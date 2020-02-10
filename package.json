@@ -1,0 +1,35 @@
+{
+  "name": "3d-tiles-renderer",
+  "version": "0.0.1",
+  "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache",
+    "lint": "eslint src/**",
+    "test": "jest"
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.jpl.nasa.gov:gkjohnso/3d-tiles-renderer-js.git"
+  },
+  "author": "Garrett Johnson <gkjohnso@jpl.nasa.gov>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@babel/core": "^7.7.2",
+    "@babel/preset-env": "^7.7.1",
+    "babel-jest": "^24.9.0",
+    "eslint": "^6.5.1",
+    "eslint-config-mdcs": "^4.2.3",
+    "eslint-plugin-jest": "^23.1.1",
+    "jest": "^24.9.0",
+    "jest-cli": "^24.9.0",
+    "parcel-bundler": "^1.12.4",
+    "three": ">=0.108.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.108.0"
+  }
+}
