@@ -27,13 +27,15 @@ animate();
 
 function reinstantiateTiles() {
 
+	const url = window.location.hash.replace( /^#/, '' ) || './SampleTileset/tileset.json';
+
 	if ( tiles ) {
 
 		scene.remove( tiles.group );
 
 	}
 
-	tiles = new ThreeTilesRenderer( './SampleTileset/tileset.json', camera, renderer );
+	tiles = new ThreeTilesRenderer( url, camera, renderer );
 	scene.add( tiles.group );
 	tiles.group.rotation.x = Math.PI / 2;
 
