@@ -199,7 +199,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 	constructor( url, cameras, renderer ) {
 
 		super( url );
-		this.group = new TilesGroup();
+		this.group = new TilesGroup( this );
 		this.cameras = Array.isArray( cameras ) ? cameras : [ cameras ];
 		this.frustums = [];
 		this.renderer = renderer;

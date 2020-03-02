@@ -1,5 +1,5 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3 } from 'three';
+import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Ray, Mesh, CylinderBufferGeometry, MeshBasicMaterial } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -7,6 +7,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
+let raycaster, mouse, rayIntersect;
 let statsContainer, stats;
 
 let params = {
@@ -95,10 +96,16 @@ function init() {
 
 	box = new Box3();
 
+	raycaster = new Raycaster();
+	mouse = new Vector2();
+	rayIntersect = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 5 ), new MeshBasicMaterial( { color: 0xff0000 } ) );
+	scene.add( rayIntersect );
+
 	reinstantiateTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'mousemove', onMouseMove, false );
 
 	// GUI
 	const gui = new dat.GUI();
@@ -166,6 +173,25 @@ function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+function onMouseMove( e ) {
+
+	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+	raycaster.setFromCamera( mouse, camera );
+
+	const results = raycaster.intersectObject( tiles.group, true );
+	if ( results.length ) {
+
+		const closestHit = results[ 0 ];
+		rayIntersect.position.copy( closestHit.point );
+
+		closestHit.face.normal.add( closestHit.point );
+		rayIntersect.lookAt( closestHit.face.normal );
+
+	}
 
 }
 
