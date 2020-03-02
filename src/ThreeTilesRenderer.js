@@ -40,55 +40,16 @@ class TilesGroup extends Group {
 
 	raycast( raycaster, intersects ) {
 
-		// TODO
-		const tilesRenderer = this.tilesRenderer;
+		// TODO: Figure out how to do traversal here -- submit issue to three.js?
+		const tilesRenderer = tilesRenderer;
+		const visibleSet = tilesRenderer.visibleSet;
 		const activeSet = tilesRenderer.activeSet;
-		const group = tilesRenderer.group;
-		tilesRenderer.traverse( tile => {
 
-			const cached = tile.cached;
+		activeSet.forEach( scene => {
 
-			const groupMatrixWorld = group.matrixWorld;
-			const transformMat = cached.transform;
+			if ( ! visibleSet.has( scene ) ) {
 
-			tempMat.copy( groupMatrixWorld );
-			tempMat.multiply( transformMat );
-
-			const sphere = cached.sphere;
-			if ( sphere ) {
-
-				_sphere.copy( sphere );
-				_sphere.applyMatrix4( tempMat );
-				if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
-
-					return true;
-
-				}
-
-			}
-
-			const boundingBox = cached.box;
-			const obbMat = cached.boxTransform;
-			if ( boundingBox ) {
-
-				tempMat.multiply( obbMat );
-				tempMat.getInverse( tempMat );
-				ray.copy( raycaster.ray ).applyMatrix4( tempMat );
-				if ( ! ray.intersectsBox( boundingBox ) ) {
-
-					return true;
-
-				}
-
-			}
-
-			// TODO: check region
-
-			// TODO: how do we prevent the child checks from happening?
-			const scene = cached.scene;
-			if ( activeSet.has( scene ) ) {
-
-				// raycaster.intersectObject( scene, true, intersects );
+				raycaster.intersectObject( scene, true, intersects );
 
 			}
 
@@ -233,6 +194,62 @@ class ThreeTilesRenderer extends TilesRenderer {
 		return true;
 
 	}
+
+	raycast( raycaster, intersects ) {
+
+		const activeSet = this.activeSet;
+		const group = this.group;
+		this.traverse( tile => {
+
+			const cached = tile.cached;
+			const groupMatrixWorld = group.matrixWorld;
+			const transformMat = cached.transform;
+
+			tempMat.copy( groupMatrixWorld );
+			tempMat.multiply( transformMat );
+
+			const sphere = cached.sphere;
+			if ( sphere ) {
+
+				_sphere.copy( sphere );
+				_sphere.applyMatrix4( tempMat );
+				if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
+
+					return true;
+
+				}
+
+			}
+
+			const boundingBox = cached.box;
+			const obbMat = cached.boxTransform;
+			if ( boundingBox ) {
+
+				tempMat.multiply( obbMat );
+				tempMat.getInverse( tempMat );
+				ray.copy( raycaster.ray ).applyMatrix4( tempMat );
+				if ( ! ray.intersectsBox( boundingBox ) ) {
+
+					return true;
+
+				}
+
+			}
+
+			// TODO: check region
+
+			// TODO: how do we prevent the child checks from happening?
+			const scene = cached.scene;
+			if ( activeSet.has( scene ) ) {
+
+				raycaster.intersectObject( scene, true, intersects );
+
+			}
+
+		} );
+
+	}
+
 
 	/* Overriden */
 	update() {
