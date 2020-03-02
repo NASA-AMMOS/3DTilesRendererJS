@@ -16,6 +16,7 @@ let params = {
 	'maxDepth': 15,
 	'loadSiblings': true,
 
+	'up': '+Y',
 	'displayBounds': false,
 	'showThirdPerson': true,
 	'reload': reinstantiateTiles,
@@ -37,7 +38,6 @@ function reinstantiateTiles() {
 
 	tiles = new ThreeTilesRenderer( url, camera, renderer );
 	scene.add( tiles.group );
-	tiles.group.rotation.x = Math.PI / 2;
 
 }
 
@@ -109,6 +109,7 @@ function init() {
 	tiles.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tiles.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tiles.add( params, 'maxDepth' ).min( 1 ).max( 100 );
+	tiles.add( params, 'up', [ '+Y', '-Z' ] );
 	tiles.open();
 
 	gui.add( params, 'displayBounds' );
@@ -201,6 +202,14 @@ function animate() {
 }
 
 function render() {
+
+	tiles.group.rotation.set( 0, 0, 0 );
+	if ( params.up === '-Z' ) {
+
+		tiles.group.rotation.x = Math.PI / 2;
+
+	}
+
 
 	// render primary view
 	cameraHelper.visible = false;
