@@ -330,7 +330,16 @@ class TilesRenderer {
 
 	get root() {
 
-		return this.tileSets[ this.rootSet ].root;
+		const tileSet = this.tileSets[ this.rootSet ];
+		if ( ! tileSet || tileSet instanceof Promise ) {
+
+			return null;
+
+		} else {
+
+			return tileSet.root;
+
+		}
 
 	}
 
@@ -368,7 +377,7 @@ class TilesRenderer {
 
 		const tileSets = this.tileSets;
 		const rootTileSet = tileSets[ this.rootSet ];
-		if ( ! rootTileSet.root ) return;
+		if ( ! rootTileSet || ! rootTileSet.root ) return;
 
 		traverseSet( rootTileSet.root, cb );
 
@@ -381,7 +390,7 @@ class TilesRenderer {
 		const lruCache = this.lruCache;
 		const tileSets = this.tileSets;
 		const rootTileSet = tileSets[ this.rootSet ];
-		if ( ! rootTileSet.root ) return;
+		if ( ! rootTileSet || ! rootTileSet.root ) return;
 
 		const root = rootTileSet.root;
 
@@ -510,7 +519,15 @@ class TilesRenderer {
                 fetch( url, { credentials: 'same-origin' } )
                 	.then( res => {
 
-                		return res.json();
+                		if ( res.ok ) {
+
+                			return res.json();
+
+                		} else {
+
+                			throw new Error( `Status ${ res.status } (${ res.statusText })` );
+
+                		}
 
                 	} )
                 	.then( json => {
