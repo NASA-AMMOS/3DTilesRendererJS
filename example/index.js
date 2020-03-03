@@ -185,6 +185,13 @@ function animate() {
 	tiles.update();
 	window.tiles = tiles;
 
+	tiles.group.rotation.set( 0, 0, 0 );
+	if ( params.up === '-Z' ) {
+
+		tiles.group.rotation.x = Math.PI / 2;
+
+	}
+
 	// update tiles center
 	if ( tiles.getBounds( box ) ) {
 
@@ -202,14 +209,6 @@ function animate() {
 }
 
 function render() {
-
-	tiles.group.rotation.set( 0, 0, 0 );
-	if ( params.up === '-Z' ) {
-
-		tiles.group.rotation.x = Math.PI / 2;
-
-	}
-
 
 	// render primary view
 	cameraHelper.visible = false;

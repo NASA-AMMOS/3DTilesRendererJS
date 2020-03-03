@@ -227,6 +227,12 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		}
 
+		if ( parentTile ) {
+
+			transform.multiply( parentTile.cached.transform );
+
+		}
+
 		let box = null;
 		let boxTransform = null;
 		if ( 'box' in tile.boundingVolume ) {
@@ -429,11 +435,9 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
-		const group = this.group;
 
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
-		const groupMatrixWorld = group.matrixWorld;
 		const transformMat = cached.transform;
 
 		if ( 'box' in boundingVolume ) {
@@ -443,8 +447,8 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 			// TODO: these can likely be cached? Or the world transform mat can be used
 			// transformMat can be rolled into oobMat
-			tempMat.multiplyMatrices( transformMat, obbMat );
-			tempMat.premultiply( groupMatrixWorld );
+			tempMat.copy( transformMat );
+			tempMat.multiply( obbMat );
 			tempMat.getInverse( tempMat );
 
 			let minError = Infinity;
