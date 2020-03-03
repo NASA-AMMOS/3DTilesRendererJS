@@ -1,5 +1,5 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3 } from 'three';
+import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Group } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -7,6 +7,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
+let offsetParent;
 let statsContainer, stats;
 
 let params = {
@@ -32,12 +33,12 @@ function reinstantiateTiles() {
 
 	if ( tiles ) {
 
-		scene.remove( tiles.group );
+		offsetParent.remove( tiles.group );
 
 	}
 
 	tiles = new ThreeTilesRenderer( url, camera, renderer );
-	scene.add( tiles.group );
+	offsetParent.add( tiles.group );
 
 }
 
@@ -96,6 +97,9 @@ function init() {
 	scene.add( ambLight );
 
 	box = new Box3();
+
+	offsetParent = new Group();
+	scene.add( offsetParent );
 
 	reinstantiateTiles();
 
@@ -185,10 +189,10 @@ function animate() {
 	tiles.update();
 	window.tiles = tiles;
 
-	tiles.group.rotation.set( 0, 0, 0 );
+	offsetParent.rotation.set( 0, 0, 0 );
 	if ( params.up === '-Z' ) {
 
-		tiles.group.rotation.x = Math.PI / 2;
+		offsetParent.rotation.x = Math.PI / 2;
 
 	}
 
