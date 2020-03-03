@@ -442,6 +442,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		if ( 'box' in boundingVolume ) {
 
+			const group = this.group;
 			const boundingBox = cached.box;
 			const obbMat = cached.boxTransform;
 
@@ -454,6 +455,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 			let minError = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
+				// transform camera position into local frame of the tile bounding box
 				const cam = cameras[ i ];
 				tempVector.copy( cam.position );
 				tempVector.applyMatrix4( tempMat );
@@ -471,8 +473,15 @@ class ThreeTilesRenderer extends TilesRenderer {
 					const distance = boundingBox.distanceToPoint( tempVector );
 
 					// assume the scales on all axes are uniform.
+					let scale;
+
+					// account for tile scale.
 					tempVector.setFromMatrixScale( tempMat );
-					const scale = tempVector.x;
+					scale = tempVector.x;
+
+					// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
+					tempVector.setFromMatrixScale( group.matrixWorld );
+					scale /= tempVector.x;
 
 					if ( Math.abs( Math.max( scale.x - scale.y, scale.x - scale.z ) ) > 1e-6 ) {
 
