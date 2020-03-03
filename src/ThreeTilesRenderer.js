@@ -150,18 +150,15 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		}
 
-		const d = this.root.boundingVolume.box;
-		box.min.set(
-			d[ 0 ] - d[ 3 ],
-			d[ 1 ] - d[ 7 ],
-			d[ 2 ] - d[ 11 ]
-		);
+		const cached = this.root.cached;
+		const boundingBox = cached.box;
+		const obbMat = cached.boxTransform;
+		const transformMat = cached.transform;
 
-		box.max.set(
-			d[ 0 ] + d[ 3 ],
-			d[ 1 ] + d[ 7 ],
-			d[ 2 ] + d[ 11 ]
-		);
+		box.copy( boundingBox );
+		tempMat.multiplyMatrices( transformMat, obbMat );
+		box.applyMatrix4( tempMat );
+
 
 		return true;
 
