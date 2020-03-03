@@ -456,6 +456,7 @@ class TilesRenderer {
 		}
 
 		tile.parent = parentTile;
+		tile.children = tile.children || [];
 		tile.__contentEmpty = ! tile.content || ! tile.content.uri;
 
 		tile.__error = 0.0;

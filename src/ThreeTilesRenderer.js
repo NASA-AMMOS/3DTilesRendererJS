@@ -469,8 +469,20 @@ class ThreeTilesRenderer extends TilesRenderer {
 				} else {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
+
+					// assume the scales on all axes are uniform.
+					tempVector.setFromMatrixScale( tempMat );
+					const scale = tempVector.x;
+
+					if ( Math.abs( Math.max( scale.x - scale.y, scale.x - scale.z ) ) > 1e-6 ) {
+
+						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when claculating screen space error.' );
+
+					}
+
+					const scaledDistance = distance * scale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
-					error = ( tile.geometricError * resVector.height ) / ( distance * sseDenominator );
+					error = ( tile.geometricError * resVector.height ) / ( scaledDistance * sseDenominator );
 
 				}
 
