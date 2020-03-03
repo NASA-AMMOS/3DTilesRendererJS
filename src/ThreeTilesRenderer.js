@@ -10,6 +10,7 @@ const resVector = new Vector2();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
+const _sphere = new Sphere();
 
 // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
@@ -185,7 +186,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		}
 
-		// store the camera frustums
+		// store the camera frustums in the 3d tiles root frame
 		for ( let i = 0, l = frustums.length; i < l; i ++ ) {
 
 			const camera = cameras[ i ];
@@ -500,11 +501,14 @@ class ThreeTilesRenderer extends TilesRenderer {
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {
 
+			_sphere.copy( sphere );
+			_sphere.applyMatrix4( tile.cached.transform );
+
 			const frustums = this.frustums;
 			for ( let i = 0, l = frustums.length; i < l; i ++ ) {
 
 				const frustum = frustums[ i ];
-				if ( frustum.intersectsSphere( sphere ) ) {
+				if ( frustum.intersectsSphere( _sphere ) ) {
 
 					return true;
 
