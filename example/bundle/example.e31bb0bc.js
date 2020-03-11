@@ -1141,7 +1141,6 @@ class TilesRenderer {
     this.errorThreshold = 6.0;
     this.loadSiblings = true;
     this.maxDepth = Infinity;
-    this.loadSiblings = true;
     this.loadTileSet(url);
   }
 
@@ -38069,7 +38068,7 @@ var GLTFLoader = function () {
 }();
 
 exports.GLTFLoader = GLTFLoader;
-},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../src/ThreeB3DMLoader.js":[function(require,module,exports) {
+},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../src/three/ThreeB3DMLoader.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38077,7 +38076,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ThreeB3DMLoader = void 0;
 
-var _B3DMLoader = require("./B3DMLoader.js");
+var _B3DMLoader = require("../B3DMLoader.js");
 
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
@@ -38093,7 +38092,7 @@ class ThreeB3DMLoader extends _B3DMLoader.B3DMLoader {
 }
 
 exports.ThreeB3DMLoader = ThreeB3DMLoader;
-},{"./B3DMLoader.js":"../src/B3DMLoader.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/ThreeTilesRenderer.js":[function(require,module,exports) {
+},{"../B3DMLoader.js":"../src/B3DMLoader.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/three/ThreeTilesRenderer.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38101,7 +38100,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ThreeTilesRenderer = void 0;
 
-var _TilesRenderer = require("./TilesRenderer.js");
+var _TilesRenderer = require("../TilesRenderer.js");
 
 var _ThreeB3DMLoader = require("./ThreeB3DMLoader.js");
 
@@ -38238,10 +38237,11 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
     const activeSet = this.activeSet;
     const group = this.group;
     this.traverse(tile => {
-      const cached = tile.tempMat.copy(transformMat);
-      group.matrixWorld;
-      tempMat.copy(transformMat);
-      ;
+      const cached = tile.cached;
+      const groupMatrixWorld = group.matrixWorld;
+      const transformMat = cached.transform;
+      tempMat.copy(groupMatrixWorld);
+      tempMat.multiply(transformMat);
       const sphere = cached.sphere;
 
       if (sphere) {
@@ -38566,7 +38566,45 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 }
 
 exports.ThreeTilesRenderer = ThreeTilesRenderer;
-},{"./TilesRenderer.js":"../src/TilesRenderer.js","./ThreeB3DMLoader.js":"../src/ThreeB3DMLoader.js","three":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
+},{"../TilesRenderer.js":"../src/TilesRenderer.js","./ThreeB3DMLoader.js":"../src/three/ThreeB3DMLoader.js","three":"../node_modules/three/build/three.module.js"}],"../src/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "ThreeTilesRenderer", {
+  enumerable: true,
+  get: function () {
+    return _ThreeTilesRenderer.ThreeTilesRenderer;
+  }
+});
+Object.defineProperty(exports, "ThreeB3DMLoader", {
+  enumerable: true,
+  get: function () {
+    return _ThreeB3DMLoader.ThreeB3DMLoader;
+  }
+});
+Object.defineProperty(exports, "TilesRenderer", {
+  enumerable: true,
+  get: function () {
+    return _TilesRenderer.TilesRenderer;
+  }
+});
+Object.defineProperty(exports, "B3DMLoader", {
+  enumerable: true,
+  get: function () {
+    return _B3DMLoader.B3DMLoader;
+  }
+});
+
+var _ThreeTilesRenderer = require("./three/ThreeTilesRenderer.js");
+
+var _ThreeB3DMLoader = require("./three/ThreeB3DMLoader");
+
+var _TilesRenderer = require("./TilesRenderer.js");
+
+var _B3DMLoader = require("./B3DMLoader");
+},{"./three/ThreeTilesRenderer.js":"../src/three/ThreeTilesRenderer.js","./three/ThreeB3DMLoader":"../src/three/ThreeB3DMLoader.js","./TilesRenderer.js":"../src/TilesRenderer.js","./B3DMLoader":"../src/B3DMLoader.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42405,7 +42443,7 @@ exports.default = _default;
 },{}],"index.js":[function(require,module,exports) {
 "use strict";
 
-var _ThreeTilesRenderer = require("../src/ThreeTilesRenderer.js");
+var _index = require("../src/index.js");
 
 var _three = require("three");
 
@@ -42447,7 +42485,7 @@ function reinstantiateTiles() {
     offsetParent.remove(tiles.group);
   }
 
-  tiles = new _ThreeTilesRenderer.ThreeTilesRenderer(url, camera, renderer);
+  tiles = new _index.ThreeTilesRenderer(url, camera, renderer);
   offsetParent.add(tiles.group);
 }
 
@@ -42497,22 +42535,23 @@ function init() {
   var ambLight = new _three.AmbientLight(0x222222);
   scene.add(ambLight);
   box = new _three.Box3();
+  offsetParent = new _three.Group();
+  scene.add(offsetParent); // Raycasting init
+
   raycaster = new _three.Raycaster();
   mouse = new _three.Vector2();
   rayIntersect = new _three.Group();
-  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 10), new _three.MeshBasicMaterial({
+  const rayIntersectMat = new _three.MeshBasicMaterial({
     color: 0xe91e63
-  }));
+  });
+  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 10), rayIntersectMat);
   rayMesh.rotation.x = Math.PI / 2;
   rayMesh.position.z += 5;
   rayIntersect.add(rayMesh);
-  const rayRing = new _three.Mesh(new _three.TorusBufferGeometry(1.5, 0.2, 16, 100), new _three.MeshBasicMaterial({
-    color: 0xe91e63
-  }));
+  const rayRing = new _three.Mesh(new _three.TorusBufferGeometry(1.5, 0.2, 16, 100), rayIntersectMat);
   rayIntersect.add(rayRing);
   scene.add(rayIntersect);
-  offsetParent = new _three.Group();
-  scene.add(offsetParent);
+  rayIntersect.visible = false;
   reinstantiateTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
@@ -42557,15 +42596,6 @@ function onWindowResize() {
 function onMouseMove(e) {
   mouse.x = e.clientX / window.innerWidth * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const results = raycaster.intersectObject(tiles.group, true);
-
-  if (results.length) {
-    const closestHit = results[0];
-    rayIntersect.position.copy(closestHit.point);
-    closestHit.face.normal.add(closestHit.point);
-    rayIntersect.lookAt(closestHit.face.normal);
-  }
 }
 
 function animate() {
@@ -42590,6 +42620,20 @@ function animate() {
     tiles.group.position.multiplyScalar(-1);
   }
 
+  raycaster.setFromCamera(mouse, camera);
+  const results = raycaster.intersectObject(tiles.group, true);
+
+  if (results.length) {
+    const closestHit = results[0];
+    const point = closestHit.point;
+    const normal = closestHit.face.normal;
+    rayIntersect.position.copy(point);
+    rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
+    rayIntersect.visible = true;
+  } else {
+    rayIntersect.visible = false;
+  }
+
   stats.begin();
   render();
   stats.end();
@@ -42610,7 +42654,7 @@ function render() {
 
   statsContainer.innerText = `Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length}`;
 }
-},{"../src/ThreeTilesRenderer.js":"../src/ThreeTilesRenderer.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -42638,7 +42682,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61189" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52787" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

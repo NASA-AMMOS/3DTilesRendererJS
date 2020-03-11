@@ -132,6 +132,7 @@ function init() {
 	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
+	rayIntersect.visible = false;
 
 	reinstantiateTiles();
 
@@ -188,23 +189,6 @@ function onMouseMove( e ) {
 
 	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-	raycaster.setFromCamera( mouse, camera );
-
-	const results = raycaster.intersectObject( tiles.group, true );
-	if ( results.length ) {
-
-		const closestHit = results[ 0 ];
-		const point = closestHit.point;
-		const normal = closestHit.face.normal;
-
-		rayIntersect.position.copy( point );
-		rayIntersect.lookAt(
-			point.x + normal.x,
-			point.y + normal.y,
-			point.z + normal.z
-		);
-
-	}
 
 }
 
@@ -233,6 +217,29 @@ function animate() {
 
 		box.getCenter( tiles.group.position );
 		tiles.group.position.multiplyScalar( - 1 );
+
+	}
+
+	raycaster.setFromCamera( mouse, camera );
+
+	const results = raycaster.intersectObject( tiles.group, true );
+	if ( results.length ) {
+
+		const closestHit = results[ 0 ];
+		const point = closestHit.point;
+		const normal = closestHit.face.normal;
+
+		rayIntersect.position.copy( point );
+		rayIntersect.lookAt(
+			point.x + normal.x,
+			point.y + normal.y,
+			point.z + normal.z
+		);
+		rayIntersect.visible = true;
+
+	} else {
+
+		rayIntersect.visible = false;
 
 	}
 
