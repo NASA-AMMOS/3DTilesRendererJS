@@ -1,0 +1,8 @@
+language: node_js
+node_js:
+  - node
+before_install:
+  - cd javascript
+script:
+  - npm run lint
+  - npm test

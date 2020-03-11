@@ -20,7 +20,22 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 # Use
 
 ```js
-// TODO
+import { ThreeTilesRenderer } from '3d-tiles-renderer';
+
+// ... initialize three scene ...
+
+const tilesRenderer = new ThreeTilesRenderer( './path/to/tileset.json', camera, renderer );
+scene.add( tilesRenderer.group );
+
+function renderLoop() {
+
+	// ...
+	
+	tilesRenderer.update();
+	renderer.render( camera, scene );
+
+}
+
 ```
 
 # API
