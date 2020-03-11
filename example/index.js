@@ -1,5 +1,20 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Group } from 'three';
+import {
+	Scene,
+	DirectionalLight,
+	AmbientLight,
+	WebGLRenderer,
+	PerspectiveCamera,
+	CameraHelper,
+	Box3,
+	Raycaster,
+	Vector2,
+	Mesh,
+	CylinderBufferGeometry,
+	MeshBasicMaterial,
+	Group,
+	TorusBufferGeometry
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -7,6 +22,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
+let raycaster, mouse, rayIntersect;
 let offsetParent;
 let statsContainer, stats;
 
@@ -52,7 +68,7 @@ function init() {
 	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
 	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
 	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0xdddddd );
+	thirdPersonRenderer.setClearColor( 0x0f1416 );
 
 	document.body.appendChild( thirdPersonRenderer.domElement );
 	thirdPersonRenderer.domElement.style.position = 'fixed';
@@ -70,7 +86,7 @@ function init() {
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setClearColor( 0xcccccc );
+	renderer.setClearColor( 0x151c1f );
 	renderer.gammaInput = true;
 	renderer.gameOutput = true;
 
@@ -101,10 +117,27 @@ function init() {
 	offsetParent = new Group();
 	scene.add( offsetParent );
 
+	// Raycasting init
+	raycaster = new Raycaster();
+	mouse = new Vector2();
+
+	rayIntersect = new Group();
+
+	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
+	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), rayIntersectMat );
+	rayMesh.rotation.x = Math.PI / 2;
+	rayMesh.position.z += 5;
+	rayIntersect.add( rayMesh );
+
+	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
+	rayIntersect.add( rayRing );
+	scene.add( rayIntersect );
+
 	reinstantiateTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'mousemove', onMouseMove, false );
 
 	// GUI
 	const gui = new dat.GUI();
@@ -122,38 +155,13 @@ function init() {
 
 	gui.open();
 
-	// TilesRenderer stats display
-	let textShadow = [];
-	for ( let x = - 1; x <= 1; x ++ ) {
-
-		for ( let y = - 1; y <= 1; y ++ ) {
-
-			let valX = x;
-			let valY = y;
-
-			if ( valX !== 0 && valY !== 0 ) {
-
-				valX *= Math.cos( Math.PI / 4 );
-				valY *= Math.sin( Math.PI / 4 );
-
-			}
-
-			valX *= 1.5;
-			valY *= 1.5;
-
-			textShadow.push( `white ${ valX }px ${ valY }px 0` );
-
-		}
-
-	}
-
 	statsContainer = document.createElement( 'div' );
 	statsContainer.style.position = 'absolute';
 	statsContainer.style.top = 0;
 	statsContainer.style.left = 0;
+	statsContainer.style.color = 'white';
 	statsContainer.style.width = '100%';
 	statsContainer.style.textAlign = 'center';
-	statsContainer.style.textShadow = textShadow.join( ',' );
 	statsContainer.style.padding = '10px';
 	document.body.appendChild( statsContainer );
 
@@ -173,6 +181,30 @@ function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+function onMouseMove( e ) {
+
+	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+	raycaster.setFromCamera( mouse, camera );
+
+	const results = raycaster.intersectObject( tiles.group, true );
+	if ( results.length ) {
+
+		const closestHit = results[ 0 ];
+		const point = closestHit.point;
+		const normal = closestHit.face.normal;
+
+		rayIntersect.position.copy( point );
+		rayIntersect.lookAt(
+			point.x + normal.x,
+			point.y + normal.y,
+			point.z + normal.z
+		);
+
+	}
 
 }
 

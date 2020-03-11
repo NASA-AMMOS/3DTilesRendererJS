@@ -1,6 +1,19 @@
 import { TilesRenderer } from './TilesRenderer.js';
 import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
-import { Matrix4, Box3, Sphere, Vector3, Group, Vector2, Math as MathUtils, Box3Helper, Quaternion, Frustum } from 'three';
+import {
+	Mesh,
+	Matrix4,
+	Box3,
+	Sphere,
+	Vector3,
+	Group,
+	Vector2,
+	Math as MathUtils,
+	Box3Helper,
+	Quaternion,
+	Frustum,
+	Ray
+} from 'three';
 
 const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
@@ -10,6 +23,7 @@ const resVector = new Vector2();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
+const ray = new Ray();
 const _sphere = new Sphere();
 
 // Specialization of "Group" that only updates world matrices of children if
@@ -26,8 +40,20 @@ class TilesGroup extends Group {
 
 	raycast( raycaster, intersects ) {
 
-		// TODO
+		// TODO: Figure out how to do traversal here -- submit issue to three.js?
 		const tilesRenderer = this.tilesRenderer;
+		const visibleSet = tilesRenderer.visibleSet;
+		const activeSet = tilesRenderer.activeSet;
+
+		activeSet.forEach( scene => {
+
+			if ( ! visibleSet.has( scene ) ) {
+
+				raycaster.intersectObject( scene, true, intersects );
+
+			}
+
+		} );
 
 	}
 
@@ -134,11 +160,12 @@ class ThreeTilesRenderer extends TilesRenderer {
 	constructor( url, cameras, renderer ) {
 
 		super( url );
-		this.group = new TilesGroup();
+		this.group = new TilesGroup( this );
 		this.cameras = Array.isArray( cameras ) ? cameras : [ cameras ];
 		this.frustums = [];
 		this.renderer = renderer;
-		this.active = [];
+		this.activeSet = new Set();
+		this.visibleSet = new Set();
 
 	}
 
@@ -162,6 +189,61 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 
 		return true;
+
+	}
+
+	raycast( raycaster, intersects ) {
+
+		const activeSet = this.activeSet;
+		const group = this.group;
+		this.traverse( tile => {
+
+			const cached = tile.cached;
+			const groupMatrixWorld = group.matrixWorld;
+			const transformMat = cached.transform;
+
+			tempMat.copy( groupMatrixWorld );
+			tempMat.multiply( transformMat );
+
+			const sphere = cached.sphere;
+			if ( sphere ) {
+
+				_sphere.copy( sphere );
+				_sphere.applyMatrix4( tempMat );
+				if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
+
+					return true;
+
+				}
+
+			}
+
+			const boundingBox = cached.box;
+			const obbMat = cached.boxTransform;
+			if ( boundingBox ) {
+
+				tempMat.multiply( obbMat );
+				tempMat.getInverse( tempMat );
+				ray.copy( raycaster.ray ).applyMatrix4( tempMat );
+				if ( ! ray.intersectsBox( boundingBox ) ) {
+
+					return true;
+
+				}
+
+			}
+
+			// TODO: check region
+
+			// TODO: how do we prevent the child checks from happening?
+			const scene = cached.scene;
+			if ( activeSet.has( scene ) ) {
+
+				raycaster.intersectObject( scene, true, intersects );
+
+			}
+
+		} );
 
 	}
 
@@ -393,18 +475,22 @@ class ThreeTilesRenderer extends TilesRenderer {
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.cached.scene;
+		const visibleSet = this.visibleSet;
+		const group = this.group;
 		if ( visible ) {
 
 			if ( scene && ! scene.parent ) {
 
-				this.group.add( scene );
+				group.add( scene );
+				visibleSet.add( scene );
 				scene.updateMatrixWorld( true );
 
 			}
 
 		} else {
 
-			this.group.remove( scene );
+			group.remove( scene );
+			visibleSet.delete( scene );
 
 		}
 
@@ -413,17 +499,17 @@ class ThreeTilesRenderer extends TilesRenderer {
 	setTileActive( tile, active ) {
 
 		const cached = tile.cached;
+		const activeSet = this.activeSet;
 		if ( active !== cached.active ) {
 
 			cached.active = active;
 			if ( active ) {
 
-				this.active.push( cached.scene );
+				activeSet.add( cached.scene );
 
 			} else {
 
-				const index = this.active.indexOf( cached.scene );
-				this.active.splice( index, 1 );
+				activeSet.delete( cached.scene );
 
 			}
 
