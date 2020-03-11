@@ -198,9 +198,12 @@ class ThreeTilesRenderer extends TilesRenderer {
 		const group = this.group;
 		this.traverse( tile => {
 
-			const cached = tile.tempMat.copy( transformMat ); group.matrixWorld;
+			const cached = tile.cached;
+			const groupMatrixWorld = group.matrixWorld;
+			const transformMat = cached.transform;
 
-			tempMat.copy( transformMat );;
+			tempMat.copy( groupMatrixWorld );
+			tempMat.multiply( transformMat );
 
 			const sphere = cached.sphere;
 			if ( sphere ) {
@@ -243,7 +246,6 @@ class ThreeTilesRenderer extends TilesRenderer {
 		} );
 
 	}
-
 
 	/* Overriden */
 	update() {
