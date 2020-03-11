@@ -20,7 +20,7 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 # Use
 
 ```js
-import { ThreeTilesRenderer } from '3d-tiles-renderer';
+import { ThreeTilesRenderer } from 'NASA-AMMOS/3DTilesRendererJS';
 
 // ... initialize three scene ...
 
