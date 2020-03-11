@@ -35,6 +35,24 @@ group : Group
 displayBounds = false : Boolean
 ```
 
+### .errorTarget
+
+```js
+errorTarget = 6 : Number
+```
+
+### .errorThreshold
+
+```js
+errorThreshold = 6 : Number
+```
+
+### .maxDepth
+
+```js
+maxDepth = Infinity : Number
+```
+
 ### .loadSiblings
 
 ```js
