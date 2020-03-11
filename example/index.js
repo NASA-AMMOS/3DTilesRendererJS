@@ -194,10 +194,15 @@ function onMouseMove( e ) {
 	if ( results.length ) {
 
 		const closestHit = results[ 0 ];
-		rayIntersect.position.copy( closestHit.point );
+		const point = closestHit.point;
+		const normal = closestHit.face.normal;
 
-		closestHit.face.normal.add( closestHit.point );
-		rayIntersect.lookAt( closestHit.face.normal );
+		rayIntersect.position.copy( point );
+		rayIntersect.lookAt(
+			point.x + normal.x,
+			point.y + normal.y,
+			point.z + normal.z
+		);
 
 	}
 
