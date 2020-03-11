@@ -114,22 +114,24 @@ function init() {
 
 	box = new Box3();
 
+	offsetParent = new Group();
+	scene.add( offsetParent );
+
+	// Raycasting init
 	raycaster = new Raycaster();
 	mouse = new Vector2();
 
 	rayIntersect = new Group();
 
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), new MeshBasicMaterial( { color: 0xe91e63 } ) );
+	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
+	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
 	rayMesh.position.z += 5;
 	rayIntersect.add( rayMesh );
 
-	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), new MeshBasicMaterial( { color: 0xe91e63 } ) );
+	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
-
-	offsetParent = new Group();
-	scene.add( offsetParent );
 
 	reinstantiateTiles();
 
