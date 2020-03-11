@@ -2,6 +2,8 @@
 
 _IN PROGRESS_
 
+[![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/nasa-ammos/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/nasa-ammos/3DTilesRendererJS/)
+
 In progress three.js implementation of the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/).
 
 The renderer supports a limited subset of the spec for the moment. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented. 
