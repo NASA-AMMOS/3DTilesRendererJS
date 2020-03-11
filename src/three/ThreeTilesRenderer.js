@@ -1,7 +1,6 @@
-import { TilesRenderer } from './TilesRenderer.js';
+import { TilesRenderer } from '../TilesRenderer.js';
 import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
 import {
-	Mesh,
 	Matrix4,
 	Box3,
 	Sphere,

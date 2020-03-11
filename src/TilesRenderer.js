@@ -367,7 +367,6 @@ class TilesRenderer {
 		this.errorThreshold = 6.0;
 		this.loadSiblings = true;
 		this.maxDepth = Infinity;
-		this.loadSiblings = true;
 
 		this.loadTileSet( url );
 

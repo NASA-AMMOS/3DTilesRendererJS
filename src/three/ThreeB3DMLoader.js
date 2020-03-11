@@ -1,4 +1,4 @@
-import { B3DMLoader } from './B3DMLoader.js';
+import { B3DMLoader } from '../B3DMLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 class ThreeB3DMLoader extends B3DMLoader {
