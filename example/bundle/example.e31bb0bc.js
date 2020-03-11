@@ -1418,15 +1418,15 @@ class B3DMLoader {
 
     const featureTableStart = 28;
     const jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
-    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData));
-    const binFeatureTableData = new Uint8Array(buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength); // TODO: dereference the json feature table data in to the binary array.
+    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData)); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
+    // TODO: dereference the json feature table data in to the binary array.
     // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
     // Batch Table
 
     const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
     const jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
-    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData));
-    const binBatchTableData = new Uint8Array(buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength); // TODO: dereference the json batch table data in to the binary array.
+    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData)); // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+    // TODO: dereference the json batch table data in to the binary array.
     // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
 
     const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
@@ -38527,7 +38527,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
       return minError;
     } else if ('sphere' in boundingVolume) {
-      const sphere = cached.sphere;
+      // const sphere = cached.sphere;
       console.warn('ThreeTilesRenderer : Sphere bounds not supported.');
     } else if ('region' in boundingVolume) {
       // unsupported
@@ -42626,9 +42626,13 @@ function animate() {
   if (results.length) {
     const closestHit = results[0];
     const point = closestHit.point;
-    const normal = closestHit.face.normal;
-    rayIntersect.position.copy(point);
-    rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
+    rayIntersect.position.copy(point); // If the display bounds are visible they get intersected
+
+    if (closestHit.face) {
+      const normal = closestHit.face.normal;
+      rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
+    }
+
     rayIntersect.visible = true;
   } else {
     rayIntersect.visible = false;

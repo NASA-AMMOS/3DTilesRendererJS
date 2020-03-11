@@ -227,14 +227,20 @@ function animate() {
 
 		const closestHit = results[ 0 ];
 		const point = closestHit.point;
-		const normal = closestHit.face.normal;
-
 		rayIntersect.position.copy( point );
-		rayIntersect.lookAt(
-			point.x + normal.x,
-			point.y + normal.y,
-			point.z + normal.z
-		);
+
+		// If the display bounds are visible they get intersected
+		if ( closestHit.face ) {
+
+			const normal = closestHit.face.normal;
+			rayIntersect.lookAt(
+				point.x + normal.x,
+				point.y + normal.y,
+				point.z + normal.z
+			);
+
+		}
+
 		rayIntersect.visible = true;
 
 	} else {
