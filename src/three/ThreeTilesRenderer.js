@@ -588,7 +588,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		} else if ( 'sphere' in boundingVolume ) {
 
-			const sphere = cached.sphere;
+			// const sphere = cached.sphere;
 
 			console.warn( 'ThreeTilesRenderer : Sphere bounds not supported.' );
 

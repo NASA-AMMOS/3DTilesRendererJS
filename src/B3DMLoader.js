@@ -67,7 +67,7 @@ class B3DMLoader {
 		const jsonFeatureTableData = new Uint8Array( buffer, featureTableStart, featureTableJSONByteLength );
 		const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonFeatureTableData ) );
 
-		const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
+		// const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
 		// TODO: dereference the json feature table data in to the binary array.
 		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
 
@@ -77,7 +77,7 @@ class B3DMLoader {
 		const jsonBatchTableData = new Uint8Array( buffer, batchTableStart, batchTableJSONByteLength );
 		const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonBatchTableData ) );
 
-		const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+		// const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
 		// TODO: dereference the json batch table data in to the binary array.
 		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
 
