@@ -1,4 +1,4 @@
-import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
+import { ThreeTilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
