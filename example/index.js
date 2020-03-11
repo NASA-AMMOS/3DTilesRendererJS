@@ -1,5 +1,5 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Ray, Mesh, CylinderBufferGeometry, MeshBasicMaterial, Group } from 'three';
+import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Mesh, CylinderBufferGeometry, MeshBasicMaterial, Group, AxesHelper, TorusBufferGeometry } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -53,7 +53,7 @@ function init() {
 	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
 	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
 	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0xdddddd );
+	thirdPersonRenderer.setClearColor( 0x0f1416 );
 
 	document.body.appendChild( thirdPersonRenderer.domElement );
 	thirdPersonRenderer.domElement.style.position = 'fixed';
@@ -71,7 +71,7 @@ function init() {
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setClearColor( 0xcccccc );
+	renderer.setClearColor( 0x151c1f );
 	renderer.gammaInput = true;
 	renderer.gameOutput = true;
 
@@ -101,7 +101,16 @@ function init() {
 
 	raycaster = new Raycaster();
 	mouse = new Vector2();
-	rayIntersect = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 5 ), new MeshBasicMaterial( { color: 0xff0000 } ) );
+
+	rayIntersect = new Group();
+
+	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), new MeshBasicMaterial( { color: 0xe91e63 } ) );
+	rayMesh.rotation.x = Math.PI / 2;
+	rayMesh.position.z += 5;
+	rayIntersect.add( rayMesh );
+
+	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), new MeshBasicMaterial( { color: 0xe91e63 } ) );
+	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
 
 	offsetParent = new Group();
@@ -129,38 +138,13 @@ function init() {
 
 	gui.open();
 
-	// TilesRenderer stats display
-	let textShadow = [];
-	for ( let x = - 1; x <= 1; x ++ ) {
-
-		for ( let y = - 1; y <= 1; y ++ ) {
-
-			let valX = x;
-			let valY = y;
-
-			if ( valX !== 0 && valY !== 0 ) {
-
-				valX *= Math.cos( Math.PI / 4 );
-				valY *= Math.sin( Math.PI / 4 );
-
-			}
-
-			valX *= 1.5;
-			valY *= 1.5;
-
-			textShadow.push( `white ${ valX }px ${ valY }px 0` );
-
-		}
-
-	}
-
 	statsContainer = document.createElement( 'div' );
 	statsContainer.style.position = 'absolute';
 	statsContainer.style.top = 0;
 	statsContainer.style.left = 0;
+	statsContainer.style.color = 'white';
 	statsContainer.style.width = '100%';
 	statsContainer.style.textAlign = 'center';
-	statsContainer.style.textShadow = textShadow.join( ',' );
 	statsContainer.style.padding = '10px';
 	document.body.appendChild( statsContainer );
 
