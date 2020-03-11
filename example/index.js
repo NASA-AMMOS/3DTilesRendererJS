@@ -1,5 +1,20 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Mesh, CylinderBufferGeometry, MeshBasicMaterial, Group, AxesHelper, TorusBufferGeometry } from 'three';
+import {
+	Scene,
+	DirectionalLight,
+	AmbientLight,
+	WebGLRenderer,
+	PerspectiveCamera,
+	CameraHelper,
+	Box3,
+	Raycaster,
+	Vector2,
+	Mesh,
+	CylinderBufferGeometry,
+	MeshBasicMaterial,
+	Group,
+	TorusBufferGeometry
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
