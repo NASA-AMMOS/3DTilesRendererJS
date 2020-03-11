@@ -2,25 +2,53 @@
 
 In progress three.js implementation of the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/).
 
-## Unsupported Features
+The renderer supports a limited subset of the spec for the moment. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented. 
 
-### Model Formats
+# Use
 
-- [i3dm format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Instanced3DModel/README.md)
-- [pnts format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md)
-- [cmt format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Composite/README.md)
+```js
+// TODO
+```
 
-### B3DM Features
+# API
 
-- Per batched feature metadata extraction
-- Individual feature access, selection, and updates
-- Individual feature transform and position
+## ThreeTilesRenderer
 
-### Tileset Features
+### .group
 
-- [Region](https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification#region) bounding volume support
-- [Viewer request volume](https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification#viewer-request-volume)
-- [Additive refinement](https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification#additive)
+```js
+group : Group
+```
+
+### .displayBounds
+
+```js
+displayBounds = false : Boolean
+```
+
+### .constructor
+
+```js
+constructor( url : String, cameras : Camera | Array<Camera>, renderer : WebGLRenderer )
+```
+
+### .update
+
+```js
+update() : void
+```
+
+### .getBounds
+
+```js
+getBounds( box : Box3 ) : void
+```
+
+### .raycast
+
+```js
+raycast( raycaster : Raycaster, intersects : Array ) : void
+```
 
 # LICENSE
 
