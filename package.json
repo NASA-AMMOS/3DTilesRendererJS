@@ -2,6 +2,17 @@
   "name": "3d-tiles-renderer",
   "version": "0.0.1",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
+  "keywords": [
+    "3d-tiles",
+    "3dtiles",
+    "graphics",
+    "b3dm",
+    "threejs",
+    "rendering",
+    "geometry",
+    "terrain",
+    "cesium"
+  ],
   "main": "src/index.js",
   "scripts": {
     "start": "parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache",

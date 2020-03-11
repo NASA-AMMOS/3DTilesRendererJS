@@ -41,7 +41,7 @@ class TilesGroup extends Group {
 	raycast( raycaster, intersects ) {
 
 		// TODO: Figure out how to do traversal here -- submit issue to three.js?
-		const tilesRenderer = tilesRenderer;
+		const tilesRenderer = this.tilesRenderer;
 		const visibleSet = tilesRenderer.visibleSet;
 		const activeSet = tilesRenderer.activeSet;
 
@@ -178,18 +178,15 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		}
 
-		const d = this.root.boundingVolume.box;
-		box.min.set(
-			d[ 0 ] - d[ 3 ],
-			d[ 1 ] - d[ 7 ],
-			d[ 2 ] - d[ 11 ]
-		);
+		const cached = this.root.cached;
+		const boundingBox = cached.box;
+		const obbMat = cached.boxTransform;
+		const transformMat = cached.transform;
 
-		box.max.set(
-			d[ 0 ] + d[ 3 ],
-			d[ 1 ] + d[ 7 ],
-			d[ 2 ] + d[ 11 ]
-		);
+		box.copy( boundingBox );
+		tempMat.multiplyMatrices( transformMat, obbMat );
+		box.applyMatrix4( tempMat );
+
 
 		return true;
 
@@ -201,12 +198,9 @@ class ThreeTilesRenderer extends TilesRenderer {
 		const group = this.group;
 		this.traverse( tile => {
 
-			const cached = tile.cached;
-			const groupMatrixWorld = group.matrixWorld;
-			const transformMat = cached.transform;
+			const cached = tile.tempMat.copy( transformMat ); group.matrixWorld;
 
-			tempMat.copy( groupMatrixWorld );
-			tempMat.multiply( transformMat );
+			tempMat.copy( transformMat );;
 
 			const sphere = cached.sphere;
 			if ( sphere ) {
@@ -272,7 +266,7 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		}
 
-		// store the camera frustums
+		// store the camera frustums in the 3d tiles root frame
 		for ( let i = 0, l = frustums.length; i < l; i ++ ) {
 
 			const camera = cameras[ i ];
@@ -310,6 +304,12 @@ class ThreeTilesRenderer extends TilesRenderer {
 		} else {
 
 			transform.identity();
+
+		}
+
+		if ( parentTile ) {
+
+			transform.multiply( parentTile.cached.transform );
 
 		}
 
@@ -519,28 +519,27 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
-		const group = this.group;
 
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
-		const groupMatrixWorld = group.matrixWorld;
 		const transformMat = cached.transform;
 
 		if ( 'box' in boundingVolume ) {
 
+			const group = this.group;
 			const boundingBox = cached.box;
 			const obbMat = cached.boxTransform;
 
 			// TODO: these can likely be cached? Or the world transform mat can be used
 			// transformMat can be rolled into oobMat
-			tempMat.copy( groupMatrixWorld );
-			tempMat.multiply( transformMat );
+			tempMat.copy( transformMat );
 			tempMat.multiply( obbMat );
 			tempMat.getInverse( tempMat );
 
 			let minError = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
+				// transform camera position into local frame of the tile bounding box
 				const cam = cameras[ i ];
 				tempVector.copy( cam.position );
 				tempVector.applyMatrix4( tempMat );
@@ -556,8 +555,27 @@ class ThreeTilesRenderer extends TilesRenderer {
 				} else {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
+
+					// assume the scales on all axes are uniform.
+					let scale;
+
+					// account for tile scale.
+					tempVector.setFromMatrixScale( tempMat );
+					scale = tempVector.x;
+
+					// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
+					tempVector.setFromMatrixScale( group.matrixWorld );
+					scale /= tempVector.x;
+
+					if ( Math.abs( Math.max( scale.x - scale.y, scale.x - scale.z ) ) > 1e-6 ) {
+
+						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when claculating screen space error.' );
+
+					}
+
+					const scaledDistance = distance * scale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
-					error = ( tile.geometricError * resVector.height ) / ( distance * sseDenominator );
+					error = ( tile.geometricError * resVector.height ) / ( scaledDistance * sseDenominator );
 
 				}
 
@@ -592,11 +610,14 @@ class ThreeTilesRenderer extends TilesRenderer {
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {
 
+			_sphere.copy( sphere );
+			_sphere.applyMatrix4( tile.cached.transform );
+
 			const frustums = this.frustums;
 			for ( let i = 0, l = frustums.length; i < l; i ++ ) {
 
 				const frustum = frustums[ i ];
-				if ( frustum.intersectsSphere( sphere ) ) {
+				if ( frustum.intersectsSphere( _sphere ) ) {
 
 					return true;
 

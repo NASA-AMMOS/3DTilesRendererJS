@@ -1,5 +1,5 @@
 import { ThreeTilesRenderer } from '../src/ThreeTilesRenderer.js';
-import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Ray, Mesh, CylinderBufferGeometry, MeshBasicMaterial } from 'three';
+import { Scene, DirectionalLight, AmbientLight, WebGLRenderer, PerspectiveCamera, CameraHelper, Box3, Raycaster, Vector2, Ray, Mesh, CylinderBufferGeometry, MeshBasicMaterial, Group } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
@@ -8,6 +8,7 @@ let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
 let raycaster, mouse, rayIntersect;
+let offsetParent;
 let statsContainer, stats;
 
 let params = {
@@ -17,6 +18,7 @@ let params = {
 	'maxDepth': 15,
 	'loadSiblings': true,
 
+	'up': '+Y',
 	'displayBounds': false,
 	'showThirdPerson': true,
 	'reload': reinstantiateTiles,
@@ -28,15 +30,16 @@ animate();
 
 function reinstantiateTiles() {
 
+	const url = window.location.hash.replace( /^#/, '' ) || './SampleTileset/tileset.json';
+
 	if ( tiles ) {
 
-		scene.remove( tiles.group );
+		offsetParent.remove( tiles.group );
 
 	}
 
-	tiles = new ThreeTilesRenderer( './SampleTileset/tileset.json', camera, renderer );
-	scene.add( tiles.group );
-	tiles.group.rotation.x = Math.PI / 2;
+	tiles = new ThreeTilesRenderer( url, camera, renderer );
+	offsetParent.add( tiles.group );
 
 }
 
@@ -101,6 +104,9 @@ function init() {
 	rayIntersect = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 5 ), new MeshBasicMaterial( { color: 0xff0000 } ) );
 	scene.add( rayIntersect );
 
+	offsetParent = new Group();
+	scene.add( offsetParent );
+
 	reinstantiateTiles();
 
 	onWindowResize();
@@ -114,6 +120,7 @@ function init() {
 	tiles.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tiles.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tiles.add( params, 'maxDepth' ).min( 1 ).max( 100 );
+	tiles.add( params, 'up', [ '+Y', '-Z' ] );
 	tiles.open();
 
 	gui.add( params, 'displayBounds' );
@@ -207,6 +214,13 @@ function animate() {
 	// update tiles
 	tiles.update();
 	window.tiles = tiles;
+
+	offsetParent.rotation.set( 0, 0, 0 );
+	if ( params.up === '-Z' ) {
+
+		offsetParent.rotation.x = Math.PI / 2;
+
+	}
 
 	// update tiles center
 	if ( tiles.getBounds( box ) ) {

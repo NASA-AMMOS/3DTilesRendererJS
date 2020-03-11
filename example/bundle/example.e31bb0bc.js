@@ -1111,7 +1111,13 @@ function toggleTiles(tile, renderer) {
 
 class TilesRenderer {
   get root() {
-    return this.tileSets[this.rootSet].root;
+    const tileSet = this.tileSets[this.rootSet];
+
+    if (!tileSet || tileSet instanceof Promise) {
+      return null;
+    } else {
+      return tileSet.root;
+    }
   }
 
   constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(2)) {
@@ -1142,26 +1148,18 @@ class TilesRenderer {
   traverse(cb) {
     const tileSets = this.tileSets;
     const rootTileSet = tileSets[this.rootSet];
-    if (!rootTileSet.root) return;
+    if (!rootTileSet || !rootTileSet.root) return;
     traverseSet(rootTileSet.root, cb);
   } // Public API
 
 
   update() {
-    // TODO: Mark all tiles as unused
-    // TODO: Check if any tiles have finished
     const stats = this.stats;
     const lruCache = this.lruCache;
     const tileSets = this.tileSets;
     const rootTileSet = tileSets[this.rootSet];
-    if (!rootTileSet.root) return;
-    const root = rootTileSet.root; // TODO: determine if the root tile should be visible / rendered?
-    // TODO: Preprocess and modify the node uris instead of
-    // generating the path on the fly
-    // const errorTarget = this.errorTarget;
-    // const errorThreshold = this.errorThreshold;
-    // const maxDepth = this.maxDepth;
-
+    if (!rootTileSet || !rootTileSet.root) return;
+    const root = rootTileSet.root;
     stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
     determineFrustumSet(root, this);
     markUsedSetLeaves(root, this);
@@ -1197,6 +1195,7 @@ class TilesRenderer {
     }
 
     tile.parent = parentTile;
+    tile.children = tile.children || [];
     tile.__contentEmpty = !tile.content || !tile.content.uri;
     tile.__error = 0.0;
     tile.__inFrustum = false;
@@ -1239,7 +1238,11 @@ class TilesRenderer {
       const pr = fetch(url, {
         credentials: 'same-origin'
       }).then(res => {
-        return res.json();
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error(`Status ${res.status} (${res.statusText})`);
+        }
       }).then(json => {
         // TODO: Add version query?
         const version = json.asset.version;
@@ -1248,8 +1251,9 @@ class TilesRenderer {
         const basePath = _path.default.dirname(url);
 
         traverseSet(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
-        tileSets[url] = json;
-        return json;
+        tileSets[url] = json; // TODO: schedule an update to avoid doing this too many times
+
+        this.update();
       });
       pr.catch(e => {
         console.error(`TilesLoader: Failed to load tile set json "${url}"`);
@@ -38110,9 +38114,12 @@ const tempVector = new _three.Vector3();
 const resVector = new _three.Vector2();
 const vecX = new _three.Vector3();
 const vecY = new _three.Vector3();
-const vecZ = new _three.Vector3(); // Specialization of "Group" that only updates world matrices of children if
+const vecZ = new _three.Vector3();
+
+const _sphere = new _three.Sphere(); // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
 // parameter under the assumption that the children tiles will not move.
+
 
 class TilesGroup extends _three.Group {
   constructor(tilesRenderer) {
@@ -38208,9 +38215,13 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
       return false;
     }
 
-    const d = this.root.boundingVolume.box;
-    box.min.set(d[0] - d[3], d[1] - d[7], d[2] - d[11]);
-    box.max.set(d[0] + d[3], d[1] + d[7], d[2] + d[11]);
+    const cached = this.root.cached;
+    const boundingBox = cached.box;
+    const obbMat = cached.boxTransform;
+    const transformMat = cached.transform;
+    box.copy(boundingBox);
+    tempMat.multiplyMatrices(transformMat, obbMat);
+    box.applyMatrix4(tempMat);
     return true;
   }
   /* Overriden */
@@ -38228,7 +38239,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
     while (frustums.length < cameras.length) {
       frustums.push(new _three.Frustum());
-    } // store the camera frustums
+    } // store the camera frustums in the 3d tiles root frame
 
 
     for (let i = 0, l = frustums.length; i < l; i++) {
@@ -38258,6 +38269,10 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
       }
     } else {
       transform.identity();
+    }
+
+    if (parentTile) {
+      transform.multiply(parentTile.cached.transform);
     }
 
     let box = null;
@@ -38403,24 +38418,24 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
   calculateError(tile) {
     const cached = tile.cached;
-    const cameras = this.cameras;
-    const group = this.group; // TODO: Use the content bounding volume here?
+    const cameras = this.cameras; // TODO: Use the content bounding volume here?
 
     const boundingVolume = tile.boundingVolume;
-    const groupMatrixWorld = group.matrixWorld;
     const transformMat = cached.transform;
 
     if ('box' in boundingVolume) {
+      const group = this.group;
       const boundingBox = cached.box;
       const obbMat = cached.boxTransform; // TODO: these can likely be cached? Or the world transform mat can be used
       // transformMat can be rolled into oobMat
 
-      tempMat.multiplyMatrices(transformMat, obbMat);
-      tempMat.premultiply(groupMatrixWorld);
+      tempMat.copy(transformMat);
+      tempMat.multiply(obbMat);
       tempMat.getInverse(tempMat);
       let minError = Infinity;
 
       for (let i = 0, l = cameras.length; i < l; i++) {
+        // transform camera position into local frame of the tile bounding box
         const cam = cameras[i];
         tempVector.copy(cam.position);
         tempVector.applyMatrix4(tempMat);
@@ -38432,9 +38447,23 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
           const pixelSize = Math.Max(h, w) / Math.Max(resVector.width, resVector.height);
           error = tile.geometricError / pixelSize;
         } else {
-          const distance = boundingBox.distanceToPoint(tempVector);
+          const distance = boundingBox.distanceToPoint(tempVector); // assume the scales on all axes are uniform.
+
+          let scale; // account for tile scale.
+
+          tempVector.setFromMatrixScale(tempMat);
+          scale = tempVector.x; // account for parent group scale. Divide because this matrix has not been inverted like the previous one.
+
+          tempVector.setFromMatrixScale(group.matrixWorld);
+          scale /= tempVector.x;
+
+          if (Math.abs(Math.max(scale.x - scale.y, scale.x - scale.z)) > 1e-6) {
+            console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when claculating screen space error.');
+          }
+
+          const scaledDistance = distance * scale;
           const sseDenominator = 2 * Math.tan(0.5 * cam.fov * DEG2RAD);
-          error = tile.geometricError * resVector.height / (distance * sseDenominator);
+          error = tile.geometricError * resVector.height / (scaledDistance * sseDenominator);
         }
 
         minError = Math.min(minError, error);
@@ -38458,12 +38487,16 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
     const sphere = tile.cached.sphere;
 
     if (sphere) {
+      _sphere.copy(sphere);
+
+      _sphere.applyMatrix4(tile.cached.transform);
+
       const frustums = this.frustums;
 
       for (let i = 0, l = frustums.length; i < l; i++) {
         const frustum = frustums[i];
 
-        if (frustum.intersectsSphere(sphere)) {
+        if (frustum.intersectsSphere(_sphere)) {
           return true;
         }
       }
@@ -42335,12 +42368,14 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
+let offsetParent;
 let statsContainer, stats;
 let params = {
   'errorTarget': 6,
   'errorThreshold': 60,
   'maxDepth': 15,
   'loadSiblings': true,
+  'up': '+Y',
   'displayBounds': false,
   'showThirdPerson': true,
   'reload': reinstantiateTiles
@@ -42349,13 +42384,14 @@ init();
 animate();
 
 function reinstantiateTiles() {
+  const url = window.location.hash.replace(/^#/, '') || './SampleTileset/tileset.json';
+
   if (tiles) {
-    scene.remove(tiles.group);
+    offsetParent.remove(tiles.group);
   }
 
-  tiles = new _ThreeTilesRenderer.ThreeTilesRenderer('https://m20-rps-asttro-terrain.s3-us-gov-west-1.amazonaws.com/sol/00000/ids/tileset/0000_0020536/0000_0020536_tileset.json', camera, renderer);
-  scene.add(tiles.group);
-  tiles.group.rotation.x = Math.PI / 2;
+  tiles = new _ThreeTilesRenderer.ThreeTilesRenderer(url, camera, renderer);
+  offsetParent.add(tiles.group);
 }
 
 function init() {
@@ -42404,6 +42440,8 @@ function init() {
   var ambLight = new _three.AmbientLight(0x222222);
   scene.add(ambLight);
   box = new _three.Box3();
+  offsetParent = new _three.Group();
+  scene.add(offsetParent);
   reinstantiateTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false); // GUI
@@ -42414,6 +42452,7 @@ function init() {
   tiles.add(params, 'errorTarget').min(0).max(50);
   tiles.add(params, 'errorThreshold').min(0).max(1000);
   tiles.add(params, 'maxDepth').min(1).max(100);
+  tiles.add(params, 'up', ['+Y', '-Z']);
   tiles.open();
   gui.add(params, 'displayBounds');
   gui.add(params, 'showThirdPerson');
@@ -42471,7 +42510,13 @@ function animate() {
   tiles.displayBounds = params.displayBounds; // update tiles
 
   tiles.update();
-  window.tiles = tiles; // update tiles center
+  window.tiles = tiles;
+  offsetParent.rotation.set(0, 0, 0);
+
+  if (params.up === '-Z') {
+    offsetParent.rotation.x = Math.PI / 2;
+  } // update tiles center
+
 
   if (tiles.getBounds(box)) {
     box.getCenter(tiles.group.position);
@@ -42526,7 +42571,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63925" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58020" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
