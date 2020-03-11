@@ -38115,6 +38115,7 @@ const resVector = new _three.Vector2();
 const vecX = new _three.Vector3();
 const vecY = new _three.Vector3();
 const vecZ = new _three.Vector3();
+const ray = new _three.Ray();
 
 const _sphere = new _three.Sphere(); // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
@@ -38128,8 +38129,15 @@ class TilesGroup extends _three.Group {
   }
 
   raycast(raycaster, intersects) {
-    // TODO
+    // TODO: Figure out how to do traversal here -- submit issue to three.js?
     const tilesRenderer = this.tilesRenderer;
+    const visibleSet = tilesRenderer.visibleSet;
+    const activeSet = tilesRenderer.activeSet;
+    activeSet.forEach(scene => {
+      if (!visibleSet.has(scene)) {
+        raycaster.intersectObject(scene, true, intersects);
+      }
+    });
   }
 
   updateMatrixWorld(force) {
@@ -38201,11 +38209,12 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
   constructor(url, cameras, renderer) {
     super(url);
-    this.group = new TilesGroup();
+    this.group = new TilesGroup(this);
     this.cameras = Array.isArray(cameras) ? cameras : [cameras];
     this.frustums = [];
     this.renderer = renderer;
-    this.active = [];
+    this.activeSet = new Set();
+    this.visibleSet = new Set();
   }
   /* Public API */
 
@@ -38223,6 +38232,49 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
     tempMat.multiplyMatrices(transformMat, obbMat);
     box.applyMatrix4(tempMat);
     return true;
+  }
+
+  raycast(raycaster, intersects) {
+    const activeSet = this.activeSet;
+    const group = this.group;
+    this.traverse(tile => {
+      const cached = tile.tempMat.copy(transformMat);
+      group.matrixWorld;
+      tempMat.copy(transformMat);
+      ;
+      const sphere = cached.sphere;
+
+      if (sphere) {
+        _sphere.copy(sphere);
+
+        _sphere.applyMatrix4(tempMat);
+
+        if (!raycaster.ray.intersectsSphere(_sphere)) {
+          return true;
+        }
+      }
+
+      const boundingBox = cached.box;
+      const obbMat = cached.boxTransform;
+
+      if (boundingBox) {
+        tempMat.multiply(obbMat);
+        tempMat.getInverse(tempMat);
+        ray.copy(raycaster.ray).applyMatrix4(tempMat);
+
+        if (!ray.intersectsBox(boundingBox)) {
+          return true;
+        }
+      } // TODO: check region
+      // TODO: how do we prevent the child checks from happening?
+
+
+      const scene = cached.scene;
+
+      if (activeSet.has(scene)) {
+        raycaster.intersectObject(scene, true, intersects);
+      }
+    });
   }
   /* Overriden */
 
@@ -38390,28 +38442,32 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
   setTileVisible(tile, visible) {
     const scene = tile.cached.scene;
+    const visibleSet = this.visibleSet;
+    const group = this.group;
 
     if (visible) {
       if (scene && !scene.parent) {
-        this.group.add(scene);
+        group.add(scene);
+        visibleSet.add(scene);
         scene.updateMatrixWorld(true);
       }
     } else {
-      this.group.remove(scene);
+      group.remove(scene);
+      visibleSet.delete(scene);
     }
   }
 
   setTileActive(tile, active) {
     const cached = tile.cached;
+    const activeSet = this.activeSet;
 
     if (active !== cached.active) {
       cached.active = active;
 
       if (active) {
-        this.active.push(cached.scene);
+        activeSet.add(cached.scene);
       } else {
-        const index = this.active.indexOf(cached.scene);
-        this.active.splice(index, 1);
+        activeSet.delete(cached.scene);
       }
     }
   }
@@ -42368,6 +42424,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let box;
+let raycaster, mouse, rayIntersect;
 let offsetParent;
 let statsContainer, stats;
 let params = {
@@ -42404,7 +42461,7 @@ function init() {
   });
   thirdPersonRenderer.setPixelRatio(window.devicePixelRatio);
   thirdPersonRenderer.setSize(window.innerWidth, window.innerHeight);
-  thirdPersonRenderer.setClearColor(0xdddddd);
+  thirdPersonRenderer.setClearColor(0x0f1416);
   document.body.appendChild(thirdPersonRenderer.domElement);
   thirdPersonRenderer.domElement.style.position = 'fixed';
   thirdPersonRenderer.domElement.style.left = '5px';
@@ -42420,7 +42477,7 @@ function init() {
   });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0xcccccc);
+  renderer.setClearColor(0x151c1f);
   renderer.gammaInput = true;
   renderer.gameOutput = true;
   document.body.appendChild(renderer.domElement);
@@ -42440,11 +42497,26 @@ function init() {
   var ambLight = new _three.AmbientLight(0x222222);
   scene.add(ambLight);
   box = new _three.Box3();
+  raycaster = new _three.Raycaster();
+  mouse = new _three.Vector2();
+  rayIntersect = new _three.Group();
+  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 10), new _three.MeshBasicMaterial({
+    color: 0xe91e63
+  }));
+  rayMesh.rotation.x = Math.PI / 2;
+  rayMesh.position.z += 5;
+  rayIntersect.add(rayMesh);
+  const rayRing = new _three.Mesh(new _three.TorusBufferGeometry(1.5, 0.2, 16, 100), new _three.MeshBasicMaterial({
+    color: 0xe91e63
+  }));
+  rayIntersect.add(rayRing);
+  scene.add(rayIntersect);
   offsetParent = new _three.Group();
   scene.add(offsetParent);
   reinstantiateTiles();
   onWindowResize();
-  window.addEventListener('resize', onWindowResize, false); // GUI
+  window.addEventListener('resize', onWindowResize, false);
+  window.addEventListener('mousemove', onMouseMove, false); // GUI
 
   const gui = new dat.GUI();
   const tiles = gui.addFolder('Tiles Options');
@@ -42457,33 +42529,14 @@ function init() {
   gui.add(params, 'displayBounds');
   gui.add(params, 'showThirdPerson');
   gui.add(params, 'reload');
-  gui.open(); // TilesRenderer stats display
-
-  let textShadow = [];
-
-  for (let x = -1; x <= 1; x++) {
-    for (let y = -1; y <= 1; y++) {
-      let valX = x;
-      let valY = y;
-
-      if (valX !== 0 && valY !== 0) {
-        valX *= Math.cos(Math.PI / 4);
-        valY *= Math.sin(Math.PI / 4);
-      }
-
-      valX *= 1.5;
-      valY *= 1.5;
-      textShadow.push(`white ${valX}px ${valY}px 0`);
-    }
-  }
-
+  gui.open();
   statsContainer = document.createElement('div');
   statsContainer.style.position = 'absolute';
   statsContainer.style.top = 0;
   statsContainer.style.left = 0;
+  statsContainer.style.color = 'white';
   statsContainer.style.width = '100%';
   statsContainer.style.textAlign = 'center';
-  statsContainer.style.textShadow = textShadow.join(',');
   statsContainer.style.padding = '10px';
   document.body.appendChild(statsContainer); // Stats
 
@@ -42499,6 +42552,20 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(e) {
+  mouse.x = e.clientX / window.innerWidth * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const results = raycaster.intersectObject(tiles.group, true);
+
+  if (results.length) {
+    const closestHit = results[0];
+    rayIntersect.position.copy(closestHit.point);
+    closestHit.face.normal.add(closestHit.point);
+    rayIntersect.lookAt(closestHit.face.normal);
+  }
 }
 
 function animate() {
@@ -42571,7 +42638,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58020" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61189" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
