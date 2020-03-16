@@ -103,6 +103,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	raycast( raycaster, intersects ) {
 
+		// TODO: Afford a firstHitOnly flag on raycaster and check the closest child node first
 		const activeSet = this.activeSet;
 		const group = this.group;
 		this.traverse( tile => {
@@ -150,7 +151,7 @@ export class TilesRenderer extends TilesRendererBase {
 				raycaster.intersectObject( scene, true, intersects );
 				scene.traverse( c => {
 
-					if ( c !== cached.boxHelper ) {
+					if ( ! ( c instanceof Box3Helper ) ) {
 
 						Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
 
