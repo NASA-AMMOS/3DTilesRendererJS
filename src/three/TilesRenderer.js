@@ -422,6 +422,27 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.multiply( obbMat );
 			tempMat.getInverse( tempMat );
 
+			// NOTE: scale is inverted here.
+			// assume the scales on all axes are uniform.
+			let scale;
+			let isInvalid;
+
+			// account for tile scale.
+			tempVector.setFromMatrixScale( tempMat );
+			scale = tempVector.x;
+			isInvalid = Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6;
+
+			// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
+			tempVector.setFromMatrixScale( group.matrixWorld );
+			scale /= tempVector.x;
+			isInvalid = isInvalid || Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6;
+
+			if ( isInvalid ) {
+
+				console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
+
+			}
+
 			let minError = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -433,40 +454,14 @@ export class TilesRenderer extends TilesRendererBase {
 				let error;
 				if ( cam.isOrthographicCamera ) {
 
-					// TODO: account for scale here
 					const w = cam.right - cam.left;
 					const h = cam.top - cam.bottom;
 					const pixelSize = Math.max( h / resVector.height, w / resVector.width );
-					error = tile.geometricError / pixelSize;
+					error = tile.geometricError / ( pixelSize * scale );
 
 				} else {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
-
-					// assume the scales on all axes are uniform.
-					let scale;
-
-					// account for tile scale.
-					tempVector.setFromMatrixScale( tempMat );
-					scale = tempVector.x;
-
-					if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
-
-						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
-
-					}
-
-					// TODO: Is this necessary? We want error in screen space which should account for all scales
-					// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
-					tempVector.setFromMatrixScale( group.matrixWorld );
-					scale /= tempVector.x;
-
-					if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
-
-						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
-
-					}
-
 					const scaledDistance = distance * scale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
 					error = ( tile.geometricError * resVector.height ) / ( scaledDistance * sseDenominator );
