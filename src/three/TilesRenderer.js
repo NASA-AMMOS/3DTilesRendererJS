@@ -431,12 +431,12 @@ export class TilesRenderer extends TilesRendererBase {
 				tempVector.applyMatrix4( tempMat );
 
 				let error;
-				if ( cam.isOrthographic ) {
+				if ( cam.isOrthographicCamera ) {
 
-					// TODO: account for error here
+					// TODO: account for scale here
 					const w = cam.right - cam.left;
 					const h = cam.top - cam.bottom;
-					const pixelSize = Math.Max( h, w ) / Math.Max( resVector.width, resVector.height );
+					const pixelSize = Math.max( h / resVector.height, w / resVector.width );
 					error = tile.geometricError / pixelSize;
 
 				} else {

@@ -13,7 +13,8 @@ import {
 	CylinderBufferGeometry,
 	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry
+	TorusBufferGeometry,
+	OrthographicCamera
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
@@ -21,12 +22,15 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
+let orthoCamera, orthoCameraHelper;
 let box;
 let raycaster, mouse, rayIntersect;
 let offsetParent;
 let statsContainer, stats;
 
 let params = {
+
+	'orthographic': false,
 
 	'errorTarget': 6,
 	'errorThreshold': 60,
@@ -98,6 +102,12 @@ function init() {
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
+	orthoCamera = new OrthographicCamera();
+
+	orthoCameraHelper = new CameraHelper( orthoCamera );
+	scene.add( orthoCameraHelper );
+
+
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
@@ -143,6 +153,7 @@ function init() {
 	// GUI
 	const gui = new dat.GUI();
 	const tiles = gui.addFolder( 'Tiles Options' );
+	tiles.add( params, 'orthographic' );
 	tiles.add( params, 'loadSiblings' );
 	tiles.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tiles.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
@@ -183,12 +194,31 @@ function onWindowResize() {
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
+	updateOrthoCamera();
+
 }
 
 function onMouseMove( e ) {
 
 	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+
+}
+
+function updateOrthoCamera() {
+
+	orthoCamera.position.copy( camera.position );
+	orthoCamera.rotation.copy( camera.rotation );
+
+	const scale = camera.position.distanceTo( controls.target ) / 2.0;
+	const aspect = window.innerWidth / window.innerHeight;
+	orthoCamera.left = - aspect * scale;
+	orthoCamera.right = aspect * scale;
+	orthoCamera.bottom = - scale;
+	orthoCamera.top = scale;
+	orthoCamera.near = camera.near;
+	orthoCamera.far = camera.far;
+	orthoCamera.updateProjectionMatrix();
 
 }
 
@@ -200,6 +230,7 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBounds = params.displayBounds;
+	tiles.cameras[ 0 ] = params.orthographic ? orthoCamera : camera;
 
 	// update tiles
 	tiles.update();
@@ -220,7 +251,7 @@ function animate() {
 
 	}
 
-	raycaster.setFromCamera( mouse, camera );
+	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
 	raycaster.firstHitOnly = true;
 	const results = raycaster.intersectObject( tiles.group, true );
 	if ( results.length ) {
@@ -259,15 +290,22 @@ function animate() {
 
 function render() {
 
+	updateOrthoCamera();
+
 	// render primary view
 	cameraHelper.visible = false;
-	renderer.render( scene, camera );
+	orthoCameraHelper.visible = false;
+	renderer.render( scene, params.orthographic ? orthoCamera : camera );
 
 	// render third person view
 	thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
 	if ( params.showThirdPerson ) {
 
-		cameraHelper.visible = true;
+		cameraHelper.update();
+		cameraHelper.visible = ! params.orthographic;
+
+		orthoCameraHelper.update();
+		orthoCameraHelper.visible = params.orthographic;
 		thirdPersonRenderer.render( scene, thirdPersonCamera );
 
 	}
