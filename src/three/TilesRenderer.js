@@ -44,7 +44,7 @@ export class TilesRenderer extends TilesRendererBase {
 			this.traverse( t => {
 
 				const scene = t.cached.scene;
-				const boxHelper = t.cached.boxHelper;
+				const boxHelper = t.cached.boxHelperGroup;
 				if ( scene ) {
 
 					if ( val ) {
@@ -340,12 +340,12 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.transform.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 
-			cached.boxHelper = boxHelperGroup;
+			cached.boxHelperGroup = boxHelperGroup;
 			cached.scene = res.scene;
 
 			if ( this.displayBounds ) {
 
-				cached.scene.add( cached.boxHelper );
+				cached.scene.add( cached.boxHelperGroup );
 
 			}
 
@@ -391,7 +391,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} );
 			cached.scene = null;
-			cached.boxHelper = null;
+			cached.boxHelperGroup = null;
 
 		}
 
