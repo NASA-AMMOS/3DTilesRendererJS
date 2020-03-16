@@ -14,6 +14,7 @@ import {
 	Frustum,
 	Ray
 } from 'three';
+import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
 const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
@@ -103,66 +104,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 	raycast( raycaster, intersects ) {
 
-		// TODO: Afford a firstHitOnly flag on raycaster and check the closest child node first
-		const activeSet = this.activeSet;
-		const group = this.group;
-		this.traverse( tile => {
+		if ( ! this.root ) return;
 
-			const cached = tile.cached;
-			const groupMatrixWorld = group.matrixWorld;
-			const transformMat = cached.transform;
-
-			tempMat.copy( groupMatrixWorld );
-			tempMat.multiply( transformMat );
-
-			const sphere = cached.sphere;
-			if ( sphere ) {
-
-				_sphere.copy( sphere );
-				_sphere.applyMatrix4( tempMat );
-				if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
-
-					return true;
-
-				}
-
-			}
-
-			const boundingBox = cached.box;
-			const obbMat = cached.boxTransform;
-			if ( boundingBox ) {
-
-				tempMat.multiply( obbMat );
-				tempMat.getInverse( tempMat );
-				ray.copy( raycaster.ray ).applyMatrix4( tempMat );
-				if ( ! ray.intersectsBox( boundingBox ) ) {
-
-					return true;
-
-				}
-
-			}
-
-			// TODO: check region
-
-			const scene = cached.scene;
-			if ( activeSet.has( scene ) ) {
-
-				raycaster.intersectObject( scene, true, intersects );
-				scene.traverse( c => {
-
-					if ( ! ( c instanceof Box3Helper ) ) {
-
-						Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
-
-					}
-
-				} );
-				return true;
-
-			}
-
-		} );
+		raycastTraverse( this.root, this.group, this.activeSet, raycaster, intersects );
 
 	}
 
