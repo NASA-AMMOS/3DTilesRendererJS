@@ -106,7 +106,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( ! this.root ) return;
 
-		raycastTraverse( this.root, this.group, this.activeSet, raycaster, intersects );
+		if ( raycaster.firstHitOnly ) {
+
+			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeSet, raycaster, intersects );
+			if ( hit ) {
+
+				intersects.push( hit );
+
+			}
+
+		} else {
+
+			raycastTraverse( this.root, this.group, this.activeSet, raycaster, intersects );
+
+		}
 
 	}
 
@@ -420,6 +433,7 @@ export class TilesRenderer extends TilesRendererBase {
 				let error;
 				if ( cam.isOrthographic ) {
 
+					// TODO: account for error here
 					const w = cam.right - cam.left;
 					const h = cam.top - cam.bottom;
 					const pixelSize = Math.Max( h, w ) / Math.Max( resVector.width, resVector.height );
@@ -436,13 +450,20 @@ export class TilesRenderer extends TilesRendererBase {
 					tempVector.setFromMatrixScale( tempMat );
 					scale = tempVector.x;
 
+					if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
+
+						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
+
+					}
+
+					// TODO: Is this necessary? We want error in screen space which should account for all scales
 					// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
 					tempVector.setFromMatrixScale( group.matrixWorld );
 					scale /= tempVector.x;
 
-					if ( Math.abs( Math.max( scale.x - scale.y, scale.x - scale.z ) ) > 1e-6 ) {
+					if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
-						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when claculating screen space error.' );
+						console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
 
 					}
 

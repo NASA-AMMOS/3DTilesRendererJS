@@ -2,10 +2,9 @@ import { Matrix4, Sphere, Ray, Vector3, Box3Helper } from 'three';
 const _sphere = new Sphere();
 const _mat = new Matrix4();
 const _vec = new Vector3();
+const _vec2 = new Vector3();
 const _ray = new Ray();
 
-let _currIndex = 0;
-const _array = [];
 const _hitArray = [];
 
 function distanceSort( a, b ) {
@@ -32,6 +31,8 @@ function intersectTileScene( scene, raycaster, intersects ) {
 // Returns the closest hit when traversing the tree
 export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
+	// TODO: see if we can avoid creating a new array here every time to save on memory
+	const array = [];
 	const children = root.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -68,24 +69,25 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
 			if ( _ray.intersectBox( boundingBox, _vec ) ) {
 
-				// if we intersect the box save the distance to the tile bounds
-				let data;
-				if ( _currIndex >= _array.length ) {
+				// account for tile scale
+				let scale;
+				_vec2.setFromMatrixScale( _mat );
+				scale = _vec2.x;
 
-					data = {
-						distance: Infinity,
-						tile: null
-					};
-					_array.push( data );
+				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
 
-				} else {
-
-					data = _array[ _currIndex ];
+					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
 
 				}
-				_currIndex ++;
 
-				data.distance = _vec.distanceToSquared( _ray.origin );
+				// if we intersect the box save the distance to the tile bounds
+				let data = {
+					distance: Infinity,
+					tile: null
+				};
+				array.push( data );
+
+				data.distance = _vec.distanceToSquared( _ray.origin ) * scale * scale;
 				data.tile = tile;
 
 			} else {
@@ -99,15 +101,15 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 	}
 
 	// sort them by ascending distance
-	_array.sort( distanceSort );
+	array.sort( distanceSort );
 
 	// traverse until we find the best hit and early out if a tile bounds
 	// couldn't possible include a best hit
 	let bestDistanceSquared = Infinity;
 	let bestHit = null;
-	for ( let i = 0, l = _currIndex; i < l; i ++ ) {
+	for ( let i = 0, l = array.length; i < l; i ++ ) {
 
-		const data = _array[ i ];
+		const data = array[ i ];
 		const distanceSquared = data.distance;
 		if ( distanceSquared > bestDistanceSquared ) {
 
@@ -117,7 +119,9 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
 			const tile = data.tile;
 			const scene = tile.cached.scene;
-			const tileChildren = tile.children;
+
+			let hit = null;
+
 			if ( activeSet.has( scene ) ) {
 
 				// save the hit if it's closer
@@ -130,41 +134,32 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
 					}
 
-					const hit = _hitArray[ 0 ];
-					const hitDistanceSquared = hit.distance * hit.distance;
-					if ( hitDistanceSquared < bestDistanceSquared ) {
-
-						bestDistanceSquared = hitDistanceSquared;
-						bestHit = hit;
-
-					}
-					_hitArray.length = 0;
+					hit = _hitArray[ 0 ];
 
 				}
 
 			} else {
 
-				for ( let t = 0, tl = tileChildren; t < tl; t ++ ) {
+				hit = raycastTraverseFirstHit( tile, group, activeSet, raycaster );
 
-					raycastTraverseFirstHit( t, group, activeSet, raycaster );
+			}
+
+			if ( hit ) {
+
+				const hitDistanceSquared = hit.distance * hit.distance;
+				if ( hitDistanceSquared < bestDistanceSquared ) {
+
+					bestDistanceSquared = hitDistanceSquared;
+					bestHit = hit;
 
 				}
+				_hitArray.length = 0;
 
 			}
 
 		}
 
 	}
-
-	// reset the cached array for next use to save on object allocation
-	for ( let i = 0, l = _currIndex; i < l; i ++ ) {
-
-		const el = _array[ i ];
-		el.tile = null;
-		el.distance = Infinity;
-
-	}
-	_currIndex = 0;
 
 	return bestHit;
 

@@ -221,7 +221,7 @@ function animate() {
 	}
 
 	raycaster.setFromCamera( mouse, camera );
-
+	raycaster.firstHitOnly = true;
 	const results = raycaster.intersectObject( tiles.group, true );
 	if ( results.length ) {
 
