@@ -1,5 +1,5 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
-import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
+import { B3DMLoader } from './B3DMLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -28,7 +28,7 @@ const _sphere = new Sphere();
 
 function emptyRaycast() {}
 
-class ThreeTilesRenderer extends TilesRendererBase {
+export class TilesRenderer extends TilesRendererBase {
 
 	get displayBounds() {
 
@@ -316,7 +316,7 @@ class ThreeTilesRenderer extends TilesRendererBase {
 
 		// TODO: 90 degree rotation must be applied to GLTF file to resolve "up"
 		const loadIndex = tile._loadIndex;
-		return new ThreeB3DMLoader().parse( buffer ).then( res => {
+		return new B3DMLoader().parse( buffer ).then( res => {
 
 			if ( tile._loadIndex !== loadIndex ) {
 
@@ -563,5 +563,3 @@ class ThreeTilesRenderer extends TilesRendererBase {
 
 
 }
-
-export { ThreeTilesRenderer };

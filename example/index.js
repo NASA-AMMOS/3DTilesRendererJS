@@ -1,4 +1,4 @@
-import { ThreeTilesRenderer } from '../src/index.js';
+import { TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -53,7 +53,7 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new ThreeTilesRenderer( url, camera, renderer );
+	tiles = new TilesRenderer( url, camera, renderer );
 	offsetParent.add( tiles.group );
 
 }
