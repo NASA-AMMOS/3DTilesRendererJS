@@ -1,5 +1,6 @@
 import { TilesRenderer } from '../TilesRenderer.js';
 import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
+import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
 	Box3,
@@ -11,7 +12,8 @@ import {
 	Box3Helper,
 	Quaternion,
 	Frustum,
-	Ray
+	Ray,
+	Mesh
 } from 'three';
 
 const DEG2RAD = MathUtils.DEG2RAD;
@@ -25,98 +27,7 @@ const vecZ = new Vector3();
 const ray = new Ray();
 const _sphere = new Sphere();
 
-// Specialization of "Group" that only updates world matrices of children if
-// the transform has changed since the last update and ignores the "force"
-// parameter under the assumption that the children tiles will not move.
-class TilesGroup extends Group {
-
-	constructor( tilesRenderer ) {
-
-		super();
-		this.tilesRenderer = tilesRenderer;
-
-	}
-
-	raycast( raycaster, intersects ) {
-
-		// TODO: Figure out how to do traversal here -- submit issue to three.js?
-		const tilesRenderer = this.tilesRenderer;
-		const visibleSet = tilesRenderer.visibleSet;
-		const activeSet = tilesRenderer.activeSet;
-
-		activeSet.forEach( scene => {
-
-			if ( ! visibleSet.has( scene ) ) {
-
-				raycaster.intersectObject( scene, true, intersects );
-
-			}
-
-		} );
-
-	}
-
-	updateMatrixWorld( force ) {
-
-		if ( this.matrixAutoUpdate ) {
-
-			this.updateMatrix();
-
-		}
-
-		if ( this.matrixWorldNeedsUpdate || force ) {
-
-			if ( this.parent === null ) {
-
-				tempMat.copy( this.matrix );
-
-			} else {
-
-				tempMat.multiplyMatrices( this.parent.matrixWorld, this.matrix );
-
-			}
-
-			this.matrixWorldNeedsUpdate = false;
-
-
-			const elA = tempMat.elements;
-			const elB = this.matrixWorld.elements;
-			let isDifferent = false;
-			for ( let i = 0; i < 16; i ++ ) {
-
-				const itemA = elA[ i ];
-				const itemB = elB[ i ];
-				const diff = Math.abs( itemA - itemB );
-
-				if ( diff > Number.EPSILON ) {
-
-					isDifferent = true;
-					break;
-
-				}
-
-			}
-
-			if ( isDifferent ) {
-
-				this.matrixWorld.copy( tempMat );
-
-				// update children
-				// the children will not have to change unless the parent group has updated
-				const children = this.children;
-				for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-					children[ i ].updateMatrixWorld();
-
-				}
-
-			}
-
-		}
-
-	}
-
-}
+function emptyRaycast () {};
 
 class ThreeTilesRenderer extends TilesRenderer {
 
@@ -234,11 +145,20 @@ class ThreeTilesRenderer extends TilesRenderer {
 
 			// TODO: check region
 
-			// TODO: how do we prevent the child checks from happening?
 			const scene = cached.scene;
 			if ( activeSet.has( scene ) ) {
 
 				raycaster.intersectObject( scene, true, intersects );
+				scene.traverse( c => {
+
+					if ( c !== cached.boxHelper ) {
+
+						Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
+
+					}
+
+				} );
+				return true;
 
 			}
 
@@ -428,6 +348,14 @@ class ThreeTilesRenderer extends TilesRenderer {
 				cached.scene.add( cached.boxHelper );
 
 			}
+
+			// We handle raycasting in a custom way so remove it from here
+			boxHelper.raycast = emptyRaycast;
+			scene.traverse( c => {
+
+				c.raycast = emptyRaycast;
+
+			} );
 
 		} );
 
