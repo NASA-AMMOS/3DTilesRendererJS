@@ -6,7 +6,7 @@ _IN PROGRESS_
 
 In progress three.js implementation of the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/).
 
-The renderer supports a limited subset of the spec for the moment. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented. 
+The renderer supports a limited subset of the spec for the moment. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
 
 See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/)!
 
@@ -20,17 +20,17 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 # Use
 
 ```js
-import { ThreeTilesRenderer } from '3d-tiles-renderer';
+import { TilesRenderer } from '3d-tiles-renderer';
 
 // ... initialize three scene ...
 
-const tilesRenderer = new ThreeTilesRenderer( './path/to/tileset.json', camera, renderer );
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json', camera, renderer );
 scene.add( tilesRenderer.group );
 
 function renderLoop() {
 
 	// ...
-	
+
 	tilesRenderer.update();
 	renderer.render( camera, scene );
 
@@ -40,7 +40,7 @@ function renderLoop() {
 
 # API
 
-## ThreeTilesRenderer
+## TilesRenderer
 
 ### .group
 
