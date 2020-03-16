@@ -1,6 +1,6 @@
 import path from 'path';
-import { LRUCache } from './LRUCache.js';
-import { PriorityQueue } from './PriorityQueue.js';
+import { LRUCache } from '../utilities/LRUCache.js';
+import { PriorityQueue } from '../utilities/PriorityQueue.js';
 
 // TODO: find out why tiles are left dangling in the hierarchy
 // TODO: Address the issue of too many promises, garbage collection

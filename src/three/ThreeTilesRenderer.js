@@ -1,4 +1,4 @@
-import { TilesRenderer } from '../TilesRenderer.js';
+import { TilesRenderer } from '../base/TilesRenderer.js';
 import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {

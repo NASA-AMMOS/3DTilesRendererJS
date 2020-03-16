@@ -16,9 +16,15 @@ function arrayToString( array ) {
 
 class B3DMLoader {
 
+	constructor() {
+
+		this.fetchOptions = {};
+
+	}
+
 	load( url ) {
 
-		return fetch( url, { credentials: 'same-origin' } )
+		return fetch( url, this.fetchOptions )
 			.then( res => res.arrayBuffer() )
 			.then( buffer => this.parse( buffer ) );
 
