@@ -14,7 +14,7 @@ function arrayToString( array ) {
 
 }
 
-class B3DMLoader {
+export class B3DMLoaderBase {
 
 	constructor() {
 
@@ -103,4 +103,3 @@ class B3DMLoader {
 
 }
 
-export { B3DMLoader };

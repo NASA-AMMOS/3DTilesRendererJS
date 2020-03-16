@@ -1,4 +1,4 @@
-import { TilesRenderer } from '../base/TilesRenderer.js';
+import { TilesRendererBase } from '../base/TilesRendererBase.js';
 import { ThreeB3DMLoader } from './ThreeB3DMLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
@@ -12,8 +12,7 @@ import {
 	Box3Helper,
 	Quaternion,
 	Frustum,
-	Ray,
-	Mesh
+	Ray
 } from 'three';
 
 const DEG2RAD = MathUtils.DEG2RAD;
@@ -27,9 +26,9 @@ const vecZ = new Vector3();
 const ray = new Ray();
 const _sphere = new Sphere();
 
-function emptyRaycast () {};
+function emptyRaycast() {}
 
-class ThreeTilesRenderer extends TilesRenderer {
+class ThreeTilesRenderer extends TilesRendererBase {
 
 	get displayBounds() {
 

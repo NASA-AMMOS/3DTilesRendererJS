@@ -1,10 +1,19 @@
 import { ThreeTilesRenderer } from './three/ThreeTilesRenderer.js';
 import { ThreeB3DMLoader } from './three/ThreeB3DMLoader';
 
-import { TilesRenderer } from './base/TilesRenderer.js';
-import { B3DMLoader } from './base/B3DMLoader';
+import { TilesRendererBase } from './base/TilesRendererBase.js';
+import { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
 
 import { LRUCache } from './utilities/LRUCache.js';
 import { PriorityQueue } from './utilities/PriorityQueue.js';
 
-export { ThreeTilesRenderer, ThreeB3DMLoader, TilesRenderer, B3DMLoader, LRUCache, PriorityQueue };
+export {
+	ThreeTilesRenderer,
+	ThreeB3DMLoader,
+
+	TilesRendererBase,
+	B3DMLoaderBase,
+
+	LRUCache,
+	PriorityQueue
+};

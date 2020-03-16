@@ -326,7 +326,7 @@ function toggleTiles( tile, renderer ) {
 
 }
 
-class TilesRenderer {
+export class TilesRendererBase {
 
 	get root() {
 
@@ -716,5 +716,3 @@ class TilesRenderer {
 	}
 
 }
-
-export { TilesRenderer };

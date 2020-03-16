@@ -1,7 +1,7 @@
-import { B3DMLoader } from '../base/B3DMLoader.js';
+import { B3DMLoaderBase } from '../base/B3DMLoaderBase.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-class ThreeB3DMLoader extends B3DMLoader {
+class ThreeB3DMLoader extends B3DMLoaderBase {
 
 	parse( buffer ) {
 
