@@ -37,7 +37,7 @@ let params = {
 	'maxDepth': 15,
 	'loadSiblings': true,
 
-	'up': '+Y',
+	'up': '+Z',
 	'displayBounds': false,
 	'showThirdPerson': true,
 	'reload': reinstantiateTiles,
@@ -158,7 +158,7 @@ function init() {
 	tiles.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tiles.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tiles.add( params, 'maxDepth' ).min( 1 ).max( 100 );
-	tiles.add( params, 'up', [ '+Y', '-Z' ] );
+	tiles.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tiles.open();
 
 	gui.add( params, 'displayBounds' );
@@ -240,6 +240,10 @@ function animate() {
 	if ( params.up === '-Z' ) {
 
 		offsetParent.rotation.x = Math.PI / 2;
+
+	} else if ( params.up === '+Z' ) {
+
+		offsetParent.rotation.x = - Math.PI / 2;
 
 	}
 

@@ -24,6 +24,7 @@ const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
 const _sphere = new Sphere();
+const _xAxis = new Vector3( 1.0, 0.0, 0.0 );
 
 function emptyRaycast() {}
 
@@ -291,12 +292,15 @@ export class TilesRenderer extends TilesRendererBase {
 			boxHelperGroup.add( boxHelper );
 			boxHelperGroup.updateMatrixWorld( true );
 
+			// rotate the scene by 90 degrees on X to convert +Y to +Z "up"
 			const scene = res.scene;
-			cached.transform.decompose( scene.position, scene.quaternion, scene.scale );
+			scene.matrix.makeRotationAxis( _xAxis, Math.PI / 2 );
+			scene.matrix.multiply( cached.transform );
+			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 
 			cached.boxHelperGroup = boxHelperGroup;
-			cached.scene = res.scene;
+			cached.scene = scene;
 
 			if ( this.displayBounds ) {
 
