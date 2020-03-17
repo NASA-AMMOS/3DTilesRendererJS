@@ -31,6 +31,29 @@ function intersectTileScene( scene, raycaster, intersects ) {
 // Returns the closest hit when traversing the tree
 export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
+	// If the root is active make sure we've checked it
+	if ( activeSet.has( root.cached.scene ) ) {
+
+		intersectTileScene( root.cached.scene, raycaster, _hitArray );
+		if ( _hitArray.length > 0 ) {
+
+			if ( _hitArray.length > 1 ) {
+
+				_hitArray.sort( distanceSort );
+
+			}
+
+			_hitArray.length = 0;
+			return _hitArray[ 0 ];
+
+		} else {
+
+			return null;
+
+		}
+
+	}
+
 	// TODO: see if we can avoid creating a new array here every time to save on memory
 	const array = [];
 	const children = root.children;
