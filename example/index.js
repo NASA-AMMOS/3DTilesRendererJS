@@ -97,7 +97,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
-	camera.position.set( 100, 100, 100 );
+	camera.position.set( 400, 400, 400 );
 
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );

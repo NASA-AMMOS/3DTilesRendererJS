@@ -631,7 +631,7 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-},{"process":"../node_modules/process/browser.js"}],"../src/LRUCache.js":[function(require,module,exports) {
+},{"process":"../node_modules/process/browser.js"}],"../src/utilities/LRUCache.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -755,7 +755,7 @@ class LRUCache {
 }
 
 exports.LRUCache = LRUCache;
-},{}],"../src/PriorityQueue.js":[function(require,module,exports) {
+},{}],"../src/utilities/PriorityQueue.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -848,53 +848,36 @@ class PriorityQueue {
 }
 
 exports.PriorityQueue = PriorityQueue;
-},{}],"../src/TilesRenderer.js":[function(require,module,exports) {
+},{}],"../src/base/constants.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.TilesRenderer = void 0;
-
-var _path = _interopRequireDefault(require("path"));
-
-var _LRUCache = require("./LRUCache.js");
-
-var _PriorityQueue = require("./PriorityQueue.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// TODO: find out why tiles are left dangling in the hierarchy
-// TODO: Address the issue of too many promises, garbage collection
-// TODO: remove more redundant computation
-// TODO: See if using classes improves performance
-// TODO: See if declaring function inline improves performance
-// TODO: Make sure active state works as expected
+exports.FAILED = exports.LOADED = exports.PARSING = exports.LOADING = exports.UNLOADED = void 0;
 const UNLOADED = 0;
+exports.UNLOADED = UNLOADED;
 const LOADING = 1;
+exports.LOADING = LOADING;
 const PARSING = 2;
+exports.PARSING = PARSING;
 const LOADED = 3;
+exports.LOADED = LOADED;
 const FAILED = 4;
+exports.FAILED = FAILED;
+},{}],"../src/base/traverseFunctions.js":[function(require,module,exports) {
+"use strict";
 
-function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth = 0) {
-  if (beforeCb && beforeCb(tile, parent, depth)) {
-    if (afterCb) {
-      afterCb(tile, parent, depth);
-    }
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.traverseSet = traverseSet;
+exports.determineFrustumSet = determineFrustumSet;
+exports.markUsedSetLeaves = markUsedSetLeaves;
+exports.skipTraversal = skipTraversal;
+exports.toggleTiles = toggleTiles;
 
-    return;
-  }
-
-  const children = tile.children;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    traverseSet(children[i], beforeCb, afterCb, tile, depth + 1);
-  }
-
-  if (afterCb) {
-    afterCb(tile, parent, depth);
-  }
-}
+var _constants = require("./constants.js");
 
 function isUsedThisFrame(tile, frameCount) {
   return tile.__lastFrameVisited === frameCount && tile.__used;
@@ -923,6 +906,26 @@ function recursivelyMarkUsed(tile, frameCount, lruCache) {
     for (let i = 0, l = children.length; i < l; i++) {
       recursivelyMarkUsed(children[i], frameCount, lruCache);
     }
+  }
+}
+
+function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth = 0) {
+  if (beforeCb && beforeCb(tile, parent, depth)) {
+    if (afterCb) {
+      afterCb(tile, parent, depth);
+    }
+
+    return;
+  }
+
+  const children = tile.children;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    traverseSet(children[i], beforeCb, afterCb, tile, depth + 1);
+  }
+
+  if (afterCb) {
+    afterCb(tile, parent, depth);
   }
 } // TODO: include frustum mask here?
 
@@ -1015,7 +1018,7 @@ function skipTraversal(tile, renderer) {
   const lruCache = renderer.lruCache;
 
   if (tile.__isLeaf) {
-    if (tile.__loadingState === LOADED) {
+    if (tile.__loadingState === _constants.LOADED) {
       if (tile.__inFrustum) {
         tile.__visible = true;
         stats.visible++;
@@ -1032,7 +1035,7 @@ function skipTraversal(tile, renderer) {
 
   const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
   const meetsSSE = tile.__error < errorRequirement;
-  const hasContent = tile.__loadingState === LOADED && !tile.__contentEmpty;
+  const hasContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
   const children = tile.children;
   let allChildrenHaveContent = true;
 
@@ -1040,7 +1043,7 @@ function skipTraversal(tile, renderer) {
     const c = children[i];
 
     if (isUsedThisFrame(c, frameCount)) {
-      const childContent = c.__loadingState === LOADED || tile.__contentEmpty;
+      const childContent = c.__loadingState === _constants.LOADED || tile.__contentEmpty;
       allChildrenHaveContent = allChildrenHaveContent && childContent;
     }
   }
@@ -1084,14 +1087,14 @@ function toggleTiles(tile, renderer) {
 
   if (isUsed || tile.__usedLastFrame) {
     if (!isUsed) {
-      if (!tile.__contentEmpty && tile.__loadingState === LOADED) {
+      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
         renderer.setTileVisible(tile, false);
         renderer.setTileActive(tile, false);
       }
 
       tile.__usedLastFrame = false;
     } else {
-      if (!tile.__contentEmpty && tile.__loadingState === LOADED) {
+      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
         // enable visibility if active due to shadows
         renderer.setTileActive(tile, tile.__active);
         renderer.setTileVisible(tile, tile.__active || tile.__visible);
@@ -1108,8 +1111,33 @@ function toggleTiles(tile, renderer) {
     }
   }
 }
+},{"./constants.js":"../src/base/constants.js"}],"../src/base/TilesRendererBase.js":[function(require,module,exports) {
+"use strict";
 
-class TilesRenderer {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TilesRendererBase = void 0;
+
+var _path = _interopRequireDefault(require("path"));
+
+var _LRUCache = require("../utilities/LRUCache.js");
+
+var _PriorityQueue = require("../utilities/PriorityQueue.js");
+
+var _traverseFunctions = require("./traverseFunctions.js");
+
+var _constants = require("./constants.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// TODO: find out why tiles are left dangling in the hierarchy
+// TODO: Address the issue of too many promises, garbage collection
+// TODO: remove more redundant computation
+// TODO: See if using classes improves performance
+// TODO: See if declaring function inline improves performance
+// TODO: Make sure active state works as expected
+class TilesRendererBase {
   get root() {
     const tileSet = this.tileSets[this.rootSet];
 
@@ -1148,7 +1176,7 @@ class TilesRenderer {
     const tileSets = this.tileSets;
     const rootTileSet = tileSets[this.rootSet];
     if (!rootTileSet || !rootTileSet.root) return;
-    traverseSet(rootTileSet.root, cb);
+    (0, _traverseFunctions.traverseSet)(rootTileSet.root, cb);
   } // Public API
 
 
@@ -1160,10 +1188,10 @@ class TilesRenderer {
     if (!rootTileSet || !rootTileSet.root) return;
     const root = rootTileSet.root;
     stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
-    determineFrustumSet(root, this);
-    markUsedSetLeaves(root, this);
-    skipTraversal(root, this);
-    toggleTiles(root, this); // TODO: We may want to add this function in the requestTileContents function
+    (0, _traverseFunctions.determineFrustumSet)(root, this);
+    (0, _traverseFunctions.markUsedSetLeaves)(root, this);
+    (0, _traverseFunctions.skipTraversal)(root, this);
+    (0, _traverseFunctions.toggleTiles)(root, this); // TODO: We may want to add this function in the requestTileContents function
 
     lruCache.scheduleUnload(null);
   } // Overrideable
@@ -1206,7 +1234,7 @@ class TilesRenderer {
     tile.__wasActive = false;
     tile.__active = false;
     tile.__childrenActive = false;
-    tile.__loadingState = UNLOADED;
+    tile.__loadingState = _constants.UNLOADED;
     tile.__loadIndex = 0;
     tile.__loadAbort = null;
 
@@ -1249,7 +1277,7 @@ class TilesRenderer {
 
         const basePath = _path.default.dirname(url);
 
-        traverseSet(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
+        (0, _traverseFunctions.traverseSet)(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
         tileSets[url] = json; // TODO: schedule an update to avoid doing this too many times
 
         this.update();
@@ -1268,7 +1296,7 @@ class TilesRenderer {
   requestTileContents(tile) {
     // If the tile is already being loaded then don't
     // start it again.
-    if (tile.__loadingState !== UNLOADED) {
+    if (tile.__loadingState !== _constants.UNLOADED) {
       return;
     } // TODO: reuse the functions created here?
 
@@ -1277,7 +1305,7 @@ class TilesRenderer {
     const downloadQueue = this.downloadQueue;
     const parseQueue = this.parseQueue;
     lruCache.add(tile, t => {
-      if (t.__loadingState === LOADING) {
+      if (t.__loadingState === _constants.LOADING) {
         t.__loadAbort.abort();
 
         t.__loadAbort = null;
@@ -1285,13 +1313,13 @@ class TilesRenderer {
         this.disposeTile(t);
       }
 
-      if (t.__loadingState === LOADING) {
+      if (t.__loadingState === _constants.LOADING) {
         stats.downloading--;
-      } else if (t.__loadingState === PARSING) {
+      } else if (t.__loadingState === _constants.PARSING) {
         stats.parsing--;
       }
 
-      t.__loadingState = UNLOADED;
+      t.__loadingState = _constants.UNLOADED;
       t.__loadIndex++; // TODO: Removing from the queues here is slow
       // parseQueue.remove( t );
       // downloadQueue.remove( t );
@@ -1304,7 +1332,7 @@ class TilesRenderer {
     const signal = controller.signal;
     stats.downloading++;
     tile.__loadAbort = controller;
-    tile.__loadingState = LOADING;
+    tile.__loadingState = _constants.LOADING;
     downloadQueue.add(tile, priority, tile => {
       if (tile.__loadIndex !== loadIndex) {
         return Promise.resolve();
@@ -1332,7 +1360,7 @@ class TilesRenderer {
       stats.downloading--;
       stats.parsing++;
       tile.__loadAbort = null;
-      tile.__loadingState = PARSING;
+      tile.__loadingState = _constants.PARSING;
       return parseQueue.add(buffer, priority, buffer => {
         if (tile.__loadIndex !== loadIndex) {
           return Promise.resolve();
@@ -1346,7 +1374,7 @@ class TilesRenderer {
       }
 
       stats.parsing--;
-      tile.__loadingState = LOADED;
+      tile.__loadingState = _constants.LOADED;
       this.setTileActive(tile, tile.__active);
       this.setTileVisible(tile, tile.__visible);
     }).catch(e => {
@@ -1358,7 +1386,7 @@ class TilesRenderer {
       if (e.name !== 'AbortError') {
         console.error('TilesRenderer : Failed to load tile.');
         console.error(e);
-        tile.__loadingState = FAILED;
+        tile.__loadingState = _constants.FAILED;
       } else {
         lruCache.remove(tile);
       }
@@ -1367,14 +1395,14 @@ class TilesRenderer {
 
 }
 
-exports.TilesRenderer = TilesRenderer;
-},{"path":"../node_modules/path-browserify/index.js","./LRUCache.js":"../src/LRUCache.js","./PriorityQueue.js":"../src/PriorityQueue.js"}],"../src/B3DMLoader.js":[function(require,module,exports) {
+exports.TilesRendererBase = TilesRendererBase;
+},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.B3DMLoader = void 0;
+exports.B3DMLoaderBase = void 0;
 
 // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
 // convert an array of numbers to a string
@@ -1388,11 +1416,13 @@ function arrayToString(array) {
   return str;
 }
 
-class B3DMLoader {
+class B3DMLoaderBase {
+  constructor() {
+    this.fetchOptions = {};
+  }
+
   load(url) {
-    return fetch(url, {
-      credentials: 'same-origin'
-    }).then(res => res.arrayBuffer()).then(buffer => this.parse(buffer));
+    return fetch(url, this.fetchOptions).then(res => res.arrayBuffer()).then(buffer => this.parse(buffer));
   }
 
   parse(buffer) {
@@ -1443,7 +1473,7 @@ class B3DMLoader {
 
 }
 
-exports.B3DMLoader = B3DMLoader;
+exports.B3DMLoaderBase = B3DMLoaderBase;
 },{}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
 "use strict";
 
@@ -38068,19 +38098,19 @@ var GLTFLoader = function () {
 }();
 
 exports.GLTFLoader = GLTFLoader;
-},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../src/three/ThreeB3DMLoader.js":[function(require,module,exports) {
+},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../src/three/B3DMLoader.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ThreeB3DMLoader = void 0;
+exports.B3DMLoader = void 0;
 
-var _B3DMLoader = require("../B3DMLoader.js");
+var _B3DMLoaderBase = require("../base/B3DMLoaderBase.js");
 
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
-class ThreeB3DMLoader extends _B3DMLoader.B3DMLoader {
+class B3DMLoader extends _B3DMLoaderBase.B3DMLoaderBase {
   parse(buffer) {
     const b3dm = super.parse(buffer);
     const gltfBuffer = b3dm.glbBytes.slice().buffer;
@@ -38091,35 +38121,21 @@ class ThreeB3DMLoader extends _B3DMLoader.B3DMLoader {
 
 }
 
-exports.ThreeB3DMLoader = ThreeB3DMLoader;
-},{"../B3DMLoader.js":"../src/B3DMLoader.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/three/ThreeTilesRenderer.js":[function(require,module,exports) {
+exports.B3DMLoader = B3DMLoader;
+},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ThreeTilesRenderer = void 0;
-
-var _TilesRenderer = require("../TilesRenderer.js");
-
-var _ThreeB3DMLoader = require("./ThreeB3DMLoader.js");
+exports.TilesGroup = void 0;
 
 var _three = require("three");
 
-const DEG2RAD = _three.Math.DEG2RAD;
-const tempMat = new _three.Matrix4();
-const tempQuaternion = new _three.Quaternion();
-const tempVector = new _three.Vector3();
-const resVector = new _three.Vector2();
-const vecX = new _three.Vector3();
-const vecY = new _three.Vector3();
-const vecZ = new _three.Vector3();
-const ray = new _three.Ray();
-
-const _sphere = new _three.Sphere(); // Specialization of "Group" that only updates world matrices of children if
+// Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
 // parameter under the assumption that the children tiles will not move.
-
+const tempMat = new _three.Matrix4();
 
 class TilesGroup extends _three.Group {
   constructor(tilesRenderer) {
@@ -38128,15 +38144,7 @@ class TilesGroup extends _three.Group {
   }
 
   raycast(raycaster, intersects) {
-    // TODO: Figure out how to do traversal here -- submit issue to three.js?
-    const tilesRenderer = this.tilesRenderer;
-    const visibleSet = tilesRenderer.visibleSet;
-    const activeSet = tilesRenderer.activeSet;
-    activeSet.forEach(scene => {
-      if (!visibleSet.has(scene)) {
-        raycaster.intersectObject(scene, true, intersects);
-      }
-    });
+    this.tilesRenderer.raycast(raycaster, intersects);
   }
 
   updateMatrixWorld(force) {
@@ -38182,7 +38190,260 @@ class TilesGroup extends _three.Group {
 
 }
 
-class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
+exports.TilesGroup = TilesGroup;
+},{"three":"../node_modules/three/build/three.module.js"}],"../src/three/raycastTraverse.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.raycastTraverseFirstHit = raycastTraverseFirstHit;
+exports.raycastTraverse = raycastTraverse;
+
+var _three = require("three");
+
+const _sphere = new _three.Sphere();
+
+const _mat = new _three.Matrix4();
+
+const _vec = new _three.Vector3();
+
+const _vec2 = new _three.Vector3();
+
+const _ray = new _three.Ray();
+
+const _hitArray = [];
+
+function distanceSort(a, b) {
+  return a.distance - b.distance;
+}
+
+function intersectTileScene(scene, raycaster, intersects) {
+  // Don't intersect the box3 helpers because those are used for debugging
+  scene.traverse(c => {
+    if (!(c instanceof _three.Box3Helper)) {
+      Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
+    }
+  });
+} // Returns the closest hit when traversing the tree
+
+
+function raycastTraverseFirstHit(root, group, activeSet, raycaster) {
+  // If the root is active make sure we've checked it
+  if (activeSet.has(root.cached.scene)) {
+    intersectTileScene(root.cached.scene, raycaster, _hitArray);
+
+    if (_hitArray.length > 0) {
+      if (_hitArray.length > 1) {
+        _hitArray.sort(distanceSort);
+      }
+
+      _hitArray.length = 0;
+      return _hitArray[0];
+    } else {
+      return null;
+    }
+  } // TODO: see if we can avoid creating a new array here every time to save on memory
+
+
+  const array = [];
+  const children = root.children;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    const tile = children[i];
+    const cached = tile.cached;
+    const groupMatrixWorld = group.matrixWorld;
+    const transformMat = cached.transform;
+
+    _mat.copy(groupMatrixWorld);
+
+    _mat.multiply(transformMat); // if we don't hit the sphere then early out
+
+
+    const sphere = cached.sphere;
+
+    if (sphere) {
+      _sphere.copy(sphere);
+
+      _sphere.applyMatrix4(_mat);
+
+      if (!raycaster.ray.intersectsSphere(_sphere)) {
+        continue;
+      }
+    } // TODO: check region
+
+
+    const boundingBox = cached.box;
+    const obbMat = cached.boxTransform;
+
+    if (boundingBox) {
+      _mat.multiply(obbMat);
+
+      _mat.getInverse(_mat);
+
+      _ray.copy(raycaster.ray).applyMatrix4(_mat);
+
+      if (_ray.intersectBox(boundingBox, _vec)) {
+        // account for tile scale
+        let invScale;
+
+        _vec2.setFromMatrixScale(_mat);
+
+        invScale = _vec2.x;
+
+        if (Math.abs(Math.max(_vec2.x - _vec2.y, _vec2.x - _vec2.z)) > 1e-6) {
+          console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.');
+        } // if we intersect the box save the distance to the tile bounds
+
+
+        let data = {
+          distance: Infinity,
+          tile: null
+        };
+        array.push(data);
+        data.distance = _vec.distanceToSquared(_ray.origin) * invScale * invScale;
+        data.tile = tile;
+      } else {
+        continue;
+      }
+    }
+  } // sort them by ascending distance
+
+
+  array.sort(distanceSort); // traverse until we find the best hit and early out if a tile bounds
+  // couldn't possible include a best hit
+
+  let bestDistanceSquared = Infinity;
+  let bestHit = null;
+
+  for (let i = 0, l = array.length; i < l; i++) {
+    const data = array[i];
+    const distanceSquared = data.distance;
+
+    if (distanceSquared > bestDistanceSquared) {
+      break;
+    } else {
+      const tile = data.tile;
+      const scene = tile.cached.scene;
+      let hit = null;
+
+      if (activeSet.has(scene)) {
+        // save the hit if it's closer
+        intersectTileScene(scene, raycaster, _hitArray);
+
+        if (_hitArray.length > 0) {
+          if (_hitArray.length > 1) {
+            _hitArray.sort(distanceSort);
+          }
+
+          hit = _hitArray[0];
+        }
+      } else {
+        hit = raycastTraverseFirstHit(tile, group, activeSet, raycaster);
+      }
+
+      if (hit) {
+        const hitDistanceSquared = hit.distance * hit.distance;
+
+        if (hitDistanceSquared < bestDistanceSquared) {
+          bestDistanceSquared = hitDistanceSquared;
+          bestHit = hit;
+        }
+
+        _hitArray.length = 0;
+      }
+    }
+  }
+
+  return bestHit;
+}
+
+function raycastTraverse(tile, group, activeSet, raycaster, intersects) {
+  const cached = tile.cached;
+  const groupMatrixWorld = group.matrixWorld;
+  const transformMat = cached.transform;
+
+  _mat.copy(groupMatrixWorld);
+
+  _mat.multiply(transformMat);
+
+  const sphere = cached.sphere;
+
+  if (sphere) {
+    _sphere.copy(sphere);
+
+    _sphere.applyMatrix4(_mat);
+
+    if (!raycaster.ray.intersectsSphere(_sphere)) {
+      return;
+    }
+  }
+
+  const boundingBox = cached.box;
+  const obbMat = cached.boxTransform;
+
+  if (boundingBox) {
+    _mat.multiply(obbMat);
+
+    _mat.getInverse(_mat);
+
+    _ray.copy(raycaster.ray).applyMatrix4(_mat);
+
+    if (!_ray.intersectsBox(boundingBox)) {
+      return;
+    }
+  } // TODO: check region
+
+
+  const scene = cached.scene;
+
+  if (activeSet.has(scene)) {
+    scene.traverse(c => {
+      if (!(c instanceof _three.Box3Helper)) {
+        Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
+      }
+    });
+    return;
+  }
+
+  const children = tile.children;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    raycastTraverse(children[i], group, activeSet, raycaster, intersects);
+  }
+}
+},{"three":"../node_modules/three/build/three.module.js"}],"../src/three/TilesRenderer.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TilesRenderer = void 0;
+
+var _TilesRendererBase = require("../base/TilesRendererBase.js");
+
+var _B3DMLoader = require("./B3DMLoader.js");
+
+var _TilesGroup = require("./TilesGroup.js");
+
+var _three = require("three");
+
+var _raycastTraverse = require("./raycastTraverse.js");
+
+const DEG2RAD = _three.Math.DEG2RAD;
+const tempMat = new _three.Matrix4();
+const tempQuaternion = new _three.Quaternion();
+const tempVector = new _three.Vector3();
+const resVector = new _three.Vector2();
+const vecX = new _three.Vector3();
+const vecY = new _three.Vector3();
+const vecZ = new _three.Vector3();
+
+const _sphere = new _three.Sphere();
+
+function emptyRaycast() {}
+
+class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
   get displayBounds() {
     return this._displayBounds;
   }
@@ -38192,7 +38453,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
       this._displayBounds = val;
       this.traverse(t => {
         const scene = t.cached.scene;
-        const boxHelper = t.cached.boxHelper;
+        const boxHelper = t.cached.boxHelperGroup;
 
         if (scene) {
           if (val) {
@@ -38208,7 +38469,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
   constructor(url, cameras, renderer) {
     super(url);
-    this.group = new TilesGroup(this);
+    this.group = new _TilesGroup.TilesGroup(this);
     this.cameras = Array.isArray(cameras) ? cameras : [cameras];
     this.frustums = [];
     this.renderer = renderer;
@@ -38234,47 +38495,17 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
   }
 
   raycast(raycaster, intersects) {
-    const activeSet = this.activeSet;
-    const group = this.group;
-    this.traverse(tile => {
-      const cached = tile.cached;
-      const groupMatrixWorld = group.matrixWorld;
-      const transformMat = cached.transform;
-      tempMat.copy(groupMatrixWorld);
-      tempMat.multiply(transformMat);
-      const sphere = cached.sphere;
+    if (!this.root) return;
 
-      if (sphere) {
-        _sphere.copy(sphere);
+    if (raycaster.firstHitOnly) {
+      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeSet, raycaster, intersects);
 
-        _sphere.applyMatrix4(tempMat);
-
-        if (!raycaster.ray.intersectsSphere(_sphere)) {
-          return true;
-        }
+      if (hit) {
+        intersects.push(hit);
       }
-
-      const boundingBox = cached.box;
-      const obbMat = cached.boxTransform;
-
-      if (boundingBox) {
-        tempMat.multiply(obbMat);
-        tempMat.getInverse(tempMat);
-        ray.copy(raycaster.ray).applyMatrix4(tempMat);
-
-        if (!ray.intersectsBox(boundingBox)) {
-          return true;
-        }
-      } // TODO: check region
-      // TODO: how do we prevent the child checks from happening?
-
-
-      const scene = cached.scene;
-
-      if (activeSet.has(scene)) {
-        raycaster.intersectObject(scene, true, intersects);
-      }
-    });
+    } else {
+      (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeSet, raycaster, intersects);
+    }
   }
   /* Overriden */
 
@@ -38388,7 +38619,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
     tile._loadIndex++; // TODO: 90 degree rotation must be applied to GLTF file to resolve "up"
 
     const loadIndex = tile._loadIndex;
-    return new _ThreeB3DMLoader.ThreeB3DMLoader().parse(buffer).then(res => {
+    return new _B3DMLoader.B3DMLoader().parse(buffer).then(res => {
       if (tile._loadIndex !== loadIndex) {
         return;
       }
@@ -38405,12 +38636,18 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
       const scene = res.scene;
       cached.transform.decompose(scene.position, scene.quaternion, scene.scale);
       scene.traverse(c => c.frustumCulled = false);
-      cached.boxHelper = boxHelperGroup;
+      cached.boxHelperGroup = boxHelperGroup;
       cached.scene = res.scene;
 
       if (this.displayBounds) {
-        cached.scene.add(cached.boxHelper);
-      }
+        cached.scene.add(cached.boxHelperGroup);
+      } // We handle raycasting in a custom way so remove it from here
+
+
+      boxHelper.raycast = emptyRaycast;
+      scene.traverse(c => {
+        c.raycast = emptyRaycast;
+      });
     });
   }
 
@@ -38434,7 +38671,7 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
         }
       });
       cached.scene = null;
-      cached.boxHelper = null;
+      cached.boxHelperGroup = null;
     }
 
     tile._loadIndex++;
@@ -38485,9 +38722,21 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
       const obbMat = cached.boxTransform; // TODO: these can likely be cached? Or the world transform mat can be used
       // transformMat can be rolled into oobMat
 
-      tempMat.copy(transformMat);
+      tempMat.copy(group.matrixWorld);
+      tempMat.multiply(transformMat);
       tempMat.multiply(obbMat);
-      tempMat.getInverse(tempMat);
+      tempMat.getInverse(tempMat); // NOTE: scale is inverted here.
+      // assume the scales on all axes are uniform.
+
+      let invScale; // account for tile scale.
+
+      tempVector.setFromMatrixScale(tempMat);
+      invScale = tempVector.x;
+
+      if (Math.abs(Math.max(tempVector.x - tempVector.y, tempVector.x - tempVector.z)) > 1e-6) {
+        console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.');
+      }
+
       let minError = Infinity;
 
       for (let i = 0, l = cameras.length; i < l; i++) {
@@ -38497,27 +38746,14 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
         tempVector.applyMatrix4(tempMat);
         let error;
 
-        if (cam.isOrthographic) {
+        if (cam.isOrthographicCamera) {
           const w = cam.right - cam.left;
           const h = cam.top - cam.bottom;
-          const pixelSize = Math.Max(h, w) / Math.Max(resVector.width, resVector.height);
-          error = tile.geometricError / pixelSize;
+          const pixelSize = Math.max(h / resVector.height, w / resVector.width);
+          error = tile.geometricError / (pixelSize * invScale);
         } else {
-          const distance = boundingBox.distanceToPoint(tempVector); // assume the scales on all axes are uniform.
-
-          let scale; // account for tile scale.
-
-          tempVector.setFromMatrixScale(tempMat);
-          scale = tempVector.x; // account for parent group scale. Divide because this matrix has not been inverted like the previous one.
-
-          tempVector.setFromMatrixScale(group.matrixWorld);
-          scale /= tempVector.x;
-
-          if (Math.abs(Math.max(scale.x - scale.y, scale.x - scale.z)) > 1e-6) {
-            console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when claculating screen space error.');
-          }
-
-          const scaledDistance = distance * scale;
+          const distance = boundingBox.distanceToPoint(tempVector);
+          const scaledDistance = distance * invScale;
           const sseDenominator = 2 * Math.tan(0.5 * cam.fov * DEG2RAD);
           error = tile.geometricError * resVector.height / (scaledDistance * sseDenominator);
         }
@@ -38565,24 +38801,12 @@ class ThreeTilesRenderer extends _TilesRenderer.TilesRenderer {
 
 }
 
-exports.ThreeTilesRenderer = ThreeTilesRenderer;
-},{"../TilesRenderer.js":"../src/TilesRenderer.js","./ThreeB3DMLoader.js":"../src/three/ThreeB3DMLoader.js","three":"../node_modules/three/build/three.module.js"}],"../src/index.js":[function(require,module,exports) {
+exports.TilesRenderer = TilesRenderer;
+},{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
-});
-Object.defineProperty(exports, "ThreeTilesRenderer", {
-  enumerable: true,
-  get: function () {
-    return _ThreeTilesRenderer.ThreeTilesRenderer;
-  }
-});
-Object.defineProperty(exports, "ThreeB3DMLoader", {
-  enumerable: true,
-  get: function () {
-    return _ThreeB3DMLoader.ThreeB3DMLoader;
-  }
 });
 Object.defineProperty(exports, "TilesRenderer", {
   enumerable: true,
@@ -38596,15 +38820,43 @@ Object.defineProperty(exports, "B3DMLoader", {
     return _B3DMLoader.B3DMLoader;
   }
 });
+Object.defineProperty(exports, "TilesRendererBase", {
+  enumerable: true,
+  get: function () {
+    return _TilesRendererBase.TilesRendererBase;
+  }
+});
+Object.defineProperty(exports, "B3DMLoaderBase", {
+  enumerable: true,
+  get: function () {
+    return _B3DMLoaderBase.B3DMLoaderBase;
+  }
+});
+Object.defineProperty(exports, "LRUCache", {
+  enumerable: true,
+  get: function () {
+    return _LRUCache.LRUCache;
+  }
+});
+Object.defineProperty(exports, "PriorityQueue", {
+  enumerable: true,
+  get: function () {
+    return _PriorityQueue.PriorityQueue;
+  }
+});
 
-var _ThreeTilesRenderer = require("./three/ThreeTilesRenderer.js");
+var _TilesRenderer = require("./three/TilesRenderer.js");
 
-var _ThreeB3DMLoader = require("./three/ThreeB3DMLoader");
+var _B3DMLoader = require("./three/B3DMLoader.js");
 
-var _TilesRenderer = require("./TilesRenderer.js");
+var _TilesRendererBase = require("./base/TilesRendererBase.js");
 
-var _B3DMLoader = require("./B3DMLoader");
-},{"./three/ThreeTilesRenderer.js":"../src/three/ThreeTilesRenderer.js","./three/ThreeB3DMLoader":"../src/three/ThreeB3DMLoader.js","./TilesRenderer.js":"../src/TilesRenderer.js","./B3DMLoader":"../src/B3DMLoader.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
+var _B3DMLoaderBase = require("./base/B3DMLoaderBase.js");
+
+var _LRUCache = require("./utilities/LRUCache.js");
+
+var _PriorityQueue = require("./utilities/PriorityQueue.js");
+},{"./three/TilesRenderer.js":"../src/three/TilesRenderer.js","./three/B3DMLoader.js":"../src/three/B3DMLoader.js","./base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","./utilities/LRUCache.js":"../src/utilities/LRUCache.js","./utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42461,11 +42713,13 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
+let orthoCamera, orthoCameraHelper;
 let box;
 let raycaster, mouse, rayIntersect;
 let offsetParent;
 let statsContainer, stats;
 let params = {
+  'orthographic': false,
   'errorTarget': 6,
   'errorThreshold': 60,
   'maxDepth': 15,
@@ -42485,7 +42739,7 @@ function reinstantiateTiles() {
     offsetParent.remove(tiles.group);
   }
 
-  tiles = new _index.ThreeTilesRenderer(url, camera, renderer);
+  tiles = new _index.TilesRenderer(url, camera, renderer);
   offsetParent.add(tiles.group);
 }
 
@@ -42520,9 +42774,12 @@ function init() {
   renderer.gameOutput = true;
   document.body.appendChild(renderer.domElement);
   camera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
-  camera.position.set(100, 100, 100);
+  camera.position.set(400, 400, 400);
   cameraHelper = new _three.CameraHelper(camera);
-  scene.add(cameraHelper); // controls
+  scene.add(cameraHelper);
+  orthoCamera = new _three.OrthographicCamera();
+  orthoCameraHelper = new _three.CameraHelper(orthoCamera);
+  scene.add(orthoCameraHelper); // controls
 
   controls = new _OrbitControls.OrbitControls(camera, renderer.domElement);
   controls.screenSpacePanning = false;
@@ -42530,9 +42787,9 @@ function init() {
   controls.maxDistance = 2000; // lights
 
   var dirLight = new _three.DirectionalLight(0xffffff);
-  dirLight.position.set(1, 1, 1);
+  dirLight.position.set(1, 2, 3);
   scene.add(dirLight);
-  var ambLight = new _three.AmbientLight(0x222222);
+  var ambLight = new _three.AmbientLight(0xffffff, 0.2);
   scene.add(ambLight);
   box = new _three.Box3();
   offsetParent = new _three.Group();
@@ -42559,6 +42816,7 @@ function init() {
 
   const gui = new dat.GUI();
   const tiles = gui.addFolder('Tiles Options');
+  tiles.add(params, 'orthographic');
   tiles.add(params, 'loadSiblings');
   tiles.add(params, 'errorTarget').min(0).max(50);
   tiles.add(params, 'errorThreshold').min(0).max(1000);
@@ -42591,11 +42849,26 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  updateOrthoCamera();
 }
 
 function onMouseMove(e) {
   mouse.x = e.clientX / window.innerWidth * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+}
+
+function updateOrthoCamera() {
+  orthoCamera.position.copy(camera.position);
+  orthoCamera.rotation.copy(camera.rotation);
+  const scale = camera.position.distanceTo(controls.target) / 2.0;
+  const aspect = window.innerWidth / window.innerHeight;
+  orthoCamera.left = -aspect * scale;
+  orthoCamera.right = aspect * scale;
+  orthoCamera.bottom = -scale;
+  orthoCamera.top = scale;
+  orthoCamera.near = camera.near;
+  orthoCamera.far = camera.far;
+  orthoCamera.updateProjectionMatrix();
 }
 
 function animate() {
@@ -42604,7 +42877,8 @@ function animate() {
   tiles.errorThreshold = params.errorThreshold;
   tiles.loadSiblings = params.loadSiblings;
   tiles.maxDepth = params.maxDepth;
-  tiles.displayBounds = params.displayBounds; // update tiles
+  tiles.displayBounds = params.displayBounds;
+  tiles.cameras[0] = params.orthographic ? orthoCamera : camera; // update tiles
 
   tiles.update();
   window.tiles = tiles;
@@ -42620,7 +42894,8 @@ function animate() {
     tiles.group.position.multiplyScalar(-1);
   }
 
-  raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+  raycaster.firstHitOnly = true;
   const results = raycaster.intersectObject(tiles.group, true);
 
   if (results.length) {
@@ -42645,14 +42920,19 @@ function animate() {
 }
 
 function render() {
-  // render primary view
+  updateOrthoCamera(); // render primary view
+
   cameraHelper.visible = false;
-  renderer.render(scene, camera); // render third person view
+  orthoCameraHelper.visible = false;
+  renderer.render(scene, params.orthographic ? orthoCamera : camera); // render third person view
 
   thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
 
   if (params.showThirdPerson) {
-    cameraHelper.visible = true;
+    cameraHelper.update();
+    cameraHelper.visible = !params.orthographic;
+    orthoCameraHelper.update();
+    orthoCameraHelper.visible = params.orthographic;
     thirdPersonRenderer.render(scene, thirdPersonCamera);
   }
 
@@ -42686,7 +42966,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52787" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54033" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
