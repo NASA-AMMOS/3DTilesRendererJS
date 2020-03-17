@@ -24,7 +24,6 @@ const resVector = new Vector2();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
-const ray = new Ray();
 const _sphere = new Sphere();
 
 function emptyRaycast() {}
@@ -418,26 +417,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// TODO: these can likely be cached? Or the world transform mat can be used
 			// transformMat can be rolled into oobMat
-			tempMat.copy( transformMat );
+			tempMat.copy( group.matrixWorld );
+			tempMat.multiply( transformMat );
 			tempMat.multiply( obbMat );
 			tempMat.getInverse( tempMat );
 
 			// NOTE: scale is inverted here.
 			// assume the scales on all axes are uniform.
-			let scale;
-			let isInvalid;
+			let invScale;
 
 			// account for tile scale.
 			tempVector.setFromMatrixScale( tempMat );
-			scale = tempVector.x;
-			isInvalid = Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6;
+			invScale = tempVector.x;
 
-			// account for parent group scale. Divide because this matrix has not been inverted like the previous one.
-			tempVector.setFromMatrixScale( group.matrixWorld );
-			scale /= tempVector.x;
-			isInvalid = isInvalid || Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6;
-
-			if ( isInvalid ) {
+			if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
 				console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
 
@@ -457,12 +450,12 @@ export class TilesRenderer extends TilesRendererBase {
 					const w = cam.right - cam.left;
 					const h = cam.top - cam.bottom;
 					const pixelSize = Math.max( h / resVector.height, w / resVector.width );
-					error = tile.geometricError / ( pixelSize * scale );
+					error = tile.geometricError / ( pixelSize * invScale );
 
 				} else {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
-					const scaledDistance = distance * scale;
+					const scaledDistance = distance * invScale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
 					error = ( tile.geometricError * resVector.height ) / ( scaledDistance * sseDenominator );
 

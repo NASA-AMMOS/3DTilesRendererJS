@@ -116,10 +116,10 @@ function init() {
 
 	// lights
 	var dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 1, 1 );
+	dirLight.position.set( 1, 2, 3 );
 	scene.add( dirLight );
 
-	var ambLight = new AmbientLight( 0x222222 );
+	var ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
 	box = new Box3();

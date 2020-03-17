@@ -70,9 +70,9 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 			if ( _ray.intersectBox( boundingBox, _vec ) ) {
 
 				// account for tile scale
-				let scale;
+				let invScale;
 				_vec2.setFromMatrixScale( _mat );
-				scale = _vec2.x;
+				invScale = _vec2.x;
 
 				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
 
@@ -87,7 +87,7 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 				};
 				array.push( data );
 
-				data.distance = _vec.distanceToSquared( _ray.origin ) * scale * scale;
+				data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
 				data.tile = tile;
 
 			} else {
