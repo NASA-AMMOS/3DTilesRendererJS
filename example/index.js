@@ -57,7 +57,10 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new TilesRenderer( url, camera, renderer );
+	tiles = new TilesRenderer( url );
+	tiles.camera = camera;
+	tiles.setResolutionFromRenderer( renderer );
+
 	offsetParent.add( tiles.group );
 
 }
@@ -230,7 +233,10 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBounds = params.displayBounds;
-	tiles.cameras[ 0 ] = params.orthographic ? orthoCamera : camera;
+	tiles.camera = params.orthographic ? orthoCamera : camera;
+
+	tiles.camera = camera;
+	tiles.setResolutionFromRenderer( renderer );
 
 	// update tiles
 	tiles.update();
