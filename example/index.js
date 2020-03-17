@@ -270,6 +270,7 @@ function animate() {
 		if ( closestHit.face ) {
 
 			const normal = closestHit.face.normal;
+			normal.transformDirection( closestHit.object.matrixWorld );
 			rayIntersect.lookAt(
 				point.x + normal.x,
 				point.y + normal.y,
