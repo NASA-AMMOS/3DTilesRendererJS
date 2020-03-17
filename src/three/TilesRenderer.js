@@ -95,7 +95,6 @@ export class TilesRenderer extends TilesRendererBase {
 		tempMat.multiplyMatrices( transformMat, obbMat );
 		box.applyMatrix4( tempMat );
 
-
 		return true;
 
 	}
@@ -296,11 +295,11 @@ export class TilesRenderer extends TilesRendererBase {
 			scene.traverse( c => c.frustumCulled = false );
 
 			cached.boxHelperGroup = boxHelperGroup;
-			cached.scene = res.scene;
+			cached.scene = scene;
 
 			if ( this.displayBounds ) {
 
-				cached.scene.add( cached.boxHelperGroup );
+				scene.add( cached.boxHelperGroup );
 
 			}
 
