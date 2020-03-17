@@ -11,8 +11,7 @@ import {
 	Math as MathUtils,
 	Box3Helper,
 	Quaternion,
-	Frustum,
-	Ray
+	Frustum
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 

@@ -1148,7 +1148,7 @@ class TilesRendererBase {
     }
   }
 
-  constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(2)) {
+  constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(1)) {
     // state
     this.tileSets = {};
     this.rootSet = url;
@@ -42966,7 +42966,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54033" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57728" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

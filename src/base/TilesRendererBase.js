@@ -28,7 +28,7 @@ export class TilesRendererBase {
 
 	}
 
-	constructor( url, cache = new LRUCache(), downloadQueue = new PriorityQueue( 6 ), parseQueue = new PriorityQueue( 2 ) ) {
+	constructor( url, cache = new LRUCache(), downloadQueue = new PriorityQueue( 6 ), parseQueue = new PriorityQueue( 1 ) ) {
 
 		// state
 		this.tileSets = {};
