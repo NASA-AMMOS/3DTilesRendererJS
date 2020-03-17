@@ -137,9 +137,9 @@ function init() {
 	rayIntersect = new Group();
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), rayIntersectMat );
+	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
-	rayMesh.position.z += 5;
+	rayMesh.position.z += 3;
 	rayIntersect.add( rayMesh );
 
 	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
@@ -275,6 +275,16 @@ function animate() {
 				point.y + normal.y,
 				point.z + normal.z
 			);
+
+		}
+
+		if ( params.orthographic ) {
+
+			rayIntersect.scale.setScalar( closestHit.distance / 150 );
+
+		} else {
+
+			rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
 
 		}
 
