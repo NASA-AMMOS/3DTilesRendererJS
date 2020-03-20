@@ -105,7 +105,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( raycaster.firstHitOnly ) {
 
-			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeSet, raycaster, intersects );
+			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeSet, raycaster );
 			if ( hit ) {
 
 				intersects.push( hit );
