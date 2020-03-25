@@ -54,8 +54,6 @@ export class TilesRendererBase {
 		this.loadSiblings = true;
 		this.maxDepth = Infinity;
 
-		this.loadTileSet( url );
-
 	}
 
 	traverse( cb ) {
@@ -75,7 +73,16 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const tileSets = this.tileSets;
 		const rootTileSet = tileSets[ this.rootSet ];
-		if ( ! rootTileSet || ! rootTileSet.root ) return;
+		if ( ! ( this.rootSet in tileSets ) ) {
+
+			this.loadTileSet( this.rootSet );
+			return;
+
+		} else if ( ! rootTileSet || ! rootTileSet.root ) {
+
+			return;
+
+		}
 
 		const root = rootTileSet.root;
 
