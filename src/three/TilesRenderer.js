@@ -19,7 +19,6 @@ const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
 const tempQuaternion = new Quaternion();
 const tempVector = new Vector3();
-const resVector = new Vector2();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
@@ -28,6 +27,20 @@ const _sphere = new Sphere();
 function emptyRaycast() {}
 
 export class TilesRenderer extends TilesRendererBase {
+
+	get camera() {
+
+		return this.cameras[ 0 ];
+
+	}
+
+	set camera( camera ) {
+
+		const cameras = this.cameras;
+		cameras.length = 1;
+		cameras[ 0 ] = camera;
+
+	}
 
 	get displayBounds() {
 
@@ -65,13 +78,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	constructor( url, cameras, renderer ) {
+	constructor( ...args ) {
 
-		super( url );
+		super( ...args );
 		this.group = new TilesGroup( this );
-		this.cameras = Array.isArray( cameras ) ? cameras : [ cameras ];
+		this.cameras = [];
+		this.resolution = new Vector2();
 		this.frustums = [];
-		this.renderer = renderer;
 		this.activeSet = new Set();
 		this.visibleSet = new Set();
 
@@ -101,7 +114,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	raycast( raycaster, intersects ) {
 
-		if ( ! this.root ) return;
+		if ( ! this.root ) {
+
+			return;
+
+		}
 
 		if ( raycaster.firstHitOnly ) {
 
@@ -120,13 +137,35 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	setResolutionFromRenderer( renderer ) {
+
+		const resolution = this.resolution;
+		renderer.getSize( resolution );
+		resolution.multiplyScalar( renderer.getPixelRatio() );
+
+	}
+
 	/* Overriden */
 	update() {
 
 		const group = this.group;
-		const renderer = this.renderer;
 		const cameras = this.cameras;
 		const frustums = this.frustums;
+		const resolution = this.resolution;
+
+		if ( cameras.length === 0 ) {
+
+			console.warn( 'TilesRenderer: no cameras to use are defined. Cannot update 3d tiles.' );
+			return;
+
+		}
+
+		if ( resolution.width === 0 || resolution.height === 0 ) {
+
+			console.warn( 'TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.' );
+			return;
+
+		}
 
 		// automatically scale the array of frustums to match the cameras
 		while ( frustums.length > cameras.length ) {
@@ -153,10 +192,6 @@ export class TilesRenderer extends TilesRendererBase {
 			frustum.setFromMatrix( tempMat );
 
 		}
-
-		// store the resolution of the render
-		renderer.getSize( resVector );
-		resVector.multiplyScalar( renderer.getPixelRatio() );
 
 		super.update();
 
@@ -437,6 +472,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
 		const transformMat = cached.transform;
+		const resolution = this.resolution;
 
 		if ( 'box' in boundingVolume ) {
 
@@ -478,7 +514,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 					const w = cam.right - cam.left;
 					const h = cam.top - cam.bottom;
-					const pixelSize = Math.max( h / resVector.height, w / resVector.width );
+					const pixelSize = Math.max( h / resolution.height, w / resolution.width );
 					error = tile.geometricError / ( pixelSize * invScale );
 
 				} else {
@@ -486,7 +522,7 @@ export class TilesRenderer extends TilesRendererBase {
 					const distance = boundingBox.distanceToPoint( tempVector );
 					const scaledDistance = distance * invScale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
-					error = ( tile.geometricError * resVector.height ) / ( scaledDistance * sseDenominator );
+					error = ( tile.geometricError * resolution.height ) / ( scaledDistance * sseDenominator );
 
 				}
 

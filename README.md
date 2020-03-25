@@ -12,9 +12,7 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 
 **In Progress Features**
 - Multicamera support
-- Fast raycast support
 - Travis integration
-- ThreeTilesRenderer API
 - Performance
 
 # Use
@@ -24,7 +22,9 @@ import { TilesRenderer } from '3d-tiles-renderer';
 
 // ... initialize three scene ...
 
-const tilesRenderer = new TilesRenderer( './path/to/tileset.json', camera, renderer );
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.camera = camera;
+tilesRenderer.setResolutionFromRenderer( renderer );
 scene.add( tilesRenderer.group );
 
 function renderLoop() {
@@ -81,7 +81,7 @@ loadSiblings = true : Boolean
 ### .constructor
 
 ```js
-constructor( url : String, cameras : Camera | Array<Camera>, renderer : WebGLRenderer )
+constructor( url : String )
 ```
 
 ### .update
@@ -100,6 +100,12 @@ getBounds( box : Box3 ) : void
 
 ```js
 raycast( raycaster : Raycaster, intersects : Array ) : void
+```
+
+### .setResolutionFromRenderer
+
+```js
+setResolutionFromRenderer( renderer : WebGLRenderer )
 ```
 
 # LICENSE

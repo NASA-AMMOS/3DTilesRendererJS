@@ -57,7 +57,10 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new TilesRenderer( url, camera, renderer );
+	tiles = new TilesRenderer( url );
+	tiles.camera = camera;
+	tiles.setResolutionFromRenderer( renderer );
+
 	offsetParent.add( tiles.group );
 
 }
@@ -134,9 +137,9 @@ function init() {
 	rayIntersect = new Group();
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 10 ), rayIntersectMat );
+	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
-	rayMesh.position.z += 5;
+	rayMesh.position.z += 3;
 	rayIntersect.add( rayMesh );
 
 	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
@@ -230,7 +233,10 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBounds = params.displayBounds;
-	tiles.cameras[ 0 ] = params.orthographic ? orthoCamera : camera;
+	tiles.camera = params.orthographic ? orthoCamera : camera;
+
+	tiles.camera = camera;
+	tiles.setResolutionFromRenderer( renderer );
 
 	// update tiles
 	tiles.update();
@@ -264,11 +270,22 @@ function animate() {
 		if ( closestHit.face ) {
 
 			const normal = closestHit.face.normal;
+			normal.transformDirection( closestHit.object.matrixWorld );
 			rayIntersect.lookAt(
 				point.x + normal.x,
 				point.y + normal.y,
 				point.z + normal.z
 			);
+
+		}
+
+		if ( params.orthographic ) {
+
+			rayIntersect.scale.setScalar( closestHit.distance / 150 );
+
+		} else {
+
+			rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
 
 		}
 
