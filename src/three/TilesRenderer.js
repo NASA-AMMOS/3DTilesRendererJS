@@ -329,17 +329,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 			scene.traverse( c => {
 
-				if ( c.geometry ) {
+				const geometry = c.geometry;
+				const material = c.material;
 
-					c.geometry.dispose();
+				if ( geometry ) {
+
+					geometry.dispose();
 
 				}
 
-				if ( c.material ) {
+				if ( material ) {
 
-					c.material.dispose();
+					material.dispose();
+					for ( const key in material ) {
 
-					// TODO: dispose textures
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							value.dispose();
+
+						}
+
+					}
 
 				}
 
