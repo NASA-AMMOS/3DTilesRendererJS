@@ -311,6 +311,27 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} );
 
+			const materials = [];
+			const geometry = [];
+			scene.traverse( c => {
+
+				if ( c.geometry ) {
+
+					geometry.push( c.geometry );
+
+				}
+
+				if ( c.material ) {
+
+					materials.push( c.material );
+
+				}
+
+			} );
+
+			cached.materials = materials;
+			cached.geometry = geometry;
+
 		} );
 
 	}
@@ -321,41 +342,40 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( cached.scene ) {
 
 			const scene = cached.scene;
+			const materials = cached.materials;
+			const geometry = cached.geometry;
 			if ( scene.parent ) {
 
 				scene.parent.remove( scene );
 
 			}
 
-			scene.traverse( c => {
+			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
-				const geometry = c.geometry;
-				const material = c.material;
+				geometry[ i ].dispose();
 
-				if ( geometry ) {
+			}
 
-					geometry.dispose();
+			for ( let i = 0, l = materials.length; i < l; i ++ ) {
 
-				}
+				const material = materials[ i ];
+				for ( const key in material ) {
 
-				if ( material ) {
+					const value = material[ key ];
+					if ( value && value.isTexture ) {
 
-					material.dispose();
-					for ( const key in material ) {
-
-						const value = material[ key ];
-						if ( value && value.isTexture ) {
-
-							value.dispose();
-
-						}
+						value.dispose();
 
 					}
 
 				}
+				material.dispose();
 
-			} );
+			}
+
 			cached.scene = null;
+			cached.materials = null;
+			cached.geometry = null;
 			cached.boxHelperGroup = null;
 
 		}
