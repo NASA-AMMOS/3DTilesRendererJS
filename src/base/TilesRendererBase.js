@@ -34,6 +34,7 @@ export class TilesRendererBase {
 		this.tileSets = {};
 		this.rootSet = url;
 		this.lruCache = cache;
+		this.fetchOptions = { credentials: 'same-origin' };
 
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
@@ -201,7 +202,7 @@ export class TilesRendererBase {
 		if ( ! ( url in tileSets ) ) {
 
 			const pr =
-                fetch( url, { credentials: 'same-origin' } )
+                fetch( url, this.fetchOptions )
                 	.then( res => {
 
                 		if ( res.ok ) {
@@ -313,7 +314,7 @@ export class TilesRendererBase {
 
 			}
 
-			return fetch( tile.content.uri, { credentials: 'same-origin', signal } );
+			return fetch( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
 
 		} )
 			.then( res => {
