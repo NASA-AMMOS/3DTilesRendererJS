@@ -42,42 +42,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	get displayBounds() {
-
-		return this._displayBounds;
-
-	}
-
-	set displayBounds( val ) {
-
-		if ( val !== this.displayBounds ) {
-
-			this._displayBounds = val;
-			this.traverse( t => {
-
-				const scene = t.cached.scene;
-				const boxHelper = t.cached.boxHelperGroup;
-				if ( scene ) {
-
-					if ( val ) {
-
-						scene.add( boxHelper );
-						boxHelper.updateMatrixWorld( true );
-
-					} else {
-
-						scene.remove( boxHelper );
-
-					}
-
-				}
-
-			} );
-
-		}
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
@@ -292,8 +256,9 @@ export class TilesRenderer extends TilesRendererBase {
 			sphere,
 			region,
 
-			boxHelper: null,
 			scene: null,
+			geometry: null,
+			material: null,
 
 		};
 
@@ -315,31 +280,15 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 			const cached = tile.cached;
-			const cachedBox = cached.box;
-			const cachedBoxMat = cached.boxTransform;
-
-			// add a helper group to represent the obb rotation matrix
-			const boxHelper = new Box3Helper( cachedBox );
-			const boxHelperGroup = new Group();
-			cachedBoxMat.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
-			boxHelperGroup.add( boxHelper );
-			boxHelperGroup.updateMatrixWorld( true );
+			const cachedTransform = cached.transform;
 
 			const scene = res.scene;
-			cached.transform.decompose( scene.position, scene.quaternion, scene.scale );
+			cachedTransform.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 
-			cached.boxHelperGroup = boxHelperGroup;
 			cached.scene = scene;
 
-			if ( this.displayBounds ) {
-
-				scene.add( cached.boxHelperGroup );
-
-			}
-
 			// We handle raycasting in a custom way so remove it from here
-			boxHelper.raycast = emptyRaycast;
 			scene.traverse( c => {
 
 				c.raycast = emptyRaycast;
@@ -411,7 +360,6 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.scene = null;
 			cached.materials = null;
 			cached.geometry = null;
-			cached.boxHelperGroup = null;
 
 		}
 
@@ -421,6 +369,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
+		// TODO: save the whole tile object in the visible set and active set
 		const scene = tile.cached.scene;
 		const visibleSet = this.visibleSet;
 		const group = this.group;

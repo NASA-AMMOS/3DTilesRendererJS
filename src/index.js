@@ -1,3 +1,4 @@
+import { DebugTilesRenderer } from './three/DebugTilesRenderer.js';
 import { TilesRenderer } from './three/TilesRenderer.js';
 import { B3DMLoader } from './three/B3DMLoader.js';
 
@@ -8,6 +9,7 @@ import { LRUCache } from './utilities/LRUCache.js';
 import { PriorityQueue } from './utilities/PriorityQueue.js';
 
 export {
+	DebugTilesRenderer,
 	TilesRenderer,
 	B3DMLoader,
 

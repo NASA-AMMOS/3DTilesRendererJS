@@ -1,4 +1,4 @@
-import { TilesRenderer } from '../src/index.js';
+import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
