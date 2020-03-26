@@ -51,7 +51,7 @@ animate();
 
 function reinstantiateTiles() {
 
-	const url = window.location.hash.replace( /^#/, '' ) || './SampleTileset/tileset.json';
+	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
 
 	if ( tiles ) {
 
