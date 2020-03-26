@@ -27,14 +27,17 @@ tilesRenderer.camera = camera;
 tilesRenderer.setResolutionFromRenderer( renderer );
 scene.add( tilesRenderer.group );
 
+renderLoop();
+
 function renderLoop() {
 
-	// ...
+	requestAnimationFrame( renderLoop );
 
 	tilesRenderer.update();
 	renderer.render( camera, scene );
 
 }
+
 
 ```
 
