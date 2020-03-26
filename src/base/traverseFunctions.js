@@ -213,7 +213,8 @@ export function skipTraversal( tile, renderer ) {
 
 	const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
 	const meetsSSE = tile.__error < errorRequirement;
-	const hasContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
+	const hasContent = ! tile.__contentEmpty;
+	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
 	const children = tile.children;
 	let allChildrenHaveContent = true;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -228,13 +229,13 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	if ( meetsSSE && ! hasContent && ! lruCache.isFull() ) {
+	if ( meetsSSE && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
 		renderer.requestTileContents( tile );
 
 	}
 
-	if ( meetsSSE && hasContent && ! allChildrenHaveContent ) {
+	if ( meetsSSE && loadedContent && ! allChildrenHaveContent ) {
 
 		if ( tile.__inFrustum ) {
 
