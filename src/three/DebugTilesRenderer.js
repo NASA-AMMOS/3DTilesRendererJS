@@ -24,6 +24,54 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
+	getTileInformationFromObject( object ) {
+
+		let targetTile = null;
+		this.traverse( tile => {
+
+			if ( targetTile ) {
+
+				return true;
+
+			}
+
+			const scene = tile.cached.scene;
+			if ( scene ) {
+
+				scene.traverse( c => {
+
+					if ( c === object ) {
+
+						targetTile = tile;
+
+					}
+
+				} );
+
+			}
+
+		} );
+
+		if ( targetTile ) {
+
+			return {
+
+				distanceToCamera: 0,
+				geometricError: targetTile.geometricError,
+				screenSpaceError: targetTile.__error,
+				depth: targetTile.__depth,
+				isLeaf: targetTile.__isLeaf
+
+			};
+
+		} else {
+
+			return null;
+
+		}
+
+	}
+
 	update() {
 
 		super.update();

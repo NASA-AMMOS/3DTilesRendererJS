@@ -152,6 +152,7 @@ function init() {
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 	window.addEventListener( 'mousemove', onMouseMove, false );
+	window.addEventListener( 'click', onMouseClick, false );
 
 	// GUI
 	const gui = new dat.GUI();
@@ -205,6 +206,29 @@ function onMouseMove( e ) {
 
 	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+
+}
+
+function onMouseClick( e ) {
+
+	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+	raycaster.firstHitOnly = true;
+	const results = raycaster.intersectObject( tiles.group, true );
+	if ( results.length ) {
+
+		const object = results[ 0 ].object;
+		const info = tiles.getTileInformationFromObject( object );
+
+		let str = '';
+		for ( const key in info ) {
+
+			str += `${ key } : ${ info[ key ] }\n`;
+
+		}
+		console.log( str );
+
+
+	}
 
 }
 
