@@ -6,10 +6,8 @@ import {
 	Box3,
 	Sphere,
 	Vector3,
-	Group,
 	Vector2,
 	Math as MathUtils,
-	Box3Helper,
 	Quaternion,
 	Frustum
 } from 'three';
@@ -23,6 +21,9 @@ const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
 const _sphere = new Sphere();
+
+const X_AXIS = new Vector3( 1, 0, 0 );
+const Y_AXIS = new Vector3( 0, 1, 0 );
 
 function emptyRaycast() {}
 
@@ -284,7 +285,8 @@ export class TilesRenderer extends TilesRendererBase {
 			const cachedTransform = cached.transform;
 
 			const scene = res.scene;
-			cachedTransform.decompose( scene.position, scene.quaternion, scene.scale );
+			scene.matrix.copy( cachedTransform );
+			scene.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 
 			cached.scene = scene;
