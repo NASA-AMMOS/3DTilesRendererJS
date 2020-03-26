@@ -51,7 +51,9 @@ export class TilesRenderer extends TilesRendererBase {
 		this.resolution = new Vector2();
 		this.frustums = [];
 		this.activeSet = new Set();
+		this.activeTiles = new Set();
 		this.visibleSet = new Set();
+		this.visibleTiles = new Set();
 
 	}
 
@@ -391,13 +393,17 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: save the whole tile object in the visible set and active set
 		const scene = tile.cached.scene;
 		const visibleSet = this.visibleSet;
+		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 		if ( visible ) {
 
+			// TODO: Should set visible be called if the scene hasn't been loaded yet?
+			// Ideally this would only be called on state change and when it's relevant
 			if ( scene && ! scene.parent ) {
 
 				group.add( scene );
 				visibleSet.add( scene );
+				visibleTiles.add( tile );
 				scene.updateMatrixWorld( true );
 
 			}
@@ -406,6 +412,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			group.remove( scene );
 			visibleSet.delete( scene );
+			visibleTiles.delete( tile );
 
 		}
 
@@ -415,16 +422,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const activeSet = this.activeSet;
+		const activeTiles = this.activeTiles;
 		if ( active !== cached.active ) {
 
 			cached.active = active;
 			if ( active ) {
 
 				activeSet.add( cached.scene );
+				activeTiles.add( tile );
 
 			} else {
 
 				activeSet.delete( cached.scene );
+				activeTiles.delete( tile );
 
 			}
 

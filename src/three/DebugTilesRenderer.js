@@ -138,93 +138,87 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
-		const visibleSet = this.visibleSet;
-		this.traverse( tile => {
+		const visibleTiles = this.visibleTiles;
+		visibleTiles.forEach( tile => {
 
 			const scene = tile.cached.scene;
-			if ( visibleSet.has( scene ) ) {
+			scene.traverse( c => {
 
-				scene.traverse( c => {
+				const currMaterial = c.material;
+				if ( currMaterial ) {
 
-					const currMaterial = c.material;
-					if ( currMaterial ) {
+					const originalMaterial = c[ ORIGINAL_MATERIAL ];
+					if ( colorMode === NONE && currMaterial !== originalMaterial ) {
 
-						const originalMaterial = c[ ORIGINAL_MATERIAL ];
-						if ( colorMode === NONE && currMaterial !== originalMaterial ) {
+						c.material.dispose();
+						c.material = c[ ORIGINAL_MATERIAL ];
 
-							c.material.dispose();
-							c.material = c[ ORIGINAL_MATERIAL ];
+					} else if ( colorMode !== NONE && currMaterial === originalMaterial ) {
 
-						} else if ( colorMode !== NONE && currMaterial === originalMaterial ) {
+						c.material = new MeshBasicMaterial();
 
-							c.material = new MeshBasicMaterial();
+					}
+
+					switch ( colorMode ) {
+
+						case DEPTH: {
+
+							const val = tile.__depth / maxDepth;
+							c.material.color.setRGB( val, val, val );
+							break;
 
 						}
+						case SCREEN_ERROR: {
 
-						switch ( colorMode ) {
+							const val = tile.__error / errorTarget;
+							if ( val > 1.0 ) {
 
-							case DEPTH: {
+								c.material.color.setRGB( 1.0, 0.0, 0.0 );
 
-								const val = tile.__depth / maxDepth;
+							} else {
+
 								c.material.color.setRGB( val, val, val );
-								break;
 
 							}
-							case SCREEN_ERROR: {
+							break;
 
-								const val = tile.__error / errorTarget;
-								if ( val > 1.0 ) {
+						}
+						case GEOMETRIC_ERROR: {
 
-									c.material.color.setRGB( 1.0, 0.0, 0.0 );
+							const val = Math.min( tile.geometricError / maxError, 1 );
+							c.material.color.setRGB( val, val, val );
+							break;
 
-								} else {
+						}
+						case DISTANCE: {
 
-									c.material.color.setRGB( val, val, val );
+							// TODO
+							// Allow custom scaling
+							const val = Math.min( tile.cached.distance / maxDistance, 1 );
+							c.material.color.setRGB( val, val, val );
+							break;
 
-								}
-								break;
+						}
+						case IS_LEAF: {
 
-							}
-							case GEOMETRIC_ERROR: {
+							if ( ! tile.children || tile.children.length === 0 ) {
 
-								const val = Math.min( tile.geometricError / maxError, 1 );
-								c.material.color.setRGB( val, val, val );
-								break;
+								c.material.color.set( 0xffffff );
 
-							}
-							case DISTANCE: {
+							} else {
 
-								// TODO
-								// Allow custom scaling
-								const val = Math.min( tile.cached.distance / maxDistance, 1 );
-								c.material.color.setRGB( val, val, val );
-								break;
-
-							}
-							case IS_LEAF: {
-
-								if ( ! tile.children || tile.children.length === 0 ) {
-
-									c.material.color.set( 0xffffff );
-
-								} else {
-
-									c.material.color.set( 0 );
-
-								}
-								break;
+								c.material.color.set( 0 );
 
 							}
-
-
+							break;
 
 						}
 
 					}
 
-				} );
+				}
 
-			}
+			} );
 
 		} );
 
