@@ -32,12 +32,47 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.maxDistance = - 1;
 		this.maxError = - 1;
 
+		this.extremeDepth = - 1;
+		this.extremeError = - 1;
+
 	}
 
-	getTileInformationFromObject( object ) {
+	initExtremes() {
+
+		// TODO: this should rerun if another nested tileset is loaded -- or kick off the tile set download?
+		let maxDepth = - 1;
+		this.traverse( tile => {
+
+			maxDepth = Math.max( maxDepth, tile.__depth );
+
+		} );
+
+		let maxError = - 1;
+		this.traverse( tile => {
+
+			maxError = Math.max( maxError, tile.geometricError );
+
+		} );
+
+		this.extremeDepth = maxDepth;
+		this.extremeError = maxError;
+
+	}
+
+	loadTileSet( ...args ) {
+
+		const pr = super.loadTileSet( ...args );
+		pr.then( () => this.initExtremes() );
+
+		return pr;
+
+	}
+
+	getTileInformationFromActiveObject( object ) {
 
 		let targetTile = null;
-		this.traverse( tile => {
+		const activeTiles = this.activeTiles;
+		activeTiles.forEach( tile => {
 
 			if ( targetTile ) {
 
@@ -98,11 +133,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		let maxDepth = - 1;
 		if ( this.maxDepth === - 1 ) {
 
-			this.traverse( tile => {
-
-				maxDepth = Math.max( maxDepth, tile.__depth );
-
-			} );
+			maxDepth = this.extremeDepth;
 
 		} else {
 
@@ -113,11 +144,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		let maxError = - 1;
 		if ( this.maxError === - 1 ) {
 
-			this.traverse( tile => {
-
-				maxError = Math.max( maxError, tile.geometricError );
-
-			} );
+			maxError = this.extremeError;
 
 		} else {
 
@@ -192,8 +219,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case DISTANCE: {
 
-							// TODO
-							// Allow custom scaling
 							const val = Math.min( tile.cached.distance / maxDistance, 1 );
 							c.material.color.setRGB( val, val, val );
 							break;
@@ -313,7 +338,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 	disposeTile( tile ) {
 
 		super.disposeTile( tile );
-		delete tile.cached.boxBounds;
+
+		tile.cached.boxHelperGroup.children[ 0 ].geometry.dispose();
+		tile.cached.sphereHelper.geometry.dispose();
+
+		delete tile.cached.boxHelperGroup;
+		delete tile.cached.sphereHelper;
 
 	}
 

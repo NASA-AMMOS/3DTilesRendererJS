@@ -282,7 +282,7 @@ function onMouseUp( e ) {
 	if ( results.length ) {
 
 		const object = results[ 0 ].object;
-		const info = tiles.getTileInformationFromObject( object );
+		const info = tiles.getTileInformationFromActiveObject( object );
 
 		let str = '';
 		for ( const key in info ) {
