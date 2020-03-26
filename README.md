@@ -27,14 +27,17 @@ tilesRenderer.camera = camera;
 tilesRenderer.setResolutionFromRenderer( renderer );
 scene.add( tilesRenderer.group );
 
+renderLoop();
+
 function renderLoop() {
 
-	// ...
+	requestAnimationFrame( renderLoop );
 
 	tilesRenderer.update();
 	renderer.render( camera, scene );
 
 }
+
 
 ```
 
@@ -71,6 +74,31 @@ maxDepth = Infinity : Number
 ```js
 loadSiblings = true : Boolean
 ```
+
+### .lruCache
+
+```js
+lruCache = new LRUCache() : LRUCache
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+### .downloadQueue
+
+```js
+downloadQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+### .parseQueue
+
+```js
+parseQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be modified once [update](#update) is called for the first time._
+
 
 ### .constructor
 
