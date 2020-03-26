@@ -523,6 +523,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// TODO: we should use the more precise bounding volumes here if possible
 		// cache the root-space planes
+		// Use separating axis theorem for frustum and obb
 
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {

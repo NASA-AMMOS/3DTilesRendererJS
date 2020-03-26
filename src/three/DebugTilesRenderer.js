@@ -39,7 +39,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	initExtremes() {
 
-		// TODO: this should rerun if another nested tileset is loaded -- or kick off the tile set download?
 		let maxDepth = - 1;
 		this.traverse( tile => {
 

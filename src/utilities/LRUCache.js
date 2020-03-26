@@ -1,4 +1,6 @@
 // TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
+// Keep a used list that we can sort as needed when it's dirty, a map of item to last used time, and a binary search
+// of the array to find an item that needs to be removed
 class LRUCache {
 
 	constructor() {

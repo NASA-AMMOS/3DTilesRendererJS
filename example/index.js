@@ -185,32 +185,6 @@ function init() {
 
 		tiles.colorMode = parseFloat( v );
 
-		if ( this._lastController ) {
-
-			this._lastController.remove();
-
-		}
-
-		switch ( v ) {
-
-			// GEOMETRIC_ERROR
-			case 2:
-
-				break;
-
-			// DISTANCE
-			case 3:
-
-				break;
-
-			// DEPTH
-			case 2:
-
-				break;
-
-		}
-
-
 	} );
 	debug.open();
 
