@@ -71,6 +71,8 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 }
 
 // TODO: include frustum mask here?
+// TODO: this is marking items as used in the lrucache, which means some data is
+// being kept around that isn't being used -- is that okay?
 export function determineFrustumSet( tile, renderer ) {
 
 	const stats = renderer.stats;

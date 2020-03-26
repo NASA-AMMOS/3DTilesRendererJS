@@ -35297,6 +35297,8 @@ function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth
     afterCb(tile, parent, depth);
   }
 } // TODO: include frustum mask here?
+// TODO: this is marking items as used in the lrucache, which means some data is
+// being kept around that isn't being used -- is that okay?
 
 
 function determineFrustumSet(tile, renderer) {
@@ -35507,20 +35509,25 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
 class TilesRendererBase {
-  get root() {
-    const tileSet = this.tileSets[this.rootSet];
+  get rootTileSet() {
+    const tileSet = this.tileSets[this.rootURL];
 
     if (!tileSet || tileSet instanceof Promise) {
       return null;
     } else {
-      return tileSet.root;
+      return tileSet;
     }
+  }
+
+  get root() {
+    const tileSet = this.rootTileSet;
+    return tileSet ? tileSet.root : null;
   }
 
   constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(1)) {
     // state
     this.tileSets = {};
-    this.rootSet = url;
+    this.rootURL = url;
     this.lruCache = cache;
     this.fetchOptions = {};
     this.downloadQueue = downloadQueue;
@@ -35543,7 +35550,7 @@ class TilesRendererBase {
 
   traverse(cb) {
     const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootSet];
+    const rootTileSet = tileSets[this.rootURL];
     if (!rootTileSet || !rootTileSet.root) return;
     (0, _traverseFunctions.traverseSet)(rootTileSet.root, cb);
   } // Public API
@@ -35553,10 +35560,10 @@ class TilesRendererBase {
     const stats = this.stats;
     const lruCache = this.lruCache;
     const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootSet];
+    const rootTileSet = tileSets[this.rootURL];
 
-    if (!(this.rootSet in tileSets)) {
-      this.loadTileSet(this.rootSet);
+    if (!(this.rootURL in tileSets)) {
+      this.loadTileSet(this.rootURL);
       return;
     } else if (!rootTileSet || !rootTileSet.root) {
       return;
@@ -43837,7 +43844,7 @@ function render() {
   });
   const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
   statsContainer.innerHTML = `
-			Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length}
+			Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length - 2}
 			<br/>
 			Cache: ${(100 * cacheFullness).toFixed(2)}% ~${(count / 1000 / 1000).toFixed(2)}mb
 		`;

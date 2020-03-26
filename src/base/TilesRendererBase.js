@@ -13,18 +13,25 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
 export class TilesRendererBase {
 
-	get root() {
+	get rootTileSet() {
 
-		const tileSet = this.tileSets[ this.rootSet ];
+		const tileSet = this.tileSets[ this.rootURL ];
 		if ( ! tileSet || tileSet instanceof Promise ) {
 
 			return null;
 
 		} else {
 
-			return tileSet.root;
+			return tileSet;
 
 		}
+
+	}
+
+	get root() {
+
+		const tileSet = this.rootTileSet;
+		return tileSet ? tileSet.root : null;
 
 	}
 
@@ -32,7 +39,7 @@ export class TilesRendererBase {
 
 		// state
 		this.tileSets = {};
-		this.rootSet = url;
+		this.rootURL = url;
 		this.lruCache = cache;
 		this.fetchOptions = {};
 
@@ -59,7 +66,7 @@ export class TilesRendererBase {
 	traverse( cb ) {
 
 		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootSet ];
+		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! rootTileSet || ! rootTileSet.root ) return;
 
 		traverseSet( rootTileSet.root, cb );
@@ -72,10 +79,10 @@ export class TilesRendererBase {
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootSet ];
-		if ( ! ( this.rootSet in tileSets ) ) {
+		const rootTileSet = tileSets[ this.rootURL ];
+		if ( ! ( this.rootURL in tileSets ) ) {
 
-			this.loadTileSet( this.rootSet );
+			this.loadTileSet( this.rootURL );
 			return;
 
 		} else if ( ! rootTileSet || ! rootTileSet.root ) {

@@ -458,7 +458,7 @@ function render() {
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
 	statsContainer.innerHTML =
 		`
-			Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length }
+			Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }
 			<br/>
 			Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb
 		`;
