@@ -17,6 +17,7 @@ import {
 	OrthographicCamera
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
@@ -225,7 +226,9 @@ function init() {
 	statsContainer.style.color = 'white';
 	statsContainer.style.width = '100%';
 	statsContainer.style.textAlign = 'center';
-	statsContainer.style.padding = '10px';
+	statsContainer.style.padding = '5px';
+	statsContainer.style.pointerEvents = 'none';
+	statsContainer.style.lineHeight = '1.5em';
 	document.body.appendChild( statsContainer );
 
 	// Stats
@@ -425,7 +428,39 @@ function render() {
 
 	}
 
-	statsContainer.innerText =
-		`Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length}`;
+	const geomSet = new Set();
+	tiles.traverse( tile => {
+
+		const scene = tile.cached.scene;
+		if ( scene ) {
+
+			scene.traverse( c => {
+
+				if ( c.geometry ) {
+
+					geomSet.add( c.geometry );
+
+				}
+
+			} );
+
+		}
+
+	} );
+
+	let count = 0;
+	geomSet.forEach( g => {
+
+		count += BufferGeometryUtils.estimateBytesUsed( g );
+
+	} );
+
+	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
+	statsContainer.innerHTML =
+		`
+			Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length }
+			<br/>
+			Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb
+		`;
 
 }

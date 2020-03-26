@@ -1,3 +1,4 @@
+// TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
 class LRUCache {
 
 	constructor() {
@@ -95,6 +96,8 @@ class LRUCache {
 
 	}
 
+	// TODO: this should be renamed because it's not necessarily unloading all unused content
+	// Maybe call it "cleanup" or "unloadToMinSize"
 	unloadUnusedContent( prioritySortCb ) {
 
 		const unloadPercent = this.unloadPercent;

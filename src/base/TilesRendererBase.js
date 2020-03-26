@@ -34,7 +34,7 @@ export class TilesRendererBase {
 		this.tileSets = {};
 		this.rootSet = url;
 		this.lruCache = cache;
-		this.fetchOptions = { credentials: 'same-origin' };
+		this.fetchOptions = {};
 
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
