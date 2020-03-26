@@ -117,1364 +117,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../node_modules/process/browser.js":[function(require,module,exports) {
-
-// shim for using process in browser
-var process = module.exports = {}; // cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-  throw new Error('setTimeout has not been defined');
-}
-
-function defaultClearTimeout() {
-  throw new Error('clearTimeout has not been defined');
-}
-
-(function () {
-  try {
-    if (typeof setTimeout === 'function') {
-      cachedSetTimeout = setTimeout;
-    } else {
-      cachedSetTimeout = defaultSetTimout;
-    }
-  } catch (e) {
-    cachedSetTimeout = defaultSetTimout;
-  }
-
-  try {
-    if (typeof clearTimeout === 'function') {
-      cachedClearTimeout = clearTimeout;
-    } else {
-      cachedClearTimeout = defaultClearTimeout;
-    }
-  } catch (e) {
-    cachedClearTimeout = defaultClearTimeout;
-  }
-})();
-
-function runTimeout(fun) {
-  if (cachedSetTimeout === setTimeout) {
-    //normal enviroments in sane situations
-    return setTimeout(fun, 0);
-  } // if setTimeout wasn't available but was latter defined
-
-
-  if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-    cachedSetTimeout = setTimeout;
-    return setTimeout(fun, 0);
-  }
-
-  try {
-    // when when somebody has screwed with setTimeout but no I.E. maddness
-    return cachedSetTimeout(fun, 0);
-  } catch (e) {
-    try {
-      // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-      return cachedSetTimeout.call(null, fun, 0);
-    } catch (e) {
-      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-      return cachedSetTimeout.call(this, fun, 0);
-    }
-  }
-}
-
-function runClearTimeout(marker) {
-  if (cachedClearTimeout === clearTimeout) {
-    //normal enviroments in sane situations
-    return clearTimeout(marker);
-  } // if clearTimeout wasn't available but was latter defined
-
-
-  if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-    cachedClearTimeout = clearTimeout;
-    return clearTimeout(marker);
-  }
-
-  try {
-    // when when somebody has screwed with setTimeout but no I.E. maddness
-    return cachedClearTimeout(marker);
-  } catch (e) {
-    try {
-      // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-      return cachedClearTimeout.call(null, marker);
-    } catch (e) {
-      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-      // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-      return cachedClearTimeout.call(this, marker);
-    }
-  }
-}
-
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-  if (!draining || !currentQueue) {
-    return;
-  }
-
-  draining = false;
-
-  if (currentQueue.length) {
-    queue = currentQueue.concat(queue);
-  } else {
-    queueIndex = -1;
-  }
-
-  if (queue.length) {
-    drainQueue();
-  }
-}
-
-function drainQueue() {
-  if (draining) {
-    return;
-  }
-
-  var timeout = runTimeout(cleanUpNextTick);
-  draining = true;
-  var len = queue.length;
-
-  while (len) {
-    currentQueue = queue;
-    queue = [];
-
-    while (++queueIndex < len) {
-      if (currentQueue) {
-        currentQueue[queueIndex].run();
-      }
-    }
-
-    queueIndex = -1;
-    len = queue.length;
-  }
-
-  currentQueue = null;
-  draining = false;
-  runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-  var args = new Array(arguments.length - 1);
-
-  if (arguments.length > 1) {
-    for (var i = 1; i < arguments.length; i++) {
-      args[i - 1] = arguments[i];
-    }
-  }
-
-  queue.push(new Item(fun, args));
-
-  if (queue.length === 1 && !draining) {
-    runTimeout(drainQueue);
-  }
-}; // v8 likes predictible objects
-
-
-function Item(fun, array) {
-  this.fun = fun;
-  this.array = array;
-}
-
-Item.prototype.run = function () {
-  this.fun.apply(null, this.array);
-};
-
-process.title = 'browser';
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) {
-  return [];
-};
-
-process.binding = function (name) {
-  throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () {
-  return '/';
-};
-
-process.chdir = function (dir) {
-  throw new Error('process.chdir is not supported');
-};
-
-process.umask = function () {
-  return 0;
-};
-},{}],"../node_modules/path-browserify/index.js":[function(require,module,exports) {
-var process = require("process");
-// .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
-// backported and transplited with Babel, with backwards-compat fixes
-
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// resolves . and .. elements in a path array with directory names there
-// must be no slashes, empty elements, or device names (c:\) in the array
-// (so also no leading and trailing slashes - it does not distinguish
-// relative and absolute paths)
-function normalizeArray(parts, allowAboveRoot) {
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-    var last = parts[i];
-    if (last === '.') {
-      parts.splice(i, 1);
-    } else if (last === '..') {
-      parts.splice(i, 1);
-      up++;
-    } else if (up) {
-      parts.splice(i, 1);
-      up--;
-    }
-  }
-
-  // if the path is allowed to go above the root, restore leading ..s
-  if (allowAboveRoot) {
-    for (; up--; up) {
-      parts.unshift('..');
-    }
-  }
-
-  return parts;
-}
-
-// path.resolve([from ...], to)
-// posix version
-exports.resolve = function() {
-  var resolvedPath = '',
-      resolvedAbsolute = false;
-
-  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-    var path = (i >= 0) ? arguments[i] : process.cwd();
-
-    // Skip empty and invalid entries
-    if (typeof path !== 'string') {
-      throw new TypeError('Arguments to path.resolve must be strings');
-    } else if (!path) {
-      continue;
-    }
-
-    resolvedPath = path + '/' + resolvedPath;
-    resolvedAbsolute = path.charAt(0) === '/';
-  }
-
-  // At this point the path should be resolved to a full absolute path, but
-  // handle relative paths to be safe (might happen when process.cwd() fails)
-
-  // Normalize the path
-  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
-    return !!p;
-  }), !resolvedAbsolute).join('/');
-
-  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-};
-
-// path.normalize(path)
-// posix version
-exports.normalize = function(path) {
-  var isAbsolute = exports.isAbsolute(path),
-      trailingSlash = substr(path, -1) === '/';
-
-  // Normalize the path
-  path = normalizeArray(filter(path.split('/'), function(p) {
-    return !!p;
-  }), !isAbsolute).join('/');
-
-  if (!path && !isAbsolute) {
-    path = '.';
-  }
-  if (path && trailingSlash) {
-    path += '/';
-  }
-
-  return (isAbsolute ? '/' : '') + path;
-};
-
-// posix version
-exports.isAbsolute = function(path) {
-  return path.charAt(0) === '/';
-};
-
-// posix version
-exports.join = function() {
-  var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(filter(paths, function(p, index) {
-    if (typeof p !== 'string') {
-      throw new TypeError('Arguments to path.join must be strings');
-    }
-    return p;
-  }).join('/'));
-};
-
-
-// path.relative(from, to)
-// posix version
-exports.relative = function(from, to) {
-  from = exports.resolve(from).substr(1);
-  to = exports.resolve(to).substr(1);
-
-  function trim(arr) {
-    var start = 0;
-    for (; start < arr.length; start++) {
-      if (arr[start] !== '') break;
-    }
-
-    var end = arr.length - 1;
-    for (; end >= 0; end--) {
-      if (arr[end] !== '') break;
-    }
-
-    if (start > end) return [];
-    return arr.slice(start, end - start + 1);
-  }
-
-  var fromParts = trim(from.split('/'));
-  var toParts = trim(to.split('/'));
-
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-    if (fromParts[i] !== toParts[i]) {
-      samePartsLength = i;
-      break;
-    }
-  }
-
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-    outputParts.push('..');
-  }
-
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-
-  return outputParts.join('/');
-};
-
-exports.sep = '/';
-exports.delimiter = ':';
-
-exports.dirname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  if (path.length === 0) return '.';
-  var code = path.charCodeAt(0);
-  var hasRoot = code === 47 /*/*/;
-  var end = -1;
-  var matchedSlash = true;
-  for (var i = path.length - 1; i >= 1; --i) {
-    code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        if (!matchedSlash) {
-          end = i;
-          break;
-        }
-      } else {
-      // We saw the first non-path separator
-      matchedSlash = false;
-    }
-  }
-
-  if (end === -1) return hasRoot ? '/' : '.';
-  if (hasRoot && end === 1) {
-    // return '//';
-    // Backwards-compat fix:
-    return '/';
-  }
-  return path.slice(0, end);
-};
-
-function basename(path) {
-  if (typeof path !== 'string') path = path + '';
-
-  var start = 0;
-  var end = -1;
-  var matchedSlash = true;
-  var i;
-
-  for (i = path.length - 1; i >= 0; --i) {
-    if (path.charCodeAt(i) === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          start = i + 1;
-          break;
-        }
-      } else if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // path component
-      matchedSlash = false;
-      end = i + 1;
-    }
-  }
-
-  if (end === -1) return '';
-  return path.slice(start, end);
-}
-
-// Uses a mixed approach for backwards-compatibility, as ext behavior changed
-// in new Node.js versions, so only basename() above is backported here
-exports.basename = function (path, ext) {
-  var f = basename(path);
-  if (ext && f.substr(-1 * ext.length) === ext) {
-    f = f.substr(0, f.length - ext.length);
-  }
-  return f;
-};
-
-exports.extname = function (path) {
-  if (typeof path !== 'string') path = path + '';
-  var startDot = -1;
-  var startPart = 0;
-  var end = -1;
-  var matchedSlash = true;
-  // Track the state of characters (if any) we see before our first dot and
-  // after any path separator we find
-  var preDotState = 0;
-  for (var i = path.length - 1; i >= 0; --i) {
-    var code = path.charCodeAt(i);
-    if (code === 47 /*/*/) {
-        // If we reached a path separator that was not part of a set of path
-        // separators at the end of the string, stop now
-        if (!matchedSlash) {
-          startPart = i + 1;
-          break;
-        }
-        continue;
-      }
-    if (end === -1) {
-      // We saw the first non-path separator, mark this as the end of our
-      // extension
-      matchedSlash = false;
-      end = i + 1;
-    }
-    if (code === 46 /*.*/) {
-        // If this is our first dot, mark it as the start of our extension
-        if (startDot === -1)
-          startDot = i;
-        else if (preDotState !== 1)
-          preDotState = 1;
-    } else if (startDot !== -1) {
-      // We saw a non-dot and non-path separator before our dot, so we should
-      // have a good chance at having a non-empty extension
-      preDotState = -1;
-    }
-  }
-
-  if (startDot === -1 || end === -1 ||
-      // We saw a non-dot character immediately before the dot
-      preDotState === 0 ||
-      // The (right-most) trimmed path component is exactly '..'
-      preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
-    return '';
-  }
-  return path.slice(startDot, end);
-};
-
-function filter (xs, f) {
-    if (xs.filter) return xs.filter(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        if (f(xs[i], i, xs)) res.push(xs[i]);
-    }
-    return res;
-}
-
-// String.prototype.substr - negative index don't work in IE8
-var substr = 'ab'.substr(-1) === 'b'
-    ? function (str, start, len) { return str.substr(start, len) }
-    : function (str, start, len) {
-        if (start < 0) start = str.length + start;
-        return str.substr(start, len);
-    }
-;
-
-},{"process":"../node_modules/process/browser.js"}],"../src/utilities/LRUCache.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.LRUCache = void 0;
-
-class LRUCache {
-  constructor() {
-    // options
-    this.maxSize = 800;
-    this.minSize = 600;
-    this.unloadPercent = 0.2;
-    this.usedSet = new Set();
-    this.itemSet = new Set();
-    this.itemList = [];
-    this.callbacks = new Map();
-  } // Returns whether or not the cache has reached the maximum size
-
-
-  isFull() {
-    return this.itemSet.size >= this.maxSize;
-  }
-
-  add(item, removeCb) {
-    const itemSet = this.itemSet;
-
-    if (itemSet.has(item)) {
-      return false;
-    }
-
-    if (this.isFull()) {
-      return false;
-    }
-
-    const usedSet = this.usedSet;
-    const itemList = this.itemList;
-    const callbacks = this.callbacks;
-    itemList.push(item);
-    usedSet.add(item);
-    itemSet.add(item);
-    callbacks.set(item, removeCb);
-    return true;
-  }
-
-  remove(item) {
-    const usedSet = this.usedSet;
-    const itemSet = this.itemSet;
-    const itemList = this.itemList;
-    const callbacks = this.callbacks;
-
-    if (itemSet.has(item)) {
-      callbacks.get(item)(item);
-      const index = itemList.indexOf(item);
-      itemList.splice(index, 1);
-      usedSet.delete(item);
-      itemSet.delete(item);
-      callbacks.delete(item);
-      return true;
-    }
-
-    return false;
-  }
-
-  markUsed(item) {
-    const itemSet = this.itemSet;
-    const usedSet = this.usedSet;
-
-    if (itemSet.has(item) && !usedSet.has(item)) {
-      const itemList = this.itemList;
-      const index = itemList.indexOf(item);
-      itemList.splice(index, 1);
-      itemList.push(item);
-      usedSet.add(item);
-    }
-  }
-
-  markAllUnused() {
-    this.usedSet.clear();
-  }
-
-  unloadUnusedContent(prioritySortCb) {
-    const unloadPercent = this.unloadPercent;
-    const targetSize = this.minSize;
-    const itemList = this.itemList;
-    const itemSet = this.itemSet;
-    const usedSet = this.usedSet;
-    const callbacks = this.callbacks;
-    const unused = itemList.length - usedSet.size;
-
-    if (itemList.length > targetSize && unused > 0) {
-      // TODO: sort by priority
-      let nodesToUnload = Math.max(itemList.length - targetSize, targetSize) * unloadPercent;
-      nodesToUnload = Math.ceil(nodesToUnload);
-      nodesToUnload = Math.min(unused, nodesToUnload);
-      const removedItems = itemList.splice(0, nodesToUnload);
-
-      for (let i = 0, l = removedItems.length; i < l; i++) {
-        const item = removedItems[i];
-        callbacks.get(item)(item);
-        itemSet.delete(item);
-        callbacks.delete(item);
-      }
-    }
-  }
-
-  scheduleUnload(prioritySortCb, markAllUnused = true) {
-    if (!this.scheduled) {
-      this.scheduled = true;
-      Promise.resolve().then(() => {
-        this.scheduled = false;
-        this.unloadUnusedContent(prioritySortCb);
-
-        if (markAllUnused) {
-          this.markAllUnused();
-        }
-      });
-    }
-  }
-
-}
-
-exports.LRUCache = LRUCache;
-},{}],"../src/utilities/PriorityQueue.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.PriorityQueue = void 0;
-
-class PriorityQueue {
-  constructor(maxJobs = 6) {
-    // options
-    this.maxJobs = maxJobs;
-    this.items = [];
-    this.currJobs = 0;
-    this.scheduled = false;
-  }
-
-  add(item, priority, callback) {
-    return new Promise((resolve, reject) => {
-      const prCallback = (...args) => callback(...args).then(resolve).catch(reject);
-
-      const items = this.items;
-
-      for (let i = 0, l = items.length; i < l; i++) {
-        const thisItem = items[i];
-
-        if (thisItem.priority > priority) {
-          items.splice(i, 0, {
-            priority,
-            item,
-            callback: prCallback
-          });
-          this.scheduleJobRun();
-          return;
-        }
-      }
-
-      items.push({
-        priority,
-        item,
-        callback: prCallback
-      });
-      this.scheduleJobRun();
-    });
-  }
-
-  remove(item) {
-    const items = this.items;
-
-    for (let i = 0, l = items.length; i < l; i++) {
-      const thisItem = items[i];
-
-      if (thisItem.item === item) {
-        items.splice(i, 1);
-        break;
-      }
-    }
-  }
-
-  tryRunJobs() {
-    const items = this.items;
-    const maxJobs = this.maxJobs;
-
-    while (maxJobs > this.currJobs && items.length > 0) {
-      this.currJobs++;
-      const {
-        item,
-        priority,
-        callback
-      } = items.pop();
-      callback(item, priority).then(() => {
-        this.currJobs--;
-        this.scheduleJobRun();
-      }).catch(() => {
-        this.currJobs--;
-        this.scheduleJobRun();
-      });
-    }
-  }
-
-  scheduleJobRun() {
-    if (!this.scheduled) {
-      Promise.resolve().then(() => {
-        this.tryRunJobs();
-        this.scheduled = false;
-      });
-      this.scheduled = true;
-    }
-  }
-
-}
-
-exports.PriorityQueue = PriorityQueue;
-},{}],"../src/base/constants.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.FAILED = exports.LOADED = exports.PARSING = exports.LOADING = exports.UNLOADED = void 0;
-const UNLOADED = 0;
-exports.UNLOADED = UNLOADED;
-const LOADING = 1;
-exports.LOADING = LOADING;
-const PARSING = 2;
-exports.PARSING = PARSING;
-const LOADED = 3;
-exports.LOADED = LOADED;
-const FAILED = 4;
-exports.FAILED = FAILED;
-},{}],"../src/base/traverseFunctions.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.traverseSet = traverseSet;
-exports.determineFrustumSet = determineFrustumSet;
-exports.markUsedSetLeaves = markUsedSetLeaves;
-exports.skipTraversal = skipTraversal;
-exports.toggleTiles = toggleTiles;
-
-var _constants = require("./constants.js");
-
-function isUsedThisFrame(tile, frameCount) {
-  return tile.__lastFrameVisited === frameCount && tile.__used;
-}
-
-function resetFrameState(tile, frameCount) {
-  if (tile.__lastFrameVisited !== frameCount) {
-    tile.__lastFrameVisited = frameCount;
-    tile.__used = false;
-    tile.__inFrustum = false;
-    tile.__isLeaf = false;
-    tile.__visible = false;
-    tile.__active = false;
-    tile.__error = 0;
-  }
-}
-
-function recursivelyMarkUsed(tile, frameCount, lruCache) {
-  resetFrameState(tile, frameCount);
-  tile.__used = true;
-  lruCache.markUsed(tile);
-
-  if (tile.__contentEmpty) {
-    const children = tile.children;
-
-    for (let i = 0, l = children.length; i < l; i++) {
-      recursivelyMarkUsed(children[i], frameCount, lruCache);
-    }
-  }
-}
-
-function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth = 0) {
-  if (beforeCb && beforeCb(tile, parent, depth)) {
-    if (afterCb) {
-      afterCb(tile, parent, depth);
-    }
-
-    return;
-  }
-
-  const children = tile.children;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    traverseSet(children[i], beforeCb, afterCb, tile, depth + 1);
-  }
-
-  if (afterCb) {
-    afterCb(tile, parent, depth);
-  }
-} // TODO: include frustum mask here?
-
-
-function determineFrustumSet(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
-  const errorTarget = renderer.errorTarget;
-  const maxDepth = renderer.maxDepth;
-  const loadSiblings = renderer.loadSiblings;
-  const lruCache = renderer.lruCache;
-  resetFrameState(tile, frameCount);
-  const inFrustum = renderer.tileInView(tile);
-
-  if (inFrustum === false) {
-    return false;
-  }
-
-  tile.__used = true;
-  lruCache.markUsed(tile);
-  tile.__inFrustum = true;
-  stats.inFrustum++;
-
-  if (!tile.__contentEmpty) {
-    const error = renderer.calculateError(tile);
-    tile.__error = error;
-
-    if (error <= errorTarget) {
-      return true;
-    }
-  }
-
-  if (renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth) {
-    return true;
-  }
-
-  let anyChildrenUsed = false;
-  const children = tile.children;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-    const r = determineFrustumSet(c, renderer);
-    anyChildrenUsed = anyChildrenUsed || r;
-  }
-
-  if (anyChildrenUsed && loadSiblings) {
-    for (let i = 0, l = children.length; i < l; i++) {
-      recursivelyMarkUsed(tile, frameCount, lruCache);
-    }
-  }
-
-  return true;
-}
-
-function markUsedSetLeaves(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
-
-  if (!isUsedThisFrame(tile, frameCount)) {
-    return;
-  }
-
-  stats.used++;
-  const children = tile.children;
-  let anyChildrenUsed = false;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-    anyChildrenUsed = anyChildrenUsed || isUsedThisFrame(c, frameCount);
-  }
-
-  if (!anyChildrenUsed) {
-    tile.__isLeaf = true; // TODO: stats
-  } else {
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
-      markUsedSetLeaves(c, renderer);
-    }
-  }
-}
-
-function skipTraversal(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
-
-  if (!isUsedThisFrame(tile, frameCount)) {
-    return;
-  }
-
-  const lruCache = renderer.lruCache;
-
-  if (tile.__isLeaf) {
-    if (tile.__loadingState === _constants.LOADED) {
-      if (tile.__inFrustum) {
-        tile.__visible = true;
-        stats.visible++;
-      }
-
-      tile.__active = true;
-      stats.active++;
-    } else if (!lruCache.isFull()) {
-      renderer.requestTileContents(tile);
-    }
-
-    return;
-  }
-
-  const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
-  const meetsSSE = tile.__error < errorRequirement;
-  const hasContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
-  const children = tile.children;
-  let allChildrenHaveContent = true;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-
-    if (isUsedThisFrame(c, frameCount)) {
-      const childContent = c.__loadingState === _constants.LOADED || tile.__contentEmpty;
-      allChildrenHaveContent = allChildrenHaveContent && childContent;
-    }
-  }
-
-  if (meetsSSE && !hasContent && !lruCache.isFull()) {
-    renderer.requestTileContents(tile);
-  }
-
-  if (meetsSSE && hasContent && !allChildrenHaveContent) {
-    if (tile.__inFrustum) {
-      tile.__visible = true;
-      stats.visible++;
-    }
-
-    tile.__active = true;
-    stats.active++;
-
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
-
-      if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
-        renderer.requestTileContents(c);
-      }
-    }
-
-    return;
-  }
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-
-    if (isUsedThisFrame(c, frameCount)) {
-      skipTraversal(c, renderer);
-    }
-  }
-}
-
-function toggleTiles(tile, renderer) {
-  const frameCount = renderer.frameCount;
-  const isUsed = isUsedThisFrame(tile, frameCount);
-
-  if (isUsed || tile.__usedLastFrame) {
-    if (!isUsed) {
-      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
-        renderer.setTileVisible(tile, false);
-        renderer.setTileActive(tile, false);
-      }
-
-      tile.__usedLastFrame = false;
-    } else {
-      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
-        // enable visibility if active due to shadows
-        renderer.setTileActive(tile, tile.__active);
-        renderer.setTileVisible(tile, tile.__active || tile.__visible);
-      }
-
-      tile.__usedLastFrame = true;
-    }
-
-    const children = tile.children;
-
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
-      toggleTiles(c, renderer);
-    }
-  }
-}
-},{"./constants.js":"../src/base/constants.js"}],"../src/base/TilesRendererBase.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.TilesRendererBase = void 0;
-
-var _path = _interopRequireDefault(require("path"));
-
-var _LRUCache = require("../utilities/LRUCache.js");
-
-var _PriorityQueue = require("../utilities/PriorityQueue.js");
-
-var _traverseFunctions = require("./traverseFunctions.js");
-
-var _constants = require("./constants.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// TODO: find out why tiles are left dangling in the hierarchy
-// TODO: Address the issue of too many promises, garbage collection
-// TODO: remove more redundant computation
-// TODO: See if using classes improves performance
-// TODO: See if declaring function inline improves performance
-// TODO: Make sure active state works as expected
-class TilesRendererBase {
-  get root() {
-    const tileSet = this.tileSets[this.rootSet];
-
-    if (!tileSet || tileSet instanceof Promise) {
-      return null;
-    } else {
-      return tileSet.root;
-    }
-  }
-
-  constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(1)) {
-    // state
-    this.tileSets = {};
-    this.rootSet = url;
-    this.lruCache = cache;
-    this.downloadQueue = downloadQueue;
-    this.parseQueue = parseQueue;
-    this.stats = {
-      parsing: 0,
-      downloading: 0,
-      inFrustum: 0,
-      used: 0,
-      active: 0,
-      visible: 0
-    };
-    this.frameCount = 0; // options
-
-    this.errorTarget = 6.0;
-    this.errorThreshold = 6.0;
-    this.loadSiblings = true;
-    this.maxDepth = Infinity;
-    this.loadTileSet(url);
-  }
-
-  traverse(cb) {
-    const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootSet];
-    if (!rootTileSet || !rootTileSet.root) return;
-    (0, _traverseFunctions.traverseSet)(rootTileSet.root, cb);
-  } // Public API
-
-
-  update() {
-    const stats = this.stats;
-    const lruCache = this.lruCache;
-    const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootSet];
-    if (!rootTileSet || !rootTileSet.root) return;
-    const root = rootTileSet.root;
-    stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
-    (0, _traverseFunctions.determineFrustumSet)(root, this);
-    (0, _traverseFunctions.markUsedSetLeaves)(root, this);
-    (0, _traverseFunctions.skipTraversal)(root, this);
-    (0, _traverseFunctions.toggleTiles)(root, this); // TODO: We may want to add this function in the requestTileContents function
-
-    lruCache.scheduleUnload(null);
-  } // Overrideable
-
-
-  parseTile(buffer, tile) {
-    return null;
-  }
-
-  disposeTile(tile) {}
-
-  preprocessNode(tile, parentTile, tileSetDir) {
-    if (tile.content) {
-      if (!('uri' in tile.content) && 'url' in tile.content) {
-        tile.content.uri = tile.content.url;
-        delete tile.content.url;
-      }
-
-      if (tile.content.uri) {
-        tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
-      } // TODO: fix for some cases where tilesets provide the bounding volume
-      // but volumes are not present. See
-
-
-      if (tile.content.boundingVolume && !('box' in tile.content.boundingVolume || 'sphere' in tile.content.boundingVolume || 'region' in tile.content.boundingVolume)) {
-        delete tile.content.boundingVolume;
-      }
-    }
-
-    tile.parent = parentTile;
-    tile.children = tile.children || [];
-    tile.__contentEmpty = !tile.content || !tile.content.uri;
-    tile.__error = 0.0;
-    tile.__inFrustum = false;
-    tile.__isLeaf = false;
-    tile.__wasUsed = false;
-    tile.__used = false;
-    tile.__wasVisible = false;
-    tile.__visible = false;
-    tile.__wasActive = false;
-    tile.__active = false;
-    tile.__childrenActive = false;
-    tile.__loadingState = _constants.UNLOADED;
-    tile.__loadIndex = 0;
-    tile.__loadAbort = null;
-
-    if (parentTile === null) {
-      tile.__depth = 0;
-    } else {
-      tile.__depth = parentTile.__depth + 1;
-    }
-  }
-
-  setTileActive(tile, state) {}
-
-  setTileVisible(tile, state) {}
-
-  calculateError(tile) {
-    return 0;
-  }
-
-  tileInView(tile) {
-    return true;
-  } // Private Functions
-
-
-  loadTileSet(url) {
-    const tileSets = this.tileSets;
-
-    if (!(url in tileSets)) {
-      const pr = fetch(url, {
-        credentials: 'same-origin'
-      }).then(res => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          throw new Error(`Status ${res.status} (${res.statusText})`);
-        }
-      }).then(json => {
-        // TODO: Add version query?
-        const version = json.asset.version;
-        console.assert(version === '1.0' || version === '0.0');
-
-        const basePath = _path.default.dirname(url);
-
-        (0, _traverseFunctions.traverseSet)(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
-        tileSets[url] = json; // TODO: schedule an update to avoid doing this too many times
-
-        this.update();
-      });
-      pr.catch(e => {
-        console.error(`TilesLoader: Failed to load tile set json "${url}"`);
-        console.error(e);
-        delete tileSets[url];
-      });
-      tileSets[url] = pr;
-    }
-
-    return Promise.resolve(tileSets[url]);
-  }
-
-  requestTileContents(tile) {
-    // If the tile is already being loaded then don't
-    // start it again.
-    if (tile.__loadingState !== _constants.UNLOADED) {
-      return;
-    } // TODO: reuse the functions created here?
-
-
-    const lruCache = this.lruCache;
-    const downloadQueue = this.downloadQueue;
-    const parseQueue = this.parseQueue;
-    lruCache.add(tile, t => {
-      if (t.__loadingState === _constants.LOADING) {
-        t.__loadAbort.abort();
-
-        t.__loadAbort = null;
-      } else {
-        this.disposeTile(t);
-      }
-
-      if (t.__loadingState === _constants.LOADING) {
-        stats.downloading--;
-      } else if (t.__loadingState === _constants.PARSING) {
-        stats.parsing--;
-      }
-
-      t.__loadingState = _constants.UNLOADED;
-      t.__loadIndex++; // TODO: Removing from the queues here is slow
-      // parseQueue.remove( t );
-      // downloadQueue.remove( t );
-    });
-    tile.__loadIndex++;
-    const loadIndex = tile.__loadIndex;
-    const priority = 1 / (tile.__depth + 1);
-    const stats = this.stats;
-    const controller = new AbortController();
-    const signal = controller.signal;
-    stats.downloading++;
-    tile.__loadAbort = controller;
-    tile.__loadingState = _constants.LOADING;
-    downloadQueue.add(tile, priority, tile => {
-      if (tile.__loadIndex !== loadIndex) {
-        return Promise.resolve();
-      }
-
-      return fetch(tile.content.uri, {
-        credentials: 'same-origin',
-        signal
-      });
-    }).then(res => {
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      if (res.ok) {
-        return res.arrayBuffer();
-      } else {
-        throw new Error(`Failed to load model with error code ${res.status}`);
-      }
-    }).then(buffer => {
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      stats.downloading--;
-      stats.parsing++;
-      tile.__loadAbort = null;
-      tile.__loadingState = _constants.PARSING;
-      return parseQueue.add(buffer, priority, buffer => {
-        if (tile.__loadIndex !== loadIndex) {
-          return Promise.resolve();
-        }
-
-        return this.parseTile(buffer, tile);
-      });
-    }).then(() => {
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      stats.parsing--;
-      tile.__loadingState = _constants.LOADED;
-      this.setTileActive(tile, tile.__active);
-      this.setTileVisible(tile, tile.__visible);
-    }).catch(e => {
-      // if it has been unloaded then the tile has been disposed
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      if (e.name !== 'AbortError') {
-        console.error('TilesRenderer : Failed to load tile.');
-        console.error(e);
-        tile.__loadingState = _constants.FAILED;
-      } else {
-        lruCache.remove(tile);
-      }
-    });
-  }
-
-}
-
-exports.TilesRendererBase = TilesRendererBase;
-},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.B3DMLoaderBase = void 0;
-
-// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
-// convert an array of numbers to a string
-function arrayToString(array) {
-  let str = '';
-
-  for (let i = 0, l = array.length; i < l; i++) {
-    str += String.fromCharCode(array[i]);
-  }
-
-  return str;
-}
-
-class B3DMLoaderBase {
-  constructor() {
-    this.fetchOptions = {};
-  }
-
-  load(url) {
-    return fetch(url, this.fetchOptions).then(res => res.arrayBuffer()).then(buffer => this.parse(buffer));
-  }
-
-  parse(buffer) {
-    const dataView = new DataView(buffer); // 28-byte header
-    // 4 bytes
-
-    const magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
-    console.assert(magic === 'b3dm'); // 4 bytes
-
-    const version = dataView.getUint32(4, true);
-    console.assert(version === 1); // 4 bytes
-
-    const byteLength = dataView.getUint32(8, true);
-    console.assert(byteLength === buffer.byteLength); // 4 bytes
-
-    const featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
-
-    const featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
-
-    const batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
-
-    const batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
-
-    const featureTableStart = 28;
-    const jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
-    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData)); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
-    // TODO: dereference the json feature table data in to the binary array.
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-    // Batch Table
-
-    const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-    const jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
-    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData)); // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
-    // TODO: dereference the json batch table data in to the binary array.
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-
-    const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-    const glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
-
-    return {
-      version,
-      featureTable: jsonFeatureTable,
-      batchTable: jsonBatchTable,
-      glbBytes
-    };
-  }
-
-}
-
-exports.B3DMLoaderBase = B3DMLoaderBase;
-},{}],"../node_modules/three/build/three.module.js":[function(require,module,exports) {
+})({"../node_modules/three/build/three.module.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -35840,6 +34483,1370 @@ if (typeof __THREE_DEVTOOLS__ !== 'undefined') {
   /* eslint-enable no-undef */
 
 }
+},{}],"../node_modules/process/browser.js":[function(require,module,exports) {
+
+// shim for using process in browser
+var process = module.exports = {}; // cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+  throw new Error('setTimeout has not been defined');
+}
+
+function defaultClearTimeout() {
+  throw new Error('clearTimeout has not been defined');
+}
+
+(function () {
+  try {
+    if (typeof setTimeout === 'function') {
+      cachedSetTimeout = setTimeout;
+    } else {
+      cachedSetTimeout = defaultSetTimout;
+    }
+  } catch (e) {
+    cachedSetTimeout = defaultSetTimout;
+  }
+
+  try {
+    if (typeof clearTimeout === 'function') {
+      cachedClearTimeout = clearTimeout;
+    } else {
+      cachedClearTimeout = defaultClearTimeout;
+    }
+  } catch (e) {
+    cachedClearTimeout = defaultClearTimeout;
+  }
+})();
+
+function runTimeout(fun) {
+  if (cachedSetTimeout === setTimeout) {
+    //normal enviroments in sane situations
+    return setTimeout(fun, 0);
+  } // if setTimeout wasn't available but was latter defined
+
+
+  if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+    cachedSetTimeout = setTimeout;
+    return setTimeout(fun, 0);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedSetTimeout(fun, 0);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+      return cachedSetTimeout.call(null, fun, 0);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+      return cachedSetTimeout.call(this, fun, 0);
+    }
+  }
+}
+
+function runClearTimeout(marker) {
+  if (cachedClearTimeout === clearTimeout) {
+    //normal enviroments in sane situations
+    return clearTimeout(marker);
+  } // if clearTimeout wasn't available but was latter defined
+
+
+  if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+    cachedClearTimeout = clearTimeout;
+    return clearTimeout(marker);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedClearTimeout(marker);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+      return cachedClearTimeout.call(null, marker);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+      // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+      return cachedClearTimeout.call(this, marker);
+    }
+  }
+}
+
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+  if (!draining || !currentQueue) {
+    return;
+  }
+
+  draining = false;
+
+  if (currentQueue.length) {
+    queue = currentQueue.concat(queue);
+  } else {
+    queueIndex = -1;
+  }
+
+  if (queue.length) {
+    drainQueue();
+  }
+}
+
+function drainQueue() {
+  if (draining) {
+    return;
+  }
+
+  var timeout = runTimeout(cleanUpNextTick);
+  draining = true;
+  var len = queue.length;
+
+  while (len) {
+    currentQueue = queue;
+    queue = [];
+
+    while (++queueIndex < len) {
+      if (currentQueue) {
+        currentQueue[queueIndex].run();
+      }
+    }
+
+    queueIndex = -1;
+    len = queue.length;
+  }
+
+  currentQueue = null;
+  draining = false;
+  runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+  var args = new Array(arguments.length - 1);
+
+  if (arguments.length > 1) {
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+  }
+
+  queue.push(new Item(fun, args));
+
+  if (queue.length === 1 && !draining) {
+    runTimeout(drainQueue);
+  }
+}; // v8 likes predictible objects
+
+
+function Item(fun, array) {
+  this.fun = fun;
+  this.array = array;
+}
+
+Item.prototype.run = function () {
+  this.fun.apply(null, this.array);
+};
+
+process.title = 'browser';
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) {
+  return [];
+};
+
+process.binding = function (name) {
+  throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () {
+  return '/';
+};
+
+process.chdir = function (dir) {
+  throw new Error('process.chdir is not supported');
+};
+
+process.umask = function () {
+  return 0;
+};
+},{}],"../node_modules/path-browserify/index.js":[function(require,module,exports) {
+var process = require("process");
+// .dirname, .basename, and .extname methods are extracted from Node.js v8.11.1,
+// backported and transplited with Babel, with backwards-compat fixes
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
+function normalizeArray(parts, allowAboveRoot) {
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var last = parts[i];
+    if (last === '.') {
+      parts.splice(i, 1);
+    } else if (last === '..') {
+      parts.splice(i, 1);
+      up++;
+    } else if (up) {
+      parts.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (allowAboveRoot) {
+    for (; up--; up) {
+      parts.unshift('..');
+    }
+  }
+
+  return parts;
+}
+
+// path.resolve([from ...], to)
+// posix version
+exports.resolve = function() {
+  var resolvedPath = '',
+      resolvedAbsolute = false;
+
+  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+    // Skip empty and invalid entries
+    if (typeof path !== 'string') {
+      throw new TypeError('Arguments to path.resolve must be strings');
+    } else if (!path) {
+      continue;
+    }
+
+    resolvedPath = path + '/' + resolvedPath;
+    resolvedAbsolute = path.charAt(0) === '/';
+  }
+
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+  // Normalize the path
+  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+    return !!p;
+  }), !resolvedAbsolute).join('/');
+
+  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+
+// path.normalize(path)
+// posix version
+exports.normalize = function(path) {
+  var isAbsolute = exports.isAbsolute(path),
+      trailingSlash = substr(path, -1) === '/';
+
+  // Normalize the path
+  path = normalizeArray(filter(path.split('/'), function(p) {
+    return !!p;
+  }), !isAbsolute).join('/');
+
+  if (!path && !isAbsolute) {
+    path = '.';
+  }
+  if (path && trailingSlash) {
+    path += '/';
+  }
+
+  return (isAbsolute ? '/' : '') + path;
+};
+
+// posix version
+exports.isAbsolute = function(path) {
+  return path.charAt(0) === '/';
+};
+
+// posix version
+exports.join = function() {
+  var paths = Array.prototype.slice.call(arguments, 0);
+  return exports.normalize(filter(paths, function(p, index) {
+    if (typeof p !== 'string') {
+      throw new TypeError('Arguments to path.join must be strings');
+    }
+    return p;
+  }).join('/'));
+};
+
+
+// path.relative(from, to)
+// posix version
+exports.relative = function(from, to) {
+  from = exports.resolve(from).substr(1);
+  to = exports.resolve(to).substr(1);
+
+  function trim(arr) {
+    var start = 0;
+    for (; start < arr.length; start++) {
+      if (arr[start] !== '') break;
+    }
+
+    var end = arr.length - 1;
+    for (; end >= 0; end--) {
+      if (arr[end] !== '') break;
+    }
+
+    if (start > end) return [];
+    return arr.slice(start, end - start + 1);
+  }
+
+  var fromParts = trim(from.split('/'));
+  var toParts = trim(to.split('/'));
+
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+    if (fromParts[i] !== toParts[i]) {
+      samePartsLength = i;
+      break;
+    }
+  }
+
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+    outputParts.push('..');
+  }
+
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+  return outputParts.join('/');
+};
+
+exports.sep = '/';
+exports.delimiter = ':';
+
+exports.dirname = function (path) {
+  if (typeof path !== 'string') path = path + '';
+  if (path.length === 0) return '.';
+  var code = path.charCodeAt(0);
+  var hasRoot = code === 47 /*/*/;
+  var end = -1;
+  var matchedSlash = true;
+  for (var i = path.length - 1; i >= 1; --i) {
+    code = path.charCodeAt(i);
+    if (code === 47 /*/*/) {
+        if (!matchedSlash) {
+          end = i;
+          break;
+        }
+      } else {
+      // We saw the first non-path separator
+      matchedSlash = false;
+    }
+  }
+
+  if (end === -1) return hasRoot ? '/' : '.';
+  if (hasRoot && end === 1) {
+    // return '//';
+    // Backwards-compat fix:
+    return '/';
+  }
+  return path.slice(0, end);
+};
+
+function basename(path) {
+  if (typeof path !== 'string') path = path + '';
+
+  var start = 0;
+  var end = -1;
+  var matchedSlash = true;
+  var i;
+
+  for (i = path.length - 1; i >= 0; --i) {
+    if (path.charCodeAt(i) === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          start = i + 1;
+          break;
+        }
+      } else if (end === -1) {
+      // We saw the first non-path separator, mark this as the end of our
+      // path component
+      matchedSlash = false;
+      end = i + 1;
+    }
+  }
+
+  if (end === -1) return '';
+  return path.slice(start, end);
+}
+
+// Uses a mixed approach for backwards-compatibility, as ext behavior changed
+// in new Node.js versions, so only basename() above is backported here
+exports.basename = function (path, ext) {
+  var f = basename(path);
+  if (ext && f.substr(-1 * ext.length) === ext) {
+    f = f.substr(0, f.length - ext.length);
+  }
+  return f;
+};
+
+exports.extname = function (path) {
+  if (typeof path !== 'string') path = path + '';
+  var startDot = -1;
+  var startPart = 0;
+  var end = -1;
+  var matchedSlash = true;
+  // Track the state of characters (if any) we see before our first dot and
+  // after any path separator we find
+  var preDotState = 0;
+  for (var i = path.length - 1; i >= 0; --i) {
+    var code = path.charCodeAt(i);
+    if (code === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          startPart = i + 1;
+          break;
+        }
+        continue;
+      }
+    if (end === -1) {
+      // We saw the first non-path separator, mark this as the end of our
+      // extension
+      matchedSlash = false;
+      end = i + 1;
+    }
+    if (code === 46 /*.*/) {
+        // If this is our first dot, mark it as the start of our extension
+        if (startDot === -1)
+          startDot = i;
+        else if (preDotState !== 1)
+          preDotState = 1;
+    } else if (startDot !== -1) {
+      // We saw a non-dot and non-path separator before our dot, so we should
+      // have a good chance at having a non-empty extension
+      preDotState = -1;
+    }
+  }
+
+  if (startDot === -1 || end === -1 ||
+      // We saw a non-dot character immediately before the dot
+      preDotState === 0 ||
+      // The (right-most) trimmed path component is exactly '..'
+      preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
+    return '';
+  }
+  return path.slice(startDot, end);
+};
+
+function filter (xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+}
+
+// String.prototype.substr - negative index don't work in IE8
+var substr = 'ab'.substr(-1) === 'b'
+    ? function (str, start, len) { return str.substr(start, len) }
+    : function (str, start, len) {
+        if (start < 0) start = str.length + start;
+        return str.substr(start, len);
+    }
+;
+
+},{"process":"../node_modules/process/browser.js"}],"../src/utilities/LRUCache.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.LRUCache = void 0;
+
+// TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
+class LRUCache {
+  constructor() {
+    // options
+    this.maxSize = 800;
+    this.minSize = 600;
+    this.unloadPercent = 0.2;
+    this.usedSet = new Set();
+    this.itemSet = new Set();
+    this.itemList = [];
+    this.callbacks = new Map();
+  } // Returns whether or not the cache has reached the maximum size
+
+
+  isFull() {
+    return this.itemSet.size >= this.maxSize;
+  }
+
+  add(item, removeCb) {
+    const itemSet = this.itemSet;
+
+    if (itemSet.has(item)) {
+      return false;
+    }
+
+    if (this.isFull()) {
+      return false;
+    }
+
+    const usedSet = this.usedSet;
+    const itemList = this.itemList;
+    const callbacks = this.callbacks;
+    itemList.push(item);
+    usedSet.add(item);
+    itemSet.add(item);
+    callbacks.set(item, removeCb);
+    return true;
+  }
+
+  remove(item) {
+    const usedSet = this.usedSet;
+    const itemSet = this.itemSet;
+    const itemList = this.itemList;
+    const callbacks = this.callbacks;
+
+    if (itemSet.has(item)) {
+      callbacks.get(item)(item);
+      const index = itemList.indexOf(item);
+      itemList.splice(index, 1);
+      usedSet.delete(item);
+      itemSet.delete(item);
+      callbacks.delete(item);
+      return true;
+    }
+
+    return false;
+  }
+
+  markUsed(item) {
+    const itemSet = this.itemSet;
+    const usedSet = this.usedSet;
+
+    if (itemSet.has(item) && !usedSet.has(item)) {
+      const itemList = this.itemList;
+      const index = itemList.indexOf(item);
+      itemList.splice(index, 1);
+      itemList.push(item);
+      usedSet.add(item);
+    }
+  }
+
+  markAllUnused() {
+    this.usedSet.clear();
+  } // TODO: this should be renamed because it's not necessarily unloading all unused content
+  // Maybe call it "cleanup" or "unloadToMinSize"
+
+
+  unloadUnusedContent(prioritySortCb) {
+    const unloadPercent = this.unloadPercent;
+    const targetSize = this.minSize;
+    const itemList = this.itemList;
+    const itemSet = this.itemSet;
+    const usedSet = this.usedSet;
+    const callbacks = this.callbacks;
+    const unused = itemList.length - usedSet.size;
+
+    if (itemList.length > targetSize && unused > 0) {
+      // TODO: sort by priority
+      let nodesToUnload = Math.max(itemList.length - targetSize, targetSize) * unloadPercent;
+      nodesToUnload = Math.ceil(nodesToUnload);
+      nodesToUnload = Math.min(unused, nodesToUnload);
+      const removedItems = itemList.splice(0, nodesToUnload);
+
+      for (let i = 0, l = removedItems.length; i < l; i++) {
+        const item = removedItems[i];
+        callbacks.get(item)(item);
+        itemSet.delete(item);
+        callbacks.delete(item);
+      }
+    }
+  }
+
+  scheduleUnload(prioritySortCb, markAllUnused = true) {
+    if (!this.scheduled) {
+      this.scheduled = true;
+      Promise.resolve().then(() => {
+        this.scheduled = false;
+        this.unloadUnusedContent(prioritySortCb);
+
+        if (markAllUnused) {
+          this.markAllUnused();
+        }
+      });
+    }
+  }
+
+}
+
+exports.LRUCache = LRUCache;
+},{}],"../src/utilities/PriorityQueue.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PriorityQueue = void 0;
+
+class PriorityQueue {
+  constructor(maxJobs = 6) {
+    // options
+    this.maxJobs = maxJobs;
+    this.items = [];
+    this.currJobs = 0;
+    this.scheduled = false;
+  }
+
+  add(item, priority, callback) {
+    return new Promise((resolve, reject) => {
+      const prCallback = (...args) => callback(...args).then(resolve).catch(reject);
+
+      const items = this.items;
+
+      for (let i = 0, l = items.length; i < l; i++) {
+        const thisItem = items[i];
+
+        if (thisItem.priority > priority) {
+          items.splice(i, 0, {
+            priority,
+            item,
+            callback: prCallback
+          });
+          this.scheduleJobRun();
+          return;
+        }
+      }
+
+      items.push({
+        priority,
+        item,
+        callback: prCallback
+      });
+      this.scheduleJobRun();
+    });
+  }
+
+  remove(item) {
+    const items = this.items;
+
+    for (let i = 0, l = items.length; i < l; i++) {
+      const thisItem = items[i];
+
+      if (thisItem.item === item) {
+        items.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  tryRunJobs() {
+    const items = this.items;
+    const maxJobs = this.maxJobs;
+
+    while (maxJobs > this.currJobs && items.length > 0) {
+      this.currJobs++;
+      const {
+        item,
+        priority,
+        callback
+      } = items.pop();
+      callback(item, priority).then(() => {
+        this.currJobs--;
+        this.scheduleJobRun();
+      }).catch(() => {
+        this.currJobs--;
+        this.scheduleJobRun();
+      });
+    }
+  }
+
+  scheduleJobRun() {
+    if (!this.scheduled) {
+      Promise.resolve().then(() => {
+        this.tryRunJobs();
+        this.scheduled = false;
+      });
+      this.scheduled = true;
+    }
+  }
+
+}
+
+exports.PriorityQueue = PriorityQueue;
+},{}],"../src/base/constants.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.FAILED = exports.LOADED = exports.PARSING = exports.LOADING = exports.UNLOADED = void 0;
+const UNLOADED = 0;
+exports.UNLOADED = UNLOADED;
+const LOADING = 1;
+exports.LOADING = LOADING;
+const PARSING = 2;
+exports.PARSING = PARSING;
+const LOADED = 3;
+exports.LOADED = LOADED;
+const FAILED = 4;
+exports.FAILED = FAILED;
+},{}],"../src/base/traverseFunctions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.traverseSet = traverseSet;
+exports.determineFrustumSet = determineFrustumSet;
+exports.markUsedSetLeaves = markUsedSetLeaves;
+exports.skipTraversal = skipTraversal;
+exports.toggleTiles = toggleTiles;
+
+var _constants = require("./constants.js");
+
+function isUsedThisFrame(tile, frameCount) {
+  return tile.__lastFrameVisited === frameCount && tile.__used;
+}
+
+function resetFrameState(tile, frameCount) {
+  if (tile.__lastFrameVisited !== frameCount) {
+    tile.__lastFrameVisited = frameCount;
+    tile.__used = false;
+    tile.__inFrustum = false;
+    tile.__isLeaf = false;
+    tile.__visible = false;
+    tile.__active = false;
+    tile.__error = 0;
+  }
+}
+
+function recursivelyMarkUsed(tile, frameCount, lruCache) {
+  resetFrameState(tile, frameCount);
+  tile.__used = true;
+  lruCache.markUsed(tile);
+
+  if (tile.__contentEmpty) {
+    const children = tile.children;
+
+    for (let i = 0, l = children.length; i < l; i++) {
+      recursivelyMarkUsed(children[i], frameCount, lruCache);
+    }
+  }
+}
+
+function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth = 0) {
+  if (beforeCb && beforeCb(tile, parent, depth)) {
+    if (afterCb) {
+      afterCb(tile, parent, depth);
+    }
+
+    return;
+  }
+
+  const children = tile.children;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    traverseSet(children[i], beforeCb, afterCb, tile, depth + 1);
+  }
+
+  if (afterCb) {
+    afterCb(tile, parent, depth);
+  }
+} // TODO: include frustum mask here?
+
+
+function determineFrustumSet(tile, renderer) {
+  const stats = renderer.stats;
+  const frameCount = renderer.frameCount;
+  const errorTarget = renderer.errorTarget;
+  const maxDepth = renderer.maxDepth;
+  const loadSiblings = renderer.loadSiblings;
+  const lruCache = renderer.lruCache;
+  resetFrameState(tile, frameCount);
+  const inFrustum = renderer.tileInView(tile);
+
+  if (inFrustum === false) {
+    return false;
+  }
+
+  tile.__used = true;
+  lruCache.markUsed(tile);
+  tile.__inFrustum = true;
+  stats.inFrustum++;
+
+  if (!tile.__contentEmpty) {
+    const error = renderer.calculateError(tile);
+    tile.__error = error;
+
+    if (error <= errorTarget) {
+      return true;
+    }
+  }
+
+  if (renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth) {
+    return true;
+  }
+
+  let anyChildrenUsed = false;
+  const children = tile.children;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    const c = children[i];
+    const r = determineFrustumSet(c, renderer);
+    anyChildrenUsed = anyChildrenUsed || r;
+  }
+
+  if (anyChildrenUsed && loadSiblings) {
+    for (let i = 0, l = children.length; i < l; i++) {
+      recursivelyMarkUsed(tile, frameCount, lruCache);
+    }
+  }
+
+  return true;
+}
+
+function markUsedSetLeaves(tile, renderer) {
+  const stats = renderer.stats;
+  const frameCount = renderer.frameCount;
+
+  if (!isUsedThisFrame(tile, frameCount)) {
+    return;
+  }
+
+  stats.used++;
+  const children = tile.children;
+  let anyChildrenUsed = false;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    const c = children[i];
+    anyChildrenUsed = anyChildrenUsed || isUsedThisFrame(c, frameCount);
+  }
+
+  if (!anyChildrenUsed) {
+    tile.__isLeaf = true; // TODO: stats
+  } else {
+    for (let i = 0, l = children.length; i < l; i++) {
+      const c = children[i];
+      markUsedSetLeaves(c, renderer);
+    }
+  }
+}
+
+function skipTraversal(tile, renderer) {
+  const stats = renderer.stats;
+  const frameCount = renderer.frameCount;
+
+  if (!isUsedThisFrame(tile, frameCount)) {
+    return;
+  }
+
+  const lruCache = renderer.lruCache;
+
+  if (tile.__isLeaf) {
+    if (tile.__loadingState === _constants.LOADED) {
+      if (tile.__inFrustum) {
+        tile.__visible = true;
+        stats.visible++;
+      }
+
+      tile.__active = true;
+      stats.active++;
+    } else if (!lruCache.isFull()) {
+      renderer.requestTileContents(tile);
+    }
+
+    return;
+  }
+
+  const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
+  const meetsSSE = tile.__error < errorRequirement;
+  const hasContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
+  const children = tile.children;
+  let allChildrenHaveContent = true;
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    const c = children[i];
+
+    if (isUsedThisFrame(c, frameCount)) {
+      const childContent = c.__loadingState === _constants.LOADED || tile.__contentEmpty;
+      allChildrenHaveContent = allChildrenHaveContent && childContent;
+    }
+  }
+
+  if (meetsSSE && !hasContent && !lruCache.isFull()) {
+    renderer.requestTileContents(tile);
+  }
+
+  if (meetsSSE && hasContent && !allChildrenHaveContent) {
+    if (tile.__inFrustum) {
+      tile.__visible = true;
+      stats.visible++;
+    }
+
+    tile.__active = true;
+    stats.active++;
+
+    for (let i = 0, l = children.length; i < l; i++) {
+      const c = children[i];
+
+      if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
+        renderer.requestTileContents(c);
+      }
+    }
+
+    return;
+  }
+
+  for (let i = 0, l = children.length; i < l; i++) {
+    const c = children[i];
+
+    if (isUsedThisFrame(c, frameCount)) {
+      skipTraversal(c, renderer);
+    }
+  }
+}
+
+function toggleTiles(tile, renderer) {
+  const frameCount = renderer.frameCount;
+  const isUsed = isUsedThisFrame(tile, frameCount);
+
+  if (isUsed || tile.__usedLastFrame) {
+    if (!isUsed) {
+      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
+        renderer.setTileVisible(tile, false);
+        renderer.setTileActive(tile, false);
+      }
+
+      tile.__usedLastFrame = false;
+    } else {
+      if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
+        // enable visibility if active due to shadows
+        renderer.setTileActive(tile, tile.__active);
+        renderer.setTileVisible(tile, tile.__active || tile.__visible);
+      }
+
+      tile.__usedLastFrame = true;
+    }
+
+    const children = tile.children;
+
+    for (let i = 0, l = children.length; i < l; i++) {
+      const c = children[i];
+      toggleTiles(c, renderer);
+    }
+  }
+}
+},{"./constants.js":"../src/base/constants.js"}],"../src/base/TilesRendererBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TilesRendererBase = void 0;
+
+var _path = _interopRequireDefault(require("path"));
+
+var _LRUCache = require("../utilities/LRUCache.js");
+
+var _PriorityQueue = require("../utilities/PriorityQueue.js");
+
+var _traverseFunctions = require("./traverseFunctions.js");
+
+var _constants = require("./constants.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// TODO: find out why tiles are left dangling in the hierarchy
+// TODO: Address the issue of too many promises, garbage collection
+// TODO: remove more redundant computation
+// TODO: See if using classes improves performance
+// TODO: See if declaring function inline improves performance
+// TODO: Make sure active state works as expected
+class TilesRendererBase {
+  get root() {
+    const tileSet = this.tileSets[this.rootSet];
+
+    if (!tileSet || tileSet instanceof Promise) {
+      return null;
+    } else {
+      return tileSet.root;
+    }
+  }
+
+  constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(1)) {
+    // state
+    this.tileSets = {};
+    this.rootSet = url;
+    this.lruCache = cache;
+    this.fetchOptions = {};
+    this.downloadQueue = downloadQueue;
+    this.parseQueue = parseQueue;
+    this.stats = {
+      parsing: 0,
+      downloading: 0,
+      inFrustum: 0,
+      used: 0,
+      active: 0,
+      visible: 0
+    };
+    this.frameCount = 0; // options
+
+    this.errorTarget = 6.0;
+    this.errorThreshold = 6.0;
+    this.loadSiblings = true;
+    this.maxDepth = Infinity;
+  }
+
+  traverse(cb) {
+    const tileSets = this.tileSets;
+    const rootTileSet = tileSets[this.rootSet];
+    if (!rootTileSet || !rootTileSet.root) return;
+    (0, _traverseFunctions.traverseSet)(rootTileSet.root, cb);
+  } // Public API
+
+
+  update() {
+    const stats = this.stats;
+    const lruCache = this.lruCache;
+    const tileSets = this.tileSets;
+    const rootTileSet = tileSets[this.rootSet];
+
+    if (!(this.rootSet in tileSets)) {
+      this.loadTileSet(this.rootSet);
+      return;
+    } else if (!rootTileSet || !rootTileSet.root) {
+      return;
+    }
+
+    const root = rootTileSet.root;
+    stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
+    (0, _traverseFunctions.determineFrustumSet)(root, this);
+    (0, _traverseFunctions.markUsedSetLeaves)(root, this);
+    (0, _traverseFunctions.skipTraversal)(root, this);
+    (0, _traverseFunctions.toggleTiles)(root, this); // TODO: We may want to add this function in the requestTileContents function
+
+    lruCache.scheduleUnload(null);
+  } // Overrideable
+
+
+  parseTile(buffer, tile) {
+    return null;
+  }
+
+  disposeTile(tile) {}
+
+  preprocessNode(tile, parentTile, tileSetDir) {
+    if (tile.content) {
+      if (!('uri' in tile.content) && 'url' in tile.content) {
+        tile.content.uri = tile.content.url;
+        delete tile.content.url;
+      }
+
+      if (tile.content.uri) {
+        tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
+      } // TODO: fix for some cases where tilesets provide the bounding volume
+      // but volumes are not present. See
+
+
+      if (tile.content.boundingVolume && !('box' in tile.content.boundingVolume || 'sphere' in tile.content.boundingVolume || 'region' in tile.content.boundingVolume)) {
+        delete tile.content.boundingVolume;
+      }
+    }
+
+    tile.parent = parentTile;
+    tile.children = tile.children || [];
+    tile.__contentEmpty = !tile.content || !tile.content.uri;
+    tile.__error = 0.0;
+    tile.__inFrustum = false;
+    tile.__isLeaf = false;
+    tile.__wasUsed = false;
+    tile.__used = false;
+    tile.__wasVisible = false;
+    tile.__visible = false;
+    tile.__wasActive = false;
+    tile.__active = false;
+    tile.__childrenActive = false;
+    tile.__loadingState = _constants.UNLOADED;
+    tile.__loadIndex = 0;
+    tile.__loadAbort = null;
+
+    if (parentTile === null) {
+      tile.__depth = 0;
+    } else {
+      tile.__depth = parentTile.__depth + 1;
+    }
+  }
+
+  setTileActive(tile, state) {}
+
+  setTileVisible(tile, state) {}
+
+  calculateError(tile) {
+    return 0;
+  }
+
+  tileInView(tile) {
+    return true;
+  } // Private Functions
+
+
+  loadTileSet(url) {
+    const tileSets = this.tileSets;
+
+    if (!(url in tileSets)) {
+      const pr = fetch(url, this.fetchOptions).then(res => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error(`Status ${res.status} (${res.statusText})`);
+        }
+      }).then(json => {
+        // TODO: Add version query?
+        const version = json.asset.version;
+        console.assert(version === '1.0' || version === '0.0');
+
+        const basePath = _path.default.dirname(url);
+
+        (0, _traverseFunctions.traverseSet)(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
+        tileSets[url] = json; // TODO: schedule an update to avoid doing this too many times
+
+        this.update();
+      });
+      pr.catch(e => {
+        console.error(`TilesLoader: Failed to load tile set json "${url}"`);
+        console.error(e);
+        delete tileSets[url];
+      });
+      tileSets[url] = pr;
+    }
+
+    return Promise.resolve(tileSets[url]);
+  }
+
+  requestTileContents(tile) {
+    // If the tile is already being loaded then don't
+    // start it again.
+    if (tile.__loadingState !== _constants.UNLOADED) {
+      return;
+    } // TODO: reuse the functions created here?
+
+
+    const lruCache = this.lruCache;
+    const downloadQueue = this.downloadQueue;
+    const parseQueue = this.parseQueue;
+    lruCache.add(tile, t => {
+      if (t.__loadingState === _constants.LOADING) {
+        t.__loadAbort.abort();
+
+        t.__loadAbort = null;
+      } else {
+        this.disposeTile(t);
+      }
+
+      if (t.__loadingState === _constants.LOADING) {
+        stats.downloading--;
+      } else if (t.__loadingState === _constants.PARSING) {
+        stats.parsing--;
+      }
+
+      t.__loadingState = _constants.UNLOADED;
+      t.__loadIndex++; // TODO: Removing from the queues here is slow
+      // parseQueue.remove( t );
+      // downloadQueue.remove( t );
+    });
+    tile.__loadIndex++;
+    const loadIndex = tile.__loadIndex;
+    const priority = 1 / (tile.__depth + 1);
+    const stats = this.stats;
+    const controller = new AbortController();
+    const signal = controller.signal;
+    stats.downloading++;
+    tile.__loadAbort = controller;
+    tile.__loadingState = _constants.LOADING;
+    downloadQueue.add(tile, priority, tile => {
+      if (tile.__loadIndex !== loadIndex) {
+        return Promise.resolve();
+      }
+
+      return fetch(tile.content.uri, Object.assign({
+        signal
+      }, this.fetchOptions));
+    }).then(res => {
+      if (tile.__loadIndex !== loadIndex) {
+        return;
+      }
+
+      if (res.ok) {
+        return res.arrayBuffer();
+      } else {
+        throw new Error(`Failed to load model with error code ${res.status}`);
+      }
+    }).then(buffer => {
+      if (tile.__loadIndex !== loadIndex) {
+        return;
+      }
+
+      stats.downloading--;
+      stats.parsing++;
+      tile.__loadAbort = null;
+      tile.__loadingState = _constants.PARSING;
+      return parseQueue.add(buffer, priority, buffer => {
+        if (tile.__loadIndex !== loadIndex) {
+          return Promise.resolve();
+        }
+
+        return this.parseTile(buffer, tile);
+      });
+    }).then(() => {
+      if (tile.__loadIndex !== loadIndex) {
+        return;
+      }
+
+      stats.parsing--;
+      tile.__loadingState = _constants.LOADED;
+      this.setTileActive(tile, tile.__active);
+      this.setTileVisible(tile, tile.__visible);
+    }).catch(e => {
+      // if it has been unloaded then the tile has been disposed
+      if (tile.__loadIndex !== loadIndex) {
+        return;
+      }
+
+      if (e.name !== 'AbortError') {
+        console.error('TilesRenderer : Failed to load tile.');
+        console.error(e);
+        tile.__loadingState = _constants.FAILED;
+      } else {
+        lruCache.remove(tile);
+      }
+    });
+  }
+
+}
+
+exports.TilesRendererBase = TilesRendererBase;
+},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.B3DMLoaderBase = void 0;
+
+// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
+// convert an array of numbers to a string
+function arrayToString(array) {
+  let str = '';
+
+  for (let i = 0, l = array.length; i < l; i++) {
+    str += String.fromCharCode(array[i]);
+  }
+
+  return str;
+}
+
+class B3DMLoaderBase {
+  constructor() {
+    this.fetchOptions = {};
+  }
+
+  load(url) {
+    return fetch(url, this.fetchOptions).then(res => res.arrayBuffer()).then(buffer => this.parse(buffer));
+  }
+
+  parse(buffer) {
+    const dataView = new DataView(buffer); // 28-byte header
+    // 4 bytes
+
+    const magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
+    console.assert(magic === 'b3dm'); // 4 bytes
+
+    const version = dataView.getUint32(4, true);
+    console.assert(version === 1); // 4 bytes
+
+    const byteLength = dataView.getUint32(8, true);
+    console.assert(byteLength === buffer.byteLength); // 4 bytes
+
+    const featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
+
+    const featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
+
+    const batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
+
+    const batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
+
+    const featureTableStart = 28;
+    const jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
+    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData)); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
+    // TODO: dereference the json feature table data in to the binary array.
+    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+    // Batch Table
+
+    const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
+    const jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
+    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData)); // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+    // TODO: dereference the json batch table data in to the binary array.
+    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+
+    const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
+    const glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
+    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
+
+    return {
+      version,
+      featureTable: jsonFeatureTable,
+      batchTable: jsonBatchTable,
+      glbBytes
+    };
+  }
+
+}
+
+exports.B3DMLoaderBase = B3DMLoaderBase;
 },{}],"../node_modules/three/examples/jsm/loaders/GLTFLoader.js":[function(require,module,exports) {
 "use strict";
 
@@ -38434,7 +38441,6 @@ const DEG2RAD = _three.Math.DEG2RAD;
 const tempMat = new _three.Matrix4();
 const tempQuaternion = new _three.Quaternion();
 const tempVector = new _three.Vector3();
-const resVector = new _three.Vector2();
 const vecX = new _three.Vector3();
 const vecY = new _three.Vector3();
 const vecZ = new _three.Vector3();
@@ -38444,35 +38450,22 @@ const _sphere = new _three.Sphere();
 function emptyRaycast() {}
 
 class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
-  get displayBounds() {
-    return this._displayBounds;
+  get camera() {
+    return this.cameras[0];
   }
 
-  set displayBounds(val) {
-    if (val !== this.displayBounds) {
-      this._displayBounds = val;
-      this.traverse(t => {
-        const scene = t.cached.scene;
-        const boxHelper = t.cached.boxHelperGroup;
-
-        if (scene) {
-          if (val) {
-            scene.add(boxHelper);
-            boxHelper.updateMatrixWorld(true);
-          } else {
-            scene.remove(boxHelper);
-          }
-        }
-      });
-    }
+  set camera(camera) {
+    const cameras = this.cameras;
+    cameras.length = 1;
+    cameras[0] = camera;
   }
 
-  constructor(url, cameras, renderer) {
-    super(url);
+  constructor(...args) {
+    super(...args);
     this.group = new _TilesGroup.TilesGroup(this);
-    this.cameras = Array.isArray(cameras) ? cameras : [cameras];
+    this.cameras = [];
+    this.resolution = new _three.Vector2();
     this.frustums = [];
-    this.renderer = renderer;
     this.activeSet = new Set();
     this.visibleSet = new Set();
   }
@@ -38495,10 +38488,12 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
   }
 
   raycast(raycaster, intersects) {
-    if (!this.root) return;
+    if (!this.root) {
+      return;
+    }
 
     if (raycaster.firstHitOnly) {
-      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeSet, raycaster, intersects);
+      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeSet, raycaster);
 
       if (hit) {
         intersects.push(hit);
@@ -38507,14 +38502,31 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeSet, raycaster, intersects);
     }
   }
+
+  setResolutionFromRenderer(renderer) {
+    const resolution = this.resolution;
+    renderer.getSize(resolution);
+    resolution.multiplyScalar(renderer.getPixelRatio());
+  }
   /* Overriden */
 
 
   update() {
     const group = this.group;
-    const renderer = this.renderer;
     const cameras = this.cameras;
-    const frustums = this.frustums; // automatically scale the array of frustums to match the cameras
+    const frustums = this.frustums;
+    const resolution = this.resolution;
+
+    if (cameras.length === 0) {
+      console.warn('TilesRenderer: no cameras to use are defined. Cannot update 3d tiles.');
+      return;
+    }
+
+    if (resolution.width === 0 || resolution.height === 0) {
+      console.warn('TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.');
+      return;
+    } // automatically scale the array of frustums to match the cameras
+
 
     while (frustums.length > cameras.length) {
       frustums.pop();
@@ -38532,11 +38544,8 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       tempMat.premultiply(camera.matrixWorldInverse);
       tempMat.premultiply(camera.projectionMatrix);
       frustum.setFromMatrix(tempMat);
-    } // store the resolution of the render
+    }
 
-
-    renderer.getSize(resVector);
-    resVector.multiplyScalar(renderer.getPixelRatio());
     super.update();
   }
 
@@ -38609,8 +38618,10 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       boxTransform,
       sphere,
       region,
-      boxHelper: null,
-      scene: null
+      scene: null,
+      geometry: null,
+      material: null,
+      distance: Infinity
     };
   }
 
@@ -38625,29 +38636,28 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       }
 
       const cached = tile.cached;
-      const cachedBox = cached.box;
-      const cachedBoxMat = cached.boxTransform; // add a helper group to represent the obb rotation matrix
-
-      const boxHelper = new _three.Box3Helper(cachedBox);
-      const boxHelperGroup = new _three.Group();
-      cachedBoxMat.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
-      boxHelperGroup.add(boxHelper);
-      boxHelperGroup.updateMatrixWorld(true);
+      const cachedTransform = cached.transform;
       const scene = res.scene;
-      cached.transform.decompose(scene.position, scene.quaternion, scene.scale);
+      cachedTransform.decompose(scene.position, scene.quaternion, scene.scale);
       scene.traverse(c => c.frustumCulled = false);
-      cached.boxHelperGroup = boxHelperGroup;
-      cached.scene = res.scene;
+      cached.scene = scene; // We handle raycasting in a custom way so remove it from here
 
-      if (this.displayBounds) {
-        cached.scene.add(cached.boxHelperGroup);
-      } // We handle raycasting in a custom way so remove it from here
-
-
-      boxHelper.raycast = emptyRaycast;
       scene.traverse(c => {
         c.raycast = emptyRaycast;
       });
+      const materials = [];
+      const geometry = [];
+      scene.traverse(c => {
+        if (c.geometry) {
+          geometry.push(c.geometry);
+        }
+
+        if (c.material) {
+          materials.push(c.material);
+        }
+      });
+      cached.materials = materials;
+      cached.geometry = geometry;
     });
   }
 
@@ -38656,28 +38666,41 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
 
     if (cached.scene) {
       const scene = cached.scene;
+      const materials = cached.materials;
+      const geometry = cached.geometry;
 
       if (scene.parent) {
         scene.parent.remove(scene);
       }
 
-      scene.traverse(c => {
-        if (c.geometry) {
-          c.geometry.dispose();
+      for (let i = 0, l = geometry.length; i < l; i++) {
+        geometry[i].dispose();
+      }
+
+      for (let i = 0, l = materials.length; i < l; i++) {
+        const material = materials[i];
+
+        for (const key in material) {
+          const value = material[key];
+
+          if (value && value.isTexture) {
+            value.dispose();
+          }
         }
 
-        if (c.material) {
-          c.material.dispose(); // TODO: dispose textures
-        }
-      });
+        material.dispose();
+      }
+
       cached.scene = null;
-      cached.boxHelperGroup = null;
+      cached.materials = null;
+      cached.geometry = null;
     }
 
     tile._loadIndex++;
   }
 
   setTileVisible(tile, visible) {
+    // TODO: save the whole tile object in the visible set and active set
     const scene = tile.cached.scene;
     const visibleSet = this.visibleSet;
     const group = this.group;
@@ -38715,6 +38738,7 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
 
     const boundingVolume = tile.boundingVolume;
     const transformMat = cached.transform;
+    const resolution = this.resolution;
 
     if ('box' in boundingVolume) {
       const group = this.group;
@@ -38749,13 +38773,14 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
         if (cam.isOrthographicCamera) {
           const w = cam.right - cam.left;
           const h = cam.top - cam.bottom;
-          const pixelSize = Math.max(h / resVector.height, w / resVector.width);
+          const pixelSize = Math.max(h / resolution.height, w / resolution.width);
           error = tile.geometricError / (pixelSize * invScale);
         } else {
           const distance = boundingBox.distanceToPoint(tempVector);
           const scaledDistance = distance * invScale;
           const sseDenominator = 2 * Math.tan(0.5 * cam.fov * DEG2RAD);
-          error = tile.geometricError * resVector.height / (scaledDistance * sseDenominator);
+          error = tile.geometricError * resolution.height / (scaledDistance * sseDenominator);
+          tile.cached.distance = scaledDistance;
         }
 
         minError = Math.min(minError, error);
@@ -38802,11 +38827,327 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
 }
 
 exports.TilesRenderer = TilesRenderer;
-},{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/index.js":[function(require,module,exports) {
+},{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/three/SphereHelper.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
+});
+exports.SphereHelper = void 0;
+
+var _three = require("three");
+
+const _vector = new _three.Vector3();
+
+const axes = ['x', 'y', 'z'];
+
+class SphereHelper extends _three.LineSegments {
+  constructor(sphere, color = 0xffff00, angleSteps = 40) {
+    const geometry = new _three.BufferGeometry();
+    const positions = [];
+
+    for (let i = 0; i < 3; i++) {
+      const axis1 = axes[i];
+      const axis2 = axes[(i + 1) % 3];
+
+      _vector.set(0, 0, 0);
+
+      for (let a = 0; a < angleSteps; a++) {
+        let angle;
+        angle = 2 * Math.PI * a / (angleSteps - 1);
+        _vector[axis1] = Math.sin(angle);
+        _vector[axis2] = Math.cos(angle);
+        positions.push(_vector.x, _vector.y, _vector.z);
+        angle = 2 * Math.PI * (a + 1) / (angleSteps - 1);
+        _vector[axis1] = Math.sin(angle);
+        _vector[axis2] = Math.cos(angle);
+        positions.push(_vector.x, _vector.y, _vector.z);
+      }
+    }
+
+    geometry.setAttribute('position', new _three.BufferAttribute(new Float32Array(positions), 3));
+    geometry.computeBoundingSphere();
+    super(geometry, new _three.LineBasicMaterial({
+      color: color,
+      toneMapped: false
+    }));
+    this.sphere = sphere;
+    this.type = 'SphereHelper';
+  }
+
+  updateMatrixWorld(force) {
+    // TODO: Why doesn't this radius have to be multiplied by 0.5?
+    const sphere = this.sphere;
+    this.position.copy(sphere.center);
+    this.scale.setScalar(sphere.radius);
+    super.updateMatrixWorld(force);
+  }
+
+}
+
+exports.SphereHelper = SphereHelper;
+},{"three":"../node_modules/three/build/three.module.js"}],"../src/three/DebugTilesRenderer.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DebugTilesRenderer = void 0;
+
+var _three = require("three");
+
+var _TilesRenderer = require("./TilesRenderer.js");
+
+var _SphereHelper = require("./SphereHelper.js");
+
+const ORIGINAL_MATERIAL = Symbol('ORIGINAL_MATERIAL');
+const NONE = 0;
+const SCREEN_ERROR = 1;
+const GEOMETRIC_ERROR = 2;
+const DISTANCE = 3;
+const DEPTH = 4;
+const IS_LEAF = 5;
+
+class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
+  constructor(...args) {
+    super(...args);
+    const tilesGroup = this.group;
+    const boxGroup = new _three.Group();
+    tilesGroup.add(boxGroup);
+    const sphereGroup = new _three.Group();
+    tilesGroup.add(sphereGroup);
+    this.displayBoxBounds = false;
+    this.displaySphereBounds = false;
+    this.colorMode = NONE;
+    this.boxGroup = boxGroup;
+    this.sphereGroup = sphereGroup;
+    this.maxDepth = -1;
+    this.maxDistance = -1;
+    this.maxError = -1;
+  }
+
+  getTileInformationFromObject(object) {
+    let targetTile = null;
+    this.traverse(tile => {
+      if (targetTile) {
+        return true;
+      }
+
+      const scene = tile.cached.scene;
+
+      if (scene) {
+        scene.traverse(c => {
+          if (c === object) {
+            targetTile = tile;
+          }
+        });
+      }
+    });
+
+    if (targetTile) {
+      return {
+        distanceToCamera: targetTile.cached.distance,
+        geometricError: targetTile.geometricError,
+        screenSpaceError: targetTile.__error,
+        depth: targetTile.__depth,
+        isLeaf: targetTile.__isLeaf
+      };
+    } else {
+      return null;
+    }
+  }
+
+  update() {
+    super.update();
+
+    if (!this.root) {
+      return;
+    }
+
+    this.boxGroup.visible = this.displayBoxBounds;
+    this.sphereGroup.visible = this.displaySphereBounds;
+    let maxDepth = -1;
+
+    if (this.maxDepth === -1) {
+      this.traverse(tile => {
+        maxDepth = Math.max(maxDepth, tile.__depth);
+      });
+    } else {
+      maxDepth = this.maxDepth;
+    }
+
+    let maxError = -1;
+
+    if (this.maxError === -1) {
+      this.traverse(tile => {
+        maxError = Math.max(maxError, tile.geometricError);
+      });
+    } else {
+      maxError = this.maxError;
+    }
+
+    let maxDistance = -1;
+
+    if (this.maxDistance === -1) {
+      maxDistance = this.root.cached.sphere.radius;
+    } else {
+      maxDistance = this.maxDistance;
+    }
+
+    const errorTarget = this.errorTarget;
+    const colorMode = this.colorMode;
+    const visibleSet = this.visibleSet;
+    this.traverse(tile => {
+      const scene = tile.cached.scene;
+
+      if (visibleSet.has(scene)) {
+        scene.traverse(c => {
+          const currMaterial = c.material;
+
+          if (currMaterial) {
+            const originalMaterial = c[ORIGINAL_MATERIAL];
+
+            if (colorMode === NONE && currMaterial !== originalMaterial) {
+              c.material.dispose();
+              c.material = c[ORIGINAL_MATERIAL];
+            } else if (colorMode !== NONE && currMaterial === originalMaterial) {
+              c.material = new _three.MeshBasicMaterial();
+            }
+
+            switch (colorMode) {
+              case DEPTH:
+                {
+                  const val = tile.__depth / maxDepth;
+                  c.material.color.setRGB(val, val, val);
+                  break;
+                }
+
+              case SCREEN_ERROR:
+                {
+                  const val = tile.__error / errorTarget;
+
+                  if (val > 1.0) {
+                    c.material.color.setRGB(1.0, 0.0, 0.0);
+                  } else {
+                    c.material.color.setRGB(val, val, val);
+                  }
+
+                  break;
+                }
+
+              case GEOMETRIC_ERROR:
+                {
+                  const val = Math.min(tile.geometricError / maxError, 1);
+                  c.material.color.setRGB(val, val, val);
+                  break;
+                }
+
+              case DISTANCE:
+                {
+                  // TODO
+                  // Allow custom scaling
+                  const val = Math.min(tile.cached.distance / maxDistance, 1);
+                  c.material.color.setRGB(val, val, val);
+                  break;
+                }
+
+              case IS_LEAF:
+                {
+                  if (!tile.children || tile.children.length === 0) {
+                    c.material.color.set(0xffffff);
+                  } else {
+                    c.material.color.set(0);
+                  }
+
+                  break;
+                }
+            }
+          }
+        });
+      }
+    });
+  }
+
+  setTileVisible(tile, visible) {
+    super.setTileVisible(tile, visible);
+    const cached = tile.cached;
+    const sphereGroup = this.sphereGroup;
+    const boxGroup = this.boxGroup;
+    const boxHelperGroup = cached.boxHelperGroup;
+    const sphereHelper = cached.sphereHelper;
+
+    if (!visible && boxHelperGroup.parent) {
+      boxGroup.remove(boxHelperGroup);
+      sphereGroup.remove(sphereHelper);
+    } else if (visible && !boxHelperGroup.parent) {
+      boxGroup.add(boxHelperGroup);
+      boxHelperGroup.updateMatrixWorld(true);
+      sphereGroup.add(sphereHelper);
+      sphereHelper.updateMatrixWorld(true);
+    }
+  }
+
+  parseTile(buffer, tile) {
+    return super.parseTile(buffer, tile).then(() => {
+      const cached = tile.cached;
+      const scene = cached.scene;
+
+      if (scene) {
+        const cachedBox = cached.box;
+        const cachedBoxMat = cached.boxTransform;
+        const cachedTransform = cached.transform;
+        const boxHelperGroup = new _three.Group();
+        boxHelperGroup.matrix.copy(cachedBoxMat);
+        boxHelperGroup.matrix.multiply(cachedTransform);
+        boxHelperGroup.matrix.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
+        const boxHelper = new _three.Box3Helper(cachedBox);
+        boxHelperGroup.add(boxHelper);
+        cached.boxHelperGroup = boxHelperGroup;
+
+        if (this.displayBoxBounds) {
+          this.boxGroup.add(boxHelperGroup);
+          boxHelperGroup.updateMatrixWorld(true);
+        }
+
+        const cachedSphere = cached.sphere;
+        const sphereHelper = new _SphereHelper.SphereHelper(cachedSphere);
+        cached.sphereHelper = sphereHelper;
+
+        if (this.displaySphereBounds) {
+          this.sphereGroup.add(sphereHelper);
+          sphereHelper.updateMatrixWorld(true);
+        }
+
+        scene.traverse(c => {
+          const material = c.material;
+
+          if (material) {
+            c[ORIGINAL_MATERIAL] = material;
+          }
+        });
+      }
+    });
+  }
+
+  disposeTile(tile) {
+    super.disposeTile(tile);
+    delete tile.cached.boxBounds;
+  }
+
+}
+
+exports.DebugTilesRenderer = DebugTilesRenderer;
+},{"three":"../node_modules/three/build/three.module.js","./TilesRenderer.js":"../src/three/TilesRenderer.js","./SphereHelper.js":"../src/three/SphereHelper.js"}],"../src/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "DebugTilesRenderer", {
+  enumerable: true,
+  get: function () {
+    return _DebugTilesRenderer.DebugTilesRenderer;
+  }
 });
 Object.defineProperty(exports, "TilesRenderer", {
   enumerable: true,
@@ -38845,6 +39186,8 @@ Object.defineProperty(exports, "PriorityQueue", {
   }
 });
 
+var _DebugTilesRenderer = require("./three/DebugTilesRenderer.js");
+
 var _TilesRenderer = require("./three/TilesRenderer.js");
 
 var _B3DMLoader = require("./three/B3DMLoader.js");
@@ -38856,7 +39199,7 @@ var _B3DMLoaderBase = require("./base/B3DMLoaderBase.js");
 var _LRUCache = require("./utilities/LRUCache.js");
 
 var _PriorityQueue = require("./utilities/PriorityQueue.js");
-},{"./three/TilesRenderer.js":"../src/three/TilesRenderer.js","./three/B3DMLoader.js":"../src/three/B3DMLoader.js","./base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","./utilities/LRUCache.js":"../src/utilities/LRUCache.js","./utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
+},{"./three/DebugTilesRenderer.js":"../src/three/DebugTilesRenderer.js","./three/TilesRenderer.js":"../src/three/TilesRenderer.js","./three/B3DMLoader.js":"../src/three/B3DMLoader.js","./base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","./utilities/LRUCache.js":"../src/utilities/LRUCache.js","./utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39656,6 +39999,455 @@ var MapControls = function (object, domElement) {
 exports.MapControls = MapControls;
 MapControls.prototype = Object.create(_threeModule.EventDispatcher.prototype);
 MapControls.prototype.constructor = MapControls;
+},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.BufferGeometryUtils = void 0;
+
+var _threeModule = require("../../../build/three.module.js");
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+var BufferGeometryUtils = {
+  computeTangents: function (geometry) {
+    var index = geometry.index;
+    var attributes = geometry.attributes; // based on http://www.terathon.com/code/tangent.html
+    // (per vertex tangents)
+
+    if (index === null || attributes.position === undefined || attributes.normal === undefined || attributes.uv === undefined) {
+      console.warn('THREE.BufferGeometry: Missing required attributes (index, position, normal or uv) in BufferGeometry.computeTangents()');
+      return;
+    }
+
+    var indices = index.array;
+    var positions = attributes.position.array;
+    var normals = attributes.normal.array;
+    var uvs = attributes.uv.array;
+    var nVertices = positions.length / 3;
+
+    if (attributes.tangent === undefined) {
+      geometry.addAttribute('tangent', new _threeModule.BufferAttribute(new Float32Array(4 * nVertices), 4));
+    }
+
+    var tangents = attributes.tangent.array;
+    var tan1 = [],
+        tan2 = [];
+
+    for (var i = 0; i < nVertices; i++) {
+      tan1[i] = new _threeModule.Vector3();
+      tan2[i] = new _threeModule.Vector3();
+    }
+
+    var vA = new _threeModule.Vector3(),
+        vB = new _threeModule.Vector3(),
+        vC = new _threeModule.Vector3(),
+        uvA = new _threeModule.Vector2(),
+        uvB = new _threeModule.Vector2(),
+        uvC = new _threeModule.Vector2(),
+        sdir = new _threeModule.Vector3(),
+        tdir = new _threeModule.Vector3();
+
+    function handleTriangle(a, b, c) {
+      vA.fromArray(positions, a * 3);
+      vB.fromArray(positions, b * 3);
+      vC.fromArray(positions, c * 3);
+      uvA.fromArray(uvs, a * 2);
+      uvB.fromArray(uvs, b * 2);
+      uvC.fromArray(uvs, c * 2);
+      var x1 = vB.x - vA.x;
+      var x2 = vC.x - vA.x;
+      var y1 = vB.y - vA.y;
+      var y2 = vC.y - vA.y;
+      var z1 = vB.z - vA.z;
+      var z2 = vC.z - vA.z;
+      var s1 = uvB.x - uvA.x;
+      var s2 = uvC.x - uvA.x;
+      var t1 = uvB.y - uvA.y;
+      var t2 = uvC.y - uvA.y;
+      var r = 1.0 / (s1 * t2 - s2 * t1);
+      sdir.set((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+      tdir.set((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+      tan1[a].add(sdir);
+      tan1[b].add(sdir);
+      tan1[c].add(sdir);
+      tan2[a].add(tdir);
+      tan2[b].add(tdir);
+      tan2[c].add(tdir);
+    }
+
+    var groups = geometry.groups;
+
+    if (groups.length === 0) {
+      groups = [{
+        start: 0,
+        count: indices.length
+      }];
+    }
+
+    for (var i = 0, il = groups.length; i < il; ++i) {
+      var group = groups[i];
+      var start = group.start;
+      var count = group.count;
+
+      for (var j = start, jl = start + count; j < jl; j += 3) {
+        handleTriangle(indices[j + 0], indices[j + 1], indices[j + 2]);
+      }
+    }
+
+    var tmp = new _threeModule.Vector3(),
+        tmp2 = new _threeModule.Vector3();
+    var n = new _threeModule.Vector3(),
+        n2 = new _threeModule.Vector3();
+    var w, t, test;
+
+    function handleVertex(v) {
+      n.fromArray(normals, v * 3);
+      n2.copy(n);
+      t = tan1[v]; // Gram-Schmidt orthogonalize
+
+      tmp.copy(t);
+      tmp.sub(n.multiplyScalar(n.dot(t))).normalize(); // Calculate handedness
+
+      tmp2.crossVectors(n2, t);
+      test = tmp2.dot(tan2[v]);
+      w = test < 0.0 ? -1.0 : 1.0;
+      tangents[v * 4] = tmp.x;
+      tangents[v * 4 + 1] = tmp.y;
+      tangents[v * 4 + 2] = tmp.z;
+      tangents[v * 4 + 3] = w;
+    }
+
+    for (var i = 0, il = groups.length; i < il; ++i) {
+      var group = groups[i];
+      var start = group.start;
+      var count = group.count;
+
+      for (var j = start, jl = start + count; j < jl; j += 3) {
+        handleVertex(indices[j + 0]);
+        handleVertex(indices[j + 1]);
+        handleVertex(indices[j + 2]);
+      }
+    }
+  },
+
+  /**
+   * @param  {Array<BufferGeometry>} geometries
+   * @param  {Boolean} useGroups
+   * @return {BufferGeometry}
+   */
+  mergeBufferGeometries: function (geometries, useGroups) {
+    var isIndexed = geometries[0].index !== null;
+    var attributesUsed = new Set(Object.keys(geometries[0].attributes));
+    var morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
+    var attributes = {};
+    var morphAttributes = {};
+    var mergedGeometry = new _threeModule.BufferGeometry();
+    var offset = 0;
+
+    for (var i = 0; i < geometries.length; ++i) {
+      var geometry = geometries[i]; // ensure that all geometries are indexed, or none
+
+      if (isIndexed !== (geometry.index !== null)) return null; // gather attributes, exit early if they're different
+
+      for (var name in geometry.attributes) {
+        if (!attributesUsed.has(name)) return null;
+        if (attributes[name] === undefined) attributes[name] = [];
+        attributes[name].push(geometry.attributes[name]);
+      } // gather morph attributes, exit early if they're different
+
+
+      for (var name in geometry.morphAttributes) {
+        if (!morphAttributesUsed.has(name)) return null;
+        if (morphAttributes[name] === undefined) morphAttributes[name] = [];
+        morphAttributes[name].push(geometry.morphAttributes[name]);
+      } // gather .userData
+
+
+      mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
+      mergedGeometry.userData.mergedUserData.push(geometry.userData);
+
+      if (useGroups) {
+        var count;
+
+        if (isIndexed) {
+          count = geometry.index.count;
+        } else if (geometry.attributes.position !== undefined) {
+          count = geometry.attributes.position.count;
+        } else {
+          return null;
+        }
+
+        mergedGeometry.addGroup(offset, count, i);
+        offset += count;
+      }
+    } // merge indices
+
+
+    if (isIndexed) {
+      var indexOffset = 0;
+      var mergedIndex = [];
+
+      for (var i = 0; i < geometries.length; ++i) {
+        var index = geometries[i].index;
+
+        for (var j = 0; j < index.count; ++j) {
+          mergedIndex.push(index.getX(j) + indexOffset);
+        }
+
+        indexOffset += geometries[i].attributes.position.count;
+      }
+
+      mergedGeometry.setIndex(mergedIndex);
+    } // merge attributes
+
+
+    for (var name in attributes) {
+      var mergedAttribute = this.mergeBufferAttributes(attributes[name]);
+      if (!mergedAttribute) return null;
+      mergedGeometry.addAttribute(name, mergedAttribute);
+    } // merge morph attributes
+
+
+    for (var name in morphAttributes) {
+      var numMorphTargets = morphAttributes[name][0].length;
+      if (numMorphTargets === 0) break;
+      mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
+      mergedGeometry.morphAttributes[name] = [];
+
+      for (var i = 0; i < numMorphTargets; ++i) {
+        var morphAttributesToMerge = [];
+
+        for (var j = 0; j < morphAttributes[name].length; ++j) {
+          morphAttributesToMerge.push(morphAttributes[name][j][i]);
+        }
+
+        var mergedMorphAttribute = this.mergeBufferAttributes(morphAttributesToMerge);
+        if (!mergedMorphAttribute) return null;
+        mergedGeometry.morphAttributes[name].push(mergedMorphAttribute);
+      }
+    }
+
+    return mergedGeometry;
+  },
+
+  /**
+   * @param {Array<BufferAttribute>} attributes
+   * @return {BufferAttribute}
+   */
+  mergeBufferAttributes: function (attributes) {
+    var TypedArray;
+    var itemSize;
+    var normalized;
+    var arrayLength = 0;
+
+    for (var i = 0; i < attributes.length; ++i) {
+      var attribute = attributes[i];
+      if (attribute.isInterleavedBufferAttribute) return null;
+      if (TypedArray === undefined) TypedArray = attribute.array.constructor;
+      if (TypedArray !== attribute.array.constructor) return null;
+      if (itemSize === undefined) itemSize = attribute.itemSize;
+      if (itemSize !== attribute.itemSize) return null;
+      if (normalized === undefined) normalized = attribute.normalized;
+      if (normalized !== attribute.normalized) return null;
+      arrayLength += attribute.array.length;
+    }
+
+    var array = new TypedArray(arrayLength);
+    var offset = 0;
+
+    for (var i = 0; i < attributes.length; ++i) {
+      array.set(attributes[i].array, offset);
+      offset += attributes[i].array.length;
+    }
+
+    return new _threeModule.BufferAttribute(array, itemSize, normalized);
+  },
+
+  /**
+   * @param {Array<BufferAttribute>} attributes
+   * @return {Array<InterleavedBufferAttribute>}
+   */
+  interleaveAttributes: function (attributes) {
+    // Interleaves the provided attributes into an InterleavedBuffer and returns
+    // a set of InterleavedBufferAttributes for each attribute
+    var TypedArray;
+    var arrayLength = 0;
+    var stride = 0; // calculate the the length and type of the interleavedBuffer
+
+    for (var i = 0, l = attributes.length; i < l; ++i) {
+      var attribute = attributes[i];
+      if (TypedArray === undefined) TypedArray = attribute.array.constructor;
+
+      if (TypedArray !== attribute.array.constructor) {
+        console.warn('AttributeBuffers of different types cannot be interleaved');
+        return null;
+      }
+
+      arrayLength += attribute.array.length;
+      stride += attribute.itemSize;
+    } // Create the set of buffer attributes
+
+
+    var interleavedBuffer = new _threeModule.InterleavedBuffer(new TypedArray(arrayLength), stride);
+    var offset = 0;
+    var res = [];
+    var getters = ['getX', 'getY', 'getZ', 'getW'];
+    var setters = ['setX', 'setY', 'setZ', 'setW'];
+
+    for (var j = 0, l = attributes.length; j < l; j++) {
+      var attribute = attributes[j];
+      var itemSize = attribute.itemSize;
+      var count = attribute.count;
+      var iba = new _threeModule.InterleavedBufferAttribute(interleavedBuffer, itemSize, offset, attribute.normalized);
+      res.push(iba);
+      offset += itemSize; // Move the data for each attribute into the new interleavedBuffer
+      // at the appropriate offset
+
+      for (var c = 0; c < count; c++) {
+        for (var k = 0; k < itemSize; k++) {
+          iba[setters[k]](c, attribute[getters[k]](c));
+        }
+      }
+    }
+
+    return res;
+  },
+
+  /**
+   * @param {Array<BufferGeometry>} geometry
+   * @return {number}
+   */
+  estimateBytesUsed: function (geometry) {
+    // Return the estimated memory used by this geometry in bytes
+    // Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
+    // for InterleavedBufferAttributes.
+    var mem = 0;
+
+    for (var name in geometry.attributes) {
+      var attr = geometry.getAttribute(name);
+      mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
+    }
+
+    var indices = geometry.getIndex();
+    mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
+    return mem;
+  },
+
+  /**
+   * @param {BufferGeometry} geometry
+   * @param {number} tolerance
+   * @return {BufferGeometry>}
+   */
+  mergeVertices: function (geometry, tolerance = 1e-4) {
+    tolerance = Math.max(tolerance, Number.EPSILON); // Generate an index buffer if the geometry doesn't have one, or optimize it
+    // if it's already available.
+
+    var hashToIndex = {};
+    var indices = geometry.getIndex();
+    var positions = geometry.getAttribute('position');
+    var vertexCount = indices ? indices.count : positions.count; // next value for triangle indices
+
+    var nextIndex = 0; // attributes and new attribute arrays
+
+    var attributeNames = Object.keys(geometry.attributes);
+    var attrArrays = {};
+    var morphAttrsArrays = {};
+    var newIndices = [];
+    var getters = ['getX', 'getY', 'getZ', 'getW']; // initialize the arrays
+
+    for (var i = 0, l = attributeNames.length; i < l; i++) {
+      var name = attributeNames[i];
+      attrArrays[name] = [];
+      var morphAttr = geometry.morphAttributes[name];
+
+      if (morphAttr) {
+        morphAttrsArrays[name] = new Array(morphAttr.length).fill().map(() => []);
+      }
+    } // convert the error tolerance to an amount of decimal places to truncate to
+
+
+    var decimalShift = Math.log10(1 / tolerance);
+    var shiftMultiplier = Math.pow(10, decimalShift);
+
+    for (var i = 0; i < vertexCount; i++) {
+      var index = indices ? indices.getX(i) : i; // Generate a hash for the vertex attributes at the current index 'i'
+
+      var hash = '';
+
+      for (var j = 0, l = attributeNames.length; j < l; j++) {
+        var name = attributeNames[j];
+        var attribute = geometry.getAttribute(name);
+        var itemSize = attribute.itemSize;
+
+        for (var k = 0; k < itemSize; k++) {
+          // double tilde truncates the decimal value
+          hash += `${~~(attribute[getters[k]](index) * shiftMultiplier)},`;
+        }
+      } // Add another reference to the vertex if it's already
+      // used by another index
+
+
+      if (hash in hashToIndex) {
+        newIndices.push(hashToIndex[hash]);
+      } else {
+        // copy data to the new index in the attribute arrays
+        for (var j = 0, l = attributeNames.length; j < l; j++) {
+          var name = attributeNames[j];
+          var attribute = geometry.getAttribute(name);
+          var morphAttr = geometry.morphAttributes[name];
+          var itemSize = attribute.itemSize;
+          var newarray = attrArrays[name];
+          var newMorphArrays = morphAttrsArrays[name];
+
+          for (var k = 0; k < itemSize; k++) {
+            var getterFunc = getters[k];
+            newarray.push(attribute[getterFunc](index));
+
+            if (morphAttr) {
+              for (var m = 0, ml = morphAttr.length; m < ml; m++) {
+                newMorphArrays[m].push(morphAttr[m][getterFunc](index));
+              }
+            }
+          }
+        }
+
+        hashToIndex[hash] = nextIndex;
+        newIndices.push(nextIndex);
+        nextIndex++;
+      }
+    } // Generate typed arrays from new attribute arrays and update
+    // the attributeBuffers
+
+
+    const result = geometry.clone();
+
+    for (var i = 0, l = attributeNames.length; i < l; i++) {
+      var name = attributeNames[i];
+      var oldAttribute = geometry.getAttribute(name);
+      var buffer = new oldAttribute.array.constructor(attrArrays[name]);
+      var attribute = new _threeModule.BufferAttribute(buffer, oldAttribute.itemSize, oldAttribute.normalized);
+      result.addAttribute(name, attribute); // Update the attribute arrays
+
+      if (name in morphAttrsArrays) {
+        for (var j = 0; j < morphAttrsArrays[name].length; j++) {
+          var oldMorphAttribute = geometry.morphAttributes[name][j];
+          var buffer = new oldMorphAttribute.array.constructor(morphAttrsArrays[name][j]);
+          var morphAttribute = new _threeModule.BufferAttribute(buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized);
+          result.morphAttributes[name][j] = morphAttribute;
+        }
+      }
+    } // indices
+
+
+    result.setIndex(newIndices);
+    return result;
+  }
+};
+exports.BufferGeometryUtils = BufferGeometryUtils;
 },{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/libs/dat.gui.module.js":[function(require,module,exports) {
 "use strict";
 
@@ -42701,6 +43493,8 @@ var _three = require("three");
 
 var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
 
+var _BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils.js");
+
 var dat = _interopRequireWildcard(require("three/examples/jsm/libs/dat.gui.module.js"));
 
 var _statsModule = _interopRequireDefault(require("three/examples/jsm/libs/stats.module.js"));
@@ -42725,7 +43519,8 @@ let params = {
   'maxDepth': 15,
   'loadSiblings': true,
   'up': '+Y',
-  'displayBounds': false,
+  'displayBoxBounds': false,
+  'colorMode': 0,
   'showThirdPerson': true,
   'reload': reinstantiateTiles
 };
@@ -42739,7 +43534,9 @@ function reinstantiateTiles() {
     offsetParent.remove(tiles.group);
   }
 
-  tiles = new _index.TilesRenderer(url, camera, renderer);
+  tiles = new _index.DebugTilesRenderer(url);
+  tiles.camera = camera;
+  tiles.setResolutionFromRenderer(renderer);
   offsetParent.add(tiles.group);
 }
 
@@ -42801,9 +43598,9 @@ function init() {
   const rayIntersectMat = new _three.MeshBasicMaterial({
     color: 0xe91e63
   });
-  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 10), rayIntersectMat);
+  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 6), rayIntersectMat);
   rayMesh.rotation.x = Math.PI / 2;
-  rayMesh.position.z += 5;
+  rayMesh.position.z += 3;
   rayIntersect.add(rayMesh);
   const rayRing = new _three.Mesh(new _three.TorusBufferGeometry(1.5, 0.2, 16, 100), rayIntersectMat);
   rayIntersect.add(rayRing);
@@ -42812,18 +43609,51 @@ function init() {
   reinstantiateTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
-  window.addEventListener('mousemove', onMouseMove, false); // GUI
+  window.addEventListener('mousemove', onMouseMove, false);
+  window.addEventListener('mousedown', onMouseDown, false);
+  window.addEventListener('mouseup', onMouseUp, false); // GUI
 
   const gui = new dat.GUI();
-  const tiles = gui.addFolder('Tiles Options');
-  tiles.add(params, 'orthographic');
-  tiles.add(params, 'loadSiblings');
-  tiles.add(params, 'errorTarget').min(0).max(50);
-  tiles.add(params, 'errorThreshold').min(0).max(1000);
-  tiles.add(params, 'maxDepth').min(1).max(100);
-  tiles.add(params, 'up', ['+Y', '-Z']);
-  tiles.open();
-  gui.add(params, 'displayBounds');
+  gui.width = 300;
+  const tileOptions = gui.addFolder('Tiles Options');
+  tileOptions.add(params, 'orthographic');
+  tileOptions.add(params, 'loadSiblings');
+  tileOptions.add(params, 'errorTarget').min(0).max(50);
+  tileOptions.add(params, 'errorThreshold').min(0).max(1000);
+  tileOptions.add(params, 'maxDepth').min(1).max(100);
+  tileOptions.add(params, 'up', ['+Y', '-Z']);
+  tileOptions.open();
+  const debug = gui.addFolder('Debug Options');
+  debug.add(params, 'displayBoxBounds');
+  debug.add(params, 'colorMode', {
+    DEFAULT: 0,
+    SCREEN_ERROR: 1,
+    GEOMETRIC_ERROR: 2,
+    DISTANCE: 3,
+    DEPTH: 4,
+    IS_LEAF: 5.
+  }).onChange(function (v) {
+    tiles.colorMode = parseFloat(v);
+
+    if (this._lastController) {
+      this._lastController.remove();
+    }
+
+    switch (v) {
+      // GEOMETRIC_ERROR
+      case 2:
+        break;
+      // DISTANCE
+
+      case 3:
+        break;
+      // DEPTH
+
+      case 2:
+        break;
+    }
+  });
+  debug.open();
   gui.add(params, 'showThirdPerson');
   gui.add(params, 'reload');
   gui.open();
@@ -42834,7 +43664,9 @@ function init() {
   statsContainer.style.color = 'white';
   statsContainer.style.width = '100%';
   statsContainer.style.textAlign = 'center';
-  statsContainer.style.padding = '10px';
+  statsContainer.style.padding = '5px';
+  statsContainer.style.pointerEvents = 'none';
+  statsContainer.style.lineHeight = '1.5em';
   document.body.appendChild(statsContainer); // Stats
 
   stats = new _statsModule.default();
@@ -42857,6 +43689,49 @@ function onMouseMove(e) {
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 }
 
+const startPos = new _three.Vector2();
+const endPos = new _three.Vector2();
+
+function onMouseDown(e) {
+  startPos.set(e.clientX, e.clientY);
+}
+
+function onMouseUp(e) {
+  endPos.set(e.clientX, e.clientY);
+
+  if (startPos.distanceTo(endPos) > 2) {
+    return;
+  }
+
+  raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+  raycaster.firstHitOnly = true;
+  const results = raycaster.intersectObject(tiles.group, true);
+
+  if (results.length) {
+    const object = results[0].object;
+    const info = tiles.getTileInformationFromObject(object);
+    let str = '';
+
+    for (const key in info) {
+      let val = info[key];
+
+      if (typeof val === 'number') {
+        val = Math.floor(val * 1e5) / 1e5;
+      }
+
+      let name = key;
+
+      while (name.length < 20) {
+        name += ' ';
+      }
+
+      str += `${name} : ${val}\n`;
+    }
+
+    console.log(str);
+  }
+}
+
 function updateOrthoCamera() {
   orthoCamera.position.copy(camera.position);
   orthoCamera.rotation.copy(camera.rotation);
@@ -42877,8 +43752,9 @@ function animate() {
   tiles.errorThreshold = params.errorThreshold;
   tiles.loadSiblings = params.loadSiblings;
   tiles.maxDepth = params.maxDepth;
-  tiles.displayBounds = params.displayBounds;
-  tiles.cameras[0] = params.orthographic ? orthoCamera : camera; // update tiles
+  tiles.camera = params.orthographic ? orthoCamera : camera;
+  tiles.displayBoxBounds = params.displayBoxBounds;
+  tiles.setResolutionFromRenderer(renderer); // update tiles
 
   tiles.update();
   window.tiles = tiles;
@@ -42905,7 +43781,14 @@ function animate() {
 
     if (closestHit.face) {
       const normal = closestHit.face.normal;
+      normal.transformDirection(closestHit.object.matrixWorld);
       rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
+    }
+
+    if (params.orthographic) {
+      rayIntersect.scale.setScalar(closestHit.distance / 150);
+    } else {
+      rayIntersect.scale.setScalar(closestHit.distance * camera.fov / 6000);
     }
 
     rayIntersect.visible = true;
@@ -42936,9 +43819,30 @@ function render() {
     thirdPersonRenderer.render(scene, thirdPersonCamera);
   }
 
-  statsContainer.innerText = `Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length}`;
+  const geomSet = new Set();
+  tiles.traverse(tile => {
+    const scene = tile.cached.scene;
+
+    if (scene) {
+      scene.traverse(c => {
+        if (c.geometry) {
+          geomSet.add(c.geometry);
+        }
+      });
+    }
+  });
+  let count = 0;
+  geomSet.forEach(g => {
+    count += _BufferGeometryUtils.BufferGeometryUtils.estimateBytesUsed(g);
+  });
+  const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
+  statsContainer.innerHTML = `
+			Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length}
+			<br/>
+			Cache: ${(100 * cacheFullness).toFixed(2)}% ~${(count / 1000 / 1000).toFixed(2)}mb
+		`;
 }
-},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -42966,7 +43870,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57728" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58930" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
