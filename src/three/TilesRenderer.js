@@ -259,6 +259,7 @@ export class TilesRenderer extends TilesRendererBase {
 			scene: null,
 			geometry: null,
 			material: null,
+			distance: Infinity
 
 		};
 
@@ -472,6 +473,8 @@ export class TilesRenderer extends TilesRendererBase {
 					const scaledDistance = distance * invScale;
 					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
 					error = ( tile.geometricError * resolution.height ) / ( scaledDistance * sseDenominator );
+
+					tile.cached.distance = scaledDistance;
 
 				}
 

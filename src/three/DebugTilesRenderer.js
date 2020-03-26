@@ -8,6 +8,7 @@ const SCREEN_ERROR = 1;
 const GEOMETRIC_ERROR = 2;
 const DISTANCE = 3;
 const DEPTH = 4;
+const IS_LEAF = 5;
 export class DebugTilesRenderer extends TilesRenderer {
 
 	constructor( ...args ) {
@@ -21,6 +22,9 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.displayBounds = false;
 		this.colorMode = NONE;
 		this.boxGroup = boxGroup;
+		this.maxDepth = - 1;
+		this.maxDistance = - 1;
+		this.maxError = - 1;
 
 	}
 
@@ -56,7 +60,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 			return {
 
-				distanceToCamera: 0,
+				distanceToCamera: targetTile.cached.distance,
 				geometricError: targetTile.geometricError,
 				screenSpaceError: targetTile.__error,
 				depth: targetTile.__depth,
@@ -76,14 +80,54 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		super.update();
 
+		if ( ! this.root ) {
+
+			return;
+
+		}
+
 		this.boxGroup.visible = this.displayBounds;
 
 		let maxDepth = - 1;
-		this.traverse( tile => {
+		if ( this.maxDepth === - 1 ) {
 
-			maxDepth = Math.max( maxDepth, tile.__depth );
+			this.traverse( tile => {
 
-		} );
+				maxDepth = Math.max( maxDepth, tile.__depth );
+
+			} );
+
+		} else {
+
+			maxDepth = this.maxDepth;
+
+		}
+
+		let maxError = - 1;
+		if ( this.maxError === - 1 ) {
+
+			this.traverse( tile => {
+
+				maxError = Math.max( maxError, tile.geometricError );
+
+			} );
+
+		} else {
+
+			maxError = this.maxError;
+
+		}
+
+		let maxDistance = - 1;
+		if ( this.maxDistance === - 1 ) {
+
+			maxDistance = this.root.cached.sphere.radius;
+
+		} else {
+
+			maxDistance = this.maxDistance;
+
+		}
 
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
@@ -122,9 +166,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 							case SCREEN_ERROR: {
 
 								// TODO
+								// Allow custom scaling and make it work
 								const relativeError = tile.__error - errorTarget;
-								const val = relativeError / 5;
-								if ( val < 0.0 ) {
+
+								const val = tile.__error / errorTarget;
+								if ( val > 1.0 ) {
 
 									c.material.color.setRGB( 1.0, 0.0, 0.0 );
 
@@ -138,7 +184,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							}
 							case GEOMETRIC_ERROR: {
 
-								const val = Math.min( tile.geometricError / 7, 1 );
+								const val = Math.min( tile.geometricError / maxError, 1 );
 								c.material.color.setRGB( val, val, val );
 								break;
 
@@ -146,8 +192,23 @@ export class DebugTilesRenderer extends TilesRenderer {
 							case DISTANCE: {
 
 								// TODO
-								const val = Math.min( tile.geometricError / 7, 1 );
+								// Allow custom scaling
+								const val = Math.min( tile.cached.distance / maxDistance, 1 );
 								c.material.color.setRGB( val, val, val );
+								break;
+
+							}
+							case IS_LEAF: {
+
+								if ( ! tile.children || tile.children.length === 0 ) {
+
+									c.material.color.set( 0xffffff );
+
+								} else {
+
+									c.material.color.set( 0 );
+
+								}
 								break;
 
 							}
