@@ -72,6 +72,31 @@ maxDepth = Infinity : Number
 loadSiblings = true : Boolean
 ```
 
+### .lruCache
+
+```js
+lruCache = new LRUCache() : LRUCache
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+### .downloadQueue
+
+```js
+downloadQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+### .parseQueue
+
+```js
+parseQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be modified once [update](#update) is called for the first time._
+
+
 ### .constructor
 
 ```js
