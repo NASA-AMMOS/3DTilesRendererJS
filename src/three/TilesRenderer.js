@@ -301,7 +301,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			scene.matrix.multiply( cachedTransform );
+			scene.matrix.premultiply( cachedTransform );
 			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 

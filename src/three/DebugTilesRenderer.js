@@ -273,7 +273,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					const boxHelperGroup = new Group();
 					boxHelperGroup.matrix.copy( cachedBoxMat );
-					boxHelperGroup.matrix.multiply( cachedTransform );
+					boxHelperGroup.matrix.premultiply( cachedTransform );
 					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
 
 					const boxHelper = new Box3Helper( cachedBox );
