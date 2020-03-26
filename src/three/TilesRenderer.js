@@ -281,12 +281,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
+			const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
 			const cached = tile.cached;
 			const cachedTransform = cached.transform;
 
 			const scene = res.scene;
-			scene.matrix.copy( cachedTransform );
-			scene.decompose( scene.position, scene.quaternion, scene.scale );
+			switch ( upAxis.toLowerCase() ) {
+
+				case 'x':
+					scene.matrix.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+					break;
+
+				case 'y':
+					scene.matrix.makeRotationAxis( X_AXIS, Math.PI / 2 );
+					break;
+
+				case 'z':
+					break;
+
+			}
+
+			scene.matrix.multiply( cachedTransform );
+			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => c.frustumCulled = false );
 
 			cached.scene = scene;
