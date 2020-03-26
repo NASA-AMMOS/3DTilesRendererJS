@@ -39,6 +39,7 @@ let params = {
 
 	'up': '+Y',
 	'displayBounds': false,
+	'colorMode': 0,
 	'showThirdPerson': true,
 	'reload': reinstantiateTiles,
 
@@ -152,20 +153,66 @@ function init() {
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 	window.addEventListener( 'mousemove', onMouseMove, false );
-	window.addEventListener( 'click', onMouseClick, false );
+	window.addEventListener( 'mousedown', onMouseDown, false );
+	window.addEventListener( 'mouseup', onMouseUp, false );
 
 	// GUI
 	const gui = new dat.GUI();
-	const tiles = gui.addFolder( 'Tiles Options' );
-	tiles.add( params, 'orthographic' );
-	tiles.add( params, 'loadSiblings' );
-	tiles.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tiles.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
-	tiles.add( params, 'maxDepth' ).min( 1 ).max( 100 );
-	tiles.add( params, 'up', [ '+Y', '-Z' ] );
-	tiles.open();
+	gui.width = 300;
 
-	gui.add( params, 'displayBounds' );
+	const tileOptions = gui.addFolder( 'Tiles Options' );
+	tileOptions.add( params, 'orthographic' );
+	tileOptions.add( params, 'loadSiblings' );
+	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
+	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
+	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
+	tileOptions.add( params, 'up', [ '+Y', '-Z' ] );
+	tileOptions.open();
+
+	const debug = gui.addFolder( 'Debug Options' );
+	debug.add( params, 'displayBounds' );
+	debug.add( params, 'colorMode', {
+
+		DEFAULT: 0,
+		SCREEN_ERROR: 1,
+		GEOMETRIC_ERROR: 2,
+		DISTANCE: 3,
+		DEPTH: 4,
+		IS_LEAF: 5.
+
+	} ).onChange( function ( v ) {
+
+		tiles.colorMode = parseFloat( v );
+
+		if ( this._lastController ) {
+
+			this._lastController.remove();
+
+		}
+
+		switch ( v ) {
+
+			// GEOMETRIC_ERROR
+			case 2:
+
+				break;
+
+			// DISTANCE
+			case 3:
+
+				break;
+
+			// DEPTH
+			case 2:
+
+				break;
+
+		}
+
+
+	} );
+	debug.open();
+
 	gui.add( params, 'showThirdPerson' );
 	gui.add( params, 'reload' );
 
@@ -209,7 +256,22 @@ function onMouseMove( e ) {
 
 }
 
-function onMouseClick( e ) {
+const startPos = new Vector2();
+const endPos = new Vector2();
+function onMouseDown( e ) {
+
+	startPos.set( e.clientX, e.clientY );
+
+}
+
+function onMouseUp( e ) {
+
+	endPos.set( e.clientX, e.clientY );
+	if ( startPos.distanceTo( endPos ) > 2 ) {
+
+		return;
+
+	}
 
 	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
 	raycaster.firstHitOnly = true;
@@ -222,11 +284,24 @@ function onMouseClick( e ) {
 		let str = '';
 		for ( const key in info ) {
 
-			str += `${ key } : ${ info[ key ] }\n`;
+			let val = info[ key ];
+			if ( typeof val === 'number' ) {
+
+				val = Math.floor( val * 1e5 ) / 1e5;
+
+			}
+
+			let name = key;
+			while ( name.length < 20 ) {
+
+				name += ' ';
+
+			}
+
+			str += `${ name } : ${ val }\n`;
 
 		}
 		console.log( str );
-
 
 	}
 
@@ -256,10 +331,9 @@ function animate() {
 	tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.maxDepth = params.maxDepth;
-	tiles.displayBounds = params.displayBounds;
 	tiles.camera = params.orthographic ? orthoCamera : camera;
+	tiles.displayBounds = params.displayBounds;
 
-	tiles.camera = camera;
 	tiles.setResolutionFromRenderer( renderer );
 
 	// update tiles
