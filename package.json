@@ -12,7 +12,8 @@
     "geometry",
     "terrain",
     "cesium"
-  ],
+	],
+	"type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache",
@@ -34,7 +35,7 @@
     "babel-jest": "^24.9.0",
     "eslint": "^6.5.1",
     "eslint-config-mdcs": "^4.2.3",
-    "eslint-plugin-jest": "^23.1.1",
+    "eslint-plugin-jest": "^23.8.2",
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
     "parcel-bundler": "^1.12.4",

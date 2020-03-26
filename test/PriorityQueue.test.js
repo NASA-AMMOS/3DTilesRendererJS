@@ -92,10 +92,8 @@ describe( 'PriorityQueue', () => {
 		expect( queue.currJobs ).toEqual( 1 );
 		expect( resolveFunc ).not.toEqual( null );
 		expect( called ).toEqual( 1 );
-		resolveFunc();
-		await nextTick();
-		expect( queue.currJobs ).toEqual( 0 );
 
+		resolveFunc();
 		await nextFrame();
 
 		expect( queue.currJobs ).toEqual( 1 );
