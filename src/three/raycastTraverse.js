@@ -29,10 +29,10 @@ function intersectTileScene( scene, raycaster, intersects ) {
 }
 
 // Returns the closest hit when traversing the tree
-export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
+export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 	// If the root is active make sure we've checked it
-	if ( activeSet.has( root.cached.scene ) ) {
+	if ( activeTiles.has( root ) ) {
 
 		intersectTileScene( root.cached.scene, raycaster, _hitArray );
 		if ( _hitArray.length > 0 ) {
@@ -145,7 +145,7 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
 			let hit = null;
 
-			if ( activeSet.has( scene ) ) {
+			if ( activeTiles.has( tile ) ) {
 
 				// save the hit if it's closer
 				intersectTileScene( scene, raycaster, _hitArray );
@@ -163,7 +163,7 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
 			} else {
 
-				hit = raycastTraverseFirstHit( tile, group, activeSet, raycaster );
+				hit = raycastTraverseFirstHit( tile, group, activeTiles, raycaster );
 
 			}
 
@@ -188,7 +188,7 @@ export function raycastTraverseFirstHit( root, group, activeSet, raycaster ) {
 
 }
 
-export function raycastTraverse( tile, group, activeSet, raycaster, intersects ) {
+export function raycastTraverse( tile, group, activeTiles, raycaster, intersects ) {
 
 	const cached = tile.cached;
 	const groupMatrixWorld = group.matrixWorld;
@@ -228,7 +228,7 @@ export function raycastTraverse( tile, group, activeSet, raycaster, intersects )
 	// TODO: check region
 
 	const scene = cached.scene;
-	if ( activeSet.has( scene ) ) {
+	if ( activeTiles.has( tile ) ) {
 
 		scene.traverse( c => {
 
@@ -246,7 +246,7 @@ export function raycastTraverse( tile, group, activeSet, raycaster, intersects )
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		raycastTraverse( children[ i ], group, activeSet, raycaster, intersects );
+		raycastTraverse( children[ i ], group, activeTiles, raycaster, intersects );
 
 	}
 

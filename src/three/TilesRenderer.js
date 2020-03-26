@@ -50,9 +50,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.resolution = new Vector2();
 		this.frustums = [];
-		this.activeSet = new Set();
 		this.activeTiles = new Set();
-		this.visibleSet = new Set();
 		this.visibleTiles = new Set();
 
 	}
@@ -89,7 +87,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( raycaster.firstHitOnly ) {
 
-			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeSet, raycaster );
+			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
 			if ( hit ) {
 
 				intersects.push( hit );
@@ -98,7 +96,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			raycastTraverse( this.root, this.group, this.activeSet, raycaster, intersects );
+			raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
 
 		}
 
@@ -273,7 +271,6 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
 
-		// TODO: 90 degree rotation must be applied to GLTF file to resolve "up"
 		const loadIndex = tile._loadIndex;
 		return new B3DMLoader().parse( buffer ).then( res => {
 
@@ -390,9 +387,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		// TODO: save the whole tile object in the visible set and active set
 		const scene = tile.cached.scene;
-		const visibleSet = this.visibleSet;
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 		if ( visible ) {
@@ -402,7 +397,6 @@ export class TilesRenderer extends TilesRendererBase {
 			if ( scene && ! scene.parent ) {
 
 				group.add( scene );
-				visibleSet.add( scene );
 				visibleTiles.add( tile );
 				scene.updateMatrixWorld( true );
 
@@ -411,7 +405,6 @@ export class TilesRenderer extends TilesRendererBase {
 		} else {
 
 			group.remove( scene );
-			visibleSet.delete( scene );
 			visibleTiles.delete( tile );
 
 		}
@@ -421,19 +414,16 @@ export class TilesRenderer extends TilesRendererBase {
 	setTileActive( tile, active ) {
 
 		const cached = tile.cached;
-		const activeSet = this.activeSet;
 		const activeTiles = this.activeTiles;
 		if ( active !== cached.active ) {
 
 			cached.active = active;
 			if ( active ) {
 
-				activeSet.add( cached.scene );
 				activeTiles.add( tile );
 
 			} else {
 
-				activeSet.delete( cached.scene );
 				activeTiles.delete( tile );
 
 			}
