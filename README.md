@@ -48,12 +48,6 @@ function renderLoop() {
 group : Group
 ```
 
-### .displayBounds
-
-```js
-displayBounds = false : Boolean
-```
-
 ### .errorTarget
 
 ```js
