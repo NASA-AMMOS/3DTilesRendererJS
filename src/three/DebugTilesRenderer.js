@@ -1,5 +1,6 @@
 import { Box3Helper, Group, MeshBasicMaterial } from 'three';
 import { TilesRenderer } from './TilesRenderer.js';
+import { SphereHelper } from './SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 
@@ -19,9 +20,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const boxGroup = new Group();
 		tilesGroup.add( boxGroup );
 
-		this.displayBounds = false;
+		const sphereGroup = new Group();
+		tilesGroup.add( sphereGroup );
+
+		this.displayBoxBounds = false;
+		this.displaySphereBounds = false;
 		this.colorMode = NONE;
 		this.boxGroup = boxGroup;
+		this.sphereGroup = sphereGroup;
 		this.maxDepth = - 1;
 		this.maxDistance = - 1;
 		this.maxError = - 1;
@@ -86,7 +92,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
-		this.boxGroup.visible = this.displayBounds;
+		this.boxGroup.visible = this.displayBoxBounds;
+		this.sphereGroup.visible = this.displaySphereBounds;
 
 		let maxDepth = - 1;
 		if ( this.maxDepth === - 1 ) {
@@ -165,10 +172,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 							}
 							case SCREEN_ERROR: {
 
-								// TODO
-								// Allow custom scaling and make it work
-								const relativeError = tile.__error - errorTarget;
-
 								const val = tile.__error / errorTarget;
 								if ( val > 1.0 ) {
 
@@ -231,18 +234,24 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		super.setTileVisible( tile, visible );
 
-		const boxGroup = this.boxGroup;
 		const cached = tile.cached;
+		const sphereGroup = this.sphereGroup;
+		const boxGroup = this.boxGroup;
 		const boxHelperGroup = cached.boxHelperGroup;
+		const sphereHelper = cached.sphereHelper;
 
 		if ( ! visible && boxHelperGroup.parent ) {
 
 			boxGroup.remove( boxHelperGroup );
+			sphereGroup.remove( sphereHelper );
 
 		} else if ( visible && ! boxHelperGroup.parent ) {
 
 			boxGroup.add( boxHelperGroup );
 			boxHelperGroup.updateMatrixWorld( true );
+
+			sphereGroup.add( sphereHelper );
+			sphereHelper.updateMatrixWorld( true );
 
 		}
 
@@ -269,13 +278,24 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					const boxHelper = new Box3Helper( cachedBox );
 					boxHelperGroup.add( boxHelper );
-					boxHelperGroup.updateMatrixWorld( true );
 
 					cached.boxHelperGroup = boxHelperGroup;
 
-					if ( this.displayBounds ) {
+					if ( this.displayBoxBounds ) {
 
 						this.boxGroup.add( boxHelperGroup );
+						boxHelperGroup.updateMatrixWorld( true );
+
+					}
+
+					const cachedSphere = cached.sphere;
+					const sphereHelper = new SphereHelper( cachedSphere );
+					cached.sphereHelper = sphereHelper;
+
+					if ( this.displaySphereBounds ) {
+
+						this.sphereGroup.add( sphereHelper );
+						sphereHelper.updateMatrixWorld( true );
 
 					}
 

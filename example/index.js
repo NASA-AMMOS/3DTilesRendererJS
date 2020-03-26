@@ -38,7 +38,7 @@ let params = {
 	'loadSiblings': true,
 
 	'up': '+Y',
-	'displayBounds': false,
+	'displayBoxBounds': false,
 	'colorMode': 0,
 	'showThirdPerson': true,
 	'reload': reinstantiateTiles,
@@ -170,7 +170,7 @@ function init() {
 	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
-	debug.add( params, 'displayBounds' );
+	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'colorMode', {
 
 		DEFAULT: 0,
@@ -332,7 +332,7 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.maxDepth = params.maxDepth;
 	tiles.camera = params.orthographic ? orthoCamera : camera;
-	tiles.displayBounds = params.displayBounds;
+	tiles.displayBoxBounds = params.displayBoxBounds;
 
 	tiles.setResolutionFromRenderer( renderer );
 
