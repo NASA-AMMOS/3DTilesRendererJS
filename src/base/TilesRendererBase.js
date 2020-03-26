@@ -35,16 +35,16 @@ export class TilesRendererBase {
 
 	}
 
-	constructor( url, cache = new LRUCache(), downloadQueue = new PriorityQueue( 6 ), parseQueue = new PriorityQueue( 1 ) ) {
+	constructor( url ) {
 
 		// state
 		this.tileSets = {};
 		this.rootURL = url;
-		this.lruCache = cache;
 		this.fetchOptions = {};
 
-		this.downloadQueue = downloadQueue;
-		this.parseQueue = parseQueue;
+		this.lruCache = new LRUCache();
+		this.downloadQueue = new PriorityQueue( 6 );
+		this.parseQueue = new PriorityQueue( 1 );
 		this.stats = {
 			parsing: 0,
 			downloading: 0,
