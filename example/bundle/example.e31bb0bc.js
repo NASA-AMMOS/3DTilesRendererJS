@@ -35006,6 +35006,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.LRUCache = void 0;
 
 // TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
+// Keep a used list that we can sort as needed when it's dirty, a map of item to last used time, and a binary search
+// of the array to find an item that needs to be removed
 class LRUCache {
   constructor() {
     // options
@@ -35406,7 +35408,8 @@ function skipTraversal(tile, renderer) {
 
   const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
   const meetsSSE = tile.__error < errorRequirement;
-  const hasContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
+  const hasContent = !tile.__contentEmpty;
+  const loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
   const children = tile.children;
   let allChildrenHaveContent = true;
 
@@ -35419,11 +35422,11 @@ function skipTraversal(tile, renderer) {
     }
   }
 
-  if (meetsSSE && !hasContent && !lruCache.isFull()) {
+  if (meetsSSE && !loadedContent && !lruCache.isFull() && hasContent) {
     renderer.requestTileContents(tile);
   }
 
-  if (meetsSSE && hasContent && !allChildrenHaveContent) {
+  if (meetsSSE && loadedContent && !allChildrenHaveContent) {
     if (tile.__inFrustum) {
       tile.__visible = true;
       stats.visible++;
@@ -35524,14 +35527,14 @@ class TilesRendererBase {
     return tileSet ? tileSet.root : null;
   }
 
-  constructor(url, cache = new _LRUCache.LRUCache(), downloadQueue = new _PriorityQueue.PriorityQueue(6), parseQueue = new _PriorityQueue.PriorityQueue(1)) {
+  constructor(url) {
     // state
     this.tileSets = {};
     this.rootURL = url;
-    this.lruCache = cache;
     this.fetchOptions = {};
-    this.downloadQueue = downloadQueue;
-    this.parseQueue = parseQueue;
+    this.lruCache = new _LRUCache.LRUCache();
+    this.downloadQueue = new _PriorityQueue.PriorityQueue(6);
+    this.parseQueue = new _PriorityQueue.PriorityQueue(1);
     this.stats = {
       parsing: 0,
       downloading: 0,
@@ -38242,9 +38245,9 @@ function intersectTileScene(scene, raycaster, intersects) {
 } // Returns the closest hit when traversing the tree
 
 
-function raycastTraverseFirstHit(root, group, activeSet, raycaster) {
+function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
   // If the root is active make sure we've checked it
-  if (activeSet.has(root.cached.scene)) {
+  if (activeTiles.has(root)) {
     intersectTileScene(root.cached.scene, raycaster, _hitArray);
 
     if (_hitArray.length > 0) {
@@ -38341,7 +38344,7 @@ function raycastTraverseFirstHit(root, group, activeSet, raycaster) {
       const scene = tile.cached.scene;
       let hit = null;
 
-      if (activeSet.has(scene)) {
+      if (activeTiles.has(tile)) {
         // save the hit if it's closer
         intersectTileScene(scene, raycaster, _hitArray);
 
@@ -38353,7 +38356,7 @@ function raycastTraverseFirstHit(root, group, activeSet, raycaster) {
           hit = _hitArray[0];
         }
       } else {
-        hit = raycastTraverseFirstHit(tile, group, activeSet, raycaster);
+        hit = raycastTraverseFirstHit(tile, group, activeTiles, raycaster);
       }
 
       if (hit) {
@@ -38372,7 +38375,7 @@ function raycastTraverseFirstHit(root, group, activeSet, raycaster) {
   return bestHit;
 }
 
-function raycastTraverse(tile, group, activeSet, raycaster, intersects) {
+function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
   const cached = tile.cached;
   const groupMatrixWorld = group.matrixWorld;
   const transformMat = cached.transform;
@@ -38411,7 +38414,7 @@ function raycastTraverse(tile, group, activeSet, raycaster, intersects) {
 
   const scene = cached.scene;
 
-  if (activeSet.has(scene)) {
+  if (activeTiles.has(tile)) {
     scene.traverse(c => {
       if (!(c instanceof _three.Box3Helper)) {
         Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
@@ -38423,7 +38426,7 @@ function raycastTraverse(tile, group, activeSet, raycaster, intersects) {
   const children = tile.children;
 
   for (let i = 0, l = children.length; i < l; i++) {
-    raycastTraverse(children[i], group, activeSet, raycaster, intersects);
+    raycastTraverse(children[i], group, activeTiles, raycaster, intersects);
   }
 }
 },{"three":"../node_modules/three/build/three.module.js"}],"../src/three/TilesRenderer.js":[function(require,module,exports) {
@@ -38454,6 +38457,9 @@ const vecZ = new _three.Vector3();
 
 const _sphere = new _three.Sphere();
 
+const X_AXIS = new _three.Vector3(1, 0, 0);
+const Y_AXIS = new _three.Vector3(0, 1, 0);
+
 function emptyRaycast() {}
 
 class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
@@ -38473,8 +38479,8 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     this.cameras = [];
     this.resolution = new _three.Vector2();
     this.frustums = [];
-    this.activeSet = new Set();
-    this.visibleSet = new Set();
+    this.activeTiles = new Set();
+    this.visibleTiles = new Set();
   }
   /* Public API */
 
@@ -38500,13 +38506,13 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     }
 
     if (raycaster.firstHitOnly) {
-      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeSet, raycaster);
+      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeTiles, raycaster);
 
       if (hit) {
         intersects.push(hit);
       }
     } else {
-      (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeSet, raycaster, intersects);
+      (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeTiles, raycaster, intersects);
     }
   }
 
@@ -38634,18 +38640,33 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
 
   parseTile(buffer, tile) {
     tile._loadIndex = tile._loadIndex || 0;
-    tile._loadIndex++; // TODO: 90 degree rotation must be applied to GLTF file to resolve "up"
-
+    tile._loadIndex++;
     const loadIndex = tile._loadIndex;
     return new _B3DMLoader.B3DMLoader().parse(buffer).then(res => {
       if (tile._loadIndex !== loadIndex) {
         return;
       }
 
+      const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
       const cached = tile.cached;
       const cachedTransform = cached.transform;
       const scene = res.scene;
-      cachedTransform.decompose(scene.position, scene.quaternion, scene.scale);
+
+      switch (upAxis.toLowerCase()) {
+        case 'x':
+          scene.matrix.makeRotationAxis(Y_AXIS, -Math.PI / 2);
+          break;
+
+        case 'y':
+          scene.matrix.makeRotationAxis(X_AXIS, Math.PI / 2);
+          break;
+
+        case 'z':
+          break;
+      }
+
+      scene.matrix.premultiply(cachedTransform);
+      scene.matrix.decompose(scene.position, scene.quaternion, scene.scale);
       scene.traverse(c => c.frustumCulled = false);
       cached.scene = scene; // We handle raycasting in a custom way so remove it from here
 
@@ -38707,34 +38728,35 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
   }
 
   setTileVisible(tile, visible) {
-    // TODO: save the whole tile object in the visible set and active set
     const scene = tile.cached.scene;
-    const visibleSet = this.visibleSet;
+    const visibleTiles = this.visibleTiles;
     const group = this.group;
 
     if (visible) {
+      // TODO: Should set visible be called if the scene hasn't been loaded yet?
+      // Ideally this would only be called on state change and when it's relevant
       if (scene && !scene.parent) {
         group.add(scene);
-        visibleSet.add(scene);
+        visibleTiles.add(tile);
         scene.updateMatrixWorld(true);
       }
     } else {
       group.remove(scene);
-      visibleSet.delete(scene);
+      visibleTiles.delete(tile);
     }
   }
 
   setTileActive(tile, active) {
     const cached = tile.cached;
-    const activeSet = this.activeSet;
+    const activeTiles = this.activeTiles;
 
     if (active !== cached.active) {
       cached.active = active;
 
       if (active) {
-        activeSet.add(cached.scene);
+        activeTiles.add(tile);
       } else {
-        activeSet.delete(cached.scene);
+        activeTiles.delete(tile);
       }
     }
   }
@@ -38808,6 +38830,7 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
   tileInView(tile) {
     // TODO: we should use the more precise bounding volumes here if possible
     // cache the root-space planes
+    // Use separating axis theorem for frustum and obb
     const sphere = tile.cached.sphere;
 
     if (sphere) {
@@ -38931,11 +38954,33 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
     this.maxDepth = -1;
     this.maxDistance = -1;
     this.maxError = -1;
+    this.extremeDepth = -1;
+    this.extremeError = -1;
   }
 
-  getTileInformationFromObject(object) {
-    let targetTile = null;
+  initExtremes() {
+    let maxDepth = -1;
     this.traverse(tile => {
+      maxDepth = Math.max(maxDepth, tile.__depth);
+    });
+    let maxError = -1;
+    this.traverse(tile => {
+      maxError = Math.max(maxError, tile.geometricError);
+    });
+    this.extremeDepth = maxDepth;
+    this.extremeError = maxError;
+  }
+
+  loadTileSet(...args) {
+    const pr = super.loadTileSet(...args);
+    pr.then(() => this.initExtremes());
+    return pr;
+  }
+
+  getTileInformationFromActiveObject(object) {
+    let targetTile = null;
+    const activeTiles = this.activeTiles;
+    activeTiles.forEach(tile => {
       if (targetTile) {
         return true;
       }
@@ -38976,9 +39021,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
     let maxDepth = -1;
 
     if (this.maxDepth === -1) {
-      this.traverse(tile => {
-        maxDepth = Math.max(maxDepth, tile.__depth);
-      });
+      maxDepth = this.extremeDepth;
     } else {
       maxDepth = this.maxDepth;
     }
@@ -38986,9 +39029,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
     let maxError = -1;
 
     if (this.maxError === -1) {
-      this.traverse(tile => {
-        maxError = Math.max(maxError, tile.geometricError);
-      });
+      maxError = this.extremeError;
     } else {
       maxError = this.maxError;
     }
@@ -39003,75 +39044,70 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
     const errorTarget = this.errorTarget;
     const colorMode = this.colorMode;
-    const visibleSet = this.visibleSet;
-    this.traverse(tile => {
+    const visibleTiles = this.visibleTiles;
+    visibleTiles.forEach(tile => {
       const scene = tile.cached.scene;
+      scene.traverse(c => {
+        const currMaterial = c.material;
 
-      if (visibleSet.has(scene)) {
-        scene.traverse(c => {
-          const currMaterial = c.material;
+        if (currMaterial) {
+          const originalMaterial = c[ORIGINAL_MATERIAL];
 
-          if (currMaterial) {
-            const originalMaterial = c[ORIGINAL_MATERIAL];
-
-            if (colorMode === NONE && currMaterial !== originalMaterial) {
-              c.material.dispose();
-              c.material = c[ORIGINAL_MATERIAL];
-            } else if (colorMode !== NONE && currMaterial === originalMaterial) {
-              c.material = new _three.MeshBasicMaterial();
-            }
-
-            switch (colorMode) {
-              case DEPTH:
-                {
-                  const val = tile.__depth / maxDepth;
-                  c.material.color.setRGB(val, val, val);
-                  break;
-                }
-
-              case SCREEN_ERROR:
-                {
-                  const val = tile.__error / errorTarget;
-
-                  if (val > 1.0) {
-                    c.material.color.setRGB(1.0, 0.0, 0.0);
-                  } else {
-                    c.material.color.setRGB(val, val, val);
-                  }
-
-                  break;
-                }
-
-              case GEOMETRIC_ERROR:
-                {
-                  const val = Math.min(tile.geometricError / maxError, 1);
-                  c.material.color.setRGB(val, val, val);
-                  break;
-                }
-
-              case DISTANCE:
-                {
-                  // TODO
-                  // Allow custom scaling
-                  const val = Math.min(tile.cached.distance / maxDistance, 1);
-                  c.material.color.setRGB(val, val, val);
-                  break;
-                }
-
-              case IS_LEAF:
-                {
-                  if (!tile.children || tile.children.length === 0) {
-                    c.material.color.set(0xffffff);
-                  } else {
-                    c.material.color.set(0);
-                  }
-
-                  break;
-                }
-            }
+          if (colorMode === NONE && currMaterial !== originalMaterial) {
+            c.material.dispose();
+            c.material = c[ORIGINAL_MATERIAL];
+          } else if (colorMode !== NONE && currMaterial === originalMaterial) {
+            c.material = new _three.MeshBasicMaterial();
           }
-        });
-      }
+
+          switch (colorMode) {
+            case DEPTH:
+              {
+                const val = tile.__depth / maxDepth;
+                c.material.color.setRGB(val, val, val);
+                break;
+              }
+
+            case SCREEN_ERROR:
+              {
+                const val = tile.__error / errorTarget;
+
+                if (val > 1.0) {
+                  c.material.color.setRGB(1.0, 0.0, 0.0);
+                } else {
+                  c.material.color.setRGB(val, val, val);
+                }
+
+                break;
+              }
+
+            case GEOMETRIC_ERROR:
+              {
+                const val = Math.min(tile.geometricError / maxError, 1);
+                c.material.color.setRGB(val, val, val);
+                break;
+              }
+
+            case DISTANCE:
+              {
+                const val = Math.min(tile.cached.distance / maxDistance, 1);
+                c.material.color.setRGB(val, val, val);
+                break;
+              }
+
+            case IS_LEAF:
+              {
+                if (!tile.children || tile.children.length === 0) {
+                  c.material.color.set(0xffffff);
+                } else {
+                  c.material.color.set(0);
+                }
+
+                break;
+              }
+          }
+        }
+      });
     });
   }
 
@@ -39105,7 +39141,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
         const cachedTransform = cached.transform;
         const boxHelperGroup = new _three.Group();
         boxHelperGroup.matrix.copy(cachedBoxMat);
-        boxHelperGroup.matrix.multiply(cachedTransform);
+        boxHelperGroup.matrix.premultiply(cachedTransform);
         boxHelperGroup.matrix.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
         const boxHelper = new _three.Box3Helper(cachedBox);
         boxHelperGroup.add(boxHelper);
@@ -39138,7 +39174,10 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
   disposeTile(tile) {
     super.disposeTile(tile);
-    delete tile.cached.boxBounds;
+    tile.cached.boxHelperGroup.children[0].geometry.dispose();
+    tile.cached.sphereHelper.geometry.dispose();
+    delete tile.cached.boxHelperGroup;
+    delete tile.cached.sphereHelper;
   }
 
 }
@@ -43535,7 +43574,7 @@ init();
 animate();
 
 function reinstantiateTiles() {
-  const url = window.location.hash.replace(/^#/, '') || './SampleTileset/tileset.json';
+  const url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
 
   if (tiles) {
     offsetParent.remove(tiles.group);
@@ -43641,24 +43680,6 @@ function init() {
     IS_LEAF: 5.
   }).onChange(function (v) {
     tiles.colorMode = parseFloat(v);
-
-    if (this._lastController) {
-      this._lastController.remove();
-    }
-
-    switch (v) {
-      // GEOMETRIC_ERROR
-      case 2:
-        break;
-      // DISTANCE
-
-      case 3:
-        break;
-      // DEPTH
-
-      case 2:
-        break;
-    }
   });
   debug.open();
   gui.add(params, 'showThirdPerson');
@@ -43716,7 +43737,7 @@ function onMouseUp(e) {
 
   if (results.length) {
     const object = results[0].object;
-    const info = tiles.getTileInformationFromObject(object);
+    const info = tiles.getTileInformationFromActiveObject(object);
     let str = '';
 
     for (const key in info) {
@@ -43877,7 +43898,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58930" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55631" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
