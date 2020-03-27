@@ -31,6 +31,8 @@ let statsContainer, stats;
 
 let params = {
 
+	'enableRaycast': false,
+	'enableCacheDisplay': false,
 	'orthographic': false,
 
 	'errorTarget': 6,
@@ -189,6 +191,8 @@ function init() {
 	debug.open();
 
 	gui.add( params, 'showThirdPerson' );
+	gui.add( params, 'enableRaycast' );
+	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'reload' );
 
 	gui.open();
@@ -332,39 +336,47 @@ function animate() {
 
 	}
 
-	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
-	raycaster.firstHitOnly = true;
-	const results = raycaster.intersectObject( tiles.group, true );
-	if ( results.length ) {
+	if ( params.enableRaycast ) {
 
-		const closestHit = results[ 0 ];
-		const point = closestHit.point;
-		rayIntersect.position.copy( point );
+		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+		raycaster.firstHitOnly = true;
+		const results = raycaster.intersectObject( tiles.group, true );
+		if ( results.length ) {
 
-		// If the display bounds are visible they get intersected
-		if ( closestHit.face ) {
+			const closestHit = results[ 0 ];
+			const point = closestHit.point;
+			rayIntersect.position.copy( point );
 
-			const normal = closestHit.face.normal;
-			normal.transformDirection( closestHit.object.matrixWorld );
-			rayIntersect.lookAt(
-				point.x + normal.x,
-				point.y + normal.y,
-				point.z + normal.z
-			);
+			// If the display bounds are visible they get intersected
+			if ( closestHit.face ) {
 
-		}
+				const normal = closestHit.face.normal;
+				normal.transformDirection( closestHit.object.matrixWorld );
+				rayIntersect.lookAt(
+					point.x + normal.x,
+					point.y + normal.y,
+					point.z + normal.z
+				);
 
-		if ( params.orthographic ) {
+			}
 
-			rayIntersect.scale.setScalar( closestHit.distance / 150 );
+			if ( params.orthographic ) {
+
+				rayIntersect.scale.setScalar( closestHit.distance / 150 );
+
+			} else {
+
+				rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
+
+			}
+
+			rayIntersect.visible = true;
 
 		} else {
 
-			rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
+			rayIntersect.visible = false;
 
 		}
-
-		rayIntersect.visible = true;
 
 	} else {
 
@@ -402,39 +414,41 @@ function render() {
 
 	}
 
-	const geomSet = new Set();
-	tiles.traverse( tile => {
-
-		const scene = tile.cached.scene;
-		if ( scene ) {
-
-			scene.traverse( c => {
-
-				if ( c.geometry ) {
-
-					geomSet.add( c.geometry );
-
-				}
-
-			} );
-
-		}
-
-	} );
-
-	let count = 0;
-	geomSet.forEach( g => {
-
-		count += BufferGeometryUtils.estimateBytesUsed( g );
-
-	} );
-
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
-	statsContainer.innerHTML =
-		`
-			Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }
-			<br/>
-			Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb
-		`;
+	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
+
+	if ( params.enableCacheDisplay ) {
+
+		const geomSet = new Set();
+		tiles.traverse( tile => {
+
+			const scene = tile.cached.scene;
+			if ( scene ) {
+
+				scene.traverse( c => {
+
+					if ( c.geometry ) {
+
+						geomSet.add( c.geometry );
+
+					}
+
+				} );
+
+			}
+
+		} );
+
+		let count = 0;
+		geomSet.forEach( g => {
+
+			count += BufferGeometryUtils.estimateBytesUsed( g );
+
+		} );
+		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
+
+	}
+
+	statsContainer.innerHTML = str
 
 }
