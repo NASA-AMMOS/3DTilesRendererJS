@@ -9,7 +9,10 @@ import {
 	Vector2,
 	Math as MathUtils,
 	Quaternion,
-	Frustum
+	Frustum,
+	CanvasTexture,
+	LoadingManager,
+	ImageBitmapLoader,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -154,7 +157,7 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
-			frustum.setFromMatrix( tempMat );
+			frustum.setFromProjectionMatrix( tempMat );
 
 		}
 
@@ -272,7 +275,29 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex ++;
 
 		const loadIndex = tile._loadIndex;
-		return new B3DMLoader().parse( buffer ).then( res => {
+
+		const manager = new LoadingManager();
+
+		if ( typeof createImageBitmap !== 'undefined' ) {
+
+			manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+
+				load( url, onComplete ) {
+
+					const loader = new ImageBitmapLoader();
+					loader.load( url, res => {
+
+						onComplete( new CanvasTexture( res ) );
+
+					} );
+
+				}
+
+			});
+
+		}
+
+		return new B3DMLoader( manager ).parse( buffer ).then( res => {
 
 			if ( tile._loadIndex !== loadIndex ) {
 

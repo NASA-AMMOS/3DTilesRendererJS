@@ -12,8 +12,8 @@
     "geometry",
     "terrain",
     "cesium"
-	],
-	"type": "module",
+  ],
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache",
@@ -39,9 +39,9 @@
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
     "parcel-bundler": "^1.12.4",
-    "three": ">=0.108.0"
+    "three": ">=0.114.0"
   },
   "peerDependencies": {
-    "three": ">=0.108.0"
+    "three": ">=0.114.0"
   }
 }
