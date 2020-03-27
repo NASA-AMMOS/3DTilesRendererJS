@@ -72,7 +72,7 @@ function reinstantiateTiles() {
 function init() {
 
 	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 3000 );
+	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	thirdPersonCamera.position.set( 50, 40, 40 );
 	thirdPersonCamera.lookAt( 0, 0, 0 );
 
@@ -103,7 +103,7 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
 
 	cameraHelper = new CameraHelper( camera );
@@ -449,6 +449,10 @@ function render() {
 
 	}
 
-	statsContainer.innerHTML = str
+	if ( statsContainer.innerHTML !== str ) {
+
+		statsContainer.innerHTML = str
+
+	}
 
 }
