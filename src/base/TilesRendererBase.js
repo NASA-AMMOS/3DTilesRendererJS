@@ -304,8 +304,8 @@ export class TilesRendererBase {
 			t.__loadIndex ++;
 
 			// TODO: Removing from the queues here is slow
-			// parseQueue.remove( t );
-			// downloadQueue.remove( t );
+			parseQueue.remove( t );
+			downloadQueue.remove( t );
 
 		} );
 

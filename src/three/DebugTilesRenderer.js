@@ -338,11 +338,16 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		super.disposeTile( tile );
 
-		tile.cached.boxHelperGroup.children[ 0 ].geometry.dispose();
-		tile.cached.sphereHelper.geometry.dispose();
+		const cached = tile.cached;
+		if ( cached.boxHelperGroup ) {
 
-		delete tile.cached.boxHelperGroup;
-		delete tile.cached.sphereHelper;
+			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
+			cached.sphereHelper.geometry.dispose();
+
+			delete cached.boxHelperGroup;
+			delete cached.sphereHelper;
+
+		}
 
 	}
 
