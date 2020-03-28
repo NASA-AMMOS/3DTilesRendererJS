@@ -162,16 +162,15 @@ export class TilesRendererBase {
 		tile.__inFrustum = false;
 		tile.__isLeaf = false;
 
-		tile.__wasUsed = false;
+		tile.__usedLastFrame = false;
 		tile.__used = false;
 
-		tile.__wasVisible = false;
+		tile.__wasSetVisible = false;
 		tile.__visible = false;
 
-		tile.__wasActive = false;
+		tile.__wasSetActive = false;
 		tile.__active = false;
 
-		tile.__childrenActive = false;
 		tile.__loadingState = UNLOADED;
 		tile.__loadIndex = 0;
 
@@ -386,8 +385,17 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
-				this.setTileActive( tile, tile.__active );
-				this.setTileVisible( tile, tile.__visible );
+				if ( tile.__wasSetVisible ) {
+
+					this.setTileVisible( tile, true );
+
+				}
+
+				if ( tile.__wasSetActive ) {
+
+					this.setTileActive( tile, true );
+
+				}
 
 			} )
 			.catch( e => {

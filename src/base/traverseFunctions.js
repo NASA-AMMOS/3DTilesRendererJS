@@ -280,28 +280,34 @@ export function toggleTiles( tile, renderer ) {
 	const isUsed = isUsedThisFrame( tile, frameCount );
 	if ( isUsed || tile.__usedLastFrame ) {
 
-		if ( ! isUsed ) {
+		let setActive = false;
+		let setVisible = false;
+		if ( isUsed ) {
 
-			if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
-
-				renderer.setTileVisible( tile, false );
-				renderer.setTileActive( tile, false );
-
-			}
-			tile.__usedLastFrame = false;
-
-		} else {
-
-			if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
-
-				// enable visibility if active due to shadows
-				renderer.setTileActive( tile, tile.__active );
-				renderer.setTileVisible( tile, tile.__active || tile.__visible );
-
-			}
-			tile.__usedLastFrame = true;
+			// enable visibility if active due to shadows
+			setActive = tile.__active;
+			setVisible = tile.__active || tile.__visible;
 
 		}
+
+		if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
+
+			if ( tile.__wasSetActive !== setActive ) {
+
+				renderer.setTileVisible( tile, setActive );
+
+			}
+
+			if ( tile.__wasSetVisible !== setVisible ) {
+
+				renderer.setTileActive( tile, setVisible );
+
+			}
+
+		}
+		tile.__wasSetActive = setActive;
+		tile.__wasSetVisible = setVisible;
+		tile.__usedLastFrame = isUsed;
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {

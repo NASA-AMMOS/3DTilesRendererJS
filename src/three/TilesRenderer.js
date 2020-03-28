@@ -417,15 +417,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const group = this.group;
 		if ( visible ) {
 
-			// TODO: Should set visible be called if the scene hasn't been loaded yet?
-			// Ideally this would only be called on state change and when it's relevant
-			if ( scene && ! scene.parent ) {
-
-				group.add( scene );
-				visibleTiles.add( tile );
-				scene.updateMatrixWorld( true );
-
-			}
+			group.add( scene );
+			visibleTiles.add( tile );
+			scene.updateMatrixWorld( true );
 
 		} else {
 
@@ -438,20 +432,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileActive( tile, active ) {
 
-		const cached = tile.cached;
 		const activeTiles = this.activeTiles;
-		if ( active !== cached.active ) {
+		if ( active ) {
 
-			cached.active = active;
-			if ( active ) {
+			activeTiles.add( tile );
 
-				activeTiles.add( tile );
+		} else {
 
-			} else {
-
-				activeTiles.delete( tile );
-
-			}
+			activeTiles.delete( tile );
 
 		}
 
@@ -559,6 +547,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {
 
+			// TODO: we should cache the sphere in the tileset root frame instead of transforming it here
 			_sphere.copy( sphere );
 			_sphere.applyMatrix4( tile.cached.transform );
 
