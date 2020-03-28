@@ -8,7 +8,6 @@ import {
 	Vector3,
 	Vector2,
 	Math as MathUtils,
-	Quaternion,
 	Frustum,
 	CanvasTexture,
 	LoadingManager,
@@ -18,12 +17,11 @@ import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
 const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
-const tempQuaternion = new Quaternion();
+const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
-const _sphere = new Sphere();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -52,7 +50,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TilesGroup( this );
 		this.cameras = [];
 		this.resolution = new Vector2();
-		this.frustums = [];
+		this.cameraInfo = [];
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 
@@ -116,7 +114,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const group = this.group;
 		const cameras = this.cameras;
-		const frustums = this.frustums;
+		const cameraInfo = this.cameraInfo;
 		const resolution = this.resolution;
 
 		if ( cameras.length === 0 ) {
@@ -133,29 +131,62 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// automatically scale the array of frustums to match the cameras
-		while ( frustums.length > cameras.length ) {
+		// automatically scale the array of cameraInfo to match the cameras
+		while ( cameraInfo.length > cameras.length ) {
 
-			frustums.pop();
-
-		}
-
-		while ( frustums.length < cameras.length ) {
-
-			frustums.push( new Frustum() );
+			cameraInfo.pop();
 
 		}
 
-		// store the camera frustums in the 3d tiles root frame
-		for ( let i = 0, l = frustums.length; i < l; i ++ ) {
+		while ( cameraInfo.length < cameras.length ) {
+
+			cameraInfo.push( {
+
+				frustum: new Frustum(),
+				sseDenominator: - 1,
+				position: new Vector3(),
+				invScale: - 1,
+
+			} );
+
+		}
+
+		tempMat2.getInverse( group.matrixWorld );
+
+		let invScale;
+		tempVector.setFromMatrixScale( tempMat2 );
+		invScale = tempVector.x;
+
+		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
+
+			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
+
+		}
+
+		// store the camera cameraInfo in the 3d tiles root frame
+		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
 			const camera = cameras[ i ];
-			const frustum = frustums[ i ];
+			const info = cameraInfo[ i ];
+			const frustum = info.frustum;
+			const position = info.position;
+
+			if ( camera.isPerspectiveCamera ) {
+
+				info.sseDenominator = 2 * Math.tan( 0.5 * camera.fov * DEG2RAD ) / resolution.height;
+
+			}
+
+			info.invScale = invScale;
 
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
 			frustum.setFromProjectionMatrix( tempMat );
+
+			position.set( 0, 0, 0 );
+			position.applyMatrix4( camera.matrixWorld );
+			position.applyMatrix4( tempMat2 );
 
 		}
 
@@ -191,11 +222,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 		let box = null;
 		let boxTransform = null;
+		let boxTransformInverse = null;
 		if ( 'box' in tile.boundingVolume ) {
 
 			const data = tile.boundingVolume.box;
 			box = new Box3();
 			boxTransform = new Matrix4();
+			boxTransformInverse = new Matrix4();
 
 			// get the extents of the bounds in each axis
 			vecX.set( data[ 3 ], data[ 4 ], data[ 5 ] );
@@ -218,6 +251,7 @@ export class TilesRenderer extends TilesRendererBase {
 				0, 0, 0, 1
 			);
 			boxTransform.premultiply( transform );
+			boxTransformInverse.getInverse( boxTransform );
 
 			// scale the box by the extents
 			box.min.set( - scaleX, - scaleY, - scaleZ );
@@ -236,9 +270,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else if ( 'box' in tile.boundingVolume ) {
 
+			const data = tile.boundingVolume.box;
 			sphere = new Sphere();
 			box.getBoundingSphere( sphere );
-			sphere.applyMatrix4( boxTransform );
+			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
+			sphere.applyMatrix4( transform );
 
 		}
 
@@ -257,6 +293,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			box,
 			boxTransform,
+			boxTransformInverse,
 			sphere,
 			region,
 
@@ -275,7 +312,6 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex ++;
 
 		const loadIndex = tile._loadIndex;
-
 		const manager = new LoadingManager();
 
 		if ( typeof createImageBitmap !== 'undefined' ) {
@@ -455,51 +491,35 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
+		const cameraInfo = this.cameraInfo;
 
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
-		const transformMat = cached.transform;
 		const resolution = this.resolution;
 
 		if ( 'box' in boundingVolume ) {
 
-			const group = this.group;
 			const boundingBox = cached.box;
-			const obbMat = cached.boxTransform;
-
-			// TODO: these can likely be cached? Or the world transform mat can be used
-			// transformMat can be rolled into oobMat
-			tempMat.copy( group.matrixWorld );
-			tempMat.multiply( obbMat );
-			tempMat.getInverse( tempMat );
-
-			// NOTE: scale is inverted here.
-			// assume the scales on all axes are uniform.
-			let invScale;
-
-			// account for tile scale.
-			tempVector.setFromMatrixScale( tempMat );
-			invScale = tempVector.x;
-
-			if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
-
-				console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
-
-			}
+			const boxTransformInverse = cached.boxTransformInverse;
 
 			let minError = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
+				// TODO: move this logic (and the distance scale extraction) into the update preprocess step
+
 				// transform camera position into local frame of the tile bounding box
-				const cam = cameras[ i ];
-				tempVector.copy( cam.position );
-				tempVector.applyMatrix4( tempMat );
+				// TODO: this should be the cameras world position
+				const camera = cameras[ i ];
+				const info = cameraInfo[ i ];
+				const invScale = info.invScale;
+				tempVector.copy( info.position );
+				tempVector.applyMatrix4( boxTransformInverse );
 
 				let error;
-				if ( cam.isOrthographicCamera ) {
+				if ( camera.isOrthographicCamera ) {
 
-					const w = cam.right - cam.left;
-					const h = cam.top - cam.bottom;
+					const w = camera.right - camera.left;
+					const h = camera.top - camera.bottom;
 					const pixelSize = Math.max( h / resolution.height, w / resolution.width );
 					error = tile.geometricError / ( pixelSize * invScale );
 
@@ -507,8 +527,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
 					const scaledDistance = distance * invScale;
-					const sseDenominator = 2 * Math.tan( 0.5 * cam.fov * DEG2RAD );
-					error = ( tile.geometricError * resolution.height ) / ( scaledDistance * sseDenominator );
+					const sseDenominator = info.sseDenominator;
+					error = tile.geometricError / ( scaledDistance * sseDenominator );
 
 					tile.cached.distance = scaledDistance;
 
@@ -546,10 +566,10 @@ export class TilesRenderer extends TilesRendererBase {
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {
 
-			const frustums = this.frustums;
-			for ( let i = 0, l = frustums.length; i < l; i ++ ) {
+			const cameraInfo = this.cameraInfo;
+			for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
-				const frustum = frustums[ i ];
+				const frustum = cameraInfo[ i ].frustum;
 				if ( frustum.intersectsSphere( sphere ) ) {
 
 					return true;

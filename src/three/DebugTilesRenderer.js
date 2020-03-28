@@ -10,6 +10,9 @@ const GEOMETRIC_ERROR = 2;
 const DISTANCE = 3;
 const DEPTH = 4;
 const IS_LEAF = 5;
+
+function emptyRaycast() {}
+
 export class DebugTilesRenderer extends TilesRenderer {
 
 	constructor( ...args ) {
@@ -293,6 +296,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
 
 					const boxHelper = new Box3Helper( cachedBox );
+					boxHelper.raycast = emptyRaycast;
 					boxHelperGroup.add( boxHelper );
 
 					cached.boxHelperGroup = boxHelperGroup;
@@ -306,6 +310,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					const cachedSphere = cached.sphere;
 					const sphereHelper = new SphereHelper( cachedSphere );
+					sphereHelper.raycast = emptyRaycast;
 					cached.sphereHelper = sphereHelper;
 
 					if ( this.displaySphereBounds ) {
