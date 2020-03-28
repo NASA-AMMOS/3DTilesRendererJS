@@ -314,8 +314,13 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		const manager = new LoadingManager();
 
-		if ( typeof createImageBitmap !== 'undefined' ) {
+		const useImageBitmap = typeof createImageBitmap !== 'undefined';
+		if ( useImageBitmap ) {
 
+			// TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
+			// the fact. Premultiply alpha default behavior is not well defined, either.
+			// TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
+			// behavior. Fall back to regular texture loading
 			manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
 
 				load( url, onComplete ) {
