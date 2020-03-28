@@ -70,11 +70,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const cached = this.root.cached;
 		const boundingBox = cached.box;
 		const obbMat = cached.boxTransform;
-		const transformMat = cached.transform;
 
 		box.copy( boundingBox );
-		tempMat.multiplyMatrices( transformMat, obbMat );
-		box.applyMatrix4( tempMat );
+		box.applyMatrix4( obbMat );
 
 		return true;
 
@@ -219,6 +217,7 @@ export class TilesRenderer extends TilesRendererBase {
 				vecX.z, vecY.z, vecZ.z, data[ 2 ],
 				0, 0, 0, 1
 			);
+			boxTransform.premultiply( transform );
 
 			// scale the box by the extents
 			box.min.set( - scaleX, - scaleY, - scaleZ );
@@ -233,12 +232,13 @@ export class TilesRenderer extends TilesRendererBase {
 			sphere = new Sphere();
 			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
 			sphere.radius = data[ 3 ];
+			sphere.applyMatrix4( transform );
 
 		} else if ( 'box' in tile.boundingVolume ) {
 
 			sphere = new Sphere();
 			box.getBoundingSphere( sphere );
-			boxTransform.decompose( sphere.center, tempQuaternion, tempVector );
+			sphere.applyMatrix4( boxTransform );
 
 		}
 
@@ -470,7 +470,6 @@ export class TilesRenderer extends TilesRendererBase {
 			// TODO: these can likely be cached? Or the world transform mat can be used
 			// transformMat can be rolled into oobMat
 			tempMat.copy( group.matrixWorld );
-			tempMat.multiply( transformMat );
 			tempMat.multiply( obbMat );
 			tempMat.getInverse( tempMat );
 
@@ -547,15 +546,11 @@ export class TilesRenderer extends TilesRendererBase {
 		const sphere = tile.cached.sphere;
 		if ( sphere ) {
 
-			// TODO: we should cache the sphere in the tileset root frame instead of transforming it here
-			_sphere.copy( sphere );
-			_sphere.applyMatrix4( tile.cached.transform );
-
 			const frustums = this.frustums;
 			for ( let i = 0, l = frustums.length; i < l; i ++ ) {
 
 				const frustum = frustums[ i ];
-				if ( frustum.intersectsSphere( _sphere ) ) {
+				if ( frustum.intersectsSphere( sphere ) ) {
 
 					return true;
 

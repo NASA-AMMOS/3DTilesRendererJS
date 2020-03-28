@@ -65,7 +65,6 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const transformMat = cached.transform;
 
 		_mat.copy( groupMatrixWorld );
-		_mat.multiply( transformMat );
 
 		// if we don't hit the sphere then early out
 		const sphere = cached.sphere;
@@ -192,10 +191,8 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 
 	const cached = tile.cached;
 	const groupMatrixWorld = group.matrixWorld;
-	const transformMat = cached.transform;
 
 	_mat.copy( groupMatrixWorld );
-	_mat.multiply( transformMat );
 
 	const sphere = cached.sphere;
 	if ( sphere ) {

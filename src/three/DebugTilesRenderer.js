@@ -258,12 +258,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const boxHelperGroup = cached.boxHelperGroup;
 		const sphereHelper = cached.sphereHelper;
 
-		if ( ! visible && boxHelperGroup.parent ) {
+		if ( ! visible ) {
 
 			boxGroup.remove( boxHelperGroup );
 			sphereGroup.remove( sphereHelper );
 
-		} else if ( visible && ! boxHelperGroup.parent ) {
+		} else {
 
 			boxGroup.add( boxHelperGroup );
 			boxHelperGroup.updateMatrixWorld( true );
@@ -287,11 +287,9 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					const cachedBox = cached.box;
 					const cachedBoxMat = cached.boxTransform;
-					const cachedTransform = cached.transform;
 
 					const boxHelperGroup = new Group();
 					boxHelperGroup.matrix.copy( cachedBoxMat );
-					boxHelperGroup.matrix.premultiply( cachedTransform );
 					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
 
 					const boxHelper = new Box3Helper( cachedBox );
