@@ -63,13 +63,13 @@ export class TilesRendererBase {
 
 	}
 
-	traverse( cb ) {
+	traverse( beforecb, aftercb ) {
 
 		const tileSets = this.tileSets;
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! rootTileSet || ! rootTileSet.root ) return;
 
-		traverseSet( rootTileSet.root, cb );
+		traverseSet( rootTileSet.root, beforecb, aftercb );
 
 	}
 

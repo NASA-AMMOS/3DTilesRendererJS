@@ -459,6 +459,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateError( tile ) {
 
+		if ( tile.geometricError === 0.0 ) {
+
+			return 0.0;
+
+		}
+
 		const cached = tile.cached;
 		const cameras = this.cameras;
 

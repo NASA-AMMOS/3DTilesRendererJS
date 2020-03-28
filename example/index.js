@@ -31,6 +31,7 @@ let statsContainer, stats;
 
 let params = {
 
+	'enableUpdate': true,
 	'enableRaycast': false,
 	'enableCacheDisplay': false,
 	'orthographic': false,
@@ -191,6 +192,7 @@ function init() {
 	debug.open();
 
 	gui.add( params, 'showThirdPerson' );
+	gui.add( params, 'enableUpdate' );
 	gui.add( params, 'enableRaycast' );
 	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'reload' );
@@ -318,7 +320,11 @@ function animate() {
 	tiles.setResolutionFromRenderer( renderer );
 
 	// update tiles
-	tiles.update();
+	if ( params.enableUpdate ) {
+
+		tiles.update();
+
+	}
 	window.tiles = tiles;
 
 	offsetParent.rotation.set( 0, 0, 0 );

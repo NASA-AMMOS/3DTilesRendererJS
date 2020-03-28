@@ -212,7 +212,7 @@ export function skipTraversal( tile, renderer ) {
 	}
 
 	const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
-	const meetsSSE = tile.__error < errorRequirement;
+	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
 	const children = tile.children;
@@ -222,6 +222,7 @@ export function skipTraversal( tile, renderer ) {
 		const c = children[ i ];
 		if ( isUsedThisFrame( c, frameCount ) ) {
 
+			// TODO: This doesn't seem right -- we should check down to the next children with content?
 			const childContent = c.__loadingState === LOADED || tile.__contentEmpty;
 			allChildrenHaveContent = allChildrenHaveContent && childContent;
 
