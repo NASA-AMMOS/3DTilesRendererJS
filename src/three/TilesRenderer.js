@@ -401,9 +401,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// This could get called before the tile has finished downloading
 		const cached = tile.cached;
 		if ( cached.scene ) {
 
+			// TODO: This should never get called if the scene hasn't been removed from the scene yet, right?
+			// TODO: this can possibly be slow because so many discard can happen at once -- maybe iteratively do it? Or lower the eviction ratio / put a cap
+			// on the amount disposed per frame.
 			const scene = cached.scene;
 			const materials = cached.materials;
 			const geometry = cached.geometry;

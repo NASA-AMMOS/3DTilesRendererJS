@@ -161,6 +161,9 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	if ( ! anyChildrenUsed ) {
 
+		// TODO: This isn't necessarily right because it's possible that a parent tile is considered in the
+		// frustum while the child tiles are not, making them unused. If all children have loaded and were properly
+		// considered to be in the used set then we shouldn't set ourselves to a leaf here.
 		tile.__isLeaf = true;
 
 		// TODO: stats
