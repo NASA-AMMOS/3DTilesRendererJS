@@ -252,23 +252,27 @@ export function skipTraversal( tile, renderer ) {
 
 	// TODO: this condition is skipped over if data hasn't loaded yet meaning that between when this tile is first
 	// used trigger and when it loads the children are iterated over and triggered to load, which is unnecessary
-	if ( meetsSSE && loadedContent && ! allChildrenHaveContent && ! childrenWereVisible ) {
+	if ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible ) {
 
-		if ( tile.__inFrustum ) {
+		if ( loadedContent ) {
 
-			tile.__visible = true;
-			stats.visible ++;
+			if ( tile.__inFrustum ) {
 
-		}
-		tile.__active = true;
-		stats.active ++;
+				tile.__visible = true;
+				stats.visible ++;
 
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+			}
+			tile.__active = true;
+			stats.active ++;
 
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				renderer.requestTileContents( c );
+				const c = children[ i ];
+				if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+
+					renderer.requestTileContents( c );
+
+				}
 
 			}
 
