@@ -17,6 +17,7 @@ function resetFrameState( tile, frameCount ) {
 		tile.__visible = false;
 		tile.__active = false;
 		tile.__error = 0;
+		tile.__childrenWereVisible = false;
 
 	}
 
@@ -152,12 +153,16 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	const children = tile.children;
 	let anyChildrenUsed = false;
+	let childrenWereVisible = false;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
 		anyChildrenUsed = anyChildrenUsed || isUsedThisFrame( c, frameCount );
+		childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
 	}
+
+	tile.__childrenWereVisible = childrenWereVisible;
 
 	if ( ! anyChildrenUsed ) {
 
@@ -218,6 +223,7 @@ export function skipTraversal( tile, renderer ) {
 	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
+	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = true;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -239,7 +245,14 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	if ( meetsSSE && loadedContent && ! allChildrenHaveContent ) {
+	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
+	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
+	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
+	// load in.
+
+	// TODO: this condition is skipped over if data hasn't loaded yet meaning that between when this tile is first
+	// used trigger and when it loads the children are iterated over and triggered to load, which is unnecessary
+	if ( meetsSSE && loadedContent && ! allChildrenHaveContent && ! childrenWereVisible ) {
 
 		if ( tile.__inFrustum ) {
 
