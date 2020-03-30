@@ -10,6 +10,7 @@ const GEOMETRIC_ERROR = 2;
 const DISTANCE = 3;
 const DEPTH = 4;
 const IS_LEAF = 5;
+const RANDOM_COLOR = 6;
 
 function emptyRaycast() {}
 
@@ -186,6 +187,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						c.material = new MeshBasicMaterial();
 
+						const h = Math.random();
+						const s = 0.5 + Math.random() * 0.5;
+						const l = 0.375 + Math.random() * 0.25;
+						c.material.color.setHSL( h, s, l );
+
 					}
 
 					switch ( colorMode ) {
@@ -301,7 +307,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					cached.boxHelperGroup = boxHelperGroup;
 
-					if ( this.displayBoxBounds ) {
+					if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
 						this.boxGroup.add( boxHelperGroup );
 						boxHelperGroup.updateMatrixWorld( true );
@@ -313,7 +319,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 					sphereHelper.raycast = emptyRaycast;
 					cached.sphereHelper = sphereHelper;
 
-					if ( this.displaySphereBounds ) {
+					if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
 
 						this.sphereGroup.add( sphereHelper );
 						sphereHelper.updateMatrixWorld( true );
