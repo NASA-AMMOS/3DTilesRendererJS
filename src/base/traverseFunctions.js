@@ -239,23 +239,27 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	if ( meetsSSE && loadedContent && ! allChildrenHaveContent ) {
+	if ( meetsSSE && ! allChildrenHaveContent ) {
 
-		if ( tile.__inFrustum ) {
+		if ( loadedContent ) {
 
-			tile.__visible = true;
-			stats.visible ++;
+			if ( tile.__inFrustum ) {
 
-		}
-		tile.__active = true;
-		stats.active ++;
+				tile.__visible = true;
+				stats.visible ++;
 
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+			}
+			tile.__active = true;
+			stats.active ++;
 
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				renderer.requestTileContents( c );
+				const c = children[ i ];
+				if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+
+					renderer.requestTileContents( c );
+
+				}
 
 			}
 
