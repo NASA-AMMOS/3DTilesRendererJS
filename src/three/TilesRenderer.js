@@ -25,6 +25,7 @@ const vecZ = new Vector3();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
+const useImageBitmap = typeof createImageBitmap !== 'undefined';
 
 function emptyRaycast() {}
 
@@ -314,7 +315,6 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		const manager = new LoadingManager();
 
-		const useImageBitmap = typeof createImageBitmap !== 'undefined';
 		if ( useImageBitmap ) {
 
 			// TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
@@ -381,6 +381,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			const materials = [];
 			const geometry = [];
+			const textures = [];
 			scene.traverse( c => {
 
 				if ( c.geometry ) {
@@ -391,7 +392,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 				if ( c.material ) {
 
+					const material = c.material;
 					materials.push( c.material );
+
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							textures.push( value );
+
+						}
+
+					}
 
 				}
 
@@ -399,6 +412,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cached.materials = materials;
 			cached.geometry = geometry;
+			cached.textures = textures;
 
 		} );
 
@@ -410,17 +424,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const cached = tile.cached;
 		if ( cached.scene ) {
 
-			// TODO: This should never get called if the scene hasn't been removed from the scene yet, right?
-			// TODO: this can possibly be slow because so many discard can happen at once -- maybe iteratively do it? Or lower the eviction ratio / put a cap
-			// on the amount disposed per frame.
-			const scene = cached.scene;
 			const materials = cached.materials;
 			const geometry = cached.geometry;
-			if ( scene.parent ) {
-
-				scene.parent.remove( scene );
-
-			}
+			const textures = cached.textures;
 
 			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
@@ -430,23 +436,25 @@ export class TilesRenderer extends TilesRendererBase {
 
 			for ( let i = 0, l = materials.length; i < l; i ++ ) {
 
-				const material = materials[ i ];
-				for ( const key in material ) {
+				materials[ i ].dispose();
 
-					const value = material[ key ];
-					if ( value && value.isTexture ) {
+			}
 
-						value.dispose();
+			for ( let i = 0, l = textures.length; i < l; i ++ ) {
 
-					}
+				const texture = textures[ i ];
+				texture.dispose();
+				if ( useImageBitmap && 'close' in texture.image ) {
+
+					texture.image.close();
 
 				}
-				material.dispose();
 
 			}
 
 			cached.scene = null;
 			cached.materials = null;
+			cached.textures = null;
 			cached.geometry = null;
 
 		}
