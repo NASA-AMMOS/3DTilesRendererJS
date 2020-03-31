@@ -57,6 +57,7 @@ export class TilesRendererBase {
 		this.errorTarget = 6.0;
 		this.errorThreshold = Infinity;
 		this.loadSiblings = true;
+		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 
 	}

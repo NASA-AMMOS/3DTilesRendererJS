@@ -323,7 +323,15 @@ export function toggleTiles( tile, renderer ) {
 
 			// enable visibility if active due to shadows
 			setActive = tile.__active;
-			setVisible = tile.__visible;
+			if ( renderer.displayActiveTiles ) {
+
+				setVisible = tile.__active || tile.__visible;
+
+			} else {
+
+				setVisible = tile.__visible;
+
+			}
 
 		}
 
