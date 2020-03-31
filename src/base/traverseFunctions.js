@@ -279,6 +279,8 @@ export function skipTraversal( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
+			// load the child content if we've found that we've been loaded so we can move down to the next tile
+			// layer when the data has loaded.
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				const c = children[ i ];
@@ -308,6 +310,7 @@ export function skipTraversal( tile, renderer ) {
 
 }
 
+// Final traverse to toggle tile visibility.
 export function toggleTiles( tile, renderer ) {
 
 	const frameCount = renderer.frameCount;
@@ -319,11 +322,14 @@ export function toggleTiles( tile, renderer ) {
 		if ( isUsed ) {
 
 			// enable visibility if active due to shadows
+			// TODO: This seems like it should be the resposibility of the implementing class to mark active
+			// tiles as visible if desired.
 			setActive = tile.__active;
 			setVisible = tile.__active || tile.__visible;
 
 		}
 
+		// If the active or visible state changed then call the functions.
 		if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
 
 			if ( tile.__wasSetActive !== setActive ) {

@@ -4,9 +4,7 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
-// TODO: find out why tiles are left dangling in the hierarchy
 // TODO: Address the issue of too many promises, garbage collection
-// TODO: remove more redundant computation
 // TODO: See if using classes improves performance
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
@@ -124,6 +122,7 @@ export class TilesRendererBase {
 
 		if ( tile.content ) {
 
+			// Fix old file formats
 			if ( ! ( 'uri' in tile.content ) && 'url' in tile.content ) {
 
 				tile.content.uri = tile.content.url;
@@ -138,7 +137,7 @@ export class TilesRendererBase {
 			}
 
 			// TODO: fix for some cases where tilesets provide the bounding volume
-			// but volumes are not present. See
+			// but volumes are not present.
 			if (
 				tile.content.boundingVolume &&
 				! (
@@ -242,9 +241,6 @@ export class TilesRendererBase {
 
                 		tileSets[ url ] = json;
 
-                		// TODO: schedule an update to avoid doing this too many times
-                		this.update();
-
                 	} );
 
 			pr.catch( e => {
@@ -303,7 +299,7 @@ export class TilesRendererBase {
 			t.__loadingState = UNLOADED;
 			t.__loadIndex ++;
 
-			// TODO: Removing from the queues here is slow
+			// TODO: Removing from the queues here is slow?
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
 
@@ -352,6 +348,7 @@ export class TilesRendererBase {
 			} )
 			.then( buffer => {
 
+				// if it has been unloaded then the tile has been disposed
 				if ( tile.__loadIndex !== loadIndex ) {
 
 					return;
@@ -365,6 +362,7 @@ export class TilesRendererBase {
 
 				return parseQueue.add( buffer, priority, buffer => {
 
+					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
 
 						return Promise.resolve();
@@ -378,6 +376,7 @@ export class TilesRendererBase {
 			} )
 			.then( () => {
 
+				// if it has been unloaded then the tile has been disposed
 				if ( tile.__loadIndex !== loadIndex ) {
 
 					return;
