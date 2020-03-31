@@ -340,13 +340,13 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
-				renderer.setTileVisible( tile, setActive );
+				renderer.setTileActive( tile, setActive );
 
 			}
 
 			if ( tile.__wasSetVisible !== setVisible ) {
 
-				renderer.setTileActive( tile, setVisible );
+				renderer.setTileVisible( tile, setVisible );
 
 			}
 
