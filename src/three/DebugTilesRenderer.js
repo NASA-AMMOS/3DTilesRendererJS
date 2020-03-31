@@ -187,10 +187,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						c.material = new MeshBasicMaterial();
 
-						const h = Math.random();
-						const s = 0.5 + Math.random() * 0.5;
-						const l = 0.375 + Math.random() * 0.25;
-						c.material.color.setHSL( h, s, l );
+					}
+
+					if ( colorMode !== RANDOM_COLOR ) {
+
+						delete c.material.__randomColor;
 
 					}
 
@@ -241,6 +242,20 @@ export class DebugTilesRenderer extends TilesRenderer {
 							} else {
 
 								c.material.color.set( 0 );
+
+							}
+							break;
+
+						}
+						case RANDOM_COLOR: {
+
+							if ( ! c.material.__randomColor ) {
+
+								const h = Math.random();
+								const s = 0.5 + Math.random() * 0.5;
+								const l = 0.375 + Math.random() * 0.25;
+								c.material.color.setHSL( h, s, l );
+								c.material.__randomColor = true;
 
 							}
 							break;
