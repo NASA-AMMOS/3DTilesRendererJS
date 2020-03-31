@@ -153,16 +153,13 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	const children = tile.children;
 	let anyChildrenUsed = false;
-	let childrenWereVisible = false;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
 		anyChildrenUsed = anyChildrenUsed || isUsedThisFrame( c, frameCount );
-		childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
 	}
 
-	tile.__childrenWereVisible = childrenWereVisible;
 
 	if ( ! anyChildrenUsed ) {
 
@@ -175,12 +172,15 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
+		let childrenWereVisible = false;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			markUsedSetLeaves( c, renderer );
+			childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
 		}
+		tile.__childrenWereVisible = childrenWereVisible;
 
 	}
 
