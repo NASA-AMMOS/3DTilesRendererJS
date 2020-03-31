@@ -62,7 +62,6 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const tile = children[ i ];
 		const cached = tile.cached;
 		const groupMatrixWorld = group.matrixWorld;
-		const transformMat = cached.transform;
 
 		_mat.copy( groupMatrixWorld );
 

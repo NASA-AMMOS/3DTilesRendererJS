@@ -456,7 +456,7 @@ function render() {
 
 	if ( statsContainer.innerHTML !== str ) {
 
-		statsContainer.innerHTML = str
+		statsContainer.innerHTML = str;
 
 	}
 
