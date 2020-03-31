@@ -235,7 +235,7 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
+	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
@@ -322,10 +322,8 @@ export function toggleTiles( tile, renderer ) {
 		if ( isUsed ) {
 
 			// enable visibility if active due to shadows
-			// TODO: This seems like it should be the resposibility of the implementing class to mark active
-			// tiles as visible if desired.
 			setActive = tile.__active;
-			setVisible = tile.__active || tile.__visible;
+			setVisible = tile.__visible;
 
 		}
 

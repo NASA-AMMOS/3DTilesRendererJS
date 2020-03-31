@@ -41,7 +41,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 
 		this.lruCache = new LRUCache();
-		this.downloadQueue = new PriorityQueue( 6 );
+		this.downloadQueue = new PriorityQueue( 4 );
 		this.parseQueue = new PriorityQueue( 1 );
 		this.stats = {
 			parsing: 0,
@@ -55,7 +55,7 @@ export class TilesRendererBase {
 
 		// options
 		this.errorTarget = 6.0;
-		this.errorThreshold = 6.0;
+		this.errorThreshold = Infinity;
 		this.loadSiblings = true;
 		this.maxDepth = Infinity;
 
