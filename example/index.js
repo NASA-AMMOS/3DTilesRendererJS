@@ -182,11 +182,8 @@ function init() {
 		GEOMETRIC_ERROR: 2,
 		DISTANCE: 3,
 		DEPTH: 4,
-		IS_LEAF: 5.
-
-	} ).onChange( function ( v ) {
-
-		tiles.colorMode = parseFloat( v );
+		IS_LEAF: 5,
+		RANDOM_COLOR: 6,
 
 	} );
 	debug.open();
@@ -309,6 +306,8 @@ function updateOrthoCamera() {
 
 function animate() {
 
+	requestAnimationFrame( animate );
+
 	// update options
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
@@ -316,6 +315,8 @@ function animate() {
 	tiles.maxDepth = params.maxDepth;
 	tiles.camera = params.orthographic ? orthoCamera : camera;
 	tiles.displayBoxBounds = params.displayBoxBounds;
+	tiles.colorMode = parseFloat( params.colorMode );
+
 
 	tiles.setResolutionFromRenderer( renderer );
 
@@ -393,8 +394,6 @@ function animate() {
 	stats.begin();
 	render();
 	stats.end();
-
-	requestAnimationFrame( animate );
 
 }
 

@@ -1,6 +1,13 @@
 // TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
 // Keep a used list that we can sort as needed when it's dirty, a map of item to last used time, and a binary search
 // of the array to find an item that needs to be removed
+
+// Fires at the end of the frame and before the next one
+function enqueueMicrotask( callback ) {
+
+	Promise.resolve().then( callback );
+
+}
 class LRUCache {
 
 	constructor() {
@@ -8,7 +15,7 @@ class LRUCache {
 		// options
 		this.maxSize = 800;
 		this.minSize = 600;
-		this.unloadPercent = 0.2;
+		this.unloadPercent = 0.05;
 
 		this.usedSet = new Set();
 		this.itemSet = new Set();
@@ -109,14 +116,14 @@ class LRUCache {
 		const usedSet = this.usedSet;
 		const callbacks = this.callbacks;
 		const unused = itemList.length - usedSet.size;
+		const excess = itemList.length - targetSize;
 
-		if ( itemList.length > targetSize && unused > 0 ) {
+		if ( excess > 0 && unused > 0 ) {
 
 			// TODO: sort by priority
 
-			let nodesToUnload = Math.max( itemList.length - targetSize, targetSize ) * unloadPercent;
+			let nodesToUnload = Math.min( targetSize * unloadPercent, unused );
 			nodesToUnload = Math.ceil( nodesToUnload );
-			nodesToUnload = Math.min( unused, nodesToUnload );
 
 			const removedItems = itemList.splice( 0, nodesToUnload );
 			for ( let i = 0, l = removedItems.length; i < l; i ++ ) {
@@ -128,7 +135,6 @@ class LRUCache {
 
 			}
 
-
 		}
 
 	}
@@ -138,7 +144,7 @@ class LRUCache {
 		if ( ! this.scheduled ) {
 
 			this.scheduled = true;
-			Promise.resolve().then( () => {
+			enqueueMicrotask( () => {
 
 				this.scheduled = false;
 				this.unloadUnusedContent( prioritySortCb );

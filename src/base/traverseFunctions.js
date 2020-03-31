@@ -249,9 +249,6 @@ export function skipTraversal( tile, renderer ) {
 	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
 	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
 	// load in.
-
-	// TODO: this condition is skipped over if data hasn't loaded yet meaning that between when this tile is first
-	// used trigger and when it loads the children are iterated over and triggered to load, which is unnecessary
 	if ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible ) {
 
 		if ( loadedContent ) {
