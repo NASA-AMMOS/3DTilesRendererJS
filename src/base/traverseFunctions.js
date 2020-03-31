@@ -17,6 +17,7 @@ function resetFrameState( tile, frameCount ) {
 		tile.__visible = false;
 		tile.__active = false;
 		tile.__error = 0;
+		tile.__childrenWereVisible = false;
 
 	}
 
@@ -159,6 +160,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
+
 	if ( ! anyChildrenUsed ) {
 
 		// TODO: This isn't necessarily right because it's possible that a parent tile is considered in the
@@ -170,12 +172,15 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
+		let childrenWereVisible = false;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			markUsedSetLeaves( c, renderer );
+			childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
 		}
+		tile.__childrenWereVisible = childrenWereVisible;
 
 	}
 
@@ -218,6 +223,7 @@ export function skipTraversal( tile, renderer ) {
 	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
+	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = true;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -239,7 +245,11 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	if ( meetsSSE && ! allChildrenHaveContent ) {
+	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
+	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
+	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
+	// load in.
+	if ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible ) {
 
 		if ( loadedContent ) {
 
