@@ -141,7 +141,8 @@ export function determineFrustumSet( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( tile, frameCount, lruCache );
+			const c = children[ i ];
+			recursivelyMarkUsed( c, frameCount, lruCache );
 
 		}
 
@@ -323,7 +324,15 @@ export function toggleTiles( tile, renderer ) {
 
 			// enable visibility if active due to shadows
 			setActive = tile.__active;
-			setVisible = tile.__visible;
+			if ( renderer.displayActiveTiles ) {
+
+				setVisible = tile.__active || tile.__visible;
+
+			} else {
+
+				setVisible = tile.__visible;
+
+			}
 
 		}
 
@@ -332,13 +341,13 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
-				renderer.setTileVisible( tile, setActive );
+				renderer.setTileActive( tile, setActive );
 
 			}
 
 			if ( tile.__wasSetVisible !== setVisible ) {
 
-				renderer.setTileActive( tile, setVisible );
+				renderer.setTileVisible( tile, setVisible );
 
 			}
 

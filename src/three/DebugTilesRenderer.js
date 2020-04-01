@@ -228,6 +228,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case DISTANCE: {
 
+							// We don't update the distance if the geometric error is 0.0 so
+							// it will always be black.
 							const val = Math.min( tile.cached.distance / maxDistance, 1 );
 							c.material.color.setRGB( val, val, val );
 							break;

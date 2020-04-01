@@ -40,6 +40,7 @@ let params = {
 	'errorThreshold': 60,
 	'maxDepth': 15,
 	'loadSiblings': true,
+	'displayActiveTiles': false,
 
 	'up': '+Y',
 	'displayBoxBounds': false,
@@ -156,9 +157,9 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener( 'mousemove', onMouseMove, false );
-	window.addEventListener( 'mousedown', onMouseDown, false );
-	window.addEventListener( 'mouseup', onMouseUp, false );
+	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+	renderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
+	renderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
 
 	// GUI
 	const gui = new dat.GUI();
@@ -167,6 +168,7 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'orthographic' );
 	tileOptions.add( params, 'loadSiblings' );
+	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
@@ -312,6 +314,7 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
+	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.camera = params.orthographic ? orthoCamera : camera;
 	tiles.displayBoxBounds = params.displayBoxBounds;
