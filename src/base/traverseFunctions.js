@@ -141,7 +141,8 @@ export function determineFrustumSet( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( tile, frameCount, lruCache );
+			const c = children[ i ];
+			recursivelyMarkUsed( c, frameCount, lruCache );
 
 		}
 
