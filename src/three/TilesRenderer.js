@@ -182,7 +182,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( cameras.length === 0 ) {
 
-			console.warn( 'TilesRenderer: no cameras to use are defined. Cannot update 3d tiles.' );
+			console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
 			return;
 
 		}
@@ -232,7 +232,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( resolution.width === 0 || resolution.height === 0 ) {
 
-				console.warn( 'TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.' );
+				console.warn( 'TilesRenderer: resolution for camera error calculation is not set.' );
 
 			}
 
