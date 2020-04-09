@@ -65,9 +65,6 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer( url );
-	tiles.camera = camera;
-	tiles.setResolutionFromRenderer( renderer );
-
 	offsetParent.add( tiles.group );
 
 }
@@ -316,10 +313,13 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
-	tiles.camera = params.orthographic ? orthoCamera : camera;
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
-	tiles.setResolutionFromRenderer( renderer );
+
+	tiles.setCamera( params.orthographic ? orthoCamera : camera );
+	tiles.setResolutionFromRenderer( orthoCamera, renderer );
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.deleteCamera( params.orthographic ? camera : orthoCamera );
 
 	offsetParent.rotation.set( 0, 0, 0 );
 	if ( params.up === '-Z' ) {

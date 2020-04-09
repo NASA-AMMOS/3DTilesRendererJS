@@ -23,8 +23,8 @@ import { TilesRenderer } from '3d-tiles-renderer';
 // ... initialize three scene ...
 
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.camera = camera;
-tilesRenderer.setResolutionFromRenderer( renderer );
+tilesRenderer.setCamera( camera );
+tilesRenderer.setResolutionFromRenderer( camera, renderer );
 scene.add( tilesRenderer.group );
 
 renderLoop();
@@ -33,6 +33,9 @@ function renderLoop() {
 
 	requestAnimationFrame( renderLoop );
 
+	// The camera matrix is expected to be up to date
+	// before calling tilesRenderer.update
+	camera.updateMatrixWorld();
 	tilesRenderer.update();
 	renderer.render( camera, scene );
 
@@ -60,7 +63,7 @@ errorTarget = 6 : Number
 ### .errorThreshold
 
 ```js
-errorThreshold = 6 : Number
+errorThreshold = Infinity : Number
 ```
 
 ### .maxDepth
@@ -99,7 +102,6 @@ parseQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
 
-
 ### .constructor
 
 ```js
@@ -124,10 +126,35 @@ getBounds( box : Box3 ) : void
 raycast( raycaster : Raycaster, intersects : Array ) : void
 ```
 
+### .hasCamera
+
+```js
+hasCamera( camera : Camera ) : boolean
+```
+
+### .setCamera
+
+```js
+setCamera( camera : Camera ) : boolean
+```
+
+### .deleteCamera
+
+```js
+deleteCamera( camera : Camera ) : boolean
+```
+
+### .setResolution
+
+```js
+setResolution( camera : Camera, resolution : Vector2 ) : boolean
+setResolution( camera : Camera, x : number, y : number ) : boolean
+```
+
 ### .setResolutionFromRenderer
 
 ```js
-setResolutionFromRenderer( renderer : WebGLRenderer )
+setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean
 ```
 
 # LICENSE
