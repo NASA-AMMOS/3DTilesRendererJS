@@ -70,10 +70,18 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingBox = cached.box;
 		const obbMat = cached.boxTransform;
 
-		box.copy( boundingBox );
-		box.applyMatrix4( obbMat );
+		if ( boundingBox ) {
 
-		return true;
+			box.copy( boundingBox );
+			box.applyMatrix4( obbMat );
+
+			return true;
+
+		} else {
+
+			return false;
+
+		}
 
 	}
 

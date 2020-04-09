@@ -72,20 +72,111 @@ export class B3DMLoaderBase {
 
 		const jsonFeatureTableData = new Uint8Array( buffer, featureTableStart, featureTableJSONByteLength );
 		const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonFeatureTableData ) );
+		const featureTable = {};
 
 		// const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
 		// TODO: dereference the json feature table data in to the binary array.
 		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+		// TODO: The feature table contains data with implicit stride and data types, which means we can't parse it into arrays
+		// unless they are specified ahead of time?s
 
 		// Batch Table
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 
 		const jsonBatchTableData = new Uint8Array( buffer, batchTableStart, batchTableJSONByteLength );
 		const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonBatchTableData ) );
+		const batchTable = { ...jsonBatchTable };
 
-		// const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
-		// TODO: dereference the json batch table data in to the binary array.
+		// dereference the json batch table data in to the binary array.
 		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+		// const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+		const batchLength = jsonFeatureTable.BATCH_LENGTH;
+		for ( const key in jsonBatchTable ) {
+
+			const feature = jsonBatchTable[ key ];
+			if ( Array.isArray( feature ) ) {
+
+				batchTable[ key ] = {
+
+					type: 'SCALAR',
+					stride: 1,
+					data: feature,
+
+				};
+
+			} else {
+
+				let stride;
+				let data;
+				const arrayStart = batchTableStart + batchTableJSONByteLength;
+				const arrayLength = batchLength * stride + feature.byteOffset;
+				switch ( feature.type ) {
+
+					case 'SCALAR':
+						stride = 1;
+						break;
+
+					case 'VEC2':
+						stride = 2;
+						break;
+
+					case 'VEC3':
+						stride = 3;
+						break;
+
+					case 'VEC4':
+						stride = 4;
+						break;
+
+				}
+
+				switch( feature.componentType ) {
+
+					case 'BYTE':
+						data = new Int8Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'UNSIGNED_BYTE':
+						data = new Uint8Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'SHORT':
+						data = new Int16Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'UNSIGNED_SHORT':
+						data = new Uint16Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'INT':
+						data = new Int32Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'UNSIGNED_INT':
+						data = new Uint32Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'FLOAT':
+						data = new Float32Array( buffer, arrayStart, arrayLength );
+						break;
+
+					case 'DOUBLE':
+						data = new Float64Array( buffer, arrayStart, arrayLength );
+						break;
+
+				}
+
+				batchTable[ key ] = {
+
+					type: feature.type,
+					stride,
+					data,
+
+				};
+
+			}
+
+		}
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
@@ -95,7 +186,7 @@ export class B3DMLoaderBase {
 		return {
 			version,
 			featureTable: jsonFeatureTable,
-			batchTable: jsonBatchTable,
+			batchTable,
 			glbBytes,
 		};
 
