@@ -31,25 +31,12 @@ function emptyRaycast() {}
 
 export class TilesRenderer extends TilesRendererBase {
 
-	get camera() {
-
-		return this.cameras[ 0 ];
-
-	}
-
-	set camera( camera ) {
-
-		const cameras = this.cameras;
-		cameras.length = 1;
-		cameras[ 0 ] = camera;
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
 		this.group = new TilesGroup( this );
 		this.cameras = [];
+		this.cameraMap = new Map();
 		this.resolution = new Vector2();
 		this.cameraInfo = [];
 		this.activeTiles = new Set();
@@ -110,11 +97,78 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	setResolutionFromRenderer( renderer ) {
+	hasCamera( camera ) {
 
-		const resolution = this.resolution;
+		return this.cameraMap.has( camera );
+
+	}
+
+	setCamera( camera ) {
+
+		const cameras = this.cameras;
+		const cameraMap = this.cameraMap;
+		if ( ! cameraMap.has( camera ) ) {
+
+			cameraMap.set( camera, new Vector2() );
+			cameras.push( camera );
+			return true;
+
+		}
+		return false;
+
+	}
+
+	setResolution( camera, xOrVec, y ) {
+
+		const cameraMap = this.cameraMap;
+		if ( ! cameraMap.has( camera ) ) {
+
+			return false;
+
+		}
+
+		if ( xOrVec instanceof Vector2 ) {
+
+			cameraMap.get( camera ).copy( xOrVec );
+
+		} else {
+
+			cameraMap.get( camera ).set( xOrVec, y );
+
+		}
+		return true;
+
+	}
+
+	setResolutionFromRenderer( camera, renderer ) {
+
+		const cameraMap = this.cameraMap;
+		if ( ! cameraMap.has( camera ) ) {
+
+			return false;
+
+		}
+
+		const resolution = cameraMap.get( camera );
 		renderer.getSize( resolution );
 		resolution.multiplyScalar( renderer.getPixelRatio() );
+		return true;
+
+	}
+
+	deleteCamera( camera ) {
+
+		const cameras = this.cameras;
+		const cameraMap = this.cameraMap;
+		if ( cameraMap.has( camera ) ) {
+
+			const index = cameras.indexOf( camera );
+			cameras.splice( index, 1 );
+			cameraMap.delete( camera );
+			return true;
+
+		}
+		return false;
 
 	}
 
@@ -123,19 +177,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const group = this.group;
 		const cameras = this.cameras;
+		const cameraMap = this.cameraMap;
 		const cameraInfo = this.cameraInfo;
-		const resolution = this.resolution;
 
 		if ( cameras.length === 0 ) {
 
 			console.warn( 'TilesRenderer: no cameras to use are defined. Cannot update 3d tiles.' );
-			return;
-
-		}
-
-		if ( resolution.width === 0 || resolution.height === 0 ) {
-
-			console.warn( 'TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.' );
 			return;
 
 		}
@@ -155,11 +202,13 @@ export class TilesRenderer extends TilesRendererBase {
 				sseDenominator: - 1,
 				position: new Vector3(),
 				invScale: - 1,
+				pixelSize: 0,
 
 			} );
 
 		}
 
+		// extract scale of group container
 		tempMat2.getInverse( group.matrixWorld );
 
 		let invScale;
@@ -179,10 +228,25 @@ export class TilesRenderer extends TilesRendererBase {
 			const info = cameraInfo[ i ];
 			const frustum = info.frustum;
 			const position = info.position;
+			const resolution = cameraMap.get( camera );
+
+			if ( resolution.width === 0 || resolution.height === 0 ) {
+
+				console.warn( 'TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.' );
+
+			}
 
 			if ( camera.isPerspectiveCamera ) {
 
 				info.sseDenominator = 2 * Math.tan( 0.5 * camera.fov * DEG2RAD ) / resolution.height;
+
+			}
+
+			if ( camera.isOrthographicCamera ) {
+
+				const w = camera.right - camera.left;
+				const h = camera.top - camera.bottom;
+				info.pixelSize = Math.max( h / resolution.height, w / resolution.width );
 
 			}
 
@@ -520,8 +584,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
-		const resolution = this.resolution;
-
 		if ( 'box' in boundingVolume ) {
 
 			const boundingBox = cached.box;
@@ -543,9 +605,7 @@ export class TilesRenderer extends TilesRendererBase {
 				let error;
 				if ( camera.isOrthographicCamera ) {
 
-					const w = camera.right - camera.left;
-					const h = camera.top - camera.bottom;
-					const pixelSize = Math.max( h / resolution.height, w / resolution.width );
+					const pixelSize = info.pixelSize;
 					error = tile.geometricError / ( pixelSize * invScale );
 
 				} else {
