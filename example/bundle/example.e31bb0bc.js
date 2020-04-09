@@ -36202,6 +36202,7 @@ function resetFrameState(tile, frameCount) {
     tile.__visible = false;
     tile.__active = false;
     tile.__error = 0;
+    tile.__childrenWereVisible = false;
   }
 } // Recursively mark tiles used down to the next tile with content
 
@@ -36294,7 +36295,8 @@ function determineFrustumSet(tile, renderer) {
 
   if (anyChildrenUsed && loadSiblings) {
     for (let i = 0, l = children.length; i < l; i++) {
-      recursivelyMarkUsed(tile, frameCount, lruCache);
+      const c = children[i];
+      recursivelyMarkUsed(c, frameCount, lruCache);
     }
   }
 
@@ -36326,10 +36328,15 @@ function markUsedSetLeaves(tile, renderer) {
     // considered to be in the used set then we shouldn't set ourselves to a leaf here.
     tile.__isLeaf = true; // TODO: stats
   } else {
+    let childrenWereVisible = false;
+
     for (let i = 0, l = children.length; i < l; i++) {
       const c = children[i];
       markUsedSetLeaves(c, renderer);
+      childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
     }
+
+    tile.__childrenWereVisible = childrenWereVisible;
   }
 } // Skip past tiles we consider unrenderable because they are outside the error threshold.
 
@@ -36361,10 +36368,11 @@ function skipTraversal(tile, renderer) {
     return;
   }
 
-  const errorRequirement = renderer.errorTarget * renderer.errorThreshold;
+  const errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
   const meetsSSE = tile.__error <= errorRequirement;
   const hasContent = !tile.__contentEmpty;
   const loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
+  const childrenWereVisible = tile.__childrenWereVisible;
   const children = tile.children;
   let allChildrenHaveContent = true;
 
@@ -36381,9 +36389,13 @@ function skipTraversal(tile, renderer) {
 
   if (meetsSSE && !loadedContent && !lruCache.isFull() && hasContent) {
     renderer.requestTileContents(tile);
-  }
+  } // Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
+  // all children have loaded yet, and if no children were visible last frame. We want to keep children visible
+  // that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
+  // load in.
 
-  if (meetsSSE && !allChildrenHaveContent) {
+
+  if (meetsSSE && !allChildrenHaveContent && !childrenWereVisible) {
     if (loadedContent) {
       if (tile.__inFrustum) {
         tile.__visible = true;
@@ -36391,7 +36403,8 @@ function skipTraversal(tile, renderer) {
       }
 
       tile.__active = true;
-      stats.active++;
+      stats.active++; // load the child content if we've found that we've been loaded so we can move down to the next tile
+      // layer when the data has loaded.
 
       for (let i = 0, l = children.length; i < l; i++) {
         const c = children[i];
@@ -36412,7 +36425,8 @@ function skipTraversal(tile, renderer) {
       skipTraversal(c, renderer);
     }
   }
-}
+} // Final traverse to toggle tile visibility.
+
 
 function toggleTiles(tile, renderer) {
   const frameCount = renderer.frameCount;
@@ -36425,16 +36439,22 @@ function toggleTiles(tile, renderer) {
     if (isUsed) {
       // enable visibility if active due to shadows
       setActive = tile.__active;
-      setVisible = tile.__active || tile.__visible;
-    }
+
+      if (renderer.displayActiveTiles) {
+        setVisible = tile.__active || tile.__visible;
+      } else {
+        setVisible = tile.__visible;
+      }
+    } // If the active or visible state changed then call the functions.
+
 
     if (!tile.__contentEmpty && tile.__loadingState === _constants.LOADED) {
       if (tile.__wasSetActive !== setActive) {
-        renderer.setTileVisible(tile, setActive);
+        renderer.setTileActive(tile, setActive);
       }
 
       if (tile.__wasSetVisible !== setVisible) {
-        renderer.setTileActive(tile, setVisible);
+        renderer.setTileVisible(tile, setVisible);
       }
     }
 
@@ -36469,9 +36489,7 @@ var _constants = require("./constants.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// TODO: find out why tiles are left dangling in the hierarchy
 // TODO: Address the issue of too many promises, garbage collection
-// TODO: remove more redundant computation
 // TODO: See if using classes improves performance
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
@@ -36497,7 +36515,7 @@ class TilesRendererBase {
     this.rootURL = url;
     this.fetchOptions = {};
     this.lruCache = new _LRUCache.LRUCache();
-    this.downloadQueue = new _PriorityQueue.PriorityQueue(6);
+    this.downloadQueue = new _PriorityQueue.PriorityQueue(4);
     this.parseQueue = new _PriorityQueue.PriorityQueue(1);
     this.stats = {
       parsing: 0,
@@ -36510,8 +36528,9 @@ class TilesRendererBase {
     this.frameCount = 0; // options
 
     this.errorTarget = 6.0;
-    this.errorThreshold = 6.0;
+    this.errorThreshold = Infinity;
     this.loadSiblings = true;
+    this.displayActiveTiles = false;
     this.maxDepth = Infinity;
   }
 
@@ -36555,6 +36574,7 @@ class TilesRendererBase {
 
   preprocessNode(tile, parentTile, tileSetDir) {
     if (tile.content) {
+      // Fix old file formats
       if (!('uri' in tile.content) && 'url' in tile.content) {
         tile.content.uri = tile.content.url;
         delete tile.content.url;
@@ -36563,7 +36583,7 @@ class TilesRendererBase {
       if (tile.content.uri) {
         tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
       } // TODO: fix for some cases where tilesets provide the bounding volume
-      // but volumes are not present. See
+      // but volumes are not present.
 
 
       if (tile.content.boundingVolume && !('box' in tile.content.boundingVolume || 'sphere' in tile.content.boundingVolume || 'region' in tile.content.boundingVolume)) {
@@ -36581,6 +36601,7 @@ class TilesRendererBase {
     tile.__used = false;
     tile.__wasSetVisible = false;
     tile.__visible = false;
+    tile.__childrenWereVisible = false;
     tile.__wasSetActive = false;
     tile.__active = false;
     tile.__loadingState = _constants.UNLOADED;
@@ -36625,9 +36646,7 @@ class TilesRendererBase {
         const basePath = _path.default.dirname(url);
 
         (0, _traverseFunctions.traverseSet)(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
-        tileSets[url] = json; // TODO: schedule an update to avoid doing this too many times
-
-        this.update();
+        tileSets[url] = json;
       });
       pr.catch(e => {
         console.error(`TilesLoader: Failed to load tile set json "${url}"`);
@@ -36667,7 +36686,7 @@ class TilesRendererBase {
       }
 
       t.__loadingState = _constants.UNLOADED;
-      t.__loadIndex++; // TODO: Removing from the queues here is slow
+      t.__loadIndex++; // TODO: Removing from the queues here is slow?
 
       parseQueue.remove(t);
       downloadQueue.remove(t);
@@ -36700,6 +36719,7 @@ class TilesRendererBase {
         throw new Error(`Failed to load model with error code ${res.status}`);
       }
     }).then(buffer => {
+      // if it has been unloaded then the tile has been disposed
       if (tile.__loadIndex !== loadIndex) {
         return;
       }
@@ -36709,6 +36729,7 @@ class TilesRendererBase {
       tile.__loadAbort = null;
       tile.__loadingState = _constants.PARSING;
       return parseQueue.add(buffer, priority, buffer => {
+        // if it has been unloaded then the tile has been disposed
         if (tile.__loadIndex !== loadIndex) {
           return Promise.resolve();
         }
@@ -36716,6 +36737,7 @@ class TilesRendererBase {
         return this.parseTile(buffer, tile);
       });
     }).then(() => {
+      // if it has been unloaded then the tile has been disposed
       if (tile.__loadIndex !== loadIndex) {
         return;
       }
@@ -39345,7 +39367,6 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
     const tile = children[i];
     const cached = tile.cached;
     const groupMatrixWorld = group.matrixWorld;
-    const transformMat = cached.transform;
 
     _mat.copy(groupMatrixWorld); // if we don't hit the sphere then early out
 
@@ -40199,6 +40220,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
             case DISTANCE:
               {
+                // We don't update the distance if the geometric error is 0.0 so
+                // it will always be black.
                 const val = Math.min(tile.cached.distance / maxDistance, 1);
                 c.material.color.setRGB(val, val, val);
                 break;
@@ -44757,6 +44780,7 @@ let params = {
   'errorThreshold': 60,
   'maxDepth': 15,
   'loadSiblings': true,
+  'displayActiveTiles': false,
   'up': '+Y',
   'displayBoxBounds': false,
   'colorMode': 0,
@@ -44848,15 +44872,16 @@ function init() {
   reinstantiateTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
-  window.addEventListener('mousemove', onMouseMove, false);
-  window.addEventListener('mousedown', onMouseDown, false);
-  window.addEventListener('mouseup', onMouseUp, false); // GUI
+  renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+  renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+  renderer.domElement.addEventListener('mouseup', onMouseUp, false); // GUI
 
   const gui = new dat.GUI();
   gui.width = 300;
   const tileOptions = gui.addFolder('Tiles Options');
   tileOptions.add(params, 'orthographic');
   tileOptions.add(params, 'loadSiblings');
+  tileOptions.add(params, 'displayActiveTiles');
   tileOptions.add(params, 'errorTarget').min(0).max(50);
   tileOptions.add(params, 'errorThreshold').min(0).max(1000);
   tileOptions.add(params, 'maxDepth').min(1).max(100);
@@ -44975,6 +45000,7 @@ function animate() {
   tiles.errorTarget = params.errorTarget;
   tiles.errorThreshold = params.errorThreshold;
   tiles.loadSiblings = params.loadSiblings;
+  tiles.displayActiveTiles = params.displayActiveTiles;
   tiles.maxDepth = params.maxDepth;
   tiles.camera = params.orthographic ? orthoCamera : camera;
   tiles.displayBoxBounds = params.displayBoxBounds;
@@ -45105,7 +45131,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58203" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55787" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
