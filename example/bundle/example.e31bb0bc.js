@@ -44784,7 +44784,7 @@ let params = {
   'up': '+Y',
   'displayBoxBounds': false,
   'colorMode': 0,
-  'showThirdPerson': true,
+  'showThirdPerson': false,
   'reload': reinstantiateTiles
 };
 init();
@@ -44830,8 +44830,7 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x151c1f);
-  renderer.gammaInput = true;
-  renderer.gameOutput = true;
+  renderer.outputEncoding = _three.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
   camera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
   camera.position.set(400, 400, 400);
@@ -45005,19 +45004,14 @@ function animate() {
   tiles.camera = params.orthographic ? orthoCamera : camera;
   tiles.displayBoxBounds = params.displayBoxBounds;
   tiles.colorMode = parseFloat(params.colorMode);
-  tiles.setResolutionFromRenderer(renderer); // update tiles
-
-  if (params.enableUpdate) {
-    tiles.update();
-  }
-
-  window.tiles = tiles;
+  tiles.setResolutionFromRenderer(renderer);
   offsetParent.rotation.set(0, 0, 0);
 
   if (params.up === '-Z') {
     offsetParent.rotation.x = Math.PI / 2;
-  } // update tiles center
+  }
 
+  offsetParent.updateMatrixWorld(true); // update tiles center
 
   if (tiles.getBounds(box)) {
     box.getCenter(tiles.group.position);
@@ -45052,11 +45046,19 @@ function animate() {
     }
   } else {
     rayIntersect.visible = false;
+  } // update tiles
+
+
+  window.tiles = tiles;
+
+  if (params.enableUpdate) {
+    camera.updateMatrixWorld();
+    orthoCamera.updateMatrixWorld();
+    tiles.update();
   }
 
-  stats.begin();
   render();
-  stats.end();
+  stats.update();
 }
 
 function render() {

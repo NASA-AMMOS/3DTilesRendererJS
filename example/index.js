@@ -14,7 +14,8 @@ import {
 	MeshBasicMaterial,
 	Group,
 	TorusBufferGeometry,
-	OrthographicCamera
+	OrthographicCamera,
+	sRGBEncoding
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -45,7 +46,7 @@ let params = {
 	'up': '+Y',
 	'displayBoxBounds': false,
 	'colorMode': 0,
-	'showThirdPerson': true,
+	'showThirdPerson': false,
 	'reload': reinstantiateTiles,
 
 };
@@ -100,8 +101,7 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.gammaInput = true;
-	renderer.gameOutput = true;
+	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 
@@ -319,17 +319,7 @@ function animate() {
 	tiles.camera = params.orthographic ? orthoCamera : camera;
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
-
-
 	tiles.setResolutionFromRenderer( renderer );
-
-	// update tiles
-	if ( params.enableUpdate ) {
-
-		tiles.update();
-
-	}
-	window.tiles = tiles;
 
 	offsetParent.rotation.set( 0, 0, 0 );
 	if ( params.up === '-Z' ) {
@@ -337,6 +327,7 @@ function animate() {
 		offsetParent.rotation.x = Math.PI / 2;
 
 	}
+	offsetParent.updateMatrixWorld( true );
 
 	// update tiles center
 	if ( tiles.getBounds( box ) ) {
@@ -394,9 +385,18 @@ function animate() {
 
 	}
 
-	stats.begin();
+	// update tiles
+	window.tiles = tiles;
+	if ( params.enableUpdate ) {
+
+		camera.updateMatrixWorld();
+		orthoCamera.updateMatrixWorld();
+		tiles.update();
+
+	}
+
 	render();
-	stats.end();
+	stats.update();
 
 }
 
