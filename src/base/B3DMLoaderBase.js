@@ -72,7 +72,7 @@ export class B3DMLoaderBase {
 
 		const jsonFeatureTableData = new Uint8Array( buffer, featureTableStart, featureTableJSONByteLength );
 		const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonFeatureTableData ) );
-		const featureTable = {};
+		const featureTable = { ...jsonFeatureTable };
 
 		// const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
 		// TODO: dereference the json feature table data in to the binary array.
@@ -185,7 +185,7 @@ export class B3DMLoaderBase {
 
 		return {
 			version,
-			featureTable: jsonFeatureTable,
+			featureTable,
 			batchTable,
 			glbBytes,
 		};
