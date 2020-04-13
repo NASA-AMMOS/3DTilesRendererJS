@@ -122,21 +122,25 @@ class LRUCache {
 
 			if ( prioritySortCb ) {
 
+				// used items should be at the end of the array
 				itemList.sort( ( a, b ) => {
 
 					const usedA = usedSet.has( a );
 					const usedB = usedSet.has( b );
 					if ( usedA && usedB ) {
 
+						// If they're both used then don't bother moving them
 						return 0;
 
 					} else if ( ! usedA && ! usedB ) {
 
+						// Use the sort function otherwise
 						return prioritySortCb( a, b );
 
 					} else {
 
-						return usedA ? - 1 : 1;
+						// If one is used and the other is not move the used one towards the end of the array
+						return usedA ? 1 : - 1;
 
 					}
 
