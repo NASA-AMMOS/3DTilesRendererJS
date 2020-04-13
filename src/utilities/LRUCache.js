@@ -22,6 +22,8 @@ class LRUCache {
 		this.itemList = [];
 		this.callbacks = new Map();
 
+		this.sortCallback = null;
+
 	}
 
 	// Returns whether or not the cache has reached the maximum size
@@ -107,7 +109,7 @@ class LRUCache {
 
 	// TODO: this should be renamed because it's not necessarily unloading all unused content
 	// Maybe call it "cleanup" or "unloadToMinSize"
-	unloadUnusedContent( prioritySortCb = null ) {
+	unloadUnusedContent() {
 
 		const unloadPercent = this.unloadPercent;
 		const targetSize = this.minSize;
@@ -117,6 +119,7 @@ class LRUCache {
 		const callbacks = this.callbacks;
 		const unused = itemList.length - usedSet.size;
 		const excess = itemList.length - targetSize;
+		const prioritySortCb = this.sortCallback;
 
 		if ( excess > 0 && unused > 0 ) {
 
@@ -169,7 +172,7 @@ class LRUCache {
 
 	}
 
-	scheduleUnload( prioritySortCb = null, markAllUnused = true ) {
+	scheduleUnload( markAllUnused = true ) {
 
 		if ( ! this.scheduled ) {
 
@@ -177,7 +180,7 @@ class LRUCache {
 			enqueueMicrotask( () => {
 
 				this.scheduled = false;
-				this.unloadUnusedContent( prioritySortCb );
+				this.unloadUnusedContent();
 				if ( markAllUnused ) {
 
 					this.markAllUnused();

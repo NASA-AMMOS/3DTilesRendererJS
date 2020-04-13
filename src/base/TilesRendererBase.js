@@ -44,6 +44,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 
 		this.lruCache = new LRUCache();
+		this.lruCache.sortCallback = lruSort;
 		this.downloadQueue = new PriorityQueue( 4 );
 		this.parseQueue = new PriorityQueue( 1 );
 		this.stats = {
@@ -107,7 +108,7 @@ export class TilesRendererBase {
 		toggleTiles( root, this );
 
 		// TODO: We may want to add this function in the requestTileContents function
-		lruCache.scheduleUnload( lruSort );
+		lruCache.scheduleUnload();
 
 	}
 
