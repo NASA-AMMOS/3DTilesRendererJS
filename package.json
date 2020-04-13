@@ -34,7 +34,7 @@
     "@babel/preset-env": "^7.7.1",
     "babel-jest": "^24.9.0",
     "concurrently": "^5.1.0",
-    "eslint": "^6.5.1",
+    "eslint": "^6.8.0",
     "eslint-config-mdcs": "^4.2.3",
     "eslint-plugin-jest": "^23.8.2",
     "jest": "^24.9.0",

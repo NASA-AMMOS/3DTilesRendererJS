@@ -1,5 +1,9 @@
 {
 	"root": true,
 	"extends": "./node_modules/eslint-config-mdcs/index.js",
-	"plugins": [ "jest" ]
+	"plugins": [ "jest" ],
+    "parserOptions": {
+        "ecmaVersion": 2018,
+		"sourceType": "module"
+	}
 }
