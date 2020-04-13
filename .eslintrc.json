@@ -1,9 +1,14 @@
 {
 	"root": true,
-	"extends": "./node_modules/eslint-config-mdcs/index.js",
-	"plugins": [ "jest" ],
-    "parserOptions": {
+	"parserOptions": {
         "ecmaVersion": 2018,
 		"sourceType": "module"
+	},
+
+	"extends": "./node_modules/eslint-config-mdcs/index.js",
+	"plugins": [ "jest" ],
+
+	"rules": {
+		"no-unused-vars": [ 1, { "args": "none" } ]
 	}
 }
