@@ -13,7 +13,7 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 
 **In Progress Features**
 - Multicamera support
-- Travis integration
+-  Travis integration
 - Performance
 
 # Use
