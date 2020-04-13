@@ -130,7 +130,7 @@ export class B3DMLoaderBase {
 
 				}
 
-				switch( feature.componentType ) {
+				switch ( feature.componentType ) {
 
 					case 'BYTE':
 						data = new Int8Array( buffer, arrayStart, arrayLength );

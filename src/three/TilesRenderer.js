@@ -393,7 +393,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// the fact. Premultiply alpha default behavior is not well defined, either.
 			// TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
 			// behavior. Fall back to regular texture loading
-			manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+			manager.addHandler( /(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
 
 				load( url, onComplete ) {
 
@@ -406,7 +406,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
-			});
+			} );
 
 		}
 

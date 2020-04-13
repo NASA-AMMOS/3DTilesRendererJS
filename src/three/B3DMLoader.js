@@ -18,9 +18,11 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 			const manager = this.manager;
 			new GLTFLoader( manager ).parse( gltfBuffer, null, model => {
+
 				model.batchTable = b3dm.batchTable;
 				model.featureTable = b3dm.featureTable;
 				resolve( model );
+
 			}, reject );
 
 		} );
