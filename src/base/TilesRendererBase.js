@@ -9,6 +9,7 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
 
+// Function for sorting the evicted LRU items. We should evict the shallowest depth first.
 const lruSort = ( a, b ) => a.__depth - b.__depth;
 
 export class TilesRendererBase {
