@@ -107,7 +107,7 @@ class LRUCache {
 
 	// TODO: this should be renamed because it's not necessarily unloading all unused content
 	// Maybe call it "cleanup" or "unloadToMinSize"
-	unloadUnusedContent( prioritySortCb ) {
+	unloadUnusedContent( prioritySortCb = null ) {
 
 		const unloadPercent = this.unloadPercent;
 		const targetSize = this.minSize;
@@ -120,9 +120,39 @@ class LRUCache {
 
 		if ( excess > 0 && unused > 0 ) {
 
-			// TODO: sort by priority
+			if ( prioritySortCb ) {
 
-			let nodesToUnload = Math.min( targetSize * unloadPercent, unused );
+				// used items should be at the end of the array
+				itemList.sort( ( a, b ) => {
+
+					const usedA = usedSet.has( a );
+					const usedB = usedSet.has( b );
+					if ( usedA && usedB ) {
+
+						// If they're both used then don't bother moving them
+						return 0;
+
+					} else if ( ! usedA && ! usedB ) {
+
+						// Use the sort function otherwise
+						return prioritySortCb( a, b );
+
+					} else {
+
+						// If one is used and the other is not move the used one towards the end of the array
+						return usedA ? 1 : - 1;
+
+					}
+
+				} );
+
+			}
+
+			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
+			// which would result in a very small or no items being unloaded.
+			const unusedExcess = Math.min( excess, unused );
+			const maxUnload = Math.max( targetSize * unloadPercent, unusedExcess * unloadPercent );
+			let nodesToUnload = Math.min( maxUnload, unused );
 			nodesToUnload = Math.ceil( nodesToUnload );
 
 			const removedItems = itemList.splice( 0, nodesToUnload );
@@ -139,7 +169,7 @@ class LRUCache {
 
 	}
 
-	scheduleUnload( prioritySortCb, markAllUnused = true ) {
+	scheduleUnload( prioritySortCb = null, markAllUnused = true ) {
 
 		if ( ! this.scheduled ) {
 

@@ -9,6 +9,9 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
 
+// Function for sorting the evicted LRU items. We should evict the shallowest depth first.
+const lruSort = ( a, b ) => a.__depth - b.__depth;
+
 export class TilesRendererBase {
 
 	get rootTileSet() {
@@ -104,7 +107,7 @@ export class TilesRendererBase {
 		toggleTiles( root, this );
 
 		// TODO: We may want to add this function in the requestTileContents function
-		lruCache.scheduleUnload( null );
+		lruCache.scheduleUnload( lruSort );
 
 	}
 
