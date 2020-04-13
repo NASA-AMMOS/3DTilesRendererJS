@@ -148,7 +148,11 @@ class LRUCache {
 
 			}
 
-			let nodesToUnload = Math.min( targetSize * unloadPercent, unused );
+			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
+			// which would result in a very small or no items being unloaded.
+			const unusedExcess = Math.min( excess, unused );
+			const maxUnload = Math.max( targetSize * unloadPercent, unusedExcess * unloadPercent );
+			let nodesToUnload = Math.min( maxUnload, unused );
 			nodesToUnload = Math.ceil( nodesToUnload );
 
 			const removedItems = itemList.splice( 0, nodesToUnload );
