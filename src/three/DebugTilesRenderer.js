@@ -166,6 +166,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
+		// TODO: Support i3dm, pnts, cmpt here
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;
@@ -301,10 +302,10 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
-	parseTile( buffer, tile ) {
+	parseTile( buffer, tile, extension ) {
 
 		return super
-			.parseTile( buffer, tile )
+			.parseTile( buffer, tile, extension )
 			.then( () => {
 
 				const cached = tile.cached;

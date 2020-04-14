@@ -379,13 +379,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	parseTile( buffer, tile ) {
+	parseTile( buffer, tile, extension ) {
 
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
 
 		const loadIndex = tile._loadIndex;
 		const manager = new LoadingManager();
+		let promise = null;
 
 		if ( useImageBitmap ) {
 
@@ -410,7 +411,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		return new B3DMLoader( manager ).parse( buffer ).then( res => {
+		switch ( extension ) {
+
+			case 'b3dm':
+				promise = new B3DMLoader( manager ).parse( buffer );
+				break;
+
+			case 'pnts':
+			case 'cmpt':
+			case 'i3dm':
+			default:
+				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
+				promise = Promise.resolve( null );
+				break;
+
+		}
+
+		return promise.then( res => {
 
 			if ( tile._loadIndex !== loadIndex ) {
 
@@ -422,7 +439,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const cached = tile.cached;
 			const cachedTransform = cached.transform;
 
-			const scene = res.scene;
+			const scene = res ? res.scene : new Group();
 			switch ( upAxis.toLowerCase() ) {
 
 				case 'x':

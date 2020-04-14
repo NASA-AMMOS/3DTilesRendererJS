@@ -113,7 +113,7 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
-	parseTile( buffer, tile ) {
+	parseTile( buffer, tile, extension ) {
 
 		return null;
 
@@ -374,7 +374,10 @@ export class TilesRendererBase {
 
 					}
 
-					return this.parseTile( buffer, tile );
+					const uri = tile.content.uri;
+					const extension = uri.split(/\./g).pop();
+
+					return this.parseTile( buffer, tile, extension );
 
 				} );
 
