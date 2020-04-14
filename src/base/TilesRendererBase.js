@@ -375,7 +375,7 @@ export class TilesRendererBase {
 					}
 
 					const uri = tile.content.uri;
-					const extension = uri.split(/\./g).pop();
+					const extension = uri.split( /\./g ).pop();
 
 					return this.parseTile( buffer, tile, extension );
 

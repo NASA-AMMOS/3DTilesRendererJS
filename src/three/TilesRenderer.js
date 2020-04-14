@@ -12,6 +12,7 @@ import {
 	CanvasTexture,
 	LoadingManager,
 	ImageBitmapLoader,
+	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
