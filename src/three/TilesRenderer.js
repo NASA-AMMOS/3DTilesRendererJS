@@ -607,7 +607,8 @@ export class TilesRenderer extends TilesRendererBase {
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
 
-			let minError = Infinity;
+			let maxError = -Infinity;
+			let minDistance = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
 				// TODO: move this logic (and the distance scale extraction) into the update preprocess step
@@ -633,15 +634,17 @@ export class TilesRenderer extends TilesRendererBase {
 					const sseDenominator = info.sseDenominator;
 					error = tile.geometricError / ( scaledDistance * sseDenominator );
 
-					tile.cached.distance = scaledDistance;
+					minDistance = Math.min( minDistance, scaledDistance );
 
 				}
 
-				minError = Math.min( minError, error );
+				maxError = Math.max( maxError, error );
 
 			}
 
-			return minError;
+			tile.cached.distance = minDistance;
+
+			return maxError;
 
 		} else if ( 'sphere' in boundingVolume ) {
 

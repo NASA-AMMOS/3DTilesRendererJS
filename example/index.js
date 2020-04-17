@@ -85,21 +85,31 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	camera.position.set( 400, 400, 400 );
+	cameraHelper = new CameraHelper( camera );
+	scene.add( cameraHelper );
+
+	orthoCamera = new OrthographicCamera();
+	orthoCameraHelper = new CameraHelper( orthoCamera );
+	scene.add( orthoCameraHelper );
+
 	// secondary camera view
 	secondCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	secondCamera.position.set( 50, 40, 40 );
+	secondCamera.position.set( 400, 400, - 400 );
 	secondCamera.lookAt( 0, 0, 0 );
 
 	secondRenderer = new WebGLRenderer( { antialias: true } );
 	secondRenderer.setPixelRatio( window.devicePixelRatio );
 	secondRenderer.setSize( window.innerWidth, window.innerHeight );
-	secondRenderer.setClearColor( 0x0f1416 );
+	secondRenderer.setClearColor( 0x151c1f );
 	secondRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( secondRenderer.domElement );
 	secondRenderer.domElement.style.position = 'absolute';
 	secondRenderer.domElement.style.right = '0';
 	secondRenderer.domElement.style.top = '0';
+	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
 
 	secondControls = new OrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
@@ -129,18 +139,6 @@ function init() {
 	thirdPersonControls.screenSpacePanning = false;
 	thirdPersonControls.minDistance = 1;
 	thirdPersonControls.maxDistance = 2000;
-
-	// scene setup
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	camera.position.set( 400, 400, 400 );
-
-	cameraHelper = new CameraHelper( camera );
-	scene.add( cameraHelper );
-
-	orthoCamera = new OrthographicCamera();
-
-	orthoCameraHelper = new CameraHelper( orthoCamera );
-	scene.add( orthoCameraHelper );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -343,7 +341,12 @@ function updateOrthoCamera() {
 	orthoCamera.rotation.copy( camera.rotation );
 
 	const scale = camera.position.distanceTo( controls.target ) / 2.0;
-	const aspect = window.innerWidth / window.innerHeight;
+	let aspect = window.innerWidth / window.innerHeight;
+	if ( params.showSecondView ) {
+
+		aspect *= 0.5;
+
+	}
 	orthoCamera.left = - aspect * scale;
 	orthoCamera.right = aspect * scale;
 	orthoCamera.bottom = - scale;
