@@ -611,7 +611,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
 
-			let maxError = -Infinity;
+			let maxError = - Infinity;
 			let minDistance = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
