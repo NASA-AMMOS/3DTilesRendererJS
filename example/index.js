@@ -27,7 +27,7 @@ let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
 let box;
-let raycaster, mouse, rayIntersect;
+let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
@@ -183,6 +183,13 @@ function init() {
 	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
 	renderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
 	renderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
+	renderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+
+	secondRenderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+	secondRenderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
+	secondRenderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
+	secondRenderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+
 
 	// GUI
 	const gui = new dat.GUI();
@@ -277,10 +284,21 @@ function onWindowResize() {
 
 }
 
+function onMouseLeave( e ) {
+
+	lastHoveredElement = null;
+
+}
+
 function onMouseMove( e ) {
 
-	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+	const bounds = this.getBoundingClientRect();
+	mouse.x = e.clientX - bounds.x;
+	mouse.y = e.clientY - bounds.y;
+	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
+	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
+
+	lastHoveredElement = this;
 
 }
 
@@ -288,20 +306,31 @@ const startPos = new Vector2();
 const endPos = new Vector2();
 function onMouseDown( e ) {
 
-	startPos.set( e.clientX, e.clientY );
+	const bounds = this.getBoundingClientRect();
+	startPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
 
 }
 
 function onMouseUp( e ) {
 
-	endPos.set( e.clientX, e.clientY );
+	const bounds = this.getBoundingClientRect();
+	endPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
 	if ( startPos.distanceTo( endPos ) > 2 ) {
 
 		return;
 
 	}
 
-	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+	if ( lastHoveredElement === secondRenderer.domElement ) {
+
+		raycaster.setFromCamera( mouse, secondCamera );
+
+	} else {
+
+		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+
+	}
+
 	raycaster.firstHitOnly = true;
 	const results = raycaster.intersectObject( tiles.group, true );
 	if ( results.length ) {
@@ -411,9 +440,18 @@ function animate() {
 
 	}
 
-	if ( params.enableRaycast ) {
+	if ( params.enableRaycast && lastHoveredElement !== null ) {
 
-		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+		if ( lastHoveredElement === renderer.domElement ) {
+
+			raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+
+		} else {
+
+			raycaster.setFromCamera( mouse, secondCamera );
+
+		}
+
 		raycaster.firstHitOnly = true;
 		const results = raycaster.intersectObject( tiles.group, true );
 		if ( results.length ) {
@@ -432,16 +470,6 @@ function animate() {
 					point.y + normal.y,
 					point.z + normal.z
 				);
-
-			}
-
-			if ( params.orthographic ) {
-
-				rayIntersect.scale.setScalar( closestHit.distance / 150 );
-
-			} else {
-
-				rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
 
 			}
 
@@ -484,11 +512,24 @@ function render() {
 	secondCameraHelper.visible = false;
 
 	// render primary view
+	if ( params.orthographic ) {
+
+		const dist = orthoCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist / 150 );
+
+	} else {
+
+		const dist = camera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
+
+	}
 	renderer.render( scene, params.orthographic ? orthoCamera : camera );
 
 	// render secondary view
 	if ( params.showSecondView ) {
 
+		const dist = secondCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * secondCamera.fov / 6000 );
 		secondRenderer.render( scene, secondCamera );
 
 	}
@@ -510,6 +551,8 @@ function render() {
 
 		}
 
+		const dist = thirdPersonCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * thirdPersonCamera.fov / 6000 );
 		thirdPersonRenderer.render( scene, thirdPersonCamera );
 
 	}
