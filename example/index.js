@@ -24,9 +24,10 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
+let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
 let box;
-let raycaster, mouse, rayIntersect;
+let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
@@ -42,11 +43,13 @@ let params = {
 	'maxDepth': 15,
 	'loadSiblings': true,
 	'displayActiveTiles': false,
+	'resolutionScale': 1.0,
 
 	'up': '+Y',
 	'displayBoxBounds': false,
 	'colorMode': 0,
 	'showThirdPerson': false,
+	'showSecondView': false,
 	'reload': reinstantiateTiles,
 
 };
@@ -71,29 +74,9 @@ function reinstantiateTiles() {
 
 function init() {
 
-	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	thirdPersonCamera.position.set( 50, 40, 40 );
-	thirdPersonCamera.lookAt( 0, 0, 0 );
-
-	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
-	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
-	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0x0f1416 );
-
-	document.body.appendChild( thirdPersonRenderer.domElement );
-	thirdPersonRenderer.domElement.style.position = 'fixed';
-	thirdPersonRenderer.domElement.style.left = '5px';
-	thirdPersonRenderer.domElement.style.bottom = '5px';
-
-	thirdPersonControls = new OrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
-	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 2000;
-
-	// primary camera view
 	scene = new Scene();
 
+	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -104,15 +87,58 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
-
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
 	orthoCamera = new OrthographicCamera();
-
 	orthoCameraHelper = new CameraHelper( orthoCamera );
 	scene.add( orthoCameraHelper );
 
+	// secondary camera view
+	secondCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	secondCamera.position.set( 400, 400, - 400 );
+	secondCamera.lookAt( 0, 0, 0 );
+
+	secondRenderer = new WebGLRenderer( { antialias: true } );
+	secondRenderer.setPixelRatio( window.devicePixelRatio );
+	secondRenderer.setSize( window.innerWidth, window.innerHeight );
+	secondRenderer.setClearColor( 0x151c1f );
+	secondRenderer.outputEncoding = sRGBEncoding;
+
+	document.body.appendChild( secondRenderer.domElement );
+	secondRenderer.domElement.style.position = 'absolute';
+	secondRenderer.domElement.style.right = '0';
+	secondRenderer.domElement.style.top = '0';
+	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
+
+	secondControls = new OrbitControls( secondCamera, secondRenderer.domElement );
+	secondControls.screenSpacePanning = false;
+	secondControls.minDistance = 1;
+	secondControls.maxDistance = 2000;
+
+	secondCameraHelper = new CameraHelper( secondCamera );
+	scene.add( secondCameraHelper );
+
+	// Third person camera view
+	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	thirdPersonCamera.position.set( 50, 40, 40 );
+	thirdPersonCamera.lookAt( 0, 0, 0 );
+
+	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
+	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
+	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
+	thirdPersonRenderer.setClearColor( 0x0f1416 );
+	thirdPersonRenderer.outputEncoding = sRGBEncoding;
+
+	document.body.appendChild( thirdPersonRenderer.domElement );
+	thirdPersonRenderer.domElement.style.position = 'fixed';
+	thirdPersonRenderer.domElement.style.left = '5px';
+	thirdPersonRenderer.domElement.style.bottom = '5px';
+
+	thirdPersonControls = new OrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls.screenSpacePanning = false;
+	thirdPersonControls.minDistance = 1;
+	thirdPersonControls.maxDistance = 2000;
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -157,13 +183,19 @@ function init() {
 	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
 	renderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
 	renderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
+	renderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+
+	secondRenderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+	secondRenderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
+	secondRenderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
+	secondRenderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+
 
 	// GUI
 	const gui = new dat.GUI();
 	gui.width = 300;
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'orthographic' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
@@ -187,12 +219,17 @@ function init() {
 	} );
 	debug.open();
 
-	gui.add( params, 'showThirdPerson' );
-	gui.add( params, 'enableUpdate' );
-	gui.add( params, 'enableRaycast' );
-	gui.add( params, 'enableCacheDisplay' );
-	gui.add( params, 'reload' );
+	const exampleOptions = gui.addFolder( 'Example Options' );
+	exampleOptions.add( params, 'resolutionScale' ).min( 0.01 ).max( 2.0 ).step( 0.01 ).onChange( onWindowResize );
+	exampleOptions.add( params, 'orthographic' );
+	exampleOptions.add( params, 'showThirdPerson' );
+	exampleOptions.add( params, 'showSecondView' ).onChange( onWindowResize );
+	exampleOptions.add( params, 'enableUpdate' );
+	exampleOptions.add( params, 'enableRaycast' );
+	exampleOptions.add( params, 'enableCacheDisplay' );
+	exampleOptions.open();
 
+	gui.add( params, 'reload' );
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
@@ -220,18 +257,48 @@ function onWindowResize() {
 	thirdPersonCamera.updateProjectionMatrix();
 	thirdPersonRenderer.setSize( Math.floor( window.innerWidth / 3 ), Math.floor( window.innerHeight / 3 ) );
 
-	camera.aspect = window.innerWidth / window.innerHeight;
+	if ( params.showSecondView ) {
+
+		camera.aspect = 0.5 * window.innerWidth / window.innerHeight;
+		renderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
+
+		secondCamera.aspect = 0.5 * window.innerWidth / window.innerHeight;
+		secondRenderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
+		secondRenderer.domElement.style.display = 'block';
+
+	} else {
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+		secondRenderer.domElement.style.display = 'none';
+
+	}
 	camera.updateProjectionMatrix();
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
+
+	secondCamera.updateProjectionMatrix();
+	secondRenderer.setPixelRatio( window.devicePixelRatio );
 
 	updateOrthoCamera();
 
 }
 
+function onMouseLeave( e ) {
+
+	lastHoveredElement = null;
+
+}
+
 function onMouseMove( e ) {
 
-	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+	const bounds = this.getBoundingClientRect();
+	mouse.x = e.clientX - bounds.x;
+	mouse.y = e.clientY - bounds.y;
+	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
+	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
+
+	lastHoveredElement = this;
 
 }
 
@@ -239,20 +306,31 @@ const startPos = new Vector2();
 const endPos = new Vector2();
 function onMouseDown( e ) {
 
-	startPos.set( e.clientX, e.clientY );
+	const bounds = this.getBoundingClientRect();
+	startPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
 
 }
 
 function onMouseUp( e ) {
 
-	endPos.set( e.clientX, e.clientY );
+	const bounds = this.getBoundingClientRect();
+	endPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
 	if ( startPos.distanceTo( endPos ) > 2 ) {
 
 		return;
 
 	}
 
-	raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+	if ( lastHoveredElement === secondRenderer.domElement ) {
+
+		raycaster.setFromCamera( mouse, secondCamera );
+
+	} else {
+
+		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+
+	}
+
 	raycaster.firstHitOnly = true;
 	const results = raycaster.intersectObject( tiles.group, true );
 	if ( results.length ) {
@@ -292,7 +370,12 @@ function updateOrthoCamera() {
 	orthoCamera.rotation.copy( camera.rotation );
 
 	const scale = camera.position.distanceTo( controls.target ) / 2.0;
-	const aspect = window.innerWidth / window.innerHeight;
+	let aspect = window.innerWidth / window.innerHeight;
+	if ( params.showSecondView ) {
+
+		aspect *= 0.5;
+
+	}
 	orthoCamera.left = - aspect * scale;
 	orthoCamera.right = aspect * scale;
 	orthoCamera.bottom = - scale;
@@ -316,10 +399,30 @@ function animate() {
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
 
-	tiles.setCamera( params.orthographic ? orthoCamera : camera );
-	tiles.setResolutionFromRenderer( orthoCamera, renderer );
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.deleteCamera( params.orthographic ? camera : orthoCamera );
+	if ( params.orthographic ) {
+
+		tiles.deleteCamera( camera );
+		tiles.setCamera( orthoCamera );
+		tiles.setResolutionFromRenderer( orthoCamera, renderer );
+
+	} else {
+
+		tiles.deleteCamera( orthoCamera );
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
+
+	}
+
+	if ( params.showSecondView ) {
+
+		tiles.setCamera( secondCamera );
+		tiles.setResolutionFromRenderer( secondCamera, secondRenderer );
+
+	} else {
+
+		tiles.deleteCamera( secondCamera );
+
+	}
 
 	offsetParent.rotation.set( 0, 0, 0 );
 	if ( params.up === '-Z' ) {
@@ -337,9 +440,18 @@ function animate() {
 
 	}
 
-	if ( params.enableRaycast ) {
+	if ( params.enableRaycast && lastHoveredElement !== null ) {
 
-		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+		if ( lastHoveredElement === renderer.domElement ) {
+
+			raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
+
+		} else {
+
+			raycaster.setFromCamera( mouse, secondCamera );
+
+		}
+
 		raycaster.firstHitOnly = true;
 		const results = raycaster.intersectObject( tiles.group, true );
 		if ( results.length ) {
@@ -361,16 +473,6 @@ function animate() {
 
 			}
 
-			if ( params.orthographic ) {
-
-				rayIntersect.scale.setScalar( closestHit.distance / 150 );
-
-			} else {
-
-				rayIntersect.scale.setScalar( closestHit.distance * camera.fov / 6000 );
-
-			}
-
 			rayIntersect.visible = true;
 
 		} else {
@@ -389,6 +491,7 @@ function animate() {
 	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
+		secondCamera.updateMatrixWorld();
 		camera.updateMatrixWorld();
 		orthoCamera.updateMatrixWorld();
 		tiles.update();
@@ -404,10 +507,32 @@ function render() {
 
 	updateOrthoCamera();
 
-	// render primary view
 	cameraHelper.visible = false;
 	orthoCameraHelper.visible = false;
+	secondCameraHelper.visible = false;
+
+	// render primary view
+	if ( params.orthographic ) {
+
+		const dist = orthoCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist / 150 );
+
+	} else {
+
+		const dist = camera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
+
+	}
 	renderer.render( scene, params.orthographic ? orthoCamera : camera );
+
+	// render secondary view
+	if ( params.showSecondView ) {
+
+		const dist = secondCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * secondCamera.fov / 6000 );
+		secondRenderer.render( scene, secondCamera );
+
+	}
 
 	// render third person view
 	thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
@@ -418,6 +543,16 @@ function render() {
 
 		orthoCameraHelper.update();
 		orthoCameraHelper.visible = params.orthographic;
+
+		if ( params.showSecondView ) {
+
+			secondCameraHelper.update();
+			secondCameraHelper.visible = true;
+
+		}
+
+		const dist = thirdPersonCamera.position.distanceTo( rayIntersect.position );
+		rayIntersect.scale.setScalar( dist * thirdPersonCamera.fov / 6000 );
 		thirdPersonRenderer.render( scene, thirdPersonCamera );
 
 	}

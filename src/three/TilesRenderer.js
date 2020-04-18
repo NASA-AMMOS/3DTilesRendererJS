@@ -253,11 +253,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 			info.invScale = invScale;
 
+			// get frustum in grop root frame
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
 			frustum.setFromProjectionMatrix( tempMat );
 
+			// get transform position in group root frame
 			position.set( 0, 0, 0 );
 			position.applyMatrix4( camera.matrixWorld );
 			position.applyMatrix4( tempMat2 );
@@ -364,6 +366,7 @@ export class TilesRenderer extends TilesRendererBase {
 			loadIndex: 0,
 			transform,
 			active: false,
+			inFrustum: [],
 
 			box,
 			boxTransform,
@@ -597,6 +600,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		const cached = tile.cached;
+		const inFrustum = cached.inFrustum;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
 
@@ -607,13 +611,17 @@ export class TilesRenderer extends TilesRendererBase {
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
 
-			let minError = Infinity;
+			let maxError = - Infinity;
+			let minDistance = Infinity;
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
-				// TODO: move this logic (and the distance scale extraction) into the update preprocess step
+				if ( ! inFrustum[ i ] ) {
+
+					continue;
+
+				}
 
 				// transform camera position into local frame of the tile bounding box
-				// TODO: this should be the cameras world position
 				const camera = cameras[ i ];
 				const info = cameraInfo[ i ];
 				const invScale = info.invScale;
@@ -633,15 +641,17 @@ export class TilesRenderer extends TilesRendererBase {
 					const sseDenominator = info.sseDenominator;
 					error = tile.geometricError / ( scaledDistance * sseDenominator );
 
-					tile.cached.distance = scaledDistance;
+					minDistance = Math.min( minDistance, scaledDistance );
 
 				}
 
-				minError = Math.min( minError, error );
+				maxError = Math.max( maxError, error );
 
 			}
 
-			return minError;
+			tile.cached.distance = minDistance;
+
+			return maxError;
 
 		} else if ( 'sphere' in boundingVolume ) {
 
@@ -666,22 +676,32 @@ export class TilesRenderer extends TilesRendererBase {
 		// cache the root-space planes
 		// Use separating axis theorem for frustum and obb
 
-		const sphere = tile.cached.sphere;
+		const cached = tile.cached;
+		const sphere = cached.sphere;
+		const inFrustum = cached.inFrustum;
 		if ( sphere ) {
 
 			const cameraInfo = this.cameraInfo;
+			let inView = false;
 			for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
+				// Track which camera frustums this tile is in so we can use it
+				// to ignore the error calculations for cameras that can't see it
 				const frustum = cameraInfo[ i ].frustum;
 				if ( frustum.intersectsSphere( sphere ) ) {
 
-					return true;
+					inView = true;
+					inFrustum[ i ] = true;
+
+				} else {
+
+					inFrustum[ i ] = false;
 
 				}
 
 			}
 
-			return false;
+			return inView;
 
 		}
 
