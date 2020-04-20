@@ -124,6 +124,8 @@ The container group for the 3d tiles. Add this to the three.js scene in order to
 constructor( url : String )
 ```
 
+Takes the url of the `tileset.json` for the tileset to be rendered.
+
 ### .update
 
 ```js
