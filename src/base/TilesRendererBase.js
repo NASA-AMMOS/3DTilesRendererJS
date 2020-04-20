@@ -11,6 +11,7 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
 const lruSort = ( a, b ) => a.__depth - b.__depth;
+const priorityCallback = tile => 1 / tile.__depth;
 
 export class TilesRendererBase {
 
@@ -48,9 +49,11 @@ export class TilesRendererBase {
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 4;
+		downloadQueue.priorityCallback = priorityCallback;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 1;
+		parseQueue.priorityCallback = priorityCallback;
 
 		this.lruCache = lruCache;
 		this.downloadQueue = downloadQueue;
@@ -329,7 +332,7 @@ export class TilesRendererBase {
 		stats.downloading ++;
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
-		downloadQueue.add( tile, priority, tile => {
+		downloadQueue.add( tile, tile => {
 
 			if ( tile.__loadIndex !== loadIndex ) {
 
@@ -373,7 +376,7 @@ export class TilesRendererBase {
 				tile.__loadAbort = null;
 				tile.__loadingState = PARSING;
 
-				return parseQueue.add( buffer, priority, buffer => {
+				return parseQueue.add( buffer, buffer => {
 
 					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {

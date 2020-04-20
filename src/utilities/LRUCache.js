@@ -8,6 +8,7 @@ function enqueueMicrotask( callback ) {
 	Promise.resolve().then( callback );
 
 }
+
 class LRUCache {
 
 	constructor() {
