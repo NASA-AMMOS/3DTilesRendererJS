@@ -35955,7 +35955,7 @@ class LRUCache {
     this.itemSet = new Set();
     this.itemList = [];
     this.callbacks = new Map();
-    this.sortCallback = null;
+    this.unloadPriorityCallback = null;
   } // Returns whether or not the cache has reached the maximum size
 
 
@@ -36031,10 +36031,10 @@ class LRUCache {
     const callbacks = this.callbacks;
     const unused = itemList.length - usedSet.size;
     const excess = itemList.length - targetSize;
-    const prioritySortCb = this.sortCallback;
+    const unloadPriorityCallback = this.unloadPriorityCallback;
 
     if (excess > 0 && unused > 0) {
-      if (prioritySortCb) {
+      if (unloadPriorityCallback) {
         // used items should be at the end of the array
         itemList.sort((a, b) => {
           const usedA = usedSet.has(a);
@@ -36045,7 +36045,8 @@ class LRUCache {
             return 0;
           } else if (!usedA && !usedB) {
             // Use the sort function otherwise
-            return prioritySortCb(a, b);
+            // higher priority should be further to the left
+            return unloadPriorityCallback(b) - unloadPriorityCallback(a);
           } else {
             // If one is used and the other is not move the used one towards the end of the array
             return usedA ? 1 : -1;
@@ -36095,69 +36096,68 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PriorityQueue = void 0;
 
+// Fires at the end of the frame and before the next one
+function enqueueMicrotask(callback) {
+  Promise.resolve().then(callback);
+}
+
 class PriorityQueue {
   constructor() {
     // options
     this.maxJobs = 6;
     this.items = [];
+    this.callbacks = new Map();
     this.currJobs = 0;
     this.scheduled = false;
+
+    this.priorityCallback = () => {
+      throw new Error('PriorityQueue: PriorityCallback function not defined.');
+    };
   }
 
-  add(item, priority, callback) {
+  sort() {
+    const priorityCallback = this.priorityCallback;
+    const items = this.items;
+    items.sort((a, b) => {
+      return priorityCallback(a) - priorityCallback(b);
+    });
+  }
+
+  add(item, callback) {
     return new Promise((resolve, reject) => {
       const prCallback = (...args) => callback(...args).then(resolve).catch(reject);
 
       const items = this.items;
-
-      for (let i = 0, l = items.length; i < l; i++) {
-        const thisItem = items[i];
-
-        if (thisItem.priority > priority) {
-          items.splice(i, 0, {
-            priority,
-            item,
-            callback: prCallback
-          });
-          this.scheduleJobRun();
-          return;
-        }
-      }
-
-      items.push({
-        priority,
-        item,
-        callback: prCallback
-      });
+      const callbacks = this.callbacks;
+      items.push(item);
+      callbacks.set(item, prCallback);
       this.scheduleJobRun();
     });
   }
 
   remove(item) {
     const items = this.items;
+    const callbacks = this.callbacks;
+    const index = items.indexOf(item);
 
-    for (let i = 0, l = items.length; i < l; i++) {
-      const thisItem = items[i];
-
-      if (thisItem.item === item) {
-        items.splice(i, 1);
-        break;
-      }
+    if (index !== -1) {
+      items.splice(index, 1);
+      callbacks.delete(item);
     }
   }
 
   tryRunJobs() {
+    this.sort();
     const items = this.items;
+    const callbacks = this.callbacks;
     const maxJobs = this.maxJobs;
+    let currJobs = this.currJobs;
 
-    while (maxJobs > this.currJobs && items.length > 0) {
-      this.currJobs++;
-      const {
-        item,
-        priority,
-        callback
-      } = items.pop();
-      callback(item, priority).then(() => {
+    while (maxJobs > currJobs && items.length > 0) {
+      currJobs++;
+      const item = items.pop();
+      const callback = callbacks.get(item);
+      callback(item).then(() => {
         this.currJobs--;
         this.scheduleJobRun();
       }).catch(() => {
@@ -36165,11 +36165,13 @@ class PriorityQueue {
         this.scheduleJobRun();
       });
     }
+
+    this.currJobs = currJobs;
   }
 
   scheduleJobRun() {
     if (!this.scheduled) {
-      Promise.resolve().then(() => {
+      enqueueMicrotask(() => {
         this.tryRunJobs();
         this.scheduled = false;
       });
@@ -36518,7 +36520,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const lruSort = (a, b) => a.__depth - b.__depth;
+const priorityCallback = tile => 1 / tile.__depth;
 
 class TilesRendererBase {
   get rootTileSet() {
@@ -36542,11 +36544,13 @@ class TilesRendererBase {
     this.rootURL = url;
     this.fetchOptions = {};
     const lruCache = new _LRUCache.LRUCache();
-    lruCache.sortCallback = lruSort;
+    lruCache.unloadPriorityCallback = priorityCallback;
     const downloadQueue = new _PriorityQueue.PriorityQueue();
     downloadQueue.maxJobs = 4;
+    downloadQueue.priorityCallback = priorityCallback;
     const parseQueue = new _PriorityQueue.PriorityQueue();
     parseQueue.maxJobs = 1;
+    parseQueue.priorityCallback = priorityCallback;
     this.lruCache = lruCache;
     this.downloadQueue = downloadQueue;
     this.parseQueue = parseQueue;
@@ -36733,7 +36737,7 @@ class TilesRendererBase {
     stats.downloading++;
     tile.__loadAbort = controller;
     tile.__loadingState = _constants.LOADING;
-    downloadQueue.add(tile, priority, tile => {
+    downloadQueue.add(tile, tile => {
       if (tile.__loadIndex !== loadIndex) {
         return Promise.resolve();
       }
@@ -36761,7 +36765,7 @@ class TilesRendererBase {
       stats.parsing++;
       tile.__loadAbort = null;
       tile.__loadingState = _constants.PARSING;
-      return parseQueue.add(buffer, priority, buffer => {
+      return parseQueue.add(buffer, buffer => {
         // if it has been unloaded then the tile has been disposed
         if (tile.__loadIndex !== loadIndex) {
           return Promise.resolve();
@@ -45449,7 +45453,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50023" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54897" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
