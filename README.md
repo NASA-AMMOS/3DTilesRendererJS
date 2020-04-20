@@ -136,6 +136,8 @@ update() : void
 
 Updates the tiles to render and kicks off loads for the appropriate tiles in the 3d tile set.
 
+Both `group.matrixWorld` and all cameras world matrices are expected to be to date before this is called.
+
 ### .getBounds
 
 ```js
