@@ -191,15 +191,19 @@ Sets the resolution being rendered to for the given camera via renderer which ac
 
 ## PriorityQueue
 
+Piority-sorted queue to prioritize file downloads and parsing.
+
 ### .maxJobs
 
 ```js
 maxJobs = 6 : number
 ```
 
-TODO
+The maximum number of jobs to be processing at once.
 
 ## LRUCache
+
+Utility class for the TilesRenderer to keep track of currently used items so rendered items will not be unloaded.
 
 ### .maxSize
 
@@ -207,7 +211,7 @@ TODO
 maxSize = 800 : number
 ```
 
-TODO
+The maximum cached size. If that current amount of cached items is equal to this value then no more items can be cached.
 
 ### .minSize
 
@@ -215,7 +219,7 @@ TODO
 minSize = 600 : number
 ```
 
-TODO
+The minimum cache size. Above this cached data will be unloaded if it's unused.
 
 ### .unloadPercent
 
@@ -223,7 +227,7 @@ TODO
 unloadPercent = 0.05 : number
 ```
 
-TODO
+The maximum percentage of [minSize](#minSize) to unload during a given frame.
 
 # LICENSE
 
