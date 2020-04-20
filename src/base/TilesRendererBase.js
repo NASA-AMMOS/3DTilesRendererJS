@@ -43,10 +43,18 @@ export class TilesRendererBase {
 		this.rootURL = url;
 		this.fetchOptions = {};
 
-		this.lruCache = new LRUCache();
-		this.lruCache.sortCallback = lruSort;
-		this.downloadQueue = new PriorityQueue( 4 );
-		this.parseQueue = new PriorityQueue( 1 );
+		const lruCache = new LRUCache();
+		lruCache.sortCallback = lruSort;
+
+		const downloadQueue = new PriorityQueue();
+		downloadQueue.maxJobs = 4;
+
+		const parseQueue = new PriorityQueue();
+		parseQueue.maxJobs = 1;
+
+		this.lruCache = lruCache;
+		this.downloadQueue = downloadQueue;
+		this.parseQueue = parseQueue;
 		this.stats = {
 			parsing: 0,
 			downloading: 0,

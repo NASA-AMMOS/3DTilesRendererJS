@@ -1,9 +1,9 @@
 class PriorityQueue {
 
-	constructor( maxJobs = 6 ) {
+	constructor() {
 
 		// options
-		this.maxJobs = maxJobs;
+		this.maxJobs = 6;
 
 		this.items = [];
 		this.currJobs = 0;
