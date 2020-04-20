@@ -132,11 +132,15 @@ Takes the url of the `tileset.json` for the tileset to be rendered.
 update() : void
 ```
 
+Updates the tiles to render and kicks off loads for the appropriate tiles in the 3d tile set.
+
 ### .getBounds
 
 ```js
-getBounds( box : Box3 ) : void
+getBounds( box : Box3 ) : boolean
 ```
+
+Sets `box` to the root bounding box of the tileset in the [group](#group) frame. Returns `false` if the tile root was not loaded.
 
 ### .raycast
 
@@ -150,17 +154,23 @@ raycast( raycaster : Raycaster, intersects : Array ) : void
 hasCamera( camera : Camera ) : boolean
 ```
 
+Returns `true` if the camera has already been set on the renderer.
+
 ### .setCamera
 
 ```js
 setCamera( camera : Camera ) : boolean
 ```
 
+Adds the camera to the camera to be accounted for when traversing the tileset. Returns `false` if the camera is already being tracked. Returns `true` otherwise.
+
 ### .deleteCamera
 
 ```js
 deleteCamera( camera : Camera ) : boolean
 ```
+
+Removes the given camera from being accounted for when traversing the tileset. Returns `false` if the camera was not tracked.
 
 ### .setResolution
 
@@ -169,17 +179,51 @@ setResolution( camera : Camera, resolution : Vector2 ) : boolean
 setResolution( camera : Camera, x : number, y : number ) : boolean
 ```
 
+Sets the resolution being rendered to for the given camera. Returns `false` if the camera is not being tracked.
+
 ### .setResolutionFromRenderer
 
 ```js
 setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean
 ```
 
+Sets the resolution being rendered to for the given camera via renderer which accounts for canvas size and current pixel ratio. Returns `false` if the camera is not being tracked.
+
 ## PriorityQueue
+
+### .maxJobs
+
+```js
+maxJobs = 6 : number
+```
 
 TODO
 
 ## LRUCache
+
+### .maxSize
+
+```js
+maxSize = 800 : number
+```
+
+TODO
+
+### .minSize
+
+```js
+minSize = 600 : number
+```
+
+TODO
+
+### .unloadPercent
+
+```js
+unloadPercent = 0.05 : number
+```
+
+TODO
 
 # LICENSE
 
