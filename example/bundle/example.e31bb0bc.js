@@ -35955,6 +35955,7 @@ class LRUCache {
     this.itemSet = new Set();
     this.itemList = [];
     this.callbacks = new Map();
+    this.sortCallback = null;
   } // Returns whether or not the cache has reached the maximum size
 
 
@@ -36021,7 +36022,7 @@ class LRUCache {
   // Maybe call it "cleanup" or "unloadToMinSize"
 
 
-  unloadUnusedContent(prioritySortCb) {
+  unloadUnusedContent() {
     const unloadPercent = this.unloadPercent;
     const targetSize = this.minSize;
     const itemList = this.itemList;
@@ -36030,10 +36031,33 @@ class LRUCache {
     const callbacks = this.callbacks;
     const unused = itemList.length - usedSet.size;
     const excess = itemList.length - targetSize;
+    const prioritySortCb = this.sortCallback;
 
     if (excess > 0 && unused > 0) {
-      // TODO: sort by priority
-      let nodesToUnload = Math.min(targetSize * unloadPercent, unused);
+      if (prioritySortCb) {
+        // used items should be at the end of the array
+        itemList.sort((a, b) => {
+          const usedA = usedSet.has(a);
+          const usedB = usedSet.has(b);
+
+          if (usedA && usedB) {
+            // If they're both used then don't bother moving them
+            return 0;
+          } else if (!usedA && !usedB) {
+            // Use the sort function otherwise
+            return prioritySortCb(a, b);
+          } else {
+            // If one is used and the other is not move the used one towards the end of the array
+            return usedA ? 1 : -1;
+          }
+        });
+      } // address corner cases where the minSize might be zero or smaller than maxSize - minSize,
+      // which would result in a very small or no items being unloaded.
+
+
+      const unusedExcess = Math.min(excess, unused);
+      const maxUnload = Math.max(targetSize * unloadPercent, unusedExcess * unloadPercent);
+      let nodesToUnload = Math.min(maxUnload, unused);
       nodesToUnload = Math.ceil(nodesToUnload);
       const removedItems = itemList.splice(0, nodesToUnload);
 
@@ -36046,12 +36070,12 @@ class LRUCache {
     }
   }
 
-  scheduleUnload(prioritySortCb, markAllUnused = true) {
+  scheduleUnload(markAllUnused = true) {
     if (!this.scheduled) {
       this.scheduled = true;
       enqueueMicrotask(() => {
         this.scheduled = false;
-        this.unloadUnusedContent(prioritySortCb);
+        this.unloadUnusedContent();
 
         if (markAllUnused) {
           this.markAllUnused();
@@ -36072,9 +36096,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.PriorityQueue = void 0;
 
 class PriorityQueue {
-  constructor(maxJobs = 6) {
+  constructor() {
     // options
-    this.maxJobs = maxJobs;
+    this.maxJobs = 6;
     this.items = [];
     this.currJobs = 0;
     this.scheduled = false;
@@ -36493,6 +36517,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // TODO: See if using classes improves performance
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
+// Function for sorting the evicted LRU items. We should evict the shallowest depth first.
+const lruSort = (a, b) => a.__depth - b.__depth;
+
 class TilesRendererBase {
   get rootTileSet() {
     const tileSet = this.tileSets[this.rootURL];
@@ -36514,9 +36541,15 @@ class TilesRendererBase {
     this.tileSets = {};
     this.rootURL = url;
     this.fetchOptions = {};
-    this.lruCache = new _LRUCache.LRUCache();
-    this.downloadQueue = new _PriorityQueue.PriorityQueue(4);
-    this.parseQueue = new _PriorityQueue.PriorityQueue(1);
+    const lruCache = new _LRUCache.LRUCache();
+    lruCache.sortCallback = lruSort;
+    const downloadQueue = new _PriorityQueue.PriorityQueue();
+    downloadQueue.maxJobs = 4;
+    const parseQueue = new _PriorityQueue.PriorityQueue();
+    parseQueue.maxJobs = 1;
+    this.lruCache = lruCache;
+    this.downloadQueue = downloadQueue;
+    this.parseQueue = parseQueue;
     this.stats = {
       parsing: 0,
       downloading: 0,
@@ -36562,11 +36595,11 @@ class TilesRendererBase {
     (0, _traverseFunctions.skipTraversal)(root, this);
     (0, _traverseFunctions.toggleTiles)(root, this); // TODO: We may want to add this function in the requestTileContents function
 
-    lruCache.scheduleUnload(null);
+    lruCache.scheduleUnload();
   } // Overrideable
 
 
-  parseTile(buffer, tile) {
+  parseTile(buffer, tile, extension) {
     return null;
   }
 
@@ -36734,7 +36767,9 @@ class TilesRendererBase {
           return Promise.resolve();
         }
 
-        return this.parseTile(buffer, tile);
+        const uri = tile.content.uri;
+        const extension = uri.split(/\./g).pop();
+        return this.parseTile(buffer, tile, extension);
       });
     }).then(() => {
       // if it has been unloaded then the tile has been disposed
@@ -36823,16 +36858,99 @@ class B3DMLoaderBase {
 
     const featureTableStart = 28;
     const jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
-    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData)); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
+    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData));
+    const featureTable = { ...jsonFeatureTable
+    }; // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
     // TODO: dereference the json feature table data in to the binary array.
     // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+    // TODO: The feature table contains data with implicit stride and data types, which means we can't parse it into arrays
+    // unless they are specified ahead of time?s
     // Batch Table
 
     const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
     const jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
-    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData)); // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
-    // TODO: dereference the json batch table data in to the binary array.
+    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData));
+    const batchTable = { ...jsonBatchTable
+    }; // dereference the json batch table data in to the binary array.
     // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+    // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+
+    const batchLength = jsonFeatureTable.BATCH_LENGTH;
+
+    for (const key in jsonBatchTable) {
+      const feature = jsonBatchTable[key];
+
+      if (Array.isArray(feature)) {
+        batchTable[key] = {
+          type: 'SCALAR',
+          stride: 1,
+          data: feature
+        };
+      } else {
+        let stride;
+        let data;
+        const arrayStart = batchTableStart + batchTableJSONByteLength;
+        const arrayLength = batchLength * stride + feature.byteOffset;
+
+        switch (feature.type) {
+          case 'SCALAR':
+            stride = 1;
+            break;
+
+          case 'VEC2':
+            stride = 2;
+            break;
+
+          case 'VEC3':
+            stride = 3;
+            break;
+
+          case 'VEC4':
+            stride = 4;
+            break;
+        }
+
+        switch (feature.componentType) {
+          case 'BYTE':
+            data = new Int8Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_BYTE':
+            data = new Uint8Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'SHORT':
+            data = new Int16Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_SHORT':
+            data = new Uint16Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'INT':
+            data = new Int32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_INT':
+            data = new Uint32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'FLOAT':
+            data = new Float32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'DOUBLE':
+            data = new Float64Array(buffer, arrayStart, arrayLength);
+            break;
+        }
+
+        batchTable[key] = {
+          type: feature.type,
+          stride,
+          data
+        };
+      }
+    }
 
     const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
     const glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
@@ -36840,8 +36958,8 @@ class B3DMLoaderBase {
 
     return {
       version,
-      featureTable: jsonFeatureTable,
-      batchTable: jsonBatchTable,
+      featureTable,
+      batchTable,
       glbBytes
     };
   }
@@ -39229,7 +39347,11 @@ class B3DMLoader extends _B3DMLoaderBase.B3DMLoaderBase {
     const gltfBuffer = b3dm.glbBytes.slice().buffer;
     return new Promise((resolve, reject) => {
       const manager = this.manager;
-      new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, resolve, reject);
+      new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, model => {
+        model.batchTable = b3dm.batchTable;
+        model.featureTable = b3dm.featureTable;
+        resolve(model);
+      }, reject);
     });
   }
 
@@ -39552,20 +39674,11 @@ const useImageBitmap = typeof createImageBitmap !== 'undefined';
 function emptyRaycast() {}
 
 class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
-  get camera() {
-    return this.cameras[0];
-  }
-
-  set camera(camera) {
-    const cameras = this.cameras;
-    cameras.length = 1;
-    cameras[0] = camera;
-  }
-
   constructor(...args) {
     super(...args);
     this.group = new _TilesGroup.TilesGroup(this);
     this.cameras = [];
+    this.cameraMap = new Map();
     this.resolution = new _three.Vector2();
     this.cameraInfo = [];
     this.activeTiles = new Set();
@@ -39582,9 +39695,14 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     const cached = this.root.cached;
     const boundingBox = cached.box;
     const obbMat = cached.boxTransform;
-    box.copy(boundingBox);
-    box.applyMatrix4(obbMat);
-    return true;
+
+    if (boundingBox) {
+      box.copy(boundingBox);
+      box.applyMatrix4(obbMat);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   raycast(raycaster, intersects) {
@@ -39603,10 +39721,64 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     }
   }
 
-  setResolutionFromRenderer(renderer) {
-    const resolution = this.resolution;
+  hasCamera(camera) {
+    return this.cameraMap.has(camera);
+  }
+
+  setCamera(camera) {
+    const cameras = this.cameras;
+    const cameraMap = this.cameraMap;
+
+    if (!cameraMap.has(camera)) {
+      cameraMap.set(camera, new _three.Vector2());
+      cameras.push(camera);
+      return true;
+    }
+
+    return false;
+  }
+
+  setResolution(camera, xOrVec, y) {
+    const cameraMap = this.cameraMap;
+
+    if (!cameraMap.has(camera)) {
+      return false;
+    }
+
+    if (xOrVec instanceof _three.Vector2) {
+      cameraMap.get(camera).copy(xOrVec);
+    } else {
+      cameraMap.get(camera).set(xOrVec, y);
+    }
+
+    return true;
+  }
+
+  setResolutionFromRenderer(camera, renderer) {
+    const cameraMap = this.cameraMap;
+
+    if (!cameraMap.has(camera)) {
+      return false;
+    }
+
+    const resolution = cameraMap.get(camera);
     renderer.getSize(resolution);
     resolution.multiplyScalar(renderer.getPixelRatio());
+    return true;
+  }
+
+  deleteCamera(camera) {
+    const cameras = this.cameras;
+    const cameraMap = this.cameraMap;
+
+    if (cameraMap.has(camera)) {
+      const index = cameras.indexOf(camera);
+      cameras.splice(index, 1);
+      cameraMap.delete(camera);
+      return true;
+    }
+
+    return false;
   }
   /* Overriden */
 
@@ -39614,16 +39786,11 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
   update() {
     const group = this.group;
     const cameras = this.cameras;
+    const cameraMap = this.cameraMap;
     const cameraInfo = this.cameraInfo;
-    const resolution = this.resolution;
 
     if (cameras.length === 0) {
-      console.warn('TilesRenderer: no cameras to use are defined. Cannot update 3d tiles.');
-      return;
-    }
-
-    if (resolution.width === 0 || resolution.height === 0) {
-      console.warn('TilesRenderer: resolution for error calculation is not set. Cannot updated 3d tiles.');
+      console.warn('TilesRenderer: no cameras defined. Cannot update 3d tiles.');
       return;
     } // automatically scale the array of cameraInfo to match the cameras
 
@@ -39637,9 +39804,11 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
         frustum: new _three.Frustum(),
         sseDenominator: -1,
         position: new _three.Vector3(),
-        invScale: -1
+        invScale: -1,
+        pixelSize: 0
       });
-    }
+    } // extract scale of group container
+
 
     tempMat2.getInverse(group.matrixWorld);
     let invScale;
@@ -39656,16 +39825,29 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       const info = cameraInfo[i];
       const frustum = info.frustum;
       const position = info.position;
+      const resolution = cameraMap.get(camera);
+
+      if (resolution.width === 0 || resolution.height === 0) {
+        console.warn('TilesRenderer: resolution for camera error calculation is not set.');
+      }
 
       if (camera.isPerspectiveCamera) {
         info.sseDenominator = 2 * Math.tan(0.5 * camera.fov * DEG2RAD) / resolution.height;
       }
 
-      info.invScale = invScale;
+      if (camera.isOrthographicCamera) {
+        const w = camera.right - camera.left;
+        const h = camera.top - camera.bottom;
+        info.pixelSize = Math.max(h / resolution.height, w / resolution.width);
+      }
+
+      info.invScale = invScale; // get frustum in grop root frame
+
       tempMat.copy(group.matrixWorld);
       tempMat.premultiply(camera.matrixWorldInverse);
       tempMat.premultiply(camera.projectionMatrix);
-      frustum.setFromProjectionMatrix(tempMat);
+      frustum.setFromProjectionMatrix(tempMat); // get transform position in group root frame
+
       position.set(0, 0, 0);
       position.applyMatrix4(camera.matrixWorld);
       position.applyMatrix4(tempMat2);
@@ -39746,6 +39928,7 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       loadIndex: 0,
       transform,
       active: false,
+      inFrustum: [],
       box,
       boxTransform,
       boxTransformInverse,
@@ -39758,11 +39941,12 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     };
   }
 
-  parseTile(buffer, tile) {
+  parseTile(buffer, tile, extension) {
     tile._loadIndex = tile._loadIndex || 0;
     tile._loadIndex++;
     const loadIndex = tile._loadIndex;
     const manager = new _three.LoadingManager();
+    let promise = null;
 
     if (useImageBitmap) {
       // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
@@ -39780,7 +39964,21 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       });
     }
 
-    return new _B3DMLoader.B3DMLoader(manager).parse(buffer).then(res => {
+    switch (extension) {
+      case 'b3dm':
+        promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer);
+        break;
+
+      case 'pnts':
+      case 'cmpt':
+      case 'i3dm':
+      default:
+        console.warn(`TilesRenderer: Content type "${extension}" not supported.`);
+        promise = Promise.resolve(null);
+        break;
+    }
+
+    return promise.then(res => {
       if (tile._loadIndex !== loadIndex) {
         return;
       }
@@ -39788,7 +39986,7 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
       const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
       const cached = tile.cached;
       const cachedTransform = cached.transform;
-      const scene = res.scene;
+      const scene = res ? res.scene : new _three.Group();
 
       switch (upAxis.toLowerCase()) {
         case 'x':
@@ -39904,21 +40102,24 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     }
 
     const cached = tile.cached;
+    const inFrustum = cached.inFrustum;
     const cameras = this.cameras;
     const cameraInfo = this.cameraInfo; // TODO: Use the content bounding volume here?
 
     const boundingVolume = tile.boundingVolume;
-    const resolution = this.resolution;
 
     if ('box' in boundingVolume) {
       const boundingBox = cached.box;
       const boxTransformInverse = cached.boxTransformInverse;
-      let minError = Infinity;
+      let maxError = -Infinity;
+      let minDistance = Infinity;
 
       for (let i = 0, l = cameras.length; i < l; i++) {
-        // TODO: move this logic (and the distance scale extraction) into the update preprocess step
-        // transform camera position into local frame of the tile bounding box
-        // TODO: this should be the cameras world position
+        if (!inFrustum[i]) {
+          continue;
+        } // transform camera position into local frame of the tile bounding box
+
+
         const camera = cameras[i];
         const info = cameraInfo[i];
         const invScale = info.invScale;
@@ -39927,22 +40128,21 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
         let error;
 
         if (camera.isOrthographicCamera) {
-          const w = camera.right - camera.left;
-          const h = camera.top - camera.bottom;
-          const pixelSize = Math.max(h / resolution.height, w / resolution.width);
+          const pixelSize = info.pixelSize;
           error = tile.geometricError / (pixelSize * invScale);
         } else {
           const distance = boundingBox.distanceToPoint(tempVector);
           const scaledDistance = distance * invScale;
           const sseDenominator = info.sseDenominator;
           error = tile.geometricError / (scaledDistance * sseDenominator);
-          tile.cached.distance = scaledDistance;
+          minDistance = Math.min(minDistance, scaledDistance);
         }
 
-        minError = Math.min(minError, error);
+        maxError = Math.max(maxError, error);
       }
 
-      return minError;
+      tile.cached.distance = minDistance;
+      return maxError;
     } else if ('sphere' in boundingVolume) {
       // const sphere = cached.sphere;
       console.warn('ThreeTilesRenderer : Sphere bounds not supported.');
@@ -39958,20 +40158,28 @@ class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
     // TODO: we should use the more precise bounding volumes here if possible
     // cache the root-space planes
     // Use separating axis theorem for frustum and obb
-    const sphere = tile.cached.sphere;
+    const cached = tile.cached;
+    const sphere = cached.sphere;
+    const inFrustum = cached.inFrustum;
 
     if (sphere) {
       const cameraInfo = this.cameraInfo;
+      let inView = false;
 
       for (let i = 0, l = cameraInfo.length; i < l; i++) {
+        // Track which camera frustums this tile is in so we can use it
+        // to ignore the error calculations for cameras that can't see it
         const frustum = cameraInfo[i].frustum;
 
         if (frustum.intersectsSphere(sphere)) {
-          return true;
+          inView = true;
+          inFrustum[i] = true;
+        } else {
+          inFrustum[i] = false;
         }
       }
 
-      return false;
+      return inView;
     }
 
     return true;
@@ -40166,7 +40374,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
       maxDistance = this.root.cached.sphere.radius;
     } else {
       maxDistance = this.maxDistance;
-    }
+    } // TODO: Support i3dm, pnts, cmpt here
+
 
     const errorTarget = this.errorTarget;
     const colorMode = this.colorMode;
@@ -40275,8 +40484,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
     }
   }
 
-  parseTile(buffer, tile) {
-    return super.parseTile(buffer, tile).then(() => {
+  parseTile(buffer, tile, extension) {
+    return super.parseTile(buffer, tile, extension).then(() => {
       const cached = tile.cached;
       const scene = cached.scene;
 
@@ -44766,9 +44975,10 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
+let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
 let box;
-let raycaster, mouse, rayIntersect;
+let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 let params = {
@@ -44781,10 +44991,12 @@ let params = {
   'maxDepth': 15,
   'loadSiblings': true,
   'displayActiveTiles': false,
+  'resolutionScale': 1.0,
   'up': '+Y',
   'displayBoxBounds': false,
   'colorMode': 0,
   'showThirdPerson': false,
+  'showSecondView': false,
   'reload': reinstantiateTiles
 };
 init();
@@ -44798,32 +45010,12 @@ function reinstantiateTiles() {
   }
 
   tiles = new _index.DebugTilesRenderer(url);
-  tiles.camera = camera;
-  tiles.setResolutionFromRenderer(renderer);
   offsetParent.add(tiles.group);
 }
 
 function init() {
-  // Third person camera view
-  thirdPersonCamera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
-  thirdPersonCamera.position.set(50, 40, 40);
-  thirdPersonCamera.lookAt(0, 0, 0);
-  thirdPersonRenderer = new _three.WebGLRenderer({
-    antialias: true
-  });
-  thirdPersonRenderer.setPixelRatio(window.devicePixelRatio);
-  thirdPersonRenderer.setSize(window.innerWidth, window.innerHeight);
-  thirdPersonRenderer.setClearColor(0x0f1416);
-  document.body.appendChild(thirdPersonRenderer.domElement);
-  thirdPersonRenderer.domElement.style.position = 'fixed';
-  thirdPersonRenderer.domElement.style.left = '5px';
-  thirdPersonRenderer.domElement.style.bottom = '5px';
-  thirdPersonControls = new _OrbitControls.OrbitControls(thirdPersonCamera, thirdPersonRenderer.domElement);
-  thirdPersonControls.screenSpacePanning = false;
-  thirdPersonControls.minDistance = 1;
-  thirdPersonControls.maxDistance = 2000; // primary camera view
+  scene = new _three.Scene(); // primary camera view
 
-  scene = new _three.Scene();
   renderer = new _three.WebGLRenderer({
     antialias: true
   });
@@ -44838,7 +45030,48 @@ function init() {
   scene.add(cameraHelper);
   orthoCamera = new _three.OrthographicCamera();
   orthoCameraHelper = new _three.CameraHelper(orthoCamera);
-  scene.add(orthoCameraHelper); // controls
+  scene.add(orthoCameraHelper); // secondary camera view
+
+  secondCamera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
+  secondCamera.position.set(400, 400, -400);
+  secondCamera.lookAt(0, 0, 0);
+  secondRenderer = new _three.WebGLRenderer({
+    antialias: true
+  });
+  secondRenderer.setPixelRatio(window.devicePixelRatio);
+  secondRenderer.setSize(window.innerWidth, window.innerHeight);
+  secondRenderer.setClearColor(0x151c1f);
+  secondRenderer.outputEncoding = _three.sRGBEncoding;
+  document.body.appendChild(secondRenderer.domElement);
+  secondRenderer.domElement.style.position = 'absolute';
+  secondRenderer.domElement.style.right = '0';
+  secondRenderer.domElement.style.top = '0';
+  secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
+  secondControls = new _OrbitControls.OrbitControls(secondCamera, secondRenderer.domElement);
+  secondControls.screenSpacePanning = false;
+  secondControls.minDistance = 1;
+  secondControls.maxDistance = 2000;
+  secondCameraHelper = new _three.CameraHelper(secondCamera);
+  scene.add(secondCameraHelper); // Third person camera view
+
+  thirdPersonCamera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
+  thirdPersonCamera.position.set(50, 40, 40);
+  thirdPersonCamera.lookAt(0, 0, 0);
+  thirdPersonRenderer = new _three.WebGLRenderer({
+    antialias: true
+  });
+  thirdPersonRenderer.setPixelRatio(window.devicePixelRatio);
+  thirdPersonRenderer.setSize(window.innerWidth, window.innerHeight);
+  thirdPersonRenderer.setClearColor(0x0f1416);
+  thirdPersonRenderer.outputEncoding = _three.sRGBEncoding;
+  document.body.appendChild(thirdPersonRenderer.domElement);
+  thirdPersonRenderer.domElement.style.position = 'fixed';
+  thirdPersonRenderer.domElement.style.left = '5px';
+  thirdPersonRenderer.domElement.style.bottom = '5px';
+  thirdPersonControls = new _OrbitControls.OrbitControls(thirdPersonCamera, thirdPersonRenderer.domElement);
+  thirdPersonControls.screenSpacePanning = false;
+  thirdPersonControls.minDistance = 1;
+  thirdPersonControls.maxDistance = 2000; // controls
 
   controls = new _OrbitControls.OrbitControls(camera, renderer.domElement);
   controls.screenSpacePanning = false;
@@ -44873,12 +45106,16 @@ function init() {
   window.addEventListener('resize', onWindowResize, false);
   renderer.domElement.addEventListener('mousemove', onMouseMove, false);
   renderer.domElement.addEventListener('mousedown', onMouseDown, false);
-  renderer.domElement.addEventListener('mouseup', onMouseUp, false); // GUI
+  renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+  renderer.domElement.addEventListener('mouseleave', onMouseLeave, false);
+  secondRenderer.domElement.addEventListener('mousemove', onMouseMove, false);
+  secondRenderer.domElement.addEventListener('mousedown', onMouseDown, false);
+  secondRenderer.domElement.addEventListener('mouseup', onMouseUp, false);
+  secondRenderer.domElement.addEventListener('mouseleave', onMouseLeave, false); // GUI
 
   const gui = new dat.GUI();
   gui.width = 300;
   const tileOptions = gui.addFolder('Tiles Options');
-  tileOptions.add(params, 'orthographic');
   tileOptions.add(params, 'loadSiblings');
   tileOptions.add(params, 'displayActiveTiles');
   tileOptions.add(params, 'errorTarget').min(0).max(50);
@@ -44898,10 +45135,15 @@ function init() {
     RANDOM_COLOR: 6
   });
   debug.open();
-  gui.add(params, 'showThirdPerson');
-  gui.add(params, 'enableUpdate');
-  gui.add(params, 'enableRaycast');
-  gui.add(params, 'enableCacheDisplay');
+  const exampleOptions = gui.addFolder('Example Options');
+  exampleOptions.add(params, 'resolutionScale').min(0.01).max(2.0).step(0.01).onChange(onWindowResize);
+  exampleOptions.add(params, 'orthographic');
+  exampleOptions.add(params, 'showThirdPerson');
+  exampleOptions.add(params, 'showSecondView').onChange(onWindowResize);
+  exampleOptions.add(params, 'enableUpdate');
+  exampleOptions.add(params, 'enableRaycast');
+  exampleOptions.add(params, 'enableCacheDisplay');
+  exampleOptions.open();
   gui.add(params, 'reload');
   gui.open();
   statsContainer = document.createElement('div');
@@ -44925,32 +45167,61 @@ function onWindowResize() {
   thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
   thirdPersonCamera.updateProjectionMatrix();
   thirdPersonRenderer.setSize(Math.floor(window.innerWidth / 3), Math.floor(window.innerHeight / 3));
-  camera.aspect = window.innerWidth / window.innerHeight;
+
+  if (params.showSecondView) {
+    camera.aspect = 0.5 * window.innerWidth / window.innerHeight;
+    renderer.setSize(0.5 * window.innerWidth, window.innerHeight);
+    secondCamera.aspect = 0.5 * window.innerWidth / window.innerHeight;
+    secondRenderer.setSize(0.5 * window.innerWidth, window.innerHeight);
+    secondRenderer.domElement.style.display = 'block';
+  } else {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    secondRenderer.domElement.style.display = 'none';
+  }
+
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio * params.resolutionScale);
+  secondCamera.updateProjectionMatrix();
+  secondRenderer.setPixelRatio(window.devicePixelRatio);
   updateOrthoCamera();
 }
 
+function onMouseLeave(e) {
+  lastHoveredElement = null;
+}
+
 function onMouseMove(e) {
-  mouse.x = e.clientX / window.innerWidth * 2 - 1;
-  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  const bounds = this.getBoundingClientRect();
+  mouse.x = e.clientX - bounds.x;
+  mouse.y = e.clientY - bounds.y;
+  mouse.x = mouse.x / bounds.width * 2 - 1;
+  mouse.y = -(mouse.y / bounds.height) * 2 + 1;
+  lastHoveredElement = this;
 }
 
 const startPos = new _three.Vector2();
 const endPos = new _three.Vector2();
 
 function onMouseDown(e) {
-  startPos.set(e.clientX, e.clientY);
+  const bounds = this.getBoundingClientRect();
+  startPos.set(e.clientX - bounds.x, e.clientY - bounds.y);
 }
 
 function onMouseUp(e) {
-  endPos.set(e.clientX, e.clientY);
+  const bounds = this.getBoundingClientRect();
+  endPos.set(e.clientX - bounds.x, e.clientY - bounds.y);
 
   if (startPos.distanceTo(endPos) > 2) {
     return;
   }
 
-  raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+  if (lastHoveredElement === secondRenderer.domElement) {
+    raycaster.setFromCamera(mouse, secondCamera);
+  } else {
+    raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+  }
+
   raycaster.firstHitOnly = true;
   const results = raycaster.intersectObject(tiles.group, true);
 
@@ -44983,7 +45254,12 @@ function updateOrthoCamera() {
   orthoCamera.position.copy(camera.position);
   orthoCamera.rotation.copy(camera.rotation);
   const scale = camera.position.distanceTo(controls.target) / 2.0;
-  const aspect = window.innerWidth / window.innerHeight;
+  let aspect = window.innerWidth / window.innerHeight;
+
+  if (params.showSecondView) {
+    aspect *= 0.5;
+  }
+
   orthoCamera.left = -aspect * scale;
   orthoCamera.right = aspect * scale;
   orthoCamera.bottom = -scale;
@@ -45001,10 +45277,26 @@ function animate() {
   tiles.loadSiblings = params.loadSiblings;
   tiles.displayActiveTiles = params.displayActiveTiles;
   tiles.maxDepth = params.maxDepth;
-  tiles.camera = params.orthographic ? orthoCamera : camera;
   tiles.displayBoxBounds = params.displayBoxBounds;
   tiles.colorMode = parseFloat(params.colorMode);
-  tiles.setResolutionFromRenderer(renderer);
+
+  if (params.orthographic) {
+    tiles.deleteCamera(camera);
+    tiles.setCamera(orthoCamera);
+    tiles.setResolutionFromRenderer(orthoCamera, renderer);
+  } else {
+    tiles.deleteCamera(orthoCamera);
+    tiles.setCamera(camera);
+    tiles.setResolutionFromRenderer(camera, renderer);
+  }
+
+  if (params.showSecondView) {
+    tiles.setCamera(secondCamera);
+    tiles.setResolutionFromRenderer(secondCamera, secondRenderer);
+  } else {
+    tiles.deleteCamera(secondCamera);
+  }
+
   offsetParent.rotation.set(0, 0, 0);
 
   if (params.up === '-Z') {
@@ -45018,8 +45310,13 @@ function animate() {
     tiles.group.position.multiplyScalar(-1);
   }
 
-  if (params.enableRaycast) {
-    raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+  if (params.enableRaycast && lastHoveredElement !== null) {
+    if (lastHoveredElement === renderer.domElement) {
+      raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
+    } else {
+      raycaster.setFromCamera(mouse, secondCamera);
+    }
+
     raycaster.firstHitOnly = true;
     const results = raycaster.intersectObject(tiles.group, true);
 
@@ -45034,12 +45331,6 @@ function animate() {
         rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
       }
 
-      if (params.orthographic) {
-        rayIntersect.scale.setScalar(closestHit.distance / 150);
-      } else {
-        rayIntersect.scale.setScalar(closestHit.distance * camera.fov / 6000);
-      }
-
       rayIntersect.visible = true;
     } else {
       rayIntersect.visible = false;
@@ -45052,6 +45343,7 @@ function animate() {
   window.tiles = tiles;
 
   if (params.enableUpdate) {
+    secondCamera.updateMatrixWorld();
     camera.updateMatrixWorld();
     orthoCamera.updateMatrixWorld();
     tiles.update();
@@ -45062,11 +45354,27 @@ function animate() {
 }
 
 function render() {
-  updateOrthoCamera(); // render primary view
-
+  updateOrthoCamera();
   cameraHelper.visible = false;
   orthoCameraHelper.visible = false;
-  renderer.render(scene, params.orthographic ? orthoCamera : camera); // render third person view
+  secondCameraHelper.visible = false; // render primary view
+
+  if (params.orthographic) {
+    const dist = orthoCamera.position.distanceTo(rayIntersect.position);
+    rayIntersect.scale.setScalar(dist / 150);
+  } else {
+    const dist = camera.position.distanceTo(rayIntersect.position);
+    rayIntersect.scale.setScalar(dist * camera.fov / 6000);
+  }
+
+  renderer.render(scene, params.orthographic ? orthoCamera : camera); // render secondary view
+
+  if (params.showSecondView) {
+    const dist = secondCamera.position.distanceTo(rayIntersect.position);
+    rayIntersect.scale.setScalar(dist * secondCamera.fov / 6000);
+    secondRenderer.render(scene, secondCamera);
+  } // render third person view
+
 
   thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
 
@@ -45075,6 +45383,14 @@ function render() {
     cameraHelper.visible = !params.orthographic;
     orthoCameraHelper.update();
     orthoCameraHelper.visible = params.orthographic;
+
+    if (params.showSecondView) {
+      secondCameraHelper.update();
+      secondCameraHelper.visible = true;
+    }
+
+    const dist = thirdPersonCamera.position.distanceTo(rayIntersect.position);
+    rayIntersect.scale.setScalar(dist * thirdPersonCamera.fov / 6000);
     thirdPersonRenderer.render(scene, thirdPersonCamera);
   }
 
@@ -45133,7 +45449,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55787" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50023" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
