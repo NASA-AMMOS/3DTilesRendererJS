@@ -118,6 +118,8 @@ group : Group
 
 The container group for the 3d tiles. Add this to the three.js scene in order to render it.
 
+When raycasting a higher performance traversal approach is used if `raycaster.firstHitOnly = true`. If true then only the first hit of the terrain is reported in the tileset.
+
 ### .constructor
 
 ```js
@@ -141,12 +143,6 @@ getBounds( box : Box3 ) : boolean
 ```
 
 Sets `box` to the root bounding box of the tileset in the [group](#group) frame. Returns `false` if the tile root was not loaded.
-
-### .raycast
-
-```js
-raycast( raycaster : Raycaster, intersects : Array ) : void
-```
 
 ### .hasCamera
 
