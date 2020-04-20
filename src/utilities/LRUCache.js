@@ -8,6 +8,7 @@ function enqueueMicrotask( callback ) {
 	Promise.resolve().then( callback );
 
 }
+
 class LRUCache {
 
 	constructor() {
@@ -22,7 +23,7 @@ class LRUCache {
 		this.itemList = [];
 		this.callbacks = new Map();
 
-		this.sortCallback = null;
+		this.unloadPriorityCallback = null;
 
 	}
 
@@ -119,11 +120,11 @@ class LRUCache {
 		const callbacks = this.callbacks;
 		const unused = itemList.length - usedSet.size;
 		const excess = itemList.length - targetSize;
-		const prioritySortCb = this.sortCallback;
+		const unloadPriorityCallback = this.unloadPriorityCallback;
 
 		if ( excess > 0 && unused > 0 ) {
 
-			if ( prioritySortCb ) {
+			if ( unloadPriorityCallback ) {
 
 				// used items should be at the end of the array
 				itemList.sort( ( a, b ) => {
@@ -138,7 +139,8 @@ class LRUCache {
 					} else if ( ! usedA && ! usedB ) {
 
 						// Use the sort function otherwise
-						return prioritySortCb( a, b );
+						// higher priority should be further to the left
+						return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
 
 					} else {
 

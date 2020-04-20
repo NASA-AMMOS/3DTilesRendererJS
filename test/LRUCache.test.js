@@ -61,7 +61,7 @@ describe( 'LRUCache', () => {
 	it( 'should sort before unloading', () => {
 
 		const cache = new LRUCache();
-		cache.sortCallback = ( a, b ) => b.priority - a.priority;
+		cache.unloadPriorityCallback = item => item.priority;
 		cache.minSize = 0;
 		cache.maxSize = 10;
 		cache.unloadPercent = 1;

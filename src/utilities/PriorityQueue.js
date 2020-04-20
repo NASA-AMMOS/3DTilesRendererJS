@@ -1,3 +1,10 @@
+// Fires at the end of the frame and before the next one
+function enqueueMicrotask( callback ) {
+
+	Promise.resolve().then( callback );
+
+}
+
 class PriorityQueue {
 
 	constructor() {
@@ -6,31 +13,41 @@ class PriorityQueue {
 		this.maxJobs = 6;
 
 		this.items = [];
+		this.callbacks = new Map();
 		this.currJobs = 0;
 		this.scheduled = false;
 
+		this.priorityCallback = () => {
+
+			throw new Error( 'PriorityQueue: PriorityCallback function not defined.' );
+
+		};
+
 	}
 
-	add( item, priority, callback ) {
+	sort() {
+
+		const priorityCallback = this.priorityCallback;
+		const items = this.items;
+		items.sort( ( a, b ) => {
+
+			return priorityCallback( a ) - priorityCallback( b );
+
+		} );
+
+	}
+
+	add( item, callback ) {
 
 		return new Promise( ( resolve, reject ) => {
 
 			const prCallback = ( ...args ) => callback( ...args ).then( resolve ).catch( reject );
 			const items = this.items;
-			for ( let i = 0, l = items.length; i < l; i ++ ) {
+			const callbacks = this.callbacks;
 
-				const thisItem = items[ i ];
-				if ( thisItem.priority > priority ) {
+			items.push( item );
+			callbacks.set( item, prCallback );
 
-					items.splice( i, 0, { priority, item, callback: prCallback } );
-					this.scheduleJobRun();
-					return;
-
-				}
-
-			}
-
-			items.push( { priority, item, callback: prCallback } );
 			this.scheduleJobRun();
 
 		} );
@@ -40,15 +57,13 @@ class PriorityQueue {
 	remove( item ) {
 
 		const items = this.items;
-		for ( let i = 0, l = items.length; i < l; i ++ ) {
+		const callbacks = this.callbacks;
 
-			const thisItem = items[ i ];
-			if ( thisItem.item === item ) {
+		const index = items.indexOf( item );
+		if ( index !== - 1 ) {
 
-				items.splice( i, 1 );
-				break;
-
-			}
+			items.splice( index, 1 );
+			callbacks.delete( item );
 
 		}
 
@@ -56,13 +71,18 @@ class PriorityQueue {
 
 	tryRunJobs() {
 
-		const items = this.items;
-		const maxJobs = this.maxJobs;
-		while ( maxJobs > this.currJobs && items.length > 0 ) {
+		this.sort();
 
-			this.currJobs ++;
-			const { item, priority, callback } = items.pop();
-			callback( item, priority )
+		const items = this.items;
+		const callbacks = this.callbacks;
+		const maxJobs = this.maxJobs;
+		let currJobs = this.currJobs;
+		while ( maxJobs > currJobs && items.length > 0 ) {
+
+			currJobs ++;
+			const item = items.pop();
+			const callback = callbacks.get( item );
+			callback( item )
 				.then( () => {
 
 					this.currJobs --;
@@ -77,6 +97,7 @@ class PriorityQueue {
 				} );
 
 		}
+		this.currJobs = currJobs;
 
 	}
 
@@ -84,7 +105,7 @@ class PriorityQueue {
 
 		if ( ! this.scheduled ) {
 
-			Promise.resolve().then( () => {
+			enqueueMicrotask( () => {
 
 				this.tryRunJobs();
 				this.scheduled = false;

@@ -199,6 +199,14 @@ maxJobs = 6 : number
 
 The maximum number of jobs to be processing at once.
 
+### .unloadPriorityCallback
+
+```js
+unloadPriorityCallback = null : ( item ) => Number
+```
+
+Function to derive the unload priority of the given item. Higher priority values get unloaded first.
+
 ## LRUCache
 
 Utility class for the TilesRenderer to keep track of currently used items so rendered items will not be unloaded.
@@ -226,6 +234,14 @@ unloadPercent = 0.05 : number
 ```
 
 The maximum percentage of [minSize](#minSize) to unload during a given frame.
+
+### .priorityCallback
+
+```js
+priorityCallback = null : ( item ) => Number
+```
+
+Function to derive the job priority of the given item. Higher priority values get processed first.
 
 # LICENSE
 
