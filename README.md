@@ -49,23 +49,23 @@ function renderLoop() {
 
 ## TilesRenderer
 
-### .group
-
-```js
-group : Group
-```
-
 ### .errorTarget
 
 ```js
 errorTarget = 6 : Number
 ```
 
+The target screenspace error in pixels to target when updating the geometry. Tiles will not render if they have below this level of screenspace error.
+
 ### .errorThreshold
 
 ```js
 errorThreshold = Infinity : Number
 ```
+
+Value used to compute the threshold `errorTarget * errorThreshold` above which tiles will not render. This is used to enable traversal to skip loading and rendering parent tiles far from the cameras current screenspace error requirement.
+
+If `errorThreshold` is set to `Infinity` then all parent tiles will be loaded and rendered. If it's set to `0` then no parent tiles will render and only the tiles that are being rendered will be loaded.
 
 ### .maxDepth
 
@@ -102,6 +102,15 @@ parseQueue = new PriorityQueue : PriorityQueue
 ```
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
+
+
+### .group
+
+```js
+group : Group
+```
+
+The container group for the 3d tiles. Add this to the three.js scene in order to render it.
 
 ### .constructor
 
