@@ -7,7 +7,8 @@ describe( 'PriorityQueue', () => {
 
 	it( 'should run jobs automatically in the correct order.', async () => {
 
-		const queue = new PriorityQueue( 6 );
+		const queue = new PriorityQueue();
+		queue.maxJobs = 6;
 		queue.add( {}, 6, () => new Promise( () => {} ) );
 		queue.add( {}, 3, () => new Promise( () => {} ) );
 		queue.add( {}, 4, () => new Promise( () => {} ) );
@@ -70,7 +71,8 @@ describe( 'PriorityQueue', () => {
 
 		let called = 0;
 		let resolveFunc = null;
-		const queue = new PriorityQueue( 1 );
+		const queue = new PriorityQueue();
+		queue.maxJobs = 1;
 
 		queue.add( {}, 1, () => new Promise( resolve => {
 
