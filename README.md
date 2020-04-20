@@ -73,11 +73,15 @@ If `errorThreshold` is set to `Infinity` then all parent tiles will be loaded an
 maxDepth = Infinity : Number
 ```
 
+The max depth to which tiles will be loaded and rendered.
+
 ### .loadSiblings
 
 ```js
 loadSiblings = true : Boolean
 ```
+
+If true then all sibling tiles will be loaded, as well, to ensure coherence when moving the camera. If false then only currently viewed tiles will be loaded.
 
 ### .lruCache
 
