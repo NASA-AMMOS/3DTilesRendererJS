@@ -10,7 +10,6 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 // TODO: Make sure active state works as expected
 
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const lruSort = ( a, b ) => a.__depth - b.__depth;
 const priorityCallback = tile => 1 / tile.__depth;
 
 export class TilesRendererBase {
@@ -45,7 +44,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 
 		const lruCache = new LRUCache();
-		lruCache.sortCallback = lruSort;
+		lruCache.unloadPriorityCallback = priorityCallback;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 4;
