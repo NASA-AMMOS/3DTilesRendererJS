@@ -10,7 +10,7 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 // TODO: Make sure active state works as expected
 
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const priorityCallback = tile => 1 / tile.__depth;
+const priorityCallback = tile => 1 / ( tile.__depthFromRenderedParent + 1 );
 
 export class TilesRendererBase {
 
@@ -191,6 +191,7 @@ export class TilesRendererBase {
 
 		tile.__loadAbort = null;
 
+		tile.__depthFromRenderedParent = - 1;
 		if ( parentTile === null ) {
 
 			tile.__depth = 0;
@@ -311,10 +312,10 @@ export class TilesRendererBase {
 
 			}
 
+			t.__buffer = null;
 			t.__loadingState = UNLOADED;
 			t.__loadIndex ++;
 
-			// TODO: Removing from the queues here is slow?
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
 
@@ -322,7 +323,6 @@ export class TilesRendererBase {
 
 		tile.__loadIndex ++;
 		const loadIndex = tile.__loadIndex;
-		const priority = 1 / ( tile.__depth + 1 );
 		const stats = this.stats;
 
 		const controller = new AbortController();
@@ -374,8 +374,9 @@ export class TilesRendererBase {
 				stats.parsing ++;
 				tile.__loadAbort = null;
 				tile.__loadingState = PARSING;
+				tile.__buffer = buffer;
 
-				return parseQueue.add( buffer, buffer => {
+				return parseQueue.add( tile, tile => {
 
 					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
@@ -386,6 +387,8 @@ export class TilesRendererBase {
 
 					const uri = tile.content.uri;
 					const extension = uri.split( /\./g ).pop();
+					const buffer = tile.__buffer;
+					tile.__buffer = null;
 
 					return this.parseTile( buffer, tile, extension );
 
