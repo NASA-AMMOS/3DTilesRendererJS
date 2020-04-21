@@ -212,9 +212,15 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
+	const parent = tile.parent;
+	const parentDepthToParent = parent ? parent.__depthFromRenderedParent : - 1;
+	tile.__depthFromRenderedParent = parentDepthToParent;
+
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	const lruCache = renderer.lruCache;
 	if ( tile.__isLeaf ) {
+
+		tile.__depthFromRenderedParent = parentDepthToParent + 1;
 
 		if ( tile.__loadingState === LOADED ) {
 
@@ -232,6 +238,7 @@ export function skipTraversal( tile, renderer ) {
 			renderer.requestTileContents( tile );
 
 		}
+
 		return;
 
 	}
@@ -253,6 +260,14 @@ export function skipTraversal( tile, renderer ) {
 			allChildrenHaveContent = allChildrenHaveContent && childContent;
 
 		}
+
+	}
+
+	// Increment the relative depth of the node to the nearest rendered parent if it has content
+	// and is being rendered.
+	if ( meetsSSE && hasContent ) {
+
+		tile.__depthFromRenderedParent = parentDepthToParent + 1;
 
 	}
 
