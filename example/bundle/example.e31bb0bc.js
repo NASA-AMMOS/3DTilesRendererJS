@@ -36373,12 +36373,17 @@ function skipTraversal(tile, renderer) {
 
   if (!isUsedThisFrame(tile, frameCount)) {
     return;
-  } // Request the tile contents or mark it as visible if we've found a leaf.
+  }
 
+  const parent = tile.parent;
+  const parentDepthToParent = parent ? parent.__depthFromRenderedParent : -1;
+  tile.__depthFromRenderedParent = parentDepthToParent; // Request the tile contents or mark it as visible if we've found a leaf.
 
   const lruCache = renderer.lruCache;
 
   if (tile.__isLeaf) {
+    tile.__depthFromRenderedParent = parentDepthToParent + 1;
+
     if (tile.__loadingState === _constants.LOADED) {
       if (tile.__inFrustum) {
         tile.__visible = true;
@@ -36410,6 +36415,12 @@ function skipTraversal(tile, renderer) {
       const childContent = c.__loadingState === _constants.LOADED || tile.__contentEmpty;
       allChildrenHaveContent = allChildrenHaveContent && childContent;
     }
+  } // Increment the relative depth of the node to the nearest rendered parent if it has content
+  // and is being rendered.
+
+
+  if (meetsSSE && hasContent) {
+    tile.__depthFromRenderedParent = parentDepthToParent + 1;
   } // If we've met the SSE requirements and we can load content then fire a fetch.
 
 
@@ -36520,7 +36531,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // TODO: See if declaring function inline improves performance
 // TODO: Make sure active state works as expected
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const priorityCallback = tile => 1 / tile.__depth;
+const priorityCallback = tile => 1 / (tile.__depthFromRenderedParent + 1);
 
 class TilesRendererBase {
   get rootTileSet() {
@@ -36644,6 +36655,7 @@ class TilesRendererBase {
     tile.__loadingState = _constants.UNLOADED;
     tile.__loadIndex = 0;
     tile.__loadAbort = null;
+    tile.__depthFromRenderedParent = -1;
 
     if (parentTile === null) {
       tile.__depth = 0;
@@ -36722,15 +36734,14 @@ class TilesRendererBase {
         stats.parsing--;
       }
 
+      t.__buffer = null;
       t.__loadingState = _constants.UNLOADED;
-      t.__loadIndex++; // TODO: Removing from the queues here is slow?
-
+      t.__loadIndex++;
       parseQueue.remove(t);
       downloadQueue.remove(t);
     });
     tile.__loadIndex++;
     const loadIndex = tile.__loadIndex;
-    const priority = 1 / (tile.__depth + 1);
     const stats = this.stats;
     const controller = new AbortController();
     const signal = controller.signal;
@@ -36765,7 +36776,8 @@ class TilesRendererBase {
       stats.parsing++;
       tile.__loadAbort = null;
       tile.__loadingState = _constants.PARSING;
-      return parseQueue.add(buffer, buffer => {
+      tile.__buffer = buffer;
+      return parseQueue.add(tile, tile => {
         // if it has been unloaded then the tile has been disposed
         if (tile.__loadIndex !== loadIndex) {
           return Promise.resolve();
@@ -36773,6 +36785,8 @@ class TilesRendererBase {
 
         const uri = tile.content.uri;
         const extension = uri.split(/\./g).pop();
+        const buffer = tile.__buffer;
+        tile.__buffer = null;
         return this.parseTile(buffer, tile, extension);
       });
     }).then(() => {
@@ -45453,7 +45467,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54897" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61412" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
