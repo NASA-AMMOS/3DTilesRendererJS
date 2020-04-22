@@ -45,10 +45,12 @@ describe( 'PriorityQueue', () => {
 		queue.add( { priority : 8 }, cb );
 		queue.add( { priority : 2 }, cb );
 		queue.add( { priority : 1 }, cb );
+		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
 		await nextTick();
 
 		expect( result ).toEqual( [ 8, 6, 4, 3, 2, 1, 0 ] );
+		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
 	} );
 
@@ -79,6 +81,7 @@ describe( 'PriorityQueue', () => {
 
 		queue.remove( D );
 		expect( queue.items ).toEqual( [] );
+		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
 	} );
 

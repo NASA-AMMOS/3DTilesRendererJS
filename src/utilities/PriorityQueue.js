@@ -82,6 +82,7 @@ class PriorityQueue {
 			currJobs ++;
 			const item = items.pop();
 			const callback = callbacks.get( item );
+			callbacks.delete( item );
 			callback( item )
 				.then( () => {
 
