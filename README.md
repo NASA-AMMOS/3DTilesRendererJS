@@ -12,7 +12,6 @@ The renderer supports a limited subset of the spec for the moment. See [Issue #1
 See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/)!
 
 **In Progress Features**
-- Travis integration
 - Performance
 - Bug Triage
 - Tileset / Browser validation
