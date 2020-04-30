@@ -206,7 +206,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							break;
 
 						}
-						case RELATIVE_DEPTH: {5
+						case RELATIVE_DEPTH: {
 
 							const val = tile.__depthFromRenderedParent / maxDepth;
 							c.material.color.setRGB( val, val, val );
