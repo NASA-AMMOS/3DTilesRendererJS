@@ -271,6 +271,9 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
+	// TODO: Also consider the case where when we zoom in and children haven't loaded yet.
+	// || ( ! meetsSSE && ! allChildrenHaveContent && loadedContent )
+
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( meetsSSE && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
