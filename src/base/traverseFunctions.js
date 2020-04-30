@@ -20,6 +20,7 @@ function resetFrameState( tile, frameCount ) {
 		tile.__active = false;
 		tile.__error = 0;
 		tile.__childrenWereVisible = false;
+		tile.__allChildrenLoaded = false;
 
 	}
 
@@ -188,14 +189,23 @@ export function markUsedSetLeaves( tile, renderer ) {
 	} else {
 
 		let childrenWereVisible = false;
+		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			markUsedSetLeaves( c, renderer );
 			childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
+			if ( isUsedThisFrame( c, frameCount ) ) {
+
+				const childLoaded = c.__contentEmpty || c.__loadingState === LOADED;
+				allChildrenLoaded = allChildrenLoaded && childLoaded; //( ( ! c.__contentEmpty && c.__loadingState === LOADED ) || c.__allChildrenLoaded );
+
+			}
+
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
+		tile.__allChildrenLoaded = allChildrenLoaded;
 
 	}
 
@@ -249,19 +259,7 @@ export function skipTraversal( tile, renderer ) {
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
-	let allChildrenHaveContent = true;
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-		const c = children[ i ];
-		if ( isUsedThisFrame( c, frameCount ) ) {
-
-			// TODO: This doesn't seem right -- we should check down to the next children with content?
-			const childContent = c.__loadingState === LOADED || tile.__contentEmpty;
-			allChildrenHaveContent = allChildrenHaveContent && childContent;
-
-		}
-
-	}
+	let allChildrenHaveContent = tile.__allChildrenLoaded;
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.
@@ -271,15 +269,27 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	// TODO: Also consider the case where when we zoom in and children haven't loaded yet.
-	// || ( ! meetsSSE && ! allChildrenHaveContent && loadedContent )
-
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( meetsSSE && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
 		renderer.requestTileContents( tile );
 
 	}
+
+	// This condition:
+	// ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible )
+	// ensures that when zooming the camera out we don't jump to the lowest parent LOD that isn't loaded until
+	// we load the children, which can lead to a disconcerting pop until children are loaded to the relevant
+	// leaf again. If the children were visible the previous frame, then don't stop here and keep traversing to
+	// retain visual continuity.
+
+	// This condition:
+	// ( ! meetsSSE && loadedContent && ! allChildrenHaveContent && ! childrenWereVisible )
+	// ensures that when zooming the camera in we don't premptively display nothing if the children haven't loaded just
+	// because the parent tile doesn't meet the SSE requirements.
+
+	// TODO: Also consider the case where when we zoom in and children haven't loaded yet.
+	// || ( ! meetsSSE && ! allChildrenHaveContent && loadedContent && ! childrenWereVisible )
 
 	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
 	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
@@ -313,6 +323,19 @@ export function skipTraversal( tile, renderer ) {
 
 		}
 		return;
+
+	}
+
+	if ( ! meetsSSE && ! allChildrenHaveContent && loadedContent ) {
+
+		if ( tile.__inFrustum ) {
+
+			tile.__visible = true;
+			stats.visible ++;
+
+		}
+		tile.__active = true;
+		stats.active ++;
 
 	}
 

@@ -16,6 +16,7 @@ class PriorityQueue {
 		this.callbacks = new Map();
 		this.currJobs = 0;
 		this.scheduled = false;
+		this.autoUpdate = true;
 
 		this.priorityCallback = () => {
 
@@ -104,7 +105,7 @@ class PriorityQueue {
 
 	scheduleJobRun() {
 
-		if ( ! this.scheduled ) {
+		if ( ! this.scheduled && this.autoUpdate ) {
 
 			enqueueMicrotask( () => {
 

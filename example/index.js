@@ -499,6 +499,9 @@ function animate() {
 
 	}
 
+	tiles.downloadQueue.autoUpdate = params.enableUpdate;
+	tiles.parseQueue.autoUpdate = params.enableUpdate;
+
 	render();
 	stats.update();
 
