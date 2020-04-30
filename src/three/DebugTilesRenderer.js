@@ -9,8 +9,9 @@ const SCREEN_ERROR = 1;
 const GEOMETRIC_ERROR = 2;
 const DISTANCE = 3;
 const DEPTH = 4;
-const IS_LEAF = 5;
-const RANDOM_COLOR = 6;
+const RELATIVE_DEPTH = 5;
+const IS_LEAF = 6;
+const RANDOM_COLOR = 7;
 
 function emptyRaycast() {}
 
@@ -201,6 +202,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
+							c.material.color.setRGB( val, val, val );
+							break;
+
+						}
+						case RELATIVE_DEPTH: {
+
+							const val = tile.__depthFromRenderedParent / maxDepth;
 							c.material.color.setRGB( val, val, val );
 							break;
 

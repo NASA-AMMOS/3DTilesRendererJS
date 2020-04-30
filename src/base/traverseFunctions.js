@@ -20,6 +20,7 @@ function resetFrameState( tile, frameCount ) {
 		tile.__active = false;
 		tile.__error = 0;
 		tile.__childrenWereVisible = false;
+		tile.__allChildrenLoaded = false;
 
 	}
 
@@ -188,14 +189,23 @@ export function markUsedSetLeaves( tile, renderer ) {
 	} else {
 
 		let childrenWereVisible = false;
+		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			markUsedSetLeaves( c, renderer );
 			childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
+			if ( isUsedThisFrame( c, frameCount ) ) {
+
+				const childLoaded = ( ! c.__contentEmpty && c.__loadingState === LOADED ) || c.__allChildrenLoaded;
+				allChildrenLoaded = allChildrenLoaded && childLoaded;
+
+			}
+
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
+		tile.__allChildrenLoaded = allChildrenLoaded;
 
 	}
 
@@ -249,19 +259,7 @@ export function skipTraversal( tile, renderer ) {
 	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
-	let allChildrenHaveContent = true;
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-		const c = children[ i ];
-		if ( isUsedThisFrame( c, frameCount ) ) {
-
-			// TODO: This doesn't seem right -- we should check down to the next children with content?
-			const childContent = c.__loadingState === LOADED || tile.__contentEmpty;
-			allChildrenHaveContent = allChildrenHaveContent && childContent;
-
-		}
-
-	}
+	let allChildrenHaveContent = tile.__allChildrenLoaded;
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.

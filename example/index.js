@@ -213,8 +213,9 @@ function init() {
 		GEOMETRIC_ERROR: 2,
 		DISTANCE: 3,
 		DEPTH: 4,
-		IS_LEAF: 5,
-		RANDOM_COLOR: 6,
+		RELATIVE_DEPTH: 5,
+		IS_LEAF: 6,
+		RANDOM_COLOR: 7,
 
 	} );
 	debug.open();
@@ -224,7 +225,19 @@ function init() {
 	exampleOptions.add( params, 'orthographic' );
 	exampleOptions.add( params, 'showThirdPerson' );
 	exampleOptions.add( params, 'showSecondView' ).onChange( onWindowResize );
-	exampleOptions.add( params, 'enableUpdate' );
+	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
+
+		tiles.parseQueue.autoUpdate = v;
+		tiles.downloadQueue.autoUpdate = v;
+
+		if ( v ) {
+
+			tiles.parseQueue.scheduleJobRun();
+			tiles.downloadQueue.scheduleJobRun();
+
+		}
+
+	} );
 	exampleOptions.add( params, 'enableRaycast' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.open();
