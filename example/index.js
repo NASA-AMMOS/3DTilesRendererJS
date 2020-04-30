@@ -213,8 +213,9 @@ function init() {
 		GEOMETRIC_ERROR: 2,
 		DISTANCE: 3,
 		DEPTH: 4,
-		IS_LEAF: 5,
-		RANDOM_COLOR: 6,
+		RELATIVE_DEPTH: 5,
+		IS_LEAF: 6,
+		RANDOM_COLOR: 7,
 
 	} );
 	debug.open();
