@@ -154,4 +154,36 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
+	it( 'should not automatically run if autoUpdate is false.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.priorityCallback = () => 0;
+		queue.autoUpdate = false;
+		queue.maxJobs = 1;
+
+		queue.add( {}, async () => {} );
+		queue.add( {}, async () => {} );
+
+		expect( queue.items ).toHaveLength( 2 );
+
+		await nextTick();
+
+		expect( queue.items ).toHaveLength( 2 );
+
+		queue.scheduleJobRun();
+		await nextTick();
+
+		expect( queue.items ).toHaveLength( 1 );
+
+		await nextTick();
+
+		expect( queue.items ).toHaveLength( 1 );
+
+		queue.scheduleJobRun();
+		await nextTick();
+
+		expect( queue.items ).toHaveLength( 0 );
+
+	});
+
 } );
