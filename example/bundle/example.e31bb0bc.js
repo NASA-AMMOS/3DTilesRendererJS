@@ -36109,6 +36109,7 @@ class PriorityQueue {
     this.callbacks = new Map();
     this.currJobs = 0;
     this.scheduled = false;
+    this.autoUpdate = true;
 
     this.priorityCallback = () => {
       throw new Error('PriorityQueue: PriorityCallback function not defined.');
@@ -36131,7 +36132,10 @@ class PriorityQueue {
       const callbacks = this.callbacks;
       items.push(item);
       callbacks.set(item, prCallback);
-      this.scheduleJobRun();
+
+      if (this.autoUpdate) {
+        this.scheduleJobRun();
+      }
     });
   }
 
@@ -36157,12 +36161,19 @@ class PriorityQueue {
       currJobs++;
       const item = items.pop();
       const callback = callbacks.get(item);
+      callbacks.delete(item);
       callback(item).then(() => {
         this.currJobs--;
-        this.scheduleJobRun();
+
+        if (this.autoUpdate) {
+          this.scheduleJobRun();
+        }
       }).catch(() => {
         this.currJobs--;
-        this.scheduleJobRun();
+
+        if (this.autoUpdate) {
+          this.scheduleJobRun();
+        }
       });
     }
 
@@ -36229,6 +36240,7 @@ function resetFrameState(tile, frameCount) {
     tile.__active = false;
     tile.__error = 0;
     tile.__childrenWereVisible = false;
+    tile.__allChildrenLoaded = false;
   }
 } // Recursively mark tiles used down to the next tile with content
 
@@ -36355,14 +36367,21 @@ function markUsedSetLeaves(tile, renderer) {
     tile.__isLeaf = true; // TODO: stats
   } else {
     let childrenWereVisible = false;
+    let allChildrenLoaded = true;
 
     for (let i = 0, l = children.length; i < l; i++) {
       const c = children[i];
       markUsedSetLeaves(c, renderer);
       childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
+
+      if (isUsedThisFrame(c, frameCount)) {
+        const childLoaded = !c.__contentEmpty && c.__loadingState === _constants.LOADED || c.__allChildrenLoaded;
+        allChildrenLoaded = allChildrenLoaded && childLoaded;
+      }
     }
 
     tile.__childrenWereVisible = childrenWereVisible;
+    tile.__allChildrenLoaded = allChildrenLoaded;
   }
 } // Skip past tiles we consider unrenderable because they are outside the error threshold.
 
@@ -36382,7 +36401,7 @@ function skipTraversal(tile, renderer) {
   const lruCache = renderer.lruCache;
 
   if (tile.__isLeaf) {
-    tile.__depthFromRenderedParent = parentDepthToParent + 1;
+    tile.__depthFromRenderedParent++;
 
     if (tile.__loadingState === _constants.LOADED) {
       if (tile.__inFrustum) {
@@ -36405,22 +36424,11 @@ function skipTraversal(tile, renderer) {
   const loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
   const childrenWereVisible = tile.__childrenWereVisible;
   const children = tile.children;
-  let allChildrenHaveContent = true;
-
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-
-    if (isUsedThisFrame(c, frameCount)) {
-      // TODO: This doesn't seem right -- we should check down to the next children with content?
-      const childContent = c.__loadingState === _constants.LOADED || tile.__contentEmpty;
-      allChildrenHaveContent = allChildrenHaveContent && childContent;
-    }
-  } // Increment the relative depth of the node to the nearest rendered parent if it has content
+  let allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
   // and is being rendered.
 
-
   if (meetsSSE && hasContent) {
-    tile.__depthFromRenderedParent = parentDepthToParent + 1;
+    tile.__depthFromRenderedParent++;
   } // If we've met the SSE requirements and we can load content then fire a fetch.
 
 
@@ -36447,6 +36455,7 @@ function skipTraversal(tile, renderer) {
         const c = children[i];
 
         if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
+          c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
           renderer.requestTileContents(c);
         }
       }
@@ -36650,6 +36659,7 @@ class TilesRendererBase {
     tile.__wasSetVisible = false;
     tile.__visible = false;
     tile.__childrenWereVisible = false;
+    tile.__allChildrenLoaded = false;
     tile.__wasSetActive = false;
     tile.__active = false;
     tile.__loadingState = _constants.UNLOADED;
@@ -40285,8 +40295,9 @@ const SCREEN_ERROR = 1;
 const GEOMETRIC_ERROR = 2;
 const DISTANCE = 3;
 const DEPTH = 4;
-const IS_LEAF = 5;
-const RANDOM_COLOR = 6;
+const RELATIVE_DEPTH = 5;
+const IS_LEAF = 6;
+const RANDOM_COLOR = 7;
 
 function emptyRaycast() {}
 
@@ -40421,6 +40432,13 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
             case DEPTH:
               {
                 const val = tile.__depth / maxDepth;
+                c.material.color.setRGB(val, val, val);
+                break;
+              }
+
+            case RELATIVE_DEPTH:
+              {
+                const val = tile.__depthFromRenderedParent / maxDepth;
                 c.material.color.setRGB(val, val, val);
                 break;
               }
@@ -45149,8 +45167,9 @@ function init() {
     GEOMETRIC_ERROR: 2,
     DISTANCE: 3,
     DEPTH: 4,
-    IS_LEAF: 5,
-    RANDOM_COLOR: 6
+    RELATIVE_DEPTH: 5,
+    IS_LEAF: 6,
+    RANDOM_COLOR: 7
   });
   debug.open();
   const exampleOptions = gui.addFolder('Example Options');
@@ -45158,7 +45177,15 @@ function init() {
   exampleOptions.add(params, 'orthographic');
   exampleOptions.add(params, 'showThirdPerson');
   exampleOptions.add(params, 'showSecondView').onChange(onWindowResize);
-  exampleOptions.add(params, 'enableUpdate');
+  exampleOptions.add(params, 'enableUpdate').onChange(v => {
+    tiles.parseQueue.autoUpdate = v;
+    tiles.downloadQueue.autoUpdate = v;
+
+    if (v) {
+      tiles.parseQueue.scheduleJobRun();
+      tiles.downloadQueue.scheduleJobRun();
+    }
+  });
   exampleOptions.add(params, 'enableRaycast');
   exampleOptions.add(params, 'enableCacheDisplay');
   exampleOptions.open();
@@ -45467,7 +45494,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61412" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55296" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

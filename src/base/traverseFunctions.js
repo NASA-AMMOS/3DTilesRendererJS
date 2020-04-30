@@ -230,7 +230,7 @@ export function skipTraversal( tile, renderer ) {
 	const lruCache = renderer.lruCache;
 	if ( tile.__isLeaf ) {
 
-		tile.__depthFromRenderedParent = parentDepthToParent + 1;
+		tile.__depthFromRenderedParent ++;
 
 		if ( tile.__loadingState === LOADED ) {
 
@@ -265,7 +265,7 @@ export function skipTraversal( tile, renderer ) {
 	// and is being rendered.
 	if ( meetsSSE && hasContent ) {
 
-		tile.__depthFromRenderedParent = parentDepthToParent + 1;
+		tile.__depthFromRenderedParent ++;
 
 	}
 
@@ -300,6 +300,7 @@ export function skipTraversal( tile, renderer ) {
 				const c = children[ i ];
 				if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
+					c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
 					renderer.requestTileContents( c );
 
 				}
