@@ -49,7 +49,11 @@ class PriorityQueue {
 			items.push( item );
 			callbacks.set( item, prCallback );
 
-			this.scheduleJobRun();
+			if ( this.autoUpdate ) {
+
+				this.scheduleJobRun();
+
+			}
 
 		} );
 
@@ -88,13 +92,23 @@ class PriorityQueue {
 				.then( () => {
 
 					this.currJobs --;
-					this.scheduleJobRun();
+
+					if ( this.autoUpdate ) {
+
+						this.scheduleJobRun();
+
+					}
 
 				} )
 				.catch( () => {
 
 					this.currJobs --;
-					this.scheduleJobRun();
+
+					if ( this.autoUpdate ) {
+
+						this.scheduleJobRun();
+
+					}
 
 				} );
 
@@ -105,7 +119,7 @@ class PriorityQueue {
 
 	scheduleJobRun() {
 
-		if ( ! this.scheduled && this.autoUpdate ) {
+		if ( ! this.scheduled ) {
 
 			enqueueMicrotask( () => {
 
