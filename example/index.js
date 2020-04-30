@@ -225,7 +225,19 @@ function init() {
 	exampleOptions.add( params, 'orthographic' );
 	exampleOptions.add( params, 'showThirdPerson' );
 	exampleOptions.add( params, 'showSecondView' ).onChange( onWindowResize );
-	exampleOptions.add( params, 'enableUpdate' );
+	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
+
+		tiles.parseQueue.autoUpdate = v;
+		tiles.downloadQueue.autoUpdate = v;
+
+		if ( v ) {
+
+			tiles.parseQueue.scheduleJobRun();
+			tiles.downloadQueue.scheduleJobRun();
+
+		}
+
+	} );
 	exampleOptions.add( params, 'enableRaycast' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.open();
@@ -498,9 +510,6 @@ function animate() {
 		tiles.update();
 
 	}
-
-	tiles.downloadQueue.autoUpdate = params.enableUpdate;
-	tiles.parseQueue.autoUpdate = params.enableUpdate;
 
 	render();
 	stats.update();
