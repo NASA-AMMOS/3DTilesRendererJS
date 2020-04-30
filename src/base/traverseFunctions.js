@@ -198,8 +198,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childLoaded = c.__contentEmpty || c.__loadingState === LOADED;
-				allChildrenLoaded = allChildrenLoaded && childLoaded; //( ( ! c.__contentEmpty && c.__loadingState === LOADED ) || c.__allChildrenLoaded );
+				const childLoaded = ( ! c.__contentEmpty && c.__loadingState === LOADED ) || c.__allChildrenLoaded;
+				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
 
@@ -276,21 +276,6 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	// This condition:
-	// ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible )
-	// ensures that when zooming the camera out we don't jump to the lowest parent LOD that isn't loaded until
-	// we load the children, which can lead to a disconcerting pop until children are loaded to the relevant
-	// leaf again. If the children were visible the previous frame, then don't stop here and keep traversing to
-	// retain visual continuity.
-
-	// This condition:
-	// ( ! meetsSSE && loadedContent && ! allChildrenHaveContent && ! childrenWereVisible )
-	// ensures that when zooming the camera in we don't premptively display nothing if the children haven't loaded just
-	// because the parent tile doesn't meet the SSE requirements.
-
-	// TODO: Also consider the case where when we zoom in and children haven't loaded yet.
-	// || ( ! meetsSSE && ! allChildrenHaveContent && loadedContent && ! childrenWereVisible )
-
 	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
 	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
 	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
@@ -323,19 +308,6 @@ export function skipTraversal( tile, renderer ) {
 
 		}
 		return;
-
-	}
-
-	if ( ! meetsSSE && ! allChildrenHaveContent && loadedContent ) {
-
-		if ( tile.__inFrustum ) {
-
-			tile.__visible = true;
-			stats.visible ++;
-
-		}
-		tile.__active = true;
-		stats.active ++;
 
 	}
 
