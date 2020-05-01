@@ -4,16 +4,16 @@ import { SphereHelper } from './SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 
-const NONE = 0;
-const SCREEN_ERROR = 1;
-const GEOMETRIC_ERROR = 2;
-const DISTANCE = 3;
-const DEPTH = 4;
-const RELATIVE_DEPTH = 5;
-const IS_LEAF = 6;
-const RANDOM_COLOR = 7;
-
 function emptyRaycast() {}
+
+export const NONE = 0;
+export const SCREEN_ERROR = 1;
+export const GEOMETRIC_ERROR = 2;
+export const DISTANCE = 3;
+export const DEPTH = 4;
+export const RELATIVE_DEPTH = 5;
+export const IS_LEAF = 6;
+export const RANDOM_COLOR = 7;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
@@ -33,12 +33,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.colorMode = NONE;
 		this.boxGroup = boxGroup;
 		this.sphereGroup = sphereGroup;
-		this.maxDepth = - 1;
-		this.maxDistance = - 1;
-		this.maxError = - 1;
+		this.maxDebugDepth = - 1;
+		this.maxDebugDistance = - 1;
+		this.maxDebugError = - 1;
 
-		this.extremeDepth = - 1;
-		this.extremeError = - 1;
+		this.extremeDebugDepth = - 1;
+		this.extremeDebugError = - 1;
 
 	}
 
@@ -58,8 +58,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		} );
 
-		this.extremeDepth = maxDepth;
-		this.extremeError = maxError;
+		this.extremeDebugDepth = maxDepth;
+		this.extremeDebugError = maxError;
 
 	}
 
@@ -135,35 +135,35 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.sphereGroup.visible = this.displaySphereBounds;
 
 		let maxDepth = - 1;
-		if ( this.maxDepth === - 1 ) {
+		if ( this.maxDebugDepth === - 1 ) {
 
-			maxDepth = this.extremeDepth;
+			maxDepth = this.extremeDebugDepth;
 
 		} else {
 
-			maxDepth = this.maxDepth;
+			maxDepth = this.maxDebugDepth;
 
 		}
 
 		let maxError = - 1;
-		if ( this.maxError === - 1 ) {
+		if ( this.maxDebugError === - 1 ) {
 
-			maxError = this.extremeError;
+			maxError = this.extremeDebugError;
 
 		} else {
 
-			maxError = this.maxError;
+			maxError = this.maxDebugError;
 
 		}
 
 		let maxDistance = - 1;
-		if ( this.maxDistance === - 1 ) {
+		if ( this.maxDebugDistance === - 1 ) {
 
 			maxDistance = this.root.cached.sphere.radius;
 
 		} else {
 
-			maxDistance = this.maxDistance;
+			maxDistance = this.maxDebugDistance;
 
 		}
 
