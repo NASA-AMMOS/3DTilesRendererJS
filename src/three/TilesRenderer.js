@@ -38,7 +38,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TilesGroup( this );
 		this.cameras = [];
 		this.cameraMap = new Map();
-		this.resolution = new Vector2();
 		this.cameraInfo = [];
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
