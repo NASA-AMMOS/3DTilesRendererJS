@@ -187,6 +187,12 @@ setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean
 
 Sets the resolution being rendered to for the given camera via renderer which accounts for canvas size and current pixel ratio. Returns `false` if the camera is not being tracked.
 
+## DebugTilesRenderer
+
+_extends [TilesRenderer](#TilesRenderer)_
+
+TODO
+
 ## PriorityQueue
 
 Piority-sorted queue to prioritize file downloads and parsing.
