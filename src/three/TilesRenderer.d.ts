@@ -2,7 +2,7 @@ import { Box3, Camera, Vector2, WebGLRenderer } from 'three';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
-class TilesRenderer extends TilesRendererBase {
+export class TilesRenderer extends TilesRendererBase {
 
 	group : TilesGroup;
 

@@ -17,7 +17,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "concurrently \"parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
-    "lint": "eslint src/**",
+    "lint": "eslint src/**.js && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },
   "browserslist": [
@@ -41,7 +41,8 @@
     "jest-cli": "^25.4.0",
     "parcel-bundler": "^1.12.4",
     "static-server": "^2.2.1",
-    "three": ">=0.114.0"
+    "three": ">=0.114.0",
+    "typescript": "^3.7.4"
   },
   "peerDependencies": {
     "three": ">=0.114.0"

@@ -1,5 +1,5 @@
 import { Group } from 'three';
-import { TilesRenderer } from '../TilesRenderer';
+import { TilesRenderer } from './TilesRenderer';
 
 export class TilesGroup extends Group {
 

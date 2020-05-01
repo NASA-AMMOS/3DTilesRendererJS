@@ -1,4 +1,4 @@
-export interface B3DMResult {
+export interface B3DMBaseResult {
 
 	version : String;
 	featureTable: Object;
@@ -9,7 +9,7 @@ export interface B3DMResult {
 
 export class B3DMLoaderBase {
 
-	load( url : string ) : Promise< B3DMResult >;
-	parse( buffer : ArrayBuffer ) : B3DMResult;
+	load( url : string ) : Promise< B3DMBaseResult >;
+	parse( buffer : ArrayBuffer ) : B3DMBaseResult;
 
 }
