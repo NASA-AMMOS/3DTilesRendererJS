@@ -1,6 +1,6 @@
 import {
 	DebugTilesRenderer,
-	DEFAULT,
+	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
 	DISTANCE,
@@ -29,7 +29,7 @@ export {
 	LRUCache,
 	PriorityQueue,
 
-	DEFAULT,
+	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
 	DISTANCE,

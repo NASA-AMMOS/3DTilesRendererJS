@@ -10,15 +10,14 @@ export const RELATIVE_DEPTH : ColorMode;
 export const IS_LEAF : ColorMode;
 export const RANDOM_COLOR : ColorMode;
 
-
 export class DebugTilesRenderer extends TilesRenderer {
 
 	displayBoxBounds : Boolean;
 	displaySphereBounds : Boolean;
 	colorMode : ColorMode;
 
-	maxDepth : Number;
-	maxDistance : Number;
-	maxError : Number;
+	maxDebugDepth : Number;
+	maxDebugDistance : Number;
+	maxDebugError : Number;
 
 }

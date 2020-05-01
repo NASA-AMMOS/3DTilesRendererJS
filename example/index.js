@@ -1,6 +1,6 @@
 import {
 	DebugTilesRenderer as TilesRenderer,
-	DEFAULT,
+	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
 	DISTANCE,
@@ -218,7 +218,7 @@ function init() {
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'colorMode', {
 
-		DEFAULT,
+		NONE,
 		SCREEN_ERROR,
 		GEOMETRIC_ERROR,
 		DISTANCE,
