@@ -1,4 +1,14 @@
-import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
+import {
+	DebugTilesRenderer as TilesRenderer,
+	DEFAULT,
+	SCREEN_ERROR,
+	GEOMETRIC_ERROR,
+	DISTANCE,
+	DEPTH,
+	RELATIVE_DEPTH,
+	IS_LEAF,
+	RANDOM_COLOR,
+} from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -208,14 +218,14 @@ function init() {
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'colorMode', {
 
-		DEFAULT: 0,
-		SCREEN_ERROR: 1,
-		GEOMETRIC_ERROR: 2,
-		DISTANCE: 3,
-		DEPTH: 4,
-		RELATIVE_DEPTH: 5,
-		IS_LEAF: 6,
-		RANDOM_COLOR: 7,
+		DEFAULT,
+		SCREEN_ERROR,
+		GEOMETRIC_ERROR,
+		DISTANCE,
+		DEPTH,
+		RELATIVE_DEPTH,
+		IS_LEAF,
+		RANDOM_COLOR,
 
 	} );
 	debug.open();

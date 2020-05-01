@@ -1,4 +1,14 @@
-import { DebugTilesRenderer } from './three/DebugTilesRenderer.js';
+import {
+	DebugTilesRenderer,
+	DEFAULT,
+	SCREEN_ERROR,
+	GEOMETRIC_ERROR,
+	DISTANCE,
+	DEPTH,
+	RELATIVE_DEPTH,
+	IS_LEAF,
+	RANDOM_COLOR,
+} from './three/DebugTilesRenderer.js';
 import { TilesRenderer } from './three/TilesRenderer.js';
 import { B3DMLoader } from './three/B3DMLoader.js';
 
@@ -17,5 +27,14 @@ export {
 	B3DMLoaderBase,
 
 	LRUCache,
-	PriorityQueue
+	PriorityQueue,
+
+	DEFAULT,
+	SCREEN_ERROR,
+	GEOMETRIC_ERROR,
+	DISTANCE,
+	DEPTH,
+	RELATIVE_DEPTH,
+	IS_LEAF,
+	RANDOM_COLOR,
 };

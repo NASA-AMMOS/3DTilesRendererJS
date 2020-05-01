@@ -4,16 +4,16 @@ import { SphereHelper } from './SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 
-const NONE = 0;
-const SCREEN_ERROR = 1;
-const GEOMETRIC_ERROR = 2;
-const DISTANCE = 3;
-const DEPTH = 4;
-const RELATIVE_DEPTH = 5;
-const IS_LEAF = 6;
-const RANDOM_COLOR = 7;
-
 function emptyRaycast() {}
+
+export const NONE = 0;
+export const SCREEN_ERROR = 1;
+export const GEOMETRIC_ERROR = 2;
+export const DISTANCE = 3;
+export const DEPTH = 4;
+export const RELATIVE_DEPTH = 5;
+export const IS_LEAF = 6;
+export const RANDOM_COLOR = 7;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
