@@ -193,6 +193,54 @@ _extends [TilesRenderer](#TilesRenderer)_
 
 TODO
 
+### .colorMode
+
+```js
+colorMode = NONE : ColorMode
+```
+
+TODO
+
+### .displayBoxBounds
+
+```js
+displayBoxBounds = false : Boolean
+```
+
+TODO
+
+### .displaySphereBounds
+
+```js
+displaySphereBounds = false : Boolean
+```
+
+TODO
+
+### .maxDebugDepth
+
+```js
+maxDebugDepth = - 1 : Number
+```
+
+TODO
+
+### .maxDebugError
+
+```js
+maxDebugError = - 1 : Number
+```
+
+TODO
+
+### .maxDebugDistance
+
+```js
+maxDebugDistance = - 1 : Number
+```
+
+TODO
+
 ## PriorityQueue
 
 Piority-sorted queue to prioritize file downloads and parsing.
