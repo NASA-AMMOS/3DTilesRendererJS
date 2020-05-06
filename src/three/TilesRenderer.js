@@ -42,6 +42,8 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 
+		this.onLoadModel = null;
+
 	}
 
 	/* Public API */
@@ -69,6 +71,21 @@ export class TilesRenderer extends TilesRendererBase {
 			return false;
 
 		}
+
+	}
+
+	forEachLoadedModel( callback ) {
+
+		this.traverse( tile => {
+
+			const scene = tile.cached.scene;
+			if ( scene ) {
+
+				callback( scene, tile );
+
+			}
+
+		} );
 
 	}
 
@@ -505,6 +522,12 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.materials = materials;
 			cached.geometry = geometry;
 			cached.textures = textures;
+
+			if ( this.onLoadModel ) {
+
+				this.onLoadModel( scene, tile );
+
+			}
 
 		} );
 

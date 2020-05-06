@@ -157,11 +157,11 @@ function init() {
 	controls.maxDistance = 2000;
 
 	// lights
-	var dirLight = new DirectionalLight( 0xffffff );
+	const dirLight = new DirectionalLight( 0xffffff );
 	dirLight.position.set( 1, 2, 3 );
 	scene.add( dirLight );
 
-	var ambLight = new AmbientLight( 0xffffff, 0.2 );
+	const ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
 	box = new Box3();

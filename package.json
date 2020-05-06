@@ -16,7 +16,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "concurrently \"parcel watch example/index.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
+    "start": "concurrently \"parcel watch example/*.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
     "lint": "eslint src/**.js && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },

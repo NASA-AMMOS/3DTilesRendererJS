@@ -18,6 +18,8 @@ See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/b
 
 # Use
 
+## Basic TilesRenderer
+
 ```js
 import { TilesRenderer } from '3d-tiles-renderer';
 
@@ -41,7 +43,29 @@ function renderLoop() {
 	renderer.render( camera, scene );
 
 }
+```
 
+## Custom Material
+
+```js
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.setCamera( camera );
+tilesRenderer.setResolutionFromRenderer( camera, renderer );
+tilesRenderer.onLoadModel = function ( scene ) {
+
+	scene.traverse( c => {
+
+		if ( c.material ) {
+
+			c.originalMaterial = material;
+			c.material = new MeshBasicMaterial();
+
+		}
+
+	} );
+
+}
+scene.add( tilesRenderer.group );
 
 ```
 
