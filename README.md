@@ -278,7 +278,7 @@ RANDOM_COLOR
 displayBoxBounds = false : Boolean
 ```
 
-TODO
+Display wireframe bounding boxes from the tiles `boundingVolume.box` for every visible tile.
 
 ### .displaySphereBounds
 
@@ -286,7 +286,7 @@ TODO
 displaySphereBounds = false : Boolean
 ```
 
-TODO
+Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or derived from the bounding box) for every visible tile.
 
 ### .maxDebugDepth
 
