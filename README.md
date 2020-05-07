@@ -211,11 +211,27 @@ setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean
 
 Sets the resolution being rendered to for the given camera via renderer which accounts for canvas size and current pixel ratio. Returns `false` if the camera is not being tracked.
 
+### .forEachLoadedModel
+
+```js
+forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : void
+```
+
+Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
+
+### .onLoadModel
+
+```js
+onLoadModel = null : ( scene : Object3D, tile : objec ) => void
+```
+
+Callback that is called every time a model is loaded. This can be used in conjunction with [.forEachLoadedModel](#forEachLoadedModel) to set the material of all load and still yet to load meshes in the tile set.
+
 ## DebugTilesRenderer
 
 _extends [TilesRenderer](#TilesRenderer)_
 
-TODO
+Special variant of TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tileset. Material overrides will not work as expected with this renderer.
 
 ### .colorMode
 
@@ -223,7 +239,38 @@ TODO
 colorMode = NONE : ColorMode
 ```
 
-TODO
+Which color mode to use when rendering the tileset. The following exported enumerations can be used:
+
+```js
+// No special color mode. Uses the default materials.
+NONE
+
+// Render the screenspace error from black to white with errorTarget
+// being the maximum value.
+SCREEN_ERROR
+
+// Render the geometric error from black to white with maxDebugError
+// being the maximum value.
+GEOMETRIC_ERROR
+
+// Render the distance from the camera to the tile as black to white
+// with maxDebugDistance being the maximum value.
+DISTANCE
+
+// Render the depth of the tile relative to the root as black to white
+// with maxDebugDepth being the maximum value.
+DEPTH
+
+// Render the depth of the tile relative to the nearest rendered parent
+// as black to white with maxDepth being the maximum value.
+RELATIVE_DEPTH
+
+// Render leaf nodes as white and parent nodes as black.
+IS_LEAF
+
+// Render the tiles with a random color to show tile edges clearly.
+RANDOM_COLOR
+```
 
 ### .displayBoxBounds
 
