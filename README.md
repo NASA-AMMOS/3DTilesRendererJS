@@ -262,7 +262,7 @@ DISTANCE
 DEPTH
 
 // Render the depth of the tile relative to the nearest rendered parent
-// as black to white with maxDepth being the maximum value.
+// as black to white with maxDebugDepth being the maximum value.
 RELATIVE_DEPTH
 
 // Render leaf nodes as white and parent nodes as black.
@@ -294,7 +294,7 @@ Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or deri
 maxDebugDepth = - 1 : Number
 ```
 
-TODO
+The depth value that represents white when rendering with `DEPTH` or `RELATIVE_DEPTH` [colorMode](#colorMode). If `maxDebugDepth` is `-1` then the maximum depth of the tileset is used.
 
 ### .maxDebugError
 
@@ -302,7 +302,7 @@ TODO
 maxDebugError = - 1 : Number
 ```
 
-TODO
+The error value that represents white when rendering with `GEOMETRIC_ERROR` [colorMode](#colorMode). If `maxDebugError` is `-1` then the maximum geometric error in the tileset is used.
 
 ### .maxDebugDistance
 
@@ -310,7 +310,7 @@ TODO
 maxDebugDistance = - 1 : Number
 ```
 
-TODO
+The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tileset is used.
 
 ## PriorityQueue
 
