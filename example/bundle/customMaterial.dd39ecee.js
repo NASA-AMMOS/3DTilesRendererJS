@@ -41503,526 +41503,6 @@ var MapControls = function (object, domElement) {
 exports.MapControls = MapControls;
 MapControls.prototype = Object.create(_threeModule.EventDispatcher.prototype);
 MapControls.prototype.constructor = MapControls;
-},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.BufferGeometryUtils = void 0;
-
-var _threeModule = require("../../../build/three.module.js");
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-var BufferGeometryUtils = {
-  computeTangents: function (geometry) {
-    var index = geometry.index;
-    var attributes = geometry.attributes; // based on http://www.terathon.com/code/tangent.html
-    // (per vertex tangents)
-
-    if (index === null || attributes.position === undefined || attributes.normal === undefined || attributes.uv === undefined) {
-      console.warn('THREE.BufferGeometry: Missing required attributes (index, position, normal or uv) in BufferGeometry.computeTangents()');
-      return;
-    }
-
-    var indices = index.array;
-    var positions = attributes.position.array;
-    var normals = attributes.normal.array;
-    var uvs = attributes.uv.array;
-    var nVertices = positions.length / 3;
-
-    if (attributes.tangent === undefined) {
-      geometry.setAttribute('tangent', new _threeModule.BufferAttribute(new Float32Array(4 * nVertices), 4));
-    }
-
-    var tangents = attributes.tangent.array;
-    var tan1 = [],
-        tan2 = [];
-
-    for (var i = 0; i < nVertices; i++) {
-      tan1[i] = new _threeModule.Vector3();
-      tan2[i] = new _threeModule.Vector3();
-    }
-
-    var vA = new _threeModule.Vector3(),
-        vB = new _threeModule.Vector3(),
-        vC = new _threeModule.Vector3(),
-        uvA = new _threeModule.Vector2(),
-        uvB = new _threeModule.Vector2(),
-        uvC = new _threeModule.Vector2(),
-        sdir = new _threeModule.Vector3(),
-        tdir = new _threeModule.Vector3();
-
-    function handleTriangle(a, b, c) {
-      vA.fromArray(positions, a * 3);
-      vB.fromArray(positions, b * 3);
-      vC.fromArray(positions, c * 3);
-      uvA.fromArray(uvs, a * 2);
-      uvB.fromArray(uvs, b * 2);
-      uvC.fromArray(uvs, c * 2);
-      vB.sub(vA);
-      vC.sub(vA);
-      uvB.sub(uvA);
-      uvC.sub(uvA);
-      var r = 1.0 / (uvB.x * uvC.y - uvC.x * uvB.y); // silently ignore degenerate uv triangles having coincident or colinear vertices
-
-      if (!isFinite(r)) return;
-      sdir.copy(vB).multiplyScalar(uvC.y).addScaledVector(vC, -uvB.y).multiplyScalar(r);
-      tdir.copy(vC).multiplyScalar(uvB.x).addScaledVector(vB, -uvC.x).multiplyScalar(r);
-      tan1[a].add(sdir);
-      tan1[b].add(sdir);
-      tan1[c].add(sdir);
-      tan2[a].add(tdir);
-      tan2[b].add(tdir);
-      tan2[c].add(tdir);
-    }
-
-    var groups = geometry.groups;
-
-    if (groups.length === 0) {
-      groups = [{
-        start: 0,
-        count: indices.length
-      }];
-    }
-
-    for (var i = 0, il = groups.length; i < il; ++i) {
-      var group = groups[i];
-      var start = group.start;
-      var count = group.count;
-
-      for (var j = start, jl = start + count; j < jl; j += 3) {
-        handleTriangle(indices[j + 0], indices[j + 1], indices[j + 2]);
-      }
-    }
-
-    var tmp = new _threeModule.Vector3(),
-        tmp2 = new _threeModule.Vector3();
-    var n = new _threeModule.Vector3(),
-        n2 = new _threeModule.Vector3();
-    var w, t, test;
-
-    function handleVertex(v) {
-      n.fromArray(normals, v * 3);
-      n2.copy(n);
-      t = tan1[v]; // Gram-Schmidt orthogonalize
-
-      tmp.copy(t);
-      tmp.sub(n.multiplyScalar(n.dot(t))).normalize(); // Calculate handedness
-
-      tmp2.crossVectors(n2, t);
-      test = tmp2.dot(tan2[v]);
-      w = test < 0.0 ? -1.0 : 1.0;
-      tangents[v * 4] = tmp.x;
-      tangents[v * 4 + 1] = tmp.y;
-      tangents[v * 4 + 2] = tmp.z;
-      tangents[v * 4 + 3] = w;
-    }
-
-    for (var i = 0, il = groups.length; i < il; ++i) {
-      var group = groups[i];
-      var start = group.start;
-      var count = group.count;
-
-      for (var j = start, jl = start + count; j < jl; j += 3) {
-        handleVertex(indices[j + 0]);
-        handleVertex(indices[j + 1]);
-        handleVertex(indices[j + 2]);
-      }
-    }
-  },
-
-  /**
-   * @param  {Array<BufferGeometry>} geometries
-   * @param  {Boolean} useGroups
-   * @return {BufferGeometry}
-   */
-  mergeBufferGeometries: function (geometries, useGroups) {
-    var isIndexed = geometries[0].index !== null;
-    var attributesUsed = new Set(Object.keys(geometries[0].attributes));
-    var morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
-    var attributes = {};
-    var morphAttributes = {};
-    var morphTargetsRelative = geometries[0].morphTargetsRelative;
-    var mergedGeometry = new _threeModule.BufferGeometry();
-    var offset = 0;
-
-    for (var i = 0; i < geometries.length; ++i) {
-      var geometry = geometries[i]; // ensure that all geometries are indexed, or none
-
-      if (isIndexed !== (geometry.index !== null)) return null; // gather attributes, exit early if they're different
-
-      for (var name in geometry.attributes) {
-        if (!attributesUsed.has(name)) return null;
-        if (attributes[name] === undefined) attributes[name] = [];
-        attributes[name].push(geometry.attributes[name]);
-      } // gather morph attributes, exit early if they're different
-
-
-      if (morphTargetsRelative !== geometry.morphTargetsRelative) return null;
-
-      for (var name in geometry.morphAttributes) {
-        if (!morphAttributesUsed.has(name)) return null;
-        if (morphAttributes[name] === undefined) morphAttributes[name] = [];
-        morphAttributes[name].push(geometry.morphAttributes[name]);
-      } // gather .userData
-
-
-      mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
-      mergedGeometry.userData.mergedUserData.push(geometry.userData);
-
-      if (useGroups) {
-        var count;
-
-        if (isIndexed) {
-          count = geometry.index.count;
-        } else if (geometry.attributes.position !== undefined) {
-          count = geometry.attributes.position.count;
-        } else {
-          return null;
-        }
-
-        mergedGeometry.addGroup(offset, count, i);
-        offset += count;
-      }
-    } // merge indices
-
-
-    if (isIndexed) {
-      var indexOffset = 0;
-      var mergedIndex = [];
-
-      for (var i = 0; i < geometries.length; ++i) {
-        var index = geometries[i].index;
-
-        for (var j = 0; j < index.count; ++j) {
-          mergedIndex.push(index.getX(j) + indexOffset);
-        }
-
-        indexOffset += geometries[i].attributes.position.count;
-      }
-
-      mergedGeometry.setIndex(mergedIndex);
-    } // merge attributes
-
-
-    for (var name in attributes) {
-      var mergedAttribute = this.mergeBufferAttributes(attributes[name]);
-      if (!mergedAttribute) return null;
-      mergedGeometry.setAttribute(name, mergedAttribute);
-    } // merge morph attributes
-
-
-    for (var name in morphAttributes) {
-      var numMorphTargets = morphAttributes[name][0].length;
-      if (numMorphTargets === 0) break;
-      mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-      mergedGeometry.morphAttributes[name] = [];
-
-      for (var i = 0; i < numMorphTargets; ++i) {
-        var morphAttributesToMerge = [];
-
-        for (var j = 0; j < morphAttributes[name].length; ++j) {
-          morphAttributesToMerge.push(morphAttributes[name][j][i]);
-        }
-
-        var mergedMorphAttribute = this.mergeBufferAttributes(morphAttributesToMerge);
-        if (!mergedMorphAttribute) return null;
-        mergedGeometry.morphAttributes[name].push(mergedMorphAttribute);
-      }
-    }
-
-    return mergedGeometry;
-  },
-
-  /**
-   * @param {Array<BufferAttribute>} attributes
-   * @return {BufferAttribute}
-   */
-  mergeBufferAttributes: function (attributes) {
-    var TypedArray;
-    var itemSize;
-    var normalized;
-    var arrayLength = 0;
-
-    for (var i = 0; i < attributes.length; ++i) {
-      var attribute = attributes[i];
-      if (attribute.isInterleavedBufferAttribute) return null;
-      if (TypedArray === undefined) TypedArray = attribute.array.constructor;
-      if (TypedArray !== attribute.array.constructor) return null;
-      if (itemSize === undefined) itemSize = attribute.itemSize;
-      if (itemSize !== attribute.itemSize) return null;
-      if (normalized === undefined) normalized = attribute.normalized;
-      if (normalized !== attribute.normalized) return null;
-      arrayLength += attribute.array.length;
-    }
-
-    var array = new TypedArray(arrayLength);
-    var offset = 0;
-
-    for (var i = 0; i < attributes.length; ++i) {
-      array.set(attributes[i].array, offset);
-      offset += attributes[i].array.length;
-    }
-
-    return new _threeModule.BufferAttribute(array, itemSize, normalized);
-  },
-
-  /**
-   * @param {Array<BufferAttribute>} attributes
-   * @return {Array<InterleavedBufferAttribute>}
-   */
-  interleaveAttributes: function (attributes) {
-    // Interleaves the provided attributes into an InterleavedBuffer and returns
-    // a set of InterleavedBufferAttributes for each attribute
-    var TypedArray;
-    var arrayLength = 0;
-    var stride = 0; // calculate the the length and type of the interleavedBuffer
-
-    for (var i = 0, l = attributes.length; i < l; ++i) {
-      var attribute = attributes[i];
-      if (TypedArray === undefined) TypedArray = attribute.array.constructor;
-
-      if (TypedArray !== attribute.array.constructor) {
-        console.warn('AttributeBuffers of different types cannot be interleaved');
-        return null;
-      }
-
-      arrayLength += attribute.array.length;
-      stride += attribute.itemSize;
-    } // Create the set of buffer attributes
-
-
-    var interleavedBuffer = new _threeModule.InterleavedBuffer(new TypedArray(arrayLength), stride);
-    var offset = 0;
-    var res = [];
-    var getters = ['getX', 'getY', 'getZ', 'getW'];
-    var setters = ['setX', 'setY', 'setZ', 'setW'];
-
-    for (var j = 0, l = attributes.length; j < l; j++) {
-      var attribute = attributes[j];
-      var itemSize = attribute.itemSize;
-      var count = attribute.count;
-      var iba = new _threeModule.InterleavedBufferAttribute(interleavedBuffer, itemSize, offset, attribute.normalized);
-      res.push(iba);
-      offset += itemSize; // Move the data for each attribute into the new interleavedBuffer
-      // at the appropriate offset
-
-      for (var c = 0; c < count; c++) {
-        for (var k = 0; k < itemSize; k++) {
-          iba[setters[k]](c, attribute[getters[k]](c));
-        }
-      }
-    }
-
-    return res;
-  },
-
-  /**
-   * @param {Array<BufferGeometry>} geometry
-   * @return {number}
-   */
-  estimateBytesUsed: function (geometry) {
-    // Return the estimated memory used by this geometry in bytes
-    // Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
-    // for InterleavedBufferAttributes.
-    var mem = 0;
-
-    for (var name in geometry.attributes) {
-      var attr = geometry.getAttribute(name);
-      mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
-    }
-
-    var indices = geometry.getIndex();
-    mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
-    return mem;
-  },
-
-  /**
-   * @param {BufferGeometry} geometry
-   * @param {number} tolerance
-   * @return {BufferGeometry>}
-   */
-  mergeVertices: function (geometry, tolerance = 1e-4) {
-    tolerance = Math.max(tolerance, Number.EPSILON); // Generate an index buffer if the geometry doesn't have one, or optimize it
-    // if it's already available.
-
-    var hashToIndex = {};
-    var indices = geometry.getIndex();
-    var positions = geometry.getAttribute('position');
-    var vertexCount = indices ? indices.count : positions.count; // next value for triangle indices
-
-    var nextIndex = 0; // attributes and new attribute arrays
-
-    var attributeNames = Object.keys(geometry.attributes);
-    var attrArrays = {};
-    var morphAttrsArrays = {};
-    var newIndices = [];
-    var getters = ['getX', 'getY', 'getZ', 'getW']; // initialize the arrays
-
-    for (var i = 0, l = attributeNames.length; i < l; i++) {
-      var name = attributeNames[i];
-      attrArrays[name] = [];
-      var morphAttr = geometry.morphAttributes[name];
-
-      if (morphAttr) {
-        morphAttrsArrays[name] = new Array(morphAttr.length).fill().map(() => []);
-      }
-    } // convert the error tolerance to an amount of decimal places to truncate to
-
-
-    var decimalShift = Math.log10(1 / tolerance);
-    var shiftMultiplier = Math.pow(10, decimalShift);
-
-    for (var i = 0; i < vertexCount; i++) {
-      var index = indices ? indices.getX(i) : i; // Generate a hash for the vertex attributes at the current index 'i'
-
-      var hash = '';
-
-      for (var j = 0, l = attributeNames.length; j < l; j++) {
-        var name = attributeNames[j];
-        var attribute = geometry.getAttribute(name);
-        var itemSize = attribute.itemSize;
-
-        for (var k = 0; k < itemSize; k++) {
-          // double tilde truncates the decimal value
-          hash += `${~~(attribute[getters[k]](index) * shiftMultiplier)},`;
-        }
-      } // Add another reference to the vertex if it's already
-      // used by another index
-
-
-      if (hash in hashToIndex) {
-        newIndices.push(hashToIndex[hash]);
-      } else {
-        // copy data to the new index in the attribute arrays
-        for (var j = 0, l = attributeNames.length; j < l; j++) {
-          var name = attributeNames[j];
-          var attribute = geometry.getAttribute(name);
-          var morphAttr = geometry.morphAttributes[name];
-          var itemSize = attribute.itemSize;
-          var newarray = attrArrays[name];
-          var newMorphArrays = morphAttrsArrays[name];
-
-          for (var k = 0; k < itemSize; k++) {
-            var getterFunc = getters[k];
-            newarray.push(attribute[getterFunc](index));
-
-            if (morphAttr) {
-              for (var m = 0, ml = morphAttr.length; m < ml; m++) {
-                newMorphArrays[m].push(morphAttr[m][getterFunc](index));
-              }
-            }
-          }
-        }
-
-        hashToIndex[hash] = nextIndex;
-        newIndices.push(nextIndex);
-        nextIndex++;
-      }
-    } // Generate typed arrays from new attribute arrays and update
-    // the attributeBuffers
-
-
-    const result = geometry.clone();
-
-    for (var i = 0, l = attributeNames.length; i < l; i++) {
-      var name = attributeNames[i];
-      var oldAttribute = geometry.getAttribute(name);
-      var buffer = new oldAttribute.array.constructor(attrArrays[name]);
-      var attribute = new _threeModule.BufferAttribute(buffer, oldAttribute.itemSize, oldAttribute.normalized);
-      result.setAttribute(name, attribute); // Update the attribute arrays
-
-      if (name in morphAttrsArrays) {
-        for (var j = 0; j < morphAttrsArrays[name].length; j++) {
-          var oldMorphAttribute = geometry.morphAttributes[name][j];
-          var buffer = new oldMorphAttribute.array.constructor(morphAttrsArrays[name][j]);
-          var morphAttribute = new _threeModule.BufferAttribute(buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized);
-          result.morphAttributes[name][j] = morphAttribute;
-        }
-      }
-    } // indices
-
-
-    result.setIndex(newIndices);
-    return result;
-  },
-
-  /**
-   * @param {BufferGeometry} geometry
-   * @param {number} drawMode
-   * @return {BufferGeometry>}
-   */
-  toTrianglesDrawMode: function (geometry, drawMode) {
-    if (drawMode === _threeModule.TrianglesDrawMode) {
-      console.warn('THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.');
-      return geometry;
-    }
-
-    if (drawMode === _threeModule.TriangleFanDrawMode || drawMode === _threeModule.TriangleStripDrawMode) {
-      var index = geometry.getIndex(); // generate index if not present
-
-      if (index === null) {
-        var indices = [];
-        var position = geometry.getAttribute('position');
-
-        if (position !== undefined) {
-          for (var i = 0; i < position.count; i++) {
-            indices.push(i);
-          }
-
-          geometry.setIndex(indices);
-          index = geometry.getIndex();
-        } else {
-          console.error('THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.');
-          return geometry;
-        }
-      } //
-
-
-      var numberOfTriangles = index.count - 2;
-      var newIndices = [];
-
-      if (drawMode === _threeModule.TriangleFanDrawMode) {
-        // gl.TRIANGLE_FAN
-        for (var i = 1; i <= numberOfTriangles; i++) {
-          newIndices.push(index.getX(0));
-          newIndices.push(index.getX(i));
-          newIndices.push(index.getX(i + 1));
-        }
-      } else {
-        // gl.TRIANGLE_STRIP
-        for (var i = 0; i < numberOfTriangles; i++) {
-          if (i % 2 === 0) {
-            newIndices.push(index.getX(i));
-            newIndices.push(index.getX(i + 1));
-            newIndices.push(index.getX(i + 2));
-          } else {
-            newIndices.push(index.getX(i + 2));
-            newIndices.push(index.getX(i + 1));
-            newIndices.push(index.getX(i));
-          }
-        }
-      }
-
-      if (newIndices.length / 3 !== numberOfTriangles) {
-        console.error('THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.');
-      } // build final geometry
-
-
-      var newGeometry = geometry.clone();
-      newGeometry.setIndex(newIndices);
-      newGeometry.clearGroups();
-      return newGeometry;
-    } else {
-      console.error('THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode);
-      return geometry;
-    }
-  }
-};
-exports.BufferGeometryUtils = BufferGeometryUtils;
 },{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/libs/dat.gui.module.js":[function(require,module,exports) {
 "use strict";
 
@@ -45059,7 +44539,7 @@ Stats.Panel = function (name, fg, bg) {
 
 var _default = Stats;
 exports.default = _default;
-},{}],"index.js":[function(require,module,exports) {
+},{}],"customMaterial.js":[function(require,module,exports) {
 "use strict";
 
 var _index = require("../src/index.js");
@@ -45067,8 +44547,6 @@ var _index = require("../src/index.js");
 var _three = require("three");
 
 var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
-
-var _BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils.js");
 
 var dat = _interopRequireWildcard(require("three/examples/jsm/libs/dat.gui.module.js"));
 
@@ -45080,44 +44558,154 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-let camera, controls, scene, renderer, tiles, cameraHelper;
-let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
-let secondRenderer, secondCameraHelper, secondControls, secondCamera;
-let orthoCamera, orthoCameraHelper;
-let box;
-let raycaster, mouse, rayIntersect, lastHoveredElement;
-let offsetParent;
-let statsContainer, stats;
-let params = {
-  'enableUpdate': true,
-  'enableRaycast': false,
-  'enableCacheDisplay': false,
-  'orthographic': false,
-  'errorTarget': 6,
-  'errorThreshold': 60,
-  'maxDepth': 15,
-  'loadSiblings': true,
-  'displayActiveTiles': false,
-  'resolutionScale': 1.0,
-  'up': '+Y',
-  'displayBoxBounds': false,
-  'colorMode': 0,
-  'showThirdPerson': false,
-  'showSecondView': false,
-  'reload': reinstantiateTiles
+let camera, controls, scene, renderer, tiles, orthoCamera;
+let offsetParent, box, dirLight;
+let stats;
+const DEFAULT = 0;
+const GRADIENT = 1;
+const TOPOGRAPHIC_LINES = 2;
+const LIGHTING = 3;
+const params = {
+  'material': DEFAULT,
+  'orthographic': false
+};
+const gradientShader = {
+  vertexShader:
+  /* glsl */
+  `
+		varying vec3 wPosition;
+		void main() {
+
+			#include <begin_vertex>
+			#include <project_vertex>
+			wPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;
+
+		}
+	`,
+  fragmentShader:
+  /* glsl */
+  `
+		varying vec3 wPosition;
+		void main() {
+
+			float minVal = - 30.0;
+			float maxVal = 30.0;
+
+			float val = ( wPosition.y - minVal ) / ( maxVal - minVal );
+
+			vec4 color1 = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;
+			vec4 color2 = vec4( 1.0 );
+
+			gl_FragColor = mix( color1, color2, val );
+
+		}
+	`
+};
+const topoShader = {
+  extensions: {
+    derivatives: true
+  },
+  vertexShader:
+  /* glsl */
+  `
+		varying vec3 wPosition;
+		varying vec3 vViewPosition;
+		void main() {
+
+			#include <begin_vertex>
+			#include <project_vertex>
+			wPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;
+			vViewPosition = - mvPosition.xyz;
+
+		}
+	`,
+  fragmentShader:
+  /* glsl */
+  `
+		varying vec3 wPosition;
+		varying vec3 vViewPosition;
+		void main() {
+
+			// lighting
+			vec3 fdx = vec3( dFdx( wPosition.x ), dFdx( wPosition.y ), dFdx( wPosition.z ) );
+			vec3 fdy = vec3( dFdy( wPosition.x ), dFdy( wPosition.y ), dFdy( wPosition.z ) );
+			vec3 worldNormal = normalize( cross( fdx, fdy ) );
+
+			float lighting =
+				0.4 +
+				clamp( dot( worldNormal, vec3( 1.0, 1.0, 1.0 ) ), 0.0, 1.0 ) * 0.5 +
+				clamp( dot( worldNormal, vec3( - 1.0, 1.0, - 1.0 ) ), 0.0, 1.0 ) * 0.3;
+
+			// thickness scale
+			float upwardness = dot( worldNormal, vec3( 0.0, 1.0, 0.0 ) );
+			float yInv = saturate( 1.0 - abs( upwardness ) );
+			float thicknessScale = pow( yInv, 0.4 );
+			thicknessScale *= 0.25 + 0.5 * ( vViewPosition.z + 1.0 ) / 2.0;
+
+			// thickness
+			float thickness = 0.01 * thicknessScale;
+			float thickness2 = thickness / 2.0;
+			float m = mod( wPosition.y, 3.0 );
+
+			// soften edge
+			float center = thickness2;
+			float dist = clamp( abs( m - thickness2 ) / thickness2, 0.0, 1.0 );
+
+			vec4 topoColor = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;
+			gl_FragColor = mix( topoColor * lighting, vec4( lighting ), dist );
+
+		}
+	`
 };
 init();
 animate();
 
-function reinstantiateTiles() {
-  const url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
+function updateMaterial(scene) {
+  const materialIndex = parseFloat(params.material);
+  scene.traverse(c => {
+    if (c.isMesh) {
+      c.material.dispose();
 
-  if (tiles) {
-    offsetParent.remove(tiles.group);
-  }
+      switch (materialIndex) {
+        case DEFAULT:
+          c.material = c.originalMaterial;
+          c.material.side = 2;
+          c.receiveShadow = false;
+          c.castShadow = false;
+          break;
 
-  tiles = new _index.DebugTilesRenderer(url);
-  offsetParent.add(tiles.group);
+        case GRADIENT:
+          c.material = new _three.ShaderMaterial(gradientShader);
+          c.material.side = 2;
+          c.receiveShadow = false;
+          c.castShadow = false;
+          break;
+
+        case TOPOGRAPHIC_LINES:
+          c.material = new _three.ShaderMaterial(topoShader);
+          c.material.side = 2;
+          c.material.flatShading = true;
+          c.receiveShadow = false;
+          c.castShadow = false;
+          break;
+
+        case LIGHTING:
+          c.material = new _three.MeshStandardMaterial();
+          c.material.side = 2;
+          c.receiveShadow = true;
+          c.castShadow = true;
+      }
+    }
+  });
+}
+
+function onLoadModel(scene) {
+  scene.traverse(c => {
+    if (c.isMesh) {
+      c.originalMaterial = c.material;
+    }
+  });
+  updateMaterial(scene);
 }
 
 function init() {
@@ -45129,150 +44717,57 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x151c1f);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = _three.PCFSoftShadowMap;
   renderer.outputEncoding = _three.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
   camera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
   camera.position.set(400, 400, 400);
-  cameraHelper = new _three.CameraHelper(camera);
-  scene.add(cameraHelper);
-  orthoCamera = new _three.OrthographicCamera();
-  orthoCameraHelper = new _three.CameraHelper(orthoCamera);
-  scene.add(orthoCameraHelper); // secondary camera view
-
-  secondCamera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
-  secondCamera.position.set(400, 400, -400);
-  secondCamera.lookAt(0, 0, 0);
-  secondRenderer = new _three.WebGLRenderer({
-    antialias: true
-  });
-  secondRenderer.setPixelRatio(window.devicePixelRatio);
-  secondRenderer.setSize(window.innerWidth, window.innerHeight);
-  secondRenderer.setClearColor(0x151c1f);
-  secondRenderer.outputEncoding = _three.sRGBEncoding;
-  document.body.appendChild(secondRenderer.domElement);
-  secondRenderer.domElement.style.position = 'absolute';
-  secondRenderer.domElement.style.right = '0';
-  secondRenderer.domElement.style.top = '0';
-  secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
-  secondControls = new _OrbitControls.OrbitControls(secondCamera, secondRenderer.domElement);
-  secondControls.screenSpacePanning = false;
-  secondControls.minDistance = 1;
-  secondControls.maxDistance = 2000;
-  secondCameraHelper = new _three.CameraHelper(secondCamera);
-  scene.add(secondCameraHelper); // Third person camera view
-
-  thirdPersonCamera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
-  thirdPersonCamera.position.set(50, 40, 40);
-  thirdPersonCamera.lookAt(0, 0, 0);
-  thirdPersonRenderer = new _three.WebGLRenderer({
-    antialias: true
-  });
-  thirdPersonRenderer.setPixelRatio(window.devicePixelRatio);
-  thirdPersonRenderer.setSize(window.innerWidth, window.innerHeight);
-  thirdPersonRenderer.setClearColor(0x0f1416);
-  thirdPersonRenderer.outputEncoding = _three.sRGBEncoding;
-  document.body.appendChild(thirdPersonRenderer.domElement);
-  thirdPersonRenderer.domElement.style.position = 'fixed';
-  thirdPersonRenderer.domElement.style.left = '5px';
-  thirdPersonRenderer.domElement.style.bottom = '5px';
-  thirdPersonControls = new _OrbitControls.OrbitControls(thirdPersonCamera, thirdPersonRenderer.domElement);
-  thirdPersonControls.screenSpacePanning = false;
-  thirdPersonControls.minDistance = 1;
-  thirdPersonControls.maxDistance = 2000; // controls
+  orthoCamera = new _three.OrthographicCamera(); // controls
 
   controls = new _OrbitControls.OrbitControls(camera, renderer.domElement);
   controls.screenSpacePanning = false;
   controls.minDistance = 1;
   controls.maxDistance = 2000; // lights
 
-  const dirLight = new _three.DirectionalLight(0xffffff);
-  dirLight.position.set(1, 2, 3);
+  dirLight = new _three.DirectionalLight(0xffffff, 1.25);
+  dirLight.position.set(1, 2, 3).multiplyScalar(40);
+  dirLight.castShadow = true;
+  dirLight.shadow.bias = -0.01;
+  dirLight.shadow.mapSize.setScalar(2048);
+  const shadowCam = dirLight.shadow.camera;
+  shadowCam.left = -200;
+  shadowCam.bottom = -200;
+  shadowCam.right = 200;
+  shadowCam.top = 200;
+  shadowCam.updateProjectionMatrix();
   scene.add(dirLight);
-  const ambLight = new _three.AmbientLight(0xffffff, 0.2);
+  const ambLight = new _three.AmbientLight(0xffffff, 0.05);
   scene.add(ambLight);
   box = new _three.Box3();
   offsetParent = new _three.Group();
-  scene.add(offsetParent); // Raycasting init
+  scene.add(offsetParent); // tiles
 
-  raycaster = new _three.Raycaster();
-  mouse = new _three.Vector2();
-  rayIntersect = new _three.Group();
-  const rayIntersectMat = new _three.MeshBasicMaterial({
-    color: 0xe91e63
-  });
-  const rayMesh = new _three.Mesh(new _three.CylinderBufferGeometry(0.25, 0.25, 6), rayIntersectMat);
-  rayMesh.rotation.x = Math.PI / 2;
-  rayMesh.position.z += 3;
-  rayIntersect.add(rayMesh);
-  const rayRing = new _three.Mesh(new _three.TorusBufferGeometry(1.5, 0.2, 16, 100), rayIntersectMat);
-  rayIntersect.add(rayRing);
-  scene.add(rayIntersect);
-  rayIntersect.visible = false;
-  reinstantiateTiles();
+  const url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
+  tiles = new _index.TilesRenderer(url);
+  tiles.errorTarget = 2;
+  tiles.onLoadModel = onLoadModel;
+  offsetParent.add(tiles.group);
   onWindowResize();
-  window.addEventListener('resize', onWindowResize, false);
-  renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-  renderer.domElement.addEventListener('mousedown', onMouseDown, false);
-  renderer.domElement.addEventListener('mouseup', onMouseUp, false);
-  renderer.domElement.addEventListener('mouseleave', onMouseLeave, false);
-  secondRenderer.domElement.addEventListener('mousemove', onMouseMove, false);
-  secondRenderer.domElement.addEventListener('mousedown', onMouseDown, false);
-  secondRenderer.domElement.addEventListener('mouseup', onMouseUp, false);
-  secondRenderer.domElement.addEventListener('mouseleave', onMouseLeave, false); // GUI
+  window.addEventListener('resize', onWindowResize, false); // GUI
 
   const gui = new dat.GUI();
   gui.width = 300;
-  const tileOptions = gui.addFolder('Tiles Options');
-  tileOptions.add(params, 'loadSiblings');
-  tileOptions.add(params, 'displayActiveTiles');
-  tileOptions.add(params, 'errorTarget').min(0).max(50);
-  tileOptions.add(params, 'errorThreshold').min(0).max(1000);
-  tileOptions.add(params, 'maxDepth').min(1).max(100);
-  tileOptions.add(params, 'up', ['+Y', '-Z']);
-  tileOptions.open();
-  const debug = gui.addFolder('Debug Options');
-  debug.add(params, 'displayBoxBounds');
-  debug.add(params, 'colorMode', {
-    NONE: _index.NONE,
-    SCREEN_ERROR: _index.SCREEN_ERROR,
-    GEOMETRIC_ERROR: _index.GEOMETRIC_ERROR,
-    DISTANCE: _index.DISTANCE,
-    DEPTH: _index.DEPTH,
-    RELATIVE_DEPTH: _index.RELATIVE_DEPTH,
-    IS_LEAF: _index.IS_LEAF,
-    RANDOM_COLOR: _index.RANDOM_COLOR
+  gui.add(params, 'orthographic');
+  gui.add(params, 'material', {
+    DEFAULT,
+    GRADIENT,
+    TOPOGRAPHIC_LINES,
+    LIGHTING
+  }).onChange(() => {
+    tiles.forEachLoadedModel(updateMaterial);
   });
-  debug.open();
-  const exampleOptions = gui.addFolder('Example Options');
-  exampleOptions.add(params, 'resolutionScale').min(0.01).max(2.0).step(0.01).onChange(onWindowResize);
-  exampleOptions.add(params, 'orthographic');
-  exampleOptions.add(params, 'showThirdPerson');
-  exampleOptions.add(params, 'showSecondView').onChange(onWindowResize);
-  exampleOptions.add(params, 'enableUpdate').onChange(v => {
-    tiles.parseQueue.autoUpdate = v;
-    tiles.downloadQueue.autoUpdate = v;
-
-    if (v) {
-      tiles.parseQueue.scheduleJobRun();
-      tiles.downloadQueue.scheduleJobRun();
-    }
-  });
-  exampleOptions.add(params, 'enableRaycast');
-  exampleOptions.add(params, 'enableCacheDisplay');
-  exampleOptions.open();
-  gui.add(params, 'reload');
-  gui.open();
-  statsContainer = document.createElement('div');
-  statsContainer.style.position = 'absolute';
-  statsContainer.style.top = 0;
-  statsContainer.style.left = 0;
-  statsContainer.style.color = 'white';
-  statsContainer.style.width = '100%';
-  statsContainer.style.textAlign = 'center';
-  statsContainer.style.padding = '5px';
-  statsContainer.style.pointerEvents = 'none';
-  statsContainer.style.lineHeight = '1.5em';
-  document.body.appendChild(statsContainer); // Stats
+  gui.open(); // Stats
 
   stats = new _statsModule.default();
   stats.showPanel(0);
@@ -45280,90 +44775,11 @@ function init() {
 }
 
 function onWindowResize() {
-  thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
-  thirdPersonCamera.updateProjectionMatrix();
-  thirdPersonRenderer.setSize(Math.floor(window.innerWidth / 3), Math.floor(window.innerHeight / 3));
-
-  if (params.showSecondView) {
-    camera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-    renderer.setSize(0.5 * window.innerWidth, window.innerHeight);
-    secondCamera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-    secondRenderer.setSize(0.5 * window.innerWidth, window.innerHeight);
-    secondRenderer.domElement.style.display = 'block';
-  } else {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    secondRenderer.domElement.style.display = 'none';
-  }
-
+  camera.aspect = window.innerWidth / window.innerHeight;
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
   camera.updateProjectionMatrix();
-  renderer.setPixelRatio(window.devicePixelRatio * params.resolutionScale);
-  secondCamera.updateProjectionMatrix();
-  secondRenderer.setPixelRatio(window.devicePixelRatio);
   updateOrthoCamera();
-}
-
-function onMouseLeave(e) {
-  lastHoveredElement = null;
-}
-
-function onMouseMove(e) {
-  const bounds = this.getBoundingClientRect();
-  mouse.x = e.clientX - bounds.x;
-  mouse.y = e.clientY - bounds.y;
-  mouse.x = mouse.x / bounds.width * 2 - 1;
-  mouse.y = -(mouse.y / bounds.height) * 2 + 1;
-  lastHoveredElement = this;
-}
-
-const startPos = new _three.Vector2();
-const endPos = new _three.Vector2();
-
-function onMouseDown(e) {
-  const bounds = this.getBoundingClientRect();
-  startPos.set(e.clientX - bounds.x, e.clientY - bounds.y);
-}
-
-function onMouseUp(e) {
-  const bounds = this.getBoundingClientRect();
-  endPos.set(e.clientX - bounds.x, e.clientY - bounds.y);
-
-  if (startPos.distanceTo(endPos) > 2) {
-    return;
-  }
-
-  if (lastHoveredElement === secondRenderer.domElement) {
-    raycaster.setFromCamera(mouse, secondCamera);
-  } else {
-    raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
-  }
-
-  raycaster.firstHitOnly = true;
-  const results = raycaster.intersectObject(tiles.group, true);
-
-  if (results.length) {
-    const object = results[0].object;
-    const info = tiles.getTileInformationFromActiveObject(object);
-    let str = '';
-
-    for (const key in info) {
-      let val = info[key];
-
-      if (typeof val === 'number') {
-        val = Math.floor(val * 1e5) / 1e5;
-      }
-
-      let name = key;
-
-      while (name.length < 20) {
-        name += ' ';
-      }
-
-      str += `${name} : ${val}\n`;
-    }
-
-    console.log(str);
-  }
 }
 
 function updateOrthoCamera() {
@@ -45371,11 +44787,6 @@ function updateOrthoCamera() {
   orthoCamera.rotation.copy(camera.rotation);
   const scale = camera.position.distanceTo(controls.target) / 2.0;
   let aspect = window.innerWidth / window.innerHeight;
-
-  if (params.showSecondView) {
-    aspect *= 0.5;
-  }
-
   orthoCamera.left = -aspect * scale;
   orthoCamera.right = aspect * scale;
   orthoCamera.bottom = -scale;
@@ -45386,15 +44797,7 @@ function updateOrthoCamera() {
 }
 
 function animate() {
-  requestAnimationFrame(animate); // update options
-
-  tiles.errorTarget = params.errorTarget;
-  tiles.errorThreshold = params.errorThreshold;
-  tiles.loadSiblings = params.loadSiblings;
-  tiles.displayActiveTiles = params.displayActiveTiles;
-  tiles.maxDepth = params.maxDepth;
-  tiles.displayBoxBounds = params.displayBoxBounds;
-  tiles.colorMode = parseFloat(params.colorMode);
+  requestAnimationFrame(animate);
 
   if (params.orthographic) {
     tiles.deleteCamera(camera);
@@ -45404,13 +44807,6 @@ function animate() {
     tiles.deleteCamera(orthoCamera);
     tiles.setCamera(camera);
     tiles.setResolutionFromRenderer(camera, renderer);
-  }
-
-  if (params.showSecondView) {
-    tiles.setCamera(secondCamera);
-    tiles.setResolutionFromRenderer(secondCamera, secondRenderer);
-  } else {
-    tiles.deleteCamera(secondCamera);
   }
 
   offsetParent.rotation.set(0, 0, 0);
@@ -45424,120 +44820,22 @@ function animate() {
   if (tiles.getBounds(box)) {
     box.getCenter(tiles.group.position);
     tiles.group.position.multiplyScalar(-1);
-  }
-
-  if (params.enableRaycast && lastHoveredElement !== null) {
-    if (lastHoveredElement === renderer.domElement) {
-      raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
-    } else {
-      raycaster.setFromCamera(mouse, secondCamera);
-    }
-
-    raycaster.firstHitOnly = true;
-    const results = raycaster.intersectObject(tiles.group, true);
-
-    if (results.length) {
-      const closestHit = results[0];
-      const point = closestHit.point;
-      rayIntersect.position.copy(point); // If the display bounds are visible they get intersected
-
-      if (closestHit.face) {
-        const normal = closestHit.face.normal;
-        normal.transformDirection(closestHit.object.matrixWorld);
-        rayIntersect.lookAt(point.x + normal.x, point.y + normal.y, point.z + normal.z);
-      }
-
-      rayIntersect.visible = true;
-    } else {
-      rayIntersect.visible = false;
-    }
-  } else {
-    rayIntersect.visible = false;
   } // update tiles
 
 
   window.tiles = tiles;
-
-  if (params.enableUpdate) {
-    secondCamera.updateMatrixWorld();
-    camera.updateMatrixWorld();
-    orthoCamera.updateMatrixWorld();
-    tiles.update();
-  }
-
+  camera.updateMatrixWorld();
+  orthoCamera.updateMatrixWorld();
+  tiles.update();
   render();
   stats.update();
 }
 
 function render() {
   updateOrthoCamera();
-  cameraHelper.visible = false;
-  orthoCameraHelper.visible = false;
-  secondCameraHelper.visible = false; // render primary view
-
-  if (params.orthographic) {
-    const dist = orthoCamera.position.distanceTo(rayIntersect.position);
-    rayIntersect.scale.setScalar(dist / 150);
-  } else {
-    const dist = camera.position.distanceTo(rayIntersect.position);
-    rayIntersect.scale.setScalar(dist * camera.fov / 6000);
-  }
-
-  renderer.render(scene, params.orthographic ? orthoCamera : camera); // render secondary view
-
-  if (params.showSecondView) {
-    const dist = secondCamera.position.distanceTo(rayIntersect.position);
-    rayIntersect.scale.setScalar(dist * secondCamera.fov / 6000);
-    secondRenderer.render(scene, secondCamera);
-  } // render third person view
-
-
-  thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
-
-  if (params.showThirdPerson) {
-    cameraHelper.update();
-    cameraHelper.visible = !params.orthographic;
-    orthoCameraHelper.update();
-    orthoCameraHelper.visible = params.orthographic;
-
-    if (params.showSecondView) {
-      secondCameraHelper.update();
-      secondCameraHelper.visible = true;
-    }
-
-    const dist = thirdPersonCamera.position.distanceTo(rayIntersect.position);
-    rayIntersect.scale.setScalar(dist * thirdPersonCamera.fov / 6000);
-    thirdPersonRenderer.render(scene, thirdPersonCamera);
-  }
-
-  const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
-  let str = `Downloading: ${tiles.stats.downloading} Parsing: ${tiles.stats.parsing} Visible: ${tiles.group.children.length - 2}`;
-
-  if (params.enableCacheDisplay) {
-    const geomSet = new Set();
-    tiles.traverse(tile => {
-      const scene = tile.cached.scene;
-
-      if (scene) {
-        scene.traverse(c => {
-          if (c.geometry) {
-            geomSet.add(c.geometry);
-          }
-        });
-      }
-    });
-    let count = 0;
-    geomSet.forEach(g => {
-      count += _BufferGeometryUtils.BufferGeometryUtils.estimateBytesUsed(g);
-    });
-    str += `<br/>Cache: ${(100 * cacheFullness).toFixed(2)}% ~${(count / 1000 / 1000).toFixed(2)}mb`;
-  }
-
-  if (statsContainer.innerHTML !== str) {
-    statsContainer.innerHTML = str;
-  }
+  renderer.render(scene, params.orthographic ? orthoCamera : camera);
 }
-},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -45741,5 +45039,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../node_modules/parcel-bundler/src/builtins/hmr-runtime.js","index.js"], null)
-//# sourceMappingURL=example.e31bb0bc.js.map
+},{}]},{},["../node_modules/parcel-bundler/src/builtins/hmr-runtime.js","customMaterial.js"], null)
+//# sourceMappingURL=customMaterial.dd39ecee.js.map
