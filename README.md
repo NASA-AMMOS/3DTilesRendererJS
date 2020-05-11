@@ -9,9 +9,11 @@ In progress three.js implementation of the [3D Tiles format](https://github.com/
 
 The renderer supports a limited subset of the spec for the moment. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
 
-See it in action [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
+**Examples**
+[Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)!
 
-And a kitchen sink demo with all the options and debug features tuneable [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)!
+[Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
+
 
 **In Progress Features**
 - Performance
