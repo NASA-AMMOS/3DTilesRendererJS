@@ -105,7 +105,7 @@ Verify that no parent tiles have loaded ( `__loadingState = 0` ) if they have a 
 
 #### expected
 
-No tiles are above the 2 max depth value while others are exactly at the level.
+No tiles are above or equal to the 2 max depth value.
 
 ## Verify that tiles do not change when update() is not called
 
