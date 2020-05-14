@@ -126,12 +126,37 @@ Verify only tiles in view of both cameras frustums are displayed in the third pe
 
 ### Verify that raycasting works as expected
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Enable raycasting.
+1. Hover over the surface of the terrain.
+
+#### expected
+
+Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
 ### Verify that raycasting works as expected with maxDepth = 0
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Enable raycasting.
+1. Set max depth option to 0.
+1. Hover over the surface of the terrain.
+
+#### expected
+
+Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
 ### Verify debug bounds display when displayBoxBounds = true
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Enable display box bounds option.
+1. Move the camera around and zoom in and out.
+
+#### expected
+
+Verify the boxes change with the level of detail of the terrain.
