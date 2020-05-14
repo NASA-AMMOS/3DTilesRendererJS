@@ -153,6 +153,7 @@ Verify only tiles in view of both cameras frustums are displayed in the third pe
 1. Open the kitchen sink example.
 1. Enable raycasting.
 1. Hover over the surface of the terrain.
+1. Repeat with firstHitOnly = false.
 
 #### expected
 
@@ -166,6 +167,7 @@ Verify the hit marker is on the point under the mouse and that the normal lines 
 1. Enable raycasting.
 1. Set max depth option to 0.
 1. Hover over the surface of the terrain.
+1. Repeat with firstHitOnly = false.
 
 #### expected
 
