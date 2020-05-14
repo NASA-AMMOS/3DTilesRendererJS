@@ -32,6 +32,9 @@ import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtil
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+const ALL_HITS = 1;
+const FIRST_HIT_ONLY = 2;
+
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -44,7 +47,7 @@ let statsContainer, stats;
 let params = {
 
 	'enableUpdate': true,
-	'enableRaycast': false,
+	'raycast': NONE,
 	'enableCacheDisplay': false,
 	'orthographic': false,
 
@@ -248,7 +251,7 @@ function init() {
 		}
 
 	} );
-	exampleOptions.add( params, 'enableRaycast' );
+	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.open();
 
@@ -463,7 +466,7 @@ function animate() {
 
 	}
 
-	if ( params.enableRaycast && lastHoveredElement !== null ) {
+	if ( parseFloat( params.raycast ) !== NONE && lastHoveredElement !== null ) {
 
 		if ( lastHoveredElement === renderer.domElement ) {
 
@@ -475,7 +478,8 @@ function animate() {
 
 		}
 
-		raycaster.firstHitOnly = true;
+		raycaster.firstHitOnly = parseFloat( params.raycast ) === FIRST_HIT_ONLY;
+
 		const results = raycaster.intersectObject( tiles.group, true );
 		if ( results.length ) {
 

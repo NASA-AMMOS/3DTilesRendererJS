@@ -35,6 +35,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 	if ( activeTiles.has( root ) ) {
 
 		intersectTileScene( root.cached.scene, raycaster, _hitArray );
+
 		if ( _hitArray.length > 0 ) {
 
 			if ( _hitArray.length > 1 ) {
@@ -43,8 +44,9 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 			}
 
+			const res = _hitArray[ 0 ];
 			_hitArray.length = 0;
-			return _hitArray[ 0 ];
+			return res;
 
 		} else {
 

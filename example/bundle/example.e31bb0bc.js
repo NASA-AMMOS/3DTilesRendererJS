@@ -39502,8 +39502,9 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
         _hitArray.sort(distanceSort);
       }
 
+      const res = _hitArray[0];
       _hitArray.length = 0;
-      return _hitArray[0];
+      return res;
     } else {
       return null;
     }
@@ -45080,6 +45081,8 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+const ALL_HITS = 1;
+const FIRST_HIT_ONLY = 2;
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -45090,7 +45093,7 @@ let offsetParent;
 let statsContainer, stats;
 let params = {
   'enableUpdate': true,
-  'enableRaycast': false,
+  'raycast': _index.NONE,
   'enableCacheDisplay': false,
   'orthographic': false,
   'errorTarget': 6,
@@ -45257,7 +45260,11 @@ function init() {
       tiles.downloadQueue.scheduleJobRun();
     }
   });
-  exampleOptions.add(params, 'enableRaycast');
+  exampleOptions.add(params, 'raycast', {
+    NONE: _index.NONE,
+    ALL_HITS,
+    FIRST_HIT_ONLY
+  });
   exampleOptions.add(params, 'enableCacheDisplay');
   exampleOptions.open();
   gui.add(params, 'reload');
@@ -45426,14 +45433,14 @@ function animate() {
     tiles.group.position.multiplyScalar(-1);
   }
 
-  if (params.enableRaycast && lastHoveredElement !== null) {
+  if (parseFloat(params.raycast) !== _index.NONE && lastHoveredElement !== null) {
     if (lastHoveredElement === renderer.domElement) {
       raycaster.setFromCamera(mouse, params.orthographic ? orthoCamera : camera);
     } else {
       raycaster.setFromCamera(mouse, secondCamera);
     }
 
-    raycaster.firstHitOnly = true;
+    raycaster.firstHitOnly = parseFloat(params.raycast) === FIRST_HIT_ONLY;
     const results = raycaster.intersectObject(tiles.group, true);
 
     if (results.length) {
@@ -45565,7 +45572,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65167" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55097" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
