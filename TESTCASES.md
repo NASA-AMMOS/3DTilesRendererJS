@@ -182,3 +182,19 @@ Verify the hit marker is on the point under the mouse and that the normal lines 
 #### expected
 
 Verify the boxes change with the level of detail of the terrain.
+
+## Verify it does not pop to higher lod on zoom out
+
+#### steps
+
+1. Open the kitchen sink example.
+1. Set the error target to 2.
+1. Set the error threshold to 6.
+1. Zoom in all the way.
+1. Click rebuild.
+1. Wait for all tiles to load.
+1. Set the error threshold to 1000 (or zoom out).
+
+#### expected
+
+Verify the display does not change and the tiles to not disappear while parent tiles load.
