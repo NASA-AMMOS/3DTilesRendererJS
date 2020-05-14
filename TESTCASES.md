@@ -70,13 +70,28 @@ No tiles are above the 6.0 error target threshold.
 #### steps
 
 1. Open the kitchen sink example.
-1. Enable raycasting.
-1. Set max depth option to 0.
-1. Hover over the surface of the terrain.
+1. Set error target to 2.
+1. Set error threshold to 6.
+1. Open the javascript console.
+1. Hit "reload".
+1. Inspect the tileset using the following script:
+
+```js
+tiles.traverse( tile => {
+
+  let str = new Array( tile.__depth + 1 ).join( '  ' );
+  str += tile.__error.toFixed( 2 );
+  str += ' : ';
+  str += tile.__loadingState;
+  console.log( str )
+	return tile.__isLeaf;
+
+} );
+```
 
 #### expected
 
-Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
+Verify that no parent tiles have loaded ( `__loadingState = 0` ) if they have a threshold above 18 ( `( target + 1 ) * threshold` ).
 
 ## Verify tiles do not display past the maxDepth threshold
 
