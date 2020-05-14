@@ -2,9 +2,7 @@
 
 Series of manually performed test cases for scenarios that are difficult / not feasible to test in an automated fashion.
 
-## Tests
-
-### Verify all sibling tiles load when loadSiblings = true
+## Verify all sibling tiles load when loadSiblings = true
 
 #### steps
 
@@ -20,7 +18,7 @@ Series of manually performed test cases for scenarios that are difficult / not f
 
 Tiles are displayed all the way out to the edge of the tileset.
 
-### Verify sibling tiles do _not_ load when loadSiblings = false
+## Verify sibling tiles do _not_ load when loadSiblings = false
 
 #### steps
 
@@ -36,7 +34,7 @@ Tiles are displayed all the way out to the edge of the tileset.
 
 Only tiles that were visible when zoomed in are displayed.
 
-### Verify that active tiles render when displayActiveTiles = true
+## Verify that active tiles render when displayActiveTiles = true
 
 #### steps
 
@@ -52,7 +50,7 @@ Only tiles that were visible when zoomed in are displayed.
 
 Tiles are displayed all the way out to the edge of the tileset but they are not when `displayActiveTiles` is false.
 
-### Verify tiles load up to errorTarget option
+## Verify tiles load up to errorTarget option
 
 #### steps
 
@@ -67,11 +65,20 @@ Tiles are displayed all the way out to the edge of the tileset but they are not 
 
 No tiles are above the 6.0 error target threshold.
 
-### Verify parent tiles do not load outside of the errorThreshold option
+## Verify parent tiles do not load outside of the errorThreshold option
 
-TODO
+#### steps
 
-### Verify tiles do not display past the maxDepth threshold
+1. Open the kitchen sink example.
+1. Enable raycasting.
+1. Set max depth option to 0.
+1. Hover over the surface of the terrain.
+
+#### expected
+
+Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
+
+## Verify tiles do not display past the maxDepth threshold
 
 #### steps
 
@@ -85,7 +92,7 @@ TODO
 
 No tiles are above the 2 max depth value while others are exactly at the level.
 
-### Verify that tiles do not change when update() is not called
+## Verify that tiles do not change when update() is not called
 
 #### steps
 
@@ -98,7 +105,7 @@ No tiles are above the 2 max depth value while others are exactly at the level.
 
 Verify tiles no longer update with the camera view.
 
-### Verify tiles are only displayed within the camera frustum.
+## Verify tiles are only displayed within the camera frustum.
 
 #### steps
 
@@ -110,7 +117,7 @@ Verify tiles no longer update with the camera view.
 
 Verify only tiles in view of the frustum are displayed in the third person camera view.
 
-### Verify that multiple cameras are taken into account when calculating error
+## Verify that multiple cameras are taken into account when calculating error
 
 #### steps
 
@@ -124,7 +131,7 @@ Verify only tiles in view of the frustum are displayed in the third person camer
 
 Verify only tiles in view of both cameras frustums are displayed in the third person camera view and that tiles nearest the cameras have the lowest geometric error.
 
-### Verify that raycasting works as expected
+## Verify that raycasting works as expected
 
 #### steps
 
@@ -136,7 +143,7 @@ Verify only tiles in view of both cameras frustums are displayed in the third pe
 
 Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
-### Verify that raycasting works as expected with maxDepth = 0
+## Verify that raycasting works as expected with maxDepth = 0
 
 #### steps
 
@@ -149,7 +156,7 @@ Verify the hit marker is on the point under the mouse and that the normal lines 
 
 Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
-### Verify debug bounds display when displayBoxBounds = true
+## Verify debug bounds display when displayBoxBounds = true
 
 #### steps
 
