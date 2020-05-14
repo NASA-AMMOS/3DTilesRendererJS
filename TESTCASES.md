@@ -6,19 +6,66 @@ Series of manually performed test cases for scenarios that are difficult / not f
 
 ### Verify all sibling tiles load when loadSiblings = true
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Ensure `loadSiblings` is enabled.
+1. Ensure `displayActiveTiles` is enabled.
+1. Zoom in as much as possible so much of the tileset is not visible.
+1. Wait until all tiles have loaded.
+1. Disable the `enableUpdate` option.
+1. Zoom out to view the whole tileset.
+
+#### expected
+
+Tiles are displayed all the way out to the edge of the tileset.
 
 ### Verify sibling tiles do _not_ load when loadSiblings = false
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Ensure `loadSiblings` is disabled.
+1. Ensure `displayActiveTiles` is enabled.
+1. Zoom in as much as possible so much of the tileset is not visible.
+1. Wait until all tiles have loaded.
+1. Disable the `enableUpdate` option.
+1. Zoom out to view the whole tileset.
+
+#### expected
+
+Only tiles that were visible when zoomed in are displayed.
 
 ### Verify that active tiles render when displayActiveTiles = true
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Ensure `loadSiblings` is enabled.
+1. Ensure `displayActiveTiles` is enabled.
+1. Zoom in as much as possible so much of the tileset is not visible.
+1. Wait until all tiles have loaded.
+1. Disable the `enableUpdate` option.
+1. Zoom out to view the whole tileset.
+
+#### expected
+
+Tiles are displayed all the way out to the edge of the tileset but they are not when `displayActiveTiles` is false.
 
 ### Verify tiles load up to errorTarget option
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Open the Javascript console.
+1. Ensure `errorTarget` is set to `6`.
+1. Enable `SCREEN_ERROR` color mode.
+1. Zoom to various levels.
+1. Click on tiles to view current screen space error in the console.
+
+#### expected
+
+No tiles are above the 6.0 error target threshold.
 
 ### Verify parent tiles do not load outside of the errorThreshold option
 
@@ -26,17 +73,62 @@ TODO
 
 ### Verify tiles do not display past the maxDepth threshold
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Open the Javascript console.
+1. Ensure `maxDepth` is set to `2`.
+1. Enable `DEPTH` color mode.
+1. Click on tiles to view current depth in the console.
+
+#### expected
+
+No tiles are above the 2 max depth value while others are exactly at the level.
 
 ### Verify that tiles do not change when update() is not called
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Zoom all the way in.
+1. Disable the `enableUpdate` option.
+1. Zoom out.
+
+#### expected
+
+Verify tiles no longer update with the camera view.
+
+### Verify tiles are only displayed within the camera frustum.
+
+#### steps
+
+1. Open the kitchen sink example.
+1. Enable the third person camera view.
+1. Zoom in the main view so part of the tileset is cut off.
+
+#### expected
+
+Verify only tiles in view of the frustum are displayed in the third person camera view.
 
 ### Verify that multiple cameras are taken into account when calculating error
 
-TODO
+#### steps
+
+1. Open the kitchen sink example.
+1. Enable the third person camera view.
+1. Enable the second camera view.
+1. Enable `GEOMETRIC_ERROR` color mode.
+1. Zoom in the both cameras on opposite sides of the terrain so part of the tileset is cut off.
+
+#### expected
+
+Verify only tiles in view of both cameras frustums are displayed in the third person camera view and that tiles nearest the cameras have the lowest geometric error.
 
 ### Verify that raycasting works as expected
+
+TODO
+
+### Verify that raycasting works as expected with maxDepth = 0
 
 TODO
 
