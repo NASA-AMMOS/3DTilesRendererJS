@@ -36364,7 +36364,7 @@ function markUsedSetLeaves(tile, renderer) {
     // TODO: This isn't necessarily right because it's possible that a parent tile is considered in the
     // frustum while the child tiles are not, making them unused. If all children have loaded and were properly
     // considered to be in the used set then we shouldn't set ourselves to a leaf here.
-    tile.__isLeaf = true; // TODO: stats
+    tile.__isLeaf = true;
   } else {
     let childrenWereVisible = false;
     let allChildrenLoaded = true;
@@ -36535,10 +36535,6 @@ var _constants = require("./constants.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// TODO: Address the issue of too many promises, garbage collection
-// TODO: See if using classes improves performance
-// TODO: See if declaring function inline improves performance
-// TODO: Make sure active state works as expected
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
 const priorityCallback = tile => 1 / (tile.__depthFromRenderedParent + 1);
 
@@ -36617,8 +36613,7 @@ class TilesRendererBase {
     (0, _traverseFunctions.determineFrustumSet)(root, this);
     (0, _traverseFunctions.markUsedSetLeaves)(root, this);
     (0, _traverseFunctions.skipTraversal)(root, this);
-    (0, _traverseFunctions.toggleTiles)(root, this); // TODO: We may want to add this function in the requestTileContents function
-
+    (0, _traverseFunctions.toggleTiles)(root, this);
     lruCache.scheduleUnload();
   } // Overrideable
 
@@ -36698,7 +36693,6 @@ class TilesRendererBase {
           throw new Error(`Status ${res.status} (${res.statusText})`);
         }
       }).then(json => {
-        // TODO: Add version query?
         const version = json.asset.version;
         console.assert(version === '1.0' || version === '0.0');
 
@@ -36723,20 +36717,22 @@ class TilesRendererBase {
     // start it again.
     if (tile.__loadingState !== _constants.UNLOADED) {
       return;
-    } // TODO: reuse the functions created here?
+    }
 
-
+    const stats = this.stats;
     const lruCache = this.lruCache;
     const downloadQueue = this.downloadQueue;
     const parseQueue = this.parseQueue;
     lruCache.add(tile, t => {
+      // Stop the load if it's started
       if (t.__loadingState === _constants.LOADING) {
         t.__loadAbort.abort();
 
         t.__loadAbort = null;
       } else {
         this.disposeTile(t);
-      }
+      } // Decrement stats
+
 
       if (t.__loadingState === _constants.LOADING) {
         stats.downloading--;
@@ -36749,10 +36745,11 @@ class TilesRendererBase {
       t.__loadIndex++;
       parseQueue.remove(t);
       downloadQueue.remove(t);
-    });
+    }); // Track a new load index so we avoid the condition where this load is stopped and
+    // another begins soon after so we don't parse twice.
+
     tile.__loadIndex++;
     const loadIndex = tile.__loadIndex;
-    const stats = this.stats;
     const controller = new AbortController();
     const signal = controller.signal;
     stats.downloading++;
@@ -39423,7 +39420,8 @@ class TilesGroup extends _three.Group {
         tempMat.multiplyMatrices(this.parent.matrixWorld, this.matrix);
       }
 
-      this.matrixWorldNeedsUpdate = false;
+      this.matrixWorldNeedsUpdate = false; // check if the matrix changed relative to what it was.
+
       const elA = tempMat.elements;
       const elB = this.matrixWorld.elements;
       let isDifferent = false;
@@ -39485,9 +39483,8 @@ function distanceSort(a, b) {
 function intersectTileScene(scene, raycaster, intersects) {
   // Don't intersect the box3 helpers because those are used for debugging
   scene.traverse(c => {
-    if (!(c instanceof _three.Box3Helper)) {
-      Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
-    }
+    // We set the default raycast function to empty so three.js doesn't automatically cast against it
+    Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
   });
 } // Returns the closest hit when traversing the tree
 
@@ -39532,7 +39529,7 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
       if (!raycaster.ray.intersectsSphere(_sphere)) {
         continue;
       }
-    } // TODO: check region
+    } // TODO: check region?
 
 
     const boundingBox = cached.box;
@@ -39543,7 +39540,9 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
 
       _mat.getInverse(_mat);
 
-      _ray.copy(raycaster.ray).applyMatrix4(_mat);
+      _ray.copy(raycaster.ray);
+
+      _ray.applyMatrix4(_mat);
 
       if (_ray.intersectBox(boundingBox, _vec)) {
         // account for tile scale
@@ -39624,7 +39623,8 @@ function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
   const cached = tile.cached;
   const groupMatrixWorld = group.matrixWorld;
 
-  _mat.copy(groupMatrixWorld);
+  _mat.copy(groupMatrixWorld); // Early out if we don't hit this tile sphere
+
 
   const sphere = cached.sphere;
 
@@ -39636,7 +39636,8 @@ function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
     if (!raycaster.ray.intersectsSphere(_sphere)) {
       return;
     }
-  }
+  } // Early out if we don't this this tile box
+
 
   const boundingBox = cached.box;
   const obbMat = cached.boxTransform;
@@ -39657,11 +39658,7 @@ function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
   const scene = cached.scene;
 
   if (activeTiles.has(tile)) {
-    scene.traverse(c => {
-      if (!(c instanceof _three.Box3Helper)) {
-        Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
-      }
-    });
+    intersectTileScene(scene, raycaster, intersects);
     return;
   }
 
@@ -40305,6 +40302,7 @@ var _TilesRenderer = require("./TilesRenderer.js");
 var _SphereHelper = require("./SphereHelper.js");
 
 const ORIGINAL_MATERIAL = Symbol('ORIGINAL_MATERIAL');
+const HAS_RANDOM_COLOR = Symbol('HAS_RANDOM_COLOR');
 
 function emptyRaycast() {}
 
@@ -40346,6 +40344,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
   }
 
   initExtremes() {
+    // initialize the extreme values of the hierarchy
     let maxDepth = -1;
     this.traverse(tile => {
       maxDepth = Math.max(maxDepth, tile.__depth);
@@ -40365,6 +40364,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
   }
 
   getTileInformationFromActiveObject(object) {
+    // Find which tile this scene is associated with. This is slow and
+    // intended for debug purposes only.
     let targetTile = null;
     const activeTiles = this.activeTiles;
     activeTiles.forEach(tile => {
@@ -40401,10 +40402,12 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
     if (!this.root) {
       return;
-    }
+    } // set box or sphere visibility
+
 
     this.boxGroup.visible = this.displayBoxBounds;
-    this.sphereGroup.visible = this.displaySphereBounds;
+    this.sphereGroup.visible = this.displaySphereBounds; // get max values to use for materials
+
     let maxDepth = -1;
 
     if (this.maxDebugDepth === -1) {
@@ -40439,6 +40442,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
         const currMaterial = c.material;
 
         if (currMaterial) {
+          // Reset the material if needed
           const originalMaterial = c[ORIGINAL_MATERIAL];
 
           if (colorMode === NONE && currMaterial !== originalMaterial) {
@@ -40449,8 +40453,9 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
           }
 
           if (colorMode !== RANDOM_COLOR) {
-            delete c.material.__randomColor;
-          }
+            delete c.material[HAS_RANDOM_COLOR];
+          } // Set the color on the basic material
+
 
           switch (colorMode) {
             case DEPTH:
@@ -40509,12 +40514,12 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
             case RANDOM_COLOR:
               {
-                if (!c.material.__randomColor) {
+                if (!c.material[HAS_RANDOM_COLOR]) {
                   const h = Math.random();
                   const s = 0.5 + Math.random() * 0.5;
                   const l = 0.375 + Math.random() * 0.25;
                   c.material.color.setHSL(h, s, l);
-                  c.material.__randomColor = true;
+                  c.material[HAS_RANDOM_COLOR] = true;
                 }
 
                 break;
@@ -40551,7 +40556,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
 
       if (scene) {
         const cachedBox = cached.box;
-        const cachedBoxMat = cached.boxTransform;
+        const cachedBoxMat = cached.boxTransform; // Create debug bounding box
+
         const boxHelperGroup = new _three.Group();
         boxHelperGroup.matrix.copy(cachedBoxMat);
         boxHelperGroup.matrix.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
@@ -40563,7 +40569,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
         if (this.visibleTiles.has(tile) && this.displayBoxBounds) {
           this.boxGroup.add(boxHelperGroup);
           boxHelperGroup.updateMatrixWorld(true);
-        }
+        } // Create debugbounding sphere
+
 
         const cachedSphere = cached.sphere;
         const sphereHelper = new _SphereHelper.SphereHelper(cachedSphere);
@@ -40573,7 +40580,8 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
         if (this.visibleTiles.has(tile) && this.displaySphereBounds) {
           this.sphereGroup.add(sphereHelper);
           sphereHelper.updateMatrixWorld(true);
-        }
+        } // Cache the original materials
+
 
         scene.traverse(c => {
           const material = c.material;
