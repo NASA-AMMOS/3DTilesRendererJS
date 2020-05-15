@@ -106,7 +106,7 @@ If `errorThreshold` is set to `Infinity` then all parent tiles will be loaded an
 maxDepth = Infinity : Number
 ```
 
-The max depth to which tiles will be loaded and rendered.
+The max depth to which tiles will be loaded and rendered. Setting it to `1` will only render the root tile.
 
 ### .loadSiblings
 
