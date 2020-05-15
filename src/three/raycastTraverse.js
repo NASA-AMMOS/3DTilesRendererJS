@@ -18,12 +18,8 @@ function intersectTileScene( scene, raycaster, intersects ) {
 	// Don't intersect the box3 helpers because those are used for debugging
 	scene.traverse( c => {
 
-		if ( ! ( c instanceof Box3Helper ) ) {
-
-			// We set the default raycast function to empty so three.js doesn't automatically cast against it
-			Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
-
-		}
+		// We set the default raycast function to empty so three.js doesn't automatically cast against it
+		Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
 
 	} );
 

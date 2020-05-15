@@ -41,7 +41,7 @@ export class TilesGroup extends Group {
 
 			this.matrixWorldNeedsUpdate = false;
 
-
+			// check if the matrix changed relative to what it was.
 			const elA = tempMat.elements;
 			const elB = this.matrixWorld.elements;
 			let isDifferent = false;
