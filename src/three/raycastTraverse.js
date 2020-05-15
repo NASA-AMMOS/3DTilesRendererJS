@@ -20,6 +20,7 @@ function intersectTileScene( scene, raycaster, intersects ) {
 
 		if ( ! ( c instanceof Box3Helper ) ) {
 
+			// We set the default raycast function to empty so three.js doesn't automatically cast against it
 			Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
 
 		}
@@ -81,7 +82,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 		}
 
-		// TODO: check region
+		// TODO: check region?
 
 		const boundingBox = cached.box;
 		const obbMat = cached.boxTransform;
@@ -89,7 +90,8 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 			_mat.multiply( obbMat );
 			_mat.getInverse( _mat );
-			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
+			_ray.copy( raycaster.ray );
+			_ray.applyMatrix4( _mat );
 			if ( _ray.intersectBox( boundingBox, _vec ) ) {
 
 				// account for tile scale
@@ -144,7 +146,6 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 			const scene = tile.cached.scene;
 
 			let hit = null;
-
 			if ( activeTiles.has( tile ) ) {
 
 				// save the hit if it's closer
@@ -195,6 +196,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 
 	_mat.copy( groupMatrixWorld );
 
+	// Early out if we don't hit this tile sphere
 	const sphere = cached.sphere;
 	if ( sphere ) {
 
@@ -208,6 +210,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 
 	}
 
+	// Early out if we don't this this tile box
 	const boundingBox = cached.box;
 	const obbMat = cached.boxTransform;
 	if ( boundingBox ) {
@@ -228,15 +231,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 	const scene = cached.scene;
 	if ( activeTiles.has( tile ) ) {
 
-		scene.traverse( c => {
-
-			if ( ! ( c instanceof Box3Helper ) ) {
-
-				Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
-
-			}
-
-		} );
+		intersectTileScene( scene, raycaster, intersects );
 		return;
 
 	}

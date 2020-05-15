@@ -3,6 +3,7 @@ import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
+const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 
 function emptyRaycast() {}
 
@@ -44,6 +45,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	initExtremes() {
 
+		// initialize the extreme values of the hierarchy
 		let maxDepth = - 1;
 		this.traverse( tile => {
 
@@ -74,6 +76,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	getTileInformationFromActiveObject( object ) {
 
+		// Find which tile this scene is associated with. This is slow and
+		// intended for debug purposes only.
 		let targetTile = null;
 		const activeTiles = this.activeTiles;
 		activeTiles.forEach( tile => {
@@ -131,9 +135,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
+		// set box or sphere visibility
 		this.boxGroup.visible = this.displayBoxBounds;
 		this.sphereGroup.visible = this.displaySphereBounds;
 
+		// get max values to use for materials
 		let maxDepth = - 1;
 		if ( this.maxDebugDepth === - 1 ) {
 
@@ -179,6 +185,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const currMaterial = c.material;
 				if ( currMaterial ) {
 
+					// Reset the material if needed
 					const originalMaterial = c[ ORIGINAL_MATERIAL ];
 					if ( colorMode === NONE && currMaterial !== originalMaterial ) {
 
@@ -193,10 +200,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					if ( colorMode !== RANDOM_COLOR ) {
 
-						delete c.material.__randomColor;
+						delete c.material[ HAS_RANDOM_COLOR ];
 
 					}
 
+					// Set the color on the basic material
 					switch ( colorMode ) {
 
 						case DEPTH: {
@@ -260,13 +268,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case RANDOM_COLOR: {
 
-							if ( ! c.material.__randomColor ) {
+							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
 
 								const h = Math.random();
 								const s = 0.5 + Math.random() * 0.5;
 								const l = 0.375 + Math.random() * 0.25;
 								c.material.color.setHSL( h, s, l );
-								c.material.__randomColor = true;
+								c.material[ HAS_RANDOM_COLOR ] = true;
 
 							}
 							break;
@@ -323,6 +331,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 					const cachedBox = cached.box;
 					const cachedBoxMat = cached.boxTransform;
 
+					// Create debug bounding box
 					const boxHelperGroup = new Group();
 					boxHelperGroup.matrix.copy( cachedBoxMat );
 					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
@@ -340,6 +349,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
+					// Create debugbounding sphere
 					const cachedSphere = cached.sphere;
 					const sphereHelper = new SphereHelper( cachedSphere );
 					sphereHelper.raycast = emptyRaycast;
@@ -352,6 +362,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
+					// Cache the original materials
 					scene.traverse( c => {
 
 						const material = c.material;

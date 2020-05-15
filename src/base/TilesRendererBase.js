@@ -4,11 +4,6 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
-// TODO: Address the issue of too many promises, garbage collection
-// TODO: See if using classes improves performance
-// TODO: See if declaring function inline improves performance
-// TODO: Make sure active state works as expected
-
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
 const priorityCallback = tile => 1 / ( tile.__depthFromRenderedParent + 1 );
 
@@ -117,7 +112,6 @@ export class TilesRendererBase {
 		skipTraversal( root, this );
 		toggleTiles( root, this );
 
-		// TODO: We may want to add this function in the requestTileContents function
 		lruCache.scheduleUnload();
 
 	}
@@ -232,33 +226,32 @@ export class TilesRendererBase {
 		if ( ! ( url in tileSets ) ) {
 
 			const pr =
-                fetch( url, this.fetchOptions )
-                	.then( res => {
+				fetch( url, this.fetchOptions )
+					.then( res => {
 
-                		if ( res.ok ) {
+						if ( res.ok ) {
 
-                			return res.json();
+							return res.json();
 
-                		} else {
+						} else {
 
-                			throw new Error( `Status ${ res.status } (${ res.statusText })` );
+							throw new Error( `Status ${ res.status } (${ res.statusText })` );
 
-                		}
+						}
 
-                	} )
-                	.then( json => {
+					} )
+					.then( json => {
 
-                		// TODO: Add version query?
-                		const version = json.asset.version;
-                		console.assert( version === '1.0' || version === '0.0' );
+						const version = json.asset.version;
+						console.assert( version === '1.0' || version === '0.0' );
 
-                		const basePath = path.dirname( url );
+						const basePath = path.dirname( url );
 
-                		traverseSet( json.root, ( node, parent ) => this.preprocessNode( node, parent, basePath ) );
+						traverseSet( json.root, ( node, parent ) => this.preprocessNode( node, parent, basePath ) );
 
-                		tileSets[ url ] = json;
+						tileSets[ url ] = json;
 
-                	} );
+					} );
 
 			pr.catch( e => {
 
@@ -286,12 +279,13 @@ export class TilesRendererBase {
 
 		}
 
-		// TODO: reuse the functions created here?
+		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		lruCache.add( tile, t => {
 
+			// Stop the load if it's started
 			if ( t.__loadingState === LOADING ) {
 
 				t.__loadAbort.abort();
@@ -303,6 +297,7 @@ export class TilesRendererBase {
 
 			}
 
+			// Decrement stats
 			if ( t.__loadingState === LOADING ) {
 
 				stats.downloading --;
@@ -322,10 +317,10 @@ export class TilesRendererBase {
 
 		} );
 
+		// Track a new load index so we avoid the condition where this load is stopped and
+		// another begins soon after so we don't parse twice.
 		tile.__loadIndex ++;
 		const loadIndex = tile.__loadIndex;
-		const stats = this.stats;
-
 		const controller = new AbortController();
 		const signal = controller.signal;
 

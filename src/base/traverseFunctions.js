@@ -184,8 +184,6 @@ export function markUsedSetLeaves( tile, renderer ) {
 		// considered to be in the used set then we shouldn't set ourselves to a leaf here.
 		tile.__isLeaf = true;
 
-		// TODO: stats
-
 	} else {
 
 		let childrenWereVisible = false;
