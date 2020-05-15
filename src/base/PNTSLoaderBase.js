@@ -1,9 +1,9 @@
-// B3DM File Format
-// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
+// PNTS File Format
+// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
 import { arrayToString } from '../utilities/arrayToString.js';
 
-export class B3DMLoaderBase {
+export class I3DMLoaderBase {
 
 	constructor() {
 
@@ -32,7 +32,7 @@ export class B3DMLoaderBase {
 			String.fromCharCode( dataView.getUint8( 2 ) ) +
 			String.fromCharCode( dataView.getUint8( 3 ) );
 
-		console.assert( magic === 'b3dm' );
+		console.assert( magic === 'pnts' );
 
 		// 4 bytes
 		const version = dataView.getUint32( 4, true );
@@ -75,6 +75,8 @@ export class B3DMLoaderBase {
 		const jsonBatchTableData = new Uint8Array( buffer, batchTableStart, batchTableJSONByteLength );
 		const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse( arrayToString( jsonBatchTableData ) );
 		const batchTable = { ...jsonBatchTable };
+
+		// TODO: Reuse batch and feature table parsers
 
 		// dereference the json batch table data in to the binary array.
 		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
@@ -167,16 +169,12 @@ export class B3DMLoaderBase {
 
 		}
 
-		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
-		// TODO: Understand how to apply the batchId semantics
-		// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
+		// TODO: Understand batch and feature table application
 
 		return {
 			version,
 			featureTable,
 			batchTable,
-			glbBytes,
 		};
 
 	}
