@@ -45,7 +45,6 @@ export class SphereHelper extends LineSegments {
 
 	updateMatrixWorld( force ) {
 
-		// TODO: Why doesn't this radius have to be multiplied by 0.5?
 		const sphere = this.sphere;
 		this.position.copy( sphere.center );
 		this.scale.setScalar( sphere.radius );

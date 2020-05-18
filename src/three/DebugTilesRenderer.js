@@ -173,7 +173,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
-		// TODO: Support i3dm, pnts, cmpt here
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;

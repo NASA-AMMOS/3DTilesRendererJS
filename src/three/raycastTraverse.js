@@ -53,7 +53,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 	}
 
-	// TODO: see if we can avoid creating a new array here every time to save on memory
+	// TODO: can we avoid creating a new array here every time to save on memory?
 	const array = [];
 	const children = root.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
