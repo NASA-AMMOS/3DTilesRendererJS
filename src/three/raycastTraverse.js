@@ -1,4 +1,4 @@
-import { Matrix4, Sphere, Ray, Vector3, Box3Helper } from 'three';
+import { Matrix4, Sphere, Ray, Vector3 } from 'three';
 const _sphere = new Sphere();
 const _mat = new Matrix4();
 const _vec = new Vector3();
