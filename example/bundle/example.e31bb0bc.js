@@ -35937,9 +35937,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.LRUCache = void 0;
 
-// TODO: can we remove the use of `indexOf` here because it's potentially slow? Possibly use time and sort as needed?
-// Keep a used list that we can sort as needed when it's dirty, a map of item to last used time, and a binary search
-// of the array to find an item that needs to be removed
 // Fires at the end of the frame and before the next one
 function enqueueMicrotask(callback) {
   Promise.resolve().then(callback);
@@ -36280,7 +36277,6 @@ function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth
     afterCb(tile, parent, depth);
   }
 } // Determine which tiles are within the camera frustum.
-// TODO: include frustum mask here?
 // TODO: this is marking items as used in the lrucache, which means some data is
 // being kept around that isn't being used -- is that okay?
 
@@ -36634,7 +36630,7 @@ class TilesRendererBase {
 
       if (tile.content.uri) {
         tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
-      } // TODO: fix for some cases where tilesets provide the bounding volume
+      } // NOTE: fix for some cases where tilesets provide the bounding volume
       // but volumes are not present.
 
 
@@ -39505,7 +39501,7 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
     } else {
       return null;
     }
-  } // TODO: see if we can avoid creating a new array here every time to save on memory
+  } // TODO: can we avoid creating a new array here every time to save on memory?
 
 
   const array = [];
@@ -40277,7 +40273,6 @@ class SphereHelper extends _three.LineSegments {
   }
 
   updateMatrixWorld(force) {
-    // TODO: Why doesn't this radius have to be multiplied by 0.5?
     const sphere = this.sphere;
     this.position.copy(sphere.center);
     this.scale.setScalar(sphere.radius);
@@ -40430,8 +40425,7 @@ class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
       maxDistance = this.root.cached.sphere.radius;
     } else {
       maxDistance = this.maxDebugDistance;
-    } // TODO: Support i3dm, pnts, cmpt here
-
+    }
 
     const errorTarget = this.errorTarget;
     const colorMode = this.colorMode;
@@ -45580,7 +45574,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55097" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50060" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
