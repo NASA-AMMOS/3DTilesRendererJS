@@ -35937,13 +35937,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.LRUCache = void 0;
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 // Fires at the end of the frame and before the next one
 function enqueueMicrotask(callback) {
   Promise.resolve().then(callback);
 }
 
-class LRUCache {
-  constructor() {
+var LRUCache =
+/*#__PURE__*/
+function () {
+  function LRUCache() {
+    _classCallCheck(this, LRUCache);
+
     // options
     this.maxSize = 800;
     this.minSize = 600;
@@ -35956,133 +35966,148 @@ class LRUCache {
   } // Returns whether or not the cache has reached the maximum size
 
 
-  isFull() {
-    return this.itemSet.size >= this.maxSize;
-  }
-
-  add(item, removeCb) {
-    const itemSet = this.itemSet;
-
-    if (itemSet.has(item)) {
-      return false;
+  _createClass(LRUCache, [{
+    key: "isFull",
+    value: function isFull() {
+      return this.itemSet.size >= this.maxSize;
     }
+  }, {
+    key: "add",
+    value: function add(item, removeCb) {
+      var itemSet = this.itemSet;
 
-    if (this.isFull()) {
-      return false;
-    }
+      if (itemSet.has(item)) {
+        return false;
+      }
 
-    const usedSet = this.usedSet;
-    const itemList = this.itemList;
-    const callbacks = this.callbacks;
-    itemList.push(item);
-    usedSet.add(item);
-    itemSet.add(item);
-    callbacks.set(item, removeCb);
-    return true;
-  }
+      if (this.isFull()) {
+        return false;
+      }
 
-  remove(item) {
-    const usedSet = this.usedSet;
-    const itemSet = this.itemSet;
-    const itemList = this.itemList;
-    const callbacks = this.callbacks;
-
-    if (itemSet.has(item)) {
-      callbacks.get(item)(item);
-      const index = itemList.indexOf(item);
-      itemList.splice(index, 1);
-      usedSet.delete(item);
-      itemSet.delete(item);
-      callbacks.delete(item);
-      return true;
-    }
-
-    return false;
-  }
-
-  markUsed(item) {
-    const itemSet = this.itemSet;
-    const usedSet = this.usedSet;
-
-    if (itemSet.has(item) && !usedSet.has(item)) {
-      const itemList = this.itemList;
-      const index = itemList.indexOf(item);
-      itemList.splice(index, 1);
+      var usedSet = this.usedSet;
+      var itemList = this.itemList;
+      var callbacks = this.callbacks;
       itemList.push(item);
       usedSet.add(item);
+      itemSet.add(item);
+      callbacks.set(item, removeCb);
+      return true;
     }
-  }
+  }, {
+    key: "remove",
+    value: function remove(item) {
+      var usedSet = this.usedSet;
+      var itemSet = this.itemSet;
+      var itemList = this.itemList;
+      var callbacks = this.callbacks;
 
-  markAllUnused() {
-    this.usedSet.clear();
-  } // TODO: this should be renamed because it's not necessarily unloading all unused content
-  // Maybe call it "cleanup" or "unloadToMinSize"
-
-
-  unloadUnusedContent() {
-    const unloadPercent = this.unloadPercent;
-    const targetSize = this.minSize;
-    const itemList = this.itemList;
-    const itemSet = this.itemSet;
-    const usedSet = this.usedSet;
-    const callbacks = this.callbacks;
-    const unused = itemList.length - usedSet.size;
-    const excess = itemList.length - targetSize;
-    const unloadPriorityCallback = this.unloadPriorityCallback;
-
-    if (excess > 0 && unused > 0) {
-      if (unloadPriorityCallback) {
-        // used items should be at the end of the array
-        itemList.sort((a, b) => {
-          const usedA = usedSet.has(a);
-          const usedB = usedSet.has(b);
-
-          if (usedA && usedB) {
-            // If they're both used then don't bother moving them
-            return 0;
-          } else if (!usedA && !usedB) {
-            // Use the sort function otherwise
-            // higher priority should be further to the left
-            return unloadPriorityCallback(b) - unloadPriorityCallback(a);
-          } else {
-            // If one is used and the other is not move the used one towards the end of the array
-            return usedA ? 1 : -1;
-          }
-        });
-      } // address corner cases where the minSize might be zero or smaller than maxSize - minSize,
-      // which would result in a very small or no items being unloaded.
-
-
-      const unusedExcess = Math.min(excess, unused);
-      const maxUnload = Math.max(targetSize * unloadPercent, unusedExcess * unloadPercent);
-      let nodesToUnload = Math.min(maxUnload, unused);
-      nodesToUnload = Math.ceil(nodesToUnload);
-      const removedItems = itemList.splice(0, nodesToUnload);
-
-      for (let i = 0, l = removedItems.length; i < l; i++) {
-        const item = removedItems[i];
+      if (itemSet.has(item)) {
         callbacks.get(item)(item);
+        var index = itemList.indexOf(item);
+        itemList.splice(index, 1);
+        usedSet.delete(item);
         itemSet.delete(item);
         callbacks.delete(item);
+        return true;
+      }
+
+      return false;
+    }
+  }, {
+    key: "markUsed",
+    value: function markUsed(item) {
+      var itemSet = this.itemSet;
+      var usedSet = this.usedSet;
+
+      if (itemSet.has(item) && !usedSet.has(item)) {
+        var itemList = this.itemList;
+        var index = itemList.indexOf(item);
+        itemList.splice(index, 1);
+        itemList.push(item);
+        usedSet.add(item);
       }
     }
-  }
+  }, {
+    key: "markAllUnused",
+    value: function markAllUnused() {
+      this.usedSet.clear();
+    } // TODO: this should be renamed because it's not necessarily unloading all unused content
+    // Maybe call it "cleanup" or "unloadToMinSize"
 
-  scheduleUnload(markAllUnused = true) {
-    if (!this.scheduled) {
-      this.scheduled = true;
-      enqueueMicrotask(() => {
-        this.scheduled = false;
-        this.unloadUnusedContent();
+  }, {
+    key: "unloadUnusedContent",
+    value: function unloadUnusedContent() {
+      var unloadPercent = this.unloadPercent;
+      var targetSize = this.minSize;
+      var itemList = this.itemList;
+      var itemSet = this.itemSet;
+      var usedSet = this.usedSet;
+      var callbacks = this.callbacks;
+      var unused = itemList.length - usedSet.size;
+      var excess = itemList.length - targetSize;
+      var unloadPriorityCallback = this.unloadPriorityCallback;
 
-        if (markAllUnused) {
-          this.markAllUnused();
+      if (excess > 0 && unused > 0) {
+        if (unloadPriorityCallback) {
+          // used items should be at the end of the array
+          itemList.sort(function (a, b) {
+            var usedA = usedSet.has(a);
+            var usedB = usedSet.has(b);
+
+            if (usedA && usedB) {
+              // If they're both used then don't bother moving them
+              return 0;
+            } else if (!usedA && !usedB) {
+              // Use the sort function otherwise
+              // higher priority should be further to the left
+              return unloadPriorityCallback(b) - unloadPriorityCallback(a);
+            } else {
+              // If one is used and the other is not move the used one towards the end of the array
+              return usedA ? 1 : -1;
+            }
+          });
+        } // address corner cases where the minSize might be zero or smaller than maxSize - minSize,
+        // which would result in a very small or no items being unloaded.
+
+
+        var unusedExcess = Math.min(excess, unused);
+        var maxUnload = Math.max(targetSize * unloadPercent, unusedExcess * unloadPercent);
+        var nodesToUnload = Math.min(maxUnload, unused);
+        nodesToUnload = Math.ceil(nodesToUnload);
+        var removedItems = itemList.splice(0, nodesToUnload);
+
+        for (var i = 0, l = removedItems.length; i < l; i++) {
+          var item = removedItems[i];
+          callbacks.get(item)(item);
+          itemSet.delete(item);
+          callbacks.delete(item);
         }
-      });
+      }
     }
-  }
+  }, {
+    key: "scheduleUnload",
+    value: function scheduleUnload() {
+      var _this = this;
 
-}
+      var markAllUnused = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+      if (!this.scheduled) {
+        this.scheduled = true;
+        enqueueMicrotask(function () {
+          _this.scheduled = false;
+
+          _this.unloadUnusedContent();
+
+          if (markAllUnused) {
+            _this.markAllUnused();
+          }
+        });
+      }
+    }
+  }]);
+
+  return LRUCache;
+}();
 
 exports.LRUCache = LRUCache;
 },{}],"../src/utilities/PriorityQueue.js":[function(require,module,exports) {
@@ -36093,13 +36118,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PriorityQueue = void 0;
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 // Fires at the end of the frame and before the next one
 function enqueueMicrotask(callback) {
   Promise.resolve().then(callback);
 }
 
-class PriorityQueue {
-  constructor() {
+var PriorityQueue =
+/*#__PURE__*/
+function () {
+  function PriorityQueue() {
+    _classCallCheck(this, PriorityQueue);
+
     // options
     this.maxJobs = 6;
     this.items = [];
@@ -36108,86 +36143,103 @@ class PriorityQueue {
     this.scheduled = false;
     this.autoUpdate = true;
 
-    this.priorityCallback = () => {
+    this.priorityCallback = function () {
       throw new Error('PriorityQueue: PriorityCallback function not defined.');
     };
   }
 
-  sort() {
-    const priorityCallback = this.priorityCallback;
-    const items = this.items;
-    items.sort((a, b) => {
-      return priorityCallback(a) - priorityCallback(b);
-    });
-  }
+  _createClass(PriorityQueue, [{
+    key: "sort",
+    value: function sort() {
+      var priorityCallback = this.priorityCallback;
+      var items = this.items;
+      items.sort(function (a, b) {
+        return priorityCallback(a) - priorityCallback(b);
+      });
+    }
+  }, {
+    key: "add",
+    value: function add(item, callback) {
+      var _this = this;
 
-  add(item, callback) {
-    return new Promise((resolve, reject) => {
-      const prCallback = (...args) => callback(...args).then(resolve).catch(reject);
+      return new Promise(function (resolve, reject) {
+        var prCallback = function prCallback() {
+          return callback.apply(void 0, arguments).then(resolve).catch(reject);
+        };
 
-      const items = this.items;
-      const callbacks = this.callbacks;
-      items.push(item);
-      callbacks.set(item, prCallback);
+        var items = _this.items;
+        var callbacks = _this.callbacks;
+        items.push(item);
+        callbacks.set(item, prCallback);
 
-      if (this.autoUpdate) {
-        this.scheduleJobRun();
+        if (_this.autoUpdate) {
+          _this.scheduleJobRun();
+        }
+      });
+    }
+  }, {
+    key: "remove",
+    value: function remove(item) {
+      var items = this.items;
+      var callbacks = this.callbacks;
+      var index = items.indexOf(item);
+
+      if (index !== -1) {
+        items.splice(index, 1);
+        callbacks.delete(item);
       }
-    });
-  }
-
-  remove(item) {
-    const items = this.items;
-    const callbacks = this.callbacks;
-    const index = items.indexOf(item);
-
-    if (index !== -1) {
-      items.splice(index, 1);
-      callbacks.delete(item);
     }
-  }
+  }, {
+    key: "tryRunJobs",
+    value: function tryRunJobs() {
+      var _this2 = this;
 
-  tryRunJobs() {
-    this.sort();
-    const items = this.items;
-    const callbacks = this.callbacks;
-    const maxJobs = this.maxJobs;
-    let currJobs = this.currJobs;
+      this.sort();
+      var items = this.items;
+      var callbacks = this.callbacks;
+      var maxJobs = this.maxJobs;
+      var currJobs = this.currJobs;
 
-    while (maxJobs > currJobs && items.length > 0) {
-      currJobs++;
-      const item = items.pop();
-      const callback = callbacks.get(item);
-      callbacks.delete(item);
-      callback(item).then(() => {
-        this.currJobs--;
+      while (maxJobs > currJobs && items.length > 0) {
+        currJobs++;
+        var item = items.pop();
+        var callback = callbacks.get(item);
+        callbacks.delete(item);
+        callback(item).then(function () {
+          _this2.currJobs--;
 
-        if (this.autoUpdate) {
-          this.scheduleJobRun();
-        }
-      }).catch(() => {
-        this.currJobs--;
+          if (_this2.autoUpdate) {
+            _this2.scheduleJobRun();
+          }
+        }).catch(function () {
+          _this2.currJobs--;
 
-        if (this.autoUpdate) {
-          this.scheduleJobRun();
-        }
-      });
+          if (_this2.autoUpdate) {
+            _this2.scheduleJobRun();
+          }
+        });
+      }
+
+      this.currJobs = currJobs;
     }
+  }, {
+    key: "scheduleJobRun",
+    value: function scheduleJobRun() {
+      var _this3 = this;
 
-    this.currJobs = currJobs;
-  }
+      if (!this.scheduled) {
+        enqueueMicrotask(function () {
+          _this3.tryRunJobs();
 
-  scheduleJobRun() {
-    if (!this.scheduled) {
-      enqueueMicrotask(() => {
-        this.tryRunJobs();
-        this.scheduled = false;
-      });
-      this.scheduled = true;
+          _this3.scheduled = false;
+        });
+        this.scheduled = true;
+      }
     }
-  }
+  }]);
 
-}
+  return PriorityQueue;
+}();
 
 exports.PriorityQueue = PriorityQueue;
 },{}],"../src/base/constants.js":[function(require,module,exports) {
@@ -36197,15 +36249,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.FAILED = exports.LOADED = exports.PARSING = exports.LOADING = exports.UNLOADED = void 0;
-const UNLOADED = 0;
+var UNLOADED = 0;
 exports.UNLOADED = UNLOADED;
-const LOADING = 1;
+var LOADING = 1;
 exports.LOADING = LOADING;
-const PARSING = 2;
+var PARSING = 2;
 exports.PARSING = PARSING;
-const LOADED = 3;
+var LOADED = 3;
 exports.LOADED = LOADED;
-const FAILED = 4;
+var FAILED = 4;
 exports.FAILED = FAILED;
 },{}],"../src/base/traverseFunctions.js":[function(require,module,exports) {
 "use strict";
@@ -36248,9 +36300,9 @@ function recursivelyMarkUsed(tile, frameCount, lruCache) {
   lruCache.markUsed(tile);
 
   if (tile.__contentEmpty) {
-    const children = tile.children;
+    var children = tile.children;
 
-    for (let i = 0, l = children.length; i < l; i++) {
+    for (var i = 0, l = children.length; i < l; i++) {
       recursivelyMarkUsed(children[i], frameCount, lruCache);
     }
   }
@@ -36258,7 +36310,12 @@ function recursivelyMarkUsed(tile, frameCount, lruCache) {
 // traversal will end early.
 
 
-function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth = 0) {
+function traverseSet(tile) {
+  var beforeCb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  var afterCb = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+  var parent = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  var depth = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+
   if (beforeCb && beforeCb(tile, parent, depth)) {
     if (afterCb) {
       afterCb(tile, parent, depth);
@@ -36267,9 +36324,9 @@ function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth
     return;
   }
 
-  const children = tile.children;
+  var children = tile.children;
 
-  for (let i = 0, l = children.length; i < l; i++) {
+  for (var i = 0, l = children.length; i < l; i++) {
     traverseSet(children[i], beforeCb, afterCb, tile, depth + 1);
   }
 
@@ -36282,15 +36339,15 @@ function traverseSet(tile, beforeCb = null, afterCb = null, parent = null, depth
 
 
 function determineFrustumSet(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
-  const errorTarget = renderer.errorTarget;
-  const maxDepth = renderer.maxDepth;
-  const loadSiblings = renderer.loadSiblings;
-  const lruCache = renderer.lruCache;
+  var stats = renderer.stats;
+  var frameCount = renderer.frameCount;
+  var errorTarget = renderer.errorTarget;
+  var maxDepth = renderer.maxDepth;
+  var loadSiblings = renderer.loadSiblings;
+  var lruCache = renderer.lruCache;
   resetFrameState(tile, frameCount); // Early out if this tile is not within view.
 
-  const inFrustum = renderer.tileInView(tile);
+  var inFrustum = renderer.tileInView(tile);
 
   if (inFrustum === false) {
     return false;
@@ -36302,7 +36359,7 @@ function determineFrustumSet(tile, renderer) {
   stats.inFrustum++; // Early out if this tile has less error than we're targeting.
 
   if (!tile.__contentEmpty) {
-    const error = renderer.calculateError(tile);
+    var error = renderer.calculateError(tile);
     tile.__error = error;
 
     if (error <= errorTarget) {
@@ -36316,21 +36373,21 @@ function determineFrustumSet(tile, renderer) {
   } // Traverse children and see if any children are in view.
 
 
-  let anyChildrenUsed = false;
-  const children = tile.children;
+  var anyChildrenUsed = false;
+  var children = tile.children;
 
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
-    const r = determineFrustumSet(c, renderer);
+  for (var i = 0, l = children.length; i < l; i++) {
+    var c = children[i];
+    var r = determineFrustumSet(c, renderer);
     anyChildrenUsed = anyChildrenUsed || r;
   } // If there are children within view and we are loading siblings then mark
   // all sibling tiles as used, as well.
 
 
   if (anyChildrenUsed && loadSiblings) {
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
-      recursivelyMarkUsed(c, frameCount, lruCache);
+    for (var _i = 0, _l = children.length; _i < _l; _i++) {
+      var _c = children[_i];
+      recursivelyMarkUsed(_c, frameCount, lruCache);
     }
   }
 
@@ -36339,8 +36396,8 @@ function determineFrustumSet(tile, renderer) {
 
 
 function markUsedSetLeaves(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
+  var stats = renderer.stats;
+  var frameCount = renderer.frameCount;
 
   if (!isUsedThisFrame(tile, frameCount)) {
     return;
@@ -36348,11 +36405,11 @@ function markUsedSetLeaves(tile, renderer) {
 
   stats.used++; // This tile is a leaf if none of the children had been used.
 
-  const children = tile.children;
-  let anyChildrenUsed = false;
+  var children = tile.children;
+  var anyChildrenUsed = false;
 
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
+  for (var i = 0, l = children.length; i < l; i++) {
+    var c = children[i];
     anyChildrenUsed = anyChildrenUsed || isUsedThisFrame(c, frameCount);
   }
 
@@ -36362,16 +36419,16 @@ function markUsedSetLeaves(tile, renderer) {
     // considered to be in the used set then we shouldn't set ourselves to a leaf here.
     tile.__isLeaf = true;
   } else {
-    let childrenWereVisible = false;
-    let allChildrenLoaded = true;
+    var childrenWereVisible = false;
+    var allChildrenLoaded = true;
 
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
-      markUsedSetLeaves(c, renderer);
-      childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
+    for (var _i2 = 0, _l2 = children.length; _i2 < _l2; _i2++) {
+      var _c2 = children[_i2];
+      markUsedSetLeaves(_c2, renderer);
+      childrenWereVisible = childrenWereVisible || _c2.__wasSetVisible || _c2.__childrenWereVisible;
 
-      if (isUsedThisFrame(c, frameCount)) {
-        const childLoaded = !c.__contentEmpty && c.__loadingState === _constants.LOADED || c.__allChildrenLoaded;
+      if (isUsedThisFrame(_c2, frameCount)) {
+        var childLoaded = !_c2.__contentEmpty && _c2.__loadingState === _constants.LOADED || _c2.__allChildrenLoaded;
         allChildrenLoaded = allChildrenLoaded && childLoaded;
       }
     }
@@ -36383,18 +36440,18 @@ function markUsedSetLeaves(tile, renderer) {
 
 
 function skipTraversal(tile, renderer) {
-  const stats = renderer.stats;
-  const frameCount = renderer.frameCount;
+  var stats = renderer.stats;
+  var frameCount = renderer.frameCount;
 
   if (!isUsedThisFrame(tile, frameCount)) {
     return;
   }
 
-  const parent = tile.parent;
-  const parentDepthToParent = parent ? parent.__depthFromRenderedParent : -1;
+  var parent = tile.parent;
+  var parentDepthToParent = parent ? parent.__depthFromRenderedParent : -1;
   tile.__depthFromRenderedParent = parentDepthToParent; // Request the tile contents or mark it as visible if we've found a leaf.
 
-  const lruCache = renderer.lruCache;
+  var lruCache = renderer.lruCache;
 
   if (tile.__isLeaf) {
     tile.__depthFromRenderedParent++;
@@ -36414,13 +36471,13 @@ function skipTraversal(tile, renderer) {
     return;
   }
 
-  const errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
-  const meetsSSE = tile.__error <= errorRequirement;
-  const hasContent = !tile.__contentEmpty;
-  const loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
-  const childrenWereVisible = tile.__childrenWereVisible;
-  const children = tile.children;
-  let allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
+  var errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
+  var meetsSSE = tile.__error <= errorRequirement;
+  var hasContent = !tile.__contentEmpty;
+  var loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
+  var childrenWereVisible = tile.__childrenWereVisible;
+  var children = tile.children;
+  var allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
   // and is being rendered.
 
   if (meetsSSE && hasContent) {
@@ -36447,8 +36504,8 @@ function skipTraversal(tile, renderer) {
       stats.active++; // load the child content if we've found that we've been loaded so we can move down to the next tile
       // layer when the data has loaded.
 
-      for (let i = 0, l = children.length; i < l; i++) {
-        const c = children[i];
+      for (var i = 0, l = children.length; i < l; i++) {
+        var c = children[i];
 
         if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
           c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
@@ -36460,23 +36517,23 @@ function skipTraversal(tile, renderer) {
     return;
   }
 
-  for (let i = 0, l = children.length; i < l; i++) {
-    const c = children[i];
+  for (var _i3 = 0, _l3 = children.length; _i3 < _l3; _i3++) {
+    var _c3 = children[_i3];
 
-    if (isUsedThisFrame(c, frameCount)) {
-      skipTraversal(c, renderer);
+    if (isUsedThisFrame(_c3, frameCount)) {
+      skipTraversal(_c3, renderer);
     }
   }
 } // Final traverse to toggle tile visibility.
 
 
 function toggleTiles(tile, renderer) {
-  const frameCount = renderer.frameCount;
-  const isUsed = isUsedThisFrame(tile, frameCount);
+  var frameCount = renderer.frameCount;
+  var isUsed = isUsedThisFrame(tile, frameCount);
 
   if (isUsed || tile.__usedLastFrame) {
-    let setActive = false;
-    let setVisible = false;
+    var setActive = false;
+    var setVisible = false;
 
     if (isUsed) {
       // enable visibility if active due to shadows
@@ -36503,10 +36560,10 @@ function toggleTiles(tile, renderer) {
     tile.__wasSetActive = setActive;
     tile.__wasSetVisible = setVisible;
     tile.__usedLastFrame = isUsed;
-    const children = tile.children;
+    var children = tile.children;
 
-    for (let i = 0, l = children.length; i < l; i++) {
-      const c = children[i];
+    for (var i = 0, l = children.length; i < l; i++) {
+      var c = children[i];
       toggleTiles(c, renderer);
     }
   }
@@ -36531,36 +36588,52 @@ var _constants = require("./constants.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const priorityCallback = tile => 1 / (tile.__depthFromRenderedParent + 1);
+var priorityCallback = function priorityCallback(tile) {
+  return 1 / (tile.__depthFromRenderedParent + 1);
+};
 
-class TilesRendererBase {
-  get rootTileSet() {
-    const tileSet = this.tileSets[this.rootURL];
+var TilesRendererBase =
+/*#__PURE__*/
+function () {
+  _createClass(TilesRendererBase, [{
+    key: "rootTileSet",
+    get: function get() {
+      var tileSet = this.tileSets[this.rootURL];
 
-    if (!tileSet || tileSet instanceof Promise) {
-      return null;
-    } else {
-      return tileSet;
+      if (!tileSet || tileSet instanceof Promise) {
+        return null;
+      } else {
+        return tileSet;
+      }
     }
-  }
+  }, {
+    key: "root",
+    get: function get() {
+      var tileSet = this.rootTileSet;
+      return tileSet ? tileSet.root : null;
+    }
+  }]);
 
-  get root() {
-    const tileSet = this.rootTileSet;
-    return tileSet ? tileSet.root : null;
-  }
+  function TilesRendererBase(url) {
+    _classCallCheck(this, TilesRendererBase);
 
-  constructor(url) {
     // state
     this.tileSets = {};
     this.rootURL = url;
     this.fetchOptions = {};
-    const lruCache = new _LRUCache.LRUCache();
+    var lruCache = new _LRUCache.LRUCache();
     lruCache.unloadPriorityCallback = priorityCallback;
-    const downloadQueue = new _PriorityQueue.PriorityQueue();
+    var downloadQueue = new _PriorityQueue.PriorityQueue();
     downloadQueue.maxJobs = 4;
     downloadQueue.priorityCallback = priorityCallback;
-    const parseQueue = new _PriorityQueue.PriorityQueue();
+    var parseQueue = new _PriorityQueue.PriorityQueue();
     parseQueue.maxJobs = 1;
     parseQueue.priorityCallback = priorityCallback;
     this.lruCache = lruCache;
@@ -36583,248 +36656,268 @@ class TilesRendererBase {
     this.maxDepth = Infinity;
   }
 
-  traverse(beforecb, aftercb) {
-    const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootURL];
-    if (!rootTileSet || !rootTileSet.root) return;
-    (0, _traverseFunctions.traverseSet)(rootTileSet.root, beforecb, aftercb);
-  } // Public API
+  _createClass(TilesRendererBase, [{
+    key: "traverse",
+    value: function traverse(beforecb, aftercb) {
+      var tileSets = this.tileSets;
+      var rootTileSet = tileSets[this.rootURL];
+      if (!rootTileSet || !rootTileSet.root) return;
+      (0, _traverseFunctions.traverseSet)(rootTileSet.root, beforecb, aftercb);
+    } // Public API
 
+  }, {
+    key: "update",
+    value: function update() {
+      var stats = this.stats;
+      var lruCache = this.lruCache;
+      var tileSets = this.tileSets;
+      var rootTileSet = tileSets[this.rootURL];
 
-  update() {
-    const stats = this.stats;
-    const lruCache = this.lruCache;
-    const tileSets = this.tileSets;
-    const rootTileSet = tileSets[this.rootURL];
-
-    if (!(this.rootURL in tileSets)) {
-      this.loadTileSet(this.rootURL);
-      return;
-    } else if (!rootTileSet || !rootTileSet.root) {
-      return;
-    }
-
-    const root = rootTileSet.root;
-    stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
-    (0, _traverseFunctions.determineFrustumSet)(root, this);
-    (0, _traverseFunctions.markUsedSetLeaves)(root, this);
-    (0, _traverseFunctions.skipTraversal)(root, this);
-    (0, _traverseFunctions.toggleTiles)(root, this);
-    lruCache.scheduleUnload();
-  } // Overrideable
-
-
-  parseTile(buffer, tile, extension) {
-    return null;
-  }
-
-  disposeTile(tile) {}
-
-  preprocessNode(tile, parentTile, tileSetDir) {
-    if (tile.content) {
-      // Fix old file formats
-      if (!('uri' in tile.content) && 'url' in tile.content) {
-        tile.content.uri = tile.content.url;
-        delete tile.content.url;
+      if (!(this.rootURL in tileSets)) {
+        this.loadTileSet(this.rootURL);
+        return;
+      } else if (!rootTileSet || !rootTileSet.root) {
+        return;
       }
 
-      if (tile.content.uri) {
-        tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
-      } // NOTE: fix for some cases where tilesets provide the bounding volume
-      // but volumes are not present.
+      var root = rootTileSet.root;
+      stats.inFrustum = 0, stats.used = 0, stats.active = 0, stats.visible = 0, this.frameCount++;
+      (0, _traverseFunctions.determineFrustumSet)(root, this);
+      (0, _traverseFunctions.markUsedSetLeaves)(root, this);
+      (0, _traverseFunctions.skipTraversal)(root, this);
+      (0, _traverseFunctions.toggleTiles)(root, this);
+      lruCache.scheduleUnload();
+    } // Overrideable
 
-
-      if (tile.content.boundingVolume && !('box' in tile.content.boundingVolume || 'sphere' in tile.content.boundingVolume || 'region' in tile.content.boundingVolume)) {
-        delete tile.content.boundingVolume;
-      }
+  }, {
+    key: "parseTile",
+    value: function parseTile(buffer, tile, extension) {
+      return null;
     }
-
-    tile.parent = parentTile;
-    tile.children = tile.children || [];
-    tile.__contentEmpty = !tile.content || !tile.content.uri;
-    tile.__error = 0.0;
-    tile.__inFrustum = false;
-    tile.__isLeaf = false;
-    tile.__usedLastFrame = false;
-    tile.__used = false;
-    tile.__wasSetVisible = false;
-    tile.__visible = false;
-    tile.__childrenWereVisible = false;
-    tile.__allChildrenLoaded = false;
-    tile.__wasSetActive = false;
-    tile.__active = false;
-    tile.__loadingState = _constants.UNLOADED;
-    tile.__loadIndex = 0;
-    tile.__loadAbort = null;
-    tile.__depthFromRenderedParent = -1;
-
-    if (parentTile === null) {
-      tile.__depth = 0;
-    } else {
-      tile.__depth = parentTile.__depth + 1;
-    }
-  }
-
-  setTileActive(tile, state) {}
-
-  setTileVisible(tile, state) {}
-
-  calculateError(tile) {
-    return 0;
-  }
-
-  tileInView(tile) {
-    return true;
-  } // Private Functions
-
-
-  loadTileSet(url) {
-    const tileSets = this.tileSets;
-
-    if (!(url in tileSets)) {
-      const pr = fetch(url, this.fetchOptions).then(res => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          throw new Error(`Status ${res.status} (${res.statusText})`);
+  }, {
+    key: "disposeTile",
+    value: function disposeTile(tile) {}
+  }, {
+    key: "preprocessNode",
+    value: function preprocessNode(tile, parentTile, tileSetDir) {
+      if (tile.content) {
+        // Fix old file formats
+        if (!('uri' in tile.content) && 'url' in tile.content) {
+          tile.content.uri = tile.content.url;
+          delete tile.content.url;
         }
-      }).then(json => {
-        const version = json.asset.version;
-        console.assert(version === '1.0' || version === '0.0');
 
-        const basePath = _path.default.dirname(url);
-
-        (0, _traverseFunctions.traverseSet)(json.root, (node, parent) => this.preprocessNode(node, parent, basePath));
-        tileSets[url] = json;
-      });
-      pr.catch(e => {
-        console.error(`TilesLoader: Failed to load tile set json "${url}"`);
-        console.error(e);
-        delete tileSets[url];
-      });
-      tileSets[url] = pr;
-    }
-
-    return Promise.resolve(tileSets[url]);
-  }
-
-  requestTileContents(tile) {
-    // If the tile is already being loaded then don't
-    // start it again.
-    if (tile.__loadingState !== _constants.UNLOADED) {
-      return;
-    }
-
-    const stats = this.stats;
-    const lruCache = this.lruCache;
-    const downloadQueue = this.downloadQueue;
-    const parseQueue = this.parseQueue;
-    lruCache.add(tile, t => {
-      // Stop the load if it's started
-      if (t.__loadingState === _constants.LOADING) {
-        t.__loadAbort.abort();
-
-        t.__loadAbort = null;
-      } else {
-        this.disposeTile(t);
-      } // Decrement stats
+        if (tile.content.uri) {
+          tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
+        } // NOTE: fix for some cases where tilesets provide the bounding volume
+        // but volumes are not present.
 
 
-      if (t.__loadingState === _constants.LOADING) {
-        stats.downloading--;
-      } else if (t.__loadingState === _constants.PARSING) {
-        stats.parsing--;
+        if (tile.content.boundingVolume && !('box' in tile.content.boundingVolume || 'sphere' in tile.content.boundingVolume || 'region' in tile.content.boundingVolume)) {
+          delete tile.content.boundingVolume;
+        }
       }
 
-      t.__buffer = null;
-      t.__loadingState = _constants.UNLOADED;
-      t.__loadIndex++;
-      parseQueue.remove(t);
-      downloadQueue.remove(t);
-    }); // Track a new load index so we avoid the condition where this load is stopped and
-    // another begins soon after so we don't parse twice.
-
-    tile.__loadIndex++;
-    const loadIndex = tile.__loadIndex;
-    const controller = new AbortController();
-    const signal = controller.signal;
-    stats.downloading++;
-    tile.__loadAbort = controller;
-    tile.__loadingState = _constants.LOADING;
-    downloadQueue.add(tile, tile => {
-      if (tile.__loadIndex !== loadIndex) {
-        return Promise.resolve();
-      }
-
-      return fetch(tile.content.uri, Object.assign({
-        signal
-      }, this.fetchOptions));
-    }).then(res => {
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      if (res.ok) {
-        return res.arrayBuffer();
-      } else {
-        throw new Error(`Failed to load model with error code ${res.status}`);
-      }
-    }).then(buffer => {
-      // if it has been unloaded then the tile has been disposed
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      stats.downloading--;
-      stats.parsing++;
+      tile.parent = parentTile;
+      tile.children = tile.children || [];
+      tile.__contentEmpty = !tile.content || !tile.content.uri;
+      tile.__error = 0.0;
+      tile.__inFrustum = false;
+      tile.__isLeaf = false;
+      tile.__usedLastFrame = false;
+      tile.__used = false;
+      tile.__wasSetVisible = false;
+      tile.__visible = false;
+      tile.__childrenWereVisible = false;
+      tile.__allChildrenLoaded = false;
+      tile.__wasSetActive = false;
+      tile.__active = false;
+      tile.__loadingState = _constants.UNLOADED;
+      tile.__loadIndex = 0;
       tile.__loadAbort = null;
-      tile.__loadingState = _constants.PARSING;
-      tile.__buffer = buffer;
-      return parseQueue.add(tile, tile => {
-        // if it has been unloaded then the tile has been disposed
+      tile.__depthFromRenderedParent = -1;
+
+      if (parentTile === null) {
+        tile.__depth = 0;
+      } else {
+        tile.__depth = parentTile.__depth + 1;
+      }
+    }
+  }, {
+    key: "setTileActive",
+    value: function setTileActive(tile, state) {}
+  }, {
+    key: "setTileVisible",
+    value: function setTileVisible(tile, state) {}
+  }, {
+    key: "calculateError",
+    value: function calculateError(tile) {
+      return 0;
+    }
+  }, {
+    key: "tileInView",
+    value: function tileInView(tile) {
+      return true;
+    } // Private Functions
+
+  }, {
+    key: "loadTileSet",
+    value: function loadTileSet(url) {
+      var _this = this;
+
+      var tileSets = this.tileSets;
+
+      if (!(url in tileSets)) {
+        var pr = fetch(url, this.fetchOptions).then(function (res) {
+          if (res.ok) {
+            return res.json();
+          } else {
+            throw new Error("Status ".concat(res.status, " (").concat(res.statusText, ")"));
+          }
+        }).then(function (json) {
+          var version = json.asset.version;
+          console.assert(version === '1.0' || version === '0.0');
+
+          var basePath = _path.default.dirname(url);
+
+          (0, _traverseFunctions.traverseSet)(json.root, function (node, parent) {
+            return _this.preprocessNode(node, parent, basePath);
+          });
+          tileSets[url] = json;
+        });
+        pr.catch(function (e) {
+          console.error("TilesLoader: Failed to load tile set json \"".concat(url, "\""));
+          console.error(e);
+          delete tileSets[url];
+        });
+        tileSets[url] = pr;
+      }
+
+      return Promise.resolve(tileSets[url]);
+    }
+  }, {
+    key: "requestTileContents",
+    value: function requestTileContents(tile) {
+      var _this2 = this;
+
+      // If the tile is already being loaded then don't
+      // start it again.
+      if (tile.__loadingState !== _constants.UNLOADED) {
+        return;
+      }
+
+      var stats = this.stats;
+      var lruCache = this.lruCache;
+      var downloadQueue = this.downloadQueue;
+      var parseQueue = this.parseQueue;
+      lruCache.add(tile, function (t) {
+        // Stop the load if it's started
+        if (t.__loadingState === _constants.LOADING) {
+          t.__loadAbort.abort();
+
+          t.__loadAbort = null;
+        } else {
+          _this2.disposeTile(t);
+        } // Decrement stats
+
+
+        if (t.__loadingState === _constants.LOADING) {
+          stats.downloading--;
+        } else if (t.__loadingState === _constants.PARSING) {
+          stats.parsing--;
+        }
+
+        t.__buffer = null;
+        t.__loadingState = _constants.UNLOADED;
+        t.__loadIndex++;
+        parseQueue.remove(t);
+        downloadQueue.remove(t);
+      }); // Track a new load index so we avoid the condition where this load is stopped and
+      // another begins soon after so we don't parse twice.
+
+      tile.__loadIndex++;
+      var loadIndex = tile.__loadIndex;
+      var controller = new AbortController();
+      var signal = controller.signal;
+      stats.downloading++;
+      tile.__loadAbort = controller;
+      tile.__loadingState = _constants.LOADING;
+      downloadQueue.add(tile, function (tile) {
         if (tile.__loadIndex !== loadIndex) {
           return Promise.resolve();
         }
 
-        const uri = tile.content.uri;
-        const extension = uri.split(/\./g).pop();
-        const buffer = tile.__buffer;
-        tile.__buffer = null;
-        return this.parseTile(buffer, tile, extension);
+        return fetch(tile.content.uri, Object.assign({
+          signal: signal
+        }, _this2.fetchOptions));
+      }).then(function (res) {
+        if (tile.__loadIndex !== loadIndex) {
+          return;
+        }
+
+        if (res.ok) {
+          return res.arrayBuffer();
+        } else {
+          throw new Error("Failed to load model with error code ".concat(res.status));
+        }
+      }).then(function (buffer) {
+        // if it has been unloaded then the tile has been disposed
+        if (tile.__loadIndex !== loadIndex) {
+          return;
+        }
+
+        stats.downloading--;
+        stats.parsing++;
+        tile.__loadAbort = null;
+        tile.__loadingState = _constants.PARSING;
+        tile.__buffer = buffer;
+        return parseQueue.add(tile, function (tile) {
+          // if it has been unloaded then the tile has been disposed
+          if (tile.__loadIndex !== loadIndex) {
+            return Promise.resolve();
+          }
+
+          var uri = tile.content.uri;
+          var extension = uri.split(/\./g).pop();
+          var buffer = tile.__buffer;
+          tile.__buffer = null;
+          return _this2.parseTile(buffer, tile, extension);
+        });
+      }).then(function () {
+        // if it has been unloaded then the tile has been disposed
+        if (tile.__loadIndex !== loadIndex) {
+          return;
+        }
+
+        stats.parsing--;
+        tile.__loadingState = _constants.LOADED;
+
+        if (tile.__wasSetVisible) {
+          _this2.setTileVisible(tile, true);
+        }
+
+        if (tile.__wasSetActive) {
+          _this2.setTileActive(tile, true);
+        }
+      }).catch(function (e) {
+        // if it has been unloaded then the tile has been disposed
+        if (tile.__loadIndex !== loadIndex) {
+          return;
+        }
+
+        if (e.name !== 'AbortError') {
+          console.error('TilesRenderer : Failed to load tile.');
+          console.error(e);
+          tile.__loadingState = _constants.FAILED;
+        } else {
+          lruCache.remove(tile);
+        }
       });
-    }).then(() => {
-      // if it has been unloaded then the tile has been disposed
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
+    }
+  }]);
 
-      stats.parsing--;
-      tile.__loadingState = _constants.LOADED;
-
-      if (tile.__wasSetVisible) {
-        this.setTileVisible(tile, true);
-      }
-
-      if (tile.__wasSetActive) {
-        this.setTileActive(tile, true);
-      }
-    }).catch(e => {
-      // if it has been unloaded then the tile has been disposed
-      if (tile.__loadIndex !== loadIndex) {
-        return;
-      }
-
-      if (e.name !== 'AbortError') {
-        console.error('TilesRenderer : Failed to load tile.');
-        console.error(e);
-        tile.__loadingState = _constants.FAILED;
-      } else {
-        lruCache.remove(tile);
-      }
-    });
-  }
-
-}
+  return TilesRendererBase;
+}();
 
 exports.TilesRendererBase = TilesRendererBase;
 },{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
@@ -36835,157 +36928,186 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.B3DMLoaderBase = void 0;
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
 // convert an array of numbers to a string
 function arrayToString(array) {
-  let str = '';
+  var str = '';
 
-  for (let i = 0, l = array.length; i < l; i++) {
+  for (var i = 0, l = array.length; i < l; i++) {
     str += String.fromCharCode(array[i]);
   }
 
   return str;
 }
 
-class B3DMLoaderBase {
-  constructor() {
+var B3DMLoaderBase =
+/*#__PURE__*/
+function () {
+  function B3DMLoaderBase() {
+    _classCallCheck(this, B3DMLoaderBase);
+
     this.fetchOptions = {};
   }
 
-  load(url) {
-    return fetch(url, this.fetchOptions).then(res => res.arrayBuffer()).then(buffer => this.parse(buffer));
-  }
+  _createClass(B3DMLoaderBase, [{
+    key: "load",
+    value: function load(url) {
+      var _this = this;
 
-  parse(buffer) {
-    const dataView = new DataView(buffer); // 28-byte header
-    // 4 bytes
-
-    const magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
-    console.assert(magic === 'b3dm'); // 4 bytes
-
-    const version = dataView.getUint32(4, true);
-    console.assert(version === 1); // 4 bytes
-
-    const byteLength = dataView.getUint32(8, true);
-    console.assert(byteLength === buffer.byteLength); // 4 bytes
-
-    const featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
-
-    const featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
-
-    const batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
-
-    const batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
-
-    const featureTableStart = 28;
-    const jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
-    const jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData));
-    const featureTable = { ...jsonFeatureTable
-    }; // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
-    // TODO: dereference the json feature table data in to the binary array.
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-    // TODO: The feature table contains data with implicit stride and data types, which means we can't parse it into arrays
-    // unless they are specified ahead of time?s
-    // Batch Table
-
-    const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-    const jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
-    const jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData));
-    const batchTable = { ...jsonBatchTable
-    }; // dereference the json batch table data in to the binary array.
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-    // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
-
-    const batchLength = jsonFeatureTable.BATCH_LENGTH;
-
-    for (const key in jsonBatchTable) {
-      const feature = jsonBatchTable[key];
-
-      if (Array.isArray(feature)) {
-        batchTable[key] = {
-          type: 'SCALAR',
-          stride: 1,
-          data: feature
-        };
-      } else {
-        let stride;
-        let data;
-        const arrayStart = batchTableStart + batchTableJSONByteLength;
-        const arrayLength = batchLength * stride + feature.byteOffset;
-
-        switch (feature.type) {
-          case 'SCALAR':
-            stride = 1;
-            break;
-
-          case 'VEC2':
-            stride = 2;
-            break;
-
-          case 'VEC3':
-            stride = 3;
-            break;
-
-          case 'VEC4':
-            stride = 4;
-            break;
-        }
-
-        switch (feature.componentType) {
-          case 'BYTE':
-            data = new Int8Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'UNSIGNED_BYTE':
-            data = new Uint8Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'SHORT':
-            data = new Int16Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'UNSIGNED_SHORT':
-            data = new Uint16Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'INT':
-            data = new Int32Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'UNSIGNED_INT':
-            data = new Uint32Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'FLOAT':
-            data = new Float32Array(buffer, arrayStart, arrayLength);
-            break;
-
-          case 'DOUBLE':
-            data = new Float64Array(buffer, arrayStart, arrayLength);
-            break;
-        }
-
-        batchTable[key] = {
-          type: feature.type,
-          stride,
-          data
-        };
-      }
+      return fetch(url, this.fetchOptions).then(function (res) {
+        return res.arrayBuffer();
+      }).then(function (buffer) {
+        return _this.parse(buffer);
+      });
     }
+  }, {
+    key: "parse",
+    value: function parse(buffer) {
+      var dataView = new DataView(buffer); // 28-byte header
+      // 4 bytes
 
-    const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-    const glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
-    // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
+      var magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
+      console.assert(magic === 'b3dm'); // 4 bytes
 
-    return {
-      version,
-      featureTable,
-      batchTable,
-      glbBytes
-    };
-  }
+      var version = dataView.getUint32(4, true);
+      console.assert(version === 1); // 4 bytes
 
-}
+      var byteLength = dataView.getUint32(8, true);
+      console.assert(byteLength === buffer.byteLength); // 4 bytes
+
+      var featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
+
+      var featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
+
+      var batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
+
+      var batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
+
+      var featureTableStart = 28;
+      var jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
+      var jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData));
+
+      var featureTable = _objectSpread({}, jsonFeatureTable); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
+      // TODO: dereference the json feature table data in to the binary array.
+      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+      // TODO: The feature table contains data with implicit stride and data types, which means we can't parse it into arrays
+      // unless they are specified ahead of time?s
+      // Batch Table
+
+
+      var batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
+      var jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
+      var jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData));
+
+      var batchTable = _objectSpread({}, jsonBatchTable); // dereference the json batch table data in to the binary array.
+      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
+      // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
+
+
+      var batchLength = jsonFeatureTable.BATCH_LENGTH;
+
+      for (var key in jsonBatchTable) {
+        var feature = jsonBatchTable[key];
+
+        if (Array.isArray(feature)) {
+          batchTable[key] = {
+            type: 'SCALAR',
+            stride: 1,
+            data: feature
+          };
+        } else {
+          var stride = void 0;
+          var data = void 0;
+          var arrayStart = batchTableStart + batchTableJSONByteLength;
+          var arrayLength = batchLength * stride + feature.byteOffset;
+
+          switch (feature.type) {
+            case 'SCALAR':
+              stride = 1;
+              break;
+
+            case 'VEC2':
+              stride = 2;
+              break;
+
+            case 'VEC3':
+              stride = 3;
+              break;
+
+            case 'VEC4':
+              stride = 4;
+              break;
+          }
+
+          switch (feature.componentType) {
+            case 'BYTE':
+              data = new Int8Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'UNSIGNED_BYTE':
+              data = new Uint8Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'SHORT':
+              data = new Int16Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'UNSIGNED_SHORT':
+              data = new Uint16Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'INT':
+              data = new Int32Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'UNSIGNED_INT':
+              data = new Uint32Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'FLOAT':
+              data = new Float32Array(buffer, arrayStart, arrayLength);
+              break;
+
+            case 'DOUBLE':
+              data = new Float64Array(buffer, arrayStart, arrayLength);
+              break;
+          }
+
+          batchTable[key] = {
+            type: feature.type,
+            stride: stride,
+            data: data
+          };
+        }
+      }
+
+      var glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
+      var glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
+      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
+
+      return {
+        version: version,
+        featureTable: featureTable,
+        batchTable: batchTable,
+        glbBytes: glbBytes
+      };
+    }
+  }]);
+
+  return B3DMLoaderBase;
+}();
 
 exports.B3DMLoaderBase = B3DMLoaderBase;
 },{}],"../node_modules/three/examples/jsm/loaders/GLTFLoader.js":[function(require,module,exports) {
@@ -39353,30 +39475,74 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.B3DMLoader = void 0;
 
-var _B3DMLoaderBase = require("../base/B3DMLoaderBase.js");
+var _B3DMLoaderBase2 = require("../base/B3DMLoaderBase.js");
 
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
-class B3DMLoader extends _B3DMLoaderBase.B3DMLoaderBase {
-  constructor(manager) {
-    super();
-    this.manager = manager;
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var B3DMLoader =
+/*#__PURE__*/
+function (_B3DMLoaderBase) {
+  _inherits(B3DMLoader, _B3DMLoaderBase);
+
+  var _super = _createSuper(B3DMLoader);
+
+  function B3DMLoader(manager) {
+    var _this;
+
+    _classCallCheck(this, B3DMLoader);
+
+    _this = _super.call(this);
+    _this.manager = manager;
+    return _this;
   }
 
-  parse(buffer) {
-    const b3dm = super.parse(buffer);
-    const gltfBuffer = b3dm.glbBytes.slice().buffer;
-    return new Promise((resolve, reject) => {
-      const manager = this.manager;
-      new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, model => {
-        model.batchTable = b3dm.batchTable;
-        model.featureTable = b3dm.featureTable;
-        resolve(model);
-      }, reject);
-    });
-  }
+  _createClass(B3DMLoader, [{
+    key: "parse",
+    value: function parse(buffer) {
+      var _this2 = this;
 
-}
+      var b3dm = _get(_getPrototypeOf(B3DMLoader.prototype), "parse", this).call(this, buffer);
+
+      var gltfBuffer = b3dm.glbBytes.slice().buffer;
+      return new Promise(function (resolve, reject) {
+        var manager = _this2.manager;
+        new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+          model.batchTable = b3dm.batchTable;
+          model.featureTable = b3dm.featureTable;
+          resolve(model);
+        }, reject);
+      });
+    }
+  }]);
+
+  return B3DMLoader;
+}(_B3DMLoaderBase2.B3DMLoaderBase);
 
 exports.B3DMLoader = B3DMLoader;
 },{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
@@ -39389,64 +39555,102 @@ exports.TilesGroup = void 0;
 
 var _three = require("three");
 
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
 // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
 // parameter under the assumption that the children tiles will not move.
-const tempMat = new _three.Matrix4();
+var tempMat = new _three.Matrix4();
 
-class TilesGroup extends _three.Group {
-  constructor(tilesRenderer) {
-    super();
-    this.tilesRenderer = tilesRenderer;
+var TilesGroup =
+/*#__PURE__*/
+function (_Group) {
+  _inherits(TilesGroup, _Group);
+
+  var _super = _createSuper(TilesGroup);
+
+  function TilesGroup(tilesRenderer) {
+    var _this;
+
+    _classCallCheck(this, TilesGroup);
+
+    _this = _super.call(this);
+    _this.tilesRenderer = tilesRenderer;
+    return _this;
   }
 
-  raycast(raycaster, intersects) {
-    this.tilesRenderer.raycast(raycaster, intersects);
-  }
-
-  updateMatrixWorld(force) {
-    if (this.matrixAutoUpdate) {
-      this.updateMatrix();
+  _createClass(TilesGroup, [{
+    key: "raycast",
+    value: function raycast(raycaster, intersects) {
+      this.tilesRenderer.raycast(raycaster, intersects);
     }
-
-    if (this.matrixWorldNeedsUpdate || force) {
-      if (this.parent === null) {
-        tempMat.copy(this.matrix);
-      } else {
-        tempMat.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+  }, {
+    key: "updateMatrixWorld",
+    value: function updateMatrixWorld(force) {
+      if (this.matrixAutoUpdate) {
+        this.updateMatrix();
       }
 
-      this.matrixWorldNeedsUpdate = false; // check if the matrix changed relative to what it was.
+      if (this.matrixWorldNeedsUpdate || force) {
+        if (this.parent === null) {
+          tempMat.copy(this.matrix);
+        } else {
+          tempMat.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+        }
 
-      const elA = tempMat.elements;
-      const elB = this.matrixWorld.elements;
-      let isDifferent = false;
+        this.matrixWorldNeedsUpdate = false; // check if the matrix changed relative to what it was.
 
-      for (let i = 0; i < 16; i++) {
-        const itemA = elA[i];
-        const itemB = elB[i];
-        const diff = Math.abs(itemA - itemB);
+        var elA = tempMat.elements;
+        var elB = this.matrixWorld.elements;
+        var isDifferent = false;
 
-        if (diff > Number.EPSILON) {
-          isDifferent = true;
-          break;
+        for (var i = 0; i < 16; i++) {
+          var itemA = elA[i];
+          var itemB = elB[i];
+          var diff = Math.abs(itemA - itemB);
+
+          if (diff > Number.EPSILON) {
+            isDifferent = true;
+            break;
+          }
+        }
+
+        if (isDifferent) {
+          this.matrixWorld.copy(tempMat); // update children
+          // the children will not have to change unless the parent group has updated
+
+          var children = this.children;
+
+          for (var _i = 0, l = children.length; _i < l; _i++) {
+            children[_i].updateMatrixWorld();
+          }
         }
       }
-
-      if (isDifferent) {
-        this.matrixWorld.copy(tempMat); // update children
-        // the children will not have to change unless the parent group has updated
-
-        const children = this.children;
-
-        for (let i = 0, l = children.length; i < l; i++) {
-          children[i].updateMatrixWorld();
-        }
-      }
     }
-  }
+  }]);
 
-}
+  return TilesGroup;
+}(_three.Group);
 
 exports.TilesGroup = TilesGroup;
 },{"three":"../node_modules/three/build/three.module.js"}],"../src/three/raycastTraverse.js":[function(require,module,exports) {
@@ -39460,17 +39664,17 @@ exports.raycastTraverse = raycastTraverse;
 
 var _three = require("three");
 
-const _sphere = new _three.Sphere();
+var _sphere = new _three.Sphere();
 
-const _mat = new _three.Matrix4();
+var _mat = new _three.Matrix4();
 
-const _vec = new _three.Vector3();
+var _vec = new _three.Vector3();
 
-const _vec2 = new _three.Vector3();
+var _vec2 = new _three.Vector3();
 
-const _ray = new _three.Ray();
+var _ray = new _three.Ray();
 
-const _hitArray = [];
+var _hitArray = [];
 
 function distanceSort(a, b) {
   return a.distance - b.distance;
@@ -39478,7 +39682,7 @@ function distanceSort(a, b) {
 
 function intersectTileScene(scene, raycaster, intersects) {
   // Don't intersect the box3 helpers because those are used for debugging
-  scene.traverse(c => {
+  scene.traverse(function (c) {
     // We set the default raycast function to empty so three.js doesn't automatically cast against it
     Object.getPrototypeOf(c).raycast.call(c, raycaster, intersects);
   });
@@ -39495,7 +39699,7 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
         _hitArray.sort(distanceSort);
       }
 
-      const res = _hitArray[0];
+      var res = _hitArray[0];
       _hitArray.length = 0;
       return res;
     } else {
@@ -39504,18 +39708,18 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
   } // TODO: can we avoid creating a new array here every time to save on memory?
 
 
-  const array = [];
-  const children = root.children;
+  var array = [];
+  var children = root.children;
 
-  for (let i = 0, l = children.length; i < l; i++) {
-    const tile = children[i];
-    const cached = tile.cached;
-    const groupMatrixWorld = group.matrixWorld;
+  for (var i = 0, l = children.length; i < l; i++) {
+    var tile = children[i];
+    var cached = tile.cached;
+    var groupMatrixWorld = group.matrixWorld;
 
     _mat.copy(groupMatrixWorld); // if we don't hit the sphere then early out
 
 
-    const sphere = cached.sphere;
+    var sphere = cached.sphere;
 
     if (sphere) {
       _sphere.copy(sphere);
@@ -39528,8 +39732,8 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
     } // TODO: check region?
 
 
-    const boundingBox = cached.box;
-    const obbMat = cached.boxTransform;
+    var boundingBox = cached.box;
+    var obbMat = cached.boxTransform;
 
     if (boundingBox) {
       _mat.multiply(obbMat);
@@ -39542,7 +39746,7 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
 
       if (_ray.intersectBox(boundingBox, _vec)) {
         // account for tile scale
-        let invScale;
+        var invScale = void 0;
 
         _vec2.setFromMatrixScale(_mat);
 
@@ -39553,7 +39757,7 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
         } // if we intersect the box save the distance to the tile bounds
 
 
-        let data = {
+        var data = {
           distance: Infinity,
           tile: null
         };
@@ -39570,21 +39774,21 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
   array.sort(distanceSort); // traverse until we find the best hit and early out if a tile bounds
   // couldn't possible include a best hit
 
-  let bestDistanceSquared = Infinity;
-  let bestHit = null;
+  var bestDistanceSquared = Infinity;
+  var bestHit = null;
 
-  for (let i = 0, l = array.length; i < l; i++) {
-    const data = array[i];
-    const distanceSquared = data.distance;
+  for (var _i = 0, _l = array.length; _i < _l; _i++) {
+    var _data = array[_i];
+    var distanceSquared = _data.distance;
 
     if (distanceSquared > bestDistanceSquared) {
       break;
     } else {
-      const tile = data.tile;
-      const scene = tile.cached.scene;
-      let hit = null;
+      var _tile = _data.tile;
+      var scene = _tile.cached.scene;
+      var hit = null;
 
-      if (activeTiles.has(tile)) {
+      if (activeTiles.has(_tile)) {
         // save the hit if it's closer
         intersectTileScene(scene, raycaster, _hitArray);
 
@@ -39596,11 +39800,11 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
           hit = _hitArray[0];
         }
       } else {
-        hit = raycastTraverseFirstHit(tile, group, activeTiles, raycaster);
+        hit = raycastTraverseFirstHit(_tile, group, activeTiles, raycaster);
       }
 
       if (hit) {
-        const hitDistanceSquared = hit.distance * hit.distance;
+        var hitDistanceSquared = hit.distance * hit.distance;
 
         if (hitDistanceSquared < bestDistanceSquared) {
           bestDistanceSquared = hitDistanceSquared;
@@ -39616,13 +39820,13 @@ function raycastTraverseFirstHit(root, group, activeTiles, raycaster) {
 }
 
 function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
-  const cached = tile.cached;
-  const groupMatrixWorld = group.matrixWorld;
+  var cached = tile.cached;
+  var groupMatrixWorld = group.matrixWorld;
 
   _mat.copy(groupMatrixWorld); // Early out if we don't hit this tile sphere
 
 
-  const sphere = cached.sphere;
+  var sphere = cached.sphere;
 
   if (sphere) {
     _sphere.copy(sphere);
@@ -39635,8 +39839,8 @@ function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
   } // Early out if we don't this this tile box
 
 
-  const boundingBox = cached.box;
-  const obbMat = cached.boxTransform;
+  var boundingBox = cached.box;
+  var obbMat = cached.boxTransform;
 
   if (boundingBox) {
     _mat.multiply(obbMat);
@@ -39651,16 +39855,16 @@ function raycastTraverse(tile, group, activeTiles, raycaster, intersects) {
   } // TODO: check region
 
 
-  const scene = cached.scene;
+  var scene = cached.scene;
 
   if (activeTiles.has(tile)) {
     intersectTileScene(scene, raycaster, intersects);
     return;
   }
 
-  const children = tile.children;
+  var children = tile.children;
 
-  for (let i = 0, l = children.length; i < l; i++) {
+  for (var i = 0, l = children.length; i < l; i++) {
     raycastTraverse(children[i], group, activeTiles, raycaster, intersects);
   }
 }
@@ -39672,7 +39876,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.TilesRenderer = void 0;
 
-var _TilesRendererBase = require("../base/TilesRendererBase.js");
+var _TilesRendererBase2 = require("../base/TilesRendererBase.js");
 
 var _B3DMLoader = require("./B3DMLoader.js");
 
@@ -39682,546 +39886,610 @@ var _three = require("three");
 
 var _raycastTraverse = require("./raycastTraverse.js");
 
-const DEG2RAD = _three.Math.DEG2RAD;
-const tempMat = new _three.Matrix4();
-const tempMat2 = new _three.Matrix4();
-const tempVector = new _three.Vector3();
-const vecX = new _three.Vector3();
-const vecY = new _three.Vector3();
-const vecZ = new _three.Vector3();
-const X_AXIS = new _three.Vector3(1, 0, 0);
-const Y_AXIS = new _three.Vector3(0, 1, 0);
-const useImageBitmap = typeof createImageBitmap !== 'undefined';
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var DEG2RAD = _three.Math.DEG2RAD;
+var tempMat = new _three.Matrix4();
+var tempMat2 = new _three.Matrix4();
+var tempVector = new _three.Vector3();
+var vecX = new _three.Vector3();
+var vecY = new _three.Vector3();
+var vecZ = new _three.Vector3();
+var X_AXIS = new _three.Vector3(1, 0, 0);
+var Y_AXIS = new _three.Vector3(0, 1, 0);
+var useImageBitmap = typeof createImageBitmap !== 'undefined';
 
 function emptyRaycast() {}
 
-class TilesRenderer extends _TilesRendererBase.TilesRendererBase {
-  constructor(...args) {
-    super(...args);
-    this.group = new _TilesGroup.TilesGroup(this);
-    this.cameras = [];
-    this.cameraMap = new Map();
-    this.cameraInfo = [];
-    this.activeTiles = new Set();
-    this.visibleTiles = new Set();
-    this.onLoadModel = null;
+var TilesRenderer =
+/*#__PURE__*/
+function (_TilesRendererBase) {
+  _inherits(TilesRenderer, _TilesRendererBase);
+
+  var _super = _createSuper(TilesRenderer);
+
+  function TilesRenderer() {
+    var _this;
+
+    _classCallCheck(this, TilesRenderer);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _super.call.apply(_super, [this].concat(args));
+    _this.group = new _TilesGroup.TilesGroup(_assertThisInitialized(_this));
+    _this.cameras = [];
+    _this.cameraMap = new Map();
+    _this.cameraInfo = [];
+    _this.activeTiles = new Set();
+    _this.visibleTiles = new Set();
+    _this.onLoadModel = null;
+    return _this;
   }
   /* Public API */
 
 
-  getBounds(box) {
-    if (!this.root) {
-      return false;
-    }
-
-    const cached = this.root.cached;
-    const boundingBox = cached.box;
-    const obbMat = cached.boxTransform;
-
-    if (boundingBox) {
-      box.copy(boundingBox);
-      box.applyMatrix4(obbMat);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  forEachLoadedModel(callback) {
-    this.traverse(tile => {
-      const scene = tile.cached.scene;
-
-      if (scene) {
-        callback(scene, tile);
-      }
-    });
-  }
-
-  raycast(raycaster, intersects) {
-    if (!this.root) {
-      return;
-    }
-
-    if (raycaster.firstHitOnly) {
-      const hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeTiles, raycaster);
-
-      if (hit) {
-        intersects.push(hit);
-      }
-    } else {
-      (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeTiles, raycaster, intersects);
-    }
-  }
-
-  hasCamera(camera) {
-    return this.cameraMap.has(camera);
-  }
-
-  setCamera(camera) {
-    const cameras = this.cameras;
-    const cameraMap = this.cameraMap;
-
-    if (!cameraMap.has(camera)) {
-      cameraMap.set(camera, new _three.Vector2());
-      cameras.push(camera);
-      return true;
-    }
-
-    return false;
-  }
-
-  setResolution(camera, xOrVec, y) {
-    const cameraMap = this.cameraMap;
-
-    if (!cameraMap.has(camera)) {
-      return false;
-    }
-
-    if (xOrVec instanceof _three.Vector2) {
-      cameraMap.get(camera).copy(xOrVec);
-    } else {
-      cameraMap.get(camera).set(xOrVec, y);
-    }
-
-    return true;
-  }
-
-  setResolutionFromRenderer(camera, renderer) {
-    const cameraMap = this.cameraMap;
-
-    if (!cameraMap.has(camera)) {
-      return false;
-    }
-
-    const resolution = cameraMap.get(camera);
-    renderer.getSize(resolution);
-    resolution.multiplyScalar(renderer.getPixelRatio());
-    return true;
-  }
-
-  deleteCamera(camera) {
-    const cameras = this.cameras;
-    const cameraMap = this.cameraMap;
-
-    if (cameraMap.has(camera)) {
-      const index = cameras.indexOf(camera);
-      cameras.splice(index, 1);
-      cameraMap.delete(camera);
-      return true;
-    }
-
-    return false;
-  }
-  /* Overriden */
-
-
-  update() {
-    const group = this.group;
-    const cameras = this.cameras;
-    const cameraMap = this.cameraMap;
-    const cameraInfo = this.cameraInfo;
-
-    if (cameras.length === 0) {
-      console.warn('TilesRenderer: no cameras defined. Cannot update 3d tiles.');
-      return;
-    } // automatically scale the array of cameraInfo to match the cameras
-
-
-    while (cameraInfo.length > cameras.length) {
-      cameraInfo.pop();
-    }
-
-    while (cameraInfo.length < cameras.length) {
-      cameraInfo.push({
-        frustum: new _three.Frustum(),
-        sseDenominator: -1,
-        position: new _three.Vector3(),
-        invScale: -1,
-        pixelSize: 0
-      });
-    } // extract scale of group container
-
-
-    tempMat2.getInverse(group.matrixWorld);
-    let invScale;
-    tempVector.setFromMatrixScale(tempMat2);
-    invScale = tempVector.x;
-
-    if (Math.abs(Math.max(tempVector.x - tempVector.y, tempVector.x - tempVector.z)) > 1e-6) {
-      console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.');
-    } // store the camera cameraInfo in the 3d tiles root frame
-
-
-    for (let i = 0, l = cameraInfo.length; i < l; i++) {
-      const camera = cameras[i];
-      const info = cameraInfo[i];
-      const frustum = info.frustum;
-      const position = info.position;
-      const resolution = cameraMap.get(camera);
-
-      if (resolution.width === 0 || resolution.height === 0) {
-        console.warn('TilesRenderer: resolution for camera error calculation is not set.');
+  _createClass(TilesRenderer, [{
+    key: "getBounds",
+    value: function getBounds(box) {
+      if (!this.root) {
+        return false;
       }
 
-      if (camera.isPerspectiveCamera) {
-        info.sseDenominator = 2 * Math.tan(0.5 * camera.fov * DEG2RAD) / resolution.height;
+      var cached = this.root.cached;
+      var boundingBox = cached.box;
+      var obbMat = cached.boxTransform;
+
+      if (boundingBox) {
+        box.copy(boundingBox);
+        box.applyMatrix4(obbMat);
+        return true;
+      } else {
+        return false;
       }
-
-      if (camera.isOrthographicCamera) {
-        const w = camera.right - camera.left;
-        const h = camera.top - camera.bottom;
-        info.pixelSize = Math.max(h / resolution.height, w / resolution.width);
-      }
-
-      info.invScale = invScale; // get frustum in grop root frame
-
-      tempMat.copy(group.matrixWorld);
-      tempMat.premultiply(camera.matrixWorldInverse);
-      tempMat.premultiply(camera.projectionMatrix);
-      frustum.setFromProjectionMatrix(tempMat); // get transform position in group root frame
-
-      position.set(0, 0, 0);
-      position.applyMatrix4(camera.matrixWorld);
-      position.applyMatrix4(tempMat2);
     }
+  }, {
+    key: "forEachLoadedModel",
+    value: function forEachLoadedModel(callback) {
+      this.traverse(function (tile) {
+        var scene = tile.cached.scene;
 
-    super.update();
-  }
-
-  preprocessNode(tile, parentTile, tileSetDir) {
-    super.preprocessNode(tile, parentTile, tileSetDir);
-    const transform = new _three.Matrix4();
-
-    if (tile.transform) {
-      const transformArr = tile.transform;
-
-      for (let i = 0; i < 16; i++) {
-        transform.elements[i] = transformArr[i];
-      }
-    } else {
-      transform.identity();
-    }
-
-    if (parentTile) {
-      transform.multiply(parentTile.cached.transform);
-    }
-
-    let box = null;
-    let boxTransform = null;
-    let boxTransformInverse = null;
-
-    if ('box' in tile.boundingVolume) {
-      const data = tile.boundingVolume.box;
-      box = new _three.Box3();
-      boxTransform = new _three.Matrix4();
-      boxTransformInverse = new _three.Matrix4(); // get the extents of the bounds in each axis
-
-      vecX.set(data[3], data[4], data[5]);
-      vecY.set(data[6], data[7], data[8]);
-      vecZ.set(data[9], data[10], data[11]);
-      const scaleX = vecX.length();
-      const scaleY = vecY.length();
-      const scaleZ = vecZ.length();
-      vecX.normalize();
-      vecY.normalize();
-      vecZ.normalize(); // create the oriented frame that the box exists in
-
-      boxTransform.set(vecX.x, vecY.x, vecZ.x, data[0], vecX.y, vecY.y, vecZ.y, data[1], vecX.z, vecY.z, vecZ.z, data[2], 0, 0, 0, 1);
-      boxTransform.premultiply(transform);
-      boxTransformInverse.getInverse(boxTransform); // scale the box by the extents
-
-      box.min.set(-scaleX, -scaleY, -scaleZ);
-      box.max.set(scaleX, scaleY, scaleZ);
-    }
-
-    let sphere = null;
-
-    if ('sphere' in tile.boundingVolume) {
-      const data = tile.boundingVolume.sphere;
-      sphere = new _three.Sphere();
-      sphere.center.set(data[0], data[1], data[2]);
-      sphere.radius = data[3];
-      sphere.applyMatrix4(transform);
-    } else if ('box' in tile.boundingVolume) {
-      const data = tile.boundingVolume.box;
-      sphere = new _three.Sphere();
-      box.getBoundingSphere(sphere);
-      sphere.center.set(data[0], data[1], data[2]);
-      sphere.applyMatrix4(transform);
-    }
-
-    let region = null;
-
-    if ('region' in tile.boundingVolume) {
-      console.warn('ThreeTilesRenderer: region bounding volume not supported.');
-    }
-
-    tile.cached = {
-      loadIndex: 0,
-      transform,
-      active: false,
-      inFrustum: [],
-      box,
-      boxTransform,
-      boxTransformInverse,
-      sphere,
-      region,
-      scene: null,
-      geometry: null,
-      material: null,
-      distance: Infinity
-    };
-  }
-
-  parseTile(buffer, tile, extension) {
-    tile._loadIndex = tile._loadIndex || 0;
-    tile._loadIndex++;
-    const loadIndex = tile._loadIndex;
-    const manager = new _three.LoadingManager();
-    let promise = null;
-
-    if (useImageBitmap) {
-      // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-      // the fact. Premultiply alpha default behavior is not well defined, either.
-      // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-      // behavior. Fall back to regular texture loading
-      manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-        load(url, onComplete) {
-          const loader = new _three.ImageBitmapLoader();
-          loader.load(url, res => {
-            onComplete(new _three.CanvasTexture(res));
-          });
+        if (scene) {
+          callback(scene, tile);
         }
-
       });
     }
-
-    switch (extension) {
-      case 'b3dm':
-        promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer);
-        break;
-
-      case 'pnts':
-      case 'cmpt':
-      case 'i3dm':
-      default:
-        console.warn(`TilesRenderer: Content type "${extension}" not supported.`);
-        promise = Promise.resolve(null);
-        break;
-    }
-
-    return promise.then(res => {
-      if (tile._loadIndex !== loadIndex) {
+  }, {
+    key: "raycast",
+    value: function raycast(raycaster, intersects) {
+      if (!this.root) {
         return;
       }
 
-      const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
-      const cached = tile.cached;
-      const cachedTransform = cached.transform;
-      const scene = res ? res.scene : new _three.Group();
+      if (raycaster.firstHitOnly) {
+        var hit = (0, _raycastTraverse.raycastTraverseFirstHit)(this.root, this.group, this.activeTiles, raycaster);
 
-      switch (upAxis.toLowerCase()) {
-        case 'x':
-          scene.matrix.makeRotationAxis(Y_AXIS, -Math.PI / 2);
-          break;
+        if (hit) {
+          intersects.push(hit);
+        }
+      } else {
+        (0, _raycastTraverse.raycastTraverse)(this.root, this.group, this.activeTiles, raycaster, intersects);
+      }
+    }
+  }, {
+    key: "hasCamera",
+    value: function hasCamera(camera) {
+      return this.cameraMap.has(camera);
+    }
+  }, {
+    key: "setCamera",
+    value: function setCamera(camera) {
+      var cameras = this.cameras;
+      var cameraMap = this.cameraMap;
 
-        case 'y':
-          scene.matrix.makeRotationAxis(X_AXIS, Math.PI / 2);
-          break;
-
-        case 'z':
-          break;
+      if (!cameraMap.has(camera)) {
+        cameraMap.set(camera, new _three.Vector2());
+        cameras.push(camera);
+        return true;
       }
 
-      scene.matrix.premultiply(cachedTransform);
-      scene.matrix.decompose(scene.position, scene.quaternion, scene.scale);
-      scene.traverse(c => c.frustumCulled = false);
-      cached.scene = scene; // We handle raycasting in a custom way so remove it from here
+      return false;
+    }
+  }, {
+    key: "setResolution",
+    value: function setResolution(camera, xOrVec, y) {
+      var cameraMap = this.cameraMap;
 
-      scene.traverse(c => {
-        c.raycast = emptyRaycast;
-      });
-      const materials = [];
-      const geometry = [];
-      const textures = [];
-      scene.traverse(c => {
-        if (c.geometry) {
-          geometry.push(c.geometry);
+      if (!cameraMap.has(camera)) {
+        return false;
+      }
+
+      if (xOrVec instanceof _three.Vector2) {
+        cameraMap.get(camera).copy(xOrVec);
+      } else {
+        cameraMap.get(camera).set(xOrVec, y);
+      }
+
+      return true;
+    }
+  }, {
+    key: "setResolutionFromRenderer",
+    value: function setResolutionFromRenderer(camera, renderer) {
+      var cameraMap = this.cameraMap;
+
+      if (!cameraMap.has(camera)) {
+        return false;
+      }
+
+      var resolution = cameraMap.get(camera);
+      renderer.getSize(resolution);
+      resolution.multiplyScalar(renderer.getPixelRatio());
+      return true;
+    }
+  }, {
+    key: "deleteCamera",
+    value: function deleteCamera(camera) {
+      var cameras = this.cameras;
+      var cameraMap = this.cameraMap;
+
+      if (cameraMap.has(camera)) {
+        var index = cameras.indexOf(camera);
+        cameras.splice(index, 1);
+        cameraMap.delete(camera);
+        return true;
+      }
+
+      return false;
+    }
+    /* Overriden */
+
+  }, {
+    key: "update",
+    value: function update() {
+      var group = this.group;
+      var cameras = this.cameras;
+      var cameraMap = this.cameraMap;
+      var cameraInfo = this.cameraInfo;
+
+      if (cameras.length === 0) {
+        console.warn('TilesRenderer: no cameras defined. Cannot update 3d tiles.');
+        return;
+      } // automatically scale the array of cameraInfo to match the cameras
+
+
+      while (cameraInfo.length > cameras.length) {
+        cameraInfo.pop();
+      }
+
+      while (cameraInfo.length < cameras.length) {
+        cameraInfo.push({
+          frustum: new _three.Frustum(),
+          sseDenominator: -1,
+          position: new _three.Vector3(),
+          invScale: -1,
+          pixelSize: 0
+        });
+      } // extract scale of group container
+
+
+      tempMat2.getInverse(group.matrixWorld);
+      var invScale;
+      tempVector.setFromMatrixScale(tempMat2);
+      invScale = tempVector.x;
+
+      if (Math.abs(Math.max(tempVector.x - tempVector.y, tempVector.x - tempVector.z)) > 1e-6) {
+        console.warn('ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.');
+      } // store the camera cameraInfo in the 3d tiles root frame
+
+
+      for (var i = 0, l = cameraInfo.length; i < l; i++) {
+        var camera = cameras[i];
+        var info = cameraInfo[i];
+        var frustum = info.frustum;
+        var position = info.position;
+        var resolution = cameraMap.get(camera);
+
+        if (resolution.width === 0 || resolution.height === 0) {
+          console.warn('TilesRenderer: resolution for camera error calculation is not set.');
         }
 
-        if (c.material) {
-          const material = c.material;
-          materials.push(c.material);
-
-          for (const key in material) {
-            const value = material[key];
-
-            if (value && value.isTexture) {
-              textures.push(value);
-            }
-          }
+        if (camera.isPerspectiveCamera) {
+          info.sseDenominator = 2 * Math.tan(0.5 * camera.fov * DEG2RAD) / resolution.height;
         }
-      });
-      cached.materials = materials;
-      cached.geometry = geometry;
-      cached.textures = textures;
-
-      if (this.onLoadModel) {
-        this.onLoadModel(scene, tile);
-      }
-    });
-  }
-
-  disposeTile(tile) {
-    // This could get called before the tile has finished downloading
-    const cached = tile.cached;
-
-    if (cached.scene) {
-      const materials = cached.materials;
-      const geometry = cached.geometry;
-      const textures = cached.textures;
-
-      for (let i = 0, l = geometry.length; i < l; i++) {
-        geometry[i].dispose();
-      }
-
-      for (let i = 0, l = materials.length; i < l; i++) {
-        materials[i].dispose();
-      }
-
-      for (let i = 0, l = textures.length; i < l; i++) {
-        const texture = textures[i];
-        texture.dispose();
-
-        if (useImageBitmap && 'close' in texture.image) {
-          texture.image.close();
-        }
-      }
-
-      cached.scene = null;
-      cached.materials = null;
-      cached.textures = null;
-      cached.geometry = null;
-    }
-
-    tile._loadIndex++;
-  }
-
-  setTileVisible(tile, visible) {
-    const scene = tile.cached.scene;
-    const visibleTiles = this.visibleTiles;
-    const group = this.group;
-
-    if (visible) {
-      group.add(scene);
-      visibleTiles.add(tile);
-      scene.updateMatrixWorld(true);
-    } else {
-      group.remove(scene);
-      visibleTiles.delete(tile);
-    }
-  }
-
-  setTileActive(tile, active) {
-    const activeTiles = this.activeTiles;
-
-    if (active) {
-      activeTiles.add(tile);
-    } else {
-      activeTiles.delete(tile);
-    }
-  }
-
-  calculateError(tile) {
-    if (tile.geometricError === 0.0) {
-      return 0.0;
-    }
-
-    const cached = tile.cached;
-    const inFrustum = cached.inFrustum;
-    const cameras = this.cameras;
-    const cameraInfo = this.cameraInfo; // TODO: Use the content bounding volume here?
-
-    const boundingVolume = tile.boundingVolume;
-
-    if ('box' in boundingVolume) {
-      const boundingBox = cached.box;
-      const boxTransformInverse = cached.boxTransformInverse;
-      let maxError = -Infinity;
-      let minDistance = Infinity;
-
-      for (let i = 0, l = cameras.length; i < l; i++) {
-        if (!inFrustum[i]) {
-          continue;
-        } // transform camera position into local frame of the tile bounding box
-
-
-        const camera = cameras[i];
-        const info = cameraInfo[i];
-        const invScale = info.invScale;
-        tempVector.copy(info.position);
-        tempVector.applyMatrix4(boxTransformInverse);
-        let error;
 
         if (camera.isOrthographicCamera) {
-          const pixelSize = info.pixelSize;
-          error = tile.geometricError / (pixelSize * invScale);
-        } else {
-          const distance = boundingBox.distanceToPoint(tempVector);
-          const scaledDistance = distance * invScale;
-          const sseDenominator = info.sseDenominator;
-          error = tile.geometricError / (scaledDistance * sseDenominator);
-          minDistance = Math.min(minDistance, scaledDistance);
+          var w = camera.right - camera.left;
+          var h = camera.top - camera.bottom;
+          info.pixelSize = Math.max(h / resolution.height, w / resolution.width);
         }
 
-        maxError = Math.max(maxError, error);
+        info.invScale = invScale; // get frustum in grop root frame
+
+        tempMat.copy(group.matrixWorld);
+        tempMat.premultiply(camera.matrixWorldInverse);
+        tempMat.premultiply(camera.projectionMatrix);
+        frustum.setFromProjectionMatrix(tempMat); // get transform position in group root frame
+
+        position.set(0, 0, 0);
+        position.applyMatrix4(camera.matrixWorld);
+        position.applyMatrix4(tempMat2);
       }
 
-      tile.cached.distance = minDistance;
-      return maxError;
-    } else if ('sphere' in boundingVolume) {
-      // const sphere = cached.sphere;
-      console.warn('ThreeTilesRenderer : Sphere bounds not supported.');
-    } else if ('region' in boundingVolume) {
-      // unsupported
-      console.warn('ThreeTilesRenderer : Region bounds not supported.');
+      _get(_getPrototypeOf(TilesRenderer.prototype), "update", this).call(this);
     }
+  }, {
+    key: "preprocessNode",
+    value: function preprocessNode(tile, parentTile, tileSetDir) {
+      _get(_getPrototypeOf(TilesRenderer.prototype), "preprocessNode", this).call(this, tile, parentTile, tileSetDir);
 
-    return Infinity;
-  }
+      var transform = new _three.Matrix4();
 
-  tileInView(tile) {
-    // TODO: we should use the more precise bounding volumes here if possible
-    // cache the root-space planes
-    // Use separating axis theorem for frustum and obb
-    const cached = tile.cached;
-    const sphere = cached.sphere;
-    const inFrustum = cached.inFrustum;
+      if (tile.transform) {
+        var transformArr = tile.transform;
 
-    if (sphere) {
-      const cameraInfo = this.cameraInfo;
-      let inView = false;
-
-      for (let i = 0, l = cameraInfo.length; i < l; i++) {
-        // Track which camera frustums this tile is in so we can use it
-        // to ignore the error calculations for cameras that can't see it
-        const frustum = cameraInfo[i].frustum;
-
-        if (frustum.intersectsSphere(sphere)) {
-          inView = true;
-          inFrustum[i] = true;
-        } else {
-          inFrustum[i] = false;
+        for (var i = 0; i < 16; i++) {
+          transform.elements[i] = transformArr[i];
         }
+      } else {
+        transform.identity();
       }
 
-      return inView;
+      if (parentTile) {
+        transform.multiply(parentTile.cached.transform);
+      }
+
+      var box = null;
+      var boxTransform = null;
+      var boxTransformInverse = null;
+
+      if ('box' in tile.boundingVolume) {
+        var data = tile.boundingVolume.box;
+        box = new _three.Box3();
+        boxTransform = new _three.Matrix4();
+        boxTransformInverse = new _three.Matrix4(); // get the extents of the bounds in each axis
+
+        vecX.set(data[3], data[4], data[5]);
+        vecY.set(data[6], data[7], data[8]);
+        vecZ.set(data[9], data[10], data[11]);
+        var scaleX = vecX.length();
+        var scaleY = vecY.length();
+        var scaleZ = vecZ.length();
+        vecX.normalize();
+        vecY.normalize();
+        vecZ.normalize(); // create the oriented frame that the box exists in
+
+        boxTransform.set(vecX.x, vecY.x, vecZ.x, data[0], vecX.y, vecY.y, vecZ.y, data[1], vecX.z, vecY.z, vecZ.z, data[2], 0, 0, 0, 1);
+        boxTransform.premultiply(transform);
+        boxTransformInverse.getInverse(boxTransform); // scale the box by the extents
+
+        box.min.set(-scaleX, -scaleY, -scaleZ);
+        box.max.set(scaleX, scaleY, scaleZ);
+      }
+
+      var sphere = null;
+
+      if ('sphere' in tile.boundingVolume) {
+        var _data = tile.boundingVolume.sphere;
+        sphere = new _three.Sphere();
+        sphere.center.set(_data[0], _data[1], _data[2]);
+        sphere.radius = _data[3];
+        sphere.applyMatrix4(transform);
+      } else if ('box' in tile.boundingVolume) {
+        var _data2 = tile.boundingVolume.box;
+        sphere = new _three.Sphere();
+        box.getBoundingSphere(sphere);
+        sphere.center.set(_data2[0], _data2[1], _data2[2]);
+        sphere.applyMatrix4(transform);
+      }
+
+      var region = null;
+
+      if ('region' in tile.boundingVolume) {
+        console.warn('ThreeTilesRenderer: region bounding volume not supported.');
+      }
+
+      tile.cached = {
+        loadIndex: 0,
+        transform: transform,
+        active: false,
+        inFrustum: [],
+        box: box,
+        boxTransform: boxTransform,
+        boxTransformInverse: boxTransformInverse,
+        sphere: sphere,
+        region: region,
+        scene: null,
+        geometry: null,
+        material: null,
+        distance: Infinity
+      };
     }
+  }, {
+    key: "parseTile",
+    value: function parseTile(buffer, tile, extension) {
+      var _this2 = this;
 
-    return true;
-  }
+      tile._loadIndex = tile._loadIndex || 0;
+      tile._loadIndex++;
+      var loadIndex = tile._loadIndex;
+      var manager = new _three.LoadingManager();
+      var promise = null;
 
-}
+      if (useImageBitmap) {
+        // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
+        // the fact. Premultiply alpha default behavior is not well defined, either.
+        // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
+        // behavior. Fall back to regular texture loading
+        manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+          load: function load(url, onComplete) {
+            var loader = new _three.ImageBitmapLoader();
+            loader.load(url, function (res) {
+              onComplete(new _three.CanvasTexture(res));
+            });
+          }
+        });
+      }
+
+      switch (extension) {
+        case 'b3dm':
+          promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer);
+          break;
+
+        case 'pnts':
+        case 'cmpt':
+        case 'i3dm':
+        default:
+          console.warn("TilesRenderer: Content type \"".concat(extension, "\" not supported."));
+          promise = Promise.resolve(null);
+          break;
+      }
+
+      return promise.then(function (res) {
+        if (tile._loadIndex !== loadIndex) {
+          return;
+        }
+
+        var upAxis = _this2.rootTileSet.asset && _this2.rootTileSet.asset.gltfUpAxis || 'y';
+        var cached = tile.cached;
+        var cachedTransform = cached.transform;
+        var scene = res ? res.scene : new _three.Group();
+
+        switch (upAxis.toLowerCase()) {
+          case 'x':
+            scene.matrix.makeRotationAxis(Y_AXIS, -Math.PI / 2);
+            break;
+
+          case 'y':
+            scene.matrix.makeRotationAxis(X_AXIS, Math.PI / 2);
+            break;
+
+          case 'z':
+            break;
+        }
+
+        scene.matrix.premultiply(cachedTransform);
+        scene.matrix.decompose(scene.position, scene.quaternion, scene.scale);
+        scene.traverse(function (c) {
+          return c.frustumCulled = false;
+        });
+        cached.scene = scene; // We handle raycasting in a custom way so remove it from here
+
+        scene.traverse(function (c) {
+          c.raycast = emptyRaycast;
+        });
+        var materials = [];
+        var geometry = [];
+        var textures = [];
+        scene.traverse(function (c) {
+          if (c.geometry) {
+            geometry.push(c.geometry);
+          }
+
+          if (c.material) {
+            var material = c.material;
+            materials.push(c.material);
+
+            for (var key in material) {
+              var value = material[key];
+
+              if (value && value.isTexture) {
+                textures.push(value);
+              }
+            }
+          }
+        });
+        cached.materials = materials;
+        cached.geometry = geometry;
+        cached.textures = textures;
+
+        if (_this2.onLoadModel) {
+          _this2.onLoadModel(scene, tile);
+        }
+      });
+    }
+  }, {
+    key: "disposeTile",
+    value: function disposeTile(tile) {
+      // This could get called before the tile has finished downloading
+      var cached = tile.cached;
+
+      if (cached.scene) {
+        var materials = cached.materials;
+        var geometry = cached.geometry;
+        var textures = cached.textures;
+
+        for (var i = 0, l = geometry.length; i < l; i++) {
+          geometry[i].dispose();
+        }
+
+        for (var _i = 0, _l = materials.length; _i < _l; _i++) {
+          materials[_i].dispose();
+        }
+
+        for (var _i2 = 0, _l2 = textures.length; _i2 < _l2; _i2++) {
+          var texture = textures[_i2];
+          texture.dispose();
+
+          if (useImageBitmap && 'close' in texture.image) {
+            texture.image.close();
+          }
+        }
+
+        cached.scene = null;
+        cached.materials = null;
+        cached.textures = null;
+        cached.geometry = null;
+      }
+
+      tile._loadIndex++;
+    }
+  }, {
+    key: "setTileVisible",
+    value: function setTileVisible(tile, visible) {
+      var scene = tile.cached.scene;
+      var visibleTiles = this.visibleTiles;
+      var group = this.group;
+
+      if (visible) {
+        group.add(scene);
+        visibleTiles.add(tile);
+        scene.updateMatrixWorld(true);
+      } else {
+        group.remove(scene);
+        visibleTiles.delete(tile);
+      }
+    }
+  }, {
+    key: "setTileActive",
+    value: function setTileActive(tile, active) {
+      var activeTiles = this.activeTiles;
+
+      if (active) {
+        activeTiles.add(tile);
+      } else {
+        activeTiles.delete(tile);
+      }
+    }
+  }, {
+    key: "calculateError",
+    value: function calculateError(tile) {
+      if (tile.geometricError === 0.0) {
+        return 0.0;
+      }
+
+      var cached = tile.cached;
+      var inFrustum = cached.inFrustum;
+      var cameras = this.cameras;
+      var cameraInfo = this.cameraInfo; // TODO: Use the content bounding volume here?
+
+      var boundingVolume = tile.boundingVolume;
+
+      if ('box' in boundingVolume) {
+        var boundingBox = cached.box;
+        var boxTransformInverse = cached.boxTransformInverse;
+        var maxError = -Infinity;
+        var minDistance = Infinity;
+
+        for (var i = 0, l = cameras.length; i < l; i++) {
+          if (!inFrustum[i]) {
+            continue;
+          } // transform camera position into local frame of the tile bounding box
+
+
+          var camera = cameras[i];
+          var info = cameraInfo[i];
+          var invScale = info.invScale;
+          tempVector.copy(info.position);
+          tempVector.applyMatrix4(boxTransformInverse);
+          var error = void 0;
+
+          if (camera.isOrthographicCamera) {
+            var pixelSize = info.pixelSize;
+            error = tile.geometricError / (pixelSize * invScale);
+          } else {
+            var distance = boundingBox.distanceToPoint(tempVector);
+            var scaledDistance = distance * invScale;
+            var sseDenominator = info.sseDenominator;
+            error = tile.geometricError / (scaledDistance * sseDenominator);
+            minDistance = Math.min(minDistance, scaledDistance);
+          }
+
+          maxError = Math.max(maxError, error);
+        }
+
+        tile.cached.distance = minDistance;
+        return maxError;
+      } else if ('sphere' in boundingVolume) {
+        // const sphere = cached.sphere;
+        console.warn('ThreeTilesRenderer : Sphere bounds not supported.');
+      } else if ('region' in boundingVolume) {
+        // unsupported
+        console.warn('ThreeTilesRenderer : Region bounds not supported.');
+      }
+
+      return Infinity;
+    }
+  }, {
+    key: "tileInView",
+    value: function tileInView(tile) {
+      // TODO: we should use the more precise bounding volumes here if possible
+      // cache the root-space planes
+      // Use separating axis theorem for frustum and obb
+      var cached = tile.cached;
+      var sphere = cached.sphere;
+      var inFrustum = cached.inFrustum;
+
+      if (sphere) {
+        var cameraInfo = this.cameraInfo;
+        var inView = false;
+
+        for (var i = 0, l = cameraInfo.length; i < l; i++) {
+          // Track which camera frustums this tile is in so we can use it
+          // to ignore the error calculations for cameras that can't see it
+          var frustum = cameraInfo[i].frustum;
+
+          if (frustum.intersectsSphere(sphere)) {
+            inView = true;
+            inFrustum[i] = true;
+          } else {
+            inFrustum[i] = false;
+          }
+        }
+
+        return inView;
+      }
+
+      return true;
+    }
+  }]);
+
+  return TilesRenderer;
+}(_TilesRendererBase2.TilesRendererBase);
 
 exports.TilesRenderer = TilesRenderer;
 },{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/three/SphereHelper.js":[function(require,module,exports) {
@@ -40234,23 +40502,62 @@ exports.SphereHelper = void 0;
 
 var _three = require("three");
 
-const _vector = new _three.Vector3();
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-const axes = ['x', 'y', 'z'];
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-class SphereHelper extends _three.LineSegments {
-  constructor(sphere, color = 0xffff00, angleSteps = 40) {
-    const geometry = new _three.BufferGeometry();
-    const positions = [];
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
-    for (let i = 0; i < 3; i++) {
-      const axis1 = axes[i];
-      const axis2 = axes[(i + 1) % 3];
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var _vector = new _three.Vector3();
+
+var axes = ['x', 'y', 'z'];
+
+var SphereHelper =
+/*#__PURE__*/
+function (_LineSegments) {
+  _inherits(SphereHelper, _LineSegments);
+
+  var _super = _createSuper(SphereHelper);
+
+  function SphereHelper(sphere) {
+    var _this;
+
+    var color = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0xffff00;
+    var angleSteps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 40;
+
+    _classCallCheck(this, SphereHelper);
+
+    var geometry = new _three.BufferGeometry();
+    var positions = [];
+
+    for (var i = 0; i < 3; i++) {
+      var axis1 = axes[i];
+      var axis2 = axes[(i + 1) % 3];
 
       _vector.set(0, 0, 0);
 
-      for (let a = 0; a < angleSteps; a++) {
-        let angle;
+      for (var a = 0; a < angleSteps; a++) {
+        var angle = void 0;
         angle = 2 * Math.PI * a / (angleSteps - 1);
         _vector[axis1] = Math.sin(angle);
         _vector[axis2] = Math.cos(angle);
@@ -40264,22 +40571,28 @@ class SphereHelper extends _three.LineSegments {
 
     geometry.setAttribute('position', new _three.BufferAttribute(new Float32Array(positions), 3));
     geometry.computeBoundingSphere();
-    super(geometry, new _three.LineBasicMaterial({
+    _this = _super.call(this, geometry, new _three.LineBasicMaterial({
       color: color,
       toneMapped: false
     }));
-    this.sphere = sphere;
-    this.type = 'SphereHelper';
+    _this.sphere = sphere;
+    _this.type = 'SphereHelper';
+    return _this;
   }
 
-  updateMatrixWorld(force) {
-    const sphere = this.sphere;
-    this.position.copy(sphere.center);
-    this.scale.setScalar(sphere.radius);
-    super.updateMatrixWorld(force);
-  }
+  _createClass(SphereHelper, [{
+    key: "updateMatrixWorld",
+    value: function updateMatrixWorld(force) {
+      var sphere = this.sphere;
+      this.position.copy(sphere.center);
+      this.scale.setScalar(sphere.radius);
 
-}
+      _get(_getPrototypeOf(SphereHelper.prototype), "updateMatrixWorld", this).call(this, force);
+    }
+  }]);
+
+  return SphereHelper;
+}(_three.LineSegments);
 
 exports.SphereHelper = SphereHelper;
 },{"three":"../node_modules/three/build/three.module.js"}],"../src/three/DebugTilesRenderer.js":[function(require,module,exports) {
@@ -40292,315 +40605,385 @@ exports.DebugTilesRenderer = exports.RANDOM_COLOR = exports.IS_LEAF = exports.RE
 
 var _three = require("three");
 
-var _TilesRenderer = require("./TilesRenderer.js");
+var _TilesRenderer2 = require("./TilesRenderer.js");
 
 var _SphereHelper = require("./SphereHelper.js");
 
-const ORIGINAL_MATERIAL = Symbol('ORIGINAL_MATERIAL');
-const HAS_RANDOM_COLOR = Symbol('HAS_RANDOM_COLOR');
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var ORIGINAL_MATERIAL = Symbol('ORIGINAL_MATERIAL');
+var HAS_RANDOM_COLOR = Symbol('HAS_RANDOM_COLOR');
 
 function emptyRaycast() {}
 
-const NONE = 0;
+var NONE = 0;
 exports.NONE = NONE;
-const SCREEN_ERROR = 1;
+var SCREEN_ERROR = 1;
 exports.SCREEN_ERROR = SCREEN_ERROR;
-const GEOMETRIC_ERROR = 2;
+var GEOMETRIC_ERROR = 2;
 exports.GEOMETRIC_ERROR = GEOMETRIC_ERROR;
-const DISTANCE = 3;
+var DISTANCE = 3;
 exports.DISTANCE = DISTANCE;
-const DEPTH = 4;
+var DEPTH = 4;
 exports.DEPTH = DEPTH;
-const RELATIVE_DEPTH = 5;
+var RELATIVE_DEPTH = 5;
 exports.RELATIVE_DEPTH = RELATIVE_DEPTH;
-const IS_LEAF = 6;
+var IS_LEAF = 6;
 exports.IS_LEAF = IS_LEAF;
-const RANDOM_COLOR = 7;
+var RANDOM_COLOR = 7;
 exports.RANDOM_COLOR = RANDOM_COLOR;
 
-class DebugTilesRenderer extends _TilesRenderer.TilesRenderer {
-  constructor(...args) {
-    super(...args);
-    const tilesGroup = this.group;
-    const boxGroup = new _three.Group();
+var DebugTilesRenderer =
+/*#__PURE__*/
+function (_TilesRenderer) {
+  _inherits(DebugTilesRenderer, _TilesRenderer);
+
+  var _super = _createSuper(DebugTilesRenderer);
+
+  function DebugTilesRenderer() {
+    var _this;
+
+    _classCallCheck(this, DebugTilesRenderer);
+
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _super.call.apply(_super, [this].concat(args));
+    var tilesGroup = _this.group;
+    var boxGroup = new _three.Group();
     tilesGroup.add(boxGroup);
-    const sphereGroup = new _three.Group();
+    var sphereGroup = new _three.Group();
     tilesGroup.add(sphereGroup);
-    this.displayBoxBounds = false;
-    this.displaySphereBounds = false;
-    this.colorMode = NONE;
-    this.boxGroup = boxGroup;
-    this.sphereGroup = sphereGroup;
-    this.maxDebugDepth = -1;
-    this.maxDebugDistance = -1;
-    this.maxDebugError = -1;
-    this.extremeDebugDepth = -1;
-    this.extremeDebugError = -1;
+    _this.displayBoxBounds = false;
+    _this.displaySphereBounds = false;
+    _this.colorMode = NONE;
+    _this.boxGroup = boxGroup;
+    _this.sphereGroup = sphereGroup;
+    _this.maxDebugDepth = -1;
+    _this.maxDebugDistance = -1;
+    _this.maxDebugError = -1;
+    _this.extremeDebugDepth = -1;
+    _this.extremeDebugError = -1;
+    return _this;
   }
 
-  initExtremes() {
-    // initialize the extreme values of the hierarchy
-    let maxDepth = -1;
-    this.traverse(tile => {
-      maxDepth = Math.max(maxDepth, tile.__depth);
-    });
-    let maxError = -1;
-    this.traverse(tile => {
-      maxError = Math.max(maxError, tile.geometricError);
-    });
-    this.extremeDebugDepth = maxDepth;
-    this.extremeDebugError = maxError;
-  }
+  _createClass(DebugTilesRenderer, [{
+    key: "initExtremes",
+    value: function initExtremes() {
+      // initialize the extreme values of the hierarchy
+      var maxDepth = -1;
+      this.traverse(function (tile) {
+        maxDepth = Math.max(maxDepth, tile.__depth);
+      });
+      var maxError = -1;
+      this.traverse(function (tile) {
+        maxError = Math.max(maxError, tile.geometricError);
+      });
+      this.extremeDebugDepth = maxDepth;
+      this.extremeDebugError = maxError;
+    }
+  }, {
+    key: "loadTileSet",
+    value: function loadTileSet() {
+      var _get2,
+          _this2 = this;
 
-  loadTileSet(...args) {
-    const pr = super.loadTileSet(...args);
-    pr.then(() => this.initExtremes());
-    return pr;
-  }
-
-  getTileInformationFromActiveObject(object) {
-    // Find which tile this scene is associated with. This is slow and
-    // intended for debug purposes only.
-    let targetTile = null;
-    const activeTiles = this.activeTiles;
-    activeTiles.forEach(tile => {
-      if (targetTile) {
-        return true;
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
       }
 
-      const scene = tile.cached.scene;
+      var pr = (_get2 = _get(_getPrototypeOf(DebugTilesRenderer.prototype), "loadTileSet", this)).call.apply(_get2, [this].concat(args));
 
-      if (scene) {
-        scene.traverse(c => {
-          if (c === object) {
-            targetTile = tile;
-          }
-        });
-      }
-    });
-
-    if (targetTile) {
-      return {
-        distanceToCamera: targetTile.cached.distance,
-        geometricError: targetTile.geometricError,
-        screenSpaceError: targetTile.__error,
-        depth: targetTile.__depth,
-        isLeaf: targetTile.__isLeaf
-      };
-    } else {
-      return null;
+      pr.then(function () {
+        return _this2.initExtremes();
+      });
+      return pr;
     }
-  }
+  }, {
+    key: "getTileInformationFromActiveObject",
+    value: function getTileInformationFromActiveObject(object) {
+      // Find which tile this scene is associated with. This is slow and
+      // intended for debug purposes only.
+      var targetTile = null;
+      var activeTiles = this.activeTiles;
+      activeTiles.forEach(function (tile) {
+        if (targetTile) {
+          return true;
+        }
 
-  update() {
-    super.update();
+        var scene = tile.cached.scene;
 
-    if (!this.root) {
-      return;
-    } // set box or sphere visibility
-
-
-    this.boxGroup.visible = this.displayBoxBounds;
-    this.sphereGroup.visible = this.displaySphereBounds; // get max values to use for materials
-
-    let maxDepth = -1;
-
-    if (this.maxDebugDepth === -1) {
-      maxDepth = this.extremeDebugDepth;
-    } else {
-      maxDepth = this.maxDebugDepth;
-    }
-
-    let maxError = -1;
-
-    if (this.maxDebugError === -1) {
-      maxError = this.extremeDebugError;
-    } else {
-      maxError = this.maxDebugError;
-    }
-
-    let maxDistance = -1;
-
-    if (this.maxDebugDistance === -1) {
-      maxDistance = this.root.cached.sphere.radius;
-    } else {
-      maxDistance = this.maxDebugDistance;
-    }
-
-    const errorTarget = this.errorTarget;
-    const colorMode = this.colorMode;
-    const visibleTiles = this.visibleTiles;
-    visibleTiles.forEach(tile => {
-      const scene = tile.cached.scene;
-      scene.traverse(c => {
-        const currMaterial = c.material;
-
-        if (currMaterial) {
-          // Reset the material if needed
-          const originalMaterial = c[ORIGINAL_MATERIAL];
-
-          if (colorMode === NONE && currMaterial !== originalMaterial) {
-            c.material.dispose();
-            c.material = c[ORIGINAL_MATERIAL];
-          } else if (colorMode !== NONE && currMaterial === originalMaterial) {
-            c.material = new _three.MeshBasicMaterial();
-          }
-
-          if (colorMode !== RANDOM_COLOR) {
-            delete c.material[HAS_RANDOM_COLOR];
-          } // Set the color on the basic material
-
-
-          switch (colorMode) {
-            case DEPTH:
-              {
-                const val = tile.__depth / maxDepth;
-                c.material.color.setRGB(val, val, val);
-                break;
-              }
-
-            case RELATIVE_DEPTH:
-              {
-                const val = tile.__depthFromRenderedParent / maxDepth;
-                c.material.color.setRGB(val, val, val);
-                break;
-              }
-
-            case SCREEN_ERROR:
-              {
-                const val = tile.__error / errorTarget;
-
-                if (val > 1.0) {
-                  c.material.color.setRGB(1.0, 0.0, 0.0);
-                } else {
-                  c.material.color.setRGB(val, val, val);
-                }
-
-                break;
-              }
-
-            case GEOMETRIC_ERROR:
-              {
-                const val = Math.min(tile.geometricError / maxError, 1);
-                c.material.color.setRGB(val, val, val);
-                break;
-              }
-
-            case DISTANCE:
-              {
-                // We don't update the distance if the geometric error is 0.0 so
-                // it will always be black.
-                const val = Math.min(tile.cached.distance / maxDistance, 1);
-                c.material.color.setRGB(val, val, val);
-                break;
-              }
-
-            case IS_LEAF:
-              {
-                if (!tile.children || tile.children.length === 0) {
-                  c.material.color.set(0xffffff);
-                } else {
-                  c.material.color.set(0);
-                }
-
-                break;
-              }
-
-            case RANDOM_COLOR:
-              {
-                if (!c.material[HAS_RANDOM_COLOR]) {
-                  const h = Math.random();
-                  const s = 0.5 + Math.random() * 0.5;
-                  const l = 0.375 + Math.random() * 0.25;
-                  c.material.color.setHSL(h, s, l);
-                  c.material[HAS_RANDOM_COLOR] = true;
-                }
-
-                break;
-              }
-          }
+        if (scene) {
+          scene.traverse(function (c) {
+            if (c === object) {
+              targetTile = tile;
+            }
+          });
         }
       });
-    });
-  }
 
-  setTileVisible(tile, visible) {
-    super.setTileVisible(tile, visible);
-    const cached = tile.cached;
-    const sphereGroup = this.sphereGroup;
-    const boxGroup = this.boxGroup;
-    const boxHelperGroup = cached.boxHelperGroup;
-    const sphereHelper = cached.sphereHelper;
-
-    if (!visible) {
-      boxGroup.remove(boxHelperGroup);
-      sphereGroup.remove(sphereHelper);
-    } else {
-      boxGroup.add(boxHelperGroup);
-      boxHelperGroup.updateMatrixWorld(true);
-      sphereGroup.add(sphereHelper);
-      sphereHelper.updateMatrixWorld(true);
+      if (targetTile) {
+        return {
+          distanceToCamera: targetTile.cached.distance,
+          geometricError: targetTile.geometricError,
+          screenSpaceError: targetTile.__error,
+          depth: targetTile.__depth,
+          isLeaf: targetTile.__isLeaf
+        };
+      } else {
+        return null;
+      }
     }
-  }
+  }, {
+    key: "update",
+    value: function update() {
+      _get(_getPrototypeOf(DebugTilesRenderer.prototype), "update", this).call(this);
 
-  parseTile(buffer, tile, extension) {
-    return super.parseTile(buffer, tile, extension).then(() => {
-      const cached = tile.cached;
-      const scene = cached.scene;
-
-      if (scene) {
-        const cachedBox = cached.box;
-        const cachedBoxMat = cached.boxTransform; // Create debug bounding box
-
-        const boxHelperGroup = new _three.Group();
-        boxHelperGroup.matrix.copy(cachedBoxMat);
-        boxHelperGroup.matrix.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
-        const boxHelper = new _three.Box3Helper(cachedBox);
-        boxHelper.raycast = emptyRaycast;
-        boxHelperGroup.add(boxHelper);
-        cached.boxHelperGroup = boxHelperGroup;
-
-        if (this.visibleTiles.has(tile) && this.displayBoxBounds) {
-          this.boxGroup.add(boxHelperGroup);
-          boxHelperGroup.updateMatrixWorld(true);
-        } // Create debugbounding sphere
+      if (!this.root) {
+        return;
+      } // set box or sphere visibility
 
 
-        const cachedSphere = cached.sphere;
-        const sphereHelper = new _SphereHelper.SphereHelper(cachedSphere);
-        sphereHelper.raycast = emptyRaycast;
-        cached.sphereHelper = sphereHelper;
+      this.boxGroup.visible = this.displayBoxBounds;
+      this.sphereGroup.visible = this.displaySphereBounds; // get max values to use for materials
 
-        if (this.visibleTiles.has(tile) && this.displaySphereBounds) {
-          this.sphereGroup.add(sphereHelper);
-          sphereHelper.updateMatrixWorld(true);
-        } // Cache the original materials
+      var maxDepth = -1;
+
+      if (this.maxDebugDepth === -1) {
+        maxDepth = this.extremeDebugDepth;
+      } else {
+        maxDepth = this.maxDebugDepth;
+      }
+
+      var maxError = -1;
+
+      if (this.maxDebugError === -1) {
+        maxError = this.extremeDebugError;
+      } else {
+        maxError = this.maxDebugError;
+      }
+
+      var maxDistance = -1;
+
+      if (this.maxDebugDistance === -1) {
+        maxDistance = this.root.cached.sphere.radius;
+      } else {
+        maxDistance = this.maxDebugDistance;
+      }
+
+      var errorTarget = this.errorTarget;
+      var colorMode = this.colorMode;
+      var visibleTiles = this.visibleTiles;
+      visibleTiles.forEach(function (tile) {
+        var scene = tile.cached.scene;
+        scene.traverse(function (c) {
+          var currMaterial = c.material;
+
+          if (currMaterial) {
+            // Reset the material if needed
+            var originalMaterial = c[ORIGINAL_MATERIAL];
+
+            if (colorMode === NONE && currMaterial !== originalMaterial) {
+              c.material.dispose();
+              c.material = c[ORIGINAL_MATERIAL];
+            } else if (colorMode !== NONE && currMaterial === originalMaterial) {
+              c.material = new _three.MeshBasicMaterial();
+            }
+
+            if (colorMode !== RANDOM_COLOR) {
+              delete c.material[HAS_RANDOM_COLOR];
+            } // Set the color on the basic material
 
 
-        scene.traverse(c => {
-          const material = c.material;
+            switch (colorMode) {
+              case DEPTH:
+                {
+                  var val = tile.__depth / maxDepth;
+                  c.material.color.setRGB(val, val, val);
+                  break;
+                }
 
-          if (material) {
-            c[ORIGINAL_MATERIAL] = material;
+              case RELATIVE_DEPTH:
+                {
+                  var _val = tile.__depthFromRenderedParent / maxDepth;
+
+                  c.material.color.setRGB(_val, _val, _val);
+                  break;
+                }
+
+              case SCREEN_ERROR:
+                {
+                  var _val2 = tile.__error / errorTarget;
+
+                  if (_val2 > 1.0) {
+                    c.material.color.setRGB(1.0, 0.0, 0.0);
+                  } else {
+                    c.material.color.setRGB(_val2, _val2, _val2);
+                  }
+
+                  break;
+                }
+
+              case GEOMETRIC_ERROR:
+                {
+                  var _val3 = Math.min(tile.geometricError / maxError, 1);
+
+                  c.material.color.setRGB(_val3, _val3, _val3);
+                  break;
+                }
+
+              case DISTANCE:
+                {
+                  // We don't update the distance if the geometric error is 0.0 so
+                  // it will always be black.
+                  var _val4 = Math.min(tile.cached.distance / maxDistance, 1);
+
+                  c.material.color.setRGB(_val4, _val4, _val4);
+                  break;
+                }
+
+              case IS_LEAF:
+                {
+                  if (!tile.children || tile.children.length === 0) {
+                    c.material.color.set(0xffffff);
+                  } else {
+                    c.material.color.set(0);
+                  }
+
+                  break;
+                }
+
+              case RANDOM_COLOR:
+                {
+                  if (!c.material[HAS_RANDOM_COLOR]) {
+                    var h = Math.random();
+                    var s = 0.5 + Math.random() * 0.5;
+                    var l = 0.375 + Math.random() * 0.25;
+                    c.material.color.setHSL(h, s, l);
+                    c.material[HAS_RANDOM_COLOR] = true;
+                  }
+
+                  break;
+                }
+            }
           }
         });
-      }
-    });
-  }
-
-  disposeTile(tile) {
-    super.disposeTile(tile);
-    const cached = tile.cached;
-
-    if (cached.boxHelperGroup) {
-      cached.boxHelperGroup.children[0].geometry.dispose();
-      cached.sphereHelper.geometry.dispose();
-      delete cached.boxHelperGroup;
-      delete cached.sphereHelper;
+      });
     }
-  }
+  }, {
+    key: "setTileVisible",
+    value: function setTileVisible(tile, visible) {
+      _get(_getPrototypeOf(DebugTilesRenderer.prototype), "setTileVisible", this).call(this, tile, visible);
 
-}
+      var cached = tile.cached;
+      var sphereGroup = this.sphereGroup;
+      var boxGroup = this.boxGroup;
+      var boxHelperGroup = cached.boxHelperGroup;
+      var sphereHelper = cached.sphereHelper;
+
+      if (!visible) {
+        boxGroup.remove(boxHelperGroup);
+        sphereGroup.remove(sphereHelper);
+      } else {
+        boxGroup.add(boxHelperGroup);
+        boxHelperGroup.updateMatrixWorld(true);
+        sphereGroup.add(sphereHelper);
+        sphereHelper.updateMatrixWorld(true);
+      }
+    }
+  }, {
+    key: "parseTile",
+    value: function parseTile(buffer, tile, extension) {
+      var _this3 = this;
+
+      return _get(_getPrototypeOf(DebugTilesRenderer.prototype), "parseTile", this).call(this, buffer, tile, extension).then(function () {
+        var cached = tile.cached;
+        var scene = cached.scene;
+
+        if (scene) {
+          var cachedBox = cached.box;
+          var cachedBoxMat = cached.boxTransform; // Create debug bounding box
+
+          var boxHelperGroup = new _three.Group();
+          boxHelperGroup.matrix.copy(cachedBoxMat);
+          boxHelperGroup.matrix.decompose(boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale);
+          var boxHelper = new _three.Box3Helper(cachedBox);
+          boxHelper.raycast = emptyRaycast;
+          boxHelperGroup.add(boxHelper);
+          cached.boxHelperGroup = boxHelperGroup;
+
+          if (_this3.visibleTiles.has(tile) && _this3.displayBoxBounds) {
+            _this3.boxGroup.add(boxHelperGroup);
+
+            boxHelperGroup.updateMatrixWorld(true);
+          } // Create debugbounding sphere
+
+
+          var cachedSphere = cached.sphere;
+          var sphereHelper = new _SphereHelper.SphereHelper(cachedSphere);
+          sphereHelper.raycast = emptyRaycast;
+          cached.sphereHelper = sphereHelper;
+
+          if (_this3.visibleTiles.has(tile) && _this3.displaySphereBounds) {
+            _this3.sphereGroup.add(sphereHelper);
+
+            sphereHelper.updateMatrixWorld(true);
+          } // Cache the original materials
+
+
+          scene.traverse(function (c) {
+            var material = c.material;
+
+            if (material) {
+              c[ORIGINAL_MATERIAL] = material;
+            }
+          });
+        }
+      });
+    }
+  }, {
+    key: "disposeTile",
+    value: function disposeTile(tile) {
+      _get(_getPrototypeOf(DebugTilesRenderer.prototype), "disposeTile", this).call(this, tile);
+
+      var cached = tile.cached;
+
+      if (cached.boxHelperGroup) {
+        cached.boxHelperGroup.children[0].geometry.dispose();
+        cached.sphereHelper.geometry.dispose();
+        delete cached.boxHelperGroup;
+        delete cached.sphereHelper;
+      }
+    }
+  }]);
+
+  return DebugTilesRenderer;
+}(_TilesRenderer2.TilesRenderer);
 
 exports.DebugTilesRenderer = DebugTilesRenderer;
 },{"three":"../node_modules/three/build/three.module.js","./TilesRenderer.js":"../src/three/TilesRenderer.js","./SphereHelper.js":"../src/three/SphereHelper.js"}],"../src/index.js":[function(require,module,exports) {
@@ -44561,111 +44944,42 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-let camera, controls, scene, renderer, tiles, orthoCamera;
-let offsetParent, box, dirLight;
-let stats;
-const DEFAULT = 0;
-const GRADIENT = 1;
-const TOPOGRAPHIC_LINES = 2;
-const LIGHTING = 3;
-const params = {
+var camera, controls, scene, renderer, tiles, orthoCamera;
+var offsetParent, box, dirLight;
+var stats;
+var DEFAULT = 0;
+var GRADIENT = 1;
+var TOPOGRAPHIC_LINES = 2;
+var LIGHTING = 3;
+var params = {
   'material': DEFAULT,
   'orthographic': false
 };
-const gradientShader = {
+var gradientShader = {
   vertexShader:
   /* glsl */
-  `
-		varying vec3 wPosition;
-		void main() {
-
-			#include <begin_vertex>
-			#include <project_vertex>
-			wPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;
-
-		}
-	`,
+  "\n\t\tvarying vec3 wPosition;\n\t\tvoid main() {\n\n\t\t\t#include <begin_vertex>\n\t\t\t#include <project_vertex>\n\t\t\twPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n\n\t\t}\n\t",
   fragmentShader:
   /* glsl */
-  `
-		varying vec3 wPosition;
-		void main() {
-
-			float minVal = - 30.0;
-			float maxVal = 30.0;
-
-			float val = ( wPosition.y - minVal ) / ( maxVal - minVal );
-
-			vec4 color1 = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;
-			vec4 color2 = vec4( 1.0 );
-
-			gl_FragColor = mix( color1, color2, val );
-
-		}
-	`
+  "\n\t\tvarying vec3 wPosition;\n\t\tvoid main() {\n\n\t\t\tfloat minVal = - 30.0;\n\t\t\tfloat maxVal = 30.0;\n\n\t\t\tfloat val = ( wPosition.y - minVal ) / ( maxVal - minVal );\n\n\t\t\tvec4 color1 = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;\n\t\t\tvec4 color2 = vec4( 1.0 );\n\n\t\t\tgl_FragColor = mix( color1, color2, val );\n\n\t\t}\n\t"
 };
-const topoShader = {
+var topoShader = {
   extensions: {
     derivatives: true
   },
   vertexShader:
   /* glsl */
-  `
-		varying vec3 wPosition;
-		varying vec3 vViewPosition;
-		void main() {
-
-			#include <begin_vertex>
-			#include <project_vertex>
-			wPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;
-			vViewPosition = - mvPosition.xyz;
-
-		}
-	`,
+  "\n\t\tvarying vec3 wPosition;\n\t\tvarying vec3 vViewPosition;\n\t\tvoid main() {\n\n\t\t\t#include <begin_vertex>\n\t\t\t#include <project_vertex>\n\t\t\twPosition = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n\t\t\tvViewPosition = - mvPosition.xyz;\n\n\t\t}\n\t",
   fragmentShader:
   /* glsl */
-  `
-		varying vec3 wPosition;
-		varying vec3 vViewPosition;
-		void main() {
-
-			// lighting
-			vec3 fdx = vec3( dFdx( wPosition.x ), dFdx( wPosition.y ), dFdx( wPosition.z ) );
-			vec3 fdy = vec3( dFdy( wPosition.x ), dFdy( wPosition.y ), dFdy( wPosition.z ) );
-			vec3 worldNormal = normalize( cross( fdx, fdy ) );
-
-			float lighting =
-				0.4 +
-				clamp( dot( worldNormal, vec3( 1.0, 1.0, 1.0 ) ), 0.0, 1.0 ) * 0.5 +
-				clamp( dot( worldNormal, vec3( - 1.0, 1.0, - 1.0 ) ), 0.0, 1.0 ) * 0.3;
-
-			// thickness scale
-			float upwardness = dot( worldNormal, vec3( 0.0, 1.0, 0.0 ) );
-			float yInv = saturate( 1.0 - abs( upwardness ) );
-			float thicknessScale = pow( yInv, 0.4 );
-			thicknessScale *= 0.25 + 0.5 * ( vViewPosition.z + 1.0 ) / 2.0;
-
-			// thickness
-			float thickness = 0.01 * thicknessScale;
-			float thickness2 = thickness / 2.0;
-			float m = mod( wPosition.y, 3.0 );
-
-			// soften edge
-			float center = thickness2;
-			float dist = clamp( abs( m - thickness2 ) / thickness2, 0.0, 1.0 );
-
-			vec4 topoColor = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;
-			gl_FragColor = mix( topoColor * lighting, vec4( lighting ), dist );
-
-		}
-	`
+  "\n\t\tvarying vec3 wPosition;\n\t\tvarying vec3 vViewPosition;\n\t\tvoid main() {\n\n\t\t\t// lighting\n\t\t\tvec3 fdx = vec3( dFdx( wPosition.x ), dFdx( wPosition.y ), dFdx( wPosition.z ) );\n\t\t\tvec3 fdy = vec3( dFdy( wPosition.x ), dFdy( wPosition.y ), dFdy( wPosition.z ) );\n\t\t\tvec3 worldNormal = normalize( cross( fdx, fdy ) );\n\n\t\t\tfloat lighting =\n\t\t\t\t0.4 +\n\t\t\t\tclamp( dot( worldNormal, vec3( 1.0, 1.0, 1.0 ) ), 0.0, 1.0 ) * 0.5 +\n\t\t\t\tclamp( dot( worldNormal, vec3( - 1.0, 1.0, - 1.0 ) ), 0.0, 1.0 ) * 0.3;\n\n\t\t\t// thickness scale\n\t\t\tfloat upwardness = dot( worldNormal, vec3( 0.0, 1.0, 0.0 ) );\n\t\t\tfloat yInv = saturate( 1.0 - abs( upwardness ) );\n\t\t\tfloat thicknessScale = pow( yInv, 0.4 );\n\t\t\tthicknessScale *= 0.25 + 0.5 * ( vViewPosition.z + 1.0 ) / 2.0;\n\n\t\t\t// thickness\n\t\t\tfloat thickness = 0.01 * thicknessScale;\n\t\t\tfloat thickness2 = thickness / 2.0;\n\t\t\tfloat m = mod( wPosition.y, 3.0 );\n\n\t\t\t// soften edge\n\t\t\tfloat center = thickness2;\n\t\t\tfloat dist = clamp( abs( m - thickness2 ) / thickness2, 0.0, 1.0 );\n\n\t\t\tvec4 topoColor = vec4( 0.149, 0.196, 0.219, 1.0 ) * 0.5;\n\t\t\tgl_FragColor = mix( topoColor * lighting, vec4( lighting ), dist );\n\n\t\t}\n\t"
 };
 init();
 animate();
 
 function updateMaterial(scene) {
-  const materialIndex = parseFloat(params.material);
-  scene.traverse(c => {
+  var materialIndex = parseFloat(params.material);
+  scene.traverse(function (c) {
     if (c.isMesh) {
       c.material.dispose();
 
@@ -44703,7 +45017,7 @@ function updateMaterial(scene) {
 }
 
 function onLoadModel(scene) {
-  scene.traverse(c => {
+  scene.traverse(function (c) {
     if (c.isMesh) {
       c.originalMaterial = c.material;
     }
@@ -44738,20 +45052,20 @@ function init() {
   dirLight.castShadow = true;
   dirLight.shadow.bias = -0.01;
   dirLight.shadow.mapSize.setScalar(2048);
-  const shadowCam = dirLight.shadow.camera;
+  var shadowCam = dirLight.shadow.camera;
   shadowCam.left = -200;
   shadowCam.bottom = -200;
   shadowCam.right = 200;
   shadowCam.top = 200;
   shadowCam.updateProjectionMatrix();
   scene.add(dirLight);
-  const ambLight = new _three.AmbientLight(0xffffff, 0.05);
+  var ambLight = new _three.AmbientLight(0xffffff, 0.05);
   scene.add(ambLight);
   box = new _three.Box3();
   offsetParent = new _three.Group();
   scene.add(offsetParent); // tiles
 
-  const url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
+  var url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
   tiles = new _index.TilesRenderer(url);
   tiles.errorTarget = 2;
   tiles.onLoadModel = onLoadModel;
@@ -44759,15 +45073,15 @@ function init() {
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false); // GUI
 
-  const gui = new dat.GUI();
+  var gui = new dat.GUI();
   gui.width = 300;
   gui.add(params, 'orthographic');
   gui.add(params, 'material', {
-    DEFAULT,
-    GRADIENT,
-    TOPOGRAPHIC_LINES,
-    LIGHTING
-  }).onChange(() => {
+    DEFAULT: DEFAULT,
+    GRADIENT: GRADIENT,
+    TOPOGRAPHIC_LINES: TOPOGRAPHIC_LINES,
+    LIGHTING: LIGHTING
+  }).onChange(function () {
     tiles.forEachLoadedModel(updateMaterial);
   });
   gui.open(); // Stats
@@ -44788,8 +45102,8 @@ function onWindowResize() {
 function updateOrthoCamera() {
   orthoCamera.position.copy(camera.position);
   orthoCamera.rotation.copy(camera.rotation);
-  const scale = camera.position.distanceTo(controls.target) / 2.0;
-  let aspect = window.innerWidth / window.innerHeight;
+  var scale = camera.position.distanceTo(controls.target) / 2.0;
+  var aspect = window.innerWidth / window.innerHeight;
   orthoCamera.left = -aspect * scale;
   orthoCamera.right = aspect * scale;
   orthoCamera.bottom = -scale;
@@ -44866,7 +45180,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50060" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61723" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

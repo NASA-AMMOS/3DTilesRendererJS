@@ -20,9 +20,6 @@
     "lint": "eslint src/**.js && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },
-  "browserslist": [
-    "last 1 Chrome versions"
-  ],
   "repository": {
     "type": "git",
     "url": "git@github.jpl.nasa.gov:gkjohnso/3d-tiles-renderer-js.git"
