@@ -13,12 +13,6 @@ Three.js renderer implementation for the [3D Tiles format](https://github.com/An
 
 [Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
 
-
-**In Progress Features**
-- Performance
-- Bug Triage
-- Tileset / Browser validation
-
 # Use
 
 ## Basic TilesRenderer
