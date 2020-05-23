@@ -1,1 +1,0 @@
-function parseBatchTable( header, body ) {}
