@@ -29,9 +29,16 @@ export class FeatureTable {
 
 	}
 
-	getData( key, count, type = null, componentType = null ) {
+	getData( key, count, defaultComponentType = null, defaultType = null ) {
 
 		const header = this.header;
+
+		if ( ! ( key in header ) ) {
+
+			return null;
+
+		}
+
 		const feature = header[ key ];
 		if ( ! ( feature instanceof Object ) ) {
 
@@ -45,8 +52,14 @@ export class FeatureTable {
 
 			const { buffer, binOffset, binLength } = this;
 			const byteOffset = feature.byteOffset || 0;
-			const featureType = type || feature.type;
-			const featureComponentType = componentType || feature.componentType;
+			const featureType = feature.type || defaultType;
+			const featureComponentType = feature.componentType || defaultComponentType;
+
+			if ( 'type' in feature && defaultType && feature.type !== defaultType) {
+
+				throw new Error( 'FeatureTable: Specified type does not match expected type.' );
+
+			}
 
 			let stride;
 			switch ( featureType ) {
@@ -133,7 +146,7 @@ export class BatchTable extends FeatureTable {
 
 	}
 
-	getData( key, type = null, componentType = null ) {
+	getData( key, componentType = null, type = null ) {
 
 		return this.getData( key, this.batchSize, type, componentType );
 

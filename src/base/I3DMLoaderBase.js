@@ -61,8 +61,20 @@ export class I3DMLoaderBase {
 
 		// Feature Table
 		const featureTableStart = 32;
+		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
 
 		// Batch Table
+		const BATCH_ID = featureTable.getData( 'BATCH_ID', 'UNSIGNED_SHORT' );
+		let maxBatchId = - 1;
+		for ( let i = 0, l = BATCH_ID.length; i < l; i ++ ) {
+
+			maxBatchId = Math.max( BATCH_ID[ i ], maxBatchId );
+
+		}
+
+		const batchLength = maxBatchId === - 1 ? 0 : maxBatchId + 1;
+		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
+		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
