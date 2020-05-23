@@ -1,8 +1,10 @@
+import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
+
 export interface B3DMBaseResult {
 
 	version : String;
-	featureTable: Object;
-	batchTable : Object;
+	featureTable: FeatureTable;
+	batchTable : BatchTable;
 	glbBytes : Uint8Array;
 
 }

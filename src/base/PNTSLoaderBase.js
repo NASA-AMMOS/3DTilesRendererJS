@@ -1,9 +1,9 @@
-// B3DM File Format
-// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
+// PNTS File Format
+// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
-import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
+import { BatchTable } from "../utilities/FeatureTable";
 
-export class B3DMLoaderBase {
+export class I3DMLoaderBase {
 
 	constructor() {
 
@@ -32,7 +32,7 @@ export class B3DMLoaderBase {
 			String.fromCharCode( dataView.getUint8( 2 ) ) +
 			String.fromCharCode( dataView.getUint8( 3 ) );
 
-		console.assert( magic === 'b3dm' );
+		console.assert( magic === 'pnts' );
 
 		// 4 bytes
 		const version = dataView.getUint32( 4, true );
@@ -61,17 +61,14 @@ export class B3DMLoaderBase {
 		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
 
 		// Batch Table
+		const batchLength = featureTable.getData( 'BATCH_LENGTH' ) || 0;
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-		const batchTable = new BatchTable( buffer, featureTable.getData( 'BATCH_LENGTH' ), batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
-
-		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
+		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
 
 		return {
 			version,
 			featureTable,
 			batchTable,
-			glbBytes,
 		};
 
 	}
