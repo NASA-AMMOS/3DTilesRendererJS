@@ -145,7 +145,7 @@ export class TilesRendererBase {
 
 			}
 
-			// TODO: fix for some cases where tilesets provide the bounding volume
+			// NOTE: fix for some cases where tilesets provide the bounding volume
 			// but volumes are not present.
 			if (
 				tile.content.boundingVolume &&

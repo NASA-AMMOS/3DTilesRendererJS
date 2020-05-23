@@ -1,4 +1,4 @@
-import { Matrix4, Sphere, Ray, Vector3, Box3Helper } from 'three';
+import { Matrix4, Sphere, Ray, Vector3 } from 'three';
 const _sphere = new Sphere();
 const _mat = new Matrix4();
 const _vec = new Vector3();
@@ -53,7 +53,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 	}
 
-	// TODO: see if we can avoid creating a new array here every time to save on memory
+	// TODO: can we avoid creating a new array here every time to save on memory?
 	const array = [];
 	const children = root.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
