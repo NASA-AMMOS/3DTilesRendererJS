@@ -36920,28 +36920,14 @@ function () {
 }();
 
 exports.TilesRendererBase = TilesRendererBase;
-},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
+},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/utilities/arrayToString.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.B3DMLoaderBase = void 0;
+exports.arrayToString = arrayToString;
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-// https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
-// convert an array of numbers to a string
 function arrayToString(array) {
   var str = '';
 
@@ -36951,6 +36937,212 @@ function arrayToString(array) {
 
   return str;
 }
+},{}],"../src/utilities/FeatureTable.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.BatchTable = exports.FeatureTable = void 0;
+
+var _arrayToString = require("./arrayToString.js");
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var FeatureTable =
+/*#__PURE__*/
+function () {
+  function FeatureTable(buffer, start, headerLength, binLength) {
+    _classCallCheck(this, FeatureTable);
+
+    this.buffer = buffer;
+    this.binOffset = start + headerLength;
+    this.binLength = binLength;
+    var header = null;
+
+    if (headerLength !== 0) {
+      var headerData = new Uint8Array(buffer, start, headerLength);
+      header = JSON.parse((0, _arrayToString.arrayToString)(headerData));
+    } else {
+      header = {};
+    }
+
+    this.header = header;
+  }
+
+  _createClass(FeatureTable, [{
+    key: "getKeys",
+    value: function getKeys() {
+      return Object.keys(this.header);
+    }
+  }, {
+    key: "getData",
+    value: function getData(key, count) {
+      var defaultComponentType = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var defaultType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+      var header = this.header;
+
+      if (!(key in header)) {
+        return null;
+      }
+
+      var feature = header[key];
+
+      if (!(feature instanceof Object)) {
+        return feature;
+      } else if (Array.isArray(feature)) {
+        return feature;
+      } else {
+        var buffer = this.buffer,
+            binOffset = this.binOffset,
+            binLength = this.binLength;
+        var byteOffset = feature.byteOffset || 0;
+        var featureType = feature.type || defaultType;
+        var featureComponentType = feature.componentType || defaultComponentType;
+
+        if ('type' in feature && defaultType && feature.type !== defaultType) {
+          throw new Error('FeatureTable: Specified type does not match expected type.');
+        }
+
+        var stride;
+
+        switch (featureType) {
+          case 'SCALAR':
+            stride = 1;
+            break;
+
+          case 'VEC2':
+            stride = 2;
+            break;
+
+          case 'VEC3':
+            stride = 3;
+            break;
+
+          case 'VEC4':
+            stride = 4;
+            break;
+        }
+
+        var data;
+        var arrayStart = binOffset + byteOffset;
+        var arrayLength = count * stride;
+
+        switch (featureComponentType) {
+          case 'BYTE':
+            data = new Int8Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_BYTE':
+            data = new Uint8Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'SHORT':
+            data = new Int16Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_SHORT':
+            data = new Uint16Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'INT':
+            data = new Int32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'UNSIGNED_INT':
+            data = new Uint32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'FLOAT':
+            data = new Float32Array(buffer, arrayStart, arrayLength);
+            break;
+
+          case 'DOUBLE':
+            data = new Float64Array(buffer, arrayStart, arrayLength);
+            break;
+        }
+
+        var dataEnd = arrayStart + arrayLength * data.BYTES_PER_ELEMENT;
+
+        if (dataEnd > binOffset + binLength) {
+          throw new Error('FeatureTable: Feature data read outside binary body length.');
+        }
+
+        return data;
+      }
+    }
+  }]);
+
+  return FeatureTable;
+}();
+
+exports.FeatureTable = FeatureTable;
+
+var BatchTable =
+/*#__PURE__*/
+function (_FeatureTable) {
+  _inherits(BatchTable, _FeatureTable);
+
+  var _super = _createSuper(BatchTable);
+
+  function BatchTable(buffer, batchSize, start, headerLength, binLength) {
+    var _this;
+
+    _classCallCheck(this, BatchTable);
+
+    _this = _super.call(this, buffer, start, headerLength, binLength);
+    _this.batchSize = batchSize;
+    return _this;
+  }
+
+  _createClass(BatchTable, [{
+    key: "getData",
+    value: function getData(key) {
+      var componentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      return this.getData(key, this.batchSize, type, componentType);
+    }
+  }]);
+
+  return BatchTable;
+}(FeatureTable);
+
+exports.BatchTable = BatchTable;
+},{"./arrayToString.js":"../src/utilities/arrayToString.js"}],"../src/base/B3DMLoaderBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.B3DMLoaderBase = void 0;
+
+var _FeatureTable = require("../utilities/FeatureTable.js");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 var B3DMLoaderBase =
 /*#__PURE__*/
@@ -36996,107 +37188,12 @@ function () {
       var batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
 
       var featureTableStart = 28;
-      var jsonFeatureTableData = new Uint8Array(buffer, featureTableStart, featureTableJSONByteLength);
-      var jsonFeatureTable = featureTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonFeatureTableData));
-
-      var featureTable = _objectSpread({}, jsonFeatureTable); // const binFeatureTableData = new Uint8Array( buffer, featureTableStart + featureTableJSONByteLength, featureTableBinaryByteLength );
-      // TODO: dereference the json feature table data in to the binary array.
-      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-      // TODO: The feature table contains data with implicit stride and data types, which means we can't parse it into arrays
-      // unless they are specified ahead of time?s
-      // Batch Table
-
+      var featureTable = new _FeatureTable.FeatureTable(buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength); // Batch Table
 
       var batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-      var jsonBatchTableData = new Uint8Array(buffer, batchTableStart, batchTableJSONByteLength);
-      var jsonBatchTable = batchTableJSONByteLength === 0 ? {} : JSON.parse(arrayToString(jsonBatchTableData));
-
-      var batchTable = _objectSpread({}, jsonBatchTable); // dereference the json batch table data in to the binary array.
-      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/FeatureTable/README.md#json-header
-      // const binBatchTableData = new Uint8Array( buffer, batchTableStart + batchTableJSONByteLength, batchTableBinaryByteLength );
-
-
-      var batchLength = jsonFeatureTable.BATCH_LENGTH;
-
-      for (var key in jsonBatchTable) {
-        var feature = jsonBatchTable[key];
-
-        if (Array.isArray(feature)) {
-          batchTable[key] = {
-            type: 'SCALAR',
-            stride: 1,
-            data: feature
-          };
-        } else {
-          var stride = void 0;
-          var data = void 0;
-          var arrayStart = batchTableStart + batchTableJSONByteLength;
-          var arrayLength = batchLength * stride + feature.byteOffset;
-
-          switch (feature.type) {
-            case 'SCALAR':
-              stride = 1;
-              break;
-
-            case 'VEC2':
-              stride = 2;
-              break;
-
-            case 'VEC3':
-              stride = 3;
-              break;
-
-            case 'VEC4':
-              stride = 4;
-              break;
-          }
-
-          switch (feature.componentType) {
-            case 'BYTE':
-              data = new Int8Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'UNSIGNED_BYTE':
-              data = new Uint8Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'SHORT':
-              data = new Int16Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'UNSIGNED_SHORT':
-              data = new Uint16Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'INT':
-              data = new Int32Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'UNSIGNED_INT':
-              data = new Uint32Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'FLOAT':
-              data = new Float32Array(buffer, arrayStart, arrayLength);
-              break;
-
-            case 'DOUBLE':
-              data = new Float64Array(buffer, arrayStart, arrayLength);
-              break;
-          }
-
-          batchTable[key] = {
-            type: feature.type,
-            stride: stride,
-            data: data
-          };
-        }
-      }
-
+      var batchTable = new _FeatureTable.BatchTable(buffer, featureTable.getData('BATCH_LENGTH'), batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength);
       var glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-      var glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart); // TODO: Understand how to apply the batchId semantics
-      // https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md#binary-gltf
-
+      var glbBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart);
       return {
         version: version,
         featureTable: featureTable,
@@ -37110,7 +37207,7 @@ function () {
 }();
 
 exports.B3DMLoaderBase = B3DMLoaderBase;
-},{}],"../node_modules/three/examples/jsm/loaders/GLTFLoader.js":[function(require,module,exports) {
+},{"../utilities/FeatureTable.js":"../src/utilities/FeatureTable.js"}],"../node_modules/three/examples/jsm/loaders/GLTFLoader.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -45960,7 +46057,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63798" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64703" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

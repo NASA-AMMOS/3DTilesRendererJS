@@ -11,7 +11,6 @@ import {
 	PCFSoftShadowMap,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 
 let camera, controls, scene, renderer;
 let box, dirLight;
@@ -76,11 +75,6 @@ function init() {
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 
-	// GUI
-	const gui = new dat.GUI();
-	gui.width = 300;
-	gui.open();
-
 }
 
 function onWindowResize() {
@@ -101,8 +95,6 @@ function animate() {
 }
 
 function render() {
-
-	updateOrthoCamera();
 
 	renderer.render( scene, camera );
 
