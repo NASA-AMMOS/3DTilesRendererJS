@@ -8,19 +8,13 @@ import {
 	Box3,
 	OrthographicCamera,
 	sRGBEncoding,
-	Group,
 	PCFSoftShadowMap,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 
-let camera, controls, scene, renderer, tiles, orthoCamera;
-let offsetParent, box, dirLight;
-let stats;
-
-const params = {
-
-};
+let camera, controls, scene, renderer;
+let box, dirLight;
 
 init();
 animate();
@@ -42,8 +36,6 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
-
-	orthoCamera = new OrthographicCamera();
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -98,25 +90,6 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	camera.updateProjectionMatrix();
 
-	updateOrthoCamera();
-
-}
-
-function updateOrthoCamera() {
-
-	orthoCamera.position.copy( camera.position );
-	orthoCamera.rotation.copy( camera.rotation );
-
-	const scale = camera.position.distanceTo( controls.target ) / 2.0;
-	let aspect = window.innerWidth / window.innerHeight;
-	orthoCamera.left = - aspect * scale;
-	orthoCamera.right = aspect * scale;
-	orthoCamera.bottom = - scale;
-	orthoCamera.top = scale;
-	orthoCamera.near = camera.near;
-	orthoCamera.far = camera.far;
-	orthoCamera.updateProjectionMatrix();
-
 }
 
 function animate() {
@@ -131,6 +104,6 @@ function render() {
 
 	updateOrthoCamera();
 
-	renderer.render( scene, params.orthographic ? orthoCamera : camera );
+	renderer.render( scene, camera );
 
 }
