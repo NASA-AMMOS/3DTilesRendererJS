@@ -6,7 +6,6 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Box3,
-	OrthographicCamera,
 	sRGBEncoding,
 	PCFSoftShadowMap,
 } from 'three';
