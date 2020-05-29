@@ -57,7 +57,7 @@ export class I3DMLoaderBase {
 		const batchTableBinaryByteLength = dataView.getUint32( 24, true );
 
 		// 4 bytes
-		const gltfFormat = dataView.getUint32( 28, true )
+		const gltfFormat = dataView.getUint32( 28, true );
 
 		// Feature Table
 		const featureTableStart = 32;
