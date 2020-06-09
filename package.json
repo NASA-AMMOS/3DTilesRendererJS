@@ -33,7 +33,7 @@
     "url": "https://github.com/NASA-AMMOS/3DTilesRendererJS/issues"
   },
   "homepage": "https://github.com/NASA-AMMOS/3DTilesRendererJS#readme",
-  "author": "Garrett Johnson <gkjohnso@jpl.nasa.gov>",
+  "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.7.2",
