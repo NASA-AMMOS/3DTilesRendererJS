@@ -1,13 +1,13 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
     "3dtiles",
     "graphics",
-		"b3dm",
-		"gltf",
+    "b3dm",
+    "gltf",
     "threejs",
     "rendering",
     "geometry",
@@ -15,11 +15,11 @@
     "cesium"
   ],
   "type": "module",
-	"main": "src/index.js",
-	"module": "src/index.js",
-	"files": [
-		"src/*"
-	],
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "files": [
+    "src/*"
+  ],
   "scripts": {
     "start": "concurrently \"parcel watch example/*.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
     "lint": "eslint src/**.js && tsc -p tsconfig.json --noEmit",
@@ -28,11 +28,11 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NASA-AMMOS/3DTilesRendererJS.git"
-	},
-	"bugs": {
+  },
+  "bugs": {
     "url": "https://github.com/NASA-AMMOS/3DTilesRendererJS/issues"
-	},
-	"homepage": "https://github.com/NASA-AMMOS/3DTilesRendererJS#readme",
+  },
+  "homepage": "https://github.com/NASA-AMMOS/3DTilesRendererJS#readme",
   "author": "Garrett Johnson <gkjohnso@jpl.nasa.gov>",
   "license": "Apache-2.0",
   "devDependencies": {
