@@ -1,5 +1,4 @@
 import { LOADED } from './constants.js';
-import { convertCompilerOptionsFromJson } from 'typescript';
 
 // Checks whether this tile was last used on the given frame.
 function isUsedThisFrame( tile, frameCount ) {
