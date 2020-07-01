@@ -79,27 +79,38 @@ export class I3DMLoaderBase {
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
 
-		// TODO: Load the data directly here and just return a promise from this parser. GLTFLoader has
-		// an async parse function, as well.
 		let glbBytes = null;
 		let externalUri = null;
+		let promise = null;
 		if ( gltfFormat ) {
 
 			glbBytes = bodyBytes;
+			promise = Promise.resolve();
 
 		} else {
 
 			externalUri = arrayToString( bodyBytes );
+			promise = fetch( externalUri, this.fetchOptions )
+				.then( res => res.buffer )
+				.then( buffer => {
+
+					glbBytes = new Uint8Array( buffer );
+
+				} );
 
 		}
 
-		return {
-			version,
-			featureTable,
-			batchTable,
-			glbBytes,
-			externalUri,
-		};
+		return promise.then( () => {
+
+			return {
+				version,
+				featureTable,
+				batchTable,
+				glbBytes,
+				externalUri,
+			};
+
+		} );
 
 	}
 
