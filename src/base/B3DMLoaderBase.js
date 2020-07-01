@@ -21,6 +21,7 @@ export class B3DMLoaderBase {
 
 	parse( buffer ) {
 
+		// TODO: this should be able to take a uint8array with an offset and length
 		const dataView = new DataView( buffer );
 
 		// 28-byte header
