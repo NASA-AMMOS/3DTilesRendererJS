@@ -61,7 +61,7 @@ export class PNTSLoaderBase {
 		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
 
 		// Batch Table
-		const batchLength = featureTable.getData( 'BATCH_LENGTH' ) || 0;
+		const batchLength = featureTable.getData( 'BATCH_LENGTH' ) || featureTable.getData( 'POINTS_LENGTH' );
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
 
