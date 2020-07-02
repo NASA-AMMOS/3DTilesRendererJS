@@ -1,6 +1,7 @@
 import { Group } from 'three';
 import { CMPTLoaderBase } from '../base/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
+import { PNTSLoader } from './PNTSLoader.js';
 
 export class CMPTLoader extends CMPTLoaderBase {
 
@@ -19,7 +20,6 @@ export class CMPTLoader extends CMPTLoaderBase {
 		const results = [];
 		const promises = [];
 
-		console.log( result, buffer.byteLength );
 		for ( const i in result.tiles ) {
 
 			const { type, buffer } = result.tiles[ i ];
@@ -27,21 +27,27 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'b3dm':
 
 					const slicedBuffer = buffer.slice();
-					console.log( slicedBuffer.buffer.byteLength, buffer.buffer.byteLength );
+					const promise = new B3DMLoader( manager )
+						.parse( slicedBuffer.buffer )
+						.then( res => {
 
-					const blob = URL.createObjectURL( new Blob( [ slicedBuffer ] ) );
-					const promise =
-						new B3DMLoader( manager ).parse( buffer.slice().buffer );
+							results.push( res );
+							group.add( res.scene );
 
-					promise.then( res => {
+						} );
 
-						results.push( res );
-						group.add( res.scene );
-
-					} );
+					promises.push(promise);
 					break;
-				case 'i3dm':
+
 				case 'pnts':
+
+					const slicedBuffer = buffer.slice();
+					const pointsResult = new PNTSLoader( manager ).parse( slicedBuffer.buffer );
+					results.push( pointsResult );
+					group.add( pointsResult.scene );
+					break;
+
+				case 'i3dm':
 				default:
 			}
 

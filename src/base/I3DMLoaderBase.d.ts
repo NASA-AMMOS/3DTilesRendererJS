@@ -6,7 +6,6 @@ export interface I3DMLoaderBaseResult {
 	featureTable: FeatureTable;
 	batchTable : BatchTable;
 	glbBytes : Uint8Array;
-	externalUri,
 
 }
 
