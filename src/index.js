@@ -12,6 +12,7 @@ import {
 import { TilesRenderer } from './three/TilesRenderer.js';
 import { B3DMLoader } from './three/B3DMLoader.js';
 import { CMPTLoader } from './three/CMPTLoader.js';
+import { PNTSLoader } from './three/PNTSLoader.js';
 
 import { TilesRendererBase } from './base/TilesRendererBase.js';
 import { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
@@ -27,6 +28,7 @@ export {
 	TilesRenderer,
 	B3DMLoader,
 	CMPTLoader,
+	PNTSLoader,
 
 	TilesRendererBase,
 	B3DMLoaderBase,

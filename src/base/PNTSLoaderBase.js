@@ -1,9 +1,9 @@
 // PNTS File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
-import { BatchTable } from "../utilities/FeatureTable";
+import { FeatureTable, BatchTable } from "../utilities/FeatureTable.js";
 
-export class I3DMLoaderBase {
+export class PNTSLoaderBase {
 
 	constructor() {
 

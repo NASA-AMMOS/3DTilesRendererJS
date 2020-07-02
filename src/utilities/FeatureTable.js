@@ -80,6 +80,9 @@ export class FeatureTable {
 					stride = 4;
 					break;
 
+				default:
+					throw new Error( `FeatureTable : Feature type not provided for "${ key }".` );
+
 			}
 
 			let data;
@@ -119,6 +122,9 @@ export class FeatureTable {
 				case 'DOUBLE':
 					data = new Float64Array( buffer, arrayStart, arrayLength );
 					break;
+
+				default:
+					throw new Error( `FeatureTable : Feature component type not provided for "${ key }".` );
 
 			}
 
