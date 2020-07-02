@@ -63,7 +63,7 @@ function init() {
 	box = new Box3();
 
 	new CMPTLoader()
-		.load( '../bim/0/1/m.cmpt' )
+		.load( '...' )
 		.then( res => {
 
 			console.log(res);
