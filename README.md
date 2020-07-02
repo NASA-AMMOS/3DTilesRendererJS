@@ -14,6 +14,8 @@ Three.js renderer implementation for the [3D Tiles format](https://github.com/An
 
 [Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
 
+[Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
+
 # Use
 
 ## Installation
@@ -74,7 +76,6 @@ tilesRenderer.onLoadModel = function ( scene ) {
 
 }
 scene.add( tilesRenderer.group );
-
 ```
 
 # API
@@ -116,6 +117,24 @@ loadSiblings = true : Boolean
 ```
 
 If true then all sibling tiles will be loaded, as well, to ensure coherence when moving the camera. If false then only currently viewed tiles will be loaded.
+
+### .displayActiveTiles
+
+```js
+displayActiveTiles = false : Boolean
+```
+
+"Active tiles" are those that are loaded and available but not necessarily visible. If [loadSiblings](#loadSiblings) is true then the tiles loaded up to the extents of the tileset will be considered active even outside the camera view. These tiles are useful for raycasting off camera or for casting shadows.
+
+Active tiles not currently visible in a camera frustum are removed from the scene as an optimization. Setting `displayActiveTiles` to true will keep them in the scene to be rendered from an outside camera view not accounted for by the tiles renderer.
+
+### .autoDisableRendererCulling
+
+```js
+autoDisableRendererCulling = true : Boolean
+```
+
+If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
 ### .lruCache
 
