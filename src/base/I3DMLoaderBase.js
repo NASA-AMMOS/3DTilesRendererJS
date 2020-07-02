@@ -1,6 +1,7 @@
 // I3DM File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Instanced3DModel/README.md
 
+import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
 import { arrayToString } from '../utilities/arrayToString.js';
 
 export class I3DMLoaderBase {
@@ -14,7 +15,16 @@ export class I3DMLoaderBase {
 	load( url ) {
 
 		return fetch( url, this.fetchOptions )
-			.then( res => res.arrayBuffer() )
+			.then( res => {
+
+				if ( ! res.ok ) {
+
+					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
+
+				}
+				return res.arrayBuffer();
+
+			} )
 			.then( buffer => this.parse( buffer ) );
 
 	}
@@ -64,41 +74,43 @@ export class I3DMLoaderBase {
 		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
 
 		// Batch Table
-		const BATCH_ID = featureTable.getData( 'BATCH_ID', 'UNSIGNED_SHORT' );
-		let maxBatchId = - 1;
-		for ( let i = 0, l = BATCH_ID.length; i < l; i ++ ) {
-
-			maxBatchId = Math.max( BATCH_ID[ i ], maxBatchId );
-
-		}
-
-		const batchLength = maxBatchId === - 1 ? 0 : maxBatchId + 1;
+		const batchLength = featureTable.getData( 'INSTANCES_LENGTH' );
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
 
-		// TODO: Consider just loading the data here rather than making the follow on function load it.
 		let glbBytes = null;
-		let externalUri = null;
+		let promise = null;
 		if ( gltfFormat ) {
 
 			glbBytes = bodyBytes;
+			promise = Promise.resolve();
 
 		} else {
 
-			externalUri = arrayToString( bodyBytes );
+			const externalUri = arrayToString( bodyBytes );
+			promise = fetch( externalUri, this.fetchOptions )
+				.then( res => res.buffer )
+				.then( buffer => {
+
+					glbBytes = new Uint8Array( buffer );
+
+				} );
 
 		}
 
-		return {
-			version,
-			featureTable,
-			batchTable,
-			glbBytes,
-			externalUri,
-		};
+		return promise.then( () => {
+
+			return {
+				version,
+				featureTable,
+				batchTable,
+				glbBytes,
+			};
+
+		} );
 
 	}
 

@@ -80,6 +80,9 @@ export class FeatureTable {
 					stride = 4;
 					break;
 
+				default:
+					throw new Error( `FeatureTable : Feature type not provided for "${ key }".` );
+
 			}
 
 			let data;
@@ -120,6 +123,9 @@ export class FeatureTable {
 					data = new Float64Array( buffer, arrayStart, arrayLength );
 					break;
 
+				default:
+					throw new Error( `FeatureTable : Feature component type not provided for "${ key }".` );
+
 			}
 
 			const dataEnd = arrayStart + arrayLength * data.BYTES_PER_ELEMENT;
@@ -148,7 +154,7 @@ export class BatchTable extends FeatureTable {
 
 	getData( key, componentType = null, type = null ) {
 
-		return this.getData( key, this.batchSize, type, componentType );
+		return super.getData( key, this.batchSize, type, componentType );
 
 	}
 

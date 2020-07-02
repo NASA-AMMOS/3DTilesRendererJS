@@ -1,15 +1,12 @@
-import { B3DMLoaderBase, B3DMBaseResult } from '../base/B3DMLoaderBase';
+import { B3DMBaseResult } from '../base/B3DMLoaderBase';
+import { LoadingManager } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
-export interface B3DMResult extends GLTF, B3DMBaseResult {
+export interface B3DMResult extends GLTF, B3DMBaseResult {}
 
-	batchTable : Object;
-	featureTable : Object;
+export class B3DMLoader {
 
-}
-
-export class B3DMLoader extends B3DMLoaderBase {
-
+	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< B3DMResult >;
 	parse( buffer : ArrayBuffer ) : B3DMResult;
 

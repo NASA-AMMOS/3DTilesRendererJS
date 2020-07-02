@@ -36947,21 +36947,21 @@ exports.BatchTable = exports.FeatureTable = void 0;
 
 var _arrayToString = require("./arrayToString.js");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -37042,6 +37042,9 @@ function () {
           case 'VEC4':
             stride = 4;
             break;
+
+          default:
+            throw new Error("FeatureTable : Feature type not provided for \"".concat(key, "\"."));
         }
 
         var data;
@@ -37080,6 +37083,9 @@ function () {
           case 'DOUBLE':
             data = new Float64Array(buffer, arrayStart, arrayLength);
             break;
+
+          default:
+            throw new Error("FeatureTable : Feature component type not provided for \"".concat(key, "\"."));
         }
 
         var dataEnd = arrayStart + arrayLength * data.BYTES_PER_ELEMENT;
@@ -37103,14 +37109,12 @@ var BatchTable =
 function (_FeatureTable) {
   _inherits(BatchTable, _FeatureTable);
 
-  var _super = _createSuper(BatchTable);
-
   function BatchTable(buffer, batchSize, start, headerLength, binLength) {
     var _this;
 
     _classCallCheck(this, BatchTable);
 
-    _this = _super.call(this, buffer, start, headerLength, binLength);
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(BatchTable).call(this, buffer, start, headerLength, binLength));
     _this.batchSize = batchSize;
     return _this;
   }
@@ -37120,7 +37124,7 @@ function (_FeatureTable) {
     value: function getData(key) {
       var componentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      return this.getData(key, this.batchSize, type, componentType);
+      return _get(_getPrototypeOf(BatchTable.prototype), "getData", this).call(this, key, this.batchSize, type, componentType);
     }
   }]);
 
@@ -37159,6 +37163,10 @@ function () {
       var _this = this;
 
       return fetch(url, this.fetchOptions).then(function (res) {
+        if (!res.ok) {
+          throw new Error("Failed to load file \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
+        }
+
         return res.arrayBuffer();
       }).then(function (buffer) {
         return _this.parse(buffer);
@@ -37167,6 +37175,7 @@ function () {
   }, {
     key: "parse",
     value: function parse(buffer) {
+      // TODO: this should be able to take a uint8array with an offset and length
       var dataView = new DataView(buffer); // 28-byte header
       // 4 bytes
 
@@ -39576,7 +39585,7 @@ var _B3DMLoaderBase2 = require("../base/B3DMLoaderBase.js");
 
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -39584,37 +39593,31 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 var B3DMLoader =
 /*#__PURE__*/
 function (_B3DMLoaderBase) {
   _inherits(B3DMLoader, _B3DMLoaderBase);
 
-  var _super = _createSuper(B3DMLoader);
-
   function B3DMLoader(manager) {
     var _this;
 
     _classCallCheck(this, B3DMLoader);
 
-    _this = _super.call(this);
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(B3DMLoader).call(this));
     _this.manager = manager;
     return _this;
   }
@@ -39642,7 +39645,626 @@ function (_B3DMLoaderBase) {
 }(_B3DMLoaderBase2.B3DMLoaderBase);
 
 exports.B3DMLoader = B3DMLoader;
-},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
+},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/PNTSLoaderBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PNTSLoaderBase = void 0;
+
+var _FeatureTable = require("../utilities/FeatureTable.js");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var PNTSLoaderBase =
+/*#__PURE__*/
+function () {
+  function PNTSLoaderBase() {
+    _classCallCheck(this, PNTSLoaderBase);
+
+    this.fetchOptions = {};
+  }
+
+  _createClass(PNTSLoaderBase, [{
+    key: "load",
+    value: function load(url) {
+      var _this = this;
+
+      return fetch(url, this.fetchOptions).then(function (res) {
+        if (!res.ok) {
+          throw new Error("Failed to load file \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
+        }
+
+        return res.arrayBuffer();
+      }).then(function (buffer) {
+        return _this.parse(buffer);
+      });
+    }
+  }, {
+    key: "parse",
+    value: function parse(buffer) {
+      var dataView = new DataView(buffer); // 28-byte header
+      // 4 bytes
+
+      var magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
+      console.assert(magic === 'pnts'); // 4 bytes
+
+      var version = dataView.getUint32(4, true);
+      console.assert(version === 1); // 4 bytes
+
+      var byteLength = dataView.getUint32(8, true);
+      console.assert(byteLength === buffer.byteLength); // 4 bytes
+
+      var featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
+
+      var featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
+
+      var batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
+
+      var batchTableBinaryByteLength = dataView.getUint32(24, true); // Feature Table
+
+      var featureTableStart = 28;
+      var featureTable = new _FeatureTable.FeatureTable(buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength); // Batch Table
+
+      var batchLength = featureTable.getData('BATCH_LENGTH') || featureTable.getData('POINTS_LENGTH');
+      var batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
+      var batchTable = new _FeatureTable.BatchTable(buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength);
+      return {
+        version: version,
+        featureTable: featureTable,
+        batchTable: batchTable
+      };
+    }
+  }]);
+
+  return PNTSLoaderBase;
+}();
+
+exports.PNTSLoaderBase = PNTSLoaderBase;
+},{"../utilities/FeatureTable.js":"../src/utilities/FeatureTable.js"}],"../src/three/PNTSLoader.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PNTSLoader = void 0;
+
+var _PNTSLoaderBase2 = require("../base/PNTSLoaderBase.js");
+
+var _three = require("three");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var PNTSLoader =
+/*#__PURE__*/
+function (_PNTSLoaderBase) {
+  _inherits(PNTSLoader, _PNTSLoaderBase);
+
+  function PNTSLoader(manager) {
+    var _this;
+
+    _classCallCheck(this, PNTSLoader);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(PNTSLoader).call(this));
+    _this.manager = manager;
+    return _this;
+  }
+
+  _createClass(PNTSLoader, [{
+    key: "parse",
+    value: function parse(buffer) {
+      var result = _get(_getPrototypeOf(PNTSLoader.prototype), "parse", this).call(this, buffer);
+
+      var featureTable = result.featureTable;
+      window.data = result; // global semantics
+
+      var POINTS_LENGTH = featureTable.getData('POINTS_LENGTH'); // RTC_CENTER
+      // QUANTIZED_VOLUME_OFFSET
+      // QUANTIZED_VOLUME_SCALE
+      // CONSTANT_RGBA
+      // BATCH_LENGTH
+
+      var POSITION = featureTable.getData('POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3');
+      var RGB = featureTable.getData('RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3'); // POSITION_QUANTIZED
+      // RGBA
+      // RGB565
+      // NORMAL
+      // NORMAL_OCT16P
+      // BATCH_ID
+
+      if (POSITION === null) {
+        throw new Error('PNTSLoader : POSITION_QUANTIZED feature type is not supported.');
+      }
+
+      var geometry = new _three.BufferGeometry();
+      geometry.setAttribute('position', new _three.BufferAttribute(POSITION, 3, false));
+      var material = new _three.PointsMaterial();
+      material.size = 2;
+      material.sizeAttenuation = false;
+
+      if (RGB !== null) {
+        geometry.setAttribute('color', new _three.BufferAttribute(RGB, 3, true));
+        material.vertexColors = true;
+      }
+
+      var object = new _three.Points(geometry, material);
+      result.scene = object;
+      return result;
+    }
+  }]);
+
+  return PNTSLoader;
+}(_PNTSLoaderBase2.PNTSLoaderBase);
+
+exports.PNTSLoader = PNTSLoader;
+},{"../base/PNTSLoaderBase.js":"../src/base/PNTSLoaderBase.js","three":"../node_modules/three/build/three.module.js"}],"../src/base/I3DMLoaderBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.I3DMLoaderBase = void 0;
+
+var _FeatureTable = require("../utilities/FeatureTable.js");
+
+var _arrayToString = require("../utilities/arrayToString.js");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var I3DMLoaderBase =
+/*#__PURE__*/
+function () {
+  function I3DMLoaderBase() {
+    _classCallCheck(this, I3DMLoaderBase);
+
+    this.fetchOptions = {};
+  }
+
+  _createClass(I3DMLoaderBase, [{
+    key: "load",
+    value: function load(url) {
+      var _this = this;
+
+      return fetch(url, this.fetchOptions).then(function (res) {
+        if (!res.ok) {
+          throw new Error("Failed to load file \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
+        }
+
+        return res.arrayBuffer();
+      }).then(function (buffer) {
+        return _this.parse(buffer);
+      });
+    }
+  }, {
+    key: "parse",
+    value: function parse(buffer) {
+      var dataView = new DataView(buffer); // 32-byte header
+      // 4 bytes
+
+      var magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
+      console.assert(magic === 'i3dm'); // 4 bytes
+
+      var version = dataView.getUint32(4, true);
+      console.assert(version === 1); // 4 bytes
+
+      var byteLength = dataView.getUint32(8, true);
+      console.assert(byteLength === buffer.byteLength); // 4 bytes
+
+      var featureTableJSONByteLength = dataView.getUint32(12, true); // 4 bytes
+
+      var featureTableBinaryByteLength = dataView.getUint32(16, true); // 4 bytes
+
+      var batchTableJSONByteLength = dataView.getUint32(20, true); // 4 bytes
+
+      var batchTableBinaryByteLength = dataView.getUint32(24, true); // 4 bytes
+
+      var gltfFormat = dataView.getUint32(28, true); // Feature Table
+
+      var featureTableStart = 32;
+      var featureTable = new _FeatureTable.FeatureTable(buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength); // Batch Table
+
+      var batchLength = featureTable.getData('INSTANCES_LENGTH');
+      var batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
+      var batchTable = new _FeatureTable.BatchTable(buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength);
+      var glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
+      var bodyBytes = new Uint8Array(buffer, glbStart, byteLength - glbStart);
+      var glbBytes = null;
+      var promise = null;
+
+      if (gltfFormat) {
+        glbBytes = bodyBytes;
+        promise = Promise.resolve();
+      } else {
+        var externalUri = (0, _arrayToString.arrayToString)(bodyBytes);
+        promise = fetch(externalUri, this.fetchOptions).then(function (res) {
+          return res.buffer;
+        }).then(function (buffer) {
+          glbBytes = new Uint8Array(buffer);
+        });
+      }
+
+      return promise.then(function () {
+        return {
+          version: version,
+          featureTable: featureTable,
+          batchTable: batchTable,
+          glbBytes: glbBytes
+        };
+      });
+    }
+  }]);
+
+  return I3DMLoaderBase;
+}();
+
+exports.I3DMLoaderBase = I3DMLoaderBase;
+},{"../utilities/FeatureTable.js":"../src/utilities/FeatureTable.js","../utilities/arrayToString.js":"../src/utilities/arrayToString.js"}],"../src/three/I3DMLoader.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.I3DMLoader = void 0;
+
+var _I3DMLoaderBase2 = require("../base/I3DMLoaderBase.js");
+
+var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
+
+var _three = require("three");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var tempPos = new _three.Vector3();
+var tempQuat = new _three.Quaternion();
+var tempSca = new _three.Vector3();
+var tempMat = new _three.Matrix4();
+
+var I3DMLoader =
+/*#__PURE__*/
+function (_I3DMLoaderBase) {
+  _inherits(I3DMLoader, _I3DMLoaderBase);
+
+  function I3DMLoader(manager) {
+    var _this;
+
+    _classCallCheck(this, I3DMLoader);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(I3DMLoader).call(this));
+    _this.manager = manager;
+    return _this;
+  }
+
+  _createClass(I3DMLoader, [{
+    key: "parse",
+    value: function parse(buffer) {
+      var _this2 = this;
+
+      return _get(_getPrototypeOf(I3DMLoader.prototype), "parse", this).call(this, buffer).then(function (i3dm) {
+        var featureTable = i3dm.featureTable,
+            batchTable = i3dm.batchTable;
+        var gltfBuffer = i3dm.glbBytes.slice().buffer;
+        return new Promise(function (resolve, reject) {
+          var manager = _this2.manager;
+          new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+            var INSTANCES_LENGTH = featureTable.getData('INSTANCES_LENGTH'); // RTC_CENTER
+            // QUANTIZED_VOLUME_OFFSET
+            // QUANTIZED_VOLUME_SCALE
+            // EAST_NORTH_UP
+
+            var POSITION = featureTable.getData('POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3'); // POSITION_QUANTIZED
+            // NORMAL_UP
+            // NORMAL_RIGHT
+            // NORMAL_UP_OCT32P
+            // NORMAL_RIGHT_OCT32P
+            // SCALE
+            // SCALE_NON_UNIFORM
+            // BATCH_ID
+
+            var instanceMap = new Map();
+            var instances = [];
+            model.scene.traverse(function (child) {
+              if (child.isMesh) {
+                var geometry = child.geometry,
+                    material = child.material;
+                var instancedMesh = new _three.InstancedMesh(geometry, material, INSTANCES_LENGTH);
+                instances.push(instancedMesh);
+                instanceMap.set(child, instancedMesh);
+              }
+            }); // replace the meshes with instanced meshes
+
+            instanceMap.forEach(function (instancedMesh, mesh) {
+              var parent = mesh.parent;
+
+              if (parent) {
+                // Mesh have no children
+                parent.remove(mesh);
+                parent.add(instancedMesh);
+              }
+            });
+
+            for (var i = 0; i < INSTANCES_LENGTH; i++) {
+              // TODO: handle quantized position
+              tempPos.set(POSITION[i * 3 + 0], POSITION[i * 3 + 1], POSITION[i * 3 + 2]); // TODO: handle normal orientation features
+
+              tempQuat.set(0, 0, 0, 1); // TODO: handle scale features
+
+              tempSca.set(1, 1, 1);
+              tempMat.compose(tempPos, tempQuat, tempSca);
+
+              for (var j = 0, l = instances.length; j < l; j++) {
+                var instance = instances[j];
+                instance.setMatrixAt(i, tempMat);
+              }
+            }
+
+            model.batchTable = batchTable;
+            model.featureTable = featureTable;
+            resolve(model);
+          }, reject);
+        });
+      });
+    }
+  }]);
+
+  return I3DMLoader;
+}(_I3DMLoaderBase2.I3DMLoaderBase);
+
+exports.I3DMLoader = I3DMLoader;
+},{"../base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three":"../node_modules/three/build/three.module.js"}],"../src/base/CMPTLoaderBase.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.CMPTLoaderBase = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+// CMPT File Format
+// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Composite/README.md
+var CMPTLoaderBase =
+/*#__PURE__*/
+function () {
+  function CMPTLoaderBase() {
+    _classCallCheck(this, CMPTLoaderBase);
+
+    this.fetchOptions = {};
+  }
+
+  _createClass(CMPTLoaderBase, [{
+    key: "load",
+    value: function load(url) {
+      var _this = this;
+
+      return fetch(url, this.fetchOptions).then(function (res) {
+        if (!res.ok) {
+          throw new Error("Failed to load file \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
+        }
+
+        return res.arrayBuffer();
+      }).then(function (buffer) {
+        return _this.parse(buffer);
+      });
+    }
+  }, {
+    key: "parse",
+    value: function parse(buffer) {
+      var dataView = new DataView(buffer); // 16-byte header
+      // 4 bytes
+
+      var magic = String.fromCharCode(dataView.getUint8(0)) + String.fromCharCode(dataView.getUint8(1)) + String.fromCharCode(dataView.getUint8(2)) + String.fromCharCode(dataView.getUint8(3));
+      console.assert(magic === 'cmpt'); // 4 bytes
+
+      var version = dataView.getUint32(4, true);
+      console.assert(version === 1); // 4 bytes
+
+      var byteLength = dataView.getUint32(8, true);
+      console.assert(byteLength === buffer.byteLength); // 4 bytes
+
+      var tilesLength = dataView.getUint32(12, true);
+      var tiles = [];
+      var offset = 16;
+
+      for (var i = 0; i < tilesLength; i++) {
+        var tileView = new DataView(buffer, offset, 12);
+        var tileMagic = String.fromCharCode(tileView.getUint8(0)) + String.fromCharCode(tileView.getUint8(1)) + String.fromCharCode(tileView.getUint8(2)) + String.fromCharCode(tileView.getUint8(3));
+        var tileVersion = tileView.getUint32(4, true);
+
+        var _byteLength = tileView.getUint32(8, true);
+
+        var tileBuffer = new Uint8Array(buffer, offset, _byteLength);
+        tiles.push({
+          type: tileMagic,
+          buffer: tileBuffer,
+          version: tileVersion
+        });
+        offset += _byteLength;
+      }
+
+      return {
+        version: version,
+        tiles: tiles
+      };
+    }
+  }]);
+
+  return CMPTLoaderBase;
+}();
+
+exports.CMPTLoaderBase = CMPTLoaderBase;
+},{}],"../src/three/CMPTLoader.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.CMPTLoader = void 0;
+
+var _three = require("three");
+
+var _CMPTLoaderBase2 = require("../base/CMPTLoaderBase.js");
+
+var _B3DMLoader = require("./B3DMLoader.js");
+
+var _PNTSLoader = require("./PNTSLoader.js");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var CMPTLoader =
+/*#__PURE__*/
+function (_CMPTLoaderBase) {
+  _inherits(CMPTLoader, _CMPTLoaderBase);
+
+  function CMPTLoader(manager) {
+    var _this;
+
+    _classCallCheck(this, CMPTLoader);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(CMPTLoader).call(this));
+    _this.manager = manager;
+    return _this;
+  }
+
+  _createClass(CMPTLoader, [{
+    key: "parse",
+    value: function parse(buffer) {
+      var result = _get(_getPrototypeOf(CMPTLoader.prototype), "parse", this).call(this, buffer);
+
+      var manager = this.manager;
+      var group = new _three.Group();
+      var results = [];
+      var promises = [];
+
+      for (var i in result.tiles) {
+        var _result$tiles$i = result.tiles[i],
+            type = _result$tiles$i.type,
+            _buffer = _result$tiles$i.buffer;
+
+        switch (type) {
+          case 'b3dm':
+            {
+              var slicedBuffer = _buffer.slice();
+
+              var promise = new _B3DMLoader.B3DMLoader(manager).parse(slicedBuffer.buffer).then(function (res) {
+                results.push(res);
+                group.add(res.scene);
+              });
+              promises.push(promise);
+              break;
+            }
+
+          case 'pnts':
+            {
+              var _slicedBuffer = _buffer.slice();
+
+              var pointsResult = new _PNTSLoader.PNTSLoader(manager).parse(_slicedBuffer.buffer);
+              results.push(pointsResult);
+              group.add(pointsResult.scene);
+              break;
+            }
+
+          case 'i3dm':
+            {
+              var _slicedBuffer2 = _buffer.slice();
+
+              var _promise = new I3DMLoader(manager).parse(_slicedBuffer2.buffer).then(function (res) {
+                results.push(res);
+                group.add(res.scene);
+              });
+
+              promises.push(_promise);
+              break;
+            }
+        }
+      }
+
+      return Promise.all(promises).then(function () {
+        return {
+          tiles: results,
+          scene: group
+        };
+      });
+    }
+  }]);
+
+  return CMPTLoader;
+}(_CMPTLoaderBase2.CMPTLoaderBase);
+
+exports.CMPTLoader = CMPTLoader;
+},{"three":"../node_modules/three/build/three.module.js","../base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39652,7 +40274,7 @@ exports.TilesGroup = void 0;
 
 var _three = require("three");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -39660,19 +40282,15 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
@@ -39684,14 +40302,12 @@ var TilesGroup =
 function (_Group) {
   _inherits(TilesGroup, _Group);
 
-  var _super = _createSuper(TilesGroup);
-
   function TilesGroup(tilesRenderer) {
     var _this;
 
     _classCallCheck(this, TilesGroup);
 
-    _this = _super.call(this);
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(TilesGroup).call(this));
     _this.tilesRenderer = tilesRenderer;
     return _this;
   }
@@ -39977,13 +40593,19 @@ var _TilesRendererBase2 = require("../base/TilesRendererBase.js");
 
 var _B3DMLoader = require("./B3DMLoader.js");
 
+var _PNTSLoader = require("./PNTSLoader.js");
+
+var _I3DMLoader = require("./I3DMLoader.js");
+
+var _CMPTLoader = require("./CMPTLoader.js");
+
 var _TilesGroup = require("./TilesGroup.js");
 
 var _three = require("three");
 
 var _raycastTraverse = require("./raycastTraverse.js");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -39991,23 +40613,19 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 var DEG2RAD = _three.Math.DEG2RAD;
 var tempMat = new _three.Matrix4();
@@ -40027,9 +40645,9 @@ var TilesRenderer =
 function (_TilesRendererBase) {
   _inherits(TilesRenderer, _TilesRendererBase);
 
-  var _super = _createSuper(TilesRenderer);
-
   function TilesRenderer() {
+    var _getPrototypeOf2;
+
     var _this;
 
     _classCallCheck(this, TilesRenderer);
@@ -40038,7 +40656,7 @@ function (_TilesRendererBase) {
       args[_key] = arguments[_key];
     }
 
-    _this = _super.call.apply(_super, [this].concat(args));
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(TilesRenderer)).call.apply(_getPrototypeOf2, [this].concat(args)));
     _this.group = new _TilesGroup.TilesGroup(_assertThisInitialized(_this));
     _this.cameras = [];
     _this.cameraMap = new Map();
@@ -40358,8 +40976,17 @@ function (_TilesRendererBase) {
           break;
 
         case 'pnts':
-        case 'cmpt':
+          promise = Promise.resolve(new _PNTSLoader.PNTSLoader(manager).parse(buffer));
+          break;
+
         case 'i3dm':
+          promise = new _I3DMLoader.I3DMLoader(manager).parse(buffer);
+          break;
+
+        case 'cmpt':
+          promise = new _CMPTLoader.CMPTLoader(manager).parse(buffer);
+          break;
+
         default:
           console.warn("TilesRenderer: Content type \"".concat(extension, "\" not supported."));
           promise = Promise.resolve(null);
@@ -40589,7 +41216,7 @@ function (_TilesRendererBase) {
 }(_TilesRendererBase2.TilesRendererBase);
 
 exports.TilesRenderer = TilesRenderer;
-},{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/three/SphereHelper.js":[function(require,module,exports) {
+},{"../base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js","./I3DMLoader.js":"../src/three/I3DMLoader.js","./CMPTLoader.js":"../src/three/CMPTLoader.js","./TilesGroup.js":"../src/three/TilesGroup.js","three":"../node_modules/three/build/three.module.js","./raycastTraverse.js":"../src/three/raycastTraverse.js"}],"../src/three/SphereHelper.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40599,7 +41226,7 @@ exports.SphereHelper = void 0;
 
 var _three = require("three");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -40607,23 +41234,19 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 var _vector = new _three.Vector3();
 
@@ -40633,8 +41256,6 @@ var SphereHelper =
 /*#__PURE__*/
 function (_LineSegments) {
   _inherits(SphereHelper, _LineSegments);
-
-  var _super = _createSuper(SphereHelper);
 
   function SphereHelper(sphere) {
     var _this;
@@ -40668,10 +41289,10 @@ function (_LineSegments) {
 
     geometry.setAttribute('position', new _three.BufferAttribute(new Float32Array(positions), 3));
     geometry.computeBoundingSphere();
-    _this = _super.call(this, geometry, new _three.LineBasicMaterial({
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(SphereHelper).call(this, geometry, new _three.LineBasicMaterial({
       color: color,
       toneMapped: false
-    }));
+    })));
     _this.sphere = sphere;
     _this.type = 'SphereHelper';
     return _this;
@@ -40706,7 +41327,7 @@ var _TilesRenderer2 = require("./TilesRenderer.js");
 
 var _SphereHelper = require("./SphereHelper.js");
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -40714,23 +41335,19 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function () { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 var ORIGINAL_MATERIAL = Symbol('ORIGINAL_MATERIAL');
 var HAS_RANDOM_COLOR = Symbol('HAS_RANDOM_COLOR');
@@ -40759,9 +41376,9 @@ var DebugTilesRenderer =
 function (_TilesRenderer) {
   _inherits(DebugTilesRenderer, _TilesRenderer);
 
-  var _super = _createSuper(DebugTilesRenderer);
-
   function DebugTilesRenderer() {
+    var _getPrototypeOf2;
+
     var _this;
 
     _classCallCheck(this, DebugTilesRenderer);
@@ -40770,7 +41387,7 @@ function (_TilesRenderer) {
       args[_key] = arguments[_key];
     }
 
-    _this = _super.call.apply(_super, [this].concat(args));
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(DebugTilesRenderer)).call.apply(_getPrototypeOf2, [this].concat(args)));
     var tilesGroup = _this.group;
     var boxGroup = new _three.Group();
     tilesGroup.add(boxGroup);
@@ -40909,7 +41526,14 @@ function (_TilesRenderer) {
               c.material.dispose();
               c.material = c[ORIGINAL_MATERIAL];
             } else if (colorMode !== NONE && currMaterial === originalMaterial) {
-              c.material = new _three.MeshBasicMaterial();
+              if (c.isPoints) {
+                var pointsMaterial = new _three.PointsMaterial();
+                pointsMaterial.size = originalMaterial.size;
+                pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
+                c.material = pointsMaterial;
+              } else {
+                c.material = new _three.MeshBasicMaterial();
+              }
             }
 
             if (colorMode !== RANDOM_COLOR) {
@@ -41155,6 +41779,24 @@ Object.defineProperty(exports, "B3DMLoader", {
     return _B3DMLoader.B3DMLoader;
   }
 });
+Object.defineProperty(exports, "PNTSLoader", {
+  enumerable: true,
+  get: function () {
+    return _PNTSLoader.PNTSLoader;
+  }
+});
+Object.defineProperty(exports, "I3DMLoader", {
+  enumerable: true,
+  get: function () {
+    return _I3DMLoader.I3DMLoader;
+  }
+});
+Object.defineProperty(exports, "CMPTLoader", {
+  enumerable: true,
+  get: function () {
+    return _CMPTLoader.CMPTLoader;
+  }
+});
 Object.defineProperty(exports, "TilesRendererBase", {
   enumerable: true,
   get: function () {
@@ -41165,6 +41807,24 @@ Object.defineProperty(exports, "B3DMLoaderBase", {
   enumerable: true,
   get: function () {
     return _B3DMLoaderBase.B3DMLoaderBase;
+  }
+});
+Object.defineProperty(exports, "I3DMLoaderBase", {
+  enumerable: true,
+  get: function () {
+    return _I3DMLoaderBase.I3DMLoaderBase;
+  }
+});
+Object.defineProperty(exports, "PNTSLoaderBase", {
+  enumerable: true,
+  get: function () {
+    return _PNTSLoaderBase.PNTSLoaderBase;
+  }
+});
+Object.defineProperty(exports, "CMPTLoaderBase", {
+  enumerable: true,
+  get: function () {
+    return _CMPTLoaderBase.CMPTLoaderBase;
   }
 });
 Object.defineProperty(exports, "LRUCache", {
@@ -41186,14 +41846,26 @@ var _TilesRenderer = require("./three/TilesRenderer.js");
 
 var _B3DMLoader = require("./three/B3DMLoader.js");
 
+var _PNTSLoader = require("./three/PNTSLoader.js");
+
+var _I3DMLoader = require("./three/I3DMLoader.js");
+
+var _CMPTLoader = require("./three/CMPTLoader.js");
+
 var _TilesRendererBase = require("./base/TilesRendererBase.js");
 
 var _B3DMLoaderBase = require("./base/B3DMLoaderBase.js");
 
+var _I3DMLoaderBase = require("./base/I3DMLoaderBase.js");
+
+var _PNTSLoaderBase = require("./base/PNTSLoaderBase.js");
+
+var _CMPTLoaderBase = require("./base/CMPTLoaderBase.js");
+
 var _LRUCache = require("./utilities/LRUCache.js");
 
 var _PriorityQueue = require("./utilities/PriorityQueue.js");
-},{"./three/DebugTilesRenderer.js":"../src/three/DebugTilesRenderer.js","./three/TilesRenderer.js":"../src/three/TilesRenderer.js","./three/B3DMLoader.js":"../src/three/B3DMLoader.js","./base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","./utilities/LRUCache.js":"../src/utilities/LRUCache.js","./utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
+},{"./three/DebugTilesRenderer.js":"../src/three/DebugTilesRenderer.js","./three/TilesRenderer.js":"../src/three/TilesRenderer.js","./three/B3DMLoader.js":"../src/three/B3DMLoader.js","./three/PNTSLoader.js":"../src/three/PNTSLoader.js","./three/I3DMLoader.js":"../src/three/I3DMLoader.js","./three/CMPTLoader.js":"../src/three/CMPTLoader.js","./base/TilesRendererBase.js":"../src/base/TilesRendererBase.js","./base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","./base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","./base/PNTSLoaderBase.js":"../src/base/PNTSLoaderBase.js","./base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./utilities/LRUCache.js":"../src/utilities/LRUCache.js","./utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js"}],"../node_modules/three/examples/jsm/controls/OrbitControls.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42087,7 +42759,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64703" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54493" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

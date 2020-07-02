@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MeshBasicMaterial } from 'three';
+import { Box3Helper, Group, MeshBasicMaterial, PointsMaterial } from 'three';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
 
@@ -193,7 +193,18 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					} else if ( colorMode !== NONE && currMaterial === originalMaterial ) {
 
-						c.material = new MeshBasicMaterial();
+						if ( c.isPoints ) {
+
+							const pointsMaterial= new PointsMaterial();
+							pointsMaterial.size = originalMaterial.size;
+							pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
+							c.material = pointsMaterial;
+
+						} else {
+
+							c.material = new MeshBasicMaterial();
+
+						}
 
 					}
 

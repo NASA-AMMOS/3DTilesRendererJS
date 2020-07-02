@@ -14,13 +14,23 @@ export class B3DMLoaderBase {
 	load( url ) {
 
 		return fetch( url, this.fetchOptions )
-			.then( res => res.arrayBuffer() )
+			.then( res => {
+
+				if ( ! res.ok ) {
+
+					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
+
+				}
+				return res.arrayBuffer();
+
+			} )
 			.then( buffer => this.parse( buffer ) );
 
 	}
 
 	parse( buffer ) {
 
+		// TODO: this should be able to take a uint8array with an offset and length
 		const dataView = new DataView( buffer );
 
 		// 28-byte header

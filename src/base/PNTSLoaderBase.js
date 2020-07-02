@@ -1,9 +1,9 @@
 // PNTS File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
-import { BatchTable } from "../utilities/FeatureTable";
+import { FeatureTable, BatchTable } from "../utilities/FeatureTable.js";
 
-export class I3DMLoaderBase {
+export class PNTSLoaderBase {
 
 	constructor() {
 
@@ -14,7 +14,16 @@ export class I3DMLoaderBase {
 	load( url ) {
 
 		return fetch( url, this.fetchOptions )
-			.then( res => res.arrayBuffer() )
+			.then( res => {
+
+				if ( ! res.ok ) {
+
+					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
+
+				}
+				return res.arrayBuffer();
+
+			} )
 			.then( buffer => this.parse( buffer ) );
 
 	}
@@ -61,7 +70,7 @@ export class I3DMLoaderBase {
 		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
 
 		// Batch Table
-		const batchLength = featureTable.getData( 'BATCH_LENGTH' ) || 0;
+		const batchLength = featureTable.getData( 'BATCH_LENGTH' ) || featureTable.getData( 'POINTS_LENGTH' );
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
 
