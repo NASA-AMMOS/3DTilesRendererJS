@@ -4,6 +4,8 @@ import { TilesGroup } from './TilesGroup';
 
 export class TilesRenderer extends TilesRendererBase {
 
+	autoDisableRendererCulling : Boolean;
+
 	group : TilesGroup;
 
 	getBounds( box : Box3 ) : Boolean;
