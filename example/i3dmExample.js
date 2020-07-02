@@ -80,23 +80,27 @@ function init() {
 
 			} );
 
-			const pos = new Vector3();
-			const quat = new Quaternion();
-			const sca = new Vector3();
-			const mat = new Matrix4();
-			const averagePos = new Vector3();
+			if ( instance ) {
 
-			for ( let i = 0, l = instance.count; i < l; i ++ ) {
+				const pos = new Vector3();
+				const quat = new Quaternion();
+				const sca = new Vector3();
+				const mat = new Matrix4();
+				const averagePos = new Vector3();
 
-				instance.getMatrixAt( i, mat );
-				mat.decompose( pos, quat, sca );
-				averagePos.add( pos );
+				for ( let i = 0, l = instance.count; i < l; i ++ ) {
+
+					instance.getMatrixAt( i, mat );
+					mat.decompose( pos, quat, sca );
+					averagePos.add( pos );
+
+				}
+
+				averagePos.divideScalar( instance.count );
+				controls.target.copy( averagePos );
+				controls.update();
 
 			}
-
-			averagePos.divideScalar( instance.count );
-			controls.target.copy( averagePos );
-			controls.update();
 
 			console.log( res );
 			scene.add( res.scene );

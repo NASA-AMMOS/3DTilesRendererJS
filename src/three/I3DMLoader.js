@@ -61,9 +61,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 									children[ i ] = instancedMesh;
 									instances.push( instancedMesh );
 
-									window.instancedMesh = instancedMesh;
-									child.material = new MeshBasicMaterial()
-
 								} else {
 
 									traverse( child );
