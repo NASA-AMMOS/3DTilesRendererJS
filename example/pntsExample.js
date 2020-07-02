@@ -66,6 +66,7 @@ function init() {
 		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/points.pnts' )
 		.then( res => {
 
+			console.log( res );
 			scene.add( res.scene );
 
 		} );
