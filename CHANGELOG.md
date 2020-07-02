@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+
 - Basic support for CMPT, PNTS, and I3DM file formats.
+- `autoDisableRendererCulling` field to `TilesRenderer`.
 
 ## [0.1.2] - 2020-06-08
 ### Changed
