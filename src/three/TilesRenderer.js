@@ -1,5 +1,8 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
+import { PNTSLoader } from './PNTSLoader.js';
+import { I3DMLoader } from './I3DMLoader.js';
+import { CMPTLoader } from './CMPTLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -438,8 +441,17 @@ export class TilesRenderer extends TilesRendererBase {
 				break;
 
 			case 'pnts':
-			case 'cmpt':
+				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ) );
+				break;
+
 			case 'i3dm':
+				promise = new I3DMLoader( manager ).parse( buffer );
+				break;
+
+			case 'cmpt':
+				promise = new CMPTLoader( manager ).parse( buffer );
+				break;
+
 			default:
 				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
 				promise = Promise.resolve( null );
