@@ -1,7 +1,6 @@
 import { B3DMBaseResult } from '../base/B3DMLoaderBase';
 import { I3DMBaseResult } from '../base/I3DMLoaderBase';
 import { PNTSBaseResult } from '../base/B3DMLoaderBase';
-import { CMPTLoaderBase } from '../base/CMPTLoaderBase';
 import { Group } from 'three';
 
 export interface CMPTResult {
@@ -11,7 +10,7 @@ export interface CMPTResult {
 
 }
 
-export class CMPTLoader extends CMPTLoaderBase {
+export class CMPTLoader {
 
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< CMPTResult >;

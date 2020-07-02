@@ -1,4 +1,4 @@
-import { I3DMLoaderBase, I3DMBaseResult } from '../base/I3DMLoaderBase';
+import { I3DMBaseResult } from '../base/I3DMLoaderBase';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export interface I3DMResult extends GLTF, I3DMBaseResult {
@@ -8,7 +8,7 @@ export interface I3DMResult extends GLTF, I3DMBaseResult {
 
 }
 
-export class I3DMLoader extends I3DMLoaderBase {
+export class I3DMLoader {
 
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< I3DMResult >;
