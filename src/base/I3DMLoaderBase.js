@@ -1,6 +1,7 @@
 // I3DM File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Instanced3DModel/README.md
 
+import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
 import { arrayToString } from '../utilities/arrayToString.js';
 
 export class I3DMLoaderBase {
@@ -75,9 +76,14 @@ export class I3DMLoaderBase {
 		// Batch Table
 		const BATCH_ID = featureTable.getData( 'BATCH_ID', 'UNSIGNED_SHORT' );
 		let maxBatchId = - 1;
-		for ( let i = 0, l = BATCH_ID.length; i < l; i ++ ) {
 
-			maxBatchId = Math.max( BATCH_ID[ i ], maxBatchId );
+		if ( BATCH_ID !== null ) {
+
+			for ( let i = 0, l = BATCH_ID.length; i < l; i ++ ) {
+
+				maxBatchId = Math.max( BATCH_ID[ i ], maxBatchId );
+
+			}
 
 		}
 

@@ -24,7 +24,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 			const { type, buffer } = result.tiles[ i ];
 			switch ( type ) {
-				case 'b3dm':
+				case 'b3dm': {
 
 					const slicedBuffer = buffer.slice();
 					const promise = new B3DMLoader( manager )
@@ -39,7 +39,8 @@ export class CMPTLoader extends CMPTLoaderBase {
 					promises.push(promise);
 					break;
 
-				case 'pnts':
+				}
+				case 'pnts': {
 
 					const slicedBuffer = buffer.slice();
 					const pointsResult = new PNTSLoader( manager ).parse( slicedBuffer.buffer );
@@ -47,6 +48,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					group.add( pointsResult.scene );
 					break;
 
+				}
 				case 'i3dm':
 				default:
 			}
