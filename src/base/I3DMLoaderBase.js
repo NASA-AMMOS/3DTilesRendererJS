@@ -80,7 +80,6 @@ export class I3DMLoaderBase {
 		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
 
 		let glbBytes = null;
-		let externalUri = null;
 		let promise = null;
 		if ( gltfFormat ) {
 
@@ -89,7 +88,7 @@ export class I3DMLoaderBase {
 
 		} else {
 
-			externalUri = arrayToString( bodyBytes );
+			const externalUri = arrayToString( bodyBytes );
 			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => res.buffer )
 				.then( buffer => {
@@ -107,7 +106,6 @@ export class I3DMLoaderBase {
 				featureTable,
 				batchTable,
 				glbBytes,
-				externalUri,
 			};
 
 		} );
