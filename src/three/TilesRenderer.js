@@ -19,6 +19,7 @@ import {
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
+const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -33,7 +34,42 @@ const useImageBitmap = typeof createImageBitmap !== 'undefined';
 
 function emptyRaycast() {}
 
+function updateFrustumCulled( object, toInitialValue ) {
+
+	object.traverse( c => {
+
+		c.frustumCulled = c[ INITIAL_FRUSTUM_CULLED ] && toInitialValue;
+
+	} );
+
+}
+
 export class TilesRenderer extends TilesRendererBase {
+
+	get autoDisableRendererCulling() {
+
+		return this._autoDisableRendererCulling;
+
+	}
+
+	set autoDisableRendererCulling( value ) {
+
+		if ( this._autoDisableRendererCulling !== value ) {
+
+			super._autoDisableRendererCulling = value;
+			this.traverse( tile => {
+
+				if ( tile.scene ) {
+
+					updateFrustumCulled( tile.scene, value );
+
+				}
+
+			} );
+
+		}
+
+	}
 
 	constructor( ...args ) {
 
@@ -44,6 +80,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameraInfo = [];
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
+		this._autoDisableRendererCulling = true;
 
 		this.onLoadModel = null;
 
@@ -489,7 +526,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 			scene.matrix.premultiply( cachedTransform );
 			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
-			scene.traverse( c => c.frustumCulled = false );
+			scene.traverse( c => {
+
+				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
+
+			} );
+			updateFrustumCulled( scene, this.autoDisableRendererCulling );
 
 			cached.scene = scene;
 
