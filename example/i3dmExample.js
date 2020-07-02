@@ -36,7 +36,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	camera.position.set( 20, 20, 20 );
+	camera.position.set( 100, 100, 100 );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -82,6 +82,8 @@ function init() {
 
 			if ( instance ) {
 
+				res.scene.updateMatrixWorld( true );
+
 				const pos = new Vector3();
 				const quat = new Quaternion();
 				const sca = new Vector3();
@@ -91,6 +93,7 @@ function init() {
 				for ( let i = 0, l = instance.count; i < l; i ++ ) {
 
 					instance.getMatrixAt( i, mat );
+					mat.premultiply( instance.matrixWorld );
 					mat.decompose( pos, quat, sca );
 					averagePos.add( pos );
 
@@ -98,6 +101,7 @@ function init() {
 
 				averagePos.divideScalar( instance.count );
 				controls.target.copy( averagePos );
+				camera.position.add( averagePos )
 				controls.update();
 
 			}

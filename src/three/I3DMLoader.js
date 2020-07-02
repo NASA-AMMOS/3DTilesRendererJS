@@ -46,31 +46,35 @@ export class I3DMLoader extends I3DMLoaderBase {
 						// SCALE_NON_UNIFORM
 						// BATCH_ID
 
-						let instances = [];
-						const traverse = c => {
+						const instanceMap = new Map();
+						const instances = [];
+						model.scene.traverse( child => {
 
-							const children = c.children;
-							for ( let i = 0, l = children.length; i < l; i ++ ) {
+							if ( child.isMesh ) {
 
-								const child = children[ i ];
-								if ( child.isMesh ) {
-
-									// TODO: Why is the model being rotated after?
-									const { geometry, material } = child;
-									const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
-									children[ i ] = instancedMesh;
-									instances.push( instancedMesh );
-
-								} else {
-
-									traverse( child );
-
-								}
+								const { geometry, material } = child;
+								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
+								instances.push( instancedMesh );
+								instanceMap.set( child, instancedMesh );
 
 							}
 
-						};
-						traverse( model.scene );
+						} );
+
+						// replace the meshes with instanced meshes
+						instanceMap.forEach( ( instancedMesh, mesh ) => {
+
+							const parent = mesh.parent;
+							if ( parent ) {
+
+								// Mesh have no children
+								parent.remove( mesh );
+								parent.add( instancedMesh );
+
+							}
+
+
+						} );
 
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
