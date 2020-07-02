@@ -13,6 +13,7 @@ export interface CMPTResult {
 
 export class CMPTLoader extends CMPTLoaderBase {
 
+	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< CMPTResult >;
 	parse( buffer : ArrayBuffer ) : CMPTResult;
 

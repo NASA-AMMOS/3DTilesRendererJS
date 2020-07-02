@@ -10,6 +10,7 @@ export interface I3DMResult extends GLTF, I3DMBaseResult {
 
 export class I3DMLoader extends I3DMLoaderBase {
 
+	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< I3DMResult >;
 	parse( buffer : ArrayBuffer ) : I3DMResult;
 
