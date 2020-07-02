@@ -14,7 +14,7 @@ Three.js renderer implementation for the [3D Tiles format](https://github.com/An
 
 [Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
 
-[Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
+[Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
 
 # Use
 
