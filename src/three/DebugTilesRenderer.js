@@ -68,7 +68,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 	loadTileSet( ...args ) {
 
 		const pr = super.loadTileSet( ...args );
-		pr.then( () => this.initExtremes() );
+		pr
+			.then( () => this.initExtremes() )
+			.catch( () => {
+
+				// error is logged internally
+
+			} );
 
 		return pr;
 
