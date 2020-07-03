@@ -179,6 +179,17 @@ export class DebugTilesRenderer extends TilesRenderer {
 		visibleTiles.forEach( tile => {
 
 			const scene = tile.cached.scene;
+
+			// create a random color per-tile
+			let h, s, l;
+			if ( colorMode === RANDOM_COLOR ) {
+
+				h = Math.random();
+				s = 0.5 + Math.random() * 0.5;
+				l = 0.375 + Math.random() * 0.25;
+
+			}
+
 			scene.traverse( c => {
 
 				const currMaterial = c.material;
@@ -280,9 +291,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
 
-								const h = Math.random();
-								const s = 0.5 + Math.random() * 0.5;
-								const l = 0.375 + Math.random() * 0.25;
 								c.material.color.setHSL( h, s, l );
 								c.material[ HAS_RANDOM_COLOR ] = true;
 
