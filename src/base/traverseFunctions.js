@@ -1,4 +1,4 @@
-import { LOADED } from './constants.js';
+import { LOADED, FAILED } from './constants.js';
 
 // Checks whether this tile was last used on the given frame.
 function isUsedThisFrame( tile, frameCount ) {
@@ -195,7 +195,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childLoaded = ( ! c.__contentEmpty && c.__loadingState === LOADED ) || c.__allChildrenLoaded;
+				const childContentLoaded = c.__loadingState === LOADED || c.__loadingState === FAILED;
+				const childLoaded = ( ! c.__contentEmpty && childContentLoaded ) || c.__allChildrenLoaded;
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
@@ -253,7 +254,7 @@ export function skipTraversal( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
-	const loadedContent = tile.__loadingState === LOADED && ! tile.__contentEmpty;
+	const loadedContent = ( tile.__loadingState === LOADED || tile.__loadingState === FAILED ) && ! tile.__contentEmpty;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = tile.__allChildrenLoaded;

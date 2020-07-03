@@ -55,6 +55,7 @@ export class TilesRendererBase {
 		this.stats = {
 			parsing: 0,
 			downloading: 0,
+			failed: 0,
 			inFrustum: 0,
 			used: 0,
 			active: 0,
@@ -425,6 +426,21 @@ export class TilesRendererBase {
 				}
 
 				if ( e.name !== 'AbortError' ) {
+
+					parseQueue.remove( tile );
+					downloadQueue.remove( tile );
+
+					if ( tile.__loadingState === PARSING ) {
+
+						stats.parsing --;
+
+					} else if ( tile.__loadingState === LOADING ) {
+
+						stats.downloading --;
+
+					}
+
+					stats.failed ++;
 
 					console.error( 'TilesRenderer : Failed to load tile.' );
 					console.error( e );
