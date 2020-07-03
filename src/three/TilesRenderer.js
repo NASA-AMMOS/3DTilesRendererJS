@@ -456,14 +456,14 @@ export class TilesRenderer extends TilesRendererBase {
 			// behavior. Fall back to regular texture loading
 			manager.addHandler( /(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
 
-				load( url, onComplete ) {
+				load( url, onComplete, onProgress, onError ) {
 
 					const loader = new ImageBitmapLoader();
 					loader.load( url, res => {
 
 						onComplete( new CanvasTexture( res ) );
 
-					} );
+					}, onProgress, onError);
 
 				}
 
