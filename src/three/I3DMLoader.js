@@ -1,6 +1,6 @@
 import { I3DMLoaderBase } from '../base/I3DMLoaderBase.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Matrix4, InstancedMesh, Vector3, Quaternion, MeshBasicMaterial, BoxBufferGeometry } from 'three';
+import { Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 
 const tempPos = new Vector3();
 const tempQuat = new Quaternion();
