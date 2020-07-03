@@ -14,7 +14,6 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 		const result = super.parse( buffer );
 		const { featureTable } = result;
-		window.data = result
 
 		// global semantics
 		const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
