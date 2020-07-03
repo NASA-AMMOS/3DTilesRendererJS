@@ -101,7 +101,7 @@ function init() {
 
 				averagePos.divideScalar( instance.count );
 				controls.target.copy( averagePos );
-				camera.position.add( averagePos )
+				camera.position.add( averagePos );
 				controls.update();
 
 			}
