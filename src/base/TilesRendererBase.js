@@ -55,6 +55,7 @@ export class TilesRendererBase {
 		this.stats = {
 			parsing: 0,
 			downloading: 0,
+			failed: 0,
 			inFrustum: 0,
 			used: 0,
 			active: 0,
@@ -235,7 +236,7 @@ export class TilesRendererBase {
 
 						} else {
 
-							throw new Error( `Status ${ res.status } (${ res.statusText })` );
+							throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
 
 						}
 
@@ -253,19 +254,26 @@ export class TilesRendererBase {
 
 					} );
 
-			pr.catch( e => {
+			pr.catch( err => {
 
-				console.error( `TilesLoader: Failed to load tile set json "${ url }"` );
-				console.error( e );
-				delete tileSets[ url ];
+				console.error( err );
+				tileSets[ url ] = err;
 
 			} );
 
 			tileSets[ url ] = pr;
 
-		}
+			return pr;
 
-		return Promise.resolve( tileSets[ url ] );
+		} else if ( tileSets[ url ] instanceof Error ) {
+
+			return Promise.reject( tileSets[ url ] );
+
+		} else {
+
+			return Promise.resolve( tileSets[ url ] );
+
+		}
 
 	}
 
@@ -425,6 +433,21 @@ export class TilesRendererBase {
 				}
 
 				if ( e.name !== 'AbortError' ) {
+
+					parseQueue.remove( tile );
+					downloadQueue.remove( tile );
+
+					if ( tile.__loadingState === PARSING ) {
+
+						stats.parsing --;
+
+					} else if ( tile.__loadingState === LOADING ) {
+
+						stats.downloading --;
+
+					}
+
+					stats.failed ++;
 
 					console.error( 'TilesRenderer : Failed to load tile.' );
 					console.error( e );

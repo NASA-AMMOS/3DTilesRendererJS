@@ -200,3 +200,27 @@ Verify the boxes change with the level of detail of the terrain.
 #### expected
 
 Verify the display does not change and the tiles to not disappear while parent tiles load.
+
+## Verify the renderer does not repeatedly try to download a failed tileset.json
+
+#### steps
+
+1. Open the kitchen sink example.
+1. Set the location hash to `#./non/existing/tileset.json` to load a different tileset.
+
+#### expected
+
+Verify that an error is logged stating that the tileset could not be found just once.
+
+## Verify that failing to load a parent tile does not prevent child tiles from loading
+
+#### steps
+
+1. Temporarily rename the root b3dm file the provided example tileset.
+1. Open the kitchen sink example.
+1. Set the error threshold as high as it goes.
+1. Click rebuild.
+
+#### expected
+
+Verify an error is logged stating that the root tile content could not be loaded, that the stats state that is 1 tile that failed, that "downloads" and "parsing" eventually settle to 0, and that child tiles continue to render.
