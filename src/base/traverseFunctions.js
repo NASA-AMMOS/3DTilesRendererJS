@@ -1,5 +1,11 @@
 import { LOADED, FAILED } from './constants.js';
 
+function isDownloadFinished( value ) {
+
+	return value === LOADED || value === FAILED;
+
+}
+
 // Checks whether this tile was last used on the given frame.
 function isUsedThisFrame( tile, frameCount ) {
 
@@ -195,8 +201,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childContentLoaded = c.__loadingState === LOADED || c.__loadingState === FAILED;
-				const childLoaded = ( ! c.__contentEmpty && childContentLoaded ) || c.__allChildrenLoaded;
+				const childLoaded = ( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) || c.__allChildrenLoaded;
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
@@ -254,7 +259,7 @@ export function skipTraversal( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const hasContent = ! tile.__contentEmpty;
-	const loadedContent = ( tile.__loadingState === LOADED || tile.__loadingState === FAILED ) && ! tile.__contentEmpty;
+	const loadedContent = isDownloadFinished( tile.__loadingState ) && ! tile.__contentEmpty;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = tile.__allChildrenLoaded;
@@ -278,6 +283,8 @@ export function skipTraversal( tile, renderer ) {
 	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
 	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
 	// load in.
+
+	// Skip the tile entirely if there's no content to load
 	if ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && hasContent ) {
 
 		if ( loadedContent ) {
