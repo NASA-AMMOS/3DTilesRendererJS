@@ -224,3 +224,16 @@ Verify that an error is logged stating that the tileset could not be found just 
 #### expected
 
 Verify an error is logged stating that the root tile content could not be loaded, that the stats state that is 1 tile that failed, that "downloads" and "parsing" eventually settle to 0, and that child tiles continue to render.
+
+## Verify that the tileset will render when a tile with no content is present
+
+#### steps
+
+1. Temporarily remove the content field from the root tile in the sample tileset.json.
+1. Open the kitchen sink example.
+1. Set the error threshold as high as it goes.
+1. Click rebuild.
+
+#### expected
+
+Verify that the tileset still renders correctly.
