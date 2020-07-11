@@ -14,9 +14,12 @@ class LRUCache {
 		this.minSize = 600;
 		this.unloadPercent = 0.05;
 
-		this.usedSet = new Set();
+		// "itemSet" doubles as both the list of the full set of items currently
+		// stored in the cache (keys) as well as a map to the time the item was last
+		// used so it can be sorted appropriately.
 		this.itemSet = new Map();
 		this.itemList = [];
+		this.usedSet = new Set();
 		this.callbacks = new Map();
 
 		this.unloadPriorityCallback = null;
