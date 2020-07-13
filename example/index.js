@@ -81,6 +81,7 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer( url );
+	tiles.fetchOptions.mode = 'cors';
 	offsetParent.add( tiles.group );
 
 }
