@@ -36273,7 +36273,11 @@ exports.toggleTiles = toggleTiles;
 
 var _constants = require("./constants.js");
 
-// Checks whether this tile was last used on the given frame.
+function isDownloadFinished(value) {
+  return value === _constants.LOADED || value === _constants.FAILED;
+} // Checks whether this tile was last used on the given frame.
+
+
 function isUsedThisFrame(tile, frameCount) {
   return tile.__lastFrameVisited === frameCount && tile.__used;
 } // Resets the frame frame information for the given tile
@@ -36428,7 +36432,8 @@ function markUsedSetLeaves(tile, renderer) {
       childrenWereVisible = childrenWereVisible || _c2.__wasSetVisible || _c2.__childrenWereVisible;
 
       if (isUsedThisFrame(_c2, frameCount)) {
-        var childLoaded = !_c2.__contentEmpty && _c2.__loadingState === _constants.LOADED || _c2.__allChildrenLoaded;
+        var childLoaded = !_c2.__contentEmpty && isDownloadFinished(_c2.__loadingState) || _c2.__allChildrenLoaded;
+
         allChildrenLoaded = allChildrenLoaded && childLoaded;
       }
     }
@@ -36474,7 +36479,7 @@ function skipTraversal(tile, renderer) {
   var errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
   var meetsSSE = tile.__error <= errorRequirement;
   var hasContent = !tile.__contentEmpty;
-  var loadedContent = tile.__loadingState === _constants.LOADED && !tile.__contentEmpty;
+  var loadedContent = isDownloadFinished(tile.__loadingState) && !tile.__contentEmpty;
   var childrenWereVisible = tile.__childrenWereVisible;
   var children = tile.children;
   var allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
@@ -36491,9 +36496,10 @@ function skipTraversal(tile, renderer) {
   // all children have loaded yet, and if no children were visible last frame. We want to keep children visible
   // that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
   // load in.
+  // Skip the tile entirely if there's no content to load
 
 
-  if (meetsSSE && !allChildrenHaveContent && !childrenWereVisible) {
+  if (meetsSSE && !allChildrenHaveContent && !childrenWereVisible && hasContent) {
     if (loadedContent) {
       if (tile.__inFrustum) {
         tile.__visible = true;
@@ -36642,6 +36648,7 @@ function () {
     this.stats = {
       parsing: 0,
       downloading: 0,
+      failed: 0,
       inFrustum: 0,
       used: 0,
       active: 0,
@@ -36772,7 +36779,7 @@ function () {
           if (res.ok) {
             return res.json();
           } else {
-            throw new Error("Status ".concat(res.status, " (").concat(res.statusText, ")"));
+            throw new Error("TilesRenderer: Failed to load tileset \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
           }
         }).then(function (json) {
           var version = json.asset.version;
@@ -36785,15 +36792,17 @@ function () {
           });
           tileSets[url] = json;
         });
-        pr.catch(function (e) {
-          console.error("TilesLoader: Failed to load tile set json \"".concat(url, "\""));
-          console.error(e);
-          delete tileSets[url];
+        pr.catch(function (err) {
+          console.error(err);
+          tileSets[url] = err;
         });
         tileSets[url] = pr;
+        return pr;
+      } else if (tileSets[url] instanceof Error) {
+        return Promise.reject(tileSets[url]);
+      } else {
+        return Promise.resolve(tileSets[url]);
       }
-
-      return Promise.resolve(tileSets[url]);
     }
   }, {
     key: "requestTileContents",
@@ -36906,6 +36915,16 @@ function () {
         }
 
         if (e.name !== 'AbortError') {
+          parseQueue.remove(tile);
+          downloadQueue.remove(tile);
+
+          if (tile.__loadingState === _constants.PARSING) {
+            stats.parsing--;
+          } else if (tile.__loadingState === _constants.LOADING) {
+            stats.downloading--;
+          }
+
+          stats.failed++;
           console.error('TilesRenderer : Failed to load tile.');
           console.error(e);
           tile.__loadingState = _constants.FAILED;
@@ -39780,8 +39799,7 @@ function (_PNTSLoaderBase) {
     value: function parse(buffer) {
       var result = _get(_getPrototypeOf(PNTSLoader.prototype), "parse", this).call(this, buffer);
 
-      var featureTable = result.featureTable;
-      window.data = result; // global semantics
+      var featureTable = result.featureTable; // global semantics
 
       var POINTS_LENGTH = featureTable.getData('POINTS_LENGTH'); // RTC_CENTER
       // QUANTIZED_VOLUME_OFFSET
@@ -40993,11 +41011,11 @@ function (_TilesRendererBase) {
         // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
         // behavior. Fall back to regular texture loading
         manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-          load: function load(url, onComplete) {
+          load: function load(url, onComplete, onProgress, onError) {
             var loader = new _three.ImageBitmapLoader();
             loader.load(url, function (res) {
               onComplete(new _three.CanvasTexture(res));
-            });
+            }, onProgress, onError);
           }
         });
       }
@@ -41468,6 +41486,7 @@ function (_TilesRenderer) {
 
       pr.then(function () {
         return _this2.initExtremes();
+      }).catch(function () {// error is logged internally
       });
       return pr;
     }
@@ -41547,7 +41566,16 @@ function (_TilesRenderer) {
       var colorMode = this.colorMode;
       var visibleTiles = this.visibleTiles;
       visibleTiles.forEach(function (tile) {
-        var scene = tile.cached.scene;
+        var scene = tile.cached.scene; // create a random color per-tile
+
+        var h, s, l;
+
+        if (colorMode === RANDOM_COLOR) {
+          h = Math.random();
+          s = 0.5 + Math.random() * 0.5;
+          l = 0.375 + Math.random() * 0.25;
+        }
+
         scene.traverse(function (c) {
           var currMaterial = c.material;
 
@@ -41635,9 +41663,6 @@ function (_TilesRenderer) {
               case RANDOM_COLOR:
                 {
                   if (!c.material[HAS_RANDOM_COLOR]) {
-                    var h = Math.random();
-                    var s = 0.5 + Math.random() * 0.5;
-                    var l = 0.375 + Math.random() * 0.25;
                     c.material.color.setHSL(h, s, l);
                     c.material[HAS_RANDOM_COLOR] = true;
                   }
@@ -45944,7 +45969,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63732" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57609" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
