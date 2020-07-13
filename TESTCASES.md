@@ -84,14 +84,14 @@ tiles.traverse( tile => {
   str += ' : ';
   str += tile.__loadingState;
   console.log( str )
-	return tile.__isLeaf;
+  return tile.__isLeaf;
 
 } );
 ```
 
 #### expected
 
-Verify that no parent tiles have loaded ( `__loadingState = 0` ) if they have a threshold above 18 ( `( target + 1 ) * threshold` ).
+Verify that no parent tiles have loaded ( `__loadingState` should equal `0` ) if they have a threshold above 18 ( `( target + 1 ) * threshold` ).
 
 ## Verify tiles do not display past the maxDepth threshold
 

@@ -14,12 +14,18 @@ class LRUCache {
 		this.minSize = 600;
 		this.unloadPercent = 0.05;
 
-		this.usedSet = new Set();
-		this.itemSet = new Set();
+		// "itemSet" doubles as both the list of the full set of items currently
+		// stored in the cache (keys) as well as a map to the time the item was last
+		// used so it can be sorted appropriately.
+		this.itemSet = new Map();
 		this.itemList = [];
+		this.usedSet = new Set();
 		this.callbacks = new Map();
 
 		this.unloadPriorityCallback = null;
+
+		const itemSet = this.itemSet;
+		this.defaultPriorityCallback = item => itemSet.get( item );
 
 	}
 
@@ -50,7 +56,7 @@ class LRUCache {
 		const callbacks = this.callbacks;
 		itemList.push( item );
 		usedSet.add( item );
-		itemSet.add( item );
+		itemSet.set( item, Date.now() );
 		callbacks.set( item, removeCb );
 
 		return true;
@@ -88,10 +94,7 @@ class LRUCache {
 		const usedSet = this.usedSet;
 		if ( itemSet.has( item ) && ! usedSet.has( item ) ) {
 
-			const itemList = this.itemList;
-			const index = itemList.indexOf( item );
-			itemList.splice( index, 1 );
-			itemList.push( item );
+			itemSet.set( item, Date.now() );
 			usedSet.add( item );
 
 		}
@@ -116,38 +119,34 @@ class LRUCache {
 		const callbacks = this.callbacks;
 		const unused = itemList.length - usedSet.size;
 		const excess = itemList.length - targetSize;
-		const unloadPriorityCallback = this.unloadPriorityCallback;
+		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 
 		if ( excess > 0 && unused > 0 ) {
 
-			if ( unloadPriorityCallback ) {
+			// used items should be at the end of the array
+			itemList.sort( ( a, b ) => {
 
-				// used items should be at the end of the array
-				itemList.sort( ( a, b ) => {
+				const usedA = usedSet.has( a );
+				const usedB = usedSet.has( b );
+				if ( usedA && usedB ) {
 
-					const usedA = usedSet.has( a );
-					const usedB = usedSet.has( b );
-					if ( usedA && usedB ) {
+					// If they're both used then don't bother moving them
+					return 0;
 
-						// If they're both used then don't bother moving them
-						return 0;
+				} else if ( ! usedA && ! usedB ) {
 
-					} else if ( ! usedA && ! usedB ) {
+					// Use the sort function otherwise
+					// higher priority should be further to the left
+					return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
 
-						// Use the sort function otherwise
-						// higher priority should be further to the left
-						return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
+				} else {
 
-					} else {
+					// If one is used and the other is not move the used one towards the end of the array
+					return usedA ? 1 : - 1;
 
-						// If one is used and the other is not move the used one towards the end of the array
-						return usedA ? 1 : - 1;
+				}
 
-					}
-
-				} );
-
-			}
+			} );
 
 			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
 			// which would result in a very small or no items being unloaded.

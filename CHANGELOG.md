@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Tiles not rendering if an empty tile is encountered.
 - Child tiles not rendering if a parent tile content failed to load.
 
+### Changed
+
+- Improved `update` function performance by deferring LRUCache array update.
+
 ## [0.1.2] - 2020-06-08
 ### Changed
 
