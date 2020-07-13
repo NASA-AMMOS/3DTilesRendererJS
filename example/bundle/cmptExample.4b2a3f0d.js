@@ -35957,12 +35957,20 @@ function () {
     // options
     this.maxSize = 800;
     this.minSize = 600;
-    this.unloadPercent = 0.05;
-    this.usedSet = new Set();
-    this.itemSet = new Set();
+    this.unloadPercent = 0.05; // "itemSet" doubles as both the list of the full set of items currently
+    // stored in the cache (keys) as well as a map to the time the item was last
+    // used so it can be sorted appropriately.
+
+    this.itemSet = new Map();
     this.itemList = [];
+    this.usedSet = new Set();
     this.callbacks = new Map();
     this.unloadPriorityCallback = null;
+    var itemSet = this.itemSet;
+
+    this.defaultPriorityCallback = function (item) {
+      return itemSet.get(item);
+    };
   } // Returns whether or not the cache has reached the maximum size
 
 
@@ -35989,7 +35997,7 @@ function () {
       var callbacks = this.callbacks;
       itemList.push(item);
       usedSet.add(item);
-      itemSet.add(item);
+      itemSet.set(item, Date.now());
       callbacks.set(item, removeCb);
       return true;
     }
@@ -36020,10 +36028,7 @@ function () {
       var usedSet = this.usedSet;
 
       if (itemSet.has(item) && !usedSet.has(item)) {
-        var itemList = this.itemList;
-        var index = itemList.indexOf(item);
-        itemList.splice(index, 1);
-        itemList.push(item);
+        itemSet.set(item, Date.now());
         usedSet.add(item);
       }
     }
@@ -36045,30 +36050,27 @@ function () {
       var callbacks = this.callbacks;
       var unused = itemList.length - usedSet.size;
       var excess = itemList.length - targetSize;
-      var unloadPriorityCallback = this.unloadPriorityCallback;
+      var unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 
       if (excess > 0 && unused > 0) {
-        if (unloadPriorityCallback) {
-          // used items should be at the end of the array
-          itemList.sort(function (a, b) {
-            var usedA = usedSet.has(a);
-            var usedB = usedSet.has(b);
+        // used items should be at the end of the array
+        itemList.sort(function (a, b) {
+          var usedA = usedSet.has(a);
+          var usedB = usedSet.has(b);
 
-            if (usedA && usedB) {
-              // If they're both used then don't bother moving them
-              return 0;
-            } else if (!usedA && !usedB) {
-              // Use the sort function otherwise
-              // higher priority should be further to the left
-              return unloadPriorityCallback(b) - unloadPriorityCallback(a);
-            } else {
-              // If one is used and the other is not move the used one towards the end of the array
-              return usedA ? 1 : -1;
-            }
-          });
-        } // address corner cases where the minSize might be zero or smaller than maxSize - minSize,
+          if (usedA && usedB) {
+            // If they're both used then don't bother moving them
+            return 0;
+          } else if (!usedA && !usedB) {
+            // Use the sort function otherwise
+            // higher priority should be further to the left
+            return unloadPriorityCallback(b) - unloadPriorityCallback(a);
+          } else {
+            // If one is used and the other is not move the used one towards the end of the array
+            return usedA ? 1 : -1;
+          }
+        }); // address corner cases where the minSize might be zero or smaller than maxSize - minSize,
         // which would result in a very small or no items being unloaded.
-
 
         var unusedExcess = Math.min(excess, unused);
         var maxUnload = Math.max(targetSize * unloadPercent, unusedExcess * unloadPercent);
