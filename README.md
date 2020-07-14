@@ -278,6 +278,14 @@ onDisposeModel = null : ( scene : Object3D, tile : object ) => void
 
 Callback that is called every time a model is disposed of. This should be used in conjunction with [.onLoadModel](#onLoadModel) to dispose of any custom materials created for a tile. Note that the textures, materials, and geometries that a tile loaded in with are all automatically disposed of even if they have been removed from the tile meshes.
 
+### .dispose
+
+```js
+dispose() : void
+```
+
+Disposes of all the tiles in the renderer. Calls dispose on all materials, textures, and geometries that were loaded by the renderer and subsequently calls [onDisposeModel](#onDisposeModel) for any loaded tile model.
+
 ## DebugTilesRenderer
 
 _extends [TilesRenderer](#TilesRenderer)_
