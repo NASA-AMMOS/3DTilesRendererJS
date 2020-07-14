@@ -18,7 +18,7 @@ import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
-let offsetParent, box, dirLight;
+let offsetParent, box, dirLight, statsContainer;
 let stats;
 
 const DEFAULT = 0;
@@ -29,6 +29,7 @@ const params = {
 
 	'material': DEFAULT,
 	'orthographic': false,
+	'rebuild': initTiles,
 
 };
 
@@ -179,6 +180,38 @@ function onLoadModel( scene ) {
 
 }
 
+function onDisposeModel( scene ) {
+
+	scene.traverse( c => {
+
+		if ( c.isMesh ) {
+
+			c.material.dispose();
+
+		}
+
+	} );
+
+}
+
+function initTiles() {
+
+	if ( tiles ) {
+
+		tiles.group.parent.remove( tiles.group );
+		tiles.dispose();
+
+	}
+
+	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
+	tiles = new TilesRenderer( url );
+	tiles.errorTarget = 2;
+	tiles.onLoadModel = onLoadModel;
+	tiles.onDisposeModel = onDisposeModel;
+	offsetParent.add( tiles.group );
+
+}
+
 function init() {
 
 	scene = new Scene();
@@ -229,13 +262,7 @@ function init() {
 	offsetParent = new Group();
 	scene.add( offsetParent );
 
-	// tiles
-	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
-	tiles = new TilesRenderer( url );
-	tiles.errorTarget = 2;
-	tiles.onLoadModel = onLoadModel;
-	offsetParent.add( tiles.group );
-
+	initTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -250,12 +277,25 @@ function init() {
 			tiles.forEachLoadedModel( updateMaterial )
 
 		} );
+	gui.add( params, 'rebuild' );
 	gui.open();
 
 	// Stats
 	stats = new Stats();
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
+
+	statsContainer = document.createElement( 'div' );
+	statsContainer.style.position = 'absolute';
+	statsContainer.style.top = 0;
+	statsContainer.style.left = 0;
+	statsContainer.style.color = 'white';
+	statsContainer.style.width = '100%';
+	statsContainer.style.textAlign = 'center';
+	statsContainer.style.padding = '5px';
+	statsContainer.style.pointerEvents = 'none';
+	statsContainer.style.lineHeight = '1.5em';
+	document.body.appendChild( statsContainer );
 
 }
 
@@ -335,6 +375,11 @@ function animate() {
 function render() {
 
 	updateOrthoCamera();
+
+	statsContainer.innerText =
+		`Geometries: ${ renderer.info.memory.geometries } ` +
+		`Textures: ${ renderer.info.memory.textures } ` +
+		`Programs: ${ renderer.info.programs.length } `;
 
 	renderer.render( scene, params.orthographic ? orthoCamera : camera );
 

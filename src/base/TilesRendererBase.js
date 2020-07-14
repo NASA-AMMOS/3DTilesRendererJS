@@ -464,4 +464,15 @@ export class TilesRendererBase {
 
 	}
 
+	dispose() {
+
+		const lruCache = this.lruCache;
+		this.traverse( tile => {
+
+			lruCache.remove( tile );
+
+		} );
+
+	}
+
 }
