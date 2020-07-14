@@ -626,8 +626,8 @@ function render() {
 	if ( params.enableRendererStats ) {
 
 		const memory = renderer.info.memory;
-		const materialCount = renderer.info.programs.length;
-		str += `<br/>Geometries: ${ memory.geometries } Textures: ${ memory.textures } Materials: ${ materialCount }`;
+		const programCount = renderer.info.programs.length;
+		str += `<br/>Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
 
 	}
 
