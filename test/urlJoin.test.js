@@ -12,10 +12,6 @@ describe( 'urlJoin', () => {
 			urlJoin( 'path//', 'to/other/', 'file.json' )
 		).toBe( 'path/to/other/file.json' );
 
-		expect(
-			urlJoin( '//path', 'to', 'file.json' )
-		).toBe( '//path/to/file.json' );
-
 	} );
 
 	it( 'should handle protocols correctly.', () => {
