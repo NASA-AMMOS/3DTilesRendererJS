@@ -251,19 +251,13 @@ Verify the tileset loads correctly and tehre are no errors in the console.
 #### steps
 
 1. Open the custom materials example.
-
 1. Wait for the tileset to load completely.
-
-1. Verify that the stats display 125 geometries, 126 textures, and 1 materials.
-
+1. Verify that the stats display 125 geometries, 126 textures, and 1 programs.
 1. Switch to "GRADIENT" display.
-
 1. Click "rebuild".
-
 1. Wait for the tileset to completely load.
-
 1. Switch to "DEFAULT" display.
 
 #### expected
 
-Verify that the stats display 125 geometries, 126 textures, and 1 materials.
+Verify that the stats display 125 geometries, 126 textures, and 1 programs.
