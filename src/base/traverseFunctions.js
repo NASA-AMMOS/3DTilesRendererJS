@@ -246,7 +246,7 @@ export function skipTraversal( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ! tile.__contentEmpty ) {
+		} else if ( ! lruCache.isFull() ) {
 
 			renderer.requestTileContents( tile );
 
