@@ -35929,7 +35929,52 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-},{"process":"../node_modules/process/browser.js"}],"../src/utilities/LRUCache.js":[function(require,module,exports) {
+},{"process":"../node_modules/process/browser.js"}],"../src/utilities/urlJoin.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.urlJoin = urlJoin;
+
+var _path = _interopRequireDefault(require("path"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+// Function that properly handles path resolution for parts that have
+// a protocol component like "http://".
+function urlJoin() {
+  var protocolRegex = /^[a-zA-Z]+:\/\//;
+  var lastRoot = -1;
+
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  for (var i = 0, l = args.length; i < l; i++) {
+    if (protocolRegex.test(args[i])) {
+      lastRoot = i;
+    }
+  }
+
+  if (lastRoot === -1) {
+    return _path.default.join.apply(_path.default, args).replace(/\\/g, '/');
+  } else {
+    var parts = lastRoot <= 0 ? args : args.slice(lastRoot);
+    var protocol = parts[0].match(protocolRegex)[0];
+    parts[0] = parts[0].substring(protocol.length);
+    return (protocol + _path.default.join.apply(_path.default, _toConsumableArray(parts))).replace(/\\/g, '/');
+  }
+}
+},{"path":"../node_modules/path-browserify/index.js"}],"../src/utilities/LRUCache.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -36471,7 +36516,7 @@ function skipTraversal(tile, renderer) {
 
       tile.__active = true;
       stats.active++;
-    } else if (!lruCache.isFull()) {
+    } else if (!lruCache.isFull() && !tile.__contentEmpty) {
       renderer.requestTileContents(tile);
     }
 
@@ -36585,6 +36630,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.TilesRendererBase = void 0;
 
 var _path = _interopRequireDefault(require("path"));
+
+var _urlJoin = require("../utilities/urlJoin.js");
 
 var _LRUCache = require("../utilities/LRUCache.js");
 
@@ -36717,7 +36764,7 @@ function () {
         }
 
         if (tile.content.uri) {
-          tile.content.uri = _path.default.join(tileSetDir, tile.content.uri);
+          tile.content.uri = (0, _urlJoin.urlJoin)(tileSetDir, tile.content.uri);
         } // NOTE: fix for some cases where tilesets provide the bounding volume
         // but volumes are not present.
 
@@ -36935,13 +36982,21 @@ function () {
         }
       });
     }
+  }, {
+    key: "dispose",
+    value: function dispose() {
+      var lruCache = this.lruCache;
+      this.traverse(function (tile) {
+        lruCache.remove(tile);
+      });
+    }
   }]);
 
   return TilesRendererBase;
 }();
 
 exports.TilesRendererBase = TilesRendererBase;
-},{"path":"../node_modules/path-browserify/index.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/utilities/arrayToString.js":[function(require,module,exports) {
+},{"path":"../node_modules/path-browserify/index.js","../utilities/urlJoin.js":"../src/utilities/urlJoin.js","../utilities/LRUCache.js":"../src/utilities/LRUCache.js","../utilities/PriorityQueue.js":"../src/utilities/PriorityQueue.js","./traverseFunctions.js":"../src/base/traverseFunctions.js","./constants.js":"../src/base/constants.js"}],"../src/utilities/arrayToString.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40716,6 +40771,7 @@ function (_TilesRendererBase) {
     _this.visibleTiles = new Set();
     _this._autoDisableRendererCulling = true;
     _this.onLoadModel = null;
+    _this.onDisposeModel = null;
     return _this;
   }
   /* Public API */
@@ -41135,6 +41191,10 @@ function (_TilesRendererBase) {
           if (useImageBitmap && 'close' in texture.image) {
             texture.image.close();
           }
+        }
+
+        if (this.onDisposeModel) {
+          this.onDisposeModel(cached.scene, tile);
         }
 
         cached.scene = null;
@@ -45774,7 +45834,7 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 var camera, controls, scene, renderer, tiles, orthoCamera;
-var offsetParent, box, dirLight;
+var offsetParent, box, dirLight, statsContainer;
 var stats;
 var DEFAULT = 0;
 var GRADIENT = 1;
@@ -45782,7 +45842,8 @@ var TOPOGRAPHIC_LINES = 2;
 var LIGHTING = 3;
 var params = {
   'material': DEFAULT,
-  'orthographic': false
+  'orthographic': false,
+  'rebuild': initTiles
 };
 var gradientShader = {
   vertexShader:
@@ -45854,6 +45915,28 @@ function onLoadModel(scene) {
   updateMaterial(scene);
 }
 
+function onDisposeModel(scene) {
+  scene.traverse(function (c) {
+    if (c.isMesh) {
+      c.material.dispose();
+    }
+  });
+}
+
+function initTiles() {
+  if (tiles) {
+    tiles.group.parent.remove(tiles.group);
+    tiles.dispose();
+  }
+
+  var url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
+  tiles = new _index.TilesRenderer(url);
+  tiles.errorTarget = 2;
+  tiles.onLoadModel = onLoadModel;
+  tiles.onDisposeModel = onDisposeModel;
+  offsetParent.add(tiles.group);
+}
+
 function init() {
   scene = new _three.Scene(); // primary camera view
 
@@ -45892,13 +45975,8 @@ function init() {
   scene.add(ambLight);
   box = new _three.Box3();
   offsetParent = new _three.Group();
-  scene.add(offsetParent); // tiles
-
-  var url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
-  tiles = new _index.TilesRenderer(url);
-  tiles.errorTarget = 2;
-  tiles.onLoadModel = onLoadModel;
-  offsetParent.add(tiles.group);
+  scene.add(offsetParent);
+  initTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false); // GUI
 
@@ -45913,11 +45991,23 @@ function init() {
   }).onChange(function () {
     tiles.forEachLoadedModel(updateMaterial);
   });
+  gui.add(params, 'rebuild');
   gui.open(); // Stats
 
   stats = new _statsModule.default();
   stats.showPanel(0);
   document.body.appendChild(stats.dom);
+  statsContainer = document.createElement('div');
+  statsContainer.style.position = 'absolute';
+  statsContainer.style.top = 0;
+  statsContainer.style.left = 0;
+  statsContainer.style.color = 'white';
+  statsContainer.style.width = '100%';
+  statsContainer.style.textAlign = 'center';
+  statsContainer.style.padding = '5px';
+  statsContainer.style.pointerEvents = 'none';
+  statsContainer.style.lineHeight = '1.5em';
+  document.body.appendChild(statsContainer);
 }
 
 function onWindowResize() {
@@ -45979,6 +46069,7 @@ function animate() {
 
 function render() {
   updateOrthoCamera();
+  statsContainer.innerText = "Geometries: ".concat(renderer.info.memory.geometries, " ") + "Textures: ".concat(renderer.info.memory.textures, " ") + "Programs: ".concat(renderer.info.programs.length, " ");
   renderer.render(scene, params.orthographic ? orthoCamera : camera);
 }
 },{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
@@ -46009,7 +46100,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55398" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50124" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
