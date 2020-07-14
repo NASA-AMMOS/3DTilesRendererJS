@@ -23,10 +23,10 @@ export function urlJoin( ...args ) {
 	} else {
 
 		const parts = lastRoot <= 0 ? args : args.slice( lastRoot );
-		const protocol = parts[ 0 ].match( protocolRegex )[ 0 ].replace( /\//g, '\\' );
+		const protocol = parts[ 0 ].match( protocolRegex )[ 0 ];
 		parts[ 0 ] = parts[ 0 ].substring( protocol.length );
 
-		return protocol + path.join( ...parts );
+		return path.normalize( protocol + path.join( ...parts ) );
 
 	}
 
