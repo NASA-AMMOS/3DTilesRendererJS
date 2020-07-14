@@ -235,3 +235,35 @@ Verify an error is logged stating that the root tile content could not be loaded
 #### expected
 
 Verify that the tileset still renders correctly.
+
+## Verify example renderer can load a full url
+
+#### steps
+
+1. Open the kitchen sink example by navigating to https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#https://raw.githubusercontent.com/NASA-AMMOS/3DTilesRendererJS/master/example/data/tileset.json.
+
+#### expected
+
+Verify the tileset loads correctly and tehre are no errors in the console.
+
+## Verify tile data is disposed of properly
+
+#### steps
+
+1. Open the custom materials example.
+
+1. Wait for the tileset to load completely.
+
+1. Verify that the stats display 125 geometries, 126 textures, and 1 materials.
+
+1. Switch to "GRADIENT" display.
+
+1. Click "rebuild".
+
+1. Wait for the tileset to completely load.
+
+1. Switch to "DEFAULT" display.
+
+#### expected
+
+Verify that the stats display 125 geometries, 126 textures, and 1 materials.
