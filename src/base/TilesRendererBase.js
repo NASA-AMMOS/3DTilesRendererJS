@@ -1,4 +1,5 @@
 import path from 'path';
+import { urlJoin } from '../utilities/urlJoin.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
@@ -142,7 +143,7 @@ export class TilesRendererBase {
 
 			if ( tile.content.uri ) {
 
-				tile.content.uri = path.join( tileSetDir, tile.content.uri );
+				tile.content.uri = urlJoin( tileSetDir, tile.content.uri );
 
 			}
 
