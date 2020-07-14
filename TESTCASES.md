@@ -240,11 +240,22 @@ Verify that the tileset still renders correctly.
 
 #### steps
 
-1. Open the kitchen sink example with a remot tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#https://raw.githubusercontent.com/NASA-AMMOS/3DTilesRendererJS/master/example/data/tileset.json).
+1. Open the kitchen sink example with a remote tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#https://raw.githubusercontent.com/NASA-AMMOS/3DTilesRendererJS/master/example/data/tileset.json).
 
 #### expected
 
 Verify the tileset loads correctly and tehre are no errors in the console.
+
+## Verify example tileset can be dragged offscreen
+
+#### steps
+
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
+1. Slowly move the tileset offscreen by right clicking and dragging the view.
+
+#### expected
+
+Verify no errors are logged.
 
 ## Verify tile data is disposed of properly
 

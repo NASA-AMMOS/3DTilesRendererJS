@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Case where the url protocol was converted to use a single slash instead of two when loading a model.
+- Corner case where an error was thrown if the tileset was dragged off screen out of camera view.
 
 ## [0.1.3] - 2020-07-12
 ### Added
