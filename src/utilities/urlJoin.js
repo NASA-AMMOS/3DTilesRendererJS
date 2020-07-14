@@ -18,7 +18,7 @@ export function urlJoin( ...args ) {
 
 	if ( lastRoot === - 1 ) {
 
-		return path.join( ...args );
+		return path.join( ...args ).replace( /\\/g, '/' );
 
 	} else {
 
@@ -26,7 +26,7 @@ export function urlJoin( ...args ) {
 		const protocol = parts[ 0 ].match( protocolRegex )[ 0 ];
 		parts[ 0 ] = parts[ 0 ].substring( protocol.length );
 
-		return path.normalize( protocol + path.join( ...parts ) );
+		return ( protocol + path.join( ...parts ) ).replace( /\\/g, '/' );
 
 	}
 
