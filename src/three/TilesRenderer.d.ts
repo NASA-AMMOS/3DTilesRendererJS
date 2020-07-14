@@ -19,6 +19,7 @@ export class TilesRenderer extends TilesRendererBase {
 	setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : Boolean;
 
 	onLoadModel : ( ( scene : Object3D, tile : object ) => void ) | null;
+	onDisposeModel : ( ( scene : Object3D, tile : object ) => void ) | null;
 	forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void );
 
 }
