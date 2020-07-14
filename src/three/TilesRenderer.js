@@ -83,6 +83,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this._autoDisableRendererCulling = true;
 
 		this.onLoadModel = null;
+		this.onDisposeModel = null;
 
 	}
 
@@ -618,6 +619,12 @@ export class TilesRenderer extends TilesRendererBase {
 					texture.image.close();
 
 				}
+
+			}
+
+			if ( this.onDisposeModel ) {
+
+				this.onDisposeModel( cached.scene, tile );
 
 			}
 
