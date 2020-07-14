@@ -216,8 +216,7 @@ Verify that an error is logged stating that the tileset could not be found just 
 
 #### steps
 
-1. Temporarily rename the root b3dm file the provided example tileset.
-1. Open the kitchen sink example.
+1. Open the kitchen sink example by navigating to "https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json".
 1. Set the error threshold as high as it goes.
 1. Click rebuild.
 
@@ -229,8 +228,7 @@ Verify an error is logged stating that the root tile content could not be loaded
 
 #### steps
 
-1. Temporarily remove the content field from the root tile in the sample tileset.json.
-1. Open the kitchen sink example.
+1. Open the kitchen sink example by navigating to "https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json".
 1. Set the error threshold as high as it goes.
 1. Click rebuild.
 
