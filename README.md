@@ -63,18 +63,34 @@ tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
 tilesRenderer.onLoadModel = function ( scene ) {
 
+	// create a custom material for the tile
 	scene.traverse( c => {
 
 		if ( c.material ) {
 
-			c.originalMaterial = material;
+			c.originalMaterial = c.material;
 			c.material = new MeshBasicMaterial();
 
 		}
 
 	} );
 
-}
+};
+
+tilesRenderer.onDisposeModel = function ( scene ) {
+
+	// dispose of any manually created materials
+	scene.traverse( c => {
+
+		if ( c.material ) {
+
+			c.material.dispose();
+
+		}
+
+	} );
+
+};
 scene.add( tilesRenderer.group );
 ```
 
@@ -249,10 +265,26 @@ Fires the callback for every loaded scene in the hierarchy with the associatd ti
 ### .onLoadModel
 
 ```js
-onLoadModel = null : ( scene : Object3D, tile : objec ) => void
+onLoadModel = null : ( scene : Object3D, tile : object ) => void
 ```
 
 Callback that is called every time a model is loaded. This can be used in conjunction with [.forEachLoadedModel](#forEachLoadedModel) to set the material of all load and still yet to load meshes in the tile set.
+
+### .onDisposeModel
+
+```js
+onDisposeModel = null : ( scene : Object3D, tile : object ) => void
+```
+
+Callback that is called every time a model is disposed of. This should be used in conjunction with [.onLoadModel](#onLoadModel) to dispose of any custom materials created for a tile. Note that the textures, materials, and geometries that a tile loaded in with are all automatically disposed of even if they have been removed from the tile meshes.
+
+### .dispose
+
+```js
+dispose() : void
+```
+
+Disposes of all the tiles in the renderer. Calls dispose on all materials, textures, and geometries that were loaded by the renderer and subsequently calls [onDisposeModel](#onDisposeModel) for any loaded tile model.
 
 ## DebugTilesRenderer
 

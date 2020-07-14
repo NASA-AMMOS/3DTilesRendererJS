@@ -49,6 +49,7 @@ let params = {
 	'enableUpdate': true,
 	'raycast': NONE,
 	'enableCacheDisplay': false,
+	'enableRendererStats': false,
 	'orthographic': false,
 
 	'errorTarget': 6,
@@ -77,6 +78,7 @@ function reinstantiateTiles() {
 	if ( tiles ) {
 
 		offsetParent.remove( tiles.group );
+		tiles.dispose();
 
 	}
 
@@ -254,6 +256,7 @@ function init() {
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
 	exampleOptions.add( params, 'enableCacheDisplay' );
+	exampleOptions.add( params, 'enableRendererStats' );
 	exampleOptions.open();
 
 	gui.add( params, 'reload' );
@@ -617,6 +620,14 @@ function render() {
 
 		} );
 		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
+
+	}
+
+	if ( params.enableRendererStats ) {
+
+		const memory = renderer.info.memory;
+		const programCount = renderer.info.programs.length;
+		str += `<br/>Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
 
 	}
 

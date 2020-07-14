@@ -24,5 +24,6 @@ export class TilesRendererBase {
 		beforeCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null,
 		afterCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null
 	) : void;
+	dispose() : void;
 
 }

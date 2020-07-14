@@ -50,6 +50,20 @@ function onLoadModel( scene ) {
 
 }
 
+function onDisposeModel( scene ) {
+
+	scene.traverse( c => {
+
+		if ( c.isMesh ) {
+
+			c.material.dispose();
+
+		}
+
+	} );
+
+}
+
 function init() {
 
 	scene = new Scene();
@@ -104,6 +118,7 @@ function init() {
 	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
 	tiles = new TilesRenderer( url );
 	tiles.onLoadModel = onLoadModel;
+	tiles.onDisposeModel = onDisposeModel;
 	offsetParent.add( tiles.group );
 
 

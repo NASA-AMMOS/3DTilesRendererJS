@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- `TilesRenderer.dispose` function to completely dispose of all loaded geometry, materials, and textures in the scene when the renderer is no longer needed.
+- `TilesRenderer.onDisposeModel` function which is called when a tile model is disposed of from the cache.
+
+### Fixed
+
+- Case where the url protocol was converted to use a single slash instead of two when loading a model.
+
 ## [0.1.3] - 2020-07-12
 ### Added
 
