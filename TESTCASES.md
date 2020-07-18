@@ -216,7 +216,7 @@ Verify that an error is logged stating that the tileset could not be found just 
 
 #### steps
 
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-broken-root-content.json).
 1. Set the error threshold as high as it goes.
 1. Click rebuild.
 
