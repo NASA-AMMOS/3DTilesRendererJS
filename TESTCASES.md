@@ -159,13 +159,13 @@ Verify only tiles in view of both cameras frustums are displayed in the third pe
 
 Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
-## Verify that raycasting works as expected with maxDepth = 0
+## Verify that raycasting works as expected with just root
 
 #### steps
 
 1. Open the kitchen sink example.
 1. Enable raycasting.
-1. Set max depth option to 0.
+1. Set max depth option to 1.
 1. Hover over the surface of the terrain.
 1. Repeat with firstHitOnly = false.
 
