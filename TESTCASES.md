@@ -268,6 +268,7 @@ Verify no errors are logged.
 1. Click "rebuild".
 1. Wait for the tileset to completely load.
 1. Switch to "DEFAULT" display.
+1. Click "rebuild".
 
 #### expected
 
