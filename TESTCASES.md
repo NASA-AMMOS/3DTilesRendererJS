@@ -159,13 +159,13 @@ Verify only tiles in view of both cameras frustums are displayed in the third pe
 
 Verify the hit marker is on the point under the mouse and that the normal lines up with the surface.
 
-## Verify that raycasting works as expected with maxDepth = 0
+## Verify that raycasting works as expected with just root
 
 #### steps
 
 1. Open the kitchen sink example.
 1. Enable raycasting.
-1. Set max depth option to 0.
+1. Set max depth option to 1.
 1. Hover over the surface of the terrain.
 1. Repeat with firstHitOnly = false.
 
@@ -216,7 +216,7 @@ Verify that an error is logged stating that the tileset could not be found just 
 
 #### steps
 
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-broken-root-content.json).
 1. Set the error threshold as high as it goes.
 1. Click rebuild.
 
@@ -268,6 +268,7 @@ Verify no errors are logged.
 1. Click "rebuild".
 1. Wait for the tileset to completely load.
 1. Switch to "DEFAULT" display.
+1. Click "rebuild".
 
 #### expected
 
