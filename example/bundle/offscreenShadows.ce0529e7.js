@@ -36516,7 +36516,7 @@ function skipTraversal(tile, renderer) {
 
       tile.__active = true;
       stats.active++;
-    } else if (!lruCache.isFull()) {
+    } else if (!lruCache.isFull() && !tile.__contentEmpty) {
       renderer.requestTileContents(tile);
     }
 
@@ -46040,7 +46040,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51194" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56786" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
