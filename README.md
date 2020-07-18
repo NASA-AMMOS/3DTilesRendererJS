@@ -94,6 +94,30 @@ tilesRenderer.onDisposeModel = function ( scene ) {
 scene.add( tilesRenderer.group );
 ```
 
+## Multiple TilesRenderers with Shared Caches and Queues
+
+Using multiple tiles renderers that share LRUCache and PriorityQueue instances to cut down on memory and correctly prioritize downloads.
+
+```js
+// create multiple tiles renderers
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.setCamera( camera );
+tilesRenderer.setResolutionFromRenderer( camera, renderer );
+
+const tilesRenderer2 = new TilesRenderer( './path/to/tileset2.json' );
+tilesRenderer2.setCamera( camera );
+tilesRenderer2.setResolutionFromRenderer( camera, renderer );
+
+// set the second renderer to share the cache and queus from the frist
+tilesRenderer2.lruCache = tilesRenderer.lruCache;
+tilesRenderer2.downloadQueue = tilesRenderer.downloadQueue;
+tilesRenderer2.parseQueue = tilesRenderer.parseQueue;
+
+// add them to the scene
+scene.add( tilesRenderer.group );
+scene.add( tilesRenderer2.group );
+```
+
 # API
 
 ## TilesRenderer
