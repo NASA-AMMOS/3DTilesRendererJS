@@ -84,6 +84,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
+		
+		this.ktx2Loader = null;
+		this.dracoLoader = null;
+		this.ddsLoader = null;
+	
+	}
+
+	setKTX2Loader( loader ) {
+
+		this.ktx2Loader = loader;
+
+	}
+
+	setDracoLoader( loader ) {
+
+		this.dracoLoader = loader;
+
+	}
+
+	setDDSLoader( loader ) {
+
+		this.ddsLoader = loader;
 
 	}
 
