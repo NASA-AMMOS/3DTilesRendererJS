@@ -9,6 +9,27 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 		super();
 		this.manager = manager;
+		this.ktx2Loader = null;
+		this.dracoLoader = null;
+		this.ddsLoader = null;
+
+	}
+	
+	setKTX2Loader( loader ) {
+
+		this.ktx2Loader = loader;
+
+	}
+	
+	setDracoLoader( loader ) {
+
+		this.dracoLoader = loader;
+
+	}
+	
+	setDDSLoader( loader ) {
+
+		this.ddsLoader = loader;
 
 	}
 
@@ -28,7 +49,12 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'b3dm': {
 
 					const slicedBuffer = buffer.slice();
-					const promise = new B3DMLoader( manager )
+					const loader = new B3DMLoader( manager );
+					loader.setKTX2Loader( this.ktx2Loader );
+					loader.setDracoLoader( this.dracoLoader );
+					loader.setDDSLoader( this.ddsLoader );
+
+					const promise = loader
 						.parse( slicedBuffer.buffer )
 						.then( res => {
 
@@ -55,7 +81,12 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'i3dm': {
 
 					const slicedBuffer = buffer.slice();
-					const promise = new I3DMLoader( manager )
+					const loader = new I3DMLoader( manager );
+					loader.setKTX2Loader( this.ktx2Loader );
+					loader.setDracoLoader( this.dracoLoader );
+					loader.setDDSLoader( this.ddsLoader );
+					
+					const promise = loader
 						.parse( slicedBuffer.buffer )
 						.then( res => {
 
