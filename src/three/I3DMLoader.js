@@ -1,6 +1,6 @@
 import { I3DMLoaderBase } from '../base/I3DMLoaderBase.js';
+import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 
 const tempPos = new Vector3();
 const tempQuat = new Quaternion();
@@ -26,7 +26,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 				return new Promise( ( resolve, reject ) => {
 
 					const manager = this.manager;
-					new GLTFLoader( manager ).parse( gltfBuffer, null, model => {
+					const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
+					loader.parse( gltfBuffer, null, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
 
