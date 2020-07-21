@@ -15,10 +15,6 @@ export interface CMPTResult {
 
 export class CMPTLoader {
 
-	dracoLoader : DracoLoader | null;
-	ddsLoader : DDSLoader | null;
-	ktx2Loader : KTX2Loader | null;
-	
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< CMPTResult >;
 	parse( buffer : ArrayBuffer ) : CMPTResult;
