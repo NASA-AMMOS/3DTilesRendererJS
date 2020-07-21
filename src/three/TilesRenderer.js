@@ -496,26 +496,56 @@ export class TilesRenderer extends TilesRendererBase {
 
 		switch ( extension ) {
 
-			case 'b3dm':
-				promise = new B3DMLoader( manager ).parse( buffer );
+			case 'b3dm': {
+				
+				const loader = new B3DMLoader( manager );
+				loader.setDracoLoader( this.dracoLoader );
+				loader.setDDSLoader( this.ddsLoader );
+				loader.setKTX2Loader( this.ktx2Loader );
+				
+				promise = loader.parse( buffer );
 				break;
+				
+			}
 
-			case 'pnts':
+			case 'pnts': {
+				
 				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ) );
 				break;
+				
+			}
 
-			case 'i3dm':
-				promise = new I3DMLoader( manager ).parse( buffer );
+			case 'i3dm': {
+
+				const loader = new I3DMLoader( manager );
+				loader.setDracoLoader( this.dracoLoader );
+				loader.setDDSLoader( this.ddsLoader );
+				loader.setKTX2Loader( this.ktx2Loader );
+				
+				promise = new loader.parse( buffer );
 				break;
+				
+			}
 
-			case 'cmpt':
-				promise = new CMPTLoader( manager ).parse( buffer );
+			case 'cmpt': {
+				
+				const loader = new CMPTLoader( manager );
+				loader.setDracoLoader( this.dracoLoader );
+				loader.setDDSLoader( this.ddsLoader );
+				loader.setKTX2Loader( this.ktx2Loader );
+				
+				promise = new loader.parse( buffer );
 				break;
+				
+			}
 
-			default:
+			default: {
+				
 				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
 				promise = Promise.resolve( null );
 				break;
+				
+			}
 
 		}
 
