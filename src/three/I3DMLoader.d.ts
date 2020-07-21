@@ -12,10 +12,6 @@ export interface I3DMResult extends GLTF, I3DMBaseResult {
 }
 
 export class I3DMLoader {
-
-	dracoLoader : DracoLoader | null;
-	ddsLoader : DDSLoader | null;
-	ktx2Loader : KTX2Loader | null;
 	
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< I3DMResult >;
