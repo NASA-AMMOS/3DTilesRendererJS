@@ -1,9 +1,9 @@
 import { PNTSLoaderBase } from '../base/PNTSLoaderBase.js';
-import { Points, PointsMaterial, BufferGeometry, BufferAttribute } from 'three';
+import { Points, PointsMaterial, BufferGeometry, BufferAttribute, DefaultLoadingManager } from 'three';
 
 export class PNTSLoader extends PNTSLoaderBase {
 
-	constructor( manager ) {
+	constructor( manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;
