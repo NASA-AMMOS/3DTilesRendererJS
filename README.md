@@ -118,6 +118,30 @@ scene.add( tilesRenderer.group );
 scene.add( tilesRenderer2.group );
 ```
 
+## Adding DRACO Decompression Support
+
+Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
+
+```js
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.manager.addHandler( /\.gltf$/, {
+
+	parse( ...args ) {
+
+		// Note the DRACO compression files need to be supplied via an explicit source.
+		// We use unpkg here but in practice should be provided by the application.
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
+
+		const loader = new GLTFLoader( tiles.manager );
+		loader.setDRACOLoader( dracoLoader );
+		return loader.parse( ...args );
+
+	}
+
+} );
+```
+
 # API
 
 ## TilesRenderer
@@ -200,7 +224,6 @@ parseQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
 
-
 ### .group
 
 ```js
@@ -210,6 +233,14 @@ group : Group
 The container group for the 3d tiles. Add this to the three.js scene in order to render it.
 
 When raycasting a higher performance traversal approach is used if `raycaster.firstHitOnly = true`. If true then only the first hit of the terrain is reported in the tileset.
+
+### .manager
+
+```js
+manager : LoadingManager
+```
+
+The manager used when loading tile geometry.
 
 ### .constructor
 
