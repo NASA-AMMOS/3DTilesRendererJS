@@ -86,7 +86,7 @@ function reinstantiateTiles() {
 
 	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
-	tiles.manager.addHandler( /\.gtlf$/, {
+	tiles.manager.addHandler( /\.gltf$/, {
 
 		parse( ...args ) {
 
@@ -96,6 +96,7 @@ function reinstantiateTiles() {
 			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
 
 			const loader = new GLTFLoader( tiles.manager );
+			loader.setDRACOLoader( dracoLoader );
 			return loader.parse( ...args );
 
 		}
