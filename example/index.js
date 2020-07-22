@@ -29,6 +29,8 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
@@ -84,6 +86,22 @@ function reinstantiateTiles() {
 
 	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
+	tiles.manager.addHandler( /\.gltf$/, {
+
+		parse( ...args ) {
+
+			// Note the DRACO compression files need to be supplied via an explicit source.
+			// We use unpkg here but in practice should be provided by the application.
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
+
+			const loader = new GLTFLoader( tiles.manager );
+			loader.setDRACOLoader( dracoLoader );
+			return loader.parse( ...args );
+
+		}
+
+	} );
 	offsetParent.add( tiles.group );
 
 }

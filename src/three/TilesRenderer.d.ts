@@ -1,10 +1,12 @@
-import { Box3, Camera, Vector2, WebGLRenderer, Object3D } from 'three';
+import { Box3, Camera, Vector2, WebGLRenderer, Object3D, LoadingManager } from 'three';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
 export class TilesRenderer extends TilesRendererBase {
 
 	autoDisableRendererCulling : Boolean;
+
+	manager : LoadingManager;
 
 	group : TilesGroup;
 

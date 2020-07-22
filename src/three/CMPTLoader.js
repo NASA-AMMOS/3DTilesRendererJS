@@ -1,11 +1,12 @@
-import { Group } from 'three';
+import { Group, DefaultLoadingManager } from 'three';
 import { CMPTLoaderBase } from '../base/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
+import { I3DMLoader } from './I3DMLoader.js';
 
 export class CMPTLoader extends CMPTLoaderBase {
 
-	constructor( manager ) {
+	constructor( manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;

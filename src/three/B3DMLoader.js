@@ -1,9 +1,10 @@
 import { B3DMLoaderBase } from '../base/B3DMLoaderBase.js';
+import { DefaultLoadingManager } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class B3DMLoader extends B3DMLoaderBase {
 
-	constructor( manager ) {
+	constructor( manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;
@@ -17,7 +18,8 @@ export class B3DMLoader extends B3DMLoaderBase {
 		return new Promise( ( resolve, reject ) => {
 
 			const manager = this.manager;
-			new GLTFLoader( manager ).parse( gltfBuffer, null, model => {
+			const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
+			loader.parse( gltfBuffer, null, model => {
 
 				model.batchTable = b3dm.batchTable;
 				model.featureTable = b3dm.featureTable;

@@ -85,6 +85,30 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
 
+		this.manager = new LoadingManager();
+		if ( useImageBitmap ) {
+
+			// TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
+			// the fact. Premultiply alpha default behavior is not well defined, either.
+			// TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
+			// behavior. Fall back to regular texture loading
+			this.manager.addHandler( /(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+
+				load( url, onComplete, onProgress, onError ) {
+
+					const loader = new ImageBitmapLoader( this.manager );
+					loader.load( url, res => {
+
+						onComplete( new CanvasTexture( res ) );
+
+					}, onProgress, onError);
+
+				}
+
+			} );
+
+		}
+
 	}
 
 	/* Public API */
@@ -445,49 +469,32 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
 
+		const manager = this.manager;
 		const loadIndex = tile._loadIndex;
-		const manager = new LoadingManager();
 		let promise = null;
-
-		if ( useImageBitmap ) {
-
-			// TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-			// the fact. Premultiply alpha default behavior is not well defined, either.
-			// TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-			// behavior. Fall back to regular texture loading
-			manager.addHandler( /(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-
-				load( url, onComplete, onProgress, onError ) {
-
-					const loader = new ImageBitmapLoader();
-					loader.load( url, res => {
-
-						onComplete( new CanvasTexture( res ) );
-
-					}, onProgress, onError);
-
-				}
-
-			} );
-
-		}
 
 		switch ( extension ) {
 
 			case 'b3dm':
-				promise = new B3DMLoader( manager ).parse( buffer );
+				promise = new B3DMLoader( manager )
+					.parse( buffer )
+					.then( res => res.scene );
 				break;
 
 			case 'pnts':
-				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ) );
+				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ).scene );
 				break;
 
 			case 'i3dm':
-				promise = new I3DMLoader( manager ).parse( buffer );
+				promise = new I3DMLoader( manager )
+					.parse( buffer )
+					.then( res => res.scene );
 				break;
 
 			case 'cmpt':
-				promise = new CMPTLoader( manager ).parse( buffer );
+				promise = new CMPTLoader( manager )
+					.parse( buffer )
+					.then( res => res.scene	);
 				break;
 
 			default:
@@ -497,7 +504,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		return promise.then( res => {
+		return promise.then( scene => {
 
 			if ( tile._loadIndex !== loadIndex ) {
 
@@ -509,7 +516,6 @@ export class TilesRenderer extends TilesRendererBase {
 			const cached = tile.cached;
 			const cachedTransform = cached.transform;
 
-			const scene = res ? res.scene : new Group();
 			switch ( upAxis.toLowerCase() ) {
 
 				case 'x':
