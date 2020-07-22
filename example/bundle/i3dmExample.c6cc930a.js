@@ -39659,6 +39659,8 @@ exports.B3DMLoader = void 0;
 
 var _B3DMLoaderBase2 = require("../base/B3DMLoaderBase.js");
 
+var _three = require("three");
+
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -39688,8 +39690,10 @@ var B3DMLoader =
 function (_B3DMLoaderBase) {
   _inherits(B3DMLoader, _B3DMLoaderBase);
 
-  function B3DMLoader(manager) {
+  function B3DMLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, B3DMLoader);
 
@@ -39708,7 +39712,8 @@ function (_B3DMLoaderBase) {
       var gltfBuffer = b3dm.glbBytes.slice().buffer;
       return new Promise(function (resolve, reject) {
         var manager = _this2.manager;
-        new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+        var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
+        loader.parse(gltfBuffer, null, function (model) {
           model.batchTable = b3dm.batchTable;
           model.featureTable = b3dm.featureTable;
           resolve(model);
@@ -39721,7 +39726,7 @@ function (_B3DMLoaderBase) {
 }(_B3DMLoaderBase2.B3DMLoaderBase);
 
 exports.B3DMLoader = B3DMLoader;
-},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/PNTSLoaderBase.js":[function(require,module,exports) {
+},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/PNTSLoaderBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39841,8 +39846,10 @@ var PNTSLoader =
 function (_PNTSLoaderBase) {
   _inherits(PNTSLoader, _PNTSLoaderBase);
 
-  function PNTSLoader(manager) {
+  function PNTSLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, PNTSLoader);
 
@@ -40012,9 +40019,9 @@ exports.I3DMLoader = void 0;
 
 var _I3DMLoaderBase2 = require("../base/I3DMLoaderBase.js");
 
-var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
-
 var _three = require("three");
+
+var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -40048,8 +40055,10 @@ var I3DMLoader =
 function (_I3DMLoaderBase) {
   _inherits(I3DMLoader, _I3DMLoaderBase);
 
-  function I3DMLoader(manager) {
+  function I3DMLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, I3DMLoader);
 
@@ -40069,7 +40078,8 @@ function (_I3DMLoaderBase) {
         var gltfBuffer = i3dm.glbBytes.slice().buffer;
         return new Promise(function (resolve, reject) {
           var manager = _this2.manager;
-          new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+          var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
+          loader.parse(gltfBuffer, null, function (model) {
             var INSTANCES_LENGTH = featureTable.getData('INSTANCES_LENGTH'); // RTC_CENTER
             // QUANTIZED_VOLUME_OFFSET
             // QUANTIZED_VOLUME_SCALE
@@ -40134,7 +40144,7 @@ function (_I3DMLoaderBase) {
 }(_I3DMLoaderBase2.I3DMLoaderBase);
 
 exports.I3DMLoader = I3DMLoader;
-},{"../base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three":"../node_modules/three/build/three.module.js"}],"../src/base/CMPTLoaderBase.js":[function(require,module,exports) {
+},{"../base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/CMPTLoaderBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40236,6 +40246,8 @@ var _B3DMLoader = require("./B3DMLoader.js");
 
 var _PNTSLoader = require("./PNTSLoader.js");
 
+var _I3DMLoader = require("./I3DMLoader.js");
+
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -40263,8 +40275,10 @@ var CMPTLoader =
 function (_CMPTLoaderBase) {
   _inherits(CMPTLoader, _CMPTLoaderBase);
 
-  function CMPTLoader(manager) {
+  function CMPTLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, CMPTLoader);
 
@@ -40315,7 +40329,7 @@ function (_CMPTLoaderBase) {
             {
               var _slicedBuffer2 = _buffer.slice();
 
-              var _promise = new I3DMLoader(manager).parse(_slicedBuffer2.buffer).then(function (res) {
+              var _promise = new _I3DMLoader.I3DMLoader(manager).parse(_slicedBuffer2.buffer).then(function (res) {
                 results.push(res);
                 group.add(res.scene);
               });
@@ -40339,7 +40353,7 @@ function (_CMPTLoaderBase) {
 }(_CMPTLoaderBase2.CMPTLoaderBase);
 
 exports.CMPTLoader = CMPTLoader;
-},{"three":"../node_modules/three/build/three.module.js","../base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
+},{"three":"../node_modules/three/build/three.module.js","../base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js","./I3DMLoader.js":"../src/three/I3DMLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40772,6 +40786,23 @@ function (_TilesRendererBase) {
     _this._autoDisableRendererCulling = true;
     _this.onLoadModel = null;
     _this.onDisposeModel = null;
+    _this.manager = new _three.LoadingManager();
+
+    if (useImageBitmap) {
+      // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
+      // the fact. Premultiply alpha default behavior is not well defined, either.
+      // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
+      // behavior. Fall back to regular texture loading
+      _this.manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+        load: function load(url, onComplete, onProgress, onError) {
+          var loader = new _three.ImageBitmapLoader(this.manager);
+          loader.load(url, function (res) {
+            onComplete(new _three.CanvasTexture(res));
+          }, onProgress, onError);
+        }
+      });
+    }
+
     return _this;
   }
   /* Public API */
@@ -41059,40 +41090,31 @@ function (_TilesRendererBase) {
 
       tile._loadIndex = tile._loadIndex || 0;
       tile._loadIndex++;
+      var manager = this.manager;
       var loadIndex = tile._loadIndex;
-      var manager = new _three.LoadingManager();
       var promise = null;
-
-      if (useImageBitmap) {
-        // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-        // the fact. Premultiply alpha default behavior is not well defined, either.
-        // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-        // behavior. Fall back to regular texture loading
-        manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-          load: function load(url, onComplete, onProgress, onError) {
-            var loader = new _three.ImageBitmapLoader();
-            loader.load(url, function (res) {
-              onComplete(new _three.CanvasTexture(res));
-            }, onProgress, onError);
-          }
-        });
-      }
 
       switch (extension) {
         case 'b3dm':
-          promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer);
+          promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         case 'pnts':
-          promise = Promise.resolve(new _PNTSLoader.PNTSLoader(manager).parse(buffer));
+          promise = Promise.resolve(new _PNTSLoader.PNTSLoader(manager).parse(buffer).scene);
           break;
 
         case 'i3dm':
-          promise = new _I3DMLoader.I3DMLoader(manager).parse(buffer);
+          promise = new _I3DMLoader.I3DMLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         case 'cmpt':
-          promise = new _CMPTLoader.CMPTLoader(manager).parse(buffer);
+          promise = new _CMPTLoader.CMPTLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         default:
@@ -41101,7 +41123,7 @@ function (_TilesRendererBase) {
           break;
       }
 
-      return promise.then(function (res) {
+      return promise.then(function (scene) {
         if (tile._loadIndex !== loadIndex) {
           return;
         }
@@ -41109,7 +41131,6 @@ function (_TilesRendererBase) {
         var upAxis = _this2.rootTileSet.asset && _this2.rootTileSet.asset.gltfUpAxis || 'y';
         var cached = tile.cached;
         var cachedTransform = cached.transform;
-        var scene = res ? res.scene : new _three.Group();
 
         switch (upAxis.toLowerCase()) {
           case 'x':
@@ -42907,7 +42928,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56786" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61947" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

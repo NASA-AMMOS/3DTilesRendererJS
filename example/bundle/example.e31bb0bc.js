@@ -39659,6 +39659,8 @@ exports.B3DMLoader = void 0;
 
 var _B3DMLoaderBase2 = require("../base/B3DMLoaderBase.js");
 
+var _three = require("three");
+
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -39688,8 +39690,10 @@ var B3DMLoader =
 function (_B3DMLoaderBase) {
   _inherits(B3DMLoader, _B3DMLoaderBase);
 
-  function B3DMLoader(manager) {
+  function B3DMLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, B3DMLoader);
 
@@ -39708,7 +39712,8 @@ function (_B3DMLoaderBase) {
       var gltfBuffer = b3dm.glbBytes.slice().buffer;
       return new Promise(function (resolve, reject) {
         var manager = _this2.manager;
-        new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+        var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
+        loader.parse(gltfBuffer, null, function (model) {
           model.batchTable = b3dm.batchTable;
           model.featureTable = b3dm.featureTable;
           resolve(model);
@@ -39721,7 +39726,7 @@ function (_B3DMLoaderBase) {
 }(_B3DMLoaderBase2.B3DMLoaderBase);
 
 exports.B3DMLoader = B3DMLoader;
-},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/PNTSLoaderBase.js":[function(require,module,exports) {
+},{"../base/B3DMLoaderBase.js":"../src/base/B3DMLoaderBase.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/PNTSLoaderBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39841,8 +39846,10 @@ var PNTSLoader =
 function (_PNTSLoaderBase) {
   _inherits(PNTSLoader, _PNTSLoaderBase);
 
-  function PNTSLoader(manager) {
+  function PNTSLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, PNTSLoader);
 
@@ -40012,9 +40019,9 @@ exports.I3DMLoader = void 0;
 
 var _I3DMLoaderBase2 = require("../base/I3DMLoaderBase.js");
 
-var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
-
 var _three = require("three");
+
+var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -40048,8 +40055,10 @@ var I3DMLoader =
 function (_I3DMLoaderBase) {
   _inherits(I3DMLoader, _I3DMLoaderBase);
 
-  function I3DMLoader(manager) {
+  function I3DMLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, I3DMLoader);
 
@@ -40069,7 +40078,8 @@ function (_I3DMLoaderBase) {
         var gltfBuffer = i3dm.glbBytes.slice().buffer;
         return new Promise(function (resolve, reject) {
           var manager = _this2.manager;
-          new _GLTFLoader.GLTFLoader(manager).parse(gltfBuffer, null, function (model) {
+          var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
+          loader.parse(gltfBuffer, null, function (model) {
             var INSTANCES_LENGTH = featureTable.getData('INSTANCES_LENGTH'); // RTC_CENTER
             // QUANTIZED_VOLUME_OFFSET
             // QUANTIZED_VOLUME_SCALE
@@ -40134,7 +40144,7 @@ function (_I3DMLoaderBase) {
 }(_I3DMLoaderBase2.I3DMLoaderBase);
 
 exports.I3DMLoader = I3DMLoader;
-},{"../base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three":"../node_modules/three/build/three.module.js"}],"../src/base/CMPTLoaderBase.js":[function(require,module,exports) {
+},{"../base/I3DMLoaderBase.js":"../src/base/I3DMLoaderBase.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js"}],"../src/base/CMPTLoaderBase.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40236,6 +40246,8 @@ var _B3DMLoader = require("./B3DMLoader.js");
 
 var _PNTSLoader = require("./PNTSLoader.js");
 
+var _I3DMLoader = require("./I3DMLoader.js");
+
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -40263,8 +40275,10 @@ var CMPTLoader =
 function (_CMPTLoaderBase) {
   _inherits(CMPTLoader, _CMPTLoaderBase);
 
-  function CMPTLoader(manager) {
+  function CMPTLoader() {
     var _this;
+
+    var manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _three.DefaultLoadingManager;
 
     _classCallCheck(this, CMPTLoader);
 
@@ -40315,7 +40329,7 @@ function (_CMPTLoaderBase) {
             {
               var _slicedBuffer2 = _buffer.slice();
 
-              var _promise = new I3DMLoader(manager).parse(_slicedBuffer2.buffer).then(function (res) {
+              var _promise = new _I3DMLoader.I3DMLoader(manager).parse(_slicedBuffer2.buffer).then(function (res) {
                 results.push(res);
                 group.add(res.scene);
               });
@@ -40339,7 +40353,7 @@ function (_CMPTLoaderBase) {
 }(_CMPTLoaderBase2.CMPTLoaderBase);
 
 exports.CMPTLoader = CMPTLoader;
-},{"three":"../node_modules/three/build/three.module.js","../base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
+},{"three":"../node_modules/three/build/three.module.js","../base/CMPTLoaderBase.js":"../src/base/CMPTLoaderBase.js","./B3DMLoader.js":"../src/three/B3DMLoader.js","./PNTSLoader.js":"../src/three/PNTSLoader.js","./I3DMLoader.js":"../src/three/I3DMLoader.js"}],"../src/three/TilesGroup.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40772,6 +40786,23 @@ function (_TilesRendererBase) {
     _this._autoDisableRendererCulling = true;
     _this.onLoadModel = null;
     _this.onDisposeModel = null;
+    _this.manager = new _three.LoadingManager();
+
+    if (useImageBitmap) {
+      // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
+      // the fact. Premultiply alpha default behavior is not well defined, either.
+      // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
+      // behavior. Fall back to regular texture loading
+      _this.manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
+        load: function load(url, onComplete, onProgress, onError) {
+          var loader = new _three.ImageBitmapLoader(this.manager);
+          loader.load(url, function (res) {
+            onComplete(new _three.CanvasTexture(res));
+          }, onProgress, onError);
+        }
+      });
+    }
+
     return _this;
   }
   /* Public API */
@@ -41059,40 +41090,31 @@ function (_TilesRendererBase) {
 
       tile._loadIndex = tile._loadIndex || 0;
       tile._loadIndex++;
+      var manager = this.manager;
       var loadIndex = tile._loadIndex;
-      var manager = new _three.LoadingManager();
       var promise = null;
-
-      if (useImageBitmap) {
-        // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-        // the fact. Premultiply alpha default behavior is not well defined, either.
-        // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-        // behavior. Fall back to regular texture loading
-        manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-          load: function load(url, onComplete, onProgress, onError) {
-            var loader = new _three.ImageBitmapLoader();
-            loader.load(url, function (res) {
-              onComplete(new _three.CanvasTexture(res));
-            }, onProgress, onError);
-          }
-        });
-      }
 
       switch (extension) {
         case 'b3dm':
-          promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer);
+          promise = new _B3DMLoader.B3DMLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         case 'pnts':
-          promise = Promise.resolve(new _PNTSLoader.PNTSLoader(manager).parse(buffer));
+          promise = Promise.resolve(new _PNTSLoader.PNTSLoader(manager).parse(buffer).scene);
           break;
 
         case 'i3dm':
-          promise = new _I3DMLoader.I3DMLoader(manager).parse(buffer);
+          promise = new _I3DMLoader.I3DMLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         case 'cmpt':
-          promise = new _CMPTLoader.CMPTLoader(manager).parse(buffer);
+          promise = new _CMPTLoader.CMPTLoader(manager).parse(buffer).then(function (res) {
+            return res.scene;
+          });
           break;
 
         default:
@@ -41101,7 +41123,7 @@ function (_TilesRendererBase) {
           break;
       }
 
-      return promise.then(function (res) {
+      return promise.then(function (scene) {
         if (tile._loadIndex !== loadIndex) {
           return;
         }
@@ -41109,7 +41131,6 @@ function (_TilesRendererBase) {
         var upAxis = _this2.rootTileSet.asset && _this2.rootTileSet.asset.gltfUpAxis || 'y';
         var cached = tile.cached;
         var cachedTransform = cached.transform;
-        var scene = res ? res.scene : new _three.Group();
 
         switch (upAxis.toLowerCase()) {
           case 'x':
@@ -43298,6 +43319,510 @@ var BufferGeometryUtils = {
   }
 };
 exports.BufferGeometryUtils = BufferGeometryUtils;
+},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/loaders/DRACOLoader.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DRACOLoader = void 0;
+
+var _threeModule = require("../../../build/three.module.js");
+
+/**
+ * @author Don McCurdy / https://www.donmccurdy.com
+ */
+var DRACOLoader = function (manager) {
+  _threeModule.Loader.call(this, manager);
+
+  this.decoderPath = '';
+  this.decoderConfig = {};
+  this.decoderBinary = null;
+  this.decoderPending = null;
+  this.workerLimit = 4;
+  this.workerPool = [];
+  this.workerNextTaskID = 1;
+  this.workerSourceURL = '';
+  this.defaultAttributeIDs = {
+    position: 'POSITION',
+    normal: 'NORMAL',
+    color: 'COLOR',
+    uv: 'TEX_COORD'
+  };
+  this.defaultAttributeTypes = {
+    position: 'Float32Array',
+    normal: 'Float32Array',
+    color: 'Float32Array',
+    uv: 'Float32Array'
+  };
+};
+
+exports.DRACOLoader = DRACOLoader;
+DRACOLoader.prototype = Object.assign(Object.create(_threeModule.Loader.prototype), {
+  constructor: DRACOLoader,
+  setDecoderPath: function (path) {
+    this.decoderPath = path;
+    return this;
+  },
+  setDecoderConfig: function (config) {
+    this.decoderConfig = config;
+    return this;
+  },
+  setWorkerLimit: function (workerLimit) {
+    this.workerLimit = workerLimit;
+    return this;
+  },
+
+  /** @deprecated */
+  setVerbosity: function () {
+    console.warn('THREE.DRACOLoader: The .setVerbosity() method has been removed.');
+  },
+
+  /** @deprecated */
+  setDrawMode: function () {
+    console.warn('THREE.DRACOLoader: The .setDrawMode() method has been removed.');
+  },
+
+  /** @deprecated */
+  setSkipDequantization: function () {
+    console.warn('THREE.DRACOLoader: The .setSkipDequantization() method has been removed.');
+  },
+  load: function (url, onLoad, onProgress, onError) {
+    var loader = new _threeModule.FileLoader(this.manager);
+    loader.setPath(this.path);
+    loader.setResponseType('arraybuffer');
+
+    if (this.crossOrigin === 'use-credentials') {
+      loader.setWithCredentials(true);
+    }
+
+    loader.load(url, buffer => {
+      var taskConfig = {
+        attributeIDs: this.defaultAttributeIDs,
+        attributeTypes: this.defaultAttributeTypes,
+        useUniqueIDs: false
+      };
+      this.decodeGeometry(buffer, taskConfig).then(onLoad).catch(onError);
+    }, onProgress, onError);
+  },
+
+  /** @deprecated Kept for backward-compatibility with previous DRACOLoader versions. */
+  decodeDracoFile: function (buffer, callback, attributeIDs, attributeTypes) {
+    var taskConfig = {
+      attributeIDs: attributeIDs || this.defaultAttributeIDs,
+      attributeTypes: attributeTypes || this.defaultAttributeTypes,
+      useUniqueIDs: !!attributeIDs
+    };
+    this.decodeGeometry(buffer, taskConfig).then(callback);
+  },
+  decodeGeometry: function (buffer, taskConfig) {
+    // TODO: For backward-compatibility, support 'attributeTypes' objects containing
+    // references (rather than names) to typed array constructors. These must be
+    // serialized before sending them to the worker.
+    for (var attribute in taskConfig.attributeTypes) {
+      var type = taskConfig.attributeTypes[attribute];
+
+      if (type.BYTES_PER_ELEMENT !== undefined) {
+        taskConfig.attributeTypes[attribute] = type.name;
+      }
+    } //
+
+
+    var taskKey = JSON.stringify(taskConfig); // Check for an existing task using this buffer. A transferred buffer cannot be transferred
+    // again from this thread.
+
+    if (DRACOLoader.taskCache.has(buffer)) {
+      var cachedTask = DRACOLoader.taskCache.get(buffer);
+
+      if (cachedTask.key === taskKey) {
+        return cachedTask.promise;
+      } else if (buffer.byteLength === 0) {
+        // Technically, it would be possible to wait for the previous task to complete,
+        // transfer the buffer back, and decode again with the second configuration. That
+        // is complex, and I don't know of any reason to decode a Draco buffer twice in
+        // different ways, so this is left unimplemented.
+        throw new Error('THREE.DRACOLoader: Unable to re-decode a buffer with different ' + 'settings. Buffer has already been transferred.');
+      }
+    } //
+
+
+    var worker;
+    var taskID = this.workerNextTaskID++;
+    var taskCost = buffer.byteLength; // Obtain a worker and assign a task, and construct a geometry instance
+    // when the task completes.
+
+    var geometryPending = this._getWorker(taskID, taskCost).then(_worker => {
+      worker = _worker;
+      return new Promise((resolve, reject) => {
+        worker._callbacks[taskID] = {
+          resolve,
+          reject
+        };
+        worker.postMessage({
+          type: 'decode',
+          id: taskID,
+          taskConfig,
+          buffer
+        }, [buffer]); // this.debug();
+      });
+    }).then(message => this._createGeometry(message.geometry)); // Remove task from the task list.
+
+
+    geometryPending.finally(() => {
+      if (worker && taskID) {
+        this._releaseTask(worker, taskID); // this.debug();
+
+      }
+    }); // Cache the task result.
+
+    DRACOLoader.taskCache.set(buffer, {
+      key: taskKey,
+      promise: geometryPending
+    });
+    return geometryPending;
+  },
+  _createGeometry: function (geometryData) {
+    var geometry = new _threeModule.BufferGeometry();
+
+    if (geometryData.index) {
+      geometry.setIndex(new _threeModule.BufferAttribute(geometryData.index.array, 1));
+    }
+
+    for (var i = 0; i < geometryData.attributes.length; i++) {
+      var attribute = geometryData.attributes[i];
+      var name = attribute.name;
+      var array = attribute.array;
+      var itemSize = attribute.itemSize;
+      geometry.setAttribute(name, new _threeModule.BufferAttribute(array, itemSize));
+    }
+
+    return geometry;
+  },
+  _loadLibrary: function (url, responseType) {
+    var loader = new _threeModule.FileLoader(this.manager);
+    loader.setPath(this.decoderPath);
+    loader.setResponseType(responseType);
+    return new Promise((resolve, reject) => {
+      loader.load(url, resolve, undefined, reject);
+    });
+  },
+  preload: function () {
+    this._initDecoder();
+
+    return this;
+  },
+  _initDecoder: function () {
+    if (this.decoderPending) return this.decoderPending;
+    var useJS = typeof WebAssembly !== 'object' || this.decoderConfig.type === 'js';
+    var librariesPending = [];
+
+    if (useJS) {
+      librariesPending.push(this._loadLibrary('draco_decoder.js', 'text'));
+    } else {
+      librariesPending.push(this._loadLibrary('draco_wasm_wrapper.js', 'text'));
+      librariesPending.push(this._loadLibrary('draco_decoder.wasm', 'arraybuffer'));
+    }
+
+    this.decoderPending = Promise.all(librariesPending).then(libraries => {
+      var jsContent = libraries[0];
+
+      if (!useJS) {
+        this.decoderConfig.wasmBinary = libraries[1];
+      }
+
+      var fn = DRACOLoader.DRACOWorker.toString();
+      var body = ['/* draco decoder */', jsContent, '', '/* worker */', fn.substring(fn.indexOf('{') + 1, fn.lastIndexOf('}'))].join('\n');
+      this.workerSourceURL = URL.createObjectURL(new Blob([body]));
+    });
+    return this.decoderPending;
+  },
+  _getWorker: function (taskID, taskCost) {
+    return this._initDecoder().then(() => {
+      if (this.workerPool.length < this.workerLimit) {
+        var worker = new Worker(this.workerSourceURL);
+        worker._callbacks = {};
+        worker._taskCosts = {};
+        worker._taskLoad = 0;
+        worker.postMessage({
+          type: 'init',
+          decoderConfig: this.decoderConfig
+        });
+
+        worker.onmessage = function (e) {
+          var message = e.data;
+
+          switch (message.type) {
+            case 'decode':
+              worker._callbacks[message.id].resolve(message);
+
+              break;
+
+            case 'error':
+              worker._callbacks[message.id].reject(message);
+
+              break;
+
+            default:
+              console.error('THREE.DRACOLoader: Unexpected message, "' + message.type + '"');
+          }
+        };
+
+        this.workerPool.push(worker);
+      } else {
+        this.workerPool.sort(function (a, b) {
+          return a._taskLoad > b._taskLoad ? -1 : 1;
+        });
+      }
+
+      var worker = this.workerPool[this.workerPool.length - 1];
+      worker._taskCosts[taskID] = taskCost;
+      worker._taskLoad += taskCost;
+      return worker;
+    });
+  },
+  _releaseTask: function (worker, taskID) {
+    worker._taskLoad -= worker._taskCosts[taskID];
+    delete worker._callbacks[taskID];
+    delete worker._taskCosts[taskID];
+  },
+  debug: function () {
+    console.log('Task load: ', this.workerPool.map(worker => worker._taskLoad));
+  },
+  dispose: function () {
+    for (var i = 0; i < this.workerPool.length; ++i) {
+      this.workerPool[i].terminate();
+    }
+
+    this.workerPool.length = 0;
+    return this;
+  }
+});
+/* WEB WORKER */
+
+DRACOLoader.DRACOWorker = function () {
+  var decoderConfig;
+  var decoderPending;
+
+  onmessage = function (e) {
+    var message = e.data;
+
+    switch (message.type) {
+      case 'init':
+        decoderConfig = message.decoderConfig;
+        decoderPending = new Promise(function (resolve
+        /*, reject*/
+        ) {
+          decoderConfig.onModuleLoaded = function (draco) {
+            // Module is Promise-like. Wrap before resolving to avoid loop.
+            resolve({
+              draco: draco
+            });
+          };
+
+          DracoDecoderModule(decoderConfig);
+        });
+        break;
+
+      case 'decode':
+        var buffer = message.buffer;
+        var taskConfig = message.taskConfig;
+        decoderPending.then(module => {
+          var draco = module.draco;
+          var decoder = new draco.Decoder();
+          var decoderBuffer = new draco.DecoderBuffer();
+          decoderBuffer.Init(new Int8Array(buffer), buffer.byteLength);
+
+          try {
+            var geometry = decodeGeometry(draco, decoder, decoderBuffer, taskConfig);
+            var buffers = geometry.attributes.map(attr => attr.array.buffer);
+            if (geometry.index) buffers.push(geometry.index.array.buffer);
+            self.postMessage({
+              type: 'decode',
+              id: message.id,
+              geometry
+            }, buffers);
+          } catch (error) {
+            console.error(error);
+            self.postMessage({
+              type: 'error',
+              id: message.id,
+              error: error.message
+            });
+          } finally {
+            draco.destroy(decoderBuffer);
+            draco.destroy(decoder);
+          }
+        });
+        break;
+    }
+  };
+
+  function decodeGeometry(draco, decoder, decoderBuffer, taskConfig) {
+    var attributeIDs = taskConfig.attributeIDs;
+    var attributeTypes = taskConfig.attributeTypes;
+    var dracoGeometry;
+    var decodingStatus;
+    var geometryType = decoder.GetEncodedGeometryType(decoderBuffer);
+
+    if (geometryType === draco.TRIANGULAR_MESH) {
+      dracoGeometry = new draco.Mesh();
+      decodingStatus = decoder.DecodeBufferToMesh(decoderBuffer, dracoGeometry);
+    } else if (geometryType === draco.POINT_CLOUD) {
+      dracoGeometry = new draco.PointCloud();
+      decodingStatus = decoder.DecodeBufferToPointCloud(decoderBuffer, dracoGeometry);
+    } else {
+      throw new Error('THREE.DRACOLoader: Unexpected geometry type.');
+    }
+
+    if (!decodingStatus.ok() || dracoGeometry.ptr === 0) {
+      throw new Error('THREE.DRACOLoader: Decoding failed: ' + decodingStatus.error_msg());
+    }
+
+    var geometry = {
+      index: null,
+      attributes: []
+    }; // Gather all vertex attributes.
+
+    for (var attributeName in attributeIDs) {
+      var attributeType = self[attributeTypes[attributeName]];
+      var attribute;
+      var attributeID; // A Draco file may be created with default vertex attributes, whose attribute IDs
+      // are mapped 1:1 from their semantic name (POSITION, NORMAL, ...). Alternatively,
+      // a Draco file may contain a custom set of attributes, identified by known unique
+      // IDs. glTF files always do the latter, and `.drc` files typically do the former.
+
+      if (taskConfig.useUniqueIDs) {
+        attributeID = attributeIDs[attributeName];
+        attribute = decoder.GetAttributeByUniqueId(dracoGeometry, attributeID);
+      } else {
+        attributeID = decoder.GetAttributeId(dracoGeometry, draco[attributeIDs[attributeName]]);
+        if (attributeID === -1) continue;
+        attribute = decoder.GetAttribute(dracoGeometry, attributeID);
+      }
+
+      geometry.attributes.push(decodeAttribute(draco, decoder, dracoGeometry, attributeName, attributeType, attribute));
+    } // Add index.
+
+
+    if (geometryType === draco.TRIANGULAR_MESH) {
+      // Generate mesh faces.
+      var numFaces = dracoGeometry.num_faces();
+      var numIndices = numFaces * 3;
+      var index = new Uint32Array(numIndices);
+      var indexArray = new draco.DracoInt32Array();
+
+      for (var i = 0; i < numFaces; ++i) {
+        decoder.GetFaceFromMesh(dracoGeometry, i, indexArray);
+
+        for (var j = 0; j < 3; ++j) {
+          index[i * 3 + j] = indexArray.GetValue(j);
+        }
+      }
+
+      geometry.index = {
+        array: index,
+        itemSize: 1
+      };
+      draco.destroy(indexArray);
+    }
+
+    draco.destroy(dracoGeometry);
+    return geometry;
+  }
+
+  function decodeAttribute(draco, decoder, dracoGeometry, attributeName, attributeType, attribute) {
+    var numComponents = attribute.num_components();
+    var numPoints = dracoGeometry.num_points();
+    var numValues = numPoints * numComponents;
+    var dracoArray;
+    var array;
+
+    switch (attributeType) {
+      case Float32Array:
+        dracoArray = new draco.DracoFloat32Array();
+        decoder.GetAttributeFloatForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Float32Array(numValues);
+        break;
+
+      case Int8Array:
+        dracoArray = new draco.DracoInt8Array();
+        decoder.GetAttributeInt8ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Int8Array(numValues);
+        break;
+
+      case Int16Array:
+        dracoArray = new draco.DracoInt16Array();
+        decoder.GetAttributeInt16ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Int16Array(numValues);
+        break;
+
+      case Int32Array:
+        dracoArray = new draco.DracoInt32Array();
+        decoder.GetAttributeInt32ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Int32Array(numValues);
+        break;
+
+      case Uint8Array:
+        dracoArray = new draco.DracoUInt8Array();
+        decoder.GetAttributeUInt8ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Uint8Array(numValues);
+        break;
+
+      case Uint16Array:
+        dracoArray = new draco.DracoUInt16Array();
+        decoder.GetAttributeUInt16ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Uint16Array(numValues);
+        break;
+
+      case Uint32Array:
+        dracoArray = new draco.DracoUInt32Array();
+        decoder.GetAttributeUInt32ForAllPoints(dracoGeometry, attribute, dracoArray);
+        array = new Uint32Array(numValues);
+        break;
+
+      default:
+        throw new Error('THREE.DRACOLoader: Unexpected attribute type.');
+    }
+
+    for (var i = 0; i < numValues; i++) {
+      array[i] = dracoArray.GetValue(i);
+    }
+
+    draco.destroy(dracoArray);
+    return {
+      name: attributeName,
+      array: array,
+      itemSize: numComponents
+    };
+  }
+};
+
+DRACOLoader.taskCache = new WeakMap();
+/** Deprecated static methods */
+
+/** @deprecated */
+
+DRACOLoader.setDecoderPath = function () {
+  console.warn('THREE.DRACOLoader: The .setDecoderPath() method has been removed. Use instance methods.');
+};
+/** @deprecated */
+
+
+DRACOLoader.setDecoderConfig = function () {
+  console.warn('THREE.DRACOLoader: The .setDecoderConfig() method has been removed. Use instance methods.');
+};
+/** @deprecated */
+
+
+DRACOLoader.releaseDecoderModule = function () {
+  console.warn('THREE.DRACOLoader: The .releaseDecoderModule() method has been removed. Use instance methods.');
+};
+/** @deprecated */
+
+
+DRACOLoader.getDecoderModule = function () {
+  console.warn('THREE.DRACOLoader: The .getDecoderModule() method has been removed. Use instance methods.');
+};
 },{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/libs/dat.gui.module.js":[function(require,module,exports) {
 "use strict";
 
@@ -46345,6 +46870,10 @@ var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
 
 var _BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils.js");
 
+var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
+
+var _DRACOLoader = require("three/examples/jsm/loaders/DRACOLoader.js");
+
 var dat = _interopRequireWildcard(require("three/examples/jsm/libs/dat.gui.module.js"));
 
 var _statsModule = _interopRequireDefault(require("three/examples/jsm/libs/stats.module.js"));
@@ -46397,6 +46926,17 @@ function reinstantiateTiles() {
 
   tiles = new _index.DebugTilesRenderer(url);
   tiles.fetchOptions.mode = 'cors';
+  tiles.manager.addHandler(/\.gltf$/, {
+    parse: function parse() {
+      // Note the DRACO compression files need to be supplied via an explicit source.
+      // We use unpkg here but in practice should be provided by the application.
+      var dracoLoader = new _DRACOLoader.DRACOLoader();
+      dracoLoader.setDecoderPath('https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/');
+      var loader = new _GLTFLoader.GLTFLoader(tiles.manager);
+      loader.setDRACOLoader(dracoLoader);
+      return loader.parse.apply(loader, arguments);
+    }
+  });
   offsetParent.add(tiles.group);
 }
 
@@ -46831,7 +47371,7 @@ function render() {
     statsContainer.innerHTML = str;
   }
 }
-},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three/examples/jsm/loaders/DRACOLoader.js":"../node_modules/three/examples/jsm/loaders/DRACOLoader.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -46859,7 +47399,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56786" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61947" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
