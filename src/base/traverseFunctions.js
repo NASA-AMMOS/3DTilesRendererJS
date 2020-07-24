@@ -121,12 +121,12 @@ export function determineFrustumSet( tile, renderer ) {
 
 		}
 
-	}
+		// Early out if we've reached the maximum allowed depth.
+		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
 
-	// Early out if we've reached the maximum allowed depth.
-	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
+			return true;
 
-		return true;
+		}
 
 	}
 
