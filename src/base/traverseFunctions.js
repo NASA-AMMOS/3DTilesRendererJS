@@ -64,7 +64,7 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 			// sake of sorting.
 			const child = children[ i ];
 			child.__depthFromRenderedParent = depthFromRenderedParent;
-			recursivelyLoadTiles( children[ i ], depthFromRenderedParent, renderer );
+			recursivelyLoadTiles( child, depthFromRenderedParent, renderer );
 
 		}
 
