@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - `CMPTLoader` not importing `I3DMLoader`.
+- A case where if the tile at depth `maxDepth` was empty nothing would be rendered.
 
 ## [0.1.4] - 2020-07-17
 ### Added
