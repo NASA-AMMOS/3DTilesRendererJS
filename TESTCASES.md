@@ -288,3 +288,18 @@ Verify that the stats display 125 geometries, 126 textures, and 1 programs.
 #### expected
 
 The next shallowest tiles are visible past the `maxDepth` cutoff.
+
+## Verify tileset with missing mid tile content loads and renders correctly
+
+#### steps
+
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-midtile-content.json).
+1. Zoom in slowly and verify the tiles load correctly and completely.
+1. Set `errorTarget` to 0.
+1. Set `maxDepth` to 3.
+1. Set `colorMode` to `RANDOM_COLOR`.
+1. Verify that there are four smaller tiles compared to the rest of the tileset where the missing midtile with content is.
+
+#### expected
+
+The tileset renders and loads correctly.
