@@ -310,53 +310,47 @@ export function skipTraversal( tile, renderer ) {
 	// load in.
 
 	// Skip the tile entirely if there's no content to load
-	if ( includeTile && ! allChildrenHaveContent && ! childrenWereVisible && hasContent ) {
+	if ( includeTile && ! allChildrenHaveContent && ! childrenWereVisible && hasContent && loadedContent ) {
 
-		if ( loadedContent ) {
+		if ( tile.__inFrustum ) {
 
-			if ( tile.__inFrustum ) {
-
-				tile.__visible = true;
-				stats.visible ++;
-
-			}
-			tile.__active = true;
-			stats.active ++;
-
-			if ( meetsSSE ) {
-
-				// load the child content if we've found that we've been loaded so we can move down to the next tile
-				// layer when the data has loaded.
-				for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-					const c = children[ i ];
-					if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
-
-						c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-						recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
-
-					}
-
-				}
-
-			}
+			tile.__visible = true;
+			stats.visible ++;
 
 		}
-
-		if ( meetsSSE ) {
-
-			return;
-
-		}
+		tile.__active = true;
+		stats.active ++;
 
 	}
 
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
+	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
+	// at the same rate.
+	if ( tile.refine !== 'ADD' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
 
-		const c = children[ i ];
-		if ( isUsedThisFrame( c, frameCount ) ) {
+		// load the child content if we've found that we've been loaded so we can move down to the next tile
+		// layer when the data has loaded.
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			skipTraversal( c, renderer );
+			const c = children[ i ];
+			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+
+				c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
+				recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
+
+			}
+
+		}
+
+	} else {
+
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			const c = children[ i ];
+			if ( isUsedThisFrame( c, frameCount ) ) {
+
+				skipTraversal( c, renderer );
+
+			}
 
 		}
 
