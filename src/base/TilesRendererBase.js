@@ -165,6 +165,7 @@ export class TilesRendererBase {
 		}
 
 		tile.parent = parentTile;
+		tile.refine = tile.refine || parentTile.refine;
 		tile.children = tile.children || [];
 		tile.__contentEmpty = ! tile.content || ! tile.content.uri;
 
