@@ -82,6 +82,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.visibleTiles = new Set();
 		this._autoDisableRendererCulling = true;
 
+		this.onLoadTileSet = null;
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
 
@@ -255,6 +256,22 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
+	loadTileSet( url ) {
+
+		const pr = super( url );
+		pr.then(() => {
+
+			if ( this.onLoadTileSet ) {
+
+				this.onLoadTileSet( this.tileSets[ url ] );
+
+			}
+
+		});
+		return pr;
+
+	}
+
 	update() {
 
 		const group = this.group;
