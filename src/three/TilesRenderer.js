@@ -258,7 +258,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/* Overriden */
 	loadTileSet( url ) {
 
-		const pr = super( url );
+		const pr = super.loadTileSet( url );
 		pr.then(() => {
 
 			if ( this.onLoadTileSet ) {
