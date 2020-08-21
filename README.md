@@ -317,6 +317,14 @@ forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : v
 
 Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
 
+### .onLoadTileSet
+
+```js
+onLoadTileSet = null : ( tileSet : Object ) => void
+```
+
+Callback that is called whenever a tileset is loaded.
+
 ### .onLoadModel
 
 ```js
