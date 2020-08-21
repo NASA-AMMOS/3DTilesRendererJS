@@ -165,7 +165,6 @@ export class TilesRendererBase {
 		}
 
 		tile.parent = parentTile;
-		tile.refine = tile.refine || parentTile.refine;
 		tile.children = tile.children || [];
 		tile.__contentEmpty = ! tile.content || ! tile.content.uri;
 
@@ -193,10 +192,12 @@ export class TilesRendererBase {
 		if ( parentTile === null ) {
 
 			tile.__depth = 0;
+			tile.refine = tile.refine || 'REPLACE';
 
 		} else {
 
 			tile.__depth = parentTile.__depth + 1;
+			tile.refine = tile.refine || parentTile.refine;
 
 		}
 
