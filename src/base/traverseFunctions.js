@@ -282,22 +282,23 @@ export function skipTraversal( tile, renderer ) {
 
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
+	const includeTile = meetsSSE || tile.refine === 'ADD';
 	const hasContent = ! tile.__contentEmpty;
-	const loadedContent = isDownloadFinished( tile.__loadingState ) && ! tile.__contentEmpty;
+	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = tile.__allChildrenLoaded;
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.
-	if ( meetsSSE && hasContent ) {
+	if ( includeTile && hasContent ) {
 
 		tile.__depthFromRenderedParent ++;
 
 	}
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
-	if ( meetsSSE && ! loadedContent && ! lruCache.isFull() && hasContent ) {
+	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
 		renderer.requestTileContents( tile );
 
@@ -309,44 +310,50 @@ export function skipTraversal( tile, renderer ) {
 	// load in.
 
 	// Skip the tile entirely if there's no content to load
-	if ( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && hasContent ) {
+	if (
+			( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
+			|| ( tile.refine === 'ADD' && loadedContent )
+	) {
 
-		if ( loadedContent ) {
+		if ( tile.__inFrustum ) {
 
-			if ( tile.__inFrustum ) {
+			tile.__visible = true;
+			stats.visible ++;
 
-				tile.__visible = true;
-				stats.visible ++;
+		}
+		tile.__active = true;
+		stats.active ++;
 
-			}
-			tile.__active = true;
-			stats.active ++;
+	}
 
-			// load the child content if we've found that we've been loaded so we can move down to the next tile
-			// layer when the data has loaded.
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
+	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
+	// at the same rate.
+	if ( tile.refine !== 'ADD' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
 
-				const c = children[ i ];
-				if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+		// load the child content if we've found that we've been loaded so we can move down to the next tile
+		// layer when the data has loaded.
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-					c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-					recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
+			const c = children[ i ];
+			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
-				}
+				c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
+				recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
 
 			}
 
 		}
-		return;
 
-	}
+	} else {
 
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		const c = children[ i ];
-		if ( isUsedThisFrame( c, frameCount ) ) {
+			const c = children[ i ];
+			if ( isUsedThisFrame( c, frameCount ) ) {
 
-			skipTraversal( c, renderer );
+				skipTraversal( c, renderer );
+
+			}
 
 		}
 

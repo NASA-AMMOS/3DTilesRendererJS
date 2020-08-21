@@ -303,3 +303,14 @@ The next shallowest tiles are visible past the `maxDepth` cutoff.
 #### expected
 
 The tileset renders and loads correctly.
+
+## Verify tileset with missing mid tile content loads and renders correctly
+
+#### steps
+
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-add.json).
+1. Set `colorMode` to `RANDOM_COLOR`.
+
+#### expected
+
+Verify that all tiles render on top of each other including the root and that setting the error target and threshold to 0 does not change this.
