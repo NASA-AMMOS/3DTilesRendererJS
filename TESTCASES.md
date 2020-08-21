@@ -313,4 +313,4 @@ The tileset renders and loads correctly.
 
 #### expected
 
-Verify that all tiles render on top of each other including the root and that setting the error target and threshold to 0 does not change this.
+Verify that all tiles render on top of each other including the root and that setting the error target and threshold to 0 does not change this. Ensure that raising the error target to the max value will cause deeper tiles to disappear.
