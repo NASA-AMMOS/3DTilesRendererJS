@@ -284,7 +284,7 @@ export function skipTraversal( tile, renderer ) {
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	const hasContent = ! tile.__contentEmpty;
-	const loadedContent = isDownloadFinished( tile.__loadingState ) && ! tile.__contentEmpty;
+	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	let allChildrenHaveContent = tile.__allChildrenLoaded;
@@ -310,7 +310,10 @@ export function skipTraversal( tile, renderer ) {
 	// load in.
 
 	// Skip the tile entirely if there's no content to load
-	if ( includeTile && ! allChildrenHaveContent && ! childrenWereVisible && hasContent && loadedContent ) {
+	if (
+			( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
+			|| ( tile.refine === 'ADD' && loadedContent )
+	) {
 
 		if ( tile.__inFrustum ) {
 
