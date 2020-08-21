@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `manager` field to `TilesRenderer` to enable support for DRACO decompression.
 - `TilesRenderer.onLoadTileSet` callback function.
+- Support for "ADD" tile refinement.
 
 ### Fixed
 
