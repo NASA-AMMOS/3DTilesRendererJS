@@ -142,6 +142,31 @@ tilesRenderer.manager.addHandler( /\.gltf$/, {
 } );
 ```
 
+## Render On Change
+
+The tile set and model load callbacks can be used to detect when the data has changed and a new render is necessary.
+
+```js
+let needsRerender = true;
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.onLoadTileSet = () => needsRerender = true;
+tilesRenderer.onLoadModel = () => needsRerender = true;
+
+function renderLoop() {
+
+	requestAnimationFrame( renderLoop );
+	if ( needsRerender ) {
+	
+		needsRerender = false;
+		tilesRenderer.upadate();
+		renderer.render( camera, scene );
+	
+	}
+
+}
+renderLoop();
+```
+
 # API
 
 ## TilesRenderer
