@@ -36357,6 +36357,23 @@ function recursivelyMarkUsed(tile, frameCount, lruCache) {
       recursivelyMarkUsed(children[i], frameCount, lruCache);
     }
   }
+}
+
+function recursivelyLoadTiles(tile, depthFromRenderedParent, renderer) {
+  if (tile.__contentEmpty) {
+    var children = tile.children;
+
+    for (var i = 0, l = children.length; i < l; i++) {
+      // don't increment depth to rendered parent here because we should treat
+      // the next layer of rendered children as just a single depth away for the
+      // sake of sorting.
+      var child = children[i];
+      child.__depthFromRenderedParent = depthFromRenderedParent;
+      recursivelyLoadTiles(child, depthFromRenderedParent, renderer);
+    }
+  } else {
+    renderer.requestTileContents(tile);
+  }
 } // Helper function for recursively traversing a tileset. If `beforeCb` returns `true` then the
 // traversal will end early.
 
@@ -36415,12 +36432,12 @@ function determineFrustumSet(tile, renderer) {
 
     if (error <= errorTarget) {
       return true;
+    } // Early out if we've reached the maximum allowed depth.
+
+
+    if (renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth) {
+      return true;
     }
-  } // Early out if we've reached the maximum allowed depth.
-
-
-  if (renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth) {
-    return true;
   } // Traverse children and see if any children are in view.
 
 
@@ -36525,19 +36542,20 @@ function skipTraversal(tile, renderer) {
 
   var errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
   var meetsSSE = tile.__error <= errorRequirement;
+  var includeTile = meetsSSE || tile.refine === 'ADD';
   var hasContent = !tile.__contentEmpty;
-  var loadedContent = isDownloadFinished(tile.__loadingState) && !tile.__contentEmpty;
+  var loadedContent = isDownloadFinished(tile.__loadingState) && hasContent;
   var childrenWereVisible = tile.__childrenWereVisible;
   var children = tile.children;
   var allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
   // and is being rendered.
 
-  if (meetsSSE && hasContent) {
+  if (includeTile && hasContent) {
     tile.__depthFromRenderedParent++;
   } // If we've met the SSE requirements and we can load content then fire a fetch.
 
 
-  if (meetsSSE && !loadedContent && !lruCache.isFull() && hasContent) {
+  if (includeTile && !loadedContent && !lruCache.isFull() && hasContent) {
     renderer.requestTileContents(tile);
   } // Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
   // all children have loaded yet, and if no children were visible last frame. We want to keep children visible
@@ -36546,35 +36564,36 @@ function skipTraversal(tile, renderer) {
   // Skip the tile entirely if there's no content to load
 
 
-  if (meetsSSE && !allChildrenHaveContent && !childrenWereVisible && hasContent) {
-    if (loadedContent) {
-      if (tile.__inFrustum) {
-        tile.__visible = true;
-        stats.visible++;
-      }
-
-      tile.__active = true;
-      stats.active++; // load the child content if we've found that we've been loaded so we can move down to the next tile
-      // layer when the data has loaded.
-
-      for (var i = 0, l = children.length; i < l; i++) {
-        var c = children[i];
-
-        if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
-          c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-          renderer.requestTileContents(c);
-        }
-      }
+  if (meetsSSE && !allChildrenHaveContent && !childrenWereVisible && loadedContent || tile.refine === 'ADD' && loadedContent) {
+    if (tile.__inFrustum) {
+      tile.__visible = true;
+      stats.visible++;
     }
 
-    return;
-  }
+    tile.__active = true;
+    stats.active++;
+  } // If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
+  // at the same rate.
 
-  for (var _i3 = 0, _l3 = children.length; _i3 < _l3; _i3++) {
-    var _c3 = children[_i3];
 
-    if (isUsedThisFrame(_c3, frameCount)) {
-      skipTraversal(_c3, renderer);
+  if (tile.refine !== 'ADD' && meetsSSE && !allChildrenHaveContent && loadedContent) {
+    // load the child content if we've found that we've been loaded so we can move down to the next tile
+    // layer when the data has loaded.
+    for (var i = 0, l = children.length; i < l; i++) {
+      var c = children[i];
+
+      if (isUsedThisFrame(c, frameCount) && !lruCache.isFull()) {
+        c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
+        recursivelyLoadTiles(c, c.__depthFromRenderedParent, renderer);
+      }
+    }
+  } else {
+    for (var _i3 = 0, _l3 = children.length; _i3 < _l3; _i3++) {
+      var _c3 = children[_i3];
+
+      if (isUsedThisFrame(_c3, frameCount)) {
+        skipTraversal(_c3, renderer);
+      }
     }
   }
 } // Final traverse to toggle tile visibility.
@@ -36795,8 +36814,10 @@ function () {
 
       if (parentTile === null) {
         tile.__depth = 0;
+        tile.refine = tile.refine || 'REPLACE';
       } else {
         tile.__depth = parentTile.__depth + 1;
+        tile.refine = tile.refine || parentTile.refine;
       }
     }
   }, {
@@ -40784,6 +40805,7 @@ function (_TilesRendererBase) {
     _this.activeTiles = new Set();
     _this.visibleTiles = new Set();
     _this._autoDisableRendererCulling = true;
+    _this.onLoadTileSet = null;
     _this.onLoadModel = null;
     _this.onDisposeModel = null;
     _this.manager = new _three.LoadingManager();
@@ -40922,6 +40944,20 @@ function (_TilesRendererBase) {
     }
     /* Overriden */
 
+  }, {
+    key: "loadTileSet",
+    value: function loadTileSet(url) {
+      var _this2 = this;
+
+      var pr = _get(_getPrototypeOf(TilesRenderer.prototype), "loadTileSet", this).call(this, url);
+
+      pr.then(function () {
+        if (_this2.onLoadTileSet) {
+          _this2.onLoadTileSet(_this2.tileSets[url]);
+        }
+      });
+      return pr;
+    }
   }, {
     key: "update",
     value: function update() {
@@ -41086,7 +41122,7 @@ function (_TilesRendererBase) {
   }, {
     key: "parseTile",
     value: function parseTile(buffer, tile, extension) {
-      var _this2 = this;
+      var _this3 = this;
 
       tile._loadIndex = tile._loadIndex || 0;
       tile._loadIndex++;
@@ -41128,7 +41164,7 @@ function (_TilesRendererBase) {
           return;
         }
 
-        var upAxis = _this2.rootTileSet.asset && _this2.rootTileSet.asset.gltfUpAxis || 'y';
+        var upAxis = _this3.rootTileSet.asset && _this3.rootTileSet.asset.gltfUpAxis || 'y';
         var cached = tile.cached;
         var cachedTransform = cached.transform;
 
@@ -41150,7 +41186,7 @@ function (_TilesRendererBase) {
         scene.traverse(function (c) {
           c[INITIAL_FRUSTUM_CULLED] = c.frustumCulled;
         });
-        updateFrustumCulled(scene, _this2.autoDisableRendererCulling);
+        updateFrustumCulled(scene, _this3.autoDisableRendererCulling);
         cached.scene = scene; // We handle raycasting in a custom way so remove it from here
 
         scene.traverse(function (c) {
@@ -41181,8 +41217,8 @@ function (_TilesRendererBase) {
         cached.geometry = geometry;
         cached.textures = textures;
 
-        if (_this2.onLoadModel) {
-          _this2.onLoadModel(scene, tile);
+        if (_this3.onLoadModel) {
+          _this3.onLoadModel(scene, tile);
         }
       });
     }
@@ -46061,7 +46097,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61947" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59225" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
