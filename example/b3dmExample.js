@@ -8,11 +8,14 @@ import {
 	Box3,
 	sRGBEncoding,
 	PCFSoftShadowMap,
+	Vector2,
+	Raycaster,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 let camera, controls, scene, renderer;
 let box, dirLight;
+let raycaster, mouse;
 
 init();
 animate();
@@ -71,8 +74,37 @@ function init() {
 
 		} );
 
+	raycaster = new Raycaster();
+	mouse = new Vector2();
+
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+
+}
+
+function onMouseMove( e ) {
+
+	const bounds = this.getBoundingClientRect();
+	mouse.x = e.clientX - bounds.x;
+	mouse.y = e.clientY - bounds.y;
+	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
+	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
+
+	raycaster.setFromCamera( mouse, camera );
+
+	const intersects = raycaster.intersectObject( scene, true );
+	if ( intersects.length ) {
+
+		const { face, object } = intersects[ 0 ];
+		const batchid = object.geometry.getAttribute( '_batchid' );
+		if ( batchid ) {
+
+			console.log( '_batchid', batchid.getX( face.a ), batchid.getX( face.b ), batchid.getX( face.c ) );
+
+		}
+
+	}
 
 }
 
