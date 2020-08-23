@@ -42846,6 +42846,7 @@ var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
 
 var camera, controls, scene, renderer;
 var box, dirLight;
+var raycaster, mouse;
 init();
 animate();
 
@@ -42889,8 +42890,32 @@ function init() {
     console.log(res);
     scene.add(res.scene);
   });
+  raycaster = new _three.Raycaster();
+  mouse = new _three.Vector2();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
+  renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+}
+
+function onMouseMove(e) {
+  var bounds = this.getBoundingClientRect();
+  mouse.x = e.clientX - bounds.x;
+  mouse.y = e.clientY - bounds.y;
+  mouse.x = mouse.x / bounds.width * 2 - 1;
+  mouse.y = -(mouse.y / bounds.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  var intersects = raycaster.intersectObject(scene, true);
+
+  if (intersects.length) {
+    var _intersects$ = intersects[0],
+        face = _intersects$.face,
+        object = _intersects$.object;
+    var batchid = object.geometry.getAttribute('_batchid');
+
+    if (batchid) {
+      console.log('_batchid', batchid.getX(face.a), batchid.getX(face.b), batchid.getX(face.c));
+    }
+  }
 }
 
 function onWindowResize() {
@@ -42936,7 +42961,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59225" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54369" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
