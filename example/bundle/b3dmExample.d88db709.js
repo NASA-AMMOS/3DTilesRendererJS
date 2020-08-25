@@ -42844,11 +42844,38 @@ var _three = require("three");
 
 var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var camera, controls, scene, renderer;
 var box, dirLight;
 var raycaster, mouse;
+var model;
 init();
-animate();
+animate(); // Adjusts the three.js standard shader to include batchid highlight
+
+function batchIdHighlightShaderMixin(shader) {
+  var newShader = _objectSpread({}, shader);
+
+  newShader.uniforms = _objectSpread({
+    highlightedBatchId: {
+      value: -1
+    },
+    highlightColor: {
+      value: new _three.Color(0xFFC107).convertSRGBToLinear()
+    }
+  }, _three.UniformsUtils.clone(shader.uniforms));
+  newShader.extensions = {
+    derivatives: true
+  };
+  newShader.lights = true;
+  newShader.vertexShader = "\n\t\t\tattribute float _batchid;\n\t\t\tvarying float batchid;\n\t\t" + newShader.vertexShader.replace(/#include <uv_vertex>/, "\n\t\t\t#include <uv_vertex>\n\t\t\tbatchid = _batchid;\n\t\t\t");
+  newShader.fragmentShader = "\n\t\t\tvarying float batchid;\n\t\t\tuniform float highlightedBatchId;\n\t\t\tuniform vec3 highlightColor;\n\t\t" + newShader.fragmentShader.replace(/vec4 diffuseColor = vec4\( diffuse, opacity \);/, "\n\t\t\tvec4 diffuseColor =\n\t\t\t\tabs( batchid - highlightedBatchId ) < 0.5 ?\n\t\t\t\tvec4( highlightColor, opacity ) :\n\t\t\t\tvec4( diffuse, opacity );\n\t\t\t");
+  return newShader;
+}
 
 function init() {
   scene = new _three.Scene(); // primary camera view
@@ -42888,7 +42915,16 @@ function init() {
   box = new _three.Box3();
   new _index.B3DMLoader().load('https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/city/lr.b3dm').then(function (res) {
     console.log(res);
-    scene.add(res.scene);
+    model = res.scene;
+    scene.add(res.scene); // reassign the material to use the batchid highlight variant.
+    // in practice this should copy over any needed uniforms from the
+    // original material.
+
+    res.scene.traverse(function (c) {
+      if (c.isMesh) {
+        c.material = new _three.ShaderMaterial(batchIdHighlightShaderMixin(_three.ShaderLib.standard));
+      }
+    });
   });
   raycaster = new _three.Raycaster();
   mouse = new _three.Vector2();
@@ -42905,16 +42941,26 @@ function onMouseMove(e) {
   mouse.y = -(mouse.y / bounds.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
   var intersects = raycaster.intersectObject(scene, true);
+  var hoveredBatchid = -1;
 
   if (intersects.length) {
     var _intersects$ = intersects[0],
         face = _intersects$.face,
         object = _intersects$.object;
-    var batchid = object.geometry.getAttribute('_batchid');
+    var batchidAttr = object.geometry.getAttribute('_batchid');
 
-    if (batchid) {
-      console.log('_batchid', batchid.getX(face.a), batchid.getX(face.b), batchid.getX(face.c));
+    if (batchidAttr) {
+      hoveredBatchid = batchidAttr.getX(face.a);
+      console.log('_batchid', batchidAttr.getX(face.a), batchidAttr.getX(face.b), batchidAttr.getX(face.c));
     }
+  }
+
+  if (model) {
+    model.traverse(function (c) {
+      if (c.isMesh) {
+        c.material.uniforms.highlightedBatchId.value = hoveredBatchid;
+      }
+    });
   }
 }
 

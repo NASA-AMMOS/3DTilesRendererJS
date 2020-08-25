@@ -10,15 +10,65 @@ import {
 	PCFSoftShadowMap,
 	Vector2,
 	Raycaster,
+	ShaderLib,
+	UniformsUtils,
+	ShaderMaterial,
+	Color,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 let camera, controls, scene, renderer;
 let box, dirLight;
 let raycaster, mouse;
+let model;
 
 init();
 animate();
+
+// Adjusts the three.js standard shader to include batchid highlight
+function batchIdHighlightShaderMixin( shader ) {
+
+	const newShader = { ...shader };
+	newShader.uniforms = {
+		highlightedBatchId: { value: - 1 },
+		highlightColor: { value: new Color( 0xFFC107 ).convertSRGBToLinear() },
+		...UniformsUtils.clone( shader.uniforms ),
+	};
+	newShader.extensions = {
+		derivatives: true,
+	};
+	newShader.lights = true;
+	newShader.vertexShader =
+		`
+			attribute float _batchid;
+			varying float batchid;
+		` +
+		newShader.vertexShader.replace(
+			/#include <uv_vertex>/,
+			`
+			#include <uv_vertex>
+			batchid = _batchid;
+			`
+		);
+	newShader.fragmentShader =
+		`
+			varying float batchid;
+			uniform float highlightedBatchId;
+			uniform vec3 highlightColor;
+		` +
+		newShader.fragmentShader.replace(
+			/vec4 diffuseColor = vec4\( diffuse, opacity \);/,
+			`
+			vec4 diffuseColor =
+				abs( batchid - highlightedBatchId ) < 0.5 ?
+				vec4( highlightColor, opacity ) :
+				vec4( diffuse, opacity );
+			`
+		);
+
+	return newShader;
+
+}
 
 function init() {
 
@@ -70,7 +120,21 @@ function init() {
 		.then( res => {
 
 			console.log( res );
+			model = res.scene;
 			scene.add( res.scene );
+
+			// reassign the material to use the batchid highlight variant.
+			// in practice this should copy over any needed uniforms from the
+			// original material.
+			res.scene.traverse( c => {
+
+				if ( c.isMesh ) {
+
+					c.material = new ShaderMaterial( batchIdHighlightShaderMixin( ShaderLib.standard ) );
+
+				}
+
+			} );
 
 		} );
 
@@ -94,15 +158,32 @@ function onMouseMove( e ) {
 	raycaster.setFromCamera( mouse, camera );
 
 	const intersects = raycaster.intersectObject( scene, true );
+	let hoveredBatchid = - 1;
 	if ( intersects.length ) {
 
 		const { face, object } = intersects[ 0 ];
-		const batchid = object.geometry.getAttribute( '_batchid' );
-		if ( batchid ) {
+		const batchidAttr = object.geometry.getAttribute( '_batchid' );
 
-			console.log( '_batchid', batchid.getX( face.a ), batchid.getX( face.b ), batchid.getX( face.c ) );
+		if ( batchidAttr ) {
+
+			hoveredBatchid = batchidAttr.getX( face.a );
+			console.log( '_batchid', batchidAttr.getX( face.a ), batchidAttr.getX( face.b ), batchidAttr.getX( face.c ) );
 
 		}
+
+	}
+
+	if ( model ) {
+
+		model.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				c.material.uniforms.highlightedBatchId.value = hoveredBatchid;
+
+			}
+
+		} );
 
 	}
 
