@@ -478,12 +478,7 @@ export class TilesRenderer extends TilesRendererBase {
 			case 'b3dm':
 				promise = new B3DMLoader( manager )
 					.parse( buffer )
-					.then( res => {
-
-						res.scene.batchAttributes = res.batchTable.header;
-						return res.scene;
-
-					 } );
+					.then( res => res.scene );
 				break;
 
 			case 'pnts':
