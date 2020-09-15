@@ -1,8 +1,20 @@
 import { B3DMBaseResult } from '../base/B3DMLoaderBase';
-import { LoadingManager } from 'three';
+import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
+import { LoadingManager, Group } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
-export interface B3DMResult extends GLTF, B3DMBaseResult {}
+interface B3DMScene extends Group {
+	
+	batchTable : BatchTable;
+	featureTable : FeatureTable;
+
+}
+
+export interface B3DMResult extends GLTF, B3DMBaseResult {
+
+	model : B3DMScene;
+	
+}
 
 export class B3DMLoader {
 
