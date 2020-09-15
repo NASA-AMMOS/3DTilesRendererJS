@@ -23,6 +23,10 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 				model.batchTable = b3dm.batchTable;
 				model.featureTable = b3dm.featureTable;
+
+				model.scene.batchTable = b3dm.batchTable;
+				model.scene.featureTable = b3dm.featureTable;
+
 				resolve( model );
 
 			}, reject );
