@@ -135,22 +135,18 @@ export function determineFrustumSet( tile, renderer ) {
 	stats.inFrustum ++;
 
 	// Early out if this tile has less error than we're targeting.
-	if ( ! tile.__contentEmpty ) {
+	const error = renderer.calculateError( tile );
+	tile.__error = error;
+	if ( error <= errorTarget ) {
 
-		const error = renderer.calculateError( tile );
-		tile.__error = error;
-		if ( error <= errorTarget ) {
+		return true;
 
-			return true;
+	}
 
-		}
+	// Early out if we've reached the maximum allowed depth.
+	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
 
-		// Early out if we've reached the maximum allowed depth.
-		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
-
-			return true;
-
-		}
+		return true;
 
 	}
 
