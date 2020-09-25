@@ -158,7 +158,7 @@ function renderLoop() {
 	if ( needsRerender ) {
 	
 		needsRerender = false;
-		tilesRenderer.upadate();
+		tilesRenderer.update();
 		renderer.render( camera, scene );
 	
 	}
