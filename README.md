@@ -158,6 +158,7 @@ function renderLoop() {
 	if ( needsRerender ) {
 	
 		needsRerender = false;
+		camera.updateMatrixWorld();
 		tilesRenderer.update();
 		renderer.render( camera, scene );
 	
