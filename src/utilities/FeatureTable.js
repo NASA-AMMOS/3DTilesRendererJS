@@ -55,7 +55,7 @@ export class FeatureTable {
 			const featureType = feature.type || defaultType;
 			const featureComponentType = feature.componentType || defaultComponentType;
 
-			if ( 'type' in feature && defaultType && feature.type !== defaultType) {
+			if ( 'type' in feature && defaultType && feature.type !== defaultType ) {
 
 				throw new Error( 'FeatureTable: Specified type does not match expected type.' );
 
