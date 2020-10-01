@@ -70,7 +70,7 @@ export class TilesRendererBase {
 		this.loadSiblings = true;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
-		this.showEmptyTiles = false;
+		this.showEmptyTiles = true;
 
 	}
 
