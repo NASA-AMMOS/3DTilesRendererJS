@@ -105,6 +105,10 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						model.batchTable = batchTable;
 						model.featureTable = featureTable;
+						
+						model.scene.batchTable = batchTable;
+						model.scene.featureTable = featureTable;
+
 						resolve( model );
 
 					}, reject );
