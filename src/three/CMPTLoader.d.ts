@@ -5,7 +5,7 @@ import { Group } from 'three';
 
 export interface CMPTResult {
 
-	tiles : Array< B3DMBaseResult, I3DMBaseResult, PNTSBaseResult >;
+	tiles : Array< B3DMBaseResult|I3DMBaseResult|PNTSBaseResult >;
 	scene : Group;
 
 }
