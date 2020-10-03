@@ -1,9 +1,16 @@
 import { PNTSBaseResult } from '../base/PNTSLoaderBase';
-import { Points } from 'three';
+import { FeatureTable } from '../utilities/FeatureTable';
+import { Points, LoadingManager } from 'three';
+
+interface PNTSScene extends Points {
+
+	featureTable : FeatureTable;
+	
+}
 
 export interface PNTSResult extends PNTSBaseResult {
 
-	scene: Points;
+	scene : PNTSScene;
 
 }
 

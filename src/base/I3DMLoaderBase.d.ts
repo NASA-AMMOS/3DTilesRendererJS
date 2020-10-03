@@ -1,6 +1,6 @@
 import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
 
-export interface I3DMLoaderBaseResult {
+export interface I3DMBaseResult {
 
 	version : String;
 	featureTable: FeatureTable;
@@ -9,9 +9,9 @@ export interface I3DMLoaderBaseResult {
 
 }
 
-export class I3DMLoaderLoaderBase {
+export class I3DMLoaderBase {
 
-	load( url : string ) : Promise< I3DMLoaderBaseResult >;
-	parse( buffer : ArrayBuffer ) : Promise< I3DMLoaderBaseResult >;
+	load( url : string ) : Promise< I3DMBaseResult >;
+	parse( buffer : ArrayBuffer ) : Promise< I3DMBaseResult >;
 
 }

@@ -12,7 +12,7 @@ interface B3DMScene extends Group {
 
 export interface B3DMResult extends GLTF, B3DMBaseResult {
 
-	model : B3DMScene;
+	scene : B3DMScene;
 	
 }
 

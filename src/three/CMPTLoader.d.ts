@@ -1,11 +1,11 @@
 import { B3DMBaseResult } from '../base/B3DMLoaderBase';
 import { I3DMBaseResult } from '../base/I3DMLoaderBase';
-import { PNTSBaseResult } from '../base/B3DMLoaderBase';
-import { Group } from 'three';
+import { PNTSBaseResult } from '../base/PNTSLoaderBase';
+import { Group, LoadingManager } from 'three';
 
 export interface CMPTResult {
 
-	tiles : Array< B3DMBaseResult, I3DMBaseResult, PNTSBaseResult >;
+	tiles : Array< B3DMBaseResult|I3DMBaseResult|PNTSBaseResult >;
 	scene : Group;
 
 }
