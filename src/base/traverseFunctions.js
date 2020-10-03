@@ -118,7 +118,7 @@ export function determineFrustumSet( tile, renderer ) {
 	const maxDepth = renderer.maxDepth;
 	const loadSiblings = renderer.loadSiblings;
 	const lruCache = renderer.lruCache;
-	const showEmptyTiles = renderer.showEmptyTiles;
+	const stopAtEmptyTiles = renderer.stopAtEmptyTiles;
 	resetFrameState( tile, frameCount );
 
 	// Early out if this tile is not within view.
@@ -136,7 +136,7 @@ export function determineFrustumSet( tile, renderer ) {
 	stats.inFrustum ++;
 
 	// Early out if this tile has less error than we're targeting.
-	if ( showEmptyTiles || ! tile.__contentEmpty ) {
+	if ( stopAtEmptyTiles || ! tile.__contentEmpty ) {
 
 		const error = renderer.calculateError( tile );
 		tile.__error = error;
