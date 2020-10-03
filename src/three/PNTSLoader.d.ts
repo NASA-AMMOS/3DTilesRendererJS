@@ -1,6 +1,6 @@
 import { PNTSBaseResult } from '../base/PNTSLoaderBase';
 import { FeatureTable } from '../utilities/FeatureTable';
-import { Points } from 'three';
+import { Points, LoadingManager } from 'three';
 
 interface PNTSScene extends Points {
 
