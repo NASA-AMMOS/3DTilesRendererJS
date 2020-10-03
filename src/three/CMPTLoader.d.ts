@@ -1,6 +1,6 @@
 import { B3DMBaseResult } from '../base/B3DMLoaderBase';
 import { I3DMBaseResult } from '../base/I3DMLoaderBase';
-import { PNTSBaseResult } from '../base/B3DMLoaderBase';
+import { PNTSBaseResult } from '../base/PNTSLoaderBase';
 import { Group } from 'three';
 
 export interface CMPTResult {
