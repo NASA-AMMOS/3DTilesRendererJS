@@ -1,10 +1,11 @@
 import { I3DMBaseResult } from '../base/I3DMLoaderBase';
+import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 interface I3DMScene extends Group {
 
-	batchTable : Object;
-	featureTable : Object;
+	batchTable : BatchTable;
+	featureTable : FeatureTable;
 	
 }
 
