@@ -2,7 +2,7 @@ import { PNTSBaseResult } from '../base/PNTSLoaderBase';
 import { FeatureTable } from '../utilities/FeatureTable';
 import { Points } from 'three';
 
-interface PNTSScene extends Point {
+interface PNTSScene extends Points {
 
 	featureTable : FeatureTable;
 	
