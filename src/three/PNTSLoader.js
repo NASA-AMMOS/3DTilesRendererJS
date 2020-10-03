@@ -56,6 +56,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 		const object = new Points( geometry, material );
 		result.scene = object;
+		result.scene.featureTable = featureTable;
 
 		return result;
 
