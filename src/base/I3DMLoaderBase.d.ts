@@ -9,7 +9,7 @@ export interface I3DMLoaderBaseResult {
 
 }
 
-export class I3DMLoaderLoaderBase {
+export class I3DMLoaderBase {
 
 	load( url : string ) : Promise< I3DMLoaderBaseResult >;
 	parse( buffer : ArrayBuffer ) : Promise< I3DMLoaderBaseResult >;
