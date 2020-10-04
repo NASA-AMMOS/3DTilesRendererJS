@@ -157,6 +157,7 @@ function onMouseMove( e ) {
 
 	raycaster.setFromCamera( mouse, camera );
 
+	// Get the batch table data
 	const intersects = raycaster.intersectObject( scene, true );
 	let hoveredBatchid = - 1;
 	if ( intersects.length ) {
@@ -166,8 +167,21 @@ function onMouseMove( e ) {
 
 		if ( batchidAttr ) {
 
+			// Traverse the parents to find the batch table.
+			let batchTableObject = object;
+			while ( ! batchTableObject.batchTable ) {
+
+				batchTableObject = batchTableObject.parent;
+
+			}
+
+			// Log the batch data
+			const batchTable = batchTableObject.batchTable;
 			hoveredBatchid = batchidAttr.getX( face.a );
-			console.log( '_batchid', batchidAttr.getX( face.a ), batchidAttr.getX( face.b ), batchidAttr.getX( face.c ) );
+			console.log( '_batchid', hoveredBatchid );
+			console.log( 'Latitude', batchTable.getData( 'Latitude' )[ hoveredBatchid ] );
+			console.log( 'Longitude', batchTable.getData( 'Longitude' )[ hoveredBatchid ] );
+			console.log( 'Height', batchTable.getData( 'Height' )[ hoveredBatchid ] );
 
 		}
 

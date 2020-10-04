@@ -39737,6 +39737,8 @@ function (_B3DMLoaderBase) {
         loader.parse(gltfBuffer, null, function (model) {
           model.batchTable = b3dm.batchTable;
           model.featureTable = b3dm.featureTable;
+          model.scene.batchTable = b3dm.batchTable;
+          model.scene.featureTable = b3dm.featureTable;
           resolve(model);
         }, reject);
       });
@@ -39917,6 +39919,7 @@ function (_PNTSLoaderBase) {
 
       var object = new _three.Points(geometry, material);
       result.scene = object;
+      result.scene.featureTable = featureTable;
       return result;
     }
   }]);
@@ -40154,6 +40157,8 @@ function (_I3DMLoaderBase) {
 
             model.batchTable = batchTable;
             model.featureTable = featureTable;
+            model.scene.batchTable = batchTable;
+            model.scene.featureTable = featureTable;
             resolve(model);
           }, reject);
         });
@@ -42939,7 +42944,8 @@ function onMouseMove(e) {
   mouse.y = e.clientY - bounds.y;
   mouse.x = mouse.x / bounds.width * 2 - 1;
   mouse.y = -(mouse.y / bounds.height) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse, camera); // Get the batch table data
+
   var intersects = raycaster.intersectObject(scene, true);
   var hoveredBatchid = -1;
 
@@ -42950,8 +42956,20 @@ function onMouseMove(e) {
     var batchidAttr = object.geometry.getAttribute('_batchid');
 
     if (batchidAttr) {
+      // Traverse the parents to find the batch table.
+      var batchTableObject = object;
+
+      while (!batchTableObject.batchTable) {
+        batchTableObject = batchTableObject.parent;
+      } // Log the batch data
+
+
+      var batchTable = batchTableObject.batchTable;
       hoveredBatchid = batchidAttr.getX(face.a);
-      console.log('_batchid', batchidAttr.getX(face.a), batchidAttr.getX(face.b), batchidAttr.getX(face.c));
+      console.log('_batchid', hoveredBatchid);
+      console.log('Latitude', batchTable.getData('Latitude')[hoveredBatchid]);
+      console.log('Longitude', batchTable.getData('Longitude')[hoveredBatchid]);
+      console.log('Height', batchTable.getData('Height')[hoveredBatchid]);
     }
   }
 
@@ -43007,7 +43025,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54369" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49980" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
