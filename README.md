@@ -168,6 +168,41 @@ function renderLoop() {
 renderLoop();
 ```
 
+## Read Batch Id and Batch Table Data
+
+How to find the batch id and batch table associated with a mesh and read the data.
+
+```js
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+
+// ...checking intersections...
+
+const intersects = raycaster.intersectObject( scene, true );
+if ( intersects.length ) {
+
+	const { face, object } = intersects[ 0 ];
+	const batchidAttr = object.geometry.getAttribute( '_batchid' );
+
+	if ( batchidAttr ) {
+
+		// Traverse the parents to find the batch table.
+		let batchTableObject = object;
+		while ( ! batchTableObject.batchTable ) {
+
+			batchTableObject = batchTableObject.parent;
+
+		}
+
+		// Log the batch data
+		const batchTable = batchTableObject.batchTable;
+		const hoveredBatchid = batchidAttr.getX( face.a );
+		console.log( batchTable.getData( 'BatchTableKey' )[ hoveredBatchid ] );
+
+	}
+	
+}
+```
+
 # API
 
 ## TilesRenderer
