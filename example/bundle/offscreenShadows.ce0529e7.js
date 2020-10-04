@@ -39737,6 +39737,8 @@ function (_B3DMLoaderBase) {
         loader.parse(gltfBuffer, null, function (model) {
           model.batchTable = b3dm.batchTable;
           model.featureTable = b3dm.featureTable;
+          model.scene.batchTable = b3dm.batchTable;
+          model.scene.featureTable = b3dm.featureTable;
           resolve(model);
         }, reject);
       });
@@ -39917,6 +39919,7 @@ function (_PNTSLoaderBase) {
 
       var object = new _three.Points(geometry, material);
       result.scene = object;
+      result.scene.featureTable = featureTable;
       return result;
     }
   }]);
@@ -40154,6 +40157,8 @@ function (_I3DMLoaderBase) {
 
             model.batchTable = batchTable;
             model.featureTable = featureTable;
+            model.scene.batchTable = batchTable;
+            model.scene.featureTable = featureTable;
             resolve(model);
           }, reject);
         });
@@ -46097,7 +46102,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54369" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49980" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
