@@ -42859,6 +42859,7 @@ var camera, controls, scene, renderer;
 var box, dirLight;
 var raycaster, mouse;
 var model;
+var infoEl;
 init();
 animate(); // Adjusts the three.js standard shader to include batchid highlight
 
@@ -42883,6 +42884,7 @@ function batchIdHighlightShaderMixin(shader) {
 }
 
 function init() {
+  infoEl = document.getElementById('info');
   scene = new _three.Scene(); // primary camera view
 
   renderer = new _three.WebGLRenderer({
@@ -42966,11 +42968,10 @@ function onMouseMove(e) {
 
       var batchTable = batchTableObject.batchTable;
       hoveredBatchid = batchidAttr.getX(face.a);
-      console.log('_batchid', hoveredBatchid);
-      console.log('Latitude', batchTable.getData('Latitude')[hoveredBatchid]);
-      console.log('Longitude', batchTable.getData('Longitude')[hoveredBatchid]);
-      console.log('Height', batchTable.getData('Height')[hoveredBatchid]);
+      infoEl.innerText = "_batchid   : ".concat(hoveredBatchid, "\n") + "Latitude   : ".concat(batchTable.getData('Latitude')[hoveredBatchid].toFixed(3), "\n") + "Longitude  : ".concat(batchTable.getData('Longitude')[hoveredBatchid].toFixed(3), "\n") + "Height     : ".concat(batchTable.getData('Height')[hoveredBatchid].toFixed(3), "\n");
     }
+  } else {
+    infoEl.innerText = '';
   }
 
   if (model) {

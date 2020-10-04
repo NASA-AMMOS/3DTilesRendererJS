@@ -21,6 +21,7 @@ let camera, controls, scene, renderer;
 let box, dirLight;
 let raycaster, mouse;
 let model;
+let infoEl;
 
 init();
 animate();
@@ -71,6 +72,8 @@ function batchIdHighlightShaderMixin( shader ) {
 }
 
 function init() {
+
+	infoEl = document.getElementById( 'info' );
 
 	scene = new Scene();
 
@@ -178,12 +181,18 @@ function onMouseMove( e ) {
 			// Log the batch data
 			const batchTable = batchTableObject.batchTable;
 			hoveredBatchid = batchidAttr.getX( face.a );
-			console.log( '_batchid', hoveredBatchid );
-			console.log( 'Latitude', batchTable.getData( 'Latitude' )[ hoveredBatchid ] );
-			console.log( 'Longitude', batchTable.getData( 'Longitude' )[ hoveredBatchid ] );
-			console.log( 'Height', batchTable.getData( 'Height' )[ hoveredBatchid ] );
+
+			infoEl.innerText =
+				`_batchid   : ${ hoveredBatchid }\n` +
+				`Latitude   : ${ batchTable.getData( 'Latitude' )[ hoveredBatchid ].toFixed( 3 ) }\n` +
+				`Longitude  : ${ batchTable.getData( 'Longitude' )[ hoveredBatchid ].toFixed( 3 ) }\n` +
+				`Height     : ${ batchTable.getData( 'Height' )[ hoveredBatchid ].toFixed( 3 ) }\n`;
 
 		}
+
+	} else {
+
+		infoEl.innerText = '';
 
 	}
 
