@@ -36413,6 +36413,7 @@ function determineFrustumSet(tile, renderer) {
   var maxDepth = renderer.maxDepth;
   var loadSiblings = renderer.loadSiblings;
   var lruCache = renderer.lruCache;
+  var stopAtEmptyTiles = renderer.stopAtEmptyTiles;
   resetFrameState(tile, frameCount); // Early out if this tile is not within view.
 
   var inFrustum = renderer.tileInView(tile);
@@ -36426,7 +36427,7 @@ function determineFrustumSet(tile, renderer) {
   tile.__inFrustum = true;
   stats.inFrustum++; // Early out if this tile has less error than we're targeting.
 
-  if (!tile.__contentEmpty) {
+  if (stopAtEmptyTiles || !tile.__contentEmpty) {
     var error = renderer.calculateError(tile);
     tile.__error = error;
 
@@ -36729,6 +36730,7 @@ function () {
     this.loadSiblings = true;
     this.displayActiveTiles = false;
     this.maxDepth = Infinity;
+    this.stopAtEmptyTiles = true;
   }
 
   _createClass(TilesRendererBase, [{
@@ -39737,6 +39739,8 @@ function (_B3DMLoaderBase) {
         loader.parse(gltfBuffer, null, function (model) {
           model.batchTable = b3dm.batchTable;
           model.featureTable = b3dm.featureTable;
+          model.scene.batchTable = b3dm.batchTable;
+          model.scene.featureTable = b3dm.featureTable;
           resolve(model);
         }, reject);
       });
@@ -46940,6 +46944,7 @@ var params = {
   'errorThreshold': 60,
   'maxDepth': 15,
   'loadSiblings': true,
+  'stopAtEmptyTiles': true,
   'displayActiveTiles': false,
   'resolutionScale': 1.0,
   'up': '+Y',
@@ -47080,6 +47085,7 @@ function init() {
   gui.width = 300;
   var tileOptions = gui.addFolder('Tiles Options');
   tileOptions.add(params, 'loadSiblings');
+  tileOptions.add(params, 'stopAtEmptyTiles');
   tileOptions.add(params, 'displayActiveTiles');
   tileOptions.add(params, 'errorTarget').min(0).max(50);
   tileOptions.add(params, 'errorThreshold').min(0).max(1000);
@@ -47252,6 +47258,7 @@ function animate() {
   tiles.errorTarget = params.errorTarget;
   tiles.errorThreshold = params.errorThreshold;
   tiles.loadSiblings = params.loadSiblings;
+  tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
   tiles.displayActiveTiles = params.displayActiveTiles;
   tiles.maxDepth = params.maxDepth;
   tiles.displayBoxBounds = params.displayBoxBounds;
@@ -47435,7 +47442,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54369" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59294" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
