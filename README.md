@@ -516,6 +516,23 @@ priorityCallback = null : ( item ) => Number
 
 Function to derive the job priority of the given item. Higher priority values get processed first.
 
+## BatchTable
+
+### .getKeys
+
+```js
+getKeys() : Array<String>
+```
+
+### getData
+```js
+getData(
+	key : String,
+	defaultComponentType = null : String|null,
+	defaultType = null : String|null,
+) : Array|TypedArray
+```
+
 # LICENSE
 
 The software is available under the [Apache V2.0 license](../LICENSE.txt).
