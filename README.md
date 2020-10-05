@@ -567,15 +567,16 @@ getKeys() : Array<String>
 Returns the keys of all the data in the batch table.
 
 ### getData
+
 ```js
 getData(
 	key : String,
 	defaultComponentType = null : String|null,
 	defaultType = null : String|null,
-) : Array|TypedArray
+) : Array|TypedArray|null
 ```
 
-Returns the data associated with the `key` passed into the function. If the component and type are specified in the batch table contents then those values are used otherwise the values in `defaultComponentType` and `defaultType` are used.
+Returns the data associated with the `key` passed into the function. If the component and type are specified in the batch table contents then those values are used otherwise the values in `defaultComponentType` and `defaultType` are used. Returns null if the key is not in the table.
 
 `defaultComponentType` can be set to `BYTE`, `UNSIGNED_BYTE`, `SHORT`, `UNSIGNED_SHORT`, `INT`, `UNSIGNED_INT`, `FLOAT`, or `DOUBLE`. `defaultType` can be set to `SCALAR`, `VEC2`, `VEC3`, or `VEC4`.
 
