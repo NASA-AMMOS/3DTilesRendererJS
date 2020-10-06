@@ -58,6 +58,7 @@ let params = {
 	'errorThreshold': 60,
 	'maxDepth': 15,
 	'loadSiblings': true,
+	'stopAtEmptyTiles': true,
 	'displayActiveTiles': false,
 	'resolutionScale': 1.0,
 
@@ -231,6 +232,7 @@ function init() {
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'loadSiblings' );
+	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
@@ -442,6 +444,7 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
+	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;

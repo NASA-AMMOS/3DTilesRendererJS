@@ -11,6 +11,7 @@ export class TilesRendererBase {
 	loadSiblings : Boolean;
 	displayActiveTiles : Boolean;
 	maxDepth : Number;
+	stopAtEmptyTiles : Boolean;
 
 	fetchOptions : Object;
 

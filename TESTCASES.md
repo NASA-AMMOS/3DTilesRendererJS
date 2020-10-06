@@ -274,7 +274,7 @@ Verify no errors are logged.
 
 Verify that the stats display 125 geometries, 126 textures, and 1 programs.
 
-## Verify maxDepth limit does not stop at empty tiles
+## Verify stopAtEmptyTiles works
 
 #### steps
 
@@ -282,6 +282,20 @@ Verify that the stats display 125 geometries, 126 textures, and 1 programs.
 1. Set `maxDepth` to 1.
 1. Verify that only 1 tile is visible.
 1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
+1. Set `maxDepth` to 1.
+1. Verify that all tiles disappear.
+
+#### expected
+
+No tiles are visible when the active leafs have no content.
+
+## Verify maxDepth limit does not stop at empty tiles when stopAtEmptyTiles = false
+
+1. Open the kitchen sink example by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/).
+1. Set `maxDepth` to 1.
+1. Verify that only 1 tile is visible.
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
+1. Disable `stopAtEmptyTiles`.
 1. Set `maxDepth` to 1.
 1. Verify that 4 tiles are visible.
 
@@ -298,6 +312,8 @@ The next shallowest tiles are visible past the `maxDepth` cutoff.
 1. Set `errorTarget` to 0.
 1. Set `maxDepth` to 3.
 1. Set `colorMode` to `RANDOM_COLOR`.
+1. Verify that one tile is missing.
+1. Disable `stopAtEmptyTiles`.
 1. Verify that there are four smaller tiles compared to the rest of the tileset where the missing midtile with content is.
 
 #### expected
