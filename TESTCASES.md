@@ -320,7 +320,7 @@ The next shallowest tiles are visible past the `maxDepth` cutoff.
 
 The tileset renders and loads correctly.
 
-## Verify tileset with missing mid tile content loads and renders correctly
+## Verify tileset with additive tiles renders correctly
 
 #### steps
 
