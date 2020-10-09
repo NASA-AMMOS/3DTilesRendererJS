@@ -36413,6 +36413,7 @@ function determineFrustumSet(tile, renderer) {
   var maxDepth = renderer.maxDepth;
   var loadSiblings = renderer.loadSiblings;
   var lruCache = renderer.lruCache;
+  var stopAtEmptyTiles = renderer.stopAtEmptyTiles;
   resetFrameState(tile, frameCount); // Early out if this tile is not within view.
 
   var inFrustum = renderer.tileInView(tile);
@@ -36426,7 +36427,7 @@ function determineFrustumSet(tile, renderer) {
   tile.__inFrustum = true;
   stats.inFrustum++; // Early out if this tile has less error than we're targeting.
 
-  if (!tile.__contentEmpty) {
+  if (stopAtEmptyTiles || !tile.__contentEmpty) {
     var error = renderer.calculateError(tile);
     tile.__error = error;
 
@@ -36729,6 +36730,7 @@ function () {
     this.loadSiblings = true;
     this.displayActiveTiles = false;
     this.maxDepth = Infinity;
+    this.stopAtEmptyTiles = true;
   }
 
   _createClass(TilesRendererBase, [{
@@ -43026,7 +43028,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49980" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49764" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
