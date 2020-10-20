@@ -212,7 +212,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						if ( c.isPoints ) {
 
-							const pointsMaterial= new PointsMaterial();
+							const pointsMaterial = new PointsMaterial();
 							pointsMaterial.size = originalMaterial.size;
 							pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
 							c.material = pointsMaterial;

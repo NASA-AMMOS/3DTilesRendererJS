@@ -38,7 +38,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 						} );
 
-					promises.push(promise);
+					promises.push( promise );
 					break;
 
 				}
@@ -64,7 +64,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 							group.add( res.scene );
 
 						} );
-					promises.push(promise);
+					promises.push( promise );
 					break;
 
 				}
