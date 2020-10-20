@@ -3,6 +3,9 @@
 	"parserOptions": {
         "ecmaVersion": 2018
 	},
+	"env": {
+		"jest/globals": true
+	},
 
 	"extends": "./node_modules/eslint-config-mdcs/index.js",
 	"plugins": [ "jest" ],

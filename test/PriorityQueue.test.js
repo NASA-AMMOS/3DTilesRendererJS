@@ -10,13 +10,13 @@ describe( 'PriorityQueue', () => {
 		const queue = new PriorityQueue();
 		queue.maxJobs = 6;
 		queue.priorityCallback = item => item.priority;
-		queue.add( { priority : 6 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 3 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 4 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 0 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 8 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 2 }, () => new Promise( () => {} ) );
-		queue.add( { priority : 1 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 6 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 3 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 4 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 0 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 8 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 2 }, () => new Promise( () => {} ) );
+		queue.add( { priority: 1 }, () => new Promise( () => {} ) );
 
 		await nextFrame();
 
@@ -38,13 +38,13 @@ describe( 'PriorityQueue', () => {
 		const queue = new PriorityQueue();
 		queue.maxJobs = 1;
 		queue.priorityCallback = item => item.priority;
-		queue.add( { priority : 6 }, cb );
-		queue.add( { priority : 3 }, cb );
-		queue.add( { priority : 4 }, cb );
-		queue.add( { priority : 0 }, cb );
-		queue.add( { priority : 8 }, cb );
-		queue.add( { priority : 2 }, cb );
-		queue.add( { priority : 1 }, cb );
+		queue.add( { priority: 6 }, cb );
+		queue.add( { priority: 3 }, cb );
+		queue.add( { priority: 4 }, cb );
+		queue.add( { priority: 0 }, cb );
+		queue.add( { priority: 8 }, cb );
+		queue.add( { priority: 2 }, cb );
+		queue.add( { priority: 1 }, cb );
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
 		await nextTick();
@@ -56,10 +56,10 @@ describe( 'PriorityQueue', () => {
 
 	it( 'should remove an item from the queue correctly.', () => {
 
-		const A = { priority : 0 };
-		const B = { priority : 1 };
-		const C = { priority : 2 };
-		const D = { priority : 3 };
+		const A = { priority: 0 };
+		const B = { priority: 1 };
+		const C = { priority: 2 };
+		const D = { priority: 3 };
 		const queue = new PriorityQueue();
 		queue.priorityCallback = item => item.priority;
 		queue.add( A, () => new Promise( () => {} ) );
@@ -93,14 +93,14 @@ describe( 'PriorityQueue', () => {
 		queue.maxJobs = 1;
 		queue.priorityCallback = item => item.priority;
 
-		queue.add( { priority : 1 }, () => new Promise( resolve => {
+		queue.add( { priority: 1 }, () => new Promise( resolve => {
 
 			resolveFunc = resolve;
 			called ++;
 
 		} ) );
 
-		queue.add( { priority : 0 }, () => new Promise( () => {
+		queue.add( { priority: 0 }, () => new Promise( () => {
 
 			called ++;
 
@@ -124,7 +124,7 @@ describe( 'PriorityQueue', () => {
 
 	it( 'should fire the callback with the item and priority.', async () => {
 
-		const A = { priority : 100 };
+		const A = { priority: 100 };
 		const queue = new PriorityQueue();
 		queue.priorityCallback = item => item.priority;
 
@@ -138,13 +138,13 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
-	it( 'should return a promise that resolves from the add function.',  async () => {
+	it( 'should return a promise that resolves from the add function.', async () => {
 
 		const queue = new PriorityQueue();
 		queue.priorityCallback = item => item.priority;
 
 		let result = null;
-		queue.add( { priority : 0 }, item => Promise.resolve( 1000 ) ).then( res => result = res );
+		queue.add( { priority: 0 }, item => Promise.resolve( 1000 ) ).then( res => result = res );
 
 		expect( result ).toEqual( null );
 
@@ -184,6 +184,6 @@ describe( 'PriorityQueue', () => {
 
 		expect( queue.items ).toHaveLength( 0 );
 
-	});
+	} );
 
 } );
