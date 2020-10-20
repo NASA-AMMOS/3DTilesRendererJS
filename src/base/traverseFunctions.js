@@ -312,7 +312,7 @@ export function skipTraversal( tile, renderer ) {
 
 	// Skip the tile entirely if there's no content to load
 	if (
-			( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
+		( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
 			|| ( tile.refine === 'ADD' && loadedContent )
 	) {
 

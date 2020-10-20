@@ -14,8 +14,7 @@ import {
 	Frustum,
 	CanvasTexture,
 	LoadingManager,
-	ImageBitmapLoader,
-	Group,
+	ImageBitmapLoader
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -102,7 +101,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 						onComplete( new CanvasTexture( res ) );
 
-					}, onProgress, onError);
+					}, onProgress, onError );
 
 				}
 
@@ -259,7 +258,7 @@ export class TilesRenderer extends TilesRendererBase {
 	loadTileSet( url ) {
 
 		const pr = super.loadTileSet( url );
-		pr.then(() => {
+		pr.then( () => {
 
 			if ( this.onLoadTileSet ) {
 
@@ -267,7 +266,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-		});
+		} );
 		return pr;
 
 	}
