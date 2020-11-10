@@ -48,6 +48,7 @@ describe( 'PriorityQueue', () => {
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
 		await nextFrame();
+		await nextFrame();
 
 		expect( result ).toEqual( [ 8, 6, 4, 3, 2, 1, 0 ] );
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
