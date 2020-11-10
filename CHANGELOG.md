@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- `PriorityQueue` to wait a frame to schedule new tasks instead of using `Promise.resolve` so tasks will only be started once per frame.
+
 ## [0.1.6] - 2020-10-08
 ### Added
 - `batchTable` and `featureTable` fields onto loaded B3DM, I3DM, and PNTS scene objects directly.
