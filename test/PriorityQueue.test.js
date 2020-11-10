@@ -47,6 +47,7 @@ describe( 'PriorityQueue', () => {
 		queue.add( { priority: 1 }, cb );
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
+		// We require a new frame to trigger each subsequent task
 		for ( let i = 0; i < 7; i ++ ) {
 
 			await nextFrame();
@@ -119,6 +120,9 @@ describe( 'PriorityQueue', () => {
 		expect( called ).toEqual( 1 );
 
 		resolveFunc();
+
+		// one frame for resolving the promise, one frame schedule new
+		// tasks, and one frame to complete the last one.
 		await nextFrame();
 		await nextFrame();
 
