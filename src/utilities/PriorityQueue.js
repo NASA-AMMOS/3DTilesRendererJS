@@ -1,10 +1,3 @@
-// Fires at the end of the frame and before the next one
-function enqueueMicrotask( callback ) {
-
-	Promise.resolve().then( callback );
-
-}
-
 class PriorityQueue {
 
 	constructor() {
@@ -121,7 +114,7 @@ class PriorityQueue {
 
 		if ( ! this.scheduled ) {
 
-			enqueueMicrotask( () => {
+			requestAnimationFrame( () => {
 
 				this.tryRunJobs();
 				this.scheduled = false;
