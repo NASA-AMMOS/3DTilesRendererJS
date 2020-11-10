@@ -47,7 +47,7 @@ describe( 'PriorityQueue', () => {
 		queue.add( { priority: 1 }, cb );
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
 
-		await nextTick();
+		await nextFrame();
 
 		expect( result ).toEqual( [ 8, 6, 4, 3, 2, 1, 0 ] );
 		expect( queue.items.length ).toEqual( queue.callbacks.size );
@@ -116,6 +116,7 @@ describe( 'PriorityQueue', () => {
 
 		resolveFunc();
 		await nextFrame();
+		await nextFrame();
 
 		expect( queue.currJobs ).toEqual( 1 );
 		expect( called ).toEqual( 2 );
@@ -166,21 +167,21 @@ describe( 'PriorityQueue', () => {
 
 		expect( queue.items ).toHaveLength( 2 );
 
-		await nextTick();
+		await nextFrame();
 
 		expect( queue.items ).toHaveLength( 2 );
 
 		queue.scheduleJobRun();
-		await nextTick();
+		await nextFrame();
 
 		expect( queue.items ).toHaveLength( 1 );
 
-		await nextTick();
+		await nextFrame();
 
 		expect( queue.items ).toHaveLength( 1 );
 
 		queue.scheduleJobRun();
-		await nextTick();
+		await nextFrame();
 
 		expect( queue.items ).toHaveLength( 0 );
 
