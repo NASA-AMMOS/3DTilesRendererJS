@@ -42788,7 +42788,6 @@ var vecY = new _three.Vector3();
 var vecZ = new _three.Vector3();
 var X_AXIS = new _three.Vector3(1, 0, 0);
 var Y_AXIS = new _three.Vector3(0, 1, 0);
-var useImageBitmap = typeof createImageBitmap !== 'undefined';
 
 function emptyRaycast() {}
 
@@ -42844,22 +42843,6 @@ function (_TilesRendererBase) {
     _this.onLoadModel = null;
     _this.onDisposeModel = null;
     _this.manager = new _three.LoadingManager();
-
-    if (useImageBitmap) {
-      // TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-      // the fact. Premultiply alpha default behavior is not well defined, either.
-      // TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-      // behavior. Fall back to regular texture loading
-      _this.manager.addHandler(/(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-        load: function load(url, onComplete, onProgress, onError) {
-          var loader = new _three.ImageBitmapLoader(this.manager);
-          loader.load(url, function (res) {
-            onComplete(new _three.CanvasTexture(res));
-          }, onProgress, onError);
-        }
-      });
-    }
-
     return _this;
   }
   /* Public API */
@@ -43279,10 +43262,6 @@ function (_TilesRendererBase) {
         for (var _i2 = 0, _l2 = textures.length; _i2 < _l2; _i2++) {
           var texture = textures[_i2];
           texture.dispose();
-
-          if (useImageBitmap && 'close' in texture.image) {
-            texture.image.close();
-          }
         }
 
         if (this.onDisposeModel) {
@@ -48226,7 +48205,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51323" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52752" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
