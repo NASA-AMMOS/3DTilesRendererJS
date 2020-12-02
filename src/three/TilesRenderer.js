@@ -12,9 +12,7 @@ import {
 	Vector2,
 	Math as MathUtils,
 	Frustum,
-	CanvasTexture,
 	LoadingManager,
-	ImageBitmapLoader
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -29,7 +27,6 @@ const vecZ = new Vector3();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
-const useImageBitmap = typeof createImageBitmap !== 'undefined';
 
 function emptyRaycast() {}
 
@@ -86,28 +83,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onDisposeModel = null;
 
 		this.manager = new LoadingManager();
-		if ( useImageBitmap ) {
-
-			// TODO: We should verify that `flipY` is false on the resulting texture after load because it can't be modified after
-			// the fact. Premultiply alpha default behavior is not well defined, either.
-			// TODO: Determine whether or not options are supported before using this so we can force flipY false and premultiply alpha
-			// behavior. Fall back to regular texture loading
-			this.manager.addHandler( /(^blob:)|(\.png$)|(\.jpg$)|(\.jpeg$)/g, {
-
-				load( url, onComplete, onProgress, onError ) {
-
-					const loader = new ImageBitmapLoader( this.manager );
-					loader.load( url, res => {
-
-						onComplete( new CanvasTexture( res ) );
-
-					}, onProgress, onError );
-
-				}
-
-			} );
-
-		}
 
 	}
 
@@ -636,11 +611,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 				const texture = textures[ i ];
 				texture.dispose();
-				if ( useImageBitmap && 'close' in texture.image ) {
-
-					texture.image.close();
-
-				}
 
 			}
 
