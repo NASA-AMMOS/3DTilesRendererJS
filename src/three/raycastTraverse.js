@@ -84,8 +84,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const obbMat = cached.boxTransform;
 		if ( boundingBox ) {
 
-			_mat.multiply( obbMat );
-			_mat.getInverse( _mat );
+			_mat.multiply( obbMat ).invert();
 			_ray.copy( raycaster.ray );
 			_ray.applyMatrix4( _mat );
 			if ( _ray.intersectBox( boundingBox, _vec ) ) {
@@ -211,8 +210,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 	const obbMat = cached.boxTransform;
 	if ( boundingBox ) {
 
-		_mat.multiply( obbMat );
-		_mat.getInverse( _mat );
+		_mat.multiply( obbMat ).invert();
 		_ray.copy( raycaster.ray ).applyMatrix4( _mat );
 		if ( ! _ray.intersectsBox( boundingBox ) ) {
 

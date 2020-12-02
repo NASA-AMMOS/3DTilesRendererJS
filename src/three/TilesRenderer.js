@@ -307,7 +307,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// extract scale of group container
-		tempMat2.getInverse( group.matrixWorld );
+		tempMat2.copy( group.matrixWorld ).invert();
 
 		let invScale;
 		tempVector.setFromMatrixScale( tempMat2 );
@@ -424,7 +424,7 @@ export class TilesRenderer extends TilesRendererBase {
 				0, 0, 0, 1
 			);
 			boxTransform.premultiply( transform );
-			boxTransformInverse.getInverse( boxTransform );
+			boxTransformInverse.copy( boxTransform ).invert();
 
 			// scale the box by the extents
 			box.min.set( - scaleX, - scaleY, - scaleZ );

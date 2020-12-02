@@ -47,10 +47,10 @@
     "jest-cli": "^25.4.0",
     "parcel-bundler": "^1.12.4",
     "static-server": "^2.2.1",
-    "three": ">=0.114.0",
+    "three": ">=0.123.0",
     "typescript": "^3.7.4"
   },
   "peerDependencies": {
-    "three": ">=0.114.0"
+    "three": ">=0.123.0"
   }
 }
