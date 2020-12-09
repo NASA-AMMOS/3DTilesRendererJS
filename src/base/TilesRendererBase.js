@@ -248,7 +248,10 @@ export class TilesRendererBase {
 					.then( json => {
 
 						const version = json.asset.version;
-						console.assert( version === '1.0' || version === '0.0' );
+						console.assert(
+							version === '1.0' || version === '0.0',
+							'asset.version is expected to be a string of "1.0" or "0.0"'
+						);
 
 						const basePath = path.dirname( url );
 
