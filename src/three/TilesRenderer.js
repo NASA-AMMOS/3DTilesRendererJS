@@ -230,14 +230,14 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	loadTileSet( url ) {
+	fetchTileSet( url, ...rest ) {
 
-		const pr = super.loadTileSet( url );
-		pr.then( () => {
+		const pr = super.loadTileSet( url, ...rest );
+		pr.then( json => {
 
 			if ( this.onLoadTileSet ) {
 
-				this.onLoadTileSet( this.tileSets[ url ] );
+				this.onLoadTileSet( json, url );
 
 			}
 
