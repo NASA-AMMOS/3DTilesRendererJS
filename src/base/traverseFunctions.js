@@ -82,7 +82,7 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
 }
 
-// Helper function for recursively traversing a tileset. If `beforeCb` returns `true` then the
+// Helper function for recursively traversing a tile set. If `beforeCb` returns `true` then the
 // traversal will end early.
 export function traverseSet( tile, beforeCb = null, afterCb = null, parent = null, depth = 0 ) {
 
@@ -141,7 +141,8 @@ export function determineFrustumSet( tile, renderer ) {
 	tile.__inFrustum = true;
 	stats.inFrustum ++;
 
-	// Early out if this tile has less error than we're targeting.
+	// Early out if this tile has less error than we're targeting but don't stop
+	// at an external tile set.
 	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
 
 		const error = renderer.calculateError( tile );
@@ -239,6 +240,9 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
+
+		// If there are no children then all the children should be considered loaded. However if it's
+		// an external tile set then we must wait until the children have loaded.
 		tile.__allChildrenLoaded = children.length === 0 ? ! tile.__externalTileSet : allChildrenLoaded;
 
 	}
@@ -290,7 +294,8 @@ export function skipTraversal( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
-	const hasContent = ! tile.__contentEmpty || tile.__externalTileSet;
+	const hasModel = ! tile.__contentEmpty;
+	const hasContent = hasModel || tile.__externalTileSet;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
@@ -298,7 +303,7 @@ export function skipTraversal( tile, renderer ) {
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.
-	if ( includeTile && hasContent ) {
+	if ( includeTile && hasModel ) {
 
 		tile.__depthFromRenderedParent ++;
 

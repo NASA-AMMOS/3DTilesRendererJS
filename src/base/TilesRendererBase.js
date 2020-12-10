@@ -420,6 +420,7 @@ export class TilesRendererBase {
 
 			downloadQueue.add( tile, tile => {
 
+				// if it has been unloaded then the tile has been disposed
 				if ( tile.__loadIndex !== loadIndex ) {
 
 					return Promise.resolve();
@@ -431,6 +432,7 @@ export class TilesRendererBase {
 			} )
 				.then( json => {
 
+					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
 
 						return;
