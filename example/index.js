@@ -609,7 +609,7 @@ function render() {
 
 	}
 
-	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
+	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
 
 	if ( params.enableCacheDisplay ) {
