@@ -8,6 +8,8 @@
 
 Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
 
+If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features.
+
 **Examples**
 
 [Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)!
@@ -26,7 +28,7 @@ npm install 3d-tiles-renderer --save
 
 ## Basic TilesRenderer
 
-Setting up a basic application a 3D Tileset.
+Setting up a basic application a 3D Tile Set.
 
 ```js
 import { TilesRenderer } from '3d-tiles-renderer';
@@ -55,7 +57,7 @@ function renderLoop() {
 
 ## Custom Material
 
-Setting up a 3D Tileset using a custom material.
+Setting up a 3D Tile Set using a custom material.
 
 ```js
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
@@ -220,7 +222,7 @@ _extends [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blo
 fetchOptions = {} : Object
 ```
 
-Options passed to `fetch` when loading tileset and model data.
+Options passed to `fetch` when loading tile set and model data.
 
 ### .errorTarget
 
@@ -262,7 +264,7 @@ If true then all sibling tiles will be loaded, as well, to ensure coherence when
 displayActiveTiles = false : Boolean
 ```
 
-"Active tiles" are those that are loaded and available but not necessarily visible. If [loadSiblings](#loadSiblings) is true then the tiles loaded up to the extents of the tileset will be considered active even outside the camera view. These tiles are useful for raycasting off camera or for casting shadows.
+"Active tiles" are those that are loaded and available but not necessarily visible. If [loadSiblings](#loadSiblings) is true then the tiles loaded up to the extents of the tile set will be considered active even outside the camera view. These tiles are useful for raycasting off camera or for casting shadows.
 
 Active tiles not currently visible in a camera frustum are removed from the scene as an optimization. Setting `displayActiveTiles` to true will keep them in the scene to be rendered from an outside camera view not accounted for by the tiles renderer.
 
@@ -322,7 +324,7 @@ The manager used when loading tile geometry.
 constructor( url : String )
 ```
 
-Takes the url of the `tileset.json` for the tileset to be rendered.
+Takes the url of the `tileset.json` for the tile set to be rendered.
 
 ### .update
 
@@ -340,7 +342,7 @@ Both `group.matrixWorld` and all cameras world matrices are expected to be up to
 getBounds( box : Box3 ) : boolean
 ```
 
-Sets `box` to the root bounding box of the tileset in the [group](#group) frame. Returns `false` if the tile root was not loaded.
+Sets `box` to the root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
 
 ### .hasCamera
 
@@ -356,7 +358,7 @@ Returns `true` if the camera has already been set on the renderer.
 setCamera( camera : Camera ) : boolean
 ```
 
-Adds the camera to the camera to be accounted for when traversing the tileset. Returns `false` if the camera is already being tracked. Returns `true` otherwise.
+Adds the camera to the camera to be accounted for when traversing the tile set. Returns `false` if the camera is already being tracked. Returns `true` otherwise.
 
 ### .deleteCamera
 
@@ -364,7 +366,7 @@ Adds the camera to the camera to be accounted for when traversing the tileset. R
 deleteCamera( camera : Camera ) : boolean
 ```
 
-Removes the given camera from being accounted for when traversing the tileset. Returns `false` if the camera was not tracked.
+Removes the given camera from being accounted for when traversing the tile set. Returns `false` if the camera was not tracked.
 
 ### .setResolution
 
@@ -397,7 +399,7 @@ Fires the callback for every loaded scene in the hierarchy with the associatd ti
 onLoadTileSet = null : ( tileSet : Object ) => void
 ```
 
-Callback that is called whenever a tileset is loaded.
+Callback that is called whenever a tile set is loaded.
 
 ### .onLoadModel
 
@@ -427,7 +429,7 @@ Disposes of all the tiles in the renderer. Calls dispose on all materials, textu
 
 _extends [TilesRenderer](#TilesRenderer)_
 
-Special variant of TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tileset. Material overrides will not work as expected with this renderer.
+Special variant of TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this renderer.
 
 ### .colorMode
 
@@ -435,7 +437,7 @@ Special variant of TilesRenderer that includes helpers for debugging and visuali
 colorMode = NONE : ColorMode
 ```
 
-Which color mode to use when rendering the tileset. The following exported enumerations can be used:
+Which color mode to use when rendering the tile set. The following exported enumerations can be used:
 
 ```js
 // No special color mode. Uses the default materials.
@@ -490,7 +492,7 @@ Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or deri
 maxDebugDepth = - 1 : Number
 ```
 
-The depth value that represents white when rendering with `DEPTH` or `RELATIVE_DEPTH` [colorMode](#colorMode). If `maxDebugDepth` is `-1` then the maximum depth of the tileset is used.
+The depth value that represents white when rendering with `DEPTH` or `RELATIVE_DEPTH` [colorMode](#colorMode). If `maxDebugDepth` is `-1` then the maximum depth of the tile set is used.
 
 ### .maxDebugError
 
@@ -498,7 +500,7 @@ The depth value that represents white when rendering with `DEPTH` or `RELATIVE_D
 maxDebugError = - 1 : Number
 ```
 
-The error value that represents white when rendering with `GEOMETRIC_ERROR` [colorMode](#colorMode). If `maxDebugError` is `-1` then the maximum geometric error in the tileset is used.
+The error value that represents white when rendering with `GEOMETRIC_ERROR` [colorMode](#colorMode). If `maxDebugError` is `-1` then the maximum geometric error in the tile set is used.
 
 ### .maxDebugDistance
 
@@ -506,7 +508,7 @@ The error value that represents white when rendering with `GEOMETRIC_ERROR` [col
 maxDebugDistance = - 1 : Number
 ```
 
-The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tileset is used.
+The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tile set is used.
 
 ## PriorityQueue
 
