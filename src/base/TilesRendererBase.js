@@ -426,7 +426,7 @@ export class TilesRendererBase {
 
 				}
 
-				return this.fetchTileSet( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+				return this.fetchTileSet( tile.content.uri, Object.assign( { signal }, this.fetchOptions ), tile );
 
 			} )
 				.then( json => {
