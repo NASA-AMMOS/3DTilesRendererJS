@@ -38000,7 +38000,10 @@ function recursivelyMarkUsed(tile, frameCount, lruCache) {
 }
 
 function recursivelyLoadTiles(tile, depthFromRenderedParent, renderer) {
-  if (tile.__contentEmpty) {
+  // Try to load any external tile set children if the external tile set has loaded.
+  var doTraverse = tile.__contentEmpty && (!tile.__externalTileSet || isDownloadFinished(tile.__loadingState));
+
+  if (doTraverse) {
     var children = tile.children;
 
     for (var i = 0, l = children.length; i < l; i++) {
@@ -38014,7 +38017,7 @@ function recursivelyLoadTiles(tile, depthFromRenderedParent, renderer) {
   } else {
     renderer.requestTileContents(tile);
   }
-} // Helper function for recursively traversing a tileset. If `beforeCb` returns `true` then the
+} // Helper function for recursively traversing a tile set. If `beforeCb` returns `true` then the
 // traversal will end early.
 
 
@@ -38065,9 +38068,10 @@ function determineFrustumSet(tile, renderer) {
   tile.__used = true;
   lruCache.markUsed(tile);
   tile.__inFrustum = true;
-  stats.inFrustum++; // Early out if this tile has less error than we're targeting.
+  stats.inFrustum++; // Early out if this tile has less error than we're targeting but don't stop
+  // at an external tile set.
 
-  if (stopAtEmptyTiles || !tile.__contentEmpty) {
+  if ((stopAtEmptyTiles || !tile.__contentEmpty) && !tile.__externalTileSet) {
     var error = renderer.calculateError(tile);
     tile.__error = error;
 
@@ -38137,7 +38141,7 @@ function markUsedSetLeaves(tile, renderer) {
       childrenWereVisible = childrenWereVisible || _c2.__wasSetVisible || _c2.__childrenWereVisible;
 
       if (isUsedThisFrame(_c2, frameCount)) {
-        var childLoaded = !_c2.__contentEmpty && isDownloadFinished(_c2.__loadingState) || _c2.__allChildrenLoaded;
+        var childLoaded = _c2.__allChildrenLoaded || !_c2.__contentEmpty && isDownloadFinished(_c2.__loadingState) || _c2.__externalTileSet && _c2.__loadingState === _constants.FAILED;
 
         allChildrenLoaded = allChildrenLoaded && childLoaded;
       }
@@ -38174,7 +38178,7 @@ function skipTraversal(tile, renderer) {
 
       tile.__active = true;
       stats.active++;
-    } else if (!lruCache.isFull() && !tile.__contentEmpty) {
+    } else if (!lruCache.isFull() && (!tile.__contentEmpty || tile.__externalTileSet)) {
       renderer.requestTileContents(tile);
     }
 
@@ -38184,14 +38188,15 @@ function skipTraversal(tile, renderer) {
   var errorRequirement = (renderer.errorTarget + 1) * renderer.errorThreshold;
   var meetsSSE = tile.__error <= errorRequirement;
   var includeTile = meetsSSE || tile.refine === 'ADD';
-  var hasContent = !tile.__contentEmpty;
+  var hasModel = !tile.__contentEmpty;
+  var hasContent = hasModel || tile.__externalTileSet;
   var loadedContent = isDownloadFinished(tile.__loadingState) && hasContent;
   var childrenWereVisible = tile.__childrenWereVisible;
   var children = tile.children;
   var allChildrenHaveContent = tile.__allChildrenLoaded; // Increment the relative depth of the node to the nearest rendered parent if it has content
   // and is being rendered.
 
-  if (includeTile && hasContent) {
+  if (includeTile && hasModel) {
     tile.__depthFromRenderedParent++;
   } // If we've met the SSE requirements and we can load content then fire a fetch.
 
@@ -38391,7 +38396,7 @@ function () {
       var rootTileSet = tileSets[this.rootURL];
 
       if (!(this.rootURL in tileSets)) {
-        this.loadTileSet(this.rootURL);
+        this.loadRootTileSet(this.rootURL);
         return;
       } else if (!rootTileSet || !rootTileSet.root) {
         return;
@@ -38437,7 +38442,18 @@ function () {
 
       tile.parent = parentTile;
       tile.children = tile.children || [];
-      tile.__contentEmpty = !tile.content || !tile.content.uri;
+      var uri = tile.content && tile.content.uri;
+
+      if (uri) {
+        // "content" should only indicate loadable meshes, not external tile sets
+        var isExternalTileSet = /\.json$/i.test(tile.content.uri);
+        tile.__externalTileSet = isExternalTileSet;
+        tile.__contentEmpty = isExternalTileSet;
+      } else {
+        tile.__externalTileSet = false;
+        tile.__contentEmpty = true;
+      }
+
       tile.__error = 0.0;
       tile.__inFrustum = false;
       tile.__isLeaf = false;
@@ -38480,28 +38496,36 @@ function () {
     } // Private Functions
 
   }, {
-    key: "loadTileSet",
-    value: function loadTileSet(url) {
+    key: "fetchTileSet",
+    value: function fetchTileSet(url, fetchOptions) {
       var _this = this;
 
+      var parent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      return fetch(url, fetchOptions).then(function (res) {
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error("TilesRenderer: Failed to load tileset \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
+        }
+      }).then(function (json) {
+        var version = json.asset.version;
+        console.assert(version === '1.0' || version === '0.0', 'asset.version is expected to be a string of "1.0" or "0.0"');
+
+        var basePath = _path.default.dirname(url);
+
+        (0, _traverseFunctions.traverseSet)(json.root, function (node, parent) {
+          return _this.preprocessNode(node, parent, basePath);
+        }, null, parent, parent ? parent.__depth : 0);
+        return json;
+      });
+    }
+  }, {
+    key: "loadRootTileSet",
+    value: function loadRootTileSet(url) {
       var tileSets = this.tileSets;
 
       if (!(url in tileSets)) {
-        var pr = fetch(url, this.fetchOptions).then(function (res) {
-          if (res.ok) {
-            return res.json();
-          } else {
-            throw new Error("TilesRenderer: Failed to load tileset \"".concat(url, "\" with status ").concat(res.status, " : ").concat(res.statusText));
-          }
-        }).then(function (json) {
-          var version = json.asset.version;
-          console.assert(version === '1.0' || version === '0.0');
-
-          var basePath = _path.default.dirname(url);
-
-          (0, _traverseFunctions.traverseSet)(json.root, function (node, parent) {
-            return _this.preprocessNode(node, parent, basePath);
-          });
+        var pr = this.fetchTileSet(url, this.fetchOptions).then(function (json) {
           tileSets[url] = json;
         });
         pr.catch(function (err) {
@@ -38531,12 +38555,15 @@ function () {
       var lruCache = this.lruCache;
       var downloadQueue = this.downloadQueue;
       var parseQueue = this.parseQueue;
+      var isExternalTileSet = tile.__externalTileSet;
       lruCache.add(tile, function (t) {
         // Stop the load if it's started
         if (t.__loadingState === _constants.LOADING) {
           t.__loadAbort.abort();
 
           t.__loadAbort = null;
+        } else if (isExternalTileSet) {
+          t.children.length = 0;
         } else {
           _this2.disposeTile(t);
         } // Decrement stats
@@ -38548,7 +38575,6 @@ function () {
           stats.parsing--;
         }
 
-        t.__buffer = null;
         t.__loadingState = _constants.UNLOADED;
         t.__loadIndex++;
         parseQueue.remove(t);
@@ -38563,64 +38589,8 @@ function () {
       stats.downloading++;
       tile.__loadAbort = controller;
       tile.__loadingState = _constants.LOADING;
-      downloadQueue.add(tile, function (tile) {
-        if (tile.__loadIndex !== loadIndex) {
-          return Promise.resolve();
-        }
 
-        return fetch(tile.content.uri, Object.assign({
-          signal: signal
-        }, _this2.fetchOptions));
-      }).then(function (res) {
-        if (tile.__loadIndex !== loadIndex) {
-          return;
-        }
-
-        if (res.ok) {
-          return res.arrayBuffer();
-        } else {
-          throw new Error("Failed to load model with error code ".concat(res.status));
-        }
-      }).then(function (buffer) {
-        // if it has been unloaded then the tile has been disposed
-        if (tile.__loadIndex !== loadIndex) {
-          return;
-        }
-
-        stats.downloading--;
-        stats.parsing++;
-        tile.__loadAbort = null;
-        tile.__loadingState = _constants.PARSING;
-        tile.__buffer = buffer;
-        return parseQueue.add(tile, function (tile) {
-          // if it has been unloaded then the tile has been disposed
-          if (tile.__loadIndex !== loadIndex) {
-            return Promise.resolve();
-          }
-
-          var uri = tile.content.uri;
-          var extension = uri.split(/\./g).pop();
-          var buffer = tile.__buffer;
-          tile.__buffer = null;
-          return _this2.parseTile(buffer, tile, extension);
-        });
-      }).then(function () {
-        // if it has been unloaded then the tile has been disposed
-        if (tile.__loadIndex !== loadIndex) {
-          return;
-        }
-
-        stats.parsing--;
-        tile.__loadingState = _constants.LOADED;
-
-        if (tile.__wasSetVisible) {
-          _this2.setTileVisible(tile, true);
-        }
-
-        if (tile.__wasSetActive) {
-          _this2.setTileActive(tile, true);
-        }
-      }).catch(function (e) {
+      var errorCallback = function errorCallback(e) {
         // if it has been unloaded then the tile has been disposed
         if (tile.__loadIndex !== loadIndex) {
           return;
@@ -38643,7 +38613,86 @@ function () {
         } else {
           lruCache.remove(tile);
         }
-      });
+      };
+
+      if (isExternalTileSet) {
+        downloadQueue.add(tile, function (tile) {
+          // if it has been unloaded then the tile has been disposed
+          if (tile.__loadIndex !== loadIndex) {
+            return Promise.resolve();
+          }
+
+          return _this2.fetchTileSet(tile.content.uri, Object.assign({
+            signal: signal
+          }, _this2.fetchOptions), tile);
+        }).then(function (json) {
+          // if it has been unloaded then the tile has been disposed
+          if (tile.__loadIndex !== loadIndex) {
+            return;
+          }
+
+          stats.downloading--;
+          tile.__loadAbort = null;
+          tile.__loadingState = _constants.LOADED;
+          tile.children.push(json.root);
+        }).catch(errorCallback);
+      } else {
+        downloadQueue.add(tile, function (tile) {
+          if (tile.__loadIndex !== loadIndex) {
+            return Promise.resolve();
+          }
+
+          return fetch(tile.content.uri, Object.assign({
+            signal: signal
+          }, _this2.fetchOptions));
+        }).then(function (res) {
+          if (tile.__loadIndex !== loadIndex) {
+            return;
+          }
+
+          if (res.ok) {
+            return res.arrayBuffer();
+          } else {
+            throw new Error("Failed to load model with error code ".concat(res.status));
+          }
+        }).then(function (buffer) {
+          // if it has been unloaded then the tile has been disposed
+          if (tile.__loadIndex !== loadIndex) {
+            return;
+          }
+
+          stats.downloading--;
+          stats.parsing++;
+          tile.__loadAbort = null;
+          tile.__loadingState = _constants.PARSING;
+          return parseQueue.add(tile, function (tile) {
+            // if it has been unloaded then the tile has been disposed
+            if (tile.__loadIndex !== loadIndex) {
+              return Promise.resolve();
+            }
+
+            var uri = tile.content.uri;
+            var extension = uri.split(/\./g).pop();
+            return _this2.parseTile(buffer, tile, extension);
+          });
+        }).then(function () {
+          // if it has been unloaded then the tile has been disposed
+          if (tile.__loadIndex !== loadIndex) {
+            return;
+          }
+
+          stats.parsing--;
+          tile.__loadingState = _constants.LOADED;
+
+          if (tile.__wasSetVisible) {
+            _this2.setTileVisible(tile, true);
+          }
+
+          if (tile.__wasSetActive) {
+            _this2.setTileActive(tile, true);
+          }
+        }).catch(errorCallback);
+      }
     }
   }, {
     key: "dispose",
@@ -42162,7 +42211,17 @@ function (_I3DMLoaderBase) {
                 instances.push(instancedMesh);
                 instanceMap.set(child, instancedMesh);
               }
-            }); // replace the meshes with instanced meshes
+            });
+            var averageVector = new _three.Vector3();
+            var transformedVector = new _three.Vector3();
+
+            for (var i = 0; i < INSTANCES_LENGTH; i++) {
+              // TODO: handle quantized position
+              averageVector.x += POSITION[i * 3 + 0] / INSTANCES_LENGTH;
+              averageVector.y += POSITION[i * 3 + 1] / INSTANCES_LENGTH;
+              averageVector.z += POSITION[i * 3 + 2] / INSTANCES_LENGTH;
+            } // replace the meshes with instanced meshes
+
 
             instanceMap.forEach(function (instancedMesh, mesh) {
               var parent = mesh.parent;
@@ -42170,13 +42229,16 @@ function (_I3DMLoaderBase) {
               if (parent) {
                 // Mesh have no children
                 parent.remove(mesh);
-                parent.add(instancedMesh);
+                parent.add(instancedMesh); // Center the instance around an average point to avoid jitter at large scales.
+
+                transformedVector.copy(averageVector).applyQuaternion(parent.quaternion).multiply(parent.scale);
+                instancedMesh.add(transformedVector);
               }
             });
 
-            for (var i = 0; i < INSTANCES_LENGTH; i++) {
+            for (var _i = 0; _i < INSTANCES_LENGTH; _i++) {
               // TODO: handle quantized position
-              tempPos.set(POSITION[i * 3 + 0], POSITION[i * 3 + 1], POSITION[i * 3 + 2]); // TODO: handle normal orientation features
+              tempPos.set(POSITION[_i * 3 + 0] - averageVector.x, POSITION[_i * 3 + 1] - averageVector.y, POSITION[_i * 3 + 2] - averageVector.z); // TODO: handle normal orientation features
 
               tempQuat.set(0, 0, 0, 1); // TODO: handle scale features
 
@@ -42185,7 +42247,7 @@ function (_I3DMLoaderBase) {
 
               for (var j = 0, l = instances.length; j < l; j++) {
                 var instance = instances[j];
-                instance.setMatrixAt(i, tempMat);
+                instance.setMatrixAt(_i, tempMat);
               }
             }
 
@@ -42963,15 +43025,25 @@ function (_TilesRendererBase) {
     /* Overriden */
 
   }, {
-    key: "loadTileSet",
-    value: function loadTileSet(url) {
-      var _this2 = this;
+    key: "fetchTileSet",
+    value: function fetchTileSet(url) {
+      var _get2,
+          _this2 = this;
 
-      var pr = _get(_getPrototypeOf(TilesRenderer.prototype), "loadTileSet", this).call(this, url);
+      for (var _len2 = arguments.length, rest = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        rest[_key2 - 1] = arguments[_key2];
+      }
 
-      pr.then(function () {
+      var pr = (_get2 = _get(_getPrototypeOf(TilesRenderer.prototype), "fetchTileSet", this)).call.apply(_get2, [this, url].concat(rest));
+
+      pr.then(function (json) {
         if (_this2.onLoadTileSet) {
-          _this2.onLoadTileSet(_this2.tileSets[url]);
+          // Push this onto the end of the event stack to ensure this runs
+          // after the base renderer has placed the provided json where it
+          // needs to be placed and is ready for an update.
+          Promise.resolve().then(function () {
+            _this2.onLoadTileSet(json, url);
+          });
         }
       });
       return pr;
@@ -49452,7 +49524,7 @@ function render() {
     thirdPersonRenderer.render(scene, thirdPersonCamera);
   }
 
-  var cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.minSize;
+  var cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
   var str = "Downloading: ".concat(tiles.stats.downloading, " Parsing: ").concat(tiles.stats.parsing, " Visible: ").concat(tiles.group.children.length - 2);
 
   if (params.enableCacheDisplay) {
@@ -49513,7 +49585,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52752" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61086" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
