@@ -93,7 +93,7 @@ export class TilesRendererBase {
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! ( this.rootURL in tileSets ) ) {
 
-			this.loadTileSet( this.rootURL );
+			this.loadRootTileSet( this.rootURL );
 			return;
 
 		} else if ( ! rootTileSet || ! rootTileSet.root ) {
@@ -279,7 +279,7 @@ export class TilesRendererBase {
 
 	}
 
-	loadTileSet( url ) {
+	loadRootTileSet( url ) {
 
 		const tileSets = this.tileSets;
 		if ( ! ( url in tileSets ) ) {
