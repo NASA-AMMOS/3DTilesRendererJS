@@ -136,7 +136,8 @@ export function determineFrustumSet( tile, renderer ) {
 	stats.inFrustum ++;
 
 	// Early out if this tile has less error than we're targeting.
-	if ( stopAtEmptyTiles || ! tile.__contentEmpty ) {
+	// TODO: check for external tileset here
+	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
 
 		const error = renderer.calculateError( tile );
 		tile.__error = error;
@@ -226,14 +227,17 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childLoaded = ( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) || c.__allChildrenLoaded;
+				// TODO: we should check for external tilesets here
+				// TODO: we get a blink when a node has no children
+				const finishedLoading = isDownloadFinished( c.__loadingState ) && ( ! c.__contentEmpty || c.__externalTileSet );
+				const childLoaded = finishedLoading || c.__allChildrenLoaded;
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
 
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
-		tile.__allChildrenLoaded = allChildrenLoaded;
+		tile.__allChildrenLoaded = children.length === 0 ? ! tile.__externalTileSet : allChildrenLoaded;
 
 	}
 
