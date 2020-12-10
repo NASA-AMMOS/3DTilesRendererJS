@@ -330,3 +330,43 @@ The tileset renders and loads correctly.
 #### expected
 
 Verify that all tiles render on top of each other including the root and that setting the error target and threshold to 0 does not change this. Ensure that raising the error target to the max value will cause deeper tiles to disappear.
+
+## Verify an external tileset loads correctly
+
+#### steps
+
+1. Load `tileset-external.json` in the kitchen sink example.
+1. Zoom in and out.
+1. Set target error to `0`.
+
+#### expected
+
+Verify the tileset loads correctly and there are no missing chunks or errors in the console.
+
+## Verify the rest of the tileset renders correctly if an external tileset fails to load
+
+#### steps
+
+1. Load `tileset-external-broken.json` in the kitchen sink example.
+1. Zoom in and out.
+1. Set target error to `0`.
+
+#### expected
+
+Verify that the external tileset does not load but the rest of the tileset continues to work as expected with a gap.
+
+## Verify an external tileset can unload from the cache
+
+#### steps
+
+1. Load `tileset-external.json` in the kitchen sink example.
+1. Zoom in and out.
+1. Set target error to `0`.
+1. Ensure external tileset has loaded by running `tiles.root.children[0].children[0].children` in the console and verifying it's not empty.
+1. Set the max depth to `0`, and set min and max cache size to `1` before resetting them to force everything to unload. Check the cache display to ensure it's unloaded.
+1. Ensure external tileset is unloaded by `tiles.root.children[0].children[0].children` in the console and verifying it's empty.
+1. Raise the max depth again and verify that the external tileset loads once again.
+
+#### expected
+
+Verify all steps happen as written.
