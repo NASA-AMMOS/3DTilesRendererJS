@@ -54,7 +54,7 @@ function recursivelyMarkUsed( tile, frameCount, lruCache ) {
 
 function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
-	if ( tile.__contentEmpty ) {
+	if ( tile.__contentEmpty && ! tile.__externalTileSet ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -271,7 +271,7 @@ export function skipTraversal( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ! tile.__contentEmpty ) {
+		} else if ( ! lruCache.isFull() && ( ! tile.__contentEmpty || tile.__externalTileSet ) ) {
 
 			renderer.requestTileContents( tile );
 
@@ -284,7 +284,7 @@ export function skipTraversal( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
-	const hasContent = ! tile.__contentEmpty;
+	const hasContent = ! tile.__contentEmpty || tile.__externalTileSet;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;

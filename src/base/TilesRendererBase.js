@@ -167,7 +167,20 @@ export class TilesRendererBase {
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
-		tile.__contentEmpty = ! tile.content || ! tile.content.uri;
+
+		const uri = tile.content && tile.content.uri;
+		if ( uri ) {
+
+			const isExternalTileSet = /\.json$/i.test( tile.content.uri );
+			tile.__externalTileSet = isExternalTileSet;
+			tile.__contentEmpty = isExternalTileSet;
+
+		} else {
+
+			tile.__externalTileSet = false;
+			tile.__contentEmpty = true;
+
+		}
 
 		tile.__error = 0.0;
 		tile.__inFrustum = false;
@@ -298,6 +311,7 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
+		const isExternalTileSet = tile.__externalTileSet;
 		lruCache.add( tile, t => {
 
 			// Stop the load if it's started
@@ -305,6 +319,10 @@ export class TilesRendererBase {
 
 				t.__loadAbort.abort();
 				t.__loadAbort = null;
+
+			} else if ( isExternalTileSet ) {
+
+				t.children.length = 0;
 
 			} else {
 
@@ -323,7 +341,6 @@ export class TilesRendererBase {
 
 			}
 
-			t.__buffer = null;
 			t.__loadingState = UNLOADED;
 			t.__loadIndex ++;
 
@@ -342,6 +359,7 @@ export class TilesRendererBase {
 		stats.downloading ++;
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
+
 		downloadQueue.add( tile, tile => {
 
 			if ( tile.__loadIndex !== loadIndex ) {
@@ -361,18 +379,34 @@ export class TilesRendererBase {
 
 				}
 
-				if ( res.ok ) {
+				if ( isExternalTileSet ) {
 
-					return res.arrayBuffer();
+					if ( res.ok ) {
+
+						return res.json();
+
+					} else {
+
+						throw new Error( `Failed to external tileset with error code ${res.status}` );
+
+					}
 
 				} else {
 
-					throw new Error( `Failed to load model with error code ${res.status}` );
+					if ( res.ok ) {
+
+						return res.arrayBuffer();
+
+					} else {
+
+						throw new Error( `Failed to load model with error code ${res.status}` );
+
+					}
 
 				}
 
 			} )
-			.then( buffer => {
+			.then( data => {
 
 				// if it has been unloaded then the tile has been disposed
 				if ( tile.__loadIndex !== loadIndex ) {
@@ -385,25 +419,50 @@ export class TilesRendererBase {
 				stats.parsing ++;
 				tile.__loadAbort = null;
 				tile.__loadingState = PARSING;
-				tile.__buffer = buffer;
 
-				return parseQueue.add( tile, tile => {
+				if ( isExternalTileSet ) {
 
-					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
+					const json = data;
+					const version = json.asset.version;
+					console.assert(
+						version === '1.0' || version === '0.0',
+						'asset.version is expected to be a string of "1.0" or "0.0"'
+					);
 
-						return Promise.resolve();
+					const basePath = path.dirname( tile.content.uri );
+					traverseSet(
+						json.root,
+						( node, parent ) => this.preprocessNode( node, parent, basePath ),
+						null,
+						tile,
+						tile.__depth,
+					);
 
-					}
+					tile.children.push( json.root );
+					console.log( 'LOADED' );
+					console.log( tile );
+					return;
 
-					const uri = tile.content.uri;
-					const extension = uri.split( /\./g ).pop();
-					const buffer = tile.__buffer;
-					tile.__buffer = null;
+				} else {
 
-					return this.parseTile( buffer, tile, extension );
+					const buffer = data;
+					return parseQueue.add( tile, tile => {
 
-				} );
+						// if it has been unloaded then the tile has been disposed
+						if ( tile.__loadIndex !== loadIndex ) {
+
+							return Promise.resolve();
+
+						}
+
+						const uri = tile.content.uri;
+						const extension = uri.split( /\./g ).pop();
+
+						return this.parseTile( buffer, tile, extension );
+
+					} );
+
+				}
 
 			} )
 			.then( () => {
@@ -417,15 +476,20 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
-				if ( tile.__wasSetVisible ) {
 
-					this.setTileVisible( tile, true );
+				if ( ! isExternalTileSet ) {
 
-				}
+					if ( tile.__wasSetVisible ) {
 
-				if ( tile.__wasSetActive ) {
+						this.setTileVisible( tile, true );
 
-					this.setTileActive( tile, true );
+					}
+
+					if ( tile.__wasSetActive ) {
+
+						this.setTileActive( tile, true );
+
+					}
 
 				}
 
