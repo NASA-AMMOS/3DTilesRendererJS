@@ -233,17 +233,18 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childLoaded = ( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) || c.__allChildrenLoaded;
+				const childLoaded =
+					c.__allChildrenLoaded ||
+					( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) ||
+					( c.__externalTileSet && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
 
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
+		tile.__allChildrenLoaded = allChildrenLoaded;
 
-		// If there are no children then all the children should be considered loaded. However if it's
-		// an external tile set then we must wait until the children have loaded.
-		tile.__allChildrenLoaded = children.length === 0 ? ! tile.__externalTileSet : allChildrenLoaded;
 
 	}
 
