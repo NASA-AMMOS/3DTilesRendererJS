@@ -54,7 +54,13 @@ function recursivelyMarkUsed( tile, frameCount, lruCache ) {
 
 function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
-	if ( tile.__contentEmpty ) {
+	// Try to load any external tile set children if the external tile set has loaded.
+	const doTraverse =
+		tile.__contentEmpty && (
+			! tile.__externalTileSet ||
+			isDownloadFinished( tile.__loadingState )
+		);
+	if ( doTraverse ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -76,7 +82,7 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
 }
 
-// Helper function for recursively traversing a tileset. If `beforeCb` returns `true` then the
+// Helper function for recursively traversing a tile set. If `beforeCb` returns `true` then the
 // traversal will end early.
 export function traverseSet( tile, beforeCb = null, afterCb = null, parent = null, depth = 0 ) {
 
@@ -135,8 +141,9 @@ export function determineFrustumSet( tile, renderer ) {
 	tile.__inFrustum = true;
 	stats.inFrustum ++;
 
-	// Early out if this tile has less error than we're targeting.
-	if ( stopAtEmptyTiles || ! tile.__contentEmpty ) {
+	// Early out if this tile has less error than we're targeting but don't stop
+	// at an external tile set.
+	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
 
 		const error = renderer.calculateError( tile );
 		tile.__error = error;
@@ -226,7 +233,10 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				const childLoaded = ( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) || c.__allChildrenLoaded;
+				const childLoaded =
+					c.__allChildrenLoaded ||
+					( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) ||
+					( c.__externalTileSet && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
@@ -234,6 +244,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 		}
 		tile.__childrenWereVisible = childrenWereVisible;
 		tile.__allChildrenLoaded = allChildrenLoaded;
+
 
 	}
 
@@ -271,7 +282,7 @@ export function skipTraversal( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ! tile.__contentEmpty ) {
+		} else if ( ! lruCache.isFull() && ( ! tile.__contentEmpty || tile.__externalTileSet ) ) {
 
 			renderer.requestTileContents( tile );
 
@@ -284,7 +295,8 @@ export function skipTraversal( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
-	const hasContent = ! tile.__contentEmpty;
+	const hasModel = ! tile.__contentEmpty;
+	const hasContent = hasModel || tile.__externalTileSet;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
@@ -292,7 +304,7 @@ export function skipTraversal( tile, renderer ) {
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.
-	if ( includeTile && hasContent ) {
+	if ( includeTile && hasModel ) {
 
 		tile.__depthFromRenderedParent ++;
 

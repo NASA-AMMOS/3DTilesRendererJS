@@ -230,14 +230,21 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	loadTileSet( url ) {
+	fetchTileSet( url, ...rest ) {
 
-		const pr = super.loadTileSet( url );
-		pr.then( () => {
+		const pr = super.fetchTileSet( url, ...rest );
+		pr.then( json => {
 
 			if ( this.onLoadTileSet ) {
 
-				this.onLoadTileSet( this.tileSets[ url ] );
+				// Push this onto the end of the event stack to ensure this runs
+				// after the base renderer has placed the provided json where it
+				// needs to be placed and is ready for an update.
+				Promise.resolve().then( () => {
+
+					this.onLoadTileSet( json, url );
+
+				} );
 
 			}
 
