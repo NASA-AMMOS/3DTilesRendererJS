@@ -62,6 +62,17 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						} );
 
+						const averageVector = new Vector3();
+						const transformedVector = new Vector3();
+						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
+
+							// TODO: handle quantized position
+							averageVector.x += POSITION[ i * 3 + 0 ] / INSTANCES_LENGTH;
+							averageVector.y += POSITION[ i * 3 + 1 ] / INSTANCES_LENGTH;
+							averageVector.z += POSITION[ i * 3 + 2 ] / INSTANCES_LENGTH;
+
+						}
+
 						// replace the meshes with instanced meshes
 						instanceMap.forEach( ( instancedMesh, mesh ) => {
 
@@ -72,8 +83,14 @@ export class I3DMLoader extends I3DMLoaderBase {
 								parent.remove( mesh );
 								parent.add( instancedMesh );
 
-							}
+								// Center the instance around an average point to avoid jitter at large scales.
+								transformedVector
+									.copy( averageVector )
+									.applyQuaternion( parent.quaternion )
+									.multiply( parent.scale );
+								instancedMesh.add( transformedVector );
 
+							}
 
 						} );
 
@@ -81,9 +98,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							// TODO: handle quantized position
 							tempPos.set(
-								POSITION[ i * 3 + 0 ],
-								POSITION[ i * 3 + 1 ],
-								POSITION[ i * 3 + 2 ],
+								POSITION[ i * 3 + 0 ] - averageVector.x,
+								POSITION[ i * 3 + 1 ] - averageVector.y,
+								POSITION[ i * 3 + 2 ] - averageVector.z,
 							);
 
 							// TODO: handle normal orientation features
