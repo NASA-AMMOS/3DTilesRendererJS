@@ -235,8 +235,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 				// TODO: we should check for external tilesets here
 				// TODO: we get a blink when a node has no children
-				const finishedLoading = isDownloadFinished( c.__loadingState ) && ( ! c.__contentEmpty || c.__externalTileSet );
-				const childLoaded = finishedLoading || c.__allChildrenLoaded;
+				const childLoaded = ( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) || c.__allChildrenLoaded;
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
