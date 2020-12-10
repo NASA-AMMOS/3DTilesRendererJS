@@ -232,7 +232,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/* Overriden */
 	fetchTileSet( url, ...rest ) {
 
-		const pr = super.loadTileSet( url, ...rest );
+		const pr = super.fetchTileSet( url, ...rest );
 		pr.then( json => {
 
 			if ( this.onLoadTileSet ) {
