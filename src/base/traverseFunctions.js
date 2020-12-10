@@ -54,7 +54,13 @@ function recursivelyMarkUsed( tile, frameCount, lruCache ) {
 
 function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
-	if ( tile.__contentEmpty && ! tile.__externalTileSet ) {
+	// Try to load any external tile set children if the external tile set has loaded.
+	const doTraverse =
+		tile.__contentEmpty && (
+			! tile.__externalTileSet ||
+			isDownloadFinished( tile.__loadingState )
+		);
+	if ( doTraverse ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {

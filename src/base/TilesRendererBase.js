@@ -171,6 +171,7 @@ export class TilesRendererBase {
 		const uri = tile.content && tile.content.uri;
 		if ( uri ) {
 
+			// "content" should only indicate loadable meshes, not external tile sets
 			const isExternalTileSet = /\.json$/i.test( tile.content.uri );
 			tile.__externalTileSet = isExternalTileSet;
 			tile.__contentEmpty = isExternalTileSet;
