@@ -239,41 +239,58 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
+	fetchTileSet( url, fetchOptions, parent = null ) {
+
+		return fetch( url, fetchOptions )
+			.then( res => {
+
+				if ( res.ok ) {
+
+					return res.json();
+
+				} else {
+
+					throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
+
+				}
+
+			} )
+			.then( json => {
+
+				const version = json.asset.version;
+				console.assert(
+					version === '1.0' || version === '0.0',
+					'asset.version is expected to be a string of "1.0" or "0.0"'
+				);
+
+				const basePath = path.dirname( url );
+
+				traverseSet(
+					json.root,
+					( node, parent ) => this.preprocessNode( node, parent, basePath ),
+					null,
+					parent,
+					parent ? parent.__depth : 0,
+				);
+
+				return json;
+
+			} );
+
+	}
+
 	loadTileSet( url ) {
 
 		const tileSets = this.tileSets;
 		if ( ! ( url in tileSets ) ) {
 
-			const pr =
-				fetch( url, this.fetchOptions )
-					.then( res => {
+			const pr = this
+				.fetchTileSet( url, this.fetchOptions )
+				.then( json => {
 
-						if ( res.ok ) {
+					tileSets[ url ] = json;
 
-							return res.json();
-
-						} else {
-
-							throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-						}
-
-					} )
-					.then( json => {
-
-						const version = json.asset.version;
-						console.assert(
-							version === '1.0' || version === '0.0',
-							'asset.version is expected to be a string of "1.0" or "0.0"'
-						);
-
-						const basePath = path.dirname( url );
-
-						traverseSet( json.root, ( node, parent ) => this.preprocessNode( node, parent, basePath ) );
-
-						tileSets[ url ] = json;
-
-					} );
+				} );
 
 			pr.catch( err => {
 
@@ -361,38 +378,94 @@ export class TilesRendererBase {
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
 
-		downloadQueue.add( tile, tile => {
+		const errorCallback = e => {
 
+			// if it has been unloaded then the tile has been disposed
 			if ( tile.__loadIndex !== loadIndex ) {
 
-				return Promise.resolve();
+				return;
 
 			}
 
-			return fetch( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+			if ( e.name !== 'AbortError' ) {
 
-		} )
-			.then( res => {
+				parseQueue.remove( tile );
+				downloadQueue.remove( tile );
 
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( tile.__loadingState === PARSING ) {
 
-					return;
+					stats.parsing --;
+
+				} else if ( tile.__loadingState === LOADING ) {
+
+					stats.downloading --;
 
 				}
 
-				if ( isExternalTileSet ) {
+				stats.failed ++;
 
-					if ( res.ok ) {
+				console.error( 'TilesRenderer : Failed to load tile.' );
+				console.error( e );
+				tile.__loadingState = FAILED;
 
-						return res.json();
+			} else {
 
-					} else {
+				lruCache.remove( tile );
 
-						throw new Error( `Failed to external tileset with error code ${res.status}` );
+			}
+
+		};
+
+		if ( isExternalTileSet ) {
+
+			downloadQueue.add( tile, tile => {
+
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return Promise.resolve();
+
+				}
+
+				return this.fetchTileSet( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+
+			} )
+				.then( json => {
+
+					if ( tile.__loadIndex !== loadIndex ) {
+
+						return;
 
 					}
 
-				} else {
+					stats.downloading --;
+					tile.__loadAbort = null;
+					tile.__loadingState = LOADED;
+
+					tile.children.push( json.root );
+
+				} )
+				.catch( errorCallback );
+
+		} else {
+
+			downloadQueue.add( tile, tile => {
+
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return Promise.resolve();
+
+				}
+
+				return fetch( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+
+			} )
+				.then( res => {
+
+					if ( tile.__loadIndex !== loadIndex ) {
+
+						return;
+
+					}
 
 					if ( res.ok ) {
 
@@ -404,47 +477,20 @@ export class TilesRendererBase {
 
 					}
 
-				}
+				} )
+				.then( data => {
 
-			} )
-			.then( data => {
+					// if it has been unloaded then the tile has been disposed
+					if ( tile.__loadIndex !== loadIndex ) {
 
-				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+						return;
 
-					return;
+					}
 
-				}
-
-				stats.downloading --;
-				stats.parsing ++;
-				tile.__loadAbort = null;
-				tile.__loadingState = PARSING;
-
-				if ( isExternalTileSet ) {
-
-					const json = data;
-					const version = json.asset.version;
-					console.assert(
-						version === '1.0' || version === '0.0',
-						'asset.version is expected to be a string of "1.0" or "0.0"'
-					);
-
-					const basePath = path.dirname( tile.content.uri );
-					traverseSet(
-						json.root,
-						( node, parent ) => this.preprocessNode( node, parent, basePath ),
-						null,
-						tile,
-						tile.__depth,
-					);
-
-					tile.children.push( json.root );
-					console.log( 'LOADED' );
-					console.log( tile );
-					return;
-
-				} else {
+					stats.downloading --;
+					stats.parsing ++;
+					tile.__loadAbort = null;
+					tile.__loadingState = PARSING;
 
 					const buffer = data;
 					return parseQueue.add( tile, tile => {
@@ -463,22 +509,18 @@ export class TilesRendererBase {
 
 					} );
 
-				}
+				} )
+				.then( () => {
 
-			} )
-			.then( () => {
+					// if it has been unloaded then the tile has been disposed
+					if ( tile.__loadIndex !== loadIndex ) {
 
-				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+						return;
 
-					return;
+					}
 
-				}
-
-				stats.parsing --;
-				tile.__loadingState = LOADED;
-
-				if ( ! isExternalTileSet ) {
+					stats.parsing --;
+					tile.__loadingState = LOADED;
 
 					if ( tile.__wasSetVisible ) {
 
@@ -492,46 +534,10 @@ export class TilesRendererBase {
 
 					}
 
-				}
+				} )
+				.catch( errorCallback );
 
-			} )
-			.catch( e => {
-
-				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
-
-					return;
-
-				}
-
-				if ( e.name !== 'AbortError' ) {
-
-					parseQueue.remove( tile );
-					downloadQueue.remove( tile );
-
-					if ( tile.__loadingState === PARSING ) {
-
-						stats.parsing --;
-
-					} else if ( tile.__loadingState === LOADING ) {
-
-						stats.downloading --;
-
-					}
-
-					stats.failed ++;
-
-					console.error( 'TilesRenderer : Failed to load tile.' );
-					console.error( e );
-					tile.__loadingState = FAILED;
-
-				} else {
-
-					lruCache.remove( tile );
-
-				}
-
-			} );
+		}
 
 	}
 
