@@ -237,7 +237,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( this.onLoadTileSet ) {
 
-				this.onLoadTileSet( json, url );
+				// Push this onto the end of the event stack to ensure this runs
+				// after the base renderer has placed the provided json where it
+				// needs to be placed and is ready for an update.
+				Promise.resolve().then(() => {
+
+					this.onLoadTileSet( json, url );
+
+				} );
 
 			}
 
