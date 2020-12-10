@@ -478,7 +478,7 @@ export class TilesRendererBase {
 					}
 
 				} )
-				.then( data => {
+				.then( buffer => {
 
 					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
@@ -492,7 +492,6 @@ export class TilesRendererBase {
 					tile.__loadAbort = null;
 					tile.__loadingState = PARSING;
 
-					const buffer = data;
 					return parseQueue.add( tile, tile => {
 
 						// if it has been unloaded then the tile has been disposed
