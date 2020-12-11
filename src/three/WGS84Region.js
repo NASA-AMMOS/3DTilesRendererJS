@@ -1,4 +1,4 @@
-import { MathUtils, Vector3, LineSegments } from 'three';
+import { MathUtils, Vector3, LineSegments, BufferAttribute } from 'three';
 
 const WGS84_MAJOR_RADIUS = 6378137.0;
 const WGS84_MINOR_RADIUS = 6356752.314245;
@@ -15,6 +15,7 @@ function vectorToLatLon( vector, target ) {
 export class WGS84Region {
 
 	constructor( west, south, east, north, minHeight, maxHeight ) {
+
 		// from east to west, north to south, min to max
 		// TODO: update these values to be minimum ranges in the above directions
 		this.east = east;
@@ -25,6 +26,7 @@ export class WGS84Region {
 
 		this.minHeight = minHeight;
 		this.maxHeight = maxHeight;
+
 	}
 
 	getLatRange() {
@@ -111,7 +113,7 @@ export class WGS84RegionHelper extends LineSegments {
 		const geometry = new BufferGeometry();
 		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( [ 0, 0, 0, 0, 0, 0 ] ), 3 ) );
 
-		super ( geometry, new LineBasicMaterial( { color: color, toneMapped: false } ) );
+		super( geometry, new LineBasicMaterial( { color: color, toneMapped: false } ) );
 		this.region = region;
 		this.update();
 
@@ -170,9 +172,9 @@ export class WGS84RegionHelper extends LineSegments {
 		const heightPosition = [];
 
 		// corner lines
-		for ( let x = 0; x <= 1 ; x ++ ) {
+		for ( let x = 0; x <= 1; x ++ ) {
 
-			for ( let y = 0; y <= 1 ; y ++ ) {
+			for ( let y = 0; y <= 1; y ++ ) {
 
 				region.getPointAt( x, y, 0, _vec );
 				heightPosition.push( _vec.x, _vec.y, _vec.z );
