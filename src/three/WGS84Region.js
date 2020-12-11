@@ -1,14 +1,42 @@
-import { MathUtils, Vector3, LineSegments, BufferAttribute } from 'three';
+import {
+	MathUtils,
+	Vector3,
+	LineSegments,
+	BufferAttribute,
+	BufferGeometry,
+	LineBasicMaterial,
+} from 'three';
 
 const WGS84_MAJOR_RADIUS = 6378137.0;
 const WGS84_MINOR_RADIUS = 6356752.314245;
 const _vecArray = new Array( 10 ).fill().map( () => new Vector3() );
+const _vec = new Vector3();
+const _zVec = new Vector3( 0, 0, 1 );
 
 function latLonToSurfaceVector( lat, lon, target ) {
 
+	target.setFromSphericalCoords( 1, lat, Math.PI / 2 );
+	target.x *= WGS84_MAJOR_RADIUS;
+	target.y *= WGS84_MINOR_RADIUS;
+
+	// WGS84 frame specifies Z as north pole
+	target.z = target.y;
+	target.y = 0;
+
+	// TODO: is this rotating the right direction?
+	target.applyAxisAngle( _zVec, lon );
+
 }
 
-function vectorToLatLon( vector, target ) {
+function vectorToLatitude( vector ) {
+
+	return Math.atan2( vector.x, vector.y ) - Math.PI / 2;
+
+}
+
+function vectorToLongitude( vector ) {
+
+	return Math.acos( vector.z / vector.length() );
 
 }
 
@@ -16,8 +44,8 @@ export class WGS84Region {
 
 	constructor( west, south, east, north, minHeight, maxHeight ) {
 
-		// from east to west, north to south, min to max
-		// TODO: update these values to be minimum ranges in the above directions
+		// from west to east, south to north, min to max
+		// TODO: update these values to be minimum ranges in the above directions maybe?
 		this.east = east;
 		this.west = west;
 
@@ -31,20 +59,20 @@ export class WGS84Region {
 
 	getLatRange() {
 
-		return this.south - this.north;
+		return this.north - this.south;
 
 	}
 
 	getLonRange() {
 
-		return this.west - this.east;
+		return this.east - this.west;
 
 	}
 
-	getPointAt( latLerp, lonLerp, heightLerp, target ) {
+	getPointAt( latLerp, lonLerp, heightLerp, target = new Vector3() ) {
 
-		const lat = MathUtils.lerp( this.east, this.west, latLerp );
-		const lon = MathUtils.lerp( this.north, this.south, lonLerp );
+		const lat = MathUtils.lerp( this.south, this.north, lonLerp );
+		const lon = MathUtils.lerp( this.west, this.east, latLerp );
 		const height = MathUtils.lerp( this.minHeight, this.maxHeight, heightLerp );
 
 		latLonToSurfaceVector( lat, lon, target );
@@ -133,17 +161,22 @@ export class WGS84RegionHelper extends LineSegments {
 		// lat lines
 		for ( let i = 0; i <= latSteps; i ++ ) {
 
+			const addTwo = i !== 0 && i !== latSteps;
 			region.getPointAt( i / latSteps, 0, 0, _vec );
 			latNorthMinPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) latNorthMinPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( i / latSteps, 0, 1, _vec );
 			latNorthMaxPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) latNorthMaxPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( i / latSteps, 1, 0, _vec );
 			latSouthMinPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) latSouthMinPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( i / latSteps, 1, 1, _vec );
 			latSouthMaxPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) latSouthMaxPosition.push( _vec.x, _vec.y, _vec.z );
 
 		}
 
@@ -155,17 +188,22 @@ export class WGS84RegionHelper extends LineSegments {
 		// lon lines
 		for ( let i = 0; i <= lonSteps; i ++ ) {
 
+			const addTwo = i !== 0 && i !== lonSteps;
 			region.getPointAt( 0, i / lonSteps, 0, _vec );
 			lonEastMinPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) lonEastMinPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( 0, i / lonSteps, 1, _vec );
 			lonEastMaxPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) lonEastMaxPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( 1, i / lonSteps, 0, _vec );
 			lonWestMinPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) lonWestMinPosition.push( _vec.x, _vec.y, _vec.z );
 
 			region.getPointAt( 1, i / lonSteps, 1, _vec );
 			lonWestMaxPosition.push( _vec.x, _vec.y, _vec.z );
+			if ( addTwo ) lonWestMaxPosition.push( _vec.x, _vec.y, _vec.z );
 
 		}
 
