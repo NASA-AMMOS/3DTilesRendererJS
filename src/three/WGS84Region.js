@@ -540,6 +540,26 @@ export class WGS84Region {
 
 		}
 
+
+		return;
+
+		const center = sphere.center;
+
+		// center height
+		this.getPointAt( 0, 0, 1, _vec );
+		const minY = _vec.y;
+
+		this.getPointAt( 0, 0, 1, _vec );
+		const maxY = _vec.y;
+
+		center.y = ( minY + maxY ) / 2;
+
+		// get the furthest distance along x (at lon 0)
+		// get min distance along x ( max of half lon range using both min lon and max lon (up to PI / 2 ) ) ( this is center z )
+		// track range of z value above to get z center
+
+		// radius is the max of the half the distance of the above ranges
+
 	}
 
 	getPrimaryPoints( target ) {
