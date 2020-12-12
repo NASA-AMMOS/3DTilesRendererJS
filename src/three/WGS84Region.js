@@ -176,7 +176,7 @@ export class WGS84Region {
 				if ( aboveLon ) {
 
 					_plane.constant = 0;
-					_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+					_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
 
 				} else {
 
@@ -244,7 +244,7 @@ export class WGS84Region {
 					if ( aboveLon ) {
 
 						_plane.constant = 0;
-						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
 
 					} else {
 

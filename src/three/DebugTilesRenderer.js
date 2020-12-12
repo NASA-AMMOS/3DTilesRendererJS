@@ -340,6 +340,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 			if ( boxHelperGroup ) {
 
 				boxGroup.remove( boxHelperGroup );
+
 			}
 
 			if ( sphereHelper ) {
