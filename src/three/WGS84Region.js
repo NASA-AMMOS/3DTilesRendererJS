@@ -8,11 +8,11 @@ import {
 	Plane,
 } from 'three';
 
+export const WGS84_MAJOR_RADIUS = 10;// 6378137.0;
+export const WGS84_MINOR_RADIUS = 10; //6356752.314245;
 const PI = Math.PI;
 const PI2 = PI * 2;
 const PI_OVER_2 = PI / 2;
-const WGS84_MAJOR_RADIUS = 10;// 6378137.0;
-const WGS84_MINOR_RADIUS = 10; //6356752.314245;
 const _vecArray = new Array( 12 ).fill().map( () => new Vector3() );
 const _vec = new Vector3();
 const _vec2 = new Vector3();
