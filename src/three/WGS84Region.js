@@ -414,7 +414,6 @@ export class WGS84Region {
 
 	getBoundingSphere( sphere ) {
 
-		// TODO: This still needs tweaking
 		const {
 			north,
 			south,
@@ -433,6 +432,11 @@ export class WGS84Region {
 		this.getPointAt( 1, 0, 0, _vec4 );
 		minY = Math.min( _vec.y, _vec2.y, _vec3.y, _vec4.y );
 		maxY = Math.max( _vec.y, _vec2.y, _vec3.y, _vec4.y );
+		_vecArray.forEach( v => v.copy( _vec ) );
+		_vecArray[ 0 ].copy( _vec );
+		_vecArray[ 1 ].copy( _vec2 );
+		_vecArray[ 2 ].copy( _vec3 );
+		_vecArray[ 3 ].copy( _vec4 );
 
 		let maxLat;
 		if ( ( north - PI_OVER_2 < 0 ) !== ( south - PI_OVER_2 < 0 ) ) {
@@ -453,11 +457,15 @@ export class WGS84Region {
 		latLonToSurfaceVector( Math.min( south, north ), this._getLonRange() / 2, _vec3, minHeight );
 		minX = Math.min( _vec.x, _vec2.x, _vec3.x );
 		maxX = Math.max( _vec.x, _vec2.x, _vec3.x );
+		_vecArray[ 4 ].copy( _vec );
+		_vecArray[ 5 ].copy( _vec2 );
+		_vecArray[ 6 ].copy( _vec3 );
 
 		// get z range
 		latLonToSurfaceVector( maxLat, maxLon / 2, _vec, maxHeight );
 		maxZ = _vec.z;
 		minZ = - _vec.z;
+		_vecArray[ 7 ].copy( _vec );
 
 		center.x = ( minX + maxX ) / 2;
 		center.z = ( minZ + maxZ ) / 2;
@@ -466,7 +474,6 @@ export class WGS84Region {
 		center.y = ( minY + maxY ) / 2;
 
 		// TODO: ideally we'd center the point on whatever axis is longest so the sphere is minimal.
-		this._getPrimaryPoints( _vecArray );
 		sphere.setFromPoints( _vecArray, center );
 
 	}
