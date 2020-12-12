@@ -10,7 +10,7 @@ import {
 
 const WGS84_MAJOR_RADIUS = 10;// 6378137.0;
 const WGS84_MINOR_RADIUS = 10; //6356752.314245;
-const _vecArray = new Array( 10 ).fill().map( () => new Vector3() );
+const _vecArray = new Array( 12 ).fill().map( () => new Vector3() );
 const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _vec3 = new Vector3();
@@ -75,6 +75,7 @@ function latLonToSurfaceVector( lat, lon, target ) {
 
 	// TODO: is this rotating the right direction?
 	target.applyAxisAngle( _zVec, lon );
+	return target;
 
 }
 
@@ -176,9 +177,9 @@ export class WGS84Region {
 	getCornerPoints( target ) {
 
 		let curr = 0;
-		for ( let x = 0; x <= 1; x ++ ) {
+		for ( let y = 0; y <= 1; y ++ ) {
 
-			for ( let y = 0; y <= 1; y ++ ) {
+			for ( let x = 0; x <= 1; x ++ ) {
 
 				for ( let h = 0; h <= 1; h ++ ) {
 
@@ -193,9 +194,24 @@ export class WGS84Region {
 
 	}
 
-	getSphere( sphere ) {
+	getBoundingBox( box ) {
 
-		// TODO
+		this.getPrimaryPoints( _vecArray );
+		box.setFromPoints( _vecArray );
+		// TODO: handle larger than PI lon
+
+	}
+
+	getBoundingSphere( sphere ) {
+
+		this.getPrimaryPoints( _vecArray );
+		sphere.setFromPoints( _vecArray );
+
+		if ( this.getLonRange() > Math.PI ) {
+
+			sphere.radius = WGS84_MAJOR_RADIUS;
+
+		}
 
 	}
 
@@ -203,8 +219,10 @@ export class WGS84Region {
 
 		this.getCornerPoints( target );
 
-		this.getPointAt( 0.5, 0.5, 0, target[ curr ] );
-		this.getPointAt( 0.5, 0.5, 1, target[ curr + 1 ] );
+		this.getPointAt( 0, 0.5, 0, target[ 8 ] );
+		this.getPointAt( 0, 0.5, 1, target[ 9 ] );
+		this.getPointAt( 1, 0.5, 0, target[ 10 ] );
+		this.getPointAt( 1, 0.5, 1, target[ 11 ] );
 
 	}
 
@@ -434,7 +452,7 @@ export class WGS84Region {
 
 	distanceToPoint( point ) {
 
-		this.getClosestPoint( point, _vec );
+		this.getClosestPointToPoint( point, _vec );
 		return point.distanceTo( _vec );
 
 	}
@@ -457,8 +475,8 @@ export class WGS84RegionHelper extends LineSegments {
 	update() {
 
 		const region = this.region;
-		const latSteps = Math.floor( region.getLatRange() / 0.1 );
-		const lonSteps = Math.floor( region.getLonRange() / 0.1 );
+		const latSteps = Math.max( 10, Math.floor( region.getLatRange() / 0.1 ) );
+		const lonSteps = Math.max( 10, Math.floor( region.getLonRange() / 0.1 ) );
 
 		const latNorthMinPosition = [];
 		const latNorthMaxPosition = [];

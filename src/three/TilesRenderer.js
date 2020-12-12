@@ -15,6 +15,7 @@ import {
 	LoadingManager,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
+import { WGS84Region } from './WGS84Region.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const DEG2RAD = MathUtils.DEG2RAD;
@@ -375,6 +376,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		let region = null;
+		if ( 'region' in tile.boundingVolume ) {
+
+			const data = tile.boundingVolume.region;
+			region = new WGS84Region( ...data );
+
+		}
+
 		let box = null;
 		let boxTransform = null;
 		let boxTransformInverse = null;
@@ -431,12 +440,10 @@ export class TilesRenderer extends TilesRendererBase {
 			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
 			sphere.applyMatrix4( transform );
 
-		}
+		} else if ( 'region' in tile.boundingVolume ) {
 
-		let region = null;
-		if ( 'region' in tile.boundingVolume ) {
-
-			console.warn( 'ThreeTilesRenderer: region bounding volume not supported.' );
+			sphere = new Sphere();
+			region.getBoundingSphere( sphere );
 
 		}
 
@@ -688,10 +695,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// TODO: Use the content bounding volume here?
 		const boundingVolume = tile.boundingVolume;
-		if ( 'box' in boundingVolume ) {
+		if ( true ) {
 
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
+			const sphere = cached.sphere;
+			const region = cached.region;
 
 			let maxError = - Infinity;
 			let minDistance = Infinity;
@@ -707,8 +716,6 @@ export class TilesRenderer extends TilesRendererBase {
 				const camera = cameras[ i ];
 				const info = cameraInfo[ i ];
 				const invScale = info.invScale;
-				tempVector.copy( info.position );
-				tempVector.applyMatrix4( boxTransformInverse );
 
 				let error;
 				if ( camera.isOrthographicCamera ) {
@@ -718,7 +725,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 				} else {
 
-					const distance = boundingBox.distanceToPoint( tempVector );
+					let distance;
+					if ( region ) {
+
+						distance = region.distanceToPoint( info.position );
+
+					} else if ( boundingBox ) {
+
+						tempVector.copy( info.position );
+						tempVector.applyMatrix4( boxTransformInverse );
+						distance = boundingBox.distanceToPoint( tempVector );
+
+					} else if ( sphere ) {
+
+						distance = sphere.distanceToPoint( info.position );
+
+					}
+
 					const scaledDistance = distance * invScale;
 					const sseDenominator = info.sseDenominator;
 					error = tile.geometricError / ( scaledDistance * sseDenominator );
@@ -734,17 +757,6 @@ export class TilesRenderer extends TilesRendererBase {
 			tile.cached.distance = minDistance;
 
 			return maxError;
-
-		} else if ( 'sphere' in boundingVolume ) {
-
-			// const sphere = cached.sphere;
-
-			console.warn( 'ThreeTilesRenderer : Sphere bounds not supported.' );
-
-		} else if ( 'region' in boundingVolume ) {
-
-			// unsupported
-			console.warn( 'ThreeTilesRenderer : Region bounds not supported.' );
 
 		}
 

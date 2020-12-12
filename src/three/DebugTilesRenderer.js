@@ -1,6 +1,7 @@
 import { Box3Helper, Group, MeshBasicMaterial, PointsMaterial } from 'three';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
+import { WGS84RegionHelper } from './WGS84Region.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -29,11 +30,16 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const sphereGroup = new Group();
 		tilesGroup.add( sphereGroup );
 
+		const regionGroup = new Group();
+		tilesGroup.add( regionGroup );
+
 		this.displayBoxBounds = false;
 		this.displaySphereBounds = false;
+		this.displayRegionBounds = false;
 		this.colorMode = NONE;
 		this.boxGroup = boxGroup;
 		this.sphereGroup = sphereGroup;
+		this.regionGroup = regionGroup;
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
@@ -144,6 +150,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		// set box or sphere visibility
 		this.boxGroup.visible = this.displayBoxBounds;
 		this.sphereGroup.visible = this.displaySphereBounds;
+		this.regionGroup.visible = this.displayRegionBounds;
 
 		// get max values to use for materials
 		let maxDepth = - 1;
@@ -322,21 +329,54 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const cached = tile.cached;
 		const sphereGroup = this.sphereGroup;
 		const boxGroup = this.boxGroup;
+		const regionGroup = this.regionGroup;
+
 		const boxHelperGroup = cached.boxHelperGroup;
 		const sphereHelper = cached.sphereHelper;
+		const regionHelper = cached.regionHelper;
 
 		if ( ! visible ) {
 
-			boxGroup.remove( boxHelperGroup );
-			sphereGroup.remove( sphereHelper );
+			if ( boxHelperGroup ) {
+
+				boxGroup.remove( boxHelperGroup );
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.remove( sphereHelper );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.remove( regionHelper );
+
+			}
+
 
 		} else {
 
-			boxGroup.add( boxHelperGroup );
-			boxHelperGroup.updateMatrixWorld( true );
+			if ( boxHelperGroup ) {
 
-			sphereGroup.add( sphereHelper );
-			sphereHelper.updateMatrixWorld( true );
+				boxGroup.add( boxHelperGroup );
+				boxHelperGroup.updateMatrixWorld( true );
+
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.add( sphereHelper );
+				sphereHelper.updateMatrixWorld( true );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.add( regionHelper );
+				regionHelper.updateMatrixWorld( true );
+
+			}
 
 		}
 
@@ -352,37 +392,61 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const scene = cached.scene;
 				if ( scene ) {
 
+					// Create debug bounding box
 					const cachedBox = cached.box;
 					const cachedBoxMat = cached.boxTransform;
 
-					// Create debug bounding box
-					const boxHelperGroup = new Group();
-					boxHelperGroup.matrix.copy( cachedBoxMat );
-					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
+					if ( cachedBox ) {
 
-					const boxHelper = new Box3Helper( cachedBox );
-					boxHelper.raycast = emptyRaycast;
-					boxHelperGroup.add( boxHelper );
+						const boxHelperGroup = new Group();
+						boxHelperGroup.matrix.copy( cachedBoxMat );
+						boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
 
-					cached.boxHelperGroup = boxHelperGroup;
+						const boxHelper = new Box3Helper( cachedBox );
+						boxHelper.raycast = emptyRaycast;
+						boxHelperGroup.add( boxHelper );
 
-					if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
+						cached.boxHelperGroup = boxHelperGroup;
 
-						this.boxGroup.add( boxHelperGroup );
-						boxHelperGroup.updateMatrixWorld( true );
+						if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
+
+							this.boxGroup.add( boxHelperGroup );
+							boxHelperGroup.updateMatrixWorld( true );
+
+						}
 
 					}
 
-					// Create debugbounding sphere
+					// Create debug bounding sphere
 					const cachedSphere = cached.sphere;
-					const sphereHelper = new SphereHelper( cachedSphere );
-					sphereHelper.raycast = emptyRaycast;
-					cached.sphereHelper = sphereHelper;
+					if ( cachedSphere ) {
 
-					if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
+						const sphereHelper = new SphereHelper( cachedSphere );
+						sphereHelper.raycast = emptyRaycast;
+						cached.sphereHelper = sphereHelper;
 
-						this.sphereGroup.add( sphereHelper );
-						sphereHelper.updateMatrixWorld( true );
+						if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
+
+							this.sphereGroup.add( sphereHelper );
+							sphereHelper.updateMatrixWorld( true );
+
+						}
+
+					}
+
+					// Create debug bounding region
+					const cachedRegion = cached.region;
+					if ( cachedRegion ) {
+
+						const regionHelper = new WGS84RegionHelper( cachedRegion );
+						regionHelper.raycast = emptyRaycast;
+						cached.regionHelper = regionHelper;
+						if ( this.visibleTiles.has( tile ) && this.displayRegionBounds ) {
+
+							this.regionGroup.add( regionHelper );
+							regionHelper.updateMatrixWorld( true );
+
+						}
 
 					}
 
