@@ -17,6 +17,7 @@ const _vecArray = new Array( 12 ).fill().map( () => new Vector3() );
 const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _vec3 = new Vector3();
+const _vec4 = new Vector3();
 const _zVec = new Vector3( 0, 1, 0 );
 
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
@@ -57,21 +58,21 @@ export class WGS84Region {
 
 		// from west to east, south to north, min to max
 		// TODO: update these values to be minimum ranges in the above directions maybe?
-		this.east = east;
-		this.west = west;
+		this.east = 0;
+		this.west = 0;
 
-		this.south = south;
-		this.north = north;
+		this.south = 0;
+		this.north = 0;
 
-		this.minHeight = minHeight;
-		this.maxHeight = maxHeight;
+		this.minHeight = 0;
+		this.maxHeight = 0;
 
 		this.eastPlane = new Plane();
 		this.westPlane = new Plane();
 		this.northDirection = new Vector3();
 		this.southDirection = new Vector3();
 		this.cornerPoints = new Array( 8 ).fill().map( () => new Vector3() );
-		this._updateCache();
+		this.set( west, south, east, north, minHeight, maxHeight );
 
 	}
 
@@ -403,19 +404,14 @@ export class WGS84Region {
 
 		// get y range
 		this.getPointAt( 0, 0, 1, _vec );
-		minY = _vec.y;
-
-		this.getPointAt( 0, 0, 0, _vec );
-		minY = Math.max( minY, _vec.y );
-
-		this.getPointAt( 1, 0, 1, _vec );
-		maxY = _vec.y;
-
-		this.getPointAt( 1, 0, 0, _vec );
-		maxY = Math.min( minY, _vec.y );
+		this.getPointAt( 0, 0, 0, _vec2 );
+		this.getPointAt( 1, 0, 1, _vec3 );
+		this.getPointAt( 1, 0, 0, _vec4 );
+		minY = Math.min( _vec.y, _vec2.y, _vec3.y, _vec4.y );
+		maxY = Math.max( _vec.y, _vec2.y, _vec3.y, _vec4.y );
 
 		let maxLat;
-		if ( ( Math.abs( north - PI_OVER_2 ) < 0 ) !== ( Math.abs( south - PI_OVER_2 ) < 0 ) ) {
+		if ( ( north - PI_OVER_2 < 0 ) !== ( south - PI_OVER_2 < 0 ) ) {
 
 			maxLat = PI / 2;
 
@@ -430,14 +426,10 @@ export class WGS84Region {
 
 		// get x range
 		latLonToSurfaceVector( maxLat, 0, _vec, maxHeight );
-		maxX = _vec.x;
-		console.log( _vec, maxHeight );
-
-		latLonToSurfaceVector( maxLat, this._getLonRange() / 2, _vec, maxHeight );
-		minX = _vec.x;
-
-		latLonToSurfaceVector( Math.min( south, north ), this._getLonRange() / 2, _vec, minHeight );
-		minX = Math.min( minX, _vec.x );
+		latLonToSurfaceVector( maxLat, this._getLonRange() / 2, _vec2, maxHeight );
+		latLonToSurfaceVector( Math.min( south, north ), this._getLonRange() / 2, _vec3, minHeight );
+		minX = Math.min( _vec.x, _vec2.x, _vec3.x );
+		maxX = Math.max( _vec.x, _vec2.x, _vec3.x );
 
 		// get z range
 		latLonToSurfaceVector( maxLat, maxLon / 2, _vec, maxHeight );
@@ -453,7 +445,6 @@ export class WGS84Region {
 		// TODO: ideally we'd center the point on whatever axis is longest so the sphere is minimal.
 		this._getPrimaryPoints( _vecArray );
 		sphere.setFromPoints( _vecArray, center );
-		sphere.radius = 0.1;
 
 	}
 
