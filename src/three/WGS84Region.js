@@ -52,8 +52,6 @@ export class WGS84Region {
 
 	constructor( west, south, east, north, minHeight, maxHeight ) {
 
-		if ( west > east || south > north ) throw new Error();
-
 		// TODO: ensure north / south are positive
 
 		// from west to east, south to north, min to max
@@ -78,11 +76,38 @@ export class WGS84Region {
 
 	set( west, south, east, north, minHeight, maxHeight ) {
 
-		this.east = east;
+		if ( west > east ) [ west, east ] = [ east, west ];
+		if ( south > north ) [ north, south ] = [ south, north ];
+		if ( minHeight > maxHeight ) [ maxHeight, minHeight ] = [ minHeight, maxHeight ];
+
+		const latRange = north - south;
+		const lonRange = east - west;
+
+		if ( latRange > PI || lonRange > PI2 ) {
+
+			throw new Error( 'WGS84Region: Latitude or Longitude out of range.' );
+
+		}
+
+		west = west % PI2;
+		if ( west < 0 ) {
+
+			west += PI2;
+
+		}
+
+		south = south % PI2;
+		if ( south < 0 ) {
+
+			south += PI2;
+
+		}
+
 		this.west = west;
+		this.east = west + lonRange;
 
 		this.south = south;
-		this.north = north;
+		this.north = south + latRange;
 
 		this.minHeight = minHeight;
 		this.maxHeight = maxHeight;
