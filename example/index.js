@@ -237,7 +237,7 @@ function init() {
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
-	tileOptions.add( params, 'up', [ '+Y', '-Z' ] );
+	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
@@ -479,6 +479,10 @@ function animate() {
 	if ( params.up === '-Z' ) {
 
 		offsetParent.rotation.x = Math.PI / 2;
+
+	} else if ( params.up === '+Z' ) {
+
+		offsetParent.rotation.x = - Math.PI / 2;
 
 	}
 	offsetParent.updateMatrixWorld( true );
