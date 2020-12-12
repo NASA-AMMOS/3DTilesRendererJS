@@ -19,6 +19,9 @@ const _vec2 = new Vector3();
 const _vec3 = new Vector3();
 const _vec4 = new Vector3();
 const _zVec = new Vector3( 0, 1, 0 );
+const _plane = new Plane();
+const _surfaceNormal = new Vector3();
+const _point = new Vector3();
 
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
@@ -117,7 +120,7 @@ export class WGS84Region {
 
 	getClosestPointToPoint( point, target ) {
 
-		point = new Vector3().copy( point );
+		_point.copy( point );
 
 		const {
 			minHeight,
@@ -133,12 +136,12 @@ export class WGS84Region {
 			cornerPoints,
 		} = this;
 
-		let lat = vectorToLatitude( point );
+		let lat = vectorToLatitude( _point );
 		lat -= south;
 		lat %= PI2;
 		lat += south;
 
-		let lon = vectorToLongitude( point );
+		let lon = vectorToLongitude( _point );
 		lon -= west;
 		lon %= PI2;
 		if ( lon < 0 ) {
@@ -158,13 +161,13 @@ export class WGS84Region {
 
 			if ( pointInLat ) {
 
-				const pointDistance = point.length();
+				const pointDistance = _point.length();
 				latLonToSurfaceVector( lat, lon, target );
 
 				const surfaceDistance = target.length();
 				const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
 				target
-					.copy( point )
+					.copy( _point )
 					.multiplyScalar( newDistance / pointDistance );
 
 			} else {
@@ -172,24 +175,22 @@ export class WGS84Region {
 				lat = MathUtils.clamp( lat, south, north );
 				lon = MathUtils.clamp( lon, west, east );
 
-				const plane = new Plane();
 				if ( aboveLon ) {
 
-					plane.constant = 0;
-					plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+					_plane.constant = 0;
+					_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
 
 				} else {
 
-					plane.constant = 0;
-					plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+					_plane.constant = 0;
+					_plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
 
 				}
 
-				const surfaceNormal = new Vector3();
-				const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
-				plane.projectPoint( point, target );
+				const surfaceDistance = latLonToSurfaceVector( lat, lon, _surfaceNormal ).length();
+				_plane.projectPoint( _point, target );
 
-				const inverted = target.dot( surfaceNormal ) < 0;
+				const inverted = target.dot( _surfaceNormal ) < 0;
 				const clampedLength = MathUtils.clamp(
 					target.length() * ( inverted ? 0 : 1 ),
 					surfaceDistance + minHeight,
@@ -209,53 +210,51 @@ export class WGS84Region {
 
 			if ( this._getLonRange() > PI ) {
 
-				if ( westPlane.distanceToPoint( point ) < eastPlane.distanceToPoint( point ) ) {
+				if ( westPlane.distanceToPoint( _point ) < eastPlane.distanceToPoint( _point ) ) {
 
-					westPlane.projectPoint( point, target );
+					westPlane.projectPoint( _point, target );
 					lon = west;
 
 				} else {
 
-					eastPlane.projectPoint( point, target );
+					eastPlane.projectPoint( _point, target );
 					lon = east;
 
 				}
-				point.copy( target );
+				_point.copy( target );
 
 				lat = MathUtils.clamp( lat, south, north );
 				lon = MathUtils.clamp( lon, west, east );
 
 				if ( pointInLat ) {
 
-					const pointDistance = point.length();
+					const pointDistance = _point.length();
 					latLonToSurfaceVector( lat, lon, target );
 
 					const surfaceDistance = target.length();
 					const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
 					target
-						.copy( point )
+						.copy( _point )
 						.multiplyScalar( newDistance / pointDistance );
 
 				} else {
 
-					const plane = new Plane();
 					if ( aboveLon ) {
 
-						plane.constant = 0;
-						plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+						_plane.constant = 0;
+						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
 
 					} else {
 
-						plane.constant = 0;
-						plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+						_plane.constant = 0;
+						_plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
 
 					}
 
-					const surfaceNormal = new Vector3();
-					const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
-					plane.projectPoint( point, target );
+					const surfaceDistance = latLonToSurfaceVector( lat, lon, _surfaceNormal ).length();
+					_plane.projectPoint( _point, target );
 
-					const inverted = target.dot( surfaceNormal ) < 0;
+					const inverted = target.dot( _surfaceNormal ) < 0;
 					const clampedLength = MathUtils.clamp(
 						target.length() * ( inverted ? 0 : 1 ),
 						surfaceDistance + minHeight,
@@ -273,8 +272,8 @@ export class WGS84Region {
 
 			} else {
 
-				const westDist = westPlane.normal.dot( point );
-				const eastDist = eastPlane.normal.dot( point );
+				const westDist = westPlane.normal.dot( _point );
+				const eastDist = eastPlane.normal.dot( _point );
 				let insideWest = westDist < 0;
 				let insideEast = eastDist < 0;
 
@@ -283,7 +282,7 @@ export class WGS84Region {
 
 				if ( insideWest && ! insideEast ) {
 
-					eastPlane.projectPoint( point, target );
+					eastPlane.projectPoint( _point, target );
 					validProj = westPlane.normal.dot( target ) < 0;
 					projectedLon = east;
 
@@ -291,7 +290,7 @@ export class WGS84Region {
 
 				if ( insideEast && ! insideWest ) {
 
-					westPlane.projectPoint( point, target );
+					westPlane.projectPoint( _point, target );
 					validProj = eastPlane.normal.dot( target ) < 0;
 					projectedLon = west;
 
@@ -299,9 +298,9 @@ export class WGS84Region {
 
 				if ( insideWest !== insideEast ) {
 
-					point.copy( target );
+					_point.copy( target );
 
-					lat = vectorToLatitude( point );
+					lat = vectorToLatitude( _point );
 					lat -= south;
 					lat %= PI2;
 					lat += south;
@@ -324,17 +323,15 @@ export class WGS84Region {
 
 					if ( useNorth ) {
 
-						const plane = new Plane();
-						plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
-						plane.projectPoint( point, target );
-						point.copy( target );
+						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
+						_plane.projectPoint( _point, target );
+						_point.copy( target );
 
 					} else if ( useSouth ) {
 
-						const plane = new Plane();
-						plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
-						plane.projectPoint( point, target );
-						point.copy( target );
+						_plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+						_plane.projectPoint( _point, target );
+						_point.copy( target );
 
 					}
 
@@ -362,14 +359,14 @@ export class WGS84Region {
 
 					}
 
-					const surfaceNormal = new Vector3();
-					const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
+					const targetLength = target.length();
+					const surfaceDistance = latLonToSurfaceVector( lat, lon, _surfaceNormal ).length();
 					const clampedLength = MathUtils.clamp(
-						target.length() * ( inverted ? 0 : 1 ),
+						targetLength * ( inverted ? 0 : 1 ),
 						surfaceDistance + minHeight,
 						surfaceDistance + maxHeight
 					);
-					target.normalize().multiplyScalar( clampedLength );
+					target.multiplyScalar( clampedLength / targetLength );
 
 				} else {
 
@@ -378,7 +375,7 @@ export class WGS84Region {
 					for ( let i = 0, l = cornerPoints.length; i < l; i ++ ) {
 
 						const p = cornerPoints[ i ];
-						const sqDist = p.distanceToSquared( point );
+						const sqDist = p.distanceToSquared( _point );
 
 						if ( sqDist	< closestDistSq ) {
 
@@ -445,7 +442,6 @@ export class WGS84Region {
 			maxLat = Math.max( north, south );
 
 		}
-
 
 		let maxLon = Math.min( PI, this._getLonRange() );
 
