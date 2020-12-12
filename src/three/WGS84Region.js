@@ -42,8 +42,6 @@ function clampLon( lon, min, max ) {
 
 function toSmallestRot( angle ) {
 
-	// console.log(' ANGLE', angle)
-
 	angle = angle % ( 2 * Math.PI );
 	if ( angle < - Math.PI ) {
 
@@ -59,8 +57,6 @@ function toSmallestRot( angle ) {
 
 	}
 
-	return angle > Math.PI ? ( 2 * Math.PI ) - angle : angle;
-
 }
 
 function latLonToSurfaceVector( lat, lon, target ) {
@@ -69,7 +65,7 @@ function latLonToSurfaceVector( lat, lon, target ) {
 	target.x *= WGS84_MAJOR_RADIUS;
 	target.y *= WGS84_MINOR_RADIUS;
 
-	// WGS84 frame specifies Z as north pole
+	// TODO: WGS84 frame specifies Z as north pole
 	// target.z = target.y;
 	// target.y = 0;
 
@@ -110,12 +106,308 @@ export class WGS84Region {
 		this.minHeight = minHeight;
 		this.maxHeight = maxHeight;
 
-		this.planes = [];
-		this._updatePlanes();
+		this.eastPlane = new Plane();
+		this.westPlane = new Plane();
+		this.northDirection = new Vector3();
+		this.southDirection = new Vector3();
+		this.cornerPoints = new Array( 8 ).fill().map( () => new Vector3() );
+		this._updateCache();
 
 	}
 
-	_updatePlanes() {
+	getClosestPointToPoint( point, target ) {
+
+		point = new Vector3().copy( point );
+
+		const {
+			minHeight,
+			maxHeight,
+			north,
+			south,
+			east,
+			west,
+			northDirection,
+			southDirection,
+			eastPlane,
+			westPlane,
+			cornerPoints,
+		} = this;
+
+		let lat = vectorToLatitude( point );
+		lat -= south;
+		lat %= 2 * Math.PI;
+		lat += south;
+
+		let lon = vectorToLongitude( point );
+		lon -= west;
+		lon %= 2 * Math.PI;
+		if ( lon < 0 ) {
+
+			lon += 2 * Math.PI;
+
+		}
+		lon += west;
+
+		const aboveLon = lat > north;
+		const belowLon = lat < south;
+
+		const pointInLat = ! belowLon && ! aboveLon;
+		const pointInLon = lon > west && lon < east;
+
+		if ( pointInLon ) {
+
+			if ( pointInLat ) {
+
+				const pointDistance = point.length();
+				latLonToSurfaceVector( lat, lon, target );
+
+				const surfaceDistance = target.length();
+				const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
+				target
+					.copy( point )
+					.multiplyScalar( newDistance / pointDistance );
+
+			} else {
+
+				lat = MathUtils.clamp( lat, south, north );
+				lon = MathUtils.clamp( lon, west, east );
+
+				const plane = new Plane();
+				if ( aboveLon ) {
+
+					plane.constant = 0;
+					plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+
+				} else {
+
+					plane.constant = 0;
+					plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+
+				}
+
+				const surfaceNormal = new Vector3();
+				const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
+				plane.projectPoint( point, target );
+
+				const inverted = target.dot( surfaceNormal ) < 0;
+				const clampedLength = MathUtils.clamp(
+					target.length() * ( inverted ? 0 : 1 ),
+					surfaceDistance + minHeight,
+					surfaceDistance + maxHeight
+				);
+				target.normalize().multiplyScalar( clampedLength );
+
+				if ( inverted ) {
+
+					target.multiplyScalar( - 1 );
+
+				}
+
+			}
+
+		} else {
+
+			if ( this.getLonRange() > Math.PI ) {
+
+				if ( westPlane.distanceToPoint( point ) < eastPlane.distanceToPoint( point ) ) {
+
+					westPlane.projectPoint( point, target );
+					lon = west;
+
+				} else {
+
+					eastPlane.projectPoint( point, target );
+					lon = east;
+
+				}
+				point.copy( target );
+
+				lat = MathUtils.clamp( lat, south, north );
+				lon = MathUtils.clamp( lon, west, east );
+
+				if ( pointInLat ) {
+
+					const pointDistance = point.length();
+					latLonToSurfaceVector( lat, lon, target );
+
+					const surfaceDistance = target.length();
+					const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
+					target
+						.copy( point )
+						.multiplyScalar( newDistance / pointDistance );
+
+				} else {
+
+					const plane = new Plane();
+					if ( aboveLon ) {
+
+						plane.constant = 0;
+						plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon )
+
+					} else {
+
+						plane.constant = 0;
+						plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+
+					}
+
+					const surfaceNormal = new Vector3();
+					const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
+					plane.projectPoint( point, target );
+
+					const inverted = target.dot( surfaceNormal ) < 0;
+					const clampedLength = MathUtils.clamp(
+						target.length() * ( inverted ? 0 : 1 ),
+						surfaceDistance + minHeight,
+						surfaceDistance + maxHeight
+					);
+					target.normalize().multiplyScalar( clampedLength );
+
+					if ( inverted ) {
+
+						target.multiplyScalar( - 1 );
+
+					}
+
+				}
+
+			} else {
+
+				const westDist = westPlane.normal.dot( point );
+				const eastDist = eastPlane.normal.dot( point );
+				let insideWest = westDist < 0;
+				let insideEast = eastDist < 0;
+
+				let validProj = false;
+				let projectedLon;
+
+				if ( insideWest && ! insideEast ) {
+
+					eastPlane.projectPoint( point, target );
+					validProj = westPlane.normal.dot( target ) < 0;
+					projectedLon = east;
+
+				}
+
+				if ( insideEast && ! insideWest ) {
+
+					westPlane.projectPoint( point, target );
+					validProj = eastPlane.normal.dot( target ) < 0;
+					projectedLon = west;
+
+				}
+
+				if ( insideWest !== insideEast ) {
+
+					point.copy( target );
+
+					lat = vectorToLatitude( point );
+					lat -= south;
+					lat %= 2 * Math.PI;
+					lat += south;
+
+					lon = projectedLon;
+
+					let useNorth = false;
+					let useSouth = false;
+					if ( validProj ) {
+
+						useNorth = lat > north;
+						useSouth = lat < south;
+
+					} else {
+
+						useSouth = lat < Math.PI / 2;
+						useNorth = lat >= Math.PI / 2;
+
+					}
+
+					if ( useNorth ) {
+
+						const plane = new Plane();
+						plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
+						plane.projectPoint( point, target );
+						point.copy( target );
+
+					} else if ( useSouth ) {
+
+						const plane = new Plane();
+						plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+						plane.projectPoint( point, target );
+						point.copy( target );
+
+					}
+
+					const regionAllAbove = north > Math.PI / 2 && south > Math.PI / 2;
+					const regionAllBelow = north < Math.PI / 2 && south < Math.PI / 2;
+					let inverted = false;
+
+					lat = vectorToLatitude( target );
+					lon = vectorToLongitude( target );
+
+					const pointAbove = lat > Math.PI / 2;
+					if ( regionAllAbove || regionAllBelow ) {
+
+						inverted = pointAbove === regionAllBelow;
+
+					} else {
+
+						inverted = pointAbove === useSouth;
+
+					}
+
+					if ( inverted ) {
+
+						target.multiplyScalar( - 1 );
+
+					}
+
+					const surfaceNormal = new Vector3();
+					const surfaceDistance = latLonToSurfaceVector( lat, lon, surfaceNormal ).length();
+					const clampedLength = MathUtils.clamp(
+						target.length() * ( inverted ? 0 : 1 ),
+						surfaceDistance + minHeight,
+						surfaceDistance + maxHeight
+					);
+					target.normalize().multiplyScalar( clampedLength );
+
+				} else {
+
+					let closestDistSq = Infinity;
+					let closestPt = null;
+					for ( let i = 0, l = cornerPoints.length; i < l; i ++ ) {
+
+						const p = cornerPoints[ i ];
+						const sqDist = p.distanceToSquared( point );
+
+						if ( sqDist	< closestDistSq ) {
+
+							closestDistSq = sqDist;
+							closestPt = p;
+
+						}
+
+					}
+
+					target.copy( closestPt );
+
+				}
+
+			}
+
+		}
+
+	}
+
+	_updateCache() {
+
+		const {
+			eastPlane,
+			westPlane,
+			northDirection,
+			southDirection,
+			cornerPoints,
+		} = this;
 
 		// west plane
 		this.getPointAt( 0, 0, 1, _vec ); // south west max corner
@@ -126,11 +418,9 @@ export class WGS84Region {
 		_vec3.sub( _vec ).normalize(); // max west northward vector
 		_vec3.cross( _vec2 );
 
-		const westPlane = new Plane();
 		_vec3.multiplyScalar( - 1 );
 		_vec3.normalize();
 		westPlane.setFromNormalAndCoplanarPoint( _vec3, _vec );
-		this.planes.push( westPlane );
 
 		// east plane
 		this.getPointAt( 0, 1, 1, _vec ); // south east max corner
@@ -141,10 +431,54 @@ export class WGS84Region {
 		_vec3.sub( _vec ).normalize(); // max east northward vector
 		_vec3.cross( _vec2 );
 
-		const eastPlane = new Plane();
 		_vec3.normalize();
 		eastPlane.setFromNormalAndCoplanarPoint( _vec3, _vec );
-		this.planes.push( eastPlane );
+
+		const surfaceNormal = new Vector3();
+		const tangent = new Vector3();
+
+		// get south direction
+		this.getPointAt( 0, 0, 1, surfaceNormal );
+		surfaceNormal.normalize();
+
+		tangent.copy( surfaceNormal );
+		tangent.y = 0;
+		[ tangent.x, tangent.z ] = [ tangent.z, tangent.x ];
+		tangent.x *= - 1;
+		tangent.normalize();
+
+		if ( surfaceNormal.dot( tangent ) === 1 ) {
+
+			southDirection.copy( surfaceNormal );
+
+		} else {
+
+			southDirection.crossVectors( surfaceNormal, tangent );
+
+		}
+
+		// get north direction
+		this.getPointAt( 1, 0, 1, surfaceNormal );
+		surfaceNormal.normalize();
+
+		tangent.copy( surfaceNormal );
+		tangent.y = 0;
+		[ tangent.x, tangent.z ] = [ tangent.z, tangent.x ];
+		tangent.x *= - 1;
+		tangent.normalize();
+
+		if ( surfaceNormal.dot( tangent ) === 1 ) {
+
+			northDirection.copy( surfaceNormal );
+
+		} else {
+
+			northDirection.crossVectors( surfaceNormal, tangent );
+
+		}
+
+		// Get the corner points
+		this.getCornerPoints( cornerPoints );
 
 	}
 
@@ -194,16 +528,9 @@ export class WGS84Region {
 
 	}
 
-	getBoundingBox( box ) {
-
-		this.getPrimaryPoints( _vecArray );
-		box.setFromPoints( _vecArray );
-		// TODO: handle larger than PI lon
-
-	}
-
 	getBoundingSphere( sphere ) {
 
+		// TODO: generate a more precise bounding sphere
 		this.getPrimaryPoints( _vecArray );
 		sphere.setFromPoints( _vecArray );
 
@@ -234,7 +561,6 @@ export class WGS84Region {
 		lat -= this.south;
 		lat %= 2 * Math.PI;
 		lat += this.south;
-		lat = MathUtils.clamp( lat, this.south, this.north );
 
 		lon -= this.west;
 		lon %= 2 * Math.PI;
@@ -246,207 +572,6 @@ export class WGS84Region {
 		lon += this.west;
 
 		return lat > this.south && lat < this.north && lon > this.west && lon < this.east;
-
-	}
-
-	getClosestPointToPoint( point, target ) {
-
-		if ( this.isPointInLatLon( point ) ) {
-
-			const lat = vectorToLatitude( point );
-			const lon = vectorToLongitude( point );
-
-			const pointLength = point.length();
-			latLonToSurfaceVector( lat, lon, target );
-
-			const surfaceLength = target.length();
-			target
-				.copy( point )
-				.normalize()
-				.multiplyScalar(
-					MathUtils.clamp( pointLength, surfaceLength + this.minHeight, surfaceLength + this.maxHeight ),
-				);
-
-			return;
-
-		}
-
-		const [ westPlane, eastPlane ] = this.planes;
-		const westDist = westPlane.normal.dot( point );
-		const eastDist = eastPlane.normal.dot( point );
-		let insideWest = westDist < 0;
-		let insideEast = eastDist < 0;
-
-		const _point = new Vector3();
-		_point.copy( point );
-		point = _point;
-
-		const lonGreaterThanPi = westPlane.normal.dot( eastPlane.normal ) > 0;
-		if ( lonGreaterThanPi && ( insideWest || insideEast ) ) {
-
-			insideEast = true;
-			insideWest = true;
-
-		}
-		if ( insideWest && ! insideEast ) {
-
-			eastPlane.projectPoint( point, target );
-			insideEast = westPlane.normal.dot( target ) < 0;
-			if ( insideEast ) {
-
-				point.copy( target );
-
-			}
-
-		}
-
-		if ( insideEast && ! insideWest ) {
-
-			westPlane.projectPoint( point, target );
-			insideWest = eastPlane.normal.dot( target ) < 0;
-			if ( insideWest ) {
-
-				point.copy( target );
-
-			}
-
-		}
-
-		const l2 = vectorToLatitude( point );
-		const oppositeHemisphere =
-			( this.north < Math.PI / 2 && l2 > Math.PI / 2 ) ||
-			( this.south > Math.PI / 2 && l2 < Math.PI / 2 );
-
-		if ( insideEast && insideWest ) {
-
-			const lat = clampLat( vectorToLatitude( point ), this.south, this.north );
-			const lon = clampLon( vectorToLongitude( point ), this.west, this.east );
-
-			const surfaceNormal = new Vector3();
-			latLonToSurfaceVector( lat, lon, surfaceNormal );
-
-			const surfaceDistance = surfaceNormal.length();
-
-			const delta = new Vector3();
-			delta.copy( surfaceNormal );
-			delta.y = 0;
-			[ delta.x, delta.z ] = [ delta.z, delta.x ];
-			delta.x *= - 1;
-
-			const cross = new Vector3();
-			delta.normalize();
-			surfaceNormal.normalize();
-			cross.crossVectors( surfaceNormal, delta );
-
-
-			const plane = new Plane();
-			surfaceNormal.multiplyScalar( surfaceDistance );
-			plane.setFromNormalAndCoplanarPoint( cross, surfaceNormal );
-			plane.projectPoint( point, target );
-
-			const targetLength = target.length();
-			const inverted = Math.sign( target.dot( surfaceNormal ) ) < 0;
-
-			target
-				.normalize()
-				.multiplyScalar(
-					MathUtils.clamp( targetLength * ( inverted ? 0 : 1 ), surfaceDistance + this.minHeight, surfaceDistance + this.maxHeight ) * ( inverted ? - 1 : 1 ),
-				);
-
-			return;
-
-		} else if ( ( ! insideWest || ! insideEast ) && ! lonGreaterThanPi || oppositeHemisphere ) {
-
-			const points = new Array( 8 ).fill().map( () => new Vector3() );
-			this.getCornerPoints( points );
-			let closestDistSq = Infinity;
-			let closestPt = null;
-			for ( let i = 0, l = points.length; i < l; i ++ ) {
-
-				const p = points[ i ];
-				const sqDist = p.distanceToSquared( point );
-
-				if ( sqDist	< closestDistSq ) {
-
-					closestDistSq = sqDist;
-					closestPt = p;
-
-				}
-
-			}
-			target.copy( closestPt );
-			return target;
-
-		}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		if ( insideEast && insideWest ) {
-
-			target.copy( point );
-
-		} else if ( Math.abs( westDist ) < Math.abs( eastDist ) ) {
-
-			westPlane.projectPoint( point, target );
-
-		} else {
-
-			eastPlane.projectPoint( point, target );
-
-		}
-
-
-		let lat = vectorToLatitude( target );
-		let lon = vectorToLongitude( target );
-
-		lat -= this.south;
-		lat %= 2 * Math.PI;
-		lat += this.south;
-		lat = MathUtils.clamp( lat, this.south, this.north );
-
-		lon -= this.west;
-		lon %= 2 * Math.PI;
-		if ( lon < - Math.PI ) {
-
-			lon += 2 * Math.PI;
-
-		}
-		lon += this.west;
-
-		if ( lon < this.west || lon > this.east ) {
-
-			if ( Math.abs( toSmallestRot( lon - this.west ) ) < Math.abs( toSmallestRot( lon - this.east ) ) ) {
-
-				lon = this.west;
-
-			} else {
-
-				lon = this.east;
-
-			}
-
-		}
-
-
-		const ogLength = target.length();
-		latLonToSurfaceVector( lat, lon, target );
-
-		const surfaceDistance = target.length();
-		const length = MathUtils.clamp( ogLength, surfaceDistance + this.minHeight, surfaceDistance + this.maxHeight );
-		target.multiplyScalar( length / surfaceDistance );
 
 	}
 
