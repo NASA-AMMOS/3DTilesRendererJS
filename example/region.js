@@ -10,6 +10,7 @@ import {
 	Group,
 	Matrix4,
 	Line,
+	Sphere,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
@@ -23,14 +24,18 @@ import { GUI } from 'three/examples/jsm/libs/dat.gui.module.js';
 let camera, controls, scene, renderer, transformControls;
 let region, regionHelper;
 let infoEl;
-let needsUpdate = false;
 let cameraSphere, gizmoSphere, gizmoGroup, gizmoLine, transformGroup;
+let boundingSphereMesh, boundingSphereCenter;
+let needsUpdate = false;
+
 const tempVec = new Vector3();
 const tempMat = new Matrix4();
+const sphere = new Sphere();
 
 const params = {
 
 	transformControls: true,
+	boundingSphere: true,
 	north: 0,
 	south: 0.5,
 	east: 0,
@@ -75,6 +80,20 @@ function init() {
 	transformGroup = new Group();
 	scene.add( transformGroup );
 
+	boundingSphereMesh = new Mesh(
+		new SphereBufferGeometry( 1, 50, 50 ),
+		new MeshBasicMaterial( { color: 0xff0000, opacity: 0.15, transparent: true, depthWrite: false } ),
+	);
+	regionHelper.add( boundingSphereMesh );
+
+	boundingSphereCenter = new Mesh(
+		new SphereBufferGeometry( 1, 50, 50 ),
+		new MeshBasicMaterial( { color: 0xff0000, opacity: 0.35, transparent: true, depthWrite: false } ),
+	);
+	boundingSphereCenter.scale.setScalar( 0.1 );
+	regionHelper.add( boundingSphereCenter );
+	window.boundingSphereCenter = boundingSphereCenter
+
 	cameraSphere = new Mesh(
 		new SphereBufferGeometry( 0.1 ),
 		new MeshBasicMaterial( { color: 0xff0000 } ),
@@ -111,6 +130,11 @@ function init() {
 
 		transformControls.enabled = v;
 		transformGroup.visible = v;
+
+	} );
+	gui.add( params, 'boundingSphere' ).onChange( v => {
+
+		boundingSphereMesh.visible = v;
 
 	} );
 	gui.add( params, 'north', - Math.PI, Math.PI, 0.01 ).onChange( onChange );
@@ -172,6 +196,11 @@ function animate() {
 	gizmoSphere.position.applyMatrix4( regionHelper.matrixWorld );
 
 	gizmoLine.geometry.setFromPoints( [gizmoSphere.position, gizmoGroup.position ] );
+
+	region.getBoundingSphere( sphere );
+	boundingSphereCenter.position.copy( sphere.center );
+	boundingSphereMesh.position.copy( sphere.center );
+	boundingSphereMesh.scale.setScalar( sphere.radius );
 
 	infoEl.innerText =
 		`camera distance    : ${ cameraDistance.toFixed( 3 ) }\n` +

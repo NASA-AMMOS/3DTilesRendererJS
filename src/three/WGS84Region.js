@@ -534,9 +534,9 @@ export class WGS84Region {
 		tangent.x *= - 1;
 		tangent.normalize();
 
-		if ( surfaceNormal.dot( tangent ) === 1 ) {
+		if ( Math.abs( surfaceNormal.y ) === 1 ) {
 
-			southDirection.copy( surfaceNormal );
+			southDirection.set( 1, 0, 0 );
 
 		} else {
 
@@ -554,9 +554,9 @@ export class WGS84Region {
 		tangent.x *= - 1;
 		tangent.normalize();
 
-		if ( surfaceNormal.dot( tangent ) === 1 ) {
+		if ( Math.abs( surfaceNormal.y ) === 1 ) {
 
-			northDirection.copy( surfaceNormal );
+			northDirection.set( 1, 0, 0 );
 
 		} else {
 
