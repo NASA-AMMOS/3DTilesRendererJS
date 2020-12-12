@@ -120,8 +120,6 @@ export class WGS84Region {
 
 	getClosestPointToPoint( point, target ) {
 
-		_point.copy( point );
-
 		const {
 			minHeight,
 			maxHeight,
@@ -136,12 +134,12 @@ export class WGS84Region {
 			cornerPoints,
 		} = this;
 
-		let lat = vectorToLatitude( _point );
+		let lat = vectorToLatitude( point );
 		lat -= south;
 		lat %= PI2;
 		lat += south;
 
-		let lon = vectorToLongitude( _point );
+		let lon = vectorToLongitude( point );
 		lon -= west;
 		lon %= PI2;
 		if ( lon < 0 ) {
@@ -161,13 +159,13 @@ export class WGS84Region {
 
 			if ( pointInLat ) {
 
-				const pointDistance = _point.length();
+				const pointDistance = point.length();
 				latLonToSurfaceVector( lat, lon, target );
 
 				const surfaceDistance = target.length();
 				const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
 				target
-					.copy( _point )
+					.copy( point )
 					.multiplyScalar( newDistance / pointDistance );
 
 			} else {
@@ -188,7 +186,7 @@ export class WGS84Region {
 				}
 
 				const surfaceDistance = latLonToSurfaceVector( lat, lon, _surfaceNormal ).length();
-				_plane.projectPoint( _point, target );
+				_plane.projectPoint( point, target );
 
 				const inverted = target.dot( _surfaceNormal ) < 0;
 				const clampedLength = MathUtils.clamp(
@@ -207,6 +205,10 @@ export class WGS84Region {
 			}
 
 		} else {
+
+			// TODO: Remove use of _point and instead use point where
+			// possible so we can remove extra copies
+			_point.copy( point );
 
 			if ( this._getLonRange() > PI ) {
 
@@ -375,7 +377,7 @@ export class WGS84Region {
 					for ( let i = 0, l = cornerPoints.length; i < l; i ++ ) {
 
 						const p = cornerPoints[ i ];
-						const sqDist = p.distanceToSquared( _point );
+						const sqDist = p.distanceToSquared( point );
 
 						if ( sqDist	< closestDistSq ) {
 
