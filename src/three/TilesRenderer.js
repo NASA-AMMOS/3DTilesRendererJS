@@ -99,12 +99,29 @@ export class TilesRenderer extends TilesRendererBase {
 		const cached = this.root.cached;
 		const boundingBox = cached.box;
 		const obbMat = cached.boxTransform;
+		const sphere = cached.sphere;
 
 		if ( boundingBox ) {
 
 			box.copy( boundingBox );
 			box.applyMatrix4( obbMat );
 
+			return true;
+
+		} else if ( sphere ) {
+
+			box.makeEmpty();
+			box.max.copy( sphere.center );
+			box.min.copy( sphere.center );
+
+			const r = sphere.radius;
+			box.max.x += r;
+			box.max.y += r;
+			box.max.z += r;
+
+			box.min.x -= r;
+			box.min.y -= r;
+			box.min.z -= r;
 			return true;
 
 		} else {
