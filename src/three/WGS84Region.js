@@ -327,7 +327,7 @@ export class WGS84Region {
 
 					} else {
 
-						inverted = pointAbove === useSouth;
+						inverted = useSouth && target.y < 0 || useNorth && target.y > 0;
 
 					}
 
