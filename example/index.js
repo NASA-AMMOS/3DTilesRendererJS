@@ -37,6 +37,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
+const hashUrl = window.location.hash.replace( /^#/, '' );
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -62,7 +63,7 @@ let params = {
 	'displayActiveTiles': false,
 	'resolutionScale': 1.0,
 
-	'up': '+Y',
+	'up': hashUrl ? '+Z' : '+Y',
 	'displayBoxBounds': false,
 	'colorMode': 0,
 	'showThirdPerson': false,
@@ -76,7 +77,7 @@ animate();
 
 function reinstantiateTiles() {
 
-	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( tiles ) {
 
@@ -237,7 +238,7 @@ function init() {
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
-	tileOptions.add( params, 'up', [ '+Y', '-Z' ] );
+	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
@@ -480,7 +481,12 @@ function animate() {
 
 		offsetParent.rotation.x = Math.PI / 2;
 
+	} else if ( params.up === '+Z' ) {
+
+		offsetParent.rotation.x = - Math.PI / 2;
+
 	}
+
 	offsetParent.updateMatrixWorld( true );
 
 	// update tiles center
