@@ -9,7 +9,7 @@ import {
 } from 'three';
 
 export const WGS84_MAJOR_RADIUS = 10;// 6378137.0;
-export const WGS84_MINOR_RADIUS = 10; //6356752.314245;
+export const WGS84_MINOR_RADIUS = 5; //6356752.314245;
 const PI = Math.PI;
 const PI2 = PI * 2;
 const PI_OVER_2 = PI / 2;
@@ -23,11 +23,28 @@ const _plane = new Plane();
 const _surfaceNormal = new Vector3();
 const _point = new Vector3();
 
+function getRadiusFromLat( lat ) {
+
+	lat -= PI_OVER_2;
+
+	// https://math.stackexchange.com/questions/432902/how-to-get-the-radius-of-an-ellipse-at-a-specific-angle-by-knowing-its-semi-majo
+	const r1 = WGS84_MAJOR_RADIUS;
+	const r2 = WGS84_MINOR_RADIUS;
+	const r12 = r1 * r1;
+	const r22 = r2 * r2;
+	const latSin = Math.sin( lat );
+	const latCos = Math.cos( lat );
+	const radius = r1 * r2 / Math.sqrt( r12 * latSin * latSin + r22 * latCos * latCos );
+
+	return radius;
+}
+
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
 	target.setFromSphericalCoords( 1, lat, PI_OVER_2 );
-	target.x *= WGS84_MAJOR_RADIUS + height;
-	target.y *= WGS84_MINOR_RADIUS + height;
+
+	const radius = getRadiusFromLat( lat );
+	target.multiplyScalar( radius );
 
 	// TODO: WGS84 frame specifies Z as north pole
 	// target.z = target.y;
@@ -153,7 +170,7 @@ export class WGS84Region {
 		const belowLon = lat < south;
 
 		const pointInLat = ! belowLon && ! aboveLon;
-		const pointInLon = lon > west && lon < east;
+		const pointInLon = lon >= west && lon <= east;
 
 		if ( pointInLon ) {
 
@@ -415,6 +432,8 @@ export class WGS84Region {
 	getBoundingSphere( sphere ) {
 
 		const {
+			east,
+			west,
 			north,
 			south,
 			minHeight,
@@ -468,10 +487,11 @@ export class WGS84Region {
 		_vecArray[ 7 ].copy( _vec );
 
 		center.x = ( minX + maxX ) / 2;
-		center.z = ( minZ + maxZ ) / 2;
-		center.applyAxisAngle( _zVec, this._getLonRange() / 2 );
-
 		center.y = ( minY + maxY ) / 2;
+		center.z = ( minZ + maxZ ) / 2;
+
+		const halfLon = MathUtils.lerp( west, east, 0.5 );
+		center.applyAxisAngle( _zVec, halfLon );
 
 		// TODO: ideally we'd center the point on whatever axis is longest so the sphere is minimal.
 		sphere.setFromPoints( _vecArray, center );
