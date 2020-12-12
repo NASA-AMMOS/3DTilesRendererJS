@@ -58,10 +58,8 @@ function toSmallestRot( angle ) {
 		return angle;
 
 	}
-	// console.log('AFTER ANLGLE', angle > Math.PI ? ( 2 * Math.PI ) - angle : angle);
 
 	return angle > Math.PI ? ( 2 * Math.PI ) - angle : angle;
-
 
 }
 
@@ -147,42 +145,6 @@ export class WGS84Region {
 		eastPlane.setFromNormalAndCoplanarPoint( _vec3, _vec );
 		this.planes.push( eastPlane );
 
-		return;
-
-		// north plane
-		if ( this.north % Math.PI !== 0 ) {
-
-			this.getPointAt( 1, 0, 1, _vec ); // north west max corner
-			this.getPointAt( 1, 0, 0, _vec2 ); // north west min corner
-			this.getPointAt( 1, 1, 1, _vec3 ); // north east max corner
-
-			_vec2.sub( _vec ).normalize(); // north west inward vector
-			_vec3.sub( _vec ).normalize(); // max north eastward vector
-			_vec3.cross( _vec2 );
-
-			const northPlane = new Plane();
-			northPlane.setFromNormalAndCoplanarPoint( _vec3, _vec );
-			this.planes.push( northPlane );
-
-		}
-
-		// south plane
-		if ( this.south % Math.PI !== 0 ) {
-
-			this.getPointAt( 0, 0, 1, _vec ); // south west max corner
-			this.getPointAt( 0, 0, 0, _vec2 ); // south west min corner
-			this.getPointAt( 0, 1, 1, _vec3 ); // south east max corner
-
-			_vec2.sub( _vec ).normalize(); // south west inward vector
-			_vec3.sub( _vec ).normalize(); // max south eastward vector
-			_vec3.cross( _vec2 );
-
-			const southPlane = new Plane();
-			southPlane.setFromNormalAndCoplanarPoint( _vec3, _vec );
-			this.planes.push( southPlane );
-
-		}
-
 	}
 
 	getLatRange() {
@@ -231,6 +193,12 @@ export class WGS84Region {
 
 	}
 
+	getSphere( sphere ) {
+
+		// TODO
+
+	}
+
 	getPrimaryPoints( target ) {
 
 		this.getCornerPoints( target );
@@ -240,39 +208,10 @@ export class WGS84Region {
 
 	}
 
-	getObb( box, matrix ) {
-
-		// Get the axis dictated by the center axis and up (or right if pointing up)
-
-		this.getPrimaryPoints( _vecArray );
-		for ( let i = 0, l = _vecArray.length; i < l; i ++ ) {
-
-			// transform vector to local values
-			box.expandByPoint( _vecArray[ i ] );
-
-		}
-
-	}
-
 	isPointInLatLon( point ) {
 
 		let lat = vectorToLatitude( point );
 		let lon = vectorToLongitude( point );
-
-		// if ( this.south % ( 2 * Math.PI ) < 0 ) {
-
-		// 	lat *= - 1;
-		// 	lon += Math.PI;
-
-		// }
-
-		// const avgLon = MathUtils.lerp( this.east, this.west, 0.5 );
-		// if ( Math.abs( toSmallestRot( avgLon - lon ) ) > Math.PI / 2 ) {
-
-		// 	console.log('TEST', Math.abs( toSmallestRot( avgLon - lon ) ) );
-		// 	lat = 0;
-
-		// }
 
 		lat -= this.south;
 		lat %= 2 * Math.PI;
@@ -281,7 +220,7 @@ export class WGS84Region {
 
 		lon -= this.west;
 		lon %= 2 * Math.PI;
-		if ( lon < - Math.PI ) {
+		if ( lon < 0 ) {
 
 			lon += 2 * Math.PI;
 
@@ -290,25 +229,10 @@ export class WGS84Region {
 
 		return lat > this.south && lat < this.north && lon > this.west && lon < this.east;
 
-		if ( lon < this.west || lon > this.east ) {
-
-			if ( Math.abs( toSmallestRot( lon - this.west ) ) < Math.abs( toSmallestRot( lon - this.east ) ) ) {
-
-				lon = this.west;
-
-			} else {
-
-				lon = this.east;
-
-			}
-
-		}
-
 	}
 
 	getClosestPointToPoint( point, target ) {
 
-		// TODO: not catching > Math.PI lon
 		if ( this.isPointInLatLon( point ) ) {
 
 			const lat = vectorToLatitude( point );
@@ -339,11 +263,13 @@ export class WGS84Region {
 		_point.copy( point );
 		point = _point;
 
-		// eastPlane.projectPoint( point, target );
-		// console.log( eastPlane.constant );
-		// console.log( target );
-		// return;
+		const lonGreaterThanPi = westPlane.normal.dot( eastPlane.normal ) > 0;
+		if ( lonGreaterThanPi && ( insideWest || insideEast ) ) {
 
+			insideEast = true;
+			insideWest = true;
+
+		}
 		if ( insideWest && ! insideEast ) {
 
 			eastPlane.projectPoint( point, target );
@@ -368,15 +294,10 @@ export class WGS84Region {
 
 		}
 
-		const lonGreaterThanPi = westPlane.normal.dot( eastPlane.normal ) > 0;
-		const latGreaterThanHalfPi = this.getLatRange() > Math.PI / 2;
-
 		const l2 = vectorToLatitude( point );
-		const dothing =
-			( this.south < Math.PI / 2 && l2 > Math.PI / 2 ) ||
-			( this.north > Math.PI / 2 && l2 < Math.PI / 2 );
-
-		console.log( 'DOING', dothing, l2, l2 > Math.PI / 2 );
+		const oppositeHemisphere =
+			( this.north < Math.PI / 2 && l2 > Math.PI / 2 ) ||
+			( this.south > Math.PI / 2 && l2 < Math.PI / 2 );
 
 		if ( insideEast && insideWest ) {
 
@@ -385,6 +306,7 @@ export class WGS84Region {
 
 			const surfaceNormal = new Vector3();
 			latLonToSurfaceVector( lat, lon, surfaceNormal );
+
 			const surfaceDistance = surfaceNormal.length();
 
 			const delta = new Vector3();
@@ -415,7 +337,7 @@ export class WGS84Region {
 
 			return;
 
-		} else if ( ( ! insideWest || ! insideEast ) && ! lonGreaterThanPi || dothing ) {
+		} else if ( ( ! insideWest || ! insideEast ) && ! lonGreaterThanPi || oppositeHemisphere ) {
 
 			const points = new Array( 8 ).fill().map( () => new Vector3() );
 			this.getCornerPoints( points );
@@ -443,13 +365,6 @@ export class WGS84Region {
 
 
 
-		// check if inside rectangle wedge
-			// if so then clamp height
-		// project point onto wedge planes
-		// get tangent vector for current heights
-		// project point onto height planes
-
-
 
 
 
@@ -475,40 +390,9 @@ export class WGS84Region {
 
 		}
 
-		// if ( ! insideEast && ! insideWest ) {
-
-		// 	target.x *= 0.01;
-		// 	target.z *= 0.01;
-
-		// }
-
-		if ( insideEast || insideWest ) {
-
-			// TOOD: project onto north and south planes that are correct when not inside the wedge
-
-		}
-
-
 
 		let lat = vectorToLatitude( target );
 		let lon = vectorToLongitude( target );
-
-		// console.log( lat, lon );
-
-		// if ( this.south % ( 2 * Math.PI ) < 0 ) {
-
-		// 	lat *= - 1;
-		// 	lon += Math.PI;
-
-		// }
-
-		const avgLon = MathUtils.lerp( this.east, this.west, 0.5 );
-		// if ( Math.abs( toSmallestRot( avgLon - lon ) ) > Math.PI / 2 ) {
-
-		// 	console.log('TEST', Math.abs( toSmallestRot( avgLon - lon ) ) );
-		// 	lat = 0;
-
-		// }
 
 		lat -= this.south;
 		lat %= 2 * Math.PI;
@@ -538,8 +422,6 @@ export class WGS84Region {
 
 		}
 
-
-		// lon = MathUtils.clamp( lon, this.west, this.east );
 
 		const ogLength = target.length();
 		latLonToSurfaceVector( lat, lon, target );
