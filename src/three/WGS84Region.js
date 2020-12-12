@@ -8,6 +8,10 @@ import {
 	Plane,
 } from 'three';
 
+const PI = Math.PI;
+const PI2 = PI * 2;
+const PI_OVER_2 = PI / 2;
+const PI_OVER_4 = PI / 4;
 const WGS84_MAJOR_RADIUS = 10;// 6378137.0;
 const WGS84_MINOR_RADIUS = 10; //6356752.314245;
 const _vecArray = new Array( 12 ).fill().map( () => new Vector3() );
@@ -19,7 +23,7 @@ const _zVec = new Vector3( 0, 1, 0 );
 function clampLat( lat, min, max ) {
 
 	lat -= min;
-	lat %= 2 * Math.PI;
+	lat %= PI2;
 	lat += min;
 	return MathUtils.clamp( lat, min, max );
 
@@ -28,10 +32,10 @@ function clampLat( lat, min, max ) {
 function clampLon( lon, min, max ) {
 
 	lon -= min;
-	lon %= 2 * Math.PI;
-	if ( lon < - Math.PI ) {
+	lon %= PI2;
+	if ( lon < - PI ) {
 
-		lon += 2 * Math.PI;
+		lon += PI2;
 
 	}
 	lon += min;
@@ -42,14 +46,14 @@ function clampLon( lon, min, max ) {
 
 function toSmallestRot( angle ) {
 
-	angle = angle % ( 2 * Math.PI );
-	if ( angle < - Math.PI ) {
+	angle = angle % ( PI2 );
+	if ( angle < - PI ) {
 
-		return angle + 2 * Math.PI;
+		return angle + PI2;
 
-	} else if ( angle > Math.PI ) {
+	} else if ( angle > PI ) {
 
-		return 2 * Math.PI - angle;
+		return PI2 - angle;
 
 	} else {
 
@@ -59,11 +63,11 @@ function toSmallestRot( angle ) {
 
 }
 
-function latLonToSurfaceVector( lat, lon, target ) {
+function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
-	target.setFromSphericalCoords( 1, lat, Math.PI / 2 );
-	target.x *= WGS84_MAJOR_RADIUS;
-	target.y *= WGS84_MINOR_RADIUS;
+	target.setFromSphericalCoords( 1, lat, PI_OVER_2 );
+	target.x *= WGS84_MAJOR_RADIUS + height;
+	target.y *= WGS84_MINOR_RADIUS + height;
 
 	// TODO: WGS84 frame specifies Z as north pole
 	// target.z = target.y;
@@ -83,7 +87,7 @@ function vectorToLatitude( vector ) {
 
 function vectorToLongitude( vector ) {
 
-	return Math.atan2( vector.x, vector.z ) - Math.PI / 2;
+	return Math.atan2( vector.x, vector.z ) - PI_OVER_2;
 
 }
 
@@ -135,15 +139,15 @@ export class WGS84Region {
 
 		let lat = vectorToLatitude( point );
 		lat -= south;
-		lat %= 2 * Math.PI;
+		lat %= PI2;
 		lat += south;
 
 		let lon = vectorToLongitude( point );
 		lon -= west;
-		lon %= 2 * Math.PI;
+		lon %= PI2;
 		if ( lon < 0 ) {
 
-			lon += 2 * Math.PI;
+			lon += PI2;
 
 		}
 		lon += west;
@@ -207,7 +211,7 @@ export class WGS84Region {
 
 		} else {
 
-			if ( this.getLonRange() > Math.PI ) {
+			if ( this.getLonRange() > PI ) {
 
 				if ( westPlane.distanceToPoint( point ) < eastPlane.distanceToPoint( point ) ) {
 
@@ -303,7 +307,7 @@ export class WGS84Region {
 
 					lat = vectorToLatitude( point );
 					lat -= south;
-					lat %= 2 * Math.PI;
+					lat %= PI2;
 					lat += south;
 
 					lon = projectedLon;
@@ -317,8 +321,8 @@ export class WGS84Region {
 
 					} else {
 
-						useSouth = lat < Math.PI / 2;
-						useNorth = lat >= Math.PI / 2;
+						useSouth = lat < PI_OVER_2;
+						useNorth = lat >= PI_OVER_2;
 
 					}
 
@@ -338,14 +342,14 @@ export class WGS84Region {
 
 					}
 
-					const regionAllAbove = north > Math.PI / 2 && south > Math.PI / 2;
-					const regionAllBelow = north < Math.PI / 2 && south < Math.PI / 2;
+					const regionAllAbove = north > PI_OVER_2 && south > PI_OVER_2;
+					const regionAllBelow = north < PI_OVER_2 && south < PI_OVER_2;
 					let inverted = false;
 
 					lat = vectorToLatitude( target );
 					lon = vectorToLongitude( target );
 
-					const pointAbove = lat > Math.PI / 2;
+					const pointAbove = lat > PI_OVER_2;
 					if ( regionAllAbove || regionAllBelow ) {
 
 						inverted = pointAbove === regionAllBelow;
@@ -534,7 +538,7 @@ export class WGS84Region {
 		this.getPrimaryPoints( _vecArray );
 		sphere.setFromPoints( _vecArray );
 
-		if ( this.getLonRange() > Math.PI ) {
+		if ( this.getLonRange() > PI ) {
 
 			sphere.radius = WGS84_MAJOR_RADIUS;
 
@@ -543,22 +547,64 @@ export class WGS84Region {
 
 		return;
 
+		const {
+			north,
+			south,
+			east,
+			west,
+			maxHeight,
+		} = this;
 		const center = sphere.center;
+		let minX, maxX;
+		let minY, maxY;
+		let minZ, maxZ;
 
-		// center height
+		// get y range
 		this.getPointAt( 0, 0, 1, _vec );
-		const minY = _vec.y;
+		minY = _vec.y;
 
-		this.getPointAt( 0, 0, 1, _vec );
-		const maxY = _vec.y;
+		this.getPointAt( 1, 0, 1, _vec );
+		maxY = _vec.y;
+
+		let maxLat;
+		if ( ( Math.abs( north - PI_OVER_2 ) < 0 ) !== Math.abs( south - PI_OVER_2 ) ) {
+
+			maxLat = PI;
+
+		} else {
+
+			maxLat = Math.max( north, south );
+
+		}
+
+		let maxLon = Math.min( PI, this.getLonRange() );
+
+		// get x range
+		latLonToSurfaceVector( maxLat, 0, _vec, maxHeight );
+		maxX = _vec.x;
+
+		latLonToSurfaceVector( maxLat, this.getLonRange() / 2, _vec, maxHeight );
+		minX = _vec.x;
+
+		latLonToSurfaceVector( Math.min( south, north ), this.getLonRange() / 2, _vec, this.minHeight );
+		minX = Math.min( minX, _vec.x );
+
+		// get z range
+		latLonToSurfaceVector( maxLat, 0, _vec, maxHeight );
+		maxZ = _vec.x;
+
+		latLonToSurfaceVector( maxLat, maxLon, _vec, maxHeight );
+		minZ = _vec.x;
+
+		latLonToSurfaceVector( Math.min( south, north ), maxLon, _vec, this.minHeight );
+		minZ = Math.min( minZ, _vec.x );
+
+		center.x = ( minX + maxX ) / 2;
+		center.z = ( minZ + maxZ ) / 2;
+		center.applyAxisAngle( _vecZ, this.getLonRange() / 2 );
 
 		center.y = ( minY + maxY ) / 2;
-
-		// get the furthest distance along x (at lon 0)
-		// get min distance along x ( max of half lon range using both min lon and max lon (up to PI / 2 ) ) ( this is center z )
-		// track range of z value above to get z center
-
-		// radius is the max of the half the distance of the above ranges
+		sphere.radius = Math.max( maxX - minX, maxY - minY, maxZ - minZ ) / 2;
 
 	}
 
@@ -579,14 +625,14 @@ export class WGS84Region {
 		let lon = vectorToLongitude( point );
 
 		lat -= this.south;
-		lat %= 2 * Math.PI;
+		lat %= PI2;
 		lat += this.south;
 
 		lon -= this.west;
-		lon %= 2 * Math.PI;
+		lon %= PI2;
 		if ( lon < 0 ) {
 
-			lon += 2 * Math.PI;
+			lon += PI2;
 
 		}
 		lon += this.west;
