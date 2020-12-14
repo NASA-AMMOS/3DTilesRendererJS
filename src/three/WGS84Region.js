@@ -151,6 +151,8 @@ export class WGS84Region {
 			cornerPoints,
 		} = this;
 
+		// get the latitude and longitude adjusted to the
+		// range of the region
 		let lat = vectorToLatitude( point );
 		lat -= south;
 		lat %= PI2;
@@ -176,6 +178,8 @@ export class WGS84Region {
 
 			if ( pointInLat ) {
 
+				// if the point is within the latitude and longitude patch then just clamp
+				// the length of the point to the min and max heights.
 				const pointDistance = point.length();
 				latLonToSurfaceVector( lat, lon, target );
 
@@ -187,6 +191,8 @@ export class WGS84Region {
 
 			} else {
 
+				// if the point is in the longitude band but outside the latitude wedge then
+				// clamp to the north and south planes beforehand.
 				lat = MathUtils.clamp( lat, south, north );
 				lon = MathUtils.clamp( lon, west, east );
 
@@ -229,6 +235,7 @@ export class WGS84Region {
 
 			if ( this._getLonRange() > PI ) {
 
+				// project onto the closest plane
 				if ( westPlane.distanceToPoint( _point ) < eastPlane.distanceToPoint( _point ) ) {
 
 					westPlane.projectPoint( _point, target );
@@ -389,29 +396,60 @@ export class WGS84Region {
 
 				} else {
 
-					let closestDistSq = Infinity;
-					let closestPt = null;
-					for ( let i = 0, l = cornerPoints.length; i < l; i ++ ) {
+					// project onto the closest plane
+					if ( westPlane.distanceToPoint( _point ) < eastPlane.distanceToPoint( _point ) ) {
 
-						const p = cornerPoints[ i ];
-						const sqDist = p.distanceToSquared( point );
+						westPlane.projectPoint( _point, target );
+						lon = east;
 
-						if ( sqDist	< closestDistSq ) {
+					} else {
 
-							closestDistSq = sqDist;
-							closestPt = p;
-
-						}
+						eastPlane.projectPoint( _point, target );
+						lon = west;
 
 					}
 
-					target.copy( closestPt );
+					latLonToSurfaceVector( north, lon, _vec2 );
+					latLonToSurfaceVector( south, lon, _vec );
+
+					if ( point.distanceToSquared( _vec ) < point.distanceToSquared( _vec2 ) ) {
+
+						_vec2.copy( _vec );
+						_plane.normal.copy( southDirection ).applyAxisAngle( _zVec, lon );
+						_plane.projectPoint( target, _vec );
+
+					} else {
+
+						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
+						_plane.projectPoint( target, _vec );
+
+					}
+
+					let distance;
+					if ( _vec.dot( _vec2 ) < 0 ) {
+
+						distance = 0;
+
+					} else {
+
+						distance = _vec.length();
+
+					}
+
+					const surfaceDistance = _vec2.length();
+					target
+						.copy( _vec2 )
+						.multiplyScalar(
+							MathUtils.clamp( distance, surfaceDistance + minHeight, surfaceDistance + maxHeight ) / surfaceDistance,
+						);
 
 				}
 
 			}
 
 		}
+
+		return target;
 
 	}
 
