@@ -89,7 +89,6 @@ export class WGS84Region {
 		this.westPlane = new Plane();
 		this.northDirection = new Vector3();
 		this.southDirection = new Vector3();
-		this.cornerPoints = new Array( 8 ).fill().map( () => new Vector3() );
 		this.set( west, south, east, north, minHeight, maxHeight );
 
 	}
@@ -148,7 +147,6 @@ export class WGS84Region {
 			southDirection,
 			eastPlane,
 			westPlane,
-			cornerPoints,
 		} = this;
 
 		// get the latitude and longitude adjusted to the
@@ -551,7 +549,6 @@ export class WGS84Region {
 			westPlane,
 			northDirection,
 			southDirection,
-			cornerPoints,
 		} = this;
 
 		// west plane
@@ -621,9 +618,6 @@ export class WGS84Region {
 			northDirection.crossVectors( surfaceNormal, tangent );
 
 		}
-
-		// Get the corner points
-		this._getCornerPoints( cornerPoints );
 
 	}
 
