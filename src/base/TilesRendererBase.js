@@ -404,7 +404,7 @@ export class TilesRendererBase {
 
 				stats.failed ++;
 
-				console.error( 'TilesRenderer : Failed to load tile.' );
+				console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
 				console.error( e );
 				tile.__loadingState = FAILED;
 

@@ -38607,7 +38607,7 @@ function () {
           }
 
           stats.failed++;
-          console.error('TilesRenderer : Failed to load tile.');
+          console.error("TilesRenderer : Failed to load tile at url \"".concat(tile.content.uri, "\"."));
           console.error(e);
           tile.__loadingState = _constants.FAILED;
         } else {
@@ -49069,6 +49069,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 var ALL_HITS = 1;
 var FIRST_HIT_ONLY = 2;
+var hashUrl = window.location.hash.replace(/^#/, '');
 var camera, controls, scene, renderer, tiles, cameraHelper;
 var thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 var secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -49090,7 +49091,7 @@ var params = {
   'stopAtEmptyTiles': true,
   'displayActiveTiles': false,
   'resolutionScale': 1.0,
-  'up': '+Y',
+  'up': hashUrl ? '+Z' : '+Y',
   'displayBoxBounds': false,
   'colorMode': 0,
   'showThirdPerson': false,
@@ -49101,7 +49102,7 @@ init();
 animate();
 
 function reinstantiateTiles() {
-  var url = window.location.hash.replace(/^#/, '') || '../data/tileset.json';
+  var url = hashUrl || '../data/tileset.json';
 
   if (tiles) {
     offsetParent.remove(tiles.group);
@@ -49233,7 +49234,7 @@ function init() {
   tileOptions.add(params, 'errorTarget').min(0).max(50);
   tileOptions.add(params, 'errorThreshold').min(0).max(1000);
   tileOptions.add(params, 'maxDepth').min(1).max(100);
-  tileOptions.add(params, 'up', ['+Y', '-Z']);
+  tileOptions.add(params, 'up', ['+Y', '+Z', '-Z']);
   tileOptions.open();
   var debug = gui.addFolder('Debug Options');
   debug.add(params, 'displayBoxBounds');
@@ -49428,6 +49429,8 @@ function animate() {
 
   if (params.up === '-Z') {
     offsetParent.rotation.x = Math.PI / 2;
+  } else if (params.up === '+Z') {
+    offsetParent.rotation.x = -Math.PI / 2;
   }
 
   offsetParent.updateMatrixWorld(true); // update tiles center
@@ -49585,7 +49588,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61086" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63111" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
