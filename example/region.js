@@ -11,6 +11,7 @@ import {
 	Matrix4,
 	Line,
 	Sphere,
+	PlaneHelper,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
@@ -26,6 +27,7 @@ let region, regionHelper;
 let infoEl;
 let cameraSphere, gizmoSphere, gizmoGroup, gizmoLine, transformGroup;
 let boundingSphereMesh, boundingSphereCenter;
+let westPlaneHelper, eastPlaneHelper;
 let needsUpdate = false;
 
 const tempVec = new Vector3();
@@ -36,10 +38,11 @@ const params = {
 
 	transformControls: true,
 	boundingSphere: true,
-	north: 0,
-	south: 0.5,
-	east: 0,
-	west: 0.5,
+	planeHelpers: true,
+	north: 0.5,
+	south: 0,
+	east: 0.5,
+	west: 0,
 	minHeight: 0,
 	maxHeight: 1,
 
@@ -76,6 +79,10 @@ function init() {
 	);
 	regionHelper = new WGS84RegionHelper( region );
 	scene.add( regionHelper );
+
+	westPlaneHelper = new PlaneHelper( region.westPlane, 10, 0xff0000 );
+	eastPlaneHelper = new PlaneHelper( region.eastPlane, 10, 0x00ff00 );
+	scene.add( westPlaneHelper, eastPlaneHelper );
 
 	transformGroup = new Group();
 	scene.add( transformGroup );
@@ -135,6 +142,12 @@ function init() {
 	gui.add( params, 'boundingSphere' ).onChange( v => {
 
 		boundingSphereMesh.visible = v;
+
+	} );
+	gui.add( params, 'planeHelpers' ).onChange( v => {
+
+		westPlaneHelper.visible = v;
+		eastPlaneHelper.visible = v;
 
 	} );
 	gui.add( params, 'north', - Math.PI, Math.PI, 0.01 ).onChange( onChange );
