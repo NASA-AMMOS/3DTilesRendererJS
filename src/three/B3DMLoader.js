@@ -22,7 +22,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 			loader.parse( gltfBuffer, null, model => {
 
 				const { batchTable, featureTable } = b3dm;
-				const { scene } = model
+				const { scene } = model;
 
 				const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 				if ( rtcCenter ) {
