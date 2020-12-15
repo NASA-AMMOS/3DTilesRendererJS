@@ -41818,10 +41818,21 @@ function (_B3DMLoaderBase) {
         var manager = _this2.manager;
         var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
         loader.parse(gltfBuffer, null, function (model) {
-          model.batchTable = b3dm.batchTable;
-          model.featureTable = b3dm.featureTable;
-          model.scene.batchTable = b3dm.batchTable;
-          model.scene.featureTable = b3dm.featureTable;
+          var batchTable = b3dm.batchTable,
+              featureTable = b3dm.featureTable;
+          var scene = model.scene;
+          var rtcCenter = featureTable.getData('RTC_CENTER');
+
+          if (rtcCenter) {
+            scene.position.x += rtcCenter[0];
+            scene.position.y += rtcCenter[1];
+            scene.position.z += rtcCenter[2];
+          }
+
+          model.batchTable = batchTable;
+          model.featureTable = featureTable;
+          scene.batchTable = batchTable;
+          scene.featureTable = featureTable;
           resolve(model);
         }, reject);
       });
@@ -43271,6 +43282,7 @@ function (_TilesRendererBase) {
             break;
         }
 
+        scene.updateMatrix();
         scene.matrix.premultiply(cachedTransform);
         scene.matrix.decompose(scene.position, scene.quaternion, scene.scale);
         scene.traverse(function (c) {
@@ -44972,8 +44984,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var camera, controls, scene, renderer;
-var box, dirLight;
+var camera, controls, scene, renderer, offsetGroup;
+var dirLight;
 var raycaster, mouse;
 var model;
 var infoEl;
@@ -45036,15 +45048,19 @@ function init() {
   scene.add(dirLight);
   var ambLight = new _three.AmbientLight(0xffffff, 0.05);
   scene.add(ambLight);
-  box = new _three.Box3();
+  offsetGroup = new _three.Group();
+  scene.add(offsetGroup);
   new _index.B3DMLoader().load('https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/city/lr.b3dm').then(function (res) {
     console.log(res);
     model = res.scene;
-    scene.add(res.scene); // reassign the material to use the batchid highlight variant.
+    offsetGroup.add(model);
+    var box = new _three.Box3();
+    box.setFromObject(model);
+    box.getCenter(offsetGroup.position).multiplyScalar(-1); // reassign the material to use the batchid highlight variant.
     // in practice this should copy over any needed uniforms from the
     // original material.
 
-    res.scene.traverse(function (c) {
+    model.traverse(function (c) {
       if (c.isMesh) {
         c.material = new _three.ShaderMaterial(batchIdHighlightShaderMixin(_three.ShaderLib.standard));
       }
@@ -45143,7 +45159,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63111" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57896" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

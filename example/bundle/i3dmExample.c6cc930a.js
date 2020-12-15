@@ -41818,10 +41818,21 @@ function (_B3DMLoaderBase) {
         var manager = _this2.manager;
         var loader = manager.getHandler('path.gltf') || new _GLTFLoader.GLTFLoader(manager);
         loader.parse(gltfBuffer, null, function (model) {
-          model.batchTable = b3dm.batchTable;
-          model.featureTable = b3dm.featureTable;
-          model.scene.batchTable = b3dm.batchTable;
-          model.scene.featureTable = b3dm.featureTable;
+          var batchTable = b3dm.batchTable,
+              featureTable = b3dm.featureTable;
+          var scene = model.scene;
+          var rtcCenter = featureTable.getData('RTC_CENTER');
+
+          if (rtcCenter) {
+            scene.position.x += rtcCenter[0];
+            scene.position.y += rtcCenter[1];
+            scene.position.z += rtcCenter[2];
+          }
+
+          model.batchTable = batchTable;
+          model.featureTable = featureTable;
+          scene.batchTable = batchTable;
+          scene.featureTable = featureTable;
           resolve(model);
         }, reject);
       });
@@ -43271,6 +43282,7 @@ function (_TilesRendererBase) {
             break;
         }
 
+        scene.updateMatrix();
         scene.matrix.premultiply(cachedTransform);
         scene.matrix.decompose(scene.position, scene.quaternion, scene.scale);
         scene.traverse(function (c) {
@@ -45086,7 +45098,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63111" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57896" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
