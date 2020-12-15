@@ -1,6 +1,7 @@
 import { B3DMLoader } from '../src/index.js';
 import {
 	Scene,
+	Group,
 	DirectionalLight,
 	AmbientLight,
 	WebGLRenderer,
@@ -17,8 +18,8 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-let camera, controls, scene, renderer;
-let box, dirLight;
+let camera, controls, scene, renderer, offsetGroup;
+let dirLight;
 let raycaster, mouse;
 let model;
 let infoEl;
@@ -116,7 +117,8 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.05 );
 	scene.add( ambLight );
 
-	box = new Box3();
+	offsetGroup = new Group();
+	scene.add( offsetGroup );
 
 	new B3DMLoader()
 		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/city/lr.b3dm' )
@@ -124,12 +126,17 @@ function init() {
 
 			console.log( res );
 			model = res.scene;
-			scene.add( res.scene );
+			offsetGroup.add( model );
+
+			const box = new Box3();
+			box.setFromObject( model );
+			box.getCenter( offsetGroup.position ).multiplyScalar( - 1 );
+
 
 			// reassign the material to use the batchid highlight variant.
 			// in practice this should copy over any needed uniforms from the
 			// original material.
-			res.scene.traverse( c => {
+			model.traverse( c => {
 
 				if ( c.isMesh ) {
 
