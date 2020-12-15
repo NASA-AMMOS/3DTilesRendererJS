@@ -21,11 +21,23 @@ export class B3DMLoader extends B3DMLoaderBase {
 			const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
 			loader.parse( gltfBuffer, null, model => {
 
-				model.batchTable = b3dm.batchTable;
-				model.featureTable = b3dm.featureTable;
+				const { batchTable, featureTable } = b3dm;
+				const { scene } = model;
 
-				model.scene.batchTable = b3dm.batchTable;
-				model.scene.featureTable = b3dm.featureTable;
+				const rtcCenter = featureTable.getData( 'RTC_CENTER' );
+				if ( rtcCenter ) {
+
+					scene.position.x += rtcCenter[ 0 ];
+					scene.position.y += rtcCenter[ 1 ];
+					scene.position.z += rtcCenter[ 2 ];
+
+				}
+
+				model.batchTable = batchTable;
+				model.featureTable = featureTable;
+
+				scene.batchTable = batchTable;
+				scene.featureTable = featureTable;
 
 				resolve( model );
 
