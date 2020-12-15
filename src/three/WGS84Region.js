@@ -487,7 +487,8 @@ export class WGS84Region {
 		_vecArray[ 2 ].copy( _vec3 );
 		_vecArray[ 3 ].copy( _vec4 );
 
-		let maxLat;
+		let maxLon = Math.min( PI, this._getLonRange() );
+		let maxLat, maxLatRatio;
 		if ( ( north < 0 ) !== ( south < 0 ) ) {
 
 			maxLat = PI / 2;
@@ -497,8 +498,7 @@ export class WGS84Region {
 			maxLat = Math.max( north, south );
 
 		}
-
-		let maxLon = Math.min( PI, this._getLonRange() );
+		maxLatRatio = ( maxLat - south ) / this._getLatRange();
 
 		// get x range
 		latLonToSurfaceVector( maxLat, 0, _vec, maxHeight );
@@ -506,15 +506,16 @@ export class WGS84Region {
 		latLonToSurfaceVector( Math.min( south, north ), this._getLonRange() / 2, _vec3, minHeight );
 		minX = Math.min( _vec.x, _vec2.x, _vec3.x );
 		maxX = Math.max( _vec.x, _vec2.x, _vec3.x );
-		_vecArray[ 4 ].copy( _vec );
-		_vecArray[ 5 ].copy( _vec2 );
-		_vecArray[ 6 ].copy( _vec3 );
+
+		this.getPointAt( maxLatRatio, 0.5, 1, _vec[ 4 ] );
+		this.getPointAt( maxLatRatio, 1, 1, _vec[ 5 ] );
+		this.getPointAt( south < north ? 0 : 1, 1, 1, _vec[ 6 ] );
 
 		// get y range
 		latLonToSurfaceVector( maxLat, maxLon / 2, _vec, maxHeight );
 		maxY = _vec.y;
 		minY = - _vec.y;
-		_vecArray[ 7 ].copy( _vec );
+		this.getPointAt( maxLatRatio, 1, 1, _vecArray[ 7 ] );
 
 		center.x = ( minX + maxX ) / 2;
 		center.y = ( minY + maxY ) / 2;
