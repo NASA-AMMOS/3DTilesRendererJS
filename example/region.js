@@ -12,6 +12,7 @@ import {
 	Line,
 	Sphere,
 	PlaneHelper,
+	AxesHelper,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
@@ -83,6 +84,8 @@ function init() {
 	westPlaneHelper = new PlaneHelper( region.westPlane, 10, 0xff0000 );
 	eastPlaneHelper = new PlaneHelper( region.eastPlane, 10, 0x00ff00 );
 	scene.add( westPlaneHelper, eastPlaneHelper );
+
+	scene.add( new AxesHelper( 10 ) );
 
 	transformGroup = new Group();
 	scene.add( transformGroup );

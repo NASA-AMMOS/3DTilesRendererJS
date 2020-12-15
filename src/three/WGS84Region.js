@@ -18,7 +18,7 @@ const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _vec3 = new Vector3();
 const _vec4 = new Vector3();
-const _zVec = new Vector3( 0, 1, 0 );
+const _zVec = new Vector3( 0, 0, 1 );
 const _plane = new Plane();
 const _surfaceNormal = new Vector3();
 const _point = new Vector3();
@@ -41,17 +41,11 @@ function getRadiusFromLat( lat ) {
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
 	target.x = Math.cos( lat );
-	target.y = Math.sin( lat );
-	target.z = 0;
+	target.y = 0;
+	target.z = Math.sin( lat );
 
 	const radius = getRadiusFromLat( lat );
 	target.multiplyScalar( radius );
-
-	// TODO: WGS84 frame specifies Z as north pole
-	// target.z = target.y;
-	// target.y = 0;
-
-	// TODO: is this rotating the right direction?
 	target.applyAxisAngle( _zVec, lon );
 	return target;
 
@@ -59,13 +53,13 @@ function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
 function vectorToLatitude( vector ) {
 
-	return Math.asin( vector.y / vector.length() );
+	return Math.asin( vector.z / vector.length() );
 
 }
 
 function vectorToLongitude( vector ) {
 
-	return Math.atan2( vector.x, vector.z ) - PI_OVER_2;
+	return Math.atan2( vector.y, vector.x );
 
 }
 
@@ -162,10 +156,10 @@ export class WGS84Region {
 		}
 		lon += west;
 
-		const aboveLon = lat > north;
-		const belowLon = lat < south;
+		const aboveLat = lat > north;
+		const belowLat = lat < south;
 
-		const pointInLat = ! belowLon && ! aboveLon;
+		const pointInLat = ! belowLat && ! aboveLat;
 		const pointInLon = lon >= west && lon <= east;
 
 		if ( pointInLon ) {
@@ -190,7 +184,7 @@ export class WGS84Region {
 				lat = MathUtils.clamp( lat, south, north );
 				lon = MathUtils.clamp( lon, west, east );
 
-				if ( aboveLon ) {
+				if ( aboveLat ) {
 
 					_plane.constant = 0;
 					_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
@@ -257,7 +251,7 @@ export class WGS84Region {
 
 				} else {
 
-					if ( aboveLon ) {
+					if ( aboveLat ) {
 
 						_plane.constant = 0;
 						_plane.normal.copy( northDirection ).applyAxisAngle( _zVec, lon );
@@ -365,9 +359,15 @@ export class WGS84Region {
 
 						inverted = pointAbove === regionAllBelow;
 
-					} else {
+					} else if ( ! validProj ) {
 
-						inverted = useSouth && target.y >= 0 || useNorth && target.y <= 0;
+						if ( Math.abs( target.z ) <= 1e-10 ) {
+
+							target.z = 0;
+
+						}
+
+						inverted = useSouth && target.z >= 0 || useNorth && target.z <= 0;
 
 					}
 
@@ -474,13 +474,13 @@ export class WGS84Region {
 		let minY, maxY;
 		let minZ, maxZ;
 
-		// get y range
+		// get z range
 		this.getPointAt( 0, 0, 1, _vec );
 		this.getPointAt( 0, 0, 0, _vec2 );
 		this.getPointAt( 1, 0, 1, _vec3 );
 		this.getPointAt( 1, 0, 0, _vec4 );
-		minY = Math.min( _vec.y, _vec2.y, _vec3.y, _vec4.y );
-		maxY = Math.max( _vec.y, _vec2.y, _vec3.y, _vec4.y );
+		minZ = Math.min( _vec.z, _vec2.z, _vec3.z, _vec4.z );
+		maxZ = Math.max( _vec.z, _vec2.z, _vec3.z, _vec4.z );
 		_vecArray.forEach( v => v.copy( _vec ) );
 		_vecArray[ 0 ].copy( _vec );
 		_vecArray[ 1 ].copy( _vec2 );
@@ -510,10 +510,10 @@ export class WGS84Region {
 		_vecArray[ 5 ].copy( _vec2 );
 		_vecArray[ 6 ].copy( _vec3 );
 
-		// get z range
+		// get y range
 		latLonToSurfaceVector( maxLat, maxLon / 2, _vec, maxHeight );
-		maxZ = _vec.z;
-		minZ = - _vec.z;
+		maxY = _vec.y;
+		minY = - _vec.y;
 		_vecArray[ 7 ].copy( _vec );
 
 		center.x = ( minX + maxX ) / 2;
@@ -578,12 +578,12 @@ export class WGS84Region {
 		surfaceNormal.normalize();
 
 		tangent.copy( surfaceNormal );
-		tangent.y = 0;
-		[ tangent.x, tangent.z ] = [ tangent.z, tangent.x ];
+		tangent.z = 0;
+		[ tangent.x, tangent.y ] = [ tangent.y, tangent.x ];
 		tangent.x *= - 1;
 		tangent.normalize();
 
-		if ( Math.abs( surfaceNormal.y ) === 1 ) {
+		if ( Math.abs( surfaceNormal.z ) === 1 ) {
 
 			southDirection.set( 1, 0, 0 );
 
@@ -598,12 +598,12 @@ export class WGS84Region {
 		surfaceNormal.normalize();
 
 		tangent.copy( surfaceNormal );
-		tangent.y = 0;
-		[ tangent.x, tangent.z ] = [ tangent.z, tangent.x ];
+		tangent.z = 0;
+		[ tangent.x, tangent.y ] = [ tangent.y, tangent.x ];
 		tangent.x *= - 1;
 		tangent.normalize();
 
-		if ( Math.abs( surfaceNormal.y ) === 1 ) {
+		if ( Math.abs( surfaceNormal.z ) === 1 ) {
 
 			northDirection.set( 1, 0, 0 );
 
