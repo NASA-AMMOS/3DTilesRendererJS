@@ -25,8 +25,6 @@ const _point = new Vector3();
 
 function getRadiusFromLat( lat ) {
 
-	lat -= PI_OVER_2;
-
 	// https://math.stackexchange.com/questions/432902/how-to-get-the-radius-of-an-ellipse-at-a-specific-angle-by-knowing-its-semi-majo
 	const r1 = WGS84_MAJOR_RADIUS;
 	const r2 = WGS84_MINOR_RADIUS;
@@ -41,7 +39,9 @@ function getRadiusFromLat( lat ) {
 
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
-	target.setFromSphericalCoords( 1, lat, PI_OVER_2 );
+	target.x = Math.cos( lat );
+	target.y = Math.sin( lat );
+	target.z = 0;
 
 	const radius = getRadiusFromLat( lat );
 	target.multiplyScalar( radius );
@@ -58,7 +58,7 @@ function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
 
 function vectorToLatitude( vector ) {
 
-	return Math.acos( vector.y / vector.length() );
+	return Math.asin( vector.y / vector.length() );
 
 }
 
@@ -116,11 +116,6 @@ export class WGS84Region {
 		}
 
 		south = south % PI2;
-		if ( south < 0 ) {
-
-			south += PI2;
-
-		}
 
 		this.west = west;
 		this.east = west + lonRange;
@@ -234,7 +229,7 @@ export class WGS84Region {
 			if ( this._getLonRange() > PI ) {
 
 				// project onto the closest plane
-				if ( westPlane.distanceToPoint( _point ) < eastPlane.distanceToPoint( _point ) ) {
+				if ( westPlane.distanceToPoint( _point ) > eastPlane.distanceToPoint( _point ) ) {
 
 					westPlane.projectPoint( _point, target );
 					lon = west;
@@ -257,9 +252,7 @@ export class WGS84Region {
 
 					const surfaceDistance = target.length();
 					const newDistance = MathUtils.clamp( pointDistance, surfaceDistance + minHeight, surfaceDistance + maxHeight );
-					target
-						.copy( _point )
-						.multiplyScalar( newDistance / pointDistance );
+					target.multiplyScalar( newDistance / surfaceDistance );
 
 				} else {
 
@@ -298,8 +291,8 @@ export class WGS84Region {
 
 				const westDist = westPlane.normal.dot( _point );
 				const eastDist = eastPlane.normal.dot( _point );
-				let insideWest = westDist < 0;
-				let insideEast = eastDist < 0;
+				let insideWest = westDist > 0;
+				let insideEast = eastDist > 0;
 
 				let validProj = false;
 				let projectedLon;
@@ -307,7 +300,7 @@ export class WGS84Region {
 				if ( insideWest && ! insideEast ) {
 
 					eastPlane.projectPoint( _point, target );
-					validProj = westPlane.normal.dot( target ) < 0;
+					validProj = westPlane.normal.dot( target ) > 0;
 					projectedLon = east;
 
 				}
@@ -315,7 +308,7 @@ export class WGS84Region {
 				if ( insideEast && ! insideWest ) {
 
 					westPlane.projectPoint( _point, target );
-					validProj = eastPlane.normal.dot( target ) < 0;
+					validProj = eastPlane.normal.dot( target ) > 0;
 					projectedLon = west;
 
 				}
@@ -340,8 +333,8 @@ export class WGS84Region {
 
 					} else {
 
-						useSouth = lat < PI_OVER_2;
-						useNorth = lat >= PI_OVER_2;
+						useSouth = lat < 0;
+						useNorth = lat >= 0;
 
 					}
 
@@ -359,21 +352,21 @@ export class WGS84Region {
 
 					}
 
-					const regionAllAbove = north > PI_OVER_2 && south > PI_OVER_2;
-					const regionAllBelow = north < PI_OVER_2 && south < PI_OVER_2;
+					const regionAllAbove = north > 0 && south > 0;
+					const regionAllBelow = north < 0 && south < 0;
 					let inverted = false;
 
 					lat = vectorToLatitude( target );
 					lon = vectorToLongitude( target );
 
-					const pointAbove = lat > PI_OVER_2;
+					const pointAbove = lat > 0;
 					if ( regionAllAbove || regionAllBelow ) {
 
 						inverted = pointAbove === regionAllBelow;
 
 					} else {
 
-						inverted = useSouth && target.y < 0 || useNorth && target.y > 0;
+						inverted = useSouth && target.y >= 0 || useNorth && target.y <= 0;
 
 					}
 
@@ -395,7 +388,7 @@ export class WGS84Region {
 				} else {
 
 					// project onto the closest plane
-					if ( westPlane.distanceToPoint( _point ) < eastPlane.distanceToPoint( _point ) ) {
+					if ( westPlane.distanceToPoint( _point ) > eastPlane.distanceToPoint( _point ) ) {
 
 						westPlane.projectPoint( _point, target );
 						lon = east;
@@ -494,7 +487,7 @@ export class WGS84Region {
 		_vecArray[ 3 ].copy( _vec4 );
 
 		let maxLat;
-		if ( ( north - PI_OVER_2 < 0 ) !== ( south - PI_OVER_2 < 0 ) ) {
+		if ( ( north < 0 ) !== ( south < 0 ) ) {
 
 			maxLat = PI / 2;
 
