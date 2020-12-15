@@ -35,6 +35,7 @@ function getRadiusFromLat( lat ) {
 	const radius = r1 * r2 / Math.sqrt( r12 * latSin * latSin + r22 * latCos * latCos );
 
 	return radius;
+
 }
 
 function latLonToSurfaceVector( lat, lon, target, height = 0 ) {
