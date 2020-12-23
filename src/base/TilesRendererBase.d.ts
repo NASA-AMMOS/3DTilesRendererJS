@@ -19,7 +19,7 @@ export class TilesRendererBase {
 	parseQueue : PriorityQueue;
 	downloadQueue : PriorityQueue;
 
-	constructor( url : String );
+	constructor( url : String, ionAccessToken : String );
 	update() : void;
 	traverse(
 		beforeCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null,

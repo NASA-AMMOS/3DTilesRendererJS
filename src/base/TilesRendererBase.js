@@ -8,6 +8,8 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 // Function for sorting the evicted LRU items. We should evict the shallowest depth first.
 const priorityCallback = tile => 1 / ( tile.__depthFromRenderedParent + 1 );
 
+const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlNzMyOGZjZC1jMWUzLTQxNDctOGQxYi03YTYyZDQ1OTIxMjkiLCJpZCI6MjU5LCJpYXQiOjE2MDE1Njk1NDN9.X1a0DCM6F539g9MDSs_ldZ0gwgruxLAZiBl60JwG1ck';
+
 export class TilesRendererBase {
 
 	get rootTileSet() {
@@ -32,12 +34,17 @@ export class TilesRendererBase {
 
 	}
 
-	constructor( url ) {
+	//The url can be:
+	//A plain url to the tileset json file
+	//A Cesium Ion asset number with access token
+	//A url to the Cesium Ion json file with bearer token as the ionAccessToken. This needs to be fetched from the Ion endpoint separately
+	constructor( url, ionAccessToken = defaultIonToken ) {
 
 		// state
 		this.tileSets = {};
-		this.rootURL = url;
 		this.fetchOptions = {};
+
+		this.setupUrlTokens( url, ionAccessToken );
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = priorityCallback;
@@ -74,6 +81,73 @@ export class TilesRendererBase {
 
 	}
 
+	setupUrlTokens( url, ionToken ) {
+
+		this.ionAssetId = this.isInt( url ) ? url : null;
+		this.ionAccessToken = ionToken;
+		this.fetchOptions.headers = {};
+
+		if ( ! this.ionAssetId ) {
+
+			this.rootURL = url;
+			if ( this.isIonJsonUrl( url ) ) {
+
+				this.ionAssetId = url.split( "/" )[ 3 ];
+				this.ionJsonUrl = new URL( url );
+				this.ionVersion = this.ionJsonUrl.searchParams.get( 'v' );
+				this.fetchOptions.headers.Authorization = `Bearer ${ionToken}`;
+				this.rootURL = this.ionJsonUrl;
+
+			}
+			return;
+
+		} else {
+
+			this.ionEndpointUrl = new URL( `https://api.cesium.com/v1/assets/${this.ionAssetId}/endpoint` );
+			this.ionEndpointUrl.searchParams.append( 'access_token', ionToken );
+
+		}
+
+	}
+
+	isInt( input ) {
+
+		return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input, 10 ) ) && Number.isInteger( parseFloat( input, 10 ) ) : Number.isInteger( input );
+
+	}
+	isIonJsonUrl( input ) {
+
+		return input.includes( '://assets.cesium.com/' ) && input.includes( '/tileset.json' );
+
+	}
+
+	getIonAssetJson( url ) {
+
+		return fetch( url, this.fetchOptions )
+			.then( res => {
+
+				if ( res.ok ) {
+
+					return res.json();
+
+				} else {
+
+					return Promise.reject( `${res.status} : ${res.statusText}` );
+
+				}
+
+			} )
+			.then( json => {
+
+				this.ionJsonUrl = new URL( json.url );
+				this.ionVersion = this.ionJsonUrl.searchParams.get( 'v' );
+				this.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+				this.rootURL = this.ionJsonUrl;
+
+			} );
+
+	}
+
 	traverse( beforecb, aftercb ) {
 
 		const tileSets = this.tileSets;
@@ -92,6 +166,18 @@ export class TilesRendererBase {
 		const tileSets = this.tileSets;
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! ( this.rootURL in tileSets ) ) {
+
+			if ( this.ionAssetId && ! this.ionJsonUrl ) {
+
+				if ( this.ionJsonUrl == undefined ) {
+
+					this.ionJsonUrl = false; // Can't use promise to block update loop, hence this hack
+					this.getIonAssetJson( this.ionEndpointUrl ).catch( err => console.error( `TilesRenderer: Failed to load ION endpoint "${this.ionEndpointUrl}" with error: ${err}` ) );
+
+				}
+				return;
+
+			}
 
 			this.loadRootTileSet( this.rootURL );
 			return;
@@ -427,7 +513,14 @@ export class TilesRendererBase {
 
 				}
 
-				return this.fetchTileSet( tile.content.uri, Object.assign( { signal }, this.fetchOptions ), tile );
+				let uri = tile.content.uri;
+				if ( this.ionAssetId ) {
+
+					uri = new URL( tile.content.uri );
+					uri.searchParams.append( 'v', this.ionVersion );
+
+				}
+				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tile );
 
 			} )
 				.then( json => {
@@ -457,8 +550,15 @@ export class TilesRendererBase {
 					return Promise.resolve();
 
 				}
+				let uri = tile.content.uri;
+				if ( this.ionAssetId ) {
 
-				return fetch( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+					uri = new URL( tile.content.uri );
+					uri.searchParams.append( 'v', this.ionVersion );
+
+				}
+
+				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {

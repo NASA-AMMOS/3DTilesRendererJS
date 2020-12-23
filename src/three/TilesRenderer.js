@@ -10,6 +10,7 @@ import {
 	Sphere,
 	Vector3,
 	Vector2,
+	Quaternion,
 	Math as MathUtils,
 	Frustum,
 	LoadingManager,
@@ -213,6 +214,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	rotationBetweenDirections( dir1, dir2 ) {
+
+		const rotation = new Quaternion();
+		const a = new Vector3().crossVectors( dir1, dir2 );
+		rotation.x = a.x;
+		rotation.y = a.y;
+		rotation.z = a.z;
+		rotation.w = 1 + dir1.clone().dot( dir2 );
+		rotation.normalize();
+
+		return rotation;
+
+	}
+
 	deleteCamera( camera ) {
 
 		const cameras = this.cameras;
@@ -247,9 +262,52 @@ export class TilesRenderer extends TilesRendererBase {
 				} );
 
 			}
+			Promise.resolve().then( () => {
+
+				if ( this.ionAssetId ) {
+
+					const transform = this.root.cached.boxTransform;
+					let position = new Vector3().setFromMatrixPosition( transform );
+					let distance = position.length();
+
+					const surfaceDir = position.normalize();
+
+					const rotation = this.rotationBetweenDirections( surfaceDir, new Vector3( 0, 1, 0 ) );
+
+					// Rotate tiles to the north pole around the Earth
+					this.group.quaternion.x = rotation.x;
+					this.group.quaternion.y = rotation.y;
+					this.group.quaternion.z = rotation.z;
+					this.group.quaternion.w = rotation.w;
+
+					//Move tiles to the center of the Earth
+					this.group.position.y = -distance;
+
+				}
+
+			} );
 
 		} );
 		return pr;
+
+	}
+
+	/** set projection matrix to frustum for legacy versions of three.js */
+	setFromProjectionMatrix( frustum, m ) {
+
+		var planes = frustum.planes;
+		var me = m.elements;
+		var me0 = me[ 0 ], me1 = me[ 1 ], me2 = me[ 2 ], me3 = me[ 3 ];
+		var me4 = me[ 4 ], me5 = me[ 5 ], me6 = me[ 6 ], me7 = me[ 7 ];
+		var me8 = me[ 8 ], me9 = me[ 9 ], me10 = me[ 10 ], me11 = me[ 11 ];
+		var me12 = me[ 12 ], me13 = me[ 13 ], me14 = me[ 14 ], me15 = me[ 15 ];
+
+		planes[ 0 ].setComponents( me3 - me0, me7 - me4, me11 - me8, me15 - me12 ).normalize();
+		planes[ 1 ].setComponents( me3 + me0, me7 + me4, me11 + me8, me15 + me12 ).normalize();
+		planes[ 2 ].setComponents( me3 + me1, me7 + me5, me11 + me9, me15 + me13 ).normalize();
+		planes[ 3 ].setComponents( me3 - me1, me7 - me5, me11 - me9, me15 - me13 ).normalize();
+		planes[ 4 ].setComponents( me3 - me2, me7 - me6, me11 - me10, me15 - me14 ).normalize();
+		planes[ 5 ].setComponents( me3 + me2, me7 + me6, me11 + me10, me15 + me14 ).normalize();
 
 	}
 
@@ -336,7 +394,16 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
-			frustum.setFromProjectionMatrix( tempMat );
+
+			if ( typeof frustum.setFromProjectionMatrix === 'function' ) {
+
+				frustum.setFromProjectionMatrix( tempMat );
+
+			} else {
+
+				this.setFromProjectionMatrix( frustum, tempMat );
+
+			}
 
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );
@@ -529,7 +596,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			scene.updateMatrix();
+			//scene.updateMatrix();
 			scene.matrix.premultiply( cachedTransform );
 			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => {
