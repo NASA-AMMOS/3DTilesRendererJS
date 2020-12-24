@@ -38319,6 +38319,8 @@ var priorityCallback = function priorityCallback(tile) {
   return 1 / (tile.__depthFromRenderedParent + 1);
 };
 
+var defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlNzMyOGZjZC1jMWUzLTQxNDctOGQxYi03YTYyZDQ1OTIxMjkiLCJpZCI6MjU5LCJpYXQiOjE2MDE1Njk1NDN9.X1a0DCM6F539g9MDSs_ldZ0gwgruxLAZiBl60JwG1ck';
+
 var TilesRendererBase =
 /*#__PURE__*/
 function () {
@@ -38338,16 +38340,22 @@ function () {
     get: function get() {
       var tileSet = this.rootTileSet;
       return tileSet ? tileSet.root : null;
-    }
+    } //The url can be:
+    //A plain url to the tileset json file
+    //A Cesium Ion asset number with access token
+    //A url to the Cesium Ion json file with bearer token as the ionAccessToken. This needs to be fetched from the Ion endpoint separately
+
   }]);
 
   function TilesRendererBase(url) {
+    var ionAccessToken = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultIonToken;
+
     _classCallCheck(this, TilesRendererBase);
 
     // state
     this.tileSets = {};
-    this.rootURL = url;
     this.fetchOptions = {};
+    this.setupUrlTokens(url, ionAccessToken);
     var lruCache = new _LRUCache.LRUCache();
     lruCache.unloadPriorityCallback = priorityCallback;
     var downloadQueue = new _PriorityQueue.PriorityQueue();
@@ -38379,6 +38387,58 @@ function () {
   }
 
   _createClass(TilesRendererBase, [{
+    key: "setupUrlTokens",
+    value: function setupUrlTokens(url, ionToken) {
+      this.ionAssetId = this.isInt(url) ? url : null;
+      this.ionAccessToken = ionToken;
+      this.fetchOptions.headers = {};
+
+      if (!this.ionAssetId) {
+        this.rootURL = url;
+
+        if (this.isIonJsonUrl(url)) {
+          this.ionAssetId = url.split("/")[3];
+          this.ionJsonUrl = new URL(url);
+          this.ionVersion = this.ionJsonUrl.searchParams.get('v');
+          this.fetchOptions.headers.Authorization = "Bearer ".concat(ionToken);
+          this.rootURL = this.ionJsonUrl;
+        }
+
+        return;
+      } else {
+        this.ionEndpointUrl = new URL("https://api.cesium.com/v1/assets/".concat(this.ionAssetId, "/endpoint"));
+        this.ionEndpointUrl.searchParams.append('access_token', ionToken);
+      }
+    }
+  }, {
+    key: "isInt",
+    value: function isInt(input) {
+      return typeof input === 'string' ? !isNaN(input) && !isNaN(parseFloat(input, 10)) && Number.isInteger(parseFloat(input, 10)) : Number.isInteger(input);
+    }
+  }, {
+    key: "isIonJsonUrl",
+    value: function isIonJsonUrl(input) {
+      return input.includes('://assets.cesium.com/') && input.includes('/tileset.json');
+    }
+  }, {
+    key: "getIonAssetJson",
+    value: function getIonAssetJson(url) {
+      var _this = this;
+
+      return fetch(url, this.fetchOptions).then(function (res) {
+        if (res.ok) {
+          return res.json();
+        } else {
+          return Promise.reject("".concat(res.status, " : ").concat(res.statusText));
+        }
+      }).then(function (json) {
+        _this.ionJsonUrl = new URL(json.url);
+        _this.ionVersion = _this.ionJsonUrl.searchParams.get('v');
+        _this.fetchOptions.headers.Authorization = "Bearer ".concat(json.accessToken);
+        _this.rootURL = _this.ionJsonUrl;
+      });
+    }
+  }, {
     key: "traverse",
     value: function traverse(beforecb, aftercb) {
       var tileSets = this.tileSets;
@@ -38390,12 +38450,26 @@ function () {
   }, {
     key: "update",
     value: function update() {
+      var _this2 = this;
+
       var stats = this.stats;
       var lruCache = this.lruCache;
       var tileSets = this.tileSets;
       var rootTileSet = tileSets[this.rootURL];
 
       if (!(this.rootURL in tileSets)) {
+        if (this.ionAssetId && !this.ionJsonUrl) {
+          if (this.ionJsonUrl == undefined) {
+            this.ionJsonUrl = false; // Can't use promise to block update loop, hence this hack
+
+            this.getIonAssetJson(this.ionEndpointUrl).catch(function (err) {
+              return console.error("TilesRenderer: Failed to load ION endpoint \"".concat(_this2.ionEndpointUrl, "\" with error: ").concat(err));
+            });
+          }
+
+          return;
+        }
+
         this.loadRootTileSet(this.rootURL);
         return;
       } else if (!rootTileSet || !rootTileSet.root) {
@@ -38498,7 +38572,7 @@ function () {
   }, {
     key: "fetchTileSet",
     value: function fetchTileSet(url, fetchOptions) {
-      var _this = this;
+      var _this3 = this;
 
       var parent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       return fetch(url, fetchOptions).then(function (res) {
@@ -38514,7 +38588,7 @@ function () {
         var basePath = _path.default.dirname(url);
 
         (0, _traverseFunctions.traverseSet)(json.root, function (node, parent) {
-          return _this.preprocessNode(node, parent, basePath);
+          return _this3.preprocessNode(node, parent, basePath);
         }, null, parent, parent ? parent.__depth : 0);
         return json;
       });
@@ -38543,7 +38617,7 @@ function () {
   }, {
     key: "requestTileContents",
     value: function requestTileContents(tile) {
-      var _this2 = this;
+      var _this4 = this;
 
       // If the tile is already being loaded then don't
       // start it again.
@@ -38565,7 +38639,7 @@ function () {
         } else if (isExternalTileSet) {
           t.children.length = 0;
         } else {
-          _this2.disposeTile(t);
+          _this4.disposeTile(t);
         } // Decrement stats
 
 
@@ -38622,9 +38696,16 @@ function () {
             return Promise.resolve();
           }
 
-          return _this2.fetchTileSet(tile.content.uri, Object.assign({
+          var uri = tile.content.uri;
+
+          if (_this4.ionAssetId) {
+            uri = new URL(tile.content.uri);
+            uri.searchParams.append('v', _this4.ionVersion);
+          }
+
+          return _this4.fetchTileSet(uri, Object.assign({
             signal: signal
-          }, _this2.fetchOptions), tile);
+          }, _this4.fetchOptions), tile);
         }).then(function (json) {
           // if it has been unloaded then the tile has been disposed
           if (tile.__loadIndex !== loadIndex) {
@@ -38642,9 +38723,16 @@ function () {
             return Promise.resolve();
           }
 
-          return fetch(tile.content.uri, Object.assign({
+          var uri = tile.content.uri;
+
+          if (_this4.ionAssetId) {
+            uri = new URL(tile.content.uri);
+            uri.searchParams.append('v', _this4.ionVersion);
+          }
+
+          return fetch(uri, Object.assign({
             signal: signal
-          }, _this2.fetchOptions));
+          }, _this4.fetchOptions));
         }).then(function (res) {
           if (tile.__loadIndex !== loadIndex) {
             return;
@@ -38673,7 +38761,7 @@ function () {
 
             var uri = tile.content.uri;
             var extension = uri.split(/\./g).pop();
-            return _this2.parseTile(buffer, tile, extension);
+            return _this4.parseTile(buffer, tile, extension);
           });
         }).then(function () {
           // if it has been unloaded then the tile has been disposed
@@ -38685,11 +38773,11 @@ function () {
           tile.__loadingState = _constants.LOADED;
 
           if (tile.__wasSetVisible) {
-            _this2.setTileVisible(tile, true);
+            _this4.setTileVisible(tile, true);
           }
 
           if (tile.__wasSetActive) {
-            _this2.setTileActive(tile, true);
+            _this4.setTileActive(tile, true);
           }
         }).catch(errorCallback);
       }
@@ -43019,6 +43107,18 @@ function (_TilesRendererBase) {
       return true;
     }
   }, {
+    key: "rotationBetweenDirections",
+    value: function rotationBetweenDirections(dir1, dir2) {
+      var rotation = new _three.Quaternion();
+      var a = new _three.Vector3().crossVectors(dir1, dir2);
+      rotation.x = a.x;
+      rotation.y = a.y;
+      rotation.z = a.z;
+      rotation.w = 1 + dir1.clone().dot(dir2);
+      rotation.normalize();
+      return rotation;
+    }
+  }, {
     key: "deleteCamera",
     value: function deleteCamera(camera) {
       var cameras = this.cameras;
@@ -43056,8 +43156,57 @@ function (_TilesRendererBase) {
             _this2.onLoadTileSet(json, url);
           });
         }
+
+        Promise.resolve().then(function () {
+          if (_this2.ionAssetId) {
+            var transform = _this2.root.cached.boxTransform;
+            var position = new _three.Vector3().setFromMatrixPosition(transform);
+            var distance = position.length();
+            var surfaceDir = position.normalize();
+
+            var rotation = _this2.rotationBetweenDirections(surfaceDir, new _three.Vector3(0, 1, 0)); // Rotate tiles to the north pole around the Earth
+
+
+            _this2.group.quaternion.x = rotation.x;
+            _this2.group.quaternion.y = rotation.y;
+            _this2.group.quaternion.z = rotation.z;
+            _this2.group.quaternion.w = rotation.w; //Move tiles to the center of the Earth
+
+            _this2.group.position.y = -distance;
+          }
+        });
       });
       return pr;
+    }
+    /** set projection matrix to frustum for legacy versions of three.js */
+
+  }, {
+    key: "setFromProjectionMatrix",
+    value: function setFromProjectionMatrix(frustum, m) {
+      var planes = frustum.planes;
+      var me = m.elements;
+      var me0 = me[0],
+          me1 = me[1],
+          me2 = me[2],
+          me3 = me[3];
+      var me4 = me[4],
+          me5 = me[5],
+          me6 = me[6],
+          me7 = me[7];
+      var me8 = me[8],
+          me9 = me[9],
+          me10 = me[10],
+          me11 = me[11];
+      var me12 = me[12],
+          me13 = me[13],
+          me14 = me[14],
+          me15 = me[15];
+      planes[0].setComponents(me3 - me0, me7 - me4, me11 - me8, me15 - me12).normalize();
+      planes[1].setComponents(me3 + me0, me7 + me4, me11 + me8, me15 + me12).normalize();
+      planes[2].setComponents(me3 + me1, me7 + me5, me11 + me9, me15 + me13).normalize();
+      planes[3].setComponents(me3 - me1, me7 - me5, me11 - me9, me15 - me13).normalize();
+      planes[4].setComponents(me3 - me2, me7 - me6, me11 - me10, me15 - me14).normalize();
+      planes[5].setComponents(me3 + me2, me7 + me6, me11 + me10, me15 + me14).normalize();
     }
   }, {
     key: "update",
@@ -43124,7 +43273,13 @@ function (_TilesRendererBase) {
         tempMat.copy(group.matrixWorld);
         tempMat.premultiply(camera.matrixWorldInverse);
         tempMat.premultiply(camera.projectionMatrix);
-        frustum.setFromProjectionMatrix(tempMat); // get transform position in group root frame
+
+        if (typeof frustum.setFromProjectionMatrix === 'function') {
+          frustum.setFromProjectionMatrix(tempMat);
+        } else {
+          this.setFromProjectionMatrix(frustum, tempMat);
+        } // get transform position in group root frame
+
 
         position.set(0, 0, 0);
         position.applyMatrix4(camera.matrixWorld);
@@ -45158,7 +45313,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62977" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56952" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
