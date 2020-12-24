@@ -25,7 +25,9 @@ import {
 	Group,
 	TorusBufferGeometry,
 	OrthographicCamera,
-	sRGBEncoding
+	sRGBEncoding,
+	Vector4,
+	Vector3,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -46,6 +48,9 @@ let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
+const moveDirection = new Vector4( 0, 0, 0, 0 );
+const originalTarget = new Vector3( 0, 0, 0 );
+let originalDistance = 0;
 
 let params = {
 
@@ -299,6 +304,92 @@ function init() {
 	stats = new Stats();
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
+
+	window.addEventListener( 'keydown', e => {
+
+		if ( moveDirection.length() === 0 ) {
+
+			originalDistance = camera.position.distanceTo( controls.target );
+			originalTarget.copy( controls.target );
+
+		}
+
+		switch ( e.key ) {
+
+			case 'w':
+				moveDirection.z = - 1;
+				break;
+			case 's':
+				moveDirection.z = 1;
+				break;
+			case 'a':
+				moveDirection.x = - 1;
+				break;
+			case 'd':
+				moveDirection.x = 1;
+				break;
+			case 'q':
+				moveDirection.y = 1;
+				break;
+			case 'e':
+				moveDirection.y = - 1;
+				break;
+			case 'r':
+				console.log( originalDistance );
+				moveDirection.set( 0, 0, - 1, 0 ).applyMatrix4( camera.matrixWorld );
+				controls.target.set( 0, 0, 0 );
+				camera.position.set( 0, 0, 0 ).addScaledVector( moveDirection, - originalDistance );
+				moveDirection.set( 0, 0, 0, 0 );
+				break;
+
+		}
+
+		if ( moveDirection.length() !== 0 ) {
+
+			const vec = new Vector4( 0, 0, - 1, 0 );
+			vec.applyMatrix4( camera.matrixWorld );
+			controls.minDistance = 0.01;
+			controls.maxDistance = 0.01;
+			controls.target.copy( camera.position ).addScaledVector( vec, 0.01 );
+
+		}
+
+	} );
+
+	window.addEventListener( 'keyup', e => {
+
+		switch( e.key ) {
+
+			case 'w':
+			case 's':
+				moveDirection.z = 0;
+				break;
+			case 'a':
+			case 'd':
+				moveDirection.x = 0;
+				break;
+			case 'q':
+			case 'e':
+				moveDirection.y = 0;
+				break;
+
+		}
+
+		if ( moveDirection.length() === 0 ) {
+
+			const vec = new Vector4( 0, 0, - 1, 0 );
+			vec.applyMatrix4( camera.matrixWorld );
+			controls.minDistance = 1;
+			controls.maxDistance = 2000;
+			controls
+				.target
+				.copy( camera.position )
+				.addScaledVector( vec, Math.min( originalDistance, camera.position.distanceTo( originalTarget ) ) );
+
+		}
+
+
+	} );
 
 }
 
@@ -562,6 +653,11 @@ function animate() {
 }
 
 function render() {
+
+	const dir = new Vector4();
+	dir.copy( moveDirection ).applyMatrix4( camera.matrixWorld );
+	camera.position.addScaledVector( dir, 1.5 );
+	controls.target.addScaledVector( dir, 1.5 );
 
 	updateOrthoCamera();
 
