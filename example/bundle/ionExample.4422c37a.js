@@ -49295,19 +49295,18 @@ function loadIonJson(assetId, accessToken) {
 }
 
 function setupTiles() {
-  tiles.fetchOptions.mode = 'cors';
+  tiles.fetchOptions.mode = 'cors'; // Note the DRACO compression files need to be supplied via an explicit source.
+  // We use unpkg here but in practice should be provided by the application.
+
+  var dracoLoader = new _DRACOLoader.DRACOLoader();
+  dracoLoader.setDecoderPath('https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/');
+  dracoLoader.setDecoderConfig({
+    type: "js"
+  });
+  var loader = new _GLTFLoader.GLTFLoader(tiles.manager);
+  loader.setDRACOLoader(dracoLoader);
   tiles.manager.addHandler(/\.gltf$/, {
     parse: function parse() {
-      // Note the DRACO compression files need to be supplied via an explicit source.
-      // We use unpkg here but in practice should be provided by the application.
-      var dracoLoader = new _DRACOLoader.DRACOLoader();
-      dracoLoader.setDecoderPath('https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/');
-      dracoLoader.setDecoderConfig({
-        type: "js"
-      }); // WASM overloads memory without some sort of bottleneck on loading
-
-      var loader = new _GLTFLoader.GLTFLoader(tiles.manager);
-      loader.setDRACOLoader(dracoLoader);
       return loader.parse.apply(loader, arguments);
     }
   });
@@ -49805,7 +49804,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "65246" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56606" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
