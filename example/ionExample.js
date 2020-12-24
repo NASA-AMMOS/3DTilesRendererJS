@@ -110,18 +110,19 @@ function setupTiles() {
 
 	tiles.fetchOptions.mode = 'cors';
 
+	// Note the DRACO compression files need to be supplied via an explicit source.
+	// We use unpkg here but in practice should be provided by the application.
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+	dracoLoader.setDecoderConfig( { type: "js" } );
+
+	const loader = new GLTFLoader( tiles.manager );
+	loader.setDRACOLoader( dracoLoader );
+
 	tiles.manager.addHandler( /\.gltf$/, {
 
 		parse( ...args ) {
 
-			// Note the DRACO compression files need to be supplied via an explicit source.
-			// We use unpkg here but in practice should be provided by the application.
-			const dracoLoader = new DRACOLoader();
-			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
-			dracoLoader.setDecoderConfig( { type: "js" } ); // WASM overloads memory without some sort of bottleneck on loading
-
-			const loader = new GLTFLoader( tiles.manager );
-			loader.setDRACOLoader( dracoLoader );
 			return loader.parse( ...args );
 
 		}
