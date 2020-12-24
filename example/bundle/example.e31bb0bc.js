@@ -43178,36 +43178,6 @@ function (_TilesRendererBase) {
       });
       return pr;
     }
-    /** set projection matrix to frustum for legacy versions of three.js */
-
-  }, {
-    key: "setFromProjectionMatrix",
-    value: function setFromProjectionMatrix(frustum, m) {
-      var planes = frustum.planes;
-      var me = m.elements;
-      var me0 = me[0],
-          me1 = me[1],
-          me2 = me[2],
-          me3 = me[3];
-      var me4 = me[4],
-          me5 = me[5],
-          me6 = me[6],
-          me7 = me[7];
-      var me8 = me[8],
-          me9 = me[9],
-          me10 = me[10],
-          me11 = me[11];
-      var me12 = me[12],
-          me13 = me[13],
-          me14 = me[14],
-          me15 = me[15];
-      planes[0].setComponents(me3 - me0, me7 - me4, me11 - me8, me15 - me12).normalize();
-      planes[1].setComponents(me3 + me0, me7 + me4, me11 + me8, me15 + me12).normalize();
-      planes[2].setComponents(me3 + me1, me7 + me5, me11 + me9, me15 + me13).normalize();
-      planes[3].setComponents(me3 - me1, me7 - me5, me11 - me9, me15 - me13).normalize();
-      planes[4].setComponents(me3 - me2, me7 - me6, me11 - me10, me15 - me14).normalize();
-      planes[5].setComponents(me3 + me2, me7 + me6, me11 + me10, me15 + me14).normalize();
-    }
   }, {
     key: "update",
     value: function update() {
@@ -43268,18 +43238,12 @@ function (_TilesRendererBase) {
           info.pixelSize = Math.max(h / resolution.height, w / resolution.width);
         }
 
-        info.invScale = invScale; // get frustum in grop root frame
+        info.invScale = invScale; // get frustum in group root frame
 
         tempMat.copy(group.matrixWorld);
         tempMat.premultiply(camera.matrixWorldInverse);
         tempMat.premultiply(camera.projectionMatrix);
-
-        if (typeof frustum.setFromProjectionMatrix === 'function') {
-          frustum.setFromProjectionMatrix(tempMat);
-        } else {
-          this.setFromProjectionMatrix(frustum, tempMat);
-        } // get transform position in group root frame
-
+        frustum.setFromProjectionMatrix(tempMat); // get transform position in group root frame
 
         position.set(0, 0, 0);
         position.applyMatrix4(camera.matrixWorld);
@@ -49754,7 +49718,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56952" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57932" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
