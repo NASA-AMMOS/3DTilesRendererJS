@@ -114,7 +114,6 @@ function setupTiles() {
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
 	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
-	dracoLoader.setDecoderConfig( { type: "js" } );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
@@ -132,9 +131,17 @@ function setupTiles() {
 
 }
 
+function isInt( input ) {
+
+	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input, 10 ) ) && Number.isInteger( parseFloat( input, 10 ) ) : Number.isInteger( input );
+
+}
+
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../data/tileset.json';
+	let url = hashUrl || '../data/tileset.json';
+
+	url = isInt( hashUrl ) ? hashUrl : url;
 
 	if ( tiles ) {
 
