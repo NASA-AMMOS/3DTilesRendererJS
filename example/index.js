@@ -86,16 +86,16 @@ function reinstantiateTiles() {
 
 	}
 
+	// Note the DRACO compression files need to be supplied via an explicit source.
+	// We use unpkg here but in practice should be provided by the application.
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
+
 	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, {
 
 		parse( ...args ) {
-
-			// Note the DRACO compression files need to be supplied via an explicit source.
-			// We use unpkg here but in practice should be provided by the application.
-			const dracoLoader = new DRACOLoader();
-			dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
 
 			const loader = new GLTFLoader( tiles.manager );
 			loader.setDRACOLoader( dracoLoader );
