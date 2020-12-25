@@ -1,15 +1,31 @@
-import { Vector3, Vector4 } from 'three';
+import { Clock, Vector3, Vector4 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+const changeEvent = { type: 'fly-change' };
+const startEvent = { type: 'fly-start' };
+const endEvent = { type: 'fly-end' };
 const tempVector = new Vector4( 0, 0, 0, 0 );
 export class FlyOrbitControls extends OrbitControls {
 
 	constructor( camera, domElement ) {
 
+		// Disable use of shift key so we can use it for acceleration
+		const disableShiftKeyCallback = e => {
+
+			if ( this.enabled ) {
+
+				Object.defineProperty( e, 'shiftKey', { get() { return false } } );
+
+			}
+
+		};
+
+		domElement.addEventListener( 'pointerdown', disableShiftKeyCallback );
+
 		super( camera, domElement );
 
-		domElement.tabIndex = 1;
-
+		this.enableKeys = false;
+		this.enableFlight = true;
 		this.baseSpeed = 1;
 		this.fastSpeed = 4;
 		this.forwardKey = 'w';
@@ -33,6 +49,7 @@ export class FlyOrbitControls extends OrbitControls {
 		let originalMaxDistance = 0;
 		let rafHandle = - 1;
 		const originalTarget = new Vector3();
+		const clock = new Clock();
 
 		const endFlight = () => {
 
@@ -41,23 +58,35 @@ export class FlyOrbitControls extends OrbitControls {
 				cancelAnimationFrame( rafHandle );
 				rafHandle = - 1;
 
+				this.minDistance = originalMinDistance;
+				this.maxDistance = originalMaxDistance;
+
+				const targetDistance = Math.min( originalDistance, camera.position.distanceTo( originalTarget ) );
+				tempVector
+					.set( 0, 0, - 1, 0 )
+					.applyMatrix4( camera.matrixWorld );
+				this
+					.target
+					.copy( camera.position )
+					.addScaledVector( tempVector, targetDistance );
+
+				this.dispatchEvent( endEvent );
+
 			}
-
-			this.minDistance = originalMinDistance;
-			this.maxDistance = originalMaxDistance;
-
-			const targetDistance = Math.min( originalDistance, camera.position.distanceTo( originalTarget ) );
-			this
-				.target
-				.set( 0, 0, - targetDistance )
-				.applyMatrix4( camera.matrixWorld );
 
 		};
 
 		const updateFlight = () => {
 
+			if ( ! this.enabled || ! this.enableFlight ) {
+
+				return;
+
+			}
+
 			rafHandle = requestAnimationFrame( updateFlight );
 
+			const delta = 60 * clock.getDelta();
 			const speed = fastHeld ? this.fastSpeed : this.baseSpeed;
 			tempVector.set( 0, 0, 0, 0 );
 			if ( forwardHeld ) tempVector.z -= 1;
@@ -70,10 +99,12 @@ export class FlyOrbitControls extends OrbitControls {
 			tempVector.applyMatrix4( camera.matrixWorld );
 			camera
 				.position
-				.addScaledVector( tempVector, speed );
+				.addScaledVector( tempVector, speed * delta );
 			this
 				.target
-				.addScaledVector( tempVector, speed );
+				.addScaledVector( tempVector, speed * delta );
+
+			this.dispatchEvent( changeEvent );
 
 		};
 		this.updateFlight = updateFlight;
@@ -141,6 +172,8 @@ export class FlyOrbitControls extends OrbitControls {
 
 				if ( rafHandle === - 1 ) {
 
+					this.dispatchEvent( startEvent );
+					clock.getDelta();
 					updateFlight();
 
 				}
@@ -152,6 +185,20 @@ export class FlyOrbitControls extends OrbitControls {
 		const keyUpCallback = e => {
 
 			const key = e.key.toLowerCase();
+
+			switch ( key ) {
+
+				case this.fastKey:
+				case this.forwardKey:
+				case this.backKey:
+				case this.leftKey:
+				case this.rightKey:
+				case this.upKey:
+				case this.downKey:
+					e.stopPropagation();
+					e.preventDefault();
+
+			}
 
 			switch( key ) {
 
@@ -179,20 +226,6 @@ export class FlyOrbitControls extends OrbitControls {
 
 			}
 
-			switch ( key ) {
-
-				case this.fastKey:
-				case this.forwardKey:
-				case this.backKey:
-				case this.leftKey:
-				case this.rightKey:
-				case this.upKey:
-				case this.downKey:
-					e.stopPropagation();
-					e.preventDefault();
-
-			}
-
 			if ( ! ( forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld ) ) {
 
 				endFlight();
@@ -210,6 +243,7 @@ export class FlyOrbitControls extends OrbitControls {
 		this.blurCallback = blurCallback;
 		this.keyDownCallback = keyDownCallback;
 		this.keyUpCallback = keyUpCallback;
+		this.disableShiftKeyCallback = disableShiftKeyCallback;
 
 		this.domElement.addEventListener( 'blur', blurCallback );
 		this.domElement.addEventListener( 'keydown', keyDownCallback );
@@ -221,11 +255,11 @@ export class FlyOrbitControls extends OrbitControls {
 
 		super.dispose();
 
-		this.domElement.addEventListener( 'blur', this.blurCallback );
-		this.domElement.addEventListener( 'keydown', this.keyDownCallback );
-		this.domElement.addEventListener( 'keyup', this.keyUpCallback );
+		this.domElement.removeEventListener( 'blur', this.blurCallback );
+		this.domElement.removeEventListener( 'keydown', this.keyDownCallback );
+		this.domElement.removeEventListener( 'keyup', this.keyUpCallback );
+		this.domElement.removeEventListener( 'pointerdown', this.disableShiftKeyCallback );
 
 	}
-
 
 }

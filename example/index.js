@@ -125,6 +125,7 @@ function init() {
 	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
+	renderer.domElement.tabIndex = 1;
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
@@ -151,6 +152,7 @@ function init() {
 	secondRenderer.domElement.style.right = '0';
 	secondRenderer.domElement.style.top = '0';
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
+	secondRenderer.domElement.tabIndex = 1;
 
 	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
@@ -175,6 +177,7 @@ function init() {
 	thirdPersonRenderer.domElement.style.position = 'fixed';
 	thirdPersonRenderer.domElement.style.left = '5px';
 	thirdPersonRenderer.domElement.style.bottom = '5px';
+	thirdPersonRenderer.domElement.tabIndex = 1;
 
 	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
 	thirdPersonControls.screenSpacePanning = false;
