@@ -25,9 +25,11 @@ import {
 	Group,
 	TorusBufferGeometry,
 	OrthographicCamera,
-	sRGBEncoding
+	sRGBEncoding,
+	Vector4,
+	Vector3,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -46,6 +48,9 @@ let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
+const moveDirection = new Vector4( 0, 0, 0, 0 );
+const originalTarget = new Vector3( 0, 0, 0 );
+let originalDistance = 0;
 
 let params = {
 
@@ -120,6 +125,7 @@ function init() {
 	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
+	renderer.domElement.tabIndex = 1;
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
@@ -146,8 +152,9 @@ function init() {
 	secondRenderer.domElement.style.right = '0';
 	secondRenderer.domElement.style.top = '0';
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
+	secondRenderer.domElement.tabIndex = 1;
 
-	secondControls = new OrbitControls( secondCamera, secondRenderer.domElement );
+	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
 	secondControls.minDistance = 1;
 	secondControls.maxDistance = 2000;
@@ -170,14 +177,15 @@ function init() {
 	thirdPersonRenderer.domElement.style.position = 'fixed';
 	thirdPersonRenderer.domElement.style.left = '5px';
 	thirdPersonRenderer.domElement.style.bottom = '5px';
+	thirdPersonRenderer.domElement.tabIndex = 1;
 
-	thirdPersonControls = new OrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
 	thirdPersonControls.screenSpacePanning = false;
 	thirdPersonControls.minDistance = 1;
 	thirdPersonControls.maxDistance = 2000;
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
+	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
