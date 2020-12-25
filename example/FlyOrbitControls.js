@@ -55,9 +55,11 @@ export class FlyOrbitControls extends OrbitControls {
 
 			if ( rafHandle !== - 1 ) {
 
+				// cancel the animation playing
 				cancelAnimationFrame( rafHandle );
 				rafHandle = - 1;
 
+				// store the original distances for the controls
 				this.minDistance = originalMinDistance;
 				this.maxDistance = originalMaxDistance;
 
@@ -86,8 +88,7 @@ export class FlyOrbitControls extends OrbitControls {
 
 			rafHandle = requestAnimationFrame( updateFlight );
 
-			const delta = 60 * clock.getDelta();
-			const speed = fastHeld ? this.fastSpeed : this.baseSpeed;
+			// get the direction
 			tempVector.set( 0, 0, 0, 0 );
 			if ( forwardHeld ) tempVector.z -= 1;
 			if ( backHeld ) tempVector.z += 1;
@@ -95,8 +96,11 @@ export class FlyOrbitControls extends OrbitControls {
 			if ( rightHeld ) tempVector.x += 1;
 			if ( upHeld ) tempVector.y += 1;
 			if ( downHeld ) tempVector.y -= 1;
-
 			tempVector.applyMatrix4( camera.matrixWorld );
+
+			// apply the movement
+			const delta = 60 * clock.getDelta();
+			const speed = fastHeld ? this.fastSpeed : this.baseSpeed;
 			camera
 				.position
 				.addScaledVector( tempVector, speed * delta );
@@ -107,7 +111,6 @@ export class FlyOrbitControls extends OrbitControls {
 			this.dispatchEvent( changeEvent );
 
 		};
-		this.updateFlight = updateFlight;
 
 		const keyDownCallback = e => {
 
@@ -167,11 +170,18 @@ export class FlyOrbitControls extends OrbitControls {
 				this.minDistance = 0.01;
 				this.maxDistance = 0.01;
 
-				tempVector.set( 0, 0, - 1, 0 ).applyMatrix4( camera.matrixWorld );
-				this.target.copy( camera.position ).addScaledVector( tempVector, 0.01 );
+				// Move the orbit target out to just in front of the camera
+				tempVector
+					.set( 0, 0, - 1, 0 )
+					.applyMatrix4( camera.matrixWorld );
+				this
+					.target
+					.copy( camera.position )
+					.addScaledVector( tempVector, 0.01 );
 
 				if ( rafHandle === - 1 ) {
 
+					// start the flight and reset the clock
 					this.dispatchEvent( startEvent );
 					clock.getDelta();
 					updateFlight();
