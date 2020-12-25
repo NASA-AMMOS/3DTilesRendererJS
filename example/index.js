@@ -48,9 +48,6 @@ let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
-const moveDirection = new Vector4( 0, 0, 0, 0 );
-const originalTarget = new Vector3( 0, 0, 0 );
-let originalDistance = 0;
 
 let params = {
 
