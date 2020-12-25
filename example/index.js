@@ -29,7 +29,7 @@ import {
 	Vector4,
 	Vector3,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -152,7 +152,7 @@ function init() {
 	secondRenderer.domElement.style.top = '0';
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
 
-	secondControls = new OrbitControls( secondCamera, secondRenderer.domElement );
+	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
 	secondControls.minDistance = 1;
 	secondControls.maxDistance = 2000;
@@ -176,13 +176,13 @@ function init() {
 	thirdPersonRenderer.domElement.style.left = '5px';
 	thirdPersonRenderer.domElement.style.bottom = '5px';
 
-	thirdPersonControls = new OrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
 	thirdPersonControls.screenSpacePanning = false;
 	thirdPersonControls.minDistance = 1;
 	thirdPersonControls.maxDistance = 2000;
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
+	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
@@ -304,92 +304,6 @@ function init() {
 	stats = new Stats();
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
-
-	window.addEventListener( 'keydown', e => {
-
-		if ( moveDirection.length() === 0 ) {
-
-			originalDistance = camera.position.distanceTo( controls.target );
-			originalTarget.copy( controls.target );
-
-		}
-
-		switch ( e.key ) {
-
-			case 'w':
-				moveDirection.z = - 1;
-				break;
-			case 's':
-				moveDirection.z = 1;
-				break;
-			case 'a':
-				moveDirection.x = - 1;
-				break;
-			case 'd':
-				moveDirection.x = 1;
-				break;
-			case 'q':
-				moveDirection.y = 1;
-				break;
-			case 'e':
-				moveDirection.y = - 1;
-				break;
-			case 'r':
-				console.log( originalDistance );
-				moveDirection.set( 0, 0, - 1, 0 ).applyMatrix4( camera.matrixWorld );
-				controls.target.set( 0, 0, 0 );
-				camera.position.set( 0, 0, 0 ).addScaledVector( moveDirection, - originalDistance );
-				moveDirection.set( 0, 0, 0, 0 );
-				break;
-
-		}
-
-		if ( moveDirection.length() !== 0 ) {
-
-			const vec = new Vector4( 0, 0, - 1, 0 );
-			vec.applyMatrix4( camera.matrixWorld );
-			controls.minDistance = 0.01;
-			controls.maxDistance = 0.01;
-			controls.target.copy( camera.position ).addScaledVector( vec, 0.01 );
-
-		}
-
-	} );
-
-	window.addEventListener( 'keyup', e => {
-
-		switch( e.key ) {
-
-			case 'w':
-			case 's':
-				moveDirection.z = 0;
-				break;
-			case 'a':
-			case 'd':
-				moveDirection.x = 0;
-				break;
-			case 'q':
-			case 'e':
-				moveDirection.y = 0;
-				break;
-
-		}
-
-		if ( moveDirection.length() === 0 ) {
-
-			const vec = new Vector4( 0, 0, - 1, 0 );
-			vec.applyMatrix4( camera.matrixWorld );
-			controls.minDistance = 1;
-			controls.maxDistance = 2000;
-			controls
-				.target
-				.copy( camera.position )
-				.addScaledVector( vec, Math.min( originalDistance, camera.position.distanceTo( originalTarget ) ) );
-
-		}
-
-
-	} );
 
 }
 
@@ -653,11 +567,6 @@ function animate() {
 }
 
 function render() {
-
-	const dir = new Vector4();
-	dir.copy( moveDirection ).applyMatrix4( camera.matrixWorld );
-	camera.position.addScaledVector( dir, 1.5 );
-	controls.target.addScaledVector( dir, 1.5 );
 
 	updateOrthoCamera();
 
