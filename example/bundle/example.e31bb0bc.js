@@ -44968,7 +44968,296 @@ var MapControls = function (object, domElement) {
 exports.MapControls = MapControls;
 MapControls.prototype = Object.create(_threeModule.EventDispatcher.prototype);
 MapControls.prototype.constructor = MapControls;
-},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js":[function(require,module,exports) {
+},{"../../../build/three.module.js":"../node_modules/three/build/three.module.js"}],"FlyOrbitControls.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.FlyOrbitControls = void 0;
+
+var _three = require("three");
+
+var _OrbitControls2 = require("three/examples/jsm/controls/OrbitControls.js");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var changeEvent = {
+  type: 'fly-change'
+};
+var startEvent = {
+  type: 'fly-start'
+};
+var endEvent = {
+  type: 'fly-end'
+};
+var tempVector = new _three.Vector4(0, 0, 0, 0);
+
+var FlyOrbitControls =
+/*#__PURE__*/
+function (_OrbitControls) {
+  _inherits(FlyOrbitControls, _OrbitControls);
+
+  function FlyOrbitControls(camera, domElement) {
+    var _this;
+
+    _classCallCheck(this, FlyOrbitControls);
+
+    // Disable use of shift key so we can use it for acceleration
+    var disableShiftKeyCallback = function disableShiftKeyCallback(e) {
+      if (_this.enabled) {
+        Object.defineProperty(e, 'shiftKey', {
+          get: function get() {
+            return false;
+          }
+        });
+      }
+    };
+
+    domElement.addEventListener('pointerdown', disableShiftKeyCallback);
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(FlyOrbitControls).call(this, camera, domElement));
+    _this.enableKeys = false;
+    _this.enableFlight = true;
+    _this.baseSpeed = 1;
+    _this.fastSpeed = 4;
+    _this.forwardKey = 'w';
+    _this.backKey = 's';
+    _this.leftKey = 'a';
+    _this.rightKey = 'd';
+    _this.upKey = 'q';
+    _this.downKey = 'e';
+    _this.fastKey = 'shift';
+    var fastHeld = false;
+    var forwardHeld = false;
+    var backHeld = false;
+    var leftHeld = false;
+    var rightHeld = false;
+    var upHeld = false;
+    var downHeld = false;
+    var originalDistance = 0;
+    var originalMinDistance = 0;
+    var originalMaxDistance = 0;
+    var rafHandle = -1;
+    var originalTarget = new _three.Vector3();
+    var clock = new _three.Clock();
+
+    var endFlight = function endFlight() {
+      if (rafHandle !== -1) {
+        // cancel the animation playing
+        cancelAnimationFrame(rafHandle);
+        rafHandle = -1; // store the original distances for the controls
+
+        _this.minDistance = originalMinDistance;
+        _this.maxDistance = originalMaxDistance;
+        var targetDistance = Math.min(originalDistance, camera.position.distanceTo(originalTarget));
+        tempVector.set(0, 0, -1, 0).applyMatrix4(camera.matrixWorld);
+
+        _this.target.copy(camera.position).addScaledVector(tempVector, targetDistance);
+
+        _this.dispatchEvent(endEvent);
+      }
+    };
+
+    var updateFlight = function updateFlight() {
+      if (!_this.enabled || !_this.enableFlight) {
+        return;
+      }
+
+      rafHandle = requestAnimationFrame(updateFlight); // get the direction
+
+      tempVector.set(0, 0, 0, 0);
+      if (forwardHeld) tempVector.z -= 1;
+      if (backHeld) tempVector.z += 1;
+      if (leftHeld) tempVector.x -= 1;
+      if (rightHeld) tempVector.x += 1;
+      if (upHeld) tempVector.y += 1;
+      if (downHeld) tempVector.y -= 1;
+      tempVector.applyMatrix4(camera.matrixWorld); // apply the movement
+
+      var delta = 60 * clock.getDelta();
+      var speed = fastHeld ? _this.fastSpeed : _this.baseSpeed;
+      camera.position.addScaledVector(tempVector, speed * delta);
+
+      _this.target.addScaledVector(tempVector, speed * delta);
+
+      _this.dispatchEvent(changeEvent);
+    };
+
+    var keyDownCallback = function keyDownCallback(e) {
+      var key = e.key.toLowerCase();
+
+      if (rafHandle === -1) {
+        originalMaxDistance = _this.maxDistance;
+        originalMinDistance = _this.minDistance;
+        originalDistance = camera.position.distanceTo(_this.target);
+        originalTarget.copy(_this.target);
+      }
+
+      switch (key) {
+        case _this.forwardKey:
+          forwardHeld = true;
+          break;
+
+        case _this.backKey:
+          backHeld = true;
+          break;
+
+        case _this.leftKey:
+          leftHeld = true;
+          break;
+
+        case _this.rightKey:
+          rightHeld = true;
+          break;
+
+        case _this.upKey:
+          upHeld = true;
+          break;
+
+        case _this.downKey:
+          downHeld = true;
+          break;
+
+        case _this.fastKey:
+          fastHeld = true;
+          break;
+      }
+
+      switch (key) {
+        case _this.fastKey:
+        case _this.forwardKey:
+        case _this.backKey:
+        case _this.leftKey:
+        case _this.rightKey:
+        case _this.upKey:
+        case _this.downKey:
+          e.stopPropagation();
+          e.preventDefault();
+      }
+
+      if (forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld) {
+        _this.minDistance = 0.01;
+        _this.maxDistance = 0.01; // Move the orbit target out to just in front of the camera
+
+        tempVector.set(0, 0, -1, 0).applyMatrix4(camera.matrixWorld);
+
+        _this.target.copy(camera.position).addScaledVector(tempVector, 0.01);
+
+        if (rafHandle === -1) {
+          // start the flight and reset the clock
+          _this.dispatchEvent(startEvent);
+
+          clock.getDelta();
+          updateFlight();
+        }
+      }
+    };
+
+    var keyUpCallback = function keyUpCallback(e) {
+      var key = e.key.toLowerCase();
+
+      switch (key) {
+        case _this.fastKey:
+        case _this.forwardKey:
+        case _this.backKey:
+        case _this.leftKey:
+        case _this.rightKey:
+        case _this.upKey:
+        case _this.downKey:
+          e.stopPropagation();
+          e.preventDefault();
+      }
+
+      switch (key) {
+        case _this.forwardKey:
+          forwardHeld = false;
+          break;
+
+        case _this.backKey:
+          backHeld = false;
+          break;
+
+        case _this.leftKey:
+          leftHeld = false;
+          break;
+
+        case _this.rightKey:
+          rightHeld = false;
+          break;
+
+        case _this.upKey:
+          upHeld = false;
+          break;
+
+        case _this.downKey:
+          downHeld = false;
+          break;
+
+        case _this.fastKey:
+          fastHeld = false;
+          break;
+      }
+
+      if (!(forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld)) {
+        endFlight();
+      }
+    };
+
+    var blurCallback = function blurCallback() {
+      endFlight();
+    };
+
+    _this.blurCallback = blurCallback;
+    _this.keyDownCallback = keyDownCallback;
+    _this.keyUpCallback = keyUpCallback;
+    _this.disableShiftKeyCallback = disableShiftKeyCallback;
+
+    _this.domElement.addEventListener('blur', blurCallback);
+
+    _this.domElement.addEventListener('keydown', keyDownCallback);
+
+    _this.domElement.addEventListener('keyup', keyUpCallback);
+
+    return _this;
+  }
+
+  _createClass(FlyOrbitControls, [{
+    key: "dispose",
+    value: function dispose() {
+      _get(_getPrototypeOf(FlyOrbitControls.prototype), "dispose", this).call(this);
+
+      this.domElement.removeEventListener('blur', this.blurCallback);
+      this.domElement.removeEventListener('keydown', this.keyDownCallback);
+      this.domElement.removeEventListener('keyup', this.keyUpCallback);
+      this.domElement.removeEventListener('pointerdown', this.disableShiftKeyCallback);
+    }
+  }]);
+
+  return FlyOrbitControls;
+}(_OrbitControls2.OrbitControls);
+
+exports.FlyOrbitControls = FlyOrbitControls;
+},{"three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js"}],"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49060,7 +49349,7 @@ var _index = require("../src/index.js");
 
 var _three = require("three");
 
-var _OrbitControls = require("three/examples/jsm/controls/OrbitControls.js");
+var _FlyOrbitControls = require("./FlyOrbitControls.js");
 
 var _BufferGeometryUtils = require("three/examples/jsm/utils/BufferGeometryUtils.js");
 
@@ -49089,6 +49378,9 @@ var box;
 var raycaster, mouse, rayIntersect, lastHoveredElement;
 var offsetParent;
 var statsContainer, stats;
+var moveDirection = new _three.Vector4(0, 0, 0, 0);
+var originalTarget = new _three.Vector3(0, 0, 0);
+var originalDistance = 0;
 var params = {
   'enableUpdate': true,
   'raycast': _index.NONE,
@@ -49147,6 +49439,7 @@ function init() {
   renderer.setClearColor(0x151c1f);
   renderer.outputEncoding = _three.sRGBEncoding;
   document.body.appendChild(renderer.domElement);
+  renderer.domElement.tabIndex = 1;
   camera = new _three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
   camera.position.set(400, 400, 400);
   cameraHelper = new _three.CameraHelper(camera);
@@ -49170,7 +49463,8 @@ function init() {
   secondRenderer.domElement.style.right = '0';
   secondRenderer.domElement.style.top = '0';
   secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
-  secondControls = new _OrbitControls.OrbitControls(secondCamera, secondRenderer.domElement);
+  secondRenderer.domElement.tabIndex = 1;
+  secondControls = new _FlyOrbitControls.FlyOrbitControls(secondCamera, secondRenderer.domElement);
   secondControls.screenSpacePanning = false;
   secondControls.minDistance = 1;
   secondControls.maxDistance = 2000;
@@ -49191,12 +49485,13 @@ function init() {
   thirdPersonRenderer.domElement.style.position = 'fixed';
   thirdPersonRenderer.domElement.style.left = '5px';
   thirdPersonRenderer.domElement.style.bottom = '5px';
-  thirdPersonControls = new _OrbitControls.OrbitControls(thirdPersonCamera, thirdPersonRenderer.domElement);
+  thirdPersonRenderer.domElement.tabIndex = 1;
+  thirdPersonControls = new _FlyOrbitControls.FlyOrbitControls(thirdPersonCamera, thirdPersonRenderer.domElement);
   thirdPersonControls.screenSpacePanning = false;
   thirdPersonControls.minDistance = 1;
   thirdPersonControls.maxDistance = 2000; // controls
 
-  controls = new _OrbitControls.OrbitControls(camera, renderer.domElement);
+  controls = new _FlyOrbitControls.FlyOrbitControls(camera, renderer.domElement);
   controls.screenSpacePanning = false;
   controls.minDistance = 1;
   controls.maxDistance = 2000; // lights
@@ -49571,7 +49866,7 @@ function render() {
     statsContainer.innerHTML = str;
   }
 }
-},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"../node_modules/three/examples/jsm/controls/OrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three/examples/jsm/loaders/DRACOLoader.js":"../node_modules/three/examples/jsm/loaders/DRACOLoader.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"../src/index.js":"../src/index.js","three":"../node_modules/three/build/three.module.js","./FlyOrbitControls.js":"FlyOrbitControls.js","three/examples/jsm/utils/BufferGeometryUtils.js":"../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js","three/examples/jsm/loaders/GLTFLoader.js":"../node_modules/three/examples/jsm/loaders/GLTFLoader.js","three/examples/jsm/loaders/DRACOLoader.js":"../node_modules/three/examples/jsm/loaders/DRACOLoader.js","three/examples/jsm/libs/dat.gui.module.js":"../node_modules/three/examples/jsm/libs/dat.gui.module.js","three/examples/jsm/libs/stats.module.js":"../node_modules/three/examples/jsm/libs/stats.module.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -49599,7 +49894,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62977" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62539" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
