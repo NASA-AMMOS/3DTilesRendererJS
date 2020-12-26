@@ -268,20 +268,18 @@ export class TilesRenderer extends TilesRendererBase {
 
 					const transform = this.root.cached.boxTransform;
 					let position = new Vector3().setFromMatrixPosition( transform );
-					let distance = position.length();
+					let distanceToEarthCenter = position.length();
 
 					const surfaceDir = position.normalize();
 
-					const rotation = this.rotationBetweenDirections( surfaceDir, new Vector3( 0, 1, 0 ) );
+					const rotationToNorthPole = this.rotationBetweenDirections( surfaceDir, new Vector3( 0, 1, 0 ) );
 
-					// Rotate tiles to the north pole around the Earth
-					this.group.quaternion.x = rotation.x;
-					this.group.quaternion.y = rotation.y;
-					this.group.quaternion.z = rotation.z;
-					this.group.quaternion.w = rotation.w;
+					this.group.quaternion.x = rotationToNorthPole.x;
+					this.group.quaternion.y = rotationToNorthPole.y;
+					this.group.quaternion.z = rotationToNorthPole.z;
+					this.group.quaternion.w = rotationToNorthPole.w;
 
-					//Move tiles to the center of the Earth
-					this.group.position.y = -distance;
+					this.group.position.y = -distanceToEarthCenter;
 
 				}
 
