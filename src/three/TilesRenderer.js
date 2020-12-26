@@ -264,22 +264,26 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 			Promise.resolve().then( () => {
 
-				if ( this.ionAssetId ) {
+				if ( this.isGeoReferenced === undefined ) {
 
-					const transform = this.root.cached.boxTransform;
-					let position = new Vector3().setFromMatrixPosition( transform );
-					let distanceToEarthCenter = position.length();
+					this.isGeoReferenced = new Vector3().setFromMatrixPosition( this.root.cached.boxTransform ).length() > 6360000; // approximate Earth radius
+
+				}
+
+				if ( this.isGeoReferenced ) {
+
+					const position = new Vector3().setFromMatrixPosition( this.root.cached.boxTransform );
+					const distanceToEarthCenter = position.length();
 
 					const surfaceDir = position.normalize();
-
-					const rotationToNorthPole = this.rotationBetweenDirections( surfaceDir, new Vector3( 0, 1, 0 ) );
+					const rotationToNorthPole = this.rotationBetweenDirections( surfaceDir, Y_AXIS );
 
 					this.group.quaternion.x = rotationToNorthPole.x;
 					this.group.quaternion.y = rotationToNorthPole.y;
 					this.group.quaternion.z = rotationToNorthPole.z;
 					this.group.quaternion.w = rotationToNorthPole.w;
 
-					this.group.position.y = -distanceToEarthCenter;
+					this.group.position.y = - distanceToEarthCenter;
 
 				}
 

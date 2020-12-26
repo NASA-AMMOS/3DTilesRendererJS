@@ -46,6 +46,8 @@ let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
+const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
+
 let params = {
 
 	'enableUpdate': true,
@@ -55,7 +57,7 @@ let params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I',
+	'ionAccessToken': defaultIonToken,
 	'preFetchToken': false,
 	'errorTarget': 6,
 	'errorThreshold': 60,
@@ -76,35 +78,6 @@ let params = {
 
 init();
 animate();
-
-function loadIonJson( assetId, accessToken ) {
-
-	const ionEndpointUrl = new URL(
-		`https://api.cesium.com/v1/assets/${assetId}/endpoint`
-	);
-	ionEndpointUrl.searchParams.append( "access_token", accessToken );
-
-	return fetch( ionEndpointUrl, { mode: 'cors' } )
-		.then( ( res ) => {
-
-			if ( res.ok ) {
-
-				return res.json();
-
-			} else {
-
-				return Promise.reject( `${res.status} : ${res.statusText}` );
-
-			}
-
-		} )
-		.then( ( json ) => {
-
-			return [ json.url, json.accessToken ];
-
-		} );
-
-}
 
 function setupTiles() {
 
@@ -156,28 +129,49 @@ function reinstantiateTiles() {
 
 	if ( params.ionAssetId ) {
 
-		if ( params.preFetchToken ) {
 
-			// If you don't want to share your ion access token on the client you can pre-fetch a temporary 1h bearer token on the server like so
-			loadIonJson( params.ionAssetId, params.ionAccessToken )
-				.then( ( [ ionUrl, token ] ) => {
+		url = new URL( `https://api.cesium.com/v1/assets/${params.ionAssetId}/endpoint` );
+		url.searchParams.append( 'access_token', params.ionAccessToken );
 
-					tiles = new TilesRenderer( ionUrl, token );
+		fetch( url, { mode: 'cors' } )
+			.then( ( res ) => {
 
-					setupTiles();
+				if ( res.ok ) {
 
-				} );
+					return res.json();
 
+				} else {
 
-		} else {
+					return Promise.reject( `${res.status} : ${res.statusText}` );
 
-			// If no access token is given, the default ion token will be used.
-			tiles = new TilesRenderer( params.ionAssetId, params.ionAccessToken );
+				}
 
-			setupTiles();
+			} )
+			.then( ( json ) => {
 
-		}
+				url = new URL( json.url );
+				const version = url.searchParams.get( 'v' );
 
+				tiles = new TilesRenderer( url );
+				tiles.fetchOptions.headers = {};
+				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+
+				tiles.onPreprocessURL = uri => {
+
+					uri = new URL( uri );
+					uri.searchParams.append( 'v', version );
+					return uri;
+
+				};
+
+				setupTiles();
+
+			} )
+			.catch( err => {
+
+				console.error( 'Unable to get ion tileset:', err );
+
+			} );
 
 	} else {
 
@@ -291,7 +285,12 @@ function init() {
 	scene.add( rayIntersect );
 	rayIntersect.visible = false;
 
-	reinstantiateTiles();
+	new Promise( r => setTimeout( r, 1 ) )
+		.then( () => {
+
+			reinstantiateTiles();
+
+		} );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
