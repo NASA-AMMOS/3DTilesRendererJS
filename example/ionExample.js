@@ -141,7 +141,11 @@ function reinstantiateTiles() {
 
 	let url = hashUrl || '../data/tileset.json';
 
-	url = isInt( hashUrl ) ? hashUrl : url;
+	if ( hashUrl ) {
+
+		params.ionAssetId = isInt( hashUrl ) ? hashUrl : '';
+
+	}
 
 	if ( tiles ) {
 
