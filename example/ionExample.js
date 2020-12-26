@@ -285,12 +285,7 @@ function init() {
 	scene.add( rayIntersect );
 	rayIntersect.visible = false;
 
-	new Promise( r => setTimeout( r, 1 ) )
-		.then( () => {
-
-			reinstantiateTiles();
-
-		} );
+	reinstantiateTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
