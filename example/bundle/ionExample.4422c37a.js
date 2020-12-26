@@ -38319,8 +38319,6 @@ var priorityCallback = function priorityCallback(tile) {
   return 1 / (tile.__depthFromRenderedParent + 1);
 };
 
-var defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlNzMyOGZjZC1jMWUzLTQxNDctOGQxYi03YTYyZDQ1OTIxMjkiLCJpZCI6MjU5LCJpYXQiOjE2MDE1Njk1NDN9.X1a0DCM6F539g9MDSs_ldZ0gwgruxLAZiBl60JwG1ck';
-
 var TilesRendererBase =
 /*#__PURE__*/
 function () {
@@ -38340,22 +38338,18 @@ function () {
     get: function get() {
       var tileSet = this.rootTileSet;
       return tileSet ? tileSet.root : null;
-    } //The url can be:
-    //A plain url to the tileset json file
-    //A Cesium Ion asset number with access token
-    //A url to the Cesium Ion json file with bearer token as the ionAccessToken. This needs to be fetched from the Ion endpoint separately
-
+    }
   }]);
 
   function TilesRendererBase(url) {
-    var ionAccessToken = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultIonToken;
-
     _classCallCheck(this, TilesRendererBase);
 
     // state
     this.tileSets = {};
+    this.rootURL = url;
     this.fetchOptions = {};
-    this.setupUrlTokens(url, ionAccessToken);
+    this.isGeoReferenced = undefined;
+    this.onPreprocessURL = null;
     var lruCache = new _LRUCache.LRUCache();
     lruCache.unloadPriorityCallback = priorityCallback;
     var downloadQueue = new _PriorityQueue.PriorityQueue();
@@ -38387,58 +38381,6 @@ function () {
   }
 
   _createClass(TilesRendererBase, [{
-    key: "setupUrlTokens",
-    value: function setupUrlTokens(url, ionToken) {
-      this.ionAssetId = this.isInt(url) ? url : null;
-      this.ionAccessToken = ionToken;
-      this.fetchOptions.headers = {};
-
-      if (!this.ionAssetId) {
-        this.rootURL = url;
-
-        if (this.isIonJsonUrl(url)) {
-          this.ionAssetId = url.split("/")[3];
-          this.ionJsonUrl = new URL(url);
-          this.ionVersion = this.ionJsonUrl.searchParams.get('v');
-          this.fetchOptions.headers.Authorization = "Bearer ".concat(ionToken);
-          this.rootURL = this.ionJsonUrl;
-        }
-
-        return;
-      } else {
-        this.ionEndpointUrl = new URL("https://api.cesium.com/v1/assets/".concat(this.ionAssetId, "/endpoint"));
-        this.ionEndpointUrl.searchParams.append('access_token', ionToken);
-      }
-    }
-  }, {
-    key: "isInt",
-    value: function isInt(input) {
-      return typeof input === 'string' ? !isNaN(input) && !isNaN(parseFloat(input, 10)) && Number.isInteger(parseFloat(input, 10)) : Number.isInteger(input);
-    }
-  }, {
-    key: "isIonJsonUrl",
-    value: function isIonJsonUrl(input) {
-      return input.includes('://assets.cesium.com/') && input.includes('/tileset.json');
-    }
-  }, {
-    key: "getIonAssetJson",
-    value: function getIonAssetJson(url) {
-      var _this = this;
-
-      return fetch(url, this.fetchOptions).then(function (res) {
-        if (res.ok) {
-          return res.json();
-        } else {
-          return Promise.reject("".concat(res.status, " : ").concat(res.statusText));
-        }
-      }).then(function (json) {
-        _this.ionJsonUrl = new URL(json.url);
-        _this.ionVersion = _this.ionJsonUrl.searchParams.get('v');
-        _this.fetchOptions.headers.Authorization = "Bearer ".concat(json.accessToken);
-        _this.rootURL = _this.ionJsonUrl;
-      });
-    }
-  }, {
     key: "traverse",
     value: function traverse(beforecb, aftercb) {
       var tileSets = this.tileSets;
@@ -38450,26 +38392,12 @@ function () {
   }, {
     key: "update",
     value: function update() {
-      var _this2 = this;
-
       var stats = this.stats;
       var lruCache = this.lruCache;
       var tileSets = this.tileSets;
       var rootTileSet = tileSets[this.rootURL];
 
       if (!(this.rootURL in tileSets)) {
-        if (this.ionAssetId && !this.ionJsonUrl) {
-          if (this.ionJsonUrl == undefined) {
-            this.ionJsonUrl = false; // Can't use promise to block update loop, hence this hack
-
-            this.getIonAssetJson(this.ionEndpointUrl).catch(function (err) {
-              return console.error("TilesRenderer: Failed to load ION endpoint \"".concat(_this2.ionEndpointUrl, "\" with error: ").concat(err));
-            });
-          }
-
-          return;
-        }
-
         this.loadRootTileSet(this.rootURL);
         return;
       } else if (!rootTileSet || !rootTileSet.root) {
@@ -38572,7 +38500,7 @@ function () {
   }, {
     key: "fetchTileSet",
     value: function fetchTileSet(url, fetchOptions) {
-      var _this3 = this;
+      var _this = this;
 
       var parent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       return fetch(url, fetchOptions).then(function (res) {
@@ -38588,7 +38516,7 @@ function () {
         var basePath = _path.default.dirname(url);
 
         (0, _traverseFunctions.traverseSet)(json.root, function (node, parent) {
-          return _this3.preprocessNode(node, parent, basePath);
+          return _this.preprocessNode(node, parent, basePath);
         }, null, parent, parent ? parent.__depth : 0);
         return json;
       });
@@ -38617,7 +38545,7 @@ function () {
   }, {
     key: "requestTileContents",
     value: function requestTileContents(tile) {
-      var _this4 = this;
+      var _this2 = this;
 
       // If the tile is already being loaded then don't
       // start it again.
@@ -38639,7 +38567,7 @@ function () {
         } else if (isExternalTileSet) {
           t.children.length = 0;
         } else {
-          _this4.disposeTile(t);
+          _this2.disposeTile(t);
         } // Decrement stats
 
 
@@ -38696,16 +38624,10 @@ function () {
             return Promise.resolve();
           }
 
-          var uri = tile.content.uri;
-
-          if (_this4.ionAssetId) {
-            uri = new URL(tile.content.uri);
-            uri.searchParams.append('v', _this4.ionVersion);
-          }
-
-          return _this4.fetchTileSet(uri, Object.assign({
+          var uri = _this2.onPreprocessURL ? _this2.onPreprocessURL(tile.content.uri) : tile.content.uri;
+          return _this2.fetchTileSet(uri, Object.assign({
             signal: signal
-          }, _this4.fetchOptions), tile);
+          }, _this2.fetchOptions), tile);
         }).then(function (json) {
           // if it has been unloaded then the tile has been disposed
           if (tile.__loadIndex !== loadIndex) {
@@ -38723,16 +38645,10 @@ function () {
             return Promise.resolve();
           }
 
-          var uri = tile.content.uri;
-
-          if (_this4.ionAssetId) {
-            uri = new URL(tile.content.uri);
-            uri.searchParams.append('v', _this4.ionVersion);
-          }
-
+          var uri = _this2.onPreprocessURL ? _this2.onPreprocessURL(tile.content.uri) : tile.content.uri;
           return fetch(uri, Object.assign({
             signal: signal
-          }, _this4.fetchOptions));
+          }, _this2.fetchOptions));
         }).then(function (res) {
           if (tile.__loadIndex !== loadIndex) {
             return;
@@ -38761,7 +38677,7 @@ function () {
 
             var uri = tile.content.uri;
             var extension = uri.split(/\./g).pop();
-            return _this4.parseTile(buffer, tile, extension);
+            return _this2.parseTile(buffer, tile, extension);
           });
         }).then(function () {
           // if it has been unloaded then the tile has been disposed
@@ -38773,11 +38689,11 @@ function () {
           tile.__loadingState = _constants.LOADED;
 
           if (tile.__wasSetVisible) {
-            _this4.setTileVisible(tile, true);
+            _this2.setTileVisible(tile, true);
           }
 
           if (tile.__wasSetActive) {
-            _this4.setTileActive(tile, true);
+            _this2.setTileActive(tile, true);
           }
         }).catch(errorCallback);
       }
@@ -43158,21 +43074,22 @@ function (_TilesRendererBase) {
         }
 
         Promise.resolve().then(function () {
-          if (_this2.ionAssetId) {
-            var transform = _this2.root.cached.boxTransform;
-            var position = new _three.Vector3().setFromMatrixPosition(transform);
-            var distance = position.length();
+          if (_this2.isGeoReferenced === undefined) {
+            _this2.isGeoReferenced = new _three.Vector3().setFromMatrixPosition(_this2.root.cached.boxTransform).length() > 6360000; // approximate Earth radius
+          }
+
+          if (_this2.isGeoReferenced) {
+            var position = new _three.Vector3().setFromMatrixPosition(_this2.root.cached.boxTransform);
+            var distanceToEarthCenter = position.length();
             var surfaceDir = position.normalize();
 
-            var rotation = _this2.rotationBetweenDirections(surfaceDir, new _three.Vector3(0, 1, 0)); // Rotate tiles to the north pole around the Earth
+            var rotationToNorthPole = _this2.rotationBetweenDirections(surfaceDir, Y_AXIS);
 
-
-            _this2.group.quaternion.x = rotation.x;
-            _this2.group.quaternion.y = rotation.y;
-            _this2.group.quaternion.z = rotation.z;
-            _this2.group.quaternion.w = rotation.w; //Move tiles to the center of the Earth
-
-            _this2.group.position.y = -distance;
+            _this2.group.quaternion.x = rotationToNorthPole.x;
+            _this2.group.quaternion.y = rotationToNorthPole.y;
+            _this2.group.quaternion.z = rotationToNorthPole.z;
+            _this2.group.quaternion.w = rotationToNorthPole.w;
+            _this2.group.position.y = -distanceToEarthCenter;
           }
         });
       });
@@ -49197,14 +49114,6 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
 var ALL_HITS = 1;
 var FIRST_HIT_ONLY = 2;
 var hashUrl = window.location.hash.replace(/^#/, '');
@@ -49215,6 +49124,7 @@ var orthoCamera, orthoCameraHelper;
 var raycaster, mouse, rayIntersect, lastHoveredElement;
 var offsetParent;
 var statsContainer, stats;
+var defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
 var params = {
   'enableUpdate': true,
   'raycast': _index.NONE,
@@ -49222,7 +49132,7 @@ var params = {
   'enableRendererStats': false,
   'orthographic': false,
   'ionAssetId': '40866',
-  'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I',
+  'ionAccessToken': defaultIonToken,
   'preFetchToken': false,
   'errorTarget': 6,
   'errorThreshold': 60,
@@ -49240,22 +49150,6 @@ var params = {
 };
 init();
 animate();
-
-function loadIonJson(assetId, accessToken) {
-  var ionEndpointUrl = new URL("https://api.cesium.com/v1/assets/".concat(assetId, "/endpoint"));
-  ionEndpointUrl.searchParams.append("access_token", accessToken);
-  return fetch(ionEndpointUrl, {
-    mode: 'cors'
-  }).then(function (res) {
-    if (res.ok) {
-      return res.json();
-    } else {
-      return Promise.reject("".concat(res.status, " : ").concat(res.statusText));
-    }
-  }).then(function (json) {
-    return [json.url, json.accessToken];
-  });
-}
 
 function setupTiles() {
   tiles.fetchOptions.mode = 'cors'; // Note the DRACO compression files need to be supplied via an explicit source.
@@ -49279,7 +49173,10 @@ function isInt(input) {
 
 function reinstantiateTiles() {
   var url = hashUrl || '../data/tileset.json';
-  url = isInt(hashUrl) ? hashUrl : url;
+
+  if (hashUrl) {
+    params.ionAssetId = isInt(hashUrl) ? hashUrl : '';
+  }
 
   if (tiles) {
     offsetParent.remove(tiles.group);
@@ -49287,21 +49184,33 @@ function reinstantiateTiles() {
   }
 
   if (params.ionAssetId) {
-    if (params.preFetchToken) {
-      // If you don't want to share your ion access token on the client you can pre-fetch a temporary 1h bearer token on the server like so
-      loadIonJson(params.ionAssetId, params.ionAccessToken).then(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2),
-            ionUrl = _ref2[0],
-            token = _ref2[1];
+    url = new URL("https://api.cesium.com/v1/assets/".concat(params.ionAssetId, "/endpoint"));
+    url.searchParams.append('access_token', params.ionAccessToken);
+    fetch(url, {
+      mode: 'cors'
+    }).then(function (res) {
+      if (res.ok) {
+        return res.json();
+      } else {
+        return Promise.reject("".concat(res.status, " : ").concat(res.statusText));
+      }
+    }).then(function (json) {
+      url = new URL(json.url);
+      var version = url.searchParams.get('v');
+      tiles = new _index.DebugTilesRenderer(url);
+      tiles.fetchOptions.headers = {};
+      tiles.fetchOptions.headers.Authorization = "Bearer ".concat(json.accessToken);
 
-        tiles = new _index.DebugTilesRenderer(ionUrl, token);
-        setupTiles();
-      });
-    } else {
-      // If no access token is given, the default ion token will be used.
-      tiles = new _index.DebugTilesRenderer(params.ionAssetId, params.ionAccessToken);
+      tiles.onPreprocessURL = function (uri) {
+        uri = new URL(uri);
+        uri.searchParams.append('v', version);
+        return uri;
+      };
+
       setupTiles();
-    }
+    }).catch(function (err) {
+      console.error('Unable to get ion tileset:', err);
+    });
   } else {
     tiles = new _index.DebugTilesRenderer(url);
     setupTiles();
@@ -49395,7 +49304,11 @@ function init() {
   rayIntersect.add(rayRing);
   scene.add(rayIntersect);
   rayIntersect.visible = false;
-  reinstantiateTiles();
+  new Promise(function (r) {
+    return setTimeout(r, 1);
+  }).then(function () {
+    reinstantiateTiles();
+  });
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
   renderer.domElement.addEventListener('mousemove', onMouseMove, false);
@@ -49769,7 +49682,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57932" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57512" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
