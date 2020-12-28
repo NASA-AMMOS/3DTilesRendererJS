@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "start": "concurrently \"parcel watch example/*.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
+    "build": "parcel build example/*.html --out-dir ./dist/ --public-url . --no-cache",
     "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },
