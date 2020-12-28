@@ -60,7 +60,6 @@ let params = {
 
 	'ionAssetId': '40866',
 	'ionAccessToken': defaultIonToken,
-	'preFetchToken': false,
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -341,7 +340,6 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'ionAssetId' );
 	tileOptions.add( params, 'ionAccessToken' );
-	tileOptions.add( params, 'preFetchToken' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
