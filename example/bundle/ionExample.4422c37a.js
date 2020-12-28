@@ -38348,7 +38348,6 @@ function () {
     this.tileSets = {};
     this.rootURL = url;
     this.fetchOptions = {};
-    this.isGeoReferenced = undefined;
     this.onPreprocessURL = null;
     var lruCache = new _LRUCache.LRUCache();
     lruCache.unloadPriorityCallback = priorityCallback;
@@ -42926,6 +42925,11 @@ function (_TilesRendererBase) {
 
 
   _createClass(TilesRenderer, [{
+    key: "getRootMatrix",
+    value: function getRootMatrix() {
+      return this.root.cached.boxTransform;
+    }
+  }, {
     key: "getBounds",
     value: function getBounds(box) {
       if (!this.root) {
@@ -43023,18 +43027,6 @@ function (_TilesRendererBase) {
       return true;
     }
   }, {
-    key: "rotationBetweenDirections",
-    value: function rotationBetweenDirections(dir1, dir2) {
-      var rotation = new _three.Quaternion();
-      var a = new _three.Vector3().crossVectors(dir1, dir2);
-      rotation.x = a.x;
-      rotation.y = a.y;
-      rotation.z = a.z;
-      rotation.w = 1 + dir1.clone().dot(dir2);
-      rotation.normalize();
-      return rotation;
-    }
-  }, {
     key: "deleteCamera",
     value: function deleteCamera(camera) {
       var cameras = this.cameras;
@@ -43072,26 +43064,6 @@ function (_TilesRendererBase) {
             _this2.onLoadTileSet(json, url);
           });
         }
-
-        Promise.resolve().then(function () {
-          if (_this2.isGeoReferenced === undefined) {
-            _this2.isGeoReferenced = new _three.Vector3().setFromMatrixPosition(_this2.root.cached.boxTransform).length() > 6360000; // approximate Earth radius
-          }
-
-          if (_this2.isGeoReferenced) {
-            var position = new _three.Vector3().setFromMatrixPosition(_this2.root.cached.boxTransform);
-            var distanceToEarthCenter = position.length();
-            var surfaceDir = position.normalize();
-
-            var rotationToNorthPole = _this2.rotationBetweenDirections(surfaceDir, Y_AXIS);
-
-            _this2.group.quaternion.x = rotationToNorthPole.x;
-            _this2.group.quaternion.y = rotationToNorthPole.y;
-            _this2.group.quaternion.z = rotationToNorthPole.z;
-            _this2.group.quaternion.w = rotationToNorthPole.w;
-            _this2.group.position.y = -distanceToEarthCenter;
-          }
-        });
       });
       return pr;
     }
@@ -49141,7 +49113,7 @@ var params = {
   'stopAtEmptyTiles': true,
   'displayActiveTiles': false,
   'resolutionScale': 1.0,
-  'up': hashUrl ? '+Z' : '+Y',
+  'up': '+Y',
   'displayBoxBounds': false,
   'colorMode': 0,
   'showThirdPerson': false,
@@ -49150,6 +49122,17 @@ var params = {
 };
 init();
 animate();
+
+function rotationBetweenDirections(dir1, dir2) {
+  var rotation = new _three.Quaternion();
+  var a = new _three.Vector3().crossVectors(dir1, dir2);
+  rotation.x = a.x;
+  rotation.y = a.y;
+  rotation.z = a.z;
+  rotation.w = 1 + dir1.clone().dot(dir2);
+  rotation.normalize();
+  return rotation;
+}
 
 function setupTiles() {
   tiles.fetchOptions.mode = 'cors'; // Note the DRACO compression files need to be supplied via an explicit source.
@@ -49205,6 +49188,19 @@ function reinstantiateTiles() {
         uri = new URL(uri);
         uri.searchParams.append('v', version);
         return uri;
+      };
+
+      tiles.onLoadTileSet = function () {
+        var position = new _three.Vector3().setFromMatrixPosition(tiles.getRootMatrix());
+        var distanceToEllipsoidCenter = position.length();
+        var surfaceDirection = position.normalize();
+        var up = new _three.Vector3(0, 1, 0);
+        var rotationToNorthPole = rotationBetweenDirections(surfaceDirection, up);
+        tiles.group.quaternion.x = rotationToNorthPole.x;
+        tiles.group.quaternion.y = rotationToNorthPole.y;
+        tiles.group.quaternion.z = rotationToNorthPole.z;
+        tiles.group.quaternion.w = rotationToNorthPole.w;
+        tiles.group.position.y = -distanceToEllipsoidCenter;
       };
 
       setupTiles();
@@ -49304,11 +49300,7 @@ function init() {
   rayIntersect.add(rayRing);
   scene.add(rayIntersect);
   rayIntersect.visible = false;
-  new Promise(function (r) {
-    return setTimeout(r, 1);
-  }).then(function () {
-    reinstantiateTiles();
-  });
+  reinstantiateTiles();
   onWindowResize();
   window.addEventListener('resize', onWindowResize, false);
   renderer.domElement.addEventListener('mousemove', onMouseMove, false);
@@ -49682,7 +49674,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57512" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59251" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
