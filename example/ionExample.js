@@ -67,7 +67,7 @@ let params = {
 	'displayActiveTiles': false,
 	'resolutionScale': 1.0,
 
-	'up': hashUrl ? '+Z' : '+Y',
+	'up': '+Y',
 	'displayBoxBounds': false,
 	'colorMode': 0,
 	'showThirdPerson': false,
