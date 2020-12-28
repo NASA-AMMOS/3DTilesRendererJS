@@ -16,8 +16,6 @@ export class TilesRendererBase {
 	fetchOptions : Object;
 	/** function to preprocess the url for each individual tile */
 	onPreprocessURL : (uri: string | URL) => URL | string | null;
-	/** Does the tileset exist on the surface of an ellipsoid. If undefined, tries determine by distance from origin */
-	isGeoReferenced: boolean | undefined;
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;

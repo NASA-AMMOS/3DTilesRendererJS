@@ -10,7 +10,6 @@ import {
 	Sphere,
 	Vector3,
 	Vector2,
-	Quaternion,
 	Math as MathUtils,
 	Frustum,
 	LoadingManager,
@@ -88,6 +87,12 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
+	getRootMatrix() {
+
+		return this.root.cached.boxTransform;
+
+	}
+
 	getBounds( box ) {
 
 		if ( ! this.root ) {
@@ -214,20 +219,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	rotationBetweenDirections( dir1, dir2 ) {
-
-		const rotation = new Quaternion();
-		const a = new Vector3().crossVectors( dir1, dir2 );
-		rotation.x = a.x;
-		rotation.y = a.y;
-		rotation.z = a.z;
-		rotation.w = 1 + dir1.clone().dot( dir2 );
-		rotation.normalize();
-
-		return rotation;
-
-	}
-
 	deleteCamera( camera ) {
 
 		const cameras = this.cameras;
@@ -262,32 +253,6 @@ export class TilesRenderer extends TilesRendererBase {
 				} );
 
 			}
-			Promise.resolve().then( () => {
-
-				if ( this.isGeoReferenced === undefined ) {
-
-					this.isGeoReferenced = new Vector3().setFromMatrixPosition( this.root.cached.boxTransform ).length() > 6360000; // approximate Earth radius
-
-				}
-
-				if ( this.isGeoReferenced ) {
-
-					const position = new Vector3().setFromMatrixPosition( this.root.cached.boxTransform );
-					const distanceToEarthCenter = position.length();
-
-					const surfaceDir = position.normalize();
-					const rotationToNorthPole = this.rotationBetweenDirections( surfaceDir, Y_AXIS );
-
-					this.group.quaternion.x = rotationToNorthPole.x;
-					this.group.quaternion.y = rotationToNorthPole.y;
-					this.group.quaternion.z = rotationToNorthPole.z;
-					this.group.quaternion.w = rotationToNorthPole.w;
-
-					this.group.position.y = - distanceToEarthCenter;
-
-				}
-
-			} );
 
 		} );
 		return pr;

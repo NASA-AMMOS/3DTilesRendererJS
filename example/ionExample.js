@@ -19,6 +19,8 @@ import {
 	CameraHelper,
 	Raycaster,
 	Vector2,
+	Vector3,
+	Quaternion,
 	Mesh,
 	CylinderBufferGeometry,
 	MeshBasicMaterial,
@@ -78,6 +80,20 @@ let params = {
 
 init();
 animate();
+
+function rotationBetweenDirections( dir1, dir2 ) {
+
+	const rotation = new Quaternion();
+	const a = new Vector3().crossVectors( dir1, dir2 );
+	rotation.x = a.x;
+	rotation.y = a.y;
+	rotation.z = a.z;
+	rotation.w = 1 + dir1.clone().dot( dir2 );
+	rotation.normalize();
+
+	return rotation;
+
+}
 
 function setupTiles() {
 
@@ -161,6 +177,24 @@ function reinstantiateTiles() {
 					uri = new URL( uri );
 					uri.searchParams.append( 'v', version );
 					return uri;
+
+				};
+
+				tiles.onLoadTileSet = () => {
+
+					const position = new Vector3().setFromMatrixPosition( tiles.getRootMatrix() );
+					const distanceToEllipsoidCenter = position.length();
+
+					const surfaceDirection = position.normalize();
+					const up = new Vector3( 0, 1, 0 );
+					const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
+
+					tiles.group.quaternion.x = rotationToNorthPole.x;
+					tiles.group.quaternion.y = rotationToNorthPole.y;
+					tiles.group.quaternion.z = rotationToNorthPole.z;
+					tiles.group.quaternion.w = rotationToNorthPole.w;
+
+					tiles.group.position.y = - distanceToEllipsoidCenter;
 
 				};
 

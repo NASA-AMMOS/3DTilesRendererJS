@@ -39,8 +39,6 @@ export class TilesRendererBase {
 		this.rootURL = url;
 		this.fetchOptions = {};
 
-		this.isGeoReferenced = undefined;
-
 		this.onPreprocessURL = null;
 
 		const lruCache = new LRUCache();
