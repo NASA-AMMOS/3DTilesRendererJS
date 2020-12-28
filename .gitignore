@@ -61,4 +61,4 @@ typings/
 .next
 
 example/local-data
-example/bundle
+example/dev-bundle
