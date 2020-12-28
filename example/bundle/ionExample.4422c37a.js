@@ -49105,7 +49105,6 @@ var params = {
   'orthographic': false,
   'ionAssetId': '40866',
   'ionAccessToken': defaultIonToken,
-  'preFetchToken': false,
   'errorTarget': 6,
   'errorThreshold': 60,
   'maxDepth': 15,
@@ -49317,7 +49316,6 @@ function init() {
   var tileOptions = gui.addFolder('Tiles Options');
   tileOptions.add(params, 'ionAssetId');
   tileOptions.add(params, 'ionAccessToken');
-  tileOptions.add(params, 'preFetchToken');
   tileOptions.add(params, 'loadSiblings');
   tileOptions.add(params, 'stopAtEmptyTiles');
   tileOptions.add(params, 'displayActiveTiles');
@@ -49674,7 +49672,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59251" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59432" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
