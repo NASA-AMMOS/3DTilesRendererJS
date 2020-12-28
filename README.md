@@ -4,6 +4,7 @@
 [![build](https://img.shields.io/github/workflow/status/NASA-AMMOS/3DTilesRendererJS/Node.js%20CI?style=flat-square&label=build)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
 [![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/3DTilesRendererJS/)
 
+
 ![](./images/header.png)
 
 Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
