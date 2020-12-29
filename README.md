@@ -18,6 +18,8 @@ If a tile set or geometry does not load or render properly please make an issue!
 
 [Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
 
+[Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
+
 # Use
 
 ## Installation
