@@ -49,6 +49,7 @@ let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
+// Default token has been taken from the Cesium npm package from "cesium/Source/Ion.js". The token expires with every Cesium release.
 const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
 
 let params = {
