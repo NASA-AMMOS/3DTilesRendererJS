@@ -27,7 +27,8 @@ import {
 	Group,
 	TorusBufferGeometry,
 	OrthographicCamera,
-	sRGBEncoding
+	sRGBEncoding,
+	Matrix4
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -181,7 +182,9 @@ function reinstantiateTiles() {
 
 				tiles.onLoadTileSet = () => {
 
-					const position = new Vector3().setFromMatrixPosition( tiles.getRootMatrix() );
+					const matrix = new Matrix4();
+					tiles.getBoundsTransform( matrix );
+					const position = new Vector3().setFromMatrixPosition( matrix );
 					const distanceToEllipsoidCenter = position.length();
 
 					const surfaceDirection = position.normalize();

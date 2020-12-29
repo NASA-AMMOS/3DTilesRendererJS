@@ -87,12 +87,6 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
-	getRootMatrix() {
-
-		return this.root.cached.boxTransform;
-
-	}
-
 	getBounds( box ) {
 
 		if ( ! this.root ) {
@@ -110,6 +104,27 @@ export class TilesRenderer extends TilesRendererBase {
 			box.copy( boundingBox );
 			box.applyMatrix4( obbMat );
 
+			return true;
+
+		} else {
+
+			return false;
+
+		}
+
+	}
+
+	getBoundsTransform( target ) {
+
+		if ( ! this.root ) {
+
+			return false;
+
+		}
+
+		if ( this.root.cached.boxTransform ) {
+
+			target.copy( this.root.cached.boxTransform );
 			return true;
 
 		} else {
