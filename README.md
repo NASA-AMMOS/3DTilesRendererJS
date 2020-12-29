@@ -462,6 +462,14 @@ forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : v
 
 Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
 
+### .onPreprocessURL
+
+```js
+onPreprocessURL : (uri: string | URL) => URL;
+```
+
+Function to preprocess the url for each individual tile.
+
 ### .onLoadTileSet
 
 ```js
