@@ -150,7 +150,7 @@ tilesRenderer.manager.addHandler( /\.gltf$/, {
 
 ## Loading from Cesium Ion
 
-Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the iosExample.js file in the examples folder.
+Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the ionExample.js file in the examples folder.
 
 Set the desired assetId as well as your Ion AccessToken. [More reading is provided by the Cesium Rest documentation.](https://cesium.com/docs/rest-api/)
 
@@ -201,7 +201,6 @@ fetch( url, { mode: 'cors' } )
 		};
 
 		// Setup draco compression etc. here
-
 	} )
 ```
 
