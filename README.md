@@ -133,13 +133,13 @@ Adding support for DRACO decompression within the GLTF files that are transporte
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
 
-const loader = new GLTFLoader( tiles.manager );
-loader.setDRACOLoader( dracoLoader );
-
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, {
 
 	parse( ...args ) {
+	
+		const loader = new GLTFLoader( tiles.manager );
+		loader.setDRACOLoader( dracoLoader );
 
 		return loader.parse( ...args );
 
