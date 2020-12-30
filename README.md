@@ -112,7 +112,7 @@ const tilesRenderer2 = new TilesRenderer( './path/to/tileset2.json' );
 tilesRenderer2.setCamera( camera );
 tilesRenderer2.setResolutionFromRenderer( camera, renderer );
 
-// set the second renderer to share the cache and queus from the frist
+// set the second renderer to share the cache and queues from the first
 tilesRenderer2.lruCache = tilesRenderer.lruCache;
 tilesRenderer2.downloadQueue = tilesRenderer.downloadQueue;
 tilesRenderer2.parseQueue = tilesRenderer.parseQueue;
