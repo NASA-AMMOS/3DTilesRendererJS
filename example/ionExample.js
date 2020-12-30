@@ -188,7 +188,7 @@ function reinstantiateTiles() {
 
 					const box = new Box3();
 					const matrix = new Matrix4();
-					tiles.getBoundsTransform( box, matrix );
+					tiles.getOrientedBounds( box, matrix );
 					const position = new Vector3().setFromMatrixPosition( matrix );
 					const distanceToEllipsoidCenter = position.length();
 
