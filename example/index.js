@@ -93,14 +93,15 @@ function reinstantiateTiles() {
 	const dracoLoader = new DRACOLoader();
 	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
 
+	const loader = new GLTFLoader( tiles.manager );
+	loader.setDRACOLoader( dracoLoader );
+
 	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, {
 
 		parse( ...args ) {
 
-			const loader = new GLTFLoader( tiles.manager );
-			loader.setDRACOLoader( dracoLoader );
 			return loader.parse( ...args );
 
 		}
