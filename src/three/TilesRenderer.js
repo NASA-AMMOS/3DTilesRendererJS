@@ -114,6 +114,27 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	getBoundsTransform( target ) {
+
+		if ( ! this.root ) {
+
+			return false;
+
+		}
+
+		if ( this.root.cached.boxTransform ) {
+
+			target.copy( this.root.cached.boxTransform );
+			return true;
+
+		} else {
+
+			return false;
+
+		}
+
+	}
+
 	forEachLoadedModel( callback ) {
 
 		this.traverse( tile => {
@@ -332,10 +353,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 			info.invScale = invScale;
 
-			// get frustum in grop root frame
+			// get frustum in group root frame
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
+
 			frustum.setFromProjectionMatrix( tempMat );
 
 			// get transform position in group root frame

@@ -1,4 +1,4 @@
-import { Box3, Camera, Vector2, WebGLRenderer, Object3D, LoadingManager } from 'three';
+import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager } from 'three';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
@@ -9,6 +9,8 @@ export class TilesRenderer extends TilesRendererBase {
 	manager : LoadingManager;
 
 	group : TilesGroup;
+
+	getBoundsTransform(target: Matrix4) : Boolean;
 
 	getBounds( box : Box3 ) : Boolean;
 

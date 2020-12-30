@@ -39,6 +39,8 @@ export class TilesRendererBase {
 		this.rootURL = url;
 		this.fetchOptions = {};
 
+		this.onPreprocessURL = null;
+
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = priorityCallback;
 
@@ -427,7 +429,8 @@ export class TilesRendererBase {
 
 				}
 
-				return this.fetchTileSet( tile.content.uri, Object.assign( { signal }, this.fetchOptions ), tile );
+				const uri = this.onPreprocessURL ? this.onPreprocessURL( tile.content.uri ) : tile.content.uri;
+				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tile );
 
 			} )
 				.then( json => {
@@ -458,7 +461,8 @@ export class TilesRendererBase {
 
 				}
 
-				return fetch( tile.content.uri, Object.assign( { signal }, this.fetchOptions ) );
+				const uri = this.onPreprocessURL ? this.onPreprocessURL( tile.content.uri ) : tile.content.uri;
+				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {

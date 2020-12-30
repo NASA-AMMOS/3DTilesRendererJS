@@ -4,7 +4,6 @@
 [![build](https://img.shields.io/github/workflow/status/NASA-AMMOS/3DTilesRendererJS/Node.js%20CI?style=flat-square&label=build)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
 [![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/3DTilesRendererJS/)
 
-
 ![](./images/header.png)
 
 Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
@@ -18,6 +17,8 @@ If a tile set or geometry does not load or render properly please make an issue!
 [Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
 
 [Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
+
+[Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
 
 # Use
 
@@ -126,15 +127,17 @@ scene.add( tilesRenderer2.group );
 Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
 
 ```js
+
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
-
+		
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, {
 
 	parse( ...args ) {
+
 
 		const loader = new GLTFLoader( tiles.manager );
 		loader.setDRACOLoader( dracoLoader );
@@ -143,6 +146,62 @@ tilesRenderer.manager.addHandler( /\.gltf$/, {
 	}
 
 } );
+```
+
+## Loading from Cesium Ion
+
+Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the ionExample.js file in the examples folder.
+
+Set the desired assetId as well as your Ion AccessToken. [More reading is provided by the Cesium Rest documentation.](https://cesium.com/docs/rest-api/)
+
+```js
+
+url = new URL( `https://api.cesium.com/v1/assets/${assetId}/endpoint` );
+url.searchParams.append( 'access_token', accessToken );
+
+fetch( url, { mode: 'cors' } )
+	.then( ( res ) => {
+		if ( res.ok ) {
+			return res.json();
+		} else {
+			return Promise.reject( `${res.status} : ${res.statusText}` );
+		}
+	} )
+	.then( ( json ) => {
+		url = new URL( json.url );
+		const version = url.searchParams.get( 'v' );
+		tiles = new TilesRenderer( url );
+		tiles.fetchOptions.headers = {};
+		tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+		
+		// Prefilter each model fetch by setting the cesium Ion version to the search parameters of the url
+		tiles.onPreprocessURL = uri => {
+			uri = new URL( uri );
+			uri.searchParams.append( 'v', version );
+			return uri;
+		};
+		
+		// Correct the rotation and position if your Ion asset happens to be on the surface of an ellipsoid i.e. is georeferenced.
+		tiles.onLoadTileSet = () => {
+			const matrix = new Matrix4();
+			tiles.getBoundsTransform( matrix );
+			const position = new Vector3().setFromMatrixPosition( matrix );
+			const distanceToEllipsoidCenter = position.length();
+
+			const surfaceDirection = position.normalize();
+			const up = new Vector3( 0, 1, 0 );
+			const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up ); //This function can be found in the ionExample file
+
+			tiles.group.quaternion.x = rotationToNorthPole.x;
+			tiles.group.quaternion.y = rotationToNorthPole.y;
+			tiles.group.quaternion.z = rotationToNorthPole.z;
+			tiles.group.quaternion.w = rotationToNorthPole.w;
+
+			tiles.group.position.y = - distanceToEllipsoidCenter;
+		};
+
+		// Setup draco compression etc. here
+	} )
 ```
 
 ## Render On Change
@@ -345,6 +404,14 @@ getBounds( box : Box3 ) : boolean
 
 Sets `box` to the root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
 
+### .getBoundsTransform
+
+```js
+getBoundsTransform(target: Matrix4) : boolean;
+```
+
+Sets `target` from the transformation matrix of the [group](#group). Returns `false` if the tile root was not loaded.
+
 ### .hasCamera
 
 ```js
@@ -393,6 +460,14 @@ forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : v
 ```
 
 Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
+
+### .onPreprocessURL
+
+```js
+onPreprocessURL : (uri: string | URL) => URL;
+```
+
+Function to preprocess the url for each individual tile.
 
 ### .onLoadTileSet
 
