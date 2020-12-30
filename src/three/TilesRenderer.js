@@ -114,7 +114,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	getBoundsTransform( target ) {
+	getOrientedBounds( box, matrix ) {
 
 		if ( ! this.root ) {
 
@@ -122,9 +122,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		if ( this.root.cached.boxTransform ) {
+		const cached = this.root.cached;
+		const boundingBox = cached.box;
+		const obbMat = cached.boxTransform;
 
-			target.copy( this.root.cached.boxTransform );
+		if ( box ) {
+
+			box.copy( boundingBox );
+			matrix.copy( obbMat );
+
 			return true;
 
 		} else {

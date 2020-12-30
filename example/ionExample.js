@@ -27,7 +27,8 @@ import {
 	TorusBufferGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
-	Matrix4
+	Matrix4,
+	Box3,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -185,8 +186,9 @@ function reinstantiateTiles() {
 
 				tiles.onLoadTileSet = () => {
 
+					const box = new Box3();
 					const matrix = new Matrix4();
-					tiles.getBoundsTransform( matrix );
+					tiles.getBoundsTransform( box, matrix );
 					const position = new Vector3().setFromMatrixPosition( matrix );
 					const distanceToEllipsoidCenter = position.length();
 

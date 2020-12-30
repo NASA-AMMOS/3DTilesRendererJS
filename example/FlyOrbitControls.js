@@ -165,7 +165,7 @@ export class FlyOrbitControls extends OrbitControls {
 
 			}
 
-			if ( forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld ) {
+			if ( forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld || fastHeld ) {
 
 				this.minDistance = 0.01;
 				this.maxDistance = 0.01;
@@ -236,7 +236,7 @@ export class FlyOrbitControls extends OrbitControls {
 
 			}
 
-			if ( ! ( forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld ) ) {
+			if ( ! ( forwardHeld || backHeld || leftHeld || rightHeld || upHeld || downHeld || fastHeld ) ) {
 
 				endFlight();
 

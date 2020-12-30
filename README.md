@@ -381,15 +381,15 @@ Both `group.matrixWorld` and all cameras world matrices are expected to be up to
 getBounds( box : Box3 ) : boolean
 ```
 
-Sets `box` to the root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
+Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
 
-### .getBoundsTransform
+### .getOrientedBounds
 
 ```js
-getBoundsTransform(target: Matrix4) : boolean;
+getOrientedBounds( box : Box3, boxTransform : Matrix4) : boolean;
 ```
 
-Sets `target` from the transformation matrix of the [group](#group). Returns `false` if the tile root was not loaded.
+Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
 
 ### .hasCamera
 
