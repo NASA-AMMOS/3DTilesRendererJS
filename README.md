@@ -315,6 +315,14 @@ autoDisableRendererCulling = true : Boolean
 
 If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
+### .onPreprocessURL
+
+```js
+onPreprocessURL = null : ( uri : string | URL ) => string | URL;
+```
+
+Function to preprocess the url for each individual tile geometry or child tile set to be loaded. If null then the url is used directly.
+
 ### .lruCache
 
 ```js
@@ -439,14 +447,6 @@ forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : v
 ```
 
 Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
-
-### .onPreprocessURL
-
-```js
-onPreprocessURL : (uri: string | URL) => URL;
-```
-
-Function to preprocess the url for each individual tile.
 
 ### .onLoadTileSet
 

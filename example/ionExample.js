@@ -176,7 +176,7 @@ function reinstantiateTiles() {
 				tiles.fetchOptions.headers = {};
 				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
 
-				tiles.onPreprocessURL = uri => {
+				tiles.preprocessURL = uri => {
 
 					uri = new URL( uri );
 					uri.searchParams.append( 'v', version );
