@@ -8,7 +8,6 @@ import {
 	RELATIVE_DEPTH,
 	IS_LEAF,
 	RANDOM_COLOR,
-	TilesRendererBase,
 } from '../src/index.js';
 import {
 	Scene,
@@ -30,7 +29,7 @@ import {
 	sRGBEncoding,
 	Matrix4
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -49,8 +48,10 @@ let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
-// Default token has been taken from the Cesium npm package from "cesium/Source/Ion.js". The token expires with every Cesium release. The default access token is provided for evaluation purposes only.
-// Sign up for a free ion account and get your own access token at {@link https://cesium.com}
+// Default public token has been taken from the Cesium npm package from "cesium/Source/Ion.js". The token
+// expires with every Cesium release. The default access token is provided by Cesium for evaluation purposes
+// only. Sign up for a free ion account and get your own access token at https://cesium.com.
+// https://github.com/CesiumGS/cesium/blob/master/Source/Core/Ion.js#L6-L13
 const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
 
 let params = {
@@ -233,6 +234,7 @@ function init() {
 	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
+	renderer.domElement.tabIndex = 1;
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
@@ -259,8 +261,9 @@ function init() {
 	secondRenderer.domElement.style.right = '0';
 	secondRenderer.domElement.style.top = '0';
 	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
+	secondRenderer.domElement.tabIndex = 1;
 
-	secondControls = new OrbitControls( secondCamera, secondRenderer.domElement );
+	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
 	secondControls.minDistance = 1;
 	secondControls.maxDistance = 2000;
@@ -283,14 +286,15 @@ function init() {
 	thirdPersonRenderer.domElement.style.position = 'fixed';
 	thirdPersonRenderer.domElement.style.left = '5px';
 	thirdPersonRenderer.domElement.style.bottom = '5px';
+	thirdPersonRenderer.domElement.tabIndex = 1;
 
-	thirdPersonControls = new OrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
 	thirdPersonControls.screenSpacePanning = false;
 	thirdPersonControls.minDistance = 1;
 	thirdPersonControls.maxDistance = 2000;
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
+	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
@@ -397,16 +401,7 @@ function init() {
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
-	statsContainer.style.position = 'absolute';
-	statsContainer.style.top = 0;
-	statsContainer.style.left = 0;
-	statsContainer.style.color = 'white';
-	statsContainer.style.width = '100%';
-	statsContainer.style.textAlign = 'center';
-	statsContainer.style.padding = '5px';
-	statsContainer.style.pointerEvents = 'none';
-	statsContainer.style.lineHeight = '1.5em';
-	document.body.appendChild( statsContainer );
+	document.getElementById( 'info' ).appendChild( statsContainer );
 
 	// Stats
 	stats = new Stats();

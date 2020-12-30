@@ -132,7 +132,7 @@ Adding support for DRACO decompression within the GLTF files that are transporte
 // We use unpkg here but in practice should be provided by the application.
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
-		
+
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, {
 
@@ -152,56 +152,35 @@ tilesRenderer.manager.addHandler( /\.gltf$/, {
 
 Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the ionExample.js file in the examples folder.
 
-Set the desired assetId as well as your Ion AccessToken. [More reading is provided by the Cesium Rest documentation.](https://cesium.com/docs/rest-api/)
+Set the desired assetId as well as your Ion AccessToken. [More reading is provided by the Cesium REST API documentation](https://cesium.com/docs/rest-api/).
 
 ```js
-
-url = new URL( `https://api.cesium.com/v1/assets/${assetId}/endpoint` );
+// fetch a temporary token for the Cesium Ion asset
+const url = new URL( `https://api.cesium.com/v1/assets/${ assetId }/endpoint` );
 url.searchParams.append( 'access_token', accessToken );
 
 fetch( url, { mode: 'cors' } )
-	.then( ( res ) => {
-		if ( res.ok ) {
-			return res.json();
-		} else {
-			return Promise.reject( `${res.status} : ${res.statusText}` );
-		}
-	} )
-	.then( ( json ) => {
+	.then( res => res.json() )
+	.then( json => {
+
 		url = new URL( json.url );
+
 		const version = url.searchParams.get( 'v' );
 		tiles = new TilesRenderer( url );
 		tiles.fetchOptions.headers = {};
 		tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
-		
-		// Prefilter each model fetch by setting the cesium Ion version to the search parameters of the url
+
+		// Prefilter each model fetch by setting the cesium Ion version to the search
+		// parameters of the url.
 		tiles.onPreprocessURL = uri => {
+
 			uri = new URL( uri );
 			uri.searchParams.append( 'v', version );
 			return uri;
-		};
-		
-		// Correct the rotation and position if your Ion asset happens to be on the surface of an ellipsoid i.e. is georeferenced.
-		tiles.onLoadTileSet = () => {
-			const matrix = new Matrix4();
-			tiles.getBoundsTransform( matrix );
-			const position = new Vector3().setFromMatrixPosition( matrix );
-			const distanceToEllipsoidCenter = position.length();
 
-			const surfaceDirection = position.normalize();
-			const up = new Vector3( 0, 1, 0 );
-			const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up ); //This function can be found in the ionExample file
-
-			tiles.group.quaternion.x = rotationToNorthPole.x;
-			tiles.group.quaternion.y = rotationToNorthPole.y;
-			tiles.group.quaternion.z = rotationToNorthPole.z;
-			tiles.group.quaternion.w = rotationToNorthPole.w;
-
-			tiles.group.position.y = - distanceToEllipsoidCenter;
 		};
 
-		// Setup draco compression etc. here
-	} )
+	} );
 ```
 
 ## Render On Change
@@ -218,12 +197,12 @@ function renderLoop() {
 
 	requestAnimationFrame( renderLoop );
 	if ( needsRerender ) {
-	
+
 		needsRerender = false;
 		camera.updateMatrixWorld();
 		tilesRenderer.update();
 		renderer.render( camera, scene );
-	
+
 	}
 
 }
@@ -266,7 +245,7 @@ if ( intersects.length ) {
 		}
 
 	}
-	
+
 }
 ```
 
