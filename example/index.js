@@ -26,8 +26,6 @@ import {
 	TorusBufferGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
-	Vector4,
-	Vector3,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
