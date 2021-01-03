@@ -126,7 +126,7 @@ function setupTiles() {
 
 function isInt( input ) {
 
-	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input, 10 ) ) && Number.isInteger( parseFloat( input, 10 ) ) : Number.isInteger( input );
+	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input ) ) && Number.isInteger( parseFloat( input ) ) : Number.isInteger( input );
 
 }
 

@@ -44,7 +44,7 @@ export class FlyOrbitControls extends OrbitControls {
 		let upHeld = false;
 		let downHeld = false;
 
-		let originalDistance = 0
+		let originalDistance = 0;
 		let originalMinDistance = 0;
 		let originalMaxDistance = 0;
 		let rafHandle = - 1;
