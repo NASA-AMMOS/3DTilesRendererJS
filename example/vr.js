@@ -31,7 +31,6 @@ import {
 	Vector3,
 } from 'three';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
-import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
 
@@ -136,7 +135,7 @@ function init() {
 	const controllerModelFactory = new XRControllerModelFactory();
 	controllerGrip = renderer.xr.getControllerGrip( 0 );
 	controllerGrip.add( controllerModelFactory.createControllerModel( controllerGrip ) );
-	scene.add( controllerGrip );
+	workspace.add( controllerGrip );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
