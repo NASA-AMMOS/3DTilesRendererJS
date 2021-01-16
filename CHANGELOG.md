@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2021-01-16
+### Fixed
+- Feature and Batch Tables unnecessarily retaining full file buffer references.
+
 ## [0.2.3] - 2020-12-30
 ### Added
 - `getOrientedBounds` function to `TilesRenderer`.
