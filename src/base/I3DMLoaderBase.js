@@ -73,7 +73,7 @@ export class I3DMLoaderBase {
 		const featureTableStart = 32;
 		const featureTableBuffer = buffer.slice(
 			featureTableStart,
-			featureTableStart + featureTableBinaryByteLength + featureTableJSONByteLength,
+			featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength,
 		);
 		const featureTable = new FeatureTable(
 			featureTableBuffer,
@@ -86,7 +86,7 @@ export class I3DMLoaderBase {
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 		const batchTableBuffer = buffer.slice(
 			batchTableStart,
-			batchTableStart + batchTableBinaryByteLength + batchTableJSONByteLength,
+			batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength,
 		);
 		const batchTable = new BatchTable(
 			batchTableBuffer,

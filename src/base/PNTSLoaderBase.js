@@ -69,7 +69,7 @@ export class PNTSLoaderBase {
 		const featureTableStart = 28;
 		const featureTableBuffer = buffer.slice(
 			featureTableStart,
-			featureTableStart + featureTableBinaryByteLength + featureTableJSONByteLength,
+			featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength,
 		);
 		const featureTable = new FeatureTable(
 			featureTableBuffer,
@@ -82,7 +82,7 @@ export class PNTSLoaderBase {
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
 		const batchTableBuffer = buffer.slice(
 			batchTableStart,
-			batchTableStart + batchTableBinaryByteLength + batchTableJSONByteLength,
+			batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength,
 		);
 		const batchTable = new BatchTable(
 			batchTableBuffer,
