@@ -63,7 +63,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						} );
 
 						const averageVector = new Vector3();
-						const transformedVector = new Vector3();
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
 							// TODO: handle quantized position
@@ -84,11 +83,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 								parent.add( instancedMesh );
 
 								// Center the instance around an average point to avoid jitter at large scales.
-								transformedVector
-									.copy( averageVector )
-									.applyQuaternion( parent.quaternion )
-									.multiply( parent.scale );
-								instancedMesh.add( transformedVector );
+								instancedMesh
+									.position
+									.copy( averageVector );
 
 							}
 
