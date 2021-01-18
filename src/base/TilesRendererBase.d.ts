@@ -14,6 +14,8 @@ export class TilesRendererBase {
 	stopAtEmptyTiles : Boolean;
 
 	fetchOptions : Object;
+	/** function to preprocess the url for each individual tile */
+	onPreprocessURL : ((uri: string | URL) => URL) | null;
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;

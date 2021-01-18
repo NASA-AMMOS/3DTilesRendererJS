@@ -1,7 +1,7 @@
 # 3d-tiles-renderer
 
 [![npm version](https://img.shields.io/npm/v/3d-tiles-renderer.svg?style=flat-square)](https://www.npmjs.com/package/3d-tiles-renderer)
-[![travis build](https://img.shields.io/travis/com/NASA-AMMOS/3DTilesRendererJS/master.svg?style=flat-square)](https://travis-ci.com/NASA-AMMOS/3DTilesRendererJS)
+[![build](https://img.shields.io/github/workflow/status/NASA-AMMOS/3DTilesRendererJS/Node.js%20CI?style=flat-square&label=build)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
 [![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/3DTilesRendererJS/)
 
 ![](./images/header.png)
@@ -17,6 +17,10 @@ If a tile set or geometry does not load or render properly please make an issue!
 [Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
 
 [Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
+
+[Rendering in VR example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/vr.html)!
+
+[Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
 
 # Use
 
@@ -110,7 +114,7 @@ const tilesRenderer2 = new TilesRenderer( './path/to/tileset2.json' );
 tilesRenderer2.setCamera( camera );
 tilesRenderer2.setResolutionFromRenderer( camera, renderer );
 
-// set the second renderer to share the cache and queus from the frist
+// set the second renderer to share the cache and queues from the first
 tilesRenderer2.lruCache = tilesRenderer.lruCache;
 tilesRenderer2.downloadQueue = tilesRenderer.downloadQueue;
 tilesRenderer2.parseQueue = tilesRenderer.parseQueue;
@@ -125,23 +129,60 @@ scene.add( tilesRenderer2.group );
 Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
 
 ```js
+
+// Note the DRACO compression files need to be supplied via an explicit source.
+// We use unpkg here but in practice should be provided by the application.
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, {
 
 	parse( ...args ) {
-
-		// Note the DRACO compression files need to be supplied via an explicit source.
-		// We use unpkg here but in practice should be provided by the application.
-		const dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.116.1/examples/js/libs/draco/gltf/' );
-
+	
 		const loader = new GLTFLoader( tiles.manager );
 		loader.setDRACOLoader( dracoLoader );
+
 		return loader.parse( ...args );
 
 	}
 
 } );
+```
+
+## Loading from Cesium Ion
+
+Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the ionExample.js file in the examples folder.
+
+Set the desired assetId as well as your Ion AccessToken. [More reading is provided by the Cesium REST API documentation](https://cesium.com/docs/rest-api/).
+
+```js
+// fetch a temporary token for the Cesium Ion asset
+const url = new URL( `https://api.cesium.com/v1/assets/${ assetId }/endpoint` );
+url.searchParams.append( 'access_token', accessToken );
+
+fetch( url, { mode: 'cors' } )
+	.then( res => res.json() )
+	.then( json => {
+
+		url = new URL( json.url );
+
+		const version = url.searchParams.get( 'v' );
+		tiles = new TilesRenderer( url );
+		tiles.fetchOptions.headers = {};
+		tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+
+		// Prefilter each model fetch by setting the cesium Ion version to the search
+		// parameters of the url.
+		tiles.onPreprocessURL = uri => {
+
+			uri = new URL( uri );
+			uri.searchParams.append( 'v', version );
+			return uri;
+
+		};
+
+	} );
 ```
 
 ## Render On Change
@@ -158,12 +199,12 @@ function renderLoop() {
 
 	requestAnimationFrame( renderLoop );
 	if ( needsRerender ) {
-	
+
 		needsRerender = false;
 		camera.updateMatrixWorld();
 		tilesRenderer.update();
 		renderer.render( camera, scene );
-	
+
 	}
 
 }
@@ -206,7 +247,7 @@ if ( intersects.length ) {
 		}
 
 	}
-	
+
 }
 ```
 
@@ -276,6 +317,14 @@ autoDisableRendererCulling = true : Boolean
 
 If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
+### .onPreprocessURL
+
+```js
+onPreprocessURL = null : ( uri : string | URL ) => string | URL;
+```
+
+Function to preprocess the url for each individual tile geometry or child tile set to be loaded. If null then the url is used directly.
+
 ### .lruCache
 
 ```js
@@ -342,7 +391,15 @@ Both `group.matrixWorld` and all cameras world matrices are expected to be up to
 getBounds( box : Box3 ) : boolean
 ```
 
-Sets `box` to the root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
+Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
+
+### .getOrientedBounds
+
+```js
+getOrientedBounds( box : Box3, boxTransform : Matrix4) : boolean;
+```
+
+Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
 
 ### .hasCamera
 
@@ -581,9 +638,9 @@ Returns the keys of all the data in the batch table.
 ```js
 getData(
 	key : String,
-	defaultComponentType = null : String|null,
-	defaultType = null : String|null,
-) : Array|TypedArray|null
+	defaultComponentType = null : String | null,
+	defaultType = null : String | null,
+) : Array | TypedArray | null
 ```
 
 Returns the data associated with the `key` passed into the function. If the component and type are specified in the batch table contents then those values are used otherwise the values in `defaultComponentType` and `defaultType` are used. Returns null if the key is not in the table.

@@ -4,7 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.2.5] - 2021-01-17
+### Fixed
+- Incorrect use of `multiply` when computing world transformations resulting in incorrect positioning of tiles when non identity transformations are used.
+
+## [0.2.4] - 2021-01-16
+### Fixed
+- Feature and Batch Tables unnecessarily retaining full file buffer references.
+
+## [0.2.3] - 2020-12-30
+### Added
+- `getOrientedBounds` function to `TilesRenderer`.
+- `preprocessURL` function to `TilesRenderer`.
+
+## [0.2.2] - 2020-12-23
+### Fixed
+- Incorrectly removing the implicit y-up to z-up GTLF transformation.
+
+## [0.2.1] - 2020-12-15
 ### Added
 - Support for external tile sets.
 - B3DM support for RTC_CENTER.

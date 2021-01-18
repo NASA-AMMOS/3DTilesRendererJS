@@ -16,9 +16,10 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	CameraHelper,
-	Box3,
 	Raycaster,
 	Vector2,
+	Vector3,
+	Quaternion,
 	Mesh,
 	CylinderBufferGeometry,
 	MeshBasicMaterial,
@@ -26,6 +27,8 @@ import {
 	TorusBufferGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
+	Matrix4,
+	Box3,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -42,10 +45,15 @@ let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
-let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
+
+// Default public token has been taken from the Cesium npm package from "cesium/Source/Ion.js". The token
+// expires with every Cesium release. The default access token is provided by Cesium for evaluation purposes
+// only. Sign up for a free ion account and get your own access token at https://cesium.com.
+// https://github.com/CesiumGS/cesium/blob/master/Source/Core/Ion.js#L6-L13
+const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
 
 let params = {
 
@@ -55,6 +63,8 @@ let params = {
 	'enableRendererStats': false,
 	'orthographic': false,
 
+	'ionAssetId': '40866',
+	'ionAccessToken': defaultIonToken,
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -63,7 +73,7 @@ let params = {
 	'displayActiveTiles': false,
 	'resolutionScale': 1.0,
 
-	'up': hashUrl ? '+Z' : '+Y',
+	'up': '+Y',
 	'displayBoxBounds': false,
 	'colorMode': 0,
 	'showThirdPerson': false,
@@ -75,9 +85,60 @@ let params = {
 init();
 animate();
 
+function rotationBetweenDirections( dir1, dir2 ) {
+
+	const rotation = new Quaternion();
+	const a = new Vector3().crossVectors( dir1, dir2 );
+	rotation.x = a.x;
+	rotation.y = a.y;
+	rotation.z = a.z;
+	rotation.w = 1 + dir1.clone().dot( dir2 );
+	rotation.normalize();
+
+	return rotation;
+
+}
+
+function setupTiles() {
+
+	tiles.fetchOptions.mode = 'cors';
+
+	// Note the DRACO compression files need to be supplied via an explicit source.
+	// We use unpkg here but in practice should be provided by the application.
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+
+	const loader = new GLTFLoader( tiles.manager );
+	loader.setDRACOLoader( dracoLoader );
+
+	tiles.manager.addHandler( /\.gltf$/, {
+
+		parse( ...args ) {
+
+			return loader.parse( ...args );
+
+		}
+
+	} );
+	offsetParent.add( tiles.group );
+
+}
+
+function isInt( input ) {
+
+	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input ) ) && Number.isInteger( parseFloat( input ) ) : Number.isInteger( input );
+
+}
+
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../data/tileset.json';
+	let url = hashUrl || '../data/tileset.json';
+
+	if ( hashUrl ) {
+
+		params.ionAssetId = isInt( hashUrl ) ? hashUrl : '';
+
+	}
 
 	if ( tiles ) {
 
@@ -86,25 +147,80 @@ function reinstantiateTiles() {
 
 	}
 
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+	if ( params.ionAssetId ) {
 
-	tiles = new TilesRenderer( url );
-	tiles.fetchOptions.mode = 'cors';
-	tiles.manager.addHandler( /\.gltf$/, {
 
-		parse( ...args ) {
+		url = new URL( `https://api.cesium.com/v1/assets/${params.ionAssetId}/endpoint` );
+		url.searchParams.append( 'access_token', params.ionAccessToken );
 
-			const loader = new GLTFLoader( tiles.manager );
-			loader.setDRACOLoader( dracoLoader );
-			return loader.parse( ...args );
+		fetch( url, { mode: 'cors' } )
+			.then( ( res ) => {
 
-		}
+				if ( res.ok ) {
 
-	} );
-	offsetParent.add( tiles.group );
+					return res.json();
+
+				} else {
+
+					return Promise.reject( `${res.status} : ${res.statusText}` );
+
+				}
+
+			} )
+			.then( ( json ) => {
+
+				url = new URL( json.url );
+				const version = url.searchParams.get( 'v' );
+
+				tiles = new TilesRenderer( url );
+				tiles.fetchOptions.headers = {};
+				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+
+				tiles.preprocessURL = uri => {
+
+					uri = new URL( uri );
+					uri.searchParams.append( 'v', version );
+					return uri;
+
+				};
+
+				tiles.onLoadTileSet = () => {
+
+					const box = new Box3();
+					const matrix = new Matrix4();
+					tiles.getOrientedBounds( box, matrix );
+					const position = new Vector3().setFromMatrixPosition( matrix );
+					const distanceToEllipsoidCenter = position.length();
+
+					const surfaceDirection = position.normalize();
+					const up = new Vector3( 0, 1, 0 );
+					const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
+
+					tiles.group.quaternion.x = rotationToNorthPole.x;
+					tiles.group.quaternion.y = rotationToNorthPole.y;
+					tiles.group.quaternion.z = rotationToNorthPole.z;
+					tiles.group.quaternion.w = rotationToNorthPole.w;
+
+					tiles.group.position.y = - distanceToEllipsoidCenter;
+
+				};
+
+				setupTiles();
+
+			} )
+			.catch( err => {
+
+				console.error( 'Unable to get ion tileset:', err );
+
+			} );
+
+	} else {
+
+		tiles = new TilesRenderer( url );
+
+		setupTiles();
+
+	}
 
 }
 
@@ -193,8 +309,6 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
-	box = new Box3();
-
 	offsetParent = new Group();
 	scene.add( offsetParent );
 
@@ -235,6 +349,8 @@ function init() {
 	gui.width = 300;
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
+	tileOptions.add( params, 'ionAssetId' );
+	tileOptions.add( params, 'ionAccessToken' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
@@ -287,16 +403,7 @@ function init() {
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
-	statsContainer.style.position = 'absolute';
-	statsContainer.style.top = 0;
-	statsContainer.style.left = 0;
-	statsContainer.style.color = 'white';
-	statsContainer.style.width = '100%';
-	statsContainer.style.textAlign = 'center';
-	statsContainer.style.padding = '5px';
-	statsContainer.style.pointerEvents = 'none';
-	statsContainer.style.lineHeight = '1.5em';
-	document.body.appendChild( statsContainer );
+	document.getElementById( 'info' ).appendChild( statsContainer );
 
 	// Stats
 	stats = new Stats();
@@ -444,6 +551,8 @@ function animate() {
 
 	requestAnimationFrame( animate );
 
+	if ( ! tiles ) return;
+
 	// update options
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
@@ -491,14 +600,6 @@ function animate() {
 	}
 
 	offsetParent.updateMatrixWorld( true );
-
-	// update tiles center
-	if ( tiles.getBounds( box ) ) {
-
-		box.getCenter( tiles.group.position );
-		tiles.group.position.multiplyScalar( - 1 );
-
-	}
 
 	if ( parseFloat( params.raycast ) !== NONE && lastHoveredElement !== null ) {
 

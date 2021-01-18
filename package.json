@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -21,7 +21,8 @@
     "src/*"
   ],
   "scripts": {
-    "start": "concurrently \"parcel watch example/*.html --out-dir ./example/bundle/ --public-url . --no-cache\" \"static-server\"",
+    "start": "concurrently \"parcel watch example/*.html --out-dir ./example/dev-bundle/ --public-url . --no-cache\" \"static-server\"",
+    "build": "parcel build --no-content-hash example/*.html --out-dir ./example/bundle/ --public-url . --no-cache",
     "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },

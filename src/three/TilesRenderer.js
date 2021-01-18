@@ -132,6 +132,33 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	getOrientedBounds( box, matrix ) {
+
+		if ( ! this.root ) {
+
+			return false;
+
+		}
+
+		const cached = this.root.cached;
+		const boundingBox = cached.box;
+		const obbMat = cached.boxTransform;
+
+		if ( box ) {
+
+			box.copy( boundingBox );
+			matrix.copy( obbMat );
+
+			return true;
+
+		} else {
+
+			return false;
+
+		}
+
+	}
+
 	forEachLoadedModel( callback ) {
 
 		this.traverse( tile => {
@@ -350,10 +377,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 			info.invScale = invScale;
 
-			// get frustum in grop root frame
+			// get frustum in group root frame
 			tempMat.copy( group.matrixWorld );
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
+
 			frustum.setFromProjectionMatrix( tempMat );
 
 			// get transform position in group root frame
@@ -389,7 +417,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.multiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.cached.transform );
 
 		}
 
@@ -553,7 +581,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			scene.updateMatrix();
 			scene.matrix.premultiply( cachedTransform );
 			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => {

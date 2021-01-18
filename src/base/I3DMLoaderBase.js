@@ -71,12 +71,30 @@ export class I3DMLoaderBase {
 
 		// Feature Table
 		const featureTableStart = 32;
-		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
+		const featureTableBuffer = buffer.slice(
+			featureTableStart,
+			featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength,
+		);
+		const featureTable = new FeatureTable(
+			featureTableBuffer,
+			0,
+			featureTableJSONByteLength,
+			featureTableBinaryByteLength,
+		);
 
 		// Batch Table
-		const batchLength = featureTable.getData( 'INSTANCES_LENGTH' );
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-		const batchTable = new BatchTable( buffer, batchLength, batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
+		const batchTableBuffer = buffer.slice(
+			batchTableStart,
+			batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength,
+		);
+		const batchTable = new BatchTable(
+			batchTableBuffer,
+			featureTable.getData( 'INSTANCES_LENGTH' ),
+			0,
+			batchTableJSONByteLength,
+			batchTableBinaryByteLength,
+		);
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );

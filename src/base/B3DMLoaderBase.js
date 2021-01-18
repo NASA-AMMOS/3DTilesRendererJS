@@ -68,11 +68,30 @@ export class B3DMLoaderBase {
 
 		// Feature Table
 		const featureTableStart = 28;
-		const featureTable = new FeatureTable( buffer, featureTableStart, featureTableJSONByteLength, featureTableBinaryByteLength );
+		const featureTableBuffer = buffer.slice(
+			featureTableStart,
+			featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength,
+		);
+		const featureTable = new FeatureTable(
+			featureTableBuffer,
+			0,
+			featureTableJSONByteLength,
+			featureTableBinaryByteLength,
+		);
 
 		// Batch Table
 		const batchTableStart = featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength;
-		const batchTable = new BatchTable( buffer, featureTable.getData( 'BATCH_LENGTH' ), batchTableStart, batchTableJSONByteLength, batchTableBinaryByteLength );
+		const batchTableBuffer = buffer.slice(
+			batchTableStart,
+			batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength,
+		);
+		const batchTable = new BatchTable(
+			batchTableBuffer,
+			featureTable.getData( 'BATCH_LENGTH' ),
+			0,
+			batchTableJSONByteLength,
+			batchTableBinaryByteLength,
+		);
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
 		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
