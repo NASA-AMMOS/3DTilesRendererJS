@@ -399,7 +399,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.multiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.cached.transform );
 
 		}
 
