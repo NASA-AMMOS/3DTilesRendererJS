@@ -85,9 +85,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
 
-			if ( this.onPreprocessURL ) {
+			if ( this.preprocessURL ) {
 
-				this.onPreprocessURL( url );
+				return this.preprocessURL( url );
 
 			} else {
 
@@ -509,6 +509,12 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
 
+		const uri = tile.content.uri;
+		const uriSplits = uri.split( /[\\\/]/g );
+		uriSplits.pop();
+		const workingPath = uriSplits.join( '/' );
+		const fetchOptions = this.fetchOptions;
+
 		const manager = this.manager;
 		const loadIndex = tile._loadIndex;
 		let promise = null;
@@ -525,16 +531,28 @@ export class TilesRenderer extends TilesRendererBase {
 				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ).scene );
 				break;
 
-			case 'i3dm':
-				promise = new I3DMLoader( manager )
-					.parse( buffer )
-					.then( res => res.scene );
+			case 'i3dm': {
+
+					const loader = new I3DMLoader( manager );
+					loader.workingPath = workingPath;
+					loader.fetchOptions = fetchOptions;
+					promise = loader
+						.parse( buffer )
+						.then( res => res.scene );
+
+				}
 				break;
 
-			case 'cmpt':
-				promise = new CMPTLoader( manager )
-					.parse( buffer )
-					.then( res => res.scene	);
+			case 'cmpt': {
+
+					const loader = new CMPTLoader( manager );
+					loader.workingPath = workingPath;
+					loader.fetchOptions = fetchOptions;
+					promise = loader
+						.parse( buffer )
+						.then( res => res.scene	);
+
+				}
 				break;
 
 			default:

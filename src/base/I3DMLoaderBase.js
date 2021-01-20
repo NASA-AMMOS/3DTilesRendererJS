@@ -17,7 +17,7 @@ export class I3DMLoaderBase {
 
 		if ( /^[^\\/]/ ) {
 
-			return this.workingPath + url;
+			return this.workingPath + '/' + url;
 
 		} else {
 
