@@ -110,7 +110,19 @@ export class I3DMLoaderBase {
 
 			const externalUri = arrayToString( bodyBytes );
 			promise = fetch( externalUri, this.fetchOptions )
-				.then( res => res.buffer )
+				.then( res => {
+
+					if ( res.ok ) {
+
+						return res.buffer();
+
+					} else {
+
+						throw new Error( `I3DMLoaderBase : Failed to load ${ externalUri } with status ${ res.status }: ${ res.statusText }` );
+
+					}
+
+				} )
 				.then( buffer => {
 
 					glbBytes = new Uint8Array( buffer );
