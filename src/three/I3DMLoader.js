@@ -15,6 +15,12 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 	}
 
+	resolveExternalURL( url ) {
+
+		return this.manager.resolveURL( super.resolveExternalURL( url ) );
+
+	}
+
 	parse( buffer ) {
 
 		return super

@@ -9,6 +9,21 @@ export class I3DMLoaderBase {
 	constructor() {
 
 		this.fetchOptions = {};
+		this.workingPath = '';
+
+	}
+
+	resolveExternalURL( url ) {
+
+		if ( /^[^\\/]/ ) {
+
+			return this.workingPath + url;
+
+		} else {
+
+			return url;
+
+		}
 
 	}
 
@@ -25,7 +40,19 @@ export class I3DMLoaderBase {
 				return res.arrayBuffer();
 
 			} )
-			.then( buffer => this.parse( buffer ) );
+			.then( buffer => {
+
+				if ( this.workingPath === '' ) {
+
+					const splits = url.split( /\\\//g );
+					splits.pop();
+					this.workingPath = splits.join( '/' );
+
+				}
+
+				return this.parse( buffer );
+
+			} );
 
 	}
 
@@ -108,19 +135,17 @@ export class I3DMLoaderBase {
 
 		} else {
 
-			const externalUri = arrayToString( bodyBytes );
+			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
 			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => {
 
-					if ( res.ok ) {
+					if ( ! res.ok ) {
 
-						return res.buffer();
-
-					} else {
-
-						throw new Error( `I3DMLoaderBase : Failed to load ${ externalUri } with status ${ res.status }: ${ res.statusText }` );
+						throw new Error( `I3DMLoaderBase : Failed to load file "${ externalUri }" with status ${ res.status } : ${ res.statusText }` );
 
 					}
+
+					return res.arrayBuffer();
 
 				} )
 				.then( buffer => {

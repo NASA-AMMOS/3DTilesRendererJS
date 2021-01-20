@@ -6,6 +6,7 @@ export class CMPTLoaderBase {
 	constructor() {
 
 		this.fetchOptions = {};
+		this.workingPath = '';
 
 	}
 
@@ -22,7 +23,19 @@ export class CMPTLoaderBase {
 				return res.arrayBuffer();
 
 			} )
-			.then( buffer => this.parse( buffer ) );
+			.then( buffer => {
+
+				if ( this.workingPath === '' ) {
+
+					const splits = url.split( /\\\//g );
+					splits.pop();
+					this.workingPath = splits.join( '/' );
+
+				}
+
+				return this.parse( buffer );
+
+			} );
 
 	}
 

@@ -82,7 +82,21 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
 
-		this.manager = new LoadingManager();
+		const manager = new LoadingManager();
+		manager.setURLModifier( url => {
+
+			if ( this.onPreprocessURL ) {
+
+				this.onPreprocessURL( url );
+
+			} else {
+
+				return url;
+
+			}
+
+		} );
+		this.manager = manager;
 
 	}
 
