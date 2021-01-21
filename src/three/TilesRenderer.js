@@ -533,27 +533,29 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'i3dm': {
 
-					const loader = new I3DMLoader( manager );
-					loader.workingPath = workingPath;
-					loader.fetchOptions = fetchOptions;
-					promise = loader
-						.parse( buffer )
-						.then( res => res.scene );
+				const loader = new I3DMLoader( manager );
+				loader.workingPath = workingPath;
+				loader.fetchOptions = fetchOptions;
+				promise = loader
+					.parse( buffer )
+					.then( res => res.scene );
 
-				}
 				break;
+
+			}
 
 			case 'cmpt': {
 
-					const loader = new CMPTLoader( manager );
-					loader.workingPath = workingPath;
-					loader.fetchOptions = fetchOptions;
-					promise = loader
-						.parse( buffer )
-						.then( res => res.scene	);
+				const loader = new CMPTLoader( manager );
+				loader.workingPath = workingPath;
+				loader.fetchOptions = fetchOptions;
+				promise = loader
+					.parse( buffer )
+					.then( res => res.scene	);
 
-				}
 				break;
+
+			}
 
 			default:
 				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
