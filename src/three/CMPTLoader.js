@@ -56,7 +56,11 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'i3dm': {
 
 					const slicedBuffer = buffer.slice();
-					const promise = new I3DMLoader( manager )
+					const loader = new I3DMLoader( manager );
+					loader.workingPath = this.workingPath;
+					loader.fetchOptions = this.fetchOptions;
+
+					const promise = loader
 						.parse( slicedBuffer.buffer )
 						.then( res => {
 

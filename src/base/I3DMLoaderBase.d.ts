@@ -11,6 +11,9 @@ export interface I3DMBaseResult {
 
 export class I3DMLoaderBase {
 
+	workingPath : string;
+
+	resolveExternalURL( url : string ) : string;
 	load( url : string ) : Promise< I3DMBaseResult >;
 	parse( buffer : ArrayBuffer ) : Promise< I3DMBaseResult >;
 

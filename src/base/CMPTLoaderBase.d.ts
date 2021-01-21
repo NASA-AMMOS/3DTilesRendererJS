@@ -15,6 +15,7 @@ export interface CMPTBaseResult {
 
 export class CMPTLoaderBase {
 
+	workingPath : string;
 	load( url : String ) : Promise< CMPTBaseResult >;
 	parse( buffer : ArrayBuffer ) : CMPTBaseResult;
 
