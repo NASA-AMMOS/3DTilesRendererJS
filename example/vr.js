@@ -103,7 +103,7 @@ function init() {
 	raycaster = new Raycaster();
 	fwdVector = new Vector3( 0, 0, 1 );
 
-	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
+	const rayIntersectMat = new MeshBasicMaterial( { color: 0xb2dfdb } );
 	intersectRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	intersectRing.visible = false;
 	scene.add( intersectRing );
@@ -232,15 +232,25 @@ function render() {
 	tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
 
 	// get the XR camera with a combined frustum for culling
-	let currCamera = camera;
 	if ( renderer.xr.isPresenting ) {
 
-		currCamera = renderer.xr.getCamera( camera );
+		const currCamera = renderer.xr.getCamera( camera );
+		tiles.setCamera( currCamera );
+
+		const leftCam = currCamera.cameras[0];
+		if ( leftCam ) {
+
+			tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
+
+		}
+
+	} else {
+
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
 
 	}
 
-	tiles.setCamera( currCamera );
-	tiles.setResolutionFromRenderer( currCamera, renderer );
 	tiles.update();
 
 
@@ -261,6 +271,8 @@ function render() {
 		if ( results.length ) {
 
 			const hit = results[ 0 ];
+
+			hit.face.normal.transformDirection( tiles.group.matrixWorld );
 			intersectRing.position.copy( hit.point );
 			intersectRing.quaternion.setFromUnitVectors(
 				fwdVector,
