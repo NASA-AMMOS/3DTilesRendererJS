@@ -52,17 +52,17 @@ export class CMPTLoaderBase {
 			String.fromCharCode( dataView.getUint8( 2 ) ) +
 			String.fromCharCode( dataView.getUint8( 3 ) );
 
-		console.assert( magic === 'cmpt' );
+		console.assert( magic === 'cmpt', 'CMPTLoader: The magic bytes equal "cmpt".' );
 
 		// 4 bytes
 		const version = dataView.getUint32( 4, true );
 
-		console.assert( version === 1 );
+		console.assert( version === 1, 'CMPTLoader: The version listed in the header is "1".' );
 
 		// 4 bytes
 		const byteLength = dataView.getUint32( 8, true );
 
-		console.assert( byteLength === buffer.byteLength );
+		console.assert( byteLength === buffer.byteLength, 'CMPTLoader: The contents buffer length listed in the header matches the file.' );
 
 		// 4 bytes
 		const tilesLength = dataView.getUint32( 12, true );
