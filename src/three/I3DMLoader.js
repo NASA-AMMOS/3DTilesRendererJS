@@ -49,11 +49,11 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 
 						// POSITION_QUANTIZED
 						// NORMAL_UP_OCT32P
 						// NORMAL_RIGHT_OCT32P
-						// SCALE
 						// BATCH_ID
 
 						const instanceMap = new Map();
@@ -141,7 +141,11 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 							// scale
-							if ( SCALE_NON_UNIFORM ) {
+							if ( SCALE ) {
+
+								tempSca.setScalar( SCALE[ i ] );
+
+							} else if ( SCALE_NON_UNIFORM ) {
 
 								tempSca.set(
 									SCALE_NON_UNIFORM[ i * 3 + 0 ],
