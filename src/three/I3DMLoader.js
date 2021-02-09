@@ -124,7 +124,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 									NORMAL_RIGHT[ i * 3 + 2 ],
 								);
 
-								tempFwd.crossVectors( tempRight, tempUp );
+								tempFwd.crossVectors( tempRight, tempUp )
+									.normalize();
 
 								tempMat.makeBasis(
 									tempRight,
