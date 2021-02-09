@@ -39,22 +39,29 @@ export class I3DMLoader extends I3DMLoaderBase {
 					loader.parse( gltfBuffer, null, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
-
-						// RTC_CENTER
-						// QUANTIZED_VOLUME_OFFSET
-						// QUANTIZED_VOLUME_SCALE
-						// EAST_NORTH_UP
-
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 
-						// POSITION_QUANTIZED
-						// NORMAL_UP_OCT32P
-						// NORMAL_RIGHT_OCT32P
-						// BATCH_ID
+						[
+							'RTC_CENTER',
+							'QUANTIZED_VOLUME_OFFSET',
+							'QUANTIZED_VOLUME_SCALE',
+							'EAST_NORTH_UP',
+							'POSITION_QUANTIZED',
+							'NORMAL_UP_OCT32P',
+							'NORMAL_RIGHT_OCT32P',
+						].forEach( feature => {
+
+							if ( feature in featureTable.header ) {
+
+								console.warn( `I3DMLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
+
+							}
+
+						} );
 
 						const instanceMap = new Map();
 						const instances = [];
