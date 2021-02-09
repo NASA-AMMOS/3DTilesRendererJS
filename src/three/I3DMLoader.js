@@ -71,6 +71,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 								const { geometry, material } = child;
 								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
+								instancedMesh.position.copy( child.position );
+								instancedMesh.rotation.copy( child.rotation );
+								instancedMesh.scale.copy( child.scale );
 								instances.push( instancedMesh );
 								instanceMap.set( child, instancedMesh );
 
@@ -81,7 +84,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const averageVector = new Vector3();
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
-							// TODO: handle quantized position
 							averageVector.x += POSITION[ i * 3 + 0 ] / INSTANCES_LENGTH;
 							averageVector.y += POSITION[ i * 3 + 1 ] / INSTANCES_LENGTH;
 							averageVector.z += POSITION[ i * 3 + 2 ] / INSTANCES_LENGTH;
@@ -99,9 +101,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 								parent.add( instancedMesh );
 
 								// Center the instance around an average point to avoid jitter at large scales.
+								// Transform the average vector by matrix world so we can account for any existing
+								// transforms of the instanced mesh.
+								instancedMesh.updateMatrixWorld();
 								instancedMesh
 									.position
-									.copy( averageVector );
+									.copy( averageVector )
+									.applyMatrix4( instancedMesh.matrixWorld );
 
 							}
 
