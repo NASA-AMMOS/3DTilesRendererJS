@@ -2,6 +2,9 @@ import { I3DMLoaderBase } from '../base/I3DMLoaderBase.js';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+const tempFwd = new Vector3();
+const tempUp = new Vector3();
+const tempRight = new Vector3();
 const tempPos = new Vector3();
 const tempQuat = new Quaternion();
 const tempSca = new Vector3();
@@ -43,14 +46,14 @@ export class I3DMLoader extends I3DMLoaderBase {
 						// EAST_NORTH_UP
 
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 
 						// POSITION_QUANTIZED
-						// NORMAL_UP
-						// NORMAL_RIGHT
 						// NORMAL_UP_OCT32P
 						// NORMAL_RIGHT_OCT32P
 						// SCALE
-						// SCALE_NON_UNIFORM
 						// BATCH_ID
 
 						const instanceMap = new Map();
@@ -99,18 +102,58 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
-							// TODO: handle quantized position
+							// position
 							tempPos.set(
 								POSITION[ i * 3 + 0 ] - averageVector.x,
 								POSITION[ i * 3 + 1 ] - averageVector.y,
 								POSITION[ i * 3 + 2 ] - averageVector.z,
 							);
 
-							// TODO: handle normal orientation features
-							tempQuat.set( 0, 0, 0, 1 );
+							// rotation
+							if ( NORMAL_UP ) {
 
-							// TODO: handle scale features
-							tempSca.set( 1, 1, 1 );
+								tempUp.set(
+									NORMAL_UP[ i * 3 + 0 ],
+									NORMAL_UP[ i * 3 + 1 ],
+									NORMAL_UP[ i * 3 + 2 ],
+								);
+
+								tempRight.set(
+									NORMAL_RIGHT[ i * 3 + 0 ],
+									NORMAL_RIGHT[ i * 3 + 1 ],
+									NORMAL_RIGHT[ i * 3 + 2 ],
+								);
+
+								tempFwd.crossVectors( tempRight, tempUp );
+
+								tempMat.makeBasis(
+									tempRight,
+									tempUp,
+									tempFwd,
+								);
+
+								tempQuat.setFromRotationMatrix( tempMat );
+
+							} else {
+
+								tempQuat.set( 0, 0, 0, 1 );
+
+							}
+
+							// scale
+							if ( SCALE_NON_UNIFORM ) {
+
+								tempSca.set(
+									SCALE_NON_UNIFORM[ i * 3 + 0 ],
+									SCALE_NON_UNIFORM[ i * 3 + 1 ],
+									SCALE_NON_UNIFORM[ i * 3 + 2 ],
+								);
+
+							} else {
+
+								tempSca.set( 1, 1, 1 );
+
+							}
 
 							tempMat.compose( tempPos, tempQuat, tempSca );
 
