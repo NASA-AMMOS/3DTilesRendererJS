@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Add warnings if unsupported feature semantics are detected for I3DM and PNTS files
+- Support for I3DM rotation, scale features.
+
+### Fixed
+- A case where I3DM instances could have an incorrect transformations by respecting existing Mesh transformations when converting them to InstancedMeshes.
+
+### Changed
+- Make CMPTLoader group child order consistent between loads.
+
 ## [0.2.6] - 2021-02-03
 ### Fixed
 - I3DM files not correctly loading external gltf files.

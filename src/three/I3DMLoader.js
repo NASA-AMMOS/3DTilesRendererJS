@@ -2,6 +2,9 @@ import { I3DMLoaderBase } from '../base/I3DMLoaderBase.js';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+const tempFwd = new Vector3();
+const tempUp = new Vector3();
+const tempRight = new Vector3();
 const tempPos = new Vector3();
 const tempQuat = new Quaternion();
 const tempSca = new Vector3();
@@ -36,22 +39,29 @@ export class I3DMLoader extends I3DMLoaderBase {
 					loader.parse( gltfBuffer, null, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
-
-						// RTC_CENTER
-						// QUANTIZED_VOLUME_OFFSET
-						// QUANTIZED_VOLUME_SCALE
-						// EAST_NORTH_UP
-
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 
-						// POSITION_QUANTIZED
-						// NORMAL_UP
-						// NORMAL_RIGHT
-						// NORMAL_UP_OCT32P
-						// NORMAL_RIGHT_OCT32P
-						// SCALE
-						// SCALE_NON_UNIFORM
-						// BATCH_ID
+						[
+							'RTC_CENTER',
+							'QUANTIZED_VOLUME_OFFSET',
+							'QUANTIZED_VOLUME_SCALE',
+							'EAST_NORTH_UP',
+							'POSITION_QUANTIZED',
+							'NORMAL_UP_OCT32P',
+							'NORMAL_RIGHT_OCT32P',
+						].forEach( feature => {
+
+							if ( feature in featureTable.header ) {
+
+								console.warn( `I3DMLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
+
+							}
+
+						} );
 
 						const instanceMap = new Map();
 						const instances = [];
@@ -61,6 +71,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 								const { geometry, material } = child;
 								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
+								instancedMesh.position.copy( child.position );
+								instancedMesh.rotation.copy( child.rotation );
+								instancedMesh.scale.copy( child.scale );
 								instances.push( instancedMesh );
 								instanceMap.set( child, instancedMesh );
 
@@ -71,7 +84,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const averageVector = new Vector3();
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
-							// TODO: handle quantized position
 							averageVector.x += POSITION[ i * 3 + 0 ] / INSTANCES_LENGTH;
 							averageVector.y += POSITION[ i * 3 + 1 ] / INSTANCES_LENGTH;
 							averageVector.z += POSITION[ i * 3 + 2 ] / INSTANCES_LENGTH;
@@ -89,9 +101,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 								parent.add( instancedMesh );
 
 								// Center the instance around an average point to avoid jitter at large scales.
+								// Transform the average vector by matrix world so we can account for any existing
+								// transforms of the instanced mesh.
+								instancedMesh.updateMatrixWorld();
 								instancedMesh
 									.position
-									.copy( averageVector );
+									.copy( averageVector )
+									.applyMatrix4( instancedMesh.matrixWorld );
 
 							}
 
@@ -99,18 +115,63 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
-							// TODO: handle quantized position
+							// position
 							tempPos.set(
 								POSITION[ i * 3 + 0 ] - averageVector.x,
 								POSITION[ i * 3 + 1 ] - averageVector.y,
 								POSITION[ i * 3 + 2 ] - averageVector.z,
 							);
 
-							// TODO: handle normal orientation features
-							tempQuat.set( 0, 0, 0, 1 );
+							// rotation
+							if ( NORMAL_UP ) {
 
-							// TODO: handle scale features
-							tempSca.set( 1, 1, 1 );
+								tempUp.set(
+									NORMAL_UP[ i * 3 + 0 ],
+									NORMAL_UP[ i * 3 + 1 ],
+									NORMAL_UP[ i * 3 + 2 ],
+								);
+
+								tempRight.set(
+									NORMAL_RIGHT[ i * 3 + 0 ],
+									NORMAL_RIGHT[ i * 3 + 1 ],
+									NORMAL_RIGHT[ i * 3 + 2 ],
+								);
+
+								tempFwd.crossVectors( tempRight, tempUp )
+									.normalize();
+
+								tempMat.makeBasis(
+									tempRight,
+									tempUp,
+									tempFwd,
+								);
+
+								tempQuat.setFromRotationMatrix( tempMat );
+
+							} else {
+
+								tempQuat.set( 0, 0, 0, 1 );
+
+							}
+
+							// scale
+							if ( SCALE ) {
+
+								tempSca.setScalar( SCALE[ i ] );
+
+							} else if ( SCALE_NON_UNIFORM ) {
+
+								tempSca.set(
+									SCALE_NON_UNIFORM[ i * 3 + 0 ],
+									SCALE_NON_UNIFORM[ i * 3 + 1 ],
+									SCALE_NON_UNIFORM[ i * 3 + 2 ],
+								);
+
+							} else {
+
+								tempSca.set( 1, 1, 1 );
+
+							}
 
 							tempMat.compose( tempPos, tempQuat, tempSca );
 

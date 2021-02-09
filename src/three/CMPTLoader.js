@@ -17,8 +17,6 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 		const result = super.parse( buffer );
 		const manager = this.manager;
-		const group = new Group();
-		const results = [];
 		const promises = [];
 
 		for ( const i in result.tiles ) {
@@ -29,15 +27,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'b3dm': {
 
 					const slicedBuffer = buffer.slice();
-					const promise = new B3DMLoader( manager )
-						.parse( slicedBuffer.buffer )
-						.then( res => {
-
-							results.push( res );
-							group.add( res.scene );
-
-						} );
-
+					const promise = new B3DMLoader( manager ).parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
 
@@ -47,8 +37,8 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 					const slicedBuffer = buffer.slice();
 					const pointsResult = new PNTSLoader( manager ).parse( slicedBuffer.buffer );
-					results.push( pointsResult );
-					group.add( pointsResult.scene );
+					const promise = Promise.resolve( pointsResult );
+					promises.push( promise );
 					break;
 
 				}
@@ -60,14 +50,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
 
-					const promise = loader
-						.parse( slicedBuffer.buffer )
-						.then( res => {
-
-							results.push( res );
-							group.add( res.scene );
-
-						} );
+					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
 
@@ -77,7 +60,14 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 		}
 
-		return Promise.all( promises ).then( () => {
+		return Promise.all( promises ).then( results => {
+
+			const group = new Group();
+			results.forEach( result => {
+
+				group.add( result.scene );
+
+			} );
 
 			return {
 
