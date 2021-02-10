@@ -400,7 +400,7 @@ Sets `box` to the axis aligned root bounding box of the tile set in the [group](
 ### .getOrientedBounds
 
 ```js
-getOrientedBounds( box : Box3, boxTransform : Matrix4) : boolean;
+getOrientedBounds( box : Box3, boxTransform : Matrix4 ) : boolean;
 ```
 
 Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
@@ -457,7 +457,7 @@ Fires the callback for every loaded scene in the hierarchy with the associatd ti
 ### .onLoadTileSet
 
 ```js
-onLoadTileSet = null : ( tileSet : Object ) => void
+onLoadTileSet = null : ( tileSet : Tileset ) => void
 ```
 
 Callback that is called whenever a tile set is loaded.
@@ -465,7 +465,7 @@ Callback that is called whenever a tile set is loaded.
 ### .onLoadModel
 
 ```js
-onLoadModel = null : ( scene : Object3D, tile : object ) => void
+onLoadModel = null : ( scene : Object3D, tile : Tile ) => void
 ```
 
 Callback that is called every time a model is loaded. This can be used in conjunction with [.forEachLoadedModel](#forEachLoadedModel) to set the material of all load and still yet to load meshes in the tile set.
@@ -473,7 +473,7 @@ Callback that is called every time a model is loaded. This can be used in conjun
 ### .onDisposeModel
 
 ```js
-onDisposeModel = null : ( scene : Object3D, tile : object ) => void
+onDisposeModel = null : ( scene : Object3D, tile : Tile ) => void
 ```
 
 Callback that is called every time a model is disposed of. This should be used in conjunction with [.onLoadModel](#onLoadModel) to dispose of any custom materials created for a tile. Note that the textures, materials, and geometries that a tile loaded in with are all automatically disposed of even if they have been removed from the tile meshes.
