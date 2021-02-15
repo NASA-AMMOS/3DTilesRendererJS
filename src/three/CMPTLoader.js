@@ -29,6 +29,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const slicedBuffer = buffer.slice();
 					const loader = new B3DMLoader( manager );
 					loader.workingPath = this.workingPath;
+					loader.fetchOptions = this.fetchOptions;
 
 					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
