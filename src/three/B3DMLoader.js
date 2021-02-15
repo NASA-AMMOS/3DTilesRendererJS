@@ -33,13 +33,21 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 			}
 
-			if ( fetchOptions.header ) {
+			if ( fetchOptions.headers ) {
 
-				loader.setRequestHeader( fetchOptions.header );
+				loader.setRequestHeader( fetchOptions.headers );
 
 			}
 
-			loader.parse( gltfBuffer, this.workingPath, model => {
+			// GLTFLoader assumes the working path ends in a slash
+			let workingPath = this.workingPath;
+			if ( !/[\\/]$/.test( workingPath ) ) {
+
+				workingPath += '/';
+
+			}
+
+			loader.parse( gltfBuffer, workingPath, model => {
 
 				const { batchTable, featureTable } = b3dm;
 				const { scene } = model;

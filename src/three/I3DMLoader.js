@@ -50,13 +50,21 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 					}
 
-					if ( fetchOptions.header ) {
+					if ( fetchOptions.headers ) {
 
-						loader.setRequestHeader( fetchOptions.header );
+						loader.setRequestHeader( fetchOptions.headers );
 
 					}
 
-					loader.parse( gltfBuffer, this.workingPath, model => {
+					// GLTFLoader assumes the working path ends in a slash
+					let workingPath = this.workingPath;
+					if ( !/[\\/]$/.test( workingPath ) ) {
+
+						workingPath += '/';
+
+					}
+
+					loader.parse( gltfBuffer, workingPath, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
