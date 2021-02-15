@@ -36,7 +36,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 					const manager = this.manager;
 					const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
-					loader.parse( gltfBuffer, null, model => {
+					loader.parse( gltfBuffer, this.workingPath, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );

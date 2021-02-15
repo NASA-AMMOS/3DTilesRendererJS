@@ -522,7 +522,9 @@ export class TilesRenderer extends TilesRendererBase {
 		switch ( extension ) {
 
 			case 'b3dm':
-				promise = new B3DMLoader( manager )
+				const loader = new B3DMLoader( manager );
+				loader.workingPath = workingPath;
+				promise = loader
 					.parse( buffer )
 					.then( res => res.scene );
 				break;

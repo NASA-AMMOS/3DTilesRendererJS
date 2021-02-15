@@ -19,7 +19,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 			const manager = this.manager;
 			const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
-			loader.parse( gltfBuffer, null, model => {
+			loader.parse( gltfBuffer, this.workingPath, model => {
 
 				const { batchTable, featureTable } = b3dm;
 				const { scene } = model;
