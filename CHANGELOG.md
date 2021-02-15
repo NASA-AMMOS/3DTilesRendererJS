@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- Pass fetch options to B3DMLoader.
+- Set working path for loaders from CMPTLoader, TilesRenderer callback.
+- Adjust loader handler in examples and README to provide GLTFLoader directly.
+
 ## [0.2.7] - 2021-02-09
 ### Added
 - Add warnings if unsupported feature semantics are detected for I3DM and PNTS files
