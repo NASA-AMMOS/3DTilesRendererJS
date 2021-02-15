@@ -58,7 +58,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 					// GLTFLoader assumes the working path ends in a slash
 					let workingPath = this.workingPath;
-					if ( !/[\\/]$/.test( workingPath ) ) {
+					if ( ! /[\\/]$/.test( workingPath ) ) {
 
 						workingPath += '/';
 
