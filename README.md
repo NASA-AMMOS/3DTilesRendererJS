@@ -625,7 +625,7 @@ getKeys() : Array<String>
 
 Returns the keys of all the data in the batch table.
 
-### getData
+### .getData
 
 ```js
 getData(
