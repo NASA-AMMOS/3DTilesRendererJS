@@ -34,9 +34,37 @@ export class I3DMLoader extends I3DMLoaderBase {
 				const gltfBuffer = i3dm.glbBytes.slice().buffer;
 				return new Promise( ( resolve, reject ) => {
 
+					const fetchOptions = this.fetchOptions;
 					const manager = this.manager;
 					const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
-					loader.parse( gltfBuffer, null, model => {
+
+					if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
+
+						loader.setCrossOrigin( 'use-credentials' );
+
+					}
+
+					if ( 'credentials' in fetchOptions ) {
+
+						loader.setWithCredentials( fetchOptions.credentials === 'include' );
+
+					}
+
+					if ( fetchOptions.headers ) {
+
+						loader.setRequestHeader( fetchOptions.headers );
+
+					}
+
+					// GLTFLoader assumes the working path ends in a slash
+					let workingPath = this.workingPath;
+					if ( ! /[\\/]$/.test( workingPath ) ) {
+
+						workingPath += '/';
+
+					}
+
+					loader.parse( gltfBuffer, workingPath, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
 						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );

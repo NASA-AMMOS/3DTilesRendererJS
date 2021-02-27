@@ -111,15 +111,7 @@ function setupTiles() {
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
 
-	tiles.manager.addHandler( /\.gltf$/, {
-
-		parse( ...args ) {
-
-			return loader.parse( ...args );
-
-		}
-
-	} );
+	tiles.manager.addHandler( /\.gltf$/, loader );
 	offsetParent.add( tiles.group );
 
 }
@@ -148,7 +140,6 @@ function reinstantiateTiles() {
 	}
 
 	if ( params.ionAssetId ) {
-
 
 		url = new URL( `https://api.cesium.com/v1/assets/${params.ionAssetId}/endpoint` );
 		url.searchParams.append( 'access_token', params.ionAccessToken );

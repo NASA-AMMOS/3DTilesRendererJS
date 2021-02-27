@@ -18,8 +18,36 @@ export class B3DMLoader extends B3DMLoaderBase {
 		return new Promise( ( resolve, reject ) => {
 
 			const manager = this.manager;
+			const fetchOptions = this.fetchOptions;
 			const loader = manager.getHandler( 'path.gltf' ) || new GLTFLoader( manager );
-			loader.parse( gltfBuffer, null, model => {
+
+			if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
+
+				loader.setCrossOrigin( 'use-credentials' );
+
+			}
+
+			if ( 'credentials' in fetchOptions ) {
+
+				loader.setWithCredentials( fetchOptions.credentials === 'include' );
+
+			}
+
+			if ( fetchOptions.headers ) {
+
+				loader.setRequestHeader( fetchOptions.headers );
+
+			}
+
+			// GLTFLoader assumes the working path ends in a slash
+			let workingPath = this.workingPath;
+			if ( ! /[\\/]$/.test( workingPath ) ) {
+
+				workingPath += '/';
+
+			}
+
+			loader.parse( gltfBuffer, workingPath, model => {
 
 				const { batchTable, featureTable } = b3dm;
 				const { scene } = model;
