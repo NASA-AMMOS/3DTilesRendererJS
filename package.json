@@ -37,19 +37,19 @@
   "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/core": "^7.7.2",
-    "@babel/preset-env": "^7.7.1",
-    "babel-jest": "^25.4.0",
-    "concurrently": "^5.1.0",
+    "@babel/core": "^7.13.8",
+    "@babel/preset-env": "^7.13.8",
+    "babel-jest": "^25.5.1",
+    "concurrently": "^5.3.0",
     "eslint": "^6.8.0",
     "eslint-config-mdcs": "^4.2.3",
-    "eslint-plugin-jest": "^23.8.2",
-    "jest": "^25.4.0",
-    "jest-cli": "^25.4.0",
+    "eslint-plugin-jest": "^23.20.0",
+    "jest": "^25.5.4",
+    "jest-cli": "^25.5.4",
     "parcel-bundler": "^1.12.4",
     "static-server": "^2.2.1",
     "three": ">=0.126.0",
-    "typescript": "^3.7.4"
+    "typescript": "^3.9.9"
   },
   "peerDependencies": {
     "three": ">=0.123.0"
