@@ -86,6 +86,8 @@ function reinstantiateTiles() {
 
 	}
 
+	tiles = new TilesRenderer( url );
+
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
@@ -94,7 +96,6 @@ function reinstantiateTiles() {
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
 
-	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	offsetParent.add( tiles.group );
