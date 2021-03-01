@@ -1,12 +1,6 @@
 export function arrayToString( array ) {
 
-	let str = '';
-	for ( let i = 0, l = array.length; i < l; i ++ ) {
-
-		str += String.fromCharCode( array[ i ] );
-
-	}
-
-	return str;
+	const utf8decoder = new TextDecoder();
+	return utf8decoder.decode( array );
 
 }
