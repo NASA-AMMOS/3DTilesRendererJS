@@ -1,7 +1,6 @@
 import { PriorityQueue } from '../src/utilities/PriorityQueue.js';
 
 const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve ) );
-const nextTick = () => new Promise( resolve => process.nextTick( resolve ) );
 
 describe( 'PriorityQueue', () => {
 
