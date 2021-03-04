@@ -582,19 +582,28 @@ export class TilesRenderer extends TilesRendererBase {
 			switch ( upAxis.toLowerCase() ) {
 
 				case 'x':
-					scene.matrix.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+					tempMat.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
 					break;
 
 				case 'y':
-					scene.matrix.makeRotationAxis( X_AXIS, Math.PI / 2 );
+					tempMat.makeRotationAxis( X_AXIS, Math.PI / 2 );
 					break;
 
 				case 'z':
+					tempMat.identity();
 					break;
 
 			}
 
-			scene.matrix.premultiply( cachedTransform );
+			// ensure the matrix is up to date in case the scene has a transform applied
+			scene.updateMatrix();
+
+			// apply the local up-axis correction rotation
+			// GLTFLoader seems to never set a transformation on the root scene object so
+			// any transformations applied to it can be assumed to be applied after load
+			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
+			// rotation fix which is why "multiply" happens here.
+			scene.matrix.multiply( tempMat ).premultiply( cachedTransform );
 			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => {
 
