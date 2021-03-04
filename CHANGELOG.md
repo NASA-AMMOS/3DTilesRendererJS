@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Feature table attributes like `RTC_CENTER` not being correctly applied to loaded tile geometry.
+- `B3DMLoader.load` not correctly resolving with a model.
 
 ### Changed
 - String decoding to use `TextDecoder`.

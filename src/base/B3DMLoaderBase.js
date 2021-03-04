@@ -35,7 +35,7 @@ export class B3DMLoaderBase {
 
 				}
 
-				this.parse( buffer );
+				return this.parse( buffer );
 
 			} );
 
