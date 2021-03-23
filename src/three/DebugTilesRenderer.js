@@ -1,8 +1,9 @@
-import { Box3Helper, Group, MeshBasicMaterial, PointsMaterial } from 'three';
+import { Box3Helper, Group, MathUtils, MeshStandardMaterial, PointsMaterial } from 'three';
+import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
 
-const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
+export const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 
 function emptyRaycast() {}
@@ -24,9 +25,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		const tilesGroup = this.group;
 		const boxGroup = new Group();
+		boxGroup.name = 'DebugTilesRenderer.boxGroup';
 		tilesGroup.add( boxGroup );
 
 		const sphereGroup = new Group();
+		sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
 		tilesGroup.add( sphereGroup );
 
 		this.displayBoxBounds = false;
@@ -219,7 +222,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						} else {
 
-							c.material = new MeshBasicMaterial();
+							c.material = new MeshStandardMaterial();
+							c.material.flatShading = true;
 
 						}
 
@@ -257,7 +261,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								c.material.color.setRGB( val, val, val );
+								const v = MathUtils.mapLinear( val, 1, 0, 0.1, 1 );
+								c.material.color.setRGB( v, v, v );
 
 							}
 							break;
@@ -265,7 +270,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case GEOMETRIC_ERROR: {
 
-							const val = Math.min( tile.geometricError / maxError, 1 );
+							const val = MathUtils.mapLinear( Math.min( tile.geometricError / maxError, 1 ), 1, 0, 0.1, 1 );
 							c.material.color.setRGB( val, val, val );
 							break;
 
@@ -359,10 +364,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 					// In some cases the bounding box may have a scale of 0 in one dimension resulting
 					// in the NaNs in an extracted rotation so we disable matrix updates instead.
 					const boxHelperGroup = new Group();
+					boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
 					boxHelperGroup.matrix.copy( cachedBoxMat );
 					boxHelperGroup.matrixAutoUpdate = false;
 
-					const boxHelper = new Box3Helper( cachedBox );
+					const boxHelper = new Box3Helper( cachedBox, getIndexedRandomColor( tile.__depth ) );
 					boxHelper.raycast = emptyRaycast;
 					boxHelperGroup.add( boxHelper );
 
