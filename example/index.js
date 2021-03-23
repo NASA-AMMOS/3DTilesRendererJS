@@ -51,6 +51,7 @@ let params = {
 
 	'enableUpdate': true,
 	'raycast': NONE,
+	'overrideRaycast': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 	'orthographic': false,
@@ -273,6 +274,7 @@ function init() {
 
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
+	exampleOptions.add( params, 'overrideRaycast', );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
 	exampleOptions.open();

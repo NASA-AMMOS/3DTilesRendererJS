@@ -13,6 +13,7 @@ import {
 	Math as MathUtils,
 	Frustum,
 	LoadingManager,
+	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -67,6 +68,67 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	get optimizeRaycast() {
+
+		return this._optimizeRaycast;
+
+	}
+
+	set optimizeRaycast( value ) {
+
+		if ( this._optimizeRaycast != value ) {
+
+			this._optimizeRaycast = value;
+
+			if ( this._optimizeRaycast ) {
+
+				this.traverse( tile => {
+
+					if ( tile instanceof TilesGroup ) {
+
+						this.raycast = TilesGroup.prototype.raycast;
+
+					} else {
+
+						this.raycast = emptyRaycast;
+
+					}
+
+				} );
+
+			} else {
+
+				this.traverse( tile => {
+
+					if ( tile instanceof TilesGroup ) {
+
+						console.log( "Replace to group's raycast" );
+						tile.raycast = Group.prototype.raycast;
+
+					} else {
+
+						tile.raycast = Object.getPrototypeOf( tile ).raycast;
+
+					}
+
+				} );
+
+			}
+
+			this.traverse( tile => {
+
+				if ( tile.scene ) {
+
+					updateFrustumCulled( tile.scene, value );
+
+				}
+
+			} );
+
+		}
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
@@ -77,6 +139,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this._autoDisableRendererCulling = true;
+		this._optimizeRaycast = true;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -171,6 +234,12 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	raycast( raycaster, intersects ) {
+
+		if ( ! this._optimizeRaycast ) {
+
+			return;
+
+		}
 
 		if ( ! this.root ) {
 
@@ -614,12 +683,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cached.scene = scene;
 
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
+			if ( this._optimizeRaycast ) {
 
-				c.raycast = emptyRaycast;
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
 
-			} );
+					c.raycast = emptyRaycast;
+
+				} );
+
+			}
 
 			const materials = [];
 			const geometry = [];
