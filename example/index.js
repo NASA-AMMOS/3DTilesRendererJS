@@ -51,7 +51,7 @@ let params = {
 
 	'enableUpdate': true,
 	'raycast': NONE,
-	'overrideRaycast': true,
+	'optimizeRaycast': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 	'orthographic': false,
@@ -274,7 +274,7 @@ function init() {
 
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
-	exampleOptions.add( params, 'overrideRaycast', );
+	exampleOptions.add( params, 'optimizeRaycast', );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
 	exampleOptions.open();
@@ -444,6 +444,7 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
+	tiles.optimizeRaycast = params.optimizeRaycast;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;

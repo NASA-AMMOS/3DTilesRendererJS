@@ -12,8 +12,7 @@ import {
 	Vector2,
 	Math as MathUtils,
 	Frustum,
-	LoadingManager,
-	Group,
+	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -29,7 +28,15 @@ const vecZ = new Vector3();
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
 
-function emptyRaycast() {}
+function overridenRaycast( raycaster, intersects ) {
+
+	if ( ! this.userData.tilesRenderer.optimizeRaycast ) {
+
+		Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+
+	}
+
+}
 
 function updateFrustumCulled( object, toInitialValue ) {
 
@@ -68,67 +75,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	get optimizeRaycast() {
-
-		return this._optimizeRaycast;
-
-	}
-
-	set optimizeRaycast( value ) {
-
-		if ( this._optimizeRaycast != value ) {
-
-			this._optimizeRaycast = value;
-
-			if ( this._optimizeRaycast ) {
-
-				this.traverse( tile => {
-
-					if ( tile instanceof TilesGroup ) {
-
-						this.raycast = TilesGroup.prototype.raycast;
-
-					} else {
-
-						this.raycast = emptyRaycast;
-
-					}
-
-				} );
-
-			} else {
-
-				this.traverse( tile => {
-
-					if ( tile instanceof TilesGroup ) {
-
-						console.log( "Replace to group's raycast" );
-						tile.raycast = Group.prototype.raycast;
-
-					} else {
-
-						tile.raycast = Object.getPrototypeOf( tile ).raycast;
-
-					}
-
-				} );
-
-			}
-
-			this.traverse( tile => {
-
-				if ( tile.scene ) {
-
-					updateFrustumCulled( tile.scene, value );
-
-				}
-
-			} );
-
-		}
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
@@ -139,7 +85,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this._autoDisableRendererCulling = true;
-		this._optimizeRaycast = true;
+		this.optimizeRaycast = true;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -235,30 +181,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 	raycast( raycaster, intersects ) {
 
-		if ( ! this._optimizeRaycast ) {
+		if ( this.optimizeRaycast ) {
 
-			return;
+			if ( ! this.root ) {
 
-		}
-
-		if ( ! this.root ) {
-
-			return;
-
-		}
-
-		if ( raycaster.firstHitOnly ) {
-
-			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
-			if ( hit ) {
-
-				intersects.push( hit );
+				return;
 
 			}
 
-		} else {
+			if ( raycaster.firstHitOnly ) {
 
-			raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
+				const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
+				if ( hit ) {
+
+					intersects.push( hit );
+
+				}
+
+			} else {
+
+				raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
+
+			}
 
 		}
 
@@ -683,16 +627,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cached.scene = scene;
 
-			if ( this._optimizeRaycast ) {
+			let renderer = this;
+			// We handle raycasting in a custom way so remove it from here
+			scene.traverse( c => {
 
-				// We handle raycasting in a custom way so remove it from here
-				scene.traverse( c => {
+				c.userData.tilesRenderer = renderer;
+				c.raycast = overridenRaycast;
 
-					c.raycast = emptyRaycast;
-
-				} );
-
-			}
+			} );
 
 			const materials = [];
 			const geometry = [];
