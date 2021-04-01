@@ -28,16 +28,6 @@ const vecZ = new Vector3();
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
 
-function overridenRaycast( raycaster, intersects ) {
-
-	if ( ! this.userData.tilesRenderer.optimizeRaycast ) {
-
-		Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
-
-	}
-
-}
-
 function updateFrustumCulled( object, toInitialValue ) {
 
 	object.traverse( c => {
@@ -106,6 +96,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 		this.manager = manager;
+
+		// Setting up the override raycasting function to be used by
+		// 3D objects created by this renderer
+		const tilesRenderer = this;
+		this._overridenRaycast = function ( raycaster, intersects ) {
+
+			if ( ! tilesRenderer.optimizeRaycast ) {
+
+				Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+
+			}
+
+		};
 
 	}
 
@@ -181,28 +184,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 	raycast( raycaster, intersects ) {
 
-		if ( this.optimizeRaycast ) {
+		if ( ! this.root ) {
 
-			if ( ! this.root ) {
+			return;
 
-				return;
+		}
 
-			}
+		if ( raycaster.firstHitOnly ) {
 
-			if ( raycaster.firstHitOnly ) {
+			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
+			if ( hit ) {
 
-				const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
-				if ( hit ) {
-
-					intersects.push( hit );
-
-				}
-
-			} else {
-
-				raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
+				intersects.push( hit );
 
 			}
+
+		} else {
+
+			raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
 
 		}
 
@@ -627,12 +626,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cached.scene = scene;
 
-			let renderer = this;
 			// We handle raycasting in a custom way so remove it from here
 			scene.traverse( c => {
 
-				c.userData.tilesRenderer = renderer;
-				c.raycast = overridenRaycast;
+				c.raycast = this._overridenRaycast;
 
 			} );
 
