@@ -49,12 +49,6 @@ let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
-// Default public token has been taken from the Cesium npm package from "cesium/Source/Ion.js". The token
-// expires with every Cesium release. The default access token is provided by Cesium for evaluation purposes
-// only. Sign up for a free ion account and get your own access token at https://cesium.com.
-// https://github.com/CesiumGS/cesium/blob/master/Source/Core/Ion.js#L6-L13
-const defaultIonToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwY2Q2MzQ1OS1kNjI4LTRiZDEtOWVkZC1kMWI4YzAyODU3OGMiLCJpZCI6MjU5LCJpYXQiOjE2MDY4NzMyMTh9.8EwC6vilVHM2yizt8nG6VmbNu66QiCrk3O-1lEDPI9I';
-
 let params = {
 
 	'enableUpdate': true,
@@ -64,7 +58,7 @@ let params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': defaultIonToken,
+	'ionAccessToken': '',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -170,7 +164,11 @@ function reinstantiateTiles() {
 				tiles.preprocessURL = uri => {
 
 					uri = new URL( uri );
-					uri.searchParams.append( 'v', version );
+					if ( /^http/.test( uri.protocol ) ) {
+
+						uri.searchParams.append( 'v', version );
+
+					}
 					return uri;
 
 				};
@@ -339,9 +337,13 @@ function init() {
 	const gui = new dat.GUI();
 	gui.width = 300;
 
+	const ionOptions = gui.addFolder( 'Ion' );
+	ionOptions.add( params, 'ionAssetId' );
+	ionOptions.add( params, 'ionAccessToken' );
+	ionOptions.add( params, 'reload' );
+	ionOptions.open();
+
 	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'ionAssetId' );
-	tileOptions.add( params, 'ionAccessToken' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
@@ -349,7 +351,6 @@ function init() {
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
-	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -365,7 +366,6 @@ function init() {
 		RANDOM_COLOR,
 
 	} );
-	debug.open();
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'resolutionScale' ).min( 0.01 ).max( 2.0 ).step( 0.01 ).onChange( onWindowResize );
@@ -388,9 +388,7 @@ function init() {
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-	exampleOptions.open();
 
-	gui.add( params, 'reload' );
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
