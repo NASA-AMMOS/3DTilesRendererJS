@@ -50,6 +50,7 @@ function init() {
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
+	controls.maxPolarAngle = Math.PI / 2;
 	controls.baseSpeed = 0.1;
 	controls.fastSpeed = 0.2;
 
@@ -67,6 +68,8 @@ function init() {
 
 	groundTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	groundTiles.fetchOptions.mode = 'cors';
+	groundTiles.lruCache.minSize = 900;
+	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
 
 	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
