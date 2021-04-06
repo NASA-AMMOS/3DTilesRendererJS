@@ -68,7 +68,7 @@ function init() {
 
 	groundTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	groundTiles.fetchOptions.mode = 'cors';
-	groundTiles.errorTarget = 15;
+	groundTiles.errorTarget = 12;
 
 	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
