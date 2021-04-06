@@ -9,7 +9,6 @@ import {
 	PerspectiveCamera,
 	Group,
 	sRGBEncoding,
-	Fog,
 	FogExp2,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
