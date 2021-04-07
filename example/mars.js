@@ -1,5 +1,5 @@
 import {
-	TilesRenderer,
+	DebugTilesRenderer as TilesRenderer,
 } from '../src/index.js';
 import {
 	Scene,
@@ -19,7 +19,9 @@ let groundTiles, skyTiles;
 
 const params = {
 
-	fog: true,
+	errorTarget: 12,
+	displayBoxBounds: false,
+	fog: false,
 
 };
 
@@ -30,7 +32,6 @@ function init() {
 
 	const fog = new FogExp2( 0xd8cec0, .0075, 250 );
 	scene = new Scene();
-	scene.fog = fog;
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
@@ -87,6 +88,9 @@ function init() {
 		scene.fog = v ? fog : null;
 
 	} );
+
+	gui.add( params, 'displayBoxBounds' );
+	gui.add( params, 'errorTarget', 0, 100 );
 	gui.open();
 
 }
@@ -105,6 +109,10 @@ function render() {
 	requestAnimationFrame( render );
 
 	camera.updateMatrixWorld();
+
+	groundTiles.errorTarget = params.errorTarget;
+	groundTiles.displayBoxBounds = params.displayBoxBounds;
+	skyTiles.displayBoxBounds = params.displayBoxBounds;
 
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
