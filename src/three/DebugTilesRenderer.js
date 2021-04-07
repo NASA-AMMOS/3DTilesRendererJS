@@ -356,9 +356,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 					const cachedBoxMat = cached.boxTransform;
 
 					// Create debug bounding box
+					// In some cases the bounding box may have a scale of 0 in one dimension resulting
+					// in the NaNs in an extracted rotation so we disable matrix updates instead.
 					const boxHelperGroup = new Group();
 					boxHelperGroup.matrix.copy( cachedBoxMat );
-					boxHelperGroup.matrix.decompose( boxHelperGroup.position, boxHelperGroup.quaternion, boxHelperGroup.scale );
+					boxHelperGroup.matrixAutoUpdate = false;
 
 					const boxHelper = new Box3Helper( cachedBox );
 					boxHelper.raycast = emptyRaycast;

@@ -4,13 +4,15 @@
 [![build](https://img.shields.io/github/workflow/status/NASA-AMMOS/3DTilesRendererJS/Node.js%20CI?style=flat-square&label=build)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
 [![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/3DTilesRendererJS/)
 
-![](./images/header.png)
+![](./images/header-mars.png)
 
 Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
 
 If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features.
 
 **Examples**
+
+[Dingo Gap Mars dataset with multiple tile sets](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mars.html)!
 
 [Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)!
 
