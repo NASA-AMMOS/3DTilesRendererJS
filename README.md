@@ -34,7 +34,7 @@ npm install 3d-tiles-renderer --save
 
 ## Basic TilesRenderer
 
-Setting up a basic application a 3D Tile Set.
+Setting up a basic application with a 3D Tile Set.
 
 ```js
 import { TilesRenderer } from '3d-tiles-renderer';
