@@ -309,6 +309,16 @@ autoDisableRendererCulling = true : Boolean
 
 If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
+### .optimizeRaycast
+
+```js
+optimizeRaycast = true : Boolean
+```
+
+If true then `.group` uses a traversal of the tileset definition to optimize the process. If `raycaster.firstHitOnly = true`, then only the first hit of the terrain is reported in the tileset.
+
+This overrides the default threejs behaviour for all its children. If you intend to use typical threejs code against the tiles (e.g. raycast directly against the meshes) you should set this to false.
+
 ### .onPreprocessURL
 
 ```js
@@ -349,7 +359,7 @@ group : Group
 
 The container group for the 3d tiles. Add this to the three.js scene in order to render it.
 
-When raycasting a higher performance traversal approach is used if `raycaster.firstHitOnly = true`. If true then only the first hit of the terrain is reported in the tileset.
+When raycasting a higher performance traversal approach is used (see [optimizeRaycast](#optimizeRaycast)).
 
 ### .manager
 
