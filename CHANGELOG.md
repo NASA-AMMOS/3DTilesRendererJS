@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- Added "sideEffects: false" to package.json.
+
 ### Fixed
 - Bounding box visualization not displaying correctly with `DebugTilesRenderer` when the bounds have a width of 0 in one dimension.
 
