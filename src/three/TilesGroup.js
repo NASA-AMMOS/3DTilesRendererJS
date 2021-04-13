@@ -15,7 +15,11 @@ export class TilesGroup extends Group {
 
 	raycast( raycaster, intersects ) {
 
-		this.tilesRenderer.raycast( raycaster, intersects );
+		if ( this.tilesRenderer.optimizeRaycast ) {
+
+			this.tilesRenderer.raycast( raycaster, intersects );
+
+		}
 
 	}
 

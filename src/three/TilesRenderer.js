@@ -12,7 +12,7 @@ import {
 	Vector2,
 	Math as MathUtils,
 	Frustum,
-	LoadingManager,
+	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
@@ -27,8 +27,6 @@ const vecZ = new Vector3();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
-
-function emptyRaycast() {}
 
 function updateFrustumCulled( object, toInitialValue ) {
 
@@ -77,6 +75,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this._autoDisableRendererCulling = true;
+		this.optimizeRaycast = true;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -97,6 +96,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 		this.manager = manager;
+
+		// Setting up the override raycasting function to be used by
+		// 3D objects created by this renderer
+		const tilesRenderer = this;
+		this._overridenRaycast = function ( raycaster, intersects ) {
+
+			if ( ! tilesRenderer.optimizeRaycast ) {
+
+				Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+
+			}
+
+		};
 
 	}
 
@@ -617,7 +629,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// We handle raycasting in a custom way so remove it from here
 			scene.traverse( c => {
 
-				c.raycast = emptyRaycast;
+				c.raycast = this._overridenRaycast;
 
 			} );
 
