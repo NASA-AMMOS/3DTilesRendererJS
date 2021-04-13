@@ -317,9 +317,9 @@ If true then all tile meshes automatically have their [frustumCulled](https://th
 optimizeRaycast = true : Boolean
 ```
 
-If true then `.group` uses a traversal of the tileset definition to optimize the process. If `raycaster.firstHitOnly = true`, then only the first hit of the terrain is reported in the tileset.
+If true then the `raycast` functions of the loaded tile objects are overriden to disable raycasting and the `TilesRenderer.group` raycast function is used to perform a raycast over all visible tiles. This enables an optimized traversal for raycasting against tiles. If `raycaster.firstHitOnly = true` then as well as a more optimal traversal of tiles the raycast will end early as soon as the closest intersction is found.
 
-This overrides the default threejs behaviour for all its children. If you intend to use typical threejs code against the tiles (e.g. raycast directly against the meshes) you should set this to false.
+If you would like to manage raycasting against tiles yourself this behavior can be disabled if needed by setting `optizeRaycast` to false.
 
 ### .onPreprocessURL
 
