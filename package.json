@@ -15,6 +15,7 @@
     "cesium"
   ],
   "type": "module",
+  "sideEffects": false,
   "main": "src/index.js",
   "module": "src/index.js",
   "files": [
