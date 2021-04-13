@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- "TilesRenderer.optimizeRaycast" option to disable overriding the raycast function of loaded tiles.
+- `TilesRenderer.optimizeRaycast` option to disable overriding the raycast function of loaded tiles.
 
 ### Changed
 - Added "sideEffects: false" to package.json.
