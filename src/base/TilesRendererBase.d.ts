@@ -30,3 +30,42 @@ export class TilesRendererBase {
 	dispose() : void;
 
 }
+
+/** Documented 3d-tile state managed by the TilesRenderer* / traverseFunctions! */
+export interface Tile {
+
+	/**
+	 * Hierarchy Depth from the TileGroup
+	 */
+	__depth : Number;
+	/**
+	 * The screen space error for this tile
+	 */
+	__error : Number;
+	/**
+	 * How far is this tiles bounds from the nearest active Camera.
+	 * Expected to be filled in during calculateError implementations.
+	 */
+	 __distanceFromCamera : Number;
+	/**
+	 * This tile is currently active if:
+	 *  1: Tile content is loaded and ready to be made visible if needed
+	 */
+	__active : Boolean;
+	/**
+	 * This tile is currently visible if:
+	 *  1: Tile content is loaded
+	 *  2: Tile is within a camera frustum
+	 *  3: Tile meets the SSE requirements
+	 */
+	 __visible : Boolean;
+	/**
+	 * Frame number that this tile was last used: active+visible
+	 */
+	 __lastFrameVisited : Number;
+	/**
+	 * TODO: Document this if it is useful enough to be the default property in the LRU sorting.
+	 */
+	 __depthFromRenderedParent : Number;
+
+}

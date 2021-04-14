@@ -586,7 +586,7 @@ The maximum number of jobs to be processing at once.
 ### .priorityCallback
 
 ```js
-priorityCallback = null : ( item ) => Number
+priorityCallback = null : ( itemA, itemB ) => Number
 ```
 
 Function to derive the job priority of the given item. Higher priority values get processed first.
@@ -622,7 +622,7 @@ The maximum percentage of [minSize](#minSize) to unload during a given frame.
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback = null : ( item ) => Number
+unloadPriorityCallback = null : ( itemA, itemB ) => Number
 ```
 
 Function to derive the unload priority of the given item. Higher priority values get unloaded first.

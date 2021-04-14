@@ -24,7 +24,8 @@ function resetFrameState( tile, frameCount ) {
 		tile.__isLeaf = false;
 		tile.__visible = false;
 		tile.__active = false;
-		tile.__error = 0;
+		tile.__error = Infinity;
+		tile.__distanceFromCamera = Infinity;
 		tile.__childrenWereVisible = false;
 		tile.__allChildrenLoaded = false;
 
