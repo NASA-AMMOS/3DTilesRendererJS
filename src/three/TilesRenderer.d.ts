@@ -5,6 +5,7 @@ import { TilesGroup } from './TilesGroup';
 export class TilesRenderer extends TilesRendererBase {
 
 	autoDisableRendererCulling : Boolean;
+	optimizeRaycast : Boolean;
 
 	manager : LoadingManager;
 
