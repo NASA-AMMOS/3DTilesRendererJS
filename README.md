@@ -583,13 +583,13 @@ maxJobs = 6 : number
 
 The maximum number of jobs to be processing at once.
 
-### .unloadPriorityCallback
+### .priorityCallback
 
 ```js
-unloadPriorityCallback = null : ( item ) => Number
+priorityCallback = null : ( item ) => Number
 ```
 
-Function to derive the unload priority of the given item. Higher priority values get unloaded first.
+Function to derive the job priority of the given item. Higher priority values get processed first.
 
 ## LRUCache
 
@@ -619,13 +619,13 @@ unloadPercent = 0.05 : number
 
 The maximum percentage of [minSize](#minSize) to unload during a given frame.
 
-### .priorityCallback
+### .unloadPriorityCallback
 
 ```js
-priorityCallback = null : ( item ) => Number
+unloadPriorityCallback = null : ( item ) => Number
 ```
 
-Function to derive the job priority of the given item. Higher priority values get processed first.
+Function to derive the unload priority of the given item. Higher priority values get unloaded first.
 
 ## BatchTable
 
