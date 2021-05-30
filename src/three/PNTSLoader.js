@@ -58,6 +58,16 @@ export class PNTSLoader extends PNTSLoaderBase {
 		result.scene = object;
 		result.scene.featureTable = featureTable;
 
+		const rtcCenter = featureTable.getData( 'RTC_CENTER' );
+
+		if ( rtcCenter ) {
+
+			result.scene.position.x += rtcCenter[ 0 ];
+			result.scene.position.y += rtcCenter[ 1 ];
+			result.scene.position.z += rtcCenter[ 2 ];
+
+		}
+
 		return result;
 
 	}

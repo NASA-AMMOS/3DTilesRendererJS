@@ -615,8 +615,12 @@ export class TilesRenderer extends TilesRendererBase {
 			// any transformations applied to it can be assumed to be applied after load
 			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 			// rotation fix which is why "multiply" happens here.
-			scene.matrix.multiply( tempMat ).premultiply( cachedTransform );
-			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+			if ( extension !== 'pnts' ) {
+
+				scene.matrix.multiply( tempMat ).premultiply( cachedTransform );
+				scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+
+			}
 			scene.traverse( c => {
 
 				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
