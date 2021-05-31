@@ -617,10 +617,12 @@ export class TilesRenderer extends TilesRendererBase {
 			// rotation fix which is why "multiply" happens here.
 			if ( extension !== 'pnts' ) {
 
-				scene.matrix.multiply( tempMat ).premultiply( cachedTransform );
-				scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+				scene.matrix.multiply( tempMat );
 
 			}
+
+			scene.matrix.premultiply( cachedTransform );
+			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 			scene.traverse( c => {
 
 				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
