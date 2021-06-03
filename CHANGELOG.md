@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.11] - 2021-06-03
+### Fixed
+- PNTS files incorrectly having a GLTF rotation adjustment applied.
+
 ## [0.2.10] - 2021-04-15
 ### Added
 - `TilesRenderer.optimizeRaycast` option to disable overriding the raycast function of loaded tiles.
