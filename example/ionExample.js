@@ -169,7 +169,7 @@ function reinstantiateTiles() {
 						uri.searchParams.append( 'v', version );
 
 					}
-					return uri;
+					return uri.toString();
 
 				};
 
