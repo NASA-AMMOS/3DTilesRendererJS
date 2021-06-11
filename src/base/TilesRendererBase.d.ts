@@ -15,7 +15,7 @@ export class TilesRendererBase {
 
 	fetchOptions : Object;
 	/** function to preprocess the url for each individual tile */
-	onPreprocessURL : ((uri: string | URL) => URL) | null;
+	preprocessURL : ((uri: string | URL) => string) | null;
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;
