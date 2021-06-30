@@ -1,9 +1,10 @@
 import { LRUCache } from '../utilities/LRUCache';
 import { PriorityQueue } from '../utilities/PriorityQueue';
+import { Tileset } from './Tileset';
 
 export class TilesRendererBase {
 
-	readonly rootTileset : Object | null;
+	readonly rootTileset : Tileset | null;
 	readonly root : Object | null;
 
 	errorTarget : Number;

@@ -16,6 +16,7 @@ export const DEPTH = 4;
 export const RELATIVE_DEPTH = 5;
 export const IS_LEAF = 6;
 export const RANDOM_COLOR = 7;
+export const RANDOM_NODE_COLOR = 8;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
@@ -201,6 +202,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 			scene.traverse( c => {
 
+				if ( colorMode === RANDOM_NODE_COLOR ) {
+
+					h = Math.random();
+					s = 0.5 + Math.random() * 0.5;
+					l = 0.375 + Math.random() * 0.25;
+
+				}
+
 				const currMaterial = c.material;
 				if ( currMaterial ) {
 
@@ -229,7 +238,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
-					if ( colorMode !== RANDOM_COLOR ) {
+					if ( colorMode !== RANDOM_COLOR && colorMode !== RANDOM_NODE_COLOR ) {
 
 						delete c.material[ HAS_RANDOM_COLOR ];
 
@@ -241,7 +250,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
-							c.material.color.setRGB( val, val, val );
+							/** map higher depth values to red, lower to green, lerping by hue */
+							c.material.color.setHSL( MathUtils.mapLinear( val, 0, 1, 0.9, 0.1 ), 1, 0.5 );
 							break;
 
 						}
@@ -261,8 +271,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								const v = MathUtils.mapLinear( val, 1, 0, 0.1, 1 );
-								c.material.color.setRGB( v, v, v );
+								/** map higher error values to red, lower to green, lerping by hue */
+								c.material.color.setHSL( MathUtils.mapLinear( val, 0, 1, 0.43, 0 ), 1, 0.5 );
 
 							}
 							break;
@@ -293,6 +303,17 @@ export class DebugTilesRenderer extends TilesRenderer {
 							} else {
 
 								c.material.color.set( 0 );
+
+							}
+							break;
+
+						}
+						case RANDOM_NODE_COLOR: {
+
+							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
+
+								c.material.color.setHSL( h, s, l );
+								c.material[ HAS_RANDOM_COLOR ] = true;
 
 							}
 							break;
