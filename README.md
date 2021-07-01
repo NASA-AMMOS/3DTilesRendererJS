@@ -622,7 +622,7 @@ The maximum percentage of [minSize](#minSize) to unload during a given frame.
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback = null : ( itemA, itemB ) => Number
+unloadPriorityCallback = null : ( item ) => Number
 ```
 
 Function to derive the unload priority of the given item. Higher priority values get unloaded first.

@@ -24,13 +24,15 @@ const priorityCallback = ( a, b ) => {
 		// tiles which have greater error next
 		return a.__error - b.__error;
 
-	} else {
+	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
 
 		// and finally visible tiles which have equal error (ex: if geometricError === 0)
 		// should prioritize based on distance.
 		return a.__distanceFromCamera - b.__distanceFromCamera;
 
 	}
+
+	return 0;
 
 };
 
@@ -39,14 +41,7 @@ const priorityCallback = ( a, b ) => {
  * @param {Tile} tile
  * @returns number
  */
-const lruPriorityCallback = ( tile ) => {
-
-	const defaultPriority = 1 / ( tile.__depthFromRenderedParent + 1 );
-	const errorPriority = 1 / ( tile.__error + 1 );
-	const priority = defaultPriority - errorPriority;
-	return priority;
-
-};
+const lruPriorityCallback = ( tile ) => 1 / ( tile.__depthFromRenderedParent + 1 );
 
 export class TilesRendererBase {
 
@@ -227,7 +222,7 @@ export class TilesRendererBase {
 
 		// Expected to be set during calculateError()
 		tile.__distanceFromCamera = Infinity;
-		tile.__error = 0.0;
+		tile.__error = Infinity;
 
 		tile.__inFrustum = false;
 		tile.__isLeaf = false;

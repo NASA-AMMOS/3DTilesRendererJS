@@ -802,14 +802,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 					const pixelSize = info.pixelSize;
 					error = tile.geometricError / ( pixelSize * invScale );
-					// TODO: distance not updated while in orthographic views
 
 				} else {
 
 					const distance = boundingBox.distanceToPoint( tempVector );
 					const scaledDistance = distance * invScale;
 					const sseDenominator = info.sseDenominator;
-					error = Math.max( 0.01, tile.geometricError ) / ( scaledDistance * sseDenominator );
+					error = tile.geometricError / ( scaledDistance * sseDenominator );
 
 					minDistance = Math.min( minDistance, scaledDistance );
 
@@ -819,8 +818,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			tile.cached.distance = minDistance;
 			tile.__distanceFromCamera = minDistance;
+			tile.__error = maxError;
 
 			return maxError;
 

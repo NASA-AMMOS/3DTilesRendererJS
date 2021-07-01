@@ -115,7 +115,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 			return {
 
-				distanceToCamera: targetTile.cached.distance,
+				distanceToCamera: targetTile.__distanceFromCamera,
 				geometricError: targetTile.geometricError,
 				screenSpaceError: targetTile.__error,
 				depth: targetTile.__depth,
@@ -274,7 +274,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
-							const val = Math.min( tile.cached.distance / maxDistance, 1 );
+							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
 							c.material.color.setRGB( val, val, val );
 							break;
 
