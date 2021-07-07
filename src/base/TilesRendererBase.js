@@ -5,8 +5,43 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
-// Function for sorting the evicted LRU items. We should evict the shallowest depth first.
-const priorityCallback = tile => 1 / ( tile.__depthFromRenderedParent + 1 );
+/**
+ * Function for provided to sort all tiles for prioritizing loading/unloading.
+ *
+ * @param {Tile} a
+ * @param {Tile} b
+ * @returns number
+ */
+const priorityCallback = ( a, b ) => {
+
+	if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
+
+		// the lastFrameVisited tracks the last frame where a tile was used
+		return a.__lastFrameVisited - b.__lastFrameVisited;
+
+	} else if ( a.__error !== b.__error ) {
+
+		// tiles which have greater error next
+		return a.__error - b.__error;
+
+	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
+
+		// and finally visible tiles which have equal error (ex: if geometricError === 0)
+		// should prioritize based on distance.
+		return a.__distanceFromCamera - b.__distanceFromCamera;
+
+	}
+
+	return 0;
+
+};
+
+/**
+ * Function for sorting the evicted LRU items. We should evict the shallowest depth first.
+ * @param {Tile} tile
+ * @returns number
+ */
+const lruPriorityCallback = ( tile ) => 1 / ( tile.__depthFromRenderedParent + 1 );
 
 export class TilesRendererBase {
 
@@ -42,7 +77,7 @@ export class TilesRendererBase {
 		this.preprocessURL = null;
 
 		const lruCache = new LRUCache();
-		lruCache.unloadPriorityCallback = priorityCallback;
+		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 4;
@@ -185,7 +220,10 @@ export class TilesRendererBase {
 
 		}
 
-		tile.__error = 0.0;
+		// Expected to be set during calculateError()
+		tile.__distanceFromCamera = Infinity;
+		tile.__error = Infinity;
+
 		tile.__inFrustum = false;
 		tile.__isLeaf = false;
 
@@ -420,17 +458,17 @@ export class TilesRendererBase {
 
 		if ( isExternalTileSet ) {
 
-			downloadQueue.add( tile, tile => {
+			downloadQueue.add( tile, tileCb => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( tileCb.__loadIndex !== loadIndex ) {
 
 					return Promise.resolve();
 
 				}
 
-				const uri = this.preprocessURL ? this.preprocessURL( tile.content.uri ) : tile.content.uri;
-				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tile );
+				const uri = this.preprocessURL ? this.preprocessURL( tileCb.content.uri ) : tileCb.content.uri;
+				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
 				.then( json => {
@@ -453,15 +491,15 @@ export class TilesRendererBase {
 
 		} else {
 
-			downloadQueue.add( tile, tile => {
+			downloadQueue.add( tile, downloadTile => {
 
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( downloadTile.__loadIndex !== loadIndex ) {
 
 					return Promise.resolve();
 
 				}
 
-				const uri = this.preprocessURL ? this.preprocessURL( tile.content.uri ) : tile.content.uri;
+				const uri = this.preprocessURL ? this.preprocessURL( downloadTile.content.uri ) : downloadTile.content.uri;
 				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
@@ -498,19 +536,19 @@ export class TilesRendererBase {
 					tile.__loadAbort = null;
 					tile.__loadingState = PARSING;
 
-					return parseQueue.add( tile, tile => {
+					return parseQueue.add( tile, parseTile => {
 
 						// if it has been unloaded then the tile has been disposed
-						if ( tile.__loadIndex !== loadIndex ) {
+						if ( parseTile.__loadIndex !== loadIndex ) {
 
 							return Promise.resolve();
 
 						}
 
-						const uri = tile.content.uri;
+						const uri = parseTile.content.uri;
 						const extension = uri.split( /\./g ).pop();
 
-						return this.parseTile( buffer, tile, extension );
+						return this.parseTile( buffer, parseTile, extension );
 
 					} );
 

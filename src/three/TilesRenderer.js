@@ -767,12 +767,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateError( tile ) {
 
-		if ( tile.geometricError === 0.0 ) {
-
-			return 0.0;
-
-		}
-
 		const cached = tile.cached;
 		const inFrustum = cached.inFrustum;
 		const cameras = this.cameras;
@@ -787,6 +781,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			let maxError = - Infinity;
 			let minDistance = Infinity;
+
 			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
 				if ( ! inFrustum[ i ] ) {
@@ -823,7 +818,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			tile.cached.distance = minDistance;
+			tile.__distanceFromCamera = minDistance;
+			tile.__error = maxError;
 
 			return maxError;
 

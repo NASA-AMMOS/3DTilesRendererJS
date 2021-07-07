@@ -23,11 +23,7 @@ class PriorityQueue {
 
 		const priorityCallback = this.priorityCallback;
 		const items = this.items;
-		items.sort( ( a, b ) => {
-
-			return priorityCallback( a ) - priorityCallback( b );
-
-		} );
+		items.sort( priorityCallback );
 
 	}
 

@@ -586,7 +586,7 @@ The maximum number of jobs to be processing at once.
 ### .priorityCallback
 
 ```js
-priorityCallback = null : ( item ) => Number
+priorityCallback = null : ( itemA, itemB ) => Number
 ```
 
 Function to derive the job priority of the given item. Higher priority values get processed first.

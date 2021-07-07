@@ -8,7 +8,7 @@ describe( 'PriorityQueue', () => {
 
 		const queue = new PriorityQueue();
 		queue.maxJobs = 6;
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 		queue.add( { priority: 6 }, () => new Promise( () => {} ) );
 		queue.add( { priority: 3 }, () => new Promise( () => {} ) );
 		queue.add( { priority: 4 }, () => new Promise( () => {} ) );
@@ -36,7 +36,7 @@ describe( 'PriorityQueue', () => {
 
 		const queue = new PriorityQueue();
 		queue.maxJobs = 1;
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 		queue.add( { priority: 6 }, cb );
 		queue.add( { priority: 3 }, cb );
 		queue.add( { priority: 4 }, cb );
@@ -65,7 +65,7 @@ describe( 'PriorityQueue', () => {
 		const C = { priority: 2 };
 		const D = { priority: 3 };
 		const queue = new PriorityQueue();
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 		queue.add( A, () => new Promise( () => {} ) );
 		queue.add( B, () => new Promise( () => {} ) );
 		queue.add( C, () => new Promise( () => {} ) );
@@ -95,7 +95,7 @@ describe( 'PriorityQueue', () => {
 		let resolveFunc = null;
 		const queue = new PriorityQueue();
 		queue.maxJobs = 1;
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 
 		queue.add( { priority: 1 }, () => new Promise( resolve => {
 
@@ -134,7 +134,7 @@ describe( 'PriorityQueue', () => {
 
 		const A = { priority: 100 };
 		const queue = new PriorityQueue();
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 
 		queue.add( A, item => new Promise( () => {
 
@@ -149,7 +149,7 @@ describe( 'PriorityQueue', () => {
 	it( 'should return a promise that resolves from the add function.', async () => {
 
 		const queue = new PriorityQueue();
-		queue.priorityCallback = item => item.priority;
+		queue.priorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
 
 		let result = null;
 		queue.add( { priority: 0 }, item => Promise.resolve( 1000 ) ).then( res => result = res );
