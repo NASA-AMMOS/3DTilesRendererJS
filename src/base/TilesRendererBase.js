@@ -471,7 +471,6 @@ export class TilesRendererBase {
 				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
-				.then( res => res.json() )
 				.then( json => {
 
 					// if it has been unloaded then the tile has been disposed
