@@ -510,7 +510,6 @@ export class TilesRenderer extends TilesRendererBase {
 			scene: null,
 			geometry: null,
 			material: null,
-			distance: Infinity
 
 		};
 
