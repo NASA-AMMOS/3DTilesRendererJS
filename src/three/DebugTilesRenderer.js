@@ -65,11 +65,20 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
-	loadTileSet( ...args ) {
+	fetchTileSet( ...args ) {
 
-		const pr = super.loadTileSet( ...args );
+		const pr = super.fetchTileSet( ...args );
 		pr
-			.then( () => this.initExtremes() )
+			.then( () => {
+
+				// defer to after the loaded tileset has been initialized
+				Promise.resolve().then( () => {
+
+					this.initExtremes();
+
+				} );
+
+			} )
 			.catch( () => {
 
 				// error is logged internally

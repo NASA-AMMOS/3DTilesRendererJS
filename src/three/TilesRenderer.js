@@ -510,7 +510,6 @@ export class TilesRenderer extends TilesRendererBase {
 			scene: null,
 			geometry: null,
 			material: null,
-			distance: Infinity
 
 		};
 
@@ -773,6 +772,8 @@ export class TilesRenderer extends TilesRendererBase {
 		const cameraInfo = this.cameraInfo;
 
 		// TODO: Use the content bounding volume here?
+		// TODO: We should use the largest distance to the tile between
+		// all available bounding volume types.
 		const boundingVolume = tile.boundingVolume;
 		if ( 'box' in boundingVolume ) {
 
@@ -821,8 +822,6 @@ export class TilesRenderer extends TilesRendererBase {
 			tile.__distanceFromCamera = minDistance;
 			tile.__error = maxError;
 
-			return maxError;
-
 		} else if ( 'sphere' in boundingVolume ) {
 
 			// const sphere = cached.sphere;
@@ -835,8 +834,6 @@ export class TilesRenderer extends TilesRendererBase {
 			console.warn( 'ThreeTilesRenderer : Region bounds not supported.' );
 
 		}
-
-		return Infinity;
 
 	}
 

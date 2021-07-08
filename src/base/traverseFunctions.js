@@ -146,8 +146,10 @@ export function determineFrustumSet( tile, renderer ) {
 	// at an external tile set.
 	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
 
-		const error = renderer.calculateError( tile );
-		tile.__error = error;
+		// compute the _error and __distanceFromCamera fields
+		renderer.calculateError( tile );
+
+		const error = tile.__error;
 		if ( error <= errorTarget ) {
 
 			return true;
