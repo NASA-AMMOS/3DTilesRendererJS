@@ -48,6 +48,7 @@
     "jest": "^25.5.4",
     "jest-cli": "^25.5.4",
     "parcel-bundler": "^1.12.4",
+    "path-browserify": "^1.0.1",
     "static-server": "^2.2.1",
     "three": ">=0.126.0",
     "typescript": "^3.9.9"
