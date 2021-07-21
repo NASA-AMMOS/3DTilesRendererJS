@@ -429,6 +429,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		const transformInverse = new Matrix4().copy( transform ).invert();
+
 		let box = null;
 		let boxTransform = null;
 		let boxTransformInverse = null;
@@ -498,6 +500,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			loadIndex: 0,
 			transform,
+			transformInverse,
 			active: false,
 			inFrustum: [],
 
@@ -775,10 +778,13 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: We should use the largest distance to the tile between
 		// all available bounding volume types.
 		const boundingVolume = tile.boundingVolume;
-		if ( 'box' in boundingVolume ) {
 
+		if ( 'box' in boundingVolume || 'sphere' in boundingVolume ) {
+
+			const boundingSphere = cached.sphere;
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
+			const transformInverse = cached.transformInverse;
 
 			let maxError = - Infinity;
 			let minDistance = Infinity;
@@ -795,8 +801,6 @@ export class TilesRenderer extends TilesRendererBase {
 				const camera = cameras[ i ];
 				const info = cameraInfo[ i ];
 				const invScale = info.invScale;
-				tempVector.copy( info.position );
-				tempVector.applyMatrix4( boxTransformInverse );
 
 				let error;
 				if ( camera.isOrthographicCamera ) {
@@ -806,7 +810,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 				} else {
 
-					const distance = boundingBox.distanceToPoint( tempVector );
+					tempVector.copy( info.position );
+					tempVector.applyMatrix4( boxTransformInverse || transformInverse );
+
+					const distance = boundingBox ? boundingBox.distanceToPoint( tempVector ) : boundingSphere.distanceToPoint( tempVector );
 					const scaledDistance = distance * invScale;
 					const sseDenominator = info.sseDenominator;
 					error = tile.geometricError / ( scaledDistance * sseDenominator );
@@ -821,12 +828,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			tile.__distanceFromCamera = minDistance;
 			tile.__error = maxError;
-
-		} else if ( 'sphere' in boundingVolume ) {
-
-			// const sphere = cached.sphere;
-
-			console.warn( 'ThreeTilesRenderer : Sphere bounds not supported.' );
 
 		} else if ( 'region' in boundingVolume ) {
 
