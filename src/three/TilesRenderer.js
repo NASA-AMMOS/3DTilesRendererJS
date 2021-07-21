@@ -501,6 +501,7 @@ export class TilesRenderer extends TilesRendererBase {
 			loadIndex: 0,
 			transform,
 			transformInverse,
+
 			active: false,
 			inFrustum: [],
 
