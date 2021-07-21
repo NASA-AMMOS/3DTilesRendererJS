@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- `path-browserify` dependency explicitly rather than relying on implicit polyfills for `path` package.
+
 ### Changed
 - `PriorityQueue.priorityCallback` now takes two arguments.
 - The default priority sort now accounts for most recently used tiles, screenspace error, and distance to the camera.
