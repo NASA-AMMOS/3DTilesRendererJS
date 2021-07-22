@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'path-browserify';
 
 // Function that properly handles path resolution for parts that have
 // a protocol component like "http://".

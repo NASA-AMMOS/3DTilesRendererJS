@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'path-browserify';
 import { urlJoin } from '../utilities/urlJoin.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
