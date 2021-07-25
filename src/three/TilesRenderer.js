@@ -786,6 +786,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const boundingBox = cached.box;
 			const boxTransformInverse = cached.boxTransformInverse;
 			const transformInverse = cached.transformInverse;
+			const useBox = boundingBox && boxTransformInverse;
 
 			let maxError = - Infinity;
 			let minDistance = Infinity;
@@ -812,9 +813,20 @@ export class TilesRenderer extends TilesRendererBase {
 				} else {
 
 					tempVector.copy( info.position );
-					tempVector.applyMatrix4( boxTransformInverse || transformInverse );
 
-					const distance = boundingBox ? boundingBox.distanceToPoint( tempVector ) : boundingSphere.distanceToPoint( tempVector );
+					let distance;
+					if ( useBox ) {
+
+						tempVector.applyMatrix4( boxTransformInverse );
+						distance = boundingBox.distanceToPoint( tempVector );
+
+					} else {
+
+						tempVector.applyMatrix4( transformInverse );
+						distance = boundingSphere.distanceToPoint( tempVector );
+
+					}
+
 					const scaledDistance = distance * invScale;
 					const sseDenominator = info.sseDenominator;
 					error = tile.geometricError / ( scaledDistance * sseDenominator );
