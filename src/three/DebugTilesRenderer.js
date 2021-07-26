@@ -3,7 +3,7 @@ import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
 
-export const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
+const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 
 function emptyRaycast() {}
@@ -250,8 +250,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
-							/** map higher depth values to red, lower to green, lerping by hue */
-							c.material.color.setHSL( MathUtils.mapLinear( val, 0, 1, 0.9, 0.1 ), 1, 0.5 );
+							c.material.color.setRGB( val, val, val );
 							break;
 
 						}
@@ -271,7 +270,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								/** map higher error values to red, lower to green, lerping by hue */
+								// map higher depth values to red, lower to green, lerping by hue
 								c.material.color.setHSL( MathUtils.mapLinear( val, 0, 1, 0.43, 0 ), 1, 0.5 );
 
 							}
