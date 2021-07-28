@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MathUtils, MeshStandardMaterial, PointsMaterial } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Color } from 'three';
 import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
@@ -41,6 +41,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
+		this.minDebugColor = new Color( 'black' );
+		this.maxDebugColor = new Color( 'white' );
 
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
@@ -183,6 +185,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
+		const minDebugColor = this.minDebugColor;
+		const maxDebugColor = this.maxDebugColor;
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;
@@ -250,14 +254,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
 						case RELATIVE_DEPTH: {
 
 							const val = tile.__depthFromRenderedParent / maxDepth;
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -270,8 +274,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								// map higher depth values to red, lower to green, lerping by hue
-								c.material.color.setHSL( MathUtils.mapLinear( val, 0, 1, 0.43, 0 ), 1, 0.5 );
+								c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 
 							}
 							break;
@@ -279,8 +282,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case GEOMETRIC_ERROR: {
 
-							const val = MathUtils.mapLinear( Math.min( tile.geometricError / maxError, 1 ), 1, 0, 0.1, 1 );
-							c.material.color.setRGB( val, val, val );
+							const val = Math.min( tile.geometricError / maxError, 1 );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -289,7 +292,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
 							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -297,11 +300,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							if ( ! tile.children || tile.children.length === 0 ) {
 
-								c.material.color.set( 0xffffff );
+								c.material.color.copy( maxDebugColor );
 
 							} else {
 
-								c.material.color.set( 0 );
+								c.material.color.set( minDebugColor );
 
 							}
 							break;
