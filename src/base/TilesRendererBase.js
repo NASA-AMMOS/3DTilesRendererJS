@@ -19,6 +19,11 @@ const priorityCallback = ( a, b ) => {
 		// the lastFrameVisited tracks the last frame where a tile was used
 		return a.__lastFrameVisited - b.__lastFrameVisited;
 
+	} else if ( a.__inFrustum !== b.__inFrustum ) {
+
+		// prioritize loading whatever is in the frame
+		return a.__inFrustum ? 1 : - 1;
+
 	} else if ( a.__error !== b.__error ) {
 
 		// tiles which have greater error next
