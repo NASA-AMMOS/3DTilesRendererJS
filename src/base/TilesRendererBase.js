@@ -14,17 +14,17 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
  */
 const priorityCallback = ( a, b ) => {
 
-	if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
-
-		// the lastFrameVisited tracks the last frame where a tile was used
-		return a.__lastFrameVisited - b.__lastFrameVisited;
-
-	} else if ( a.__inFrustum !== b.__inFrustum ) {
+	if ( a.__inFrustum !== b.__inFrustum ) {
 
 		// prioritize loading whatever is in the frame
 		return a.__inFrustum ? 1 : - 1;
 
-	} else if ( a.__error !== b.__error ) {
+	} else if ( a.__used !== b.__used ) {
+
+		// prioritize tiles that were used most recently
+		return a.__used ? 1 : - 1;
+
+	} if ( a.__error !== b.__error ) {
 
 		// tiles which have greater error next
 		return a.__error - b.__error;
