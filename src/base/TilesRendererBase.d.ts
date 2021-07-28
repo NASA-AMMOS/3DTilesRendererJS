@@ -46,7 +46,7 @@ export interface Tile {
 	 * How far is this tiles bounds from the nearest active Camera.
 	 * Expected to be filled in during calculateError implementations.
 	 */
-	 __distanceFromCamera : Number;
+	__distanceFromCamera : Number;
 	/**
 	 * This tile is currently active if:
 	 *  1: Tile content is loaded and ready to be made visible if needed
@@ -58,14 +58,20 @@ export interface Tile {
 	 *  2: Tile is within a camera frustum
 	 *  3: Tile meets the SSE requirements
 	 */
-	 __visible : Boolean;
+	__visible : Boolean;
 	/**
-	 * Frame number that this tile was last used: active+visible
+	 * Whether or not the tile was visited during the last update run.
 	 */
-	 __lastFrameVisited : Number;
+	__used : Boolean;
+
+	/**
+	 * Whether or not the tile was within the frustum on the last update run.
+	 */
+	__inFrustum : Boolean;
+
 	/**
 	 * TODO: Document this if it is useful enough to be the default property in the LRU sorting.
 	 */
-	 __depthFromRenderedParent : Number;
+	__depthFromRenderedParent : Number;
 
 }
