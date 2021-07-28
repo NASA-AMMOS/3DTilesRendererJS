@@ -452,6 +452,25 @@ export class TilesRenderer extends TilesRendererBase {
 			vecY.normalize();
 			vecZ.normalize();
 
+			// handle the case where the box has a dimension of 0 in one axis
+			if ( scaleX === 0 ) {
+
+				vecX.crossVectors( vecY, vecZ );
+
+			}
+
+			if ( scaleY === 0 ) {
+
+				vecY.crossVectors( vecX, vecZ );
+
+			}
+
+			if ( scaleZ === 0 ) {
+
+				vecZ.crossVectors( vecX, vecY );
+
+			}
+
 			// create the oriented frame that the box exists in
 			boxTransform.set(
 				vecX.x, vecY.x, vecZ.x, data[ 0 ],
