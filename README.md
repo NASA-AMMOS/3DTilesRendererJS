@@ -529,6 +529,9 @@ IS_LEAF
 
 // Render the tiles with a random color to show tile edges clearly.
 RANDOM_COLOR
+
+// Render every individual mesh in the scene with a random color.
+RANDOM_NODE_COLOR
 ```
 
 ### .displayBoxBounds
