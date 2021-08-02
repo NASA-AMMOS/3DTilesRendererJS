@@ -8,6 +8,7 @@ import {
 	RELATIVE_DEPTH,
 	IS_LEAF,
 	RANDOM_COLOR,
+	RANDOM_NODE_COLOR,
 } from '../src/index.js';
 import {
 	Scene,
@@ -251,6 +252,7 @@ function init() {
 		RELATIVE_DEPTH,
 		IS_LEAF,
 		RANDOM_COLOR,
+		RANDOM_NODE_COLOR,
 
 	} );
 	debug.open();

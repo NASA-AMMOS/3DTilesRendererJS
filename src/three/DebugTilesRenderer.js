@@ -1,4 +1,5 @@
-import { Box3Helper, Group, MeshBasicMaterial, PointsMaterial } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Color } from 'three';
+import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
 
@@ -15,6 +16,7 @@ export const DEPTH = 4;
 export const RELATIVE_DEPTH = 5;
 export const IS_LEAF = 6;
 export const RANDOM_COLOR = 7;
+export const RANDOM_NODE_COLOR = 8;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
@@ -24,9 +26,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		const tilesGroup = this.group;
 		const boxGroup = new Group();
+		boxGroup.name = 'DebugTilesRenderer.boxGroup';
 		tilesGroup.add( boxGroup );
 
 		const sphereGroup = new Group();
+		sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
 		tilesGroup.add( sphereGroup );
 
 		this.displayBoxBounds = false;
@@ -37,6 +41,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
+		this.minDebugColor = new Color( 'black' );
+		this.maxDebugColor = new Color( 'white' );
 
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
@@ -188,6 +194,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
+		const minDebugColor = this.minDebugColor;
+		const maxDebugColor = this.maxDebugColor;
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;
@@ -206,6 +214,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 			}
 
 			scene.traverse( c => {
+
+				if ( colorMode === RANDOM_NODE_COLOR ) {
+
+					h = Math.random();
+					s = 0.5 + Math.random() * 0.5;
+					l = 0.375 + Math.random() * 0.25;
+
+				}
 
 				const currMaterial = c.material;
 				if ( currMaterial ) {
@@ -228,13 +244,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						} else {
 
-							c.material = new MeshBasicMaterial();
+							c.material = new MeshStandardMaterial();
+							c.material.flatShading = true;
 
 						}
 
 					}
 
-					if ( colorMode !== RANDOM_COLOR ) {
+					if ( colorMode !== RANDOM_COLOR && colorMode !== RANDOM_NODE_COLOR ) {
 
 						delete c.material[ HAS_RANDOM_COLOR ];
 
@@ -246,14 +263,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
 						case RELATIVE_DEPTH: {
 
 							const val = tile.__depthFromRenderedParent / maxDepth;
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -266,7 +283,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								c.material.color.setRGB( val, val, val );
+								c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 
 							}
 							break;
@@ -275,7 +292,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case GEOMETRIC_ERROR: {
 
 							const val = Math.min( tile.geometricError / maxError, 1 );
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -284,7 +301,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
 							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
-							c.material.color.setRGB( val, val, val );
+							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
 							break;
 
 						}
@@ -292,11 +309,22 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							if ( ! tile.children || tile.children.length === 0 ) {
 
-								c.material.color.set( 0xffffff );
+								c.material.color.copy( maxDebugColor );
 
 							} else {
 
-								c.material.color.set( 0 );
+								c.material.color.set( minDebugColor );
+
+							}
+							break;
+
+						}
+						case RANDOM_NODE_COLOR: {
+
+							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
+
+								c.material.color.setHSL( h, s, l );
+								c.material[ HAS_RANDOM_COLOR ] = true;
 
 							}
 							break;
@@ -368,10 +396,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 					// In some cases the bounding box may have a scale of 0 in one dimension resulting
 					// in the NaNs in an extracted rotation so we disable matrix updates instead.
 					const boxHelperGroup = new Group();
+					boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
 					boxHelperGroup.matrix.copy( cachedBoxMat );
 					boxHelperGroup.matrixAutoUpdate = false;
 
-					const boxHelper = new Box3Helper( cachedBox );
+					const boxHelper = new Box3Helper( cachedBox, getIndexedRandomColor( tile.__depth ) );
 					boxHelper.raycast = emptyRaycast;
 					boxHelperGroup.add( boxHelper );
 
