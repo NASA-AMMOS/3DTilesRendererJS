@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- DebugTilesRenderer: "RANDOM_COLOR" debug colors are now consistent between flag toggles.
+- DebugTilesRenderer: "MeshStandardMaterial" is now used instead of "MeshBasicMaterial" for debugging.
+
+### Added
+- DebugTilesRenderer: "RANDOM_NODE_COLOR" visualization setting.
+- Names for various tile objects.
+
+### TODO
+- priority callback update (again)
+- change tiles renderer color to use callback
+
 ## [0.3.1] - 2021-07-28
 ### Fixed
 - Case where tiles that were outside of the camera frustum would be loaded with a higher priority.
