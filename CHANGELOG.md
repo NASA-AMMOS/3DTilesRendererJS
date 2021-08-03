@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - DebugTilesRenderer: "RANDOM_NODE_COLOR" visualization setting.
 - Names for various tile objects.
+- DebugTilesRenderer: Added `getDebugColor` function for adjusing the debug visualization colors.
 
 ### TODO
 - priority callback update (again)
-- change tiles renderer color to use callback
 
 ## [0.3.1] - 2021-07-28
 ### Fixed
