@@ -41,8 +41,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
-		this.minDebugColor = new Color( 'black' );
-		this.maxDebugColor = new Color( 'white' );
+
+		this.getDebugColor = ( value, target ) => {
+
+			target.setRGB( value, value, value );
+
+		};
 
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
@@ -194,8 +198,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		}
 
-		const minDebugColor = this.minDebugColor;
-		const maxDebugColor = this.maxDebugColor;
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;
@@ -263,14 +265,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case DEPTH: {
 
 							const val = tile.__depth / maxDepth;
-							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
+							this.getDebugColor( val, c.material.color );
 							break;
 
 						}
 						case RELATIVE_DEPTH: {
 
 							const val = tile.__depthFromRenderedParent / maxDepth;
-							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
+							this.getDebugColor( val, c.material.color );
 							break;
 
 						}
@@ -283,7 +285,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							} else {
 
-								c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
+								this.getDebugColor( val, c.material.color );
 
 							}
 							break;
@@ -292,7 +294,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 						case GEOMETRIC_ERROR: {
 
 							const val = Math.min( tile.geometricError / maxError, 1 );
-							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
+							this.getDebugColor( val, c.material.color );
 							break;
 
 						}
@@ -301,7 +303,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
 							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
-							c.material.color.copy( minDebugColor ).lerpHSL( maxDebugColor, val );
+							this.getDebugColor( val, c.material.color );
 							break;
 
 						}
@@ -309,11 +311,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							if ( ! tile.children || tile.children.length === 0 ) {
 
-								c.material.color.copy( maxDebugColor );
+								this.getDebugColor( 1.0, c.material.color );
+
 
 							} else {
 
-								c.material.color.set( minDebugColor );
+								this.getDebugColor( 0.0, c.material.color );
 
 							}
 							break;
