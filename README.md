@@ -574,6 +574,14 @@ maxDebugDistance = - 1 : Number
 
 The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tile set is used.
 
+### .getDebugColor
+
+```js
+getDebugColor : ( val : Number, target : Color ) => void
+```
+
+The function used to map a [0, 1] value to a color for debug visualizations. By default the color is mapped from black to white.
+
 ## PriorityQueue
 
 Piority-sorted queue to prioritize file downloads and parsing.

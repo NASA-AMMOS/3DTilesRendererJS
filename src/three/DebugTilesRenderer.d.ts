@@ -16,14 +16,11 @@ export class DebugTilesRenderer extends TilesRenderer {
 	displayBoxBounds : Boolean;
 	displaySphereBounds : Boolean;
 	colorMode : ColorMode;
-	
-	/** Debug color min value, default 'black' */
-	minDebugColor : Color;
-	/** Debug color max value, default 'white' */
-	maxDebugColor : Color;
 
 	maxDebugDepth : Number;
 	maxDebugDistance : Number;
 	maxDebugError : Number;
+
+	getDebugColor : ( val: Number, target: Color ) => void;
 
 }
