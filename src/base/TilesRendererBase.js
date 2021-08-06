@@ -14,26 +14,31 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
  */
 const priorityCallback = ( a, b ) => {
 
-	if ( a.__inFrustum !== b.__inFrustum ) {
+	if ( a.__depth !== b.__depth ) {
 
-		// prioritize loading whatever is in the frame
+		// load shallower tiles first
+		return a.__depth > b.__depth ? - 1 : 1;
+
+	} else if ( a.__inFrustum !== b.__inFrustum ) {
+
+		// load tiles that are in the frustum at the current depth
 		return a.__inFrustum ? 1 : - 1;
 
 	} else if ( a.__used !== b.__used ) {
 
-		// prioritize tiles that were used most recently
+		// load tiles that have been used
 		return a.__used ? 1 : - 1;
 
-	} if ( a.__error !== b.__error ) {
+	} else if ( a.__error !== b.__error ) {
 
-		// tiles which have greater error next
-		return a.__error - b.__error;
+		// load the tile with the higher error
+		return a.__error > b.__error ? 1 : - 1;
 
 	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
 
 		// and finally visible tiles which have equal error (ex: if geometricError === 0)
 		// should prioritize based on distance.
-		return a.__distanceFromCamera - b.__distanceFromCamera;
+		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
 
 	}
 
