@@ -30,6 +30,7 @@ import {
 	Line,
 	Vector3,
 	RingBufferGeometry,
+	Sphere,
 } from 'three';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
@@ -37,7 +38,7 @@ import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerM
 
 let camera, scene, renderer, tiles;
 let workspace;
-let box, grid;
+let box, sphere, grid;
 let raycaster, fwdVector, intersectRing;
 let offsetParent;
 let controller, controllerGrip;
@@ -92,6 +93,7 @@ function init() {
 
 	// tile set
 	box = new Box3();
+	sphere = new Sphere();
 
 	// parent for centering the tileset
 	offsetParent = new Group();
@@ -226,6 +228,11 @@ function render() {
 
 		box.getCenter( tiles.group.position );
 		tiles.group.position.multiplyScalar( - 1 );
+
+	} else if ( tiles.getBoundingSphere(sphere) ) {
+
+		tiles.group.position.copy(sphere.center);
+		tiles.group.position.multiplyScalar(-1);
 
 	}
 

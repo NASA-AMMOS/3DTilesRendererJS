@@ -372,11 +372,19 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		} else {
 
-			boxGroup.add( boxHelperGroup );
-			boxHelperGroup.updateMatrixWorld( true );
+			if ( boxHelperGroup ) {
 
-			sphereGroup.add( sphereHelper );
-			sphereHelper.updateMatrixWorld( true );
+				boxGroup.add( boxHelperGroup );
+				boxHelperGroup.updateMatrixWorld( true );
+
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.add( sphereHelper );
+				sphereHelper.updateMatrixWorld( true );
+
+			}
 
 		}
 
@@ -392,40 +400,49 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const scene = cached.scene;
 				if ( scene ) {
 
-					const cachedBox = cached.box;
-					const cachedBoxMat = cached.boxTransform;
 
-					// Create debug bounding box
-					// In some cases the bounding box may have a scale of 0 in one dimension resulting
-					// in the NaNs in an extracted rotation so we disable matrix updates instead.
-					const boxHelperGroup = new Group();
-					boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
-					boxHelperGroup.matrix.copy( cachedBoxMat );
-					boxHelperGroup.matrixAutoUpdate = false;
+					if ( cached.box && cached.boxTransform ) {
 
-					const boxHelper = new Box3Helper( cachedBox, getIndexedRandomColor( tile.__depth ) );
-					boxHelper.raycast = emptyRaycast;
-					boxHelperGroup.add( boxHelper );
+						const cachedBox = cached.box;
+						const cachedBoxMat = cached.boxTransform;
 
-					cached.boxHelperGroup = boxHelperGroup;
+						// Create debug bounding box
+						// In some cases the bounding box may have a scale of 0 in one dimension resulting
+						// in the NaNs in an extracted rotation so we disable matrix updates instead.
+						const boxHelperGroup = new Group();
+						boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
+						boxHelperGroup.matrix.copy( cachedBoxMat );
+						boxHelperGroup.matrixAutoUpdate = false;
 
-					if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
+						const boxHelper = new Box3Helper( cachedBox, getIndexedRandomColor( tile.__depth ) );
+						boxHelper.raycast = emptyRaycast;
+						boxHelperGroup.add( boxHelper );
 
-						this.boxGroup.add( boxHelperGroup );
-						boxHelperGroup.updateMatrixWorld( true );
+						cached.boxHelperGroup = boxHelperGroup;
+
+						if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
+
+							this.boxGroup.add( boxHelperGroup );
+							boxHelperGroup.updateMatrixWorld( true );
+
+						}
 
 					}
 
-					// Create debugbounding sphere
-					const cachedSphere = cached.sphere;
-					const sphereHelper = new SphereHelper( cachedSphere );
-					sphereHelper.raycast = emptyRaycast;
-					cached.sphereHelper = sphereHelper;
+					if ( cached.sphere ) {
 
-					if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
+						// Create debugbounding sphere
+						const cachedSphere = cached.sphere;
+						const sphereHelper = new SphereHelper( cachedSphere );
+						sphereHelper.raycast = emptyRaycast;
+						cached.sphereHelper = sphereHelper;
 
-						this.sphereGroup.add( sphereHelper );
-						sphereHelper.updateMatrixWorld( true );
+						if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
+
+							this.sphereGroup.add( sphereHelper );
+							sphereHelper.updateMatrixWorld( true );
+
+						}
 
 					}
 

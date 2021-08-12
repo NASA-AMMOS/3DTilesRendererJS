@@ -166,6 +166,29 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 	}
+	
+	getBoundingSphere(sphere) {
+
+		if ( ! this.root ) {
+
+			return false;
+
+		}
+
+		const boundingSphere = this.root.cached.sphere;
+
+		if ( boundingSphere ) {
+
+			sphere.copy( boundingSphere );
+			return true;
+
+		} else {
+
+			return false;
+
+		}
+
+	}
 
 	forEachLoadedModel( callback ) {
 
