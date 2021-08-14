@@ -308,6 +308,7 @@ export class TilesRendererBase {
 					'asset.version is expected to be a string of "1.0" or "0.0"'
 				);
 
+				url = (typeof url === 'string') ? url : url.toString();
 				const basePath = path.dirname( url );
 
 				traverseSet(
