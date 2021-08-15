@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DebugTilesRenderer: "RANDOM_NODE_COLOR" visualization setting.
 - Names for various tile objects.
 - DebugTilesRenderer: Added `getDebugColor` function for adjusing the debug visualization colors.
+- Support for computing screen space error for tiles that had sphere bounds but no box bounds.
 
 ### TODO
 - priority callback update (again)
