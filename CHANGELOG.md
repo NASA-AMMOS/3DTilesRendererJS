@@ -15,9 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DebugTilesRenderer: Added `getDebugColor` function for adjusing the debug visualization colors.
 - Support for computing screen space error for tiles that had sphere bounds but no box bounds.
 
-### TODO
-- priority callback update (again)
-
 ## [0.3.1] - 2021-07-28
 ### Fixed
 - Case where tiles that were outside of the camera frustum would be loaded with a higher priority.
