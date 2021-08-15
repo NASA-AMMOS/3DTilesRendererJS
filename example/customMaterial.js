@@ -128,7 +128,7 @@ function updateMaterial( scene ) {
 		if ( c.isMesh ) {
 
 			c.material.dispose();
-			switch( materialIndex ) {
+			switch ( materialIndex ) {
 
 				case DEFAULT:
 					c.material = c.originalMaterial;
@@ -274,7 +274,7 @@ function init() {
 	gui.add( params, 'material', { DEFAULT, GRADIENT, TOPOGRAPHIC_LINES, LIGHTING } )
 		.onChange( () => {
 
-			tiles.forEachLoadedModel( updateMaterial )
+			tiles.forEachLoadedModel( updateMaterial );
 
 		} );
 	gui.add( params, 'rebuild' );

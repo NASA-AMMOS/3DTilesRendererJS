@@ -14,7 +14,11 @@ export class FlyOrbitControls extends OrbitControls {
 
 			if ( this.enabled ) {
 
-				Object.defineProperty( e, 'shiftKey', { get() { return false } } );
+				Object.defineProperty( e, 'shiftKey', { get() {
+
+					return false;
+
+				} } );
 
 			}
 
@@ -210,7 +214,7 @@ export class FlyOrbitControls extends OrbitControls {
 
 			}
 
-			switch( key ) {
+			switch ( key ) {
 
 				case this.forwardKey:
 					forwardHeld = false;

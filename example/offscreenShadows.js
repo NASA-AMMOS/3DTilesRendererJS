@@ -80,7 +80,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	camera.position.set( -21, 13, 25 );
+	camera.position.set( - 21, 13, 25 );
 
 	orthoCamera = new OrthographicCamera();
 
@@ -173,7 +173,7 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	tiles.errorTarget = params.errorTarget;
-	switch( parseFloat( params.shadowStrategy ) ) {
+	switch ( parseFloat( params.shadowStrategy ) ) {
 
 		case NONE:
 			tiles.displayActiveTiles = false;

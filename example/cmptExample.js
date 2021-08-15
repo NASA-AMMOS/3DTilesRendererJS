@@ -66,7 +66,7 @@ function init() {
 		.load( '...' )
 		.then( res => {
 
-			console.log(res);
+			console.log( res );
 
 			// console.log( res );
 			// scene.add( res.scene );

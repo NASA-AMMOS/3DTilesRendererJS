@@ -29,12 +29,13 @@ import {
 	AdditiveBlending,
 	Line,
 	Vector3,
+	RingBufferGeometry,
 } from 'three';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
 
-let camera,  scene, renderer, tiles;
+let camera, scene, renderer, tiles;
 let workspace;
 let box, grid;
 let raycaster, fwdVector, intersectRing;
@@ -237,7 +238,7 @@ function render() {
 		const currCamera = renderer.xr.getCamera( camera );
 		tiles.setCamera( currCamera );
 
-		const leftCam = currCamera.cameras[0];
+		const leftCam = currCamera.cameras[ 0 ];
 		if ( leftCam ) {
 
 			tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
