@@ -157,7 +157,7 @@ function reinstantiateTiles() {
 				url = new URL( json.url );
 				const version = url.searchParams.get( 'v' );
 
-				tiles = new TilesRenderer( url );
+				tiles = new TilesRenderer( url.toString() );
 				tiles.fetchOptions.headers = {};
 				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
 
