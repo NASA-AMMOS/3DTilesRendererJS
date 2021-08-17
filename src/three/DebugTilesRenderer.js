@@ -400,7 +400,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const scene = cached.scene;
 				if ( scene ) {
 
-
 					if ( cached.box && cached.boxTransform ) {
 
 						const cachedBox = cached.box;
@@ -472,9 +471,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 		if ( cached.boxHelperGroup ) {
 
 			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
-			cached.sphereHelper.geometry.dispose();
-
 			delete cached.boxHelperGroup;
+
+		}
+
+		if ( cached.sphereHelper ) {
+
+			cached.sphereHelper.geometry.dispose();
 			delete cached.sphereHelper;
 
 		}
