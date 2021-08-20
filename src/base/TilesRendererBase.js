@@ -337,7 +337,7 @@ export class TilesRendererBase {
 		if ( ! ( url in tileSets ) ) {
 
 			const pr = this
-				.fetchTileSet( url, this.fetchOptions )
+				.fetchTileSet( this.preprocessURL ? this.preprocessURL( url ) : url, this.fetchOptions )
 				.then( json => {
 
 					tileSets[ url ] = json;
