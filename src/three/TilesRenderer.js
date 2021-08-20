@@ -166,8 +166,8 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 	}
-	
-	getBoundingSphere(sphere) {
+
+	getBoundingSphere( sphere ) {
 
 		if ( ! this.root ) {
 

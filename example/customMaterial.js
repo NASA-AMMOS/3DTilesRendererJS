@@ -361,10 +361,10 @@ function animate() {
 		box.getCenter( tiles.group.position );
 		tiles.group.position.multiplyScalar( - 1 );
 
-	} else if ( tiles.getBoundingSphere(sphere) ) {
+	} else if ( tiles.getBoundingSphere( sphere ) ) {
 
-		tiles.group.position.copy(sphere.center);
-		tiles.group.position.multiplyScalar(-1);
+		tiles.group.position.copy( sphere.center );
+		tiles.group.position.multiplyScalar( - 1 );
 
 	}
 
