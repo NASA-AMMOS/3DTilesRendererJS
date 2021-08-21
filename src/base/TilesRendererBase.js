@@ -216,7 +216,7 @@ export class TilesRendererBase {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
-			const isExternalTileSet = extension.toLowerCase() === 'json';
+			const isExternalTileSet = extension && extension.toLowerCase() === 'json';
 			tile.__externalTileSet = isExternalTileSet;
 			tile.__contentEmpty = isExternalTileSet;
 
@@ -553,7 +553,7 @@ export class TilesRendererBase {
 						}
 
 						const uri = parseTile.content.uri;
-						const extension = getUrlExtension( uri );
+						const extension = getUrlExtension( uri ) || '';
 
 						return this.parseTile( buffer, parseTile, extension );
 
