@@ -30,7 +30,7 @@ export function getUrlExtension( url ) {
 	const dotIndex = filename.lastIndexOf( '.' );
 	if ( dotIndex === - 1 || dotIndex === filename.length - 1 ) {
 
-		// Has no extension or has trailing .
+		// Has no extension or has trailing . character
 		return null;
 
 	}
