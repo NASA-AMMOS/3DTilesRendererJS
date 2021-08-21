@@ -10,8 +10,10 @@ describe( 'getUrlExtension', () => {
 		'https://nasa.gov//tileset.json',
 		'file:///Users/JaneScientist/code/3DTilesRendererJS/example/b3dmExample.json',
 		'foo.json',
+		'/foo/bar.json',
 		'foo.json?a=b',
 		'/foo.json',
+		'/foo/bar.json',
 	] )( 'parses the json extension out of %s', url => {
 
 		expect( getUrlExtension( url ) ).toBe( 'json' );
