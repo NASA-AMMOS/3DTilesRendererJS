@@ -15,7 +15,7 @@ export class I3DMLoaderBase {
 
 	resolveExternalURL( url ) {
 
-		if ( /^[^\\/]/ ) {
+		if ( /^[^\\/]/.test( url ) ) {
 
 			return this.workingPath + '/' + url;
 

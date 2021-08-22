@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Color } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial } from 'three';
 import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './SphereHelper.js';
