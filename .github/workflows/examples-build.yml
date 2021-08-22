@@ -34,4 +34,4 @@ jobs:
 #         branch: examples
         message: 'update builds'
         push: 'origin examples --force --set-upstream'
-        pull_strategy: 'NO-PULL'
+#         pull_strategy: 'NO-PULL'
