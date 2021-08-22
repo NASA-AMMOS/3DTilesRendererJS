@@ -33,3 +33,4 @@ jobs:
         add: 'example/bundle'
         branch: examples
         message: 'update builds'
+        pull_strategy: 'NO-PULL'
