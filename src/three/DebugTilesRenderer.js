@@ -367,8 +367,17 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 		if ( ! visible ) {
 
-			boxGroup.remove( boxHelperGroup );
-			sphereGroup.remove( sphereHelper );
+			if ( boxHelperGroup ) {
+
+				boxGroup.remove( boxHelperGroup );
+
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.remove( sphereHelper );
+
+			}
 
 		} else {
 
