@@ -17,6 +17,7 @@ export const RELATIVE_DEPTH = 5;
 export const IS_LEAF = 6;
 export const RANDOM_COLOR = 7;
 export const RANDOM_NODE_COLOR = 8;
+export const CUSTOM_COLOR_MODE = 9;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
@@ -36,6 +37,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.displayBoxBounds = false;
 		this.displaySphereBounds = false;
 		this.colorMode = NONE;
+		this.customDebugColor = null;
 		this.boxGroup = boxGroup;
 		this.sphereGroup = sphereGroup;
 		this.maxDebugDepth = - 1;
@@ -258,7 +260,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 						delete c.material[ HAS_RANDOM_COLOR ];
 
 					}
-
 					// Set the color on the basic material
 					switch ( colorMode ) {
 
@@ -339,6 +340,20 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 								c.material.color.setHSL( h, s, l );
 								c.material[ HAS_RANDOM_COLOR ] = true;
+
+							}
+							break;
+
+						}
+						case CUSTOM_COLOR_MODE: {
+
+							if ( this.customDebugColor ) {
+
+								this.customDebugColor( tile, c );
+
+							} else {
+
+								console.error( 'customDebugColor callback not defined' );
 
 							}
 							break;
