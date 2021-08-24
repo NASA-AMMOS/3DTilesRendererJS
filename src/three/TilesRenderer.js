@@ -842,7 +842,10 @@ export class TilesRenderer extends TilesRendererBase {
 					} else {
 
 						tempVector.applyMatrix4( transformInverse );
-						distance = boundingSphere.distanceToPoint( tempVector );
+						// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
+						// zero inside the box. Clipping the distance to a minimum of zero ensures that both
+						// types of bounding volume behave the same way.
+						distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
 
 					}
 
