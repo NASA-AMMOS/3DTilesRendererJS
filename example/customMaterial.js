@@ -12,13 +12,14 @@ import {
 	ShaderMaterial,
 	MeshStandardMaterial,
 	PCFSoftShadowMap,
+	Sphere,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
-let offsetParent, box, dirLight, statsContainer;
+let offsetParent, box, sphere, dirLight, statsContainer;
 let stats;
 
 const DEFAULT = 0;
@@ -258,6 +259,7 @@ function init() {
 	scene.add( ambLight );
 
 	box = new Box3();
+	sphere = new Sphere();
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
@@ -357,6 +359,11 @@ function animate() {
 	if ( tiles.getBounds( box ) ) {
 
 		box.getCenter( tiles.group.position );
+		tiles.group.position.multiplyScalar( - 1 );
+
+	} else if ( tiles.getBoundingSphere( sphere ) ) {
+
+		tiles.group.position.copy( sphere.center );
 		tiles.group.position.multiplyScalar( - 1 );
 
 	}

@@ -27,6 +27,7 @@ import {
 	TorusBufferGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
+	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -43,7 +44,7 @@ let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
-let box;
+let box, sphere;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
@@ -190,6 +191,7 @@ function init() {
 	scene.add( ambLight );
 
 	box = new Box3();
+	sphere = new Sphere();
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
@@ -495,6 +497,11 @@ function animate() {
 	if ( tiles.getBounds( box ) ) {
 
 		box.getCenter( tiles.group.position );
+		tiles.group.position.multiplyScalar( - 1 );
+
+	} else if ( tiles.getBoundingSphere( sphere ) ) {
+
+		tiles.group.position.copy( sphere.center );
 		tiles.group.position.multiplyScalar( - 1 );
 
 	}
