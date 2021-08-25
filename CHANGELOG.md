@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - DebugTilesRenderer: "RANDOM_COLOR" debug colors are now consistent between flag toggles.
 - DebugTilesRenderer: "MeshStandardMaterial" is now used instead of "MeshBasicMaterial" for debugging.
+- TilesRenderer: add `getBoundingSphere` function.
 
 ### Added
 - DebugTilesRenderer: "RANDOM_NODE_COLOR" visualization setting.
