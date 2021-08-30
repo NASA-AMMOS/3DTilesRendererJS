@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Names for various tile objects.
 - DebugTilesRenderer: Added `getDebugColor` function for adjusing the debug visualization colors.
 - Support for computing screen space error for tiles that had sphere bounds but no box bounds.
+- Support for embedded tileset / tile geometry URLs with hashes, search query parameters.
+- DebugTilesRenderer: Added `customColorCallback` and `CUSTOM_COLOR` mode for custom debug coloring.
 
 ### Fixed
 - I3DMLoader: Fixed embedded absolute URLs not working correctly.
