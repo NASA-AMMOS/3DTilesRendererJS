@@ -37,7 +37,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		this.displayBoxBounds = false;
 		this.displaySphereBounds = false;
 		this.colorMode = NONE;
-		this.customDebugColor = null;
+		this.customColorCallback = null;
 		this.boxGroup = boxGroup;
 		this.sphereGroup = sphereGroup;
 		this.maxDebugDepth = - 1;
@@ -347,13 +347,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case CUSTOM_COLOR_MODE: {
 
-							if ( this.customDebugColor ) {
+							if ( this.customColorCallback ) {
 
-								this.customDebugColor( tile, c );
+								this.customColorCallback( tile, c );
 
 							} else {
 
-								console.error( 'customDebugColor callback not defined' );
+								console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
 
 							}
 							break;

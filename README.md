@@ -533,16 +533,16 @@ RANDOM_COLOR
 // Render every individual mesh in the scene with a random color.
 RANDOM_NODE_COLOR
 
-// Sets a custom color using the customDebugColor call back. 
+// Sets a custom color using the customColorCallback call back. 
 CUSTOM_COLOR_MODE
 ```
-### .customDebugColor
+### .customColorCallback
 
-```
-customDebugColor: (tile: Tile, child: Object) => void
+```js
+customColorCallback: (tile: Tile, child: Object3D) => void
 ```
 
-The callback used if `debugColor` is set to `CUSTOM_COLOR_MODE`. Value default to `null` and must be explicitly set
+The callback used if `debugColor` is set to `CUSTOM_COLOR_MODE`. Value defaults to `null` and must be set explicitly.
 
 ### .displayBoxBounds
 
