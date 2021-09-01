@@ -8,6 +8,7 @@ import {
 	RELATIVE_DEPTH,
 	IS_LEAF,
 	RANDOM_COLOR,
+	CUSTOM_COLOR_MODE
 } from './three/DebugTilesRenderer.js';
 import { TilesRenderer } from './three/TilesRenderer.js';
 import { B3DMLoader } from './three/B3DMLoader.js';
@@ -49,4 +50,5 @@ export {
 	RELATIVE_DEPTH,
 	IS_LEAF,
 	RANDOM_COLOR,
+	CUSTOM_COLOR_MODE
 };

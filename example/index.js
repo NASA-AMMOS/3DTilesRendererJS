@@ -9,6 +9,7 @@ import {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
+	CUSTOM_COLOR_MODE
 } from '../src/index.js';
 import {
 	Scene,
@@ -102,6 +103,17 @@ function reinstantiateTiles() {
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	offsetParent.add( tiles.group );
+
+
+	// Used with CUSTOM_COLOR_MODE
+	tiles.customColorCallback = ( tile, child ) => {
+
+		const depthIsEven = tile.__depth % 2 === 0;
+		const color = depthIsEven ? [ 255, 0, 0 ] : [ 255, 255, 255 ];
+
+		child.material.color.setRGB( ...color );
+
+	};
 
 }
 
@@ -255,6 +267,7 @@ function init() {
 		IS_LEAF,
 		RANDOM_COLOR,
 		RANDOM_NODE_COLOR,
+		CUSTOM_COLOR_MODE
 
 	} );
 	debug.open();
