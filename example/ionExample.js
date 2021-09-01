@@ -187,12 +187,12 @@ function reinstantiateTiles() {
 
 						position = new Vector3().setFromMatrixPosition( matrix );
 						distanceToEllipsoidCenter = position.length();
-		
+
 					} else if ( tiles.getBoundingSphere( sphere ) ) {
-				
+
 						position = sphere.center.clone();
 						distanceToEllipsoidCenter = position.length();
-				
+
 					}
 
 					const surfaceDirection = position.normalize();
