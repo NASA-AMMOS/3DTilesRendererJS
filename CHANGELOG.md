@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - I3DMLoader: Fixed embedded absolute URLs not working correctly.
+- TilesRenderer: "getBounds" function throwing an error if no bounding box is present on the tileset.
 
 ## [0.3.1] - 2021-07-28
 ### Fixed
