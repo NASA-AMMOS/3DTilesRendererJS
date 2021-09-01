@@ -106,11 +106,11 @@ function reinstantiateTiles() {
 
 
 	// Used with CUSTOM_COLOR_MODE
-	tiles.customColorCallback = ( tile, child ) => {
+	tiles.customColorCallback = ( tile, object ) => {
 
 		const depthIsEven = tile.__depth % 2 === 0;
 		const hex = depthIsEven ? 0xff0000 : 0xffffff;
-		child.traverse( c => {
+		object.traverse( c => {
 			
 			if ( c.isMesh ) {
 			
