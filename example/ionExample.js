@@ -29,6 +29,7 @@ import {
 	sRGBEncoding,
 	Matrix4,
 	Box3,
+	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -176,10 +177,23 @@ function reinstantiateTiles() {
 				tiles.onLoadTileSet = () => {
 
 					const box = new Box3();
+					const sphere = new Sphere();
 					const matrix = new Matrix4();
-					tiles.getOrientedBounds( box, matrix );
-					const position = new Vector3().setFromMatrixPosition( matrix );
-					const distanceToEllipsoidCenter = position.length();
+
+					let position;
+					let distanceToEllipsoidCenter;
+
+					if ( tiles.getOrientedBounds( box, matrix ) ) {
+
+						position = new Vector3().setFromMatrixPosition( matrix );
+						distanceToEllipsoidCenter = position.length();
+
+					} else if ( tiles.getBoundingSphere( sphere ) ) {
+
+						position = sphere.center.clone();
+						distanceToEllipsoidCenter = position.length();
+
+					}
 
 					const surfaceDirection = position.normalize();
 					const up = new Vector3( 0, 1, 0 );
