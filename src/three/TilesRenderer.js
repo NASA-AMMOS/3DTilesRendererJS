@@ -152,7 +152,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingBox = cached.box;
 		const obbMat = cached.boxTransform;
 
-		if ( box ) {
+		if ( boundingBox ) {
 
 			box.copy( boundingBox );
 			matrix.copy( obbMat );
