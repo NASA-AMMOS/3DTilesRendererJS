@@ -9,7 +9,7 @@ import {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR_MODE
+	CUSTOM_COLOR
 } from '../src/index.js';
 import {
 	Scene,
@@ -104,7 +104,7 @@ function reinstantiateTiles() {
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	offsetParent.add( tiles.group );
 
-	// Used with CUSTOM_COLOR_MODE
+	// Used with CUSTOM_COLOR
 	tiles.customColorCallback = ( tile, object ) => {
 
 		const depthIsEven = tile.__depth % 2 === 0;
@@ -273,7 +273,7 @@ function init() {
 		IS_LEAF,
 		RANDOM_COLOR,
 		RANDOM_NODE_COLOR,
-		CUSTOM_COLOR_MODE
+		CUSTOM_COLOR
 
 	} );
 	debug.open();

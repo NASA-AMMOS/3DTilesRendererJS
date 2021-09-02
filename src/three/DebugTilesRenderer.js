@@ -18,7 +18,7 @@ export const RELATIVE_DEPTH = 5;
 export const IS_LEAF = 6;
 export const RANDOM_COLOR = 7;
 export const RANDOM_NODE_COLOR = 8;
-export const CUSTOM_COLOR_MODE = 9;
+export const CUSTOM_COLOR = 9;
 
 export class DebugTilesRenderer extends TilesRenderer {
 
@@ -353,7 +353,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 							break;
 
 						}
-						case CUSTOM_COLOR_MODE: {
+						case CUSTOM_COLOR: {
 
 							if ( this.customColorCallback ) {
 

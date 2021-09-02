@@ -9,7 +9,7 @@ import {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR_MODE,
+	CUSTOM_COLOR,
 } from './three/DebugTilesRenderer.js';
 import { TilesRenderer } from './three/TilesRenderer.js';
 import { B3DMLoader } from './three/B3DMLoader.js';
@@ -52,5 +52,5 @@ export {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR_MODE,
+	CUSTOM_COLOR,
 };
