@@ -9,6 +9,7 @@ import {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
+	CUSTOM_COLOR_MODE
 } from '../src/index.js';
 import {
 	Scene,
@@ -27,6 +28,7 @@ import {
 	TorusBufferGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
+	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -43,7 +45,7 @@ let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
-let box;
+let box, sphere;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
@@ -101,6 +103,23 @@ function reinstantiateTiles() {
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	offsetParent.add( tiles.group );
+
+	// Used with CUSTOM_COLOR_MODE
+	tiles.customColorCallback = ( tile, object ) => {
+
+		const depthIsEven = tile.__depth % 2 === 0;
+		const hex = depthIsEven ? 0xff0000 : 0xffffff;
+		object.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				c.material.color.set( hex );
+
+			}
+
+		} );
+
+	};
 
 }
 
@@ -190,6 +209,7 @@ function init() {
 	scene.add( ambLight );
 
 	box = new Box3();
+	sphere = new Sphere();
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
@@ -253,6 +273,7 @@ function init() {
 		IS_LEAF,
 		RANDOM_COLOR,
 		RANDOM_NODE_COLOR,
+		CUSTOM_COLOR_MODE
 
 	} );
 	debug.open();
@@ -495,6 +516,11 @@ function animate() {
 	if ( tiles.getBounds( box ) ) {
 
 		box.getCenter( tiles.group.position );
+		tiles.group.position.multiplyScalar( - 1 );
+
+	} else if ( tiles.getBoundingSphere( sphere ) ) {
+
+		tiles.group.position.copy( sphere.center );
 		tiles.group.position.multiplyScalar( - 1 );
 
 	}
