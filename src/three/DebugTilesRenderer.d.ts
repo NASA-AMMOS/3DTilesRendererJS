@@ -11,6 +11,7 @@ export const RELATIVE_DEPTH : ColorMode;
 export const IS_LEAF : ColorMode;
 export const RANDOM_COLOR : ColorMode;
 export const RANDOM_NODE_COLOR: ColorMode;
+export const CUSTOM_COLOR_MODE: ColorMode;
 export class DebugTilesRenderer extends TilesRenderer {
 
 	displayBoxBounds : Boolean;
