@@ -5,6 +5,7 @@ import { SphereHelper } from './SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
+const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
 
 function emptyRaycast() {}
 
@@ -253,9 +254,15 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
-					if ( colorMode !== RANDOM_COLOR && colorMode !== RANDOM_NODE_COLOR ) {
+					if ( colorMode !== RANDOM_COLOR ) {
 
 						delete c.material[ HAS_RANDOM_COLOR ];
+
+					}
+
+					if ( colorMode !== RANDOM_NODE_COLOR ) {
+
+						delete c.material[ HAS_RANDOM_NODE_COLOR ];
 
 					}
 
@@ -324,10 +331,10 @@ export class DebugTilesRenderer extends TilesRenderer {
 						}
 						case RANDOM_NODE_COLOR: {
 
-							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
+							if ( ! c.material[ HAS_RANDOM_NODE_COLOR ] ) {
 
 								c.material.color.setHSL( h, s, l );
-								c.material[ HAS_RANDOM_COLOR ] = true;
+								c.material[ HAS_RANDOM_NODE_COLOR ] = true;
 
 							}
 							break;
