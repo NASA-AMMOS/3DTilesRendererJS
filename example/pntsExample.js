@@ -5,14 +5,13 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Box3,
 	sRGBEncoding,
 	PCFSoftShadowMap,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 let camera, controls, scene, renderer;
-let box, dirLight;
+let dirLight;
 
 init();
 animate();
@@ -59,8 +58,6 @@ function init() {
 
 	const ambLight = new AmbientLight( 0xffffff, 0.05 );
 	scene.add( ambLight );
-
-	box = new Box3();
 
 	new PNTSLoader()
 		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/points.pnts' )
