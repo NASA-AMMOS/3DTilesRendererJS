@@ -5,8 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Fixed
+- Support for embedded tileset / tile geometry URLs with hashes, search query parameters.
+
+## [0.3.2] - 2021-09-02
 ### Changed
-- DebugTilesRenderer: "RANDOM_COLOR" debug colors are now consistent between flag toggles.
+- DebugTilesRenderer: Bounding boxes now colored down the tree based on depth.
 - DebugTilesRenderer: "MeshStandardMaterial" is now used instead of "MeshBasicMaterial" for debugging.
 - TilesRenderer: add `getBoundingSphere` function.
 
@@ -15,7 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Names for various tile objects.
 - DebugTilesRenderer: Added `getDebugColor` function for adjusing the debug visualization colors.
 - Support for computing screen space error for tiles that had sphere bounds but no box bounds.
-- Support for embedded tileset / tile geometry URLs with hashes, search query parameters.
 - DebugTilesRenderer: Added `customColorCallback` and `CUSTOM_COLOR` mode for custom debug coloring.
 
 ### Fixed
