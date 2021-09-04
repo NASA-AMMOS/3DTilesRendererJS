@@ -553,7 +553,7 @@ export class TilesRendererBase {
 						}
 
 						const uri = parseTile.content.uri;
-						const extension = getUrlExtension( uri ) || '';
+						const extension = getUrlExtension( uri );
 
 						return this.parseTile( buffer, parseTile, extension );
 
