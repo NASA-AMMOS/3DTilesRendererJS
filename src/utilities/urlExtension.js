@@ -8,21 +8,12 @@ export function getUrlExtension( url ) {
 	let parsedUrl;
 	try {
 
-		parsedUrl = new URL( url );
+		parsedUrl = new URL( url, 'http://fakehost.com/' );
 
 	} catch ( _ ) {
 
-		try {
-
-			// Try again as a relative URL
-			parsedUrl = new URL( 'https://example.com/' + url );
-
-		} catch ( _ ) {
-
-			// Ignore invalid URLs
-			return null;
-
-		}
+		// Ignore invalid URLs
+		return null;
 
 	}
 
