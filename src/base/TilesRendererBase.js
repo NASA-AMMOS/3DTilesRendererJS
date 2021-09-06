@@ -1,5 +1,6 @@
 import path from 'path-browserify';
 import { urlJoin } from '../utilities/urlJoin.js';
+import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
@@ -219,7 +220,8 @@ export class TilesRendererBase {
 		if ( uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
-			const isExternalTileSet = /\.json$/i.test( tile.content.uri );
+			const extension = getUrlExtension( tile.content.uri );
+			const isExternalTileSet = extension && extension.toLowerCase() === 'json';
 			tile.__externalTileSet = isExternalTileSet;
 			tile.__contentEmpty = isExternalTileSet;
 
@@ -556,7 +558,7 @@ export class TilesRendererBase {
 						}
 
 						const uri = parseTile.content.uri;
-						const extension = uri.split( /\./g ).pop();
+						const extension = getUrlExtension( uri );
 
 						return this.parseTile( buffer, parseTile, extension );
 
