@@ -355,10 +355,11 @@ export class TilesRenderer extends TilesRendererBase {
 			cameraInfo.push( {
 
 				frustum: new Frustum(),
-				sseDenominator: - 1,
+				isOrthographic: false,
+				sseDenominator: - 1, // used if isOrthographic:false
 				position: new Vector3(),
 				invScale: - 1,
-				pixelSize: 0,
+				pixelSize: 0, // used if isOrthographic:true
 
 			} );
 
@@ -392,17 +393,18 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			if ( camera.isPerspectiveCamera ) {
+			const projection = camera.projectionMatrix.elements;
+			info.isOrthographic = projection[ 15 ] === 1;
 
-				info.sseDenominator = 2 * Math.tan( 0.5 * camera.fov * DEG2RAD ) / resolution.height;
+			if ( info.isOrthographic ) {
 
-			}
-
-			if ( camera.isOrthographicCamera ) {
-
-				const w = camera.right - camera.left;
-				const h = camera.top - camera.bottom;
+				const w = 2 / projection[ 0 ];
+				const h = 2 / projection[ 5 ];
 				info.pixelSize = Math.max( h / resolution.height, w / resolution.width );
+
+			} else {
+
+				info.sseDenominator = ( 2 / projection[ 5 ] ) / resolution.height;
 
 			}
 
@@ -842,12 +844,11 @@ export class TilesRenderer extends TilesRendererBase {
 				}
 
 				// transform camera position into local frame of the tile bounding box
-				const camera = cameras[ i ];
 				const info = cameraInfo[ i ];
 				const invScale = info.invScale;
 
 				let error;
-				if ( camera.isOrthographicCamera ) {
+				if ( info.isOrthographic ) {
 
 					const pixelSize = info.pixelSize;
 					error = tile.geometricError / ( pixelSize * invScale );
