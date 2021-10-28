@@ -51,13 +51,9 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( this._autoDisableRendererCulling !== value ) {
 
 			super._autoDisableRendererCulling = value;
-			this.traverse( tile => {
+			this.forEachLoadedModel( ( scene ) => {
 
-				if ( tile.scene ) {
-
-					updateFrustumCulled( tile.scene, value );
-
-				}
+				updateFrustumCulled( scene, ! value );
 
 			} );
 
@@ -673,7 +669,7 @@ export class TilesRenderer extends TilesRendererBase {
 				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
 
 			} );
-			updateFrustumCulled( scene, this.autoDisableRendererCulling );
+			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
 			cached.scene = scene;
 
