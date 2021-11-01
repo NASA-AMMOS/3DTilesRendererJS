@@ -10,14 +10,12 @@ import {
 	Sphere,
 	Vector3,
 	Vector2,
-	Math as MathUtils,
 	Frustum,
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
-const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
