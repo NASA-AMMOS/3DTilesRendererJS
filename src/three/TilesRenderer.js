@@ -391,17 +391,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
+			// Read the calculated projection matrix directly to support custom Camera implementations
 			const projection = camera.projectionMatrix.elements;
+
+			// The last element of the projection matrix is 1 for orthographic, 0 for perspective
 			info.isOrthographic = projection[ 15 ] === 1;
 
 			if ( info.isOrthographic ) {
 
+				// See OrthographicCamera.updateProjectionMatrix and Matrix4.makeOrthographic:
+				// the view width and height are used to populate matrix elements 0 and 5.
 				const w = 2 / projection[ 0 ];
 				const h = 2 / projection[ 5 ];
 				info.pixelSize = Math.max( h / resolution.height, w / resolution.width );
 
 			} else {
 
+				// See PerspectiveCamera.updateProjectionMatrix and Matrix4.makePerspective:
+				// the vertical FOV is used to populate matrix element 5.
 				info.sseDenominator = ( 2 / projection[ 5 ] ) / resolution.height;
 
 			}
