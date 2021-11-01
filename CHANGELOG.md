@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Fixed
 - `autoDisableRendererCulling` incorrectly applying the inverse of the documented effect.
+- Screen space error calculations now use the camera projectionMatrix rather than camera type to determine frustum type.
 
 ## [0.3.3] - 2021-09-08
 ### Added
