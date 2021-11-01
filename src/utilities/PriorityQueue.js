@@ -12,11 +12,18 @@ class PriorityQueue {
 		this.autoUpdate = true;
 
 		this.priorityCallback = () => {
-
 			throw new Error( 'PriorityQueue: PriorityCallback function not defined.' );
-
 		};
 
+		// Customizable scheduling callback. Default using requestAnimationFrame()
+		this.schedulingCallback = func => {
+			requestAnimationFrame( func );
+		};
+
+		this._runjobs = ()=>{
+			this.tryRunJobs();
+			this.scheduled = false;
+		};
 	}
 
 	sort() {
@@ -107,19 +114,11 @@ class PriorityQueue {
 	}
 
 	scheduleJobRun() {
+		if ( !this.scheduled ){
+			this.schedulingCallback( this._runjobs );
 
-		if ( ! this.scheduled ) {
-
-			requestAnimationFrame( () => {
-
-				this.tryRunJobs();
-				this.scheduled = false;
-
-			} );
 			this.scheduled = true;
-
 		}
-
 	}
 
 }
