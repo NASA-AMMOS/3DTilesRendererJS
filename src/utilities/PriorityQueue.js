@@ -122,13 +122,14 @@ class PriorityQueue {
 
 	scheduleJobRun() {
 
-		if ( ! this.scheduled ){
+		if ( ! this.scheduled ) {
 
 			this.schedulingCallback( this._runjobs );
 
 			this.scheduled = true;
 
 		}
+
 	}
 
 }

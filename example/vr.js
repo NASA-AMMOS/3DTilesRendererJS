@@ -102,6 +102,19 @@ function init() {
 	tiles = new TilesRenderer( '../data/tileset.json' );
 	offsetParent.add( tiles.group );
 
+
+	// We define a custom scheduling callback to handle also active WebXR sessions
+	const tilesSchedulingCB = func => {
+
+		setTimeout( func, 50 );
+
+	};
+
+	// We set our scheduling callback for tiles downloading and parsing
+	tiles.downloadQueue.schedulingCallback = tilesSchedulingCB;
+	tiles.parseQueue.schedulingCallback = tilesSchedulingCB;
+
+
 	// Raycasting init
 	raycaster = new Raycaster();
 	fwdVector = new Vector3( 0, 0, 1 );
