@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- PriorityQueue: Added `schedulingCallback` to afford flexibility in job scheduling callback for scenarios where `requestAnimationFrame` will not work, such as with WebXR.
+
 ### Fixed
 - `autoDisableRendererCulling` incorrectly applying the inverse of the documented effect.
 - Screen space error calculations now use the camera projectionMatrix rather than camera type to determine frustum type.
