@@ -273,9 +273,9 @@ function handleCamera() {
 function handleTasks() {
 
 	for ( let t = 0, l = tasks.length; t < l; t ++ ) {
-		
+
 		tasks[ t ]();
-		
+
 	}
 	tasks.length = 0;
 
