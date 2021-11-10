@@ -42,6 +42,8 @@ let box, sphere, grid;
 let raycaster, fwdVector, intersectRing;
 let offsetParent;
 let controller, controllerGrip;
+let xrSession = null;
+let tasks = [];
 
 let params = {
 
@@ -52,7 +54,6 @@ let params = {
 };
 
 init();
-animate();
 
 function init() {
 
@@ -68,6 +69,8 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
+
+	renderer.setAnimationLoop( frame );
 
 	// create workspace
 	workspace = new Group();
@@ -101,6 +104,23 @@ function init() {
 
 	tiles = new TilesRenderer( '../data/tileset.json' );
 	offsetParent.add( tiles.group );
+
+	// We set camera for tileset
+	tiles.setCamera( camera );
+	tiles.setResolutionFromRenderer( camera, renderer );
+
+
+	// We define a custom scheduling callback to handle also active WebXR sessions
+	const tilesSchedulingCB = func => {
+
+		tasks.push( func );
+
+	};
+
+	// We set our scheduling callback for tiles downloading and parsing
+	tiles.downloadQueue.schedulingCallback = tilesSchedulingCB;
+	tiles.parseQueue.schedulingCallback = tilesSchedulingCB;
+
 
 	// Raycasting init
 	raycaster = new Raycaster();
@@ -206,16 +226,63 @@ function onWindowResize() {
 
 }
 
-function animate() {
+function handleCamera() {
 
-	renderer.setAnimationLoop( render );
+	// get the XR camera with a combined frustum for culling
+	if ( renderer.xr.isPresenting ) {
+
+		if ( xrSession === null ) { // We setup XR camera once
+
+			// remove all cameras so we can use the VR camera instead
+			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+
+			const currCamera = renderer.xr.getCamera( camera );
+			tiles.setCamera( currCamera );
+
+			const leftCam = currCamera.cameras[ 0 ];
+			if ( leftCam ) {
+
+				tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
+
+			}
+
+			xrSession = renderer.xr.getSession();
+
+		}
+
+	} else {
+
+		// Reset default camera (exiting WebXR session)
+		if ( xrSession !== null ) {
+
+			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+
+			tiles.setCamera( camera );
+			tiles.setResolutionFromRenderer( camera, renderer );
+
+			camera.position.set( 0, 1, 0 );
+
+			xrSession = null;
+
+		}
+
+	}
 
 }
 
+function handleTasks() {
 
-function render() {
+	if ( tasks.length < 1 ) return;
 
-	requestAnimationFrame( animate );
+	const tt = tasks;
+	let tlen = tt.length;
+
+	for ( let t = 0; t < tlen; t ++ ) tt[ t ]();
+	tasks = [];
+
+}
+
+function frame() {
 
 	grid.visible = params.displayGrid;
 
@@ -236,31 +303,13 @@ function render() {
 
 	}
 
-	// remove all cameras so we can use the VR camera instead
-	tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+	// We check for tiles camera setup (default and XR sessions)
+	handleCamera();
 
-	// get the XR camera with a combined frustum for culling
-	if ( renderer.xr.isPresenting ) {
-
-		const currCamera = renderer.xr.getCamera( camera );
-		tiles.setCamera( currCamera );
-
-		const leftCam = currCamera.cameras[ 0 ];
-		if ( leftCam ) {
-
-			tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
-
-		}
-
-	} else {
-
-		tiles.setCamera( camera );
-		tiles.setResolutionFromRenderer( camera, renderer );
-
-	}
+	// We handle pending tasks
+	handleTasks();
 
 	tiles.update();
-
 
 	if ( controller.controllerActive ) {
 
