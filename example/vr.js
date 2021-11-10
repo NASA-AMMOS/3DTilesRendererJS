@@ -70,7 +70,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	renderer.setAnimationLoop( frame );
+	renderer.setAnimationLoop( animate );
 
 	// create workspace
 	workspace = new Group();
@@ -272,17 +272,16 @@ function handleCamera() {
 
 function handleTasks() {
 
-	if ( tasks.length < 1 ) return;
-
-	const tt = tasks;
-	let tlen = tt.length;
-
-	for ( let t = 0; t < tlen; t ++ ) tt[ t ]();
-	tasks = [];
+	for ( let t = 0, l = tasks.length; t < l; t ++ ) {
+		
+		tasks[ t ]();
+		
+	}
+	tasks.length = 0;
 
 }
 
-function frame() {
+function animate() {
 
 	grid.visible = params.displayGrid;
 
