@@ -612,6 +612,14 @@ priorityCallback = null : ( itemA, itemB ) => Number
 
 Function to derive the job priority of the given item. Higher priority values get processed first.
 
+### .schedulingCallback
+
+```js
+schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
+```
+
+A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR.
+
 ## LRUCache
 
 Utility class for the TilesRenderer to keep track of currently used items so rendered items will not be unloaded.
