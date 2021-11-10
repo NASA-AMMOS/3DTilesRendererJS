@@ -618,7 +618,7 @@ Function to derive the job priority of the given item. Higher priority values ge
 schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 ```
 
-A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR.
+A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
 
 ## LRUCache
 
