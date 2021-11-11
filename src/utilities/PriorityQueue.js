@@ -17,6 +17,20 @@ class PriorityQueue {
 
 		};
 
+		// Customizable scheduling callback. Default using requestAnimationFrame()
+		this.schedulingCallback = func => {
+
+			requestAnimationFrame( func );
+
+		};
+
+		this._runjobs = () => {
+
+			this.tryRunJobs();
+			this.scheduled = false;
+
+		};
+
 	}
 
 	sort() {
@@ -110,12 +124,8 @@ class PriorityQueue {
 
 		if ( ! this.scheduled ) {
 
-			requestAnimationFrame( () => {
+			this.schedulingCallback( this._runjobs );
 
-				this.tryRunJobs();
-				this.scheduled = false;
-
-			} );
 			this.scheduled = true;
 
 		}

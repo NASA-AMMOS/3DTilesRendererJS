@@ -10,14 +10,12 @@ import {
 	Sphere,
 	Vector3,
 	Vector2,
-	Math as MathUtils,
 	Frustum,
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
-const DEG2RAD = MathUtils.DEG2RAD;
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
@@ -51,13 +49,9 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( this._autoDisableRendererCulling !== value ) {
 
 			super._autoDisableRendererCulling = value;
-			this.traverse( tile => {
+			this.forEachLoadedModel( ( scene ) => {
 
-				if ( tile.scene ) {
-
-					updateFrustumCulled( tile.scene, value );
-
-				}
+				updateFrustumCulled( scene, ! value );
 
 			} );
 
@@ -355,10 +349,11 @@ export class TilesRenderer extends TilesRendererBase {
 			cameraInfo.push( {
 
 				frustum: new Frustum(),
-				sseDenominator: - 1,
+				isOrthographic: false,
+				sseDenominator: - 1, // used if isOrthographic:false
 				position: new Vector3(),
 				invScale: - 1,
-				pixelSize: 0,
+				pixelSize: 0, // used if isOrthographic:true
 
 			} );
 
@@ -392,17 +387,25 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			if ( camera.isPerspectiveCamera ) {
+			// Read the calculated projection matrix directly to support custom Camera implementations
+			const projection = camera.projectionMatrix.elements;
 
-				info.sseDenominator = 2 * Math.tan( 0.5 * camera.fov * DEG2RAD ) / resolution.height;
+			// The last element of the projection matrix is 1 for orthographic, 0 for perspective
+			info.isOrthographic = projection[ 15 ] === 1;
 
-			}
+			if ( info.isOrthographic ) {
 
-			if ( camera.isOrthographicCamera ) {
-
-				const w = camera.right - camera.left;
-				const h = camera.top - camera.bottom;
+				// See OrthographicCamera.updateProjectionMatrix and Matrix4.makeOrthographic:
+				// the view width and height are used to populate matrix elements 0 and 5.
+				const w = 2 / projection[ 0 ];
+				const h = 2 / projection[ 5 ];
 				info.pixelSize = Math.max( h / resolution.height, w / resolution.width );
+
+			} else {
+
+				// See PerspectiveCamera.updateProjectionMatrix and Matrix4.makePerspective:
+				// the vertical FOV is used to populate matrix element 5.
+				info.sseDenominator = ( 2 / projection[ 5 ] ) / resolution.height;
 
 			}
 
@@ -673,7 +676,7 @@ export class TilesRenderer extends TilesRendererBase {
 				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
 
 			} );
-			updateFrustumCulled( scene, this.autoDisableRendererCulling );
+			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
 			cached.scene = scene;
 
@@ -842,12 +845,11 @@ export class TilesRenderer extends TilesRendererBase {
 				}
 
 				// transform camera position into local frame of the tile bounding box
-				const camera = cameras[ i ];
 				const info = cameraInfo[ i ];
 				const invScale = info.invScale;
 
 				let error;
-				if ( camera.isOrthographicCamera ) {
+				if ( info.isOrthographic ) {
 
 					const pixelSize = info.pixelSize;
 					error = tile.geometricError / ( pixelSize * invScale );
