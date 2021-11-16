@@ -233,16 +233,16 @@ function handleCamera() {
 
 		if ( xrSession === null ) { // We setup XR camera once
 
+			const xrCamera = renderer.xr.getCamera( camera );
+
 			// remove all cameras so we can use the VR camera instead
-			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+			tiles.cameras.forEach( c => tiles.deleteCamera( c ) );
+			tiles.setCamera( xrCamera );
 
-			const currCamera = renderer.xr.getCamera( camera );
-			tiles.setCamera( currCamera );
-
-			const leftCam = currCamera.cameras[ 0 ];
+			const leftCam = xrCamera.cameras[ 0 ];
 			if ( leftCam ) {
 
-				tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
+				tiles.setResolution( xrCamera, leftCam.viewport.z, leftCam.viewport.w );
 
 			}
 
@@ -255,7 +255,7 @@ function handleCamera() {
 		// Reset default camera (exiting WebXR session)
 		if ( xrSession !== null ) {
 
-			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+			tiles.cameras.forEach( c => tiles.deleteCamera( c ) );
 
 			tiles.setCamera( camera );
 			tiles.setResolutionFromRenderer( camera, renderer );
