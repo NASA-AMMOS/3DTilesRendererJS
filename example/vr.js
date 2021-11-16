@@ -240,9 +240,8 @@ function handleCamera() {
 
 		if ( xrSession === null ) { // We setup XR camera once
 
-			const xrCamera = renderer.xr.getCamera( camera );
-
 			// remove all cameras so we can use the VR camera instead
+			const xrCamera = renderer.xr.getCamera( camera );
 			tiles.cameras.forEach( c => tiles.deleteCamera( c ) );
 			tiles.setCamera( xrCamera );
 
