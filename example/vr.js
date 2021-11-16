@@ -102,13 +102,13 @@ function init() {
 	offsetParent = new Group();
 	scene.add( offsetParent );
 
-	tiles = new TilesRenderer( '../data/tileset.json' );
+	// set up ground
+	tiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	offsetParent.add( tiles.group );
 
 	// We set camera for tileset
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );
-
 
 	// We define a custom scheduling callback to handle also active WebXR sessions
 	const tilesSchedulingCB = func => {
@@ -121,6 +121,13 @@ function init() {
 	tiles.downloadQueue.schedulingCallback = tilesSchedulingCB;
 	tiles.parseQueue.schedulingCallback = tilesSchedulingCB;
 
+	// set up sky tiles
+	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
+	offsetParent.add( skyTiles.group );
+	skyTiles.setCamera( camera );
+	skyTiles.setResolutionFromRenderer( camera, renderer );
+	skyTiles.downloadQueue = tiles.downloadQueue;
+	skyTiles.parseQueue = tiles.parseQueue;
 
 	// Raycasting init
 	raycaster = new Raycaster();
@@ -233,16 +240,20 @@ function handleCamera() {
 
 		if ( xrSession === null ) { // We setup XR camera once
 
+			const xrCamera = renderer.xr.getCamera( camera );
+
 			// remove all cameras so we can use the VR camera instead
-			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
+			tiles.cameras.forEach( c => tiles.deleteCamera( c ) );
+			tiles.setCamera( xrCamera );
 
-			const currCamera = renderer.xr.getCamera( camera );
-			tiles.setCamera( currCamera );
+			skyTiles.cameras.forEach( c => skyTiles.deleteCamera( c ) );
+			skyTiles.setCamera( xrCamera );
 
-			const leftCam = currCamera.cameras[ 0 ];
+			const leftCam = xrCamera.cameras[ 0 ];
 			if ( leftCam ) {
 
-				tiles.setResolution( currCamera, leftCam.viewport.z, leftCam.viewport.w );
+				tiles.setResolution( xrCamera, leftCam.viewport.z, leftCam.viewport.w );
+				skyTiles.setResolution( xrCamera, leftCam.viewport.z, leftCam.viewport.w );
 
 			}
 
@@ -255,10 +266,13 @@ function handleCamera() {
 		// Reset default camera (exiting WebXR session)
 		if ( xrSession !== null ) {
 
-			tiles.cameras.forEach( c => tiles.deleteCamera( camera ) );
-
+			tiles.cameras.forEach( c => tiles.deleteCamera( c ) );
 			tiles.setCamera( camera );
 			tiles.setResolutionFromRenderer( camera, renderer );
+
+			skyTiles.cameras.forEach( c => skyTiles.deleteCamera( c ) );
+			skyTiles.setCamera( camera );
+			skyTiles.setResolutionFromRenderer( camera, renderer );
 
 			camera.position.set( 0, 1, 0 );
 
