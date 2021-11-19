@@ -1,41 +1,12 @@
 // CMPT File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Composite/README.md
+import { LoaderBase } from './LoaderBase.js';
 
-export class CMPTLoaderBase {
+export class CMPTLoaderBase extends LoaderBase {
 
 	constructor() {
 
-		this.fetchOptions = {};
-		this.workingPath = '';
-
-	}
-
-	load( url ) {
-
-		return fetch( url, this.fetchOptions )
-			.then( res => {
-
-				if ( ! res.ok ) {
-
-					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-				}
-				return res.arrayBuffer();
-
-			} )
-			.then( buffer => {
-
-				if ( this.workingPath === '' ) {
-
-					const splits = url.split( /\\\//g );
-					splits.pop();
-					this.workingPath = splits.join( '/' );
-
-				}
-
-				return this.parse( buffer );
-
-			} );
+		super();
 
 	}
 

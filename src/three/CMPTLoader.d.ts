@@ -14,6 +14,6 @@ export class CMPTLoader {
 	
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< CMPTResult >;
-	parse( buffer : ArrayBuffer ) : CMPTResult;
+	parse( buffer : ArrayBuffer ) : Promise< CMPTResult >;
 
 }

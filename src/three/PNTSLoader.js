@@ -12,63 +12,68 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 	parse( buffer ) {
 
-		const result = super.parse( buffer );
-		const { featureTable } = result;
+		return super
+			.parse( buffer )
+			.then( result => {
 
-		const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
-		const POSITION = featureTable.getData( 'POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3' );
-		const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
+				const { featureTable } = result;
 
-		[
-			'RTC_CENTER',
-			'QUANTIZED_VOLUME_OFFSET',
-			'QUANTIZED_VOLUME_SCALE',
-			'CONSTANT_RGBA',
-			'BATCH_LENGTH',
-			'POSITION_QUANTIZED',
-			'RGBA',
-			'RGB565',
-			'NORMAL',
-			'NORMAL_OCT16P',
-		].forEach( feature => {
+				const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
+				const POSITION = featureTable.getData( 'POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3' );
+				const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
 
-			if ( feature in featureTable.header ) {
+				[
+					'RTC_CENTER',
+					'QUANTIZED_VOLUME_OFFSET',
+					'QUANTIZED_VOLUME_SCALE',
+					'CONSTANT_RGBA',
+					'BATCH_LENGTH',
+					'POSITION_QUANTIZED',
+					'RGBA',
+					'RGB565',
+					'NORMAL',
+					'NORMAL_OCT16P',
+				].forEach( feature => {
 
-				console.warn( `PNTSLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
+					if ( feature in featureTable.header ) {
 
-			}
+						console.warn( `PNTSLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
 
-		} );
+					}
 
-		const geometry = new BufferGeometry();
-		geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+				} );
 
-		const material = new PointsMaterial();
-		material.size = 2;
-		material.sizeAttenuation = false;
+				const geometry = new BufferGeometry();
+				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
 
-		if ( RGB !== null ) {
+				const material = new PointsMaterial();
+				material.size = 2;
+				material.sizeAttenuation = false;
 
-			geometry.setAttribute( 'color', new BufferAttribute( RGB, 3, true ) );
-			material.vertexColors = true;
+				if ( RGB !== null ) {
 
-		}
+					geometry.setAttribute( 'color', new BufferAttribute( RGB, 3, true ) );
+					material.vertexColors = true;
 
-		const object = new Points( geometry, material );
-		result.scene = object;
-		result.scene.featureTable = featureTable;
+				}
 
-		const rtcCenter = featureTable.getData( 'RTC_CENTER' );
+				const object = new Points( geometry, material );
+				result.scene = object;
+				result.scene.featureTable = featureTable;
 
-		if ( rtcCenter ) {
+				const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 
-			result.scene.position.x += rtcCenter[ 0 ];
-			result.scene.position.y += rtcCenter[ 1 ];
-			result.scene.position.z += rtcCenter[ 2 ];
+				if ( rtcCenter ) {
 
-		}
+					result.scene.position.x += rtcCenter[ 0 ];
+					result.scene.position.y += rtcCenter[ 1 ];
+					result.scene.position.z += rtcCenter[ 2 ];
 
-		return result;
+				}
+
+				return result;
+
+			} );
 
 	}
 

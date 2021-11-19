@@ -2,29 +2,13 @@
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
 import { FeatureTable, BatchTable } from "../utilities/FeatureTable.js";
+import { LoaderBase } from './LoaderBase.js';
 
-export class PNTSLoaderBase {
+export class PNTSLoaderBase extends LoaderBase {
 
 	constructor() {
 
-		this.fetchOptions = {};
-
-	}
-
-	load( url ) {
-
-		return fetch( url, this.fetchOptions )
-			.then( res => {
-
-				if ( ! res.ok ) {
-
-					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-				}
-				return res.arrayBuffer();
-
-			} )
-			.then( buffer => this.parse( buffer ) );
+		super();
 
 	}
 
@@ -92,11 +76,13 @@ export class PNTSLoaderBase {
 			batchTableBinaryByteLength,
 		);
 
-		return {
+		return Promise.resolve( {
+
 			version,
 			featureTable,
 			batchTable,
-		};
+
+		} );
 
 	}
 

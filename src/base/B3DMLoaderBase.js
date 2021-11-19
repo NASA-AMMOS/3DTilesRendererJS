@@ -2,42 +2,13 @@
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
 
 import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
+import { LoaderBase } from './LoaderBase.js';
 
-export class B3DMLoaderBase {
+export class B3DMLoaderBase extends LoaderBase {
 
 	constructor() {
 
-		this.fetchOptions = {};
-		this.workingPath = '';
-
-	}
-
-	load( url ) {
-
-		return fetch( url, this.fetchOptions )
-			.then( res => {
-
-				if ( ! res.ok ) {
-
-					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-				}
-				return res.arrayBuffer();
-
-			} )
-			.then( buffer => {
-
-				if ( this.workingPath === '' ) {
-
-					const splits = url.split( /\\\//g );
-					splits.pop();
-					this.workingPath = splits.join( '/' );
-
-				}
-
-				return this.parse( buffer );
-
-			} );
+		super();
 
 	}
 

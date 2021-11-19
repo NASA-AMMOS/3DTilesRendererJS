@@ -3,6 +3,7 @@ import { CMPTLoaderBase } from '../base/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
+import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
 
 export class CMPTLoader extends CMPTLoaderBase {
 
@@ -40,8 +41,10 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'pnts': {
 
 					const slicedBuffer = buffer.slice();
-					const pointsResult = new PNTSLoader( manager ).parse( slicedBuffer.buffer );
-					const promise = Promise.resolve( pointsResult );
+					const loader = new PNTSLoader( manager );
+					loader.workingPath = this.workingPath;
+					loader.fetchOptions = this.fetchOptions;
+					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
 
@@ -59,6 +62,18 @@ export class CMPTLoader extends CMPTLoaderBase {
 					break;
 
 				}
+
+				// 3DTILES_content_gltf
+				case 'glb':
+				case 'gltf':
+					const slicedBuffer = buffer.slice();
+					const loader = new GLTFExtensionLoader( manager );
+					loader.workingPath = this.workingPath;
+					loader.fetchOptions = this.fetchOptions;
+
+					const promise = loader.parse( slicedBuffer.buffer );
+					promises.push( promise );
+					break;
 
 			}
 

@@ -13,7 +13,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	group : TilesGroup;
 
-	getBoundsTransform(target: Matrix4) : Boolean;
+	getBoundsTransform( target: Matrix4 ) : Boolean;
 
 	getBounds( box : Box3 ) : Boolean;
 
@@ -30,6 +30,5 @@ export class TilesRenderer extends TilesRendererBase {
 	onLoadTileSet : ( ( tileSet : Tileset ) => void ) | null;
 	onLoadModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
 	onDisposeModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
-
 
 }
