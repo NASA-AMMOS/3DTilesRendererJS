@@ -121,7 +121,7 @@ function init() {
 	scene.add( offsetGroup );
 
 	new B3DMLoader()
-		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/tilesets/TilesetWithRequestVolume/city/lr.b3dm' )
+		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithRequestVolume/city/lr.b3dm' )
 		.then( res => {
 
 			console.log( res );
