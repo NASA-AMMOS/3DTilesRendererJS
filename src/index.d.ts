@@ -10,6 +10,7 @@ import {
 	RANDOM_COLOR,
 } from './three/DebugTilesRenderer';
 import { TilesRenderer } from './three/TilesRenderer';
+import { TilesGroup } from './three/TilesGroup';
 import { B3DMLoader } from './three/B3DMLoader';
 import { I3DMLoader } from './three/I3DMLoader';
 import { PNTSLoader } from './three/PNTSLoader';
@@ -36,6 +37,7 @@ export {
 	TileBase,
 	Tileset,
 	TilesRendererBase,
+	TilesGroup,
 	B3DMLoaderBase,
 
 	LRUCache,
