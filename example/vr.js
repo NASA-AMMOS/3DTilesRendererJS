@@ -100,9 +100,11 @@ function init() {
 
 	// parent for centering the tileset
 	offsetParent = new Group();
+	offsetParent.rotation.x = Math.PI / 2;
+	offsetParent.position.y = 32;
 	scene.add( offsetParent );
 
-	tiles = new TilesRenderer( '../data/tileset.json' );
+	tiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/scene-tileset.json' );
 	offsetParent.add( tiles.group );
 
 	// We set camera for tileset
