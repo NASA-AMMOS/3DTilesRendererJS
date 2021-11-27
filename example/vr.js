@@ -44,6 +44,7 @@ let offsetParent;
 let controller, controllerGrip;
 let xrSession = null;
 let tasks = [];
+const upVector = new Vector3( 0, 1, 0 );
 
 let params = {
 
@@ -63,7 +64,7 @@ function init() {
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setClearColor( 0x151c1f );
+	renderer.setClearColor( 0xbbbbbb );
 	renderer.outputEncoding = sRGBEncoding;
 	renderer.xr.enabled = true;
 
@@ -100,9 +101,11 @@ function init() {
 
 	// parent for centering the tileset
 	offsetParent = new Group();
+	offsetParent.rotation.x = Math.PI / 2;
+	offsetParent.position.y = 32;
 	scene.add( offsetParent );
 
-	tiles = new TilesRenderer( '../data/tileset.json' );
+	tiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/scene-tileset.json' );
 	offsetParent.add( tiles.group );
 
 	// We set camera for tileset
@@ -121,6 +124,8 @@ function init() {
 	tiles.downloadQueue.schedulingCallback = tilesSchedulingCB;
 	tiles.parseQueue.schedulingCallback = tilesSchedulingCB;
 
+	tiles.lruCache.maxSize = 1200;
+	tiles.lruCache.minSize = 900;
 
 	// Raycasting init
 	raycaster = new Raycaster();
@@ -137,7 +142,11 @@ function init() {
 	controller = renderer.xr.getController( 0 );
 	controller.addEventListener( 'selectstart', () => {
 
-		workspace.position.copy( intersectRing.position );
+		if ( intersectRing.visible ) {
+
+			workspace.position.copy( intersectRing.position );
+
+		}
 
 	} );
 	controller.addEventListener( 'connected', function ( event ) {
@@ -339,6 +348,13 @@ function animate() {
 			// scale ring based on distance
 			const scale = workspace.position.distanceTo( intersectRing.position ) * camera.fov / 4000;
 			intersectRing.scale.setScalar( scale );
+
+			// only teleport to mostly horizontal surfaces
+			if ( hit.face.normal.dot( upVector ) < 0.15 ) {
+
+				intersectRing.visible = false;
+
+			}
 
 		} else {
 
