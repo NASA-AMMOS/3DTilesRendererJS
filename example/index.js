@@ -235,15 +235,15 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
-	renderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
-	renderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
-	renderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+	renderer.domElement.addEventListener( 'pointermove', onPointerMove, false );
+	renderer.domElement.addEventListener( 'pointerdown', onPointerDown, false );
+	renderer.domElement.addEventListener( 'pointerup', onPointerUp, false );
+	renderer.domElement.addEventListener( 'pointerleave', onPointerLeave, false );
 
-	secondRenderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
-	secondRenderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
-	secondRenderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
-	secondRenderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
+	secondRenderer.domElement.addEventListener( 'pointermove', onPointerMove, false );
+	secondRenderer.domElement.addEventListener( 'pointerdown', onPointerDown, false );
+	secondRenderer.domElement.addEventListener( 'pointerup', onPointerUp, false );
+	secondRenderer.domElement.addEventListener( 'pointerleave', onPointerLeave, false );
 
 
 	// GUI
@@ -357,13 +357,13 @@ function onWindowResize() {
 
 }
 
-function onMouseLeave( e ) {
+function onPointerLeave( e ) {
 
 	lastHoveredElement = null;
 
 }
 
-function onMouseMove( e ) {
+function onPointerMove( e ) {
 
 	const bounds = this.getBoundingClientRect();
 	mouse.x = e.clientX - bounds.x;
@@ -377,14 +377,14 @@ function onMouseMove( e ) {
 
 const startPos = new Vector2();
 const endPos = new Vector2();
-function onMouseDown( e ) {
+function onPointerDown( e ) {
 
 	const bounds = this.getBoundingClientRect();
 	startPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
 
 }
 
-function onMouseUp( e ) {
+function onPointerUp( e ) {
 
 	const bounds = this.getBoundingClientRect();
 	endPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
