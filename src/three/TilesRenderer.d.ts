@@ -1,5 +1,6 @@
 import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager } from 'three';
-import { Tile, Tileset } from '..';
+import { Tile } from '../base/Tile';
+import { Tileset } from '../base/Tileset';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
