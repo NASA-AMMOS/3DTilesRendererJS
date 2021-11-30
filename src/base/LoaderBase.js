@@ -24,9 +24,7 @@ export class LoaderBase {
 
 				if ( this.workingPath === '' ) {
 
-					const splits = url.split( /\\\//g );
-					splits.pop();
-					this.workingPath = splits.join( '/' );
+					this.workingPath = this.workingPathForURL( url );
 
 				}
 
@@ -47,6 +45,15 @@ export class LoaderBase {
 			return url;
 
 		}
+
+	}
+
+	workingPathForURL( url ) {
+
+		const splits = url.split( '/' );
+		splits.pop();
+		const workingPath = splits.join( '/' );
+		return workingPath + '/';
 
 	}
 

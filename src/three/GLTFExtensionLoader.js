@@ -16,17 +16,13 @@ export class GLTFExtensionLoader extends LoaderBase {
 		return new Promise( ( resolve, reject ) => {
 
 			const manager = this.manager;
-			const loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' ) || new GLTFLoader( manager );
+			let loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' ) || new GLTFLoader( manager );
 
-			// GLTFLoader assumes the working path ends in a slash
-			let workingPath = this.workingPath;
-			if ( ! /[\\/]$/.test( workingPath ) ) {
+			// assume any pre-registered loader has paths configured as the user desires, but if we're making
+			// a new loader, use the working path during parse to support relative uris on other hosts
+			const resourcePath = loader.resourcePath || loader.path || this.workingPath;
 
-				workingPath += '/';
-
-			}
-
-			loader.parse( buffer, workingPath, model => {
+			loader.parse( buffer, resourcePath, model => {
 
 				resolve( model );
 
