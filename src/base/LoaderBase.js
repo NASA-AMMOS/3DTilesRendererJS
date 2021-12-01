@@ -50,7 +50,7 @@ export class LoaderBase {
 
 	workingPathForURL( url ) {
 
-		const splits = url.split( '/' );
+		const splits = url.split( /[\\/]/g );
 		splits.pop();
 		const workingPath = splits.join( '/' );
 		return workingPath + '/';
