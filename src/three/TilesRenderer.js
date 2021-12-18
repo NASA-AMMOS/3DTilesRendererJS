@@ -802,6 +802,7 @@ export class TilesRenderer extends TilesRendererBase {
 			this.onTileVisibilityChange( scene, tile, visible );
 
 		}
+
 	}
 
 	setTileActive( tile, active ) {

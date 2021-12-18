@@ -30,6 +30,7 @@ export class TilesRenderer extends TilesRendererBase {
 	onLoadTileSet : ( ( tileSet : Tileset ) => void ) | null;
 	onLoadModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
 	onDisposeModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
+	onTileVisibilityChange : ( ( scene : Object3D, tile : Tile, visible : boolean ) => void ) | null;
 
 
 }
