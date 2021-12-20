@@ -478,6 +478,14 @@ onDisposeModel = null : ( scene : Object3D, tile : Tile ) => void
 
 Callback that is called every time a model is disposed of. This should be used in conjunction with [.onLoadModel](#onLoadModel) to dispose of any custom materials created for a tile. Note that the textures, materials, and geometries that a tile loaded in with are all automatically disposed of even if they have been removed from the tile meshes.
 
+### .onTileVisibilityChange
+
+```js
+onTileVisibilityChange = null : ( scene : Object3D, tile : Tile, visible : boolean ) => void
+```
+
+Callback that is called when a tile's visibility changed. The parameter `visible` is `true` when the tile is visible
+
 ### .dispose
 
 ```js

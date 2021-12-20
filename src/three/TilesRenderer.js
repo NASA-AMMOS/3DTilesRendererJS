@@ -74,6 +74,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
+		this.onTileVisibilityChange = null;
 
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
@@ -793,6 +794,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 			group.remove( scene );
 			visibleTiles.delete( tile );
+
+		}
+
+		if ( this.onTileVisibilityChange ) {
+
+			this.onTileVisibilityChange( scene, tile, visible );
 
 		}
 
