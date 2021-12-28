@@ -59,6 +59,8 @@ export class LoaderBase {
 
 	parse( buffer ) {
 
+		throw new Error( 'LoaderBase: Parse not implemented.' );
+
 	}
 
 }

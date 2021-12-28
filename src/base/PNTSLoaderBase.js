@@ -6,12 +6,6 @@ import { LoaderBase } from './LoaderBase.js';
 
 export class PNTSLoaderBase extends LoaderBase {
 
-	constructor() {
-
-		super();
-
-	}
-
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );

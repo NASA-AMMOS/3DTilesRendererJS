@@ -4,12 +4,6 @@ import { LoaderBase } from './LoaderBase.js';
 
 export class CMPTLoaderBase extends LoaderBase {
 
-	constructor() {
-
-		super();
-
-	}
-
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );

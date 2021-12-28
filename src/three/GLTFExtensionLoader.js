@@ -16,7 +16,15 @@ export class GLTFExtensionLoader extends LoaderBase {
 		return new Promise( ( resolve, reject ) => {
 
 			const manager = this.manager;
-			let loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' ) || new GLTFLoader( manager );
+			let loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' );
+
+			if ( ! loader ) {
+
+				loader = new GLTFLoader( manager );
+				loader.crossOrigin = this.crossOrigin;
+				loader.withCredentials = this.withCredentials;
+
+			}
 
 			// assume any pre-registered loader has paths configured as the user desires, but if we're making
 			// a new loader, use the working path during parse to support relative uris on other hosts

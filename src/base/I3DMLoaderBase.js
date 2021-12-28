@@ -7,12 +7,6 @@ import { LoaderBase } from './LoaderBase.js';
 
 export class I3DMLoaderBase extends LoaderBase {
 
-	constructor() {
-
-		super();
-
-	}
-
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );

@@ -6,12 +6,6 @@ import { LoaderBase } from './LoaderBase.js';
 
 export class B3DMLoaderBase extends LoaderBase {
 
-	constructor() {
-
-		super();
-
-	}
-
 	parse( buffer ) {
 
 		// TODO: this should be able to take a uint8array with an offset and length
