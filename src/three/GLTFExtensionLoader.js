@@ -16,13 +16,30 @@ export class GLTFExtensionLoader extends LoaderBase {
 		return new Promise( ( resolve, reject ) => {
 
 			const manager = this.manager;
+			const fetchOptions = this.fetchOptions;
 			let loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' );
 
 			if ( ! loader ) {
 
 				loader = new GLTFLoader( manager );
-				loader.crossOrigin = this.crossOrigin;
-				loader.withCredentials = this.withCredentials;
+				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
+
+					loader.setCrossOrigin( 'use-credentials' );
+
+				}
+
+				if ( 'credentials' in fetchOptions ) {
+
+					loader.setWithCredentials( fetchOptions.credentials === 'include' );
+
+				}
+
+				if ( fetchOptions.headers ) {
+
+					loader.setRequestHeader( fetchOptions.headers );
+
+				}
+
 
 			}
 
