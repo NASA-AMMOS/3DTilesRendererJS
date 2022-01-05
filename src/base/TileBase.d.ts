@@ -59,4 +59,6 @@ export interface TileBase {
 
 	refine?: 'REPLACE' | 'ADD';
 
+	transform?: number[];
+
 }
