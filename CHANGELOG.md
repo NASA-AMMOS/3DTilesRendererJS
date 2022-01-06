@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `TilesRenderer.onTileVisibilityChange` callback.
-- Support for GLTF in tilesets.
+- Support for GLTF in tilesets (`3DTILES_content_gltf` extension).
 
 ### Changed
 - Improved type definitions.
