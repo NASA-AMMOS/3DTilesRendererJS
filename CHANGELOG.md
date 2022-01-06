@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `TilesRenderer.onTileVisibilityChange` callback.
+- Support for GLTF in tilesets.
 
 ### Changed
 - Improved type definitions.
+- `PNTSLoader.parse` now returns a promise.
 
 ## [0.3.4] - 2021-11-15
 ### Added
