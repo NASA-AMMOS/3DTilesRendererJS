@@ -20,6 +20,6 @@ export class B3DMLoader {
 
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< B3DMResult >;
-	parse( buffer : ArrayBuffer ) : B3DMResult;
+	parse( buffer : ArrayBuffer ) : Promise < B3DMResult >;
 
 }

@@ -20,6 +20,6 @@ export class I3DMLoader {
 
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< I3DMResult >;
-	parse( buffer : ArrayBuffer ) : I3DMResult;
+	parse( buffer : ArrayBuffer ) : Promise< I3DMResult >;
 	
 }

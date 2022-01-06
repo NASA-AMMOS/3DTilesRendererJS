@@ -16,8 +16,10 @@ import { B3DMLoader } from './three/B3DMLoader.js';
 import { PNTSLoader } from './three/PNTSLoader.js';
 import { I3DMLoader } from './three/I3DMLoader.js';
 import { CMPTLoader } from './three/CMPTLoader.js';
+import { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
 
 import { TilesRendererBase } from './base/TilesRendererBase.js';
+import { LoaderBase } from './base/LoaderBase.js';
 import { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
 import { I3DMLoaderBase } from './base/I3DMLoaderBase.js';
 import { PNTSLoaderBase } from './base/PNTSLoaderBase.js';
@@ -33,8 +35,10 @@ export {
 	PNTSLoader,
 	I3DMLoader,
 	CMPTLoader,
+	GLTFExtensionLoader,
 
 	TilesRendererBase,
+	LoaderBase,
 	B3DMLoaderBase,
 	I3DMLoaderBase,
 	PNTSLoaderBase,

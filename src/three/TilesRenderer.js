@@ -3,6 +3,7 @@ import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
 import { CMPTLoader } from './CMPTLoader.js';
+import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -582,7 +583,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		switch ( extension ) {
 
-			case 'b3dm':
+			case 'b3dm': {
+
 				const loader = new B3DMLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
@@ -591,9 +593,19 @@ export class TilesRenderer extends TilesRendererBase {
 					.then( res => res.scene );
 				break;
 
-			case 'pnts':
-				promise = Promise.resolve( new PNTSLoader( manager ).parse( buffer ).scene );
+			}
+
+			case 'pnts': {
+
+				const loader = new PNTSLoader( manager );
+				loader.workingPath = workingPath;
+				loader.fetchOptions = fetchOptions;
+				promise = loader
+					.parse( buffer )
+					.then( res => res.scene );
 				break;
+
+			}
 
 			case 'i3dm': {
 
@@ -603,7 +615,6 @@ export class TilesRenderer extends TilesRendererBase {
 				promise = loader
 					.parse( buffer )
 					.then( res => res.scene );
-
 				break;
 
 			}
@@ -616,10 +627,20 @@ export class TilesRenderer extends TilesRendererBase {
 				promise = loader
 					.parse( buffer )
 					.then( res => res.scene	);
-
 				break;
 
 			}
+
+			// 3DTILES_content_gltf
+			case 'gltf':
+			case 'glb':
+				const loader = new GLTFExtensionLoader( manager );
+				loader.workingPath = workingPath;
+				loader.fetchOptions = fetchOptions;
+				promise = loader
+					.parse( buffer )
+					.then( res => res.scene	);
+				break;
 
 			default:
 				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );

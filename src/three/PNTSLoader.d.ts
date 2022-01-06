@@ -1,4 +1,4 @@
-import { PNTSBaseResult } from '../base/PNTSLoaderBase';
+import { PNTSBaseResult, PNTSLoaderBase } from '../base/PNTSLoaderBase';
 import { FeatureTable } from '../utilities/FeatureTable';
 import { Points, LoadingManager } from 'three';
 
@@ -14,10 +14,10 @@ export interface PNTSResult extends PNTSBaseResult {
 
 }
 
-export class PNTSLoader {
+export class PNTSLoader extends PNTSLoaderBase {
 
 	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< PNTSResult >;
-	parse( buffer : ArrayBuffer ) : PNTSResult;
+	parse( buffer : ArrayBuffer ) : Promise< PNTSResult >;
 
 }

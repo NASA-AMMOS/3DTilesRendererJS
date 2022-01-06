@@ -40,8 +40,10 @@ export class CMPTLoader extends CMPTLoaderBase {
 				case 'pnts': {
 
 					const slicedBuffer = buffer.slice();
-					const pointsResult = new PNTSLoader( manager ).parse( slicedBuffer.buffer );
-					const promise = Promise.resolve( pointsResult );
+					const loader = new PNTSLoader( manager );
+					loader.workingPath = this.workingPath;
+					loader.fetchOptions = this.fetchOptions;
+					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
 

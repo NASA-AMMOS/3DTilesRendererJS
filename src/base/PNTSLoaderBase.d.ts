@@ -11,6 +11,6 @@ export interface PNTSBaseResult {
 export class PNTSLoaderBase {
 
 	load( url : string ) : Promise< PNTSBaseResult >;
-	parse( buffer : ArrayBuffer ) : PNTSBaseResult;
+	parse( buffer : ArrayBuffer ) : Promise< PNTSBaseResult >;
 
 }
