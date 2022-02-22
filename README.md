@@ -56,7 +56,7 @@ function renderLoop() {
 	// before calling tilesRenderer.update
 	camera.updateMatrixWorld();
 	tilesRenderer.update();
-	renderer.render( camera, scene );
+	renderer.render( scene, camera );
 
 }
 ```
@@ -197,7 +197,7 @@ function renderLoop() {
 		needsRerender = false;
 		camera.updateMatrixWorld();
 		tilesRenderer.update();
-		renderer.render( camera, scene );
+		renderer.render( scene, camera );
 
 	}
 
