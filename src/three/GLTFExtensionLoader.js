@@ -40,12 +40,16 @@ export class GLTFExtensionLoader extends LoaderBase {
 
 				}
 
-
 			}
 
 			// assume any pre-registered loader has paths configured as the user desires, but if we're making
 			// a new loader, use the working path during parse to support relative uris on other hosts
-			const resourcePath = loader.resourcePath || loader.path || this.workingPath;
+			let resourcePath = loader.resourcePath || loader.path || this.workingPath;
+			if ( ! /[\\/]$/.test( resourcePath ) && resourcePath.length ) {
+
+				resourcePath += '/';
+
+			}
 
 			loader.parse( buffer, resourcePath, model => {
 
