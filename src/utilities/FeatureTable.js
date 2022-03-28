@@ -154,7 +154,7 @@ export class BatchTable extends FeatureTable {
 
 	getData( key, componentType = null, type = null ) {
 
-		return super.getData( key, this.batchSize, type, componentType );
+		return super.getData( key, this.batchSize, componentType, type );
 
 	}
 
