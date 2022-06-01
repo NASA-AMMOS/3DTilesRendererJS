@@ -151,10 +151,10 @@ export class TilesRendererBase {
 
 		const root = rootTileSet.root;
 
-		stats.inFrustum = 0,
-		stats.used = 0,
-		stats.active = 0,
-		stats.visible = 0,
+		stats.inFrustum = 0;
+		stats.used = 0;
+		stats.active = 0;
+		stats.visible = 0;
 		this.frameCount ++;
 
 		determineFrustumSet( root, this );
