@@ -1,5 +1,3 @@
-import path from 'path-browserify';
-import { urlJoin } from '../utilities/urlJoin.js';
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
@@ -192,7 +190,8 @@ export class TilesRendererBase {
 
 			if ( tile.content.uri ) {
 
-				tile.content.uri = urlJoin( tileSetDir, tile.content.uri );
+				// tile content uri has to be interpreted relative to the tileset.json
+				tile.content.uri = new URL( tile.content.uri, tileSetDir ).toString();
 
 			}
 
@@ -315,7 +314,7 @@ export class TilesRendererBase {
 					'asset.version is expected to be a string of "1.0" or "0.0"'
 				);
 
-				const basePath = path.dirname( url );
+				const basePath = url.replace( /\/[^\/]*\/?$/, '' );
 
 				traverseSet(
 					json.root,

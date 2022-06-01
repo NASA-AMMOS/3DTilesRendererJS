@@ -55,8 +55,5 @@
   },
   "peerDependencies": {
     "three": ">=0.123.0"
-  },
-  "dependencies": {
-    "path-browserify": "^1.0.1"
   }
 }
