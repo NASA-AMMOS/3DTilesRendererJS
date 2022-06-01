@@ -294,7 +294,7 @@ export class TilesRendererBase {
 	resetFailedTiles() {
 
 		const stats = this.stats;
-		if ( !stats.failed ) {
+		if ( stats.failed === 0 ) {
 
 			return;
 
