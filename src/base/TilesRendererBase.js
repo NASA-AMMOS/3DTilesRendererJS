@@ -290,6 +290,30 @@ export class TilesRendererBase {
 
 	}
 
+
+	resetFailedTiles() {
+
+		const stats = this.stats;
+		if ( !stats.failed ) {
+
+			return;
+
+		}
+
+		this.traverse( tile => {
+
+			if ( tile.__loadingState === FAILED ) {
+
+				tile.__loadingState = UNLOADED;
+
+			}
+
+		} );
+
+		stats.failed = 0;
+
+	}
+
 	// Private Functions
 	fetchTileSet( url, fetchOptions, parent = null ) {
 

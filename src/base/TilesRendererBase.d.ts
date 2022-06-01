@@ -28,5 +28,6 @@ export class TilesRendererBase {
 		afterCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null
 	) : void;
 	dispose() : void;
+	resetFailedTiles() : void;
 
 }
