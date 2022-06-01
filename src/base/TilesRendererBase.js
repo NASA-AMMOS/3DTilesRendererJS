@@ -3,6 +3,7 @@ import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
+import { getTileContentType } from "../utilities/tileContentType";
 
 /**
  * Function for provided to sort all tiles for prioritizing loading/unloading.
@@ -166,7 +167,7 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
-	parseTile( buffer, tile, extension ) {
+	parseTile( buffer, tile, tileContentType ) {
 
 		return null;
 
@@ -549,7 +550,12 @@ export class TilesRendererBase {
 
 					if ( res.ok ) {
 
-						return res.arrayBuffer();
+						return {
+
+							mediaType: res.headers.get( 'Content-Type' ),
+							buffer: res.arrayBuffer()
+
+						};
 
 					} else {
 
@@ -558,7 +564,7 @@ export class TilesRendererBase {
 					}
 
 				} )
-				.then( buffer => {
+				.then( result => {
 
 					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
@@ -566,6 +572,8 @@ export class TilesRendererBase {
 						return;
 
 					}
+
+					const { buffer, mediaType = '' } = result;
 
 					stats.downloading --;
 					stats.parsing ++;
@@ -581,10 +589,9 @@ export class TilesRendererBase {
 
 						}
 
-						const uri = parseTile.content.uri;
-						const extension = getUrlExtension( uri );
+						const contentType = getTileContentType( buffer, mediaType );
 
-						return this.parseTile( buffer, parseTile, extension );
+						return this.parseTile( buffer, parseTile, contentType );
 
 					} );
 

@@ -15,6 +15,7 @@ import {
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
+import { TileContentType } from '../utilities/tileContentType';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
@@ -565,7 +566,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	parseTile( buffer, tile, extension ) {
+	parseTile( buffer, tile, contentType ) {
 
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
@@ -600,9 +601,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		switch ( extension ) {
+		switch ( contentType ) {
 
-			case 'b3dm': {
+			case TileContentType.B3DM: {
 
 				const loader = new B3DMLoader( manager );
 				loader.workingPath = workingPath;
@@ -617,7 +618,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			case 'pnts': {
+			case TileContentType.PNTS: {
 
 				const loader = new PNTSLoader( manager );
 				loader.workingPath = workingPath;
@@ -629,7 +630,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			case 'i3dm': {
+			case TileContentType.I3DM: {
 
 				const loader = new I3DMLoader( manager );
 				loader.workingPath = workingPath;
@@ -644,7 +645,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			case 'cmpt': {
+			case TileContentType.CMPT: {
 
 				const loader = new CMPTLoader( manager );
 				loader.workingPath = workingPath;
@@ -660,8 +661,8 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 			// 3DTILES_content_gltf
-			case 'gltf':
-			case 'glb':
+			case TileContentType.GLTF:
+			case TileContentType.GLB:
 				const loader = new GLTFExtensionLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
@@ -671,7 +672,7 @@ export class TilesRenderer extends TilesRendererBase {
 				break;
 
 			default:
-				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
+				console.warn( `TilesRenderer: Content type "${ contentType }" not supported.` );
 				promise = Promise.resolve( null );
 				break;
 
@@ -692,7 +693,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// any transformations applied to it can be assumed to be applied after load
 			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 			// rotation fix which is why "multiply" happens here.
-			if ( extension === 'glb' || extension === 'gltf' ) {
+			if ( contentType === TileContentType.GLB || contentType === TileContentType.GLTF ) {
 
 				scene.matrix.multiply( tempMat );
 

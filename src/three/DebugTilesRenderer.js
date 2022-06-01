@@ -422,10 +422,10 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
-	parseTile( buffer, tile, extension ) {
+	parseTile( buffer, tile, contentType ) {
 
 		return super
-			.parseTile( buffer, tile, extension )
+			.parseTile( buffer, tile, contentType )
 			.then( () => {
 
 				const cached = tile.cached;
