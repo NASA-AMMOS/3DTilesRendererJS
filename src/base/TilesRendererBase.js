@@ -550,12 +550,16 @@ export class TilesRendererBase {
 
 					if ( res.ok ) {
 
-						return {
+						return res.arrayBuffer().then( buffer => {
 
-							mediaType: res.headers.get( 'Content-Type' ),
-							buffer: res.arrayBuffer()
+							return {
 
-						};
+								mediaType: res.headers.get( 'Content-Type' ),
+								buffer
+
+							};
+
+						} );
 
 					} else {
 
