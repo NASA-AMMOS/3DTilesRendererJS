@@ -314,6 +314,7 @@ export class TilesRendererBase {
 					'asset.version is expected to be a string of "1.0" or "0.0"'
 				);
 
+				// remove trailing slash and last path-segment from the URL
 				const basePath = url.replace( /\/[^\/]*\/?$/, '' );
 
 				traverseSet(
