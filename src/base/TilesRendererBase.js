@@ -550,16 +550,7 @@ export class TilesRendererBase {
 
 					if ( res.ok ) {
 
-						return res.arrayBuffer().then( buffer => {
-
-							return {
-
-								mediaType: res.headers.get( 'Content-Type' ),
-								buffer
-
-							};
-
-						} );
+						return res.arrayBuffer();
 
 					} else {
 
@@ -568,7 +559,7 @@ export class TilesRendererBase {
 					}
 
 				} )
-				.then( result => {
+				.then( buffer => {
 
 					// if it has been unloaded then the tile has been disposed
 					if ( tile.__loadIndex !== loadIndex ) {
@@ -576,8 +567,6 @@ export class TilesRendererBase {
 						return;
 
 					}
-
-					const { buffer, mediaType = '' } = result;
 
 					stats.downloading --;
 					stats.parsing ++;
@@ -593,7 +582,7 @@ export class TilesRendererBase {
 
 						}
 
-						const contentType = getTileContentType( buffer, mediaType );
+						const contentType = getTileContentType( buffer );
 
 						return this.parseTile( buffer, parseTile, contentType );
 

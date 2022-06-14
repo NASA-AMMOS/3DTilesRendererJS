@@ -21,25 +21,13 @@ const MAGIC_BYTES = {
 
 /**
  * Returns the content-type for the tile-contents, determined from
- * the media-type and the magic bytes in the data-buffer. Returns
- * one of the Strings defined in `TileContentType`, or null if
- * the content-type couldn't be recognized.
+ * the magic bytes in the data-buffer. Returns one of the Strings
+ * defined in `TileContentType`, or null if  the content-type couldn't
+ * be recognized.
  * @param {ArrayBuffer} buffer
- * @param {string} mediaType
  * @return {string|null}
  */
-export function getTileContentType( buffer, mediaType = '' ) {
-
-	// glTF formats have registered media-types
-	if ( mediaType === 'model/gltf+json' ) {
-
-		return TileContentType.GLTF;
-
-	} else if ( mediaType === 'model/gltf-binary' ) {
-
-		return TileContentType.GLB;
-
-	}
+export function getTileContentType( buffer ) {
 
 	const view = new DataView( buffer );
 
