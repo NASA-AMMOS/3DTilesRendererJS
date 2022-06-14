@@ -8,6 +8,18 @@
 	"plugins": [ "jest" ],
 
 	"rules": {
-		"no-unused-vars": [ 1, { "args": "none" } ]
+		"no-unused-vars": [ 1, { "args": "none" } ],
+		"no-throw-literal": [
+			"error"
+		],
+		"prefer-const": [
+			"error",
+			{
+				"destructuring": "any",
+				"ignoreReadBeforeAssign": false
+			}
+		],
+		"quotes": [ "error", "single" ],
+		"indent": [ "error", "tab" ]
 	}
 }
