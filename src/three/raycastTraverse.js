@@ -90,9 +90,8 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 			if ( _ray.intersectBox( boundingBox, _vec ) ) {
 
 				// account for tile scale
-				let invScale;
 				_vec2.setFromMatrixScale( _mat );
-				invScale = _vec2.x;
+				const invScale = _vec2.x;
 
 				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
 
@@ -101,7 +100,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 				}
 
 				// if we intersect the box save the distance to the tile bounds
-				let data = {
+				const data = {
 					distance: Infinity,
 					tile: null
 				};

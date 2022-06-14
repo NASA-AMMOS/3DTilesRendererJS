@@ -364,9 +364,8 @@ export class TilesRenderer extends TilesRendererBase {
 		// extract scale of group container
 		tempMat2.copy( group.matrixWorld ).invert();
 
-		let invScale;
 		tempVector.setFromMatrixScale( tempMat2 );
-		invScale = tempVector.x;
+		const invScale = tempVector.x;
 
 		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
@@ -536,7 +535,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		let region = null;
+		const region = null;
 		if ( 'region' in tile.boundingVolume ) {
 
 			console.warn( 'ThreeTilesRenderer: region bounding volume not supported.' );

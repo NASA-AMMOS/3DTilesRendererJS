@@ -19,7 +19,6 @@
 				"ignoreReadBeforeAssign": false
 			}
 		],
-		"quotes": [ "error", "single" ],
-		"indent": [ "error", "tab" ]
+		"quotes": [ "error", "single" ]
 	}
 }

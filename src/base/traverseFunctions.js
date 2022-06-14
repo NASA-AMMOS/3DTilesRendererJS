@@ -303,7 +303,7 @@ export function skipTraversal( tile, renderer ) {
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
-	let allChildrenHaveContent = tile.__allChildrenLoaded;
+	const allChildrenHaveContent = tile.__allChildrenLoaded;
 
 	// Increment the relative depth of the node to the nearest rendered parent if it has content
 	// and is being rendered.

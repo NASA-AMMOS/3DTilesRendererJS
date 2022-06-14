@@ -159,7 +159,7 @@ function updateOrthoCamera() {
 	orthoCamera.rotation.copy( camera.rotation );
 
 	const scale = camera.position.distanceTo( controls.target ) / 2.0;
-	let aspect = window.innerWidth / window.innerHeight;
+	const aspect = window.innerWidth / window.innerHeight;
 	orthoCamera.left = - aspect * scale;
 	orthoCamera.right = aspect * scale;
 	orthoCamera.bottom = - scale;

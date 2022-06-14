@@ -43,10 +43,10 @@ let raycaster, fwdVector, intersectRing;
 let offsetParent;
 let controller, controllerGrip;
 let xrSession = null;
-let tasks = [];
+const tasks = [];
 const upVector = new Vector3( 0, 1, 0 );
 
-let params = {
+const params = {
 
 	'displayBoxBounds': false,
 	'colorMode': 0,

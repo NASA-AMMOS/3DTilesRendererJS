@@ -50,7 +50,7 @@ let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
-let params = {
+const params = {
 
 	'enableUpdate': true,
 	'raycast': NONE,
