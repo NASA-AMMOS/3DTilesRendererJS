@@ -566,7 +566,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	parseTile( buffer, tile, contentType ) {
+	parseTile( buffer, tile, extension, contentType ) {
 
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;

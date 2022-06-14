@@ -167,7 +167,7 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
-	parseTile( buffer, tile, tileContentType ) {
+	parseTile( buffer, tile, extension, tileContentType ) {
 
 		return null;
 
@@ -528,6 +528,8 @@ export class TilesRendererBase {
 
 		} else {
 
+			const uri = this.preprocessURL ? this.preprocessURL( tile.content.uri ) : tile.content.uri;
+
 			downloadQueue.add( tile, downloadTile => {
 
 				if ( downloadTile.__loadIndex !== loadIndex ) {
@@ -536,7 +538,6 @@ export class TilesRendererBase {
 
 				}
 
-				const uri = this.preprocessURL ? this.preprocessURL( downloadTile.content.uri ) : downloadTile.content.uri;
 				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
@@ -583,8 +584,9 @@ export class TilesRendererBase {
 						}
 
 						const contentType = getTileContentType( buffer );
+						const extension = getUrlExtension( uri );
 
-						return this.parseTile( buffer, parseTile, contentType );
+						return this.parseTile( buffer, parseTile, extension, contentType );
 
 					} );
 
