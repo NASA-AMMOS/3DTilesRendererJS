@@ -1,5 +1,5 @@
 import { I3DMLoaderBase } from '../base/I3DMLoaderBase.js';
-import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
+import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion,Euler } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const tempFwd = new Vector3();
@@ -201,7 +201,14 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							}
 
-							tempMat.compose( tempPos, tempQuat, tempSca );
+
+							const m = new Matrix4();
+							m.set(1.0, 0.0,  0.0, 0.0,
+								0.0, 0.0, -1.0, 0.0,
+								0.0, 1.0,  0.0, 0.0,
+								0.0, 0.0,  0.0, 1.0);
+							tempMat.compose( tempPos, tempQuat, tempSca ).multiply(m);
+							// tempMat.compose( tempPos, tempQuat, tempSca );
 
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
@@ -211,6 +218,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						}
+
+						model.scene.rotation.copy(new Euler(model.scene.rotation.x - Math.PI/2,model.scene.rotation.y,model.scene.rotation.z,'XYZ'))
 
 						model.batchTable = batchTable;
 						model.featureTable = featureTable;
