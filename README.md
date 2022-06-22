@@ -389,6 +389,14 @@ Updates the tiles to render and kicks off loads for the appropriate tiles in the
 
 Both `group.matrixWorld` and all cameras world matrices are expected to be up to date before this is called.
 
+### .resetFailedTiles
+
+```js
+resetFailedTiles() : void
+```
+
+If any tiles failed to load due to server or network issues then they will not be retried by automatically. This function clears all failed tile states so unloaded tiles can be retried again.
+
 ### .getBounds
 
 ```js
