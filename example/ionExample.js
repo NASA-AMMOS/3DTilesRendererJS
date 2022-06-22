@@ -58,8 +58,8 @@ const params = {
 	'enableRendererStats': false,
 	'orthographic': false,
 
-	'ionAssetId': '40866',
-	'ionAccessToken': '',
+	'ionAssetId': '69380',
+	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmN2Y4Y2NkYi02MTYzLTRiYjUtOGJiMy0wYjEwOWE4NzdlOGYiLCJpZCI6Mjg2NjEsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1OTEzMjQ1NzZ9.rO4XyZdWm60tHImj1vL8_EabQzmnVBfDdAuqRmKlrUA',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -165,12 +165,16 @@ function reinstantiateTiles() {
 				tiles.preprocessURL = uri => {
 
 					uri = new URL( uri );
-					if ( /^http/.test( uri.protocol ) ) {
+					// if ( /^https/.test( uri.protocol ) ) {
 
-						uri.searchParams.append( 'v', version );
+					// 	uri.searchParams.append( 'v', version );
 
+					// }
+					uri = uri.toString();
+					if ( ! uri.includes( params.ionAssetId ) ) {
+						uri = uri.replace( /com/g, `com/${params.ionAssetId}` );
 					}
-					return uri.toString();
+					return uri;
 
 				};
 
