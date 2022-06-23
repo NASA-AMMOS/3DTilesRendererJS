@@ -580,6 +580,12 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		let promise = null;
 
+		const m = new Matrix4();
+		m.set(1.0, 0.0,  0.0, 0.0,
+			0.0, 0.0, -1.0, 0.0,
+			0.0, 1.0,  0.0, 0.0,
+			0.0, 0.0,  0.0, 1.0);
+
 		switch ( extension ) {
 
 			case 'b3dm': {
@@ -587,6 +593,9 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new B3DMLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
+
+				loader.adjustmentTransform.copy(m);
+
 				promise = loader
 					.parse( buffer )
 					.then( res => res.scene );
@@ -611,6 +620,9 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new I3DMLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
+
+				loader.adjustmentTransform.copy(m);
+
 				promise = loader
 					.parse( buffer )
 					.then( res => res.scene );
@@ -623,6 +635,9 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new CMPTLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
+
+				loader.adjustmentTransform.copy(m);
+
 				promise = loader
 					.parse( buffer )
 					.then( res => res.scene	);
@@ -684,7 +699,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// any transformations applied to it can be assumed to be applied after load
 			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 			// rotation fix which is why "multiply" happens here.
-			if ( extension !== 'pnts' ) {
+			if (extension === 'glb'|| extension === 'gltf' ) {
 
 				scene.matrix.multiply( tempMat );
 

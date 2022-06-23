@@ -1,5 +1,5 @@
 import { B3DMLoaderBase } from '../base/B3DMLoaderBase.js';
-import { DefaultLoadingManager } from 'three';
+import { DefaultLoadingManager, Matrix4 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class B3DMLoader extends B3DMLoaderBase {
@@ -8,7 +8,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 		super();
 		this.manager = manager;
-
+		this.adjustmentTransform = new Matrix4();
 	}
 
 	parse( buffer ) {
@@ -47,6 +47,8 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 			}
 
+			let adjustmentTransform = this.adjustmentTransform;
+
 			loader.parse( gltfBuffer, workingPath, model => {
 
 				const { batchTable, featureTable } = b3dm;
@@ -60,6 +62,9 @@ export class B3DMLoader extends B3DMLoaderBase {
 					scene.position.z += rtcCenter[ 2 ];
 
 				}
+
+				model.scene.matrix.multiply( adjustmentTransform );
+				model.scene.matrix.decompose( model.scene.position, model.scene.quaternion, model.scene.scale );
 
 				model.batchTable = batchTable;
 				model.featureTable = featureTable;
