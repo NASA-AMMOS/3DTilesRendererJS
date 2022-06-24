@@ -1,4 +1,4 @@
-import { Group, DefaultLoadingManager,Matrix4  } from 'three';
+import { Group, DefaultLoadingManager, Matrix4 } from 'three';
 import { CMPTLoaderBase } from '../base/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
@@ -11,6 +11,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+
 	}
 
 	parse( buffer ) {
@@ -33,7 +34,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					loader.fetchOptions = this.fetchOptions;
 
 					loader.adjustmentTransform.copy( adjustmentTransform );
-					
+
 					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
@@ -58,9 +59,9 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new I3DMLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
-					
+
 					loader.adjustmentTransform.copy( adjustmentTransform );
-					
+
 					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;

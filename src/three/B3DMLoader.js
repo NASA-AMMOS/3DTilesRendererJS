@@ -9,6 +9,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+
 	}
 
 	parse( buffer ) {
@@ -47,7 +48,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 			}
 
-			let adjustmentTransform = this.adjustmentTransform;
+			const adjustmentTransform = this.adjustmentTransform;
 
 			loader.parse( gltfBuffer, workingPath, model => {
 

@@ -580,11 +580,25 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		let promise = null;
 
-		const m = new Matrix4();
-		m.set(1.0, 0.0,  0.0, 0.0,
-			0.0, 0.0, -1.0, 0.0,
-			0.0, 1.0,  0.0, 0.0,
-			0.0, 0.0,  0.0, 1.0);
+		const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
+		const cached = tile.cached;
+		const cachedTransform = cached.transform;
+
+		switch ( upAxis.toLowerCase() ) {
+
+			case 'x':
+				tempMat.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+				break;
+
+			case 'y':
+				tempMat.makeRotationAxis( X_AXIS, Math.PI / 2 );
+				break;
+
+			case 'z':
+				tempMat.identity();
+				break;
+
+		}
 
 		switch ( extension ) {
 
@@ -594,7 +608,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy(m);
+				loader.adjustmentTransform.copy( tempMat );
 
 				promise = loader
 					.parse( buffer )
@@ -621,7 +635,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy(m);
+				loader.adjustmentTransform.copy( tempMat );
 
 				promise = loader
 					.parse( buffer )
@@ -636,7 +650,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy(m);
+				loader.adjustmentTransform.copy( tempMat );
 
 				promise = loader
 					.parse( buffer )
@@ -670,27 +684,6 @@ export class TilesRenderer extends TilesRendererBase {
 				return;
 
 			}
-
-			const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
-			const cached = tile.cached;
-			const cachedTransform = cached.transform;
-
-			switch ( upAxis.toLowerCase() ) {
-
-				case 'x':
-					tempMat.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
-					break;
-
-				case 'y':
-					tempMat.makeRotationAxis( X_AXIS, Math.PI / 2 );
-					break;
-
-				case 'z':
-					tempMat.identity();
-					break;
-
-			}
-
 			// ensure the matrix is up to date in case the scene has a transform applied
 			scene.updateMatrix();
 
@@ -699,7 +692,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// any transformations applied to it can be assumed to be applied after load
 			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 			// rotation fix which is why "multiply" happens here.
-			if (extension === 'glb'|| extension === 'gltf' ) {
+			if ( extension === 'glb' || extension === 'gltf' ) {
 
 				scene.matrix.multiply( tempMat );
 

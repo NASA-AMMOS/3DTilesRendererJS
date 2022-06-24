@@ -16,6 +16,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+
 	}
 
 	resolveExternalURL( url ) {
@@ -64,7 +65,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 					}
 
-					let adjustmentTransform = this.adjustmentTransform;
+					const adjustmentTransform = this.adjustmentTransform;
 
 					loader.parse( gltfBuffer, workingPath, model => {
 
@@ -204,14 +205,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 
-							// const m = new Matrix4();
-							// m.set(1.0, 0.0,  0.0, 0.0,
-							// 	0.0, 0.0, -1.0, 0.0,
-							// 	0.0, 1.0,  0.0, 0.0,
-							// 	0.0, 0.0,  0.0, 1.0);
-							// tempMat.compose( tempPos, tempQuat, tempSca ).multiply(m);
-							// tempMat.compose( tempPos, tempQuat, tempSca );
-							tempMat.compose( tempPos, tempQuat, tempSca ).multiply(adjustmentTransform);
+							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
 
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
