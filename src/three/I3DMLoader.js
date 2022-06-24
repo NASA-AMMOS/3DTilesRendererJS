@@ -15,6 +15,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 		super();
 		this.manager = manager;
+		this.adjustmentTransform = new Matrix4();
 
 	}
 
@@ -63,6 +64,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 						workingPath += '/';
 
 					}
+
+					const adjustmentTransform = this.adjustmentTransform;
 
 					loader.parse( gltfBuffer, workingPath, model => {
 
@@ -201,7 +204,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							}
 
-							tempMat.compose( tempPos, tempQuat, tempSca );
+
+							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
 
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
@@ -211,6 +215,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						}
+
 
 						model.batchTable = batchTable;
 						model.featureTable = featureTable;
