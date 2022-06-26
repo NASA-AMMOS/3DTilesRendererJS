@@ -23,7 +23,6 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
 
 				[
-					'RTC_CENTER',
 					'QUANTIZED_VOLUME_OFFSET',
 					'QUANTIZED_VOLUME_SCALE',
 					'CONSTANT_RGBA',
