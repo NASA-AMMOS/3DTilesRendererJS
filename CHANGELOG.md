@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `resetFailedTiles` to enable retry tile downloads that failed.
+- Support for performing frustum culling using box bounds.
 
 ### Fixed
 - Support for loading absolute URIs.
