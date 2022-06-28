@@ -525,14 +525,6 @@ export class TilesRenderer extends TilesRendererBase {
 			sphere.radius = data[ 3 ];
 			sphere.applyMatrix4( transform );
 
-		} else if ( 'box' in tile.boundingVolume ) {
-
-			const data = tile.boundingVolume.box;
-			sphere = new Sphere();
-			box.getBoundingSphere( sphere );
-			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
-			sphere.applyMatrix4( transform );
-
 		}
 
 		const region = null;
