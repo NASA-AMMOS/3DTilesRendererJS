@@ -13,6 +13,6 @@ export class LRUCache {
 	markAllUnused() : void;
 
 	unloadUnusedContent() : void;
-	scheduleUnload( markAllUnused : Boolean );
+	scheduleUnload( markAllUnused? : Boolean ): void;
 
 }
