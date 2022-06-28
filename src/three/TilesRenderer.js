@@ -525,14 +525,6 @@ export class TilesRenderer extends TilesRendererBase {
 			sphere.radius = data[ 3 ];
 			sphere.applyMatrix4( transform );
 
-		} else if ( 'box' in tile.boundingVolume ) {
-
-			const data = tile.boundingVolume.box;
-			sphere = new Sphere();
-			box.getBoundingSphere( sphere );
-			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
-			sphere.applyMatrix4( transform );
-
 		}
 
 		const region = null;
@@ -941,8 +933,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const sphere = cached.sphere;
+		const box = cached.box;
 		const inFrustum = cached.inFrustum;
-		if ( sphere ) {
+		if ( sphere || box ) {
 
 			const cameraInfo = this.cameraInfo;
 			let inView = false;
@@ -951,7 +944,11 @@ export class TilesRenderer extends TilesRendererBase {
 				// Track which camera frustums this tile is in so we can use it
 				// to ignore the error calculations for cameras that can't see it
 				const frustum = cameraInfo[ i ].frustum;
-				if ( frustum.intersectsSphere( sphere ) ) {
+
+				const intersectsSphere = sphere && frustum.intersectsSphere( sphere );
+				const intersectsBox = box && frustum.intersectsBox( box );
+
+				if ( intersectsSphere || intersectsBox ) {
 
 					inView = true;
 					inFrustum[ i ] = true;

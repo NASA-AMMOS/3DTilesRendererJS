@@ -191,7 +191,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		}
 
 		let maxDistance = - 1;
-		if ( this.maxDebugDistance === - 1 ) {
+		if ( this.maxDebugDistance === - 1 && this.root.cached.sphere ) {
 
 			maxDistance = this.root.cached.sphere.radius;
 
