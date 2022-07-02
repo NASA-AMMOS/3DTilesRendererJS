@@ -20,7 +20,7 @@ export function readMagicBytes( bufferOrDataView ) {
 	let magicBytes = '';
 	for ( let i = 0; i < 4; i ++ ) {
 
-	  res += String.fromCharCode( view.getUint8( i ) );
+		magicBytes += String.fromCharCode( view.getUint8( i ) );
 
 	}
 

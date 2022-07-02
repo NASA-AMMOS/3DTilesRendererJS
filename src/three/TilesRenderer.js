@@ -15,6 +15,7 @@ import {
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
@@ -600,7 +601,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		switch ( extension ) {
+		const fileType = readMagicBytes( buffer ) || extension;
+		switch ( fileType ) {
 
 			case 'b3dm': {
 
@@ -671,7 +673,7 @@ export class TilesRenderer extends TilesRendererBase {
 				break;
 
 			default:
-				console.warn( `TilesRenderer: Content type "${ extension }" not supported.` );
+				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
 				promise = Promise.resolve( null );
 				break;
 
@@ -692,7 +694,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// any transformations applied to it can be assumed to be applied after load
 			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 			// rotation fix which is why "multiply" happens here.
-			if ( extension === 'glb' || extension === 'gltf' ) {
+			if ( fileType === 'glb' || fileType === 'gltf' ) {
 
 				scene.matrix.multiply( tempMat );
 
