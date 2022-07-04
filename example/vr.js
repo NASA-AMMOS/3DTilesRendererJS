@@ -32,7 +32,7 @@ import {
 	RingBufferGeometry,
 	Sphere,
 } from 'three';
-import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
 
@@ -173,7 +173,7 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	// GUI
-	const gui = new dat.GUI();
+	const gui = new GUI();
 	gui.width = 300;
 	gui.add( params, 'displayGrid' );
 	gui.add( params, 'displayBoxBounds' );

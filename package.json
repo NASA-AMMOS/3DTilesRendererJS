@@ -50,7 +50,7 @@
     "jest-cli": "^25.5.4",
     "parcel-bundler": "^1.12.4",
     "static-server": "^2.2.1",
-    "three": ">=0.128.0",
+    "three": "^0.136.0",
     "typescript": "^3.9.9"
   },
   "peerDependencies": {

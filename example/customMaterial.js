@@ -15,7 +15,7 @@ import {
 	Sphere,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
@@ -270,7 +270,7 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	// GUI
-	const gui = new dat.GUI();
+	const gui = new GUI();
 	gui.width = 300;
 	gui.add( params, 'orthographic' );
 	gui.add( params, 'material', { DEFAULT, GRADIENT, TOPOGRAPHIC_LINES, LIGHTING } )

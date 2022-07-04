@@ -12,7 +12,7 @@ import {
 	FogExp2,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
-import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer;
 let groundTiles, skyTiles;
@@ -82,7 +82,7 @@ function init() {
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 
-	const gui = new dat.GUI();
+	const gui = new GUI();
 	gui.add( params, 'fog' ).onChange( v => {
 
 		scene.fog = v ? fog : null;

@@ -14,7 +14,7 @@ import {
 	Sphere,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'three/examples/jsm/libs/dat.gui.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
@@ -81,7 +81,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	camera.position.set( - 21, 13, 25 );
+	camera.position.set( - 56, 232, 260 );
 
 	orthoCamera = new OrthographicCamera();
 
@@ -95,14 +95,15 @@ function init() {
 	dirLight = new DirectionalLight( 0xffffff, 1.25 );
 	dirLight.position.set( - 100, 40, 10 );
 	dirLight.castShadow = true;
-	dirLight.shadow.bias = - 0.00001;
+	dirLight.shadow.bias = - 1e-4;
+	dirLight.shadow.normalBias = 0.2;
 	dirLight.shadow.mapSize.setScalar( 2048 );
 
 	const shadowCam = dirLight.shadow.camera;
-	shadowCam.left = - 100;
-	shadowCam.bottom = - 100;
-	shadowCam.right = 100;
-	shadowCam.top = 100;
+	shadowCam.left = - 120;
+	shadowCam.bottom = - 120;
+	shadowCam.right = 120;
+	shadowCam.top = 120;
 	shadowCam.updateProjectionMatrix();
 
 	scene.add( dirLight );
@@ -128,7 +129,7 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	// GUI
-	const gui = new dat.GUI();
+	const gui = new GUI();
 	gui.width = 300;
 	gui.add( params, 'orthographic' );
 	gui.add( params, 'errorTarget' ).min( 0 ).max( 25 ).step( 1 );
