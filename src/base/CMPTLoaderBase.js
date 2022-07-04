@@ -1,6 +1,7 @@
 // CMPT File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Composite/README.md
 import { LoaderBase } from './LoaderBase.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 export class CMPTLoaderBase extends LoaderBase {
 
@@ -11,11 +12,7 @@ export class CMPTLoaderBase extends LoaderBase {
 		// 16-byte header
 
 		// 4 bytes
-		const magic =
-			String.fromCharCode( dataView.getUint8( 0 ) ) +
-			String.fromCharCode( dataView.getUint8( 1 ) ) +
-			String.fromCharCode( dataView.getUint8( 2 ) ) +
-			String.fromCharCode( dataView.getUint8( 3 ) );
+		const magic = readMagicBytes( dataView );
 
 		console.assert( magic === 'cmpt', 'CMPTLoader: The magic bytes equal "cmpt".' );
 
@@ -37,11 +34,7 @@ export class CMPTLoaderBase extends LoaderBase {
 		for ( let i = 0; i < tilesLength; i ++ ) {
 
 			const tileView = new DataView( buffer, offset, 12 );
-			const tileMagic =
-				String.fromCharCode( tileView.getUint8( 0 ) ) +
-				String.fromCharCode( tileView.getUint8( 1 ) ) +
-				String.fromCharCode( tileView.getUint8( 2 ) ) +
-				String.fromCharCode( tileView.getUint8( 3 ) );
+			const tileMagic = readMagicBytes( tileView );
 			const tileVersion = tileView.getUint32( 4, true );
 			const byteLength = tileView.getUint32( 8, true );
 

@@ -3,6 +3,7 @@
 
 import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 export class B3DMLoaderBase extends LoaderBase {
 
@@ -14,11 +15,7 @@ export class B3DMLoaderBase extends LoaderBase {
 		// 28-byte header
 
 		// 4 bytes
-		const magic =
-			String.fromCharCode( dataView.getUint8( 0 ) ) +
-			String.fromCharCode( dataView.getUint8( 1 ) ) +
-			String.fromCharCode( dataView.getUint8( 2 ) ) +
-			String.fromCharCode( dataView.getUint8( 3 ) );
+		const magic = readMagicBytes( dataView );
 
 		console.assert( magic === 'b3dm' );
 

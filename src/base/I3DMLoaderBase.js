@@ -4,6 +4,7 @@
 import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
 import { arrayToString } from '../utilities/arrayToString.js';
 import { LoaderBase } from './LoaderBase.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 export class I3DMLoaderBase extends LoaderBase {
 
@@ -14,11 +15,7 @@ export class I3DMLoaderBase extends LoaderBase {
 		// 32-byte header
 
 		// 4 bytes
-		const magic =
-			String.fromCharCode( dataView.getUint8( 0 ) ) +
-			String.fromCharCode( dataView.getUint8( 1 ) ) +
-			String.fromCharCode( dataView.getUint8( 2 ) ) +
-			String.fromCharCode( dataView.getUint8( 3 ) );
+		const magic = readMagicBytes( dataView );
 
 		console.assert( magic === 'i3dm' );
 

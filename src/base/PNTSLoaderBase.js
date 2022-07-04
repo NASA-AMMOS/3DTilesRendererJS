@@ -2,6 +2,7 @@
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
 
 import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { LoaderBase } from './LoaderBase.js';
 
 export class PNTSLoaderBase extends LoaderBase {
@@ -13,11 +14,7 @@ export class PNTSLoaderBase extends LoaderBase {
 		// 28-byte header
 
 		// 4 bytes
-		const magic =
-			String.fromCharCode( dataView.getUint8( 0 ) ) +
-			String.fromCharCode( dataView.getUint8( 1 ) ) +
-			String.fromCharCode( dataView.getUint8( 2 ) ) +
-			String.fromCharCode( dataView.getUint8( 3 ) );
+		const magic = readMagicBytes( dataView );
 
 		console.assert( magic === 'pnts' );
 
