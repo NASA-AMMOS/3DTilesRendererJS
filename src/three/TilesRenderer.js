@@ -770,6 +770,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const materials = cached.materials;
 			const geometry = cached.geometry;
 			const textures = cached.textures;
+			const parent = cached.scene.parent;
 
 			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
@@ -790,6 +791,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
+			if ( parent ) {
+
+				parent.remove( cached.scene );
+
+			}
+
 			if ( this.onDisposeModel ) {
 
 				this.onDisposeModel( cached.scene, tile );
@@ -803,6 +810,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		this.activeTiles.delete( tile );
+		this.visibleTiles.delete( tile );
 		tile._loadIndex ++;
 
 	}
@@ -971,6 +980,5 @@ export class TilesRenderer extends TilesRendererBase {
 		return true;
 
 	}
-
 
 }

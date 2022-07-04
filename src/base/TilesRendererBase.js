@@ -630,6 +630,17 @@ export class TilesRendererBase {
 
 		} );
 
+		this.stats = {
+			parsing: 0,
+			downloading: 0,
+			failed: 0,
+			inFrustum: 0,
+			used: 0,
+			active: 0,
+			visible: 0,
+		};
+		this.frameCount = 0;
+
 	}
 
 }
