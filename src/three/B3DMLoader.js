@@ -64,6 +64,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 				}
 
+				model.scene.updateMatrix();
 				model.scene.matrix.multiply( adjustmentTransform );
 				model.scene.matrix.decompose( model.scene.position, model.scene.quaternion, model.scene.scale );
 
