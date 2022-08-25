@@ -1,6 +1,7 @@
 import { DefaultLoadingManager } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LoaderBase } from '../base/LoaderBase.js';
+import GLTFCesiumRTCExtension from './GLTFCesiumRTCExtension.js';
 
 export class GLTFExtensionLoader extends LoaderBase {
 
@@ -22,6 +23,8 @@ export class GLTFExtensionLoader extends LoaderBase {
 			if ( ! loader ) {
 
 				loader = new GLTFLoader( manager );
+
+				loader.register( () => new GLTFCesiumRTCExtension() );
 				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
 					loader.setCrossOrigin( 'use-credentials' );
