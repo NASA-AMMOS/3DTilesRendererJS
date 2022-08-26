@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - B3DMLoader: regression causing RTC_CENTER to not be respected.
 
+### Added
+- Support for GLTFLoader Cesium_RTC extension.
+
 ## [0.3.11] - 2022-07-04
 ### Added
 - Support for determining tile format based on magic bytes.
