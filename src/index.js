@@ -26,7 +26,7 @@ import { I3DMLoaderBase } from './base/I3DMLoaderBase.js';
 import { PNTSLoaderBase } from './base/PNTSLoaderBase.js';
 import { CMPTLoaderBase } from './base/CMPTLoaderBase.js';
 
-import { Ellipsoid } from './math/Ellipsoid.js';
+import { Ellipsoid, WGS84_RADIUS, WGS84_HEIGHT } from './math/Ellipsoid.js';
 import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 
 import { LRUCache } from './utilities/LRUCache.js';
@@ -49,6 +49,8 @@ export {
 	PNTSLoaderBase,
 	CMPTLoaderBase,
 
+	WGS84_RADIUS,
+	WGS84_HEIGHT,
 	Ellipsoid,
 	EllipsoidRegion,
 

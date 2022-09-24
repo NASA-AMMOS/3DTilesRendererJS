@@ -1,4 +1,4 @@
-import { Ellipsoid, EllipsoidRegion, EllipsoidHelper } from '../src/index.js';
+import { EllipsoidHelper } from '../src/index.js';
 import {
 	Scene,
 	Group,
@@ -6,33 +6,24 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Box3,
 	sRGBEncoding,
-	PCFSoftShadowMap,
-	Vector2,
-	Raycaster,
-	ShaderLib,
-	UniformsUtils,
-	ShaderMaterial,
-	Color,
+	EdgesGeometry,
 	MeshPhongMaterial,
+	LineSegments,
+	LineBasicMaterial,
+	Color,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer, offsetGroup;
 let dirLight;
-let raycaster, mouse;
-let model;
-let infoEl;
-let helper, ghostHelper;
+let helper, ghostHelper, edges;
 
 init();
 animate();
 
 function init() {
-
-	infoEl = document.getElementById( 'info' );
 
 	scene = new Scene();
 
@@ -42,7 +33,6 @@ function init() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = PCFSoftShadowMap;
 	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
@@ -55,7 +45,15 @@ function init() {
 	scene.add( group );
 
 	helper = new EllipsoidHelper();
-	helper.material = new MeshPhongMaterial();
+	helper.material = new MeshPhongMaterial( {
+
+		polygonOffset: true,
+		polygonOffsetFactor: 1,
+		polygonOffsetUnits: 1,
+
+	} );
+	helper.ellipsoidRegion.radius.z = 0.95;
+
 	helper.ellipsoidRegion.heightStart = - 0.05;
 	helper.ellipsoidRegion.heightEnd = 0.05;
 
@@ -65,12 +63,13 @@ function init() {
 	helper.ellipsoidRegion.lonStart = - Math.PI / 8;
 	helper.ellipsoidRegion.lonEnd = Math.PI / 8;
 
-
 	ghostHelper = new EllipsoidHelper();
 	ghostHelper.material = new MeshPhongMaterial( { opacity: 0.1, transparent: true, depthWrite: false } );
 
+	edges = new LineSegments( new EdgesGeometry(), new LineBasicMaterial( { color: new Color( 0x151c1f ).convertSRGBToLinear() } ) );
+
 	updateHelper();
-	group.add( helper, ghostHelper );
+	group.add( helper, ghostHelper, edges );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -83,7 +82,7 @@ function init() {
 	dirLight.position.set( 1, 2, 3 ).multiplyScalar( 40 );
 	scene.add( dirLight );
 
-	const ambLight = new AmbientLight( 0xffffff, 0.05 );
+	const ambLight = new AmbientLight( 0xffffff, 0.15 );
 	scene.add( ambLight );
 
 	const gui = new GUI();
@@ -111,6 +110,9 @@ function updateHelper() {
 
 	helper.update();
 	ghostHelper.update();
+
+	edges.geometry.dispose();
+	edges.geometry = new EdgesGeometry( helper.geometry, 80 );
 
 }
 
