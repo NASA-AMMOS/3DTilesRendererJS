@@ -44,11 +44,12 @@ describe( 'Ellipsoid', () => {
 
 			const lat = Math.random();
 			const lon = Math.random();
+			const height = Math.random();
 			const cart = new Cesium.Cartographic( lon, lat, 0 );
 
 			// test positions
-			c_unitEllipse.cartographicToCartesian( new Cesium.Cartographic( lon, lat, 0 ), c );
-			unitEllipse.getCartographicToVector( lat, lon, v );
+			c_unitEllipse.cartographicToCartesian( new Cesium.Cartographic( lon, lat, height ), c );
+			unitEllipse.getCartographicToPosition( lat, lon, height, v );
 
 			compareCartesianVector( c, v );
 
@@ -64,19 +65,20 @@ describe( 'Ellipsoid', () => {
 
 	} );
 
-	it.only( 'should match Cesium WGS84 results.', () => {
+	it( 'should match Cesium WGS84 results.', () => {
 
-		const LOCAL_EPSILON = 1e-8;
+		const LOCAL_EPSILON = 1e-6;
 		for ( let i = 0; i < 100; i ++ ) {
 
 			const lat = Math.random();
 			const lon = Math.random();
+			const height = ( Math.random() - 0.5 ) * 1000;
 
 			const cart = new Cesium.Cartographic( lon, lat, 0 );
 
 			// test positions
-			c_wgsEllipse.cartographicToCartesian( new Cesium.Cartographic( lon, lat, 0 ), c );
-			wgsEllipse.getCartographicToVector( lat, lon, v );
+			c_wgsEllipse.cartographicToCartesian( new Cesium.Cartographic( lon, lat, height ), c );
+			wgsEllipse.getCartographicToPosition( lat, lon, height, v );
 
 			compareCartesianVector( c, v, LOCAL_EPSILON );
 

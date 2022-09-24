@@ -10,31 +10,35 @@ const _tri = new Triangle();
 
 export class EllipsoidHelper extends Mesh {
 
-	constructor( ellipsoid = new Ellipsoid( 1, 1, 1 ), region = new EllipsoidRegion() ) {
+	constructor( ellipsoidRegion = new EllipsoidRegion() ) {
 
 		super();
-		this.ellipsoid = ellipsoid;
-		this.region = region;
+		this.ellipsoidRegion = ellipsoidRegion;
 		this.update();
 
 	}
 
 	update() {
 
-		const { region } = this;
-		const phiStart = latitudeToSphericalPhi( region.latStart );
-		const phiEnd = latitudeToSphericalPhi( region.latEnd );
+		const { ellipsoidRegion } = this;
+		const {
+			latStart = - Math.PI / 2, latEnd = Math.PI / 2,
+			lonStart = 0, lonEnd = 2 * Math.PI,
+			heightStart = 0, heightEnd = 0,
+		} = ellipsoidRegion;
+
+		const phiStart = latitudeToSphericalPhi( latStart );
+		const phiEnd = latitudeToSphericalPhi( latEnd );
 		const phiLength = phiStart - phiEnd;
 
 		this.geometry.dispose();
 		this.geometry = new SphereGeometry(
 			1, 32, 32,
-			// undefined, undefined,
-			region.lonStart, region.lonEnd - region.lonStart,
+			lonStart, lonEnd - lonStart,
 			phiEnd, phiLength,
 		).toNonIndexed();
 
-		const { geometry, ellipsoid } = this;
+		const { geometry } = this;
 		const { normal, position } = geometry.attributes;
 
 		for ( let i = 0, l = position.count; i < l; i ++ ) {
@@ -46,8 +50,8 @@ export class EllipsoidHelper extends Mesh {
 
 			const lat = sphericalPhiToLatitude( _spherical.phi );
 			const lon = _spherical.theta - Math.PI / 2;
-			ellipsoid.getCartographicToPosition( lat, lon, _pos );
-			ellipsoid.getCartographicToNormal( lat, lon, _norm );
+			ellipsoidRegion.getCartographicToPosition( lat, lon, _pos );
+			ellipsoidRegion.getCartographicToNormal( lat, lon, _norm );
 
 			normal.setXYZ( i, ..._norm );
 			position.setXYZ( i, ..._pos );

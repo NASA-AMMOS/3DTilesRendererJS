@@ -58,7 +58,7 @@ function init() {
 	helper = new EllipsoidHelper();
 	helper.material = new MeshPhongMaterial( { side: DoubleSide } );
 
-	ghostHelper = new EllipsoidHelper( helper.ellipsoid );
+	ghostHelper = new EllipsoidHelper();
 	ghostHelper.material = new MeshPhongMaterial( { side: DoubleSide, opacity: 0.1, transparent: true } );
 
 	group.add( helper, ghostHelper );
@@ -79,15 +79,15 @@ function init() {
 
 	const gui = new GUI();
 	const radiusFolder = gui.addFolder( 'radius' );
-	radiusFolder.add( helper.ellipsoid.radius, 'x', 0.1, 2 ).onChange( updateHelper );
-	radiusFolder.add( helper.ellipsoid.radius, 'y', 0.1, 2 ).onChange( updateHelper );
-	radiusFolder.add( helper.ellipsoid.radius, 'z', 0.1, 2 ).onChange( updateHelper );
+	radiusFolder.add( helper.ellipsoidRegion.radius, 'x', 0.1, 2 ).onChange( updateHelper );
+	radiusFolder.add( helper.ellipsoidRegion.radius, 'y', 0.1, 2 ).onChange( updateHelper );
+	radiusFolder.add( helper.ellipsoidRegion.radius, 'z', 0.1, 2 ).onChange( updateHelper );
 
 	const regionFolder = gui.addFolder( 'region' );
-	regionFolder.add( helper.region, 'latStart', - Math.PI / 2, Math.PI / 2 ).onChange( updateHelper );
-	regionFolder.add( helper.region, 'latEnd', - Math.PI / 2, Math.PI / 2 ).onChange( updateHelper );
-	regionFolder.add( helper.region, 'lonStart', 0, 2 * Math.PI ).onChange( updateHelper );
-	regionFolder.add( helper.region, 'lonEnd', 0, 2 * Math.PI ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'latStart', - Math.PI / 2, Math.PI / 2 ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'latEnd', - Math.PI / 2, Math.PI / 2 ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'lonStart', 0, 2 * Math.PI ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'lonEnd', 0, 2 * Math.PI ).onChange( updateHelper );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -95,6 +95,8 @@ function init() {
 }
 
 function updateHelper() {
+
+	ghostHelper.ellipsoidRegion.radius.copy( helper.ellipsoidRegion.radius );
 
 	helper.update();
 	ghostHelper.update();

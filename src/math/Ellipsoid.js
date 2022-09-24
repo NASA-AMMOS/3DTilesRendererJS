@@ -54,13 +54,13 @@ export const WGS84_HEIGHT = - ( WGS84_FLATTENING * WGS84_RADIUS - WGS84_RADIUS )
 
 export class Ellipsoid {
 
-	constructor( x, y, z ) {
+	constructor( x = 1, y = 1, z = 1 ) {
 
 		this.radius = new Vector3( x, y, z );
 
 	}
 
-	getCartographicToPosition( lat, lon, target ) {
+	getCartographicToPosition( lat, lon, height, target ) {
 
 		// https://github.com/CesiumGS/cesium/blob/main/Source/Core/Ellipsoid.js#L396
 		const radius = this.radius;
@@ -77,7 +77,7 @@ export class Ellipsoid {
 		const gamma = Math.sqrt( _norm.dot( _vec ) );
 		_vec.divideScalar( gamma );
 
-		return target.copy( _vec );
+		return target.copy( _vec ).addScaledVector( _norm, height );
 
 	}
 
