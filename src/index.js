@@ -17,6 +17,7 @@ import { PNTSLoader } from './three/PNTSLoader.js';
 import { I3DMLoader } from './three/I3DMLoader.js';
 import { CMPTLoader } from './three/CMPTLoader.js';
 import { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
+import { EllipsoidHelper } from './three/EllipsoidHelper.js';
 
 import { TilesRendererBase } from './base/TilesRendererBase.js';
 import { LoaderBase } from './base/LoaderBase.js';
@@ -24,6 +25,9 @@ import { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
 import { I3DMLoaderBase } from './base/I3DMLoaderBase.js';
 import { PNTSLoaderBase } from './base/PNTSLoaderBase.js';
 import { CMPTLoaderBase } from './base/CMPTLoaderBase.js';
+
+import { Ellipsoid } from './math/Ellipsoid.js';
+import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 
 import { LRUCache } from './utilities/LRUCache.js';
 import { PriorityQueue } from './utilities/PriorityQueue.js';
@@ -36,6 +40,7 @@ export {
 	I3DMLoader,
 	CMPTLoader,
 	GLTFExtensionLoader,
+	EllipsoidHelper,
 
 	TilesRendererBase,
 	LoaderBase,
@@ -43,6 +48,9 @@ export {
 	I3DMLoaderBase,
 	PNTSLoaderBase,
 	CMPTLoaderBase,
+
+	Ellipsoid,
+	EllipsoidRegion,
 
 	LRUCache,
 	PriorityQueue,
