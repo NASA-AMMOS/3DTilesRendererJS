@@ -97,7 +97,7 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		for ( let z = 0; z <= 1; z ++ ) {
 
-			const height = MathUtils.mapLinear( z, 0, 1, heightStart , heightEnd  );
+			const height = MathUtils.mapLinear( z, 0, 1, heightStart, heightEnd );
 			for ( let i = 0, l = total; i < l; i ++ ) {
 
 				const [ lat, lon ] = latlon[ i ];
