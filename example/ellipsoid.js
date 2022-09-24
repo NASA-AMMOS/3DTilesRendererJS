@@ -16,7 +16,6 @@ import {
 	ShaderMaterial,
 	Color,
 	MeshPhongMaterial,
-	DoubleSide,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -52,15 +51,25 @@ function init() {
 	camera.position.set( 3, 3, 3 );
 
 	const group = new Group();
-	group.rotation.x = Math.PI / 2;
+	group.rotation.x = - Math.PI / 2;
 	scene.add( group );
 
 	helper = new EllipsoidHelper();
-	helper.material = new MeshPhongMaterial( { side: DoubleSide } );
+	helper.material = new MeshPhongMaterial();
+	helper.ellipsoidRegion.heightStart = - 0.05;
+	helper.ellipsoidRegion.heightEnd = 0.05;
+
+	helper.ellipsoidRegion.latStart = 0;
+	helper.ellipsoidRegion.latEnd = Math.PI / 4;
+
+	helper.ellipsoidRegion.lonStart = - Math.PI / 8;
+	helper.ellipsoidRegion.lonEnd = Math.PI / 8;
+
 
 	ghostHelper = new EllipsoidHelper();
-	ghostHelper.material = new MeshPhongMaterial( { side: DoubleSide, opacity: 0.1, transparent: true } );
+	ghostHelper.material = new MeshPhongMaterial( { opacity: 0.1, transparent: true, depthWrite: false } );
 
+	updateHelper();
 	group.add( helper, ghostHelper );
 
 	// controls
@@ -88,6 +97,8 @@ function init() {
 	regionFolder.add( helper.ellipsoidRegion, 'latEnd', - Math.PI / 2, Math.PI / 2 ).onChange( updateHelper );
 	regionFolder.add( helper.ellipsoidRegion, 'lonStart', 0, 2 * Math.PI ).onChange( updateHelper );
 	regionFolder.add( helper.ellipsoidRegion, 'lonEnd', 0, 2 * Math.PI ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'heightStart', - 0.1, 0.1 ).onChange( updateHelper );
+	regionFolder.add( helper.ellipsoidRegion, 'heightEnd', - 0.1, 0.1 ).onChange( updateHelper );
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );

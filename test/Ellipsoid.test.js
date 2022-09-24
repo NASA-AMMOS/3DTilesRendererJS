@@ -29,10 +29,6 @@ describe( 'Ellipsoid', () => {
 		c_unitEllipse = new Cesium.Ellipsoid( 1, 1, 1 );
 		unitEllipse = new Ellipsoid( 1, 1, 1 );
 
-
-		// c_wgsEllipse = new Cesium.Ellipsoid( 10, 20, 30 );
-		// wgsEllipse = new Ellipsoid( 10, 20, 30 );
-
 		c_wgsEllipse = new Cesium.Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
 		wgsEllipse = new Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
 
