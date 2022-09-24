@@ -1,9 +1,50 @@
 import { EllipsoidRegion } from '../math/EllipsoidRegion.js';
-import { Mesh, Vector3, Spherical, Triangle, MathUtils, BoxGeometry } from 'three';
+import { Mesh, Vector3, Spherical, Triangle, MathUtils, BoxGeometry, BufferGeometry } from 'three';
+import { BufferAttribute } from 'three';
 
 const _norm = new Vector3();
 const _norm2 = new Vector3();
 const _pos = new Vector3();
+const _vec1 = new Vector3();
+const _vec2 = new Vector3();
+
+// Converts a geometry with a given set of groups rendering a smaller set of
+// geometry into a new one with only the relevant triangles.
+function toGroupGeometry( geometry ) {
+
+	// non indexed makes this process easier
+	geometry = geometry.toNonIndexed();
+
+	// prep the arrays
+	const { groups } = geometry;
+	const { position, normal } = geometry.attributes;
+	const newNorm = [];
+	const newPos = [];
+
+	// add the normals and the positions
+	for ( const group of groups ) {
+
+		const { start, count } = group;
+		for ( let i = start, l = ( start + count ); i < l; i ++ ) {
+
+			_vec1.fromBufferAttribute( position, i );
+			_vec2.fromBufferAttribute( normal, i );
+
+			newPos.push( ..._vec1 );
+			newNorm.push( ..._vec2 );
+
+		}
+
+	}
+
+	// set the new geometry
+	const newGeometry = new BufferGeometry();
+	newGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( newPos ), 3 ) );
+	newGeometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( newNorm ), 3 ) );
+
+	return newGeometry;
+
+}
 
 export class EllipsoidHelper extends Mesh {
 
@@ -13,24 +54,29 @@ export class EllipsoidHelper extends Mesh {
 		this.ellipsoidRegion = ellipsoidRegion;
 		this.update();
 
-
 	}
 
 	update() {
 
-		const { ellipsoidRegion } = this;
+		// dispose of the existing geometry
 		this.geometry.dispose();
 
+		// retrieve the relevant fields
+		const { ellipsoidRegion } = this;
 		const {
 			latStart = - Math.PI / 2, latEnd = Math.PI / 2,
 			lonStart = 0, lonEnd = 2 * Math.PI,
 			heightStart = 0, heightEnd = 0,
 		} = ellipsoidRegion;
 
-		const geometry = new BoxGeometry( 1, 1, 1, 10, 10 );
+		// get the attributes
+		const geometry = new BoxGeometry( 1, 1, 1, 32, 32 );
 		const { normal, position } = geometry.attributes;
+
+		// clone the position buffer so we can reference it for normal calculations later
 		const refPosition = position.clone();
 
+		// perturb the position buffer into an ellipsoid region
 		for ( let i = 0, l = position.count; i < l; i ++ ) {
 
 			_pos.fromBufferAttribute( position, i );
@@ -50,8 +96,10 @@ export class EllipsoidHelper extends Mesh {
 
 		}
 
+		// compute the vertex normals so we can get the edge normals
 		geometry.computeVertexNormals();
 
+		// compute the top and bottom cap normals
 		for ( let i = 0, l = refPosition.count; i < l; i ++ ) {
 
 			_pos.fromBufferAttribute( refPosition, i );
@@ -62,6 +110,7 @@ export class EllipsoidHelper extends Mesh {
 			_norm.fromBufferAttribute( normal, i );
 			ellipsoidRegion.getCartographicToNormal( lat, lon, _norm2 );
 
+			// exclude the sides so we get sharp corners
 			if ( Math.abs( _norm.dot( _norm2 ) ) > 0.1 ) {
 
 				if ( _pos.z > 0 ) {
@@ -76,7 +125,17 @@ export class EllipsoidHelper extends Mesh {
 
 		}
 
-		this.geometry = geometry;
+		// exclude the side tris if the region wraps around
+		if ( lonEnd - lonStart >= 2 * Math.PI ) {
+
+			geometry.groups.splice( 2, 2 );
+			this.geometry = toGroupGeometry( geometry );
+
+		} else {
+
+			this.geometry = geometry;
+
+		}
 
 	}
 
