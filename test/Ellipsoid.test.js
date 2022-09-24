@@ -99,7 +99,7 @@ describe( 'EllipsoidRegion', () => {
 
 	describe( 'Bounding Boxes', () => {
 
-		it.skip( 'should encapsulate randomized points.', () => {
+		it( 'should encapsulate randomized points.', () => {
 
 			const POINT_COUNT = 100;
 			const REGION_COUNT = 100;
@@ -118,7 +118,7 @@ describe( 'EllipsoidRegion', () => {
 				region.latEnd = MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI / 2 );
 
 				region.lonStart = MathUtils.mapLinear( Math.random(), 0, 1, 0.0, 2 * Math.PI );
-				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, 2 * Math.PI );
+				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI );
 
 				region.getBoundingBox( box, matrix );
 				region.getBoundingSphere( sphere );
@@ -133,8 +133,23 @@ describe( 'EllipsoidRegion', () => {
 						point,
 					);
 
+
 					expect( sphere.containsPoint( point ) ).toBe( true );
 					point.applyMatrix4( invMatrix );
+					// if ( ! box.containsPoint( point ) ) {
+
+					// 	console.log( `
+					// 		p.position.set( ${ point.x }, ${ point.y }, ${ point.z } );
+					// 		er.latStart = ${ region.latStart };
+					// 		er.latEnd = ${ region.latEnd };
+					// 		er.lonStart = ${ region.lonStart };
+					// 		er.lonEnd = ${ region.lonEnd };
+					// 		er.heightStart = ${ region.heightStart };
+					// 		er.heightEnd = ${ region.heightEnd };
+
+					// 	`);
+
+					// }
 					expect( box.containsPoint( point ) ).toBe( true );
 
 				}

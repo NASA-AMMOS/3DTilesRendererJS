@@ -9,7 +9,33 @@ const _orthoX = new Vector3();
 const _orthoY = new Vector3();
 const _orthoZ = new Vector3();
 const _invMatrix = new Matrix4();
-const _points = [];
+
+let _poolIndex = 0;
+const _pointsPool = [];
+function getVector( usePool = false ) {
+
+	if ( ! usePool ) {
+
+		return new Vector3();
+
+	}
+
+	if ( ! _pointsPool[ _poolIndex ] ) {
+
+		_pointsPool[ _poolIndex ] = new Vector3();
+
+	}
+
+	_poolIndex ++;
+	return _pointsPool[ _poolIndex - 1 ];
+
+}
+
+function resetPool() {
+
+	_poolIndex = 0;
+
+}
 
 export class EllipsoidRegion extends Ellipsoid {
 
@@ -30,38 +56,56 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
-	_getPoints( target ) {
+	_getPoints( usePool = false ) {
 
-		const countLat = 3;
-		const countLon = 5;
 		const {
 			latStart, latEnd,
 			lonStart, lonEnd,
 			heightStart, heightEnd,
 		} = this;
 
-		// initialize the necessary number of vector3s
-		const total = countLat * countLon * 2;
-		for ( let i = 0, l = total; i < l; i ++ ) {
+		const midLat = MathUtils.mapLinear( 0.5, 0, 1, latStart, latEnd );
+		const midLon = MathUtils.mapLinear( 0.5, 0, 1, lonStart, lonEnd );
 
-			if ( ! target[ i ] ) target.push( new Vector3() );
+		const lonOffset = Math.floor( lonStart / HALF_PI ) * HALF_PI;
+		const latlon = [
+			[ - PI / 2, 0 ],
+			[ PI / 2, 0 ],
+			[ 0, lonOffset ],
+			[ 0, lonOffset + PI / 2 ],
+			[ 0, lonOffset + PI ],
+			[ 0, lonOffset + 3 * PI / 2 ],
 
-		}
+			[ latStart, lonEnd ],
+			[ latEnd, lonEnd ],
+			[ latStart, lonStart ],
+			[ latEnd, lonStart ],
 
-		target.length = total;
+			[ 0, lonStart ],
+			[ 0, lonEnd ],
 
-		// generate a point along the region
-		let index = 0;
+			[ midLat, midLon ],
+			[ latStart, midLon ],
+			[ latEnd, midLon ],
+			[ midLat, lonStart ],
+			[ midLat, lonEnd ],
+
+		];
+
+		const target = [];
+		const total = latlon.length;
+
 		for ( let z = 0; z <= 1; z ++ ) {
 
-			const height = MathUtils.mapLinear( z, 0, 1, heightStart, heightEnd );
-			for ( let x = 0; x < countLat; x ++ ) {
+			const height = MathUtils.mapLinear( z, 0, 1, heightStart , heightEnd  );
+			for ( let i = 0, l = total; i < l; i ++ ) {
 
-				const lat = MathUtils.mapLinear( x, 0, countLat - 1, latStart, latEnd );
-				for ( let y = 0; y < countLon; y ++ ) {
+				const [ lat, lon ] = latlon[ i ];
+				if ( lat >= latStart && lat <= latEnd && lon >= lonStart && lon <= lonEnd ) {
 
-					const lon = MathUtils.mapLinear( y, 0, countLon - 1, lonStart, lonEnd );
-					this.getCartographicToPosition( lat, lon, height, target[ index ++ ] );
+					const v = getVector( usePool );
+					target.push( v );
+					this.getCartographicToPosition( lat, lon, height, v );
 
 				}
 
@@ -69,47 +113,65 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		}
 
+		return target;
+
 	}
 
 	getBoundingBox( box, matrix ) {
+
+		resetPool();
 
 		const {
 			latStart, latEnd,
 			lonStart, lonEnd,
 		} = this;
 
-		// get the midway point for the region
-		const midLat = MathUtils.mapLinear( 0.5, 0, 1, latStart, latEnd );
-		const midLon = MathUtils.mapLinear( 0.5, 0, 1, lonStart, lonEnd );
+		const latRange = latEnd - latStart;
+		if ( latRange < PI / 2 ) {
 
-		// get the frame matrix for the box - works well for smaller regions
-		this.getCartographicToNormal( midLat, midLon, _orthoZ );
-		_orthoY.set( 0, 0, 1 );
-		_orthoX.crossVectors( _orthoY, _orthoZ );
-		_orthoY.crossVectors( _orthoX, _orthoZ );
-		matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+			// get the midway point for the region
+			const midLat = MathUtils.mapLinear( 0.5, 0, 1, latStart, latEnd );
+			const midLon = MathUtils.mapLinear( 0.5, 0, 1, lonStart, lonEnd );
+
+			// get the frame matrix for the box - works well for smaller regions
+			this.getCartographicToNormal( midLat, midLon, _orthoZ );
+			_orthoY.set( 0, 0, 1 );
+			_orthoX.crossVectors( _orthoY, _orthoZ );
+			_orthoY.crossVectors( _orthoX, _orthoZ );
+			matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+
+		} else {
+
+			_orthoX.set( 1, 0, 0 );
+			_orthoY.set( 0, 1, 0 );
+			_orthoZ.set( 0, 0, 1 );
+			matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+
+		}
 
 		// transform the points into the local frame
 		_invMatrix.copy( matrix ).invert();
 
-		this._getPoints( _points );
-		for ( let i = 0, l = _points.length; i < l; i ++ ) {
+		const points = this._getPoints( true );
+		for ( let i = 0, l = points.length; i < l; i ++ ) {
 
-			_points[ i ].applyMatrix4( _invMatrix );
+			points[ i ].applyMatrix4( _invMatrix );
 
 		}
 
 		// init the box
 		box.makeEmpty();
-		box.setFromPoints( _points );
+		box.setFromPoints( points );
 
 	}
 
 	getBoundingSphere( sphere, center ) {
 
+		resetPool();
+
+		const points = this._getPoints( true );
 		sphere.makeEmpty();
-		this._getPoints( _points );
-		sphere.setFromPoints( _points, center );
+		sphere.setFromPoints( points, center );
 
 	}
 

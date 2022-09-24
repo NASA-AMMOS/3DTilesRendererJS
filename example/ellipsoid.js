@@ -164,9 +164,9 @@ function updateHelper() {
 		boxGroup.scale,
 	);
 
-	const array = [];
-	helper.ellipsoidRegion._getPoints( array );
-	for ( let i = 0; i < array.length; i ++ ) {
+	const points = helper.ellipsoidRegion._getPoints();
+	pointsArray.forEach( o => o.visible = false );
+	for ( let i = 0; i < points.length; i ++ ) {
 
 		if ( ! pointsArray[ i ] ) {
 
@@ -176,7 +176,8 @@ function updateHelper() {
 
 		}
 
-		pointsArray[ i ].position.copy( array[ i ] );
+		pointsArray[ i ].position.copy( points[ i ] );
+		pointsArray[ i ].visible = true;
 
 	}
 
