@@ -25,7 +25,8 @@ let camera, controls, scene, renderer, group;
 let dirLight;
 let sphereHelper, boxHelper;
 let helper, ghostHelper, edges, boxGroup;
-let pointsArray = [], pointsGroup;
+const pointsArray = [];
+let pointsGroup;
 
 const params = {
 
