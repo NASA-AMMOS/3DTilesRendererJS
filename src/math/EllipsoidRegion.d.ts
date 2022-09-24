@@ -1,5 +1,4 @@
-import Matrix4 from 'cesium/Source/Core/Matrix4';
-import { Box3 } from 'three';
+import { Box3, Sphere, Matrix4 } from 'three';
 import { Ellipsoid } from './Ellipsoid';
 
 export class EllipsoidRegion extends Ellipsoid {
