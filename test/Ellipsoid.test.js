@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
-import { Vector3 } from 'three';
+import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
+import { EllipsoidRegion } from '../src/math/EllipsoidRegion';
 import { Ellipsoid, WGS84_HEIGHT, WGS84_RADIUS } from '../src/math/Ellipsoid.js';
 
 function compareCartesianVector( cart, vec, EPSILON = 1e-13 ) {
@@ -94,4 +95,54 @@ describe( 'Ellipsoid', () => {
 
 } );
 
+describe( 'EllipsoidRegion', () => {
 
+	describe( 'Bounding Boxes', () => {
+
+		it.skip( 'should encapsulate randomized points.', () => {
+
+			const POINT_COUNT = 100;
+			const REGION_COUNT = 100;
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+			for ( let i = 0; i < REGION_COUNT; i ++ ) {
+
+				const region = new EllipsoidRegion( 1, 1, 1 );
+				region.heightStart = MathUtils.mapLinear( Math.random(), 0, 1, - 0.2, 0.2 );
+				region.heightEnd = region.heightStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, 0.2 );
+
+				region.latStart = MathUtils.mapLinear( Math.random(), 0, 1, - Math.PI / 2, 0 );
+				region.latEnd = MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI / 2 );
+
+				region.lonStart = MathUtils.mapLinear( Math.random(), 0, 1, 0.0, 2 * Math.PI );
+				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, 2 * Math.PI );
+
+				region.getBoundingBox( box, matrix );
+				region.getBoundingSphere( sphere );
+				invMatrix.copy( matrix ).invert();
+
+				for ( let p = 0; p < POINT_COUNT; p ++ ) {
+
+					region.getCartographicToPosition(
+						MathUtils.mapLinear( Math.random(), 0, 1, region.latStart, region.latEnd ),
+						MathUtils.mapLinear( Math.random(), 0, 1, region.lonStart, region.lonEnd ),
+						Math.random() > 0.5 ? region.heightStart : region.heightEnd,
+						point,
+					);
+
+					expect( sphere.containsPoint( point ) ).toBe( true );
+					point.applyMatrix4( invMatrix );
+					expect( box.containsPoint( point ) ).toBe( true );
+
+				}
+
+			}
+
+		} );
+
+	} );
+
+} );

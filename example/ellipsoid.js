@@ -15,6 +15,8 @@ import {
 	Box3Helper,
 	Box3,
 	Sphere,
+	SphereBufferGeometry,
+	Mesh,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -23,11 +25,13 @@ let camera, controls, scene, renderer, group;
 let dirLight;
 let sphereHelper, boxHelper;
 let helper, ghostHelper, edges, boxGroup;
+let pointsArray = [], pointsGroup;
 
 const params = {
 
 	displaySphereHelper: false,
 	displayBoxHelper: false,
+	displayPoints: false,
 
 };
 
@@ -57,7 +61,10 @@ function init() {
 	group.rotation.x = - Math.PI / 2;
 	scene.add( group );
 
-	// add ellipsoid heler
+	pointsGroup = new Group();
+	group.add( pointsGroup );
+
+	// add ellipsoid helper
 	helper = new EllipsoidHelper();
 	helper.material = new MeshPhongMaterial( {
 
@@ -114,6 +121,7 @@ function init() {
 	const gui = new GUI();
 	gui.add( params, 'displayBoxHelper' );
 	gui.add( params, 'displaySphereHelper' );
+	gui.add( params, 'displayPoints' );
 
 	const radiusFolder = gui.addFolder( 'radius' );
 	radiusFolder.add( helper.ellipsoidRegion.radius, 'x', 0.1, 2 ).onChange( updateHelper );
@@ -155,6 +163,22 @@ function updateHelper() {
 		boxGroup.scale,
 	);
 
+	const array = [];
+	helper.ellipsoidRegion._getPoints( array );
+	for ( let i = 0; i < array.length; i ++ ) {
+
+		if ( ! pointsArray[ i ] ) {
+
+			pointsArray.push( new Mesh( new SphereBufferGeometry( 0.01 ) ) );
+			pointsArray[ i ].material.color.set( 0xff0000 );
+			pointsGroup.add( pointsArray[ i ] );
+
+		}
+
+		pointsArray[ i ].position.copy( array[ i ] );
+
+	}
+
 }
 
 function onWindowResize() {
@@ -178,6 +202,7 @@ function render() {
 
 	sphereHelper.visible = params.displaySphereHelper;
 	boxHelper.visible = params.displayBoxHelper;
+	pointsGroup.visible = params.displayPoints;
 	renderer.render( scene, camera );
 
 }
