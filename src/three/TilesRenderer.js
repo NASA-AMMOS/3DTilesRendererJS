@@ -5,6 +5,8 @@ import { I3DMLoader } from './I3DMLoader.js';
 import { CMPTLoader } from './CMPTLoader.js';
 import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
+import { WGS84_HEIGHT, WGS84_RADIUS } from './math/Ellipsoid.js';
+import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 import {
 	Matrix4,
 	Box3,
@@ -536,12 +538,39 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const region = null;
+		let region = null;
 		if ( 'region' in tile.boundingVolume ) {
 
-			console.warn( 'ThreeTilesRenderer: region bounding volume not supported.' );
+			const data = tile.boundingVolume.region;
+			const [ west, south, east, north, minHeight, maxHeight ] = data;
+
+			region = new EllipsoidRegion(
+				WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT,
+				south, north,
+				west, east,
+				minHeight, maxHeight,
+			);
+
+			if ( sphere === null ) {
+
+				sphere = new Sphere();
+				region.getBoundingSphere( sphere );
+
+			}
+
+			if ( box === null ) {
+
+				box = new Box3();
+				boxTransform = new Matrix4();
+				boxTransformInverse = new Matrix4();
+
+				region.getBoundingBox( box, boxTransform );
+				boxTransformInverse.copy( boxTransform ).invert();
+
+			}
 
 		}
+
 
 		tile.cached = {
 
@@ -869,78 +898,67 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: Use the content bounding volume here?
 		// TODO: We should use the largest distance to the tile between
 		// all available bounding volume types.
-		const boundingVolume = tile.boundingVolume;
+		const boundingSphere = cached.sphere;
+		const boundingBox = cached.box;
+		const boxTransformInverse = cached.boxTransformInverse;
+		const transformInverse = cached.transformInverse;
+		const useBox = boundingBox && boxTransformInverse;
 
-		if ( 'box' in boundingVolume || 'sphere' in boundingVolume ) {
+		let maxError = - Infinity;
+		let minDistance = Infinity;
 
-			const boundingSphere = cached.sphere;
-			const boundingBox = cached.box;
-			const boxTransformInverse = cached.boxTransformInverse;
-			const transformInverse = cached.transformInverse;
-			const useBox = boundingBox && boxTransformInverse;
+		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
-			let maxError = - Infinity;
-			let minDistance = Infinity;
+			if ( ! inFrustum[ i ] ) {
 
-			for ( let i = 0, l = cameras.length; i < l; i ++ ) {
-
-				if ( ! inFrustum[ i ] ) {
-
-					continue;
-
-				}
-
-				// transform camera position into local frame of the tile bounding box
-				const info = cameraInfo[ i ];
-				const invScale = info.invScale;
-
-				let error;
-				if ( info.isOrthographic ) {
-
-					const pixelSize = info.pixelSize;
-					error = tile.geometricError / ( pixelSize * invScale );
-
-				} else {
-
-					tempVector.copy( info.position );
-
-					let distance;
-					if ( useBox ) {
-
-						tempVector.applyMatrix4( boxTransformInverse );
-						distance = boundingBox.distanceToPoint( tempVector );
-
-					} else {
-
-						tempVector.applyMatrix4( transformInverse );
-						// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
-						// zero inside the box. Clipping the distance to a minimum of zero ensures that both
-						// types of bounding volume behave the same way.
-						distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
-
-					}
-
-					const scaledDistance = distance * invScale;
-					const sseDenominator = info.sseDenominator;
-					error = tile.geometricError / ( scaledDistance * sseDenominator );
-
-					minDistance = Math.min( minDistance, scaledDistance );
-
-				}
-
-				maxError = Math.max( maxError, error );
+				continue;
 
 			}
 
-			tile.__distanceFromCamera = minDistance;
-			tile.__error = maxError;
+			// transform camera position into local frame of the tile bounding box
+			const info = cameraInfo[ i ];
+			const invScale = info.invScale;
 
-		} else if ( 'region' in boundingVolume ) {
+			let error;
+			if ( info.isOrthographic ) {
 
-			// unsupported
-			console.warn( 'ThreeTilesRenderer : Region bounds not supported.' );
+				const pixelSize = info.pixelSize;
+				error = tile.geometricError / ( pixelSize * invScale );
+
+			} else {
+
+				tempVector.copy( info.position );
+
+				let distance;
+				if ( useBox ) {
+
+					tempVector.applyMatrix4( boxTransformInverse );
+					distance = boundingBox.distanceToPoint( tempVector );
+
+				} else {
+
+					tempVector.applyMatrix4( transformInverse );
+					// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
+					// zero inside the box. Clipping the distance to a minimum of zero ensures that both
+					// types of bounding volume behave the same way.
+					distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
+
+				}
+
+				const scaledDistance = distance * invScale;
+				const sseDenominator = info.sseDenominator;
+				error = tile.geometricError / ( scaledDistance * sseDenominator );
+
+				minDistance = Math.min( minDistance, scaledDistance );
+
+			}
+
+			maxError = Math.max( maxError, error );
 
 		}
+
+		tile.__distanceFromCamera = minDistance;
+		tile.__error = maxError;
 
 	}
 
