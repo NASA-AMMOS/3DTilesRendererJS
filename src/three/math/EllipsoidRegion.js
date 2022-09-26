@@ -1,6 +1,6 @@
 import { MathUtils, Matrix4 } from 'three';
 import { Vector3 } from 'three';
-import { Ellipsoid } from '../math/Ellipsoid.js';
+import { Ellipsoid } from './Ellipsoid.js';
 
 const PI = Math.PI;
 const HALF_PI = PI / 2;

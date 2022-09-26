@@ -1,7 +1,7 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial } from 'three';
 import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
-import { SphereHelper } from './SphereHelper.js';
+import { SphereHelper } from './objects/SphereHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
