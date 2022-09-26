@@ -24,6 +24,17 @@ If a tile set or geometry does not load or render properly please make an issue!
 
 [Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
 
+**Debugging**
+
+[B3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/b3dmExample.html)
+
+[I3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/i3dmExample.html)
+
+[PNTS Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/pntsExample.html)
+
+[Ellipsoid Region Bounds](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ellipsoid.html)
+
+
 # Use
 
 ## Installation
