@@ -464,7 +464,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						// Create debugbounding sphere
 						const cachedSphere = cached.sphere;
-						const sphereHelper = new SphereHelper( cachedSphere );
+						const sphereHelper = new SphereHelper( cachedSphere, getIndexedRandomColor( tile.__depth ) );
 						sphereHelper.raycast = emptyRaycast;
 						cached.sphereHelper = sphereHelper;
 

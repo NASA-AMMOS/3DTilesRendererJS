@@ -117,11 +117,11 @@ function getRegionGeometry( ellipsoidRegion ) {
 
 export class EllipsoidLineHelper extends LineSegments {
 
-	constructor( ellipsoidRegion = new EllipsoidRegion() ) {
+	constructor( ellipsoidRegion = new EllipsoidRegion(), color = 0xffff00 ) {
 
 		super();
 		this.ellipsoidRegion = ellipsoidRegion;
-		this.material.color.set( 0xffff00 );
+		this.material.color.set( color );
 		this.update();
 
 	}

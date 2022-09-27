@@ -1,4 +1,4 @@
-import { LineSegments, Mesh } from 'three';
+import { LineSegments, Mesh, Color } from 'three';
 import { EllipsoidRegion } from '../math/EllipsoidRegion';
 
 export class EllipsoidLineHelper extends LineSegments {
@@ -11,7 +11,7 @@ export class EllipsoidLineHelper extends LineSegments {
 
 export class EllipsoidHelper extends Mesh {
 
-	constructor( ellipsoidRegion : EllipsoidRegion );
+	constructor( ellipsoidRegion : EllipsoidRegion, color : Color | number | string );
 	update() : void;
 	dispose() : void;
 
