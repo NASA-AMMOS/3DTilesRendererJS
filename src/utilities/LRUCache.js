@@ -190,6 +190,15 @@ class LRUCache {
 
 	}
 
+	dispose() {
+
+		this.markAllUnused();
+		this.itemSet.clear();
+		this.itemList = [];
+		this.callbacks.clear();
+
+	}
+
 }
 
 export { LRUCache };

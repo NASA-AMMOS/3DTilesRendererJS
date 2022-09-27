@@ -3,7 +3,7 @@ export class PriorityQueue {
 	maxJobs : Number;
 	autoUpdate : Boolean;
 	priorityCallback : ( itemA : any , itemB : any ) => Number;
-	
+
 	schedulingCallback : ( func : Function ) => void;
 
 	sort() : void;
@@ -12,5 +12,7 @@ export class PriorityQueue {
 
 	tryRunJobs() : void;
 	scheduleJobRun() : void;
+
+	dispose() : void;
 
 }

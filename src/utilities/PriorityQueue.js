@@ -132,6 +132,13 @@ class PriorityQueue {
 
 	}
 
+	dispose() {
+
+		this.callbacks.clear();
+		this.items = [];
+
+	}
+
 }
 
 export { PriorityQueue };

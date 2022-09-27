@@ -987,15 +987,11 @@ export class TilesRenderer extends TilesRendererBase {
 	dispose() {
 
 		super.dispose();
-		this.lruCache.itemSet.clear();
-		this.lruCache.itemList = [];
-		this.lruCache.callbacks.clear();
+		this.lruCache.dispose();
 		this.visibleTiles.clear();
 		this.activeTiles.clear();
-		this.downloadQueue.callbacks.clear();
-		this.downloadQueue.items = [];
-		this.parseQueue.callbacks.clear();
-		this.parseQueue.items = [];
+		this.downloadQueue.dispose();
+		this.parseQueue.dispose();
 		this.clearGroup( this.group );
 		this.group = null;
 		this.tileSets = {};
