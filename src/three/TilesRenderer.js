@@ -1,11 +1,11 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
+import { WGS84_HEIGHT, WGS84_RADIUS } from '../base/constants.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
 import { CMPTLoader } from './CMPTLoader.js';
 import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
-import { WGS84_HEIGHT, WGS84_RADIUS } from './math/Ellipsoid.js';
 import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 import {
 	Matrix4,
