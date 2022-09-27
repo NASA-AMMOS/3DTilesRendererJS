@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - Class for Ellipsoid and EllipsoidRegion.
+- DebugTilesRenderer: Added "displayRegionBounds" flag.
+- Supprt for region bounds by converting the volumes into sphere and box bounds.
 
 ## [0.3.12] - 2022-08-26
 ### Fixed
