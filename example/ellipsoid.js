@@ -20,6 +20,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { EllipsoidLineHelper } from '../src/three/objects/EllipsoidHelper.js';
 
 let camera, controls, scene, renderer, group;
 let dirLight;
@@ -90,7 +91,8 @@ function init() {
 	ghostHelper.material = new MeshPhongMaterial( { opacity: 0.1, transparent: true, depthWrite: false } );
 
 	// add region edges
-	edges = new LineSegments( new EdgesGeometry(), new LineBasicMaterial( { color: new Color( 0x151c1f ).convertSRGBToLinear() } ) );
+	edges = new EllipsoidLineHelper( helper.ellipsoidRegion );
+	edges.material.color.set( 0x151c1f ).convertSRGBToLinear();
 
 	// add sphere helper
 	sphereHelper = new SphereHelper( new Sphere() );
@@ -150,10 +152,7 @@ function updateHelper() {
 	// update geometry
 	helper.update();
 	ghostHelper.update();
-
-	// update the edges
-	edges.geometry.dispose();
-	edges.geometry = new EdgesGeometry( helper.geometry, 80 );
+	edges.update();
 
 	// update the bounds helpers
 	helper.ellipsoidRegion.getBoundingSphere( sphereHelper.sphere );
