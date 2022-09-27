@@ -1,5 +1,5 @@
 import { EllipsoidRegion } from '../math/EllipsoidRegion.js';
-import { Mesh, Vector3, Spherical, Triangle, MathUtils, BoxGeometry, BufferGeometry, Line, EdgesGeometry, LineSegments } from 'three';
+import { Mesh, Vector3, MathUtils, BoxGeometry, BufferGeometry, EdgesGeometry, LineSegments } from 'three';
 import { BufferAttribute } from 'three';
 
 const _norm = new Vector3();
@@ -115,7 +115,7 @@ function getRegionGeometry( ellipsoidRegion ) {
 
 }
 
-export class EllipsoidLineHelper extends LineSegments {
+export class EllipsoidRegionLineHelper extends LineSegments {
 
 	constructor( ellipsoidRegion = new EllipsoidRegion(), color = 0xffff00 ) {
 
@@ -143,7 +143,7 @@ export class EllipsoidLineHelper extends LineSegments {
 
 }
 
-export class EllipsoidHelper extends Mesh {
+export class EllipsoidRegionHelper extends Mesh {
 
 	constructor( ellipsoidRegion = new EllipsoidRegion() ) {
 

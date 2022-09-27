@@ -1,8 +1,8 @@
-import { Box3, Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere } from 'three';
 import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidLineHelper } from './objects/EllipsoidHelper.js';
+import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -504,7 +504,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 						// Create debug bounding region
 						const cachedRegion = cached.region;
-						const regionHelper = new EllipsoidLineHelper( cachedRegion, getIndexedRandomColor( tile.__depth ) );
+						const regionHelper = new EllipsoidRegionLineHelper( cachedRegion, getIndexedRandomColor( tile.__depth ) );
 						regionHelper.raycast = emptyRaycast;
 
 						// recenter the geometry to avoid rendering artifacts

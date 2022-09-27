@@ -1,4 +1,4 @@
-import { EllipsoidHelper, SphereHelper } from '../src/index.js';
+import { SphereHelper, EllipsoidRegionLineHelper, EllipsoidRegionHelper } from '../src/index.js';
 import {
 	Scene,
 	Group,
@@ -7,11 +7,7 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	sRGBEncoding,
-	EdgesGeometry,
 	MeshPhongMaterial,
-	LineSegments,
-	LineBasicMaterial,
-	Color,
 	Box3Helper,
 	Box3,
 	Sphere,
@@ -20,7 +16,6 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { EllipsoidLineHelper } from '../src/three/objects/EllipsoidHelper.js';
 
 let camera, controls, scene, renderer, group;
 let dirLight;
@@ -67,7 +62,7 @@ function init() {
 	group.add( pointsGroup );
 
 	// add ellipsoid helper
-	helper = new EllipsoidHelper();
+	helper = new EllipsoidRegionHelper();
 	helper.material = new MeshPhongMaterial( {
 
 		polygonOffset: true,
@@ -87,11 +82,11 @@ function init() {
 	helper.ellipsoidRegion.lonEnd = Math.PI / 4;
 
 	// add ghosted region
-	ghostHelper = new EllipsoidHelper();
+	ghostHelper = new EllipsoidRegionHelper();
 	ghostHelper.material = new MeshPhongMaterial( { opacity: 0.1, transparent: true, depthWrite: false } );
 
 	// add region edges
-	edges = new EllipsoidLineHelper( helper.ellipsoidRegion );
+	edges = new EllipsoidRegionLineHelper( helper.ellipsoidRegion );
 	edges.material.color.set( 0x151c1f ).convertSRGBToLinear();
 
 	// add sphere helper

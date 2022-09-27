@@ -17,7 +17,7 @@ export { PNTSLoader } from './three/PNTSLoader.js';
 export { I3DMLoader } from './three/I3DMLoader.js';
 export { CMPTLoader } from './three/CMPTLoader.js';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
-export { EllipsoidHelper } from './three/objects/EllipsoidHelper.js';
+export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
 export { SphereHelper } from './three/objects/SphereHelper.js';
 export { Ellipsoid, WGS84_RADIUS, WGS84_HEIGHT } from './three/math/Ellipsoid.js';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion.js';

@@ -1,4 +1,4 @@
-import { Vector3, Spherical, MathUtils } from 'three';
+import { Vector3, Spherical } from 'three';
 
 // Cesium / 3D tiles Spheroid:
 // - Up is Z at 90 degrees latitude
