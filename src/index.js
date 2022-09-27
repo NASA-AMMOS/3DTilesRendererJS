@@ -17,8 +17,10 @@ export { PNTSLoader } from './three/PNTSLoader.js';
 export { I3DMLoader } from './three/I3DMLoader.js';
 export { CMPTLoader } from './three/CMPTLoader.js';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
-export { EllipsoidHelper } from './three/EllipsoidHelper.js';
-export { SphereHelper } from './three/SphereHelper.js';
+export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
+export { SphereHelper } from './three/objects/SphereHelper.js';
+export { Ellipsoid, WGS84_RADIUS, WGS84_HEIGHT } from './three/math/Ellipsoid.js';
+export { EllipsoidRegion } from './three/math/EllipsoidRegion.js';
 
 export { TilesRendererBase } from './base/TilesRendererBase.js';
 export { LoaderBase } from './base/LoaderBase.js';
@@ -26,9 +28,6 @@ export { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
 export { I3DMLoaderBase } from './base/I3DMLoaderBase.js';
 export { PNTSLoaderBase } from './base/PNTSLoaderBase.js';
 export { CMPTLoaderBase } from './base/CMPTLoaderBase.js';
-
-export { Ellipsoid, WGS84_RADIUS, WGS84_HEIGHT } from './math/Ellipsoid.js';
-export { EllipsoidRegion } from './math/EllipsoidRegion.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';

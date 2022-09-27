@@ -1,4 +1,4 @@
-import { EllipsoidHelper, SphereHelper } from '../src/index.js';
+import { SphereHelper, EllipsoidRegionLineHelper, EllipsoidRegionHelper } from '../src/index.js';
 import {
 	Scene,
 	Group,
@@ -7,11 +7,7 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	sRGBEncoding,
-	EdgesGeometry,
 	MeshPhongMaterial,
-	LineSegments,
-	LineBasicMaterial,
-	Color,
 	Box3Helper,
 	Box3,
 	Sphere,
@@ -66,7 +62,7 @@ function init() {
 	group.add( pointsGroup );
 
 	// add ellipsoid helper
-	helper = new EllipsoidHelper();
+	helper = new EllipsoidRegionHelper();
 	helper.material = new MeshPhongMaterial( {
 
 		polygonOffset: true,
@@ -86,11 +82,12 @@ function init() {
 	helper.ellipsoidRegion.lonEnd = Math.PI / 4;
 
 	// add ghosted region
-	ghostHelper = new EllipsoidHelper();
+	ghostHelper = new EllipsoidRegionHelper();
 	ghostHelper.material = new MeshPhongMaterial( { opacity: 0.1, transparent: true, depthWrite: false } );
 
 	// add region edges
-	edges = new LineSegments( new EdgesGeometry(), new LineBasicMaterial( { color: new Color( 0x151c1f ).convertSRGBToLinear() } ) );
+	edges = new EllipsoidRegionLineHelper( helper.ellipsoidRegion );
+	edges.material.color.set( 0x151c1f ).convertSRGBToLinear();
 
 	// add sphere helper
 	sphereHelper = new SphereHelper( new Sphere() );
@@ -150,10 +147,7 @@ function updateHelper() {
 	// update geometry
 	helper.update();
 	ghostHelper.update();
-
-	// update the edges
-	edges.geometry.dispose();
-	edges.geometry = new EdgesGeometry( helper.geometry, 80 );
+	edges.update();
 
 	// update the bounds helpers
 	helper.ellipsoidRegion.getBoundingSphere( sphereHelper.sphere );

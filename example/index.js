@@ -52,27 +52,29 @@ let statsContainer, stats;
 
 const params = {
 
-	'enableUpdate': true,
-	'raycast': NONE,
-	'optimizeRaycast': true,
-	'enableCacheDisplay': false,
-	'enableRendererStats': false,
-	'orthographic': false,
+	enableUpdate: true,
+	raycast: NONE,
+	optimizeRaycast: true,
+	enableCacheDisplay: false,
+	enableRendererStats: false,
+	orthographic: false,
 
-	'errorTarget': 6,
-	'errorThreshold': 60,
-	'maxDepth': 15,
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'displayActiveTiles': false,
-	'resolutionScale': 1.0,
+	errorTarget: 6,
+	errorThreshold: 60,
+	maxDepth: 15,
+	loadSiblings: true,
+	stopAtEmptyTiles: true,
+	displayActiveTiles: false,
+	resolutionScale: 1.0,
 
-	'up': hashUrl ? '+Z' : '+Y',
-	'displayBoxBounds': false,
-	'colorMode': 0,
-	'showThirdPerson': false,
-	'showSecondView': false,
-	'reload': reinstantiateTiles,
+	up: hashUrl ? '+Z' : '+Y',
+	displayBoxBounds: false,
+	displaySphereBounds: false,
+	displayRegionBounds: false,
+	colorMode: 0,
+	showThirdPerson: false,
+	showSecondView: false,
+	reload: reinstantiateTiles,
 
 };
 
@@ -262,6 +264,8 @@ function init() {
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
+	debug.add( params, 'displaySphereBounds' );
+	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', {
 
 		NONE,
@@ -472,6 +476,8 @@ function animate() {
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;
+	tiles.displaySphereBounds = params.displaySphereBounds;
+	tiles.displayRegionBounds = params.displayRegionBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
 
 	if ( params.orthographic ) {

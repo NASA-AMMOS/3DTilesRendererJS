@@ -18,7 +18,8 @@ export { I3DMLoader } from './three/I3DMLoader';
 export { PNTSLoader } from './three/PNTSLoader';
 export { CMPTLoader } from './three/CMPTLoader';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader';
-export { EllipsoidHelper } from './three/EllipsoidHelper';
+export { Ellipsoid } from './three/math/Ellipsoid';
+export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
@@ -29,9 +30,6 @@ export { I3DMLoaderBase } from './base/I3DMLoaderBase';
 export { PNTSLoaderBase } from './base/PNTSLoaderBase';
 export { CMPTLoaderBase } from './base/CMPTLoaderBase';
 export { LoaderBase } from './base/LoaderBase';
-
-export { Ellipsoid } from './math/Ellipsoid';
-export { EllipsoidRegion } from './math/EllipsoidRegion';
 
 export { LRUCache } from './utilities/LRUCache';
 export { PriorityQueue } from './utilities/PriorityQueue';
