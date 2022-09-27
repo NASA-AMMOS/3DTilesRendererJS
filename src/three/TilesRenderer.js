@@ -983,4 +983,71 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+
+	dispose() {
+
+		super.dispose();
+		this.lruCache.itemSet.clear();
+		this.lruCache.itemList = [];
+		this.lruCache.callbacks.clear();
+		this.visibleTiles.clear();
+		this.activeTiles.clear();
+		this.downloadQueue.callbacks.clear();
+		this.downloadQueue.items = [];
+		this.parseQueue.callbacks.clear();
+		this.parseQueue.items = [];
+		this.clearGroup( this.group );
+		this.group = null;
+		this.tileSets = {};
+
+	}
+
+	clearGroup( group ) {
+
+		const clearCache = ( mesh ) => {
+
+			if ( mesh.geometry ) {
+
+				mesh.geometry.dispose(); // 删除几何体
+
+			}
+			if ( mesh.material && mesh.material.dispose ) {
+
+				mesh.material.dispose(); // 删除材质
+
+			}
+			if ( mesh.material.texture && mesh.material.texture.dispose ) {
+
+				mesh.material.texture.dispose();
+
+			}
+
+		};
+		const removeObj = ( item ) => {
+
+			let array = item.children.filter( ( x ) => x );
+			array.forEach( v => {
+
+				if ( v.children.length ) {
+
+					removeObj( v );
+
+				} else {
+
+					if ( v.isMesh ) {
+
+						clearCache( v );
+
+					}
+
+				}
+
+			} );
+			array = null;
+
+		};
+		removeObj( group );
+
+	}
+
 }
