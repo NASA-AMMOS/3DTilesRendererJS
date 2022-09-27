@@ -265,6 +265,7 @@ function init() {
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
+	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', {
 
 		NONE,
@@ -476,6 +477,7 @@ function animate() {
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.displaySphereBounds = params.displaySphereBounds;
+	tiles.displayRegionBounds = params.displayRegionBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
 
 	if ( params.orthographic ) {

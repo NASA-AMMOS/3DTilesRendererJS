@@ -1,7 +1,8 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial } from 'three';
+import { Box3, Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere } from 'three';
 import { getIndexedRandomColor } from './utilities.js';
 import { TilesRenderer } from './TilesRenderer.js';
 import { SphereHelper } from './objects/SphereHelper.js';
+import { EllipsoidLineHelper } from './objects/EllipsoidHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -35,12 +36,18 @@ export class DebugTilesRenderer extends TilesRenderer {
 		sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
 		tilesGroup.add( sphereGroup );
 
+		const regionGroup = new Group();
+		regionGroup.name = 'DebugTilesRenderer.regionGroup';
+		tilesGroup.add( regionGroup );
+
 		this.displayBoxBounds = false;
 		this.displaySphereBounds = false;
+		this.displayRegionBounds = false;
 		this.colorMode = NONE;
 		this.customColorCallback = null;
 		this.boxGroup = boxGroup;
 		this.sphereGroup = sphereGroup;
+		this.regionGroup = regionGroup;
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
@@ -166,6 +173,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 		// set box or sphere visibility
 		this.boxGroup.visible = this.displayBoxBounds;
 		this.sphereGroup.visible = this.displaySphereBounds;
+		this.regionGroup.visible = this.displayRegionBounds;
 
 		// get max values to use for materials
 		let maxDepth = - 1;
@@ -385,8 +393,10 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const cached = tile.cached;
 		const sphereGroup = this.sphereGroup;
 		const boxGroup = this.boxGroup;
+		const regionGroup = this.regionGroup;
 		const boxHelperGroup = cached.boxHelperGroup;
 		const sphereHelper = cached.sphereHelper;
+		const regionHelper = cached.regionHelper;
 
 		if ( ! visible ) {
 
@@ -399,6 +409,12 @@ export class DebugTilesRenderer extends TilesRenderer {
 			if ( sphereHelper ) {
 
 				sphereGroup.remove( sphereHelper );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.remove( regionHelper );
 
 			}
 
@@ -415,6 +431,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 				sphereGroup.add( sphereHelper );
 				sphereHelper.updateMatrixWorld( true );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.add( regionHelper );
+				regionHelper.updateMatrixWorld( true );
 
 			}
 
@@ -462,7 +485,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					if ( cached.sphere ) {
 
-						// Create debugbounding sphere
+						// Create debug bounding sphere
 						const cachedSphere = cached.sphere;
 						const sphereHelper = new SphereHelper( cachedSphere, getIndexedRandomColor( tile.__depth ) );
 						sphereHelper.raycast = emptyRaycast;
@@ -472,6 +495,32 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 							this.sphereGroup.add( sphereHelper );
 							sphereHelper.updateMatrixWorld( true );
+
+						}
+
+					}
+
+					if ( cached.region ) {
+
+						// Create debug bounding region
+						const cachedRegion = cached.region;
+						const regionHelper = new EllipsoidLineHelper( cachedRegion, getIndexedRandomColor( tile.__depth ) );
+						regionHelper.raycast = emptyRaycast;
+
+						// recenter the geometry to avoid rendering artifacts
+						const sphere = new Sphere();
+						cachedRegion.getBoundingSphere( sphere );
+						regionHelper.position.copy( sphere.center );
+
+						sphere.center.multiplyScalar( - 1 );
+						regionHelper.geometry.translate( ...sphere.center );
+
+						cached.regionHelper = regionHelper;
+
+						if ( this.visibleTiles.has( tile ) && this.displayRegionBounds ) {
+
+							this.regionGroup.add( regionHelper );
+							regionHelper.updateMatrixWorld( true );
 
 						}
 
