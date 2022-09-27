@@ -577,7 +577,7 @@ The callback used if `debugColor` is set to `CUSTOM_COLOR`. Value defaults to `n
 displayBoxBounds = false : Boolean
 ```
 
-Display wireframe bounding boxes from the tiles `boundingVolume.box` for every visible tile.
+Display wireframe bounding boxes from the tiles `boundingVolume.box` (or derived from the region bounds) for every visible tile.
 
 ### .displaySphereBounds
 
@@ -585,7 +585,15 @@ Display wireframe bounding boxes from the tiles `boundingVolume.box` for every v
 displaySphereBounds = false : Boolean
 ```
 
-Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or derived from the bounding box) for every visible tile.
+Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or derived from the bounding box / region bounds) for every visible tile.
+
+### .displayRegionBounds
+
+```js
+displayRegionBounds = false : Boolean
+```
+
+Display wireframe bounding rgions from the tiles `boundingVolume.region` for every visible tile if it exists.
 
 ### .maxDebugDepth
 
