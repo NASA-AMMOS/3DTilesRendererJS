@@ -1,7 +1,8 @@
 import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
-import { EllipsoidRegion } from '../src/math/EllipsoidRegion';
-import { Ellipsoid, WGS84_HEIGHT, WGS84_RADIUS } from '../src/math/Ellipsoid.js';
+import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
+import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
+import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/base/constants.js';
 
 function compareCartesianVector( cart, vec, EPSILON = 1e-13 ) {
 

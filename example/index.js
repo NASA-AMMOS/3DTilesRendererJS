@@ -34,6 +34,7 @@ import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
@@ -52,27 +53,29 @@ let statsContainer, stats;
 
 const params = {
 
-	'enableUpdate': true,
-	'raycast': NONE,
-	'optimizeRaycast': true,
-	'enableCacheDisplay': false,
-	'enableRendererStats': false,
-	'orthographic': false,
+	enableUpdate: true,
+	raycast: NONE,
+	optimizeRaycast: true,
+	enableCacheDisplay: false,
+	enableRendererStats: false,
+	orthographic: false,
 
-	'errorTarget': 6,
-	'errorThreshold': 60,
-	'maxDepth': 15,
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'displayActiveTiles': false,
-	'resolutionScale': 1.0,
+	errorTarget: 6,
+	errorThreshold: 60,
+	maxDepth: 15,
+	loadSiblings: true,
+	stopAtEmptyTiles: true,
+	displayActiveTiles: false,
+	resolutionScale: 1.0,
 
-	'up': hashUrl ? '+Z' : '+Y',
-	'displayBoxBounds': false,
-	'colorMode': 0,
-	'showThirdPerson': false,
-	'showSecondView': false,
-	'reload': reinstantiateTiles,
+	up: hashUrl ? '+Z' : '+Y',
+	displayBoxBounds: false,
+	displaySphereBounds: false,
+	displayRegionBounds: false,
+	colorMode: 0,
+	showThirdPerson: false,
+	showSecondView: false,
+	reload: reinstantiateTiles,
 
 };
 
@@ -95,10 +98,15 @@ function reinstantiateTiles() {
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.140.0/examples/js/libs/draco/gltf/' );
+
+	const ktx2loader = new KTX2Loader();
+	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.140.0/examples/js/libs/basis/' );
+	ktx2loader.detectSupport( renderer );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
+	loader.setKTX2Loader( ktx2loader );
 
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, loader );
@@ -262,6 +270,8 @@ function init() {
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
+	debug.add( params, 'displaySphereBounds' );
+	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', {
 
 		NONE,
@@ -472,6 +482,8 @@ function animate() {
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;
+	tiles.displaySphereBounds = params.displaySphereBounds;
+	tiles.displayRegionBounds = params.displayRegionBounds;
 	tiles.colorMode = parseFloat( params.colorMode );
 
 	if ( params.orthographic ) {

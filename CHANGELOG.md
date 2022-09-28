@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.13] - 2022-09-26
+### Added
+- Classes for Ellipsoid and EllipsoidRegion.
+- DebugTilesRenderer: Added "displayRegionBounds" flag.
+- Support for region bounds by converting the volumes into sphere and box bounds.
+
 ## [0.3.12] - 2022-08-26
 ### Fixed
 - B3DMLoader: regression causing RTC_CENTER to not be respected.

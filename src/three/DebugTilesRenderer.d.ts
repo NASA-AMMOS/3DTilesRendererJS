@@ -16,6 +16,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	displayBoxBounds : Boolean;
 	displaySphereBounds : Boolean;
+	displayRegionBounds : Boolean;
 	colorMode : ColorMode;
 
 	maxDebugDepth : Number;

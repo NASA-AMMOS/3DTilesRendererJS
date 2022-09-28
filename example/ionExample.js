@@ -59,7 +59,7 @@ const params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': '',
+	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjYjNlMTg5Zi1hMzc2LTRmZjktOGEwZC00NGEzNTM0MTAzZGUiLCJpZCI6MjU5LCJpYXQiOjE1MTgxOTE2NTV9.qaP8-_Ej6AihGnv5iB990Hm6lHr8F_rrC3_EPxdT6MQ',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -131,6 +131,7 @@ function reinstantiateTiles() {
 
 		offsetParent.remove( tiles.group );
 		tiles.dispose();
+		tiles = null;
 
 	}
 
