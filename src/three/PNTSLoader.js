@@ -21,13 +21,13 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
 				const POSITION = featureTable.getData( 'POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 				const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
+				const POSITION_QUANTIZED = featureTable.getData( 'POSITION_QUANTIZED', POINTS_LENGTH, 'UNSIGNED_SHORT', 'VEC3' );
+				const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', POINTS_LENGTH, 'FLOAT', 'VEC3' );
+				const QUANTIZED_VOLUME_OFFSET = featureTable.getData( 'QUANTIZED_VOLUME_OFFSET', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 
 				[
-					'QUANTIZED_VOLUME_OFFSET',
-					'QUANTIZED_VOLUME_SCALE',
 					'CONSTANT_RGBA',
 					'BATCH_LENGTH',
-					'POSITION_QUANTIZED',
 					'RGBA',
 					'RGB565',
 					'NORMAL',
@@ -43,7 +43,18 @@ export class PNTSLoader extends PNTSLoaderBase {
 				} );
 
 				const geometry = new BufferGeometry();
-				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+				if ( POSITION ) {
+  				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );					
+				} else if ( POSITION_QUANTIZED ) {
+					const decodedPositions = new Float32Array(POSITION_QUANTIZED.length);
+					for (let i = 0; i < POSITION_QUANTIZED.length / 3; i++) {
+						for (let j = 0; j < 3; j++) {
+							const index = 3 * i + j;
+							decodedPositions[index] = (POSITION_QUANTIZED[index] / 65535.0) * QUANTIZED_VOLUME_SCALE[j] + QUANTIZED_VOLUME_OFFSET[j];
+						}
+					}
+					geometry.setAttribute( 'position', new BufferAttribute( decodedPositions, 3, false ) );					
+				}
 
 				const material = new PointsMaterial();
 				material.size = 2;
