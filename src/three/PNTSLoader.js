@@ -44,16 +44,24 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 				const geometry = new BufferGeometry();
 				if ( POSITION ) {
-  				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );					
+
+  				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+
 				} else if ( POSITION_QUANTIZED ) {
-					const decodedPositions = new Float32Array(POSITION_QUANTIZED.length);
-					for (let i = 0; i < POSITION_QUANTIZED.length / 3; i++) {
-						for (let j = 0; j < 3; j++) {
+
+					const decodedPositions = new Float32Array( POSITION_QUANTIZED.length );
+					for ( let i = 0; i < POSITION_QUANTIZED.length / 3; i ++ ) {
+
+						for ( let j = 0; j < 3; j ++ ) {
+
 							const index = 3 * i + j;
-							decodedPositions[index] = (POSITION_QUANTIZED[index] / 65535.0) * QUANTIZED_VOLUME_SCALE[j] + QUANTIZED_VOLUME_OFFSET[j];
+							decodedPositions[ index ] = ( POSITION_QUANTIZED[ index ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ j ] + QUANTIZED_VOLUME_OFFSET[ j ];
+
 						}
+
 					}
-					geometry.setAttribute( 'position', new BufferAttribute( decodedPositions, 3, false ) );					
+					geometry.setAttribute( 'position', new BufferAttribute( decodedPositions, 3, false ) );
+
 				}
 
 				const material = new PointsMaterial();
