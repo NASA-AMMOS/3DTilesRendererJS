@@ -987,12 +987,23 @@ export class TilesRenderer extends TilesRendererBase {
 	dispose() {
 
 		super.dispose();
+		this.lruCache.itemList.forEach( tile => {
+
+			this.disposeTile( tile );
+
+		} );
 		this.lruCache.dispose();
+		this.lruCache = null;
 		this.visibleTiles.clear();
 		this.activeTiles.clear();
 		this.downloadQueue.dispose();
+		this.downloadQueue = null;
 		this.parseQueue.dispose();
+		this.parseQueue = null;
 		this.clearGroup( this.group );
+		this.cameraMap.clear();
+		this.cameras = [];
+		this.cameraInfo = [];
 		this.group = null;
 		this.tileSets = {};
 
@@ -1000,49 +1011,25 @@ export class TilesRenderer extends TilesRendererBase {
 
 	clearGroup( group ) {
 
-		const clearCache = ( mesh ) => {
+		group.traverse( ( item ) => {
 
-			if ( mesh.geometry ) {
+			if ( item.isMesh ) {
 
-				mesh.geometry.dispose(); // 删除几何体
+				item.geometry.dispose();
+				item.material.dispose();
+				if ( item.material.texture && item.material.texture.dispose ) {
 
-			}
-			if ( mesh.material && mesh.material.dispose ) {
-
-				mesh.material.dispose(); // 删除材质
-
-			}
-			if ( mesh.material.texture && mesh.material.texture.dispose ) {
-
-				mesh.material.texture.dispose();
-
-			}
-
-		};
-		const removeObj = ( item ) => {
-
-			let array = item.children.filter( ( x ) => x );
-			array.forEach( v => {
-
-				if ( v.children.length ) {
-
-					removeObj( v );
-
-				} else {
-
-					if ( v.isMesh ) {
-
-						clearCache( v );
-
-					}
+					item.material.texture.dispose();
 
 				}
 
-			} );
-			array = null;
+			}
+			delete item.featureTable;
+			delete item.batchTable;
 
-		};
-		removeObj( group );
+		} );
+		delete group.tilesRenderer;
+		group.remove( ...group.children );
 
 	}
 
