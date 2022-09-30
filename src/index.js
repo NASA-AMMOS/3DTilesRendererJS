@@ -19,7 +19,7 @@ export { CMPTLoader } from './three/CMPTLoader.js';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
 export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
 export { SphereHelper } from './three/objects/SphereHelper.js';
-export { Ellipsoid, WGS84_RADIUS, WGS84_HEIGHT } from './three/math/Ellipsoid.js';
+export { Ellipsoid } from './three/math/Ellipsoid.js';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion.js';
 
 export { TilesRendererBase } from './base/TilesRendererBase.js';
