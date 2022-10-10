@@ -45,12 +45,12 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const geometry = new BufferGeometry();
 				if ( POSITION ) {
 
-  				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+					geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
 
 				} else if ( POSITION_QUANTIZED ) {
 
-					const decodedPositions = new Float32Array( POSITION_QUANTIZED.length );
-					for ( let i = 0; i < POSITION_QUANTIZED.length / 3; i ++ ) {
+					const decodedPositions = new Float32Array( POINTS_LENGTH );
+					for ( let i = 0; i < POINTS_LENGTH / 3; i ++ ) {
 
 						for ( let j = 0; j < 3; j ++ ) {
 
