@@ -49,8 +49,8 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 				} else if ( POSITION_QUANTIZED ) {
 
-					const decodedPositions = new Float32Array( POINTS_LENGTH );
-					for ( let i = 0; i < POINTS_LENGTH / 3; i ++ ) {
+					const decodedPositions = new Float32Array( POINTS_LENGTH * 3 );
+					for ( let i = 0; i < POINTS_LENGTH; i ++ ) {
 
 						for ( let j = 0; j < 3; j ++ ) {
 
