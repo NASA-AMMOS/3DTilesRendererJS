@@ -424,6 +424,14 @@ getOrientedBounds( box : Box3, boxTransform : Matrix4 ) : boolean;
 
 Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
 
+### .getBoundingSphere
+
+```js
+getBoundingSphere( sphere : Sphere ) : boolean;
+```
+
+Sets `sphere` to the bounding sphere that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
+
 ### .hasCamera
 
 ```js
