@@ -16,6 +16,7 @@ export { B3DMLoader } from './three/B3DMLoader.js';
 export { PNTSLoader } from './three/PNTSLoader.js';
 export { I3DMLoader } from './three/I3DMLoader.js';
 export { CMPTLoader } from './three/CMPTLoader.js';
+export { GLTFCesiumRTCExtension } from './three/GLTFCesiumRTCExtension.js';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
 export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
 export { SphereHelper } from './three/objects/SphereHelper.js';

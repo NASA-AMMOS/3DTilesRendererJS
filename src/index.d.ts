@@ -17,6 +17,7 @@ export { B3DMLoader } from './three/B3DMLoader';
 export { I3DMLoader } from './three/I3DMLoader';
 export { PNTSLoader } from './three/PNTSLoader';
 export { CMPTLoader } from './three/CMPTLoader';
+export { GLTFCesiumRTCExtension } from './three/GLTFCesiumRTCExtension';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader';
 export { Ellipsoid } from './three/math/Ellipsoid';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion';
