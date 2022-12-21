@@ -9,7 +9,8 @@ import {
 	IS_LEAF,
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR
+	CUSTOM_COLOR,
+	GLTFCesiumRTCExtension,
 } from '../src/index.js';
 import {
 	Scene,
@@ -48,7 +49,7 @@ let secondRenderer, secondCameraHelper, secondControls, secondCamera;
 let orthoCamera, orthoCameraHelper;
 let box, sphere;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
-let offsetParent;
+let offsetParent, geospatialRotationParent;
 let statsContainer, stats;
 
 const params = {
@@ -88,7 +89,7 @@ function reinstantiateTiles() {
 
 	if ( tiles ) {
 
-		offsetParent.remove( tiles.group );
+		geospatialRotationParent.remove( tiles.group );
 		tiles.dispose();
 
 	}
@@ -107,10 +108,11 @@ function reinstantiateTiles() {
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
 	loader.setKTX2Loader( ktx2loader );
+	loader.register( () => new GLTFCesiumRTCExtension() );
 
 	tiles.fetchOptions.mode = 'cors';
 	tiles.manager.addHandler( /\.gltf$/, loader );
-	offsetParent.add( tiles.group );
+	geospatialRotationParent.add( tiles.group );
 
 	// Used with CUSTOM_COLOR
 	tiles.customColorCallback = ( tile, object ) => {
@@ -145,7 +147,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
 	camera.position.set( 400, 400, 400 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
@@ -175,7 +177,7 @@ function init() {
 	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
 	secondControls.screenSpacePanning = false;
 	secondControls.minDistance = 1;
-	secondControls.maxDistance = 2000;
+	secondControls.maxDistance = 5000;
 
 	secondCameraHelper = new CameraHelper( secondCamera );
 	scene.add( secondCameraHelper );
@@ -200,13 +202,13 @@ function init() {
 	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
 	thirdPersonControls.screenSpacePanning = false;
 	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 2000;
+	thirdPersonControls.maxDistance = 5000;
 
 	// controls
 	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
-	controls.maxDistance = 2000;
+	controls.maxDistance = 5000;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -221,6 +223,9 @@ function init() {
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
+
+	geospatialRotationParent = new Group();
+	offsetParent.add( geospatialRotationParent );
 
 	// Raycasting init
 	raycaster = new Raycaster();
@@ -511,6 +516,16 @@ function animate() {
 
 	}
 
+	if ( tiles.root && tiles.root.boundingVolume.region ) {
+
+		tiles.getOrientedBounds( box, geospatialRotationParent.matrix );
+		geospatialRotationParent.matrix.decompose( geospatialRotationParent.position, geospatialRotationParent.quaternion, geospatialRotationParent.scale );
+		geospatialRotationParent.position.set( 0, 0, 0 );
+		geospatialRotationParent.quaternion.invert();
+		geospatialRotationParent.scale.set( 1, 1, 1 );
+
+	}
+
 	offsetParent.rotation.set( 0, 0, 0 );
 	if ( params.up === '-Z' ) {
 
@@ -522,7 +537,7 @@ function animate() {
 
 	}
 
-	offsetParent.updateMatrixWorld( true );
+	offsetParent.updateMatrixWorld( false );
 
 	// update tiles center
 	if ( tiles.getBounds( box ) ) {
