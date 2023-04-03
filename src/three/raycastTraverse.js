@@ -106,12 +106,16 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 				};
 				array.push( data );
 
-				if (boundingBox.containsPoint(_ray.origin)) {
+				if ( boundingBox.containsPoint( _ray.origin ) ) {
+					
 					data.distance = 0;
-				}
-				else {
+					
+				} else {
+					
 					data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
+					
 				}
+				
 				data.tile = tile;
 
 			} else {
