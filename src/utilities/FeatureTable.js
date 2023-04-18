@@ -141,6 +141,39 @@ export class FeatureTable {
 
 	}
 
+	isDraco() {
+
+		return !!this.header?.extensions[ "3DTILES_draco_point_compression" ];
+
+	}
+
+	getDracoBuffer() {
+
+		if ( !this.isDraco() ) {
+
+			throw new Error( 'FeatureTable: Feature data is not draco encoded' );
+
+		}
+
+		const { buffer, binOffset } = this;
+
+		const { byteOffset, byteLength } = this.header?.extensions["3DTILES_draco_point_compression"];
+
+		return buffer.slice( binOffset + byteOffset, binOffset + byteOffset + byteLength );
+
+	}
+
+	getDracoProperties() {
+
+		if ( !this.isDraco() ) {
+
+			throw new Error( 'FeatureTable: Feature data is not draco encoded' );
+
+		}
+
+		return this.header?.extensions[ "3DTILES_draco_point_compression" ]?.properties;
+
+	};
 }
 
 export class BatchTable extends FeatureTable {
