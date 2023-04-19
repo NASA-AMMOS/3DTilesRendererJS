@@ -143,13 +143,14 @@ export class FeatureTable {
 
 	isDraco() {
 
-		return !!this.header?.extensions[ "3DTILES_draco_point_compression" ];
+		const { extensions } = this.header;
+		return extensions && !! extensions[ '3DTILES_draco_point_compression' ];
 
 	}
 
 	getDracoBuffer() {
 
-		if ( !this.isDraco() ) {
+		if ( ! this.isDraco() ) {
 
 			throw new Error( 'FeatureTable: Feature data is not draco encoded' );
 
@@ -157,7 +158,7 @@ export class FeatureTable {
 
 		const { buffer, binOffset } = this;
 
-		const { byteOffset, byteLength } = this.header?.extensions["3DTILES_draco_point_compression"];
+		const { byteOffset, byteLength } = this.header.extensions[ '3DTILES_draco_point_compression' ];
 
 		return buffer.slice( binOffset + byteOffset, binOffset + byteOffset + byteLength );
 
@@ -165,15 +166,16 @@ export class FeatureTable {
 
 	getDracoProperties() {
 
-		if ( !this.isDraco() ) {
+		if ( ! this.isDraco() ) {
 
 			throw new Error( 'FeatureTable: Feature data is not draco encoded' );
 
 		}
 
-		return this.header?.extensions[ "3DTILES_draco_point_compression" ]?.properties;
+		return this.header.extensions[ '3DTILES_draco_point_compression' ].properties;
 
-	};
+	}
+
 }
 
 export class BatchTable extends FeatureTable {
