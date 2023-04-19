@@ -18,8 +18,8 @@ export class PNTSLoader extends PNTSLoaderBase {
 		super();
 		this.manager = manager;
 
-		// very hacky way of getting the draco loader
-		this.dracoLoader = this.manager.getHandler( 'test.drc' );
+		// hacky way of getting the draco loader from the manager
+		this.dracoLoader = this.manager.getHandler( 'draco.drc' );
 
 	}
 
