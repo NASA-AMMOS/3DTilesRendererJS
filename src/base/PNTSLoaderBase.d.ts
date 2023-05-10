@@ -1,9 +1,10 @@
-import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
+import {  BatchTable } from '../utilities/FeatureTable';
+import { PNTSFeatureTable } from '../utilities/PNTSFeatureTable';
 
 export interface PNTSBaseResult {
 
 	version : String;
-	featureTable: FeatureTable;
+	featureTable: PNTSFeatureTable;
 	batchTable : BatchTable;
 
 }

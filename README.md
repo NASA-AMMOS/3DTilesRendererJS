@@ -165,7 +165,7 @@ dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/dr
 
 
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.manager.addHandler( /\.drc$/, loader );
+tilesRenderer.manager.addHandler( /\.pnts$/, loader );
 ```
 
 

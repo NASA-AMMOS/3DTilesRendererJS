@@ -7,19 +7,12 @@ import {
 	DefaultLoadingManager,
 } from 'three';
 
-const DRACO_ATTRIBUTE_MAP = {
-	RGB: 'color',
-	POSITION: 'position',
-};
 export class PNTSLoader extends PNTSLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;
-
-		// hacky way of getting the draco loader from the manager
-		this.dracoLoader = this.manager.getHandler( 'draco.drc' );
 
 	}
 
@@ -29,41 +22,19 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 			const { featureTable } = result;
 
-			const geometry = new BufferGeometry();
+			let geometry = new BufferGeometry();
 			const material = new PointsMaterial();
+			material.size = 2;
+			material.sizeAttenuation = false;
 
-			if ( featureTable.isDraco() ) {
+			if ( featureTable.isDracoEncoded() ) {
 
-				const dracoIDs = featureTable.getDracoProperties();
-				const attributeIDs = {};
+				// get draco loader for .pnts files
+				const dracoLoader = this.manager.getHandler( 'test.pnts' );
 
-				for ( const [ key, value ] of Object.entries( dracoIDs ) ) {
+				featureTable.setDracoLoader( dracoLoader );
 
-					attributeIDs[ DRACO_ATTRIBUTE_MAP[ key ] ] = value;
-
-				}
-
-				const taskConfig = {
-					attributeIDs,
-					attributeTypes: {
-						position: 'Float32Array',
-						color: 'Uint8Array',
-					},
-					useUniqueIDs: true,
-				};
-
-				const buffer = featureTable.getDracoBuffer();
-
-				if ( this.dracoLoader == null ) {
-
-					throw new Error( 'PNTSLoader: dracoLoader not available.' );
-
-				}
-
-				const dracoGeometry = await this.dracoLoader
-					.decodeGeometry( buffer, taskConfig );
-
-				geometry.copy( dracoGeometry );
+				geometry = await featureTable.getDracoEncodedGeometry();
 
 				if ( geometry.attributes.color ) {
 
