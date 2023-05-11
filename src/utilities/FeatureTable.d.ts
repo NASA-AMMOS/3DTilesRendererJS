@@ -1,4 +1,13 @@
+interface FeatureTableHeader {
+
+	extensions?: Object;
+	extras?: any;
+
+}
+
 export class FeatureTable {
+
+	header: FeatureTableHeader;
 
 	constructor(
 		buffer : ArrayBuffer,
