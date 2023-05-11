@@ -16,11 +16,7 @@ export class FeatureTable {
 		defaultType? : String | null
 	) : Number | String | ArrayBufferView;
 
-	isDraco() : boolean;
-
-	getDracoBuffer() : ArrayBuffer;
-
-	getDracoProperties() : Record<string, number>;
+	getBuffer( byteOffset : Number, byteLength : Number ) : ArrayBuffer;
 
 }
 
