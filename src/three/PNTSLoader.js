@@ -46,9 +46,9 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const attributeIDs = {};
 				for ( const key in properties ) {
 
-					const mappedKey = DRACO_ATTRIBUTE_MAP[ key ];
-					if ( mappedKey in attributeIds ) {
+					if ( key in DRACO_ATTRIBUTE_MAP && key in properties ) {
 
+						const mappedKey = DRACO_ATTRIBUTE_MAP[ key ];
 						attributeIDs[ mappedKey ] = properties[ key ];
 
 					}
@@ -66,7 +66,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 				};
 
 				const buffer = featureTable.getDracoBuffer( byteOffset, byteLength );
-				const geometry = await dracoLoader.decodeGeometry( buffer, taskConfig );
+				geometry = await dracoLoader.decodeGeometry( buffer, taskConfig );
 				geometry.copy( dracoGeometry );
 				if ( geometry.attributes.color ) {
 
