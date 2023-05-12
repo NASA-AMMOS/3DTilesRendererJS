@@ -65,9 +65,8 @@ export class PNTSLoader extends PNTSLoaderBase {
 					useUniqueIDs: true,
 				};
 
-				const buffer = featureTable.getDracoBuffer( byteOffset, byteLength );
+				const buffer = featureTable.getBuffer( byteOffset, byteLength );
 				geometry = await dracoLoader.decodeGeometry( buffer, taskConfig );
-				geometry.copy( dracoGeometry );
 				if ( geometry.attributes.color ) {
 
 					material.vertexColors = true;
