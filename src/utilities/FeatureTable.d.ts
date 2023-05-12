@@ -1,4 +1,13 @@
+interface FeatureTableHeader {
+
+	extensions?: Object;
+	extras?: any;
+
+}
+
 export class FeatureTable {
+
+	header: FeatureTableHeader;
 
 	constructor(
 		buffer : ArrayBuffer,
@@ -15,6 +24,8 @@ export class FeatureTable {
 		defaultComponentType? : String | null,
 		defaultType? : String | null
 	) : Number | String | ArrayBufferView;
+
+	getBuffer( byteOffset : Number, byteLength : Number ) : ArrayBuffer;
 
 }
 

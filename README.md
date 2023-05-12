@@ -154,6 +154,21 @@ const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, loader );
 ```
 
+Adding support for DRACO decompression within the PNTS files.
+
+```js
+
+// Note the DRACO compression files need to be supplied via an explicit source.
+// We use unpkg here but in practice should be provided by the application.
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+
+
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.manager.addHandler( /\.drc$/, loader );
+```
+
+
 ## Loading from Cesium Ion
 
 Loading from Cesium Ion requires some extra fetching of the ion url endpoint, as well as a temporary bearer access token. A full example is found in the ionExample.js file in the examples folder.
