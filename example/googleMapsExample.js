@@ -216,7 +216,7 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1600000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
 	camera.position.set( 7326000, 10279000, -823000 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
@@ -225,7 +225,7 @@ function init() {
 	controls = new OrbitControls( camera, renderer.domElement );
 	controls.enablePan = false;
 	controls.minDistance = 6500000;
-	controls.maxDistance = 13315000;
+	controls.maxDistance = Infinity;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -258,7 +258,6 @@ function init() {
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
-	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
