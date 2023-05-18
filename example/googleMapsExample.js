@@ -252,7 +252,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 16000000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1600000 );
 	camera.position.set( 7326000, 10279000, -823000 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
@@ -280,31 +280,10 @@ function init() {
 	offsetParent = new Group();
 	scene.add( offsetParent );
 
-	// Raycasting init
-	raycaster = new Raycaster();
-	mouse = new Vector2();
-
-	rayIntersect = new Group();
-
-	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
-	rayMesh.rotation.x = Math.PI / 2;
-	rayMesh.position.z += 3;
-	rayIntersect.add( rayMesh );
-
-	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
-	rayIntersect.add( rayRing );
-	scene.add( rayIntersect );
-	rayIntersect.visible = false;
-
 	reinstantiateTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
-	renderer.domElement.addEventListener( 'mousedown', onMouseDown, false );
-	renderer.domElement.addEventListener( 'mouseup', onMouseUp, false );
-	renderer.domElement.addEventListener( 'mouseleave', onMouseLeave, false );
 
 	// GUI
 	const gui = new GUI();
@@ -354,7 +333,6 @@ function init() {
 		}
 
 	} );
-	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
 
@@ -380,78 +358,6 @@ function onWindowResize() {
 
 }
 
-function onMouseLeave( e ) {
-
-	lastHoveredElement = null;
-
-}
-
-function onMouseMove( e ) {
-
-	const bounds = this.getBoundingClientRect();
-	mouse.x = e.clientX - bounds.x;
-	mouse.y = e.clientY - bounds.y;
-	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
-	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
-
-	lastHoveredElement = this;
-
-}
-
-const startPos = new Vector2();
-const endPos = new Vector2();
-function onMouseDown( e ) {
-
-	const bounds = this.getBoundingClientRect();
-	startPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
-
-}
-
-function onMouseUp( e ) {
-
-	const bounds = this.getBoundingClientRect();
-	endPos.set( e.clientX - bounds.x, e.clientY - bounds.y );
-	if ( startPos.distanceTo( endPos ) > 2 ) {
-
-		return;
-
-	}
-
-	raycaster.setFromCamera( mouse, camera );
-
-	raycaster.firstHitOnly = true;
-	const results = raycaster.intersectObject( tiles.group, true );
-	if ( results.length ) {
-
-		const object = results[ 0 ].object;
-		const info = tiles.getTileInformationFromActiveObject( object );
-
-		let str = '';
-		for ( const key in info ) {
-
-			let val = info[ key ];
-			if ( typeof val === 'number' ) {
-
-				val = Math.floor( val * 1e5 ) / 1e5;
-
-			}
-
-			let name = key;
-			while ( name.length < 20 ) {
-
-				name += ' ';
-
-			}
-
-			str += `${ name } : ${ val }\n`;
-
-		}
-		console.log( str );
-
-	}
-
-}
-
 function animate() {
 
 	requestAnimationFrame( animate );
@@ -460,7 +366,7 @@ function animate() {
 
 	// update options
 	tiles.errorTarget = params.errorTarget;
-	tiles.errorThreshold = params.errorThreshold;
+	// tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
