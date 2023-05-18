@@ -32,7 +32,6 @@ const params = {
 
 	'apiKey': 'put-your-google-api-key-here',
 	'errorTarget': 6,
-	'maxDepth': 15,
 	'loadSiblings': true,
 	'stopAtEmptyTiles': true,
 	'resolutionScale': 1.0,
@@ -218,9 +217,7 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
-	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -275,7 +272,6 @@ function animate() {
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
-	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;
 
 	// TODO: required every raf?
