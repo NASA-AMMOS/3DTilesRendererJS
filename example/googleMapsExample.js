@@ -142,7 +142,6 @@ function reinstantiateTiles() {
 			console.log('session', session);
 
 			tiles = new TilesRenderer( url.toString() );
-
 			tiles.preprocessURL = uri => {
 
 				uri = new URL( uri );
@@ -156,42 +155,9 @@ function reinstantiateTiles() {
 
 			};
 
-			tiles.onLoadTileSet = () => {
-
-				const box = new Box3();
-				const sphere = new Sphere();
-				const matrix = new Matrix4();
-
-				let position;
-				let distanceToEllipsoidCenter;
-
-				if ( tiles.getOrientedBounds( box, matrix ) ) {
-
-					position = new Vector3().setFromMatrixPosition( matrix );
-					distanceToEllipsoidCenter = position.length();
-
-				} else if ( tiles.getBoundingSphere( sphere ) ) {
-
-					position = sphere.center.clone();
-					distanceToEllipsoidCenter = position.length();
-
-				}
-
-				const surfaceDirection = position.normalize();
-				const up = new Vector3( 0, 1, 0 );
-				const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
-
-				tiles.group.quaternion.x = rotationToNorthPole.x;
-				tiles.group.quaternion.y = rotationToNorthPole.y;
-				tiles.group.quaternion.z = rotationToNorthPole.z;
-				tiles.group.quaternion.w = rotationToNorthPole.w;
-
-				tiles.group.position.y = - distanceToEllipsoidCenter;
-
-			};
-
 			tiles.lruCache.minSize = 3000;
 			tiles.lruCache.maxSize = 5000;
+			tiles.group.rotation.x = - Math.PI / 2;
 
 			setupTiles();
 
@@ -216,7 +182,7 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1000, 16000000 );
 	camera.position.set( 7326000, 10279000, -823000 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
