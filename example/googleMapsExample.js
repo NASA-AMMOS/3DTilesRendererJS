@@ -1,14 +1,4 @@
-import {
-	DebugTilesRenderer as TilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-} from '../src/index.js';
+import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -16,20 +6,13 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	CameraHelper,
-	Raycaster,
-	Vector2,
 	Vector3,
 	Quaternion,
-	Mesh,
-	CylinderBufferGeometry,
-	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry,
 	sRGBEncoding,
 	Matrix4,
 	Box3,
 	Sphere,
-	SphereGeometry,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -38,36 +21,27 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-const ALL_HITS = 1;
-const FIRST_HIT_ONLY = 2;
-
 const apiOrigin = 'https://tile.googleapis.com';
 
 const hashUrl = window.location.hash.replace( /^#/, '' );
 let camera, controls, scene, renderer, tiles, cameraHelper;
-let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent;
 let statsContainer, stats;
 
 const params = {
 
 	'enableUpdate': true,
-	'raycast': NONE,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 
 	'apiKey': 'put-your-google-api-key-here',
 	'errorTarget': 6,
-	'errorThreshold': 60,
 	'maxDepth': 15,
 	'loadSiblings': true,
 	'stopAtEmptyTiles': true,
-	'displayActiveTiles': false,
 	'resolutionScale': 1.0,
 
-	'up': '+Y',
 	'displayBoxBounds': false,
-	'colorMode': 0,
 	'reload': reinstantiateTiles,
 
 };
@@ -230,12 +204,12 @@ function reinstantiateTiles() {
 
 			setupTiles();
 
-			} )
-			.catch( err => {
+		} )
+		.catch( err => {
 
-				console.error( 'Unable to get gmaps tileset:', err );
+			console.error( 'Unable to get gmaps tileset:', err );
 
-			} );
+		} );
 
 }
 
@@ -250,18 +224,11 @@ function init() {
 	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
-	renderer.domElement.tabIndex = 1;
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1600000 );
 	camera.position.set( 7326000, 10279000, -823000 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
-
-	const geom = new SphereGeometry(1, 32, 8);
-	const mat = new MeshBasicMaterial( { color: 0xff0000 } );
-	const mesh = new Mesh(geom, mat);
-	mesh.position.x = 4;
-	scene.add(mesh);
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -299,27 +266,13 @@ function init() {
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
-	debug.add( params, 'colorMode', {
-
-		NONE,
-		SCREEN_ERROR,
-		GEOMETRIC_ERROR,
-		DISTANCE,
-		DEPTH,
-		RELATIVE_DEPTH,
-		IS_LEAF,
-		RANDOM_COLOR,
-
-	} );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
-	exampleOptions.add( params, 'resolutionScale' ).min( 0.01 ).max( 2.0 ).step( 0.01 ).onChange( onWindowResize );
 	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
 
 		tiles.parseQueue.autoUpdate = v;
@@ -366,7 +319,6 @@ function animate() {
 
 	// update options
 	tiles.errorTarget = params.errorTarget;
-	// tiles.errorThreshold = params.errorThreshold;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
@@ -378,62 +330,7 @@ function animate() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
-	offsetParent.rotation.set( 0, 0, 0 );
-	if ( params.up === '-Z' ) {
-
-		offsetParent.rotation.x = Math.PI / 2;
-
-	} else if ( params.up === '+Z' ) {
-
-		offsetParent.rotation.x = - Math.PI / 2;
-
-	}
-
 	offsetParent.updateMatrixWorld( true );
-
-	if ( parseFloat( params.raycast ) !== NONE && lastHoveredElement !== null ) {
-
-		if ( lastHoveredElement === renderer.domElement ) {
-
-			raycaster.setFromCamera( mouse, camera );
-
-		}
-
-		raycaster.firstHitOnly = parseFloat( params.raycast ) === FIRST_HIT_ONLY;
-
-		const results = raycaster.intersectObject( tiles.group, true );
-		if ( results.length ) {
-
-			const closestHit = results[ 0 ];
-			const point = closestHit.point;
-			rayIntersect.position.copy( point );
-
-			// If the display bounds are visible they get intersected
-			if ( closestHit.face ) {
-
-				const normal = closestHit.face.normal;
-				normal.transformDirection( closestHit.object.matrixWorld );
-				rayIntersect.lookAt(
-					point.x + normal.x,
-					point.y + normal.y,
-					point.z + normal.z
-				);
-
-			}
-
-			rayIntersect.visible = true;
-
-		} else {
-
-			rayIntersect.visible = false;
-
-		}
-
-	} else {
-
-		rayIntersect.visible = false;
-
-	}
 
 	// update tiles
 	window.tiles = tiles;
@@ -454,9 +351,6 @@ function render() {
 	cameraHelper.visible = false;
 
 	// render primary view
-	const dist = camera.position.distanceTo( rayIntersect.position );
-	rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
-
 	renderer.render( scene, camera );
 
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
