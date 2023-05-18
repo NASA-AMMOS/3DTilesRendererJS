@@ -23,7 +23,6 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
-const hashUrl = window.location.hash.replace( /^#/, '' );
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let offsetParent;
 let statsContainer, stats;
@@ -91,14 +90,6 @@ function isInt( input ) {
 
 function reinstantiateTiles() {
 
-	let url = hashUrl || '../data/tileset.json';
-
-	if ( hashUrl ) {
-
-		params.ionAssetId = isInt( hashUrl ) ? hashUrl : '';
-
-	}
-
 	if ( tiles ) {
 
 		offsetParent.remove( tiles.group );
@@ -107,10 +98,10 @@ function reinstantiateTiles() {
 
 	}
 
-	url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` );
+	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` );
 
 	fetch( url, { mode: 'cors' } )
-		.then( ( res ) => {
+		.then( res => {
 
 			if ( res.ok ) {
 
@@ -118,12 +109,12 @@ function reinstantiateTiles() {
 
 			} else {
 
-				return Promise.reject( `${res.status} : ${res.statusText}` );
+				return Promise.reject( new Error( `${res.status} : ${res.statusText}` ) );
 
 			}
 
 		} )
-		.then( ( json ) => {
+		.then( json => {
 
 			if ( !json.root ) {
 				throw new Error( `malformed response: ${ json }` );
