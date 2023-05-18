@@ -10,9 +10,6 @@ import {
 	Quaternion,
 	Group,
 	sRGBEncoding,
-	Matrix4,
-	Box3,
-	Sphere,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
