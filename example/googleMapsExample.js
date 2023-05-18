@@ -324,7 +324,6 @@ function animate() {
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.colorMode = parseFloat( params.colorMode );
 
 	// TODO: required every raf?
 	tiles.setResolutionFromRenderer( camera, renderer );
