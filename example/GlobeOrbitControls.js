@@ -428,12 +428,6 @@ class GlobeOrbitControls extends EventDispatcher {
 				v.setFromMatrixColumn( objectMatrix, 0 );
 
 				scope.geoid.getPositionToNormal( scope.object.position, dir );
-				scope.geoid.getPositionToNormal( scope.object.position, dir );
-
-				v.setFromMatrixColumn( objectMatrix, 0 );
-				scope.geoid.getPositionToNormal( scope.object.position, dir );
-
-				v.setFromMatrixColumn( objectMatrix, 0 );
 				v.crossVectors( dir, v );
 
 				v.multiplyScalar( distance );
