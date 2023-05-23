@@ -98,4 +98,14 @@ export class Ellipsoid {
 
 	}
 
+	getPositionToSurfacePoint( pos, target ) {
+
+		const normal = this.getPositionToNormal( pos, target );
+		normal.x *= this.radius.x;
+		normal.y *= this.radius.y;
+		normal.z *= this.radius.z;
+
+		return target;
+	}
+
 }
