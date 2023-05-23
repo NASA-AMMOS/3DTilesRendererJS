@@ -614,23 +614,24 @@ export class TilesRenderer extends TilesRendererBase {
 		const cached = tile.cached;
 		const cachedTransform = cached.transform;
 
+		const upAdjustment = new Matrix4();
 		switch ( upAxis.toLowerCase() ) {
 
 			case 'x':
-				tempMat.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+				upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
 				break;
 
 			case 'y':
-				tempMat.makeRotationAxis( X_AXIS, Math.PI / 2 );
+				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
 				break;
 
 			case 'z':
-				tempMat.identity();
+				upAdjustment.identity();
 				break;
 
 		}
 
-		const fileType = readMagicBytes( buffer ) || extension;
+		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
 
 			case 'b3dm': {
@@ -639,7 +640,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( tempMat );
+				loader.adjustmentTransform.copy( upAdjustment );
 
 				promise = loader
 					.parse( buffer )
@@ -666,7 +667,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( tempMat );
+				loader.adjustmentTransform.copy( upAdjustment );
 
 				promise = loader
 					.parse( buffer )
@@ -681,7 +682,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( tempMat );
+				loader.adjustmentTransform.copy( upAdjustment );
 
 				promise = loader
 					.parse( buffer )
@@ -725,7 +726,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// rotation fix which is why "multiply" happens here.
 			if ( fileType === 'glb' || fileType === 'gltf' ) {
 
-				scene.matrix.multiply( tempMat );
+				scene.matrix.multiply( upAdjustment );
 
 			}
 
