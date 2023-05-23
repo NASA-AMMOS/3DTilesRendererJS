@@ -106,6 +106,7 @@ export class Ellipsoid {
 		normal.z *= this.radius.z;
 
 		return target;
+
 	}
 
 }

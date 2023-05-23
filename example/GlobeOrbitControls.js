@@ -25,7 +25,7 @@ class GlobeOrbitControls extends EventDispatcher {
 
 		super();
 
-    this.geoid = geoid;
+		this.geoid = geoid;
 
 		this.object = camera;
 		this.domElement = domElement;
@@ -165,7 +165,7 @@ class GlobeOrbitControls extends EventDispatcher {
 			const quat = new Quaternion().setFromUnitVectors( camera.up, new Vector3( 0, 1, 0 ) );
 			const quatInverse = quat.clone().invert();
 
-				// TODO: use surface normal as camera pivot
+			// TODO: use surface normal as camera pivot
 			// const up = new Vector3();
 
 			const lastPosition = new Vector3();
@@ -397,7 +397,7 @@ class GlobeOrbitControls extends EventDispatcher {
 
 		}
 
-    const dir = new Vector3();
+		const dir = new Vector3();
 
 		const panLeft = function () {
 
@@ -427,17 +427,13 @@ class GlobeOrbitControls extends EventDispatcher {
 
 				v.setFromMatrixColumn( objectMatrix, 0 );
 
-					scope.geoid.getPositionToNormal( scope.object.position, dir );
-					scope.geoid.getPositionToNormal( scope.object.position, dir );
-					// scope.object.getWorldDirection(dir);
-					// dir.negate();
-
-					v.setFromMatrixColumn( objectMatrix, 0 );
 				scope.geoid.getPositionToNormal( scope.object.position, dir );
-					// scope.object.getWorldDirection(dir);
-					// dir.negate();
+				scope.geoid.getPositionToNormal( scope.object.position, dir );
 
-					v.setFromMatrixColumn( objectMatrix, 0 );
+				v.setFromMatrixColumn( objectMatrix, 0 );
+				scope.geoid.getPositionToNormal( scope.object.position, dir );
+
+				v.setFromMatrixColumn( objectMatrix, 0 );
 				v.crossVectors( dir, v );
 
 				v.multiplyScalar( distance );

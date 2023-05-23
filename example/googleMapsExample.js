@@ -1,4 +1,4 @@
-import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
+import { Ellipsoid, DebugTilesRenderer as TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -7,56 +7,71 @@ import {
 	PerspectiveCamera,
 	CameraHelper,
 	Vector3,
-	Quaternion,
 	Group,
 	sRGBEncoding,
+	Raycaster,
+	Vector2,
+	MeshPhongMaterial,
+	SphereGeometry,
+	MeshBasicMaterial,
+	Mesh,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+import { GlobeOrbitControls } from './GlobeOrbitControls.js';
+import { WGS84_RADIUS, WGS84_HEIGHT } from '../src/base/constants.js';
+import { EllipsoidRegionHelper } from '../src/index.js';
+
 const apiOrigin = 'https://tile.googleapis.com';
 
 let camera, controls, scene, renderer, tiles, cameraHelper;
-let offsetParent;
+let mainGroup;
 let statsContainer, stats;
 
+const ellipsoid = new Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
+let ellipsoidHelper, ellipsoidInitialised = false;
+let surfaceHelper;
+
+const raycaster = new Raycaster();
+raycaster.firstHitOnly = true;
+const pointer = new Vector2();
+const deltaTarget = new Vector3();
+
+let prevDist = 0;
+
 const params = {
+
+	'showGlobe': true,
+	'showGlobeHelper': false,
+	'showFrustumHelper': false,
+	'showSurfaceHelper': false,
 
 	'enableUpdate': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 
-	'apiKey': 'put-your-google-api-key-here',
+	'apiKey': 'put-your-api-key-here',
 	'errorTarget': 6,
+	'errorThreshold': Infinity,
+	'maxDepth': Infinity,
 	'loadSiblings': true,
 	'stopAtEmptyTiles': true,
 	'resolutionScale': 1.0,
 
+	'autoDisableRendererCulling': true,
+	'displayActiveTiles': false,
 	'displayBoxBounds': false,
+	'displaySphereBounds': false,
+	'displayRegionBounds': false,
 	'reload': reinstantiateTiles,
 
 };
 
 init();
 animate();
-
-function rotationBetweenDirections( dir1, dir2 ) {
-
-	const rotation = new Quaternion();
-	const a = new Vector3().crossVectors( dir1, dir2 );
-	rotation.x = a.x;
-	rotation.y = a.y;
-	rotation.z = a.z;
-	rotation.w = 1 + dir1.clone().dot( dir2 );
-	rotation.normalize();
-
-	return rotation;
-
-}
 
 function setupTiles() {
 
@@ -71,16 +86,10 @@ function setupTiles() {
 	loader.setDRACOLoader( dracoLoader );
 
 	tiles.manager.addHandler( /\.gltf$/, loader );
-	offsetParent.add( tiles.group );
+	mainGroup.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-
-}
-
-function isInt( input ) {
-
-	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input ) ) && Number.isInteger( parseFloat( input ) ) : Number.isInteger( input );
 
 }
 
@@ -88,7 +97,7 @@ function reinstantiateTiles() {
 
 	if ( tiles ) {
 
-		offsetParent.remove( tiles.group );
+		mainGroup.remove( tiles.group );
 		tiles.dispose();
 		tiles = null;
 
@@ -112,8 +121,10 @@ function reinstantiateTiles() {
 		} )
 		.then( json => {
 
-			if ( !json.root ) {
+			if ( ! json.root ) {
+
 				throw new Error( `malformed response: ${ json }` );
+
 			}
 
 			// TODO: check this is correct
@@ -121,21 +132,26 @@ function reinstantiateTiles() {
 			let uri = undefined;
 			const toVisit = [];
 			for ( let curr = json.root; curr !== undefined; curr = toVisit.pop() ) {
-				if ( curr.content?.uri ) {
+
+				if ( curr.content.uri ) {
+
 					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
 					uri.searchParams.append( 'key', params.apiKey );
 					break;
+
 				}
 
 				toVisit.push( ...curr.children );
+
 			}
 
-			if ( !uri ) {
+			if ( ! uri ) {
+
 				throw new Error( `can't find session string in response: ${ json }` );
+
 			}
 
 			const session = uri.searchParams.get( 'session' );
-			console.log('session', session);
 
 			tiles = new TilesRenderer( url.toString() );
 			tiles.preprocessURL = uri => {
@@ -167,6 +183,7 @@ function reinstantiateTiles() {
 }
 
 function init() {
+
 	scene = new Scene();
 
 	// primary camera view
@@ -178,15 +195,17 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1000, 16000000 );
-	camera.position.set( 7326000, 10279000, -823000 );
+	mainGroup = new Group();
+	scene.add( mainGroup );
+
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+	camera.position.set( 7326000, 10279000, - 823000 );
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.enablePan = false;
-	controls.minDistance = 6500000;
+	controls = new GlobeOrbitControls( camera, ellipsoid, renderer.domElement );
+	controls.minDistance = 100;
 	controls.maxDistance = Infinity;
 
 	// lights
@@ -197,30 +216,50 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
-	offsetParent = new Group();
-	scene.add( offsetParent );
-
 	reinstantiateTiles();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 
+	// ellipsoid helper
+	ellipsoidHelper = new EllipsoidRegionHelper( ellipsoid );
+	ellipsoidHelper.material = new MeshPhongMaterial( { color: 0xff3311 } );
+	ellipsoidHelper.visible = false;
+	scene.add( ellipsoidHelper );
+
+	// misc helper
+	const geom = new SphereGeometry( 1, 32, 16 );
+	const mat = new MeshBasicMaterial( { color: 0x0000ff } );
+	surfaceHelper = new Mesh( geom, mat );
+	surfaceHelper.visible = false;
+	scene.add( surfaceHelper );
+
 	// GUI
 	const gui = new GUI();
 	gui.width = 300;
 
-	const ionOptions = gui.addFolder( 'gmaps' );
-	ionOptions.add( params, 'apiKey' );
-	ionOptions.add( params, 'reload' );
-	ionOptions.open();
+	const displayOptions = gui.addFolder( 'Display' );
+	displayOptions.add( params, 'showGlobe' ).onChange( v => mainGroup.visible = v );
+	displayOptions.add( params, 'showGlobeHelper' ).onChange( v => ellipsoidHelper.visible = v );
+	displayOptions.add( params, 'showSurfaceHelper' ).onChange( v => surfaceHelper.visible = v );
+	displayOptions.open();
+
+	const mapsOptions = gui.addFolder( 'GMaps' );
+	mapsOptions.add( params, 'apiKey' );
+	mapsOptions.add( params, 'reload' );
+	mapsOptions.open();
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
+	tileOptions.add( params, 'errorThreshold' );
+	tileOptions.add( params, 'maxDepth' );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
+	debug.add( params, 'displaySphereBounds' );
+	debug.add( params, 'displayRegionBounds' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
@@ -249,6 +288,32 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
+	document.addEventListener( 'dblclick', event => {
+
+		if ( raycaster ) {
+
+			pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+			pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+			raycaster.setFromCamera( pointer, camera );
+			const intersections = raycaster.intersectObject( tiles.group, true );
+			const numIntersections = intersections.length;
+			if ( numIntersections > 0 ) {
+
+				const intersection = intersections[ 0 ];
+
+				deltaTarget.subVectors( intersection.point, controls.target );
+				controls.target.add( deltaTarget );
+				// TODO: work out how to adjust the camera position so this refocussing
+				//       happens seamlessly (i.e. on a mousemove callback)
+				// controls.position.add( deltaTarget );
+
+			}
+
+		}
+
+	} );
+
 }
 
 function onWindowResize() {
@@ -261,24 +326,140 @@ function onWindowResize() {
 
 }
 
+const top = { origin: new Vector3( 0, 1000000000, 0 ), dir: new Vector3( 0, - 1, 0 ) };
+const side = { origin: new Vector3( 1000000000, 0, 0 ), dir: new Vector3( - 1, 0, 0 ) };
+const temp = new Vector3();
+
+function refineEllipsoid() {
+
+	const findSurface = ( query ) => {
+
+		raycaster.set( query.origin, query.dir );
+		const intersections = raycaster.intersectObject( tiles.group, true );
+		const numIntersections = intersections.length;
+		if ( numIntersections > 0 ) {
+
+			const intersection = intersections[ 0 ];
+			return intersection.point.length();
+
+		} else {
+
+			return undefined;
+
+		}
+
+	};
+
+	const y = findSurface( top );
+	const xz = findSurface( side );
+
+	if ( y !== undefined && xz !== undefined ) {
+
+		ellipsoid.radius.set( xz, y, xz );
+
+		ellipsoid.getPositionToSurfacePoint( camera.position, temp );
+
+		controls.target.copy( temp );
+
+		ellipsoidHelper.update();
+		ellipsoidInitialised = true;
+
+	}
+
+}
+
+function updateFrustum( dist, raycast = false ) {
+
+	// TODO: do we want to raycast like this or just do something simple based
+	//       on surface distance?
+	if ( raycast ) {
+
+		const findSurfaceDistanceScreenSpace = ( x, y ) => {
+
+			pointer.x = x;
+			pointer.y = y;
+
+			raycaster.setFromCamera( pointer, camera );
+			const intersections = raycaster.intersectObject( tiles.group, true );
+			const numIntersections = intersections.length;
+			if ( numIntersections > 0 ) {
+
+				const intersection = intersections[ 0 ];
+				return intersection.distance;
+
+			} else {
+
+				return undefined;
+
+			}
+
+		};
+
+		const casts = [];
+		for ( const [ x, y ] of [[ - 1, 0 ], [ 0, 1 ], [ 1, 0 ], [ 0, - 1 ]] ) {
+
+			const distance = findSurfaceDistanceScreenSpace( x, y );
+			if ( distance !== undefined ) {
+
+				camera.getWorldDirection( temp );
+				casts.push( distance );
+
+			}
+
+		}
+
+		camera.far = casts.length === 4 ? Math.max( ...casts ) : dist;
+
+	} else {
+
+		camera.far = dist * 2;
+
+	}
+
+	camera.updateProjectionMatrix();
+	prevDist = dist;
+
+}
+
 function animate() {
 
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
 
+	if ( ! ellipsoidInitialised && raycaster ) {
+
+		refineEllipsoid();
+
+	}
+
+	ellipsoid.getPositionToSurfacePoint( camera.position, temp );
+	surfaceHelper.position.copy( temp );
+	const surfaceDist = temp.distanceTo( camera.position );
+	surfaceHelper.scale.setScalar( surfaceDist / 100 );
+
 	// update options
 	tiles.errorTarget = params.errorTarget;
+	tiles.errorThreshold = params.errorThreshold;
+	tiles.maxDepth = params.maxDepth;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
+	tiles.autoDisableRendererCulling = params.autoDisableRendererCulling;
 	tiles.displayBoxBounds = params.displayBoxBounds;
+	tiles.displaySphereBounds = params.displaySphereBounds;
+	tiles.displayRegionBounds = params.displayRegionBounds;
 
-	// TODO: required every raf?
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
-	offsetParent.updateMatrixWorld( true );
+	if ( prevDist !== surfaceDist ) {
+
+		updateFrustum( surfaceDist );
+
+	}
+
+	mainGroup.updateMatrixWorld( true );
 
 	// update tiles
 	window.tiles = tiles;
@@ -329,7 +510,8 @@ function render() {
 		let count = 0;
 		geomSet.forEach( g => {
 
-			count += BufferGeometryUtils.estimateBytesUsed( g );
+			// TODO: resurrect this
+			count += 0;//BufferGeometryUtils.estimateBytesUsed( g );
 
 		} );
 		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
