@@ -23,6 +23,7 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
+const tempSphere = new Sphere();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
@@ -132,6 +133,16 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		} else {
+
+			const boundingSphere = cached.sphere;
+
+			if ( boundingSphere ) {
+
+				boundingSphere.getBoundingBox( box );
+
+				return true;
+
+			}
 
 			return false;
 
@@ -939,10 +950,12 @@ export class TilesRenderer extends TilesRendererBase {
 				} else {
 
 					tempVector.applyMatrix4( transformInverse );
+					tempSphere.copy( boundingSphere );
+					tempSphere.applyMatrix4( transformInverse );
 					// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
 					// zero inside the box. Clipping the distance to a minimum of zero ensures that both
 					// types of bounding volume behave the same way.
-					distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
+					distance = Math.max( tempSphere.distanceToPoint( tempVector ), 0 );
 
 				}
 
