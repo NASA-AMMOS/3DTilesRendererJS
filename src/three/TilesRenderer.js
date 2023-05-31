@@ -642,9 +642,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				loader.adjustmentTransform.copy( upAdjustment );
 
-				promise = loader
-					.parse( buffer )
-					.then( res => res.scene );
+				promise = loader.parse( buffer );
 				break;
 
 			}
@@ -654,9 +652,7 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new PNTSLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-				promise = loader
-					.parse( buffer )
-					.then( res => res.scene );
+				promise = loader.parse( buffer );
 				break;
 
 			}
@@ -669,9 +665,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				loader.adjustmentTransform.copy( upAdjustment );
 
-				promise = loader
-					.parse( buffer )
-					.then( res => res.scene );
+				promise = loader.parse( buffer );
 				break;
 
 			}
@@ -697,9 +691,7 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new GLTFExtensionLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-				promise = loader
-					.parse( buffer )
-					.then( res => res.scene	);
+				promise = loader.parse( buffer );
 				break;
 
 			default:
@@ -709,7 +701,21 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		return promise.then( scene => {
+		return promise.then( result => {
+
+			let scene;
+			let metadata;
+			if ( result.isObject3D ) {
+
+				scene = result;
+				metadata = null;
+
+			} else {
+
+				scene = result.scene;
+				metadata = result;
+
+			}
 
 			if ( tile._loadIndex !== loadIndex ) {
 
@@ -740,6 +746,7 @@ export class TilesRenderer extends TilesRendererBase {
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
 			cached.scene = scene;
+			cached.metadata = metadata;
 
 			// We handle raycasting in a custom way so remove it from here
 			scene.traverse( c => {
