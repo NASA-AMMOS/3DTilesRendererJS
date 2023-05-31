@@ -24,10 +24,11 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { GlobeOrbitControls } from './GlobeOrbitControls.js';
 import { WGS84_RADIUS, WGS84_HEIGHT } from '../src/base/constants.js';
 import { EllipsoidRegionHelper } from '../src/index.js';
+import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
-let camera, controls, scene, renderer, tiles, cameraHelper;
+let camera, controls, scene, renderer, tiles, credits, cameraHelper;
 let mainGroup;
 let statsContainer, stats;
 
@@ -166,6 +167,16 @@ function reinstantiateTiles() {
 
 				}
 				return uri.toString();
+
+			};
+
+			credits = new MapsTilesCredits();
+			tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
+
+				const copyright = tile.cached.metadata.asset.copyright || '';
+				if ( visible ) credits.addCredits( copyright );
+				else credits.removeCredits( copyright );
+
 
 			};
 
@@ -531,6 +542,12 @@ function render() {
 	if ( statsContainer.innerHTML !== str ) {
 
 		statsContainer.innerHTML = str;
+
+	}
+
+	if ( credits ) {
+
+		document.getElementById( 'credits' ).innerText = credits.getCredits();
 
 	}
 
