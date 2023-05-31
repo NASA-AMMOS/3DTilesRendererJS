@@ -1,4 +1,4 @@
-import { Spherical, Vector3 } from 'three';
+import { MathUtils, Spherical, Vector3 } from 'three';
 
 function sphericalPhiToLatitude( phi ) {
 
@@ -46,6 +46,7 @@ export class GeoCoord {
 
 		this.lon = spherical.theta;
 		this.lat = sphericalPhiToLatitude( spherical.phi );
+		return this;
 
 	}
 
@@ -53,27 +54,49 @@ export class GeoCoord {
 
 		target.theta = this.lon;
 		target.phi = latitudeToSphericalPhi( this.lat );
+		return this;
+
+	}
+
+	fromVector3( vector ) {
+
+		_spherical.setFromVector3( vector );
+		this.fromSpherical( _spherical );
+		return this;
+
+	}
+
+	getVector3( target ) {
+
+		this.getSpherical( _spherical );
+		target.setFromSpherical( _spherical );
+		return this;
 
 	}
 
 	normalize() {
 
-		this.getSpherical( _spherical );
-		_vec.setFromSpherical( _spherical );
-		_spherical.setFromVector3( _vec );
-		this.fromSpherical( _spherical );
+		this.getVector3( _vec );
+		this.fromVector3( _vec );
+		return this;
 
 	}
 
-	getLatitudeString() {
+	toLatitudeString() {
 
-		return getHoursMinutesSeconds( this.lat, 'E', 'W' );
+		return getHoursMinutesSeconds( MathUtils.RAD2DEG * this.lat, 'N', 'S' );
 
 	}
 
-	getLongitudeString() {
+	toLongitudeString() {
 
-		return getHoursMinutesSeconds( this.lon, 'N', 'S' );
+		return getHoursMinutesSeconds( MathUtils.RAD2DEG * this.lon, 'E', 'W' );
+
+	}
+
+	toString() {
+
+		return `${ this.toLatitudeString() }, ${ this.toLongitudeString() }`;
 
 	}
 
