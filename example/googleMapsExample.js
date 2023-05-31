@@ -24,10 +24,11 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { GlobeOrbitControls } from './GlobeOrbitControls.js';
 import { WGS84_RADIUS, WGS84_HEIGHT } from '../src/base/constants.js';
 import { EllipsoidRegionHelper } from '../src/index.js';
+import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
-let camera, controls, scene, renderer, tiles, cameraHelper;
+let camera, controls, scene, renderer, tiles, credits, cameraHelper;
 let mainGroup;
 let statsContainer, stats;
 
@@ -127,21 +128,23 @@ function reinstantiateTiles() {
 
 			}
 
-			// TODO: check this is correct
-			// find first node with uri and treat that as root
-			let uri = undefined;
-			const toVisit = [];
-			for ( let curr = json.root; curr !== undefined; curr = toVisit.pop() ) {
+			// TODO: See if there's a better way to retrieve the session id
+			let uri;
+			const toVisit = [ json.root ];
+			while ( toVisit.length !== 0 ) {
 
-				if ( curr.content.uri ) {
+				const curr = toVisit.pop();
+				if ( curr.content && curr.content.uri ) {
 
 					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
 					uri.searchParams.append( 'key', params.apiKey );
 					break;
 
-				}
+				} else {
 
-				toVisit.push( ...curr.children );
+					toVisit.push( ...curr.children );
+
+				}
 
 			}
 
@@ -164,6 +167,16 @@ function reinstantiateTiles() {
 
 				}
 				return uri.toString();
+
+			};
+
+			credits = new MapsTilesCredits();
+			tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
+
+				const copyright = tile.cached.metadata.asset.copyright || '';
+				if ( visible ) credits.addCredits( copyright );
+				else credits.removeCredits( copyright );
+
 
 			};
 
@@ -529,6 +542,12 @@ function render() {
 	if ( statsContainer.innerHTML !== str ) {
 
 		statsContainer.innerHTML = str;
+
+	}
+
+	if ( credits ) {
+
+		document.getElementById( 'credits' ).innerText = credits.getCredits();
 
 	}
 
