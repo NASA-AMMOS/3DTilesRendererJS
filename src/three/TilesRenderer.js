@@ -745,9 +745,6 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			cached.scene = scene;
-			cached.metadata = metadata;
-
 			// We handle raycasting in a custom way so remove it from here
 			scene.traverse( c => {
 
@@ -789,6 +786,8 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.materials = materials;
 			cached.geometry = geometry;
 			cached.textures = textures;
+			cached.scene = scene;
+			cached.metadata = metadata;
 
 			if ( this.onLoadModel ) {
 
@@ -846,6 +845,7 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.materials = null;
 			cached.textures = null;
 			cached.geometry = null;
+			cached.metadata = null;
 
 		}
 
