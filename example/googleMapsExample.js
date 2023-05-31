@@ -127,21 +127,23 @@ function reinstantiateTiles() {
 
 			}
 
-			// TODO: check this is correct
-			// find first node with uri and treat that as root
-			let uri = undefined;
-			const toVisit = [];
-			for ( let curr = json.root; curr !== undefined; curr = toVisit.pop() ) {
+			// TODO: See if there's a better way to retrieve the session id
+			let uri;
+			const toVisit = [ json.root ];
+			while ( toVisit.length !== 0 ) {
 
-				if ( curr.content.uri ) {
+				const curr = toVisit.pop();
+				if ( curr.content && curr.content.uri ) {
 
 					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
 					uri.searchParams.append( 'key', params.apiKey );
 					break;
 
-				}
+				} else {
 
-				toVisit.push( ...curr.children );
+					toVisit.push( ...curr.children );
+
+				}
 
 			}
 
