@@ -1,16 +1,5 @@
 import { MathUtils, Spherical, Vector3 } from 'three';
-
-function sphericalPhiToLatitude( phi ) {
-
-	return - ( phi - Math.PI / 2 );
-
-}
-
-function latitudeToSphericalPhi( latitude ) {
-
-	return - latitude + Math.PI / 2;
-
-}
+import { swapToGeoFrame, swapToThreeFrame, sphericalPhiToLatitude, latitudeToSphericalPhi } from './GeoUtils.js';
 
 function getHoursMinutesSeconds( value, pos = 'E', neg = 'W' ) {
 
@@ -60,6 +49,8 @@ export class GeoCoord {
 
 	fromVector3( vector ) {
 
+		swapToThreeFrame( vector );
+
 		_spherical.setFromVector3( vector );
 		this.fromSpherical( _spherical );
 		return this;
@@ -70,6 +61,9 @@ export class GeoCoord {
 
 		this.getSpherical( _spherical );
 		target.setFromSpherical( _spherical );
+
+		swapToGeoFrame( target );
+
 		return this;
 
 	}

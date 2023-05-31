@@ -549,7 +549,9 @@ function render() {
 
 	if ( credits ) {
 
-		document.getElementById( 'credits' ).innerText = geocoord.fromVector3( camera.position ).toString() + '\n' + credits.getCredits();
+		const mat = tiles.group.matrixWorld.clone().invert();
+		const vec = camera.position.clone().applyMatrix4( mat );
+		document.getElementById( 'credits' ).innerText = geocoord.fromVector3( vec ).toString() + '\n' + credits.getCredits();
 
 	}
 
