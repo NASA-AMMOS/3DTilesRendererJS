@@ -25,6 +25,7 @@ import { GlobeOrbitControls } from './GlobeOrbitControls.js';
 import { WGS84_RADIUS, WGS84_HEIGHT } from '../src/base/constants.js';
 import { EllipsoidRegionHelper } from '../src/index.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
+import { GeoCoord } from './src/GeoCoord.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
@@ -40,6 +41,7 @@ const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 const pointer = new Vector2();
 const deltaTarget = new Vector3();
+const geocoord = new GeoCoord();
 
 let prevDist = 0;
 
@@ -547,7 +549,9 @@ function render() {
 
 	if ( credits ) {
 
-		document.getElementById( 'credits' ).innerText = credits.getCredits();
+		const mat = tiles.group.matrixWorld.clone().invert();
+		const vec = camera.position.clone().applyMatrix4( mat );
+		document.getElementById( 'credits' ).innerText = geocoord.fromVector3( vec ).toString() + '\n' + credits.getCredits();
 
 	}
 
