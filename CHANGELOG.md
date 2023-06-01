@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Case sensitivity when dealing with file formats.
 - Race condition when setting the transformation of gltf files.
+- Case where internal tilesets were not disposed of properly when calling "dispose".
 
 ## [0.3.18] - 2023-05-13
 ### Added
