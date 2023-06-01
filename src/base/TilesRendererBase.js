@@ -623,12 +623,15 @@ export class TilesRendererBase {
 
 	dispose() {
 
-		const lruCache = this.lruCache;
-		this.traverse( tile => {
+		// Make sure we've collected all children before disposing of the internal tilesets to avoid
+		// dangling children that we inadvertantly skip when deleting the nested tileset.
+		const toRemove = [];
+		this.traverse( t => toRemove.push( t ) );
+		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
 
-			lruCache.remove( tile );
+ 			lruCache.remove( toRemove[ i ] );
 
-		} );
+		}
 
 		this.stats = {
 			parsing: 0,
