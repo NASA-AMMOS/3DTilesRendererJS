@@ -623,12 +623,13 @@ export class TilesRendererBase {
 
 	dispose() {
 
-		const lruCache = this.lruCache;
-		this.traverse( tile => {
+		const toRemove = [];
+		this.traverse( t => toRemove.push( t ) );
+		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
 
-			lruCache.remove( tile );
+ 			lruCache.remove( toRemove[ i ] );
 
-		} );
+		}
 
 		this.stats = {
 			parsing: 0,
