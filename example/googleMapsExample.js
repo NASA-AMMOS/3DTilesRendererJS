@@ -5,7 +5,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	CameraHelper,
 	Vector3,
 	Group,
 	sRGBEncoding,
@@ -29,8 +28,7 @@ import { GeoCoord } from './src/GeoCoord.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
-let camera, controls, scene, renderer, tiles, credits, cameraHelper;
-let mainGroup;
+let camera, controls, scene, renderer, tiles, credits;
 let statsContainer, stats;
 
 const ellipsoid = new Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
@@ -47,7 +45,6 @@ let prevDist = 0;
 
 const params = {
 
-	'showGlobe': true,
 	'showGlobeHelper': false,
 	'showFrustumHelper': false,
 	'showSurfaceHelper': false,
@@ -89,7 +86,7 @@ function setupTiles() {
 	loader.setDRACOLoader( dracoLoader );
 
 	tiles.manager.addHandler( /\.gltf$/, loader );
-	mainGroup.add( tiles.group );
+	scene.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
@@ -100,7 +97,7 @@ function reinstantiateTiles() {
 
 	if ( tiles ) {
 
-		mainGroup.remove( tiles.group );
+		scene.remove( tiles.group );
 		tiles.dispose();
 		tiles = null;
 
@@ -210,13 +207,8 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	mainGroup = new Group();
-	scene.add( mainGroup );
-
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
 	camera.position.set( 7326000, 10279000, - 823000 );
-	cameraHelper = new CameraHelper( camera );
-	scene.add( cameraHelper );
 
 	// controls
 	controls = new GlobeOrbitControls( camera, ellipsoid, renderer.domElement );
@@ -254,7 +246,6 @@ function init() {
 	gui.width = 300;
 
 	const displayOptions = gui.addFolder( 'Display' );
-	displayOptions.add( params, 'showGlobe' ).onChange( v => mainGroup.visible = v );
 	displayOptions.add( params, 'showGlobeHelper' ).onChange( v => ellipsoidHelper.visible = v );
 	displayOptions.add( params, 'showSurfaceHelper' ).onChange( v => surfaceHelper.visible = v );
 	displayOptions.open();
@@ -474,8 +465,6 @@ function animate() {
 
 	}
 
-	mainGroup.updateMatrixWorld( true );
-
 	// update tiles
 	window.tiles = tiles;
 	if ( params.enableUpdate ) {
@@ -491,8 +480,6 @@ function animate() {
 }
 
 function render() {
-
-	cameraHelper.visible = false;
 
 	// render primary view
 	renderer.render( scene, camera );
