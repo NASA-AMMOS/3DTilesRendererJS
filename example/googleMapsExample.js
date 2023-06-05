@@ -165,6 +165,8 @@ function reinstantiateTiles() {
 
 			};
 
+			tiles.parseQueue.maxJobs = 5;
+			tiles.downloadQueue.maxJobs = 50;
 			tiles.lruCache.minSize = 3000;
 			tiles.lruCache.maxSize = 5000;
 			tiles.group.rotation.x = - Math.PI / 2;
@@ -275,10 +277,23 @@ function onWindowResize() {
 
 function updateControls() {
 
-	// TODO: update target position based on ray hits
 	// TODO: add tilting of the camera - keep a frame at the surface to retain the camera orientation
 
-	controls.target.normalize().multiplyScalar( GeoUtils.WGS84_RADIUS );
+	const raycaster = new Raycaster();
+	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( GeoUtils.WGS84_RADIUS * 1.5 );
+	raycaster.ray.direction.copy( raycaster.ray.origin ).normalize().multiplyScalar( - 1 );
+	raycaster.firstHitOnly = true;
+
+	const hit = raycaster.intersectObject( scene, true )[ 0 ];
+	if ( hit ) {
+
+		controls.target.copy( hit.point );
+
+	} else {
+
+		controls.target.normalize().multiplyScalar( GeoUtils.WGS84_RADIUS );
+
+	}
 	controls.panPlane.copy( controls.target ).normalize();
 
 	const dist = camera.position.length();
