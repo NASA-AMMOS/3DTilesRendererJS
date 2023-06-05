@@ -1,4 +1,4 @@
-import { Ellipsoid, DebugTilesRenderer as TilesRenderer } from '../src/index.js';
+import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -9,13 +9,16 @@ import {
 	sRGBEncoding,
 	Raycaster,
 	Vector2,
+	Sphere,
+	Box3,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-import { GlobeOrbitControls } from './GlobeOrbitControls.js';
+// import { GlobeOrbitControls } from './GlobeOrbitControls.js';
+import { MapControls } from './src/lib/MapControls.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 import { GeoCoord } from './src/GeoCoord.js';
 import * as GeoUtils from './src/GeoUtils.js';
@@ -40,9 +43,6 @@ const params = {
 	'enableRendererStats': false,
 
 	'apiKey': 'put-your-api-key-here',
-	'errorTarget': 6,
-	'errorThreshold': Infinity,
-	'maxDepth': Infinity,
 	'loadSiblings': true,
 	'stopAtEmptyTiles': true,
 	'resolutionScale': 1.0,
@@ -197,9 +197,11 @@ function init() {
 	camera.position.set( 7326000, 10279000, - 823000 );
 
 	// controls
-	controls = new GlobeOrbitControls( camera, ellipsoid, renderer.domElement );
-	controls.minDistance = 100;
+	controls = new MapControls( camera, renderer.domElement );
+	controls.minDistance = 1;
 	controls.maxDistance = Infinity;
+	controls.minPolarAngle = Math.PI / 4;
+	controls.target.set( 0, 0, 1 );
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -226,9 +228,6 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
-	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'errorThreshold' );
-	tileOptions.add( params, 'maxDepth' );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -262,32 +261,6 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
-	document.addEventListener( 'dblclick', event => {
-
-		if ( raycaster ) {
-
-			pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-			pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-			raycaster.setFromCamera( pointer, camera );
-			const intersections = raycaster.intersectObject( tiles.group, true );
-			const numIntersections = intersections.length;
-			if ( numIntersections > 0 ) {
-
-				const intersection = intersections[ 0 ];
-
-				deltaTarget.subVectors( intersection.point, controls.target );
-				controls.target.add( deltaTarget );
-				// TODO: work out how to adjust the camera position so this refocussing
-				//       happens seamlessly (i.e. on a mousemove callback)
-				// controls.position.add( deltaTarget );
-
-			}
-
-		}
-
-	} );
-
 }
 
 function onWindowResize() {
@@ -300,16 +273,38 @@ function onWindowResize() {
 
 }
 
+function updateControls() {
+
+	// TODO: update target position based on ray hits
+	// TODO: add tilting of the camera - keep a frame at the surface to retain the camera orientation
+
+	controls.target.normalize().multiplyScalar( GeoUtils.WGS84_RADIUS );
+	controls.panPlane.copy( controls.target ).normalize();
+
+	const dist = camera.position.length();
+	camera.position.copy( controls.target ).normalize().multiplyScalar( dist );
+	camera.lookAt( controls.target );
+	controls.update();
+
+	const box = new Box3();
+	tiles.getBounds( box );
+
+	camera.far = dist;
+	camera.near = Math.max( 1, dist - Math.max( ...box.min, ...box.max ) );
+	camera.updateProjectionMatrix();
+
+
+}
+
 function animate() {
 
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
 
+	updateControls();
+
 	// update options
-	tiles.errorTarget = params.errorTarget;
-	tiles.errorThreshold = params.errorThreshold;
-	tiles.maxDepth = params.maxDepth;
 	tiles.loadSiblings = params.loadSiblings;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
@@ -368,8 +363,7 @@ function render() {
 		let count = 0;
 		geomSet.forEach( g => {
 
-			// TODO: resurrect this
-			count += 0;//BufferGeometryUtils.estimateBytesUsed( g );
+			count += BufferGeometryUtils.estimateBytesUsed( g );
 
 		} );
 		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
