@@ -70,7 +70,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 			_sphere.copy( sphere );
 			_sphere.applyMatrix4( _mat );
-			if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
+			if ( ! raycaster.ray.intersectSphere( _sphere, _vec ) ) {
 
 				continue;
 
@@ -87,44 +87,46 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 			_mat.multiply( obbMat ).invert();
 			_ray.copy( raycaster.ray );
 			_ray.applyMatrix4( _mat );
-			if ( _ray.intersectBox( boundingBox, _vec ) ) {
-
-				// account for tile scale
-				_vec2.setFromMatrixScale( _mat );
-				const invScale = _vec2.x;
-
-				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
-
-					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
-
-				}
-
-				// if we intersect the box save the distance to the tile bounds
-				const data = {
-					distance: Infinity,
-					tile: null
-				};
-				array.push( data );
-
-				if ( boundingBox.containsPoint( _ray.origin ) ) {
-
-					data.distance = 0;
-
-				} else {
-
-					data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
-
-				}
-
-				data.tile = tile;
-
-			} else {
+			if ( ! _ray.intersectBox( boundingBox, _vec ) ) {
 
 				continue;
 
 			}
 
+		} else {
+
+			_mat.invert();
+
 		}
+
+		// account for tile scale
+		_vec2.setFromMatrixScale( _mat );
+		const invScale = _vec2.x;
+
+		if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
+
+			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
+
+		}
+
+		// if we intersect the tightest available bound save the distance to the tile bounds
+		const data = {
+			distance: Infinity,
+			tile: null
+		};
+		array.push( data );
+
+		if ( ( boundingBox && boundingBox.containsPoint( _ray.origin ) ) || ( ! boundingBox && sphere && sphere.containsPoint( _ray.origin ) ) ) {
+
+			data.distance = 0;
+
+		} else {
+
+			data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
+
+		}
+
+		data.tile = tile;
 
 	}
 
