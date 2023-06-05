@@ -170,6 +170,17 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
+			const boundingSphere = cached.sphere;
+
+			if ( boundingSphere ) {
+
+				boundingSphere.getBoundingBox( box );
+				matrix.identity();
+
+				return true;
+
+			}
+
 			return false;
 
 		}
