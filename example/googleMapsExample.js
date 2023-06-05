@@ -9,7 +9,6 @@ import {
 	sRGBEncoding,
 	Raycaster,
 	Vector2,
-	Sphere,
 	Box3,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -17,7 +16,6 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-// import { GlobeOrbitControls } from './GlobeOrbitControls.js';
 import { MapControls } from './src/lib/MapControls.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 import { GeoCoord } from './src/GeoCoord.js';
@@ -307,7 +305,6 @@ function updateControls() {
 	camera.far = dist;
 	camera.near = Math.max( 1, dist - Math.max( ...box.min, ...box.max ) );
 	camera.updateProjectionMatrix();
-
 
 }
 
