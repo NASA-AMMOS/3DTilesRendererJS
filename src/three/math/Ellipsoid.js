@@ -60,6 +60,7 @@ export class Ellipsoid {
 
 	getCartographicToPosition( lat, lon, height, target ) {
 
+		// From Cesium function Ellipsoid.cartographicToCartesian
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L396
 		this.getCartographicToNormal( lat, lon, _norm );
 
@@ -78,6 +79,7 @@ export class Ellipsoid {
 
 	getPositionToCartographic( pos, target ) {
 
+		// From Cesium function Ellipsoid.cartesianToCartographic
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
 		this.getPositionToSurfacePoint( pos, _vec );
 		this.getPositionToNormal( pos, _norm );
@@ -117,6 +119,7 @@ export class Ellipsoid {
 
 	getPositionToSurfacePoint( pos, target ) {
 
+		// From Cesium function Ellipsoid.scaleToGeodeticSurface
 		// https://github.com/CesiumGS/cesium/blob/d11b746e5809ac115fcff65b7b0c6bdfe81dcf1c/packages/engine/Source/Core/scaleToGeodeticSurface.js#L25
 		const radius = this.radius;
 		const invRadiusSqX = 1 / ( radius.x ** 2 );
