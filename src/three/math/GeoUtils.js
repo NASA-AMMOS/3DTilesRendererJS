@@ -1,17 +1,29 @@
 import { Spherical, Vector3, MathUtils } from 'three';
-import { Ellipsoid } from '../../';
 
 const _spherical = new Spherical();
 const _vec = new Vector3();
 const _geoResults = {};
 
-export const WGS84_RADIUS = 6378137;
+// Cesium / 3D tiles Spheroid:
+// - Up is Z at 90 degrees latitude
+// - 0, 0 latitude, longitude is X axis
+//      Z
+//      |
+//      |
+//      .----- Y
+//     /
+//   X
 
-export const WGS84_FLATTENING = 1 / 298.257223563;
 
-export const WGS84_HEIGHT = - ( WGS84_FLATTENING * WGS84_RADIUS - WGS84_RADIUS );
-
-export const WGS84_ELLIPSOID = new Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
+// Three.js Spherical Coordinates
+// - Up is Y at 90 degrees latitude
+// - 0, 0 latitude, longitude is Z
+//       Y
+//      |
+//      |
+//      .----- X
+//     /
+//   Z
 
 export function swapToGeoFrame( target ) {
 
@@ -43,7 +55,7 @@ export function latitudeToSphericalPhi( latitude ) {
 
 }
 
-export function correctGeoCoordWrap( lat, lon, target = {} ) {
+function correctGeoCoordWrap( lat, lon, target = {} ) {
 
 	_spherical.theta = lon;
 	_spherical.phi = latitudeToSphericalPhi( lat );
@@ -69,7 +81,7 @@ function toHoursMinutesSecondsString( value, pos = 'E', neg = 'W' ) {
 	const secDec = ( minDec - minutes ) * 60;
 	const seconds = ~ ~ secDec;
 
-	return `${ hours }° ${ minutes }' ${ seconds }" ${ direction }`
+	return `${ hours }° ${ minutes }' ${ seconds }" ${ direction }`;
 
 }
 
@@ -79,8 +91,8 @@ export function toLatLonString( lat, lon, decimalFormat = false ) {
 	let latString, lonString;
 	if ( decimalFormat ) {
 
-		latString =  `${ ( MathUtils.RAD2DEG * result.lat ).toFixed( 4 ) }°`;
-		lonString =  `${ ( MathUtils.RAD2DEG * result.lon ).toFixed( 4 ) }°`;
+		latString = `${ ( MathUtils.RAD2DEG * result.lat ).toFixed( 4 ) }°`;
+		lonString = `${ ( MathUtils.RAD2DEG * result.lon ).toFixed( 4 ) }°`;
 
 	} else {
 

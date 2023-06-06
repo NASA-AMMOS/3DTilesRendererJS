@@ -1,46 +1,5 @@
 import { Vector3, Spherical } from 'three';
-
-// Cesium / 3D tiles Spheroid:
-// - Up is Z at 90 degrees latitude
-// - 0, 0 latitude, longitude is X axis
-//      Z
-//      |
-//      |
-//      .----- Y
-//     /
-//   X
-
-
-// Three.js Spherical Coordinates
-// - Up is Y at 90 degrees latitude
-// - 0, 0 latitude, longitude is Z
-//       Y
-//      |
-//      |
-//      .----- X
-//     /
-//   Z
-
-function swapFrame( target ) {
-
-	const { x, y, z } = target;
-	target.x = z;
-	target.y = x;
-	target.z = y;
-
-}
-
-export function sphericalPhiToLatitude( phi ) {
-
-	return - ( phi - Math.PI / 2 );
-
-}
-
-export function latitudeToSphericalPhi( latitude ) {
-
-	return - latitude + Math.PI / 2;
-
-}
+import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
 const _norm = new Vector3();
@@ -99,7 +58,7 @@ export class Ellipsoid {
 		target.setFromSpherical( _spherical ).normalize();
 
 		// swap frame from the three.js frame to the geo coord frame
-		swapFrame( target );
+		swapToGeoFrame( target );
 		return target;
 
 	}

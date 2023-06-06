@@ -1,3 +1,4 @@
+/* eslint-disable jest/expect-expect */
 import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
@@ -48,7 +49,7 @@ describe( 'Ellipsoid', () => {
 	let v, c, c2;
 	let c_unitEllipse, unitEllipse;
 	let c_wgsEllipse, wgsEllipse;
-	let norm, norm2, cnorm, cnorm2;
+	let norm, cnorm;
 	beforeEach( () => {
 
 		c = new Cesium.Cartesian3();
@@ -56,9 +57,7 @@ describe( 'Ellipsoid', () => {
 		v = new Vector3();
 
 		norm = new Vector3();
-		norm2 = new Vector3();
 		cnorm = new Cesium.Cartesian3();
-		cnorm2 = new Cesium.Cartesian3();
 
 		c_unitEllipse = new Cesium.Ellipsoid( 1, 1, 1 );
 		unitEllipse = new Ellipsoid( 1, 1, 1 );

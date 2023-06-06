@@ -1,4 +1,4 @@
-import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
+import { DebugTilesRenderer as TilesRenderer, GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -7,6 +7,7 @@ import {
 	PerspectiveCamera,
 	Raycaster,
 	Box3,
+	MathUtils,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -16,7 +17,6 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
-import * as GeoUtils from './src/GeoUtils.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
 
@@ -269,7 +269,7 @@ function onWindowResize() {
 function updateControls() {
 
 	const raycaster = new Raycaster();
-	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( GeoUtils.WGS84_RADIUS * 1.5 );
+	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( WGS84_RADIUS * 1.5 );
 	raycaster.ray.direction.copy( raycaster.ray.origin ).normalize().multiplyScalar( - 1 );
 	raycaster.firstHitOnly = true;
 
@@ -280,7 +280,7 @@ function updateControls() {
 
 	} else {
 
-		controls.target.normalize().multiplyScalar( GeoUtils.WGS84_RADIUS );
+		controls.target.normalize().multiplyScalar( WGS84_RADIUS );
 
 	}
 	controls.panPlane.copy( controls.target ).normalize();
@@ -305,7 +305,10 @@ function updateHash() {
 	const pos = controls.target.clone();
 	GeoUtils.swapToGeoFrame( pos );
 
-	GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( pos, res );
+	WGS84_ELLIPSOID.getPositionToCartographic( pos, res );
+
+	res.lat *= MathUtils.RAD2DEG;
+	res.lon *= MathUtils.RAD2DEG;
 	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
 
 }
@@ -314,7 +317,6 @@ function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
 	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
-	console.log( tokens );
 	if ( tokens.length !== 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
 
 		return;
@@ -322,7 +324,7 @@ function initFromHash() {
 	}
 
 	const [ lat, lon ] = tokens;
-	GeoUtils.WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, 0, controls.target );
+	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
 	GeoUtils.swapToThreeFrame( controls.target );
 
 	updateControls();
@@ -422,9 +424,8 @@ function render() {
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
 
-
 		const res = {};
-		GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+		WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + credits.getCredits();
 
 	}
