@@ -133,6 +133,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
+			const boundingSphere = cached.sphere;
+
+			if ( boundingSphere ) {
+
+				boundingSphere.getBoundingBox( box );
+
+				return true;
+
+			}
+
 			return false;
 
 		}
@@ -159,6 +169,17 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		} else {
+
+			const boundingSphere = cached.sphere;
+
+			if ( boundingSphere ) {
+
+				boundingSphere.getBoundingBox( box );
+				matrix.identity();
+
+				return true;
+
+			}
 
 			return false;
 
@@ -909,7 +930,6 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingSphere = cached.sphere;
 		const boundingBox = cached.box;
 		const boxTransformInverse = cached.boxTransformInverse;
-		const transformInverse = cached.transformInverse;
 		const useBox = boundingBox && boxTransformInverse;
 
 		let maxError = - Infinity;
@@ -945,7 +965,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 				} else {
 
-					tempVector.applyMatrix4( transformInverse );
 					// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
 					// zero inside the box. Clipping the distance to a minimum of zero ensures that both
 					// types of bounding volume behave the same way.
