@@ -318,8 +318,7 @@ window.setLatLon = function setLatLon( lat, lon ) {
 	ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
 	controls.target.applyMatrix4( tiles.group.matrixWorld );
 
-
-}
+};
 
 function animate() {
 
