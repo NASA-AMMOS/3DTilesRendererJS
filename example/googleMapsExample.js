@@ -14,6 +14,7 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
@@ -64,7 +65,7 @@ function setupTiles() {
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
@@ -164,7 +165,7 @@ function reinstantiateTiles() {
 			};
 
 			tiles.parseQueue.maxJobs = 5;
-			tiles.downloadQueue.maxJobs = 50;
+			tiles.downloadQueue.maxJobs = 20;
 			tiles.lruCache.minSize = 3000;
 			tiles.lruCache.maxSize = 5000;
 			tiles.group.rotation.x = - Math.PI / 2;
@@ -307,6 +308,17 @@ function updateControls() {
 	camera.updateProjectionMatrix();
 
 }
+
+window.setLatLon = function setLatLon( lat, lon ) {
+
+	geocoord.lat = lat;
+	geocoord.lon = lon;
+
+	// geocoord.getVector3( controls.target );
+	ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
+	controls.target.applyMatrix4( tiles.group.matrixWorld );
+
+};
 
 function animate() {
 
