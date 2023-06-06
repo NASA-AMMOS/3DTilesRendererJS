@@ -132,12 +132,9 @@ export class Ellipsoid {
 
 		// As an initial approximation, assume that the radial intersection is the projection point.
 		const intersection = _vec.copy( pos ).multiplyScalar( ratio );
-
 		if ( squaredNorm < CENTER_EPS ) {
 
-			return ! isFinite( ratio )
-				? null
-			  	: target.copy( intersection );
+			return ! isFinite( ratio ) ? null : target.copy( intersection );
 
 		}
 
@@ -150,11 +147,10 @@ export class Ellipsoid {
 		);
 
 		// Compute the initial guess at the normal vector multiplier, lambda.
-		let lambda = ( ( 1.0 - ratio ) * pos.length() ) / ( 0.5 * gradient.length() );
+		let lambda = ( 1.0 - ratio ) * pos.length() / ( 0.5 * gradient.length() );
 		let correction = 0.0;
 
-		let func;
-		let denominator;
+		let func, denominator;
 		let xMultiplier, yMultiplier, zMultiplier;
 		let xMultiplier2, yMultiplier2, zMultiplier2;
 		let xMultiplier3, yMultiplier3, zMultiplier3;
