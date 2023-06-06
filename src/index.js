@@ -11,6 +11,7 @@ export {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 } from './three/DebugTilesRenderer.js';
+
 export { TilesRenderer } from './three/TilesRenderer.js';
 export { B3DMLoader } from './three/B3DMLoader.js';
 export { PNTSLoader } from './three/PNTSLoader.js';
@@ -22,6 +23,8 @@ export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/object
 export { SphereHelper } from './three/objects/SphereHelper.js';
 export { Ellipsoid } from './three/math/Ellipsoid.js';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion.js';
+export * as GeoUtils from './three/math/GeoUtils.js';
+export * from './three/math/GeoConstants.js';
 
 export { TilesRendererBase } from './base/TilesRendererBase.js';
 export { LoaderBase } from './base/LoaderBase.js';

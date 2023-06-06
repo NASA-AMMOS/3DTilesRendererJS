@@ -306,6 +306,9 @@ function updateHash() {
 	GeoUtils.swapToGeoFrame( pos );
 
 	GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( pos, res );
+
+	res.lat *= MathUtils.RAD2DEG;
+	res.lon *= MathUtils.RAD2DEG;
 	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
 
 }
@@ -314,7 +317,6 @@ function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
 	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
-	console.log( tokens );
 	if ( tokens.length !== 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
 
 		return;
@@ -322,7 +324,7 @@ function initFromHash() {
 	}
 
 	const [ lat, lon ] = tokens;
-	GeoUtils.WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, 0, controls.target );
+	GeoUtils.WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * DEG2RAD, 0, controls.target );
 	GeoUtils.swapToThreeFrame( controls.target );
 
 	updateControls();
@@ -421,7 +423,6 @@ function render() {
 
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
-
 
 		const res = {};
 		GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
