@@ -45,6 +45,7 @@ export function latitudeToSphericalPhi( latitude ) {
 const _spherical = new Spherical();
 const _norm = new Vector3();
 const _vec = new Vector3();
+const _vec2 = new Vector3();
 
 export class Ellipsoid {
 
@@ -56,13 +57,10 @@ export class Ellipsoid {
 
 	getCartographicToPosition( lat, lon, height, target ) {
 
-		// https://github.com/CesiumGS/cesium/blob/main/Source/Core/Ellipsoid.js#L396
+		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L396
+		this.getCartographicToNormal( lat, lon, _norm );
+
 		const radius = this.radius;
-		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
-		_norm.setFromSpherical( _spherical ).normalize();
-
-		swapFrame( _norm );
-
 		_vec.copy( _norm );
 		_vec.x *= radius.x ** 2;
 		_vec.y *= radius.y ** 2;
@@ -75,9 +73,23 @@ export class Ellipsoid {
 
 	}
 
+	getPositionToCartographic( vec, target ) {
+
+		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
+		this.getPositionToSurfacePoint( vec, _vec );
+		this.getPositionToNormal( vec, _norm );
+		const h = _vec2.subVectors( vec, _vec );
+
+		target.lon = Math.atan2( _norm.y, _norm.x );
+		target.lat = Math.asin( _norm.z );
+		target.height = Math.sign( h.dot( vec ) ) * h.length();
+		return target;
+
+	}
+
 	getCartographicToNormal( lat, lon, target ) {
 
-		_spherical.set( 1, ( - lat + Math.PI / 2 ), lon );
+		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
 		target.setFromSpherical( _spherical ).normalize();
 
 		swapFrame( target );
@@ -100,6 +112,7 @@ export class Ellipsoid {
 
 	getPositionToSurfacePoint( pos, target ) {
 
+		// TODO: this is possibly wrong
 		const normal = this.getPositionToNormal( pos, target );
 		normal.x *= this.radius.x;
 		normal.y *= this.radius.y;
