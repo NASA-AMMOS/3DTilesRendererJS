@@ -5,10 +5,7 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Vector3,
-	sRGBEncoding,
 	Raycaster,
-	Vector2,
 	Box3,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -19,7 +16,6 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
-import { GeoCoord } from './src/GeoCoord.js';
 import * as GeoUtils from './src/GeoUtils.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
@@ -27,13 +23,8 @@ const apiOrigin = 'https://tile.googleapis.com';
 let camera, controls, scene, renderer, tiles, credits;
 let statsContainer, stats;
 
-const ellipsoid = GeoUtils.WGS84_ELLIPSOID;
-
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
-const pointer = new Vector2();
-const deltaTarget = new Vector3();
-const geocoord = new GeoCoord();
 
 const params = {
 
@@ -171,6 +162,8 @@ function reinstantiateTiles() {
 			tiles.group.rotation.x = - Math.PI / 2;
 
 			setupTiles();
+			initFromHash();
+			setInterval( updateHash, 100 );
 
 		} )
 		.catch( err => {
@@ -190,7 +183,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 
@@ -276,8 +268,6 @@ function onWindowResize() {
 
 function updateControls() {
 
-	// TODO: add tilting of the camera - keep a frame at the surface to retain the camera orientation
-
 	const raycaster = new Raycaster();
 	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( GeoUtils.WGS84_RADIUS * 1.5 );
 	raycaster.ray.direction.copy( raycaster.ray.origin ).normalize().multiplyScalar( - 1 );
@@ -309,16 +299,35 @@ function updateControls() {
 
 }
 
-window.setLatLon = function setLatLon( lat, lon ) {
+function updateHash() {
 
-	geocoord.lat = lat;
-	geocoord.lon = lon;
+	const res = {};
+	const pos = controls.target.clone();
+	GeoUtils.swapToGeoFrame( pos );
 
-	// geocoord.getVector3( controls.target );
-	ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
-	controls.target.applyMatrix4( tiles.group.matrixWorld );
+	GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( pos, res );
+	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
 
-};
+}
+
+function initFromHash() {
+
+	const hash = window.location.hash.replace( /^#/, '' );
+	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
+	console.log( tokens );
+	if ( tokens.length !== 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
+
+		return;
+
+	}
+
+	const [ lat, lon ] = tokens;
+	GeoUtils.WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, 0, controls.target );
+	GeoUtils.swapToThreeFrame( controls.target );
+
+	updateControls();
+
+}
 
 function animate() {
 
@@ -412,7 +421,11 @@ function render() {
 
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
-		document.getElementById( 'credits' ).innerText = geocoord.fromVector3( vec ).toString() + '\n' + credits.getCredits();
+
+
+		const res = {};
+		GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + credits.getCredits();
 
 	}
 
