@@ -19,7 +19,6 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
 import { MapsTilesCredits } from './src/MapsTilesCredits.js';
-import { GeoCoord } from './src/GeoCoord.js';
 import * as GeoUtils from './src/GeoUtils.js';
 
 const apiOrigin = 'https://tile.googleapis.com';
@@ -31,9 +30,6 @@ const ellipsoid = GeoUtils.WGS84_ELLIPSOID;
 
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
-const pointer = new Vector2();
-const deltaTarget = new Vector3();
-const geocoord = new GeoCoord();
 
 const params = {
 
@@ -311,12 +307,14 @@ function updateControls() {
 
 window.setLatLon = function setLatLon( lat, lon ) {
 
-	geocoord.lat = lat;
-	geocoord.lon = lon;
+	// // geocoord.getVector3( controls.target );
+	// // ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
+	// // controls.target.applyMatrix4( tiles.group.matrixWorld );
 
-	// geocoord.getVector3( controls.target );
-	ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
-	controls.target.applyMatrix4( tiles.group.matrixWorld );
+
+	// const vec = new Vector3();
+	// ellipsoid.getCartographicToPosition( lat, lon, 0, vec );
+
 
 };
 
@@ -412,7 +410,11 @@ function render() {
 
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
-		document.getElementById( 'credits' ).innerText = geocoord.fromVector3( vec ).toString() + '\n' + credits.getCredits();
+
+
+		const res = {};
+		GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + credits.getCredits();
 
 	}
 

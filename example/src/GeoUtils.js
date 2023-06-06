@@ -1,8 +1,9 @@
-import { Spherical, Vector3 } from 'three';
+import { Spherical, Vector3, MathUtils } from 'three';
 import { Ellipsoid } from '../../';
 
 const _spherical = new Spherical();
 const _vec = new Vector3();
+const _geoResults = {};
 
 export const WGS84_RADIUS = 6378137;
 
@@ -74,7 +75,7 @@ function toHoursMinutesSecondsString( value, pos = 'E', neg = 'W' ) {
 
 export function toLatLonString( lat, lon, decimalFormat = false ) {
 
-	const result = correctGeoCoordWrap( lat, lon );
+	const result = correctGeoCoordWrap( lat, lon, _geoResults );
 	let latString, lonString;
 	if ( decimalFormat ) {
 
