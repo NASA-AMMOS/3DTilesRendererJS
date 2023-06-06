@@ -302,10 +302,9 @@ function updateControls() {
 function updateHash() {
 
 	const res = {};
-	const pos = controls.target.clone();
-	GeoUtils.swapToGeoFrame( pos );
-
-	WGS84_ELLIPSOID.getPositionToCartographic( pos, res );
+	const mat = tiles.group.matrixWorld.clone().invert();
+	const vec = controls.target.clone().applyMatrix4( mat );
+	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 
 	res.lat *= MathUtils.RAD2DEG;
 	res.lon *= MathUtils.RAD2DEG;
@@ -325,8 +324,9 @@ function initFromHash() {
 
 	const [ lat, lon ] = tokens;
 	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
-	GeoUtils.swapToThreeFrame( controls.target );
 
+	tiles.group.updateMatrixWorld();
+	controls.target.applyMatrix4( tiles.group.matrixWorld );
 	updateControls();
 
 }
