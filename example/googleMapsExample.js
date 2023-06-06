@@ -5,7 +5,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Vector3,
 	sRGBEncoding,
 	Raycaster,
 	Vector2,
@@ -186,7 +185,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 
@@ -258,6 +256,8 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
+	setInterval( updateHash, 100 );
+
 }
 
 function onWindowResize() {
@@ -271,8 +271,6 @@ function onWindowResize() {
 }
 
 function updateControls() {
-
-	// TODO: add tilting of the camera - keep a frame at the surface to retain the camera orientation
 
 	const raycaster = new Raycaster();
 	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( GeoUtils.WGS84_RADIUS * 1.5 );
@@ -305,18 +303,13 @@ function updateControls() {
 
 }
 
-window.setLatLon = function setLatLon( lat, lon ) {
+function updateHash() {
 
-	// // geocoord.getVector3( controls.target );
-	// // ellipsoid.getCartographicToPosition( lat, lon, 0, controls.target );
-	// // controls.target.applyMatrix4( tiles.group.matrixWorld );
+	const res = {};
+	GeoUtils.WGS84_ELLIPSOID.getPositionToCartographic( camera.position, res );
+	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) },${ res.height.toFixed( 4 ) }` );
 
-
-	// const vec = new Vector3();
-	// ellipsoid.getCartographicToPosition( lat, lon, 0, vec );
-
-
-};
+}
 
 function animate() {
 

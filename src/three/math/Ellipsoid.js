@@ -92,6 +92,7 @@ export class Ellipsoid {
 		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
 		target.setFromSpherical( _spherical ).normalize();
 
+		// swap frame from the three.js frame to the geo coord frame
 		swapFrame( target );
 		return target;
 
@@ -112,7 +113,7 @@ export class Ellipsoid {
 
 	getPositionToSurfacePoint( pos, target ) {
 
-		// TODO: this is possibly wrong
+		// TODO: this is wrong
 		const normal = this.getPositionToNormal( pos, target );
 		normal.x *= this.radius.x;
 		normal.y *= this.radius.y;
