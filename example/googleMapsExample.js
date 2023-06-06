@@ -160,6 +160,7 @@ function reinstantiateTiles() {
 			tiles.lruCache.minSize = 3000;
 			tiles.lruCache.maxSize = 5000;
 			tiles.group.rotation.x = - Math.PI / 2;
+			tiles.errorTarget = 20;
 
 			setupTiles();
 			initFromHash();
