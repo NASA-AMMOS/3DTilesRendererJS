@@ -10,8 +10,8 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { LoadingManager } from 'three';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let camera, controls, scene, renderer;
 let dirLight;
@@ -95,7 +95,7 @@ function init() {
 	const manager = new LoadingManager();
 	const gltfLoader = new GLTFLoader( manager );
 	const dracoLoader = new DRACOLoader( manager );
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.128.0/examples/js/libs/draco/gltf/' );
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
 	gltfLoader.setDRACOLoader( dracoLoader );
 	manager.addHandler( /\.gltf$/, gltfLoader );
 	manager.addHandler( /\.glb$/, gltfLoader );
