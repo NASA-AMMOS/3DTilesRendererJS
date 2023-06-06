@@ -1,3 +1,3 @@
 import { Ellipsoid } from './Ellipsoid';
 
-export const WGS65_ELLIPSOID : Ellipsoid;
+export const WGS84_ELLIPSOID : Ellipsoid;
