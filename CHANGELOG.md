@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Case sensitivity when dealing with file formats.
 - Race condition when setting the transformation of gltf files.
 - Case where internal tilesets were not disposed of properly when calling "dispose".
+- Incorrect calculation of geometric error when spheres are available.
+
+### Added
+- `getBounds` and `getOrientedBounds` now return the AABB of a sphere if a tileset bounding box is not available.
 
 ## [0.3.18] - 2023-05-13
 ### Added
