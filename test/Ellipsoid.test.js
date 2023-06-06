@@ -88,15 +88,14 @@ describe( 'Ellipsoid', () => {
 
 	} );
 
-	it.skip( 'should match the surface points.', () => {
+	it( 'should match the surface points.', () => {
 
 		for ( let i = 0; i < 100; i ++ ) {
 
-			v.random().normalize();
+			v.random().normalize().multiplyScalar( WGS84_RADIUS );
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
-
 
 			wgsEllipse.getPositionToSurfacePoint( v, norm );
 			c_wgsEllipse.scaleToGeodeticSurface( c, cnorm );
