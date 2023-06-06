@@ -76,16 +76,17 @@ export class Ellipsoid {
 
 	}
 
-	getPositionToCartographic( vec, target ) {
+	getPositionToCartographic( pos, target ) {
 
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
-		this.getPositionToSurfacePoint( vec, _vec );
-		this.getPositionToNormal( vec, _norm );
-		const h = _vec2.subVectors( vec, _vec );
+		this.getPositionToSurfacePoint( pos, _vec );
+		this.getPositionToNormal( pos, _norm );
+
+		const heightDelta = _vec2.subVectors( pos, _vec );
 
 		target.lon = Math.atan2( _norm.y, _norm.x );
 		target.lat = Math.asin( _norm.z );
-		target.height = Math.sign( h.dot( vec ) ) * h.length();
+		target.height = Math.sign( heightDelta.dot( pos ) ) * heightDelta.length();
 		return target;
 
 	}

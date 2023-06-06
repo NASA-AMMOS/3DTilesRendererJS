@@ -5,9 +5,7 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	Raycaster,
-	Vector2,
 	Box3,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -24,8 +22,6 @@ const apiOrigin = 'https://tile.googleapis.com';
 
 let camera, controls, scene, renderer, tiles, credits;
 let statsContainer, stats;
-
-const ellipsoid = GeoUtils.WGS84_ELLIPSOID;
 
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;

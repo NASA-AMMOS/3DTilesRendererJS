@@ -45,13 +45,14 @@ function randomLon() {
 
 describe( 'Ellipsoid', () => {
 
-	let v, c;
+	let v, c, c2;
 	let c_unitEllipse, unitEllipse;
 	let c_wgsEllipse, wgsEllipse;
 	let norm, norm2, cnorm, cnorm2;
 	beforeEach( () => {
 
 		c = new Cesium.Cartesian3();
+		c2 = new Cesium.Cartesian3();
 		v = new Vector3();
 
 		norm = new Vector3();
@@ -67,22 +68,30 @@ describe( 'Ellipsoid', () => {
 
 	} );
 
-	it.skip( 'should convert between lat lon and position consistently.', () => {
+	it( 'should convert between lat lon and position consistently.', () => {
 
+		const POS_EPSILON = 1e-6;
+		const SURF_EPSILON = 1e-5;
+		const LAT_LON_EPSILON = 1e-4;
 		for ( let i = 0; i < 100; i ++ ) {
 
 			const lat = randomLat();
 			const lon = randomLon();
-			const height = Math.random();
+			const height = randomRange( - 1e5, 1e5 );
+			const cart = new Cesium.Cartographic( lon, lat, height );
 
 			wgsEllipse.getCartographicToPosition( lat, lon, height, v );
+			c_wgsEllipse.cartographicToCartesian( cart, c );
+
+			compareCartesianVector( c, v, POS_EPSILON );
 
 			const result = {};
 			wgsEllipse.getPositionToCartographic( v, result );
+			c_wgsEllipse.scaleToGeodeticSurface( c, c2 );
 
-			compareCoord( result.lat, lat );
-			compareCoord( result.lon, lon );
-			compareCoord( result.height, height );
+			compareCoord( result.lat, lat, LAT_LON_EPSILON );
+			compareCoord( result.lon, lon, LAT_LON_EPSILON );
+			compareCoord( result.height, height, SURF_EPSILON );
 
 		}
 
@@ -90,9 +99,10 @@ describe( 'Ellipsoid', () => {
 
 	it( 'should match the surface points.', () => {
 
+		const LOCAL_EPSILON = 1e-8;
 		for ( let i = 0; i < 100; i ++ ) {
 
-			v.random().normalize().multiplyScalar( WGS84_RADIUS );
+			v.random().normalize().multiplyScalar( WGS84_RADIUS * 2 );
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
@@ -100,7 +110,7 @@ describe( 'Ellipsoid', () => {
 			wgsEllipse.getPositionToSurfacePoint( v, norm );
 			c_wgsEllipse.scaleToGeodeticSurface( c, cnorm );
 
-			compareCartesianVector( cnorm, norm );
+			compareCartesianVector( cnorm, norm, LOCAL_EPSILON );
 
 		}
 
