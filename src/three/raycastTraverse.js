@@ -25,6 +25,29 @@ function intersectTileScene( scene, raycaster, intersects ) {
 
 }
 
+function calculateDistanceToBoundingVolume( vector, mat, ray, containsPoint ) {
+
+	let distance = 0;
+
+	_vec2.setFromMatrixScale( mat );
+	const invScale = _vec2.x;
+
+	if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
+
+		console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
+
+	}
+
+	if ( ! containsPoint ) {
+
+		distance = vector.distanceToSquared( ray.origin ) * invScale * invScale;
+
+	}
+
+	return distance;
+
+}
+
 // Returns the closest hit when traversing the tree
 export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
@@ -74,6 +97,15 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 				continue;
 
+			} else {
+
+				_mat.invert();
+				const data = {
+					distance: calculateDistanceToBoundingVolume( _vec, _mat, raycaster.ray, _sphere.containsPoint( raycaster.ray.origin ) ),
+					tile: tile
+				};
+				array.push( data );
+
 			}
 
 		}
@@ -84,49 +116,21 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const obbMat = cached.boxTransform;
 		if ( boundingBox ) {
 
+			_mat.copy( groupMatrixWorld );
 			_mat.multiply( obbMat ).invert();
 			_ray.copy( raycaster.ray );
 			_ray.applyMatrix4( _mat );
-			if ( ! _ray.intersectBox( boundingBox, _vec ) ) {
+			if ( _ray.intersectBox( boundingBox, _vec ) ) {
 
-				continue;
+				const data = {
+					distance: calculateDistanceToBoundingVolume( _vec, _mat, _ray, boundingBox.containsPoint( _ray.origin ) ),
+					tile: tile
+				};
+				array.push( data );
 
 			}
 
-		} else {
-
-			_mat.invert();
-
 		}
-
-		// account for tile scale
-		_vec2.setFromMatrixScale( _mat );
-		const invScale = _vec2.x;
-
-		if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
-
-			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
-
-		}
-
-		// if we intersect the tightest available bound save the distance to the tile bounds
-		const data = {
-			distance: Infinity,
-			tile: null
-		};
-		array.push( data );
-
-		if ( ( boundingBox && boundingBox.containsPoint( _ray.origin ) ) || ( ! boundingBox && sphere && sphere.containsPoint( _ray.origin ) ) ) {
-
-			data.distance = 0;
-
-		} else {
-
-			data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
-
-		}
-
-		data.tile = tile;
 
 	}
 
