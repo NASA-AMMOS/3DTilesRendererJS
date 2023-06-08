@@ -1,5 +1,5 @@
 import { PNTSLoaderBase } from '../base/PNTSLoaderBase.js';
-import { Points, PointsMaterial, BufferGeometry, BufferAttribute, DefaultLoadingManager } from 'three';
+import { Points, PointsMaterial, BufferGeometry, BufferAttribute, DefaultLoadingManager, Vector3 } from 'three';
 
 export class PNTSLoader extends PNTSLoaderBase {
 
@@ -43,6 +43,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 				} );
 
 				const geometry = new BufferGeometry();
+				const averageVector = new Vector3();
 				if ( POSITION ) {
 
 					geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
@@ -55,11 +56,15 @@ export class PNTSLoader extends PNTSLoaderBase {
 						for ( let j = 0; j < 3; j ++ ) {
 
 							const index = 3 * i + j;
-							decodedPositions[ index ] = ( POSITION_QUANTIZED[ index ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ j ] + QUANTIZED_VOLUME_OFFSET[ j ];
+							decodedPositions[ index ] = ( POSITION_QUANTIZED[ index ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ j ];
 
 						}
 
 					}
+					averageVector.x += QUANTIZED_VOLUME_OFFSET[ 0 ];
+					averageVector.y += QUANTIZED_VOLUME_OFFSET[ 1 ];
+					averageVector.z += QUANTIZED_VOLUME_OFFSET[ 2 ];
+
 					geometry.setAttribute( 'position', new BufferAttribute( decodedPositions, 3, false ) );
 
 				}
@@ -76,6 +81,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 				}
 
 				const object = new Points( geometry, material );
+				object.position.copy( averageVector );
 				result.scene = object;
 				result.scene.featureTable = featureTable;
 
