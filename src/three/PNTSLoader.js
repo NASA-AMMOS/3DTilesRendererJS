@@ -5,6 +5,7 @@ import {
 	BufferGeometry,
 	BufferAttribute,
 	DefaultLoadingManager,
+	Vector3,
 } from 'three';
 
 const DRACO_ATTRIBUTE_MAP = {
@@ -29,6 +30,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 			const material = new PointsMaterial();
 			const extensions = featureTable.header.extensions;
+			const translationOffset = new Vector3();
 			let geometry;
 
 			// handle loading the draco data
@@ -79,9 +81,36 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
 				const POSITION = featureTable.getData( 'POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 				const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
+				const POSITION_QUANTIZED = featureTable.getData( 'POSITION_QUANTIZED', POINTS_LENGTH, 'UNSIGNED_SHORT', 'VEC3' );
+				const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', POINTS_LENGTH, 'FLOAT', 'VEC3' );
+				const QUANTIZED_VOLUME_OFFSET = featureTable.getData( 'QUANTIZED_VOLUME_OFFSET', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 
 				geometry = new BufferGeometry();
-				geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+
+				if ( POSITION_QUANTIZED ) {
+
+					const decodedPositions = new Float32Array( POINTS_LENGTH * 3 );
+					for ( let i = 0; i < POINTS_LENGTH; i ++ ) {
+
+						for ( let j = 0; j < 3; j ++ ) {
+
+							const index = 3 * i + j;
+							decodedPositions[ index ] = ( POSITION_QUANTIZED[ index ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ j ];
+
+						}
+
+					}
+					translationOffset.x = QUANTIZED_VOLUME_OFFSET[ 0 ];
+					translationOffset.y = QUANTIZED_VOLUME_OFFSET[ 1 ];
+					translationOffset.z = QUANTIZED_VOLUME_OFFSET[ 2 ];
+					geometry.setAttribute( 'position', new BufferAttribute( decodedPositions, 3, false ) );
+
+				} else {
+
+					geometry.setAttribute( 'position', new BufferAttribute( POSITION, 3, false ) );
+
+				}
+
 				if ( RGB !== null ) {
 
 					geometry.setAttribute( 'color', new BufferAttribute( RGB, 3, true ) );
@@ -92,11 +121,8 @@ export class PNTSLoader extends PNTSLoaderBase {
 			}
 
 			[
-				'QUANTIZED_VOLUME_OFFSET',
-				'QUANTIZED_VOLUME_SCALE',
 				'CONSTANT_RGBA',
 				'BATCH_LENGTH',
-				'POSITION_QUANTIZED',
 				'RGBA',
 				'RGB565',
 				'NORMAL',
@@ -114,11 +140,11 @@ export class PNTSLoader extends PNTSLoaderBase {
 			} );
 
 			const object = new Points( geometry, material );
+			object.position.copy( translationOffset );
 			result.scene = object;
 			result.scene.featureTable = featureTable;
 
 			const rtcCenter = featureTable.getData( 'RTC_CENTER' );
-
 			if ( rtcCenter ) {
 
 				result.scene.position.x += rtcCenter[ 0 ];
