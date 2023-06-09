@@ -87,7 +87,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 				geometry = new BufferGeometry();
 
-				if( POSITION_QUANTIZED ) {
+				if ( POSITION_QUANTIZED ) {
 
 					const decodedPositions = new Float32Array( POINTS_LENGTH * 3 );
 					for ( let i = 0; i < POINTS_LENGTH; i ++ ) {
