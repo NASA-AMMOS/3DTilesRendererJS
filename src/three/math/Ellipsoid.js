@@ -1,50 +1,13 @@
 import { Vector3, Spherical } from 'three';
-
-// Cesium / 3D tiles Spheroid:
-// - Up is Z at 90 degrees latitude
-// - 0, 0 latitude, longitude is X axis
-//      Z
-//      |
-//      |
-//      .----- Y
-//     /
-//   X
-
-
-// Three.js Spherical Coordinates
-// - Up is Y at 90 degrees latitude
-// - 0, 0 latitude, longitude is Z
-//       Y
-//      |
-//      |
-//      .----- X
-//     /
-//   Z
-
-function swapFrame( target ) {
-
-	const { x, y, z } = target;
-	target.x = z;
-	target.y = x;
-	target.z = y;
-
-}
-
-export function sphericalPhiToLatitude( phi ) {
-
-	return - ( phi - Math.PI / 2 );
-
-}
-
-export function latitudeToSphericalPhi( latitude ) {
-
-	return - latitude + Math.PI / 2;
-
-}
+import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
 const _norm = new Vector3();
 const _vec = new Vector3();
+const _vec2 = new Vector3();
+
+const EPSILON12 = 1e-12;
+const CENTER_EPS = 0.1;
 
 export class Ellipsoid {
 
@@ -56,13 +19,11 @@ export class Ellipsoid {
 
 	getCartographicToPosition( lat, lon, height, target ) {
 
-		// https://github.com/CesiumGS/cesium/blob/main/Source/Core/Ellipsoid.js#L396
+		// From Cesium function Ellipsoid.cartographicToCartesian
+		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L396
+		this.getCartographicToNormal( lat, lon, _norm );
+
 		const radius = this.radius;
-		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
-		_norm.setFromSpherical( _spherical ).normalize();
-
-		swapFrame( _norm );
-
 		_vec.copy( _norm );
 		_vec.x *= radius.x ** 2;
 		_vec.y *= radius.y ** 2;
@@ -75,12 +36,29 @@ export class Ellipsoid {
 
 	}
 
+	getPositionToCartographic( pos, target ) {
+
+		// From Cesium function Ellipsoid.cartesianToCartographic
+		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
+		this.getPositionToSurfacePoint( pos, _vec );
+		this.getPositionToNormal( pos, _norm );
+
+		const heightDelta = _vec2.subVectors( pos, _vec );
+
+		target.lon = Math.atan2( _norm.y, _norm.x );
+		target.lat = Math.asin( _norm.z );
+		target.height = Math.sign( heightDelta.dot( pos ) ) * heightDelta.length();
+		return target;
+
+	}
+
 	getCartographicToNormal( lat, lon, target ) {
 
-		_spherical.set( 1, ( - lat + Math.PI / 2 ), lon );
+		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
 		target.setFromSpherical( _spherical ).normalize();
 
-		swapFrame( target );
+		// swap frame from the three.js frame to the geo coord frame
+		swapToGeoFrame( target );
 		return target;
 
 	}
@@ -95,6 +73,86 @@ export class Ellipsoid {
 		target.normalize();
 
 		return target;
+
+	}
+
+	getPositionToSurfacePoint( pos, target ) {
+
+		// From Cesium function Ellipsoid.scaleToGeodeticSurface
+		// https://github.com/CesiumGS/cesium/blob/d11b746e5809ac115fcff65b7b0c6bdfe81dcf1c/packages/engine/Source/Core/scaleToGeodeticSurface.js#L25
+		const radius = this.radius;
+		const invRadiusSqX = 1 / ( radius.x ** 2 );
+		const invRadiusSqY = 1 / ( radius.y ** 2 );
+		const invRadiusSqZ = 1 / ( radius.z ** 2 );
+
+		const x2 = pos.x * pos.x * invRadiusSqX;
+		const y2 = pos.y * pos.y * invRadiusSqY;
+		const z2 = pos.z * pos.z * invRadiusSqZ;
+
+		// Compute the squared ellipsoid norm.
+		const squaredNorm = x2 + y2 + z2;
+		const ratio = Math.sqrt( 1.0 / squaredNorm );
+
+		// As an initial approximation, assume that the radial intersection is the projection point.
+		const intersection = _vec.copy( pos ).multiplyScalar( ratio );
+		if ( squaredNorm < CENTER_EPS ) {
+
+			return ! isFinite( ratio ) ? null : target.copy( intersection );
+
+		}
+
+		// Use the gradient at the intersection point in place of the true unit normal.
+		// The difference in magnitude will be absorbed in the multiplier.
+		const gradient = _vec2.set(
+			intersection.x * invRadiusSqX * 2.0,
+			intersection.y * invRadiusSqY * 2.0,
+			intersection.z * invRadiusSqZ * 2.0
+		);
+
+		// Compute the initial guess at the normal vector multiplier, lambda.
+		let lambda = ( 1.0 - ratio ) * pos.length() / ( 0.5 * gradient.length() );
+		let correction = 0.0;
+
+		let func, denominator;
+		let xMultiplier, yMultiplier, zMultiplier;
+		let xMultiplier2, yMultiplier2, zMultiplier2;
+		let xMultiplier3, yMultiplier3, zMultiplier3;
+
+		do {
+
+			lambda -= correction;
+
+			xMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSqX );
+			yMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSqY );
+			zMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSqZ );
+
+			xMultiplier2 = xMultiplier * xMultiplier;
+			yMultiplier2 = yMultiplier * yMultiplier;
+			zMultiplier2 = zMultiplier * zMultiplier;
+
+			xMultiplier3 = xMultiplier2 * xMultiplier;
+			yMultiplier3 = yMultiplier2 * yMultiplier;
+			zMultiplier3 = zMultiplier2 * zMultiplier;
+
+			func = x2 * xMultiplier2 + y2 * yMultiplier2 + z2 * zMultiplier2 - 1.0;
+
+			// "denominator" here refers to the use of this expression in the velocity and acceleration
+			// computations in the sections to follow.
+			denominator =
+			  	x2 * xMultiplier3 * invRadiusSqX +
+			  	y2 * yMultiplier3 * invRadiusSqY +
+			  	z2 * zMultiplier3 * invRadiusSqZ;
+
+			const derivative = - 2.0 * denominator;
+			correction = func / derivative;
+
+		} while ( Math.abs( func ) > EPSILON12 );
+
+		return target.set(
+			pos.x * xMultiplier,
+			pos.y * yMultiplier,
+			pos.z * zMultiplier
+		);
 
 	}
 

@@ -59,7 +59,7 @@ const params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjYjNlMTg5Zi1hMzc2LTRmZjktOGEwZC00NGEzNTM0MTAzZGUiLCJpZCI6MjU5LCJpYXQiOjE1MTgxOTE2NTV9.qaP8-_Ej6AihGnv5iB990Hm6lHr8F_rrC3_EPxdT6MQ',
+	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMmM4Yzc0YS02ZTM4LTQwODItOGI4ZC04OTI3Yzk5MjJlMGEiLCJpZCI6MjU5LCJpYXQiOjE2Njk5MDUxNDh9.tcSYhz3-NLfuOdb1w9wHOw-Ps85-AyR_mBYRHDifEi8',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -101,7 +101,7 @@ function setupTiles() {
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );

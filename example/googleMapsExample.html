@@ -4,7 +4,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 		<meta charset="utf-8"/>
 
-		<title>3D Tiles Renderer Options Example</title>
+		<title>Google 3D Tiles Example</title>
 
 		<style>
 			* {
@@ -39,15 +39,28 @@
 				color: white;
 				pointer-events: all;
 			}
+
+			#credits {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				color: white;
+				font-size: 12px;
+				opacity: 0.5;
+				padding: 5px;
+				line-height: 1.25em;
+			}
         </style>
     </head>
     <body>
 		<div id="info">
 			<div>
-				Paste the evaluation Cesium Ion token from the <a target="_blank" href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repository</a> or your own token and asset id <br/> into the fields and press "reload" to see the demo. See <a href="http://cesium.com">cesium.com</a> for more information.
+				Google Maps 3D tiles example. Double click to refocus the camera.
 				<br/>
 			</div>
 		</div>
-        <script src="./ionExample.js"></script>
+		<div id="credits">
+		</div>
+        <script type="module" src="./googleMapsExample.js"></script>
     </body>
 </html>

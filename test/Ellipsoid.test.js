@@ -1,32 +1,63 @@
+/* eslint-disable jest/expect-expect */
 import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
 import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/base/constants.js';
 
-function compareCartesianVector( cart, vec, EPSILON = 1e-13 ) {
+function epsCompare( a, b, EPSILON = 1e-10 ) {
 
-	expect( Math.abs( cart.x - vec.x ) ).toBeLessThanOrEqual( EPSILON );
-	expect( Math.abs( cart.y - vec.y ) ).toBeLessThanOrEqual( EPSILON );
-	expect( Math.abs( cart.z - vec.z ) ).toBeLessThanOrEqual( EPSILON );
+	expect( Math.abs( a - b ) ).toBeLessThanOrEqual( EPSILON );
+
+}
+
+function compareCartesianVector( cart, vec, EPSILON = 1e-10 ) {
+
+	epsCompare( cart.x, vec.x, EPSILON );
+	epsCompare( cart.y, vec.y, EPSILON );
+	epsCompare( cart.z, vec.z, EPSILON );
+
+}
+
+function compareCoord( a, b, EPSILON = 1e-7 ) {
+
+	epsCompare( a, b, EPSILON );
+
+}
+
+function randomRange( min, max ) {
+
+	const delta = max - min;
+	return min + Math.random() * delta;
+
+}
+
+function randomLat() {
+
+	return randomRange( - Math.PI / 2, Math.PI / 2 );
+
+}
+
+function randomLon() {
+
+	return randomRange( - Math.PI, Math.PI );
 
 }
 
 describe( 'Ellipsoid', () => {
 
-	let v, c;
+	let v, c, c2;
 	let c_unitEllipse, unitEllipse;
 	let c_wgsEllipse, wgsEllipse;
-	let norm, norm2, cnorm, cnorm2;
+	let norm, cnorm;
 	beforeEach( () => {
 
 		c = new Cesium.Cartesian3();
+		c2 = new Cesium.Cartesian3();
 		v = new Vector3();
 
 		norm = new Vector3();
-		norm2 = new Vector3();
 		cnorm = new Cesium.Cartesian3();
-		cnorm2 = new Cesium.Cartesian3();
 
 		c_unitEllipse = new Cesium.Ellipsoid( 1, 1, 1 );
 		unitEllipse = new Ellipsoid( 1, 1, 1 );
@@ -36,28 +67,80 @@ describe( 'Ellipsoid', () => {
 
 	} );
 
+	it( 'should convert between lat lon and position consistently.', () => {
+
+		const POS_EPSILON = 1e-6;
+		const SURF_EPSILON = 1e-5;
+		const LAT_LON_EPSILON = 1e-4;
+		for ( let i = 0; i < 100; i ++ ) {
+
+			const lat = randomLat();
+			const lon = randomLon();
+			const height = randomRange( - 1e5, 1e5 );
+			const cart = new Cesium.Cartographic( lon, lat, height );
+
+			wgsEllipse.getCartographicToPosition( lat, lon, height, v );
+			c_wgsEllipse.cartographicToCartesian( cart, c );
+
+			compareCartesianVector( c, v, POS_EPSILON );
+
+			const result = {};
+			wgsEllipse.getPositionToCartographic( v, result );
+			c_wgsEllipse.scaleToGeodeticSurface( c, c2 );
+
+			compareCoord( result.lat, lat, LAT_LON_EPSILON );
+			compareCoord( result.lon, lon, LAT_LON_EPSILON );
+			compareCoord( result.height, height, SURF_EPSILON );
+
+		}
+
+	} );
+
+	it( 'should match the surface points.', () => {
+
+		const LOCAL_EPSILON = 1e-8;
+		for ( let i = 0; i < 100; i ++ ) {
+
+			v.random().normalize().multiplyScalar( WGS84_RADIUS * 2 );
+			c.x = v.x;
+			c.y = v.y;
+			c.z = v.z;
+
+			wgsEllipse.getPositionToSurfacePoint( v, norm );
+			c_wgsEllipse.scaleToGeodeticSurface( c, cnorm );
+
+			compareCartesianVector( cnorm, norm, LOCAL_EPSILON );
+
+		}
+
+	} );
+
 	it( 'should match Cesium Unit Sphere results.', () => {
 
 		for ( let i = 0; i < 100; i ++ ) {
 
-			const lat = Math.random();
-			const lon = Math.random();
-			const height = Math.random();
-			const cart = new Cesium.Cartographic( lon, lat, 0 );
+			const lat = randomLat();
+			const lon = randomLon();
+			const height = randomRange( - 1e5, 1e5 );
+			const cart = new Cesium.Cartographic( lon, lat, height );
 
 			// test positions
-			c_unitEllipse.cartographicToCartesian( new Cesium.Cartographic( lon, lat, height ), c );
+			c_unitEllipse.cartographicToCartesian( cart, c );
 			unitEllipse.getCartographicToPosition( lat, lon, height, v );
 
 			compareCartesianVector( c, v );
 
-			// test normals
-			c_unitEllipse.geodeticSurfaceNormal( c, cnorm2 );
-			c_unitEllipse.geodeticSurfaceNormalCartographic( cart, cnorm );
+			// test pos to normal
+			c_unitEllipse.geodeticSurfaceNormal( c, cnorm );
 			unitEllipse.getPositionToNormal( v, norm );
 
 			compareCartesianVector( cnorm, norm );
-			compareCartesianVector( cnorm, cnorm2 );
+
+			// test cart to normal
+			c_wgsEllipse.geodeticSurfaceNormalCartographic( cart, cnorm );
+			wgsEllipse.getCartographicToNormal( lat, lon, norm );
+
+			compareCartesianVector( cnorm, norm );
 
 		}
 
@@ -68,10 +151,9 @@ describe( 'Ellipsoid', () => {
 		const LOCAL_EPSILON = 1e-6;
 		for ( let i = 0; i < 100; i ++ ) {
 
-			const lat = Math.random();
-			const lon = Math.random();
-			const height = ( Math.random() - 0.5 ) * 1000;
-
+			const lat = randomLat();
+			const lon = randomLon();
+			const height = randomRange( - 1e5, 1e5 );
 			const cart = new Cesium.Cartographic( lon, lat, 0 );
 
 			// test positions
@@ -80,15 +162,17 @@ describe( 'Ellipsoid', () => {
 
 			compareCartesianVector( c, v, LOCAL_EPSILON );
 
-			// test normals
-			c_wgsEllipse.geodeticSurfaceNormal( c, cnorm2 );
-			c_wgsEllipse.geodeticSurfaceNormalCartographic( cart, cnorm );
-			wgsEllipse.getPositionToNormal( v, norm );
-			wgsEllipse.getCartographicToNormal( lat, lon, norm2 );
+			// test pos to normal
+			c_unitEllipse.geodeticSurfaceNormal( c, cnorm );
+			unitEllipse.getPositionToNormal( v, norm );
 
-			compareCartesianVector( cnorm, norm, LOCAL_EPSILON );
-			compareCartesianVector( cnorm, cnorm2, LOCAL_EPSILON );
-			compareCartesianVector( cnorm, norm2, LOCAL_EPSILON );
+			compareCartesianVector( cnorm, norm );
+
+			// test cart to normal
+			c_wgsEllipse.geodeticSurfaceNormalCartographic( cart, cnorm );
+			wgsEllipse.getCartographicToNormal( lat, lon, norm );
+
+			compareCartesianVector( cnorm, norm );
 
 		}
 

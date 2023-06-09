@@ -1,8 +1,7 @@
 # 3d-tiles-renderer
 
 [![npm version](https://img.shields.io/npm/v/3d-tiles-renderer.svg?style=flat-square)](https://www.npmjs.com/package/3d-tiles-renderer)
-[![build](https://img.shields.io/github/workflow/status/NASA-AMMOS/3DTilesRendererJS/Node.js%20CI?style=flat-square&label=build)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
-[![lgtm code quality](https://img.shields.io/lgtm/grade/javascript/g/NASA-AMMOS/3DTilesRendererJS.svg?style=flat-square&label=code-quality)](https://lgtm.com/projects/g/NASA-AMMOS/3DTilesRendererJS/)
+[![build](https://img.shields.io/github/actions/workflow/status/NASA-AMMOS/3DTilesRendererJS/node.js.yml?style=flat-square&label=build&branch=master)](https://github.com/NASA-AMMOS/3DTilesRendererJS/actions)
 
 ![](./images/header-mars.png)
 
@@ -154,6 +153,21 @@ loader.setDRACOLoader( dracoLoader );
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, loader );
 ```
+
+Adding support for DRACO decompression within the PNTS files.
+
+```js
+
+// Note the DRACO compression files need to be supplied via an explicit source.
+// We use unpkg here but in practice should be provided by the application.
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
+
+
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+tilesRenderer.manager.addHandler( /\.drc$/, loader );
+```
+
 
 ## Loading from Cesium Ion
 
@@ -423,6 +437,14 @@ getOrientedBounds( box : Box3, boxTransform : Matrix4 ) : boolean;
 ```
 
 Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
+
+### .getBoundingSphere
+
+```js
+getBoundingSphere( sphere : Sphere ) : boolean;
+```
+
+Sets `sphere` to the bounding sphere that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
 
 ### .hasCamera
 

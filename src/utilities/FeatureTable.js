@@ -141,6 +141,13 @@ export class FeatureTable {
 
 	}
 
+	getBuffer( byteOffset, byteLength ) {
+
+		const { buffer, binOffset } = this;
+		return buffer.slice( binOffset + byteOffset, binOffset + byteOffset + byteLength );
+
+	}
+
 }
 
 export class BatchTable extends FeatureTable {

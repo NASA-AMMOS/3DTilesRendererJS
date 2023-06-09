@@ -13,7 +13,7 @@ export class TilesRendererBase {
 	maxDepth : Number;
 	stopAtEmptyTiles : Boolean;
 
-	fetchOptions : Object;
+	fetchOptions : RequestInit;
 	/** function to preprocess the url for each individual tile */
 	preprocessURL : ((uri: string | URL) => string) | null;
 

@@ -1,5 +1,4 @@
-
-export default class GLTFCesiumRTCExtension {
+export class GLTFCesiumRTCExtension {
 
 	constructor() {
 
@@ -9,10 +8,19 @@ export default class GLTFCesiumRTCExtension {
 
 	afterRoot( res ) {
 
-		const { center } = res.parser.json.extensions.CESIUM_RTC;
-		res.scene.position.x += center[ 0 ];
-		res.scene.position.y += center[ 1 ];
-		res.scene.position.z += center[ 2 ];
+		if ( res.parser.json.extensions && res.parser.json.extensions.CESIUM_RTC ) {
+
+			const { center } = res.parser.json.extensions.CESIUM_RTC;
+
+			if ( center ) {
+
+				res.scene.position.x += center[ 0 ];
+				res.scene.position.y += center[ 1 ];
+				res.scene.position.z += center[ 2 ];
+
+			}
+
+		}
 
 	}
 

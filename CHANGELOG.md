@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.19] - Unreleased
+### Fixed
+- Case sensitivity when dealing with file formats.
+- Race condition when setting the transformation of gltf files.
+- Case where internal tilesets were not disposed of properly when calling "dispose".
+- Incorrect calculation of geometric error when spheres are available.
+
+### Added
+- `getBounds` and `getOrientedBounds` now return the AABB of a sphere if a tileset bounding box is not available.
+
+## [0.3.18] - 2023-05-13
+### Added
+- Support for DRACO-compressed PNTs files.
+
+## [0.3.17] - 2023-04-03
+### Fixed
+- Case where raycasting could return an incorrect result when `firstHitOnly` was true.
+
+## [0.3.16] - 2022-11-11
+### Fixed
+- Incorrect internal import statement.
+
+## [0.3.15] - 2022-11-09
+### Fixed
+- Incorrect type definitions.
+
+### Added
+- Export for glTF CESIUM_RTC extension.
+
+## [0.3.14] - 2022-09-26
+### Fixed
+- Removed unused exports.
+
+
 ## [0.3.13] - 2022-09-26
 ### Added
 - Classes for Ellipsoid and EllipsoidRegion.

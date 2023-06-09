@@ -1,5 +1,7 @@
 import { PriorityQueue } from '../src/utilities/PriorityQueue.js';
 
+// eslint-disable-next-line
+globalThis.requestAnimationFrame = cb => setTimeout( cb );
 const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve ) );
 
 describe( 'PriorityQueue', () => {
