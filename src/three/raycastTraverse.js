@@ -61,16 +61,58 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const tile = children[ i ];
 		const cached = tile.cached;
 		const groupMatrixWorld = group.matrixWorld;
+		let distance = - Infinity;
 
-		_mat.copy( groupMatrixWorld );
-
-		// if we don't hit the sphere then early out
+		// if we don't hit the sphere then skip
 		const sphere = cached.sphere;
 		if ( sphere ) {
 
-			_sphere.copy( sphere );
-			_sphere.applyMatrix4( _mat );
-			if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
+			// measure hit in the parent tile set group
+			_sphere.copy( sphere ).applyMatrix4( groupMatrixWorld );
+			if ( raycaster.ray.intersectSphere( _sphere, _vec ) ) {
+
+				distance = Math.max(
+					distance,
+					_sphere.containsPoint( raycaster.ray.origin ) ? 0 : raycaster.ray.origin.distanceToSquared( _vec ),
+				);
+
+			} else {
+
+				continue;
+
+			}
+
+		}
+
+		// if we don't hit the box then skip
+		const boundingBox = cached.box;
+		const obbMat = cached.boxTransform;
+		if ( boundingBox ) {
+
+			// transform the ray into the local obb frame before finding the hit
+			_mat.copy( groupMatrixWorld ).multiply( obbMat ).invert();
+			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
+			if ( _ray.intersectBox( boundingBox, _vec ) ) {
+
+				// get the scaling of the frame relative to the parent so we can
+				// compute the distance in the tile set group frame
+				_vec2.setFromMatrixScale( _mat );
+
+				const invScale = _vec2.x;
+				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
+
+					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
+
+				}
+
+				distance = Math.max(
+					distance,
+					boundingBox.containsPoint( raycaster.ray.origin )
+						? 0
+						: raycaster.ray.origin.distanceToSquared( _vec ) * invScale * invScale,
+				);
+
+			} else {
 
 				continue;
 
@@ -80,49 +122,10 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 		// TODO: check region?
 
-		const boundingBox = cached.box;
-		const obbMat = cached.boxTransform;
-		if ( boundingBox ) {
+		// track the tile and hit distance for sorting
+		if ( distance !== - Infinity ) {
 
-			_mat.multiply( obbMat ).invert();
-			_ray.copy( raycaster.ray );
-			_ray.applyMatrix4( _mat );
-			if ( _ray.intersectBox( boundingBox, _vec ) ) {
-
-				// account for tile scale
-				_vec2.setFromMatrixScale( _mat );
-				const invScale = _vec2.x;
-
-				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
-
-					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
-
-				}
-
-				// if we intersect the box save the distance to the tile bounds
-				const data = {
-					distance: Infinity,
-					tile: null
-				};
-				array.push( data );
-
-				if ( boundingBox.containsPoint( _ray.origin ) ) {
-
-					data.distance = 0;
-
-				} else {
-
-					data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
-
-				}
-
-				data.tile = tile;
-
-			} else {
-
-				continue;
-
-			}
+			array.push( { distance, tile } );
 
 		}
 
