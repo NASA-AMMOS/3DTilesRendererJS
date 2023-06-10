@@ -61,7 +61,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		const tile = children[ i ];
 		const cached = tile.cached;
 		const groupMatrixWorld = group.matrixWorld;
-		let distance = Infinity;
+		let distance = - Infinity;
 
 		// if we don't hit the sphere then skip
 		const sphere = cached.sphere;
@@ -71,7 +71,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 			_sphere.copy( sphere ).applyMatrix4( groupMatrixWorld );
 			if ( raycaster.ray.intersectSphere( _sphere, _vec ) ) {
 
-				distance = Math.min(
+				distance = Math.max(
 					distance,
 					_sphere.containsPoint( raycaster.ray.origin ) ? 0 : raycaster.ray.origin.distanceToSquared( _vec ),
 				);
@@ -105,7 +105,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 				}
 
-				distance = Math.min(
+				distance = Math.max(
 					distance,
 					boundingBox.containsPoint( raycaster.ray.origin )
 						? 0
@@ -123,7 +123,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		// TODO: check region?
 
 		// track the tile and hit distance for sorting
-		if ( distance !== Infinity ) {
+		if ( distance !== - Infinity ) {
 
 			array.push( { distance, tile } );
 
