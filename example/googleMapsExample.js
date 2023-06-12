@@ -49,9 +49,74 @@ const params = {
 init();
 animate();
 
-function setupTiles() {
+function reinstantiateTiles() {
 
+	if ( tiles ) {
+
+		scene.remove( tiles.group );
+		tiles.dispose();
+		tiles = null;
+
+	}
+
+	credits = new MapsTilesCredits();
+
+	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` ).toString();
+	tiles = new TilesRenderer( url );
 	tiles.fetchOptions.mode = 'cors';
+	tiles.parseQueue.maxJobs = 5;
+	tiles.downloadQueue.maxJobs = 20;
+	tiles.lruCache.minSize = 3000;
+	tiles.lruCache.maxSize = 5000;
+	tiles.group.rotation.x = - Math.PI / 2;
+	tiles.errorTarget = 20;
+	tiles.onLoadTileSet = tileset => {
+
+		// find the session id in the first sub tileset
+		let session;
+		const toVisit = [ tileset.root ];
+		while ( toVisit.length !== 0 ) {
+
+			const curr = toVisit.pop();
+			if ( curr.content && curr.content.uri ) {
+
+				session = new URL( `${ apiOrigin }${ curr.content.uri }` ).searchParams.get( 'session' );
+				break;
+
+			} else {
+
+				toVisit.push( ...curr.children );
+
+			}
+
+		}
+
+		// adjust the url preprocessor to include the api key, session
+		tiles.preprocessURL = uri => {
+
+			uri = new URL( uri );
+			if ( /^http/.test( uri.protocol ) ) {
+
+				uri.searchParams.append( 'session', session );
+				uri.searchParams.append( 'key', params.apiKey );
+
+			}
+			return uri.toString();
+
+		};
+
+		// clear the callback once the root is loaded
+		tiles.onLoadTileSet = null;
+
+	};
+
+	tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
+
+		const copyright = tile.cached.metadata.asset.copyright || '';
+		if ( visible ) credits.addCredits( copyright );
+		else credits.removeCredits( copyright );
+
+	};
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -66,112 +131,6 @@ function setupTiles() {
 
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-
-}
-
-function reinstantiateTiles() {
-
-	if ( tiles ) {
-
-		scene.remove( tiles.group );
-		tiles.dispose();
-		tiles = null;
-
-	}
-
-	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` );
-
-	fetch( url, { mode: 'cors' } )
-		.then( res => {
-
-			if ( res.ok ) {
-
-				return res.json();
-
-			} else {
-
-				return Promise.reject( new Error( `${res.status} : ${res.statusText}` ) );
-
-			}
-
-		} )
-		.then( json => {
-
-			if ( ! json.root ) {
-
-				throw new Error( `malformed response: ${ json }` );
-
-			}
-
-			// TODO: See if there's a better way to retrieve the session id
-			let uri;
-			const toVisit = [ json.root ];
-			while ( toVisit.length !== 0 ) {
-
-				const curr = toVisit.pop();
-				if ( curr.content && curr.content.uri ) {
-
-					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
-					uri.searchParams.append( 'key', params.apiKey );
-					break;
-
-				} else {
-
-					toVisit.push( ...curr.children );
-
-				}
-
-			}
-
-			if ( ! uri ) {
-
-				throw new Error( `can't find session string in response: ${ json }` );
-
-			}
-
-			const session = uri.searchParams.get( 'session' );
-
-			tiles = new TilesRenderer( url.toString() );
-			tiles.preprocessURL = uri => {
-
-				uri = new URL( uri );
-				if ( /^http/.test( uri.protocol ) ) {
-
-					uri.searchParams.append( 'session', session );
-					uri.searchParams.append( 'key', params.apiKey );
-
-				}
-				return uri.toString();
-
-			};
-
-			credits = new MapsTilesCredits();
-			tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
-
-				const copyright = tile.cached.metadata.asset.copyright || '';
-				if ( visible ) credits.addCredits( copyright );
-				else credits.removeCredits( copyright );
-
-
-			};
-
-			tiles.parseQueue.maxJobs = 5;
-			tiles.downloadQueue.maxJobs = 20;
-			tiles.lruCache.minSize = 3000;
-			tiles.lruCache.maxSize = 5000;
-			tiles.group.rotation.x = - Math.PI / 2;
-			tiles.errorTarget = 20;
-
-			setupTiles();
-			initFromHash();
-			setInterval( updateHash, 100 );
-
-		} )
-		.catch( err => {
-
-			console.error( 'Unable to get gmaps tileset:', err );
-
-		} );
 
 }
 
@@ -255,6 +214,10 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
+	// run hash functions
+	initFromHash();
+	setInterval( updateHash, 100 );
+
 }
 
 function onWindowResize() {
@@ -301,6 +264,12 @@ function updateControls() {
 }
 
 function updateHash() {
+
+	if ( ! tiles ) {
+
+		return;
+
+	}
 
 	const res = {};
 	const mat = tiles.group.matrixWorld.clone().invert();
