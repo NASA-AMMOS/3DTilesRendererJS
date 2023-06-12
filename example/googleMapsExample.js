@@ -49,26 +49,6 @@ const params = {
 init();
 animate();
 
-function setupTiles() {
-
-	tiles.fetchOptions.mode = 'cors';
-
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const loader = new GLTFLoader( tiles.manager );
-	loader.setDRACOLoader( dracoLoader );
-
-	tiles.manager.addHandler( /\.gltf$/, loader );
-	scene.add( tiles.group );
-
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.setCamera( camera );
-
-}
-
 function reinstantiateTiles() {
 
 	if ( tiles ) {
@@ -83,6 +63,7 @@ function reinstantiateTiles() {
 
 	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` ).toString();
 	tiles = new TilesRenderer( url );
+	tiles.fetchOptions.mode = 'cors';
 	tiles.parseQueue.maxJobs = 5;
 	tiles.downloadQueue.maxJobs = 20;
 	tiles.lruCache.minSize = 3000;
@@ -137,9 +118,19 @@ function reinstantiateTiles() {
 
 	};
 
-	setupTiles();
-	initFromHash();
-	setInterval( updateHash, 100 );
+	// Note the DRACO compression files need to be supplied via an explicit source.
+	// We use unpkg here but in practice should be provided by the application.
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
+
+	const loader = new GLTFLoader( tiles.manager );
+	loader.setDRACOLoader( dracoLoader );
+
+	tiles.manager.addHandler( /\.gltf$/, loader );
+	scene.add( tiles.group );
+
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.setCamera( camera );
 
 }
 
@@ -223,6 +214,10 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
+	// run hash functions
+	initFromHash();
+	setInterval( updateHash, 100 );
+
 }
 
 function onWindowResize() {
@@ -269,6 +264,12 @@ function updateControls() {
 }
 
 function updateHash() {
+
+	if ( ! tiles ) {
+
+		return;
+
+	}
 
 	const res = {};
 	const mat = tiles.group.matrixWorld.clone().invert();
