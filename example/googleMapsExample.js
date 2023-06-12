@@ -79,99 +79,67 @@ function reinstantiateTiles() {
 
 	}
 
-	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` );
+	credits = new MapsTilesCredits();
 
-	fetch( url, { mode: 'cors' } )
-		.then( res => {
+	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` ).toString();
+	tiles = new TilesRenderer( url );
+	tiles.parseQueue.maxJobs = 5;
+	tiles.downloadQueue.maxJobs = 20;
+	tiles.lruCache.minSize = 3000;
+	tiles.lruCache.maxSize = 5000;
+	tiles.group.rotation.x = - Math.PI / 2;
+	tiles.errorTarget = 20;
+	tiles.onLoadTileSet = tileset => {
 
-			if ( res.ok ) {
+		// find the session id in the first sub tileset
+		let session;
+		const toVisit = [ tileset.root ];
+		while ( toVisit.length !== 0 ) {
 
-				return res.json();
+			const curr = toVisit.pop();
+			if ( curr.content && curr.content.uri ) {
+
+				session = new URL( `${ apiOrigin }${ curr.content.uri }` ).searchParams.get( 'session' );
+				break;
 
 			} else {
 
-				return Promise.reject( new Error( `${res.status} : ${res.statusText}` ) );
+				toVisit.push( ...curr.children );
 
 			}
 
-		} )
-		.then( json => {
+		}
 
-			if ( ! json.root ) {
+		// adjust the url preprocessor to include the api key, session
+		tiles.preprocessURL = uri => {
 
-				throw new Error( `malformed response: ${ json }` );
+			uri = new URL( uri );
+			if ( /^http/.test( uri.protocol ) ) {
 
-			}
-
-			// TODO: See if there's a better way to retrieve the session id
-			let uri;
-			const toVisit = [ json.root ];
-			while ( toVisit.length !== 0 ) {
-
-				const curr = toVisit.pop();
-				if ( curr.content && curr.content.uri ) {
-
-					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
-					uri.searchParams.append( 'key', params.apiKey );
-					break;
-
-				} else {
-
-					toVisit.push( ...curr.children );
-
-				}
+				uri.searchParams.append( 'session', session );
+				uri.searchParams.append( 'key', params.apiKey );
 
 			}
+			return uri.toString();
 
-			if ( ! uri ) {
+		};
 
-				throw new Error( `can't find session string in response: ${ json }` );
+		// clear the callback once the root is loaded
+		tiles.onLoadTileSet = null;
 
-			}
+	};
 
-			const session = uri.searchParams.get( 'session' );
+	tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
 
-			tiles = new TilesRenderer( url.toString() );
-			tiles.preprocessURL = uri => {
+		const copyright = tile.cached.metadata.asset.copyright || '';
+		if ( visible ) credits.addCredits( copyright );
+		else credits.removeCredits( copyright );
 
-				uri = new URL( uri );
-				if ( /^http/.test( uri.protocol ) ) {
+	};
 
-					uri.searchParams.append( 'session', session );
-					uri.searchParams.append( 'key', params.apiKey );
-
-				}
-				return uri.toString();
-
-			};
-
-			credits = new MapsTilesCredits();
-			tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
-
-				const copyright = tile.cached.metadata.asset.copyright || '';
-				if ( visible ) credits.addCredits( copyright );
-				else credits.removeCredits( copyright );
-
-
-			};
-
-			tiles.parseQueue.maxJobs = 5;
-			tiles.downloadQueue.maxJobs = 20;
-			tiles.lruCache.minSize = 3000;
-			tiles.lruCache.maxSize = 5000;
-			tiles.group.rotation.x = - Math.PI / 2;
-			tiles.errorTarget = 20;
-
-			setupTiles();
-			initFromHash();
-			setInterval( updateHash, 100 );
-
-		} )
-		.catch( err => {
-
-			console.error( 'Unable to get gmaps tileset:', err );
-
-		} );
+	setupTiles();
+	initFromHash();
+	setInterval( updateHash, 100 );
 
 }
 
