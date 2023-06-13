@@ -1,5 +1,7 @@
 import { Matrix4 } from 'three';
-import { TilesRenderer, DebugTilesRenderer, WGS84_ELLIPSOID } from '../../src/index.js';
+import { TilesRenderer } from '../TilesRenderer.js';
+import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GoogleMapsTilesCredits } from './GoogleMapsTilesCredits.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
