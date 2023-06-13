@@ -5,7 +5,6 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Raycaster,
-	Box3,
 	MathUtils,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -20,7 +19,7 @@ raycaster.firstHitOnly = true;
 
 const params = {
 
-    'apiKey': 'put-your-api-key-here',
+	'apiKey': 'put-your-api-key-here',
 	'reload': reinstantiateTiles,
 
 };
