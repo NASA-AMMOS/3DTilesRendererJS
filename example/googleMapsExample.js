@@ -77,8 +77,6 @@ function init() {
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 
 	document.body.appendChild( renderer.domElement );
@@ -92,14 +90,6 @@ function init() {
 	controls.maxDistance = Infinity;
 	controls.minPolarAngle = Math.PI / 4;
 	controls.target.set( 0, 0, 1 );
-
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
 
 	reinstantiateTiles();
 
@@ -136,7 +126,6 @@ function init() {
 	} );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
@@ -247,12 +236,10 @@ function animate() {
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.displaySphereBounds = params.displaySphereBounds;
 	tiles.displayRegionBounds = params.displayRegionBounds;
-
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
 	// update tiles
-	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
 		camera.updateMatrixWorld();
@@ -270,6 +257,7 @@ function render() {
 	// render primary view
 	renderer.render( scene, camera );
 
+	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
 
