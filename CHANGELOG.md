@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - `getBounds` and `getOrientedBounds` now return the AABB of a sphere if a tileset bounding box is not available.
+- `GoogleTilesRenderer` for rendering Google's Photorealistic 3D Tiles
 
 ## [0.3.18] - 2023-05-13
 ### Added
