@@ -1,4 +1,5 @@
-import { DebugTilesRenderer as TilesRenderer, GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
+import { DebugGoogleTilesRenderer as GoogleTilesRenderer } from './src/GoogleTilesRenderer.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -16,11 +17,8 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
-import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 
-const apiOrigin = 'https://tile.googleapis.com';
-
-let camera, controls, scene, renderer, tiles, credits;
+let camera, controls, scene, renderer, tiles;
 let statsContainer, stats;
 
 const raycaster = new Raycaster();
@@ -59,64 +57,8 @@ function reinstantiateTiles() {
 
 	}
 
-	credits = new MapsTilesCredits();
-
-	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` ).toString();
-	tiles = new TilesRenderer( url );
-	tiles.fetchOptions.mode = 'cors';
-	tiles.parseQueue.maxJobs = 5;
-	tiles.downloadQueue.maxJobs = 20;
-	tiles.lruCache.minSize = 3000;
-	tiles.lruCache.maxSize = 5000;
+	tiles = new GoogleTilesRenderer( params.apiKey );
 	tiles.group.rotation.x = - Math.PI / 2;
-	tiles.errorTarget = 20;
-	tiles.onLoadTileSet = tileset => {
-
-		// find the session id in the first sub tileset
-		let session;
-		const toVisit = [ tileset.root ];
-		while ( toVisit.length !== 0 ) {
-
-			const curr = toVisit.pop();
-			if ( curr.content && curr.content.uri ) {
-
-				session = new URL( `${ apiOrigin }${ curr.content.uri }` ).searchParams.get( 'session' );
-				break;
-
-			} else {
-
-				toVisit.push( ...curr.children );
-
-			}
-
-		}
-
-		// adjust the url preprocessor to include the api key, session
-		tiles.preprocessURL = uri => {
-
-			uri = new URL( uri );
-			if ( /^http/.test( uri.protocol ) ) {
-
-				uri.searchParams.append( 'session', session );
-				uri.searchParams.append( 'key', params.apiKey );
-
-			}
-			return uri.toString();
-
-		};
-
-		// clear the callback once the root is loaded
-		tiles.onLoadTileSet = null;
-
-	};
-
-	tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
-
-		const copyright = tile.cached.metadata.asset.copyright || '';
-		if ( visible ) credits.addCredits( copyright );
-		else credits.removeCredits( copyright );
-
-	};
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -389,14 +331,14 @@ function render() {
 
 	}
 
-	if ( credits ) {
+	if ( tiles ) {
 
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
 
 		const res = {};
 		WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + credits.getCredits();
+		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
 
 	}
 
