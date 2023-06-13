@@ -11,12 +11,10 @@ const GoogleTilesRendererMixin = base => class extends base {
 		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
 
 		const container = new Group();
-		const tilesetGroup = this.group;
-		container.add( tilesetGroup );
+		container.add( this.group );
 
-		this.group = container;
+		this.globeContainer = container;
 		this._credits = new MapsTilesCredits();
-		this._tilsetGroup = tilesetGroup;
 
 		this.fetchOptions.mode = 'cors';
 		this.parseQueue.maxJobs = 5;
@@ -25,7 +23,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this.lruCache.maxSize = 5000;
 		this.errorTarget = 20;
 
-		// this.group.rotation.x = - Math.PI / 2;
 		this.onLoadTileSet = tileset => {
 
 			// find the session id in the first sub tile set
