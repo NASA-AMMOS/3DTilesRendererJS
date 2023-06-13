@@ -1,6 +1,8 @@
 import { Matrix4 } from 'three';
-import { TilesRenderer, DebugTilesRenderer, WGS84_ELLIPSOID } from '../../src/index.js';
-import { MapsTilesCredits } from './MapsTilesCredits.js';
+import { TilesRenderer } from '../TilesRenderer.js';
+import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
+import { GoogleMapsTilesCredits } from './GoogleMapsTilesCredits.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
@@ -17,7 +19,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
 
-		this._credits = new MapsTilesCredits();
+		this._credits = new GoogleMapsTilesCredits();
 
 		this.fetchOptions.mode = 'cors';
 		this.parseQueue.maxJobs = 7;

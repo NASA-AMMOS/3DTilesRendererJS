@@ -1,4 +1,4 @@
-export class MapsTilesCredits {
+export class GoogleMapsTilesCredits {
 
 	constructor() {
 

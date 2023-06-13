@@ -1,5 +1,4 @@
-import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
-import { DebugGoogleTilesRenderer as GoogleTilesRenderer } from './src/GoogleTilesRenderer.js';
+import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS, DebugGoogleTilesRenderer as GoogleTilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
