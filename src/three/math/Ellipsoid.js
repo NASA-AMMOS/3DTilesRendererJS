@@ -25,9 +25,9 @@ export class Ellipsoid {
 
 	constructLatLonFrame( lat, lon, target ) {
 
-		thi.getCartographicToPosition( lat, lon, 0, _pos );
-		thi.getCartographicToNormal( lat, lon, _vecZ );
-		thi.getNorthernTangent( lat, lon, _vecY );
+		this.getCartographicToPosition( lat, lon, 0, _pos );
+		this.getCartographicToNormal( lat, lon, _vecZ );
+		this.getNorthernTangent( lat, lon, _vecY );
 		_vecX.crossVectors( _vecY, _vecZ );
 
 		return target.makeBasis( _vecX, _vecY, _vecZ ).setPosition( _pos );
@@ -47,9 +47,14 @@ export class Ellipsoid {
 
 		const norm = this.getCartographicToNormal( lat, lon, _vec ).normalize();
 		const normPrime = this.getCartographicToNormal( latPrime, lon, _vec2 ).normalize();
-		westTarget.crossVectors( norm, normPrime ).normalize();
+		westTarget
+			.crossVectors( norm, normPrime )
+			.normalize()
+			.multiplyScalar( multiplier );
 
-		return target.crossVectors( westTarget, norm ).normalize().multiplyScalar( multiplier );
+		return target
+			.crossVectors( westTarget, norm )
+			.normalize();
 
 	}
 

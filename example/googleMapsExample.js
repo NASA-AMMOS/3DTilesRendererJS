@@ -30,12 +30,7 @@ const params = {
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 
-	'apiKey': 'put-your-api-key-here',
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'resolutionScale': 1.0,
 
-	'autoDisableRendererCulling': true,
 	'displayActiveTiles': false,
 	'displayBoxBounds': false,
 	'displaySphereBounds': false,
@@ -115,14 +110,10 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	const mapsOptions = gui.addFolder( 'GMaps' );
+	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
 	mapsOptions.open();
-
-	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'loadSiblings' );
-	tileOptions.add( params, 'stopAtEmptyTiles' );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -168,7 +159,7 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 	camera.updateProjectionMatrix();
-	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
+	renderer.setPixelRatio( window.devicePixelRatio );
 
 }
 
@@ -252,10 +243,7 @@ function animate() {
 	updateControls();
 
 	// update options
-	tiles.loadSiblings = params.loadSiblings;
-	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
-	tiles.autoDisableRendererCulling = params.autoDisableRendererCulling;
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.displaySphereBounds = params.displaySphereBounds;
 	tiles.displayRegionBounds = params.displayRegionBounds;
