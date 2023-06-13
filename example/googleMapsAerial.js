@@ -69,18 +69,18 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1600000 );
-	camera.position.set( 1e4, 1e4, 1e4 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 100, 1600000 );
+	camera.position.set( 1e3, 1e3, 1e3 ).multiplyScalar( 0.5 );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
-	controls.minDistance = 1;
-	controls.maxDistance = 1e6;
+	controls.minDistance = 500;
+	controls.maxDistance = 1e4 * 2;
 	controls.minPolarAngle = 0;
 	controls.maxPolarAngle = 3 * Math.PI / 8;
 	controls.enableDamping = true;
 	controls.autoRotate = true;
-	controls.autoRotateSpeed = 0.25;
+	controls.autoRotateSpeed = 0.5;
 	controls.enablePan = false;
 
 	reinstantiateTiles();
