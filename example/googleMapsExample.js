@@ -29,7 +29,6 @@ const params = {
 	'enableRendererStats': false,
 
 
-	'displayActiveTiles': false,
 	'displayBoxBounds': false,
 	'displaySphereBounds': false,
 	'displayRegionBounds': false,
@@ -230,10 +229,6 @@ function animate() {
 	updateControls();
 
 	// update options
-	tiles.displayActiveTiles = params.displayActiveTiles;
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displaySphereBounds = params.displaySphereBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
