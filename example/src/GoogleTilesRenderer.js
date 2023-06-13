@@ -1,10 +1,16 @@
 import { Group } from 'three';
-import { TilesRenderer, DebugTilesRenderer } from '../../src/index.js';
+import { TilesRenderer, DebugTilesRenderer, WGS84_ELLIPSOID } from '../../src/index.js';
 import { MapsTilesCredits } from './MapsTilesCredits.js';
+
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
-
 const GoogleTilesRendererMixin = base => class extends base {
+
+	get ellipsoid() {
+
+		return WGS84_ELLIPSOID;
+
+	}
 
 	constructor( apiKey, baseUrl = TILE_URL ) {
 
@@ -83,6 +89,19 @@ const GoogleTilesRendererMixin = base => class extends base {
 	getCreditsString() {
 
 		return this._credits.toString();
+
+	}
+
+	setLatLonToUp( lat, lon ) {
+
+		const { ellipsoid, group } = this;
+		ellipsoid.constructLatLonFrame( lat, lon, group.matrix )
+			.invert()
+			.decompose(
+				group.position,
+				group.quaternion,
+				group.scale,
+			);
 
 	}
 
