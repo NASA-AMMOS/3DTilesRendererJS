@@ -677,6 +677,36 @@ schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 
 A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
 
+## GoogleTilesRenderer
+
+_extends [TilesRenderer](#TilesRenderer)_
+
+Variant of the TilesRenderer designed to easily support [Google's Photorealistic 3D Tiles API](https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles). Handles adding api key to all requests, reading tile credits, and initializes tile set traversal options to reasonable defaults for the globe.
+
+### constructor
+
+```js
+constructor( apiKey: String )
+```
+
+Takes the Google Photorealistic Tiles API Key.
+
+### .getCreditsString
+
+```js
+getCreditsString(): String;
+```
+
+Returns a string of unique credits for all the tiles currently displayed.
+
+### .setLatLonToYUp
+
+```js
+setLatLonToYUp( lat: Number, lon: Number ): void;
+```
+
+Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+.
+
 ## LRUCache
 
 Utility class for the TilesRenderer to keep track of currently used items so rendered items will not be unloaded.
