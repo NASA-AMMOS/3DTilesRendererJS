@@ -8,11 +8,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 	constructor( apiKey, baseUrl = TILE_URL ) {
 
-		const url = new URL( `${ baseUrl }?key=${ apiKey }` ).toString();
-
-		console.log('HERE', apiKey, baseUrl );
-
-		super( url );
+		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
 
 		const container = new Group();
 		const tilesetGroup = this.group;
