@@ -1,24 +1,27 @@
-import { Group } from 'three';
-import { TilesRenderer, DebugTilesRenderer } from '../../src/index.js';
+import { Matrix4 } from 'three';
+import { TilesRenderer, DebugTilesRenderer, WGS84_ELLIPSOID } from '../../src/index.js';
 import { MapsTilesCredits } from './MapsTilesCredits.js';
+
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
-
+const _mat = new Matrix4();
 const GoogleTilesRendererMixin = base => class extends base {
+
+	get ellipsoid() {
+
+		return WGS84_ELLIPSOID;
+
+	}
 
 	constructor( apiKey, baseUrl = TILE_URL ) {
 
 		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
 
-		const container = new Group();
-		container.add( this.group );
-
-		this.globeContainer = container;
 		this._credits = new MapsTilesCredits();
 
 		this.fetchOptions.mode = 'cors';
-		this.parseQueue.maxJobs = 5;
-		this.downloadQueue.maxJobs = 20;
+		this.parseQueue.maxJobs = 7;
+		this.downloadQueue.maxJobs = 30;
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
 		this.errorTarget = 20;
@@ -83,6 +86,22 @@ const GoogleTilesRendererMixin = base => class extends base {
 	getCreditsString() {
 
 		return this._credits.toString();
+
+	}
+
+	setLatLonToYUp( lat, lon ) {
+
+		const { ellipsoid, group } = this;
+
+		_mat.makeRotationX( - Math.PI / 2 );
+		ellipsoid.constructLatLonFrame( lat, lon, group.matrix )
+			.invert()
+			.premultiply( _mat )
+			.decompose(
+				group.position,
+				group.quaternion,
+				group.scale,
+			);
 
 	}
 

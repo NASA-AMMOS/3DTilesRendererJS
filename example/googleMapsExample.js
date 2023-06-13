@@ -2,8 +2,6 @@ import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
 import { DebugGoogleTilesRenderer as GoogleTilesRenderer } from './src/GoogleTilesRenderer.js';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Raycaster,
@@ -30,13 +28,7 @@ const params = {
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
 
-	'apiKey': 'put-your-api-key-here',
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'resolutionScale': 1.0,
 
-	'autoDisableRendererCulling': true,
-	'displayActiveTiles': false,
 	'displayBoxBounds': false,
 	'displaySphereBounds': false,
 	'displayRegionBounds': false,
@@ -82,8 +74,6 @@ function init() {
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 
 	document.body.appendChild( renderer.domElement );
@@ -98,14 +88,6 @@ function init() {
 	controls.minPolarAngle = Math.PI / 4;
 	controls.target.set( 0, 0, 1 );
 
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
-
 	reinstantiateTiles();
 
 	onWindowResize();
@@ -115,14 +97,10 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	const mapsOptions = gui.addFolder( 'GMaps' );
+	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
 	mapsOptions.open();
-
-	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'loadSiblings' );
-	tileOptions.add( params, 'stopAtEmptyTiles' );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -145,7 +123,6 @@ function init() {
 	} );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
@@ -168,7 +145,7 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 	camera.updateProjectionMatrix();
-	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
+	renderer.setPixelRatio( window.devicePixelRatio );
 
 }
 
@@ -252,19 +229,10 @@ function animate() {
 	updateControls();
 
 	// update options
-	tiles.loadSiblings = params.loadSiblings;
-	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
-	tiles.displayActiveTiles = params.displayActiveTiles;
-	tiles.autoDisableRendererCulling = params.autoDisableRendererCulling;
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displaySphereBounds = params.displaySphereBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
-
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
 	// update tiles
-	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
 		camera.updateMatrixWorld();
@@ -282,6 +250,7 @@ function render() {
 	// render primary view
 	renderer.render( scene, camera );
 
+	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
 
