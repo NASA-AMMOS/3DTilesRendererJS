@@ -16,10 +16,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
 
-		const container = new Group();
-		container.add( this.group );
-
-		this.globeContainer = container;
 		this._credits = new MapsTilesCredits();
 
 		this.fetchOptions.mode = 'cors';
