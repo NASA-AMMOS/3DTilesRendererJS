@@ -1,4 +1,4 @@
-import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID } from '../src/index.js';
 import { DebugGoogleTilesRenderer as GoogleTilesRenderer } from './src/GoogleTilesRenderer.js';
 import {
 	Scene,
@@ -39,8 +39,9 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new GoogleTilesRenderer( params.apiKey );
-	tiles.group.rotation.x = - Math.PI / 2;
-	window.tiles = tiles;
+	tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
+	tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
+	tiles.setLatLonToYUp( 35.6586 * MathUtils.DEG2RAD, 139.7454 * MathUtils.DEG2RAD ); // Tokyo Tower
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -68,15 +69,19 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 7326000, 10279000, - 823000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1600000 );
+	camera.position.set( 1e4, 1e4, 1e4 );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
 	controls.minDistance = 1;
-	controls.maxDistance = Infinity;
+	controls.maxDistance = 1e6;
 	controls.minPolarAngle = 0;
-	controls.maxPolarAngle = Math.PI / 2;
+	controls.maxPolarAngle = 3 * Math.PI / 8;
+	controls.enableDamping = true;
+	controls.autoRotate = true;
+	controls.autoRotateSpeed = 0.25;
+	controls.enablePan = false;
 
 	reinstantiateTiles();
 
@@ -130,6 +135,8 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
+
+	controls.update();
 
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
