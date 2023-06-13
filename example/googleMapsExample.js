@@ -2,8 +2,6 @@ import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
 import { DebugGoogleTilesRenderer as GoogleTilesRenderer } from './src/GoogleTilesRenderer.js';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Raycaster,
