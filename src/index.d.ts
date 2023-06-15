@@ -24,6 +24,7 @@ export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 export * as GeoUtils from './three/math/GeoUtils';
 export * from './three/math/GeoConstants';
 export * from './three/renderers/GoogleTilesRenderer';
+export * from './three/renderers/CesiumIonTilesRenderer';
 
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
