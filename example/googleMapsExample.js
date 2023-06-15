@@ -26,6 +26,7 @@ const params = {
 	'enableUpdate': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
+	'apiKey': 'put-your-api-key-here',
 
 
 	'displayBoxBounds': false,
