@@ -26,7 +26,6 @@ import {
 	Group,
 	TorusBufferGeometry,
 	OrthographicCamera,
-	sRGBEncoding,
 	Matrix4,
 	Box3,
 	Sphere,
@@ -192,7 +191,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
@@ -215,7 +213,6 @@ function init() {
 	secondRenderer.setPixelRatio( window.devicePixelRatio );
 	secondRenderer.setSize( window.innerWidth, window.innerHeight );
 	secondRenderer.setClearColor( 0x151c1f );
-	secondRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( secondRenderer.domElement );
 	secondRenderer.domElement.style.position = 'absolute';
@@ -241,7 +238,6 @@ function init() {
 	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
 	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
 	thirdPersonRenderer.setClearColor( 0x0f1416 );
-	thirdPersonRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( thirdPersonRenderer.domElement );
 	thirdPersonRenderer.domElement.style.position = 'fixed';
