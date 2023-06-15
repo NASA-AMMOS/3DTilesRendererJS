@@ -67,7 +67,7 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 
 			} );
 
-		} else if( state === LOADED ) {
+		} else if ( state === LOADED ) {
 
 			super.update();
 

@@ -119,7 +119,7 @@ function isInt( input ) {
 
 function reinstantiateTiles() {
 
-	let url = hashUrl || '../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( hashUrl ) {
 
