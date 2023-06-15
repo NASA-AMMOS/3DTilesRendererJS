@@ -1,4 +1,5 @@
-import { TilesRenderer, DebugTilesRenderer } from '../../src/index.js';
+import { TilesRenderer } from '../TilesRenderer.js';
+import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
 
 const UNLOADED = 0;
 const LOADING = 1;

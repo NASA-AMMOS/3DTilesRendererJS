@@ -1,5 +1,6 @@
 import {
 	DebugTilesRenderer as TilesRenderer,
+	DebugCesiumIonTilesRenderer as CesiumIonTilesRenderer,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -35,7 +36,6 @@ import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtil
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { DebugCesiumIonTilesRenderer as CesiumIonTilesRenderer } from './src/CesiumIonTilesRenderer.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 const ALL_HITS = 1;
