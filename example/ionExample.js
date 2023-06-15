@@ -36,6 +36,7 @@ import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtil
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { DebugCesiumIonTilesRenderer as CesiumIonTilesRenderer } from './src/CesiumIonTilesRenderer.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 const ALL_HITS = 1;
@@ -59,7 +60,7 @@ const params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMmM4Yzc0YS02ZTM4LTQwODItOGI4ZC04OTI3Yzk5MjJlMGEiLCJpZCI6MjU5LCJpYXQiOjE2Njk5MDUxNDh9.tcSYhz3-NLfuOdb1w9wHOw-Ps85-AyR_mBYRHDifEi8',
+	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -137,94 +138,48 @@ function reinstantiateTiles() {
 
 	if ( params.ionAssetId ) {
 
-		url = new URL( `https://api.cesium.com/v1/assets/${params.ionAssetId}/endpoint` );
-		url.searchParams.append( 'access_token', params.ionAccessToken );
+		tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
+		tiles.onLoadTileSet = () => {
 
-		fetch( url, { mode: 'cors' } )
-			.then( ( res ) => {
+			const box = new Box3();
+			const sphere = new Sphere();
+			const matrix = new Matrix4();
 
-				if ( res.ok ) {
+			let position;
+			let distanceToEllipsoidCenter;
 
-					return res.json();
+			if ( tiles.getOrientedBounds( box, matrix ) ) {
 
-				} else {
+				position = new Vector3().setFromMatrixPosition( matrix );
+				distanceToEllipsoidCenter = position.length();
 
-					return Promise.reject( `${res.status} : ${res.statusText}` );
+			} else if ( tiles.getBoundingSphere( sphere ) ) {
 
-				}
+				position = sphere.center.clone();
+				distanceToEllipsoidCenter = position.length();
 
-			} )
-			.then( ( json ) => {
+			}
 
-				url = new URL( json.url );
-				const version = url.searchParams.get( 'v' );
+			const surfaceDirection = position.normalize();
+			const up = new Vector3( 0, 1, 0 );
+			const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
 
-				tiles = new TilesRenderer( url.toString() );
-				tiles.fetchOptions.headers = {};
-				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+			tiles.group.quaternion.x = rotationToNorthPole.x;
+			tiles.group.quaternion.y = rotationToNorthPole.y;
+			tiles.group.quaternion.z = rotationToNorthPole.z;
+			tiles.group.quaternion.w = rotationToNorthPole.w;
 
-				tiles.preprocessURL = uri => {
+			tiles.group.position.y = - distanceToEllipsoidCenter;
 
-					uri = new URL( uri );
-					if ( /^http/.test( uri.protocol ) ) {
-
-						uri.searchParams.append( 'v', version );
-
-					}
-					return uri.toString();
-
-				};
-
-				tiles.onLoadTileSet = () => {
-
-					const box = new Box3();
-					const sphere = new Sphere();
-					const matrix = new Matrix4();
-
-					let position;
-					let distanceToEllipsoidCenter;
-
-					if ( tiles.getOrientedBounds( box, matrix ) ) {
-
-						position = new Vector3().setFromMatrixPosition( matrix );
-						distanceToEllipsoidCenter = position.length();
-
-					} else if ( tiles.getBoundingSphere( sphere ) ) {
-
-						position = sphere.center.clone();
-						distanceToEllipsoidCenter = position.length();
-
-					}
-
-					const surfaceDirection = position.normalize();
-					const up = new Vector3( 0, 1, 0 );
-					const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
-
-					tiles.group.quaternion.x = rotationToNorthPole.x;
-					tiles.group.quaternion.y = rotationToNorthPole.y;
-					tiles.group.quaternion.z = rotationToNorthPole.z;
-					tiles.group.quaternion.w = rotationToNorthPole.w;
-
-					tiles.group.position.y = - distanceToEllipsoidCenter;
-
-				};
-
-				setupTiles();
-
-			} )
-			.catch( err => {
-
-				console.error( 'Unable to get ion tileset:', err );
-
-			} );
+		};
 
 	} else {
 
 		tiles = new TilesRenderer( url );
 
-		setupTiles();
-
 	}
+
+	setupTiles();
 
 }
 
