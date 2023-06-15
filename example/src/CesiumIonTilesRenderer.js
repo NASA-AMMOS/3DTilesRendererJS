@@ -12,14 +12,13 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 		this._tokenState = UNLOADED;
 		this._ionAccessToken = ionAccessToken;
 		this._ionAssetId = ionAssetId;
-		this._tilesetVersion = - 1;
-
+		this._tileSetVersion = - 1;
 		this.preprocessURL = uri => {
 
 			uri = new URL( uri );
-			if ( /^http/.test( uri.protocol ) ) {
+			if ( /^http/.test( uri.protocol ) && this._tileSetVersion != - 1 ) {
 
-				uri.searchParams.append( 'v', this._tilesetVersion );
+				uri.searchParams.append( 'v', this._tileSetVersion );
 
 			}
 			return uri.toString();
@@ -38,39 +37,34 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 			const url = new URL( `https://api.cesium.com/v1/assets/${ this._ionAssetId }/endpoint` );
 			url.searchParams.append( 'access_token', this._ionAccessToken );
 
-			fetch( url, { mode: 'cors' } )
-				.then( res => {
+			fetch( url, { mode: 'cors' } ).then( res => {
 
-					if ( res.ok ) {
+				if ( res.ok ) {
 
-						return res.json();
+					return res.json();
 
-					} else {
+				} else {
 
-						return Promise.reject( `${res.status} : ${res.statusText}` );
+					return Promise.reject( `${res.status} : ${res.statusText}` );
 
-					}
+				}
 
-				} )
-				.then( json => {
+			} ).then( json => {
 
-					const url = new URL( json.url );
-					this._tilesetVersion = url.searchParams.get( 'v' );
-					this.rootURL = url;
-					if ( ! this.fetchOptions.headers ) {
+				this._tokenState = LOADED;
 
-						this.fetchOptions.headers = {};
+				// retrieve the url version
+				const url = new URL( json.url );
+				this._tileSetVersion = url.searchParams.get( 'v' );
+				this.rootURL = url;
+				this.fetchOptions.headers = this.fetchOptions.headers || {};
+				this.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
 
-					}
-					this.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
-					this._tokenState = LOADED;
+			} ).catch( () => {
 
-				} )
-				.catch( () => {
+				this._tokenState = FAILED;
 
-					this._tokenState = FAILED;
-
-				} );
+			} );
 
 		} else if( state === LOADED ) {
 
