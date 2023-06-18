@@ -89,7 +89,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		if ( obb ) {
 
 			// transform the ray into the local obb frame before finding the hit
-			_mat.copy( groupMatrixWorld ).multiply( obb.traverse ).invert();
+			_mat.copy( groupMatrixWorld ).multiply( obb.transform ).invert();
 			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
 			if ( _ray.intersectBox( obb.box, _vec ) ) {
 

@@ -592,7 +592,6 @@ export class TilesRenderer extends TilesRendererBase {
 			const data = tile.boundingVolume.box;
 			sphere = new Sphere();
 			obb.box.getBoundingSphere( sphere );
-			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
 			sphere.applyMatrix4( obb.transform );
 
 		}
