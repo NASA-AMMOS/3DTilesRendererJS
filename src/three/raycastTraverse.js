@@ -67,7 +67,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, lo
 		const tile = children[ i ];
 		const cached = tile.cached;
 		const boundingVolume = cached.boundingVolume;
-		const distance = boundingVolume.intersectsRayDistance( localRay );
+		const distance = boundingVolume.getRayDistance( localRay );
 
 		// track the tile and hit distance for sorting
 		if ( distance !== null ) {
