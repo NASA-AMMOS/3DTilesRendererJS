@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `CesiumIonTilesRenderer` for more convenient use of the ion API.
+- Frustum check support for OBB bounding volumes.
 
 ## [0.3.19] - 2023-06-13
 ### Fixed
