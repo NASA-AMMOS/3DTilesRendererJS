@@ -145,10 +145,11 @@ export class EllipsoidRegionLineHelper extends LineSegments {
 
 export class EllipsoidRegionHelper extends Mesh {
 
-	constructor( ellipsoidRegion = new EllipsoidRegion() ) {
+	constructor( ellipsoidRegion = new EllipsoidRegion(), color = 0xffff00 ) {
 
 		super();
 		this.ellipsoidRegion = ellipsoidRegion;
+		this.material.color.set( color );
 		this.update();
 
 	}
