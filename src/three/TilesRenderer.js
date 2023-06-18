@@ -906,8 +906,6 @@ export class TilesRenderer extends TilesRendererBase {
 		const cameraInfo = this.cameraInfo;
 		const boundingVolume = cached.boundingVolume;
 
-		// TODO: Use the content bounding volume here?
-
 		let maxError = - Infinity;
 		let minDistance = Infinity;
 
