@@ -31,6 +31,9 @@ export class TileBoundingVolume {
 
 		if ( sphere ) {
 
+			// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
+			// zero inside the box. Clipping the distance to a minimum of zero ensures that both
+			// types of bounding volume behave the same way.
 			sphereDistance = Math.max( sphere.distanceToPoint( point ), 0 );
 
 		}

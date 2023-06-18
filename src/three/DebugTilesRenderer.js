@@ -455,19 +455,18 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const scene = cached.scene;
 				if ( scene ) {
 
-					if ( cached.obb ) {
-
-						const cachedObb = cached.obb;
+					const { sphere, obb, region } = cached.boundingVolume;
+					if ( obb ) {
 
 						// Create debug bounding box
 						// In some cases the bounding box may have a scale of 0 in one dimension resulting
 						// in the NaNs in an extracted rotation so we disable matrix updates instead.
 						const boxHelperGroup = new Group();
 						boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
-						boxHelperGroup.matrix.copy( cachedObb.transform );
+						boxHelperGroup.matrix.copy( obb.transform );
 						boxHelperGroup.matrixAutoUpdate = false;
 
-						const boxHelper = new Box3Helper( cachedObb.box, getIndexedRandomColor( tile.__depth ) );
+						const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.__depth ) );
 						boxHelper.raycast = emptyRaycast;
 						boxHelperGroup.add( boxHelper );
 
@@ -482,11 +481,10 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
-					if ( cached.sphere ) {
+					if ( sphere ) {
 
 						// Create debug bounding sphere
-						const cachedSphere = cached.sphere;
-						const sphereHelper = new SphereHelper( cachedSphere, getIndexedRandomColor( tile.__depth ) );
+						const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.__depth ) );
 						sphereHelper.raycast = emptyRaycast;
 						cached.sphereHelper = sphereHelper;
 
@@ -499,16 +497,15 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 					}
 
-					if ( cached.region ) {
+					if ( region ) {
 
 						// Create debug bounding region
-						const cachedRegion = cached.region;
-						const regionHelper = new EllipsoidRegionLineHelper( cachedRegion, getIndexedRandomColor( tile.__depth ) );
+						const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.__depth ) );
 						regionHelper.raycast = emptyRaycast;
 
 						// recenter the geometry to avoid rendering artifacts
 						const sphere = new Sphere();
-						cachedRegion.getBoundingSphere( sphere );
+						region.getBoundingSphere( sphere );
 						regionHelper.position.copy( sphere.center );
 
 						sphere.center.multiplyScalar( - 1 );

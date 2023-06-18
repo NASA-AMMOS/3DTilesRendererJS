@@ -925,12 +925,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const inFrustum = cached.inFrustum;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
+		const boundingVolume = cached.boundingVolume;
 
 		// TODO: Use the content bounding volume here?
-		// TODO: We should use the largest distance to the tile between
-		// all available bounding volume types.
-		const boundingSphere = cached.sphere;
-		const boundingObb = cached.obb;
 
 		let maxError = - Infinity;
 		let minDistance = Infinity;
@@ -955,23 +952,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} else {
 
-				tempVector.copy( info.position );
-
-				let distance;
-				if ( boundingObb ) {
-
-					tempVector.applyMatrix4( boundingObb.inverseTransform );
-					distance = boundingObb.box.distanceToPoint( tempVector );
-
-				} else {
-
-					// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
-					// zero inside the box. Clipping the distance to a minimum of zero ensures that both
-					// types of bounding volume behave the same way.
-					distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
-
-				}
-
+				const distance = boundingVolume.distanceToPoint( info.position );
 				const scaledDistance = distance * invScale;
 				const sseDenominator = info.sseDenominator;
 				error = tile.geometricError / ( scaledDistance * sseDenominator );
@@ -993,52 +974,32 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// TODO: we should use the more precise bounding volumes here if possible
 		// cache the root-space planes
-		// Use separating axis theorem for frustum and obb
 
 		const cached = tile.cached;
-		const { sphere, obb } = cached;
+		const boundingVolume = cached.boundingVolume;
 
 		const inFrustum = cached.inFrustum;
-		if ( sphere ) {
+		const cameraInfo = this.cameraInfo;
+		let inView = false;
+		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
-			const cameraInfo = this.cameraInfo;
-			let inView = false;
-			for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
+			// Track which camera frustums this tile is in so we can use it
+			// to ignore the error calculations for cameras that can't see it
+			const frustum = cameraInfo[ i ].frustum;
+			if ( boundingVolume.intersectsFrustum( frustum ) ) {
 
-				// Track which camera frustums this tile is in so we can use it
-				// to ignore the error calculations for cameras that can't see it
-				const frustum = cameraInfo[ i ].frustum;
-				let intersected = Boolean( sphere || obb );
-				if ( sphere && ! frustum.intersectsSphere( sphere ) ) {
+				inView = true;
+				inFrustum[ i ] = true;
 
-					intersected = false;
+			} else {
 
-				}
-
-				if ( obb && ! obb.intersectsFrustum( frustum ) ) {
-
-					intersected = false;
-
-				}
-
-				if ( intersected ) {
-
-					inView = true;
-					inFrustum[ i ] = true;
-
-				} else {
-
-					inFrustum[ i ] = false;
-
-				}
+				inFrustum[ i ] = false;
 
 			}
 
-			return inView;
-
 		}
 
-		return true;
+		return inView;
 
 	}
 
