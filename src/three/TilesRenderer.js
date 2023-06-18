@@ -1060,7 +1060,7 @@ export class TilesRenderer extends TilesRendererBase {
 				// Track which camera frustums this tile is in so we can use it
 				// to ignore the error calculations for cameras that can't see it
 				const frustum = cameraInfo[ i ].frustum;
-				let intersected = true;
+				let intersected = Boolean( sphere || box );
 				if ( sphere && ! frustum.intersectsSphere( sphere ) ) {
 
 					intersected = false;
