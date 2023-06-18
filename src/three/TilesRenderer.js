@@ -26,7 +26,6 @@ const tempVector = new Vector3();
 const vecX = new Vector3();
 const vecY = new Vector3();
 const vecZ = new Vector3();
-const boxVectors = new Array( 8 ).fill().map( () => new Vector3() );
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -40,57 +39,6 @@ function updateFrustumCulled( object, toInitialValue ) {
 	} );
 
 }
-
-// based on three.js' Box3 "intersects frustum" function
-// TODO: could cache box corners in group frame to improve performance
-function obbIntersectsFrustum( obb, matrix, frustum ) {
-
-	const { min, max } = obb;
-	const { planes } = frustum;
-	let index = 0;
-	for ( let x = - 1; x <= 1; x += 2 ) {
-
-		for ( let y = - 1; y <= 1; y += 2 ) {
-
-			for ( let z = - 1; z <= 1; z += 2 ) {
-
-				boxVectors[ index ].set(
-					x < 0 ? min.x : max.x,
-					y < 0 ? min.y : max.y,
-					z < 0 ? min.z : max.z,
-				).applyMatrix4( matrix );
-				index ++;
-
-			}
-
-		}
-
-	}
-
-	for ( let i = 0; i < 6; i ++ ) {
-
-		const plane = planes[ i ];
-		let maxDistance = - Infinity;
-		for ( let j = 0; j < 6; j ++ ) {
-
-			const v = boxVectors[ j ];
-			const dist = plane.distanceToPoint( v );
-			maxDistance = maxDistance < dist ? dist : maxDistance;
-
-		}
-
-		if ( maxDistance < 0 ) {
-
-			return false;
-
-		}
-
-	}
-
-	return true;
-
-}
-
 
 export class TilesRenderer extends TilesRendererBase {
 
@@ -1046,7 +994,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
-				if ( obb && ! obbIntersectsFrustum( obb.box, obb.transform, frustum ) ) {
+				if ( obb && ! obb.intersectsFrustum( frustum ) ) {
 
 					intersected = false;
 
