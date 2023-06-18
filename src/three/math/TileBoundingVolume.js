@@ -5,6 +5,8 @@ const _vecX = new Vector3();
 const _vecY = new Vector3();
 const _vecZ = new Vector3();
 const _vec = new Vector3();
+const _sphereVec = new Vector3();
+const _obbVec = new Vector3();
 
 // TODO: check region more precisely in all functions
 export class TileBoundingVolume {
@@ -47,7 +49,31 @@ export class TileBoundingVolume {
 
 	}
 
-	intersectRay( ray, target ) {
+	intersectRayDistance( ray ) {
+
+		let sphereDistSq = - Infinity;
+		let obbDistSq = - Infinity;
+
+		const sphere = this.sphere;
+		const obb = this.obb || this.regionObb;
+
+		if ( sphere ) {
+
+			ray.intersectSphere( sphere, _sphereVec );
+			sphereDistSq = ray.origin.distanceToSq( _sphereVec );
+
+		}
+
+		if ( obb ) {
+
+			_ray.copy( localRay ).applyMatrix4( obb.inverseTransform );
+			_ray.intersectBox( obb.box, _obbVec );
+			obbDistSq = ray.origin.distanceToSq( _obbVec );
+
+		}
+
+		const furthestDist = sphereDistSq > obbDistSq ? sphereDistSq : obbDistSq;
+		return furthestDist === - Infinity ? null : furthestDist;
 
 	}
 

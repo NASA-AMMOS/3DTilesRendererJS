@@ -1,12 +1,7 @@
-import { Matrix4, Sphere, Ray, Vector3 } from 'three';
+import { Matrix4, Ray } from 'three';
 
-const _sphere = new Sphere();
 const _mat = new Matrix4();
-const _vec = new Vector3();
-const _vec2 = new Vector3();
-const _ray = new Ray();
 const _localRay = new Ray();
-
 const _hitArray = [];
 
 function distanceSort( a, b ) {
@@ -71,69 +66,11 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, lo
 
 		const tile = children[ i ];
 		const cached = tile.cached;
-		const groupMatrixWorld = group.matrixWorld;
-		let distance = - Infinity;
-
-		// if we don't hit the sphere then skip
-		const sphere = cached.sphere;
-		if ( sphere ) {
-
-			// measure hit in the parent tile set group
-			_sphere.copy( sphere ).applyMatrix4( groupMatrixWorld );
-			if ( raycaster.ray.intersectSphere( _sphere, _vec ) ) {
-
-				distance = Math.max(
-					distance,
-					_sphere.containsPoint( raycaster.ray.origin ) ? 0 : raycaster.ray.origin.distanceToSquared( _vec ),
-				);
-
-			} else {
-
-				continue;
-
-			}
-
-		}
-
-		// if we don't hit the box then skip
-		const obb = cached.obb;
-		if ( obb ) {
-
-			// transform the ray into the local obb frame before finding the hit
-			_mat.copy( groupMatrixWorld ).multiply( obb.transform ).invert();
-			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
-			if ( _ray.intersectBox( obb.box, _vec ) ) {
-
-				// get the scaling of the frame relative to the parent so we can
-				// compute the distance in the tile set group frame
-				_vec2.setFromMatrixScale( _mat );
-
-				const invScale = _vec2.x;
-				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
-
-					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
-
-				}
-
-				distance = Math.max(
-					distance,
-					obb.box.containsPoint( raycaster.ray.origin )
-						? 0
-						: raycaster.ray.origin.distanceToSquared( _vec ) * invScale * invScale,
-				);
-
-			} else {
-
-				continue;
-
-			}
-
-		}
-
-		// TODO: check region?
+		const boundingVolume = cached.boundingVolume;
+		const distance = boundingVolume.intersectsRayDistance( localRay );
 
 		// track the tile and hit distance for sorting
-		if ( distance !== - Infinity ) {
+		if ( distance !== null ) {
 
 			array.push( { distance, tile } );
 
