@@ -707,6 +707,20 @@ setLatLonToYUp( lat: Number, lon: Number ): void;
 
 Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+.
 
+## CesiumIonTilesRenderer
+
+_extends [TilesRenderer](#TilesRenderer)_
+
+Variant of TilesRenderer designed to easily support the [Cesium Ion API](https://cesium.com/learn/ion/rest-api/#section/Authentication). Handles initial url resolution, access tokens in the header, and query parameter additions.
+
+### constructor
+
+```js
+constructor( ionAssetId: String | Number, ionAccessToken: String )
+```
+
+Takes the Ion asset id and access token.
+
 ## LRUCache
 
 Utility class for the TilesRenderer to keep track of currently used items so rendered items will not be unloaded.

@@ -46,7 +46,7 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 
 				} else {
 
-					return Promise.reject( `${res.status} : ${res.statusText}` );
+					return Promise.reject( `${ res.status } : ${ res.statusText }` );
 
 				}
 
@@ -59,7 +59,7 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 				this._tileSetVersion = url.searchParams.get( 'v' );
 				this.rootURL = url;
 				this.fetchOptions.headers = this.fetchOptions.headers || {};
-				this.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+				this.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
 
 			} ).catch( () => {
 
