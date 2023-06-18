@@ -6,6 +6,7 @@ const _vecY = new Vector3();
 const _vecZ = new Vector3();
 const _vec = new Vector3();
 
+// TODO: check region more precisely in all functions
 export class TileBoundingVolume {
 
 	constructor() {
@@ -15,6 +16,34 @@ export class TileBoundingVolume {
 		this.region = null;
 
 		this.regionObb = null;
+
+	}
+
+	intersectsRay( ray ) {
+
+		const sphere = this.sphere;
+		const obb = this.obb || this.regionObb;
+
+		// Early out if we don't hit this tile sphere
+		if ( sphere && ! ray.intersectsSphere( sphere ) ) {
+
+			return false;
+
+		}
+
+		// Early out if we don't this this tile box
+		if ( obb ) {
+
+			_ray.copy( localRay ).applyMatrix4( obb.inverseTransform );
+			if ( ! _ray.intersectsBox( obb.box ) ) {
+
+				return false;
+
+			}
+
+		}
+
+		return true;
 
 	}
 
