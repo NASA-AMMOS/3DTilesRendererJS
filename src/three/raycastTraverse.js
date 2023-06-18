@@ -85,14 +85,13 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 		}
 
 		// if we don't hit the box then skip
-		const boundingBox = cached.box;
-		const obbMat = cached.boxTransform;
-		if ( boundingBox ) {
+		const obb = cached.obb;
+		if ( obb ) {
 
 			// transform the ray into the local obb frame before finding the hit
-			_mat.copy( groupMatrixWorld ).multiply( obbMat ).invert();
+			_mat.copy( groupMatrixWorld ).multiply( obb.transform ).invert();
 			_ray.copy( raycaster.ray ).applyMatrix4( _mat );
-			if ( _ray.intersectBox( boundingBox, _vec ) ) {
+			if ( _ray.intersectBox( obb.box, _vec ) ) {
 
 				// get the scaling of the frame relative to the parent so we can
 				// compute the distance in the tile set group frame
@@ -107,7 +106,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 				distance = Math.max(
 					distance,
-					boundingBox.containsPoint( raycaster.ray.origin )
+					obb.box.containsPoint( raycaster.ray.origin )
 						? 0
 						: raycaster.ray.origin.distanceToSquared( _vec ) * invScale * invScale,
 				);
