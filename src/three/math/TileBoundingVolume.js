@@ -98,20 +98,6 @@ export class TileBoundingVolume {
 
 	}
 
-	computeDerivedVolumes() {
-
-		if ( this.region && ! this.sphere && ! this.obb ) {
-
-			const obb = new OBB();
-			region.getBoundingBox( obb.box, obb.transform );
-			obb.update();
-
-			this.regionObb = obb;
-
-		}
-
-	}
-
 	setObbData( data, transform ) {
 
 		const obb = new OBB();
@@ -184,6 +170,11 @@ export class TileBoundingVolume {
 			west, east,
 			minHeight, maxHeight,
 		);
+
+		const obb = new OBB();
+		region.getBoundingBox( obb.box, obb.transform );
+		obb.update();
+		this.regionObb = obb;
 
 	}
 
