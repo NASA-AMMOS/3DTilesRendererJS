@@ -164,7 +164,7 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
-	getBounds( box ) {
+	getBounds( target ) {
 
 		if ( ! this.root ) {
 
@@ -175,7 +175,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const { sphere, obb } = this.root.cached;
 		if ( obb ) {
 
-			box
+			target
 				.copy( obb.box )
 				.applyMatrix4( obb.transform );
 
@@ -185,7 +185,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( sphere ) {
 
-				sphere.getBoundingBox( box );
+				sphere.getBoundingBox( target );
 				return true;
 
 			}
@@ -196,7 +196,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	getOrientedBounds( box, matrix ) {
+	getOrientedBounds( targetBox, targetMatrix ) {
 
 		if ( ! this.root ) {
 
@@ -207,8 +207,8 @@ export class TilesRenderer extends TilesRendererBase {
 		const { sphere, obb } = this.root.cached;
 		if ( obb ) {
 
-			box.copy( obb.box );
-			matrix.copy( obb.transform );
+			targetBox.copy( obb.box );
+			targetMatrix.copy( obb.transform );
 
 			return true;
 
@@ -216,8 +216,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( sphere ) {
 
-				sphere.getBoundingBox( box );
-				matrix.identity();
+				sphere.getBoundingBox( targetBox );
+				targetMatrix.identity();
 
 				return true;
 
@@ -229,7 +229,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	getBoundingSphere( sphere ) {
+	getBoundingSphere( target ) {
 
 		if ( ! this.root ) {
 
@@ -240,7 +240,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const { sphere } = this.root.cached;
 		if ( sphere ) {
 
-			sphere.copy( sphere );
+			target.copy( sphere );
 			return true;
 
 		} else {
@@ -591,7 +591,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			const data = tile.boundingVolume.box;
 			sphere = new Sphere();
-			obb.getBoundingSphere( sphere );
+			obb.box.getBoundingSphere( sphere );
 			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
 			sphere.applyMatrix4( obb.transform );
 
@@ -992,7 +992,7 @@ export class TilesRenderer extends TilesRendererBase {
 				let distance;
 				if ( boundingObb ) {
 
-					tempVector.applyMatrix4( obb.inverseTransform );
+					tempVector.applyMatrix4( boundingObb.inverseTransform );
 					distance = boundingObb.box.distanceToPoint( tempVector );
 
 				} else {
