@@ -455,20 +455,19 @@ export class DebugTilesRenderer extends TilesRenderer {
 				const scene = cached.scene;
 				if ( scene ) {
 
-					if ( cached.box && cached.boxTransform ) {
+					if ( cached.obb ) {
 
-						const cachedBox = cached.box;
-						const cachedBoxMat = cached.boxTransform;
+						const cachedObb = cached.obb;
 
 						// Create debug bounding box
 						// In some cases the bounding box may have a scale of 0 in one dimension resulting
 						// in the NaNs in an extracted rotation so we disable matrix updates instead.
 						const boxHelperGroup = new Group();
 						boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
-						boxHelperGroup.matrix.copy( cachedBoxMat );
+						boxHelperGroup.matrix.copy( cachedObb.transform );
 						boxHelperGroup.matrixAutoUpdate = false;
 
-						const boxHelper = new Box3Helper( cachedBox, getIndexedRandomColor( tile.__depth ) );
+						const boxHelper = new Box3Helper( cachedObb.box, getIndexedRandomColor( tile.__depth ) );
 						boxHelper.raycast = emptyRaycast;
 						boxHelperGroup.add( boxHelper );
 

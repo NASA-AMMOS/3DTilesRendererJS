@@ -9,7 +9,6 @@ import { TilesGroup } from './TilesGroup.js';
 import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 import {
 	Matrix4,
-	Box3,
 	Sphere,
 	Vector3,
 	Vector2,
@@ -17,6 +16,7 @@ import {
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
+import { OBB } from './math/OBB.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
@@ -172,25 +172,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const cached = this.root.cached;
-		const boundingBox = cached.box;
-		const obbMat = cached.boxTransform;
+		const { sphere, obb } = this.root.cached;
+		if ( obb ) {
 
-		if ( boundingBox ) {
-
-			box.copy( boundingBox );
-			box.applyMatrix4( obbMat );
+			box
+				.copy( obb.box )
+				.applyMatrix4( obb.transform );
 
 			return true;
 
 		} else {
 
-			const boundingSphere = cached.sphere;
+			if ( sphere ) {
 
-			if ( boundingSphere ) {
-
-				boundingSphere.getBoundingBox( box );
-
+				sphere.getBoundingBox( box );
 				return true;
 
 			}
@@ -209,24 +204,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const cached = this.root.cached;
-		const boundingBox = cached.box;
-		const obbMat = cached.boxTransform;
+		const { sphere, obb } = this.root.cached;
+		if ( obb ) {
 
-		if ( boundingBox ) {
-
-			box.copy( boundingBox );
-			matrix.copy( obbMat );
+			box.copy( obb.box );
+			matrix.copy( obb.transform );
 
 			return true;
 
 		} else {
 
-			const boundingSphere = cached.sphere;
+			if ( sphere ) {
 
-			if ( boundingSphere ) {
-
-				boundingSphere.getBoundingBox( box );
+				sphere.getBoundingBox( box );
 				matrix.identity();
 
 				return true;
@@ -247,11 +237,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingSphere = this.root.cached.sphere;
+		const { sphere } = this.root.cached;
+		if ( sphere ) {
 
-		if ( boundingSphere ) {
-
-			sphere.copy( boundingSphere );
+			sphere.copy( sphere );
 			return true;
 
 		} else {
@@ -534,15 +523,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const transformInverse = new Matrix4().copy( transform ).invert();
 
-		let box = null;
-		let boxTransform = null;
-		let boxTransformInverse = null;
+		let obb = null;
 		if ( 'box' in tile.boundingVolume ) {
 
 			const data = tile.boundingVolume.box;
-			box = new Box3();
-			boxTransform = new Matrix4();
-			boxTransformInverse = new Matrix4();
+			obb = new OBB();
 
 			// get the extents of the bounds in each axis
 			vecX.set( data[ 3 ], data[ 4 ], data[ 5 ] );
@@ -577,18 +562,19 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 			// create the oriented frame that the box exists in
-			boxTransform.set(
-				vecX.x, vecY.x, vecZ.x, data[ 0 ],
-				vecX.y, vecY.y, vecZ.y, data[ 1 ],
-				vecX.z, vecY.z, vecZ.z, data[ 2 ],
-				0, 0, 0, 1
-			);
-			boxTransform.premultiply( transform );
-			boxTransformInverse.copy( boxTransform ).invert();
+			obb.transform
+				.set(
+					vecX.x, vecY.x, vecZ.x, data[ 0 ],
+					vecX.y, vecY.y, vecZ.y, data[ 1 ],
+					vecX.z, vecY.z, vecZ.z, data[ 2 ],
+					0, 0, 0, 1
+				)
+				.premultiply( transform );
 
 			// scale the box by the extents
-			box.min.set( - scaleX, - scaleY, - scaleZ );
-			box.max.set( scaleX, scaleY, scaleZ );
+			obb.box.min.set( - scaleX, - scaleY, - scaleZ );
+			obb.box.max.set( scaleX, scaleY, scaleZ );
+			obb.update();
 
 		}
 
@@ -605,9 +591,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 			const data = tile.boundingVolume.box;
 			sphere = new Sphere();
-			box.getBoundingSphere( sphere );
+			obb.getBoundingSphere( sphere );
 			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
-			sphere.applyMatrix4( transform );
+			sphere.applyMatrix4( obb.transform );
 
 		}
 
@@ -631,14 +617,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			if ( box === null ) {
+			if ( obb === null ) {
 
-				box = new Box3();
-				boxTransform = new Matrix4();
-				boxTransformInverse = new Matrix4();
+				obb = new OBB();
 
-				region.getBoundingBox( box, boxTransform );
-				boxTransformInverse.copy( boxTransform ).invert();
+				region.getBoundingBox( obb.box, obb.transform );
+				obb.update();
 
 			}
 
@@ -654,9 +638,7 @@ export class TilesRenderer extends TilesRendererBase {
 			active: false,
 			inFrustum: [],
 
-			box,
-			boxTransform,
-			boxTransformInverse,
+			obb,
 			sphere,
 			region,
 
@@ -980,9 +962,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: We should use the largest distance to the tile between
 		// all available bounding volume types.
 		const boundingSphere = cached.sphere;
-		const boundingBox = cached.box;
-		const boxTransformInverse = cached.boxTransformInverse;
-		const useBox = boundingBox && boxTransformInverse;
+		const boundingObb = cached.obb;
 
 		let maxError = - Infinity;
 		let minDistance = Infinity;
@@ -1010,10 +990,10 @@ export class TilesRenderer extends TilesRendererBase {
 				tempVector.copy( info.position );
 
 				let distance;
-				if ( useBox ) {
+				if ( boundingObb ) {
 
-					tempVector.applyMatrix4( boxTransformInverse );
-					distance = boundingBox.distanceToPoint( tempVector );
+					tempVector.applyMatrix4( obb.inverseTransform );
+					distance = boundingObb.box.distanceToPoint( tempVector );
 
 				} else {
 
@@ -1048,7 +1028,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// Use separating axis theorem for frustum and obb
 
 		const cached = tile.cached;
-		const { sphere, box, boxTransform } = cached;
+		const { sphere, obb } = cached;
 
 		const inFrustum = cached.inFrustum;
 		if ( sphere ) {
@@ -1060,14 +1040,14 @@ export class TilesRenderer extends TilesRendererBase {
 				// Track which camera frustums this tile is in so we can use it
 				// to ignore the error calculations for cameras that can't see it
 				const frustum = cameraInfo[ i ].frustum;
-				let intersected = Boolean( sphere || box );
+				let intersected = Boolean( sphere || obb );
 				if ( sphere && ! frustum.intersectsSphere( sphere ) ) {
 
 					intersected = false;
 
 				}
 
-				if ( box && ! obbIntersectsFrustum( box, boxTransform, frustum ) ) {
+				if ( obb && ! obbIntersectsFrustum( obb.box, obb.transform, frustum ) ) {
 
 					intersected = false;
 
