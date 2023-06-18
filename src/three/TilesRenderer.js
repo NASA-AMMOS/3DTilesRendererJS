@@ -121,25 +121,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere, obb } = this.root.cached;
-		if ( obb ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			target
-				.copy( obb.box )
-				.applyMatrix4( obb.transform );
-
+			boundingVolume.getAABB( target );
 			return true;
 
 		} else {
 
-			if ( sphere ) {
-
-				sphere.getBoundingBox( target );
-				return true;
-
-			}
-
-			return false;
+			return true;
 
 		}
 
@@ -153,26 +143,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere, obb } = this.root.cached;
-		if ( obb ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			targetBox.copy( obb.box );
-			targetMatrix.copy( obb.transform );
-
+			boundingVolume.getOBB( targetBox, targetMatrix );
 			return true;
 
 		} else {
 
-			if ( sphere ) {
-
-				sphere.getBoundingBox( targetBox );
-				targetMatrix.identity();
-
-				return true;
-
-			}
-
-			return false;
+			return true;
 
 		}
 
@@ -186,10 +165,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere } = this.root.cached;
-		if ( sphere ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			target.copy( sphere );
+			boundingVolume.getBoundingSphere( target );
 			return true;
 
 		} else {
