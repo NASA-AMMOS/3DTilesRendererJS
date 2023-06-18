@@ -18,6 +18,7 @@ import {
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { OBB } from './math/OBB.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
@@ -576,6 +577,25 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 
+		const boundingVolume = new TileBoundingVolume();
+		if ( 'sphere' in tile.boundingVolume ) {
+
+			boundingVolume.setSphereData( ...tile.boundingVolume.sphere, transform );
+
+		}
+
+		if ( 'box' in tile.boundingVolume ) {
+
+			boundingVolume.setObbData( tile.boundingVolume.box, transform );
+
+		}
+
+		if ( 'region' in tile.boundingVolume ) {
+
+			boundingVolume.setRegionData( ...tile.boundingVolume.region );
+
+		}
+
 		tile.cached = {
 
 			loadIndex: 0,
@@ -588,6 +608,7 @@ export class TilesRenderer extends TilesRendererBase {
 			obb,
 			sphere,
 			region,
+			boundingVolume,
 
 			scene: null,
 			geometry: null,

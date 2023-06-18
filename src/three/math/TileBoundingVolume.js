@@ -1,9 +1,11 @@
 import { Vector3 } from 'three';
 import { WGS84_RADIUS, WGS84_HEIGHT } from './Ellipsoid.js';
 
-const vecX = new Vector3();
-const vecY = new Vector3();
-const vecZ = new Vector3();
+const _vecX = new Vector3();
+const _vecY = new Vector3();
+const _vecZ = new Vector3();
+const _vec = new Vector3();
+
 export class TileBoundingVolume {
 
 	constructor() {
@@ -21,6 +23,26 @@ export class TileBoundingVolume {
 	}
 
 	distanceToPoint( point ) {
+
+		let sphereDistance = - Infinity;
+		let obbDistance = - Infinity;
+		const sphere = this.sphere;
+		const obb = this.obb || this.regionObb;
+
+		if ( sphere ) {
+
+			sphereDistance = Math.max( sphere.distanceToPoint( point ), 0 );
+
+		}
+
+		if ( obb ) {
+
+			_vec.copy( point ).applyMatrix4( boundingObb.inverseTransform );
+			obbDistance = obb.box.distanceToPoint( _vec );
+
+		}
+
+		return sphereDistance > obbDistance ? sphereDistance : obbDistance;
 
 	}
 
@@ -103,43 +125,43 @@ export class TileBoundingVolume {
 		const obb = new OBB();
 
 		// get the extents of the bounds in each axis
-		vecX.set( data[ 3 ], data[ 4 ], data[ 5 ] );
-		vecY.set( data[ 6 ], data[ 7 ], data[ 8 ] );
-		vecZ.set( data[ 9 ], data[ 10 ], data[ 11 ] );
+		_vecX.set( data[ 3 ], data[ 4 ], data[ 5 ] );
+		_vecY.set( data[ 6 ], data[ 7 ], data[ 8 ] );
+		_vecZ.set( data[ 9 ], data[ 10 ], data[ 11 ] );
 
-		const scaleX = vecX.length();
-		const scaleY = vecY.length();
-		const scaleZ = vecZ.length();
+		const scaleX = _vecX.length();
+		const scaleY = _vecY.length();
+		const scaleZ = _vecZ.length();
 
-		vecX.normalize();
-		vecY.normalize();
-		vecZ.normalize();
+		_vecX.normalize();
+		_vecY.normalize();
+		_vecZ.normalize();
 
 		// handle the case where the box has a dimension of 0 in one axis
 		if ( scaleX === 0 ) {
 
-			vecX.crossVectors( vecY, vecZ );
+			_vecX.crossVectors( _vecY, _vecZ );
 
 		}
 
 		if ( scaleY === 0 ) {
 
-			vecY.crossVectors( vecX, vecZ );
+			_vecY.crossVectors( _vecX, _vecZ );
 
 		}
 
 		if ( scaleZ === 0 ) {
 
-			vecZ.crossVectors( vecX, vecY );
+			_vecZ.crossVectors( _vecX, _vecY );
 
 		}
 
 		// create the oriented frame that the box exists in
 		obb.transform
 			.set(
-				vecX.x, vecY.x, vecZ.x, data[ 0 ],
-				vecX.y, vecY.y, vecZ.y, data[ 1 ],
-				vecX.z, vecY.z, vecZ.z, data[ 2 ],
+				_vecX.x, _vecY.x, _vecZ.x, data[ 0 ],
+				_vecX.y, _vecY.y, _vecZ.y, data[ 1 ],
+				_vecX.z, _vecY.z, _vecZ.z, data[ 2 ],
 				0, 0, 0, 1
 			)
 			.premultiply( transform );
