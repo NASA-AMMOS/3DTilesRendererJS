@@ -126,7 +126,12 @@ export class TilesRendererBase {
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! rootTileSet || ! rootTileSet.root ) return;
 
-		traverseSet( rootTileSet.root, beforecb, aftercb );
+		traverseSet( rootTileSet.root, ( tile, ...args ) => {
+
+			this.ensureChildrenArePreprocessed( tile );
+			return beforecb( tile, ...args );
+
+		}, aftercb );
 
 	}
 

@@ -34,7 +34,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 			let session;
 			this.traverse( tile => {
 
-				this.ensureChildrenArePreprocessed( tile );
 				if ( tile.content && tile.content.uri ) {
 
 					session = new URL( tile.content.uri ).searchParams.get( 'session' );
