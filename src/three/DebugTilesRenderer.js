@@ -21,6 +21,7 @@ export const RANDOM_COLOR = 7;
 export const RANDOM_NODE_COLOR = 8;
 export const CUSTOM_COLOR = 9;
 
+const _sphere = new Sphere();
 export class DebugTilesRenderer extends TilesRenderer {
 
 	constructor( ...args ) {
@@ -201,7 +202,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 		let maxDistance = - 1;
 		if ( this.maxDebugDistance === - 1 ) {
 
-			maxDistance = this.root.cached.sphere.radius;
+			this.root.cached.boundingVolume.getSphere( _sphere );
+			maxDistance = _sphere.radius;
 
 		} else {
 
