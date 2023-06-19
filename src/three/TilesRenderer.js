@@ -18,6 +18,7 @@ import {
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { OBB } from './math/OBB.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
@@ -120,25 +121,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere, obb } = this.root.cached;
-		if ( obb ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			target
-				.copy( obb.box )
-				.applyMatrix4( obb.transform );
-
+			boundingVolume.getAABB( target );
 			return true;
 
 		} else {
 
-			if ( sphere ) {
-
-				sphere.getBoundingBox( target );
-				return true;
-
-			}
-
-			return false;
+			return true;
 
 		}
 
@@ -152,26 +143,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere, obb } = this.root.cached;
-		if ( obb ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			targetBox.copy( obb.box );
-			targetMatrix.copy( obb.transform );
-
+			boundingVolume.getOBB( targetBox, targetMatrix );
 			return true;
 
 		} else {
 
-			if ( sphere ) {
-
-				sphere.getBoundingBox( targetBox );
-				targetMatrix.identity();
-
-				return true;
-
-			}
-
-			return false;
+			return true;
 
 		}
 
@@ -185,10 +165,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const { sphere } = this.root.cached;
-		if ( sphere ) {
+		const boundingVolume = this.root.cached.boundingVolume;
+		if ( boundingVolume ) {
 
-			target.copy( sphere );
+			boundingVolume.getBoundingSphere( target );
 			return true;
 
 		} else {
@@ -470,111 +450,24 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		const transformInverse = new Matrix4().copy( transform ).invert();
-
-		let obb = null;
-		if ( 'box' in tile.boundingVolume ) {
-
-			const data = tile.boundingVolume.box;
-			obb = new OBB();
-
-			// get the extents of the bounds in each axis
-			vecX.set( data[ 3 ], data[ 4 ], data[ 5 ] );
-			vecY.set( data[ 6 ], data[ 7 ], data[ 8 ] );
-			vecZ.set( data[ 9 ], data[ 10 ], data[ 11 ] );
-
-			const scaleX = vecX.length();
-			const scaleY = vecY.length();
-			const scaleZ = vecZ.length();
-
-			vecX.normalize();
-			vecY.normalize();
-			vecZ.normalize();
-
-			// handle the case where the box has a dimension of 0 in one axis
-			if ( scaleX === 0 ) {
-
-				vecX.crossVectors( vecY, vecZ );
-
-			}
-
-			if ( scaleY === 0 ) {
-
-				vecY.crossVectors( vecX, vecZ );
-
-			}
-
-			if ( scaleZ === 0 ) {
-
-				vecZ.crossVectors( vecX, vecY );
-
-			}
-
-			// create the oriented frame that the box exists in
-			obb.transform
-				.set(
-					vecX.x, vecY.x, vecZ.x, data[ 0 ],
-					vecX.y, vecY.y, vecZ.y, data[ 1 ],
-					vecX.z, vecY.z, vecZ.z, data[ 2 ],
-					0, 0, 0, 1
-				)
-				.premultiply( transform );
-
-			// scale the box by the extents
-			obb.box.min.set( - scaleX, - scaleY, - scaleZ );
-			obb.box.max.set( scaleX, scaleY, scaleZ );
-			obb.update();
-
-		}
-
-		let sphere = null;
+		const boundingVolume = new TileBoundingVolume();
 		if ( 'sphere' in tile.boundingVolume ) {
 
-			const data = tile.boundingVolume.sphere;
-			sphere = new Sphere();
-			sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
-			sphere.radius = data[ 3 ];
-			sphere.applyMatrix4( transform );
-
-		} else if ( 'box' in tile.boundingVolume ) {
-
-			const data = tile.boundingVolume.box;
-			sphere = new Sphere();
-			obb.box.getBoundingSphere( sphere );
-			sphere.applyMatrix4( obb.transform );
+			boundingVolume.setSphereData( ...tile.boundingVolume.sphere, transform );
 
 		}
 
-		let region = null;
+		if ( 'box' in tile.boundingVolume ) {
+
+			boundingVolume.setObbData( tile.boundingVolume.box, transform );
+
+		}
+
 		if ( 'region' in tile.boundingVolume ) {
 
-			const data = tile.boundingVolume.region;
-			const [ west, south, east, north, minHeight, maxHeight ] = data;
-
-			region = new EllipsoidRegion(
-				WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT,
-				south, north,
-				west, east,
-				minHeight, maxHeight,
-			);
-
-			if ( sphere === null ) {
-
-				sphere = new Sphere();
-				region.getBoundingSphere( sphere );
-
-			}
-
-			if ( obb === null ) {
-
-				obb = new OBB();
-
-				region.getBoundingBox( obb.box, obb.transform );
-				obb.update();
-
-			}
+			boundingVolume.setRegionData( ...tile.boundingVolume.region );
 
 		}
-
 
 		tile.cached = {
 
@@ -585,9 +478,7 @@ export class TilesRenderer extends TilesRendererBase {
 			active: false,
 			inFrustum: [],
 
-			obb,
-			sphere,
-			region,
+			boundingVolume,
 
 			scene: null,
 			geometry: null,
@@ -904,12 +795,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const inFrustum = cached.inFrustum;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
-
-		// TODO: Use the content bounding volume here?
-		// TODO: We should use the largest distance to the tile between
-		// all available bounding volume types.
-		const boundingSphere = cached.sphere;
-		const boundingObb = cached.obb;
+		const boundingVolume = cached.boundingVolume;
 
 		let maxError = - Infinity;
 		let minDistance = Infinity;
@@ -934,23 +820,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} else {
 
-				tempVector.copy( info.position );
-
-				let distance;
-				if ( boundingObb ) {
-
-					tempVector.applyMatrix4( boundingObb.inverseTransform );
-					distance = boundingObb.box.distanceToPoint( tempVector );
-
-				} else {
-
-					// Sphere#distanceToPoint is negative inside the sphere, whereas Box3#distanceToPoint is
-					// zero inside the box. Clipping the distance to a minimum of zero ensures that both
-					// types of bounding volume behave the same way.
-					distance = Math.max( boundingSphere.distanceToPoint( tempVector ), 0 );
-
-				}
-
+				const distance = boundingVolume.distanceToPoint( info.position );
 				const scaledDistance = distance * invScale;
 				const sseDenominator = info.sseDenominator;
 				error = tile.geometricError / ( scaledDistance * sseDenominator );
@@ -970,54 +840,30 @@ export class TilesRenderer extends TilesRendererBase {
 
 	tileInView( tile ) {
 
-		// TODO: we should use the more precise bounding volumes here if possible
-		// cache the root-space planes
-		// Use separating axis theorem for frustum and obb
-
 		const cached = tile.cached;
-		const { sphere, obb } = cached;
-
+		const boundingVolume = cached.boundingVolume;
 		const inFrustum = cached.inFrustum;
-		if ( sphere ) {
+		const cameraInfo = this.cameraInfo;
+		let inView = false;
+		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
-			const cameraInfo = this.cameraInfo;
-			let inView = false;
-			for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
+			// Track which camera frustums this tile is in so we can use it
+			// to ignore the error calculations for cameras that can't see it
+			const frustum = cameraInfo[ i ].frustum;
+			if ( boundingVolume.intersectsFrustum( frustum ) ) {
 
-				// Track which camera frustums this tile is in so we can use it
-				// to ignore the error calculations for cameras that can't see it
-				const frustum = cameraInfo[ i ].frustum;
-				let intersected = Boolean( sphere || obb );
-				if ( sphere && ! frustum.intersectsSphere( sphere ) ) {
+				inView = true;
+				inFrustum[ i ] = true;
 
-					intersected = false;
+			} else {
 
-				}
-
-				if ( obb && ! obb.intersectsFrustum( frustum ) ) {
-
-					intersected = false;
-
-				}
-
-				if ( intersected ) {
-
-					inView = true;
-					inFrustum[ i ] = true;
-
-				} else {
-
-					inFrustum[ i ] = false;
-
-				}
+				inFrustum[ i ] = false;
 
 			}
 
-			return inView;
-
 		}
 
-		return true;
+		return inView;
 
 	}
 
