@@ -1,22 +1,18 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
-import { WGS84_HEIGHT, WGS84_RADIUS } from '../base/constants.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
 import { CMPTLoader } from './CMPTLoader.js';
 import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
-import { EllipsoidRegion } from './math/EllipsoidRegion.js';
 import {
 	Matrix4,
-	Sphere,
 	Vector3,
 	Vector2,
 	Frustum,
 	LoadingManager
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { OBB } from './math/OBB.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 
@@ -24,9 +20,6 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
-const vecX = new Vector3();
-const vecY = new Vector3();
-const vecZ = new Vector3();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
