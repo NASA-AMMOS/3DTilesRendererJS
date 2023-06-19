@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 <!--
-Include sufficient detail on what's confusing, not working, or unexpected behavior including code and screenshots or the issue may be closed.
+Include sufficient detail on what's confusing, not working, or unexpected behavior including code with what you tried and screenshots if relevant.
 
 Also consider asking at the three.js forum: https://discourse.threejs.org/
 -->
