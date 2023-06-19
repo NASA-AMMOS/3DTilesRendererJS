@@ -296,7 +296,7 @@ export class TilesRendererBase {
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const child = children[ 0 ];
+			const child = children[ i ];
 			if ( '__depth' in child ) {
 
 				break;

@@ -26,6 +26,7 @@ function intersectTileScene( scene, raycaster, intersects ) {
 export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	// If the root is active make sure we've checked it
 	if ( activeTiles.has( tile ) ) {
@@ -119,7 +120,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 			} else {
 
-				hit = raycastTraverseFirstHit( tile, group, activeTiles, raycaster, localRay );
+				hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
 
 			}
 
@@ -147,6 +148,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -176,7 +178,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		raycastTraverse( children[ i ], group, activeTiles, raycaster, intersects, localRay );
+		raycastTraverse( renderer, children[ i ], raycaster, intersects, localRay );
 
 	}
 
