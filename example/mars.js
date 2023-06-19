@@ -8,7 +8,6 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
-	sRGBEncoding,
 	FogExp2,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';

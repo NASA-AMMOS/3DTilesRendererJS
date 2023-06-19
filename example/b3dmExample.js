@@ -7,7 +7,6 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Box3,
-	sRGBEncoding,
 	PCFSoftShadowMap,
 	Vector2,
 	Raycaster,

@@ -28,7 +28,6 @@ import {
 	Group,
 	TorusGeometry,
 	OrthographicCamera,
-	sRGBEncoding,
 	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';

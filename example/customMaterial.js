@@ -7,7 +7,6 @@ import {
 	PerspectiveCamera,
 	Box3,
 	OrthographicCamera,
-	sRGBEncoding,
 	Group,
 	ShaderMaterial,
 	MeshStandardMaterial,

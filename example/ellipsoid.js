@@ -6,7 +6,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	MeshPhongMaterial,
 	Box3Helper,
 	Box3,

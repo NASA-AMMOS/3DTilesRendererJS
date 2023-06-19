@@ -5,7 +5,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	PCFSoftShadowMap,
 	Vector3,
 	Quaternion,

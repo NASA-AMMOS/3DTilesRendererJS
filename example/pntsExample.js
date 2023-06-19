@@ -5,7 +5,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	PCFSoftShadowMap,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -27,7 +26,6 @@ function init() {
 	renderer.setClearColor( 0x151c1f );
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = PCFSoftShadowMap;
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 

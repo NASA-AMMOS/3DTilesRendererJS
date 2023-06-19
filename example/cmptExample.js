@@ -5,7 +5,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	PCFSoftShadowMap,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
