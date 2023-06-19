@@ -48,7 +48,7 @@ export class OBB {
 
 			const plane = planes[ i ];
 			let maxDistance = - Infinity;
-			for ( let j = 0; j < 6; j ++ ) {
+			for ( let j = 0; j < 8; j ++ ) {
 
 				const v = points[ j ];
 				const dist = plane.distanceToPoint( v );
