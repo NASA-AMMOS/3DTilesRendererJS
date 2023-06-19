@@ -123,6 +123,8 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 // being kept around that isn't being used -- is that okay?
 export function determineFrustumSet( tile, renderer ) {
 
+	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
+	// child tiles has happened here.
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	const stats = renderer.stats;
