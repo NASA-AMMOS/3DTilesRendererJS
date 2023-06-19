@@ -6,5 +6,8 @@ labels: 'question'
 assignees: ''
 
 ---
-
+<!--
 Include sufficient detail on what's confusing, not working, or unexpected behavior including code and screenshots or the issue may be closed.
+
+Also consider asking at the three.js forum: https://discourse.threejs.org/
+-->
