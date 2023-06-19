@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `CesiumIonTilesRenderer` for more convenient use of the ion API.
-- Frustum check support for OBB bounding volumes.
+- Frustum check support for OBB bounding volumes resulting in more than 35-45% fewer tiles loading and displaying in some cases when OBB bounding volumes are used.
+
+### Changed
 - Consolidate bounding volumes into a common class to simplify implementation.
+- Progressively process recursive tileset tiles preventing frame stalls of up to and over 100ms in some cases when many or large child tilesets were loaded.
 
 ## [0.3.19] - 2023-06-13
 ### Fixed
