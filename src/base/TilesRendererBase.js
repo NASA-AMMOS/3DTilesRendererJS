@@ -129,7 +129,7 @@ export class TilesRendererBase {
 		traverseSet( rootTileSet.root, ( tile, ...args ) => {
 
 			this.ensureChildrenArePreprocessed( tile );
-			return beforecb( tile, ...args );
+			return beforecb ? beforecb( tile, ...args ) : false;
 
 		}, aftercb );
 
