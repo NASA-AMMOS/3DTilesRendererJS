@@ -22,7 +22,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this._credits = new GoogleMapsTilesCredits();
 
 		this.fetchOptions.mode = 'cors';
-		this.parseQueue.maxJobs = 7;
+		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
