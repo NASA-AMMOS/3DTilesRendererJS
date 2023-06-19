@@ -1,5 +1,6 @@
 import {
 	DebugTilesRenderer as TilesRenderer,
+	DebugCesiumIonTilesRenderer as CesiumIonTilesRenderer,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -21,12 +22,11 @@ import {
 	Vector3,
 	Quaternion,
 	Mesh,
-	CylinderBufferGeometry,
+	CylinderGeometry,
 	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry,
+	TorusGeometry,
 	OrthographicCamera,
-	sRGBEncoding,
 	Matrix4,
 	Box3,
 	Sphere,
@@ -59,7 +59,7 @@ const params = {
 	'orthographic': false,
 
 	'ionAssetId': '40866',
-	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMmM4Yzc0YS02ZTM4LTQwODItOGI4ZC04OTI3Yzk5MjJlMGEiLCJpZCI6MjU5LCJpYXQiOjE2Njk5MDUxNDh9.tcSYhz3-NLfuOdb1w9wHOw-Ps85-AyR_mBYRHDifEi8',
+	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
 	'errorTarget': 6,
 	'errorThreshold': 60,
 	'maxDepth': 15,
@@ -119,7 +119,7 @@ function isInt( input ) {
 
 function reinstantiateTiles() {
 
-	let url = hashUrl || '../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( hashUrl ) {
 
@@ -137,94 +137,48 @@ function reinstantiateTiles() {
 
 	if ( params.ionAssetId ) {
 
-		url = new URL( `https://api.cesium.com/v1/assets/${params.ionAssetId}/endpoint` );
-		url.searchParams.append( 'access_token', params.ionAccessToken );
+		tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
+		tiles.onLoadTileSet = () => {
 
-		fetch( url, { mode: 'cors' } )
-			.then( ( res ) => {
+			const box = new Box3();
+			const sphere = new Sphere();
+			const matrix = new Matrix4();
 
-				if ( res.ok ) {
+			let position;
+			let distanceToEllipsoidCenter;
 
-					return res.json();
+			if ( tiles.getOrientedBounds( box, matrix ) ) {
 
-				} else {
+				position = new Vector3().setFromMatrixPosition( matrix );
+				distanceToEllipsoidCenter = position.length();
 
-					return Promise.reject( `${res.status} : ${res.statusText}` );
+			} else if ( tiles.getBoundingSphere( sphere ) ) {
 
-				}
+				position = sphere.center.clone();
+				distanceToEllipsoidCenter = position.length();
 
-			} )
-			.then( ( json ) => {
+			}
 
-				url = new URL( json.url );
-				const version = url.searchParams.get( 'v' );
+			const surfaceDirection = position.normalize();
+			const up = new Vector3( 0, 1, 0 );
+			const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
 
-				tiles = new TilesRenderer( url.toString() );
-				tiles.fetchOptions.headers = {};
-				tiles.fetchOptions.headers.Authorization = `Bearer ${json.accessToken}`;
+			tiles.group.quaternion.x = rotationToNorthPole.x;
+			tiles.group.quaternion.y = rotationToNorthPole.y;
+			tiles.group.quaternion.z = rotationToNorthPole.z;
+			tiles.group.quaternion.w = rotationToNorthPole.w;
 
-				tiles.preprocessURL = uri => {
+			tiles.group.position.y = - distanceToEllipsoidCenter;
 
-					uri = new URL( uri );
-					if ( /^http/.test( uri.protocol ) ) {
-
-						uri.searchParams.append( 'v', version );
-
-					}
-					return uri.toString();
-
-				};
-
-				tiles.onLoadTileSet = () => {
-
-					const box = new Box3();
-					const sphere = new Sphere();
-					const matrix = new Matrix4();
-
-					let position;
-					let distanceToEllipsoidCenter;
-
-					if ( tiles.getOrientedBounds( box, matrix ) ) {
-
-						position = new Vector3().setFromMatrixPosition( matrix );
-						distanceToEllipsoidCenter = position.length();
-
-					} else if ( tiles.getBoundingSphere( sphere ) ) {
-
-						position = sphere.center.clone();
-						distanceToEllipsoidCenter = position.length();
-
-					}
-
-					const surfaceDirection = position.normalize();
-					const up = new Vector3( 0, 1, 0 );
-					const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
-
-					tiles.group.quaternion.x = rotationToNorthPole.x;
-					tiles.group.quaternion.y = rotationToNorthPole.y;
-					tiles.group.quaternion.z = rotationToNorthPole.z;
-					tiles.group.quaternion.w = rotationToNorthPole.w;
-
-					tiles.group.position.y = - distanceToEllipsoidCenter;
-
-				};
-
-				setupTiles();
-
-			} )
-			.catch( err => {
-
-				console.error( 'Unable to get ion tileset:', err );
-
-			} );
+		};
 
 	} else {
 
 		tiles = new TilesRenderer( url );
 
-		setupTiles();
-
 	}
+
+	setupTiles();
 
 }
 
@@ -237,7 +191,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
@@ -260,7 +213,6 @@ function init() {
 	secondRenderer.setPixelRatio( window.devicePixelRatio );
 	secondRenderer.setSize( window.innerWidth, window.innerHeight );
 	secondRenderer.setClearColor( 0x151c1f );
-	secondRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( secondRenderer.domElement );
 	secondRenderer.domElement.style.position = 'absolute';
@@ -286,7 +238,6 @@ function init() {
 	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
 	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
 	thirdPersonRenderer.setClearColor( 0x0f1416 );
-	thirdPersonRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( thirdPersonRenderer.domElement );
 	thirdPersonRenderer.domElement.style.position = 'fixed';
@@ -323,12 +274,12 @@ function init() {
 	rayIntersect = new Group();
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
+	const rayMesh = new Mesh( new CylinderGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
 	rayMesh.position.z += 3;
 	rayIntersect.add( rayMesh );
 
-	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
+	const rayRing = new Mesh( new TorusGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
 	rayIntersect.visible = false;

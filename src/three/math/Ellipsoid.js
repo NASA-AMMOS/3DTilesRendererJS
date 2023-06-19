@@ -5,6 +5,12 @@ const _spherical = new Spherical();
 const _norm = new Vector3();
 const _vec = new Vector3();
 const _vec2 = new Vector3();
+const _vec3 = new Vector3();
+
+const _vecX = new Vector3();
+const _vecY = new Vector3();
+const _vecZ = new Vector3();
+const _pos = new Vector3();
 
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
@@ -14,6 +20,41 @@ export class Ellipsoid {
 	constructor( x = 1, y = 1, z = 1 ) {
 
 		this.radius = new Vector3( x, y, z );
+
+	}
+
+	constructLatLonFrame( lat, lon, target ) {
+
+		this.getCartographicToPosition( lat, lon, 0, _pos );
+		this.getCartographicToNormal( lat, lon, _vecZ );
+		this.getNorthernTangent( lat, lon, _vecY );
+		_vecX.crossVectors( _vecY, _vecZ );
+
+		return target.makeBasis( _vecX, _vecY, _vecZ ).setPosition( _pos );
+
+	}
+
+	getNorthernTangent( lat, lon, target, westTarget = _vec3 ) {
+
+		let multiplier = 1;
+		let latPrime = lat + 1e-7;
+		if ( lat > Math.PI / 4 ) {
+
+			multiplier = - 1;
+			latPrime = lat - 1e-7;
+
+		}
+
+		const norm = this.getCartographicToNormal( lat, lon, _vec ).normalize();
+		const normPrime = this.getCartographicToNormal( latPrime, lon, _vec2 ).normalize();
+		westTarget
+			.crossVectors( norm, normPrime )
+			.normalize()
+			.multiplyScalar( multiplier );
+
+		return target
+			.crossVectors( westTarget, norm )
+			.normalize();
 
 	}
 

@@ -1,10 +1,7 @@
-import { Matrix4, Sphere, Ray, Vector3 } from 'three';
-const _sphere = new Sphere();
-const _mat = new Matrix4();
-const _vec = new Vector3();
-const _vec2 = new Vector3();
-const _ray = new Ray();
+import { Matrix4, Ray } from 'three';
 
+const _mat = new Matrix4();
+const _localRay = new Ray();
 const _hitArray = [];
 
 function distanceSort( a, b ) {
@@ -26,7 +23,7 @@ function intersectTileScene( scene, raycaster, intersects ) {
 }
 
 // Returns the closest hit when traversing the tree
-export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
+export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, localRay = null ) {
 
 	// If the root is active make sure we've checked it
 	if ( activeTiles.has( root ) ) {
@@ -53,6 +50,15 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 	}
 
+	// get the ray in the local group frame
+	if ( localRay === null ) {
+
+		localRay = _localRay;
+		_mat.copy( group.matrixWorld ).invert();
+		localRay.copy( raycaster.ray ).applyMatrix4( _mat );
+
+	}
+
 	// TODO: can we avoid creating a new array here every time to save on memory?
 	const array = [];
 	const children = root.children;
@@ -60,69 +66,13 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 		const tile = children[ i ];
 		const cached = tile.cached;
-		const groupMatrixWorld = group.matrixWorld;
+		const boundingVolume = cached.boundingVolume;
+		const distance = boundingVolume.getRayDistance( localRay );
 
-		_mat.copy( groupMatrixWorld );
+		// track the tile and hit distance for sorting
+		if ( distance !== null ) {
 
-		// if we don't hit the sphere then early out
-		const sphere = cached.sphere;
-		if ( sphere ) {
-
-			_sphere.copy( sphere );
-			_sphere.applyMatrix4( _mat );
-			if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
-
-				continue;
-
-			}
-
-		}
-
-		// TODO: check region?
-
-		const boundingBox = cached.box;
-		const obbMat = cached.boxTransform;
-		if ( boundingBox ) {
-
-			_mat.multiply( obbMat ).invert();
-			_ray.copy( raycaster.ray );
-			_ray.applyMatrix4( _mat );
-			if ( _ray.intersectBox( boundingBox, _vec ) ) {
-
-				// account for tile scale
-				_vec2.setFromMatrixScale( _mat );
-				const invScale = _vec2.x;
-
-				if ( Math.abs( Math.max( _vec2.x - _vec2.y, _vec2.x - _vec2.z ) ) > 1e-6 ) {
-
-					console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when raycasting.' );
-
-				}
-
-				// if we intersect the box save the distance to the tile bounds
-				const data = {
-					distance: Infinity,
-					tile: null
-				};
-				array.push( data );
-
-				if ( boundingBox.containsPoint( _ray.origin ) ) {
-
-					data.distance = 0;
-
-				} else {
-
-					data.distance = _vec.distanceToSquared( _ray.origin ) * invScale * invScale;
-
-				}
-
-				data.tile = tile;
-
-			} else {
-
-				continue;
-
-			}
+			array.push( { distance, tile } );
 
 		}
 
@@ -167,7 +117,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 			} else {
 
-				hit = raycastTraverseFirstHit( tile, group, activeTiles, raycaster );
+				hit = raycastTraverseFirstHit( tile, group, activeTiles, raycaster, localRay );
 
 			}
 
@@ -192,43 +142,24 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster ) {
 
 }
 
-export function raycastTraverse( tile, group, activeTiles, raycaster, intersects ) {
+export function raycastTraverse( tile, group, activeTiles, raycaster, intersects, localRay = null ) {
+
+	// get the ray in the local group frame
+	if ( localRay === null ) {
+
+		localRay = _localRay;
+		_mat.copy( group.matrixWorld ).invert();
+		localRay.copy( raycaster.ray ).applyMatrix4( _mat );
+
+	}
 
 	const cached = tile.cached;
-	const groupMatrixWorld = group.matrixWorld;
+	const boundingVolume = cached.boundingVolume;
+	if ( ! boundingVolume.intersectsRay( localRay ) ) {
 
-	_mat.copy( groupMatrixWorld );
-
-	// Early out if we don't hit this tile sphere
-	const sphere = cached.sphere;
-	if ( sphere ) {
-
-		_sphere.copy( sphere );
-		_sphere.applyMatrix4( _mat );
-		if ( ! raycaster.ray.intersectsSphere( _sphere ) ) {
-
-			return;
-
-		}
+		return;
 
 	}
-
-	// Early out if we don't this this tile box
-	const boundingBox = cached.box;
-	const obbMat = cached.boxTransform;
-	if ( boundingBox ) {
-
-		_mat.multiply( obbMat ).invert();
-		_ray.copy( raycaster.ray ).applyMatrix4( _mat );
-		if ( ! _ray.intersectsBox( boundingBox ) ) {
-
-			return;
-
-		}
-
-	}
-
-	// TODO: check region
 
 	const scene = cached.scene;
 	if ( activeTiles.has( tile ) ) {
@@ -241,7 +172,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		raycastTraverse( children[ i ], group, activeTiles, raycaster, intersects );
+		raycastTraverse( children[ i ], group, activeTiles, raycaster, intersects, localRay );
 
 	}
 

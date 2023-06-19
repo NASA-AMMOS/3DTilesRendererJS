@@ -1,8 +1,6 @@
-import { DebugTilesRenderer as TilesRenderer, GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS, DebugGoogleTilesRenderer as GoogleTilesRenderer } from '../src/index.js';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Raycaster,
@@ -16,11 +14,8 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { MapControls } from './src/lib/MapControls.js';
-import { MapsTilesCredits } from './src/MapsTilesCredits.js';
 
-const apiOrigin = 'https://tile.googleapis.com';
-
-let camera, controls, scene, renderer, tiles, credits;
+let camera, controls, scene, renderer, tiles;
 let statsContainer, stats;
 
 const raycaster = new Raycaster();
@@ -31,14 +26,9 @@ const params = {
 	'enableUpdate': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
-
 	'apiKey': 'put-your-api-key-here',
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'resolutionScale': 1.0,
 
-	'autoDisableRendererCulling': true,
-	'displayActiveTiles': false,
+
 	'displayBoxBounds': false,
 	'displaySphereBounds': false,
 	'displayRegionBounds': false,
@@ -49,9 +39,18 @@ const params = {
 init();
 animate();
 
-function setupTiles() {
+function reinstantiateTiles() {
 
-	tiles.fetchOptions.mode = 'cors';
+	if ( tiles ) {
+
+		scene.remove( tiles.group );
+		tiles.dispose();
+		tiles = null;
+
+	}
+
+	tiles = new GoogleTilesRenderer( params.apiKey );
+	tiles.group.rotation.x = - Math.PI / 2;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -69,120 +68,12 @@ function setupTiles() {
 
 }
 
-function reinstantiateTiles() {
-
-	if ( tiles ) {
-
-		scene.remove( tiles.group );
-		tiles.dispose();
-		tiles = null;
-
-	}
-
-	const url = new URL( `${apiOrigin}/v1/3dtiles/root.json?key=${ params.apiKey }` );
-
-	fetch( url, { mode: 'cors' } )
-		.then( res => {
-
-			if ( res.ok ) {
-
-				return res.json();
-
-			} else {
-
-				return Promise.reject( new Error( `${res.status} : ${res.statusText}` ) );
-
-			}
-
-		} )
-		.then( json => {
-
-			if ( ! json.root ) {
-
-				throw new Error( `malformed response: ${ json }` );
-
-			}
-
-			// TODO: See if there's a better way to retrieve the session id
-			let uri;
-			const toVisit = [ json.root ];
-			while ( toVisit.length !== 0 ) {
-
-				const curr = toVisit.pop();
-				if ( curr.content && curr.content.uri ) {
-
-					uri = new URL( `${ apiOrigin }${ curr.content.uri }` );
-					uri.searchParams.append( 'key', params.apiKey );
-					break;
-
-				} else {
-
-					toVisit.push( ...curr.children );
-
-				}
-
-			}
-
-			if ( ! uri ) {
-
-				throw new Error( `can't find session string in response: ${ json }` );
-
-			}
-
-			const session = uri.searchParams.get( 'session' );
-
-			tiles = new TilesRenderer( url.toString() );
-			tiles.preprocessURL = uri => {
-
-				uri = new URL( uri );
-				if ( /^http/.test( uri.protocol ) ) {
-
-					uri.searchParams.append( 'session', session );
-					uri.searchParams.append( 'key', params.apiKey );
-
-				}
-				return uri.toString();
-
-			};
-
-			credits = new MapsTilesCredits();
-			tiles.onTileVisibilityChange = ( scene, tile, visible ) => {
-
-				const copyright = tile.cached.metadata.asset.copyright || '';
-				if ( visible ) credits.addCredits( copyright );
-				else credits.removeCredits( copyright );
-
-
-			};
-
-			tiles.parseQueue.maxJobs = 5;
-			tiles.downloadQueue.maxJobs = 20;
-			tiles.lruCache.minSize = 3000;
-			tiles.lruCache.maxSize = 5000;
-			tiles.group.rotation.x = - Math.PI / 2;
-			tiles.errorTarget = 20;
-
-			setupTiles();
-			initFromHash();
-			setInterval( updateHash, 100 );
-
-		} )
-		.catch( err => {
-
-			console.error( 'Unable to get gmaps tileset:', err );
-
-		} );
-
-}
-
 function init() {
 
 	scene = new Scene();
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 
 	document.body.appendChild( renderer.domElement );
@@ -197,14 +88,6 @@ function init() {
 	controls.minPolarAngle = Math.PI / 4;
 	controls.target.set( 0, 0, 1 );
 
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
-
 	reinstantiateTiles();
 
 	onWindowResize();
@@ -214,14 +97,10 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	const mapsOptions = gui.addFolder( 'GMaps' );
+	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
 	mapsOptions.open();
-
-	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'loadSiblings' );
-	tileOptions.add( params, 'stopAtEmptyTiles' );
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
@@ -244,7 +123,6 @@ function init() {
 	} );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-
 	gui.open();
 
 	statsContainer = document.createElement( 'div' );
@@ -255,6 +133,10 @@ function init() {
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
 
+	// run hash functions
+	initFromHash();
+	setInterval( updateHash, 100 );
+
 }
 
 function onWindowResize() {
@@ -263,7 +145,7 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 	camera.updateProjectionMatrix();
-	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
+	renderer.setPixelRatio( window.devicePixelRatio );
 
 }
 
@@ -301,6 +183,12 @@ function updateControls() {
 }
 
 function updateHash() {
+
+	if ( ! tiles ) {
+
+		return;
+
+	}
 
 	const res = {};
 	const mat = tiles.group.matrixWorld.clone().invert();
@@ -341,19 +229,10 @@ function animate() {
 	updateControls();
 
 	// update options
-	tiles.loadSiblings = params.loadSiblings;
-	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
-	tiles.displayActiveTiles = params.displayActiveTiles;
-	tiles.autoDisableRendererCulling = params.autoDisableRendererCulling;
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displaySphereBounds = params.displaySphereBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
-
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
 	// update tiles
-	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
 		camera.updateMatrixWorld();
@@ -371,6 +250,7 @@ function render() {
 	// render primary view
 	renderer.render( scene, camera );
 
+	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
 
@@ -420,14 +300,14 @@ function render() {
 
 	}
 
-	if ( credits ) {
+	if ( tiles ) {
 
 		const mat = tiles.group.matrixWorld.clone().invert();
 		const vec = camera.position.clone().applyMatrix4( mat );
 
 		const res = {};
 		WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + credits.getCredits();
+		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
 
 	}
 

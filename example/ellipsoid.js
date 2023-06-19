@@ -6,12 +6,11 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	sRGBEncoding,
 	MeshPhongMaterial,
 	Box3Helper,
 	Box3,
 	Sphere,
-	SphereBufferGeometry,
+	SphereGeometry,
 	Mesh,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -45,7 +44,6 @@ function init() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 	renderer.shadowMap.enabled = true;
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 
@@ -164,7 +162,7 @@ function updateHelper() {
 
 		if ( ! pointsArray[ i ] ) {
 
-			pointsArray.push( new Mesh( new SphereBufferGeometry( 0.01 ) ) );
+			pointsArray.push( new Mesh( new SphereGeometry( 0.01 ) ) );
 			pointsArray[ i ].material.color.set( 0xff0000 );
 			pointsGroup.add( pointsArray[ i ] );
 

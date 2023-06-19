@@ -1,4 +1,4 @@
-export class MapsTilesCredits {
+export class GoogleMapsTilesCredits {
 
 	constructor() {
 
@@ -43,7 +43,7 @@ export class MapsTilesCredits {
 
 	}
 
-	getCredits() {
+	toString() {
 
 		const tokens = Object.keys( this.creditsCount ).sort();
 		return tokens.join( ', ' );

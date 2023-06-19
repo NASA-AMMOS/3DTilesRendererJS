@@ -4,15 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.3.19] - Unreleased
+## Unreleased
+### Added
+- `CesiumIonTilesRenderer` for more convenient use of the ion API.
+- Frustum check support for OBB bounding volumes.
+- Consolidate bounding volumes into a common class to simplify implementation.
+
+## [0.3.19] - 2023-06-13
 ### Fixed
 - Case sensitivity when dealing with file formats.
 - Race condition when setting the transformation of gltf files.
 - Case where internal tilesets were not disposed of properly when calling "dispose".
 - Incorrect calculation of geometric error when spheres are available.
+- Support for rayasting tiles with sphere bounding volumes.
+- Add "constructLatLonFrame" and "getNorthernTangent" to Ellipsoid class.
 
 ### Added
 - `getBounds` and `getOrientedBounds` now return the AABB of a sphere if a tileset bounding box is not available.
+- `GoogleTilesRenderer` for rendering Google's Photorealistic 3D Tiles
 
 ## [0.3.18] - 2023-05-13
 ### Added
