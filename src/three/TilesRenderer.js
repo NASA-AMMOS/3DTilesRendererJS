@@ -204,7 +204,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( raycaster.firstHitOnly ) {
 
-			const hit = raycastTraverseFirstHit( this.root, this.group, this.activeTiles, raycaster );
+			const hit = raycastTraverseFirstHit( this, this.root, raycaster );
 			if ( hit ) {
 
 				intersects.push( hit );
@@ -213,7 +213,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			raycastTraverse( this.root, this.group, this.activeTiles, raycaster, intersects );
+			raycastTraverse( this, this.root, raycaster, intersects );
 
 		}
 

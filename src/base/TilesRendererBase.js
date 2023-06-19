@@ -176,7 +176,7 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, parentTile, tileSetDir ) {
+	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
 		if ( tile.content ) {
 
@@ -291,9 +291,9 @@ export class TilesRendererBase {
 
 	}
 
-	ensureChildrenArePreprocessed( parent ) {
+	ensureChildrenArePreprocessed( tile ) {
 
-		const children = parent.children;
+		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ 0 ];
@@ -303,7 +303,7 @@ export class TilesRendererBase {
 
 			}
 
-			this.preprocessNode( child, parent, parent.__basePath );
+			this.preprocessNode( child, tile.__basePath, tile );
 
 		}
 
@@ -360,15 +360,7 @@ export class TilesRendererBase {
 				// remove trailing slash and last path-segment from the URL
 				let basePath = url.replace( /\/[^\/]*\/?$/, '' );
 				basePath = new URL( basePath, window.location.href ).toString();
-				this.preprocessNode( json.root, parent, basePath );
-
-				// traverseSet(
-				// 	json.root,
-				// 	( node, parent ) => this.preprocessNode( node, parent, basePath ),
-				// 	null,
-				// 	parent,
-				// 	parent ? parent.__depth : 0,
-				// );
+				this.preprocessNode( json.root, basePath, parent );
 
 				return json;
 
