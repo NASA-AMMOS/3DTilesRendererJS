@@ -23,10 +23,10 @@ import {
 	Raycaster,
 	Vector2,
 	Mesh,
-	CylinderBufferGeometry,
+	CylinderGeometry,
 	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry,
+	TorusGeometry,
 	OrthographicCamera,
 	sRGBEncoding,
 	Sphere,
@@ -142,7 +142,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
@@ -165,7 +164,6 @@ function init() {
 	secondRenderer.setPixelRatio( window.devicePixelRatio );
 	secondRenderer.setSize( window.innerWidth, window.innerHeight );
 	secondRenderer.setClearColor( 0x151c1f );
-	secondRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( secondRenderer.domElement );
 	secondRenderer.domElement.style.position = 'absolute';
@@ -191,7 +189,6 @@ function init() {
 	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
 	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
 	thirdPersonRenderer.setClearColor( 0x0f1416 );
-	thirdPersonRenderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( thirdPersonRenderer.domElement );
 	thirdPersonRenderer.domElement.style.position = 'fixed';
@@ -234,12 +231,12 @@ function init() {
 	rayIntersect = new Group();
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
+	const rayMesh = new Mesh( new CylinderGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
 	rayMesh.position.z += 3;
 	rayIntersect.add( rayMesh );
 
-	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
+	const rayRing = new Mesh( new TorusGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
 	rayIntersect.visible = false;

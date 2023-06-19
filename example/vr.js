@@ -20,8 +20,7 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry,
-	sRGBEncoding,
+	TorusGeometry,
 	GridHelper,
 	BufferGeometry,
 	Float32BufferAttribute,
@@ -29,7 +28,7 @@ import {
 	AdditiveBlending,
 	Line,
 	Vector3,
-	RingBufferGeometry,
+	RingGeometry,
 	Sphere,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -65,7 +64,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0xbbbbbb );
-	renderer.outputEncoding = sRGBEncoding;
 	renderer.xr.enabled = true;
 
 	document.body.appendChild( renderer.domElement );
@@ -132,7 +130,7 @@ function init() {
 	fwdVector = new Vector3( 0, 0, 1 );
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xb2dfdb } );
-	intersectRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
+	intersectRing = new Mesh( new TorusGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	intersectRing.visible = false;
 	scene.add( intersectRing );
 
@@ -216,7 +214,7 @@ function buildController( data ) {
 
 		case 'gaze':
 
-			geometry = new RingBufferGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+			geometry = new RingGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
 			material = new MeshBasicMaterial( { opacity: 0.5, transparent: true } );
 			return new Mesh( geometry, material );
 

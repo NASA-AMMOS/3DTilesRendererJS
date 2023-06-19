@@ -38,7 +38,6 @@ function init() {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0xd8cec0 );
-	renderer.outputEncoding = sRGBEncoding;
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;

@@ -22,10 +22,10 @@ import {
 	Vector3,
 	Quaternion,
 	Mesh,
-	CylinderBufferGeometry,
+	CylinderGeometry,
 	MeshBasicMaterial,
 	Group,
-	TorusBufferGeometry,
+	TorusGeometry,
 	OrthographicCamera,
 	Matrix4,
 	Box3,
@@ -274,12 +274,12 @@ function init() {
 	rayIntersect = new Group();
 
 	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderBufferGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
+	const rayMesh = new Mesh( new CylinderGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
 	rayMesh.rotation.x = Math.PI / 2;
 	rayMesh.position.z += 3;
 	rayIntersect.add( rayMesh );
 
-	const rayRing = new Mesh( new TorusBufferGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
+	const rayRing = new Mesh( new TorusGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
 	rayIntersect.add( rayRing );
 	scene.add( rayIntersect );
 	rayIntersect.visible = false;
