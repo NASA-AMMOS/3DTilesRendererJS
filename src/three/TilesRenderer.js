@@ -842,13 +842,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const boundingVolume = cached.boundingVolume;
-
-		if ( boundingVolume.isEmpty ) {
-
-			return true;
-
-		}
-
 		const inFrustum = cached.inFrustum;
 		const cameraInfo = this.cameraInfo;
 		let inView = false;

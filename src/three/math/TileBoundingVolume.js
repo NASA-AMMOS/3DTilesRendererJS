@@ -13,12 +13,6 @@ const _ray = new Ray();
 // TODO: check region more precisely in all functions
 export class TileBoundingVolume {
 
-	get isEmpty() {
-
-		return Boolean( this.sphere || this.obb || this.region );
-
-	}
-
 	constructor() {
 
 		this.sphere = null;
@@ -59,11 +53,11 @@ export class TileBoundingVolume {
 
 	getRayDistance( ray ) {
 
-		let sphereDistSq = - Infinity;
-		let obbDistSq = - Infinity;
-
 		const sphere = this.sphere;
 		const obb = this.obb || this.regionObb;
+
+		let sphereDistSq = - Infinity;
+		let obbDistSq = - Infinity;
 
 		if ( sphere ) {
 
@@ -74,23 +68,28 @@ export class TileBoundingVolume {
 
 		if ( obb ) {
 
+			// the obb transform contains no scale
 			_ray.copy( ray ).applyMatrix4( obb.inverseTransform );
 			_ray.intersectBox( obb.box, _obbVec );
 			obbDistSq = ray.origin.distanceToSquared( _obbVec );
 
 		}
 
+		// return the furthest distance
 		const furthestDist = sphereDistSq > obbDistSq ? sphereDistSq : obbDistSq;
+
+		// return null if no hit
 		return furthestDist === - Infinity ? null : furthestDist;
 
 	}
 
 	distanceToPoint( point ) {
 
-		let sphereDistance = - Infinity;
-		let obbDistance = - Infinity;
 		const sphere = this.sphere;
 		const obb = this.obb || this.regionObb;
+
+		let sphereDistance = - Infinity;
+		let obbDistance = - Infinity;
 
 		if ( sphere ) {
 
@@ -103,11 +102,13 @@ export class TileBoundingVolume {
 
 		if ( obb ) {
 
+			// the obb transform contains no scale
 			_vec.copy( point ).applyMatrix4( obb.inverseTransform );
 			obbDistance = obb.box.distanceToPoint( _vec );
 
 		}
 
+		// return the further distance of the two volumes
 		return sphereDistance > obbDistance ? sphereDistance : obbDistance;
 
 	}
@@ -116,21 +117,20 @@ export class TileBoundingVolume {
 
 		const obb = this.obb || this.regionObb;
 		const sphere = this.sphere;
-
-		let intersected = Boolean( sphere || obb );
 		if ( sphere && ! frustum.intersectsSphere( sphere ) ) {
 
-			intersected = false;
+			return false;
 
 		}
 
 		if ( obb && ! obb.intersectsFrustum( frustum ) ) {
 
-			intersected = false;
+			return false;
 
 		}
 
-		return intersected;
+		// if we don't have a sphere or obb then just say we did intersect
+		return Boolean( sphere || obb );
 
 	}
 
