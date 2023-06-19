@@ -539,7 +539,7 @@ Disposes of all the tiles in the renderer. Calls dispose on all materials, textu
 
 _extends [TilesRenderer](#TilesRenderer)_
 
-Special variant of TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this renderer.
+Special variant of TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this renderer. The debug renderer includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
 
 ### .colorMode
 

@@ -37,8 +37,8 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new GoogleTilesRenderer( params.apiKey );
-	tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
-	tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
+	// tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
+	// tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
 	tiles.setLatLonToYUp( 35.6586 * MathUtils.DEG2RAD, 139.7454 * MathUtils.DEG2RAD ); // Tokyo Tower
 
 	// Note the DRACO compression files need to be supplied via an explicit source.

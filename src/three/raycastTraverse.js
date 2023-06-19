@@ -23,12 +23,15 @@ function intersectTileScene( scene, raycaster, intersects ) {
 }
 
 // Returns the closest hit when traversing the tree
-export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, localRay = null ) {
+export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = null ) {
+
+	const { group, activeTiles } = renderer;
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	// If the root is active make sure we've checked it
-	if ( activeTiles.has( root ) ) {
+	if ( activeTiles.has( tile ) ) {
 
-		intersectTileScene( root.cached.scene, raycaster, _hitArray );
+		intersectTileScene( tile.cached.scene, raycaster, _hitArray );
 
 		if ( _hitArray.length > 0 ) {
 
@@ -61,7 +64,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, lo
 
 	// TODO: can we avoid creating a new array here every time to save on memory?
 	const array = [];
-	const children = root.children;
+	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const tile = children[ i ];
@@ -117,7 +120,7 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, lo
 
 			} else {
 
-				hit = raycastTraverseFirstHit( tile, group, activeTiles, raycaster, localRay );
+				hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
 
 			}
 
@@ -142,7 +145,10 @@ export function raycastTraverseFirstHit( root, group, activeTiles, raycaster, lo
 
 }
 
-export function raycastTraverse( tile, group, activeTiles, raycaster, intersects, localRay = null ) {
+export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
+
+	const { group, activeTiles } = renderer;
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -172,7 +178,7 @@ export function raycastTraverse( tile, group, activeTiles, raycaster, intersects
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		raycastTraverse( children[ i ], group, activeTiles, raycaster, intersects, localRay );
+		raycastTraverse( renderer, children[ i ], raycaster, intersects, localRay );
 
 	}
 

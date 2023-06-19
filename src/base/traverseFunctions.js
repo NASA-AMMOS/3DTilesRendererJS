@@ -34,7 +34,9 @@ function resetFrameState( tile, frameCount ) {
 }
 
 // Recursively mark tiles used down to the next tile with content
-function recursivelyMarkUsed( tile, frameCount, lruCache ) {
+function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
+
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, frameCount );
 
@@ -45,7 +47,7 @@ function recursivelyMarkUsed( tile, frameCount, lruCache ) {
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], frameCount, lruCache );
+			recursivelyMarkUsed( children[ i ], frameCount, lruCache, renderer );
 
 		}
 
@@ -54,6 +56,8 @@ function recursivelyMarkUsed( tile, frameCount, lruCache ) {
 }
 
 function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
+
+	renderer.ensureChildrenArePreprocessed( tile );
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
@@ -119,6 +123,10 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 // being kept around that isn't being used -- is that okay?
 export function determineFrustumSet( tile, renderer ) {
 
+	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
+	// child tiles has happened here.
+	renderer.ensureChildrenArePreprocessed( tile );
+
 	const stats = renderer.stats;
 	const frameCount = renderer.frameCount;
 	const errorTarget = renderer.errorTarget;
@@ -183,7 +191,7 @@ export function determineFrustumSet( tile, renderer ) {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
-			recursivelyMarkUsed( c, frameCount, lruCache );
+			recursivelyMarkUsed( c, frameCount, lruCache, renderer );
 
 		}
 
