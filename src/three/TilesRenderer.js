@@ -840,11 +840,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 	tileInView( tile ) {
 
-		// TODO: we should use the more precise bounding volumes here if possible
-		// cache the root-space planes
-
 		const cached = tile.cached;
 		const boundingVolume = cached.boundingVolume;
+
+		if ( boundingVolume.isEmpty ) {
+
+			return true;
+
+		}
 
 		const inFrustum = cached.inFrustum;
 		const cameraInfo = this.cameraInfo;

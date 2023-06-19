@@ -13,6 +13,12 @@ const _ray = new Ray();
 // TODO: check region more precisely in all functions
 export class TileBoundingVolume {
 
+	get isEmpty() {
+
+		return Boolean( this.sphere || this.obb || this.region );
+
+	}
+
 	constructor() {
 
 		this.sphere = null;
