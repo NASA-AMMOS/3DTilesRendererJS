@@ -32,22 +32,19 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 			// find the session id in the first sub tile set
 			let session;
-			const toVisit = [ tileset.root ];
-			while ( toVisit.length !== 0 ) {
+			this.traverse( tile => {
 
-				const curr = toVisit.pop();
-				if ( curr.content && curr.content.uri ) {
+				this.ensureChildrenArePreprocessed( tile );
+				if ( tile.content && tile.content.uri ) {
 
-					session = new URL( curr.content.uri ).searchParams.get( 'session' );
-					break;
-
-				} else {
-
-					toVisit.push( ...curr.children );
+					session = new URL( tile.content.uri ).searchParams.get( 'session' );
+					return true;
 
 				}
 
-			}
+				return false;
+
+			} );
 
 			// adjust the url preprocessor to include the api key, session
 			this.preprocessURL = uri => {
