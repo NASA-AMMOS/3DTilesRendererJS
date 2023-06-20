@@ -70,6 +70,8 @@ function reinstantiateTiles() {
 	tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
 	tiles.onLoadTileSet = () => {
 
+		// because ion examples typically are positioned on the planet surface we can orient
+		// it such that up is Y+ and center the model
 		const sphere = new Sphere();
 		tiles.getBoundingSphere( sphere );
 
