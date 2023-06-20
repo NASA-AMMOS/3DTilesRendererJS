@@ -119,14 +119,6 @@ function isInt( input ) {
 
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../data/tileset.json';
-
-	if ( hashUrl ) {
-
-		params.ionAssetId = isInt( hashUrl ) ? hashUrl : '';
-
-	}
-
 	if ( tiles ) {
 
 		offsetParent.remove( tiles.group );
@@ -135,48 +127,40 @@ function reinstantiateTiles() {
 
 	}
 
-	if ( params.ionAssetId ) {
+	tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
+	tiles.onLoadTileSet = () => {
 
-		tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
-		tiles.onLoadTileSet = () => {
+		const box = new Box3();
+		const sphere = new Sphere();
+		const matrix = new Matrix4();
 
-			const box = new Box3();
-			const sphere = new Sphere();
-			const matrix = new Matrix4();
+		let position;
+		let distanceToEllipsoidCenter;
 
-			let position;
-			let distanceToEllipsoidCenter;
+		if ( tiles.getOrientedBounds( box, matrix ) ) {
 
-			if ( tiles.getOrientedBounds( box, matrix ) ) {
+			position = new Vector3().setFromMatrixPosition( matrix );
+			distanceToEllipsoidCenter = position.length();
 
-				position = new Vector3().setFromMatrixPosition( matrix );
-				distanceToEllipsoidCenter = position.length();
+		} else if ( tiles.getBoundingSphere( sphere ) ) {
 
-			} else if ( tiles.getBoundingSphere( sphere ) ) {
+			position = sphere.center.clone();
+			distanceToEllipsoidCenter = position.length();
 
-				position = sphere.center.clone();
-				distanceToEllipsoidCenter = position.length();
+		}
 
-			}
+		const surfaceDirection = position.normalize();
+		const up = new Vector3( 0, 1, 0 );
+		const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
 
-			const surfaceDirection = position.normalize();
-			const up = new Vector3( 0, 1, 0 );
-			const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
+		tiles.group.quaternion.x = rotationToNorthPole.x;
+		tiles.group.quaternion.y = rotationToNorthPole.y;
+		tiles.group.quaternion.z = rotationToNorthPole.z;
+		tiles.group.quaternion.w = rotationToNorthPole.w;
 
-			tiles.group.quaternion.x = rotationToNorthPole.x;
-			tiles.group.quaternion.y = rotationToNorthPole.y;
-			tiles.group.quaternion.z = rotationToNorthPole.z;
-			tiles.group.quaternion.w = rotationToNorthPole.w;
+		tiles.group.position.y = - distanceToEllipsoidCenter;
 
-			tiles.group.position.y = - distanceToEllipsoidCenter;
-
-		};
-
-	} else {
-
-		tiles = new TilesRenderer( url );
-
-	}
+	};
 
 	setupTiles();
 
@@ -200,89 +184,14 @@ function init() {
 	cameraHelper = new CameraHelper( camera );
 	scene.add( cameraHelper );
 
-	orthoCamera = new OrthographicCamera();
-	orthoCameraHelper = new CameraHelper( orthoCamera );
-	scene.add( orthoCameraHelper );
-
-	// secondary camera view
-	secondCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	secondCamera.position.set( 400, 400, - 400 );
-	secondCamera.lookAt( 0, 0, 0 );
-
-	secondRenderer = new WebGLRenderer( { antialias: true } );
-	secondRenderer.setPixelRatio( window.devicePixelRatio );
-	secondRenderer.setSize( window.innerWidth, window.innerHeight );
-	secondRenderer.setClearColor( 0x151c1f );
-
-	document.body.appendChild( secondRenderer.domElement );
-	secondRenderer.domElement.style.position = 'absolute';
-	secondRenderer.domElement.style.right = '0';
-	secondRenderer.domElement.style.top = '0';
-	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
-	secondRenderer.domElement.tabIndex = 1;
-
-	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
-	secondControls.screenSpacePanning = false;
-	secondControls.minDistance = 1;
-	secondControls.maxDistance = 2000;
-
-	secondCameraHelper = new CameraHelper( secondCamera );
-	scene.add( secondCameraHelper );
-
-	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	thirdPersonCamera.position.set( 50, 40, 40 );
-	thirdPersonCamera.lookAt( 0, 0, 0 );
-
-	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
-	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
-	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0x0f1416 );
-
-	document.body.appendChild( thirdPersonRenderer.domElement );
-	thirdPersonRenderer.domElement.style.position = 'fixed';
-	thirdPersonRenderer.domElement.style.left = '5px';
-	thirdPersonRenderer.domElement.style.bottom = '5px';
-	thirdPersonRenderer.domElement.tabIndex = 1;
-
-	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
-	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 2000;
-
 	// controls
 	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
 
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
-
 	offsetParent = new Group();
 	scene.add( offsetParent );
-
-	// Raycasting init
-	raycaster = new Raycaster();
-	mouse = new Vector2();
-
-	rayIntersect = new Group();
-
-	const rayIntersectMat = new MeshBasicMaterial( { color: 0xe91e63 } );
-	const rayMesh = new Mesh( new CylinderGeometry( 0.25, 0.25, 6 ), rayIntersectMat );
-	rayMesh.rotation.x = Math.PI / 2;
-	rayMesh.position.z += 3;
-	rayIntersect.add( rayMesh );
-
-	const rayRing = new Mesh( new TorusGeometry( 1.5, 0.2, 16, 100 ), rayIntersectMat );
-	rayIntersect.add( rayRing );
-	scene.add( rayIntersect );
-	rayIntersect.visible = false;
 
 	reinstantiateTiles();
 
@@ -303,32 +212,10 @@ function init() {
 
 function onWindowResize() {
 
-	thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
-	thirdPersonCamera.updateProjectionMatrix();
-	thirdPersonRenderer.setSize( Math.floor( window.innerWidth / 3 ), Math.floor( window.innerHeight / 3 ) );
-
-	if ( params.showSecondView ) {
-
-		camera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-		renderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
-
-		secondCamera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-		secondRenderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
-		secondRenderer.domElement.style.display = 'block';
-
-	} else {
-
-		camera.aspect = window.innerWidth / window.innerHeight;
-		renderer.setSize( window.innerWidth, window.innerHeight );
-
-		secondRenderer.domElement.style.display = 'none';
-
-	}
+	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
-
-	secondCamera.updateProjectionMatrix();
-	secondRenderer.setPixelRatio( window.devicePixelRatio );
 
 }
 
