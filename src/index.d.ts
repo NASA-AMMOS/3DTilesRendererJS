@@ -26,6 +26,7 @@ export * from './three/math/GeoConstants';
 export * from './three/renderers/GoogleTilesRenderer';
 export * from './three/renderers/CesiumIonTilesRenderer';
 
+export * from './base/constants';
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
 export { TileBase } from './base/TileBase';
