@@ -33,6 +33,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 		intersectTileScene( tile.cached.scene, raycaster, _hitArray );
 
+		// TODO: check for "add" here
 		if ( _hitArray.length > 0 ) {
 
 			if ( _hitArray.length > 1 ) {
@@ -118,6 +119,8 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 				}
 
+				// TODO: we need to check for 'ADD' here and continue
+
 			} else {
 
 				hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
@@ -171,7 +174,14 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	if ( activeTiles.has( tile ) ) {
 
 		intersectTileScene( scene, raycaster, intersects );
-		return;
+
+		// if we're adding the subsequent set of tiles then we want
+		// to continue to the next tier of children
+		if ( tile.refine !== 'ADD' ) {
+
+			return;
+
+		}
 
 	}
 
