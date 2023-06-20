@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Consolidate bounding volumes into a common class to simplify implementation.
 - Progressively process recursive tileset tiles preventing frame stalls of up to and over 100ms in some cases when many or large child tilesets were loaded.
 - GoogleTilesRenderer.setLatLonToYUp now sets X+ to north and Z+ to east
+
 ### Fixed
 - TilesRenderer.dispose function not working correctly.
+- Type declaration file for constants.
 
 ## [0.3.19] - 2023-06-13
 ### Fixed
