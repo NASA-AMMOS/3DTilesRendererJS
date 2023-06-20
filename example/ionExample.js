@@ -1,78 +1,24 @@
-import {
-	DebugTilesRenderer as TilesRenderer,
-	DebugCesiumIonTilesRenderer as CesiumIonTilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-} from '../src/index.js';
+import { CesiumIonTilesRenderer } from '../src/index.js';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	CameraHelper,
-	Raycaster,
-	Vector2,
 	Vector3,
 	Quaternion,
-	Mesh,
-	CylinderGeometry,
-	MeshBasicMaterial,
 	Group,
-	TorusGeometry,
-	OrthographicCamera,
-	Matrix4,
-	Box3,
 	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-const ALL_HITS = 1;
-const FIRST_HIT_ONLY = 2;
-
-const hashUrl = window.location.hash.replace( /^#/, '' );
-let camera, controls, scene, renderer, tiles, cameraHelper;
-let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
-let secondRenderer, secondCameraHelper, secondControls, secondCamera;
-let orthoCamera, orthoCameraHelper;
-let raycaster, mouse, rayIntersect, lastHoveredElement;
-let offsetParent;
-let statsContainer, stats;
+let camera, controls, scene, renderer, tiles;
 
 const params = {
 
-	'enableUpdate': true,
-	'raycast': NONE,
-	'enableCacheDisplay': false,
-	'enableRendererStats': false,
-	'orthographic': false,
-
 	'ionAssetId': '40866',
 	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
-	'errorTarget': 6,
-	'errorThreshold': 60,
-	'maxDepth': 15,
-	'loadSiblings': true,
-	'stopAtEmptyTiles': true,
-	'displayActiveTiles': false,
-	'resolutionScale': 1.0,
-
-	'up': '+Y',
-	'displayBoxBounds': false,
-	'colorMode': 0,
-	'showThirdPerson': false,
-	'showSecondView': false,
 	'reload': reinstantiateTiles,
 
 };
@@ -107,13 +53,7 @@ function setupTiles() {
 	loader.setDRACOLoader( dracoLoader );
 
 	tiles.manager.addHandler( /\.gltf$/, loader );
-	offsetParent.add( tiles.group );
-
-}
-
-function isInt( input ) {
-
-	return ( typeof input === 'string' ) ? ! isNaN( input ) && ! isNaN( parseFloat( input ) ) && Number.isInteger( parseFloat( input ) ) : Number.isInteger( input );
+	scene.add( tiles.group );
 
 }
 
@@ -121,7 +61,7 @@ function reinstantiateTiles() {
 
 	if ( tiles ) {
 
-		offsetParent.remove( tiles.group );
+		scene.remove( tiles.group );
 		tiles.dispose();
 		tiles = null;
 
@@ -130,24 +70,11 @@ function reinstantiateTiles() {
 	tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
 	tiles.onLoadTileSet = () => {
 
-		const box = new Box3();
 		const sphere = new Sphere();
-		const matrix = new Matrix4();
+		tiles.getBoundingSphere( sphere );
 
-		let position;
-		let distanceToEllipsoidCenter;
-
-		if ( tiles.getOrientedBounds( box, matrix ) ) {
-
-			position = new Vector3().setFromMatrixPosition( matrix );
-			distanceToEllipsoidCenter = position.length();
-
-		} else if ( tiles.getBoundingSphere( sphere ) ) {
-
-			position = sphere.center.clone();
-			distanceToEllipsoidCenter = position.length();
-
-		}
+		const position = sphere.center.clone();
+		const distanceToEllipsoidCenter = position.length();
 
 		const surfaceDirection = position.normalize();
 		const up = new Vector3( 0, 1, 0 );
@@ -172,8 +99,6 @@ function init() {
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
 
 	document.body.appendChild( renderer.domElement );
@@ -181,17 +106,12 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 400, 400, 400 );
-	cameraHelper = new CameraHelper( camera );
-	scene.add( cameraHelper );
 
 	// controls
 	controls = new FlyOrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
 	controls.minDistance = 1;
 	controls.maxDistance = 2000;
-
-	offsetParent = new Group();
-	scene.add( offsetParent );
 
 	reinstantiateTiles();
 
@@ -215,7 +135,7 @@ function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
+	renderer.setPixelRatio( window.devicePixelRatio );
 
 }
 
@@ -229,7 +149,6 @@ function animate() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 
 	// update tiles
-	window.tiles = tiles;
 	camera.updateMatrixWorld();
 	tiles.update();
 
