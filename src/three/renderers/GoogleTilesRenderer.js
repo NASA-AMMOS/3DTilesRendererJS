@@ -22,7 +22,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this._credits = new GoogleMapsTilesCredits();
 
 		this.fetchOptions.mode = 'cors';
-		this.parseQueue.maxJobs = 7;
+		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
@@ -32,22 +32,18 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 			// find the session id in the first sub tile set
 			let session;
-			const toVisit = [ tileset.root ];
-			while ( toVisit.length !== 0 ) {
+			this.traverse( tile => {
 
-				const curr = toVisit.pop();
-				if ( curr.content && curr.content.uri ) {
+				if ( tile.content && tile.content.uri ) {
 
-					session = new URL( curr.content.uri ).searchParams.get( 'session' );
-					break;
-
-				} else {
-
-					toVisit.push( ...curr.children );
+					session = new URL( tile.content.uri ).searchParams.get( 'session' );
+					return true;
 
 				}
 
-			}
+				return false;
+
+			} );
 
 			// adjust the url preprocessor to include the api key, session
 			this.preprocessURL = uri => {

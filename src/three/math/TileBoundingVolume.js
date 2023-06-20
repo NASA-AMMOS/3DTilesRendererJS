@@ -1,6 +1,7 @@
-import { Ray, Vector3 } from 'three';
+import { Ray, Vector3, Sphere } from 'three';
 import { WGS84_RADIUS, WGS84_HEIGHT } from './Ellipsoid.js';
 import { OBB } from './OBB.js';
+import { EllipsoidRegion } from './EllipsoidRegion.js';
 
 const _vecX = new Vector3();
 const _vecY = new Vector3();
@@ -243,8 +244,8 @@ export class TileBoundingVolume {
 	setSphereData( x, y, z, radius, transform ) {
 
 		const sphere = new Sphere();
-		sphere.center.set( data[ 0 ], data[ 1 ], data[ 2 ] );
-		sphere.radius = data[ 3 ];
+		sphere.center.set( x, y, z );
+		sphere.radius = radius;
 		sphere.applyMatrix4( transform );
 		this.sphere = sphere;
 
@@ -252,7 +253,7 @@ export class TileBoundingVolume {
 
 	setRegionData( west, south, east, north, minHeight, maxHeight ) {
 
-		this.region = new EllipsoidRegion(
+		const region = new EllipsoidRegion(
 			WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT,
 			south, north,
 			west, east,
@@ -262,6 +263,8 @@ export class TileBoundingVolume {
 		const obb = new OBB();
 		region.getBoundingBox( obb.box, obb.transform );
 		obb.update();
+
+		this.region = region;
 		this.regionObb = obb;
 
 	}
