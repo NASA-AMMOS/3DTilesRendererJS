@@ -26,7 +26,6 @@ export * from './three/math/GeoConstants';
 export * from './three/renderers/GoogleTilesRenderer';
 export * from './three/renderers/CesiumIonTilesRenderer';
 
-export * from './base/constants';
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
 export { TileBase } from './base/TileBase';
@@ -36,6 +35,7 @@ export { I3DMLoaderBase } from './base/I3DMLoaderBase';
 export { PNTSLoaderBase } from './base/PNTSLoaderBase';
 export { CMPTLoaderBase } from './base/CMPTLoaderBase';
 export { LoaderBase } from './base/LoaderBase';
+export * from './base/constants';
 
 export { LRUCache } from './utilities/LRUCache';
 export { PriorityQueue } from './utilities/PriorityQueue';
