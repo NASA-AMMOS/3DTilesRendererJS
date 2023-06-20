@@ -324,7 +324,7 @@ The tileset renders and loads correctly.
 
 #### steps
 
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-broken-root-content.json).
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-add.json).
 1. Set `colorMode` to `RANDOM_COLOR`.
 
 #### expected
@@ -347,7 +347,7 @@ Verify the tileset loads correctly and there are no missing chunks or errors in 
 
 #### steps
 
-1. Load `tileset-external-broken.json` in the kitchen sink example.
+1. Load `tileset-external-broken.json` in the kitchen sink example [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-external-broken.json).
 1. Zoom in and out.
 1. Set target error to `0`.
 
@@ -359,7 +359,7 @@ Verify that the external tileset does not load but the rest of the tileset conti
 
 #### steps
 
-1. Load `tileset-external.json` in the kitchen sink example.
+1. Load `tileset-external.json` in the kitchen sink example [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-external.json).
 1. Zoom in and out.
 1. Set target error to `0`.
 1. Ensure external tileset has loaded by running `tiles.root.children[0].children[0].children` in the console and verifying it's not empty.
