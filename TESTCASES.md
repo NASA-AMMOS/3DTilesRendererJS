@@ -370,3 +370,18 @@ Verify that the external tileset does not load but the rest of the tileset conti
 #### expected
 
 Verify all steps happen as written.
+
+## Verify disposing of the tileset removes all sub tile sets
+
+#### steps
+
+1. Load `tileset-external.json` in the kitchen sink example [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-external.json).
+1. Zoom in and out to load in tiles.
+1. Set target error to `0`.
+1. Open render stats display.
+1. Wait for all data to load and ensure total geometries is "220".
+1. Press "reload" and wiat for all data to load.
+
+#### expected
+
+Verify that the total geometries in the render stats display is still "220".
