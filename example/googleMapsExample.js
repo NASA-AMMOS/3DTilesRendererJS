@@ -252,7 +252,7 @@ function render() {
 
 	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
-	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.group.children.length - 2 }`;
+	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
 
 	if ( params.enableCacheDisplay ) {
 
