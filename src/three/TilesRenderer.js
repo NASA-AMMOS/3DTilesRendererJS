@@ -161,7 +161,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingVolume = this.root.cached.boundingVolume;
 		if ( boundingVolume ) {
 
-			boundingVolume.getBoundingSphere( target );
+			boundingVolume.getSphere( target );
 			return true;
 
 		} else {
