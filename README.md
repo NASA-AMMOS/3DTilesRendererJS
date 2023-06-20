@@ -705,7 +705,7 @@ Returns a string of unique credits for all the tiles currently displayed.
 setLatLonToYUp( lat: Number, lon: Number ): void;
 ```
 
-Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+.
+Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+, X+ points north, and Z+ points east.
 
 ## CesiumIonTilesRenderer
 

@@ -23,6 +23,9 @@ export class Ellipsoid {
 
 	}
 
+	// returns a frame with Z indicating altitude
+	// Y pointing north
+	// X pointing east
 	constructLatLonFrame( lat, lon, target ) {
 
 		this.getCartographicToPosition( lat, lon, 0, _pos );
