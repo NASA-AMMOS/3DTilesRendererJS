@@ -1,7 +1,8 @@
-import { Matrix4, Ray } from 'three';
+import { Matrix4, Ray, Vector3 } from 'three';
 
 const _mat = new Matrix4();
 const _localRay = new Ray();
+const _vec = new Vector3();
 const _hitArray = [];
 
 function distanceSort( a, b ) {
@@ -62,10 +63,14 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 		// track the tile and hit distance for sorting
 		const boundingVolume = child.cached.boundingVolume;
-		const distSq = boundingVolume.getRayDistanceSquared( localRay );
+		const distSq = boundingVolume.getRayDistanceSquared( localRay, _vec );
 		if ( distSq !== null ) {
 
-			array.push( { distance: distSq, tile: child } );
+			_vec.applyMatrix4( group.matrixWorld );
+			array.push( {
+				distance: _vec.distanceToSquared( raycaster.ray.origin ),
+				tile: child,
+			} );
 
 		}
 
