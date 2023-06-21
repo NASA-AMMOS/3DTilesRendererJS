@@ -33,7 +33,6 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 		intersectTileScene( tile.cached.scene, raycaster, _hitArray );
 
-		// TODO: check for "add" here
 		if ( _hitArray.length > 0 ) {
 
 			if ( _hitArray.length > 1 ) {
@@ -151,6 +150,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
+	const { scene, boundingVolume } = tile.cached;
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
@@ -162,26 +162,15 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 
 	}
 
-	const cached = tile.cached;
-	const boundingVolume = cached.boundingVolume;
-	if ( ! boundingVolume.intersectsRay( localRay ) ) {
+	if ( ! tile.__used || ! boundingVolume.intersectsRay( localRay ) ) {
 
 		return;
 
 	}
 
-	const scene = cached.scene;
 	if ( activeTiles.has( tile ) ) {
 
 		intersectTileScene( scene, raycaster, intersects );
-
-		// if we're adding the subsequent set of tiles then we want
-		// to continue to the next tier of children
-		if ( tile.refine !== 'ADD' ) {
-
-			return;
-
-		}
 
 	}
 
