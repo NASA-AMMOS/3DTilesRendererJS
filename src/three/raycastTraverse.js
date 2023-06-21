@@ -1,7 +1,8 @@
-import { Matrix4, Ray } from 'three';
+import { Matrix4, Ray, Vector3 } from 'three';
 
 const _mat = new Matrix4();
 const _localRay = new Ray();
+const _vec = new Vector3();
 const _hitArray = [];
 
 function distanceSort( a, b ) {
@@ -22,36 +23,22 @@ function intersectTileScene( scene, raycaster, intersects ) {
 
 }
 
+function intersectTileSceneFirstHist( scene, raycaster ) {
+
+	intersectTileScene( scene, raycaster, _hitArray );
+	_hitArray.sort( distanceSort );
+
+	const hit = _hitArray[ 0 ] || null;
+	_hitArray.length = 0;
+	return hit;
+
+}
+
 // Returns the closest hit when traversing the tree
 export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
 	renderer.ensureChildrenArePreprocessed( tile );
-
-	// If the root is active make sure we've checked it
-	if ( activeTiles.has( tile ) ) {
-
-		intersectTileScene( tile.cached.scene, raycaster, _hitArray );
-
-		if ( _hitArray.length > 0 ) {
-
-			if ( _hitArray.length > 1 ) {
-
-				_hitArray.sort( distanceSort );
-
-			}
-
-			const res = _hitArray[ 0 ];
-			_hitArray.length = 0;
-			return res;
-
-		} else {
-
-			return null;
-
-		}
-
-	}
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -62,20 +49,27 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 	}
 
-	// TODO: can we avoid creating a new array here every time to save on memory?
+	// get a set of intersections so we intersect the nearest one first
 	const array = [];
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		const tile = children[ i ];
-		const cached = tile.cached;
-		const boundingVolume = cached.boundingVolume;
-		const distance = boundingVolume.getRayDistance( localRay );
+		const child = children[ i ];
+		if ( ! child.__used ) {
+
+			continue;
+
+		}
 
 		// track the tile and hit distance for sorting
-		if ( distance !== null ) {
+		const boundingVolume = child.cached.boundingVolume;
+		if ( boundingVolume.intersectRay( localRay, _vec ) !== null ) {
 
-			array.push( { distance, tile } );
+			_vec.applyMatrix4( group.matrixWorld );
+			array.push( {
+				distance: _vec.distanceToSquared( raycaster.ray.origin ),
+				tile: child,
+			} );
 
 		}
 
@@ -84,56 +78,42 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	// sort them by ascending distance
 	array.sort( distanceSort );
 
+	// If the root is active make sure we've checked it
+	let bestHit = null;
+	let bestHitDistSq = Infinity;
+	if ( activeTiles.has( tile ) ) {
+
+		const hit = intersectTileSceneFirstHist( tile.cached.scene, raycaster );
+		if ( hit ) {
+
+			bestHit = hit;
+			bestHitDistSq = hit.distance * hit.distance;
+
+		}
+
+	}
+
 	// traverse until we find the best hit and early out if a tile bounds
 	// couldn't possible include a best hit
-	let bestDistanceSquared = Infinity;
-	let bestHit = null;
 	for ( let i = 0, l = array.length; i < l; i ++ ) {
 
 		const data = array[ i ];
-		const distanceSquared = data.distance;
-		if ( distanceSquared > bestDistanceSquared ) {
+		const boundingVolumeDistSq = data.distance;
+		const tile = data.tile;
+		if ( boundingVolumeDistSq > bestHitDistSq ) {
 
 			break;
 
-		} else {
+		}
 
-			const tile = data.tile;
-			const scene = tile.cached.scene;
+		const hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
+		if ( hit ) {
 
-			let hit = null;
-			if ( activeTiles.has( tile ) ) {
+			const hitDistSq = hit.distance * hit.distance;
+			if ( hitDistSq < bestHitDistSq ) {
 
-				// save the hit if it's closer
-				intersectTileScene( scene, raycaster, _hitArray );
-				if ( _hitArray.length > 0 ) {
-
-					if ( _hitArray.length > 1 ) {
-
-						_hitArray.sort( distanceSort );
-
-					}
-
-					hit = _hitArray[ 0 ];
-
-				}
-
-			} else {
-
-				hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
-
-			}
-
-			if ( hit ) {
-
-				const hitDistanceSquared = hit.distance * hit.distance;
-				if ( hitDistanceSquared < bestDistanceSquared ) {
-
-					bestDistanceSquared = hitDistanceSquared;
-					bestHit = hit;
-
-				}
-				_hitArray.length = 0;
+				bestHit = hit;
+				bestHitDistSq = hitDistSq;
 
 			}
 
@@ -148,6 +128,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
+	const { scene, boundingVolume } = tile.cached;
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
@@ -159,19 +140,15 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 
 	}
 
-	const cached = tile.cached;
-	const boundingVolume = cached.boundingVolume;
-	if ( ! boundingVolume.intersectsRay( localRay ) ) {
+	if ( ! tile.__used || ! boundingVolume.intersectsRay( localRay ) ) {
 
 		return;
 
 	}
 
-	const scene = cached.scene;
 	if ( activeTiles.has( tile ) ) {
 
 		intersectTileScene( scene, raycaster, intersects );
-		return;
 
 	}
 
