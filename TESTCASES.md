@@ -324,7 +324,7 @@ The tileset renders and loads correctly.
 
 #### steps
 
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-add.json).
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
 1. Set `colorMode` to `RANDOM_COLOR`.
 
 #### expected
@@ -385,3 +385,17 @@ Verify all steps happen as written.
 #### expected
 
 Verify that the total geometries in the render stats display is still "220".
+
+## Verify tileset raycasting with additive tile sets
+
+#### steps
+
+1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-add.json).
+1. Set `colorMode` to `RANDOM_COLOR`.
+1. Set `maxDepth` to 2 so two layers are displayed on top of eachother.
+1. Click the color that represents the root tile and ensure depth is logged as "0".
+1. Click a color that represents a child tile and ensure the depth is logged as "1".
+
+#### expected
+
+Verify correct depth is returned when clicking the tiles.
