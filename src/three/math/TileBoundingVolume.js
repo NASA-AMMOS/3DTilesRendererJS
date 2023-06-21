@@ -52,7 +52,7 @@ export class TileBoundingVolume {
 
 	}
 
-	getRayDistance( ray ) {
+	getRayDistanceSquared( ray ) {
 
 		const sphere = this.sphere;
 		const obb = this.obb || this.regionObb;
@@ -63,7 +63,7 @@ export class TileBoundingVolume {
 		if ( sphere ) {
 
 			ray.intersectSphere( sphere, _sphereVec );
-			sphereDistSq = ray.origin.distanceToSquared( _sphereVec );
+			sphereDistSq = sphere.containsPoint( ray.origin ) ? 0 : ray.origin.distanceToSquared( _sphereVec );
 
 		}
 
@@ -72,7 +72,7 @@ export class TileBoundingVolume {
 			// the obb transform contains no scale
 			_ray.copy( ray ).applyMatrix4( obb.inverseTransform );
 			_ray.intersectBox( obb.box, _obbVec );
-			obbDistSq = ray.origin.distanceToSquared( _obbVec );
+			obbDistSq = obb.box.containsPoint( _ray.origin ) ? 0 : ray.origin.distanceToSquared( _obbVec );
 
 		}
 
