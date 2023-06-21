@@ -1,4 +1,4 @@
-import { Ray, Vector3, Sphere } from 'three';
+import { Ray, Vector3, Sphere, QuadraticBezier, Quaternion } from 'three';
 import { WGS84_RADIUS, WGS84_HEIGHT } from './Ellipsoid.js';
 import { OBB } from './OBB.js';
 import { EllipsoidRegion } from './EllipsoidRegion.js';
@@ -52,7 +52,7 @@ export class TileBoundingVolume {
 
 	}
 
-	getRayDistanceSquared( ray, target ) {
+	getRayDistanceSquared( ray, target = null ) {
 
 		const sphere = this.sphere;
 		const obb = this.obb || this.regionObb;
@@ -76,40 +76,28 @@ export class TileBoundingVolume {
 			_ray.copy( ray ).applyMatrix4( obb.inverseTransform );
 			if ( _ray.intersectBox( obb.box, _obbVec ) ) {
 
-				obbDistSq = obb.box.containsPoint( _ray.origin ) ? 0 : ray.origin.distanceToSquared( _obbVec );
+				obbDistSq = obb.box.containsPoint( _ray.origin ) ? 0 : _ray.origin.distanceToSquared( _obbVec );
 
 			}
 
 		}
 
-		const furthestDist = sphereDistSq > obbDistSq ? sphereDistSq : obbDistSq;
+		// if we didn't hit anything then exit
+		const furthestDist = Math.max( sphereDistSq, obbDistSq );
 		if ( furthestDist === - Infinity ) {
 
 			return null;
 
 		}
 
-		if ( sphereDistSq > obbDistSq ) {
+		// get the furthest hit point if needed
+		if ( target !== null ) {
 
-			if ( target !== null ) {
-
-				target.copy( _sphereVec );
-
-			}
-
-			return sphereDistSq;
-
-		} else {
-
-			if ( target !== null ) {
-
-				target.copy( _obbVec ).applyMatrix4( obb.transform );
-
-			}
-
-			return obbDistSq;
+			ray.at( Math.sqrt( furthestDist ), target );
 
 		}
+
+		return furthestDist;
 
 	}
 
