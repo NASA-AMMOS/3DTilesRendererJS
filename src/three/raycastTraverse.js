@@ -89,9 +89,6 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 			bestHit = hit;
 			bestHitDistSq = hit.distance * hit.distance;
-			hit.DEPTH = tile.__depth;
-
-			if ( tile.__depth === 0 ) console.log( 'HIT ', hit.DEPTH, bestHitDistSq, array );
 
 		}
 
@@ -113,10 +110,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 		const hit = raycastTraverseFirstHit( renderer, tile, raycaster, localRay );
 		if ( hit ) {
 
-
-
 			const hitDistSq = hit.distance * hit.distance;
-			if ( tile.__depth === 0 ) console.log( 'HIT ', hit.DEPTH, hitDistSq );
 			if ( hitDistSq < bestHitDistSq ) {
 
 				bestHit = hit;
