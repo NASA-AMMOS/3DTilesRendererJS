@@ -52,7 +52,7 @@ export class TileBoundingVolume {
 
 	}
 
-	getRayDistanceSquared( ray, target = null ) {
+	intersectRay( ray, target = null ) {
 
 		const sphere = this.sphere;
 		const obb = this.obb || this.regionObb;
@@ -91,13 +91,8 @@ export class TileBoundingVolume {
 		}
 
 		// get the furthest hit point if needed
-		if ( target !== null ) {
-
-			ray.at( Math.sqrt( furthestDist ), target );
-
-		}
-
-		return furthestDist;
+		ray.at( Math.sqrt( furthestDist ), target );
+		return target;
 
 	}
 

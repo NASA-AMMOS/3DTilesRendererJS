@@ -63,8 +63,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 		// track the tile and hit distance for sorting
 		const boundingVolume = child.cached.boundingVolume;
-		const distSq = boundingVolume.getRayDistanceSquared( localRay, _vec );
-		if ( distSq !== null ) {
+		if ( boundingVolume.intersectRay( localRay, _vec ) !== null ) {
 
 			_vec.applyMatrix4( group.matrixWorld );
 			array.push( {
