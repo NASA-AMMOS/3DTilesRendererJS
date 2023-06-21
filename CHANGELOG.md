@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - TilesRenderer.dispose function not working correctly.
 - Type declaration file for constants.
+- Raycasting not working correctly with "additive" tile refinement.
 
 ## [0.3.19] - 2023-06-13
 ### Fixed
