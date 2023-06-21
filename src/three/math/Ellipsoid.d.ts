@@ -1,9 +1,5 @@
 import { Vector3, Matrix4 } from 'three';
 
-export const WGS84_RADIUS;
-export const WGS84_FLATTENING;
-export const WGS84_HEIGHT;
-
 export class Ellipsoid {
 
 	radius: Vector3;

@@ -35,6 +35,7 @@ export { I3DMLoaderBase } from './base/I3DMLoaderBase';
 export { PNTSLoaderBase } from './base/PNTSLoaderBase';
 export { CMPTLoaderBase } from './base/CMPTLoaderBase';
 export { LoaderBase } from './base/LoaderBase';
+export * from './base/constants';
 
 export { LRUCache } from './utilities/LRUCache';
 export { PriorityQueue } from './utilities/PriorityQueue';
