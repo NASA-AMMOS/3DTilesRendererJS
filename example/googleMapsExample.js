@@ -21,7 +21,7 @@ let statsContainer, stats;
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 
-const apiKey = localStorage.getItem('googleApiKey') ?? 'put-your-api-key-here';
+const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
 
 const params = {
 
@@ -41,7 +41,8 @@ init();
 animate();
 
 function reinstantiateTiles() {
-	localStorage.setItem('googleApiKey', params.apiKey);
+	
+	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
 
