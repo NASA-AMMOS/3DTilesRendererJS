@@ -41,7 +41,7 @@ init();
 animate();
 
 function reinstantiateTiles() {
-	
+
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
