@@ -16,9 +16,11 @@ let camera, controls, scene, renderer, tiles;
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 
+const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
+
 const params = {
 
-	'apiKey': 'put-your-api-key-here',
+	'apiKey': apiKey,
 	'reload': reinstantiateTiles,
 
 };
@@ -27,6 +29,8 @@ init();
 animate();
 
 function reinstantiateTiles() {
+
+	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
 
