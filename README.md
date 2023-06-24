@@ -23,7 +23,7 @@ If a tile set or geometry does not load or render properly please make an issue!
 
 [Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
 
-[Loading 3D tiles from Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)! (Personal [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) required)
+[Loading 3D tiles from Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)! (Personal [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) required)
 
 **Debug Pages**
 
