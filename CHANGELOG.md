@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.20] - 2023.06.26
 ### Added
 - `CesiumIonTilesRenderer` for more convenient use of the ion API.
 - Frustum check support for OBB bounding volumes resulting in more than 35-45% fewer tiles loading and displaying in some cases when OBB bounding volumes are used.
