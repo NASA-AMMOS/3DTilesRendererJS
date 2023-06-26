@@ -21,13 +21,14 @@ let statsContainer, stats;
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 
+const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
+
 const params = {
 
 	'enableUpdate': true,
 	'enableCacheDisplay': false,
 	'enableRendererStats': false,
-	'apiKey': 'put-your-api-key-here',
-
+	'apiKey': apiKey,
 
 	'displayBoxBounds': false,
 	'displaySphereBounds': false,
@@ -40,6 +41,8 @@ init();
 animate();
 
 function reinstantiateTiles() {
+
+	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
 
