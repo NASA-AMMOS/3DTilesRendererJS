@@ -43,6 +43,10 @@ function reinstantiateTiles() {
 	tiles = new GoogleTilesRenderer( params.apiKey );
 	// tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
 	// tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
+	// tiles.setLatLonToYUp( 41.8902 * MathUtils.DEG2RAD, 12.4922 * MathUtils.DEG2RAD ); // Colosseum
+	// tiles.setLatLonToYUp( 43.8803 * MathUtils.DEG2RAD, - 103.4538 * MathUtils.DEG2RAD ); // Mt Rushmore
+	// tiles.setLatLonToYUp( 36.2679 * MathUtils.DEG2RAD, - 112.3535 * MathUtils.DEG2RAD ); // Grand Canyon
+	// tiles.setLatLonToYUp( - 22.951890 * MathUtils.DEG2RAD, - 43.210439 * MathUtils.DEG2RAD ); // Christ the Redeemer
 	tiles.setLatLonToYUp( 35.6586 * MathUtils.DEG2RAD, 139.7454 * MathUtils.DEG2RAD ); // Tokyo Tower
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
@@ -93,11 +97,9 @@ function init() {
 	// GUI
 	const gui = new GUI();
 	gui.width = 300;
-
-	const mapsOptions = gui.addFolder( 'Google Tiles' );
-	mapsOptions.add( params, 'apiKey' );
-	mapsOptions.add( params, 'reload' );
-	mapsOptions.open();
+	gui.add( params, 'apiKey' );
+	gui.add( params, 'reload' );
+	gui.open();
 
 	// run hash functions
 	initFromHash();
