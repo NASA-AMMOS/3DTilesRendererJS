@@ -149,8 +149,13 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 					const color = new Color( `rgb(${CONSTANT_RGBA[ 0 ]}, ${CONSTANT_RGBA[ 1 ]}, ${CONSTANT_RGBA[ 2 ]})` );
 					material.color = color;
-					material.opacity = CONSTANT_RGBA[ 3 ] / 255;
-					material.transparent = true;
+					const opacity = CONSTANT_RGBA[ 3 ] / 255;
+					if ( opacity < 1 ) {
+
+						material.opacity = opacity;
+						material.transparent = true;
+
+					}
 
 				}
 
