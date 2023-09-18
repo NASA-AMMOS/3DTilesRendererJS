@@ -1,3 +1,6 @@
+// The implementation of rgb565 to rgb888 is from
+// https://rgbcolorpicker.com/565
+
 export function rgb565torgb( rgb565 ) {
 
 	// Shift the red value to the right by 11 bits.
