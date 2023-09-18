@@ -1,11 +1,19 @@
 export function rgb565torgb( rgb565 ) {
 
-	let r = ( rgb565 & 0xF800 ) >> 11;
-	let g = ( rgb565 & 0x07E0 ) >> 5;
-	let b = rgb565 & 0x001F;
-	r = ( r << 3 ) | ( r >> 2 ); // Scale up red component
-	g = ( g << 2 ) | ( g >> 4 ); // Scale up green component
-	b = ( b << 3 ) | ( b >> 2 ); // Scale up blue component
-	return [ r, g, b ];
+	// Shift the red value to the right by 11 bits.
+	const red5 = rgb565 >> 11;
+	// Shift the green value to the right by 5 bits and extract the lower 6 bits.
+	const green6 = ( rgb565 >> 5 ) & 0b111111;
+	// Extract the lower 5 bits.
+	const blue5 = rgb565 & 0b11111;
+
+	// Convert 5-bit red to 8-bit red.
+	const red8 = Math.round( ( red5 / 31 ) * 255 );
+	// Convert 6-bit green to 8-bit green.
+	const green8 = Math.round( ( green6 / 63 ) * 255 );
+	// Convert 5-bit blue to 8-bit blue.
+	const blue8 = Math.round( ( blue5 / 31 ) * 255 );
+
+	return [ red8, green8, blue8 ];
 
 }
