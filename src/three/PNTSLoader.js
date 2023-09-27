@@ -6,7 +6,9 @@ import {
 	BufferAttribute,
 	DefaultLoadingManager,
 	Vector3,
+	Color,
 } from 'three';
+import { rgb565torgb } from '../utilities/rgb565torgb.js';
 
 const DRACO_ATTRIBUTE_MAP = {
 	RGB: 'color',
@@ -81,6 +83,9 @@ export class PNTSLoader extends PNTSLoaderBase {
 				const POINTS_LENGTH = featureTable.getData( 'POINTS_LENGTH' );
 				const POSITION = featureTable.getData( 'POSITION', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 				const RGB = featureTable.getData( 'RGB', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC3' );
+				const RGBA = featureTable.getData( 'RGBA', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC4' );
+				const RGB565 = featureTable.getData( 'RGB565', POINTS_LENGTH, 'UNSIGNED_SHORT', 'SCALAR' );
+				const CONSTANT_RGBA = featureTable.getData( 'CONSTANT_RGBA', POINTS_LENGTH, 'UNSIGNED_BYTE', 'VEC4' );
 				const POSITION_QUANTIZED = featureTable.getData( 'POSITION_QUANTIZED', POINTS_LENGTH, 'UNSIGNED_SHORT', 'VEC3' );
 				const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', POINTS_LENGTH, 'FLOAT', 'VEC3' );
 				const QUANTIZED_VOLUME_OFFSET = featureTable.getData( 'QUANTIZED_VOLUME_OFFSET', POINTS_LENGTH, 'FLOAT', 'VEC3' );
@@ -111,20 +116,54 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 				}
 
-				if ( RGB !== null ) {
+				if ( RGBA !== null ) {
+
+					geometry.setAttribute( 'color', new BufferAttribute( RGBA, 4, true ) );
+					material.vertexColors = true;
+					material.transparent = true;
+					material.depthWrite = false;
+
+				} else if ( RGB !== null ) {
 
 					geometry.setAttribute( 'color', new BufferAttribute( RGB, 3, true ) );
 					material.vertexColors = true;
+
+				} else if ( RGB565 !== null ) {
+
+					const color = new Uint8Array( POINTS_LENGTH * 3 );
+					for ( let i = 0; i < POINTS_LENGTH; i ++ ) {
+
+						const rgbColor = rgb565torgb( RGB565[ i ] );
+						for ( let j = 0; j < 3; j ++ ) {
+
+							const index = 3 * i + j;
+							color[ index ] = rgbColor[ j ];
+
+						}
+
+					}
+					geometry.setAttribute( 'color', new BufferAttribute( color, 3, true ) );
+					material.vertexColors = true;
+
+				} else if ( CONSTANT_RGBA !== null ) {
+
+					const color = new Color( CONSTANT_RGBA[ 0 ], CONSTANT_RGBA[ 1 ], CONSTANT_RGBA[ 2 ] );
+					material.color = color;
+					const opacity = CONSTANT_RGBA[ 3 ] / 255;
+					if ( opacity < 1 ) {
+
+						material.opacity = opacity;
+						material.transparent = true;
+						material.depthWrite = false;
+
+					}
 
 				}
 
 			}
 
 			[
-				'CONSTANT_RGBA',
 				'BATCH_LENGTH',
-				'RGBA',
-				'RGB565',
 				'NORMAL',
 				'NORMAL_OCT16P',
 			].forEach( ( feature ) => {
