@@ -134,7 +134,6 @@ export class PNTSLoader extends PNTSLoaderBase {
 					for ( let i = 0; i < POINTS_LENGTH; i ++ ) {
 
 						const rgbColor = rgb565torgb( RGB565[ i ] );
-
 						for ( let j = 0; j < 3; j ++ ) {
 
 							const index = 3 * i + j;
@@ -148,7 +147,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 				} else if ( CONSTANT_RGBA !== null ) {
 
-					const color = new Color( `rgb(${CONSTANT_RGBA[ 0 ]}, ${CONSTANT_RGBA[ 1 ]}, ${CONSTANT_RGBA[ 2 ]})` );
+					const color = new Color( CONSTANT_RGBA[ 0 ], CONSTANT_RGBA[ 1 ], CONSTANT_RGBA[ 2 ] );
 					material.color = color;
 					const opacity = CONSTANT_RGBA[ 3 ] / 255;
 					if ( opacity < 1 ) {
