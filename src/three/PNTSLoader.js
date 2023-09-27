@@ -121,6 +121,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 					geometry.setAttribute( 'color', new BufferAttribute( RGBA, 4, true ) );
 					material.vertexColors = true;
 					material.transparent = true;
+					material.depthWrite = false;
 
 				} else if ( RGB !== null ) {
 
@@ -154,6 +155,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 						material.opacity = opacity;
 						material.transparent = true;
+						material.depthWrite = false;
 
 					}
 
