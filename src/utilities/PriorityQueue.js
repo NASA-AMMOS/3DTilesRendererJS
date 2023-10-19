@@ -31,6 +31,18 @@ class PriorityQueue {
 
 		};
 
+		this._done = () => {
+
+			this.currJobs --;
+
+			if ( this.autoUpdate ) {
+
+				this.scheduleJobRun();
+
+			}
+
+		};
+
 	}
 
 	sort() {
@@ -92,28 +104,8 @@ class PriorityQueue {
 			const callback = callbacks.get( item );
 			callbacks.delete( item );
 			callback( item )
-				.then( () => {
-
-					this.currJobs --;
-
-					if ( this.autoUpdate ) {
-
-						this.scheduleJobRun();
-
-					}
-
-				} )
-				.catch( () => {
-
-					this.currJobs --;
-
-					if ( this.autoUpdate ) {
-
-						this.scheduleJobRun();
-
-					}
-
-				} );
+				.then( this._done )
+				.catch( this._done );
 
 		}
 		this.currJobs = currJobs;

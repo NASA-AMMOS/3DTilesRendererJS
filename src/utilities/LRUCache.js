@@ -27,6 +27,32 @@ class LRUCache {
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
 
+		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
+
+		this.sortFn = ( a, b ) => {
+
+			const usedA = this.usedSet.has( a );
+			const usedB = this.usedSet.has( b );
+			if ( usedA && usedB ) {
+
+				// If they're both used then don't bother moving them
+				return 0;
+
+			} else if ( ! usedA && ! usedB ) {
+
+				// Use the sort function otherwise
+				// higher priority should be further to the left
+				return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
+
+			} else {
+
+				// If one is used and the other is not move the used one towards the end of the array
+				return usedA ? 1 : - 1;
+
+			}
+
+		  };
+
 	}
 
 	// Returns whether or not the cache has reached the maximum size
@@ -119,34 +145,11 @@ class LRUCache {
 		const callbacks = this.callbacks;
 		const unused = itemList.length - usedSet.size;
 		const excess = itemList.length - targetSize;
-		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 
 		if ( excess > 0 && unused > 0 ) {
 
 			// used items should be at the end of the array
-			itemList.sort( ( a, b ) => {
-
-				const usedA = usedSet.has( a );
-				const usedB = usedSet.has( b );
-				if ( usedA && usedB ) {
-
-					// If they're both used then don't bother moving them
-					return 0;
-
-				} else if ( ! usedA && ! usedB ) {
-
-					// Use the sort function otherwise
-					// higher priority should be further to the left
-					return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
-
-				} else {
-
-					// If one is used and the other is not move the used one towards the end of the array
-					return usedA ? 1 : - 1;
-
-				}
-
-			} );
+			itemList.sort( this.sortFn );
 
 			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
 			// which would result in a very small or no items being unloaded.
