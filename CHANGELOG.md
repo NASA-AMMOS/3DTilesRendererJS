@@ -242,7 +242,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.1.6] - 2020-10-08
 ### Added
 - `batchTable` and `featureTable` fields onto loaded B3DM, I3DM, and PNTS scene objects directly.
-- `stopAtEmptyTiles` which defaults to false so tilesets correctly stop traversal at empty tiles.
+- `stopAtEmptyTiles` which defaults to true so tilesets correctly stop traversal at empty tiles.
 
 ### Changed
 - Tileset traversal now correctly stops at empty tiles if they do no meet the SSE requirement. Previous behavior can be retained for now by settings `stopAtEmptyTiles` to `false`.
