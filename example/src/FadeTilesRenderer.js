@@ -4,6 +4,13 @@ import { FadeManager } from './FadeManager.js';
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
+	if ( tile.__wasInFrustum !== tile.__inFrustum ) {
+
+		// TODO: possibly need to cancel fade?
+		return;
+
+	}
+
 	// TODO: we should only do this when jumping from parent to child tiles.
 	// do not fade when a tile is made visible from frustum culling
 	if ( ! visible ) {
@@ -53,7 +60,7 @@ export class FadeTilesRenderer extends TilesRenderer {
 		this.group.add( fadeGroup );
 
 		const fadeManager = new FadeManager();
-		fadeManager.onFadeOutFinish = object => {
+		fadeManager.onFadeFinish = object => {
 
 			if ( object.parent === fadeGroup ) {
 

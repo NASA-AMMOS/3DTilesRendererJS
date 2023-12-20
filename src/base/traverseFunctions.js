@@ -429,6 +429,7 @@ export function toggleTiles( tile, renderer ) {
 		tile.__wasSetActive = setActive;
 		tile.__wasSetVisible = setVisible;
 		tile.__usedLastFrame = isUsed;
+		tile.__wasInFrustum = tile.__inFrustum;
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {

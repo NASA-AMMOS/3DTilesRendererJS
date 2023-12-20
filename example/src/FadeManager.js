@@ -170,6 +170,18 @@ export class FadeManager {
 		if ( ! fadeState.has( object ) ) return;
 
 		fadeState.delete( object );
+		object.traverse( child => {
+
+			const material = child.material;
+			if ( material.defines.FEATURE_FADE !== 0 ) {
+
+				material.defines.FEATURE_FADE = 0;
+				material.needsUpdate = true;
+
+			}
+
+		} );
+
 		this.onFadeFinish( object );
 
 	}
@@ -242,8 +254,8 @@ export class FadeManager {
 
 					if ( defineValue !== material.defines.FEATURE_FADE ) {
 
-						// material.defines.FEATURE_FADE = defineValue;
-						// material.needsUpdate = true;
+						material.defines.FEATURE_FADE = defineValue;
+						material.needsUpdate = true;
 
 					}
 
