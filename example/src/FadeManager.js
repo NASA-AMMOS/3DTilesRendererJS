@@ -243,11 +243,6 @@ export class FadeManager {
 			state.fadeIn = fadeIn;
 			state.fadeOut = fadeOut;
 
-			// TODO: if we're at a "stable" state - ie reached the target values, then we
-			// should adjust the material define
-			// TODO: properly remove the tiles once the fade out has finished
-			// TODO: don't dispose of tiles until they've been faded out
-
 			// update the material fields
 			const defineValue = Number( fadeOut !== fadeOutTarget || fadeIn !== fadeInTarget );
 			object.traverse( child => {
@@ -270,7 +265,7 @@ export class FadeManager {
 
 			} );
 
-			if ( fadeOut === 1.0 ) {
+			if ( fadeOut === 1.0 || fadeOut > fadeIn ) {
 
 				this.completeFade( object );
 

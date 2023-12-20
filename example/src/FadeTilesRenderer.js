@@ -4,9 +4,6 @@ import { FadeManager } from './FadeManager.js';
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
-
-
-
 	if ( ! visible ) {
 
 		this._fadeGroup.add( scene );
@@ -68,7 +65,7 @@ function onFadeFinish( object ) {
 
 }
 
-export class FadeTilesRenderer extends TilesRenderer {
+export const FadeTilesRendererMixin = base => class extends base {
 
 	get fadeDuration() {
 
@@ -127,4 +124,6 @@ export class FadeTilesRenderer extends TilesRenderer {
 
 	}
 
-}
+};
+
+export const FadeTilesRenderer = FadeTilesRendererMixin( TilesRenderer );
