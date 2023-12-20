@@ -30,6 +30,12 @@ export class FadeManager {
 
 	deleteObject( object ) {
 
+		if ( ! object ) {
+
+			return;
+
+		}
+
 		this._fadeParams.delete( object );
 		object.traverse( child => {
 
@@ -60,7 +66,7 @@ export class FadeManager {
 		};
 
 		material.defines = {
-			FEATURE_FADE: 1,
+			FEATURE_FADE: 0,
 		};
 
 		material.onBeforeCompile = shader => {
@@ -173,7 +179,7 @@ export class FadeManager {
 		object.traverse( child => {
 
 			const material = child.material;
-			if ( material.defines.FEATURE_FADE !== 0 ) {
+			if ( material && material.defines.FEATURE_FADE !== 0 ) {
 
 				material.defines.FEATURE_FADE = 0;
 				material.needsUpdate = true;
@@ -208,8 +214,9 @@ export class FadeManager {
 
 	update() {
 
+		// clamp delta in case duration is really small or 0
 		const time = window.performance.now();
-		const delta = ( time - this._lastTick ) / this.duration;
+		const delta = clamp( ( time - this._lastTick ) / this.duration, 0, 1 );
 		this._lastTick = time;
 
 		const fadeState = this._fadeState;

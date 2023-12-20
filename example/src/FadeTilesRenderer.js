@@ -4,15 +4,9 @@ import { FadeManager } from './FadeManager.js';
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
-	if ( tile.__wasInFrustum !== tile.__inFrustum ) {
 
-		// TODO: possibly need to cancel fade?
-		return;
 
-	}
 
-	// TODO: we should only do this when jumping from parent to child tiles.
-	// do not fade when a tile is made visible from frustum culling
 	if ( ! visible ) {
 
 		this._fadeGroup.add( scene );
@@ -32,9 +26,45 @@ function onLoadModel( scene ) {
 
 }
 
-function onDisposeModel( scene ) {
+function onFadeFinish( object ) {
 
-	this._fadeManager.deleteObject( scene );
+	if ( object.parent === this._fadeGroup ) {
+
+		this._fadeGroup.remove( object );
+
+		if ( this.disposeSet.has( object ) ) {
+
+			this._fadeManager.deleteObject( object );
+			object.traverse( child => {
+
+				const { geometry, material } = child;
+				if ( geometry ) {
+
+					geometry.dispose();
+
+				}
+
+				if ( material ) {
+
+					material.dispose();
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.dispose && typeof value.dispose === 'function' ) {
+
+							value.dispose();
+
+						}
+
+					}
+
+				}
+
+			} );
+
+		}
+
+	}
 
 }
 
@@ -60,22 +90,15 @@ export class FadeTilesRenderer extends TilesRenderer {
 		this.group.add( fadeGroup );
 
 		const fadeManager = new FadeManager();
-		fadeManager.onFadeFinish = object => {
-
-			if ( object.parent === fadeGroup ) {
-
-				fadeGroup.remove( object );
-
-			}
-
-		};
+		fadeManager.onFadeFinish = onFadeFinish.bind( this );
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
 
 		this.onLoadModel = onLoadModel.bind( this );
-		this.onDisposeModel = onDisposeModel.bind( this );
 		this.onTileVisibilityChange = onTileVisibilityChange.bind( this );
+
+		this.disposeSet = new Set();
 
 	}
 
@@ -83,6 +106,24 @@ export class FadeTilesRenderer extends TilesRenderer {
 
 		super.update( ...args );
 		this._fadeManager.update();
+
+	}
+
+	disposeTile( tile ) {
+
+		const scene = tile.cached.scene;
+		if ( scene && scene.parent === this._fadeGroup ) {
+
+			this.disposeSet.add( scene );
+			super.disposeTile( tile );
+			this._fadeGroup.add( scene );
+
+		} else {
+
+			super.disposeTile( tile );
+			this._fadeManager.deleteObject( scene );
+
+		}
 
 	}
 
