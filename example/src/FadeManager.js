@@ -251,7 +251,6 @@ export class FadeManager {
 
 			} );
 
-
 			if ( fadeOut === 1.0 ) {
 
 				this.completeFade( object );
