@@ -357,10 +357,17 @@ export class TilesRendererBase {
 			.then( json => {
 
 				const version = json.asset.version;
+				const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
 				console.assert(
-					version === '1.0' || version === '0.0',
-					'asset.version is expected to be a string of "1.0" or "0.0"'
+					major <= 1,
+					'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.',
 				);
+
+				if ( major === 1 && minor > 0 ) {
+
+					console.warn( 'TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.' );
+
+				}
 
 				// remove trailing slash and last path-segment from the URL
 				let basePath = url.replace( /\/[^\/]*\/?$/, '' );
