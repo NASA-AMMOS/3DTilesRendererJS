@@ -8,7 +8,6 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
-	FogExp2,
 } from 'three';
 import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -23,6 +22,7 @@ const params = {
 	fadeDuration: 0.25,
 	renderScale: 1,
 	displayActiveTiles: true,
+	fadingTiles: '0 tiles',
 
 };
 
@@ -31,7 +31,6 @@ render();
 
 function init() {
 
-	const fog = new FogExp2( 0xd8cec0, .0075, 250 );
 	scene = new Scene();
 
 	// primary camera view
@@ -85,17 +84,11 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	const gui = new GUI();
-	gui.add( params, 'fog' ).onChange( v => {
-
-		scene.fog = v ? fog : null;
-
-	} );
-
 	gui.add( params, 'displayActiveTiles' );
-
 	gui.add( params, 'errorTarget', 0, 100 );
 	gui.add( params, 'fadeDuration', 0, 5 );
 	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
+	gui.add( params, 'fadingTiles' ).listen();
 	gui.open();
 
 }
@@ -130,5 +123,7 @@ function render() {
 	skyTiles.fadeDuration = params.fadeDuration * 1000;
 
 	renderer.render( scene, camera );
+
+	params.fadingTiles = groundTiles._fadeGroup.children.length + ' tiles';
 
 }

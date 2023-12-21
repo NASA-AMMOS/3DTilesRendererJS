@@ -76,8 +76,6 @@ export class FadeManager {
 				...params,
 			};
 
-			material.PARAMS = params;
-
 			shader.fragmentShader = shader.fragmentShader
 				.replace( /void main\(/, value => /* glsl */`
 					#if FEATURE_FADE
@@ -265,7 +263,7 @@ export class FadeManager {
 
 			} );
 
-			if ( fadeOut === 1.0 || fadeOut > fadeIn ) {
+			if ( fadeOut === 1.0 || fadeOut >= fadeIn ) {
 
 				this.completeFade( object );
 
