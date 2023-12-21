@@ -22,7 +22,7 @@ const params = {
 	fadeDuration: 0.25,
 	renderScale: 1,
 	displayActiveTiles: true,
-	fadingTiles: '0 tiles',
+	fadingGroundTiles: '0 tiles',
 
 };
 
@@ -88,7 +88,7 @@ function init() {
 	gui.add( params, 'errorTarget', 0, 100 );
 	gui.add( params, 'fadeDuration', 0, 5 );
 	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
-	gui.add( params, 'fadingTiles' ).listen().disable();
+	gui.add( params, 'fadingGroundTiles' ).listen().disable();
 	gui.open();
 
 	gui.children[ 4 ].domElement.style.opacity = 1.0;
@@ -126,6 +126,6 @@ function render() {
 
 	renderer.render( scene, camera );
 
-	params.fadingTiles = groundTiles._fadeGroup.children.length + ' tiles';
+	params.fadingGroundTiles = groundTiles._fadeGroup.children.length + ' tiles';
 
 }
