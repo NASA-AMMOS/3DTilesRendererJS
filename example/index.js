@@ -10,6 +10,7 @@ import {
 	RANDOM_COLOR,
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
+	LOAD_ORDER,
 	GLTFCesiumRTCExtension,
 } from '../src/index.js';
 import {
@@ -284,7 +285,8 @@ function init() {
 		IS_LEAF,
 		RANDOM_COLOR,
 		RANDOM_NODE_COLOR,
-		CUSTOM_COLOR
+		CUSTOM_COLOR,
+		LOAD_ORDER,
 
 	} );
 	debug.open();
