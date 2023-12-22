@@ -7,6 +7,7 @@ import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
+const LOAD_TIME = Symbol( 'LOAD_TIME' );
 
 function emptyRaycast() {}
 
@@ -20,6 +21,7 @@ export const IS_LEAF = 6;
 export const RANDOM_COLOR = 7;
 export const RANDOM_NODE_COLOR = 8;
 export const CUSTOM_COLOR = 9;
+export const LOAD_ORDER = 10;
 
 const _sphere = new Sphere();
 export class DebugTilesRenderer extends TilesRenderer {
@@ -214,6 +216,17 @@ export class DebugTilesRenderer extends TilesRenderer {
 		const errorTarget = this.errorTarget;
 		const colorMode = this.colorMode;
 		const visibleTiles = this.visibleTiles;
+		let sortedTiles;
+		if ( colorMode === LOAD_ORDER ) {
+
+			sortedTiles = Array.from( visibleTiles ).sort( ( a, b ) => {
+
+				return a[ LOAD_TIME ] - b[ LOAD_TIME ];
+
+			} );
+
+		}
+
 		visibleTiles.forEach( tile => {
 
 			const scene = tile.cached.scene;
@@ -377,6 +390,13 @@ export class DebugTilesRenderer extends TilesRenderer {
 							break;
 
 						}
+						case LOAD_ORDER: {
+
+							const value = sortedTiles.indexOf( tile );
+							this.getDebugColor( value / ( sortedTiles.length - 1 ), c.material.color );
+							break;
+
+						}
 
 					}
 
@@ -385,6 +405,14 @@ export class DebugTilesRenderer extends TilesRenderer {
 			} );
 
 		} );
+
+	}
+
+	parseTile( buffer, tile, ext ) {
+
+		tile[ LOAD_TIME ] = performance.now();
+
+		return super.parseTile( buffer, tile, ext );
 
 	}
 

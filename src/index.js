@@ -1,16 +1,4 @@
-export {
-	DebugTilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR,
-} from './three/DebugTilesRenderer.js';
+export * from './three/DebugTilesRenderer.js';
 
 export { TilesRenderer } from './three/TilesRenderer.js';
 export { B3DMLoader } from './three/B3DMLoader.js';
