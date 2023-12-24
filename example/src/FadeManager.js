@@ -139,7 +139,7 @@ export class FadeManager {
 		const fadeState = this._fadeState;
 		if ( fadeState.has( object ) ) {
 
-			return;
+			return false;
 
 		}
 
@@ -165,6 +165,8 @@ export class FadeManager {
 			}
 
 		} );
+
+		return true;
 
 	}
 
@@ -203,10 +205,15 @@ export class FadeManager {
 
 	fadeOut( object ) {
 
-		this.guaranteeState( object );
-
+		const noState = this.guaranteeState( object );
 		const state = this._fadeState.get( object );
 		state.fadeOutTarget = 1;
+		if ( noState ) {
+
+			state.fadeInTarget = 1;
+			state.fadeIn = 1;
+
+		}
 
 	}
 
