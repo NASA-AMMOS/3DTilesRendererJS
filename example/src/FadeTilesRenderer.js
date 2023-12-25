@@ -1,10 +1,17 @@
-import { Group } from 'three';
+import { Group, Matrix4, Vector3, Quaternion } from 'three';
 import { TilesRenderer } from '../..';
 import { FadeManager } from './FadeManager.js';
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
 	scene.visible = true;
+
+	if ( this.isMovingFast ) {
+
+		this._fadeManager.completeFade( scene );
+		return;
+
+	}
 
 	if ( ! visible ) {
 
@@ -97,15 +104,54 @@ export const FadeTilesRendererMixin = base => class extends base {
 		this.onLoadModel = onLoadModel.bind( this );
 		this.onTileVisibilityChange = onTileVisibilityChange.bind( this );
 
+		this.prevCameraTransform = new Map();
 		this.disposeSet = new Set();
 
 	}
 
 	update( ...args ) {
 
+
+		const fromPos = new Vector3();
+		const toPos = new Vector3();
+		const fromQuat = new Quaternion();
+		const toQuat = new Quaternion();
+		const scale = new Vector3();
+
+		let isMovingFast = true;
+		const prevCameraTransform = this.prevCameraTransform;
+		this.cameras.forEach( camera => {
+
+			if ( ! prevCameraTransform.has( camera ) ) {
+
+				return;
+
+			}
+
+			const currMatrix = camera.matrixWorld;
+			const prevMatrix = prevCameraTransform.get( camera );
+
+			currMatrix.decompose( toPos, toQuat, scale );
+			prevMatrix.decompose( fromPos, fromQuat, scale );
+
+			const angleTo = toQuat.angleTo( fromQuat );
+			const positionTo = toPos.distanceTo( fromPos );
+
+			isMovingFast = isMovingFast && ( angleTo > 0.25 || positionTo > 0.1 );
+
+		} );
+
+		const fadeDuration = this.fadeDuration;
+		const displayActiveTiles = this.displayActiveTiles;
+		this.displayActiveTiles = true;
+		this.fadeDuration = isMovingFast ? fadeDuration * 0.2 : fadeDuration;
+		this.isMovingFast = isMovingFast;
+
 		super.update( ...args );
 		this._fadeManager.update();
+
 		this.displayActiveTiles = displayActiveTiles;
+		this.fadeDuration = fadeDuration;
 
 		if ( ! displayActiveTiles ) {
 
@@ -118,6 +164,25 @@ export const FadeTilesRendererMixin = base => class extends base {
 			} );
 
 		}
+
+		// track the camera movement
+		this.cameras.forEach( camera => {
+
+			if ( ! prevCameraTransform.has( camera ) ) {
+
+				prevCameraTransform.set( camera, new Matrix4() );
+
+			}
+
+			prevCameraTransform.get( camera ).copy( camera.matrixWorld );
+
+		} );
+
+	}
+
+	deleteCamera( camera ) {
+
+		this.prevCameraTransform.delete( camera );
 
 	}
 
