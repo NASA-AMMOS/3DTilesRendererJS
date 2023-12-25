@@ -6,13 +6,6 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 	scene.visible = true;
 
-	if ( this.isMovingFast ) {
-
-		this._fadeManager.completeFade( scene );
-		return;
-
-	}
-
 	if ( ! visible ) {
 
 		this._fadeGroup.add( scene );
@@ -21,6 +14,12 @@ function onTileVisibilityChange( scene, tile, visible ) {
 	} else {
 
 		this._fadeManager.fadeIn( scene );
+
+	}
+
+	if ( this.isMovingFast ) {
+
+		this._fadeManager.completeFade( scene );
 
 	}
 
