@@ -4,6 +4,8 @@ import { FadeManager } from './FadeManager.js';
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
+	scene.visible = true;
+
 	if ( ! visible ) {
 
 		this._fadeGroup.add( scene );
@@ -103,6 +105,19 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		super.update( ...args );
 		this._fadeManager.update();
+		this.displayActiveTiles = displayActiveTiles;
+
+		if ( ! displayActiveTiles ) {
+
+			// update the visibility of tiles based on visibility since we must use
+			// the active tiles for rendering fade
+			this.visibleTiles.forEach( t => {
+
+				t.cached.scene.visible = t.__inFrustum;
+
+			} );
+
+		}
 
 	}
 
