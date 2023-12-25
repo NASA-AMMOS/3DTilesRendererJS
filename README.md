@@ -15,15 +15,19 @@ If a tile set or geometry does not load or render properly please make an issue!
 
 [Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)!
 
-[Custom material example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
-
-[Rendering shadows from offscreen tiles example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
-
 [Rendering in VR example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/vr.html)!
 
 [Loading 3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)!
 
 [Loading 3D tiles from Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)! (Personal [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) required)
+
+**Customization**
+
+[Custom material example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)!
+
+[Rendering shadows from offscreen tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)!
+
+[Tile fade transition](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/fadingTiles.html)!
 
 **Debug Pages**
 
