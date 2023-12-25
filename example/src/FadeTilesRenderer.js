@@ -2,8 +2,16 @@ import { Group, Matrix4, Vector3, Quaternion } from 'three';
 import { TilesRenderer } from '../..';
 import { FadeManager } from './FadeManager.js';
 
+const _fromPos = new Vector3();
+const _toPos = new Vector3();
+const _fromQuat = new Quaternion();
+const _toQuat = new Quaternion();
+const _scale = new Vector3();
+
 function onTileVisibilityChange( scene, tile, visible ) {
 
+	// ensure the tiles are marked as visible on visibility toggle since
+	// it's possible we disable them when adjusting visibility based on frustum
 	scene.visible = true;
 
 	if ( ! visible ) {
@@ -17,6 +25,7 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 	}
 
+	// ensure the tiles are fading to the right target before stopping fade
 	if ( this.isMovingFast ) {
 
 		this._fadeManager.completeFade( scene );
@@ -33,12 +42,14 @@ function onLoadModel( scene ) {
 
 function onFadeFinish( object ) {
 
+	// when the fade finishes ensure we dispose the tile and remove it from the fade group
 	if ( object.parent === this._fadeGroup ) {
 
 		this._fadeGroup.remove( object );
 
 		if ( this.disposeSet.has( object ) ) {
 
+			// TODO: a lot of this is basically redundant to the TilesRenderer.disposeTile code
 			this._fadeManager.deleteObject( object );
 			object.traverse( child => {
 
@@ -92,9 +103,8 @@ export const FadeTilesRendererMixin = base => class extends base {
 		super( ...args );
 
 		const fadeGroup = new Group();
-		this.group.add( fadeGroup );
-
 		const fadeManager = new FadeManager();
+		this.group.add( fadeGroup );
 		fadeManager.onFadeFinish = onFadeFinish.bind( this );
 
 		this._fadeManager = fadeManager;
@@ -110,16 +120,12 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	update( ...args ) {
 
-
-		const fromPos = new Vector3();
-		const toPos = new Vector3();
-		const fromQuat = new Quaternion();
-		const toQuat = new Quaternion();
-		const scale = new Vector3();
-
+		// determine whether all the rendering cameras are moving
+		// quickly so we can adjust how tiles fade accordingly
 		let isMovingFast = true;
 		const prevCameraTransform = this.prevCameraTransform;
-		this.cameras.forEach( camera => {
+		const cameras = this.cameras;
+		cameras.forEach( camera => {
 
 			if ( ! prevCameraTransform.has( camera ) ) {
 
@@ -130,32 +136,38 @@ export const FadeTilesRendererMixin = base => class extends base {
 			const currMatrix = camera.matrixWorld;
 			const prevMatrix = prevCameraTransform.get( camera );
 
-			currMatrix.decompose( toPos, toQuat, scale );
-			prevMatrix.decompose( fromPos, fromQuat, scale );
+			currMatrix.decompose( _toPos, _toQuat, _scale );
+			prevMatrix.decompose( _fromPos, _fromQuat, _scale );
 
-			const angleTo = toQuat.angleTo( fromQuat );
-			const positionTo = toPos.distanceTo( fromPos );
+			const angleTo = _toQuat.angleTo( _fromQuat );
+			const positionTo = _toPos.distanceTo( _fromPos );
 
+			// if rotation is moving > 0.25 radians per frame or position is moving > 0.1 units
+			// then we are considering the camera to be moving too fast to notice a faster / abrupt fade
 			isMovingFast = isMovingFast && ( angleTo > 0.25 || positionTo > 0.1 );
 
 		} );
 
+		// adjust settings to what's needed for specific fade logic. Ie display active tiles so when the camera
+		// moves we don't notice tiles popping when they enter the view. And perform the fade animation more quickly
+		// if the camera is moving quickly.
 		const fadeDuration = this.fadeDuration;
 		const displayActiveTiles = this.displayActiveTiles;
 		this.displayActiveTiles = true;
 		this.fadeDuration = isMovingFast ? fadeDuration * 0.2 : fadeDuration;
 		this.isMovingFast = isMovingFast;
 
+		// update the tiles
 		super.update( ...args );
 		this._fadeManager.update();
 
 		this.displayActiveTiles = displayActiveTiles;
 		this.fadeDuration = fadeDuration;
 
+		// update the visibility of tiles based on visibility since we must use
+		// the active tiles for rendering fade
 		if ( ! displayActiveTiles ) {
 
-			// update the visibility of tiles based on visibility since we must use
-			// the active tiles for rendering fade
 			this.visibleTiles.forEach( t => {
 
 				t.cached.scene.visible = t.__inFrustum;
@@ -164,8 +176,8 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		}
 
-		// track the camera movement
-		this.cameras.forEach( camera => {
+		// track the camera movement so we can use it for next frame
+		cameras.forEach( camera => {
 
 			if ( ! prevCameraTransform.has( camera ) ) {
 
@@ -187,6 +199,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	disposeTile( tile ) {
 
+		// When a tile is disposed we keep it around if it's currently fading out and mark it for disposal later
 		const scene = tile.cached.scene;
 		if ( scene && scene.parent === this._fadeGroup ) {
 

@@ -13,10 +13,11 @@ import { FlyOrbitControls } from './FlyOrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer;
-let groundTiles, skyTiles;
+let groundTiles, skyTiles, tilesParent;
 
 const params = {
 
+	reinstantiateTiles,
 	useFade: true,
 	errorTarget: 12,
 	fadeDuration: 0.5,
@@ -61,9 +62,38 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
-	const tilesParent = new Group();
+	tilesParent = new Group();
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
+
+	reinstantiateTiles();
+
+	onWindowResize();
+	window.addEventListener( 'resize', onWindowResize, false );
+
+	const gui = new GUI();
+	gui.add( params, 'useFade' );
+	gui.add( params, 'errorTarget', 0, 1000 );
+	gui.add( params, 'fadeDuration', 0, 5 );
+	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
+
+	const textController = gui.add( params, 'fadingGroundTiles' ).listen().disable();
+	textController.domElement.style.opacity = 1.0;
+
+	gui.add( params, 'reinstantiateTiles' );
+
+	gui.open();
+
+}
+
+function reinstantiateTiles() {
+
+	if ( groundTiles ) {
+
+		groundTiles.dispose();
+		skyTiles.dispose();
+
+	}
 
 	groundTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	groundTiles.fetchOptions.mode = 'cors';
@@ -76,19 +106,6 @@ function init() {
 	skyTiles.lruCache = groundTiles.lruCache;
 
 	tilesParent.add( groundTiles.group, skyTiles.group );
-
-	onWindowResize();
-	window.addEventListener( 'resize', onWindowResize, false );
-
-	const gui = new GUI();
-	gui.add( params, 'useFade' );
-	gui.add( params, 'errorTarget', 0, 1000 );
-	gui.add( params, 'fadeDuration', 0, 5 );
-	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
-	gui.add( params, 'fadingGroundTiles' ).listen().disable();
-	gui.open();
-
-	gui.children[ 3 ].domElement.style.opacity = 1.0;
 
 }
 
