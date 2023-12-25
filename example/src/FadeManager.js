@@ -28,6 +28,7 @@ export class FadeManager {
 
 	}
 
+	// delete the object from the fade, reset the material data
 	deleteObject( object ) {
 
 		if ( ! object ) {
@@ -36,13 +37,17 @@ export class FadeManager {
 
 		}
 
-		this._fadeParams.delete( object );
+		this.completeFade( object );
+
+		const fadeParams = this._fadeParams;
 		object.traverse( child => {
 
 			const material = child.material;
 			if ( material ) {
 
-				this._fadeParams.delete( material );
+				fadeParams.delete( material );
+				material.onBeforeCompile = null;
+				material.needsUpdate = true;
 
 			}
 
@@ -124,7 +129,6 @@ export class FadeManager {
 
 					#endif
 
-
 				` );
 
 
@@ -134,6 +138,8 @@ export class FadeManager {
 
 	}
 
+	// Ensure we're storing a fade timer for the provided object
+	// Returns whether a new state had to be added
 	guaranteeState( object ) {
 
 		const fadeState = this._fadeState;
@@ -170,6 +176,7 @@ export class FadeManager {
 
 	}
 
+	// Force the fade to complete in the direction it is already trending
 	completeFade( object ) {
 
 		const fadeState = this._fadeState;
@@ -192,6 +199,7 @@ export class FadeManager {
 
 	}
 
+	// Fade the object in
 	fadeIn( object ) {
 
 		this.guaranteeState( object );
@@ -203,6 +211,7 @@ export class FadeManager {
 
 	}
 
+	// Fade the object out
 	fadeOut( object ) {
 
 		const noState = this.guaranteeState( object );
@@ -217,10 +226,17 @@ export class FadeManager {
 
 	}
 
+	// Tick the fade timer for each actively fading object
 	update() {
 
 		// clamp delta in case duration is really small or 0
 		const time = window.performance.now();
+		if ( this._lastTick === - 1 ) {
+
+			this._lastTick = time;
+
+		}
+
 		const delta = clamp( ( time - this._lastTick ) / this.duration, 0, 1 );
 		this._lastTick = time;
 
