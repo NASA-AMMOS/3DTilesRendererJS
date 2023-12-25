@@ -10,6 +10,13 @@ const _scale = new Vector3();
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
+	// ensure the tiles are fading to the right target before stopping fade
+	if ( this.isMovingFast ) {
+
+		this._fadeManager.completeFade( scene );
+
+	}
+
 	// ensure the tiles are marked as visible on visibility toggle since
 	// it's possible we disable them when adjusting visibility based on frustum
 	scene.visible = true;
@@ -22,13 +29,6 @@ function onTileVisibilityChange( scene, tile, visible ) {
 	} else {
 
 		this._fadeManager.fadeIn( scene );
-
-	}
-
-	// ensure the tiles are fading to the right target before stopping fade
-	if ( this.isMovingFast ) {
-
-		this._fadeManager.completeFade( scene );
 
 	}
 
@@ -188,6 +188,13 @@ export const FadeTilesRendererMixin = base => class extends base {
 			prevCameraTransform.get( camera ).copy( camera.matrixWorld );
 
 		} );
+
+
+		if ( isMovingFast ) {
+
+			this._fadeManager.completeAllFades();
+
+		}
 
 	}
 

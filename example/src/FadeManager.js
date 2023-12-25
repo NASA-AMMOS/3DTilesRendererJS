@@ -199,6 +199,16 @@ export class FadeManager {
 
 	}
 
+	completeAllFades() {
+
+		this._fadeState.forEach( ( value, key ) => {
+
+			this.completeFade( key );
+
+		} );
+
+	}
+
 	// Fade the object in
 	fadeIn( object ) {
 
