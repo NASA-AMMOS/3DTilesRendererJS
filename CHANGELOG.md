@@ -6,10 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.3.22] - 2023.12.25
 ### Added
-- Support for visualizing the load order of tiles
+- DebugTilesRenderer: Support for visualizing the load order of tiles
 
 ### Fixed
-- Error log when using a 1.1-compatible tileset 
+- TilesRendererBase: Error log when using a 1.1-compatible tileset
 
 ## [0.3.21] - 2023.09.27
 ### Added
