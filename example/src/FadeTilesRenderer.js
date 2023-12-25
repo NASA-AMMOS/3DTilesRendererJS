@@ -216,6 +216,18 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	}
 
+	dispose() {
+
+		super.dispose();
+
+		this.disposeSet.forEach( object => {
+
+			onFadeFinish.call( this, object );
+
+		} );
+
+	}
+
 };
 
 export const FadeTilesRenderer = FadeTilesRendererMixin( TilesRenderer );
