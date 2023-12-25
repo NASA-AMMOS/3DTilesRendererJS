@@ -17,11 +17,10 @@ let groundTiles, skyTiles;
 
 const params = {
 
-	fog: false,
+	useFade: true,
 	errorTarget: 12,
-	fadeDuration: 0.25,
+	fadeDuration: 0.5,
 	renderScale: 1,
-	displayActiveTiles: true,
 	fadingGroundTiles: '0 tiles',
 
 };
@@ -71,12 +70,10 @@ function init() {
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
-	groundTiles.displayActiveTiles = true;
 
 	skyTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
-	skyTiles.displayActiveTiles = true;
 
 	tilesParent.add( groundTiles.group, skyTiles.group );
 
@@ -84,14 +81,14 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	const gui = new GUI();
-	gui.add( params, 'displayActiveTiles' );
-	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'useFade' );
+	gui.add( params, 'errorTarget', 0, 1000 );
 	gui.add( params, 'fadeDuration', 0, 5 );
 	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
 	gui.add( params, 'fadingGroundTiles' ).listen().disable();
 	gui.open();
 
-	gui.children[ 4 ].domElement.style.opacity = 1.0;
+	gui.children[ 3 ].domElement.style.opacity = 1.0;
 
 }
 
@@ -113,16 +110,14 @@ function render() {
 
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
-	groundTiles.displayActiveTiles = params.displayActiveTiles;
 	groundTiles.update();
 
 	skyTiles.setCamera( camera );
 	skyTiles.setResolutionFromRenderer( camera, renderer );
-	skyTiles.displayActiveTiles = params.displayActiveTiles;
 	skyTiles.update();
 
-	groundTiles.fadeDuration = params.fadeDuration * 1000;
-	skyTiles.fadeDuration = params.fadeDuration * 1000;
+	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 
 	renderer.render( scene, camera );
 
