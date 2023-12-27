@@ -15,8 +15,16 @@ const _rotMatrix = new Matrix4();
 
 
 // TODO
-// - Update the containing frame every frame (maintain height)
-// - To start just use a group that the camera is added to
+// - Add drag
+// - Add angle limits
+// - Adjust the camera height
+// - Test with globe (adjusting up vector)
+// - Add drift animation
+// - Add support for angled rotation plane
+// - Fix zoom approach so wen can zoom far in and out more easily
+// - Toggles for zoom to cursor, zoom forward, orbit around center, etc
+// - Shift button use
+// - Cleanup
 export class GlobeControls {
 
 	constructor( scene, camera, domElement ) {
