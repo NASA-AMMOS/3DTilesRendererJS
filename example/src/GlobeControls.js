@@ -1,4 +1,13 @@
-import { Matrix4, Quaternion, Vector2, Vector3, Raycaster, Mesh, SphereGeometry, Plane } from 'three';
+import {
+	Matrix4,
+	Quaternion,
+	Vector2,
+	Vector3,
+	Raycaster,
+	Mesh,
+	SphereGeometry,
+	Plane,
+} from 'three';
 
 const NONE = 0;
 const DRAG = 1;
@@ -8,14 +17,13 @@ const _matrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
-const _crossVec = new Vector3();
+const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _up = new Vector3( 0, 1, 0 );
 const _plane = new Plane();
 
 // TODO
 // - provide fallback plane for cases when you're off the map
-// - add snap back for drag
 // ---
 // - Touch controls
 // - Add support for angled rotation plane (based on where the pivot point is)
@@ -49,6 +57,7 @@ export class GlobeControls {
 		// internal state
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
+		this.startDragPoint = new Vector3();
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
@@ -150,6 +159,7 @@ export class GlobeControls {
 
 					this.state = DRAG;
 					this.dragPoint.copy( hit.point );
+					this.startDragPoint.copy( hit.point );
 					this.dragPointSet = true;
 
 					this.sphere.position.copy( hit.point );
@@ -361,11 +371,9 @@ export class GlobeControls {
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
-		// TODO: why not just use camera-right here?
-		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_crossVec.crossVectors( _up, _delta ).normalize();
+		_rotationAxis.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
 
-		_quaternion.setFromAxisAngle( _crossVec, altitude );
+		_quaternion.setFromAxisAngle( _rotationAxis, altitude );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
@@ -376,7 +384,27 @@ export class GlobeControls {
 
 	update() {
 
-		const { raycaster, camera, scene, cameraRadius, dragPoint } = this;
+		const {
+			raycaster,
+			camera,
+			scene,
+			cameraRadius,
+			dragPoint,
+			startDragPoint,
+		} = this;
+
+		// when dragging the camera and drag point may be moved
+		// to accommodate terrain so we try to move it back down
+		// to the original point.
+		if ( this.state === DRAG ) {
+
+			_delta.subVectors( startDragPoint, dragPoint );
+			camera.position.add( _delta );
+			dragPoint.copy( startDragPoint );
+
+		}
+
+		// cast down from the camera
 		raycaster.ray.direction.copy( _up ).multiplyScalar( - 1 );
 		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
 
