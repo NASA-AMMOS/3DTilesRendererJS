@@ -4,8 +4,6 @@ import {
 	Vector2,
 	Vector3,
 	Raycaster,
-	Mesh,
-	SphereGeometry,
 	Plane,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
@@ -73,13 +71,9 @@ export class GlobeControls {
 		this.minDistance = 2;
 		this.maxDistance = Infinity;
 
-		// group to display (TODO: make callback instead)
-		this.sphere = new Mesh( new SphereGeometry() );
-
-		this.sphere = new PivotPointMesh();
-
-		this.sphere.raycast = () => {};
-		this.sphere.scale.setScalar( 0.25 );
+		this.pivotMesh = new PivotPointMesh();
+		this.pivotMesh.raycast = () => {};
+		this.pivotMesh.scale.setScalar( 0.25 );
 
 		// internal state
 		this.dragPointSet = false;
@@ -179,8 +173,8 @@ export class GlobeControls {
 					this.rotationClickDirection.copy( raycaster.ray.direction ).transformDirection( _matrix );
 					this.rotationPointSet = true;
 
-					this.sphere.position.copy( hit.point );
-					this.scene.add( this.sphere );
+					this.pivotMesh.position.copy( hit.point );
+					this.scene.add( this.pivotMesh );
 
 				} else if ( e.buttons & 1 ) {
 
@@ -189,8 +183,8 @@ export class GlobeControls {
 					this.startDragPoint.copy( hit.point );
 					this.dragPointSet = true;
 
-					this.sphere.position.copy( hit.point );
-					this.scene.add( this.sphere );
+					this.pivotMesh.position.copy( hit.point );
+					this.scene.add( this.pivotMesh );
 
 				}
 
@@ -234,7 +228,7 @@ export class GlobeControls {
 			this.state = NONE;
 			this.rotationPointSet = false;
 			this.dragPointSet = false;
-			this.scene.remove( this.sphere );
+			this.scene.remove( this.pivotMesh );
 
 		};
 
@@ -272,7 +266,7 @@ export class GlobeControls {
 				this.state = NONE;
 				this.dragPointSet = false;
 				this.rotationPointSet = false;
-				this.scene.remove( this.sphere );
+				this.scene.remove( this.pivotMesh );
 
 			}
 
@@ -455,18 +449,6 @@ export class GlobeControls {
 	dispose() {
 
 		this.detach();
-
-	}
-
-	_raycast( o, d ) {
-
-		const { scene } = this;
-		const raycaster = new Raycaster();
-		const { ray } = raycaster;
-		ray.direction.copy( d );
-		ray.origin.copy( o );
-
-		return raycaster.intersectObject( scene )[ 0 ] || null;
 
 	}
 
