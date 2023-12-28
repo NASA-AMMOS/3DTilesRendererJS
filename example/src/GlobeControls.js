@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector2, Vector3, Raycaster, Ray, Mesh, SphereGeometry } from 'three';
+import { Matrix4, Quaternion, Vector2, Vector3, Raycaster, Ray, Mesh, SphereGeometry, Plane } from 'three';
 
 const NONE = 0;
 const DRAG = 1;
@@ -10,21 +10,21 @@ const _cross = new Vector3();
 const _quaternion = new Quaternion();
 const _matrix = new Matrix4();
 const _ray = new Ray();
-
+const _plane = new Plane();
 const _rotMatrix = new Matrix4();
 
-
 // TODO
-// - Add drag
+// - Ensure rotation can not flp the opposite direction (clamp rotations)
 // - Add angle limits
-// - Adjust the camera height
+// - Adjust the camera height (possibly need to tilt or something based on which move mode is being used?)
+// - Fix zoom approach so we can zoom far in and out more easily
+// - Cleanup
+// ---
+// - Toggles for zoom to cursor, zoom forward, orbit around center, etc
+// - Touch controls
+// - Add support for angled rotation plane (based on where the pivot point is)
 // - Test with globe (adjusting up vector)
 // - Add drift animation
-// - Add support for angled rotation plane
-// - Fix zoom approach so wen can zoom far in and out more easily
-// - Toggles for zoom to cursor, zoom forward, orbit around center, etc
-// - Shift button use
-// - Cleanup
 export class GlobeControls {
 
 	constructor( scene, camera, domElement ) {
@@ -34,7 +34,6 @@ export class GlobeControls {
 		this.scene = scene;
 
 		this.state = NONE;
-		this.frame = new Matrix4();
 		this.cameraRadius = 1;
 
 		this.pivotPointSet = false;
@@ -59,26 +58,64 @@ export class GlobeControls {
 
 		const _pointer = new Vector2();
 		const _newPointer = new Vector2();
-		const _delta = new Vector2();
+		const _deltaPointer = new Vector2();
+		let shiftClicked = false;
+
+		domElement.addEventListener( 'contextmenu', e => {
+
+			e.preventDefault();
+
+		} );
+
+		domElement.addEventListener( 'keydown', e => {
+
+			if ( e.key === 'Shift' ) {
+
+				shiftClicked = true;
+
+			}
+
+		} );
+
+		domElement.addEventListener( 'keyup', e => {
+
+			if ( e.key === 'Shift' ) {
+
+				shiftClicked = false;
+
+			}
+
+		} );
 
 		domElement.addEventListener( 'pointerdown', e => {
 
 			const { camera, raycaster, domElement, scene } = this;
 
-			_pointer.x = ( e.clientX / domElement.clientWidth ) * 2 - 1;
-			_pointer.y = - ( e.clientY / domElement.clientHeight ) * 2 + 1;
-
+			mouseToCoords( e, domElement, _pointer );
 			raycaster.setFromCamera( _pointer, camera );
 
 			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
 			if ( hit ) {
 
-				this.state = ROTATE;
-				this.pivotPoint.copy( hit.point );
-				this.pivotPointSet = true;
+				if ( e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
 
-				this.sphere.position.copy( hit.point );
-				this.scene.add( this.sphere );
+					this.state = ROTATE;
+					this.pivotPoint.copy( hit.point );
+					this.pivotPointSet = true;
+
+					this.sphere.position.copy( hit.point );
+					this.scene.add( this.sphere );
+
+				} else if ( e.buttons & 1 ) {
+
+					this.state = DRAG;
+					this.pivotPoint.copy( hit.point );
+					this.pivotPointSet = true;
+
+					this.sphere.position.copy( hit.point );
+					this.scene.add( this.sphere );
+
+				}
 
 			}
 
@@ -86,16 +123,28 @@ export class GlobeControls {
 
 		domElement.addEventListener( 'pointermove', e => {
 
-			_newPointer.x = ( e.clientX / domElement.clientWidth ) * 2 - 1;
-			_newPointer.y = - ( e.clientY / domElement.clientHeight ) * 2 + 1;
-
-			_delta.subVectors( _newPointer, _pointer );
+			mouseToCoords( e, domElement, _newPointer );
+			_deltaPointer.subVectors( _newPointer, _pointer );
 			_pointer.copy( _newPointer );
 
-			if ( this.state === ROTATE ) {
+			if ( this.state === DRAG ) {
+
+				const { raycaster, camera, pivotPoint } = this;
+				_vec.set( 0, 1, 0 );
+				_plane.setFromNormalAndCoplanarPoint( _vec, pivotPoint );
+				raycaster.setFromCamera( _pointer, camera );
+
+				if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+
+					_delta.subVectors( pivotPoint, _vec );
+					this.updatePosition( _delta );
+
+				}
+
+			} else if ( this.state === ROTATE ) {
 
 				const { rotationSpeed } = this;
-				this.updateRotation( - _delta.x * rotationSpeed, - _delta.y * rotationSpeed );
+				this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 
 			}
 
@@ -120,10 +169,10 @@ export class GlobeControls {
 
 		domElement.addEventListener( 'pointerenter', e => {
 
-			_pointer.x = ( e.clientX / domElement.clientWidth ) * 2 - 1;
-			_pointer.y = - ( e.clientY / domElement.clientHeight ) * 2 + 1;
+			mouseToCoords( e, domElement, _pointer );
+			shiftClicked = false;
 
-			if ( ! ( e.buttons & 1 ) ) {
+			if ( e.buttons === 0 ) {
 
 				this.state = NONE;
 				this.pivotPointSet = false;
@@ -167,11 +216,12 @@ export class GlobeControls {
 
 	}
 
-	updatePosition() {
+	updatePosition( delta ) {
 
 		// TODO: when adjusting the frame we have to reproject the grab point
 		// so as the use drags it winds up in the same spot.
 		// Will this work? Or be good enough?
+		this.camera.position.add( delta );
 
 	}
 
@@ -247,5 +297,12 @@ function makeRotateAroundPoint( point, quat, target ) {
 	target.premultiply( _matrix );
 
 	return target;
+
+}
+
+function mouseToCoords( e, element, target ) {
+
+	target.x = ( e.clientX / element.clientWidth ) * 2 - 1;
+	target.y = - ( e.clientY / element.clientHeight ) * 2 + 1;
 
 }
