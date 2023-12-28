@@ -17,7 +17,6 @@ const _rotMatrix = new Matrix4();
 // - Ensure rotation can not flp the opposite direction (clamp rotations)
 // - Add angle limits
 // - Adjust the camera height (possibly need to tilt or something based on which move mode is being used?)
-// - Fix zoom approach so we can zoom far in and out more easily
 // - Cleanup
 // ---
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc
@@ -36,10 +35,16 @@ export class GlobeControls {
 		this.state = NONE;
 		this.cameraRadius = 1;
 
-		this.pivotPointSet = false;
-		this.pivotPoint = new Vector3();
-		this.pivotDirectionSet = false;
-		this.pivotDirection = new Vector3();
+		this.dragPointSet = false;
+		this.dragPoint = new Vector3();
+
+		this.rotationPointSet = false;
+		this.rotationPoint = new Vector3();
+
+		this.zoomDirectionSet = false;
+		this.zoomPointSet = false;
+		this.zoomDirection = new Vector3();
+		this.zoomPoint = new Vector3();
 
 		this.rotationSpeed = 3;
 		this.raycaster = new Raycaster();
@@ -48,11 +53,18 @@ export class GlobeControls {
 		this.sphere = new Mesh( new SphereGeometry() );
 		this.sphere.scale.setScalar( 0.25 );
 
+		this._detachCallback = null;
 		this.attach( domElement );
 
 	}
 
 	attach( domElement ) {
+
+		if ( this.domElement ) {
+
+			throw new Error( 'GlobeControls: Controls already attached to element' );
+
+		}
 
 		this.domElement = domElement;
 
@@ -61,13 +73,13 @@ export class GlobeControls {
 		const _deltaPointer = new Vector2();
 		let shiftClicked = false;
 
-		domElement.addEventListener( 'contextmenu', e => {
+		const contextMenuCallback = e => {
 
 			e.preventDefault();
 
-		} );
+		};
 
-		domElement.addEventListener( 'keydown', e => {
+		const keydownCallback = e => {
 
 			if ( e.key === 'Shift' ) {
 
@@ -75,9 +87,9 @@ export class GlobeControls {
 
 			}
 
-		} );
+		};
 
-		domElement.addEventListener( 'keyup', e => {
+		const keyupCallback = e => {
 
 			if ( e.key === 'Shift' ) {
 
@@ -85,9 +97,9 @@ export class GlobeControls {
 
 			}
 
-		} );
+		};
 
-		domElement.addEventListener( 'pointerdown', e => {
+		const pointerdownCallback = e => {
 
 			const { camera, raycaster, domElement, scene } = this;
 
@@ -100,8 +112,8 @@ export class GlobeControls {
 				if ( e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
 
 					this.state = ROTATE;
-					this.pivotPoint.copy( hit.point );
-					this.pivotPointSet = true;
+					this.rotationPoint.copy( hit.point );
+					this.rotationPointSet = true;
 
 					this.sphere.position.copy( hit.point );
 					this.scene.add( this.sphere );
@@ -109,8 +121,8 @@ export class GlobeControls {
 				} else if ( e.buttons & 1 ) {
 
 					this.state = DRAG;
-					this.pivotPoint.copy( hit.point );
-					this.pivotPointSet = true;
+					this.dragPoint.copy( hit.point );
+					this.dragPointSet = true;
 
 					this.sphere.position.copy( hit.point );
 					this.scene.add( this.sphere );
@@ -119,9 +131,12 @@ export class GlobeControls {
 
 			}
 
-		} );
+		};
 
-		domElement.addEventListener( 'pointermove', e => {
+		const pointermoveCallback = e => {
+
+			this.zoomDirectionSet = false;
+			this.zoomPointSet = false;
 
 			mouseToCoords( e, domElement, _newPointer );
 			_deltaPointer.subVectors( _newPointer, _pointer );
@@ -129,14 +144,14 @@ export class GlobeControls {
 
 			if ( this.state === DRAG ) {
 
-				const { raycaster, camera, pivotPoint } = this;
-				_vec.set( 0, 1, 0 );
-				_plane.setFromNormalAndCoplanarPoint( _vec, pivotPoint );
+				const { raycaster, camera, dragPoint } = this;
+				_vec.set( 0, 1, 0 ); // up vector
+				_plane.setFromNormalAndCoplanarPoint( _vec, dragPoint );
 				raycaster.setFromCamera( _pointer, camera );
 
 				if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
-					_delta.subVectors( pivotPoint, _vec );
+					_delta.subVectors( dragPoint, _vec );
 					this.updatePosition( _delta );
 
 				}
@@ -148,26 +163,42 @@ export class GlobeControls {
 
 			}
 
-		} );
+		};
 
-		domElement.addEventListener( 'pointerup', e => {
+		const pointerupCallback = e => {
 
 			this.state = NONE;
-			this.pivotPointSet = false;
+			this.rotationPointSet = false;
+			this.dragPointSet = false;
 			this.scene.remove( this.sphere );
 
-		} );
+		};
 
-		domElement.addEventListener( 'wheel', e => {
+		const wheelCallback = e => {
 
-			this.raycaster.setFromCamera( _pointer, this.camera );
-			this.pivotDirection.copy( this.raycaster.ray.direction ).normalize();
+			if ( ! this.zoomDirectionSet ) {
+
+				const { raycaster, scene } = this;
+				raycaster.setFromCamera( _pointer, this.camera );
+
+				const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+				if ( hit ) {
+
+					this.zoomPoint.copy( hit.point );
+					this.zoomPointSet = true;
+
+				}
+
+				this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
+				this.zoomDirectionSet = true;
+
+			}
 
 			this.updateZoom( - e.deltaY );
 
-		} );
+		};
 
-		domElement.addEventListener( 'pointerenter', e => {
+		const pointerenterCallback = e => {
 
 			mouseToCoords( e, domElement, _pointer );
 			shiftClicked = false;
@@ -175,30 +206,69 @@ export class GlobeControls {
 			if ( e.buttons === 0 ) {
 
 				this.state = NONE;
-				this.pivotPointSet = false;
+				this.dragPointSet = false;
+				this.rotationPointSet = false;
 				this.scene.remove( this.sphere );
 
 			}
 
-		} );
+		};
+
+		domElement.addEventListener( 'contextmenu', contextMenuCallback );
+		domElement.addEventListener( 'keydown', keydownCallback );
+		domElement.addEventListener( 'keyup', keyupCallback );
+		domElement.addEventListener( 'pointerdown', pointerdownCallback );
+		domElement.addEventListener( 'pointermove', pointermoveCallback );
+		domElement.addEventListener( 'pointerup', pointerupCallback );
+		domElement.addEventListener( 'wheel', wheelCallback );
+		domElement.addEventListener( 'pointerenter', pointerenterCallback );
+
+		this._detachCallback = () => {
+
+			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
+			domElement.removeEventListener( 'keydown', keydownCallback );
+			domElement.removeEventListener( 'keyup', keyupCallback );
+			domElement.removeEventListener( 'pointerdown', pointerdownCallback );
+			domElement.removeEventListener( 'pointermove', pointermoveCallback );
+			domElement.removeEventListener( 'pointerup', pointerupCallback );
+			domElement.removeEventListener( 'wheel', wheelCallback );
+			domElement.removeEventListener( 'pointerenter', pointerenterCallback );
+
+		};
 
 	}
 
-	detach() {}
+	detach() {
+
+		if ( this._detachCallback ) {
+
+			this._detachCallback();
+			this._detachCallback = null;
+
+		}
+
+	}
 
 	updateZoom( scale ) {
 
-		const { pivotPointSet, pivotPoint, pivotDirection, camera, raycaster, scene } = this;
+		const {
+			zoomPointSet,
+			zoomPoint,
+			zoomDirection,
+			camera,
+			raycaster,
+			scene,
+		} = this;
 
 		let dist = Infinity;
-		if ( pivotPointSet ) {
+		if ( zoomPointSet ) {
 
-			dist = pivotPoint.distanceTo( camera.position );
+			dist = zoomPoint.distanceTo( camera.position );
 
 		} else {
 
 			raycaster.ray.origin.copy( camera.position );
-			raycaster.ray.direction.copy( pivotDirection );
+			raycaster.ray.direction.copy( zoomDirection );
 
 			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
 			if ( hit ) {
@@ -209,10 +279,10 @@ export class GlobeControls {
 
 		}
 
-		pivotDirection.normalize();
+		zoomDirection.normalize();
 		scale = Math.min( scale * ( dist - 5 ) * 0.01, Math.max( 0, dist - 5 ) );
 
-		this.camera.position.addScaledVector( pivotDirection, scale );
+		this.camera.position.addScaledVector( zoomDirection, scale );
 
 	}
 
@@ -227,19 +297,19 @@ export class GlobeControls {
 
 	updateRotation( azimuth, altitude ) {
 
-		const { camera, pivotPoint } = this;
+		const { camera, rotationPoint } = this;
 
 		// zoom in frame around pivot point
 		_vec.set( 0, 1, 0 );
 		_quaternion.setFromAxisAngle( _vec, azimuth );
-		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
+		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 		_cross.crossVectors( _vec, _delta ).normalize();
 
 		_quaternion.setFromAxisAngle( _cross, altitude );
-		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
+		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
