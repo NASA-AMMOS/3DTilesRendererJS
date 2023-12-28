@@ -14,15 +14,15 @@ const _ray = new Ray();
 const _plane = new Plane();
 
 // TODO
-// - Ensure rotation can not flp the opposite direction (clamp rotations)
-// - Add angle limits
 // - Adjust the camera height (possibly need to tilt or something based on which move mode is being used?)
 // ---
-// - Toggles for zoom to cursor, zoom forward, orbit around center, etc
 // - Touch controls
 // - Add support for angled rotation plane (based on where the pivot point is)
 // - Test with globe (adjusting up vector)
 // - Add drift animation
+// - provide fallback plane for cases where you're off the map?
+// - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
+
 export class GlobeControls {
 
 	constructor( scene, camera, domElement ) {
@@ -35,6 +35,8 @@ export class GlobeControls {
 		this.state = NONE;
 		this.cameraRadius = 1;
 		this.rotationSpeed = 3;
+		this.minAltitude = 0;
+		this.maxAltitude = Math.PI / 2;
 
 		// group to display (TODO: make callback instead)
 		this.sphere = new Mesh( new SphereGeometry() );
@@ -47,6 +49,7 @@ export class GlobeControls {
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
+		this.rotationClickDirection = new Vector3();
 
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
@@ -130,8 +133,11 @@ export class GlobeControls {
 
 				if ( e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
 
+					_matrix.copy( camera.matrixWorld ).invert();
+
 					this.state = ROTATE;
 					this.rotationPoint.copy( hit.point );
+					this.rotationClickDirection.copy( raycaster.ray.direction ).transformDirection( _matrix );
 					this.rotationPointSet = true;
 
 					this.sphere.position.copy( hit.point );
@@ -279,6 +285,7 @@ export class GlobeControls {
 			scene,
 		} = this;
 
+		const fallback = scale < 0 ? - 1 : 1;
 		let dist = Infinity;
 		if ( zoomPointSet ) {
 
@@ -300,6 +307,13 @@ export class GlobeControls {
 
 		zoomDirection.normalize();
 		scale = Math.min( scale * ( dist - 5 ) * 0.01, Math.max( 0, dist - 5 ) );
+		if ( scale === Infinity || scale === - Infinity || Number.isNaN( scale ) ) {
+
+			scale = fallback;
+
+		}
+
+		console.log( scale, dist )
 
 		this.camera.position.addScaledVector( zoomDirection, scale );
 
@@ -316,14 +330,30 @@ export class GlobeControls {
 
 	updateRotation( azimuth, altitude ) {
 
-		const { camera, rotationPoint } = this;
+		const { camera, rotationPoint, minAltitude, maxAltitude } = this;
+
+		// TODO: currently uses the camera forward for this work but it may be best to use a combination of camera
+		// forward and direction to pivot? Or just dir to pivot?
+		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
+
+		const angle = _vec.set( 0, 1, 0 ).angleTo( _delta );
+		if ( altitude > 0 ) {
+
+			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
+
+		} else {
+
+			altitude = Math.max( angle - maxAltitude, altitude );
+
+		}
 
 		// zoom in frame around pivot point
-		_vec.set( 0, 1, 0 );
+		_vec.set( 0, 1, 0 ); // up vector
 		_quaternion.setFromAxisAngle( _vec, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
+		// TODO: why not just use camera-right here?
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 		_crossVec.crossVectors( _vec, _delta ).normalize();
 
