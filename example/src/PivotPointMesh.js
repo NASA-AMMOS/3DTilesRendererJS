@@ -16,6 +16,12 @@ export class PivotPointMesh extends Mesh {
 
 	}
 
+	updateMatrixWorld() {
+
+		this.matrixWorld.makeTranslation( this.position );
+
+	}
+
 	dispose() {
 
 		this.geometry.dispose();
