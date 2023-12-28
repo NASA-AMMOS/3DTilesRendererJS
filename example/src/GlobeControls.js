@@ -38,6 +38,8 @@ export class GlobeControls {
 		this.rotationSpeed = 3;
 		this.minAltitude = 0;
 		this.maxAltitude = Math.PI / 2;
+		this.minDistance = 2;
+		this.maxDistance = Infinity;
 
 		// group to display (TODO: make callback instead)
 		this.sphere = new Mesh( new SphereGeometry() );
@@ -283,6 +285,8 @@ export class GlobeControls {
 			camera,
 			raycaster,
 			scene,
+			minDistance,
+			maxDistance,
 		} = this;
 
 		const fallback = scale < 0 ? - 1 : 1;
@@ -306,10 +310,17 @@ export class GlobeControls {
 		}
 
 		zoomDirection.normalize();
-		scale = Math.min( scale * ( dist - 5 ) * 0.01, Math.max( 0, dist - 5 ) );
+		scale = Math.min( scale * ( dist - minDistance ) * 0.01, Math.max( 0, dist - minDistance ) );
 		if ( scale === Infinity || scale === - Infinity || Number.isNaN( scale ) ) {
 
 			scale = fallback;
+
+		}
+
+		if ( scale < 0 ) {
+
+			const remainingDistance = Math.min( 0, dist - maxDistance );
+			scale = Math.max( scale, remainingDistance );
 
 		}
 
