@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector2, Vector3, Raycaster, Ray, Mesh, SphereGeometry, Plane } from 'three';
+import { Matrix4, Quaternion, Vector2, Vector3, Raycaster, Mesh, SphereGeometry, Plane } from 'three';
 
 const NONE = 0;
 const DRAG = 1;
@@ -10,17 +10,18 @@ const _delta = new Vector3();
 const _vec = new Vector3();
 const _crossVec = new Vector3();
 const _quaternion = new Quaternion();
-const _ray = new Ray();
+const _up = new Vector3( 0, 1, 0 );
 const _plane = new Plane();
 
 // TODO
-// - Adjust the camera height (possibly need to tilt or something based on which move mode is being used?)
+// - provide fallback plane for cases when you're off the map
+// - add snap back for drag
 // ---
 // - Touch controls
 // - Add support for angled rotation plane (based on where the pivot point is)
 // - Test with globe (adjusting up vector)
-// - Add drift animation
-// - provide fallback plane for cases where you're off the map?
+// ---
+// - Consider using sphere intersect for positioning
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
 
 export class GlobeControls {
@@ -170,8 +171,7 @@ export class GlobeControls {
 			if ( this.state === DRAG ) {
 
 				const { raycaster, camera, dragPoint } = this;
-				_vec.set( 0, 1, 0 ); // up vector
-				_plane.setFromNormalAndCoplanarPoint( _vec, dragPoint );
+				_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
 				raycaster.setFromCamera( _pointer, camera );
 
 				if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
@@ -313,8 +313,6 @@ export class GlobeControls {
 
 		}
 
-		console.log( scale, dist )
-
 		this.camera.position.addScaledVector( zoomDirection, scale );
 
 	}
@@ -336,7 +334,7 @@ export class GlobeControls {
 		// forward and direction to pivot? Or just dir to pivot?
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
 
-		const angle = _vec.set( 0, 1, 0 ).angleTo( _delta );
+		const angle = _up.angleTo( _delta );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
@@ -348,14 +346,13 @@ export class GlobeControls {
 		}
 
 		// zoom in frame around pivot point
-		_vec.set( 0, 1, 0 ); // up vector
-		_quaternion.setFromAxisAngle( _vec, azimuth );
+		_quaternion.setFromAxisAngle( _up, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		// TODO: why not just use camera-right here?
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_crossVec.crossVectors( _vec, _delta ).normalize();
+		_crossVec.crossVectors( _up, _delta ).normalize();
 
 		_quaternion.setFromAxisAngle( _crossVec, altitude );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
@@ -367,6 +364,25 @@ export class GlobeControls {
 	}
 
 	update() {
+
+		const { raycaster, camera, scene, cameraRadius, dragPoint } = this;
+		raycaster.ray.direction.copy( _up ).multiplyScalar( - 1 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
+
+		const hit = raycaster.intersectObject( scene )[ 0 ];
+		if ( hit ) {
+
+			const dist = hit.distance - 100;
+			if ( dist < cameraRadius ) {
+
+				// TODO: maybe this can snap back once the camera as gone over the hill so the drag point is back in the right spot
+				const delta = cameraRadius - dist;
+				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
+				dragPoint.addScaledVector( _up, delta );
+
+			}
+
+		}
 
 	}
 
@@ -385,21 +401,6 @@ export class GlobeControls {
 		ray.origin.copy( o );
 
 		return raycaster.intersectObject( scene )[ 0 ] || null;
-
-	}
-
-	_updateCameraPosition() {
-
-		const { camera } = this;
-		_ray.direction.set( 0, - 1, 0 );
-		_ray.origin.copy( camera.position ).addScaledVector( _ray.direction, - 100 );
-
-		const hit = this._raycast( _ray.origin, _ray.direction );
-		if ( hit && hit.point.distanceTo( camera.position ) < this.cameraRadius ) {
-
-			camera.position.hit.point.addScaledVector( _ray.direction, - this.cameraRadius );
-
-		}
 
 	}
 
