@@ -4,20 +4,19 @@ const NONE = 0;
 const DRAG = 1;
 const ROTATE = 2;
 
+const _matrix = new Matrix4();
+const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
-const _cross = new Vector3();
+const _crossVec = new Vector3();
 const _quaternion = new Quaternion();
-const _matrix = new Matrix4();
 const _ray = new Ray();
 const _plane = new Plane();
-const _rotMatrix = new Matrix4();
 
 // TODO
 // - Ensure rotation can not flp the opposite direction (clamp rotations)
 // - Add angle limits
 // - Adjust the camera height (possibly need to tilt or something based on which move mode is being used?)
-// - Cleanup
 // ---
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc
 // - Touch controls
@@ -28,13 +27,21 @@ export class GlobeControls {
 
 	constructor( scene, camera, domElement ) {
 
-		this.camera = camera;
 		this.domElement = null;
-		this.scene = scene;
+		this.camera = null;
+		this.scene = null;
 
+		// settings
 		this.state = NONE;
 		this.cameraRadius = 1;
+		this.rotationSpeed = 3;
 
+		// group to display (TODO: make callback instead)
+		this.sphere = new Mesh( new SphereGeometry() );
+		this.sphere.raycast = () => {};
+		this.sphere.scale.setScalar( 0.25 );
+
+		// internal state
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
 
@@ -46,15 +53,27 @@ export class GlobeControls {
 		this.zoomDirection = new Vector3();
 		this.zoomPoint = new Vector3();
 
-		this.rotationSpeed = 3;
 		this.raycaster = new Raycaster();
 		this.raycaster.firstHitOnly = true;
 
-		this.sphere = new Mesh( new SphereGeometry() );
-		this.sphere.scale.setScalar( 0.25 );
-
 		this._detachCallback = null;
+
+		// init
 		this.attach( domElement );
+		this.setCamera( camera );
+		this.setScene( scene );
+
+	}
+
+	setScene( scene ) {
+
+		this.scene = scene;
+
+	}
+
+	setCamera( camera ) {
+
+		this.camera = camera;
 
 	}
 
@@ -306,9 +325,9 @@ export class GlobeControls {
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_cross.crossVectors( _vec, _delta ).normalize();
+		_crossVec.crossVectors( _vec, _delta ).normalize();
 
-		_quaternion.setFromAxisAngle( _cross, altitude );
+		_quaternion.setFromAxisAngle( _crossVec, altitude );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
@@ -356,6 +375,7 @@ export class GlobeControls {
 
 }
 
+// helper function for constructing a matrix for rotating around a point
 function makeRotateAroundPoint( point, quat, target ) {
 
 	target.makeTranslation( - point.x, - point.y, - point.z );
@@ -370,6 +390,7 @@ function makeRotateAroundPoint( point, quat, target ) {
 
 }
 
+// get the three.js pointer coords from an event
 function mouseToCoords( e, element, target ) {
 
 	target.x = ( e.clientX / element.clientWidth ) * 2 - 1;
