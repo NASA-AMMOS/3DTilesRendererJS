@@ -39,8 +39,8 @@ class PivotMaterial extends ShaderMaterial {
 
 				resolution: { value: new Vector2() },
 				pixelRatio: { value: 1 },
-				size: { value: 10 },
-				thickness: { value: 1.5 },
+				size: { value: 7.5 },
+				thickness: { value: 1 },
 				opacity: { value: 1 },
 
 			},
