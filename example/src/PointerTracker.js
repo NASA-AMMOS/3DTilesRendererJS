@@ -37,7 +37,7 @@ export class PointerTracker {
 		const id = e.pointerId;
 		const pointerOrder = this.pointerOrder;
 		pointerOrder.splice( pointerOrder.indexOf( id ), 1 );
-		delete this.pointerPositions;
+		delete this.pointerPositions[ id ];
 
 	}
 

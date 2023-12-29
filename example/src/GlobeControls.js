@@ -122,14 +122,16 @@ export class GlobeControls {
 		}
 
 		this.domElement = domElement;
+		domElement.style.touchAction = 'none';
 
 		const _pointer = new Vector2();
 		const _newPointer = new Vector2();
 		const _deltaPointer = new Vector2();
-		const _pointerArr = [];
+		let _allowedZoom = false;
 
 		const _pointerTracker = new PointerTracker();
 		let _pointerDist = 0;
+		let _originalDist = 0;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -166,14 +168,22 @@ export class GlobeControls {
 
 			if ( e.pointerType === 'touch' ) {
 
+				if ( _pointerTracker.getPointerCount() === 0 ) {
+
+					domElement.setPointerCapture( e.pointerId );
+
+				}
+
 				_pointerTracker.addPointer( e );
 				_pointerDist = 0;
+				_originalDist = 0;
 
 				if ( _pointerTracker.getPointerCount() === 2 ) {
 
 					const center = new Vector2();
 					_pointerTracker.getCenterPoint( center );
 					_pointerDist = _pointerTracker.getPointerDistance();
+					_originalDist = _pointerTracker.getPointerDistance();
 
 					mouseToCoords( center.x, center.y, domElement, _pointer );
 
@@ -191,7 +201,7 @@ export class GlobeControls {
 			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
 			if ( hit ) {
 
-				if ( _pointerArr.length === 2 || e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
+				if ( _pointerTracker.getPointerCount() === 2 || e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
 
 					_matrix.copy( camera.matrixWorld ).invert();
 
@@ -242,28 +252,39 @@ export class GlobeControls {
 
 					const previousDist = _pointerDist;
 					_pointerDist = _pointerTracker.getPointerDistance();
-					if ( _pointerDist - previousDist > 20 ) {
+
+					console.log( _allowedZoom, _pointerDist - _originalDist );
+					if ( ! _allowedZoom && _pointerDist - _originalDist > 15 * window.devicePixelRatio ) {
 
 						resetState();
+						_allowedZoom = true;
 
 					}
 
-					// perform zoom
-					const { raycaster, scene } = this;
-					raycaster.setFromCamera( _pointer, this.camera );
+					if ( _allowedZoom ) {
 
-					const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-					if ( hit ) {
+						// perform zoom
+						this.zoomDirectionSet = false;
+						performZoom( _pointerDist - previousDist );
 
-						this.zoomPoint.copy( hit.point );
-						this.zoomPointSet = true;
+						const { raycaster, scene } = this;
+						raycaster.setFromCamera( _pointer, this.camera );
+
+						const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+						if ( hit ) {
+
+							this.zoomPoint.copy( hit.point );
+							this.zoomPointSet = true;
+
+						}
+
+						this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
+						this.zoomDirectionSet = true;
+
+						this.updateZoom( _pointerDist - previousDist );
+
 
 					}
-
-					this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
-					this.zoomDirectionSet = true;
-
-					this.updateZoom( _pointerDist - previousDist );
 
 				}
 
@@ -301,6 +322,13 @@ export class GlobeControls {
 			if ( e.pointerType === 'touch' ) {
 
 				_pointerTracker.deletePointer( e );
+				_allowedZoom = false;
+
+				if ( _pointerTracker.getPointerCount() === 0 ) {
+
+					domElement.releasePointerCapture( e.pointerId );
+
+				}
 
 			}
 
@@ -308,25 +336,7 @@ export class GlobeControls {
 
 		const wheelCallback = e => {
 
-			if ( ! this.zoomDirectionSet ) {
-
-				const { raycaster, scene } = this;
-				raycaster.setFromCamera( _pointer, this.camera );
-
-				const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-				if ( hit ) {
-
-					this.zoomPoint.copy( hit.point );
-					this.zoomPointSet = true;
-
-				}
-
-				this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
-				this.zoomDirectionSet = true;
-
-			}
-
-			this.updateZoom( - e.deltaY );
+			performZoom( - e.deltaY );
 
 		};
 
@@ -349,6 +359,30 @@ export class GlobeControls {
 			this.dragPointSet = false;
 			this.rotationPointSet = false;
 			this.scene.remove( this.pivotMesh );
+
+		};
+
+		const performZoom = delta => {
+
+			if ( ! this.zoomDirectionSet ) {
+
+				const { raycaster, scene } = this;
+				raycaster.setFromCamera( _pointer, this.camera );
+
+				const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+				if ( hit ) {
+
+					this.zoomPoint.copy( hit.point );
+					this.zoomPointSet = true;
+
+				}
+
+				this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
+				this.zoomDirectionSet = true;
+
+			}
+
+			this.updateZoom( delta );
 
 		};
 
