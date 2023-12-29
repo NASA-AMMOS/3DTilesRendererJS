@@ -133,6 +133,7 @@ export class GlobeControls {
 		const _centerPoint = new Vector2();
 		const _originalCenterPoint = new Vector2();
 		let _pinchAction = NONE;
+		let _pointerMoveQueued = false;
 
 		const _pointerTracker = new PointerTracker();
 		let _pointerDist = 0;
@@ -196,6 +197,7 @@ export class GlobeControls {
 
 					// the "pointer" for zooming and rotating should be based on the center point
 					mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
+					_newPointer.copy( _pointer );
 
 				} else if ( _pointerTracker.getPointerCount() > 2 ) {
 
@@ -267,47 +269,58 @@ export class GlobeControls {
 
 				} else if ( _pointerTracker.getPointerCount() === 2 ) {
 
-					// adjust the pointer position to be the center point
-					_pointerTracker.getCenterPoint( _centerPoint );
+					if ( ! _pointerMoveQueued ) {
 
-					// detect zoom transition
-					const previousDist = _pointerDist;
-					_pointerDist = _pointerTracker.getPointerDistance();
-					if ( _pinchAction === NONE ) {
+						_pointerMoveQueued = true;
+						queueMicrotask( () => {
 
-						if ( _pointerDist - _originalPointerDist > ACTION_THRESHOLD ) {
+							_pointerMoveQueued = false;
 
-							resetState();
-							_pinchAction = ZOOM;
-							this.zoomDirectionSet = false;
+							// adjust the pointer position to be the center point
+							_pointerTracker.getCenterPoint( _centerPoint );
 
-						} else if ( _centerPoint.distanceTo( _originalCenterPoint ) > ACTION_THRESHOLD ) {
+							// detect zoom transition
+							const previousDist = _pointerDist;
+							_pointerDist = _pointerTracker.getPointerDistance();
+							if ( _pinchAction === NONE ) {
 
-							_pinchAction = ROTATE;
+								if ( _pointerDist - _originalPointerDist > ACTION_THRESHOLD ) {
+
+									resetState();
+									_pinchAction = ZOOM;
+									this.zoomDirectionSet = false;
+
+								} else if ( _centerPoint.distanceTo( _originalCenterPoint ) > ACTION_THRESHOLD ) {
+
+									_pinchAction = ROTATE;
 
 
-						}
+								}
 
-					}
+							}
 
-					if ( _pinchAction === ZOOM ) {
+							if ( _pinchAction === ZOOM ) {
 
-						// perform zoom
-						performZoom( _pointerDist - previousDist );
+								// perform zoom
+								performZoom( _pointerDist - previousDist );
 
-					} else if ( _pinchAction === ROTATE ) {
+							} else if ( _pinchAction === ROTATE ) {
 
-						// perform rotation
-						const { rotationSpeed } = this;
-						mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
-						_deltaPointer.subVectors( _newPointer, _pointer );
-						_pointer.copy( _newPointer );
-						this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+								// perform rotation
+								const { rotationSpeed } = this;
+								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
+								_deltaPointer.subVectors( _newPointer, _pointer );
+								_pointer.copy( _newPointer );
+								this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 
-					} else {
+							} else {
 
-						// no action
-						_pointer.copy( _newPointer );
+								// no action
+								_pointer.copy( _newPointer );
+
+							}
+
+						} );
 
 					}
 
