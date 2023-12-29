@@ -175,6 +175,8 @@ export class GlobeControls {
 
 			if ( e.pointerType === 'touch' ) {
 
+				this.pivotMesh.visible = false;
+
 				if ( _pointerTracker.getPointerCount() === 0 ) {
 
 					domElement.setPointerCapture( e.pointerId );
@@ -313,10 +315,12 @@ export class GlobeControls {
 								_deltaPointer.subVectors( _newPointer, _pointer );
 								_pointer.copy( _newPointer );
 								this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+								this.pivotMesh.visible = true;
 
 							} else {
 
 								// no action
+								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
 								_pointer.copy( _newPointer );
 
 							}
@@ -392,6 +396,7 @@ export class GlobeControls {
 			this.dragPointSet = false;
 			this.rotationPointSet = false;
 			this.scene.remove( this.pivotMesh );
+			this.pivotMesh.visible = true;
 
 		};
 
