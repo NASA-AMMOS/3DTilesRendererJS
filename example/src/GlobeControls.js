@@ -7,6 +7,7 @@ import {
 	Plane,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
+import { PointerTracker } from './PointerTracker.js';
 
 const NONE = 0;
 const DRAG = 1;
@@ -22,14 +23,13 @@ const _up = new Vector3( 0, 1, 0 );
 const _plane = new Plane();
 
 // TODO
-// - provide fallback plane for cases when you're off the map
-// ---
 // - Touch controls
 // - Add support for angled rotation plane (based on where the pivot point is)
 // - Test with globe (adjusting up vector)
 // ---
 // - Consider using sphere intersect for positioning
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
+// - provide fallback plane for cases when you're off the map
 
 // helper function for constructing a matrix for rotating around a point
 function makeRotateAroundPoint( point, quat, target ) {
@@ -47,10 +47,10 @@ function makeRotateAroundPoint( point, quat, target ) {
 }
 
 // get the three.js pointer coords from an event
-function mouseToCoords( e, element, target ) {
+function mouseToCoords( clientX, clientY, element, target ) {
 
-	target.x = ( e.clientX / element.clientWidth ) * 2 - 1;
-	target.y = - ( e.clientY / element.clientHeight ) * 2 + 1;
+	target.x = ( clientX / element.clientWidth ) * 2 - 1;
+	target.y = - ( clientY / element.clientHeight ) * 2 + 1;
 
 }
 
@@ -65,7 +65,7 @@ export class GlobeControls {
 		// settings
 		this.state = NONE;
 		this.cameraRadius = 1;
-		this.rotationSpeed = 3;
+		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = Math.PI / 2;
 		this.minDistance = 2;
@@ -126,6 +126,10 @@ export class GlobeControls {
 		const _pointer = new Vector2();
 		const _newPointer = new Vector2();
 		const _deltaPointer = new Vector2();
+		const _pointerArr = [];
+
+		const _pointerTracker = new PointerTracker();
+		let _pointerDist = 0;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -158,13 +162,36 @@ export class GlobeControls {
 
 			const { camera, raycaster, domElement, scene } = this;
 
-			mouseToCoords( e, domElement, _pointer );
+			mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+
+			if ( e.pointerType === 'touch' ) {
+
+				_pointerTracker.addPointer( e );
+				_pointerDist = 0;
+
+				if ( _pointerTracker.getPointerCount() === 2 ) {
+
+					const center = new Vector2();
+					_pointerTracker.getCenterPoint( center );
+					_pointerDist = _pointerTracker.getPointerDistance();
+
+					mouseToCoords( center.x, center.y, domElement, _pointer );
+
+				} else if ( _pointerTracker.getPointerCount() > 2 ) {
+
+					resetState();
+					return;
+
+				}
+
+			}
+
 			raycaster.setFromCamera( _pointer, camera );
 
 			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
 			if ( hit ) {
 
-				if ( e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
+				if ( _pointerArr.length === 2 || e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
 
 					_matrix.copy( camera.matrixWorld ).invert();
 
@@ -197,7 +224,51 @@ export class GlobeControls {
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
 
-			mouseToCoords( e, domElement, _newPointer );
+			mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
+
+			if ( e.pointerType === 'touch' ) {
+
+				if ( ! _pointerTracker.updatePointer( e ) ) {
+
+					return;
+
+				}
+
+				if ( _pointerTracker.getPointerCount() === 2 ) {
+
+					const center = new Vector2();
+					_pointerTracker.getCenterPoint( center );
+					mouseToCoords( center.x, center.y, domElement, _newPointer );
+
+					const previousDist = _pointerDist;
+					_pointerDist = _pointerTracker.getPointerDistance();
+					if ( _pointerDist - previousDist > 20 ) {
+
+						resetState();
+
+					}
+
+					// perform zoom
+					const { raycaster, scene } = this;
+					raycaster.setFromCamera( _pointer, this.camera );
+
+					const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+					if ( hit ) {
+
+						this.zoomPoint.copy( hit.point );
+						this.zoomPointSet = true;
+
+					}
+
+					this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
+					this.zoomDirectionSet = true;
+
+					this.updateZoom( _pointerDist - previousDist );
+
+				}
+
+			}
+
 			_deltaPointer.subVectors( _newPointer, _pointer );
 			_pointer.copy( _newPointer );
 
@@ -225,10 +296,13 @@ export class GlobeControls {
 
 		const pointerupCallback = e => {
 
-			this.state = NONE;
-			this.rotationPointSet = false;
-			this.dragPointSet = false;
-			this.scene.remove( this.pivotMesh );
+			resetState();
+
+			if ( e.pointerType === 'touch' ) {
+
+				_pointerTracker.deletePointer( e );
+
+			}
 
 		};
 
@@ -258,17 +332,23 @@ export class GlobeControls {
 
 		const pointerenterCallback = e => {
 
-			mouseToCoords( e, domElement, _pointer );
+			mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
 			shiftClicked = false;
 
 			if ( e.buttons === 0 ) {
 
-				this.state = NONE;
-				this.dragPointSet = false;
-				this.rotationPointSet = false;
-				this.scene.remove( this.pivotMesh );
+				resetState();
 
 			}
+
+		};
+
+		const resetState = () => {
+
+			this.state = NONE;
+			this.dragPointSet = false;
+			this.rotationPointSet = false;
+			this.scene.remove( this.pivotMesh );
 
 		};
 
@@ -372,7 +452,7 @@ export class GlobeControls {
 
 		const { camera, rotationPoint, minAltitude, maxAltitude } = this;
 
-		// TODO: currently uses the camera forward for this work but it may be best to use a combination of camera
+		// currently uses the camera forward for this work but it may be best to use a combination of camera
 		// forward and direction to pivot? Or just dir to pivot?
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
 
@@ -435,7 +515,6 @@ export class GlobeControls {
 			const dist = hit.distance - 100;
 			if ( dist < cameraRadius ) {
 
-				// TODO: maybe this can snap back once the camera as gone over the hill so the drag point is back in the right spot
 				const delta = cameraRadius - dist;
 				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
 				dragPoint.addScaledVector( _up, delta );
