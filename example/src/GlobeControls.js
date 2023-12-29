@@ -25,8 +25,11 @@ const _quaternion = new Quaternion();
 const _up = new Vector3( 0, 1, 0 );
 const _plane = new Plane();
 
+const _deltaPointer = new Vector2();
+const _centerPoint = new Vector2();
+const _newPointer = new Vector2();
+
 // TODO
-// - Touch controls
 // - Add support for angled rotation plane (based on where the pivot point is)
 // - Test with globe (adjusting up vector)
 // ---
@@ -128,9 +131,6 @@ export class GlobeControls {
 		domElement.style.touchAction = 'none';
 
 		const _pointer = new Vector2();
-		const _newPointer = new Vector2();
-		const _deltaPointer = new Vector2();
-		const _centerPoint = new Vector2();
 		const _originalCenterPoint = new Vector2();
 		let _pinchAction = NONE;
 		let _pointerMoveQueued = false;
@@ -199,7 +199,6 @@ export class GlobeControls {
 
 					// the "pointer" for zooming and rotating should be based on the center point
 					mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
-					_newPointer.copy( _pointer );
 
 				} else if ( _pointerTracker.getPointerCount() > 2 ) {
 
