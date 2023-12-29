@@ -12,6 +12,9 @@ import { PointerTracker } from './PointerTracker.js';
 const NONE = 0;
 const DRAG = 1;
 const ROTATE = 2;
+const ZOOM = 3;
+
+const ACTION_THRESHOLD = 2 * window.devicePixelRatio;
 
 const _matrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -127,11 +130,13 @@ export class GlobeControls {
 		const _pointer = new Vector2();
 		const _newPointer = new Vector2();
 		const _deltaPointer = new Vector2();
-		let _allowedZoom = false;
+		const _centerPoint = new Vector2();
+		const _originalCenterPoint = new Vector2();
+		let _pinchAction = NONE;
 
 		const _pointerTracker = new PointerTracker();
 		let _pointerDist = 0;
-		let _originalDist = 0;
+		let _originalPointerDist = 0;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -176,16 +181,16 @@ export class GlobeControls {
 
 				_pointerTracker.addPointer( e );
 				_pointerDist = 0;
-				_originalDist = 0;
+				_originalPointerDist = 0;
 
 				if ( _pointerTracker.getPointerCount() === 2 ) {
 
-					const center = new Vector2();
-					_pointerTracker.getCenterPoint( center );
+					_pointerTracker.getCenterPoint( _originalCenterPoint );
+					_pointerTracker.getCenterPoint( _centerPoint );
 					_pointerDist = _pointerTracker.getPointerDistance();
-					_originalDist = _pointerTracker.getPointerDistance();
+					_originalPointerDist = _pointerTracker.getPointerDistance();
 
-					mouseToCoords( center.x, center.y, domElement, _pointer );
+					mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
 
 				} else if ( _pointerTracker.getPointerCount() > 2 ) {
 
@@ -229,108 +234,118 @@ export class GlobeControls {
 
 		};
 
+		let _queued = false;
 		const pointermoveCallback = e => {
 
-			this.zoomDirectionSet = false;
-			this.zoomPointSet = false;
+			if ( _queued ) return;
 
-			mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
+			_queued = true;
+			queueMicrotask( () => {
 
-			if ( e.pointerType === 'touch' ) {
+				_queued = false;
+				this.zoomDirectionSet = false;
+				this.zoomPointSet = false;
 
-				if ( ! _pointerTracker.updatePointer( e ) ) {
+				mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
 
-					return;
+				if ( e.pointerType === 'touch' ) {
 
-				}
+					if ( ! _pointerTracker.updatePointer( e ) ) {
 
-				if ( _pointerTracker.getPointerCount() === 2 ) {
-
-					const center = new Vector2();
-					_pointerTracker.getCenterPoint( center );
-					mouseToCoords( center.x, center.y, domElement, _newPointer );
-
-					const previousDist = _pointerDist;
-					_pointerDist = _pointerTracker.getPointerDistance();
-
-					console.log( _allowedZoom, _pointerDist - _originalDist );
-					if ( ! _allowedZoom && _pointerDist - _originalDist > 15 * window.devicePixelRatio ) {
-
-						resetState();
-						_allowedZoom = true;
+						return;
 
 					}
 
-					if ( _allowedZoom ) {
+					if ( _pointerTracker.getPointerCount() === 2 ) {
 
-						// perform zoom
-						this.zoomDirectionSet = false;
-						performZoom( _pointerDist - previousDist );
+						// adjust the pointer position to be the center point
+						const _centerPoint = new Vector2();
+						_pointerTracker.getCenterPoint( _centerPoint );
+						mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
 
-						const { raycaster, scene } = this;
-						raycaster.setFromCamera( _pointer, this.camera );
+						// detect zoom transition
+						const previousDist = _pointerDist;
+						_pointerDist = _pointerTracker.getPointerDistance();
+						if ( _pinchAction === NONE ) {
 
-						const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-						if ( hit ) {
+							if ( _pointerDist - _originalPointerDist > ACTION_THRESHOLD ) {
 
-							this.zoomPoint.copy( hit.point );
-							this.zoomPointSet = true;
+								resetState();
+								_pinchAction = ZOOM;
+								this.zoomDirectionSet = false;
+
+							} else if ( _centerPoint.distanceTo( _originalCenterPoint ) > ACTION_THRESHOLD ) {
+
+								_pinchAction = ROTATE;
+
+
+							}
 
 						}
 
-						this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
-						this.zoomDirectionSet = true;
+						if ( _pinchAction === ZOOM ) {
 
-						this.updateZoom( _pointerDist - previousDist );
+							// perform zoom
+							performZoom( _pointerDist - previousDist );
 
+						} else if ( _pinchAction === NONE ) {
+
+							_pointer.copy( _newPointer );
+							return;
+
+						}
 
 					}
 
 				}
 
-			}
+				_deltaPointer.subVectors( _newPointer, _pointer );
+				_pointer.copy( _newPointer );
 
-			_deltaPointer.subVectors( _newPointer, _pointer );
-			_pointer.copy( _newPointer );
+				if ( this.state === DRAG ) {
 
-			if ( this.state === DRAG ) {
+					const { raycaster, camera, dragPoint } = this;
+					_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
+					raycaster.setFromCamera( _pointer, camera );
 
-				const { raycaster, camera, dragPoint } = this;
-				_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
-				raycaster.setFromCamera( _pointer, camera );
+					if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
-				if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+						_delta.subVectors( dragPoint, _vec );
+						this.updatePosition( _delta );
 
-					_delta.subVectors( dragPoint, _vec );
-					this.updatePosition( _delta );
+					}
+
+				} else if ( this.state === ROTATE ) {
+
+					const { rotationSpeed } = this;
+					this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 
 				}
 
-			} else if ( this.state === ROTATE ) {
-
-				const { rotationSpeed } = this;
-				this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
-
-			}
+			} );
 
 		};
 
 		const pointerupCallback = e => {
 
-			resetState();
+			queueMicrotask( () => {
 
-			if ( e.pointerType === 'touch' ) {
+				resetState();
 
-				_pointerTracker.deletePointer( e );
-				_allowedZoom = false;
+				if ( e.pointerType === 'touch' ) {
 
-				if ( _pointerTracker.getPointerCount() === 0 ) {
+					_pointerTracker.deletePointer( e );
+					_pinchAction = NONE;
 
-					domElement.releasePointerCapture( e.pointerId );
+					if ( _pointerTracker.getPointerCount() === 0 ) {
+
+						domElement.releasePointerCapture( e.pointerId );
+
+					}
 
 				}
 
-			}
+			} );
 
 		};
 
@@ -470,6 +485,7 @@ export class GlobeControls {
 		}
 
 		this.camera.position.addScaledVector( zoomDirection, scale );
+		this.camera.updateMatrixWorld();
 
 	}
 
