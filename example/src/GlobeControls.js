@@ -286,16 +286,23 @@ export class GlobeControls {
 							_pointerDist = _pointerTracker.getPointerDistance();
 							if ( _pinchAction === NONE ) {
 
-								if ( _pointerDist - _originalPointerDist > ACTION_THRESHOLD ) {
+								// check which direction was moved in first
+								const separateDistance = _pointerDist - _originalPointerDist;
+								const rotateDistance = _centerPoint.distanceTo( _originalCenterPoint );
+								if ( separateDistance > 0 && rotateDistance > 0 ) {
 
-									resetState();
-									_pinchAction = ZOOM;
-									this.zoomDirectionSet = false;
+									if ( separateDistance > rotateDistance ) {
 
-								} else if ( _centerPoint.distanceTo( _originalCenterPoint ) > ACTION_THRESHOLD ) {
+										resetState();
+										_pinchAction = ZOOM;
+										this.zoomDirectionSet = false;
 
-									_pinchAction = ROTATE;
+									} else {
 
+										_pinchAction = ROTATE;
+
+
+									}
 
 								}
 
