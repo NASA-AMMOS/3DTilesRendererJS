@@ -246,8 +246,6 @@ export class GlobeControls {
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
 
-			mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
-
 			if ( e.pointerType === 'touch' ) {
 
 				if ( ! _pointerTracker.updatePointer( e ) ) {
@@ -256,12 +254,21 @@ export class GlobeControls {
 
 				}
 
-				if ( _pointerTracker.getPointerCount() === 2 ) {
+				if ( _pointerTracker.getPointerCount() === 1 ) {
+
+					// if there's only one pointer active then handle the drag event
+					mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+
+					if ( this.state === DRAG ) {
+
+						performDrag();
+
+					}
+
+				} else if ( _pointerTracker.getPointerCount() === 2 ) {
 
 					// adjust the pointer position to be the center point
-					const _centerPoint = new Vector2();
 					_pointerTracker.getCenterPoint( _centerPoint );
-					mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
 
 					// detect zoom transition
 					const previousDist = _pointerDist;
@@ -288,55 +295,33 @@ export class GlobeControls {
 						// perform zoom
 						performZoom( _pointerDist - previousDist );
 
-					} else if ( _pinchAction === NONE ) {
+					} else if ( _pinchAction === ROTATE ) {
 
+						// perform rotation
+						const { rotationSpeed } = this;
+						mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
+						_deltaPointer.subVectors( _newPointer, _pointer );
 						_pointer.copy( _newPointer );
-						return;
+						this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+
+					} else {
+
+						// no action
+						_pointer.copy( _newPointer );
 
 					}
-
-				}
-
-				_deltaPointer.subVectors( _newPointer, _pointer );
-				_pointer.copy( _newPointer );
-
-				if ( this.state === DRAG ) {
-
-					const { raycaster, camera, dragPoint } = this;
-					_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
-					raycaster.setFromCamera( _pointer, camera );
-
-					if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
-
-						_delta.subVectors( dragPoint, _vec );
-						this.updatePosition( _delta );
-
-					}
-
-				} else if ( this.state === ROTATE ) {
-
-					const { rotationSpeed } = this;
-					this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 
 				}
 
 			} else if ( e.pointerType === 'mouse' ) {
 
+				mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
 				_deltaPointer.subVectors( _newPointer, _pointer );
 				_pointer.copy( _newPointer );
 
 				if ( this.state === DRAG ) {
 
-					const { raycaster, camera, dragPoint } = this;
-					_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
-					raycaster.setFromCamera( _pointer, camera );
-
-					if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
-
-						_delta.subVectors( dragPoint, _vec );
-						this.updatePosition( _delta );
-
-					}
+					performDrag();
 
 				} else if ( this.state === ROTATE ) {
 
@@ -417,6 +402,21 @@ export class GlobeControls {
 			}
 
 			this.updateZoom( delta );
+
+		};
+
+		const performDrag = () => {
+
+			const { raycaster, camera, dragPoint } = this;
+			_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
+			raycaster.setFromCamera( _pointer, camera );
+
+			if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+
+				_delta.subVectors( dragPoint, _vec );
+				this.updatePosition( _delta );
+
+			}
 
 		};
 
