@@ -269,6 +269,7 @@ export class GlobeControls {
 
 				} else if ( _pointerTracker.getPointerCount() === 2 ) {
 
+					// We queue this event to ensure that all pointers have been updated
 					if ( ! _pointerMoveQueued ) {
 
 						_pointerMoveQueued = true;
