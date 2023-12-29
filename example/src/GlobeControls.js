@@ -14,8 +14,6 @@ const DRAG = 1;
 const ROTATE = 2;
 const ZOOM = 3;
 
-const ACTION_THRESHOLD = 2 * window.devicePixelRatio;
-
 const _matrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
@@ -36,6 +34,7 @@ const _newPointer = new Vector2();
 // - Consider using sphere intersect for positioning
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
 // - provide fallback plane for cases when you're off the map
+// - consider enabling drag with zoom
 
 // helper function for constructing a matrix for rotating around a point
 function makeRotateAroundPoint( point, quat, target ) {
@@ -55,8 +54,10 @@ function makeRotateAroundPoint( point, quat, target ) {
 // get the three.js pointer coords from an event
 function mouseToCoords( clientX, clientY, element, target ) {
 
-	target.x = ( clientX / element.clientWidth ) * 2 - 1;
-	target.y = - ( clientY / element.clientHeight ) * 2 + 1;
+	console.log( element.offsetLeft );
+
+	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
+	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
 
 }
 
