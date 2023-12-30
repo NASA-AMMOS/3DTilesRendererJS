@@ -423,17 +423,8 @@ export class GlobeControls {
 
 			if ( ! this.zoomDirectionSet ) {
 
-				const { raycaster, scene } = this;
+				const { raycaster } = this;
 				raycaster.setFromCamera( _pointer, this.camera );
-
-				const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-				if ( hit ) {
-
-					this.zoomPoint.copy( hit.point );
-					this.zoomPointSet = true;
-
-				}
-
 				this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
 				this.zoomDirectionSet = true;
 
@@ -546,7 +537,6 @@ export class GlobeControls {
 	_updateZoom( scale ) {
 
 		const {
-			zoomPointSet,
 			zoomPoint,
 			zoomDirection,
 			camera,
@@ -558,21 +548,14 @@ export class GlobeControls {
 
 		const fallback = scale < 0 ? - 1 : 1;
 		let dist = Infinity;
-		if ( zoomPointSet ) {
+		raycaster.ray.origin.copy( camera.position );
+		raycaster.ray.direction.copy( zoomDirection );
 
-			dist = zoomPoint.distanceTo( camera.position );
+		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+		if ( hit ) {
 
-		} else {
-
-			raycaster.ray.origin.copy( camera.position );
-			raycaster.ray.direction.copy( zoomDirection );
-
-			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-			if ( hit ) {
-
-				dist = hit.distance;
-
-			}
+			dist = hit.distance;
+			zoomPoint.copy( hit.point );
 
 		}
 
@@ -602,6 +585,7 @@ export class GlobeControls {
 		// so as the use drags it winds up in the same spot.
 		// Will this work? Or be good enough?
 		this.camera.position.add( delta );
+		this.camera.updateMatrixWorld();
 
 	}
 
@@ -655,6 +639,8 @@ export class GlobeControls {
 
 		// cast down from the camera to get the pivot to rotate around
 		const { up, raycaster, camera, scene, state } = this;
+		camera.updateMatrixWorld();
+
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
 		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
 
@@ -711,6 +697,8 @@ export class GlobeControls {
 			camera.updateMatrixWorld();
 
 		}
+
+		this.up.copy( newUp );
 
 	}
 
