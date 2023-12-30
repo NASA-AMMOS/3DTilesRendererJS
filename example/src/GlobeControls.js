@@ -234,6 +234,7 @@ export class GlobeControls {
 					this.rotationPointSet = true;
 
 					this.pivotMesh.position.copy( hit.point );
+					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
 
 				} else if ( e.buttons & 1 ) {
@@ -247,6 +248,7 @@ export class GlobeControls {
 						this.dragPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
+						this.pivotMesh.updateMatrixWorld();
 						this.scene.add( this.pivotMesh );
 
 					}
@@ -489,7 +491,6 @@ export class GlobeControls {
 		const {
 			raycaster,
 			camera,
-			scene,
 			cameraRadius,
 			dragPoint,
 			startDragPoint,
@@ -508,10 +509,7 @@ export class GlobeControls {
 		}
 
 		// cast down from the camera
-		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
-
-		const hit = raycaster.intersectObject( scene )[ 0 ];
+		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
 			const dist = hit.distance - 100;
@@ -580,6 +578,16 @@ export class GlobeControls {
 
 	}
 
+	_getPointBelowCamera() {
+
+		const { camera, raycaster, scene, up } = this;
+		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
+
+		return raycaster.intersectObject( scene )[ 0 ] || null;
+
+	}
+
 	_updatePosition( delta ) {
 
 		// TODO: when adjusting the frame we have to reproject the grab point
@@ -637,13 +645,10 @@ export class GlobeControls {
 		let dist = 0;
 
 		// cast down from the camera to get the pivot to rotate around
-		const { up, raycaster, camera, scene, state } = this;
+		const { up, camera, state } = this;
 		camera.updateMatrixWorld();
 
-		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
-
-		const hit = raycaster.intersectObject( scene )[ 0 ];
+		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
 			_vec.setFromMatrixPosition( camera.matrixWorld );
@@ -691,6 +696,7 @@ export class GlobeControls {
 
 		}
 
+		// TODO: do we need to potentially fix the camera twist here?
 		up.copy( newUp );
 
 	}
