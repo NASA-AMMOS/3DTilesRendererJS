@@ -590,7 +590,6 @@ export class GlobeControls {
 		raycaster.ray.origin.copy( camera.position );
 		raycaster.ray.direction.copy( zoomDirection );
 
-		console.log('UPDATING ZOOM POINT', performance.now(), new Error().stack)
 		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
 		if ( hit ) {
 
@@ -671,7 +670,7 @@ export class GlobeControls {
 		let dist = 0;
 
 		// cast down from the camera to get the pivot to rotate around
-		const { up, camera, state } = this;
+		const { up, camera, state, zoomPoint, zoomDirection } = this;
 		camera.updateMatrixWorld();
 
 		const hit = this._getPointBelowCamera();
@@ -696,11 +695,11 @@ export class GlobeControls {
 
 				camera.updateMatrixWorld();
 
-				// TODO: removing this fixes the zoom point but the orientation can be put in a position that's
-				// potentially below the valid altitude. Why does rotating around the zoom point not work?
-				makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
+				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
 				camera.matrixWorld.premultiply( _rotMatrix );
 				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+				zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
 
 			}
 
