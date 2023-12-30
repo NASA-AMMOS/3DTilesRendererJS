@@ -20,7 +20,6 @@ const _delta = new Vector3();
 const _vec = new Vector3();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
-const _up = new Vector3( 0, 1, 0 );
 const _plane = new Plane();
 
 const _deltaPointer = new Vector2();
@@ -99,6 +98,8 @@ export class GlobeControls {
 		this.raycaster = new Raycaster();
 		this.raycaster.firstHitOnly = true;
 
+		this.up = new Vector3( 0, 1, 0 );
+
 		this._detachCallback = null;
 
 		// init
@@ -169,7 +170,13 @@ export class GlobeControls {
 
 		const pointerdownCallback = e => {
 
-			const { camera, raycaster, domElement, scene } = this;
+			const {
+				camera,
+				raycaster,
+				domElement,
+				scene,
+				up,
+			} = this;
 
 			// get the screen coordinates
 			mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
@@ -232,7 +239,7 @@ export class GlobeControls {
 				} else if ( e.buttons & 1 ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
-					if ( raycaster.ray.direction.dot( _up ) < 0 ) {
+					if ( raycaster.ray.direction.dot( up ) < 0 ) {
 
 						this.state = DRAG;
 						this.dragPoint.copy( hit.point );
@@ -326,7 +333,7 @@ export class GlobeControls {
 								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
 								_deltaPointer.subVectors( _newPointer, _pointer );
 								_pointer.copy( _newPointer );
-								this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+								this._updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 								this.pivotMesh.visible = true;
 
 							} else {
@@ -356,7 +363,7 @@ export class GlobeControls {
 				} else if ( this.state === ROTATE ) {
 
 					const { rotationSpeed } = this;
-					this.updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+					this._updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
 
 				}
 
@@ -432,20 +439,20 @@ export class GlobeControls {
 
 			}
 
-			this.updateZoom( delta );
+			this._updateZoom( delta );
 
 		};
 
 		const performDrag = () => {
 
-			const { raycaster, camera, dragPoint } = this;
-			_plane.setFromNormalAndCoplanarPoint( _up, dragPoint );
+			const { raycaster, camera, dragPoint, up } = this;
+			_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
 			raycaster.setFromCamera( _pointer, camera );
 
 			if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
 				_delta.subVectors( dragPoint, _vec );
-				this.updatePosition( _delta );
+				this._updatePosition( _delta );
 
 			}
 
@@ -486,7 +493,57 @@ export class GlobeControls {
 
 	}
 
-	updateZoom( scale ) {
+	update() {
+
+		const {
+			raycaster,
+			camera,
+			scene,
+			cameraRadius,
+			dragPoint,
+			startDragPoint,
+			up,
+		} = this;
+
+		// when dragging the camera and drag point may be moved
+		// to accommodate terrain so we try to move it back down
+		// to the original point.
+		if ( this.state === DRAG ) {
+
+			_delta.subVectors( startDragPoint, dragPoint );
+			camera.position.add( _delta );
+			dragPoint.copy( startDragPoint );
+
+		}
+
+		// cast down from the camera
+		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
+
+		const hit = raycaster.intersectObject( scene )[ 0 ];
+		if ( hit ) {
+
+			const dist = hit.distance - 100;
+			if ( dist < cameraRadius ) {
+
+				const delta = cameraRadius - dist;
+				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
+				dragPoint.addScaledVector( up, delta );
+
+			}
+
+		}
+
+	}
+
+	dispose() {
+
+		this.detach();
+
+	}
+
+	// private
+	_updateZoom( scale ) {
 
 		const {
 			zoomPointSet,
@@ -539,7 +596,7 @@ export class GlobeControls {
 
 	}
 
-	updatePosition( delta ) {
+	_updatePosition( delta ) {
 
 		// TODO: when adjusting the frame we have to reproject the grab point
 		// so as the use drags it winds up in the same spot.
@@ -548,15 +605,21 @@ export class GlobeControls {
 
 	}
 
-	updateRotation( azimuth, altitude ) {
+	_updateRotation( azimuth, altitude ) {
 
-		const { camera, rotationPoint, minAltitude, maxAltitude } = this;
+		const {
+			camera,
+			rotationPoint,
+			minAltitude,
+			maxAltitude,
+			up,
+		} = this;
 
 		// currently uses the camera forward for this work but it may be best to use a combination of camera
 		// forward and direction to pivot? Or just dir to pivot?
 		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
 
-		const angle = _up.angleTo( _delta );
+		const angle = up.angleTo( _delta );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
@@ -568,7 +631,7 @@ export class GlobeControls {
 		}
 
 		// zoom in frame around pivot point
-		_quaternion.setFromAxisAngle( _up, azimuth );
+		_quaternion.setFromAxisAngle( up, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
@@ -580,54 +643,6 @@ export class GlobeControls {
 
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 		camera.updateMatrixWorld();
-
-	}
-
-	update() {
-
-		const {
-			raycaster,
-			camera,
-			scene,
-			cameraRadius,
-			dragPoint,
-			startDragPoint,
-		} = this;
-
-		// when dragging the camera and drag point may be moved
-		// to accommodate terrain so we try to move it back down
-		// to the original point.
-		if ( this.state === DRAG ) {
-
-			_delta.subVectors( startDragPoint, dragPoint );
-			camera.position.add( _delta );
-			dragPoint.copy( startDragPoint );
-
-		}
-
-		// cast down from the camera
-		raycaster.ray.direction.copy( _up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
-
-		const hit = raycaster.intersectObject( scene )[ 0 ];
-		if ( hit ) {
-
-			const dist = hit.distance - 100;
-			if ( dist < cameraRadius ) {
-
-				const delta = cameraRadius - dist;
-				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
-				dragPoint.addScaledVector( _up, delta );
-
-			}
-
-		}
-
-	}
-
-	dispose() {
-
-		this.detach();
 
 	}
 
