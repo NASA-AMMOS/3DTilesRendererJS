@@ -556,6 +556,7 @@ export class GlobeControls {
 
 			dist = hit.distance;
 			zoomPoint.copy( hit.point );
+			this.zoomPointSet = true;
 
 		}
 
@@ -632,8 +633,6 @@ export class GlobeControls {
 
 	setFrame( newUp ) {
 
-		const right = new Vector3();
-		const cross = new Vector3();
 		const pivot = new Vector3();
 		let dist = 0;
 
@@ -658,11 +657,7 @@ export class GlobeControls {
 
 		}
 
-		// get the necessary rotation
-		right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		cross.crossVectors( up, newUp );
-
-		const angle = newUp.angleTo( up ) * Math.sign( cross.dot( right ) );
+		_quaternion.setFromUnitVectors( up, newUp );
 
 		if (
 			state === DRAG && this.dragPointSet ||
@@ -671,8 +666,6 @@ export class GlobeControls {
 		) {
 
 			// if we're performing an action currently then pivot around the current focus point
-			_quaternion.setFromAxisAngle( right, angle );
-
 			if ( state === DRAG ) {
 
 				makeRotateAroundPoint( this.dragPoint, _quaternion, _rotMatrix );
@@ -693,12 +686,12 @@ export class GlobeControls {
 		} else {
 
 			camera.position.copy( pivot ).addScaledVector( newUp, dist );
-			camera.rotateX( angle );
+			camera.quaternion.premultiply( _quaternion );
 			camera.updateMatrixWorld();
 
 		}
 
-		this.up.copy( newUp );
+		up.copy( newUp );
 
 	}
 
