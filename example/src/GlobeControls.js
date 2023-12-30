@@ -646,5 +646,73 @@ export class GlobeControls {
 
 	}
 
+	setFrame( newUp ) {
+
+		const right = new Vector3();
+		const cross = new Vector3();
+		const pivot = new Vector3();
+		let dist = 0;
+
+		// cast down from the camera to get the pivot to rotate around
+		const { up, raycaster, camera, scene, state } = this;
+		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
+
+		const hit = raycaster.intersectObject( scene )[ 0 ];
+		if ( hit ) {
+
+			_vec.setFromMatrixPosition( camera.matrixWorld );
+
+			pivot.copy( hit.point );
+			dist = pivot.distanceTo( _vec );
+
+		} else {
+
+			return;
+
+		}
+
+		// get the necessary rotation
+		right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		cross.crossVectors( up, newUp );
+
+		const angle = newUp.angleTo( up ) * Math.sign( cross.dot( right ) );
+
+		if (
+			state === DRAG && this.dragPointSet ||
+			this.zoomPointSet ||
+			state === ROTATE && this.rotationPointSet
+		) {
+
+			// if we're performing an action currently then pivot around the current focus point
+			_quaternion.setFromAxisAngle( right, angle );
+
+			if ( state === DRAG ) {
+
+				makeRotateAroundPoint( this.dragPoint, _quaternion, _rotMatrix );
+
+			} else if ( state === ROTATE ) {
+
+				makeRotateAroundPoint( this.rotationPoint, _quaternion, _rotMatrix );
+
+			} else if ( this.zoomPointSet ) {
+
+				makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
+
+			}
+
+			camera.matrixWorld.premultiply( _rotMatrix );
+			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+		} else {
+
+			camera.position.copy( pivot ).addScaledVector( newUp, dist );
+			camera.rotateX( angle );
+			camera.updateMatrixWorld();
+
+		}
+
+	}
+
 }
 
