@@ -664,31 +664,13 @@ export class GlobeControls {
 
 		_quaternion.setFromUnitVectors( up, newUp );
 
-		if (
-			state === DRAG && this.dragPointSet ||
-			this.zoomPointSet ||
-			state === ROTATE && this.rotationPointSet
-		) {
+		if ( this.zoomPointSet ) {
 
-			// if we're performing an action currently then pivot around the current focus point
-			if ( state === DRAG ) {
-
-				makeRotateAroundPoint( this.dragPoint, _quaternion, _rotMatrix );
-
-			} else if ( state === ROTATE ) {
-
-				makeRotateAroundPoint( this.rotationPoint, _quaternion, _rotMatrix );
-
-			} else if ( this.zoomPointSet ) {
-
-				makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
-
-			}
-
+			makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-		} else {
+		} else if ( state !== ROTATE ) {
 
 			camera.position.copy( pivot ).addScaledVector( newUp, dist );
 			camera.quaternion.premultiply( _quaternion );
