@@ -35,6 +35,8 @@ const _newPointer = new Vector2();
 // - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
 // - provide fallback plane for cases when you're off the map
 // - consider enabling drag with zoom
+// - shift + scroll could adjust altitude
+// - fade pivot icon in and out
 
 // helper function for constructing a matrix for rotating around a point
 function makeRotateAroundPoint( point, quat, target ) {
@@ -54,8 +56,6 @@ function makeRotateAroundPoint( point, quat, target ) {
 // get the three.js pointer coords from an event
 function mouseToCoords( clientX, clientY, element, target ) {
 
-	console.log( element.offsetLeft );
-
 	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
 	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
 
@@ -74,7 +74,7 @@ export class GlobeControls {
 		this.cameraRadius = 1;
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
-		this.maxAltitude = Math.PI / 2;
+		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 2;
 		this.maxDistance = Infinity;
 
@@ -231,13 +231,18 @@ export class GlobeControls {
 
 				} else if ( e.buttons & 1 ) {
 
-					this.state = DRAG;
-					this.dragPoint.copy( hit.point );
-					this.startDragPoint.copy( hit.point );
-					this.dragPointSet = true;
+					// if the clicked point is coming from below the plane then don't perform the drag
+					if ( raycaster.ray.direction.dot( _up ) < 0 ) {
 
-					this.pivotMesh.position.copy( hit.point );
-					this.scene.add( this.pivotMesh );
+						this.state = DRAG;
+						this.dragPoint.copy( hit.point );
+						this.startDragPoint.copy( hit.point );
+						this.dragPointSet = true;
+
+						this.pivotMesh.position.copy( hit.point );
+						this.scene.add( this.pivotMesh );
+
+					}
 
 				}
 
