@@ -538,23 +538,15 @@ export class GlobeControls {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			raycaster,
-			scene,
 			minDistance,
 			maxDistance,
 		} = this;
 
 		const fallback = scale < 0 ? - 1 : 1;
 		let dist = Infinity;
-		raycaster.ray.origin.copy( camera.position );
-		raycaster.ray.direction.copy( zoomDirection );
+		if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
-		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
-		if ( hit ) {
-
-			dist = hit.distance;
-			zoomPoint.copy( hit.point );
-			this.zoomPointSet = true;
+			dist = zoomPoint.distanceTo( camera.position );
 
 		}
 
@@ -575,6 +567,40 @@ export class GlobeControls {
 
 		this.camera.position.addScaledVector( zoomDirection, scale );
 		this.camera.updateMatrixWorld();
+
+	}
+
+	_updateZoomPoint() {
+
+		const {
+			camera,
+			zoomDirectionSet,
+			zoomDirection,
+			raycaster,
+			scene,
+			zoomPoint,
+		} = this;
+
+		if ( ! zoomDirectionSet ) {
+
+			return false;
+
+		}
+
+		raycaster.ray.origin.copy( camera.position );
+		raycaster.ray.direction.copy( zoomDirection );
+
+		console.log('UPDATING ZOOM POINT', performance.now(), new Error().stack)
+		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+		if ( hit ) {
+
+			zoomPoint.copy( hit.point );
+			this.zoomPointSet = true;
+			return true;
+
+		}
+
+		return false;
 
 	}
 
@@ -664,11 +690,19 @@ export class GlobeControls {
 
 		_quaternion.setFromUnitVectors( up, newUp );
 
-		if ( this.zoomPointSet ) {
+		if ( this.zoomDirectionSet ) {
 
-			makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
-			camera.matrixWorld.premultiply( _rotMatrix );
-			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+			if ( this.zoomPointSet || this._updateZoomPoint() ) {
+
+				camera.updateMatrixWorld();
+
+				// TODO: removing this fixes the zoom point but the orientation can be put in a position that's
+				// potentially below the valid altitude. Why does rotating around the zoom point not work?
+				makeRotateAroundPoint( this.zoomPoint, _quaternion, _rotMatrix );
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			}
 
 		} else if ( state !== ROTATE ) {
 
