@@ -532,8 +532,17 @@ export class GlobeControls {
 
 		} else {
 
-			// if we're zooming into nothing then skip zooming
-			return;
+			// if we're zooming into nothing then use the distance from the ground to scale movement
+			const hit = this._getPointBelowCamera();
+			if ( hit ) {
+
+				dist = hit.distance;
+
+			} else {
+
+				return;
+
+			}
 
 		}
 
@@ -549,11 +558,6 @@ export class GlobeControls {
 			const remainingDistance = Math.max( 0, dist - minDistance );
 			scale = scale * ( dist - minDistance ) * 0.01;
 			scale = Math.min( scale, remainingDistance );
-
-		}
-
-		if ( scale < 0 ) {
-
 
 		}
 
