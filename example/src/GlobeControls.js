@@ -18,6 +18,9 @@ const _matrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
+const _forward = new Vector3();
+const __pointer = new Vector2();
+const __prevPointer = new Vector2();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
@@ -82,13 +85,14 @@ export class GlobeControls {
 		this.pivotMesh.scale.setScalar( 0.25 );
 
 		// internal state
+		this.pointerTracker = new PointerTracker();
+
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
 		this.startDragPoint = new Vector3();
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
-		this.rotationClickDirection = new Vector3();
 
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
@@ -137,7 +141,7 @@ export class GlobeControls {
 		let _pinchAction = NONE;
 		let _pointerMoveQueued = false;
 
-		const _pointerTracker = new PointerTracker();
+		const _pointerTracker = this.pointerTracker;
 		let _pointerDist = 0;
 		let _originalPointerDist = 0;
 		let shiftClicked = false;
@@ -176,37 +180,32 @@ export class GlobeControls {
 				domElement,
 				scene,
 				up,
+				pivotMesh,
 			} = this;
 
-			// get the screen coordinates
-			mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+
+			// init fields
+			_pointerTracker.addPointer( e );
+			_pointerDist = 0;
+			_originalPointerDist = 0;
 
 			if ( e.pointerType === 'touch' ) {
 
-				this.pivotMesh.visible = false;
+				pivotMesh.visible = false;
 
 				if ( _pointerTracker.getPointerCount() === 0 ) {
 
 					domElement.setPointerCapture( e.pointerId );
 
-				}
+				} else if ( _pointerTracker.getPointerCount() === 2 ) {
 
-				// init fields
-				_pointerTracker.addPointer( e );
-				_pointerDist = 0;
-				_originalPointerDist = 0;
-
-				// if we find a second pointer init other values
-				if ( _pointerTracker.getPointerCount() === 2 ) {
-
+					// if we find a second pointer init other values
 					_pointerTracker.getCenterPoint( _originalCenterPoint );
 					_centerPoint.copy( _originalCenterPoint );
 
 					_pointerDist = _pointerTracker.getPointerDistance();
 					_originalPointerDist = _pointerTracker.getPointerDistance();
 
-					// the "pointer" for zooming and rotating should be based on the center point
-					mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
 
 				} else if ( _pointerTracker.getPointerCount() > 2 ) {
 
@@ -217,6 +216,10 @@ export class GlobeControls {
 
 			}
 
+			// the "pointer" for zooming and rotating should be based on the center point
+			_pointerTracker.getCenterPoint( __pointer );
+			mouseToCoords( __pointer.x, __pointer.y, domElement, _pointer );
+
 			// find the hit point
 			raycaster.setFromCamera( _pointer, camera );
 			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
@@ -224,20 +227,23 @@ export class GlobeControls {
 
 				// if two fingers, right click, or shift click are being used then we trigger
 				// a rotation action to begin
-				if ( _pointerTracker.getPointerCount() === 2 || e.buttons & 2 || e.buttons & 1 && shiftClicked ) {
+				if (
+					_pointerTracker.getPointerCount() === 2 ||
+					_pointerTracker.isRightClicked() ||
+					_pointerTracker.isLeftClicked() && shiftClicked
+				) {
 
 					_matrix.copy( camera.matrixWorld ).invert();
 
 					this.state = ROTATE;
 					this.rotationPoint.copy( hit.point );
-					this.rotationClickDirection.copy( raycaster.ray.direction ).transformDirection( _matrix );
 					this.rotationPointSet = true;
 
 					this.pivotMesh.position.copy( hit.point );
 					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
 
-				} else if ( e.buttons & 1 ) {
+				} else if ( _pointerTracker.isLeftClicked() ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
 					if ( raycaster.ray.direction.dot( up ) < 0 ) {
@@ -264,22 +270,22 @@ export class GlobeControls {
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
 
-			if ( e.pointerType === 'touch' ) {
+			if ( ! _pointerTracker.updatePointer( e ) ) {
 
-				if ( ! _pointerTracker.updatePointer( e ) ) {
+				return;
 
-					return;
+			}
 
-				}
+			if ( _pointerTracker.getPointerType() === 'touch' ) {
 
 				if ( _pointerTracker.getPointerCount() === 1 ) {
 
-					// if there's only one pointer active then handle the drag event
+					// TODO: remove
 					mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
 
 					if ( this.state === DRAG ) {
 
-						performDrag();
+						this._updatePosition();
 
 					}
 
@@ -330,12 +336,10 @@ export class GlobeControls {
 
 							} else if ( _pinchAction === ROTATE ) {
 
-								// perform rotation
-								const { rotationSpeed } = this;
-								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
-								_deltaPointer.subVectors( _newPointer, _pointer );
-								_pointer.copy( _newPointer );
-								this._updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+								// TODO: remove
+								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
+
+								this._updateRotation();
 								this.pivotMesh.visible = true;
 
 							} else {
@@ -352,15 +356,14 @@ export class GlobeControls {
 
 				}
 
-			} else if ( e.pointerType === 'mouse' ) {
+			} else if ( _pointerTracker.getPointerType() === 'mouse' ) {
 
-				mouseToCoords( e.clientX, e.clientY, domElement, _newPointer );
-				_deltaPointer.subVectors( _newPointer, _pointer );
-				_pointer.copy( _newPointer );
+				// TODO: remove
+				mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
 
 				if ( this.state === DRAG ) {
 
-					performDrag();
+					this._updatePosition();
 
 				} else if ( this.state === ROTATE ) {
 
@@ -377,9 +380,10 @@ export class GlobeControls {
 
 			resetState();
 
+			_pointerTracker.deletePointer( e );
+
 			if ( e.pointerType === 'touch' ) {
 
-				_pointerTracker.deletePointer( e );
 				_pinchAction = NONE;
 
 				if ( _pointerTracker.getPointerCount() === 0 ) {
@@ -436,21 +440,6 @@ export class GlobeControls {
 
 		};
 
-		const performDrag = () => {
-
-			const { raycaster, camera, dragPoint, up } = this;
-			_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
-			raycaster.setFromCamera( _pointer, camera );
-
-			if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
-
-				_delta.subVectors( dragPoint, _vec );
-				this._updatePosition( _delta );
-
-			}
-
-		};
-
 		domElement.addEventListener( 'contextmenu', contextMenuCallback );
 		domElement.addEventListener( 'keydown', keydownCallback );
 		domElement.addEventListener( 'keyup', keyupCallback );
@@ -481,6 +470,7 @@ export class GlobeControls {
 
 			this._detachCallback();
 			this._detachCallback = null;
+			this.pointerTracker = new PointerTracker();
 
 		}
 
@@ -512,7 +502,7 @@ export class GlobeControls {
 		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
-			const dist = hit.distance - 100;
+			const dist = hit.distance - 1e5;
 			if ( dist < cameraRadius ) {
 
 				const delta = cameraRadius - dist;
@@ -607,23 +597,40 @@ export class GlobeControls {
 
 		const { camera, raycaster, scene, up } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 100 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 1e5 );
 
 		return raycaster.intersectObject( scene )[ 0 ] || null;
 
 	}
 
-	_updatePosition( delta ) {
+	_updatePosition() {
 
-		// TODO: when adjusting the frame we have to reproject the grab point
-		// so as the use drags it winds up in the same spot.
-		// Will this work? Or be good enough?
-		this.camera.position.add( delta );
-		this.camera.updateMatrixWorld();
+		const {
+			raycaster,
+			camera,
+			dragPoint,
+			up,
+			pointerTracker,
+			domElement,
+		} = this;
+
+		pointerTracker.getCenterPoint( __pointer );
+		mouseToCoords( __pointer.x, __pointer.y, domElement, __pointer );
+
+		_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
+		raycaster.setFromCamera( __pointer, camera );
+
+		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+
+			_delta.subVectors( dragPoint, _vec );
+			this.camera.position.add( _delta );
+			this.camera.updateMatrixWorld();
+
+		}
 
 	}
 
-	_updateRotation( azimuth, altitude ) {
+	_updateRotation() {
 
 		const {
 			camera,
@@ -631,13 +638,28 @@ export class GlobeControls {
 			minAltitude,
 			maxAltitude,
 			up,
+			domElement,
+			pointerTracker,
+			rotationSpeed,
 		} = this;
+
+		// get the rotation motion
+		pointerTracker.getCenterPoint( __pointer );
+		mouseToCoords( __pointer.x, __pointer.y, domElement, __pointer );
+
+		pointerTracker.getPreviousCenterPoint( __prevPointer );
+		mouseToCoords( __prevPointer.x, __prevPointer.y, domElement, __prevPointer );
+
+		_deltaPointer.subVectors( __pointer, __prevPointer );
+
+		const azimuth = - _deltaPointer.x * rotationSpeed;
+		let altitude = - _deltaPointer.y * rotationSpeed;
 
 		// currently uses the camera forward for this work but it may be best to use a combination of camera
 		// forward and direction to pivot? Or just dir to pivot?
-		_delta.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
 
-		const angle = up.angleTo( _delta );
+		const angle = up.angleTo( _forward );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
