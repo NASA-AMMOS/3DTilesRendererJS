@@ -18,6 +18,7 @@ let groundTiles, skyTiles, tilesParent;
 const params = {
 
 	reinstantiateTiles,
+	fadeRootTiles: false,
 	useFade: true,
 	errorTarget: 12,
 	fadeDuration: 0.5,
@@ -73,6 +74,7 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'useFade' );
+	gui.add( params, 'fadeRootTiles' );
 	gui.add( params, 'errorTarget', 0, 1000 );
 	gui.add( params, 'fadeDuration', 0, 5 );
 	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
@@ -101,6 +103,8 @@ function reinstantiateTiles() {
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
 
+	window.TILES = groundTiles
+
 	skyTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
@@ -124,11 +128,12 @@ function render() {
 	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
-
+	groundTiles.fadeRootTiles = params.fadeRootTiles;
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
+	skyTiles.fadeRootTiles = params.fadeRootTiles;
 	skyTiles.setCamera( camera );
 	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();

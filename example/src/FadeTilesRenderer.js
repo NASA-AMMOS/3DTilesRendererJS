@@ -21,7 +21,20 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 	} else {
 
-		this._fadeManager.fadeIn( scene );
+		// if this is a root tile and we haven't rendered any child tiles yet then pop in
+		// the root tiles immediately rather than fading from nothing
+		const isRootTile = tile.__depthFromRenderedParent === 0;
+		if ( ! isRootTile ) {
+
+			this.initialLayerRendered = true;
+
+		}
+
+		if ( ! isRootTile || ! this.fadeRootTiles || this.initialLayerRendered ) {
+
+			this._fadeManager.fadeIn( scene );
+
+		}
 
 	}
 
@@ -96,6 +109,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 		super( ...args );
 
 		this.maximumFadeOutTiles = 50;
+		this.fadeRootTiles = false;
 
 		const fadeGroup = new Group();
 		const fadeManager = new FadeManager();
@@ -108,6 +122,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 		this.onLoadModel = onLoadModel.bind( this );
 		this.onTileVisibilityChange = onTileVisibilityChange.bind( this );
 
+		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
 		this.disposeSet = new Set();
 

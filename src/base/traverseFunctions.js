@@ -256,7 +256,6 @@ export function markUsedSetLeaves( tile, renderer ) {
 		tile.__childrenWereVisible = childrenWereVisible;
 		tile.__allChildrenLoaded = allChildrenLoaded;
 
-
 	}
 
 }
