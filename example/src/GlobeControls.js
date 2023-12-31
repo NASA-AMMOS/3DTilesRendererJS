@@ -516,12 +516,23 @@ export class GlobeControls {
 
 		}
 
-		scale = Math.min( scale * ( dist - minDistance ) * 0.01, Math.max( 0, dist - minDistance ) );
+		// scale the distance based on how far there is to move
+		if ( scale < 0 ) {
+
+			const remainingDistance = Math.min( 0, dist - maxDistance );
+			scale = scale * ( dist - 0 ) * 0.01;
+			scale = Math.max( scale, remainingDistance );
+
+		} else {
+
+			const remainingDistance = Math.max( 0, dist - minDistance );
+			scale = scale * ( dist - minDistance ) * 0.01;
+			scale = Math.min( scale, remainingDistance );
+
+		}
 
 		if ( scale < 0 ) {
 
-			const remainingDistance = Math.min( 0, dist - maxDistance ) || 0;
-			scale = Math.max( scale, remainingDistance );
 
 		}
 
