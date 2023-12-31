@@ -22,6 +22,7 @@ const _forward = new Vector3();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
+const _up = new Vector3();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -79,10 +80,7 @@ export class GlobeControls {
 		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 2;
 		this.maxDistance = Infinity;
-
-		this.pivotMesh = new PivotPointMesh();
-		this.pivotMesh.raycast = () => {};
-		this.pivotMesh.scale.setScalar( 0.25 );
+		this.getUpDirection = null;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
@@ -99,12 +97,17 @@ export class GlobeControls {
 		this.zoomDirection = new Vector3();
 		this.zoomPoint = new Vector3();
 
+		this.pivotMesh = new PivotPointMesh();
+		this.pivotMesh.raycast = () => {};
+		this.pivotMesh.scale.setScalar( 0.25 );
+
 		this.raycaster = new Raycaster();
 		this.raycaster.firstHitOnly = true;
 
 		this.up = new Vector3( 0, 1, 0 );
 
 		this._detachCallback = null;
+		this._upInitialized = false;
 
 		// init
 		this.attach( domElement );
@@ -444,6 +447,24 @@ export class GlobeControls {
 			up,
 		} = this;
 
+		if ( this.getUpDirection ) {
+
+			this.getUpDirection( camera.position, _up );
+			if ( ! this._upInitialized ) {
+
+				// TODO: do we need to do more here? Possibly add a helper for initializing
+				// the camera orientation?
+				this._upInitialized = true;
+				this.up.copy( _up );
+
+			} else {
+
+				this.setFrame( _up );
+
+			}
+
+		}
+
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
@@ -503,9 +524,9 @@ export class GlobeControls {
 		zoomDirection.copy( raycaster.ray.direction ).normalize();
 		this.zoomDirectionSet = true;
 
-		// get the target zoom point
+		// always update the zoom target point in case the tiles are changing
 		let dist = Infinity;
-		if ( this.zoomPointSet || this._updateZoomPoint() ) {
+		if ( this._updateZoomPoint() ) {
 
 			dist = zoomPoint.distanceTo( camera.position );
 
