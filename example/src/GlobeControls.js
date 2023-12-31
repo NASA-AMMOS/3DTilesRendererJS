@@ -19,15 +19,15 @@ const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
 const _forward = new Vector3();
-const __pointer = new Vector2();
-const __prevPointer = new Vector2();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
 
+const _pointer = new Vector2();
+const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
-const _newPointer = new Vector2();
+const _originalCenterPoint = new Vector2();
 
 // TODO
 // - Add support for angled rotation plane (based on where the pivot point is)
@@ -136,14 +136,10 @@ export class GlobeControls {
 		this.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
-		const _pointer = new Vector2();
-		const _originalCenterPoint = new Vector2();
 		let _pinchAction = NONE;
 		let _pointerMoveQueued = false;
 
-		const _pointerTracker = this.pointerTracker;
-		let _pointerDist = 0;
-		let _originalPointerDist = 0;
+		const pointerTracker = this.pointerTracker;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -181,33 +177,21 @@ export class GlobeControls {
 				scene,
 				up,
 				pivotMesh,
+				pointerTracker,
 			} = this;
 
-
 			// init fields
-			_pointerTracker.addPointer( e );
-			_pointerDist = 0;
-			_originalPointerDist = 0;
+			pointerTracker.addPointer( e );
 
 			if ( e.pointerType === 'touch' ) {
 
 				pivotMesh.visible = false;
 
-				if ( _pointerTracker.getPointerCount() === 0 ) {
+				if ( pointerTracker.getPointerCount() === 0 ) {
 
 					domElement.setPointerCapture( e.pointerId );
 
-				} else if ( _pointerTracker.getPointerCount() === 2 ) {
-
-					// if we find a second pointer init other values
-					_pointerTracker.getCenterPoint( _originalCenterPoint );
-					_centerPoint.copy( _originalCenterPoint );
-
-					_pointerDist = _pointerTracker.getPointerDistance();
-					_originalPointerDist = _pointerTracker.getPointerDistance();
-
-
-				} else if ( _pointerTracker.getPointerCount() > 2 ) {
+				} else if ( pointerTracker.getPointerCount() > 2 ) {
 
 					resetState();
 					return;
@@ -217,8 +201,8 @@ export class GlobeControls {
 			}
 
 			// the "pointer" for zooming and rotating should be based on the center point
-			_pointerTracker.getCenterPoint( __pointer );
-			mouseToCoords( __pointer.x, __pointer.y, domElement, _pointer );
+			pointerTracker.getCenterPoint( _pointer );
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 			// find the hit point
 			raycaster.setFromCamera( _pointer, camera );
@@ -228,9 +212,9 @@ export class GlobeControls {
 				// if two fingers, right click, or shift click are being used then we trigger
 				// a rotation action to begin
 				if (
-					_pointerTracker.getPointerCount() === 2 ||
-					_pointerTracker.isRightClicked() ||
-					_pointerTracker.isLeftClicked() && shiftClicked
+					pointerTracker.getPointerCount() === 2 ||
+					pointerTracker.isRightClicked() ||
+					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
 					_matrix.copy( camera.matrixWorld ).invert();
@@ -243,7 +227,7 @@ export class GlobeControls {
 					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
 
-				} else if ( _pointerTracker.isLeftClicked() ) {
+				} else if ( pointerTracker.isLeftClicked() ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
 					if ( raycaster.ray.direction.dot( up ) < 0 ) {
@@ -270,18 +254,17 @@ export class GlobeControls {
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
 
-			if ( ! _pointerTracker.updatePointer( e ) ) {
+			const { pointerTracker } = this;
+
+			if ( ! pointerTracker.updatePointer( e ) ) {
 
 				return;
 
 			}
 
-			if ( _pointerTracker.getPointerType() === 'touch' ) {
+			if ( pointerTracker.getPointerType() === 'touch' ) {
 
-				if ( _pointerTracker.getPointerCount() === 1 ) {
-
-					// TODO: remove
-					mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+				if ( pointerTracker.getPointerCount() === 1 ) {
 
 					if ( this.state === DRAG ) {
 
@@ -289,7 +272,7 @@ export class GlobeControls {
 
 					}
 
-				} else if ( _pointerTracker.getPointerCount() === 2 ) {
+				} else if ( pointerTracker.getPointerCount() === 2 ) {
 
 					// We queue this event to ensure that all pointers have been updated
 					if ( ! _pointerMoveQueued ) {
@@ -300,19 +283,22 @@ export class GlobeControls {
 							_pointerMoveQueued = false;
 
 							// adjust the pointer position to be the center point
-							_pointerTracker.getCenterPoint( _centerPoint );
+							pointerTracker.getCenterPoint( _centerPoint );
 
 							// detect zoom transition
-							const previousDist = _pointerDist;
-							_pointerDist = _pointerTracker.getPointerDistance();
+							const previousDist = pointerTracker.getPreviousPointerDistance();
+							const pointerDist = pointerTracker.getPointerDistance();
+							const separateDelta = pointerDist - previousDist;
 							if ( _pinchAction === NONE ) {
 
 								// check which direction was moved in first
-								const separateDistance = _pointerDist - _originalPointerDist;
-								const rotateDistance = _centerPoint.distanceTo( _originalCenterPoint );
-								if ( separateDistance > 0 && rotateDistance > 0 ) {
+								pointerTracker.getCenterPoint( _centerPoint );
+								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
 
-									if ( separateDistance > rotateDistance ) {
+								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
+								if ( separateDelta > 0 && parallelDelta > 0 ) {
+
+									if ( separateDelta > parallelDelta ) {
 
 										resetState();
 										_pinchAction = ZOOM;
@@ -332,21 +318,12 @@ export class GlobeControls {
 							if ( _pinchAction === ZOOM ) {
 
 								// perform zoom
-								performZoom( _pointerDist - previousDist );
+								performZoom( separateDelta );
 
 							} else if ( _pinchAction === ROTATE ) {
 
-								// TODO: remove
-								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _pointer );
-
 								this._updateRotation();
 								this.pivotMesh.visible = true;
-
-							} else {
-
-								// no action
-								mouseToCoords( _centerPoint.x, _centerPoint.y, domElement, _newPointer );
-								_pointer.copy( _newPointer );
 
 							}
 
@@ -356,10 +333,7 @@ export class GlobeControls {
 
 				}
 
-			} else if ( _pointerTracker.getPointerType() === 'mouse' ) {
-
-				// TODO: remove
-				mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+			} else if ( pointerTracker.getPointerType() === 'mouse' ) {
 
 				if ( this.state === DRAG ) {
 
@@ -380,17 +354,12 @@ export class GlobeControls {
 
 			resetState();
 
-			_pointerTracker.deletePointer( e );
+			pointerTracker.deletePointer( e );
+			_pinchAction = NONE;
 
-			if ( e.pointerType === 'touch' ) {
+			if ( pointerTracker.getPointerType() === 'touch' && pointerTracker.getPointerCount() === 0 ) {
 
-				_pinchAction = NONE;
-
-				if ( _pointerTracker.getPointerCount() === 0 ) {
-
-					domElement.releasePointerCapture( e.pointerId );
-
-				}
+				domElement.releasePointerCapture( e.pointerId );
 
 			}
 
@@ -404,11 +373,13 @@ export class GlobeControls {
 
 		const pointerenterCallback = e => {
 
-			mouseToCoords( e.clientX, e.clientY, domElement, _pointer );
+			const { pointerTracker } = this;
+
 			shiftClicked = false;
 
-			if ( e.buttons === 0 ) {
+			if ( e.buttons !== pointerTracker.getPointerButtons() ) {
 
+				pointerTracker.deletePointer( e );
 				resetState();
 
 			}
@@ -429,9 +400,9 @@ export class GlobeControls {
 
 			if ( ! this.zoomDirectionSet ) {
 
-				const { raycaster } = this;
-				raycaster.setFromCamera( _pointer, this.camera );
-				this.zoomDirection.copy( this.raycaster.ray.direction ).normalize();
+				const { raycaster, camera } = this;
+				raycaster.setFromCamera( _pointer, camera );
+				this.zoomDirection.copy( raycaster.ray.direction ).normalize();
 				this.zoomDirectionSet = true;
 
 			}
@@ -614,11 +585,11 @@ export class GlobeControls {
 			domElement,
 		} = this;
 
-		pointerTracker.getCenterPoint( __pointer );
-		mouseToCoords( __pointer.x, __pointer.y, domElement, __pointer );
+		pointerTracker.getCenterPoint( _pointer );
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 		_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
-		raycaster.setFromCamera( __pointer, camera );
+		raycaster.setFromCamera( _pointer, camera );
 
 		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
@@ -644,13 +615,13 @@ export class GlobeControls {
 		} = this;
 
 		// get the rotation motion
-		pointerTracker.getCenterPoint( __pointer );
-		mouseToCoords( __pointer.x, __pointer.y, domElement, __pointer );
+		pointerTracker.getCenterPoint( _pointer );
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
-		pointerTracker.getPreviousCenterPoint( __prevPointer );
-		mouseToCoords( __prevPointer.x, __prevPointer.y, domElement, __prevPointer );
+		pointerTracker.getPreviousCenterPoint( _prevPointer );
+		mouseToCoords( _prevPointer.x, _prevPointer.y, domElement, _prevPointer );
 
-		_deltaPointer.subVectors( __pointer, __prevPointer );
+		_deltaPointer.subVectors( _pointer, _prevPointer );
 
 		const azimuth = - _deltaPointer.x * rotationSpeed;
 		let altitude = - _deltaPointer.y * rotationSpeed;

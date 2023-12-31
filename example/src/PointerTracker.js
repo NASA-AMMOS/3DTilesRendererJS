@@ -23,7 +23,7 @@ export class PointerTracker {
 		this.previousPositions[ id ] = position.clone();
 		this.startPositions[ id ] = position.clone();
 
-		if ( this.pointerType === null ) {
+		if ( this.getPointerCount() === 1 ) {
 
 			this.pointerType = e.pointerType;
 			this.buttons = e.buttons;
@@ -104,7 +104,7 @@ export class PointerTracker {
 
 	}
 
-	getPointerDistance() {
+	getPointerDistance( pointerPositions = this.pointerPositions ) {
 
 		if ( this.getPointerCount() <= 1 || this.getPointerType() === 'mouse' ) {
 
@@ -112,13 +112,20 @@ export class PointerTracker {
 
 		}
 
-		const id0 = this.pointerOrder[ 0 ];
-		const id1 = this.pointerOrder[ 1 ];
+		const { pointerOrder } = this;
+		const id0 = pointerOrder[ 0 ];
+		const id1 = pointerOrder[ 1 ];
 
-		const p0 = this.pointerPositions[ id0 ];
-		const p1 = this.pointerPositions[ id1 ];
+		const p0 = pointerPositions[ id0 ];
+		const p1 = pointerPositions[ id1 ];
 
 		return p0.distanceTo( p1 );
+
+	}
+
+	getPreviousPointerDistance() {
+
+		return this.getPointerDistance( this.previousPositions );
 
 	}
 
