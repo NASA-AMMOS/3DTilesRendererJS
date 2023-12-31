@@ -137,7 +137,6 @@ export class GlobeControls {
 		domElement.style.touchAction = 'none';
 
 		let _pinchAction = NONE;
-		let _pointerMoveQueued = false;
 
 		const pointerTracker = this.pointerTracker;
 		let shiftClicked = false;
@@ -249,6 +248,7 @@ export class GlobeControls {
 
 		};
 
+		let _pointerMoveQueued = false;
 		const pointermoveCallback = e => {
 
 			this.zoomDirectionSet = false;
@@ -256,6 +256,7 @@ export class GlobeControls {
 
 			const { pointerTracker } = this;
 
+			pointerTracker.setHoverEvent( e );
 			if ( ! pointerTracker.updatePointer( e ) ) {
 
 				return;
@@ -318,7 +319,7 @@ export class GlobeControls {
 							if ( _pinchAction === ZOOM ) {
 
 								// perform zoom
-								performZoom( separateDelta );
+								this._updateZoom( separateDelta );
 
 							} else if ( _pinchAction === ROTATE ) {
 
@@ -367,7 +368,7 @@ export class GlobeControls {
 
 		const wheelCallback = e => {
 
-			performZoom( - e.deltaY );
+			this._updateZoom( - e.deltaY );
 
 		};
 
@@ -393,21 +394,6 @@ export class GlobeControls {
 			this.rotationPointSet = false;
 			this.scene.remove( this.pivotMesh );
 			this.pivotMesh.visible = true;
-
-		};
-
-		const performZoom = delta => {
-
-			if ( ! this.zoomDirectionSet ) {
-
-				const { raycaster, camera } = this;
-				raycaster.setFromCamera( _pointer, camera );
-				this.zoomDirection.copy( raycaster.ray.direction ).normalize();
-				this.zoomDirectionSet = true;
-
-			}
-
-			this._updateZoom( delta );
 
 		};
 
@@ -501,33 +487,46 @@ export class GlobeControls {
 			camera,
 			minDistance,
 			maxDistance,
+			raycaster,
+			pointerTracker,
+			domElement,
 		} = this;
 
-		const fallback = scale < 0 ? - 1 : 1;
+		if ( ! pointerTracker.getLatestPoint( _pointer ) ) {
+
+			return;
+
+		}
+
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+		raycaster.setFromCamera( _pointer, camera );
+		zoomDirection.copy( raycaster.ray.direction ).normalize();
+		this.zoomDirectionSet = true;
+
+		// get the target zoom point
 		let dist = Infinity;
 		if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
 			dist = zoomPoint.distanceTo( camera.position );
 
+		} else {
+
+			// if we're zooming into nothing then skip zooming
+			return;
+
 		}
 
-		zoomDirection.normalize();
 		scale = Math.min( scale * ( dist - minDistance ) * 0.01, Math.max( 0, dist - minDistance ) );
-		if ( scale === Infinity || scale === - Infinity || Number.isNaN( scale ) ) {
-
-			scale = fallback;
-
-		}
 
 		if ( scale < 0 ) {
 
-			const remainingDistance = Math.min( 0, dist - maxDistance );
+			const remainingDistance = Math.min( 0, dist - maxDistance ) || 0;
 			scale = Math.max( scale, remainingDistance );
 
 		}
 
-		this.camera.position.addScaledVector( zoomDirection, scale );
-		this.camera.updateMatrixWorld();
+		camera.position.addScaledVector( zoomDirection, scale );
+		camera.updateMatrixWorld();
 
 	}
 

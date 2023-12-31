@@ -1,6 +1,5 @@
 import { Vector2 } from 'three';
 
-const _vec = new Vector2();
 export class PointerTracker {
 
 	constructor() {
@@ -11,6 +10,39 @@ export class PointerTracker {
 		this.previousPositions = {};
 		this.pointerPositions = {};
 		this.startPositions = {};
+		this.hoverPosition = new Vector2();
+		this.hoverSet = false;
+
+	}
+
+	setHoverEvent( e ) {
+
+		if ( e.pointerType === 'mouse' ) {
+
+			this.hoverPosition.set( e.clientX, e.clientY );
+			this.hoverSet = true;
+
+		}
+
+	}
+
+	getLatestPoint( target ) {
+
+		if ( ! this.hoverSet ) {
+
+			return null;
+
+		} else if ( this.pointerType !== null ) {
+
+			this.getCenterPoint( target );
+
+		} else {
+
+			target.copy( this.hoverPosition );
+
+		}
+
+		return target;
 
 	}
 
