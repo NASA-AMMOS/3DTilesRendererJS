@@ -103,8 +103,6 @@ function reinstantiateTiles() {
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
 
-	window.TILES = groundTiles
-
 	skyTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
