@@ -10,13 +10,6 @@ const _scale = new Vector3();
 
 function onTileVisibilityChange( scene, tile, visible ) {
 
-	// ensure the tiles are fading to the right target before stopping fade
-	if ( this.isMovingFast ) {
-
-		this._fadeManager.completeFade( scene );
-
-	}
-
 	// ensure the tiles are marked as visible on visibility toggle since
 	// it's possible we disable them when adjusting visibility based on frustum
 	scene.visible = true;
@@ -102,6 +95,8 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		super( ...args );
 
+		this.maximumFadeOutTiles = 50;
+
 		const fadeGroup = new Group();
 		const fadeManager = new FadeManager();
 		this.group.add( fadeGroup );
@@ -113,40 +108,12 @@ export const FadeTilesRendererMixin = base => class extends base {
 		this.onLoadModel = onLoadModel.bind( this );
 		this.onTileVisibilityChange = onTileVisibilityChange.bind( this );
 
-		this.prevCameraTransform = new Map();
+		this.prevCameraTransforms = new Map();
 		this.disposeSet = new Set();
 
 	}
 
 	update( ...args ) {
-
-		// determine whether all the rendering cameras are moving
-		// quickly so we can adjust how tiles fade accordingly
-		let isMovingFast = true;
-		const prevCameraTransform = this.prevCameraTransform;
-		const cameras = this.cameras;
-		cameras.forEach( camera => {
-
-			if ( ! prevCameraTransform.has( camera ) ) {
-
-				return;
-
-			}
-
-			const currMatrix = camera.matrixWorld;
-			const prevMatrix = prevCameraTransform.get( camera );
-
-			currMatrix.decompose( _toPos, _toQuat, _scale );
-			prevMatrix.decompose( _fromPos, _fromQuat, _scale );
-
-			const angleTo = _toQuat.angleTo( _fromQuat );
-			const positionTo = _toPos.distanceTo( _fromPos );
-
-			// if rotation is moving > 0.25 radians per frame or position is moving > 0.1 units
-			// then we are considering the camera to be moving too fast to notice a faster / abrupt fade
-			isMovingFast = isMovingFast && ( angleTo > 0.25 || positionTo > 0.1 );
-
-		} );
 
 		// adjust settings to what's needed for specific fade logic. Ie display active tiles so when the camera
 		// moves we don't notice tiles popping when they enter the view. And perform the fade animation more quickly
@@ -154,8 +121,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 		const fadeDuration = this.fadeDuration;
 		const displayActiveTiles = this.displayActiveTiles;
 		this.displayActiveTiles = true;
-		this.fadeDuration = isMovingFast ? fadeDuration * 0.2 : fadeDuration;
-		this.isMovingFast = isMovingFast;
 
 		// update the tiles
 		super.update( ...args );
@@ -176,31 +141,63 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		}
 
-		// track the camera movement so we can use it for next frame
-		cameras.forEach( camera => {
+		const cameras = this.cameras;
+		const prevCameraTransforms = this.prevCameraTransforms;
+		if ( this.maximumFadeOutTiles < this._fadeGroup.children.length ) {
 
-			if ( ! prevCameraTransform.has( camera ) ) {
+			// determine whether all the rendering cameras are moving
+			// quickly so we can adjust how tiles fade accordingly
+			let isMovingFast = true;
+			cameras.forEach( camera => {
 
-				prevCameraTransform.set( camera, new Matrix4() );
+				if ( ! prevCameraTransforms.has( camera ) ) {
+
+					return;
+
+				}
+
+				const currMatrix = camera.matrixWorld;
+				const prevMatrix = prevCameraTransforms.get( camera );
+
+				currMatrix.decompose( _toPos, _toQuat, _scale );
+				prevMatrix.decompose( _fromPos, _fromQuat, _scale );
+
+				const angleTo = _toQuat.angleTo( _fromQuat );
+				const positionTo = _toPos.distanceTo( _fromPos );
+
+				// if rotation is moving > 0.25 radians per frame or position is moving > 0.1 units
+				// then we are considering the camera to be moving too fast to notice a faster / abrupt fade
+				isMovingFast = isMovingFast && ( angleTo > 0.25 || positionTo > 0.1 );
+
+			} );
+
+			if ( isMovingFast ) {
+
+				this._fadeManager.completeAllFades();
 
 			}
 
-			prevCameraTransform.get( camera ).copy( camera.matrixWorld );
+		}
+
+		// track the camera movement so we can use it for next frame
+		cameras.forEach( camera => {
+
+			if ( ! prevCameraTransforms.has( camera ) ) {
+
+				prevCameraTransforms.set( camera, new Matrix4() );
+
+			}
+
+			prevCameraTransforms.get( camera ).copy( camera.matrixWorld );
 
 		} );
 
-
-		if ( isMovingFast ) {
-
-			this._fadeManager.completeAllFades();
-
-		}
 
 	}
 
 	deleteCamera( camera ) {
 
-		this.prevCameraTransform.delete( camera );
+		this.prevCameraTransforms.delete( camera );
 
 	}
 
