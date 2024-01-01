@@ -5,9 +5,11 @@ import {
 	Vector3,
 	Raycaster,
 	Plane,
+	MathUtils,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
+import { WGS84_ELLIPSOID } from '../../src/index.js';
 
 const NONE = 0;
 const DRAG = 1;
@@ -761,6 +763,7 @@ export class MapControls {
 
 		if ( this.zoomDirectionSet ) {
 
+			// TODO: just zoom backwards if we're at a steep angle
 			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
 				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
@@ -779,14 +782,13 @@ export class MapControls {
 
 		}
 
-		// TODO: do we need to potentially fix the camera twist here?
 		up.copy( newUp );
 
 	}
 
 }
 
-const MAX_GLOBE_DISTANCE = 3 * 1e7;
+const MAX_GLOBE_DISTANCE = 2 * 1e7;
 const GLOBE_TRANSITION_THRESHOLD = 1e7;
 export class GlobeControls extends MapControls {
 
@@ -817,131 +819,107 @@ export class GlobeControls extends MapControls {
 		} = this;
 
 		// clamp the camera distance
-		const distanceToCenter = this.getDistanceToCenter();
+		let distanceToCenter = this.getDistanceToCenter();
 		if ( distanceToCenter > MAX_GLOBE_DISTANCE ) {
 
 			_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
 			camera.position.setFromMatrixPosition( scene.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
 			camera.updateMatrixWorld();
 
+			distanceToCenter = MAX_GLOBE_DISTANCE;
+
+		}
+
+		// update the projection matrix
+		const largestDistance = Math.max( ...WGS84_ELLIPSOID.radius );
+		camera.near = Math.max( 1, distanceToCenter - largestDistance * 1.25 );
+		camera.far = distanceToCenter + largestDistance + 0.1;
+		camera.updateProjectionMatrix();
+
+	}
+
+	_updatePosition( ...args ) {
+
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+
+			super._updatePosition( ...args );
+
+		} else {
+
+
 		}
 
 	}
 
-	// setFrame( ...args ) {
+	_updateRotation( ...args ) {
 
-	// 	if ( this.getDistanceToCenter() > GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
 
-	// 		this.zoomDirectionSet = false;
+			super._updateRotation( ...args );
 
-	// 	}
-
-	// 	super.setFrame( ...args );
-
-	// }
-
-	// _updateRotation() {
-
-	// 	if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
-
-	// 		super._updateRotation();
-
-	// 	}
-
-	// }
-
-	// _updatePosition() {
-
-	// 	if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
-
-	// 		super._updatePosition();
-
-	// 	} else {
-
-	// 		const {
-	// 			pointerTracker,
-	// 			domElement,
-	// 			camera,
-	// 			scene,
-	// 		} = this;
-
-	// 		// get delta pointer
-	// 		pointerTracker.getCenterPoint( _pointer );
-	// 		// mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-
-	// 		pointerTracker.getPreviousCenterPoint( _prevPointer );
-	// 		// mouseToCoords( _prevPointer.x, _prevPointer.y, domElement, _prevPointer );
-
-	// 		_deltaPointer.subVectors( _pointer, _prevPointer );
-	// 		_deltaPointer.multiplyScalar( 0.01 / window.devicePixelRatio );
-
-	// 		// get the rotation axes
-	// 		const _right = new Vector3();
-	// 		const _towardCenter = new Vector3();
-	// 		const _up = new Vector3();
-	// 		const _center = new Vector3();
-
-	// 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
-	// 		this.getVectorToCenter( _towardCenter ).normalize().multiplyScalar( - 1 );
-	// 		_up.crossVectors( _right, _towardCenter );
-	// 		_center.setFromMatrixPosition( scene.matrixWorld );
-
-	// 		_quaternion.setFromAxisAngle( _right, - _deltaPointer.y );
-	// 		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-	// 		camera.matrixWorld.premultiply( _rotMatrix );
-	// 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-	// 		_quaternion.setFromAxisAngle( _up, _deltaPointer.x );
-	// 		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-	// 		camera.matrixWorld.premultiply( _rotMatrix );
-	// 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-	// 		console.log('TEST')
-	// 		this._tiltTowardsCenter();
-
-	// 	}
-
-	// }
-
-	// _updateZoom( delta ) {
-
-	// 	const { camera } = this;
-
-	// 	if ( camera.position.length() < MAX_GLOBE_DISTANCE - 1 || delta > 0 ) {
-
-	// 		super._updateZoom( delta );
-
-	// 	}
-
-	// 	// TODO: twist the camera
-	// 	if ( delta < 0 ) {
-
-	// 		if ( this.getDistanceToCenter() > GLOBE_TRANSITION_THRESHOLD ) {
-
-	// 			this._tiltTowardsCenter();
-
-	// 		}
+		} else {
 
 
-	// 	}
+		}
 
-	// }
+	}
 
-	// _tiltTowardsCenter() {
+	_updateZoom( delta ) {
 
-	// 	const {
-	// 		camera,
-	// 		scene,
-	// 	} = this;
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || delta > 0 ) {
 
-	// 	_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
-	// 	_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize();
-	// 	_vec.lerp( _forward, 0.97 ).normalize();
+			super._updateZoom( delta );
 
-	// 	_quaternion.setFromUnitVectors( _forward, _vec );
-	// 	camera.quaternion.premultiply( _quaternion );
-	// 	camera.updateMatrixWorld();
+		} else {
 
-	// }
+			// TODO: zoom forward if the user is zooming into the sky
+
+			// orient the camera during the zoom
+			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
+			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.6, alpha ) );
+			this._alignUpward( MathUtils.lerp( 1, 0.8, alpha ) );
+
+			this.getVectorToCenter( _vec );
+			const dist = _vec.length();
+
+			this.camera.position.addScaledVector( _vec, delta * 0.0025 * dist / dist );
+			this.camera.updateMatrixWorld();
+
+		}
+
+	}
+
+	_alignUpward( alpha ) {
+
+		const { scene, camera } = this;
+		const _globalUp = new Vector3( 0, 0, 1 ).transformDirection( scene.matrixWorld );
+		const _forward = new Vector3( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		const _right = new Vector3( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		const _targetRight = new Vector3().crossVectors( _globalUp, _forward );
+
+		_targetRight.lerp( _right, alpha ).normalize();
+
+		_quaternion.setFromUnitVectors( _right, _targetRight );
+		camera.quaternion.premultiply( _quaternion );
+		camera.updateMatrixWorld();
+
+	}
+
+	_tiltTowardsCenter( alpha ) {
+
+		const {
+			camera,
+			scene,
+		} = this;
+
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
+		_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize();
+		_vec.lerp( _forward, alpha ).normalize();
+
+		_quaternion.setFromUnitVectors( _forward, _vec );
+		camera.quaternion.premultiply( _quaternion );
+		camera.updateMatrixWorld();
+
+	}
 
 }
