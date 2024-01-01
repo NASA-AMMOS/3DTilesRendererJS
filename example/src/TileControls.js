@@ -78,7 +78,7 @@ export class TileControls {
 		// settings
 		this.state = NONE;
 		this.cameraRadius = 1;
-		this.rotationSpeed = 3;
+		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 2;
@@ -713,7 +713,17 @@ export class TileControls {
 		// forward and direction to pivot? Or just dir to pivot?
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
 
-		const angle = up.angleTo( _forward );
+		if ( this.getUpDirection ) {
+
+			this.getUpDirection( rotationPoint, _up );
+
+		} else {
+
+			_up.copy( up );
+
+		}
+
+		const angle = _up.angleTo( _forward );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
@@ -725,7 +735,7 @@ export class TileControls {
 		}
 
 		// zoom in frame around pivot point
-		_quaternion.setFromAxisAngle( up, azimuth );
+		_quaternion.setFromAxisAngle( _up, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
