@@ -10,8 +10,9 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GlobeControls } from './src/controls/GlobeControls.js';
 
 import { MapControls } from './src/lib/MapControls.js';
 
@@ -52,7 +53,7 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new GoogleTilesRenderer( params.apiKey );
-	tiles.group.rotation.x = - Math.PI / 2;
+	// tiles.group.rotation.x = - Math.PI / 2;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -68,6 +69,8 @@ function reinstantiateTiles() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
+	controls.setScene( tiles.group );
+
 }
 
 function init() {
@@ -82,13 +85,14 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
 	camera.position.set( 7326000, 10279000, - 823000 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new MapControls( camera, renderer.domElement );
-	controls.minDistance = 1;
-	controls.maxDistance = Infinity;
-	controls.minPolarAngle = Math.PI / 4;
-	controls.target.set( 0, 0, 1 );
+	// controls = new MapControls( camera, renderer.domElement );
+	controls = new GlobeControls( scene, camera, renderer.domElement );
+
+	// console.log( GlobeControls )
+
 
 	reinstantiateTiles();
 
@@ -152,34 +156,6 @@ function onWindowResize() {
 
 function updateControls() {
 
-	const raycaster = new Raycaster();
-	raycaster.ray.origin.copy( controls.target ).normalize().multiplyScalar( WGS84_RADIUS * 1.5 );
-	raycaster.ray.direction.copy( raycaster.ray.origin ).normalize().multiplyScalar( - 1 );
-	raycaster.firstHitOnly = true;
-
-	const hit = raycaster.intersectObject( scene, true )[ 0 ];
-	if ( hit ) {
-
-		controls.target.copy( hit.point );
-
-	} else {
-
-		controls.target.normalize().multiplyScalar( WGS84_RADIUS );
-
-	}
-	controls.panPlane.copy( controls.target ).normalize();
-
-	const dist = camera.position.length();
-	camera.position.copy( controls.target ).normalize().multiplyScalar( dist );
-	camera.lookAt( controls.target );
-	controls.update();
-
-	const box = new Box3();
-	tiles.getBounds( box );
-
-	camera.far = dist;
-	camera.near = Math.max( 1, dist - Math.max( ...box.min, ...box.max ) );
-	camera.updateProjectionMatrix();
 
 }
 
@@ -191,14 +167,14 @@ function updateHash() {
 
 	}
 
-	const res = {};
-	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = controls.target.clone().applyMatrix4( mat );
-	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+	// const res = {};
+	// const mat = tiles.group.matrixWorld.clone().invert();
+	// const vec = controls.target.clone().applyMatrix4( mat );
+	// WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 
-	res.lat *= MathUtils.RAD2DEG;
-	res.lon *= MathUtils.RAD2DEG;
-	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
+	// res.lat *= MathUtils.RAD2DEG;
+	// res.lon *= MathUtils.RAD2DEG;
+	// window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
 
 }
 
@@ -212,12 +188,12 @@ function initFromHash() {
 
 	}
 
-	const [ lat, lon ] = tokens;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
+	// const [ lat, lon ] = tokens;
+	// WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
 
-	tiles.group.updateMatrixWorld();
-	controls.target.applyMatrix4( tiles.group.matrixWorld );
-	updateControls();
+	// tiles.group.updateMatrixWorld();
+	// controls.target.applyMatrix4( tiles.group.matrixWorld );
+	// updateControls();
 
 }
 
@@ -227,7 +203,7 @@ function animate() {
 
 	if ( ! tiles ) return;
 
-	updateControls();
+	controls.update();
 
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
@@ -281,7 +257,7 @@ function updateHtml() {
 		let count = 0;
 		geomSet.forEach( g => {
 
-			count += BufferGeometryUtils.estimateBytesUsed( g );
+			count += estimateBytesUsed( g );
 
 		} );
 		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
