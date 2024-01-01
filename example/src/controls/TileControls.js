@@ -50,7 +50,6 @@ export class TileControls {
 		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 10;
 		this.maxDistance = Infinity;
-		this.getUpDirection = null;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 
@@ -387,6 +386,12 @@ export class TileControls {
 			domElement.removeEventListener( 'pointerenter', pointerenterCallback );
 
 		};
+
+	}
+
+	getUpDirection( point, target ) {
+
+		target.copy( this.up );
 
 	}
 

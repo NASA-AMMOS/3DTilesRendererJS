@@ -36,17 +36,6 @@ export class GlobeControls extends TileControls {
 		this._dragMode = 0;
 		this._rotationMode = 0;
 
-		this.getUpDirection = ( point, target ) => {
-
-			const { scene, ellipsoid } = this;
-			const invMatrix = _invMatrix.copy( scene.matrixWorld ).invert();
-			const pos = point.clone().applyMatrix4( invMatrix );
-
-			ellipsoid.getPositionToNormal( pos, target );
-			target.transformDirection( scene.matrixWorld );
-
-		};
-
 	}
 
 	// get the vector to the center of the provided globe
@@ -65,6 +54,18 @@ export class GlobeControls extends TileControls {
 		return this
 			.getVectorToCenter( _vec )
 			.length();
+
+	}
+
+	getUpDirection( point, target ) {
+
+		// get the "up" direction based on the wgs84 ellipsoid
+		const { scene, ellipsoid } = this;
+		const invMatrix = _invMatrix.copy( scene.matrixWorld ).invert();
+		const pos = _vec.copy( point ).applyMatrix4( invMatrix );
+
+		ellipsoid.getPositionToNormal( pos, target );
+		target.transformDirection( scene.matrixWorld );
 
 	}
 
