@@ -67,7 +67,7 @@ function mouseToCoords( clientX, clientY, element, target ) {
 
 }
 
-export class GlobeControls {
+export class MapControls {
 
 	constructor( scene, camera, domElement ) {
 
@@ -786,3 +786,162 @@ export class GlobeControls {
 
 }
 
+const MAX_GLOBE_DISTANCE = 3 * 1e7;
+const GLOBE_TRANSITION_THRESHOLD = 1e7;
+export class GlobeControls extends MapControls {
+
+	getVectorToCenter( target ) {
+
+		const { scene, camera } = this;
+		return target
+			.setFromMatrixPosition( scene.matrixWorld )
+			.sub( camera.position );
+
+	}
+
+	getDistanceToCenter() {
+
+		return this
+			.getVectorToCenter( _vec )
+			.length();
+
+	}
+
+	update() {
+
+		super.update();
+
+		const {
+			camera,
+			scene,
+		} = this;
+
+		// clamp the camera distance
+		const distanceToCenter = this.getDistanceToCenter();
+		if ( distanceToCenter > MAX_GLOBE_DISTANCE ) {
+
+			_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
+			camera.position.setFromMatrixPosition( scene.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
+			camera.updateMatrixWorld();
+
+		}
+
+	}
+
+	// setFrame( ...args ) {
+
+	// 	if ( this.getDistanceToCenter() > GLOBE_TRANSITION_THRESHOLD ) {
+
+	// 		this.zoomDirectionSet = false;
+
+	// 	}
+
+	// 	super.setFrame( ...args );
+
+	// }
+
+	// _updateRotation() {
+
+	// 	if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+
+	// 		super._updateRotation();
+
+	// 	}
+
+	// }
+
+	// _updatePosition() {
+
+	// 	if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+
+	// 		super._updatePosition();
+
+	// 	} else {
+
+	// 		const {
+	// 			pointerTracker,
+	// 			domElement,
+	// 			camera,
+	// 			scene,
+	// 		} = this;
+
+	// 		// get delta pointer
+	// 		pointerTracker.getCenterPoint( _pointer );
+	// 		// mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+
+	// 		pointerTracker.getPreviousCenterPoint( _prevPointer );
+	// 		// mouseToCoords( _prevPointer.x, _prevPointer.y, domElement, _prevPointer );
+
+	// 		_deltaPointer.subVectors( _pointer, _prevPointer );
+	// 		_deltaPointer.multiplyScalar( 0.01 / window.devicePixelRatio );
+
+	// 		// get the rotation axes
+	// 		const _right = new Vector3();
+	// 		const _towardCenter = new Vector3();
+	// 		const _up = new Vector3();
+	// 		const _center = new Vector3();
+
+	// 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
+	// 		this.getVectorToCenter( _towardCenter ).normalize().multiplyScalar( - 1 );
+	// 		_up.crossVectors( _right, _towardCenter );
+	// 		_center.setFromMatrixPosition( scene.matrixWorld );
+
+	// 		_quaternion.setFromAxisAngle( _right, - _deltaPointer.y );
+	// 		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+	// 		camera.matrixWorld.premultiply( _rotMatrix );
+	// 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+	// 		_quaternion.setFromAxisAngle( _up, _deltaPointer.x );
+	// 		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+	// 		camera.matrixWorld.premultiply( _rotMatrix );
+	// 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+	// 		console.log('TEST')
+	// 		this._tiltTowardsCenter();
+
+	// 	}
+
+	// }
+
+	// _updateZoom( delta ) {
+
+	// 	const { camera } = this;
+
+	// 	if ( camera.position.length() < MAX_GLOBE_DISTANCE - 1 || delta > 0 ) {
+
+	// 		super._updateZoom( delta );
+
+	// 	}
+
+	// 	// TODO: twist the camera
+	// 	if ( delta < 0 ) {
+
+	// 		if ( this.getDistanceToCenter() > GLOBE_TRANSITION_THRESHOLD ) {
+
+	// 			this._tiltTowardsCenter();
+
+	// 		}
+
+
+	// 	}
+
+	// }
+
+	// _tiltTowardsCenter() {
+
+	// 	const {
+	// 		camera,
+	// 		scene,
+	// 	} = this;
+
+	// 	_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
+	// 	_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize();
+	// 	_vec.lerp( _forward, 0.97 ).normalize();
+
+	// 	_quaternion.setFromUnitVectors( _forward, _vec );
+	// 	camera.quaternion.premultiply( _quaternion );
+	// 	camera.updateMatrixWorld();
+
+	// }
+
+}
