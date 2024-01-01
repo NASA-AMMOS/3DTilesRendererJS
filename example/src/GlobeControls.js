@@ -86,6 +86,7 @@ export class MapControls {
 		this.minDistance = 2;
 		this.maxDistance = Infinity;
 		this.getUpDirection = null;
+		this.reorientOnDrag = true;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
@@ -784,7 +785,7 @@ export class MapControls {
 
 			}
 
-		} else if ( state !== ROTATE ) {
+		} else if ( state !== ROTATE && this.reorientOnDrag ) {
 
 			// TODO: fix this for dragging from afar
 			camera.position.copy( pivot ).addScaledVector( newUp, dist );
@@ -845,10 +846,12 @@ export class GlobeControls extends MapControls {
 		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
 
 			pivotMesh.visible = false;
+			this.reorientOnDrag = false;
 
 		} else {
 
 			pivotMesh.visible = true;
+			this.reorientOnDrag = true;
 
 		}
 
