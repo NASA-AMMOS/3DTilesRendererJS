@@ -8,6 +8,7 @@ import {
 import { TileControls, makeRotateAroundPoint } from './TileControls.js';
 import { WGS84_ELLIPSOID } from '../../src/index.js';
 
+const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _vec = new Vector3();
 const _forward = new Vector3();
@@ -27,6 +28,17 @@ export class GlobeControls extends TileControls {
 		super( ...args );
 		this._dragMode = 0;
 		this._rotationMode = 0;
+
+		this.getUpDirection = ( point, target ) => {
+
+			const { scene } = this;
+			const invMatrix = _invMatrix.copy( scene.matrixWorld ).invert();
+			const pos = point.clone().applyMatrix4( invMatrix );
+
+			WGS84_ELLIPSOID.getPositionToNormal( pos, target );
+			target.transformDirection( scene.matrixWorld );
+
+		};
 
 	}
 
@@ -190,11 +202,36 @@ export class GlobeControls extends TileControls {
 
 	_alignCameraUpToNorth( alpha ) {
 
-		const { scene, camera } = this;
+		const { scene } = this;
 		const _globalUp = new Vector3( 0, 0, 1 ).transformDirection( scene.matrixWorld );
+		this._alignCameraUp( _globalUp, alpha );
+
+	}
+
+	setFrame( ...args ) {
+
+		super.setFrame( ...args );
+
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+
+			this._alignCameraUp( this.up );
+
+		}
+
+	}
+
+	_alignCameraUp( up, alpha = null ) {
+
+		const { camera } = this;
 		const _forward = new Vector3( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 		const _right = new Vector3( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		const _targetRight = new Vector3().crossVectors( _globalUp, _forward );
+		const _targetRight = new Vector3().crossVectors( up, _forward );
+
+		if ( alpha === null ) {
+
+			alpha = Math.abs( _forward.dot( up ) );
+
+		}
 
 		_targetRight.lerp( _right, alpha ).normalize();
 
