@@ -44,11 +44,11 @@ export class TileControls {
 
 		// settings
 		this.state = NONE;
-		this.cameraRadius = 1;
+		this.cameraRadius = 5;
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minDistance = 2;
+		this.minDistance = 10;
 		this.maxDistance = Infinity;
 		this.getUpDirection = null;
 		this.reorientOnDrag = true;
@@ -454,7 +454,7 @@ export class TileControls {
 		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
-			const dist = hit.distance - 1e5;
+			const dist = hit.distance;
 			if ( dist < cameraRadius ) {
 
 				const delta = cameraRadius - dist;
@@ -509,6 +509,24 @@ export class TileControls {
 
 			dist = zoomPoint.distanceTo( camera.position );
 
+			// scale the distance based on how far there is to move
+			if ( scale < 0 ) {
+
+				const remainingDistance = Math.min( 0, dist - maxDistance );
+				scale = scale * ( dist - 0 ) * 0.01;
+				scale = Math.max( scale, remainingDistance );
+
+			} else {
+
+				const remainingDistance = Math.max( 0, dist - minDistance );
+				scale = scale * ( dist - minDistance ) * 0.01;
+				scale = Math.min( scale, remainingDistance );
+
+			}
+
+			camera.position.addScaledVector( zoomDirection, scale );
+			camera.updateMatrixWorld();
+
 		} else {
 
 			// if we're zooming into nothing then use the distance from the ground to scale movement
@@ -517,32 +535,12 @@ export class TileControls {
 
 				dist = hit.distance;
 				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-
-			} else {
-
-				return;
+				camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
+				camera.updateMatrixWorld();
 
 			}
 
 		}
-
-		// scale the distance based on how far there is to move
-		if ( scale < 0 ) {
-
-			const remainingDistance = Math.min( 0, dist - maxDistance );
-			scale = scale * ( dist - 0 ) * 0.01;
-			scale = Math.max( scale, remainingDistance );
-
-		} else {
-
-			const remainingDistance = Math.max( 0, dist - minDistance );
-			scale = scale * ( dist - minDistance ) * 0.01;
-			scale = Math.min( scale, remainingDistance );
-
-		}
-
-		camera.position.addScaledVector( finalZoomDirection, scale );
-		camera.updateMatrixWorld();
 
 	}
 
@@ -587,7 +585,14 @@ export class TileControls {
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
 		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
 
-		return raycaster.intersectObject( scene )[ 0 ] || null;
+		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+		if ( hit ) {
+
+			hit.distance -= 1e5;
+
+		}
+
+		return hit;
 
 	}
 
@@ -614,7 +619,7 @@ export class TileControls {
 		// to a reasonable angle with the drag plane
 		if ( - raycaster.ray.direction.dot( up ) < DRAG_PLANE_THRESHOLD ) {
 
-			// rotate the pointer direction down to the correct angle for horizontal draggin
+			// rotate the pointer direction down to the correct angle for horizontal dragging
 			const angle = Math.acos( DRAG_PLANE_THRESHOLD );
 
 			_rotationAxis
@@ -739,55 +744,38 @@ export class TileControls {
 		const { up, camera, state, zoomPoint, zoomDirection } = this;
 		camera.updateMatrixWorld();
 
-		// TODO: this raycast isn't necessary a lot of the time
-		// get the pivot to rotate the frame if needed
-		let dist = 0;
-		const hit = this._getPointBelowCamera();
-		if ( hit ) {
-
-			_pivot.copy( hit.point );
-			dist = _pivot.distanceTo( camera.position );
-
-		} else {
-
-			return;
-
-		}
-
 		// get the amount needed to rotate
 		_quaternion.setFromUnitVectors( up, newUp );
 
-		if ( this.zoomDirectionSet ) {
+		if ( this.zoomDirectionSet && ( this.zoomPointSet || this._updateZoomPoint() ) ) {
 
-			if ( this.zoomPointSet || this._updateZoomPoint() ) {
+			if ( this.reorientOnZoom ) {
 
-				if ( this.reorientOnZoom ) {
+				// rotates the camera position around the point being zoomed in to
+				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-					// rotates the camera position around the point being zoomed in to
-					makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
-					camera.matrixWorld.premultiply( _rotMatrix );
-					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-					zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
-
-				}
-
-			} else {
-
-				// TODO: if zooming into the sky we should reorient and zoom parallel to the ground
-				// if zooming in or out from the sky we just adjust to the ground orientation
-				camera.position.copy( _pivot ).addScaledVector( newUp, dist );
-				camera.quaternion.premultiply( _quaternion );
-				camera.updateMatrixWorld();
+				zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
 
 			}
 
 		} else if ( state === NONE || state === DRAG && this.reorientOnDrag ) {
 
-			// perform a simple realignment
-			camera.position.copy( _pivot ).addScaledVector( newUp, dist );
-			camera.quaternion.premultiply( _quaternion );
-			camera.updateMatrixWorld();
+			// get the pivot to rotate the frame if needed
+			let dist = 0;
+			const hit = this._getPointBelowCamera();
+			if ( hit ) {
+
+				_pivot.copy( hit.point );
+				dist = _pivot.distanceTo( camera.position );
+
+				// perform a simple realignment
+				camera.position.copy( _pivot ).addScaledVector( newUp, dist );
+				camera.quaternion.premultiply( _quaternion );
+				camera.updateMatrixWorld();
+
+			}
 
 		}
 
