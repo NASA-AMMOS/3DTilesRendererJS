@@ -14,6 +14,9 @@ const DRAG = 1;
 const ROTATE = 2;
 const ZOOM = 3;
 
+const DRAG_PLANE_THRESHOLD = 0.05;
+const DRAG_UP_THRESHOLD = 0.025;
+
 const _matrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
@@ -626,6 +629,45 @@ export class GlobeControls {
 		_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
 		raycaster.setFromCamera( _pointer, camera );
 
+		// prevent the drag distance from getting too severe
+		if ( - raycaster.ray.direction.dot( up ) < DRAG_PLANE_THRESHOLD ) {
+
+			const angle = Math.acos( DRAG_PLANE_THRESHOLD );
+
+			_rotationAxis
+				.crossVectors( raycaster.ray.direction, up )
+				.normalize();
+
+			raycaster.ray.direction
+				.copy( up )
+				.applyAxisAngle( _rotationAxis, angle )
+				.multiplyScalar( - 1 );
+
+		}
+
+		// TODO: dragging causes the camera to rise because we're getting "pushed" up by lower resolution tiles and
+		// don't lower back down. We should maintain a target height above tiles where possible
+		// prevent the drag from inverting
+		if ( this.getUpDirection ) {
+
+			this.getUpDirection( dragPoint, _up );
+			if ( - _up.dot( raycaster.ray.direction ) < DRAG_UP_THRESHOLD ) {
+
+				const angle = Math.acos( DRAG_UP_THRESHOLD );
+
+				_rotationAxis
+					.crossVectors( raycaster.ray.direction, _up )
+					.normalize();
+
+				raycaster.ray.direction
+					.copy( _up )
+					.applyAxisAngle( _rotationAxis, angle )
+					.multiplyScalar( - 1 );
+
+			}
+
+		}
+
 		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
 			_delta.subVectors( dragPoint, _vec );
@@ -720,8 +762,6 @@ export class GlobeControls {
 		if ( this.zoomDirectionSet ) {
 
 			if ( this.zoomPointSet || this._updateZoomPoint() ) {
-
-				camera.updateMatrixWorld();
 
 				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
 				camera.matrixWorld.premultiply( _rotMatrix );
