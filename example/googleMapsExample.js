@@ -31,7 +31,6 @@ const params = {
 	'apiKey': apiKey,
 
 	'displayBoxBounds': false,
-	'displaySphereBounds': false,
 	'displayRegionBounds': false,
 	'reload': reinstantiateTiles,
 
@@ -107,7 +106,6 @@ function init() {
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
-	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -234,6 +232,8 @@ function animate() {
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
+	tiles.displayBoxBounds = params.displayBoxBounds;
+	tiles.displayRegionBounds = params.displayRegionBounds;
 
 	// update tiles
 	if ( params.enableUpdate ) {
@@ -243,15 +243,14 @@ function animate() {
 
 	}
 
-	render();
+	renderer.render( scene, camera );
 	stats.update();
+
+	updateHtml();
 
 }
 
-function render() {
-
-	// render primary view
-	renderer.render( scene, camera );
+function updateHtml() {
 
 	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
@@ -303,15 +302,11 @@ function render() {
 
 	}
 
-	if ( tiles ) {
+	const mat = tiles.group.matrixWorld.clone().invert();
+	const vec = camera.position.clone().applyMatrix4( mat );
 
-		const mat = tiles.group.matrixWorld.clone().invert();
-		const vec = camera.position.clone().applyMatrix4( mat );
-
-		const res = {};
-		WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
-
-	}
+	const res = {};
+	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
 
 }
