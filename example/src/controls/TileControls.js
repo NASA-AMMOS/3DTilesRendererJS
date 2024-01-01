@@ -10,10 +10,10 @@ import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
 import { mouseToCoords, makeRotateAroundPoint } from './utils.js';
 
-const NONE = 0;
-const DRAG = 1;
-const ROTATE = 2;
-const ZOOM = 3;
+export const NONE = 0;
+export const DRAG = 1;
+export const ROTATE = 2;
+export const ZOOM = 3;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;

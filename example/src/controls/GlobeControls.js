@@ -5,7 +5,7 @@ import {
 	Vector3,
 	MathUtils,
 } from 'three';
-import { TileControls } from './TileControls.js';
+import { TileControls, NONE } from './TileControls.js';
 import { makeRotateAroundPoint } from './utils.js';
 import { WGS84_ELLIPSOID } from '../../../src/index.js';
 
@@ -95,7 +95,7 @@ export class GlobeControls extends TileControls {
 		// when adjusting the up frame while moving hte camera
 		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
 
-			if ( this._dragMode !== 1 && this._rotationMode !== 1 ) {
+			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
 
 				pivotMesh.visible = false;
 
