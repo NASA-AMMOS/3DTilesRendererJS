@@ -717,7 +717,7 @@ export class TileControls {
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
-		const angle = _localUp.angleTo( _forward );
+		const angle = up.angleTo( _forward );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );

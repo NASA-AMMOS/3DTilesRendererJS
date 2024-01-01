@@ -76,6 +76,7 @@ export class GlobeControls extends TileControls {
 		const {
 			camera,
 			scene,
+			pivotMesh,
 		} = this;
 
 		// clamp the camera distance
@@ -94,6 +95,11 @@ export class GlobeControls extends TileControls {
 		// when adjusting the up frame while moving hte camera
 		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
 
+			if ( this._dragMode !== 1 && this._rotationMode !== 1 ) {
+
+				pivotMesh.visible = false;
+
+			}
 			this.reorientOnDrag = false;
 			this.reorientOnZoom = true;
 

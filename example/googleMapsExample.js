@@ -194,9 +194,11 @@ function updateHtml() {
 
 	// render html text updates
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
-	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
+	let str = '';
 
 	if ( params.enableCacheDisplay ) {
+
+		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
 
 		const geomSet = new Set();
 		tiles.traverse( tile => {
@@ -224,7 +226,7 @@ function updateHtml() {
 			count += estimateBytesUsed( g );
 
 		} );
-		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
+		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
 
@@ -232,7 +234,7 @@ function updateHtml() {
 
 		const memory = renderer.info.memory;
 		const programCount = renderer.info.programs.length;
-		str += `<br/>Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
+		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
 
 	}
 
