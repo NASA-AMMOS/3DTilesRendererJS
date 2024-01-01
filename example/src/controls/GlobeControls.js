@@ -5,8 +5,9 @@ import {
 	Vector3,
 	MathUtils,
 } from 'three';
-import { TileControls, makeRotateAroundPoint } from './TileControls.js';
-import { WGS84_ELLIPSOID } from '../../src/index.js';
+import { TileControls } from './TileControls.js';
+import { makeRotateAroundPoint } from './utils.js';
+import { WGS84_ELLIPSOID } from '../../../src/index.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();

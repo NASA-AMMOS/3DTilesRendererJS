@@ -8,6 +8,7 @@ import {
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
+import { mouseToCoords, makeRotateAroundPoint } from './utils.js';
 
 const NONE = 0;
 const DRAG = 1;
@@ -32,29 +33,6 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
 const _originalCenterPoint = new Vector2();
-
-// helper function for constructing a matrix for rotating around a point
-export function makeRotateAroundPoint( point, quat, target ) {
-
-	target.makeTranslation( - point.x, - point.y, - point.z );
-
-	_matrix.makeRotationFromQuaternion( quat );
-	target.premultiply( _matrix );
-
-	_matrix.makeTranslation( point.x, point.y, point.z );
-	target.premultiply( _matrix );
-
-	return target;
-
-}
-
-// get the three.js pointer coords from an event
-function mouseToCoords( clientX, clientY, element, target ) {
-
-	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
-	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
-
-}
 
 export class TileControls {
 
