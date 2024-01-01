@@ -1,10 +1,8 @@
-import { GeoUtils, WGS84_ELLIPSOID, WGS84_RADIUS, DebugGoogleTilesRenderer as GoogleTilesRenderer } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, DebugGoogleTilesRenderer as GoogleTilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Raycaster,
-	Box3,
 	MathUtils,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -14,26 +12,20 @@ import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { GlobeControls } from './src/controls/GlobeControls.js';
 
-import { MapControls } from './src/lib/MapControls.js';
-
 let camera, controls, scene, renderer, tiles;
 let statsContainer, stats;
-
-const raycaster = new Raycaster();
-raycaster.firstHitOnly = true;
 
 const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
 
 const params = {
 
-	'enableUpdate': true,
-	'enableCacheDisplay': false,
-	'enableRendererStats': false,
-	'apiKey': apiKey,
+	enableCacheDisplay: false,
+	enableRendererStats: false,
+	apiKey: apiKey,
 
-	'displayBoxBounds': false,
-	'displayRegionBounds': false,
 	'reload': reinstantiateTiles,
+	displayBoxBounds: false,
+	displayRegionBounds: false,
 
 };
 
@@ -41,8 +33,6 @@ init();
 animate();
 
 function reinstantiateTiles() {
-
-	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
 
@@ -52,8 +42,10 @@ function reinstantiateTiles() {
 
 	}
 
+	localStorage.setItem( 'googleApiKey', params.apiKey );
+
 	tiles = new GoogleTilesRenderer( params.apiKey );
-	// tiles.group.rotation.x = - Math.PI / 2;
+	tiles.group.rotation.x = - Math.PI / 2;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -84,15 +76,11 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 7326000, 10279000, - 823000 );
+	camera.position.set( 4800000, 2570000, 14720000 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	// controls = new MapControls( camera, renderer.domElement );
 	controls = new GlobeControls( scene, camera, renderer.domElement );
-
-	// console.log( GlobeControls )
-
 
 	reinstantiateTiles();
 
@@ -106,29 +94,14 @@ function init() {
 	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
-	mapsOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displayRegionBounds' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
-	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
-
-		tiles.parseQueue.autoUpdate = v;
-		tiles.downloadQueue.autoUpdate = v;
-
-		if ( v ) {
-
-			tiles.parseQueue.scheduleJobRun();
-			tiles.downloadQueue.scheduleJobRun();
-
-		}
-
-	} );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-	gui.open();
 
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
@@ -154,11 +127,6 @@ function onWindowResize() {
 
 }
 
-function updateControls() {
-
-
-}
-
 function updateHash() {
 
 	if ( ! tiles ) {
@@ -167,14 +135,14 @@ function updateHash() {
 
 	}
 
-	// const res = {};
-	// const mat = tiles.group.matrixWorld.clone().invert();
-	// const vec = controls.target.clone().applyMatrix4( mat );
-	// WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+	const res = {};
+	const mat = tiles.group.matrixWorld.clone().invert();
+	const vec = camera.position.clone().applyMatrix4( mat );
+	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 
-	// res.lat *= MathUtils.RAD2DEG;
-	// res.lon *= MathUtils.RAD2DEG;
-	// window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
+	res.lat *= MathUtils.RAD2DEG;
+	res.lon *= MathUtils.RAD2DEG;
+	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
 
 }
 
@@ -188,12 +156,12 @@ function initFromHash() {
 
 	}
 
-	// const [ lat, lon ] = tokens;
-	// WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
+	const [ lat, lon ] = tokens;
+	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, camera.position );
 
-	// tiles.group.updateMatrixWorld();
-	// controls.target.applyMatrix4( tiles.group.matrixWorld );
-	// updateControls();
+	tiles.group.updateMatrixWorld();
+	camera.position.applyMatrix4( tiles.group.matrixWorld ).multiplyScalar( 2 );
+	camera.lookAt( 0, 0, 0 );
 
 }
 
@@ -212,12 +180,8 @@ function animate() {
 	tiles.displayRegionBounds = params.displayRegionBounds;
 
 	// update tiles
-	if ( params.enableUpdate ) {
-
-		camera.updateMatrixWorld();
-		tiles.update();
-
-	}
+	camera.updateMatrixWorld();
+	tiles.update();
 
 	renderer.render( scene, camera );
 	stats.update();
