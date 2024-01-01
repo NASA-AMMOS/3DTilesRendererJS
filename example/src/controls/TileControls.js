@@ -18,7 +18,7 @@ const ZOOM = 3;
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
 
-const _matrix = new Matrix4();
+const _pivot = new Vector3();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
@@ -108,12 +108,12 @@ export class TileControls {
 
 		}
 
+		// set the touch action to none so the browser does not
+		// drag the page to refresh or scroll
 		this.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
-		let _pinchAction = NONE;
-
-		const pointerTracker = this.pointerTracker;
+		let pinchAction = NONE;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -154,10 +154,12 @@ export class TileControls {
 				pointerTracker,
 			} = this;
 
-			// init fields
+			// init the pointer
 			pointerTracker.addPointer( e );
 
-			if ( e.pointerType === 'touch' ) {
+			// handle cases where we need to capture the pointer or
+			// reset state when we have too many pointers
+			if ( pointerTracker.getPointerType() === 'touch' ) {
 
 				pivotMesh.visible = false;
 
@@ -168,6 +170,7 @@ export class TileControls {
 				} else if ( pointerTracker.getPointerCount() > 2 ) {
 
 					this.resetState();
+					pinchAction = NONE;
 					return;
 
 				}
@@ -190,8 +193,6 @@ export class TileControls {
 					pointerTracker.isRightClicked() ||
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
-
-					_matrix.copy( camera.matrixWorld ).invert();
 
 					this.state = ROTATE;
 					this.rotationPoint.copy( hit.point );
@@ -226,11 +227,11 @@ export class TileControls {
 		let _pointerMoveQueued = false;
 		const pointermoveCallback = e => {
 
+			// whenever the pointer moves we need to re-derive the zoom direction and point
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
 
 			const { pointerTracker } = this;
-
 			pointerTracker.setHoverEvent( e );
 			if ( ! pointerTracker.updatePointer( e ) ) {
 
@@ -265,9 +266,10 @@ export class TileControls {
 							const previousDist = pointerTracker.getPreviousPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - previousDist;
-							if ( _pinchAction === NONE ) {
+							if ( pinchAction === NONE ) {
 
-								// check which direction was moved in first
+								// check which direction was moved in first - if the pointers are pinching then
+								// it's a zoom. But if they move in parallel it's a rotation
 								pointerTracker.getCenterPoint( _centerPoint );
 								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
 
@@ -277,13 +279,12 @@ export class TileControls {
 									if ( separateDelta > parallelDelta ) {
 
 										this.resetState();
-										_pinchAction = ZOOM;
+										pinchAction = ZOOM;
 										this.zoomDirectionSet = false;
 
 									} else {
 
-										_pinchAction = ROTATE;
-
+										pinchAction = ROTATE;
 
 									}
 
@@ -291,12 +292,11 @@ export class TileControls {
 
 							}
 
-							if ( _pinchAction === ZOOM ) {
+							if ( pinchAction === ZOOM ) {
 
-								// perform zoom
 								this._updateZoom( separateDelta );
 
-							} else if ( _pinchAction === ROTATE ) {
+							} else if ( pinchAction === ROTATE ) {
 
 								this._updateRotation();
 								this.pivotMesh.visible = true;
@@ -317,8 +317,7 @@ export class TileControls {
 
 				} else if ( this.state === ROTATE ) {
 
-					const { rotationSpeed } = this;
-					this._updateRotation( - _deltaPointer.x * rotationSpeed, - _deltaPointer.y * rotationSpeed );
+					this._updateRotation();
 
 				}
 
@@ -328,16 +327,21 @@ export class TileControls {
 
 		const pointerupCallback = e => {
 
-			this.resetState();
+			const { pointerTracker } = this;
 
 			pointerTracker.deletePointer( e );
-			_pinchAction = NONE;
+			pinchAction = NONE;
 
-			if ( pointerTracker.getPointerType() === 'touch' && pointerTracker.getPointerCount() === 0 ) {
+			if (
+				pointerTracker.getPointerType() === 'touch' &&
+				pointerTracker.getPointerCount() === 0
+			) {
 
 				domElement.releasePointerCapture( e.pointerId );
 
 			}
+
+			this.resetState();
 
 		};
 
@@ -424,8 +428,6 @@ export class TileControls {
 			this.getUpDirection( camera.position, _localUp );
 			if ( ! this._upInitialized ) {
 
-				// TODO: do we need to do more here? Possibly add a helper for initializing
-				// the camera orientation?
 				this._upInitialized = true;
 				this.up.copy( _localUp );
 
@@ -485,17 +487,20 @@ export class TileControls {
 			domElement,
 		} = this;
 
+		// get the latest hover / touch point
 		if ( ! pointerTracker.getLatestPoint( _pointer ) ) {
 
 			return;
 
 		}
 
+		// initialize the zoom direction
 		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 		raycaster.setFromCamera( _pointer, camera );
 		zoomDirection.copy( raycaster.ray.direction ).normalize();
 		this.zoomDirectionSet = true;
 
+		// track the zoom direction we're going to use
 		const finalZoomDirection = _vec.copy( zoomDirection );
 
 		// always update the zoom target point in case the tiles are changing
@@ -511,14 +516,13 @@ export class TileControls {
 			if ( hit ) {
 
 				dist = hit.distance;
+				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
 			} else {
 
 				return;
 
 			}
-
-			finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
 		}
 
@@ -542,6 +546,7 @@ export class TileControls {
 
 	}
 
+	// update the point being zoomed in to based on the zoom direction
 	_updateZoomPoint() {
 
 		const {
@@ -575,16 +580,18 @@ export class TileControls {
 
 	}
 
+	// returns the point below the camera
 	_getPointBelowCamera() {
 
 		const { camera, raycaster, scene, up } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( raycaster.ray.direction, - 1e5 );
+		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
 
 		return raycaster.intersectObject( scene )[ 0 ] || null;
 
 	}
 
+	// update the drag action
 	_updatePosition() {
 
 		const {
@@ -596,15 +603,18 @@ export class TileControls {
 			domElement,
 		} = this;
 
+		// get the pointer and plane
 		pointerTracker.getCenterPoint( _pointer );
 		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 		_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
 		raycaster.setFromCamera( _pointer, camera );
 
-		// prevent the drag distance from getting too severe
+		// prevent the drag distance from getting too severe by limiting the drag point
+		// to a reasonable angle with the drag plane
 		if ( - raycaster.ray.direction.dot( up ) < DRAG_PLANE_THRESHOLD ) {
 
+			// rotate the pointer direction down to the correct angle for horizontal draggin
 			const angle = Math.acos( DRAG_PLANE_THRESHOLD );
 
 			_rotationAxis
@@ -623,8 +633,10 @@ export class TileControls {
 		// prevent the drag from inverting
 		if ( this.getUpDirection ) {
 
+			// if we drag to a point that's near the edge of the earth then we want to prevent it
+			// from wrapping around and causing unexpected rotations
 			this.getUpDirection( dragPoint, _localUp );
-			if ( - _localUp.dot( raycaster.ray.direction ) < DRAG_UP_THRESHOLD ) {
+			if ( - raycaster.ray.direction.dot( _localUp ) < DRAG_UP_THRESHOLD ) {
 
 				const angle = Math.acos( DRAG_UP_THRESHOLD );
 
@@ -641,6 +653,7 @@ export class TileControls {
 
 		}
 
+		// find the point on the plane that we should drag to
 		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
 			_delta.subVectors( dragPoint, _vec );
@@ -676,9 +689,11 @@ export class TileControls {
 		const azimuth = - _deltaPointer.x * rotationSpeed;
 		let altitude = - _deltaPointer.y * rotationSpeed;
 
-		// currently uses the camera forward for this work but it may be best to use a combination of camera
-		// forward and direction to pivot? Or just dir to pivot?
-		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).multiplyScalar( - 1 );
+		// calculate current angles and clamp
+		_forward
+			.set( 0, 0, - 1 )
+			.transformDirection( camera.matrixWorld )
+			.multiplyScalar( - 1 );
 
 		if ( this.getUpDirection ) {
 
@@ -701,38 +716,37 @@ export class TileControls {
 
 		}
 
-		// zoom in frame around pivot point
+		// rotate around the up axis
 		_quaternion.setFromAxisAngle( _localUp, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
+		// get a rotation axis for altitude and rotate
 		_rotationAxis.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
 
 		_quaternion.setFromAxisAngle( _rotationAxis, altitude );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
+		// update the transform members
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-		camera.updateMatrixWorld();
 
 	}
 
+	// sets the "up" axis for the current surface of the tile set
 	setFrame( newUp ) {
 
-		const pivot = new Vector3();
-		let dist = 0;
-
-		// cast down from the camera to get the pivot to rotate around
 		const { up, camera, state, zoomPoint, zoomDirection } = this;
 		camera.updateMatrixWorld();
 
+		// TODO: this raycast isn't necessary a lot of the time
+		// get the pivot to rotate the frame if needed
+		let dist = 0;
 		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
-			_vec.setFromMatrixPosition( camera.matrixWorld );
-
-			pivot.copy( hit.point );
-			dist = pivot.distanceTo( _vec );
+			_pivot.copy( hit.point );
+			dist = _pivot.distanceTo( camera.position );
 
 		} else {
 
@@ -740,15 +754,16 @@ export class TileControls {
 
 		}
 
+		// get the amount needed to rotate
 		_quaternion.setFromUnitVectors( up, newUp );
 
 		if ( this.zoomDirectionSet ) {
 
-			// TODO: just zoom backwards if we're at a steep angle
 			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
 				if ( this.reorientOnZoom ) {
 
+					// rotates the camera position around the point being zoomed in to
 					makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
 					camera.matrixWorld.premultiply( _rotMatrix );
 					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
@@ -759,16 +774,18 @@ export class TileControls {
 
 			} else {
 
-				camera.position.copy( pivot ).addScaledVector( newUp, dist );
+				// TODO: if zooming into the sky we should reorient and zoom parallel to the ground
+				// if zooming in or out from the sky we just adjust to the ground orientation
+				camera.position.copy( _pivot ).addScaledVector( newUp, dist );
 				camera.quaternion.premultiply( _quaternion );
 				camera.updateMatrixWorld();
 
 			}
 
-		} else if ( state !== ROTATE && this.reorientOnDrag ) {
+		} else if ( state === NONE || state === DRAG && this.reorientOnDrag ) {
 
-			// TODO: fix this for dragging from afar
-			camera.position.copy( pivot ).addScaledVector( newUp, dist );
+			// perform a simple realignment
+			camera.position.copy( _pivot ).addScaledVector( newUp, dist );
 			camera.quaternion.premultiply( _quaternion );
 			camera.updateMatrixWorld();
 
