@@ -80,13 +80,14 @@ export class MapControls {
 		// settings
 		this.state = NONE;
 		this.cameraRadius = 1;
-		this.rotationSpeed = 5;
+		this.rotationSpeed = 3;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 2;
 		this.maxDistance = Infinity;
 		this.getUpDirection = null;
 		this.reorientOnDrag = true;
+		this.reorientOnZoom = false;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
@@ -771,11 +772,15 @@ export class MapControls {
 			// TODO: just zoom backwards if we're at a steep angle
 			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
-				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+				if ( this.reorientOnZoom ) {
 
-				zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
+					makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+					camera.matrixWorld.premultiply( _rotMatrix );
+					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+					zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
+
+				}
 
 			} else {
 
@@ -801,7 +806,7 @@ export class MapControls {
 }
 
 const MAX_GLOBE_DISTANCE = 2 * 1e7;
-const GLOBE_TRANSITION_THRESHOLD = 1e7;
+const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
 export class GlobeControls extends MapControls {
 
 	getVectorToCenter( target ) {
@@ -847,11 +852,13 @@ export class GlobeControls extends MapControls {
 
 			pivotMesh.visible = false;
 			this.reorientOnDrag = false;
+			this.reorientOnZoom = true;
 
 		} else {
 
 			pivotMesh.visible = true;
 			this.reorientOnDrag = true;
+			this.reorientOnZoom = false;
 
 		}
 
@@ -931,12 +938,10 @@ export class GlobeControls extends MapControls {
 
 		} else {
 
-			// TODO: zoom forward if the user is zooming into the sky
-
 			// orient the camera during the zoom
 			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
 			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-			this._alignUpward( MathUtils.lerp( 1, 0.9, alpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
 
 			this.getVectorToCenter( _vec );
 			const dist = _vec.length();
@@ -948,7 +953,7 @@ export class GlobeControls extends MapControls {
 
 	}
 
-	_alignUpward( alpha ) {
+	_alignCameraUpToNorth( alpha ) {
 
 		const { scene, camera } = this;
 		const _globalUp = new Vector3( 0, 0, 1 ).transformDirection( scene.matrixWorld );
