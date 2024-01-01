@@ -25,24 +25,13 @@ const _forward = new Vector3();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
-const _up = new Vector3();
+const _localUp = new Vector3();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
 const _originalCenterPoint = new Vector2();
-
-// TODO
-// - Add support for angled rotation plane (based on where the pivot point is)
-// - Test with globe (adjusting up vector)
-// ---
-// - Consider using sphere intersect for positioning
-// - Toggles for zoom to cursor, zoom forward, orbit around center, etc?
-// - provide fallback plane for cases when you're off the map
-// - consider enabling drag with zoom
-// - shift + scroll could adjust altitude
-// - fade pivot icon in and out
 
 // helper function for constructing a matrix for rotating around a point
 export function makeRotateAroundPoint( point, quat, target ) {
@@ -454,17 +443,17 @@ export class TileControls {
 
 		if ( this.getUpDirection ) {
 
-			this.getUpDirection( camera.position, _up );
+			this.getUpDirection( camera.position, _localUp );
 			if ( ! this._upInitialized ) {
 
 				// TODO: do we need to do more here? Possibly add a helper for initializing
 				// the camera orientation?
 				this._upInitialized = true;
-				this.up.copy( _up );
+				this.up.copy( _localUp );
 
 			} else {
 
-				this.setFrame( _up );
+				this.setFrame( _localUp );
 
 			}
 
@@ -656,17 +645,17 @@ export class TileControls {
 		// prevent the drag from inverting
 		if ( this.getUpDirection ) {
 
-			this.getUpDirection( dragPoint, _up );
-			if ( - _up.dot( raycaster.ray.direction ) < DRAG_UP_THRESHOLD ) {
+			this.getUpDirection( dragPoint, _localUp );
+			if ( - _localUp.dot( raycaster.ray.direction ) < DRAG_UP_THRESHOLD ) {
 
 				const angle = Math.acos( DRAG_UP_THRESHOLD );
 
 				_rotationAxis
-					.crossVectors( raycaster.ray.direction, _up )
+					.crossVectors( raycaster.ray.direction, _localUp )
 					.normalize();
 
 				raycaster.ray.direction
-					.copy( _up )
+					.copy( _localUp )
 					.applyAxisAngle( _rotationAxis, angle )
 					.multiplyScalar( - 1 );
 
@@ -715,15 +704,15 @@ export class TileControls {
 
 		if ( this.getUpDirection ) {
 
-			this.getUpDirection( rotationPoint, _up );
+			this.getUpDirection( rotationPoint, _localUp );
 
 		} else {
 
-			_up.copy( up );
+			_localUp.copy( up );
 
 		}
 
-		const angle = _up.angleTo( _forward );
+		const angle = _localUp.angleTo( _forward );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
@@ -735,7 +724,7 @@ export class TileControls {
 		}
 
 		// zoom in frame around pivot point
-		_quaternion.setFromAxisAngle( _up, azimuth );
+		_quaternion.setFromAxisAngle( _localUp, azimuth );
 		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 

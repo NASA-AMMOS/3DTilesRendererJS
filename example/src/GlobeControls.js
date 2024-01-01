@@ -11,7 +11,12 @@ import { WGS84_ELLIPSOID } from '../../src/index.js';
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _vec = new Vector3();
+const _center = new Vector3();
+const _up = new Vector3();
 const _forward = new Vector3();
+const _right = new Vector3();
+const _targetRight = new Vector3();
+const _globalUp = new Vector3();
 const _quaternion = new Quaternion();
 
 const _pointer = new Vector2();
@@ -26,22 +31,24 @@ export class GlobeControls extends TileControls {
 
 		// store which mode the drag stats are in
 		super( ...args );
+		this.ellipsoid = WGS84_ELLIPSOID;
 		this._dragMode = 0;
 		this._rotationMode = 0;
 
 		this.getUpDirection = ( point, target ) => {
 
-			const { scene } = this;
+			const { scene, ellipsoid } = this;
 			const invMatrix = _invMatrix.copy( scene.matrixWorld ).invert();
 			const pos = point.clone().applyMatrix4( invMatrix );
 
-			WGS84_ELLIPSOID.getPositionToNormal( pos, target );
+			ellipsoid.getPositionToNormal( pos, target );
 			target.transformDirection( scene.matrixWorld );
 
 		};
 
 	}
 
+	// get the vector to the center of the provided globe
 	getVectorToCenter( target ) {
 
 		const { scene, camera } = this;
@@ -51,6 +58,7 @@ export class GlobeControls extends TileControls {
 
 	}
 
+	// get the distance to the center of the globe
 	getDistanceToCenter() {
 
 		return this
@@ -66,7 +74,6 @@ export class GlobeControls extends TileControls {
 		const {
 			camera,
 			scene,
-			pivotMesh,
 		} = this;
 
 		// clamp the camera distance
@@ -81,15 +88,15 @@ export class GlobeControls extends TileControls {
 
 		}
 
+		// if we're outside the transition threshold then we toggle some reorientation behavior
+		// when adjusting the up frame while moving hte camera
 		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
 
-			pivotMesh.visible = false;
 			this.reorientOnDrag = false;
 			this.reorientOnZoom = true;
 
 		} else {
 
-			pivotMesh.visible = true;
 			this.reorientOnDrag = true;
 			this.reorientOnZoom = false;
 
@@ -103,11 +110,25 @@ export class GlobeControls extends TileControls {
 
 	}
 
+	// resets the "stuck" drag modes
 	resetState() {
 
 		super.resetState();
 		this._dragMode = 0;
 		this._rotationMode = 0;
+
+	}
+
+	// animate the frame to align to an up direction
+	setFrame( ...args ) {
+
+		super.setFrame( ...args );
+
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+
+			this._alignCameraUp( this.up );
+
+		}
 
 	}
 
@@ -128,21 +149,26 @@ export class GlobeControls extends TileControls {
 				rotationSpeed,
 				camera,
 				pivotMesh,
+				dragPoint,
 			} = this;
+
+			// get the delta movement with magic numbers scaled by the distance to the
+			// grabbed point so it feels okay
+			// TODO: it would be better to properly calculate angle based on drag distance
 			pointerTracker.getCenterPoint( _pointer );
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
-
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( this.dragPoint ) * 1e-8 * 5 * 1e-3 );
+				.multiplyScalar( camera.position.distanceTo( dragPoint ) * 1e-11 * 5 );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
 
-			const _center = new Vector3().setFromMatrixPosition( this.scene.matrixWorld );
-			const _right = new Vector3( 1, 0, 0 ).transformDirection( camera.matrixWorld );
-			const _up = new Vector3( 0, 1, 0 ).transformDirection( camera.matrixWorld );
+			_center.setFromMatrixPosition( this.scene.matrixWorld );
+			_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+			_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
 
+			// apply the altitude and azimuth adjustment
 			_quaternion.setFromAxisAngle( _right, altitude );
 			camera.quaternion.premultiply( _quaternion );
 			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
@@ -157,11 +183,11 @@ export class GlobeControls extends TileControls {
 
 			pivotMesh.visible = false;
 
-
 		}
 
 	}
 
+	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
 		if ( this._rotationMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
@@ -171,6 +197,7 @@ export class GlobeControls extends TileControls {
 
 		} else {
 
+			this.pivotMesh.visible = false;
 			this._rotationMode = - 1;
 
 		}
@@ -185,47 +212,36 @@ export class GlobeControls extends TileControls {
 
 		} else {
 
-			// orient the camera during the zoom
+			// orient the camera to focus on the earth during the zoom
 			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
 			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
 			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
 
+			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
-			const dist = _vec.length();
-
-			this.camera.position.addScaledVector( _vec, delta * 0.0025 * dist / dist );
+			this.camera.position.addScaledVector( _vec, delta * 0.0025 );
 			this.camera.updateMatrixWorld();
 
 		}
 
 	}
 
+	// tilt the camera to align with north
 	_alignCameraUpToNorth( alpha ) {
 
 		const { scene } = this;
-		const _globalUp = new Vector3( 0, 0, 1 ).transformDirection( scene.matrixWorld );
+		_globalUp.set( 0, 0, 1 ).transformDirection( scene.matrixWorld );
 		this._alignCameraUp( _globalUp, alpha );
 
 	}
 
-	setFrame( ...args ) {
-
-		super.setFrame( ...args );
-
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
-
-			this._alignCameraUp( this.up );
-
-		}
-
-	}
-
+	// tilt the camera to align with the provided "up" value
 	_alignCameraUp( up, alpha = null ) {
 
 		const { camera } = this;
-		const _forward = new Vector3( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		const _right = new Vector3( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		const _targetRight = new Vector3().crossVectors( up, _forward );
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		_targetRight.crossVectors( up, _forward );
 
 		if ( alpha === null ) {
 
@@ -241,6 +257,7 @@ export class GlobeControls extends TileControls {
 
 	}
 
+	// tilt the camera to look at the center of the globe
 	_tiltTowardsCenter( alpha ) {
 
 		const {
