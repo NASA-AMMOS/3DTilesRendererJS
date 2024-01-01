@@ -529,6 +529,8 @@ export class MapControls {
 		zoomDirection.copy( raycaster.ray.direction ).normalize();
 		this.zoomDirectionSet = true;
 
+		const finalZoomDirection = _vec.copy( zoomDirection );
+
 		// always update the zoom target point in case the tiles are changing
 		let dist = Infinity;
 		if ( this._updateZoomPoint() ) {
@@ -549,6 +551,8 @@ export class MapControls {
 
 			}
 
+			finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+
 		}
 
 		// scale the distance based on how far there is to move
@@ -566,7 +570,7 @@ export class MapControls {
 
 		}
 
-		camera.position.addScaledVector( zoomDirection, scale );
+		camera.position.addScaledVector( finalZoomDirection, scale );
 		camera.updateMatrixWorld();
 
 	}
@@ -772,10 +776,17 @@ export class MapControls {
 
 				zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
 
+			} else {
+
+				camera.position.copy( pivot ).addScaledVector( newUp, dist );
+				camera.quaternion.premultiply( _quaternion );
+				camera.updateMatrixWorld();
+
 			}
 
 		} else if ( state !== ROTATE ) {
 
+			// TODO: fix this for dragging from afar
 			camera.position.copy( pivot ).addScaledVector( newUp, dist );
 			camera.quaternion.premultiply( _quaternion );
 			camera.updateMatrixWorld();
@@ -816,6 +827,7 @@ export class GlobeControls extends MapControls {
 		const {
 			camera,
 			scene,
+			pivotMesh,
 		} = this;
 
 		// clamp the camera distance
@@ -827,6 +839,16 @@ export class GlobeControls extends MapControls {
 			camera.updateMatrixWorld();
 
 			distanceToCenter = MAX_GLOBE_DISTANCE;
+
+		}
+
+		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
+
+			pivotMesh.visible = false;
+
+		} else {
+
+			pivotMesh.visible = true;
 
 		}
 
@@ -845,6 +867,40 @@ export class GlobeControls extends MapControls {
 			super._updatePosition( ...args );
 
 		} else {
+
+			const {
+				pointerTracker,
+				rotationSpeed,
+				camera,
+				pivotMesh,
+			} = this;
+			pointerTracker.getCenterPoint( _pointer );
+			pointerTracker.getPreviousCenterPoint( _prevPointer );
+
+			_deltaPointer
+				.subVectors( _pointer, _prevPointer )
+				.multiplyScalar( camera.position.distanceTo( this.dragPoint ) * 1e-8 * 5 * 1e-3);
+
+			const azimuth = - _deltaPointer.x * rotationSpeed;
+			const altitude = - _deltaPointer.y * rotationSpeed;
+
+			const _center = new Vector3().setFromMatrixPosition( this.scene.matrixWorld );
+			const _right = new Vector3( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+			const _up = new Vector3( 0, 1, 0 ).transformDirection( camera.matrixWorld );
+
+			_quaternion.setFromAxisAngle( _right, altitude );
+			camera.quaternion.premultiply( _quaternion );
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+			camera.matrixWorld.premultiply( _rotMatrix );
+
+			_quaternion.setFromAxisAngle( _up, azimuth );
+			camera.quaternion.premultiply( _quaternion );
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+			camera.matrixWorld.premultiply( _rotMatrix );
+
+			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			pivotMesh.visible = false;
 
 
 		}
@@ -876,8 +932,8 @@ export class GlobeControls extends MapControls {
 
 			// orient the camera during the zoom
 			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.6, alpha ) );
-			this._alignUpward( MathUtils.lerp( 1, 0.8, alpha ) );
+			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
+			this._alignUpward( MathUtils.lerp( 1, 0.9, alpha ) );
 
 			this.getVectorToCenter( _vec );
 			const dist = _vec.length();
