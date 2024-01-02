@@ -274,7 +274,7 @@ export class TileControls {
 								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
 								if ( Math.abs( separateDelta ) > 0 || parallelDelta > 0 ) {
 
-									if ( separateDelta > parallelDelta ) {
+									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
 										this.resetState();
 										pinchAction = ZOOM;
