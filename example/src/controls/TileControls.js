@@ -18,7 +18,6 @@ export const ZOOM = 3;
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
 
-const _pivot = new Vector3();
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
@@ -428,6 +427,8 @@ export class TileControls {
 			up,
 		} = this;
 
+		// reuse the "hit" information since it can be slow to perform multiple hits
+		const hit = this._getPointBelowCamera();
 		if ( this.getUpDirection ) {
 
 			this.getUpDirection( camera.position, _localUp );
@@ -438,7 +439,7 @@ export class TileControls {
 
 			} else {
 
-				this.setFrame( _localUp );
+				this._setFrame( _localUp, hit && hit.point || null );
 
 			}
 
@@ -456,7 +457,6 @@ export class TileControls {
 		}
 
 		// cast down from the camera
-		const hit = this._getPointBelowCamera();
 		if ( hit ) {
 
 			const dist = hit.distance;
@@ -748,7 +748,7 @@ export class TileControls {
 	}
 
 	// sets the "up" axis for the current surface of the tile set
-	setFrame( newUp ) {
+	_setFrame( newUp, pivot ) {
 
 		const { up, camera, state, zoomPoint, zoomDirection } = this;
 		camera.updateMatrixWorld();
@@ -771,16 +771,14 @@ export class TileControls {
 
 		} else if ( state === NONE || state === DRAG && this.reorientOnDrag ) {
 
-			// get the pivot to rotate the frame if needed
-			let dist = 0;
-			const hit = this._getPointBelowCamera();
-			if ( hit ) {
+			// NOTE: We used to derive the pivot point here by getting the point below the camera
+			// but decided to pass it in via "update" to avoid multiple ray casts
 
-				_pivot.copy( hit.point );
-				dist = _pivot.distanceTo( camera.position );
+			if ( pivot ) {
 
-				// perform a simple realignment
-				camera.position.copy( _pivot ).addScaledVector( newUp, dist );
+				// perform a simple realignment by rotating the camera and adjusting the height
+				const dist = pivot.distanceTo( camera.position );
+				camera.position.copy( pivot ).addScaledVector( newUp, dist );
 				camera.quaternion.premultiply( _quaternion );
 				camera.updateMatrixWorld();
 
