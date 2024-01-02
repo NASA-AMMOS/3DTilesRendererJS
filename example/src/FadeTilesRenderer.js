@@ -30,7 +30,7 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 		}
 
-		if ( ! isRootTile || ! this.fadeRootTiles || this.initialLayerRendered ) {
+		if ( ! isRootTile || this.fadeRootTiles || this.initialLayerRendered ) {
 
 			this._fadeManager.fadeIn( scene );
 

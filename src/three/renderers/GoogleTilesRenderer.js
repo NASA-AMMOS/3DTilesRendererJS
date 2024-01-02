@@ -27,7 +27,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this.downloadQueue.maxJobs = 30;
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
-		this.errorTarget = 20;
+		this.errorTarget = 40;
 
 		this.onLoadTileSet = tileset => {
 
