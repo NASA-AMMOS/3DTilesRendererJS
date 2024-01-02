@@ -36,11 +36,13 @@ const utils = {
 	},
 };
 
+// 512 * 2000
+// 512: TILE_SIZE
 const WORLD_SIZE = 10240000;
-const FOV_ORTHO = ( 0.1 / 180 ) * Math.PI;
-const FOV = Math.atan( 3 / 4 );
-const EARTH_RADIUS = 6371008.8;
-const EARTH_CIRCUMFERENCE_EQUATOR = 40075017;
+const FOV_ORTHO = ( 0.1 / 180 ) * Math.PI; // Mapbox doesn't accept 0 as FOV
+const FOV = Math.atan( 3 / 4 ); // from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/main/src/geo/transform.js#L93
+const EARTH_RADIUS = 6371008.8; // from Mapbox  https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L11
+const EARTH_CIRCUMFERENCE_EQUATOR = 40075017; // from Mapbox https://github.com/mapbox/mapbox-gl-js/blob/0063cbd10a97218fb6a0f64c99bf18609b918f4c/src/geo/lng_lat.js#L117
 const MapConstants = {
 	WORLD_SIZE: WORLD_SIZE,
 	PROJECTION_WORLD_SIZE: WORLD_SIZE / ( EARTH_RADIUS * Math.PI * 2 ),
@@ -60,6 +62,7 @@ const Constants = MapConstants;
 
 function projectToWorld( coords ) {
 
+	// Spherical mercator forward projection, re-scaling to WORLD_SIZE
 	var projected = [
 		- Constants.MERCATOR_A *
       Constants.DEG2RAD *
@@ -70,6 +73,7 @@ function projectToWorld( coords ) {
       Constants.PROJECTION_WORLD_SIZE,
 	];
 
+	// z dimension, defaulting to 0 if not provided
 	if ( ! coords[ 2 ] ) projected.push( 0 );
 	else {
 
@@ -101,14 +105,14 @@ class CameraSync {
 		this.map = map;
 		this.camera = camera;
 		this.active = true;
-
+		// We're in charge of the camera now!
 		this.camera.matrixAutoUpdate = false;
-
+		// Postion and configure the world group so we can scale it appropriately when the camera zooms
 		this.world = world || new THREE.Group();
 		this.world.position.x = this.world.position.y =
     MapConstants.WORLD_SIZE / 2;
 		this.world.matrixAutoUpdate = false;
-
+		// set up basic camera state
 		this.state = {
 			translateCenter: new THREE.Matrix4().makeTranslation(
 				MapConstants.WORLD_SIZE / 2,
@@ -118,7 +122,7 @@ class CameraSync {
 			worldSizeRatio: MapConstants.TILE_SIZE / MapConstants.WORLD_SIZE,
 			worldSize: MapConstants.TILE_SIZE * this.map.transform.scale,
 		};
-
+		// Listen for move events from the map and update the Three.js camera
 		const _this = this;
 		this.map
 			.on( 'move', function () {
@@ -139,6 +143,7 @@ class CameraSync {
 	setupCamera() {
 
 		const t = this.map.transform;
+		// if aspect is not reset raycast will fail on map resize
 		this.camera.aspect = t.width / t.height;
 		this.halfFov = t._fov / 2;
 		this.cameraToCenterDistance = ( 0.5 / Math.tan( this.halfFov ) ) * t.height;
@@ -164,6 +169,7 @@ class CameraSync {
 		let furthestDistance = 0;
 		this.halfFov = t._fov / 2;
 		const groundAngle = Math.PI / 2 + t._pitch;
+		// pitch seems to influence heavily the depth calculation and cannot be more than 60 = PI/3 < v1 and 85 > v2
 		const pitchAngle = Math.cos( Math.PI / 2 - t._pitch );
 		this.cameraToCenterDistance = ( 0.5 / Math.tan( this.halfFov ) ) * t.height;
 
@@ -173,7 +179,8 @@ class CameraSync {
 		pixelsPerMeter = this.mercatorZfromAltitude( 1, t.center.lat ) * worldSize;
 		const fovAboveCenter = t._fov * ( 0.5 + t.centerOffset.y / t.height );
 
-
+		// Adjust distance to MSL by the minimum possible elevation visible on screen,
+		// this way the far plane is pushed further in the case of negative elevation.
 		const minElevationInPixels = t.elevation
 			? t.elevation.getMinElevationBelowMSL() * pixelsPerMeter
 			: 0;
@@ -192,10 +199,10 @@ class CameraSync {
       	)
       );
 
-
+		// Calculate z distance of the farthest fragment that should be rendered.
 		furthestDistance =
       pitchAngle * topHalfSurfaceDistance + cameraToSeaLevelDistance;
-
+		// Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
 		const horizonDistance = cameraToSeaLevelDistance * ( 1 / t._horizonShift );
 		farZ = Math.min( furthestDistance * 1.01, horizonDistance );
 
@@ -204,9 +211,10 @@ class CameraSync {
 			0,
 			this.cameraToCenterDistance
 		);
-
-		const nz = t.height / 50;
-		const nearZ = Math.max( nz * pitchAngle, nz );
+		// someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
+		// https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
+		const nz = t.height / 50; // min near z as coded by @ansis
+		const nearZ = Math.max( nz * pitchAngle, nz ); // on changes in the pitch nz could be too low
 
 		const h = t.height;
 		const w = t.width;
@@ -216,15 +224,17 @@ class CameraSync {
 			nearZ,
 			farZ
 		);
-
+		// Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
+		// If this is applied directly to the projection matrix, it will work OK but break raycasting
 		const cameraWorldMatrix = this.calcCameraMatrix( t._pitch, t.angle );
-
+		// When terrain layers are included, height of 3D layers must be modified from t_camera.z * worldSize
 		if ( t.elevation )
 			cameraWorldMatrix.elements[ 14 ] = t._camera.position[ 2 ] * worldSize;
-
+		//this.camera.matrixWorld.elements is equivalent to t._camera._transform
 		this.camera.matrixWorld.copy( cameraWorldMatrix );
 
 		const zoomPow = t.scale * this.state.worldSizeRatio;
+		// Handle scaling and translation of objects in the map in the world's matrix transform, not the camera
 		const scale = new THREE.Matrix4();
 		const translateMap = new THREE.Matrix4();
 		const rotateMap = new THREE.Matrix4();
