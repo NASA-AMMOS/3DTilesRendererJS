@@ -118,8 +118,8 @@ export class PointerTracker {
 			const id0 = this.pointerOrder[ 0 ];
 			const id1 = this.pointerOrder[ 1 ];
 
-			const p0 = this.pointerPositions[ id0 ];
-			const p1 = this.pointerPositions[ id1 ];
+			const p0 = pointerPositions[ id0 ];
+			const p1 = pointerPositions[ id1 ];
 
 			target.addVectors( p0, p1 ).multiplyScalar( 0.5 );
 			return target;
