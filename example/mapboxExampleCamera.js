@@ -64,13 +64,8 @@ function projectToWorld( coords ) {
 
 	// Spherical mercator forward projection, re-scaling to WORLD_SIZE
 	var projected = [
-		- Constants.MERCATOR_A *
-      Constants.DEG2RAD *
-      coords[ 0 ] *
-      Constants.PROJECTION_WORLD_SIZE,
-		- Constants.MERCATOR_A *
-      Math.log( Math.tan( Math.PI * 0.25 + 0.5 * Constants.DEG2RAD * coords[ 1 ] ) ) *
-      Constants.PROJECTION_WORLD_SIZE,
+		- Constants.MERCATOR_A * Constants.DEG2RAD * coords[ 0 ] * Constants.PROJECTION_WORLD_SIZE,
+		- Constants.MERCATOR_A * Math.log( Math.tan( Math.PI * 0.25 + 0.5 * Constants.DEG2RAD * coords[ 1 ] ) ) * Constants.PROJECTION_WORLD_SIZE,
 	];
 
 	// z dimension, defaulting to 0 if not provided
@@ -91,10 +86,7 @@ function projectToWorld( coords ) {
 function projectedUnitsPerMeter( latitude ) {
 
 	return Math.abs(
-		Constants.WORLD_SIZE /
-      Math.cos( Constants.DEG2RAD * latitude ) /
-      Constants.EARTH_CIRCUMFERENCE
-	);
+		Constants.WORLD_SIZE / Math.cos( Constants.DEG2RAD * latitude ) / Constants.EARTH_CIRCUMFERENCE );
 
 }
 
@@ -185,23 +177,18 @@ class CameraSync {
 			? t.elevation.getMinElevationBelowMSL() * pixelsPerMeter
 			: 0;
 
-		const cameraToSeaLevelDistance =
-      ( t._camera.position[ 2 ] * worldSize - minElevationInPixels ) /
-      Math.cos( t._pitch );
+		const cameraToSeaLevelDistance = ( t._camera.position[ 2 ] * worldSize - minElevationInPixels ) / Math.cos( t._pitch );
 
-		const topHalfSurfaceDistance =
-      ( Math.sin( fovAboveCenter ) * cameraToSeaLevelDistance ) /
-      Math.sin(
-      	utils.clamp(
-      		Math.PI - groundAngle - fovAboveCenter,
-      		0.01,
-      		Math.PI - 0.01
-      	)
-      );
+		const topHalfSurfaceDistance = ( Math.sin( fovAboveCenter ) * cameraToSeaLevelDistance ) / Math.sin(
+			utils.clamp(
+				Math.PI - groundAngle - fovAboveCenter,
+				0.01,
+				Math.PI - 0.01
+			)
+		);
 
 		// Calculate z distance of the farthest fragment that should be rendered.
-		furthestDistance =
-      pitchAngle * topHalfSurfaceDistance + cameraToSeaLevelDistance;
+		furthestDistance = pitchAngle * topHalfSurfaceDistance + cameraToSeaLevelDistance;
 		// Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
 		const horizonDistance = cameraToSeaLevelDistance * ( 1 / t._horizonShift );
 		farZ = Math.min( furthestDistance * 1.01, horizonDistance );
