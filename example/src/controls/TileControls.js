@@ -272,7 +272,7 @@ export class TileControls {
 								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
 
 								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
-								if ( separateDelta > 0 && parallelDelta > 0 ) {
+								if ( Math.abs( separateDelta ) > 0 || parallelDelta > 0 ) {
 
 									if ( separateDelta > parallelDelta ) {
 

@@ -28,21 +28,21 @@ export class PointerTracker {
 
 	getLatestPoint( target ) {
 
-		if ( ! this.hoverSet ) {
-
-			return null;
-
-		} else if ( this.pointerType !== null ) {
+		if ( this.pointerType !== null ) {
 
 			this.getCenterPoint( target );
+			return target;
+
+		} else if ( this.hoverSet ) {
+
+			target.copy( this.hoverPosition );
+			return target;
 
 		} else {
 
-			target.copy( this.hoverPosition );
+			return null;
 
 		}
-
-		return target;
 
 	}
 
