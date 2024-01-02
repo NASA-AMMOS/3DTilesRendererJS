@@ -31,7 +31,7 @@ import {
 	OrthographicCamera,
 	Sphere,
 } from 'three';
-import { FlyOrbitControls } from './FlyOrbitControls.js';
+import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';

@@ -10,7 +10,7 @@ import {
 	Group,
 	FogExp2,
 } from 'three';
-import { FlyOrbitControls } from './FlyOrbitControls.js';
+import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer;

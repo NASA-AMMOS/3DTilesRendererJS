@@ -8,7 +8,7 @@ import {
 	Group,
 	Sphere,
 } from 'three';
-import { FlyOrbitControls } from './FlyOrbitControls.js';
+import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
