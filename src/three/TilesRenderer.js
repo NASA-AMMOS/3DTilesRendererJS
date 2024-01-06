@@ -68,6 +68,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.visibleTiles = new Set();
 		this._autoDisableRendererCulling = true;
 		this.optimizeRaycast = true;
+		this.loading = false;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -674,6 +675,29 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.textures = textures;
 			cached.scene = scene;
 			cached.metadata = metadata;
+
+			if ( ! this.loading ) {
+
+				if ( this.onLoadStart ) {
+
+					this.onLoadStart( );
+
+				}
+				this.loading = true;
+
+			}
+
+			if ( this.parseQueue.items.length === 0 && this.downloadQueue.items.length === this.parseQueue.items.length ) {
+
+				if ( this.onLoadComplete ) {
+
+					this.onLoadComplete( );
+					this.loading = false;
+
+				}
+
+			}
+
 
 			if ( this.onLoadModel ) {
 
