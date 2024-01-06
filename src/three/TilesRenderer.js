@@ -676,7 +676,7 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.scene = scene;
 			cached.metadata = metadata;
 
-			if ( ! this.loading ) {
+			if ( ! this.loading && this.parseQueue.items.length > 0 ) {
 
 				if ( this.onLoadStart ) {
 
@@ -687,7 +687,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			if ( this.parseQueue.items.length === 0 && this.downloadQueue.items.length === this.parseQueue.items.length ) {
+			if ( this.loading && this.parseQueue.items.length === 0 && this.downloadQueue.items.length === this.parseQueue.items.length ) {
 
 				if ( this.onLoadComplete ) {
 
