@@ -6,9 +6,11 @@ import CameraSync, {
 import { DebugTilesRenderer as TilesRenderer } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
+// To use any of Mapbox's tools, APIs, or SDKs, you'll need a Mapbox access token
+// https://docs.mapbox.com/help/getting-started/access-tokens/
 const params = {
 
-	'accessToken': 'pk.eyJ1IjoieGlheGlhbmdmbmVnIiwiYSI6ImNscTRzc245NTA5c3cya3BhdXA4MDY0NWQifQ._9T_J9z7Hvcd00nQL3UuSw',
+	'accessToken': 'put-your-api-key-here',
 	'reload': reload,
 
 };
@@ -81,14 +83,6 @@ function init() {
 				world = new THREE.Group();
 				scene.add( world );
 
-				// lights
-				const dirLight = new THREE.DirectionalLight( 0xffffff, 0.8 );
-				dirLight.position.set( 1, 2, 3 );
-				world.add( dirLight );
-
-				const ambLight = new THREE.AmbientLight( 0xffffff, 1 );
-				world.add( ambLight );
-
 				tilesGroup = new THREE.Group();
 
 				world.add( tilesGroup );
@@ -144,6 +138,7 @@ function init() {
 
 				const pos = projectToWorld( origin );
 				tilesGroup.position.copy( pos );
+				tilesGroup.position.z = 1;
 
 				// Since the 3D model is in real world meters, a scale transform needs to be
 				// applied since the CustomLayerInterface expects units in MercatorCoordinates.
@@ -157,7 +152,11 @@ function init() {
 			render: function ( gl, matrix ) {
 
 				renderer.resetState();
+
+				// update tiles
+				camera.updateMatrixWorld();
 				tiles.update();
+
 				renderer.render( scene, camera );
 				map.triggerRepaint();
 
