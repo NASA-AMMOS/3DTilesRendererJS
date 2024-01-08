@@ -1,45 +1,43 @@
 ---
-name: Bug report
-about: Report a reproducible bug or regression.
-title: ''
+name: Bug Report
+about: Report a bug to help us improve
+title: '[Bug]: '
 labels: 'bug'
 assignees: ''
 
 ---
 
+**Checked for duplicates**
+
+> Have you checked for duplicate issue tickets?
+
+- Ex. Yes - I've already checked
+- Ex. No - I haven't checked
+
 **Describe the bug**
 
-A clear and concise description of what the bug is. Before submitting, please remove unnecessary sections.
+> A clear and concise description of what the bug is. Plain-text snippets preferred but screenshots welcome.
 
-**To Reproduce**
+Ex. When I did [...] action, I noticed [...]
 
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. See error
+**What did you expect?**
 
-***Code***
+> A clear and concise description of what you expect to happen
 
-```js
-// code goes here
-```
+Ex. I expected [...]
 
-***Live example***
+**Reproducible steps**
 
--
+> How would we reproduce this bug? Please walk us through it step by step. Plain-text snippets preferred but screenshots welcome.
 
-**Expected behavior**
+1.
+2.
+3.
 
-A clear and concise description of what you expected to happen.
+**What is your environment?**
 
-**Screenshots**
+> Include any computer hardware, operating system, framework, browser, time-of-day or other contextual information related to your issue
 
-If applicable, add screenshots to help explain your problem (drag and drop the image).
-
-**Platform:**
-
- - Device: [Desktop, Mobile, ...]
- - OS: [Windows, MacOS, Linux, Android, iOS, ...]
- - Browser: [Chrome, Firefox, Safari, Edge, ...]
- - Three.js version: [r???]
- - Library version: [v???]
+- Ex. Version of this software [e.g. vX.Y.Z]
+- Ex. Operating System: [e.g. MacOSX with Docker Desktop vX.Y]
+- ...
