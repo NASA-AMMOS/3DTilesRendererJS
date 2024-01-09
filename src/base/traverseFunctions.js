@@ -244,15 +244,22 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
+				// consider a child to be loaded if
+				// - the children's children have been loaded
+				// - the tile content has loaded
+				// - the tile is completely empty - ie has no children and no content
+				// - the child tileset has tried to load but failed
 				const childLoaded =
 					c.__allChildrenLoaded ||
 					( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) ||
+					( ! c.__externalTileSet && c.__contentEmpty && c.children.length === 0 ) ||
 					( c.__externalTileSet && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
 
 		}
+
 		tile.__childrenWereVisible = childrenWereVisible;
 		tile.__allChildrenLoaded = allChildrenLoaded;
 
