@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.23] - 2024-01-09
+### Fixed
+- Case where Google tiles did not load to a further depth when a tile has no content and no children.
+
 ## [0.3.22] - 2023.12.25
 ### Added
 - DebugTilesRenderer: Support for visualizing the load order of tiles
