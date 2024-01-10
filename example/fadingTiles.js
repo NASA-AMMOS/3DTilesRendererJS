@@ -18,7 +18,7 @@ let groundTiles, skyTiles, tilesParent;
 const params = {
 
 	reinstantiateTiles,
-	fadeRootTiles: false,
+	fadeRootTiles: true,
 	useFade: true,
 	errorTarget: 12,
 	fadeDuration: 0.5,
