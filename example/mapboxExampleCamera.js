@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+// The code in this file comes from https://github.com/jscastro76/threebox/tree/master I have simplified and modified some content
 // 512 * 2000
 // 512: TILE_SIZE
 const WORLD_SIZE = 10240000;
