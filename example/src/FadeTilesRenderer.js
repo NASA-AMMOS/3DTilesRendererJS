@@ -46,7 +46,7 @@ function onLoadModel( scene ) {
 
 }
 
-function onFadeFinish( object ) {
+function onFadeComplete( object ) {
 
 	// when the fade finishes ensure we dispose the tile and remove it from the fade group
 	if ( object.parent === this._fadeGroup ) {
@@ -113,14 +113,17 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		const fadeGroup = new Group();
 		const fadeManager = new FadeManager();
+		fadeManager.onFadeSetStart = () => this.dispatchEvent( { type: 'fade-start' } );
+		fadeManager.onFadeSetComplete = () => this.dispatchEvent( { type: 'fade-end' } );
+
 		this.group.add( fadeGroup );
-		fadeManager.onFadeFinish = onFadeFinish.bind( this );
+		fadeManager.onFadeComplete = onFadeComplete.bind( this );
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
 
-		this.onLoadModel = onLoadModel.bind( this );
-		this.onTileVisibilityChange = onTileVisibilityChange.bind( this );
+		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene ) );
+		this.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
 
 		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
@@ -138,8 +141,17 @@ export const FadeTilesRendererMixin = base => class extends base {
 		this.displayActiveTiles = true;
 
 		// update the tiles
+		const fadingBefore = this._fadeManager.fadeCount;
+
 		super.update( ...args );
 		this._fadeManager.update();
+
+		const fadingAfter = this._fadeManager.fadeCount;
+		if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
+
+			this.dispatchEvent( { type: 'fade-change' } );
+
+		}
 
 		this.displayActiveTiles = displayActiveTiles;
 		this.fadeDuration = fadeDuration;
@@ -241,7 +253,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		this.disposeSet.forEach( object => {
 
-			onFadeFinish.call( this, object );
+			onFadeComplete.call( this, object );
 
 		} );
 
