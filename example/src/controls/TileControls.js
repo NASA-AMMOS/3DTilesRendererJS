@@ -33,6 +33,10 @@ const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
 const _originalCenterPoint = new Vector2();
 
+const _changeEvent = { type: 'change' };
+const _startEvent = { type: 'start' };
+const _endEvent = { type: 'end' };
+
 export class TileControls {
 
 	constructor( scene, camera, domElement ) {
@@ -43,6 +47,7 @@ export class TileControls {
 
 		// settings
 		this.state = NONE;
+		this.pinchState = NONE;
 		this.cameraRadius = 5;
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
@@ -111,7 +116,6 @@ export class TileControls {
 		this.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
-		let pinchAction = NONE;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -168,7 +172,6 @@ export class TileControls {
 				} else if ( pointerTracker.getPointerCount() > 2 ) {
 
 					this.resetState();
-					pinchAction = NONE;
 					return;
 
 				}
@@ -192,7 +195,7 @@ export class TileControls {
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
-					this.state = ROTATE;
+					this.setState( ROTATE );
 					this.rotationPoint.copy( hit.point );
 					this.rotationPointSet = true;
 
@@ -205,7 +208,7 @@ export class TileControls {
 					// if the clicked point is coming from below the plane then don't perform the drag
 					if ( raycaster.ray.direction.dot( up ) < 0 ) {
 
-						this.state = DRAG;
+						this.setState( DRAG );
 						this.dragPoint.copy( hit.point );
 						this.startDragPoint.copy( hit.point );
 						this.dragPointSet = true;
@@ -264,7 +267,7 @@ export class TileControls {
 							const previousDist = pointerTracker.getPreviousPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - previousDist;
-							if ( pinchAction === NONE ) {
+							if ( this.pinchState === NONE ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
@@ -276,13 +279,14 @@ export class TileControls {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-										this.resetState();
-										pinchAction = ZOOM;
+										this.setState( NONE, ZOOM );
 										this.zoomDirectionSet = false;
 
 									} else {
 
-										pinchAction = ROTATE;
+										this.pinchState = ROTATE;
+										this.setState( NONE, ROTATE );
+
 
 									}
 
@@ -290,11 +294,11 @@ export class TileControls {
 
 							}
 
-							if ( pinchAction === ZOOM ) {
+							if ( this.pinchState === ZOOM ) {
 
 								this._updateZoom( separateDelta );
 
-							} else if ( pinchAction === ROTATE ) {
+							} else if ( this.pinchState === ROTATE ) {
 
 								this._updateRotation();
 								this.pivotMesh.visible = true;
@@ -328,7 +332,6 @@ export class TileControls {
 			const { pointerTracker } = this;
 
 			pointerTracker.deletePointer( e );
-			pinchAction = NONE;
 
 			if (
 				pointerTracker.getPointerType() === 'touch' &&
@@ -408,11 +411,40 @@ export class TileControls {
 
 	resetState() {
 
+		if ( this.state !== NONE && this.pinchState !== NONE ) {
+
+			this.dispatchEvent( _endEvent );
+
+		}
+
 		this.state = NONE;
+		this.pinchState = NONE;
 		this.dragPointSet = false;
 		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
+
+	}
+
+	setState( state = null, pinchState = null ) {
+
+		if ( this.state === NONE && this.pinchState === NONE ) {
+
+			this.dispatchEvent( _startEvent );
+
+		}
+
+		if ( state !== null ) {
+
+			this.state = state;
+
+		}
+
+		if ( pinchState !== null ) {
+
+			this.pinchState = pinchState;
+
+		}
 
 	}
 
@@ -547,6 +579,8 @@ export class TileControls {
 
 		}
 
+		this.dispatchEvent( _changeEvent );
+
 	}
 
 	// update the point being zoomed in to based on the zoom direction
@@ -672,6 +706,8 @@ export class TileControls {
 
 		}
 
+		this.dispatchEvent( _changeEvent );
+
 	}
 
 	_updateRotation() {
@@ -744,6 +780,8 @@ export class TileControls {
 
 		// update the transform members
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+		this.dispatchEvent( _changeEvent );
 
 	}
 
