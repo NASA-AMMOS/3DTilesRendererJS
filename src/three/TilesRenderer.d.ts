@@ -4,8 +4,6 @@ import { Tileset } from '../base/Tileset';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
-
-
 export class TilesRenderer extends TilesRendererBase {
 
 	autoDisableRendererCulling : Boolean;
