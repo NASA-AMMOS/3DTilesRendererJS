@@ -10,7 +10,8 @@ import {
 	Vector3,
 	Vector2,
 	Frustum,
-	LoadingManager
+	LoadingManager,
+	EventDispatcher,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -66,8 +67,9 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameraInfo = [];
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
-		this._autoDisableRendererCulling = true;
 		this.optimizeRaycast = true;
+		this._autoDisableRendererCulling = true;
+		this._eventDispatcher = new EventDispatcher();
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -102,6 +104,30 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 		};
+
+	}
+
+	addEventListener( ...args ) {
+
+		this._eventDispatcher.addEventListener( ...args );
+
+	}
+
+	hasEventListener( ...args ) {
+
+		this._eventDispatcher.hasEventListener( ...args );
+
+	}
+
+	removeEventListener( ...args ) {
+
+		this._eventDispatcher.removeEventListener( ...args );
+
+	}
+
+	dispatchEvent( ...args ) {
+
+		this._eventDispatcher.dispatchEvent( ...args );
 
 	}
 
@@ -292,6 +318,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const pr = super.fetchTileSet( url, ...rest );
 		pr.then( json => {
+
+			this.dispatchEvent( {
+				type: 'load-tile-set',
+				tileSet: json,
+				url,
+			} );
 
 			if ( this.onLoadTileSet ) {
 
@@ -675,6 +707,12 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.scene = scene;
 			cached.metadata = metadata;
 
+			this.dispatchEvent( {
+				type: 'load-model',
+				scene,
+				tile,
+			} );
+
 			if ( this.onLoadModel ) {
 
 				this.onLoadModel( scene, tile );
@@ -721,6 +759,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
+
+			this.dispatchEvent( {
+				type: 'dispose-model',
+				scene: cached.scene,
+				tile,
+			} );
+
 			if ( this.onDisposeModel ) {
 
 				this.onDisposeModel( cached.scene, tile );
@@ -758,6 +803,13 @@ export class TilesRenderer extends TilesRendererBase {
 			visibleTiles.delete( tile );
 
 		}
+
+		this.dispatchEvent( {
+			type: 'tile-visibility-change',
+			scene,
+			tile,
+			visible,
+		} );
 
 		if ( this.onTileVisibilityChange ) {
 
