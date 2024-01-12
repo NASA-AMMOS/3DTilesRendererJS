@@ -280,7 +280,23 @@ if ( intersects.length ) {
 
 ## TilesRenderer
 
-_extends [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/base/TilesRendererBase.js), which can be used to implement a 3d tiles renderer in other engines_
+_extends `THREE.EventDispatcher`` & [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/base/TilesRendererBase.js), which can be used to implement a 3d tiles renderer in other engines_
+
+### events
+
+```js
+// fired when a new root or child tile set is loaded
+{ type: 'load-tile-set', tileSet: Object, url: String }
+
+// fired when a tile model is loaded
+{ type: 'load-model', scene: THREE.Group, tile: Object }
+
+// fired when a tile model is disposed
+{ type: 'dispose-model', scene: THREE.Group, tile: Object }
+
+// fired when a tiles visibility changes
+{ type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
+```
 
 ### .fetchOptions
 

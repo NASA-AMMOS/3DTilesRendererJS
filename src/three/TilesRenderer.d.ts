@@ -4,6 +4,8 @@ import { Tileset } from '../base/Tileset';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 
+
+
 export class TilesRenderer extends TilesRendererBase {
 
 	autoDisableRendererCulling : Boolean;
@@ -31,5 +33,10 @@ export class TilesRenderer extends TilesRendererBase {
 	onLoadModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
 	onDisposeModel : ( ( scene : Object3D, tile : Tile ) => void ) | null;
 	onTileVisibilityChange : ( ( scene : Object3D, tile : Tile, visible : boolean ) => void ) | null;
+
+	addEventListener( type: String, cb: ( e : Object ) => void );
+	hasEventListener( type: String, cb: ( e : Object ) => void );
+	removeEventListener( type: String, cb: ( e : Object ) => void );
+	dispatchEvent( e : Object );
 
 }
