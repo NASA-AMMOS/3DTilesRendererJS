@@ -6,10 +6,14 @@ export class FadeManager {
 	constructor() {
 
 		this.duration = 250;
+		this.fadeCount = 0;
 		this._lastTick = - 1;
 		this._fadeState = new Map();
 		this._fadeParams = new WeakMap();
-		this.onFadeFinish = () => {};
+		this.onFadeComplete = null;
+		this.onFadeStart = null;
+		this.onFadeSetComplete = null;
+		this.onFadeSetStart = null;
 
 	}
 
@@ -195,7 +199,20 @@ export class FadeManager {
 
 		} );
 
-		this.onFadeFinish( object );
+		// fire events
+		this.fadeCount --;
+
+		if ( this.onFadeComplete ) {
+
+			this.onFadeComplete( object );
+
+		}
+
+		if ( this.fadeCount === 0 && this.onFadeSetComplete ) {
+
+			this.onFadeSetComplete();
+
+		}
 
 	}
 
@@ -212,12 +229,29 @@ export class FadeManager {
 	// Fade the object in
 	fadeIn( object ) {
 
-		this.guaranteeState( object );
-
+		const noState = this.guaranteeState( object );
 		const state = this._fadeState.get( object );
 		state.fadeInTarget = 1;
 		state.fadeOutTarget = 0;
 		state.fadeOut = 0;
+
+		// Fire events
+		if ( noState ) {
+
+			this.fadeCount ++;
+			if ( this.fadeCount === 1 && this.onFadeSetStart ) {
+
+				this.onFadeSetStart();
+
+			}
+
+			if ( this.onFadeStart ) {
+
+				this.onFadeStart( object );
+
+			}
+
+		}
 
 	}
 
@@ -227,10 +261,25 @@ export class FadeManager {
 		const noState = this.guaranteeState( object );
 		const state = this._fadeState.get( object );
 		state.fadeOutTarget = 1;
+
+		// Fire events and initialize state
 		if ( noState ) {
 
 			state.fadeInTarget = 1;
 			state.fadeIn = 1;
+
+			this.fadeCount ++;
+			if ( this.fadeCount === 1 && this.onFadeSetStart ) {
+
+				this.onFadeSetStart();
+
+			}
+
+			if ( this.onFadeStart ) {
+
+				this.onFadeStart( object );
+
+			}
 
 		}
 
