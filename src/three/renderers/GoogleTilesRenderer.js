@@ -29,7 +29,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this.lruCache.maxSize = 5000;
 		this.errorTarget = 40;
 
-		this.onLoadTileSet = tileset => {
+		const onLoadCallback = () => {
 
 			// find the session id in the first sub tile set
 			let session;
@@ -60,12 +60,13 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 			};
 
-			// clear the callback once the root is loaded
-			this.onLoadTileSet = null;
+			this.removeEventListener( 'load-tile-set', onLoadCallback );
 
 		};
 
-		this.onTileVisibilityChange = ( scene, tile, visible ) => {
+		this.addEventListener( 'load-tile-set', onLoadCallback );
+
+		this.addEventListener( 'tile-visibility-change', ( scene, tile, visible ) => {
 
 			const copyright = tile.cached.metadata.asset.copyright || '';
 			if ( visible ) {
@@ -78,7 +79,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 			}
 
-		};
+		} );
 
 	}
 
