@@ -319,24 +319,25 @@ export class TilesRenderer extends TilesRendererBase {
 		const pr = super.fetchTileSet( url, ...rest );
 		pr.then( json => {
 
-			this.dispatchEvent( {
-				type: 'load-tile-set',
-				tileSet: json,
-				url,
-			} );
+			// Push this onto the end of the event stack to ensure this runs
+			// after the base renderer has placed the provided json where it
+			// needs to be placed and is ready for an update.
+			Promise.resolve().then( () => {
 
-			if ( this.onLoadTileSet ) {
+				this.dispatchEvent( {
+					type: 'load-tile-set',
+					tileSet: json,
+					url,
+				} );
 
-				// Push this onto the end of the event stack to ensure this runs
-				// after the base renderer has placed the provided json where it
-				// needs to be placed and is ready for an update.
-				Promise.resolve().then( () => {
+				if ( this.onLoadTileSet ) {
 
 					this.onLoadTileSet( json, url );
 
-				} );
+				}
 
-			}
+			} );
+
 
 		} );
 		return pr;

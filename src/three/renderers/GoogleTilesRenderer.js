@@ -60,14 +60,16 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 			};
 
+			// clear the callback once the root is loaded
 			this.removeEventListener( 'load-tile-set', onLoadCallback );
 
 		};
 
 		this.addEventListener( 'load-tile-set', onLoadCallback );
 
-		this.addEventListener( 'tile-visibility-change', ( scene, tile, visible ) => {
+		this.addEventListener( 'tile-visibility-change', e => {
 
+			const { tile, visible } = e;
 			const copyright = tile.cached.metadata.asset.copyright || '';
 			if ( visible ) {
 
