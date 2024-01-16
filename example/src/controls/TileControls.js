@@ -454,16 +454,18 @@ export class TileControls {
 			camera.position.add( _delta );
 			dragPoint.copy( startDragPoint );
 
+			// adjust the height
+			hit.distance -= _delta.length();
+
 		}
 
-		// cast down from the camera
 		if ( hit ) {
 
 			const dist = hit.distance;
 			if ( dist < cameraRadius ) {
 
 				const delta = cameraRadius - dist;
-				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
+				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
 
 			}
