@@ -47,8 +47,8 @@ export class TileControls {
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minDistance = 10;
-		this.maxDistance = Infinity;
+		this.minZoomDistance = 10;
+		this.maxZoomDistance = Infinity;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 
@@ -102,7 +102,7 @@ export class TileControls {
 
 		if ( this.domElement ) {
 
-			throw new Error( 'GlobeControls: Controls already attached to element' );
+			throw new Error( 'TileControls: Controls already attached to element' );
 
 		}
 
@@ -486,8 +486,8 @@ export class TileControls {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			minDistance,
-			maxDistance,
+			minZoomDistance,
+			maxZoomDistance,
 			raycaster,
 			pointerTracker,
 			domElement,
@@ -518,14 +518,14 @@ export class TileControls {
 			// scale the distance based on how far there is to move
 			if ( scale < 0 ) {
 
-				const remainingDistance = Math.min( 0, dist - maxDistance );
+				const remainingDistance = Math.min( 0, dist - maxZoomDistance );
 				scale = scale * ( dist - 0 ) * 0.01;
 				scale = Math.max( scale, remainingDistance );
 
 			} else {
 
-				const remainingDistance = Math.max( 0, dist - minDistance );
-				scale = scale * ( dist - minDistance ) * 0.01;
+				const remainingDistance = Math.max( 0, dist - minZoomDistance );
+				scale = scale * ( dist - minZoomDistance ) * 0.01;
 				scale = Math.min( scale, remainingDistance );
 
 			}
