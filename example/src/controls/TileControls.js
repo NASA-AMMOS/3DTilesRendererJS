@@ -454,16 +454,18 @@ export class TileControls {
 			camera.position.add( _delta );
 			dragPoint.copy( startDragPoint );
 
+			// adjust the height
+			hit.distance -= _delta.length();
+
 		}
 
-		// cast down from the camera
 		if ( hit ) {
 
 			const dist = hit.distance;
 			if ( dist < cameraRadius ) {
 
 				const delta = cameraRadius - dist;
-				camera.position.copy( hit.point ).addScaledVector( raycaster.ray.direction, - cameraRadius );
+				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
 
 			}
@@ -776,17 +778,17 @@ export class TileControls {
 
 			if ( pivot ) {
 
-				// perform a simple realignment by rotating the camera and adjusting the height
-				const dist = pivot.distanceTo( camera.position );
-				camera.position.copy( pivot ).addScaledVector( newUp, dist );
-				camera.quaternion.premultiply( _quaternion );
-				camera.updateMatrixWorld();
+				// perform a simple realignment by rotating the camera around the pivot
+				makeRotateAroundPoint( pivot, _quaternion, _rotMatrix );
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			}
 
 		}
 
 		up.copy( newUp );
+		camera.updateMatrixWorld();
 
 	}
 
