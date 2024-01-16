@@ -55,18 +55,18 @@ export class TileControls extends EventDispatcher {
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minDistance = 10;
-		this.maxDistance = Infinity;
+		this.minZoomDistance = 10;
+		this.maxZoomDistance = Infinity;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
 		this.needsUpdate = false;
+		this.actionHeightOffset = 0;
 
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
-		this.startDragPoint = new Vector3();
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
@@ -112,7 +112,7 @@ export class TileControls extends EventDispatcher {
 
 		if ( this.domElement ) {
 
-			throw new Error( 'GlobeControls: Controls already attached to element' );
+			throw new Error( 'TileControls: Controls already attached to element' );
 
 		}
 
@@ -216,7 +216,6 @@ export class TileControls extends EventDispatcher {
 
 						this.setState( DRAG );
 						this.dragPoint.copy( hit.point );
-						this.startDragPoint.copy( hit.point );
 						this.dragPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
@@ -416,6 +415,7 @@ export class TileControls extends EventDispatcher {
 		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
+		this.actionHeightOffset = 0;
 
 	}
 
@@ -444,7 +444,6 @@ export class TileControls extends EventDispatcher {
 			camera,
 			cameraRadius,
 			dragPoint,
-			startDragPoint,
 			up,
 			state,
 			pinchState,
@@ -504,16 +503,22 @@ export class TileControls extends EventDispatcher {
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
-		if ( this.state === DRAG ) {
+		if ( ( this.state === DRAG || this.state === ROTATE ) && this.actionHeightOffset !== 0 ) {
 
-			_delta.subVectors( startDragPoint, dragPoint );
-			camera.position.add( _delta );
-			dragPoint.copy( startDragPoint );
+			const { actionHeightOffset } = this;
+			camera.position.addScaledVector( up, - actionHeightOffset );
+			dragPoint.addScaledVector( up, - actionHeightOffset );
 
 			// adjust the height
-			hit.distance -= _delta.length();
+			if ( hit ) {
+
+				hit.distance -= actionHeightOffset;
+
+			}
 
 		}
+
+		this.actionHeightOffset = 0;
 
 		if ( hit ) {
 
@@ -523,6 +528,7 @@ export class TileControls extends EventDispatcher {
 				const delta = cameraRadius - dist;
 				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
+				this.actionHeightOffset = delta;
 
 			}
 
@@ -543,8 +549,8 @@ export class TileControls extends EventDispatcher {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			minDistance,
-			maxDistance,
+			minZoomDistance,
+			maxZoomDistance,
 			raycaster,
 			pointerTracker,
 			domElement,
@@ -578,14 +584,14 @@ export class TileControls extends EventDispatcher {
 			// scale the distance based on how far there is to move
 			if ( scale < 0 ) {
 
-				const remainingDistance = Math.min( 0, dist - maxDistance );
+				const remainingDistance = Math.min( 0, dist - maxZoomDistance );
 				scale = scale * ( dist - 0 ) * 0.01;
 				scale = Math.max( scale, remainingDistance );
 
 			} else {
 
-				const remainingDistance = Math.max( 0, dist - minDistance );
-				scale = scale * ( dist - minDistance ) * 0.01;
+				const remainingDistance = Math.max( 0, dist - minZoomDistance );
+				scale = scale * ( dist - minZoomDistance ) * 0.01;
 				scale = Math.min( scale, remainingDistance );
 
 			}
