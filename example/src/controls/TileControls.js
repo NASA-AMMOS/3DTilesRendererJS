@@ -447,38 +447,39 @@ export class TileControls extends EventDispatcher {
 			startDragPoint,
 			up,
 			state,
+			pinchState,
 		} = this;
 
 		// update the actions
 		if ( this.needsUpdate ) {
 
-			let fireEvent = false;
-			if ( state === DRAG ) {
+			const action = state || pinchState;
+			const zoomDelta = this.zoomDelta;
+			if ( action === DRAG ) {
 
 				this._updatePosition();
-				fireEvent = true;
 
-			} else if ( state === ROTATE ) {
+			}
+
+			if ( action === ROTATE ) {
 
 				this._updateRotation();
-				fireEvent = true;
 
 			}
 
-			if ( state === ZOOM || this.zoomDelta !== 0 ) {
+			if ( action === ZOOM || zoomDelta !== 0 ) {
 
 				this._updateZoom();
-				fireEvent = true;
 
 			}
 
-			this.needsUpdate = false;
-
-			if ( fireEvent ) {
+			if ( action !== NONE || zoomDelta !== 0 ) {
 
 				this.dispatchEvent( _changeEvent );
 
 			}
+
+			this.needsUpdate = false;
 
 		}
 
