@@ -404,7 +404,7 @@ export class TileControls extends EventDispatcher {
 
 	resetState() {
 
-		if ( this.state !== NONE && this.pinchState !== NONE ) {
+		if ( this.state !== NONE || this.pinchState !== NONE ) {
 
 			this.dispatchEvent( _endEvent );
 
@@ -452,25 +452,33 @@ export class TileControls extends EventDispatcher {
 		// update the actions
 		if ( this.needsUpdate ) {
 
+			let fireEvent = false;
 			if ( state === DRAG ) {
 
 				this._updatePosition();
+				fireEvent = true;
 
 			} else if ( state === ROTATE ) {
 
 				this._updateRotation();
+				fireEvent = true;
 
 			}
 
 			if ( state === ZOOM || this.zoomDelta !== 0 ) {
 
 				this._updateZoom();
+				fireEvent = true;
 
 			}
 
 			this.needsUpdate = false;
 
-			this.dispatchEvent( _changeEvent );
+			if ( fireEvent ) {
+
+				this.dispatchEvent( _changeEvent );
+
+			}
 
 		}
 
