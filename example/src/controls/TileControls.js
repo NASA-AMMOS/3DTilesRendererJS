@@ -454,7 +454,11 @@ export class TileControls {
 			dragPoint.copy( startDragPoint );
 
 			// adjust the height
-			hit.distance -= _delta.length();
+			if ( hit ) {
+
+				hit.distance -= _delta.length();
+
+			}
 
 		}
 
