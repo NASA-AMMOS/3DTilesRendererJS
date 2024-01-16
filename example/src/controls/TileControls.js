@@ -5,6 +5,7 @@ import {
 	Vector3,
 	Raycaster,
 	Plane,
+	EventDispatcher,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -37,9 +38,11 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
-export class TileControls {
+export class TileControls extends EventDispatcher {
 
 	constructor( scene, camera, domElement ) {
+
+		super();
 
 		this.domElement = null;
 		this.camera = null;
@@ -250,7 +253,7 @@ export class TileControls {
 
 					if ( this.state === DRAG ) {
 
-						this.setState( NONE, NONE );
+						this.setState( NONE, NONE, false );
 
 					}
 
@@ -403,7 +406,7 @@ export class TileControls {
 
 		if ( this.state !== NONE && this.pinchState !== NONE ) {
 
-			// this.dispatchEvent( _endEvent );
+			this.dispatchEvent( _endEvent );
 
 		}
 
@@ -416,25 +419,22 @@ export class TileControls {
 
 	}
 
-	setState( state = null, pinchState = null ) {
+	setState( state = this.state, pinchState = this.pinchState, fireEvent = true ) {
 
-		if ( this.state === NONE && this.pinchState === NONE ) {
+		if ( this.state === state && this.pinchState === pinchState ) {
 
-			// this.dispatchEvent( _startEvent );
-
-		}
-
-		if ( state !== null ) {
-
-			this.state = state;
+			return;
 
 		}
 
-		if ( pinchState !== null ) {
+		if ( this.state === NONE && this.pinchState === NONE && fireEvent ) {
 
-			this.pinchState = pinchState;
+			this.dispatchEvent( _startEvent );
 
 		}
+
+		this.state = state;
+		this.pinchState = pinchState;
 
 	}
 
@@ -470,7 +470,7 @@ export class TileControls {
 
 			this.needsUpdate = false;
 
-			// TODO: dispatch the change event
+			this.dispatchEvent( _changeEvent );
 
 		}
 
@@ -599,8 +599,6 @@ export class TileControls {
 
 		}
 
-		// this.dispatchEvent( _changeEvent );
-
 	}
 
 	// update the point being zoomed in to based on the zoom direction
@@ -726,8 +724,6 @@ export class TileControls {
 
 		}
 
-		// this.dispatchEvent( _changeEvent );
-
 	}
 
 	_updateRotation() {
@@ -800,8 +796,6 @@ export class TileControls {
 
 		// update the transform members
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-		// this.dispatchEvent( _changeEvent );
 
 	}
 
