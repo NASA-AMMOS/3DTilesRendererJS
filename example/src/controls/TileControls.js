@@ -5,6 +5,7 @@ import {
 	Vector3,
 	Raycaster,
 	Plane,
+	EventDispatcher,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -33,9 +34,15 @@ const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
 const _originalCenterPoint = new Vector2();
 
-export class TileControls {
+const _changeEvent = { type: 'change' };
+const _startEvent = { type: 'start' };
+const _endEvent = { type: 'end' };
+
+export class TileControls extends EventDispatcher {
 
 	constructor( scene, camera, domElement ) {
+
+		super();
 
 		this.domElement = null;
 		this.camera = null;
@@ -43,6 +50,7 @@ export class TileControls {
 
 		// settings
 		this.state = NONE;
+		this.pinchState = NONE;
 		this.cameraRadius = 5;
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
@@ -54,6 +62,7 @@ export class TileControls {
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
+		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
 		this.dragPointSet = false;
@@ -66,6 +75,7 @@ export class TileControls {
 		this.zoomPointSet = false;
 		this.zoomDirection = new Vector3();
 		this.zoomPoint = new Vector3();
+		this.zoomDelta = 0;
 
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
@@ -111,7 +121,6 @@ export class TileControls {
 		this.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
-		let pinchAction = NONE;
 		let shiftClicked = false;
 
 		const contextMenuCallback = e => {
@@ -154,6 +163,7 @@ export class TileControls {
 
 			// init the pointer
 			pointerTracker.addPointer( e );
+			this.needsUpdate = true;
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
@@ -168,7 +178,6 @@ export class TileControls {
 				} else if ( pointerTracker.getPointerCount() > 2 ) {
 
 					this.resetState();
-					pinchAction = NONE;
 					return;
 
 				}
@@ -192,7 +201,7 @@ export class TileControls {
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
-					this.state = ROTATE;
+					this.setState( ROTATE );
 					this.rotationPoint.copy( hit.point );
 					this.rotationPointSet = true;
 
@@ -205,7 +214,7 @@ export class TileControls {
 					// if the clicked point is coming from below the plane then don't perform the drag
 					if ( raycaster.ray.direction.dot( up ) < 0 ) {
 
-						this.state = DRAG;
+						this.setState( DRAG );
 						this.dragPoint.copy( hit.point );
 						this.dragPointSet = true;
 
@@ -227,6 +236,7 @@ export class TileControls {
 			// whenever the pointer moves we need to re-derive the zoom direction and point
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
+			this.needsUpdate = true;
 
 			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
@@ -238,15 +248,13 @@ export class TileControls {
 
 			if ( pointerTracker.getPointerType() === 'touch' ) {
 
-				if ( pointerTracker.getPointerCount() === 1 ) {
+				if ( pointerTracker.getPointerCount() === 2 ) {
 
 					if ( this.state === DRAG ) {
 
-						this._updatePosition();
+						this.setState( NONE, NONE, false );
 
 					}
-
-				} else if ( pointerTracker.getPointerCount() === 2 ) {
 
 					// We queue this event to ensure that all pointers have been updated
 					if ( ! _pointerMoveQueued ) {
@@ -263,7 +271,7 @@ export class TileControls {
 							const previousDist = pointerTracker.getPreviousPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - previousDist;
-							if ( pinchAction === NONE ) {
+							if ( this.pinchState === NONE ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
@@ -275,13 +283,13 @@ export class TileControls {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-										this.resetState();
-										pinchAction = ZOOM;
+										this.setState( NONE, ZOOM );
 										this.zoomDirectionSet = false;
 
 									} else {
 
-										pinchAction = ROTATE;
+										this.pinchState = ROTATE;
+										this.setState( NONE, ROTATE );
 
 									}
 
@@ -289,13 +297,12 @@ export class TileControls {
 
 							}
 
-							if ( pinchAction === ZOOM ) {
+							if ( this.pinchState === ZOOM ) {
 
-								this._updateZoom( separateDelta );
+								this.zoomDelta += separateDelta;
 
-							} else if ( pinchAction === ROTATE ) {
+							} else if ( this.pinchState === ROTATE ) {
 
-								this._updateRotation();
 								this.pivotMesh.visible = true;
 
 							}
@@ -303,18 +310,6 @@ export class TileControls {
 						} );
 
 					}
-
-				}
-
-			} else if ( pointerTracker.getPointerType() === 'mouse' ) {
-
-				if ( this.state === DRAG ) {
-
-					this._updatePosition();
-
-				} else if ( this.state === ROTATE ) {
-
-					this._updateRotation();
 
 				}
 
@@ -327,7 +322,6 @@ export class TileControls {
 			const { pointerTracker } = this;
 
 			pointerTracker.deletePointer( e );
-			pinchAction = NONE;
 
 			if (
 				pointerTracker.getPointerType() === 'touch' &&
@@ -339,12 +333,14 @@ export class TileControls {
 			}
 
 			this.resetState();
+			this.needsUpdate = true;
 
 		};
 
 		const wheelCallback = e => {
 
-			this._updateZoom( - e.deltaY );
+			this.needsUpdate = true;
+			this.zoomDelta -= e.deltaY;
 
 		};
 
@@ -407,12 +403,38 @@ export class TileControls {
 
 	resetState() {
 
+		if ( this.state !== NONE || this.pinchState !== NONE ) {
+
+			this.dispatchEvent( _endEvent );
+
+		}
+
 		this.state = NONE;
+		this.pinchState = NONE;
 		this.dragPointSet = false;
 		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
+
+	}
+
+	setState( state = this.state, pinchState = this.pinchState, fireEvent = true ) {
+
+		if ( this.state === state && this.pinchState === pinchState ) {
+
+			return;
+
+		}
+
+		if ( this.state === NONE && this.pinchState === NONE && fireEvent ) {
+
+			this.dispatchEvent( _startEvent );
+
+		}
+
+		this.state = state;
+		this.pinchState = pinchState;
 
 	}
 
@@ -423,7 +445,42 @@ export class TileControls {
 			cameraRadius,
 			dragPoint,
 			up,
+			state,
+			pinchState,
 		} = this;
+
+		// update the actions
+		if ( this.needsUpdate ) {
+
+			const action = state || pinchState;
+			const zoomDelta = this.zoomDelta;
+			if ( action === DRAG ) {
+
+				this._updatePosition();
+
+			}
+
+			if ( action === ROTATE ) {
+
+				this._updateRotation();
+
+			}
+
+			if ( action === ZOOM || zoomDelta !== 0 ) {
+
+				this._updateZoom();
+
+			}
+
+			if ( action !== NONE || zoomDelta !== 0 ) {
+
+				this.dispatchEvent( _changeEvent );
+
+			}
+
+			this.needsUpdate = false;
+
+		}
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
 		const hit = this._getPointBelowCamera();
@@ -486,7 +543,7 @@ export class TileControls {
 	}
 
 	// private
-	_updateZoom( scale ) {
+	_updateZoom() {
 
 		const {
 			zoomPoint,
@@ -498,6 +555,9 @@ export class TileControls {
 			pointerTracker,
 			domElement,
 		} = this;
+
+		let scale = this.zoomDelta;
+		this.zoomDelta = 0;
 
 		// get the latest hover / touch point
 		if ( ! pointerTracker.getLatestPoint( _pointer ) ) {
