@@ -54,10 +54,10 @@ export class TileControls {
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
+		this.actionHeightOffset = 0;
 
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
-		this.startDragPoint = new Vector3();
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
@@ -207,7 +207,6 @@ export class TileControls {
 
 						this.state = DRAG;
 						this.dragPoint.copy( hit.point );
-						this.startDragPoint.copy( hit.point );
 						this.dragPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
@@ -413,6 +412,7 @@ export class TileControls {
 		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
+		this.actionHeightOffset = 0;
 
 	}
 
@@ -422,7 +422,6 @@ export class TileControls {
 			camera,
 			cameraRadius,
 			dragPoint,
-			startDragPoint,
 			up,
 		} = this;
 
@@ -447,20 +446,25 @@ export class TileControls {
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
-		if ( this.state === DRAG ) {
+		if ( this.state === DRAG || this.state === ROTATE ) {
 
-			_delta.subVectors( startDragPoint, dragPoint );
-			camera.position.add( _delta );
-			dragPoint.copy( startDragPoint );
+			if ( this.actionHeightOffset !== 0 ) {
 
-			// adjust the height
-			if ( hit ) {
+				camera.position.addScaledVector( up, - this.actionHeightOffset );
+				dragPoint.addScaledVector( up, - this.actionHeightOffset );
 
-				hit.distance -= _delta.length();
+				// adjust the height
+				if ( hit ) {
+
+					hit.distance -= this.actionHeightOffset;
+
+				}
 
 			}
 
 		}
+
+		this.actionHeightOffset = 0;
 
 		if ( hit ) {
 
@@ -470,6 +474,7 @@ export class TileControls {
 				const delta = cameraRadius - dist;
 				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
+				this.actionHeightOffset += delta;
 
 			}
 
