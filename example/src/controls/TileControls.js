@@ -419,7 +419,6 @@ export class TileControls {
 	update() {
 
 		const {
-			raycaster,
 			camera,
 			cameraRadius,
 			dragPoint,
