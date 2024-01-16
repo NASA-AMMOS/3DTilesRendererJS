@@ -446,19 +446,16 @@ export class TileControls {
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
-		if ( this.state === DRAG || this.state === ROTATE ) {
+		if ( ( this.state === DRAG || this.state === ROTATE ) && this.actionHeightOffset !== 0 ) {
 
-			if ( this.actionHeightOffset !== 0 ) {
+			const { actionHeightOffset } = this;
+			camera.position.addScaledVector( up, - actionHeightOffset );
+			dragPoint.addScaledVector( up, - actionHeightOffset );
 
-				camera.position.addScaledVector( up, - this.actionHeightOffset );
-				dragPoint.addScaledVector( up, - this.actionHeightOffset );
+			// adjust the height
+			if ( hit ) {
 
-				// adjust the height
-				if ( hit ) {
-
-					hit.distance -= this.actionHeightOffset;
-
-				}
+				hit.distance -= actionHeightOffset;
 
 			}
 
@@ -474,7 +471,7 @@ export class TileControls {
 				const delta = cameraRadius - dist;
 				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
-				this.actionHeightOffset += delta;
+				this.actionHeightOffset = delta;
 
 			}
 
