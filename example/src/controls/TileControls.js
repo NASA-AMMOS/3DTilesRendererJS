@@ -340,8 +340,26 @@ export class TileControls extends EventDispatcher {
 
 		const wheelCallback = e => {
 
+			let delta;
+			switch ( e.deltaMode ) {
+
+				case 2: // Pages
+					delta = e.deltaY * 100;
+					break;
+				case 1: // Lines
+					delta = e.deltaY * 16;
+					break;
+				case 0: // Pixels
+					delta = e.deltaY;
+					break;
+
+			}
+
+			const normalizedDelta = Math.abs( delta * 0.01 );
+			const finalDelta = Math.sign( delta ) * Math.pow( 0.95, normalizedDelta );
+
 			this.needsUpdate = true;
-			this.zoomDelta -= e.deltaY;
+			this.zoomDelta -= finalDelta;
 
 		};
 
