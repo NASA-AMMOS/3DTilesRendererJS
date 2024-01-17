@@ -14,6 +14,7 @@ export const NONE = 0;
 export const DRAG = 1;
 export const ROTATE = 2;
 export const ZOOM = 3;
+export const WAITING = 4;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
@@ -244,6 +245,7 @@ export class TileControls {
 					if ( this.state === DRAG ) {
 
 						this._updatePosition();
+						// this.setState( NONE, WAITING, false );
 
 					}
 
@@ -264,7 +266,8 @@ export class TileControls {
 							const previousDist = pointerTracker.getPreviousPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - previousDist;
-							if ( pinchAction === NONE ) {
+
+							if ( this.pinchState === NONE || this.pinchState === WAITING ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
