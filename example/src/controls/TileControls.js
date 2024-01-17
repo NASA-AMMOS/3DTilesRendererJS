@@ -290,7 +290,6 @@ export class TileControls extends EventDispatcher {
 
 									} else {
 
-										this.pinchState = ROTATE;
 										this.setState( NONE, ROTATE );
 
 									}
