@@ -356,7 +356,7 @@ export class TileControls extends EventDispatcher {
 			}
 
 			const normalizedDelta = Math.abs( delta * 0.01 );
-			const finalDelta = Math.sign( delta ) * Math.pow( 0.95, normalizedDelta );
+			const finalDelta = 3 * Math.sign( delta ) * Math.log( Math.abs( delta ) + 1 );
 
 			this.needsUpdate = true;
 			this.zoomDelta -= finalDelta;
