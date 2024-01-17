@@ -12,7 +12,7 @@ export class PivotPointMesh extends Mesh {
 
 		const uniforms = this.material.uniforms;
 		renderer.getSize( uniforms.resolution.value );
-		uniforms.pixelRatio.value = renderer.getPixelRatio();
+		uniforms.thickness.value = 2.0 / renderer.getPixelRatio();
 
 	}
 
@@ -44,9 +44,8 @@ class PivotMaterial extends ShaderMaterial {
 			uniforms: {
 
 				resolution: { value: new Vector2() },
-				pixelRatio: { value: 1 },
-				size: { value: 7.5 },
-				thickness: { value: 1 },
+				size: { value: 15 },
+				thickness: { value: 2 },
 				opacity: { value: 1 },
 
 			},
@@ -68,7 +67,7 @@ class PivotMaterial extends ShaderMaterial {
 					offset.y *= aspect;
 
 					vec4 screenPoint = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-					screenPoint.xy += offset * pixelRatio * ( size + thickness ) * screenPoint.w / resolution.x;
+					screenPoint.xy += offset * ( size + thickness ) * screenPoint.w / resolution.x;
 
 					gl_Position = screenPoint;
 
@@ -91,7 +90,7 @@ class PivotMaterial extends ShaderMaterial {
 
 					vec2 vec = vUv * 2.0 - vec2( 1.0 );
 					float dist = abs( length( vec ) - offset );
-					float fw = fwidth( dist );
+					float fw = fwidth( dist ) * 0.5;
 					float a = smoothstep( texelThickness - fw, texelThickness + fw, dist );
 
 					gl_FragColor = vec4( 1, 1, 1, opacity * ( 1.0 - a ) );
