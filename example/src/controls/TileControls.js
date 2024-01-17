@@ -15,6 +15,7 @@ export const NONE = 0;
 export const DRAG = 1;
 export const ROTATE = 2;
 export const ZOOM = 3;
+export const WAITING = 4;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
@@ -55,8 +56,8 @@ export class TileControls extends EventDispatcher {
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minZoomDistance = 10;
-		this.maxZoomDistance = Infinity;
+		this.minDistance = 10;
+		this.maxDistance = Infinity;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 
@@ -67,6 +68,7 @@ export class TileControls extends EventDispatcher {
 
 		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
+		this.startDragPoint = new Vector3();
 
 		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
@@ -112,7 +114,7 @@ export class TileControls extends EventDispatcher {
 
 		if ( this.domElement ) {
 
-			throw new Error( 'TileControls: Controls already attached to element' );
+			throw new Error( 'GlobeControls: Controls already attached to element' );
 
 		}
 
@@ -216,6 +218,7 @@ export class TileControls extends EventDispatcher {
 
 						this.setState( DRAG );
 						this.dragPoint.copy( hit.point );
+						this.startDragPoint.copy( hit.point );
 						this.dragPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
@@ -252,7 +255,7 @@ export class TileControls extends EventDispatcher {
 
 					if ( this.state === DRAG ) {
 
-						this.setState( NONE, NONE, false );
+						this.setState( NONE, WAITING, false );
 
 					}
 
@@ -271,7 +274,8 @@ export class TileControls extends EventDispatcher {
 							const previousDist = pointerTracker.getPreviousPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - previousDist;
-							if ( this.pinchState === NONE ) {
+
+							if ( this.pinchState === NONE || this.pinchState === WAITING ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
@@ -415,7 +419,6 @@ export class TileControls extends EventDispatcher {
 		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
-		this.actionHeightOffset = 0;
 
 	}
 
@@ -444,6 +447,7 @@ export class TileControls extends EventDispatcher {
 			camera,
 			cameraRadius,
 			dragPoint,
+			startDragPoint,
 			up,
 			state,
 			pinchState,
@@ -503,22 +507,16 @@ export class TileControls extends EventDispatcher {
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
 		// to the original point.
-		if ( ( this.state === DRAG || this.state === ROTATE ) && this.actionHeightOffset !== 0 ) {
+		if ( this.state === DRAG ) {
 
-			const { actionHeightOffset } = this;
-			camera.position.addScaledVector( up, - actionHeightOffset );
-			dragPoint.addScaledVector( up, - actionHeightOffset );
+			_delta.subVectors( startDragPoint, dragPoint );
+			camera.position.add( _delta );
+			dragPoint.copy( startDragPoint );
 
 			// adjust the height
-			if ( hit ) {
-
-				hit.distance -= actionHeightOffset;
-
-			}
+			hit.distance -= _delta.length();
 
 		}
-
-		this.actionHeightOffset = 0;
 
 		if ( hit ) {
 
@@ -528,7 +526,6 @@ export class TileControls extends EventDispatcher {
 				const delta = cameraRadius - dist;
 				camera.position.addScaledVector( up, delta );
 				dragPoint.addScaledVector( up, delta );
-				this.actionHeightOffset = delta;
 
 			}
 
@@ -549,8 +546,8 @@ export class TileControls extends EventDispatcher {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			minZoomDistance,
-			maxZoomDistance,
+			minDistance,
+			maxDistance,
 			raycaster,
 			pointerTracker,
 			domElement,
@@ -584,14 +581,14 @@ export class TileControls extends EventDispatcher {
 			// scale the distance based on how far there is to move
 			if ( scale < 0 ) {
 
-				const remainingDistance = Math.min( 0, dist - maxZoomDistance );
+				const remainingDistance = Math.min( 0, dist - maxDistance );
 				scale = scale * ( dist - 0 ) * 0.01;
 				scale = Math.max( scale, remainingDistance );
 
 			} else {
 
-				const remainingDistance = Math.max( 0, dist - minZoomDistance );
-				scale = scale * ( dist - minZoomDistance ) * 0.01;
+				const remainingDistance = Math.max( 0, dist - minDistance );
+				scale = scale * ( dist - minDistance ) * 0.01;
 				scale = Math.min( scale, remainingDistance );
 
 			}
