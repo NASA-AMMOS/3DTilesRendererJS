@@ -152,6 +152,8 @@ export class TileControls extends EventDispatcher {
 
 		const pointerdownCallback = e => {
 
+			e.preventDefault();
+
 			const {
 				camera,
 				raycaster,
@@ -233,6 +235,8 @@ export class TileControls extends EventDispatcher {
 
 		let _pointerMoveQueued = false;
 		const pointermoveCallback = e => {
+
+			e.preventDefault();
 
 			// whenever the pointer moves we need to re-derive the zoom direction and point
 			this.zoomDirectionSet = false;
@@ -339,6 +343,8 @@ export class TileControls extends EventDispatcher {
 		};
 
 		const wheelCallback = e => {
+
+			e.preventDefault();
 
 			let delta;
 			switch ( e.deltaMode ) {
