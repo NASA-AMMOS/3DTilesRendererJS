@@ -212,11 +212,12 @@ export class GlobeControls extends TileControls {
 
 	}
 
-	_updateZoom( delta ) {
+	_updateZoom() {
 
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || delta > 0 ) {
+		const scale = this.zoomDelta;
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || scale > 0 ) {
 
-			super._updateZoom( delta );
+			super._updateZoom();
 
 		} else {
 
@@ -227,8 +228,10 @@ export class GlobeControls extends TileControls {
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
-			this.camera.position.addScaledVector( _vec, delta * 0.0025 );
+			this.camera.position.addScaledVector( _vec, scale * 0.0025 );
 			this.camera.updateMatrixWorld();
+
+			this.zoomDelta = 0;
 
 		}
 
