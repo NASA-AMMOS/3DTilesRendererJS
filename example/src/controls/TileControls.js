@@ -355,11 +355,11 @@ export class TileControls extends EventDispatcher {
 
 			}
 
-			const normalizedDelta = Math.abs( delta * 0.01 );
-			const finalDelta = 3 * Math.sign( delta ) * Math.log( Math.abs( delta ) + 1 );
-
+			// use LOG to scale the scroll delta and hopefully normalize them across platforms
+			const deltaSign = Math.sign( delta );
+			const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
+			this.zoomDelta -= 3 * deltaSign * normalizedDelta;
 			this.needsUpdate = true;
-			this.zoomDelta -= finalDelta;
 
 		};
 
