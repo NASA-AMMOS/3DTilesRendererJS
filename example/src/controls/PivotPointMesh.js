@@ -12,7 +12,6 @@ export class PivotPointMesh extends Mesh {
 
 		const uniforms = this.material.uniforms;
 		renderer.getSize( uniforms.resolution.value );
-		uniforms.thickness.value = 2.0 / renderer.getPixelRatio();
 
 	}
 

@@ -509,19 +509,15 @@ export class TileControls extends EventDispatcher {
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
 		const hit = this._getPointBelowCamera();
-		if ( this.getUpDirection ) {
+		this.getUpDirection( camera.position, _localUp );
+		if ( ! this._upInitialized ) {
 
-			this.getUpDirection( camera.position, _localUp );
-			if ( ! this._upInitialized ) {
+			this._upInitialized = true;
+			this.up.copy( _localUp );
 
-				this._upInitialized = true;
-				this.up.copy( _localUp );
+		} else {
 
-			} else {
-
-				this._setFrame( _localUp, hit && hit.point || null );
-
-			}
+			this._setFrame( _localUp, hit && hit.point || null );
 
 		}
 
@@ -733,25 +729,22 @@ export class TileControls extends EventDispatcher {
 		// TODO: dragging causes the camera to rise because we're getting "pushed" up by lower resolution tiles and
 		// don't lower back down. We should maintain a target height above tiles where possible
 		// prevent the drag from inverting
-		if ( this.getUpDirection ) {
 
-			// if we drag to a point that's near the edge of the earth then we want to prevent it
-			// from wrapping around and causing unexpected rotations
-			this.getUpDirection( dragPoint, _localUp );
-			if ( - raycaster.ray.direction.dot( _localUp ) < DRAG_UP_THRESHOLD ) {
+		// if we drag to a point that's near the edge of the earth then we want to prevent it
+		// from wrapping around and causing unexpected rotations
+		this.getUpDirection( dragPoint, _localUp );
+		if ( - raycaster.ray.direction.dot( _localUp ) < DRAG_UP_THRESHOLD ) {
 
-				const angle = Math.acos( DRAG_UP_THRESHOLD );
+			const angle = Math.acos( DRAG_UP_THRESHOLD );
 
-				_rotationAxis
-					.crossVectors( raycaster.ray.direction, _localUp )
-					.normalize();
+			_rotationAxis
+				.crossVectors( raycaster.ray.direction, _localUp )
+				.normalize();
 
-				raycaster.ray.direction
-					.copy( _localUp )
-					.applyAxisAngle( _rotationAxis, angle )
-					.multiplyScalar( - 1 );
-
-			}
+			raycaster.ray.direction
+				.copy( _localUp )
+				.applyAxisAngle( _rotationAxis, angle )
+				.multiplyScalar( - 1 );
 
 		}
 
@@ -797,15 +790,7 @@ export class TileControls extends EventDispatcher {
 			.transformDirection( camera.matrixWorld )
 			.multiplyScalar( - 1 );
 
-		if ( this.getUpDirection ) {
-
-			this.getUpDirection( rotationPoint, _localUp );
-
-		} else {
-
-			_localUp.copy( up );
-
-		}
+		this.getUpDirection( rotationPoint, _localUp );
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
