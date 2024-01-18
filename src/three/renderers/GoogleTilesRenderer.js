@@ -108,6 +108,8 @@ const GoogleTilesRendererMixin = base => class extends base {
 				group.scale,
 			);
 
+		group.updateMatrixWorld(true);
+
 	}
 
 };
