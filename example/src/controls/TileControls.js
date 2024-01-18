@@ -24,6 +24,7 @@ const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
 const _vec = new Vector3();
 const _forward = new Vector3();
+const _right = new Vector3();
 const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
@@ -792,9 +793,14 @@ export class TileControls extends EventDispatcher {
 
 		this.getUpDirection( rotationPoint, _localUp );
 
+		// get the signed angle relative to the top down view
+		_vec.crossVectors( up, _forward ).normalize();
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
+		const sign = Math.sign( _vec.dot( _right ) );
+		const angle = sign * up.angleTo( _forward );
+
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
-		const angle = up.angleTo( _forward );
 		if ( altitude > 0 ) {
 
 			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
