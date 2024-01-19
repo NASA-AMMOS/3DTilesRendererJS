@@ -6,20 +6,6 @@ Thanks for taking the time to consider contributing! We very much appreciate you
 
 Before you begin contributing to our project, it'll be a good idea to ensure you've satisfied the below pre-requisites. 
 
-### Developer Certificate of Origin (DCO)
-
-To accept your contributions for any kind of patch, you'll want to:
-1. Understand what a Developer Certificate of Origin is. See [this](https://wiki.linuxfoundation.org/dco) guide.
-2. Read and agree to the [terms](https://developercertificate.org) of the Developer Certificate of Origin.
-3. Remember to add your Sign-Off for each patch contribution you submit to our project via either:
-   1. By using the `-s` flag if using Git. See [these](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt--s) instructions.
-   2. By including the following text in your patch contributions (i.e. pull requests)
-   ```
-   Signed-off-by: Full Name <email>
-   ``` 
-
-Reviewers reviewing your patch will look for the sign-off before deciding to accept your contribution.
-
 ### License
 
 Our project has our licensing terms, including rules governing redistribution, documented in our [LICENSE](LICENSE) file. Please take a look at that file and ensure you understand the terms. This will impact how we, or others, use your contributions.
@@ -27,10 +13,6 @@ Our project has our licensing terms, including rules governing redistribution, d
 ### Code of Conduct
 
 Our Code of Conduct helps facilitate a positive interaction environment for everyone involved with the team, and provides guidance on what to do if you experience problematic behavior. Read more in our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and make sure you agree to its terms. 
-
-### Governance Model
-
-Our Governance model helps outline our project's decision making and roles-based expectations. Read more in our [GOVERNANCE.md](GOVERNANCE.md). 
 
 ### Developer Environment
 
@@ -75,8 +57,8 @@ Make sure people are aware you're working on a patch! Check out our [issue track
 #### Choose the Right Branch to Fork
 
 Our project typically has the following branches available, make sure to fork either the default branch or a branch someone else already tagged with a particular issue ticket you're working with.
-- `develop` &mdash; default branch, used for new code development
 - `main` &mdash; release branch 
+- `develop` &mdash; optional default branch, used primarily for new code development
 
 ### Make your Modifications
 
@@ -93,8 +75,6 @@ Issue #248 - Show an example commit message title
 This makes sure that tickets are updated on GitHub with references to commits that are related to them.
 
 Commit should always be atomic. Keep solutions isolated whenever possible. Filler commits such as "clean up white space" or "fix typo" should be merged together before making a pull request, and significant sub-feature branches should be [rebased](https://www.youtube.com/results?search_query=git+rebase) to preserve commit history. Please ensure your commit history is clean and meaningful!
-
-Additionally, remember to "Sign-Off" on your commits to align with our [Developer Certificate of Origin (DCO) policy](#developer-certificate-of-origin-dco). 
 
 ### Submit a Pull Request
 
@@ -182,7 +162,7 @@ Here's some guidance on submitting a new feature issue:
 
 Security vulnerabilities should **not** be filed to the regular issue tracking system.
 
-Report your security vulnerabilities to (see contact links): [@jl-0](https://github.com/jl-0) or [@jeffreypon](https://github.com/jeffreypon)
+Report your security vulnerabilities to (see contact links): [@jl-0](https://github.com/jl-0) or [@sharimayer](https://github.com/sharimayer)
 
 Please be sure to:
 * Indicate the severity of the vulnerability
@@ -238,7 +218,7 @@ The overall structure of our project documentation is as follows:
   - [README.md](README.md) - top-level information about how to run, build, and contribute to the project
   - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - best practices and guidance on how to work well with other people in the project, and suggestions on dealing with interpersonal issues
   - [CONTRIBUTING.md](CONTRIBUTING.md) - guidance on contributing to the project
-  - `*.java` - inline documentation available inside code files
+  - `*.java`, `*.py`, `*.sh`, etc. - inline documentation available inside code files
 - Hosted documentation
   - [Wiki Main-page](https://github.com/NASA-AMMOS/3DTilesRendererJS/wiki)
 - Discussion Boards
@@ -290,12 +270,10 @@ To ensure documentation is readable and consistent by newcomers and experts alik
 #### Common Wording 
 
 Below are some commonly used words you'll want to leverage in your documentation contributions:
-- **AMMOS** - Advanced Multi-Mission Operations System tool set.
-- **Artifactory** - Lab-based artifact repository that stores compiled builds for reuse.
-- **GitHub** - One word with capitalization of the 'G' and 'H'.
-- **Jenkins** - Continuous Integration (CI) server that hosts many Lab builds.
-- **MIPL** - Multimission Instrument Processing Lab which hosts the project containing this repository.
-- **VICAR Java Build**  - The build system that collects and compiles related code.
+- **AMMOS** - Advanced Multi-Mission Operations System tool set. AMMOS is also the eponymous organization that sponsors this repository.
+- **Docker** - Containerization service used to perform automated build, release and deployment.
+- **GitHub** - one word, and capitalization of the 'G' and the 'H'
+- **GitHub Actions** - Continuous Integration (CI) services that facilitate build automation
 
 #### Inline Code Documentation
 
@@ -347,4 +325,5 @@ A great way to contribute towards our project goals is to socialize and encourag
 - Help point project contributors and community members to conferences and publications where they may socialize their unique innovations
 - Schedule in-person or virtual happy-hours to help create a more social atmosphere within the project community
 
-For the above ideas, use our [communication channels](#communication-channels) to propose get-togethers.  
+For the above ideas, use our [communication channels](#communication-channels) to propose get-togethers. 
+
