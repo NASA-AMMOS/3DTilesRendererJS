@@ -10,8 +10,23 @@ export class PointerTracker {
 		this.previousPositions = {};
 		this.pointerPositions = {};
 		this.startPositions = {};
+		this.pointerSetThisFrame = {};
 		this.hoverPosition = new Vector2();
 		this.hoverSet = false;
+
+	}
+
+	// The pointers can be set multiple times per frame so track whether the pointer has
+	// been set this frame or not so we don't overwrite the previous position and lose information
+	// about pointer movement
+	resetFrame() {
+
+		const { previousPositions, pointerPositions } = this;
+		for ( const id in pointerPositions ) {
+
+			previousPositions[ id ].copy( pointerPositions[ id ] );
+
+		}
 
 	}
 
@@ -73,8 +88,6 @@ export class PointerTracker {
 
 		}
 
-		const position = this.pointerPositions[ id ];
-		this.previousPositions[ id ].copy( position );
 		this.pointerPositions[ id ].set( e.clientX, e.clientY );
 		return true;
 
