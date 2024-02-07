@@ -285,8 +285,10 @@ export class TileControls extends EventDispatcher {
 								pointerTracker.getCenterPoint( _centerPoint );
 								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
 
+								// adjust the drag requirement by the dpr
+								const dpr = window.devicePixelRatio;
 								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
-								if ( Math.abs( separateDelta ) > 1 || parallelDelta > 1 ) {
+								if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
