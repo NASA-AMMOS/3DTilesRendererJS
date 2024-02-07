@@ -42,6 +42,24 @@ const _endEvent = { type: 'end' };
 
 export class TileControls extends EventDispatcher {
 
+	get enabled() {
+
+		return this._enabled || true;
+
+	}
+
+	set enabled( v ) {
+
+		if ( v !== this.enabled ) {
+
+			this.resetState();
+			this.pointerTracker.reset();
+			this._enabled = v;
+
+		}
+
+	}
+
 	constructor( scene, camera, domElement ) {
 
 		super();
@@ -51,6 +69,7 @@ export class TileControls extends EventDispatcher {
 		this.scene = null;
 
 		// settings
+		this._enabled = true;
 		this.state = NONE;
 		this.pinchState = NONE;
 		this.cameraRadius = 5;
@@ -423,7 +442,7 @@ export class TileControls extends EventDispatcher {
 
 			this._detachCallback();
 			this._detachCallback = null;
-			this.pointerTracker = new PointerTracker();
+			this.pointerTracker.reset();
 
 		}
 
@@ -467,6 +486,12 @@ export class TileControls extends EventDispatcher {
 	}
 
 	update() {
+
+		if ( ! this.enabled ) {
+
+			return;
+
+		}
 
 		const {
 			camera,
@@ -558,7 +583,7 @@ export class TileControls extends EventDispatcher {
 
 		}
 
-		this.pointerTracker.resetFrame();
+		this.pointerTracker.updateFrame();
 
 	}
 

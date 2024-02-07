@@ -16,10 +16,24 @@ export class PointerTracker {
 
 	}
 
+	reset() {
+
+		this.buttons = 0;
+		this.pointerType = null;
+		this.pointerOrder = [];
+		this.previousPositions = {};
+		this.pointerPositions = {};
+		this.startPositions = {};
+		this.pointerSetThisFrame = {};
+		this.hoverPosition = new Vector2();
+		this.hoverSet = false;
+
+	}
+
 	// The pointers can be set multiple times per frame so track whether the pointer has
 	// been set this frame or not so we don't overwrite the previous position and lose information
 	// about pointer movement
-	resetFrame() {
+	updateFrame() {
 
 		const { previousPositions, pointerPositions } = this;
 		for ( const id in pointerPositions ) {
