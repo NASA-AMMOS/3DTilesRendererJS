@@ -558,6 +558,8 @@ export class TileControls extends EventDispatcher {
 
 		}
 
+		this.pointerTracker.resetFrame();
+
 	}
 
 	dispose() {
