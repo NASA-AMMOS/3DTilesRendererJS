@@ -285,8 +285,10 @@ export class TileControls extends EventDispatcher {
 								pointerTracker.getCenterPoint( _centerPoint );
 								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
 
+								// adjust the drag requirement by the dpr
+								const dpr = window.devicePixelRatio;
 								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
-								if ( Math.abs( separateDelta ) > 1 || parallelDelta > 1 ) {
+								if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
@@ -833,12 +835,13 @@ export class TileControls extends EventDispatcher {
 	// sets the "up" axis for the current surface of the tile set
 	_setFrame( newUp, pivot ) {
 
-		const { up, camera, state, zoomPoint, zoomDirection } = this;
+		const { up, camera, state, pinchState, zoomPoint, zoomDirection } = this;
 		camera.updateMatrixWorld();
 
 		// get the amount needed to rotate
 		_quaternion.setFromUnitVectors( up, newUp );
 
+		const action = state || pinchState;
 		if ( this.zoomDirectionSet && ( this.zoomPointSet || this._updateZoomPoint() ) ) {
 
 			if ( this.reorientOnZoom ) {
@@ -852,7 +855,7 @@ export class TileControls extends EventDispatcher {
 
 			}
 
-		} else if ( state === NONE || state === DRAG && this.reorientOnDrag ) {
+		} else if ( action === NONE || action === DRAG && this.reorientOnDrag ) {
 
 			// NOTE: We used to derive the pivot point here by getting the point below the camera
 			// but decided to pass it in via "update" to avoid multiple ray casts
