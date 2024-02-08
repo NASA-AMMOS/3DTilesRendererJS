@@ -207,7 +207,7 @@ export class GlobeControls extends EnvironmentControls {
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( dragPoint ) * 1e-11 * 5 );
+				.multiplyScalar( camera.position.distanceTo( dragPoint ) * 1e-10 / devicePixelRatio );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
