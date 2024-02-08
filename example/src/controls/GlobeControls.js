@@ -5,7 +5,7 @@ import {
 	Vector3,
 	MathUtils,
 } from 'three';
-import { TileControls, NONE } from './TileControls.js';
+import { EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { makeRotateAroundPoint } from './utils.js';
 import { WGS84_ELLIPSOID } from '../../../src/index.js';
 
@@ -26,7 +26,7 @@ const _deltaPointer = new Vector2();
 
 const MAX_GLOBE_DISTANCE = 2 * 1e7;
 const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
-export class GlobeControls extends TileControls {
+export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
 

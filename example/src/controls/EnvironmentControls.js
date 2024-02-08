@@ -40,7 +40,7 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
-export class TileControls extends EventDispatcher {
+export class EnvironmentControls extends EventDispatcher {
 
 	get enabled() {
 
@@ -133,7 +133,7 @@ export class TileControls extends EventDispatcher {
 
 		if ( this.domElement ) {
 
-			throw new Error( 'TileControls: Controls already attached to element' );
+			throw new Error( 'EnvironmentControls: Controls already attached to element' );
 
 		}
 
