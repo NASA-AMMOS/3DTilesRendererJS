@@ -92,7 +92,7 @@ function reinstantiateTiles() {
 	};
 
 	// Some Cesium Ion tilesets have wrong materials - or should add a light to the scene
-        tiles.onLoadModel = function (scene, tile) {
+        tiles.onLoadModel = (scene, tile) => {
           scene.traverse((c) => {
             if (c.isMesh) {
               if (c.material.isMeshStandardMaterial) {
@@ -103,7 +103,8 @@ function reinstantiateTiles() {
                 // c.material = new THREE.MeshBasicMaterial({map: c?.material?.map});
               }
 	    }
-	  }
+	  });
+	};
 
 	setupTiles();
 
