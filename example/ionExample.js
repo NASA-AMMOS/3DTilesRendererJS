@@ -5,7 +5,6 @@ import {
 	PerspectiveCamera,
 	Vector3,
 	Quaternion,
-	Group,
 	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
@@ -16,11 +15,10 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 let camera, controls, scene, renderer, tiles;
 
 const params = {
-
-	'ionAssetId': '40866',
-	'ionAccessToken': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
-	'reload': reinstantiateTiles,
-
+	ionAssetId: '40866',
+	ionAccessToken:
+		'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
+	reload: reinstantiateTiles,
 };
 
 init();
@@ -47,7 +45,9 @@ function setupTiles() {
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
+	dracoLoader.setDecoderPath(
+		'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/'
+	);
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
@@ -92,18 +92,26 @@ function reinstantiateTiles() {
 	};
 
 	// Some Cesium Ion tilesets have wrong materials - or should add a light to the scene
-        tiles.onLoadModel = (scene, tile) => {
-          scene.traverse((c) => {
-            if (c.isMesh) {
-              if (c.material.isMeshStandardMaterial) {
-                // Option 1: use an emissiveMap within PBR MeshStandardMaterial
-                c.material.emissiveMap = c?.material?.map;
-                c.material.emissive = new THREE.Color(0xffffff); 
-                // Option 2: redefine a classic MeshBasicMaterial with map
-                // c.material = new THREE.MeshBasicMaterial({map: c?.material?.map});
-              }
-	    }
-	  });
+	tiles.onLoadModel = ( scene, tile ) => {
+
+		scene.traverse( ( c ) => {
+
+			if ( c.isMesh ) {
+
+				if ( c.material.isMeshStandardMaterial ) {
+
+					// Option 1: use an emissiveMap within PBR MeshStandardMaterial
+					c.material.emissiveMap = c?.material?.map;
+					c.material.emissive = new THREE.Color( 0xffffff );
+					// Option 2: redefine a classic MeshBasicMaterial with map
+					// c.material = new THREE.MeshBasicMaterial({map: c?.material?.map});
+
+				}
+
+			}
+
+		} );
+
 	};
 
 	setupTiles();
@@ -115,8 +123,8 @@ function init() {
 	scene = new Scene();
 
 	// Add scene light for MeshStandardMaterial to react properly
-        const light = new THREE.AmbientLight(0xffffff, 1);
-        scene.add(light);
+	const light = new THREE.AmbientLight( 0xffffff, 1 );
+	scene.add( light );
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
@@ -125,7 +133,12 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	camera = new PerspectiveCamera(
+		60,
+		window.innerWidth / window.innerHeight,
+		1,
+		4000
+	);
 	camera.position.set( 400, 400, 400 );
 
 	// controls
