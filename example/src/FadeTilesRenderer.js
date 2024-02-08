@@ -133,10 +133,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	update( ...args ) {
 
-		// adjust settings to what's needed for specific fade logic. Ie display active tiles so when the camera
-		// moves we don't notice tiles popping when they enter the view. And perform the fade animation more quickly
-		// if the camera is moving quickly.
-		const fadeDuration = this.fadeDuration;
 		const displayActiveTiles = this.displayActiveTiles;
 		this.displayActiveTiles = true;
 
@@ -154,7 +150,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 		}
 
 		this.displayActiveTiles = displayActiveTiles;
-		this.fadeDuration = fadeDuration;
 
 		// update the visibility of tiles based on visibility since we must use
 		// the active tiles for rendering fade
