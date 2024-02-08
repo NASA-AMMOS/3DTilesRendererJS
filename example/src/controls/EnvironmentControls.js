@@ -80,7 +80,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.maxZoomDistance = Infinity;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
-		this.adjustHeight = false;
+		this.adjustHeight = true;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
