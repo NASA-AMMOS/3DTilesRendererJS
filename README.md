@@ -199,11 +199,11 @@ fetch( url, { mode: 'cors' } )
 
 		// Prefilter each model fetch by setting the cesium Ion version to the search
 		// parameters of the url.
-		tiles.onPreprocessURL = uri => {
+		tiles.preprocessURL = uri => {
 
 			uri = new URL( uri );
 			uri.searchParams.append( 'v', version );
-			return uri;
+			return uri.toString();
 
 		};
 
@@ -368,10 +368,10 @@ If true then the `raycast` functions of the loaded tile objects are overriden to
 
 If you would like to manage raycasting against tiles yourself this behavior can be disabled if needed by setting `optizeRaycast` to false.
 
-### .onPreprocessURL
+### .preprocessURL
 
 ```js
-onPreprocessURL = null : ( uri : string | URL ) => string | URL;
+preprocessURL = null : ( uri : string | URL ) => string | URL;
 ```
 
 Function to preprocess the url for each individual tile geometry or child tile set to be loaded. If null then the url is used directly.
