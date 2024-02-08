@@ -80,6 +80,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.maxZoomDistance = Infinity;
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
+		this.adjustHeight = false;
 
 		// internal state
 		this.pointerTracker = new PointerTracker();
@@ -500,6 +501,7 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			state,
 			pinchState,
+			adjustHeight,
 		} = this;
 
 		// update the actions
@@ -536,7 +538,7 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = this._getPointBelowCamera();
+		const hit = adjustHeight && this._getPointBelowCamera() || null;
 		this.getUpDirection( camera.position, _localUp );
 		if ( ! this._upInitialized ) {
 
@@ -636,7 +638,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if ( scale < 0 ) {
 
 				const remainingDistance = Math.min( 0, dist - maxZoomDistance );
-				scale = scale * ( dist - 0 ) * 0.01;
+				scale = scale * dist * 0.01;
 				scale = Math.max( scale, remainingDistance );
 
 			} else {
