@@ -28,22 +28,61 @@ const MAX_GLOBE_DISTANCE = 2 * 1e7;
 const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
 export class GlobeControls extends TileControls {
 
-	constructor( ...args ) {
+	get ellipsoid() {
+
+		return this._tilesRenderer ? this._tilesRenderer.ellipsoid : null;
+
+	}
+
+	get tilesGroup() {
+
+		return this._tilesRenderer ? this._tilesRenderer.group : null;
+
+	}
+
+	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
 
 		// store which mode the drag stats are in
-		super( ...args );
-		this.ellipsoid = WGS84_ELLIPSOID;
+		super( scene, camera, domElement );
+		this._tilesRenderer = null;
 		this._dragMode = 0;
 		this._rotationMode = 0;
+
+		this.setTilesRenderer( tilesRenderer );
+
+	}
+
+	setTilesRenderer( tilesRenderer ) {
+
+		this._tilesRenderer = tilesRenderer;
+		if ( this.scene === null && this._tilesRenderer !== null ) {
+
+			this.setScene( this._tilesRenderer.group );
+
+		}
+
+	}
+
+	setScene( scene ) {
+
+		if ( scene === null && this._tilesRenderer !== null ) {
+
+			super.setScene( this._tilesRenderer.group );
+
+		} else {
+
+			super.setScene( scene );
+
+		}
 
 	}
 
 	// get the vector to the center of the provided globe
 	getVectorToCenter( target ) {
 
-		const { scene, camera } = this;
+		const { tilesGroup, camera } = this;
 		return target
-			.setFromMatrixPosition( scene.matrixWorld )
+			.setFromMatrixPosition( tilesGroup.matrixWorld )
 			.sub( camera.position );
 
 	}
@@ -60,12 +99,12 @@ export class GlobeControls extends TileControls {
 	getUpDirection( point, target ) {
 
 		// get the "up" direction based on the wgs84 ellipsoid
-		const { scene, ellipsoid } = this;
-		const invMatrix = _invMatrix.copy( scene.matrixWorld ).invert();
+		const { tilesGroup, ellipsoid } = this;
+		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
 		const pos = _vec.copy( point ).applyMatrix4( invMatrix );
 
 		ellipsoid.getPositionToNormal( pos, target );
-		target.transformDirection( scene.matrixWorld );
+		target.transformDirection( tilesGroup.matrixWorld );
 
 	}
 
@@ -75,7 +114,7 @@ export class GlobeControls extends TileControls {
 
 		const {
 			camera,
-			scene,
+			tilesGroup,
 			pivotMesh,
 		} = this;
 
@@ -83,8 +122,8 @@ export class GlobeControls extends TileControls {
 		let distanceToCenter = this.getDistanceToCenter();
 		if ( distanceToCenter > MAX_GLOBE_DISTANCE ) {
 
-			_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
-			camera.position.setFromMatrixPosition( scene.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
+			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
+			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
 			camera.updateMatrixWorld();
 
 			distanceToCenter = MAX_GLOBE_DISTANCE;
@@ -158,6 +197,7 @@ export class GlobeControls extends TileControls {
 				camera,
 				pivotMesh,
 				dragPoint,
+				tilesGroup,
 			} = this;
 
 			// get the delta movement with magic numbers scaled by the distance to the
@@ -172,7 +212,7 @@ export class GlobeControls extends TileControls {
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
 
-			_center.setFromMatrixPosition( this.scene.matrixWorld );
+			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
 			_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
 			_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
 
@@ -240,8 +280,8 @@ export class GlobeControls extends TileControls {
 	// tilt the camera to align with north
 	_alignCameraUpToNorth( alpha ) {
 
-		const { scene } = this;
-		_globalUp.set( 0, 0, 1 ).transformDirection( scene.matrixWorld );
+		const { tilesGroup } = this;
+		_globalUp.set( 0, 0, 1 ).transformDirection( tilesGroup.matrixWorld );
 		this._alignCameraUp( _globalUp, alpha );
 
 	}
@@ -273,11 +313,11 @@ export class GlobeControls extends TileControls {
 
 		const {
 			camera,
-			scene,
+			tilesGroup,
 		} = this;
 
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
-		_vec.setFromMatrixPosition( scene.matrixWorld ).sub( camera.position ).normalize();
+		_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
 		_vec.lerp( _forward, alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _forward, _vec );

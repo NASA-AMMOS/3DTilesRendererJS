@@ -61,7 +61,7 @@ function reinstantiateTiles() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
-	controls.setScene( tiles.group );
+	controls.setTilesRenderer( tiles );
 
 }
 
@@ -80,7 +80,7 @@ function init() {
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new GlobeControls( scene, camera, renderer.domElement );
+	controls = new GlobeControls( scene, camera, renderer.domElement, null );
 
 	reinstantiateTiles();
 

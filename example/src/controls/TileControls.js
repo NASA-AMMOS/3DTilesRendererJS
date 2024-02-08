@@ -60,7 +60,7 @@ export class TileControls extends EventDispatcher {
 
 	}
 
-	constructor( scene, camera, domElement ) {
+	constructor( scene = null, camera = null, domElement = null ) {
 
 		super();
 
