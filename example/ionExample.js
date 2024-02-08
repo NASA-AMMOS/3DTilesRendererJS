@@ -91,6 +91,20 @@ function reinstantiateTiles() {
 
 	};
 
+	// Some Cesium Ion tilesets have wrong materials - or should add a light to the scene
+        tiles.onLoadModel = function (scene, tile) {
+          scene.traverse((c) => {
+            if (c.isMesh) {
+              if (c.material.isMeshStandardMaterial) {
+                // Option 1: use an emissiveMap within PBR MeshStandardMaterial
+                c.material.emissiveMap = c?.material?.map;
+                c.material.emissive = new THREE.Color(0xffffff); 
+                // Option 2: redefine a classic MeshBasicMaterial with map
+                // c.material = new THREE.MeshBasicMaterial({map: c?.material?.map});
+              }
+	    }
+	  }
+
 	setupTiles();
 
 }
@@ -98,6 +112,10 @@ function reinstantiateTiles() {
 function init() {
 
 	scene = new Scene();
+
+	// Add scene light for MeshStandardMaterial to react properly
+        const light = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(light);
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
