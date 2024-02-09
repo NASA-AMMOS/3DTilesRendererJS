@@ -7,6 +7,8 @@ import {
 	Quaternion,
 	Sphere,
 	AmbientLight,
+	DataTexture,
+	EquirectangularReflectionMapping
 } from 'three';
 import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -92,31 +94,6 @@ function reinstantiateTiles() {
 
 	};
 
-	// Some Cesium Ion tilesets have wrong materials - or should add a light to the scene
-	tiles.onLoadModel = ( scene, tile ) => {
-
-		scene.traverse( ( c ) => {
-
-			if ( c.isMesh ) {
-
-				if ( c.material.isMeshStandardMaterial ) {
-
-					// Option 1
-					c.material.metalness = 0;
-					// Option 2: use an emissiveMap within PBR MeshStandardMaterial
-					// c.material.emissiveMap = c?.material?.map;
-					// c.material.emissive = new Color( 0xffffff );
-					// Option 3: redefine a classic MeshBasicMaterial with map
-					// c.material = new MeshBasicMaterial( { map: c?.material?.map } );
-
-				}
-
-			}
-
-		} );
-
-	};
-
 	setupTiles();
 
 }
@@ -128,6 +105,12 @@ function init() {
 	// Add scene light for MeshStandardMaterial to react properly if its metalness is set to 0
 	const light = new AmbientLight( 0xffffff, 1 );
 	scene.add( light );
+
+	const env = new DataTexture( new Uint8Array( 64 * 64 * 4 ).fill( 255 ), 64, 64 );
+	env.mapping = EquirectangularReflectionMapping;
+	env.needsUpdate = true;
+	scene.background = env;
+	scene.environment = env;
 
 	// primary camera view
 	renderer = new WebGLRenderer( { antialias: true } );
