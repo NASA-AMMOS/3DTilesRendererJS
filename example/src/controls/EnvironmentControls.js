@@ -34,7 +34,7 @@ const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 const _centerPoint = new Vector2();
-const _originalCenterPoint = new Vector2();
+const _startCenterPoint = new Vector2();
 
 const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
@@ -294,20 +294,19 @@ export class EnvironmentControls extends EventDispatcher {
 							pointerTracker.getCenterPoint( _centerPoint );
 
 							// detect zoom transition
-							const previousDist = pointerTracker.getPreviousPointerDistance();
+							const startDist = pointerTracker.getStartPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
-							const separateDelta = pointerDist - previousDist;
-
+							const separateDelta = pointerDist - startDist;
 							if ( this.pinchState === NONE || this.pinchState === WAITING ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
 								pointerTracker.getCenterPoint( _centerPoint );
-								pointerTracker.getPreviousCenterPoint( _originalCenterPoint );
+								pointerTracker.getStartCenterPoint( _startCenterPoint );
 
 								// adjust the drag requirement by the dpr
 								const dpr = window.devicePixelRatio;
-								const parallelDelta = _centerPoint.distanceTo( _originalCenterPoint );
+								const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
 								if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
@@ -327,7 +326,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 							if ( this.pinchState === ZOOM ) {
 
-								this.zoomDelta += separateDelta;
+								const previousDist = pointerTracker.getPreviousPointerDistance();
+								this.zoomDelta += pointerDist - previousDist;
 
 							} else if ( this.pinchState === ROTATE ) {
 
