@@ -1,4 +1,9 @@
-import { GeoUtils, WGS84_ELLIPSOID, DebugGoogleTilesRenderer as GoogleTilesRenderer } from '../src/index.js';
+import {
+	WGS84_ELLIPSOID,
+	GeoUtils,
+	GlobeControls,
+	DebugGoogleTilesRenderer as GoogleTilesRenderer,
+} from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -10,7 +15,6 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { GlobeControls } from './src/controls/GlobeControls.js';
 
 let camera, controls, scene, renderer, tiles;
 let statsContainer, stats;
