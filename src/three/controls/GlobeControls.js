@@ -7,7 +7,6 @@ import {
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { makeRotateAroundPoint } from './utils.js';
-import { WGS84_ELLIPSOID } from '../../../src/index.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -116,6 +115,7 @@ export class GlobeControls extends EnvironmentControls {
 			camera,
 			tilesGroup,
 			pivotMesh,
+			ellipsoid,
 		} = this;
 
 		// clamp the camera distance
@@ -150,7 +150,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the projection matrix
-		const largestDistance = Math.max( ...WGS84_ELLIPSOID.radius );
+		const largestDistance = Math.max( ...ellipsoid.radius );
 		camera.near = Math.max( 1, distanceToCenter - largestDistance * 1.25 );
 		camera.far = distanceToCenter + largestDistance + 0.1;
 		camera.updateProjectionMatrix();

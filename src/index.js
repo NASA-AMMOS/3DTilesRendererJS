@@ -1,5 +1,6 @@
 export * from './three/DebugTilesRenderer.js';
 
+// three.js
 export { TilesRenderer } from './three/TilesRenderer.js';
 export { B3DMLoader } from './three/B3DMLoader.js';
 export { PNTSLoader } from './three/PNTSLoader.js';
@@ -16,6 +17,11 @@ export * from './three/math/GeoConstants.js';
 export * from './three/renderers/GoogleTilesRenderer.js';
 export * from './three/renderers/CesiumIonTilesRenderer.js';
 
+// three.js controls
+export { GlobeControls } from './three/controls/GlobeControls.js';
+export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
+
+// common
 export { TilesRendererBase } from './base/TilesRendererBase.js';
 export { LoaderBase } from './base/LoaderBase.js';
 export { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
@@ -26,3 +32,4 @@ export * from './base/constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';
+
