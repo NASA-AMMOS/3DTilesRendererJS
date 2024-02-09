@@ -163,6 +163,12 @@ export class PointerTracker {
 
 	}
 
+	getStartCenterPoint( target ) {
+
+		return this.getCenterPoint( target, this.startPositions );
+
+	}
+
 	getPointerDistance( pointerPositions = this.pointerPositions ) {
 
 		if ( this.getPointerCount() <= 1 || this.getPointerType() === 'mouse' ) {
@@ -185,6 +191,12 @@ export class PointerTracker {
 	getPreviousPointerDistance() {
 
 		return this.getPointerDistance( this.previousPositions );
+
+	}
+
+	getStartPointerDistance() {
+
+		return this.getPointerDistance( this.startPositions );
 
 	}
 
