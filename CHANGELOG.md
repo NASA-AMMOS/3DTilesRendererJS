@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.3.24] - Unreleased
 ### Added
 - Support for dispatched events to TilesRenderer and equivelent events for existing `.on*` callbacks
+- EnvironmentControls and GlobeControls
 
 ## [0.3.23] - 2024-01-09
 ### Fixed
