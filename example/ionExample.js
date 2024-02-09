@@ -109,7 +109,6 @@ function init() {
 	const env = new DataTexture( new Uint8Array( 64 * 64 * 4 ).fill( 255 ), 64, 64 );
 	env.mapping = EquirectangularReflectionMapping;
 	env.needsUpdate = true;
-	scene.background = env;
 	scene.environment = env;
 
 	// primary camera view
