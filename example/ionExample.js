@@ -19,8 +19,7 @@ let camera, controls, scene, renderer, tiles;
 
 const params = {
 	ionAssetId: '40866',
-	ionAccessToken:
-		'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
+	ionAccessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
 	reload: reinstantiateTiles,
 };
 
@@ -48,9 +47,7 @@ function setupTiles() {
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath(
-		'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/'
-	);
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.setDRACOLoader( dracoLoader );
@@ -102,10 +99,7 @@ function init() {
 
 	scene = new Scene();
 
-	// Add scene light for MeshStandardMaterial to react properly if its metalness is set to 0
-	const light = new AmbientLight( 0xffffff, 1 );
-	scene.add( light );
-
+	// Add an env map for MeshStandardMaterial so lighting and metalness are rendered
 	const env = new DataTexture( new Uint8Array( 64 * 64 * 4 ).fill( 255 ), 64, 64 );
 	env.mapping = EquirectangularReflectionMapping;
 	env.needsUpdate = true;
