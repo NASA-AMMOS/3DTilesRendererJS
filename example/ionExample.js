@@ -6,6 +6,7 @@ import {
 	Vector3,
 	Quaternion,
 	Sphere,
+	AmbientLight,
 } from 'three';
 import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -100,11 +101,13 @@ function reinstantiateTiles() {
 
 				if ( c.material.isMeshStandardMaterial ) {
 
-					// Option 1: use an emissiveMap within PBR MeshStandardMaterial
-					c.material.emissiveMap = c?.material?.map;
-					c.material.emissive = new THREE.Color( 0xffffff );
-					// Option 2: redefine a classic MeshBasicMaterial with map
-					// c.material = new THREE.MeshBasicMaterial({map: c?.material?.map});
+					// Option 1
+					c.material.metalness = 0;
+					// Option 2: use an emissiveMap within PBR MeshStandardMaterial
+					// c.material.emissiveMap = c?.material?.map;
+					// c.material.emissive = new Color( 0xffffff );
+					// Option 3: redefine a classic MeshBasicMaterial with map
+					// c.material = new MeshBasicMaterial( { map: c?.material?.map } );
 
 				}
 
@@ -122,8 +125,8 @@ function init() {
 
 	scene = new Scene();
 
-	// Add scene light for MeshStandardMaterial to react properly
-	const light = new THREE.AmbientLight( 0xffffff, 1 );
+	// Add scene light for MeshStandardMaterial to react properly if its metalness is set to 0
+	const light = new AmbientLight( 0xffffff, 1 );
 	scene.add( light );
 
 	// primary camera view
