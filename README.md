@@ -150,13 +150,14 @@ Adding support for DRACO decompression within the GLTF files that are transporte
 
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
+const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
+
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
 
-const loader = new GLTFLoader( tiles.manager );
+const loader = new GLTFLoader( tilesRenderer.manager );
 loader.setDRACOLoader( dracoLoader );
 
-const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.manager.addHandler( /\.gltf$/, loader );
 ```
 
