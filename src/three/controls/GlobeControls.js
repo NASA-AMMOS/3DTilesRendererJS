@@ -152,7 +152,13 @@ export class GlobeControls extends EnvironmentControls {
 		// update the projection matrix
 		const largestDistance = Math.max( ...ellipsoid.radius );
 		camera.near = Math.max( 1, distanceToCenter - largestDistance * 1.25 );
-		camera.far = distanceToCenter + largestDistance + 0.1;
+
+		// update the far plane to the horizon distance
+		ellipsoid.getPositionToCartographic( camera.position, _vec );
+		const elevation = ellipsoid.getPositionElevation( camera.position );
+		const horizonDistance = ellipsoid.calculateHorizonDistance( _vec.lat, elevation );
+		camera.far = horizonDistance + 0.1;
+
 		camera.updateProjectionMatrix();
 
 	}

@@ -1,4 +1,4 @@
-import { Vector3, Spherical } from 'three';
+import { Vector3, Spherical, MathUtils, Euler, Quaternion } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
@@ -11,6 +11,9 @@ const _vecX = new Vector3();
 const _vecY = new Vector3();
 const _vecZ = new Vector3();
 const _pos = new Vector3();
+
+const toLocalEuler = new Euler( - Math.PI / 2, 0, 0, 'XYZ' );
+const toLocalQuaternion = new Quaternion().setFromEuler( toLocalEuler );
 
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
@@ -183,9 +186,9 @@ export class Ellipsoid {
 			// "denominator" here refers to the use of this expression in the velocity and acceleration
 			// computations in the sections to follow.
 			denominator =
-			  	x2 * xMultiplier3 * invRadiusSqX +
-			  	y2 * yMultiplier3 * invRadiusSqY +
-			  	z2 * zMultiplier3 * invRadiusSqZ;
+				x2 * xMultiplier3 * invRadiusSqX +
+				y2 * yMultiplier3 * invRadiusSqY +
+				z2 * zMultiplier3 * invRadiusSqZ;
 
 			const derivative = - 2.0 * denominator;
 			correction = func / derivative;
@@ -197,6 +200,45 @@ export class Ellipsoid {
 			pos.y * yMultiplier,
 			pos.z * zMultiplier
 		);
+
+	}
+
+	calculateHorizonDistance( latitude, elevation ) {
+
+		// elevation relative to the surface of the ellipsoid at the specified latitude
+		const effectiveRadius = this.calculateEffectiveRadius( latitude );
+		return Math.sqrt( 2 * effectiveRadius * elevation + elevation ** 2 );
+
+	}
+
+	calculateEffectiveRadius( latitude ) {
+
+		const semiMajorAxis = this.radius.x;
+		const semiMinorAxis = this.radius.z;
+		const eSquared = 1 - ( semiMinorAxis ** 2 / semiMajorAxis ** 2 );
+		const phi = latitude * MathUtils.DEG2RAD;
+
+		const sinPhiSquared = Math.sin( phi ) ** 2;
+		const N = semiMajorAxis / Math.sqrt( 1 - eSquared * sinPhiSquared );
+		return N;
+
+	}
+
+	worldToLocal( pos ) {
+
+		pos.applyQuaternion( toLocalQuaternion );
+
+	}
+
+	getPositionElevation( pos ) {
+
+		_pos.copy( pos );
+		this.worldToLocal( _pos );
+
+		this.getPositionToSurfacePoint( _pos, _vec3 );
+		const elevation = _vec3.distanceTo( _pos );
+
+		return elevation;
 
 	}
 

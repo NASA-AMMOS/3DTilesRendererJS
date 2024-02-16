@@ -9,14 +9,17 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	MathUtils,
+	CameraHelper,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 
-let camera, controls, scene, renderer, tiles;
+let camera, controls, scene, renderer, tiles, cameraHelper;
+let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let statsContainer, stats;
 
 const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
@@ -30,6 +33,8 @@ const params = {
 	'reload': reinstantiateTiles,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
+
+	showThirdPerson: false,
 
 };
 
@@ -83,6 +88,31 @@ function init() {
 	camera.position.set( 4800000, 2570000, 14720000 );
 	camera.lookAt( 0, 0, 0 );
 
+	// Third person camera view
+	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+	thirdPersonCamera.position.set( 4800000, 2570000, 14720000 );
+	thirdPersonCamera.lookAt( 0, 0, 0 );
+
+	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
+	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
+	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
+	thirdPersonRenderer.setClearColor( 0x0f1416 );
+
+	document.body.appendChild( thirdPersonRenderer.domElement );
+	thirdPersonRenderer.domElement.style.position = 'fixed';
+	thirdPersonRenderer.domElement.style.left = '5px';
+	thirdPersonRenderer.domElement.style.bottom = '5px';
+	thirdPersonRenderer.domElement.tabIndex = 1;
+
+	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
+	thirdPersonControls.screenSpacePanning = false;
+	thirdPersonControls.minDistance = 1;
+	thirdPersonControls.maxDistance = 14720000000;
+
+	cameraHelper = new CameraHelper( camera );
+	cameraHelper.raycast = function () {};
+	scene.add( cameraHelper );
+
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
 
@@ -106,6 +136,7 @@ function init() {
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
+	exampleOptions.add( params, 'showThirdPerson' );
 
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
@@ -122,6 +153,10 @@ function init() {
 }
 
 function onWindowResize() {
+
+	thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
+	thirdPersonCamera.updateProjectionMatrix();
+	thirdPersonRenderer.setSize( Math.floor( window.innerWidth / 3 ), Math.floor( window.innerHeight / 3 ) );
 
 	camera.aspect = window.innerWidth / window.innerHeight;
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -175,6 +210,8 @@ function animate() {
 
 	if ( ! tiles ) return;
 
+	cameraHelper.visible = false;
+
 	controls.update();
 
 	// update options
@@ -189,6 +226,17 @@ function animate() {
 
 	renderer.render( scene, camera );
 	stats.update();
+
+	// render third person view
+	thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
+	if ( params.showThirdPerson ) {
+
+		cameraHelper.update();
+		cameraHelper.visible = true;
+
+		thirdPersonRenderer.render( scene, thirdPersonCamera );
+
+	}
 
 	updateHtml();
 
