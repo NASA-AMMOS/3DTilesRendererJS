@@ -59,20 +59,6 @@ class AdvFrustum extends Frustum {
 
 	}
 
-	boxInFrustum( box ) {
-
-		let out;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].x > box.max.x ) ? 1 : 0 ); if ( out == 8 ) return false;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].x < box.min.x ) ? 1 : 0 ); if ( out == 8 ) return false;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].y > box.max.y ) ? 1 : 0 ); if ( out == 8 ) return false;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].y < box.min.y ) ? 1 : 0 ); if ( out == 8 ) return false;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].z > box.max.z ) ? 1 : 0 ); if ( out == 8 ) return false;
-		out = 0; for ( let i = 0; i < 8; i ++ ) out += ( ( this.mPoints[ i ].z < box.min.z ) ? 1 : 0 ); if ( out == 8 ) return false;
-
-		return true;
-
-	}
-
 }
 
 export { AdvFrustum };
