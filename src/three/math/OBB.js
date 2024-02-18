@@ -11,6 +11,7 @@ export class OBB {
 
 		this.box = box.clone();
 		this.transform = transform.clone();
+		this.inverseTransform = new Matrix4();
 		this.points = new Array( 8 ).fill().map( () => new Vector3() );
 		this.planes = new Array( 6 ).fill().map( () => new Plane() );
 		this.planeNeedsUpdate = false;
@@ -19,7 +20,8 @@ export class OBB {
 
 	update() {
 
-		const { points, transform, box } = this;
+		const { points, inverseTransform, transform, box } = this;
+		inverseTransform.copy( transform ).invert();
 
 		const { min, max } = box;
 		points[ 0 ].set( min.x, min.y, min.z ).applyMatrix4( transform ); // Front-bottom-left
