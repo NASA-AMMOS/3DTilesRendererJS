@@ -16,6 +16,7 @@ import {
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
+import { AdvFrustum } from './math/AdvFrustum.js';
 
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
@@ -369,7 +370,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cameraInfo.push( {
 
-				frustum: new Frustum(),
+				frustum: new AdvFrustum(),
 				isOrthographic: false,
 				sseDenominator: - 1, // used if isOrthographic:false
 				position: new Vector3(),

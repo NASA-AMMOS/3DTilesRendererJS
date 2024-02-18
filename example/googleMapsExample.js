@@ -72,6 +72,13 @@ function reinstantiateTiles() {
 
 	controls.setTilesRenderer( tiles );
 
+	tiles.loadedModels = 0;
+	tiles.onLoadModel = () => {
+
+		tiles.loadedModels ++;
+
+	};
+
 }
 
 function init() {
@@ -181,7 +188,11 @@ function updateHash() {
 
 	res.lat *= MathUtils.RAD2DEG;
 	res.lon *= MathUtils.RAD2DEG;
-	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) }` );
+
+	//todo above camer position use a matrix to get the position, should getPositionElevation be adjusted to work the same ?
+	const elevation = WGS84_ELLIPSOID.getPositionElevation( camera.position );
+
+	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) },${ elevation.toFixed( 4 ) }` );
 
 }
 
@@ -189,17 +200,17 @@ function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
 	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
-	if ( tokens.length !== 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
+	if ( tokens.length < 3 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
 
 		return;
 
 	}
 
-	const [ lat, lon ] = tokens;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, camera.position );
+	const [ lat, lon, height ] = tokens;
+	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 
 	tiles.group.updateMatrixWorld();
-	camera.position.applyMatrix4( tiles.group.matrixWorld ).multiplyScalar( 2 );
+	camera.position.applyMatrix4( tiles.group.matrixWorld );
 	camera.lookAt( 0, 0, 0 );
 
 }
@@ -250,7 +261,8 @@ function updateHtml() {
 
 	if ( params.enableCacheDisplay ) {
 
-		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
+		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>
+		Active: ${ tiles.activeTiles.size }  loadedModels: ${ tiles.loadedModels }<br/>`;
 
 		const geomSet = new Set();
 		tiles.traverse( tile => {

@@ -5,6 +5,7 @@ export class OBB {
 	constructor( box = new Box3(), transform = new Matrix4() ) {
 
 		this.box = box.clone();
+		this.orientedBox = box.clone();
 		this.transform = transform.clone();
 		this.inverseTransform = new Matrix4();
 		this.points = new Array( 8 ).fill().map( () => new Vector3() );
@@ -13,9 +14,10 @@ export class OBB {
 
 	update() {
 
-		const { points, inverseTransform, transform, box } = this;
+		const { points, inverseTransform, transform, box, orientedBox } = this;
 		inverseTransform.copy( transform ).invert();
 
+		orientedBox.copy( box ).applyMatrix4( transform );
 		const { min, max } = box;
 		let index = 0;
 		for ( let x = - 1; x <= 1; x += 2 ) {
@@ -61,6 +63,13 @@ export class OBB {
 				return false;
 
 			}
+
+		}
+
+		const boxInFrustum = frustum.boxInFrustum( this.orientedBox );
+		if ( ! boxInFrustum ) {
+
+			return false;
 
 		}
 
