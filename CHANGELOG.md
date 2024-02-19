@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.25] - Unreleased
+### Changed
+- "getBounds" and "getOrientedBounds" functions have been renamed to "getBoundingBox" and "getOrientedBoundingBox".
+- GlobeControls will now set the camera near and far values to more tightly encapsuate the set of tiles visible until the horizon, limiting the amount of tiles to load.
+
+### Fixed
+- Frustum and oriented bounding box functions now more correctly determines intersections instead of producing frequent false positives resulting in more tiles being loaded.
+
 ## [0.3.24] - 2024-02-09
 ### Added
 - Support for dispatched events to TilesRenderer and equivelent events for existing `.on*` callbacks.
