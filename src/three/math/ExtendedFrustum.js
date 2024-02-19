@@ -2,9 +2,10 @@ import { Frustum, Matrix3, Vector3 } from 'three';
 
 const _mat3 = new Matrix3();
 
+// Solve a system of equations to find the point where the three planes intersect
 function findIntersectionPoint( plane1, plane2, plane3, target ) {
 
-	// Create the matrix A using the normals of the planes
+	// Create the matrix A using the normals of the planes as rows
 	const A = _mat3.set(
 		plane1.normal.x, plane1.normal.y, plane1.normal.z,
 		plane2.normal.x, plane2.normal.y, plane2.normal.z,
@@ -39,20 +40,21 @@ class ExtendedFrustum extends Frustum {
 
 	calculateFrustumPoints() {
 
+		const { planes, points } = this;
 		const planeIntersections = [
-			[ this.planes[ 0 ], this.planes[ 3 ], this.planes[ 4 ] ], // Near top left
-			[ this.planes[ 1 ], this.planes[ 3 ], this.planes[ 4 ] ], // Near top right
-			[ this.planes[ 0 ], this.planes[ 2 ], this.planes[ 4 ] ], // Near bottom left
-			[ this.planes[ 1 ], this.planes[ 2 ], this.planes[ 4 ] ], // Near bottom right
-			[ this.planes[ 0 ], this.planes[ 3 ], this.planes[ 5 ] ], // Far top left
-			[ this.planes[ 1 ], this.planes[ 3 ], this.planes[ 5 ] ], // Far top right
-			[ this.planes[ 0 ], this.planes[ 2 ], this.planes[ 5 ] ], // Far bottom left
-			[ this.planes[ 1 ], this.planes[ 2 ], this.planes[ 5 ] ] // Far bottom right
+			[ planes[ 0 ], planes[ 3 ], planes[ 4 ] ], // Near top left
+			[ planes[ 1 ], planes[ 3 ], planes[ 4 ] ], // Near top right
+			[ planes[ 0 ], planes[ 2 ], planes[ 4 ] ], // Near bottom left
+			[ planes[ 1 ], planes[ 2 ], planes[ 4 ] ], // Near bottom right
+			[ planes[ 0 ], planes[ 3 ], planes[ 5 ] ], // Far top left
+			[ planes[ 1 ], planes[ 3 ], planes[ 5 ] ], // Far top right
+			[ planes[ 0 ], planes[ 2 ], planes[ 5 ] ], // Far bottom left
+			[ planes[ 1 ], planes[ 2 ], planes[ 5 ] ], // Far bottom right
 		];
 
 		planeIntersections.forEach( ( planes, index ) => {
 
-			findIntersectionPoint( planes[ 0 ], planes[ 1 ], planes[ 2 ], this.points[ index ] );
+			findIntersectionPoint( planes[ 0 ], planes[ 1 ], planes[ 2 ], points[ index ] );
 
 		} );
 
