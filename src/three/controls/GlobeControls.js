@@ -10,6 +10,7 @@ import { makeRotateAroundPoint } from './utils.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
+const _pos = new Vector3();
 const _vec = new Vector3();
 const _center = new Vector3();
 const _up = new Vector3();
@@ -155,7 +156,9 @@ export class GlobeControls extends EnvironmentControls {
 
 		// update the far plane to the horizon distance
 		ellipsoid.getPositionToCartographic( camera.position, _vec );
-		const elevation = ellipsoid.getPositionElevation( camera.position );
+		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
+		_pos.copy( camera.position ).applyMatrix4( invMatrix );
+		const elevation = ellipsoid.getPositionElevation( _pos );
 		const horizonDistance = ellipsoid.calculateHorizonDistance( _vec.lat, elevation );
 		camera.far = horizonDistance + 0.1;
 

@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import * as Cesium from 'cesium';
-import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
+import { Vector3, MathUtils, Matrix4, Box3, Sphere, Euler, Quaternion } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
 import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/base/constants.js';
@@ -101,7 +101,7 @@ describe( 'Ellipsoid', () => {
 		const LOCAL_EPSILON = 1e-8;
 		for ( let i = 0; i < 100; i ++ ) {
 
-			v.random().normalize().multiplyScalar( WGS84_RADIUS * 2 );
+			v.random().normalize().multiplyScalar( WGS84_HEIGHT * 2 );
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;
@@ -180,31 +180,31 @@ describe( 'Ellipsoid', () => {
 
 	it( 'should match the expected elevation.', () => {
 
-		const northPos = new Vector3( 0, WGS84_HEIGHT, 0 );
+		//ellipsoid rotation
+		const northPos = new Vector3( 0, 0, WGS84_HEIGHT );
 		expect( wgsEllipse.getPositionElevation( northPos ) ).toBeCloseTo( 0, 1e-6 );
-		const southPos = new Vector3( 0, - WGS84_HEIGHT, 0 );
+		const southPos = new Vector3( 0, 0, - WGS84_HEIGHT );
 		expect( wgsEllipse.getPositionElevation( southPos ) ).toBeCloseTo( 0, 1e-6 );
 		const xPos = new Vector3( WGS84_RADIUS, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( xPos ) ).toBeCloseTo( 0, 1e-6 );
 		const mxPos = new Vector3( - WGS84_RADIUS, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( mxPos ) ).toBeCloseTo( 0, 1e-6 );
-		const zPos = new Vector3( 0, 0, WGS84_RADIUS );
+		const zPos = new Vector3( 0, WGS84_RADIUS, 0 );
 		expect( wgsEllipse.getPositionElevation( zPos ) ).toBeCloseTo( 0, 1e-6 );
-		const mzPos = new Vector3( 0, 0, - WGS84_RADIUS );
+		const mzPos = new Vector3( 0, - WGS84_RADIUS, 0 );
 		expect( wgsEllipse.getPositionElevation( mzPos ) ).toBeCloseTo( 0, 1e-6 );
 
-
-		const northPos100 = new Vector3( 0, WGS84_HEIGHT + 100, 0 );
+		const northPos100 = new Vector3( 0, 0, WGS84_HEIGHT + 100 );
 		expect( wgsEllipse.getPositionElevation( northPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const southPos100 = new Vector3( 0, - WGS84_HEIGHT + 100, 0 );
+		const southPos100 = new Vector3( 0, 0, - WGS84_HEIGHT + 100 );
 		expect( wgsEllipse.getPositionElevation( southPos100 ) ).toBeCloseTo( 100, 1e-6 );
 		const xPos100 = new Vector3( WGS84_RADIUS + 100, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( xPos100 ) ).toBeCloseTo( 100, 1e-6 );
 		const mxPos100 = new Vector3( - WGS84_RADIUS + 100, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( mxPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const zPos100 = new Vector3( 0, 0, WGS84_RADIUS + 100 );
+		const zPos100 = new Vector3( 0, WGS84_RADIUS + 100, 0 );
 		expect( wgsEllipse.getPositionElevation( zPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const mzPos100 = new Vector3( 0, 0, - WGS84_RADIUS + 100 );
+		const mzPos100 = new Vector3( 0, - WGS84_RADIUS + 100, 0 );
 		expect( wgsEllipse.getPositionElevation( mzPos100 ) ).toBeCloseTo( 100, 1e-6 );
 
 	} );

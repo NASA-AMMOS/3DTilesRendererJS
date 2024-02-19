@@ -12,9 +12,6 @@ const _vecY = new Vector3();
 const _vecZ = new Vector3();
 const _pos = new Vector3();
 
-const toLocalEuler = new Euler( - Math.PI / 2, 0, 0, 'XYZ' );
-const toLocalQuaternion = new Quaternion().setFromEuler( toLocalEuler );
-
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
 
@@ -228,19 +225,11 @@ export class Ellipsoid {
 
 	}
 
-	worldToLocal( pos ) {
-
-		pos.applyQuaternion( toLocalQuaternion );
-
-	}
-
 	getPositionElevation( pos ) {
 
-		_pos.copy( pos );
-		this.worldToLocal( _pos );
+		this.getPositionToSurfacePoint( pos, _vec3 );
 
-		this.getPositionToSurfacePoint( _pos, _vec3 );
-		const elevation = _vec3.distanceTo( _pos );
+		const elevation = _vec3.distanceTo( pos );
 
 		return elevation;
 
