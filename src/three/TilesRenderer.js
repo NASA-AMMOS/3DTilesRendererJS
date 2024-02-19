@@ -133,7 +133,21 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
-	getBounds( target ) {
+	getBounds( ...args ) {
+
+		console.warn( 'TilesRenderer: getBounds has been renamed to getBoundingBox.' );
+		return this.getBoundingBox( ...args );
+
+	}
+
+	getOrientedBounds( ...args ) {
+
+		console.warn( 'TilesRenderer: getOrientedBounds has been renamed to getOrientedBoundingBox.' );
+		return this.getOrientedBoundingBox( ...args );
+
+	}
+
+	getBoundingBox( target ) {
 
 		if ( ! this.root ) {
 
@@ -155,7 +169,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	getOrientedBounds( targetBox, targetMatrix ) {
+	getOrientedBoundingBox( targetBox, targetMatrix ) {
 
 		if ( ! this.root ) {
 

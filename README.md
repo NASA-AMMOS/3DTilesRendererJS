@@ -445,18 +445,18 @@ resetFailedTiles() : void
 
 If any tiles failed to load due to server or network issues then they will not be retried by automatically. This function clears all failed tile states so unloaded tiles can be retried again.
 
-### .getBounds
+### .getBoundingBox
 
 ```js
-getBounds( box : Box3 ) : boolean
+getBoundingBox( box : Box3 ) : boolean
 ```
 
 Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
 
-### .getOrientedBounds
+### .getOrientedBoundingBox
 
 ```js
-getOrientedBounds( box : Box3, boxTransform : Matrix4 ) : boolean;
+getOrientedBoundingBox( box : Box3, boxTransform : Matrix4 ) : boolean;
 ```
 
 Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.

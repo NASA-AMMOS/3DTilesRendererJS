@@ -297,7 +297,7 @@ function animate() {
 	tiles.colorMode = parseFloat( params.colorMode );
 
 	// update tiles center
-	if ( tiles.getBounds( box ) ) {
+	if ( tiles.getBoundingBox( box ) ) {
 
 		box.getCenter( tiles.group.position );
 		tiles.group.position.multiplyScalar( - 1 );
