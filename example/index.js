@@ -516,7 +516,7 @@ function animate() {
 
 	if ( tiles.root && tiles.root.boundingVolume.region ) {
 
-		tiles.getOrientedBounds( box, geospatialRotationParent.matrix );
+		tiles.getOrientedBoundingBox( box, geospatialRotationParent.matrix );
 		geospatialRotationParent.matrix.decompose( geospatialRotationParent.position, geospatialRotationParent.quaternion, geospatialRotationParent.scale );
 		geospatialRotationParent.position.set( 0, 0, 0 );
 		geospatialRotationParent.quaternion.invert();
@@ -538,7 +538,7 @@ function animate() {
 	offsetParent.updateMatrixWorld( false );
 
 	// update tiles center
-	if ( tiles.getBounds( box ) ) {
+	if ( tiles.getBoundingBox( box ) ) {
 
 		box.getCenter( tiles.group.position );
 		tiles.group.position.multiplyScalar( - 1 );
