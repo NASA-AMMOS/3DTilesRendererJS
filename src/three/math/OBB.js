@@ -43,8 +43,8 @@ export class OBB {
 
 		const normals = [
 			_normal1.subVectors( this.points[ 1 ], this.points[ 0 ] ).cross( _vec3.subVectors( this.points[ 2 ], this.points[ 0 ] ) ).normalize(),
-			_normal2.subVectors( this.points[ 4 ], this.points[ 0 ] ).cross( _vec3.subVectors( this.points[ 1 ], this.points[ 0 ] ) ).normalize(),
-			_normal3.subVectors( this.points[ 2 ], this.points[ 0 ] ).cross( _vec3.subVectors( this.points[ 4 ], this.points[ 0 ] ) ).normalize()
+			_normal2.subVectors( this.points[ 0 ], this.points[ 3 ] ).cross( _vec3.subVectors( this.points[ 4 ], this.points[ 0 ] ) ).normalize(),
+			_normal3.subVectors( this.points[ 2 ], this.points[ 3 ] ).cross( _vec3.subVectors( this.points[ 6 ], this.points[ 2 ] ) ).normalize(),
 		];
 
 		// Front and back
@@ -52,12 +52,12 @@ export class OBB {
 		this.planes[ 1 ].setFromNormalAndCoplanarPoint( normals[ 0 ].negate(), this.points[ 6 ] );
 
 		// Left and right
-		this.planes[ 2 ].setFromNormalAndCoplanarPoint( normals[ 1 ], this.points[ 0 ] );
-		this.planes[ 3 ].setFromNormalAndCoplanarPoint( normals[ 1 ].negate(), this.points[ 2 ] );
+		this.planes[ 2 ].setFromNormalAndCoplanarPoint( normals[ 1 ], this.points[ 1 ] );
+		this.planes[ 3 ].setFromNormalAndCoplanarPoint( normals[ 1 ].negate(), this.points[ 3 ] );
 
 		// Top and bottom
-		this.planes[ 4 ].setFromNormalAndCoplanarPoint( normals[ 2 ], this.points[ 0 ] );
-		this.planes[ 5 ].setFromNormalAndCoplanarPoint( normals[ 2 ].negate(), this.points[ 1 ] );
+		this.planes[ 4 ].setFromNormalAndCoplanarPoint( normals[ 2 ], this.points[ 3 ] );
+		this.planes[ 5 ].setFromNormalAndCoplanarPoint( normals[ 2 ].negate(), this.points[ 4 ] );
 
 		this.planeNeedsUpdate = false;
 
