@@ -13,7 +13,6 @@ export class OBB {
 		this.inverseTransform = new Matrix4();
 		this.points = new Array( 8 ).fill().map( () => new Vector3() );
 		this.planes = new Array( 6 ).fill().map( () => new Plane() );
-		this.planeNeedsUpdate = false;
 
 	}
 
@@ -23,22 +22,31 @@ export class OBB {
 		inverseTransform.copy( transform ).invert();
 
 		const { min, max } = box;
-		points[ 0 ].set( min.x, min.y, min.z ).applyMatrix4( transform ); // Front-bottom-left
-		points[ 1 ].set( max.x, min.y, min.z ).applyMatrix4( transform ); // Front-bottom-right
-		points[ 2 ].set( max.x, max.y, min.z ).applyMatrix4( transform ); // Front-top-right
-		points[ 3 ].set( min.x, max.y, min.z ).applyMatrix4( transform ); // Front-top-left
+		let index = 0;
+		for ( let x = - 1; x <= 1; x += 2 ) {
 
-		points[ 4 ].set( min.x, min.y, max.z ).applyMatrix4( transform ); // Back-bottom-left
-		points[ 5 ].set( max.x, min.y, max.z ).applyMatrix4( transform ); // Back-bottom-right
-		points[ 6 ].set( max.x, max.y, max.z ).applyMatrix4( transform ); // Back-top-right
-		points[ 7 ].set( min.x, max.y, max.z ).applyMatrix4( transform ); // Back-top-left
-		this.planeNeedsUpdate = true;
+			for ( let y = - 1; y <= 1; y += 2 ) {
+
+				for ( let z = - 1; z <= 1; z += 2 ) {
+
+					points[ index ].set(
+						x < 0 ? min.x : max.x,
+						y < 0 ? min.y : max.y,
+						z < 0 ? min.z : max.z,
+					).applyMatrix4( transform );
+					index ++;
+
+				}
+
+			}
+
+		}
+
+		this.updatePlanes();
 
 	}
 
 	updatePlanes() {
-
-		if ( ! this.planeNeedsUpdate ) return;
 
 		_worldMin.copy( this.box.min ).applyMatrix4( this.transform );
 		_worldMax.copy( this.box.max ).applyMatrix4( this.transform );
@@ -54,8 +62,6 @@ export class OBB {
 		_norm.set( 1, 0, 0 ).transformDirection( this.transform );
 		this.planes[ 4 ].setFromNormalAndCoplanarPoint( _norm, _worldMin );
 		this.planes[ 5 ].setFromNormalAndCoplanarPoint( _norm, _worldMax ).negate();
-
-		this.planeNeedsUpdate = false;
 
 	}
 
@@ -85,14 +91,13 @@ export class OBB {
 		}
 
 		// do the opposite check using the obb planes to avoid false positives
-		this.updatePlanes();
 		for ( let i = 0; i < 6; i ++ ) {
 
 			const plane = this.planes[ i ];
 			let maxDistance = - Infinity;
 			for ( let j = 0; j < 8; j ++ ) {
 
-				const v = frustum.mPoints[ j ];
+				const v = frustum.points[ j ];
 				const dist = plane.distanceToPoint( v );
 				maxDistance = maxDistance < dist ? dist : maxDistance;
 

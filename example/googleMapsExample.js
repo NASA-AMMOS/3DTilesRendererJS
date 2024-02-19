@@ -9,17 +9,14 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	MathUtils,
-	CameraHelper,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 
-let camera, controls, scene, renderer, tiles, cameraHelper;
-let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
+let camera, controls, scene, renderer, tiles;
 let statsContainer, stats;
 
 const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
@@ -33,8 +30,6 @@ const params = {
 	'reload': reinstantiateTiles,
 	displayBoxBounds: false,
 	displayRegionBounds: false,
-
-	showThirdPerson: false,
 
 };
 
@@ -72,13 +67,6 @@ function reinstantiateTiles() {
 
 	controls.setTilesRenderer( tiles );
 
-	tiles.loadedModels = 0;
-	tiles.onLoadModel = () => {
-
-		tiles.loadedModels ++;
-
-	};
-
 }
 
 function init() {
@@ -94,31 +82,6 @@ function init() {
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
 	camera.position.set( 4800000, 2570000, 14720000 );
 	camera.lookAt( 0, 0, 0 );
-
-	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	thirdPersonCamera.position.set( 4800000, 2570000, 14720000 );
-	thirdPersonCamera.lookAt( 0, 0, 0 );
-
-	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
-	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
-	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0x0f1416 );
-
-	document.body.appendChild( thirdPersonRenderer.domElement );
-	thirdPersonRenderer.domElement.style.position = 'fixed';
-	thirdPersonRenderer.domElement.style.left = '5px';
-	thirdPersonRenderer.domElement.style.bottom = '5px';
-	thirdPersonRenderer.domElement.tabIndex = 1;
-
-	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
-	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 14720000000;
-
-	cameraHelper = new CameraHelper( camera );
-	cameraHelper.raycast = function () {};
-	scene.add( cameraHelper );
 
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
@@ -143,7 +106,6 @@ function init() {
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
-	exampleOptions.add( params, 'showThirdPerson' );
 
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
@@ -160,10 +122,6 @@ function init() {
 }
 
 function onWindowResize() {
-
-	thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
-	thirdPersonCamera.updateProjectionMatrix();
-	thirdPersonRenderer.setSize( Math.floor( window.innerWidth / 3 ), Math.floor( window.innerHeight / 3 ) );
 
 	camera.aspect = window.innerWidth / window.innerHeight;
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -189,8 +147,7 @@ function updateHash() {
 	res.lat *= MathUtils.RAD2DEG;
 	res.lon *= MathUtils.RAD2DEG;
 
-	//todo above camer position use a matrix to get the position, should getPositionElevation be adjusted to work the same ?
-	const elevation = WGS84_ELLIPSOID.getPositionElevation( camera.position );
+	const elevation = WGS84_ELLIPSOID.getPositionElevation( vec );
 
 	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) },${ elevation.toFixed( 4 ) }` );
 
@@ -206,6 +163,7 @@ function initFromHash() {
 
 	}
 
+	//todo it looks like we can't init under a certain height, I assume it has something to do with the first tile loaded and collision
 	const [ lat, lon, height ] = tokens;
 	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 
@@ -220,8 +178,6 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
-
-	cameraHelper.visible = false;
 
 	controls.update();
 
@@ -238,17 +194,6 @@ function animate() {
 	renderer.render( scene, camera );
 	stats.update();
 
-	// render third person view
-	thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
-	if ( params.showThirdPerson ) {
-
-		cameraHelper.update();
-		cameraHelper.visible = true;
-
-		thirdPersonRenderer.render( scene, thirdPersonCamera );
-
-	}
-
 	updateHtml();
 
 }
@@ -261,8 +206,7 @@ function updateHtml() {
 
 	if ( params.enableCacheDisplay ) {
 
-		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>
-		Active: ${ tiles.activeTiles.size }  loadedModels: ${ tiles.loadedModels }<br/>`;
+		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
 
 		const geomSet = new Set();
 		tiles.traverse( tile => {

@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import * as Cesium from 'cesium';
-import { Vector3, MathUtils, Matrix4, Box3, Sphere, Euler, Quaternion } from 'three';
+import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
 import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/base/constants.js';
@@ -101,7 +101,7 @@ describe( 'Ellipsoid', () => {
 		const LOCAL_EPSILON = 1e-8;
 		for ( let i = 0; i < 100; i ++ ) {
 
-			v.random().normalize().multiplyScalar( WGS84_HEIGHT * 2 );
+			v.random().normalize().multiplyScalar( WGS84_RADIUS * 2 );
 			c.x = v.x;
 			c.y = v.y;
 			c.z = v.z;

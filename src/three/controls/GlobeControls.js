@@ -155,15 +155,16 @@ export class GlobeControls extends EnvironmentControls {
 		camera.near = Math.max( 1, distanceToCenter - largestDistance * 1.25 );
 
 		// update the far plane to the horizon distance
-		ellipsoid.getPositionToCartographic( camera.position, _vec );
+		const res = {};
 		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
 		_pos.copy( camera.position ).applyMatrix4( invMatrix );
+		ellipsoid.getPositionToCartographic( _pos, res );
 		const elevation = ellipsoid.getPositionElevation( _pos );
 		// due to the level of prescision of the tiles / sphere
 		// we can get an elevation that will be higher than the actual elevation.
 		// when we end up below the surface of the ellipsoid the elevation is returned as positive instead of negative
 		// resulting in a horizon distance that is too large.
-		const horizonDistance = ellipsoid.calculateHorizonDistance( _vec.lat, elevation );
+		const horizonDistance = ellipsoid.calculateHorizonDistance( res.lat, elevation );
 		camera.far = horizonDistance + 0.1;
 
 		camera.updateProjectionMatrix();

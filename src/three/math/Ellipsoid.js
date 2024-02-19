@@ -1,4 +1,4 @@
-import { Vector3, Spherical, MathUtils, Euler, Quaternion } from 'three';
+import { Vector3, Spherical, MathUtils } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
