@@ -205,7 +205,8 @@ export class Ellipsoid {
 
 	calculateHorizonDistance( latitude, elevation ) {
 
-		// elevation relative to the surface of the ellipsoid at the specified latitude
+		// from https://aty.sdsu.edu/explain/atmos_refr/horizon.html
+		// OG = sqrt ( 2 R h + h2 ) .
 		const effectiveRadius = this.calculateEffectiveRadius( latitude );
 		return Math.sqrt( 2 * effectiveRadius * elevation + elevation ** 2 );
 
@@ -213,6 +214,9 @@ export class Ellipsoid {
 
 	calculateEffectiveRadius( latitude ) {
 
+		// This radius represents the distance from the center of the ellipsoid to the surface along the normal at the given latitude.
+		// from https://en.wikipedia.org/wiki/Earth_radius#Prime_vertical
+		// N = a / sqrt(1 - e^2 * sin^2(phi))
 		const semiMajorAxis = this.radius.x;
 		const semiMinorAxis = this.radius.z;
 		const eSquared = 1 - ( semiMinorAxis ** 2 / semiMajorAxis ** 2 );
