@@ -1,9 +1,8 @@
 import { Matrix4, Box3, Vector3, Plane } from 'three';
 
-const _normal1 = new Vector3();
-const _normal2 = new Vector3();
-const _normal3 = new Vector3();
-const _vec3 = new Vector3();
+const _worldMin = new Vector3();
+const _worldMax = new Vector3();
+const _norm = new Vector3();
 
 export class OBB {
 
@@ -41,23 +40,20 @@ export class OBB {
 
 		if ( ! this.planeNeedsUpdate ) return;
 
-		const normals = [
-			_normal1.subVectors( this.points[ 1 ], this.points[ 0 ] ).cross( _vec3.subVectors( this.points[ 2 ], this.points[ 0 ] ) ).normalize(),
-			_normal2.subVectors( this.points[ 0 ], this.points[ 3 ] ).cross( _vec3.subVectors( this.points[ 4 ], this.points[ 0 ] ) ).normalize(),
-			_normal3.subVectors( this.points[ 2 ], this.points[ 3 ] ).cross( _vec3.subVectors( this.points[ 6 ], this.points[ 2 ] ) ).normalize(),
-		];
+		_worldMin.copy( this.box.min ).applyMatrix4( this.transform );
+		_worldMax.copy( this.box.max ).applyMatrix4( this.transform );
 
-		// Front and back
-		this.planes[ 0 ].setFromNormalAndCoplanarPoint( normals[ 0 ], this.points[ 0 ] );
-		this.planes[ 1 ].setFromNormalAndCoplanarPoint( normals[ 0 ].negate(), this.points[ 6 ] );
+		_norm.set( 0, 0, 1 ).transformDirection( this.transform );
+		this.planes[ 0 ].setFromNormalAndCoplanarPoint( _norm, _worldMin );
+		this.planes[ 1 ].setFromNormalAndCoplanarPoint( _norm, _worldMax ).negate();
 
-		// Left and right
-		this.planes[ 2 ].setFromNormalAndCoplanarPoint( normals[ 1 ], this.points[ 1 ] );
-		this.planes[ 3 ].setFromNormalAndCoplanarPoint( normals[ 1 ].negate(), this.points[ 3 ] );
+		_norm.set( 0, 1, 0 ).transformDirection( this.transform );
+		this.planes[ 2 ].setFromNormalAndCoplanarPoint( _norm, _worldMin );
+		this.planes[ 3 ].setFromNormalAndCoplanarPoint( _norm, _worldMax ).negate();
 
-		// Top and bottom
-		this.planes[ 4 ].setFromNormalAndCoplanarPoint( normals[ 2 ], this.points[ 3 ] );
-		this.planes[ 5 ].setFromNormalAndCoplanarPoint( normals[ 2 ].negate(), this.points[ 4 ] );
+		_norm.set( 1, 0, 0 ).transformDirection( this.transform );
+		this.planes[ 4 ].setFromNormalAndCoplanarPoint( _norm, _worldMin );
+		this.planes[ 5 ].setFromNormalAndCoplanarPoint( _norm, _worldMax ).negate();
 
 		this.planeNeedsUpdate = false;
 
