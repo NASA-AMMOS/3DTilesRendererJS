@@ -13,8 +13,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 	group : TilesGroup;
 
-	getBounds( box : Box3 ) : Boolean;
-	getOrientedBounds( box : Box3, matrix : Matrix4 ) : Boolean;
+	getBoundingBox( box : Box3 ) : Boolean;
+	getOrientedBoundingBox( box : Box3, matrix : Matrix4 ) : Boolean;
 	getBoundingSphere( sphere: Sphere ) : Boolean;
 
 	hasCamera( camera : Camera ) : Boolean;
