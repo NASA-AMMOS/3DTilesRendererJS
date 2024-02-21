@@ -152,8 +152,13 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the projection matrix
+		// interpolate from the 25% radius margin around the globe down to the surface
+		// so we can avoid z fighting when near value is too far at a high altitude
 		const largestDistance = Math.max( ...ellipsoid.radius );
-		camera.near = Math.max( 1, distanceToCenter - largestDistance * 1.25 );
+		const margin = 0.25 * largestDistance;
+		const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
+		const minNear = MathUtils.lerp( 1, 1000, alpha );
+		camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
 
 		// update the far plane to the horizon distance
 		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
