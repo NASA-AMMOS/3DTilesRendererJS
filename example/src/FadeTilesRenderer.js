@@ -219,6 +219,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	deleteCamera( camera ) {
 
+		super.deleteCamera( camera );
 		this.prevCameraTransforms.delete( camera );
 
 	}
