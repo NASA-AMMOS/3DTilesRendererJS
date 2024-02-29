@@ -369,6 +369,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 			e.preventDefault();
 
+			this.dispatchEvent( _startEvent );
+
 			let delta;
 			switch ( e.deltaMode ) {
 
@@ -389,6 +391,8 @@ export class EnvironmentControls extends EventDispatcher {
 			const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
 			this.zoomDelta -= 3 * deltaSign * normalizedDelta;
 			this.needsUpdate = true;
+
+			this.dispatchEvent( _endEvent );
 
 		};
 
