@@ -345,7 +345,13 @@ export class FadeManager {
 
 			} );
 
-			if ( fadeOut === 1.0 || fadeOut >= fadeIn ) {
+			// Check if the fade in and fade out animations are complete
+			const fadeOutComplete = fadeOut === 1 || fadeOut === 0;
+			const fadeInComplete = fadeIn === 1 || fadeIn === 0;
+
+			// If they are or the fade out animation is further along than the
+			// fade in animation then mark the fade as completed for this tile
+			if ( ( fadeOutComplete && fadeInComplete ) || fadeOut >= fadeIn ) {
 
 				this.completeFade( object );
 

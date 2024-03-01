@@ -141,6 +141,6 @@ function render() {
 
 	renderer.render( scene, camera );
 
-	params.fadingGroundTiles = groundTiles._fadeGroup.children.length + ' tiles';
+	params.fadingGroundTiles = groundTiles.fadingTiles + ' tiles';
 
 }
