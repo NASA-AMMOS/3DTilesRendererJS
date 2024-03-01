@@ -345,7 +345,9 @@ export class FadeManager {
 
 			} );
 
-			if ( fadeOut === 1.0 || fadeOut >= fadeIn ) {
+			const fadeOutComplete = fadeOut === 1 || fadeOut === 0;
+			const fadeInComplete = fadeIn === 1 || fadeIn === 0;
+			if ( ( fadeOutComplete && fadeInComplete ) || fadeOut >= fadeIn ) {
 
 				this.completeFade( object );
 
