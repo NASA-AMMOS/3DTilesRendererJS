@@ -45,8 +45,13 @@ export class GoogleMapsTilesCredits {
 
 	toString() {
 
-		const tokens = Object.keys( this.creditsCount ).sort();
-		return tokens.join( ', ' );
+		const sortedByCount = Object.entries(this.creditsCount).sort((a, b) => {
+			const countA = a[1];
+			const countB = b[1];
+			return countB - countA; // Descending order
+		});
+
+		return sortedByCount.map(pair => pair[0]).join('; ');
 
 	}
 
