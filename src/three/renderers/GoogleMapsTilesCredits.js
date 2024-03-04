@@ -45,6 +45,8 @@ export class GoogleMapsTilesCredits {
 
 	toString() {
 
+		// attribution guidelines: https://developers.google.com/maps/documentation/tile/create-renderer#display-attributions
+		
 		const sortedByCount = Object.entries( this.creditsCount ).sort( ( a, b ) => {
 
 			const countA = a[ 1 ];
@@ -53,7 +55,6 @@ export class GoogleMapsTilesCredits {
 
 		} );
 
-		// attribution guidelines: https://developers.google.com/maps/documentation/tile/create-renderer#display-attributions
 		return sortedByCount.map( pair => pair[ 0 ] ).join( '; ' );
 
 	}
