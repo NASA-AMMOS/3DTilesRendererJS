@@ -3,13 +3,14 @@ export class LoaderBase {
 	constructor() {
 
 		this.fetchOptions = {};
+		this.fetcher = ( url, options ) => fetch( url, options );
 		this.workingPath = '';
 
 	}
 
 	load( url ) {
 
-		return fetch( url, this.fetchOptions )
+		return this.fetcher( url, this.fetchOptions )
 			.then( res => {
 
 				if ( ! res.ok ) {

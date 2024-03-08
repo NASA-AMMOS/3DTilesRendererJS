@@ -82,6 +82,7 @@ export class TilesRendererBase {
 		this.tileSets = {};
 		this.rootURL = url;
 		this.fetchOptions = {};
+		this.fetcher = ( url, options ) => fetch( url, options );
 
 		this.preprocessURL = null;
 
@@ -340,7 +341,7 @@ export class TilesRendererBase {
 	// Private Functions
 	fetchTileSet( url, fetchOptions, parent = null ) {
 
-		return fetch( url, fetchOptions )
+		return this.fetcher( url, fetchOptions )
 			.then( res => {
 
 				if ( res.ok ) {
@@ -561,7 +562,7 @@ export class TilesRendererBase {
 				}
 
 				const uri = this.preprocessURL ? this.preprocessURL( downloadTile.content.uri ) : downloadTile.content.uri;
-				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+				return this.fetcher( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {

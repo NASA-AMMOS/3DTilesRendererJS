@@ -84,7 +84,7 @@ export class I3DMLoaderBase extends LoaderBase {
 		} else {
 
 			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
-			promise = fetch( externalUri, this.fetchOptions )
+			promise = this.fetcher( externalUri, this.fetchOptions )
 				.then( res => {
 
 					if ( ! res.ok ) {

@@ -32,6 +32,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new B3DMLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
+					loader.fetcher = this.fetcher;
 
 					loader.adjustmentTransform.copy( adjustmentTransform );
 
@@ -47,6 +48,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new PNTSLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
+					loader.fetcher = this.fetcher;
 					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
@@ -59,6 +61,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new I3DMLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
+					loader.fetcher = this.fetcher;
 
 					loader.adjustmentTransform.copy( adjustmentTransform );
 
