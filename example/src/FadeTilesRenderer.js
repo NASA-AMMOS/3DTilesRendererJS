@@ -56,6 +56,7 @@ function onFadeComplete( object ) {
 		if ( this.disposeSet.has( object ) ) {
 
 			// TODO: a lot of this is basically redundant to the TilesRenderer.disposeTile code
+			// TODO: dispose textures? ImageBitmap?
 			this._fadeManager.deleteObject( object );
 			object.traverse( child => {
 
