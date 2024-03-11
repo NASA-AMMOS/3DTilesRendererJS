@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.29] - Unreleased
+### Fixed
+- EnvironmentControls and GlobeControls not working with a non-full page element.
+
 ## [0.3.28] - 2024.03.11
 ### Fixed
 - Memory leak related to ImageBitmaps not being released on tile disposal.
