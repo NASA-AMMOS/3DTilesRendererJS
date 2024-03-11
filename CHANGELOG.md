@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.3.29] - Unreleased
 ### Fixed
 - EnvironmentControls and GlobeControls not working with a non-full page element.
+- FadeTilesRenderer improperly disposing of tiles causing unloaded textures to be rendered.
 
 ## [0.3.28] - 2024.03.11
 ### Fixed
