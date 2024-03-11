@@ -75,10 +75,22 @@ export class PointerTracker {
 
 	}
 
+	// get the pointer position in the coordinate system of the target element
+	getAdjustedPointer( e ) {
+
+		const rect = e.target.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		return { x, y };
+
+	}
+
 	addPointer( e ) {
 
+		const { x, y } = this.getAdjustedPointer( e );
+
 		const id = e.pointerId;
-		const position = new Vector2( e.clientX, e.clientY );
+		const position = new Vector2( x, y );
 		this.pointerOrder.push( id );
 		this.pointerPositions[ id ] = position;
 		this.previousPositions[ id ] = position.clone();
@@ -95,6 +107,7 @@ export class PointerTracker {
 
 	updatePointer( e ) {
 
+		const { x, y } = this.getAdjustedPointer( e );
 		const id = e.pointerId;
 		if ( ! ( id in this.pointerPositions ) ) {
 
@@ -102,7 +115,7 @@ export class PointerTracker {
 
 		}
 
-		this.pointerPositions[ id ].set( e.clientX, e.clientY );
+		this.pointerPositions[ id ].set( x, y );
 		return true;
 
 	}
