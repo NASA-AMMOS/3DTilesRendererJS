@@ -2,7 +2,6 @@ import { Group, Matrix4, Vector3, Quaternion } from 'three';
 import { TilesRenderer } from '../../src/index.js';
 import { FadeManager } from './FadeManager.js';
 
-const TILE_REFERENCE = Symbol( 'TILE_REFERENCE' );
 const _fromPos = new Vector3();
 const _toPos = new Vector3();
 const _fromQuat = new Quaternion();
@@ -44,7 +43,7 @@ function onTileVisibilityChange( scene, tile, visible ) {
 function onLoadModel( scene, tile ) {
 
 	this._fadeManager.prepareObject( scene );
-	scene[ TILE_REFERENCE ] = tile;
+	this._tileMap.add( scene, tile );
 
 }
 
@@ -102,6 +101,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
+		this._tileMap = new Map();
 
 		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
 		this.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
@@ -196,9 +196,11 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		} );
 
+		const lruCache = this.lruCache;
+		const tileMap = this._tileMap;
 		fadeManager.forEachObject( scene => {
 
-			this.lruCache.markUsed( scene[ TILE_REFERENCE ] );
+			lruCache.markUsed( tileMap.get( scene ) );
 
 		} );
 
