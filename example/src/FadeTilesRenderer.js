@@ -40,9 +40,16 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 }
 
-function onLoadModel( scene ) {
+function onLoadModel( scene, tile ) {
 
 	this._fadeManager.prepareObject( scene );
+	this._tileMap.add( scene, tile );
+
+}
+
+function onDisposeModel( scene ) {
+
+	this._fadeManager.deleteObject( scene );
 
 }
 
@@ -52,62 +59,6 @@ function onFadeComplete( object ) {
 	if ( object.parent === this._fadeGroup ) {
 
 		this._fadeGroup.remove( object );
-
-		// TODO: this is basically duplicating all disposal logic from TilesRenderer disposeTile. Would be best to not duplicate this.
-		if ( this.disposeSet.has( object ) ) {
-
-			const info = this.disposeSet.get( object );
-			const materials = info.materials;
-			const geometry = info.geometry;
-			const textures = info.textures;
-			const parent = info.scene.parent;
-			const tile = info.tile;
-
-			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
-
-				geometry[ i ].dispose();
-
-			}
-
-			for ( let i = 0, l = materials.length; i < l; i ++ ) {
-
-				materials[ i ].dispose();
-
-			}
-
-			for ( let i = 0, l = textures.length; i < l; i ++ ) {
-
-				const texture = textures[ i ];
-
-				if ( texture.image instanceof ImageBitmap ) {
-
-					texture.image.close();
-
-				}
-
-				texture.dispose();
-
-			}
-
-			if ( parent ) {
-
-				parent.remove( info.scene );
-
-			}
-
-			this.dispatchEvent( {
-				type: 'dispose-model',
-				scene: info.scene,
-				tile,
-			} );
-
-			if ( this.onDisposeModel ) {
-
-				this.onDisposeModel( info.scene, tile );
-
-			}
-
-		}
 
 	}
 
@@ -150,28 +101,30 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
+		this._tileMap = new Map();
 
-		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene ) );
+		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
+		this.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
 		this.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
 
 		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
-		this.disposeSet = new Map();
 
 	}
 
 	update( ...args ) {
 
 		const displayActiveTiles = this.displayActiveTiles;
+		const fadeManager = this._fadeManager;
 		this.displayActiveTiles = true;
 
 		// update the tiles
-		const fadingBefore = this._fadeManager.fadeCount;
+		const fadingBefore = fadeManager.fadeCount;
 
 		super.update( ...args );
-		this._fadeManager.update();
+		fadeManager.update();
 
-		const fadingAfter = this._fadeManager.fadeCount;
+		const fadingAfter = fadeManager.fadeCount;
 		if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
 			this.dispatchEvent( { type: 'fade-change' } );
@@ -243,6 +196,13 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		} );
 
+		const lruCache = this.lruCache;
+		const tileMap = this._tileMap;
+		fadeManager.forEachObject( scene => {
+
+			lruCache.markUsed( tileMap.get( scene ) );
+
+		} );
 
 	}
 
@@ -250,47 +210,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		super.deleteCamera( camera );
 		this.prevCameraTransforms.delete( camera );
-
-	}
-
-	disposeTile( tile ) {
-
-		// When a tile is disposed we keep it around if it's currently fading out and mark it for disposal later
-		const scene = tile.cached.scene;
-		if ( scene && scene.parent === this._fadeGroup ) {
-
-			const cached = tile.cached;
-			this.disposeSet.set( scene, { tile, ...cached } );
-
-			// TODO: duplicating logic from TilesRenderer disposeTile
-			cached.scene = null;
-			cached.materials = null;
-			cached.textures = null;
-			cached.geometry = null;
-			cached.metadata = null;
-
-			this.activeTiles.delete( tile );
-			this.visibleTiles.delete( tile );
-			tile._loadIndex ++;
-
-		} else {
-
-			super.disposeTile( tile );
-			this._fadeManager.deleteObject( scene );
-
-		}
-
-	}
-
-	dispose() {
-
-		super.dispose();
-
-		this.disposeSet.forEach( object => {
-
-			onFadeComplete.call( this, object );
-
-		} );
 
 	}
 
