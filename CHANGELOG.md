@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.28] - 2024.03.11
+### Fixed
+- Memory leak related to ImageBitmaps not being released on tile disposal.
+
+## [0.3.27] - 2024.03.06
+### Fixed
+- Fixed credit attribution string for GoogleTilesRenderer to align with requirements.
+- Fixed fade events not firing as expected in FadeEventManager.
+
+## [0.3.26] - 2024-02-29
+### Fixed
+- FadeTilesMixin.deleteCamera now correctly calls the parent function.
+- EnvironmentControls now dispatches events on zoom value change.
+
 ## [0.3.25] - 2024-02-21
 ### Changed
 - "getBounds" and "getOrientedBounds" functions have been renamed to "getBoundingBox" and "getOrientedBoundingBox".

@@ -765,6 +765,13 @@ export class TilesRenderer extends TilesRendererBase {
 			for ( let i = 0, l = textures.length; i < l; i ++ ) {
 
 				const texture = textures[ i ];
+
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
+
+				}
+
 				texture.dispose();
 
 			}

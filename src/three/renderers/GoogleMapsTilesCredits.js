@@ -45,8 +45,17 @@ export class GoogleMapsTilesCredits {
 
 	toString() {
 
-		const tokens = Object.keys( this.creditsCount ).sort();
-		return tokens.join( ', ' );
+		// attribution guidelines: https://developers.google.com/maps/documentation/tile/create-renderer#display-attributions
+
+		const sortedByCount = Object.entries( this.creditsCount ).sort( ( a, b ) => {
+
+			const countA = a[ 1 ];
+			const countB = b[ 1 ];
+			return countB - countA; // Descending order
+
+		} );
+
+		return sortedByCount.map( pair => pair[ 0 ] ).join( '; ' );
 
 	}
 

@@ -104,6 +104,12 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	}
 
+	get fadingTiles() {
+
+		return this._fadeManager.fadeCount;
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
