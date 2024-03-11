@@ -48,6 +48,12 @@ function onLoadModel( scene, tile ) {
 
 }
 
+function onDisposeModel( scene ) {
+
+	this._fadeManager.deleteObject( scene );
+
+}
+
 function onFadeComplete( object ) {
 
 	// when the fade finishes ensure we dispose the tile and remove it from the fade group
@@ -98,12 +104,11 @@ export const FadeTilesRendererMixin = base => class extends base {
 		this._fadeGroup = fadeGroup;
 
 		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
-		this.addEventListener( 'dispose-model', e => fadeManager.deleteObject( e.scene ) );
+		this.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
 		this.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
 
 		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
-		this.disposeSet = new Map();
 
 	}
 
@@ -203,18 +208,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		super.deleteCamera( camera );
 		this.prevCameraTransforms.delete( camera );
-
-	}
-
-	dispose() {
-
-		super.dispose();
-
-		this.disposeSet.forEach( object => {
-
-			onFadeComplete.call( this, object );
-
-		} );
 
 	}
 
