@@ -2,8 +2,9 @@ import { Vector2 } from 'three';
 
 export class PointerTracker {
 
-	constructor() {
+	constructor( domElement ) {
 
+		this.domElement = domElement;
 		this.buttons = 0;
 		this.pointerType = null;
 		this.pointerOrder = [];
@@ -76,21 +77,21 @@ export class PointerTracker {
 	}
 
 	// get the pointer position in the coordinate system of the target element
-	getAdjustedPointer( e ) {
+	getAdjustedPointer( e, target ) {
 
-		const rect = e.target.getBoundingClientRect();
+		const domRef = this.domElement ? this.domElement : e.target;
+		const rect = domRef.getBoundingClientRect();
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
-		return { x, y };
+		target.set( x, y );
 
 	}
 
 	addPointer( e ) {
 
-		const { x, y } = this.getAdjustedPointer( e );
-
 		const id = e.pointerId;
-		const position = new Vector2( x, y );
+		const position = new Vector2();
+		this.getAdjustedPointer( e, position );
 		this.pointerOrder.push( id );
 		this.pointerPositions[ id ] = position;
 		this.previousPositions[ id ] = position.clone();
@@ -107,7 +108,6 @@ export class PointerTracker {
 
 	updatePointer( e ) {
 
-		const { x, y } = this.getAdjustedPointer( e );
 		const id = e.pointerId;
 		if ( ! ( id in this.pointerPositions ) ) {
 
@@ -115,7 +115,7 @@ export class PointerTracker {
 
 		}
 
-		this.pointerPositions[ id ].set( x, y );
+		this.getAdjustedPointer( e, this.pointerPositions[ id ] );
 		return true;
 
 	}

@@ -83,7 +83,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.adjustHeight = true;
 
 		// internal state
-		this.pointerTracker = new PointerTracker();
+		this.pointerTracker = new PointerTracker( domElement );
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
@@ -141,6 +141,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// set the touch action to none so the browser does not
 		// drag the page to refresh or scroll
 		this.domElement = domElement;
+		this.pointerTracker.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
 		let shiftClicked = false;
