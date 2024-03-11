@@ -237,8 +237,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 		if ( scene && scene.parent === this._fadeGroup ) {
 
 			this.disposeSet.add( scene );
-			super.disposeTile( tile );
-			this._fadeGroup.add( scene );
 
 		} else {
 
