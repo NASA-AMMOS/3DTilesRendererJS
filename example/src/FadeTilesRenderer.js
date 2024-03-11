@@ -53,37 +53,59 @@ function onFadeComplete( object ) {
 
 		this._fadeGroup.remove( object );
 
+		// TODO: this is basically duplicating all disposal logic from TilesRenderer disposeTile. Would be best to not duplicate this.
 		if ( this.disposeSet.has( object ) ) {
 
-			// TODO: a lot of this is basically redundant to the TilesRenderer.disposeTile code
-			// TODO: dispose textures? ImageBitmap?
-			this._fadeManager.deleteObject( object );
-			object.traverse( child => {
+			const info = this.disposeSet.get( object );
+			const materials = info.materials;
+			const geometry = info.geometry;
+			const textures = info.textures;
+			const parent = info.scene.parent;
+			const tile = info.tile;
 
-				const { geometry, material } = child;
-				if ( geometry ) {
+			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
-					geometry.dispose();
+				geometry[ i ].dispose();
+
+			}
+
+			for ( let i = 0, l = materials.length; i < l; i ++ ) {
+
+				materials[ i ].dispose();
+
+			}
+
+			for ( let i = 0, l = textures.length; i < l; i ++ ) {
+
+				const texture = textures[ i ];
+
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
 
 				}
 
-				if ( material ) {
+				texture.dispose();
 
-					material.dispose();
-					for ( const key in material ) {
+			}
 
-						const value = material[ key ];
-						if ( value && value.dispose && typeof value.dispose === 'function' ) {
+			if ( parent ) {
 
-							value.dispose();
+				parent.remove( info.scene );
 
-						}
+			}
 
-					}
-
-				}
-
+			this.dispatchEvent( {
+				type: 'dispose-model',
+				scene: info.scene,
+				tile,
 			} );
+
+			if ( this.onDisposeModel ) {
+
+				this.onDisposeModel( info.scene, tile );
+
+			}
 
 		}
 
@@ -134,7 +156,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
-		this.disposeSet = new Set();
+		this.disposeSet = new Map();
 
 	}
 
@@ -237,7 +259,19 @@ export const FadeTilesRendererMixin = base => class extends base {
 		const scene = tile.cached.scene;
 		if ( scene && scene.parent === this._fadeGroup ) {
 
-			this.disposeSet.add( scene );
+			const cached = tile.cached;
+			this.disposeSet.set( scene, { tile, ...cached } );
+
+			// TODO: duplicating logic from TilesRenderer disposeTile
+			cached.scene = null;
+			cached.materials = null;
+			cached.textures = null;
+			cached.geometry = null;
+			cached.metadata = null;
+
+			this.activeTiles.delete( tile );
+			this.visibleTiles.delete( tile );
+			tile._loadIndex ++;
 
 		} else {
 
