@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.3.29] - Unreleased
+## [0.3.29] - 2023.03.12
 ### Fixed
 - EnvironmentControls and GlobeControls not working with a non-full page element.
 - FadeTilesRenderer improperly disposing of tiles causing unloaded textures to be rendered.
