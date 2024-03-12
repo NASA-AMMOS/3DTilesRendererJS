@@ -226,6 +226,12 @@ export class FadeManager {
 
 	}
 
+	forEachObject( cb ) {
+
+		this._fadeState.forEach( ( info, scene ) => cb( scene ) );
+
+	}
+
 	// Fade the object in
 	fadeIn( object ) {
 

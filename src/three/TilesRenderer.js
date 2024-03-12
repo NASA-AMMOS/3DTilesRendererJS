@@ -9,7 +9,6 @@ import {
 	Matrix4,
 	Vector3,
 	Vector2,
-	Frustum,
 	LoadingManager,
 	EventDispatcher,
 } from 'three';

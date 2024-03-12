@@ -40,9 +40,16 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 }
 
-function onLoadModel( scene ) {
+function onLoadModel( scene, tile ) {
 
 	this._fadeManager.prepareObject( scene );
+	this._tileMap.set( scene, tile );
+
+}
+
+function onDisposeModel( scene ) {
+
+	this._fadeManager.deleteObject( scene );
 
 }
 
@@ -52,39 +59,6 @@ function onFadeComplete( object ) {
 	if ( object.parent === this._fadeGroup ) {
 
 		this._fadeGroup.remove( object );
-
-		if ( this.disposeSet.has( object ) ) {
-
-			// TODO: a lot of this is basically redundant to the TilesRenderer.disposeTile code
-			this._fadeManager.deleteObject( object );
-			object.traverse( child => {
-
-				const { geometry, material } = child;
-				if ( geometry ) {
-
-					geometry.dispose();
-
-				}
-
-				if ( material ) {
-
-					material.dispose();
-					for ( const key in material ) {
-
-						const value = material[ key ];
-						if ( value && value.dispose && typeof value.dispose === 'function' ) {
-
-							value.dispose();
-
-						}
-
-					}
-
-				}
-
-			} );
-
-		}
 
 	}
 
@@ -127,28 +101,30 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
+		this._tileMap = new Map();
 
-		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene ) );
+		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
+		this.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
 		this.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
 
 		this.initialLayerRendered = false;
 		this.prevCameraTransforms = new Map();
-		this.disposeSet = new Set();
 
 	}
 
 	update( ...args ) {
 
 		const displayActiveTiles = this.displayActiveTiles;
+		const fadeManager = this._fadeManager;
 		this.displayActiveTiles = true;
 
 		// update the tiles
-		const fadingBefore = this._fadeManager.fadeCount;
+		const fadingBefore = fadeManager.fadeCount;
 
 		super.update( ...args );
-		this._fadeManager.update();
+		fadeManager.update();
 
-		const fadingAfter = this._fadeManager.fadeCount;
+		const fadingAfter = fadeManager.fadeCount;
 		if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
 			this.dispatchEvent( { type: 'fade-change' } );
@@ -220,6 +196,13 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		} );
 
+		const lruCache = this.lruCache;
+		const tileMap = this._tileMap;
+		fadeManager.forEachObject( scene => {
+
+			lruCache.markUsed( tileMap.get( scene ) );
+
+		} );
 
 	}
 
@@ -227,37 +210,6 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		super.deleteCamera( camera );
 		this.prevCameraTransforms.delete( camera );
-
-	}
-
-	disposeTile( tile ) {
-
-		// When a tile is disposed we keep it around if it's currently fading out and mark it for disposal later
-		const scene = tile.cached.scene;
-		if ( scene && scene.parent === this._fadeGroup ) {
-
-			this.disposeSet.add( scene );
-			super.disposeTile( tile );
-			this._fadeGroup.add( scene );
-
-		} else {
-
-			super.disposeTile( tile );
-			this._fadeManager.deleteObject( scene );
-
-		}
-
-	}
-
-	dispose() {
-
-		super.dispose();
-
-		this.disposeSet.forEach( object => {
-
-			onFadeComplete.call( this, object );
-
-		} );
 
 	}
 
