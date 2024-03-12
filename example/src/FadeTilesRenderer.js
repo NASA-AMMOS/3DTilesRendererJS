@@ -43,7 +43,7 @@ function onTileVisibilityChange( scene, tile, visible ) {
 function onLoadModel( scene, tile ) {
 
 	this._fadeManager.prepareObject( scene );
-	this._tileMap.add( scene, tile );
+	this._tileMap.set( scene, tile );
 
 }
 
