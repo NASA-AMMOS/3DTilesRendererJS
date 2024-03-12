@@ -49,7 +49,7 @@ export class PointerTracker {
 
 		if ( e.pointerType === 'mouse' ) {
 
-			this.hoverPosition.set( e.clientX, e.clientY );
+			this.getAdjustedPointer( e, this.hoverPosition );
 			this.hoverSet = true;
 
 		}
