@@ -21,9 +21,9 @@ If a tile set or geometry does not load or render properly please make an issue!
 
 _Personal [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/) required_
 
-[3D tiles from Cesium Ion](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)
+[Cesium Ion 3D Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)
 
-[3D tiles from Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)
+[Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)
 
 [Google Globe Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsExample.html)
 
