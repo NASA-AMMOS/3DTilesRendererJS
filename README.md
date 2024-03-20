@@ -457,7 +457,7 @@ If any tiles failed to load due to server or network issues then they will not b
 getBoundingBox( box : Box3 ) : boolean
 ```
 
-Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root was not loaded.
+Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
 
 ### .getOrientedBoundingBox
 
@@ -465,7 +465,7 @@ Sets `box` to the axis aligned root bounding box of the tile set in the [group](
 getOrientedBoundingBox( box : Box3, boxTransform : Matrix4 ) : boolean;
 ```
 
-Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
+Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
 
 ### .getBoundingSphere
 
@@ -473,7 +473,7 @@ Sets `box` and `boxTransform` to the bounds and matrix that describe the oriente
 getBoundingSphere( sphere : Sphere ) : boolean;
 ```
 
-Sets `sphere` to the bounding sphere that encapsulates the root of the tile set. Returns `false` if the tile root was not loaded.
+Sets `sphere` to the bounding sphere that encapsulates the root of the tile set. Returns `false` if the tile root is not loaded and the bounding sphere cannot be set.
 
 ### .hasCamera
 
