@@ -227,11 +227,11 @@ export class Ellipsoid {
 
 	getPositionElevation( pos ) {
 
-		this.getPositionToSurfacePoint( pos, _vec3 );
+		// logic from "getPositionToCartographic"
+		this.getPositionToSurfacePoint( pos, _vec );
 
-		const elevation = _vec3.distanceTo( pos );
-
-		return elevation;
+		const heightDelta = _vec2.subVectors( pos, _vec );
+		return Math.sign( heightDelta.dot( pos ) ) * heightDelta.length();
 
 	}
 

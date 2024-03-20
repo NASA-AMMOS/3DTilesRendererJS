@@ -25,6 +25,7 @@ const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
+const MIN_ELEVATION = 10;
 const MAX_GLOBE_DISTANCE = 2 * 1e7;
 const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
 export class GlobeControls extends EnvironmentControls {
@@ -164,12 +165,10 @@ export class GlobeControls extends EnvironmentControls {
 		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
 		_pos.copy( camera.position ).applyMatrix4( invMatrix );
 		ellipsoid.getPositionToCartographic( _pos, _latLon );
-		const elevation = ellipsoid.getPositionElevation( _pos );
 
-		// due to the level of precision of the tiles / sphere
-		// we can get an elevation that will be higher than the actual elevation.
-		// when we end up below the surface of the ellipsoid the elevation is returned as positive instead of negative
-		// resulting in a horizon distance that is too large.
+		// use a minimum elevation for computing the horizon distance to avoid the far clip
+		// plane approaching zero as the camera goes to or below sea level.
+		const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
 		const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
 		camera.far = horizonDistance + 0.1;
 
