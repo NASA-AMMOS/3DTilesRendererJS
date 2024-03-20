@@ -227,6 +227,7 @@ export class Ellipsoid {
 
 	getPositionElevation( pos ) {
 
+		// logic from "getPositionToCartographic"
 		this.getPositionToSurfacePoint( pos, _vec );
 
 		const heightDelta = _vec2.subVectors( pos, _vec );

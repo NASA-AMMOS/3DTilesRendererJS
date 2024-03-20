@@ -196,15 +196,15 @@ describe( 'Ellipsoid', () => {
 
 		const northPos100 = new Vector3( 0, 0, WGS84_HEIGHT + 100 );
 		expect( wgsEllipse.getPositionElevation( northPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const southPos100 = new Vector3( 0, 0, - WGS84_HEIGHT + 100 );
+		const southPos100 = new Vector3( 0, 0, - WGS84_HEIGHT - 100 );
 		expect( wgsEllipse.getPositionElevation( southPos100 ) ).toBeCloseTo( 100, 1e-6 );
 		const xPos100 = new Vector3( WGS84_RADIUS + 100, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( xPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const mxPos100 = new Vector3( - WGS84_RADIUS + 100, 0, 0 );
+		const mxPos100 = new Vector3( - WGS84_RADIUS - 100, 0, 0 );
 		expect( wgsEllipse.getPositionElevation( mxPos100 ) ).toBeCloseTo( 100, 1e-6 );
 		const zPos100 = new Vector3( 0, WGS84_RADIUS + 100, 0 );
 		expect( wgsEllipse.getPositionElevation( zPos100 ) ).toBeCloseTo( 100, 1e-6 );
-		const mzPos100 = new Vector3( 0, - WGS84_RADIUS + 100, 0 );
+		const mzPos100 = new Vector3( 0, - WGS84_RADIUS - 100, 0 );
 		expect( wgsEllipse.getPositionElevation( mzPos100 ) ).toBeCloseTo( 100, 1e-6 );
 
 	} );
