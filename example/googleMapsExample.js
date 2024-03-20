@@ -118,6 +118,11 @@ function init() {
 	// run hash functions
 	initFromHash();
 	setInterval( updateHash, 100 );
+	window.addEventListener( 'hashchange', () => {
+
+		initFromHash();
+
+	} );
 
 }
 
