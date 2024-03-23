@@ -495,7 +495,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	update() {
 
-		if ( ! this.enabled ) {
+		if ( ! this.enabled || ! this.camera ) {
 
 			return;
 

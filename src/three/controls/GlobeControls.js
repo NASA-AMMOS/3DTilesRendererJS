@@ -112,7 +112,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	update() {
 
-		if ( this.tilesGroup === null ) {
+		if ( ! this.tilesGroup || ! this.camera ) {
 
 			return;
 
