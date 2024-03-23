@@ -14,6 +14,10 @@ export class TilesRendererBase {
 	stopAtEmptyTiles : Boolean;
 
 	fetchOptions : RequestInit;
+	fetcher( 
+		input: string | URL,
+		init?: RequestInit
+	): Promise<Response>;
 	/** function to preprocess the url for each individual tile */
 	preprocessURL : ((uri: string | URL) => string) | null;
 

@@ -38,7 +38,7 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 			const url = new URL( `https://api.cesium.com/v1/assets/${ this._ionAssetId }/endpoint` );
 			url.searchParams.append( 'access_token', this._ionAccessToken );
 
-			fetch( url, { mode: 'cors' } ).then( res => {
+			this.fetcher( url, { mode: 'cors' } ).then( res => {
 
 				if ( res.ok ) {
 

@@ -6,5 +6,9 @@ export class LoaderBase {
 	resolveExternalURL( url: string ): string;
 	workingPathForURL( url: string ): string
 	parse( buffer: ArrayBuffer ): Promise< any >;
+	fetcher( 
+		input: string | URL,
+		init?: RequestInit
+	): Promise<Response>;
 
 }
