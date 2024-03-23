@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Ellipsoid.getPositionElevation not returning negative elevations.
 - EnvironmentControls: Enfoce a minimum elevation when computing horizon distance to ensure a reasonable far clip distance.
+- EnvironmentControls: Contructor arguments are no longer required.
+- EnvironmentControls: Detach now correctly removes the dom element reference.
+- GlobeControls: Functions without setting indices.
 
 ## [0.3.30] - 2023.03.12
 ### Fixed
