@@ -83,7 +83,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.adjustHeight = true;
 
 		// internal state
-		this.pointerTracker = new PointerTracker( domElement );
+		this.pointerTracker = new PointerTracker();
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
