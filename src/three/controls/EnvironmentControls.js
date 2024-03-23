@@ -444,6 +444,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 	detach() {
 
+		this.domElement = null;
+
 		if ( this._detachCallback ) {
 
 			this._detachCallback();
