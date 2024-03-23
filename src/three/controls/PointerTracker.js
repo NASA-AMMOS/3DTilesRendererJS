@@ -2,9 +2,9 @@ import { Vector2 } from 'three';
 
 export class PointerTracker {
 
-	constructor( domElement ) {
+	constructor() {
 
-		this.domElement = domElement;
+		this.domElement = null;
 		this.buttons = 0;
 		this.pointerType = null;
 		this.pointerOrder = [];

@@ -83,7 +83,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.adjustHeight = true;
 
 		// internal state
-		this.pointerTracker = new PointerTracker( domElement );
+		this.pointerTracker = new PointerTracker();
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
@@ -112,9 +112,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this._upInitialized = false;
 
 		// init
-		this.attach( domElement );
-		this.setCamera( camera );
-		this.setScene( scene );
+		if ( domElement ) this.attach( domElement );
+		if ( camera ) this.setCamera( camera );
+		if ( scene ) this.setScene( scene );
 
 	}
 
@@ -444,6 +444,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 	detach() {
 
+		this.domElement = null;
+
 		if ( this._detachCallback ) {
 
 			this._detachCallback();
@@ -493,7 +495,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	update() {
 
-		if ( ! this.enabled ) {
+		if ( ! this.enabled || ! this.camera ) {
 
 			return;
 
