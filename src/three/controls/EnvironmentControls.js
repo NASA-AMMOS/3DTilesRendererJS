@@ -112,9 +112,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this._upInitialized = false;
 
 		// init
-		this.attach( domElement );
-		this.setCamera( camera );
-		this.setScene( scene );
+		if ( domElement ) this.attach( domElement );
+		if ( camera ) this.setCamera( camera );
+		if ( scene ) this.setScene( scene );
 
 	}
 
