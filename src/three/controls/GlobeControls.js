@@ -112,6 +112,12 @@ export class GlobeControls extends EnvironmentControls {
 
 	update() {
 
+		if ( this.tilesGroup === null ) {
+
+			return;
+
+		}
+
 		super.update();
 
 		const {
