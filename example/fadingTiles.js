@@ -1,7 +1,4 @@
 import {
-	FadeTilesRenderer,
-} from './src/FadeTilesRenderer.js';
-import {
 	Scene,
 	DirectionalLight,
 	AmbientLight,
@@ -9,7 +6,8 @@ import {
 	PerspectiveCamera,
 	Group,
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
+import { FadeTilesRenderer, } from './src/FadeTilesRenderer.js';
+import { EnvironmentControls } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer;
@@ -43,17 +41,13 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 );
 	camera.position.set( 20, 10, 20 );
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
-	controls.minDistance = 1;
-	controls.maxDistance = 2000;
-	controls.maxPolarAngle = Math.PI / 2;
-	controls.baseSpeed = 0.1;
-	controls.fastSpeed = 0.2;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.minZoomDistance = 2;
+	controls.cameraRadius = 1;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -123,6 +117,7 @@ function render() {
 
 	requestAnimationFrame( render );
 
+	controls.update();
 	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
