@@ -49,6 +49,7 @@ export class GlobeControls extends EnvironmentControls {
 		this._tilesRenderer = null;
 		this._dragMode = 0;
 		this._rotationMode = 0;
+		this.useFallbackPlane = false;
 
 		this.setTilesRenderer( tilesRenderer );
 

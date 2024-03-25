@@ -108,6 +108,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.up = new Vector3( 0, 1, 0 );
 
+		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
+		this.useFallbackPlane = true;
+
 		this._detachCallback = null;
 		this._upInitialized = false;
 
@@ -906,7 +909,29 @@ export class EnvironmentControls extends EventDispatcher {
 
 	_raycast( raycaster ) {
 
-		return raycaster.intersectObject( this.scene )[ 0 ] || null;
+		const { scene, useFallbackPlane, fallbackPlane } = this;
+		const result = raycaster.intersectObject( scene )[ 0 ] || null;
+		if ( result ) {
+
+			return result;
+
+		} else if ( useFallbackPlane ) {
+
+			const plane = fallbackPlane;
+			if ( raycaster.ray.intersectPlane( plane, _vec ) ) {
+
+				const planeHit = {
+					point: _vec.clone(),
+					distance: raycaster.ray.origin.distanceTo( _vec ),
+				};
+
+				return planeHit;
+
+			}
+
+		}
+
+		return null;
 
 	}
 
