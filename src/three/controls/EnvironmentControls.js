@@ -917,6 +917,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else if ( useFallbackPlane ) {
 
+			// if we don't hit any geometry then try to intersect the fallback
+			// plane so the camera can still be manipulated
 			const plane = fallbackPlane;
 			if ( raycaster.ray.intersectPlane( plane, _vec ) ) {
 
