@@ -92,6 +92,16 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
+		const gltfLoader = new GLTFExtensionLoader( manager );
+		this.loaderMap = new Map( [
+			[ 'b3dm', new B3DMLoader( manager ) ],
+			[ 'pnts', new PNTSLoader( manager ) ],
+			[ 'i3bm', new I3DMLoader( manager ) ],
+			[ 'cmpt', new CMPTLoader( manager ) ],
+			[ 'gltf', gltfLoader ],
+			[ 'glb', gltfLoader ]
+		] );
+
 		// Setting up the override raycasting function to be used by
 		// 3D objects created by this renderer
 		const tilesRenderer = this;
@@ -539,7 +549,6 @@ export class TilesRenderer extends TilesRendererBase {
 		const workingPath = uriSplits.join( '/' );
 		const fetchOptions = this.fetchOptions;
 
-		const manager = this.manager;
 		const loadIndex = tile._loadIndex;
 		let promise = null;
 
@@ -565,74 +574,51 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
-		switch ( fileType ) {
+		const loader = this.loaderMap.get( fileType );
+		if ( loader ) {
 
-			case 'b3dm': {
+			loader.workingPath = workingPath;
+			loader.fetchOptions = fetchOptions;
+			switch ( fileType ) {
 
-				const loader = new B3DMLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
+				case 'i3bm':
+				case 'b3dm': {
 
-				loader.adjustmentTransform.copy( upAdjustment );
+					loader.adjustmentTransform.copy( upAdjustment );
+					promise = loader.parse( buffer );
+					break;
 
-				promise = loader.parse( buffer );
-				break;
+				}
+				// 3DTILES_content_gltf
+				case 'gltf':
+				case 'glb':
+				case 'pnts': {
 
-			}
+					promise = loader.parse( buffer );
+					break;
 
-			case 'pnts': {
+				}
 
-				const loader = new PNTSLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-				promise = loader.parse( buffer );
-				break;
 
-			}
+				case 'cmpt': {
 
-			case 'i3dm': {
+					loader.adjustmentTransform.copy( upAdjustment );
+					promise = loader
+						.parse( buffer )
+						.then( res => res.scene	);
+					break;
 
-				const loader = new I3DMLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-
-				loader.adjustmentTransform.copy( upAdjustment );
-
-				promise = loader.parse( buffer );
-				break;
-
-			}
-
-			case 'cmpt': {
-
-				const loader = new CMPTLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-
-				loader.adjustmentTransform.copy( upAdjustment );
-
-				promise = loader
-					.parse( buffer )
-					.then( res => res.scene	);
-				break;
+				}
 
 			}
 
-			// 3DTILES_content_gltf
-			case 'gltf':
-			case 'glb':
-				const loader = new GLTFExtensionLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-				promise = loader.parse( buffer );
-				break;
+		} else {
 
-			default:
-				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
-				promise = Promise.resolve( null );
-				break;
+			console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
+			promise = Promise.resolve( null );
 
 		}
+
 
 		return promise.then( result => {
 

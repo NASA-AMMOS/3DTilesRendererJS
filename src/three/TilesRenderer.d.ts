@@ -3,6 +3,7 @@ import { Tile } from '../base/Tile';
 import { Tileset } from '../base/Tileset';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
+import { LoaderBase } from '../base/LoaderBase';
 
 export class TilesRenderer extends TilesRendererBase {
 
@@ -10,6 +11,8 @@ export class TilesRenderer extends TilesRendererBase {
 	optimizeRaycast : Boolean;
 
 	manager : LoadingManager;
+
+	loaderMap: Map<string, LoaderBase>; 
 
 	group : TilesGroup;
 
