@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Detach now correctly removes the dom element reference.
 - GlobeControls: Functions without setting indices.
 
+### Added
+- EnvironmentControls: Add "fallbackPlane" and "useFallbackPlane" members so dragging works when there is no geometry under the mouse.
+
 ## [0.3.30] - 2023.03.12
 ### Fixed
 - EnvironmentControls and GlobeControls not zooming into the cursor when offset.
