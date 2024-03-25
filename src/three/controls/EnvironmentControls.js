@@ -180,7 +180,6 @@ export class EnvironmentControls extends EventDispatcher {
 				camera,
 				raycaster,
 				domElement,
-				scene,
 				up,
 				pivotMesh,
 				pointerTracker,
@@ -215,7 +214,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// find the hit point
 			raycaster.setFromCamera( _pointer, camera );
-			const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+			const hit = this._raycast( raycaster );
 			if ( hit ) {
 
 				// if two fingers, right click, or shift click are being used then we trigger
@@ -636,10 +635,9 @@ export class EnvironmentControls extends EventDispatcher {
 		const finalZoomDirection = _vec.copy( zoomDirection );
 
 		// always update the zoom target point in case the tiles are changing
-		let dist = Infinity;
 		if ( this._updateZoomPoint() ) {
 
-			dist = zoomPoint.distanceTo( camera.position );
+			const dist = zoomPoint.distanceTo( camera.position );
 
 			// scale the distance based on how far there is to move
 			if ( scale < 0 ) {
@@ -665,7 +663,7 @@ export class EnvironmentControls extends EventDispatcher {
 			const hit = this._getPointBelowCamera();
 			if ( hit ) {
 
-				dist = hit.distance;
+				const dist = hit.distance;
 				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 				camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
 				camera.updateMatrixWorld();
@@ -684,7 +682,6 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirectionSet,
 			zoomDirection,
 			raycaster,
-			scene,
 			zoomPoint,
 		} = this;
 
@@ -697,7 +694,7 @@ export class EnvironmentControls extends EventDispatcher {
 		raycaster.ray.origin.copy( camera.position );
 		raycaster.ray.direction.copy( zoomDirection );
 
-		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+		const hit = this._raycast( raycaster );
 		if ( hit ) {
 
 			zoomPoint.copy( hit.point );
@@ -713,11 +710,11 @@ export class EnvironmentControls extends EventDispatcher {
 	// returns the point below the camera
 	_getPointBelowCamera() {
 
-		const { camera, raycaster, scene, up } = this;
+		const { camera, raycaster, up } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
 		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
 
-		const hit = raycaster.intersectObject( scene )[ 0 ] || null;
+		const hit = this._raycast( raycaster );
 		if ( hit ) {
 
 			hit.distance -= 1e5;
@@ -904,6 +901,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 		up.copy( newUp );
 		camera.updateMatrixWorld();
+
+	}
+
+	_raycast( raycaster ) {
+
+		return raycaster.intersectObject( this.scene )[ 0 ] || null;
 
 	}
 
