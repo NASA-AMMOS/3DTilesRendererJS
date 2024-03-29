@@ -75,7 +75,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.state = NONE;
 		this.pinchState = NONE;
 		this.cameraRadius = 5;
-		this.rotationSpeed = 5;
+		this.rotationSpeed = 1;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
 		this.minDistance = 10;
@@ -847,7 +847,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// get the rotation motion and scale the rotation based on pixel ratio for consistency
 		pointerTracker.getCenterPoint( _pointer );
 		pointerTracker.getPreviousCenterPoint( _prevPointer );
-		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 0.01 / devicePixelRatio );
+		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 0.02 / devicePixelRatio );
 
 		const azimuth = - _deltaPointer.x * rotationSpeed;
 		let altitude = _deltaPointer.y * rotationSpeed;
