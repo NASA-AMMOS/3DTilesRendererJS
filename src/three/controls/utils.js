@@ -23,4 +23,10 @@ export function mouseToCoords( clientX, clientY, element, target ) {
 	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
 	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
 
+	if ( target.isVector3 ) {
+
+		target.z = 0;
+
+	}
+
 }

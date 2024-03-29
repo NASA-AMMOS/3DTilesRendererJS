@@ -4,13 +4,14 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
+	OrthographicCamera,
 	Group,
 } from 'three';
 import { FadeTilesRenderer, } from './src/FadeTilesRenderer.js';
 import { EnvironmentControls } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
-let camera, controls, scene, renderer;
+let camera, ortho, controls, scene, renderer;
 let groundTiles, skyTiles, tilesParent;
 
 const params = {
@@ -22,6 +23,7 @@ const params = {
 	fadeDuration: 0.5,
 	renderScale: 1,
 	fadingGroundTiles: '0 tiles',
+	camera: 'perspective',
 
 };
 
@@ -40,6 +42,8 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
+
+	ortho = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1000 );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 );
 	camera.position.set( 20, 10, 20 );
@@ -67,6 +71,27 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	const gui = new GUI();
+	gui.add( params, 'camera', [ 'perspective', 'orthographic' ] ).onChange( v => {
+
+		if ( v === 'perspective' ) {
+
+			camera.position.copy( ortho.position );
+			camera.rotation.copy( ortho.rotation );
+			controls.setCamera( camera );
+			groundTiles.deleteCamera( ortho );
+			skyTiles.deleteCamera( ortho );
+
+		} else {
+
+			ortho.position.copy( camera.position );
+			ortho.rotation.copy( camera.rotation );
+			controls.setCamera( ortho );
+			groundTiles.deleteCamera( camera );
+			skyTiles.deleteCamera( camera );
+
+		}
+
+	} );
 	gui.add( params, 'useFade' );
 	gui.add( params, 'fadeRootTiles' );
 	gui.add( params, 'errorTarget', 0, 1000 );
@@ -107,6 +132,14 @@ function reinstantiateTiles() {
 
 function onWindowResize() {
 
+	const aspect = window.innerWidth / window.innerHeight;
+
+	ortho.bottom = - 20;
+	ortho.top = 20;
+	ortho.left = - 20 * aspect;
+	ortho.right = 20 * aspect;
+	ortho.updateProjectionMatrix();
+
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -117,24 +150,26 @@ function render() {
 
 	requestAnimationFrame( render );
 
+	const activeCamera = params.camera === 'perspective' ? camera : ortho;
+
 	controls.update();
-	camera.updateMatrixWorld();
+	activeCamera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.fadeRootTiles = params.fadeRootTiles;
-	groundTiles.setCamera( camera );
-	groundTiles.setResolutionFromRenderer( camera, renderer );
+	groundTiles.setCamera( activeCamera );
+	groundTiles.setResolutionFromRenderer( activeCamera, renderer );
 	groundTiles.update();
 
 	skyTiles.fadeRootTiles = params.fadeRootTiles;
-	skyTiles.setCamera( camera );
-	skyTiles.setResolutionFromRenderer( camera, renderer );
+	skyTiles.setCamera( activeCamera );
+	skyTiles.setResolutionFromRenderer( activeCamera, renderer );
 	skyTiles.update();
 
 	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 
-	renderer.render( scene, camera );
+	renderer.render( scene, activeCamera );
 
 	params.fadingGroundTiles = groundTiles.fadingTiles + ' tiles';
 

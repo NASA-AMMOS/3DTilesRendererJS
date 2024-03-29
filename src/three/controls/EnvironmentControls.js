@@ -632,9 +632,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 		if ( camera.isOrthographicCamera ) {
 
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
 			_mouseBefore.unproject( camera );
 
+			// TODO: move these to options?
 			const minZoom = 0;
 			const maxZoom = Infinity;
 
@@ -645,10 +646,12 @@ export class EnvironmentControls extends EventDispatcher {
 			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor ) );
 			camera.updateProjectionMatrix();
 
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
 			_mouseAfter.unproject( camera );
+
+			// shift the camera on the near plane so the mouse is in the same spot
 			camera.position.sub( _mouseAfter ).add( _mouseBefore );
 			camera.updateMatrixWorld();
-
 
 		} else {
 
