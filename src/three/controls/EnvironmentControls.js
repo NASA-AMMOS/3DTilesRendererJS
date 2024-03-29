@@ -78,8 +78,11 @@ export class EnvironmentControls extends EventDispatcher {
 		this.rotationSpeed = 5;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minZoomDistance = 10;
-		this.maxZoomDistance = Infinity;
+		this.minDistance = 10;
+		this.maxDistance = Infinity;
+		this.minZoom = 0;
+		this.maxZoom = Infinity;
+
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 		this.adjustHeight = true;
@@ -613,8 +616,8 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			minZoomDistance,
-			maxZoomDistance,
+			minDistance,
+			maxDistance,
 			raycaster,
 			pointerTracker,
 			domElement,
@@ -635,15 +638,11 @@ export class EnvironmentControls extends EventDispatcher {
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
 			_mouseBefore.unproject( camera );
 
-			// TODO: move these to options?
-			const minZoom = 0;
-			const maxZoom = Infinity;
-
 			const normalizedDelta = Math.abs( scale * 0.05 );
 			let scaleFactor = Math.pow( 0.95, normalizedDelta );
 			scaleFactor = scale > 0 ? 1 / Math.abs( scaleFactor ) : scaleFactor;
 
-			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor ) );
+			camera.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, camera.zoom * scaleFactor ) );
 			camera.updateProjectionMatrix();
 
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
@@ -672,14 +671,14 @@ export class EnvironmentControls extends EventDispatcher {
 				// scale the distance based on how far there is to move
 				if ( scale < 0 ) {
 
-					const remainingDistance = Math.min( 0, dist - maxZoomDistance );
+					const remainingDistance = Math.min( 0, dist - maxDistance );
 					scale = scale * dist * 0.01;
 					scale = Math.max( scale, remainingDistance );
 
 				} else {
 
-					const remainingDistance = Math.max( 0, dist - minZoomDistance );
-					scale = scale * ( dist - minZoomDistance ) * 0.01;
+					const remainingDistance = Math.max( 0, dist - minDistance );
+					scale = scale * ( dist - minDistance ) * 0.01;
 					scale = Math.min( scale, remainingDistance );
 
 				}
