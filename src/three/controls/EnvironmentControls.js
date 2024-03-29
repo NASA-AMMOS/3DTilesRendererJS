@@ -29,6 +29,8 @@ const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
 const _localUp = new Vector3();
+const _mouseBefore = new Vector3();
+const _mouseAfter = new Vector3();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -631,9 +633,7 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( camera.isOrthographicCamera ) {
 
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-
-			const mouseBefore = new Vector3( _pointer.x, _pointer.y, 0 );
-			mouseBefore.unproject( camera );
+			_mouseBefore.unproject( camera );
 
 			const minZoom = 0;
 			const maxZoom = Infinity;
@@ -645,10 +645,8 @@ export class EnvironmentControls extends EventDispatcher {
 			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor ) );
 			camera.updateProjectionMatrix();
 
-			const mouseAfter = new Vector3( _pointer.x, _pointer.y, 0 );
-			mouseAfter.unproject( camera );
-
-			camera.position.sub( mouseAfter ).add( mouseBefore );
+			_mouseAfter.unproject( camera );
+			camera.position.sub( _mouseAfter ).add( _mouseBefore );
 			camera.updateMatrixWorld();
 
 
