@@ -654,52 +654,50 @@ export class EnvironmentControls extends EventDispatcher {
 			camera.position.sub( _mouseAfter ).add( _mouseBefore );
 			camera.updateMatrixWorld();
 
-		} else {
+		}
 
-			// initialize the zoom direction
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
-			zoomDirection.copy( raycaster.ray.direction ).normalize();
-			this.zoomDirectionSet = true;
+		// initialize the zoom direction
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+		raycaster.setFromCamera( _pointer, camera );
+		zoomDirection.copy( raycaster.ray.direction ).normalize();
+		this.zoomDirectionSet = true;
 
-			// track the zoom direction we're going to use
-			const finalZoomDirection = _vec.copy( zoomDirection );
+		// track the zoom direction we're going to use
+		const finalZoomDirection = _vec.copy( zoomDirection );
 
-			// always update the zoom target point in case the tiles are changing
-			if ( this._updateZoomPoint() ) {
+		// always update the zoom target point in case the tiles are changing
+		if ( this._updateZoomPoint() ) {
 
-				const dist = zoomPoint.distanceTo( camera.position );
+			const dist = zoomPoint.distanceTo( camera.position );
 
-				// scale the distance based on how far there is to move
-				if ( scale < 0 ) {
+			// scale the distance based on how far there is to move
+			if ( scale < 0 ) {
 
-					const remainingDistance = Math.min( 0, dist - maxDistance );
-					scale = scale * dist * 0.01;
-					scale = Math.max( scale, remainingDistance );
-
-				} else {
-
-					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * ( dist - minDistance ) * 0.01;
-					scale = Math.min( scale, remainingDistance );
-
-				}
-
-				camera.position.addScaledVector( zoomDirection, scale );
-				camera.updateMatrixWorld();
+				const remainingDistance = Math.min( 0, dist - maxDistance );
+				scale = scale * dist * 0.01;
+				scale = Math.max( scale, remainingDistance );
 
 			} else {
 
-				// if we're zooming into nothing then use the distance from the ground to scale movement
-				const hit = this._getPointBelowCamera();
-				if ( hit ) {
+				const remainingDistance = Math.max( 0, dist - minDistance );
+				scale = scale * ( dist - minDistance ) * 0.01;
+				scale = Math.min( scale, remainingDistance );
 
-					const dist = hit.distance;
-					finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-					camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
-					camera.updateMatrixWorld();
+			}
 
-				}
+			camera.position.addScaledVector( zoomDirection, scale );
+			camera.updateMatrixWorld();
+
+		} else {
+
+			// if we're zooming into nothing then use the distance from the ground to scale movement
+			const hit = this._getPointBelowCamera();
+			if ( hit ) {
+
+				const dist = hit.distance;
+				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+				camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
+				camera.updateMatrixWorld();
 
 			}
 
