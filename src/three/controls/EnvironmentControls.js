@@ -82,6 +82,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.maxDistance = Infinity;
 		this.minZoom = 0;
 		this.maxZoom = Infinity;
+		this.zoomSpeed = 1;
 
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
@@ -621,6 +622,9 @@ export class EnvironmentControls extends EventDispatcher {
 			raycaster,
 			pointerTracker,
 			domElement,
+			minZoom,
+			maxZoom,
+			zoomSpeed,
 		} = this;
 
 		let scale = this.zoomDelta;
@@ -640,11 +644,10 @@ export class EnvironmentControls extends EventDispatcher {
 			_mouseBefore.unproject( camera );
 
 			// zoom the camera
-			const normalizedDelta = Math.abs( scale * 0.05 );
-			let scaleFactor = Math.pow( 0.95, normalizedDelta );
-			scaleFactor = scale > 0 ? 1 / Math.abs( scaleFactor ) : scaleFactor;
+			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
 
-			camera.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, camera.zoom * scaleFactor ) );
+			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
 			camera.updateProjectionMatrix();
 
 			// get the mouse position after zoom
@@ -675,13 +678,13 @@ export class EnvironmentControls extends EventDispatcher {
 				if ( scale < 0 ) {
 
 					const remainingDistance = Math.min( 0, dist - maxDistance );
-					scale = scale * dist * 0.01;
+					scale = scale * dist * zoomSpeed * 0.0025;
 					scale = Math.max( scale, remainingDistance );
 
 				} else {
 
 					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * ( dist - minDistance ) * 0.01;
+					scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
 					scale = Math.min( scale, remainingDistance );
 
 				}
