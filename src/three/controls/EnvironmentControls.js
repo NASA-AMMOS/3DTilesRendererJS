@@ -394,6 +394,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
+			// TODO: document the intent here more
 			// use LOG to scale the scroll delta and hopefully normalize them across platforms
 			const deltaSign = Math.sign( delta );
 			const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
@@ -638,6 +639,7 @@ export class EnvironmentControls extends EventDispatcher {
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
 			_mouseBefore.unproject( camera );
 
+			// TODO: can we normalize this behavior between perspective and ortho camera
 			const normalizedDelta = Math.abs( scale * 0.05 );
 			let scaleFactor = Math.pow( 0.95, normalizedDelta );
 			scaleFactor = scale > 0 ? 1 / Math.abs( scaleFactor ) : scaleFactor;

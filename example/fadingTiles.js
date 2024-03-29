@@ -134,10 +134,10 @@ function onWindowResize() {
 
 	const aspect = window.innerWidth / window.innerHeight;
 
-	ortho.bottom = - 20;
-	ortho.top = 20;
-	ortho.left = - 20 * aspect;
-	ortho.right = 20 * aspect;
+	ortho.bottom = - 40;
+	ortho.top = 40;
+	ortho.left = - 40 * aspect;
+	ortho.right = 40 * aspect;
 	ortho.updateProjectionMatrix();
 
 	camera.aspect = window.innerWidth / window.innerHeight;
