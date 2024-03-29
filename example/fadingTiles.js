@@ -43,7 +43,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	ortho = new OrthographicCamera( - 1, 1, 1, - 1, 0, 1000 );
+	ortho = new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 );
 	camera.position.set( 20, 10, 20 );
