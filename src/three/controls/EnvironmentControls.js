@@ -29,6 +29,8 @@ const _rotationAxis = new Vector3();
 const _quaternion = new Quaternion();
 const _plane = new Plane();
 const _localUp = new Vector3();
+const _mouseBefore = new Vector3();
+const _mouseAfter = new Vector3();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -73,11 +75,15 @@ export class EnvironmentControls extends EventDispatcher {
 		this.state = NONE;
 		this.pinchState = NONE;
 		this.cameraRadius = 5;
-		this.rotationSpeed = 5;
+		this.rotationSpeed = 1;
 		this.minAltitude = 0;
 		this.maxAltitude = 0.45 * Math.PI;
-		this.minZoomDistance = 10;
-		this.maxZoomDistance = Infinity;
+		this.minDistance = 10;
+		this.maxDistance = Infinity;
+		this.minZoom = 0;
+		this.maxZoom = Infinity;
+		this.zoomSpeed = 1;
+
 		this.reorientOnDrag = true;
 		this.reorientOnZoom = false;
 		this.adjustHeight = true;
@@ -611,11 +617,14 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomPoint,
 			zoomDirection,
 			camera,
-			minZoomDistance,
-			maxZoomDistance,
+			minDistance,
+			maxDistance,
 			raycaster,
 			pointerTracker,
 			domElement,
+			minZoom,
+			maxZoom,
+			zoomSpeed,
 		} = this;
 
 		let scale = this.zoomDelta;
@@ -628,48 +637,73 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		// initialize the zoom direction
-		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-		raycaster.setFromCamera( _pointer, camera );
-		zoomDirection.copy( raycaster.ray.direction ).normalize();
-		this.zoomDirectionSet = true;
+		if ( camera.isOrthographicCamera ) {
 
-		// track the zoom direction we're going to use
-		const finalZoomDirection = _vec.copy( zoomDirection );
+			// get the mouse position before zoom
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
+			_mouseBefore.unproject( camera );
 
-		// always update the zoom target point in case the tiles are changing
-		if ( this._updateZoomPoint() ) {
+			// zoom the camera
+			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
 
-			const dist = zoomPoint.distanceTo( camera.position );
+			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+			camera.updateProjectionMatrix();
 
-			// scale the distance based on how far there is to move
-			if ( scale < 0 ) {
+			// get the mouse position after zoom
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
+			_mouseAfter.unproject( camera );
 
-				const remainingDistance = Math.min( 0, dist - maxZoomDistance );
-				scale = scale * dist * 0.01;
-				scale = Math.max( scale, remainingDistance );
-
-			} else {
-
-				const remainingDistance = Math.max( 0, dist - minZoomDistance );
-				scale = scale * ( dist - minZoomDistance ) * 0.01;
-				scale = Math.min( scale, remainingDistance );
-
-			}
-
-			camera.position.addScaledVector( zoomDirection, scale );
+			// shift the camera on the near plane so the mouse is in the same spot
+			camera.position.sub( _mouseAfter ).add( _mouseBefore );
 			camera.updateMatrixWorld();
 
 		} else {
 
-			// if we're zooming into nothing then use the distance from the ground to scale movement
-			const hit = this._getPointBelowCamera();
-			if ( hit ) {
+			// initialize the zoom direction
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			raycaster.setFromCamera( _pointer, camera );
+			zoomDirection.copy( raycaster.ray.direction ).normalize();
+			this.zoomDirectionSet = true;
 
-				const dist = hit.distance;
-				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-				camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
+			// track the zoom direction we're going to use
+			const finalZoomDirection = _vec.copy( zoomDirection );
+
+			// always update the zoom target point in case the tiles are changing
+			if ( this._updateZoomPoint() ) {
+
+				const dist = zoomPoint.distanceTo( camera.position );
+
+				// scale the distance based on how far there is to move
+				if ( scale < 0 ) {
+
+					const remainingDistance = Math.min( 0, dist - maxDistance );
+					scale = scale * dist * zoomSpeed * 0.0025;
+					scale = Math.max( scale, remainingDistance );
+
+				} else {
+
+					const remainingDistance = Math.max( 0, dist - minDistance );
+					scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
+					scale = Math.min( scale, remainingDistance );
+
+				}
+
+				camera.position.addScaledVector( zoomDirection, scale );
 				camera.updateMatrixWorld();
+
+			} else {
+
+				// if we're zooming into nothing then use the distance from the ground to scale movement
+				const hit = this._getPointBelowCamera();
+				if ( hit ) {
+
+					const dist = hit.distance;
+					finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+					camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
+					camera.updateMatrixWorld();
+
+				}
 
 			}
 
@@ -813,7 +847,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// get the rotation motion and scale the rotation based on pixel ratio for consistency
 		pointerTracker.getCenterPoint( _pointer );
 		pointerTracker.getPreviousCenterPoint( _prevPointer );
-		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 0.01 / devicePixelRatio );
+		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 0.02 / devicePixelRatio );
 
 		const azimuth = - _deltaPointer.x * rotationSpeed;
 		let altitude = _deltaPointer.y * rotationSpeed;
