@@ -1,13 +1,28 @@
-import { TextureLoader } from 'three';
+import { Texture, TextureLoader, ImageBitmapLoader } from 'three';
 
 // TODO: Enable TilesRenderer to delay load model events until all textures have loaded
 // TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
-// TODO: Make sure we fire symmetrical events
-// TODO: Add basic overlay support for custom materials w/ opacity blending
-// TODO: Add support for toggling layers
 // TODO: What happens if a tile starts loading and then a layer is added, meaning it's not in the "loaded tiles" callback
 // or active function and we haven't caught it in the parseTile function. Additional callback? Store the loading models?
-// TODO: Use image bitmap loader and / or LoadingManager callback
+function canUseImageBitmap() {
+
+	let isSafari = false;
+	let isFirefox = false;
+	let firefoxVersion = - 1;
+
+	if ( typeof navigator !== 'undefined' ) {
+
+		isSafari = /^((?!chrome|android).)*safari/i.test( navigator.userAgent ) === true;
+		isFirefox = navigator.userAgent.indexOf( 'Firefox' ) > - 1;
+		firefoxVersion = isFirefox ? navigator.userAgent.match( /Firefox\/([0-9]+)\./ )[ 1 ] : - 1;
+
+	}
+
+
+	return ! ( typeof createImageBitmap === 'undefined' || isSafari || ( isFirefox && firefoxVersion < 98 ) );
+
+}
+
 class TextureCache {
 
 	constructor() {
@@ -21,7 +36,17 @@ class TextureCache {
 	getTextureLoader() {
 
 		const fetchOptions = this.fetchOptions;
-		const loader = new TextureLoader();
+
+		let loader;
+		if ( canUseImageBitmap() ) {
+
+			loader = new ImageBitmapLoader();
+
+		} else {
+
+			loader = new TextureLoader();
+
+		}
 
 		if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
@@ -56,11 +81,19 @@ class TextureCache {
 		}
 
 		const abortController = new AbortController();
-		const promise = this.getTextureLoader()
+		const loader = this.getTextureLoader();
+		const promise = loader
 			.loadAsync( this.urlResolver( key ) )
 			.then( tex => {
 
 				if ( ! abortController.signal.aborted ) {
+
+					if ( loader.isImageBitmapLoader ) {
+
+						tex = new Texture( tex );
+						tex.needsUpdate = true;
+
+					}
 
 					cache[ key ].texture = tex;
 					return tex;
