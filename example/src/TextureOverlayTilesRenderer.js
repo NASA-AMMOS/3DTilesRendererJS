@@ -379,13 +379,19 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 function onBeforeCompileCallback( shader ) {
 
 	const textures = this.textures || [];
+	const material = this;
+
+	shader.uniforms.textures = {
+		get value() {
+
+			return material.textures || [];
+
+		},
+	};
 
 	// WebGL does not seem to like empty texture arrays
 	if ( textures.length !== 0 ) {
 
-		shader.uniforms.textures = {
-			value: textures,
-		};
 
 		shader.fragmentShader = shader.fragmentShader
 			.replace( /void main/, m => /* glsl */`

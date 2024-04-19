@@ -118,6 +118,7 @@ function init() {
 		}
 
 	} );
+
 	gui.add( params, 'layer2' ).onChange( v => {
 
 		if ( v ) {
