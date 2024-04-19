@@ -21,7 +21,8 @@ let tiles;
 
 const params = {
 
-	errorTarget: 12,
+	layer1: true,
+	layer2: true,
 
 };
 
@@ -74,27 +75,23 @@ function init() {
 	tiles.lruCache.maxSize = 1300;
 	tiles.errorTarget = 12;
 
-	const db = new DataTexture( new Uint8Array( [ 0, 255, 0, 25 ] ) );
-	db.needsUpdate = true;
+	window.tiles = tiles;
 
-	tiles.registerLayer( 'red', async () => {
+	tiles.registerLayer( 'layer1', async () => {
 
-		const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 25 ] ) );
+		const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 50 ] ) );
 		dt.needsUpdate = true;
 		return dt;
 
 	} );
 
-	tiles.registerLayer( 'blue', async () => {
+	tiles.registerLayer( 'layer2', async () => {
 
-		const dt = new DataTexture( new Uint8Array( [ 0, 0, 255, 25 ] ) );
+		const dt = new DataTexture( new Uint8Array( [ 0, 0, 255, 50 ] ) );
 		dt.needsUpdate = true;
 		return dt;
 
 	} );
-
-	window.UNREGISTER = () => tiles.unregisterLayer( 'red' );
-
 
 	tilesParent.add( tiles.group );
 
@@ -102,7 +99,44 @@ function init() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	const gui = new GUI();
-	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'layer1' ).onChange( v => {
+
+		if ( v ) {
+
+			tiles.registerLayer( 'layer1', async () => {
+
+				const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 50 ] ) );
+				dt.needsUpdate = true;
+				return dt;
+
+			} );
+
+		} else {
+
+			tiles.unregisterLayer( 'layer1' );
+
+		}
+
+	} );
+	gui.add( params, 'layer2' ).onChange( v => {
+
+		if ( v ) {
+
+			tiles.registerLayer( 'layer2', async () => {
+
+				const dt = new DataTexture( new Uint8Array( [ 0, 0, 255, 50 ] ) );
+				dt.needsUpdate = true;
+				return dt;
+
+			} );
+
+		} else {
+
+			tiles.unregisterLayer( 'layer2' );
+
+		}
+
+	} );
 	gui.open();
 
 }
@@ -121,8 +155,6 @@ function render() {
 	requestAnimationFrame( render );
 
 	camera.updateMatrixWorld();
-
-	tiles.errorTarget = params.errorTarget;
 
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );

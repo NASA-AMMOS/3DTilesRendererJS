@@ -237,6 +237,8 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 				if ( c.material ) {
 
 					c.material.onBeforeCompile = onBeforeCompileCallback;
+					c.material.onBeforeRender = onBeforeRender;
+					c.material.customProgramCacheKey = customProgramCacheKey;
 					c.material.textures = textures;
 
 				}
@@ -377,12 +379,9 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 function onBeforeCompileCallback( shader ) {
 
 	const textures = this.textures || [];
-	shader.defines = {
-		TEXTURE_COUNT: textures.length,
-	};
 
 	// WebGL does not seem to like empty texture arrays
-	if ( textures.length ) {
+	if ( textures.length !== 0 ) {
 
 		shader.uniforms.textures = {
 			value: textures,
@@ -390,9 +389,7 @@ function onBeforeCompileCallback( shader ) {
 
 		shader.fragmentShader = shader.fragmentShader
 			.replace( /void main/, m => /* glsl */`
-				#if TEXTURE_COUNT != 0
-				uniform sampler2D textures[ TEXTURE_COUNT ];
-				#endif
+				uniform sampler2D textures[ ${ textures.length } ];
 				${ m }
 
 			` )
@@ -401,7 +398,6 @@ function onBeforeCompileCallback( shader ) {
 				${ m }
 
 				vec4 col;
-				#if TEXTURE_COUNT != 0
 				#pragma unroll_loop_start
 				for ( int i = 0; i < ${ textures.length }; i ++ ) {
 
@@ -410,28 +406,27 @@ function onBeforeCompileCallback( shader ) {
 
 				}
 				#pragma unroll_loop_end
-				#endif
 
 			` );
 
 	}
 
-	this.customProgramCacheKey = () => {
+}
 
-		return this.textures.length;
+function customProgramCacheKey() {
 
-	};
+	return this.textures.length + onBeforeCompileCallback.toString();
 
-	this.onBeforeRender = () => {
+}
 
-		const textures = this.textures || [];
-		if ( textures.length !== shader.defines.TEXTURE_COUNT ) {
+function onBeforeRender() {
 
-			shader.defines.TEXTURE_COUNT = textures.length;
-			this.needsUpdate = true;
+	const textures = this.textures || [];
+	if ( textures.length !== this.lastTextureCount ) {
 
-		}
+		this.lastTextureCount = textures.length;
+		this.needsUpdate = true;
 
-	};
+	}
 
 }
