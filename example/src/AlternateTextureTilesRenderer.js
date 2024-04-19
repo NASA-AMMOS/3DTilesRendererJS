@@ -1,11 +1,12 @@
 import { TextureLoader } from 'three';
 
 // TODO: Enable TilesRenderer to delay load model events until all textures have loaded
-// TODO: Load textures while the tile geometry is loading
+// TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
 // TODO: Make sure we fire symmetrical events
 // TODO: Add basic overlay support for custom materials w/ opacity blending
 // TODO: Add support for toggling layers
-// TODO: Make it easier / more clear to get all loaded tiles and associated scene data. Maybe a "forEach" function?
+// TODO: What happens if a tile starts loading and then a layer is added, meaning it's not in the "loaded tiles" callback
+// or active function and we haven't caught it in the parseTile function. Additional callback? Store the loading models?
 class TextureCache {
 
 	constructor() {
@@ -202,6 +203,16 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 
 	}
 
+	getTexturesForTile( tile, order = null ) {
+
+		const cacheArray = order ? order.map( name => this.caches[ name ] ).filter( c => c ) : Object.values( this.caches );
+		const key = this.getTileKey( tile );
+		return cacheArray
+			.map( c => c.getTexture( key ) )
+			.filter( t => t );
+
+	}
+
 	registerLayer( name ) {
 
 		if ( name in this.caches ) {
@@ -219,9 +230,8 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 		};
 		this.caches[ name ] = cache;
 
-		this.activeTiles.forEach( tile => {
+		this.forEachLoadedModel( ( scene, tile ) => {
 
-			const scene = tile.cached.scene;
 			cache
 				.loadTexture( this.getTileKey( tile ) )
 				.then( texture => {
@@ -247,12 +257,11 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 		if ( name in caches ) {
 
 			const cache = caches[ name ];
-			this.activeTiles.forEach( tile => {
+			this.forEachLoadedModel( ( scene, tile ) => {
 
 				const texture = cache.getTexture( this.getTileKey( tile ) );
 				if ( texture ) {
 
-					const scene = tile.cached.scene;
 					this.dispatchEvent( {
 						type: 'delete-layer-texture',
 						layer: name,
@@ -273,3 +282,38 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 	}
 
 };
+
+function onBeforeCompileCallback( shader ) {
+
+	shader.uniforms.textures = {
+		value: this.textures || [],
+	};
+
+	shader.fragmentShader = shader.fragmentShader
+		.replace( /#include <color_fragment>/, m => /* glsl */`
+
+			${ m }
+
+			#pragma unroll_loop_start
+			for ( int i = 0; i < ${ this.textures.length }; i ++ ) {
+
+				vec4 v = texture( textures[ i ], vMapUv );
+				diffuse = mix( diffuse, v, v.a );
+
+			}
+			#pragma unroll_loop_end
+
+		` );
+
+	this.onBeforeRender = () => {
+
+		if ( this.textures !== this.defines.TEXTURE_COUNT ) {
+
+			this.defines.TEXTURE_COUNT = this.textures.length;
+			this.needsUpdate = true;
+
+		}
+
+	};
+
+}
