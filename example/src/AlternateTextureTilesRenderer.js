@@ -288,34 +288,49 @@ function onBeforeCompileCallback( shader ) {
 
 	const textures = this.textures || [];
 	shader.defines = {
-		TEXTURE_COUNT: textures.length || 1,
+		TEXTURE_COUNT: textures.length,
 	};
 
-	shader.uniforms.textures = {
-		value: textures,
+	// WebGL does not seem to like empty texture arrays
+	if ( textures.length ) {
+
+		shader.uniforms.textures = {
+			value: textures,
+		};
+
+		shader.fragmentShader = shader.fragmentShader
+			.replace( /void main/, m => /* glsl */`
+				#if TEXTURE_COUNT != 0
+				uniform sampler2D textures[ TEXTURE_COUNT ];
+				#endif
+				${ m }
+
+			` )
+			.replace( /#include <color_fragment>/, m => /* glsl */`
+
+				${ m }
+
+				vec4 col;
+				#if TEXTURE_COUNT != 0
+				#pragma unroll_loop_start
+				for ( int i = 0; i < ${ textures.length }; i ++ ) {
+
+					col = texture( textures[ i ], vMapUv );
+					diffuseColor = mix( diffuseColor, col, col.a );
+
+				}
+				#pragma unroll_loop_end
+				#endif
+
+			` );
+
+	}
+
+	this.customProgramCacheKey = () => {
+
+		return this.textures.length;
+
 	};
-
-	shader.fragmentShader = shader.fragmentShader
-		.replace( /void main/, m => /* glsl */`
-			uniform sampler2D textures[ TEXTURE_COUNT ];
-			${ m }
-
-		` )
-		.replace( /#include <color_fragment>/, m => /* glsl */`
-
-			${ m }
-
-			vec4 col;
-			#pragma unroll_loop_start
-			for ( int i = 0; i < ${ textures.length }; i ++ ) {
-
-				col = texture( textures[ i ], vMapUv );
-				diffuseColor = mix( diffuseColor, col, col.a );
-
-			}
-			#pragma unroll_loop_end
-
-		` );
 
 	this.onBeforeRender = () => {
 
