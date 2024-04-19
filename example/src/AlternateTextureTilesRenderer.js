@@ -7,6 +7,7 @@ import { TextureLoader } from 'three';
 // TODO: Add support for toggling layers
 // TODO: What happens if a tile starts loading and then a layer is added, meaning it's not in the "loaded tiles" callback
 // or active function and we haven't caught it in the parseTile function. Additional callback? Store the loading models?
+// TODO: Use image bitmap loader and / or LoadingManager callback
 class TextureCache {
 
 	constructor() {
@@ -46,7 +47,7 @@ class TextureCache {
 
 	loadTexture( key ) {
 
-		const cache = cache;
+		const cache = this.cache;
 		if ( key in cache ) {
 
 			cache[ key ].refs ++;
@@ -72,7 +73,7 @@ class TextureCache {
 
 			} );
 
-		this.cache = {
+		this.cache[ key ] = {
 			refs: 1,
 			texture: null,
 			abortController,
@@ -167,7 +168,7 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 					.then( texture => {
 
 						this.dispatchEvent( {
-							event: 'load-layer-texture',
+							type: 'load-layer-texture',
 							layer: key,
 							tile,
 							scene,
@@ -199,7 +200,7 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 	getTileKey( tile ) {
 
 		// TODO
-		return '';
+		return tile.content.uri;
 
 	}
 
@@ -237,7 +238,7 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 				.then( texture => {
 
 					this.dispatchEvent( {
-						event: 'load-layer-texture',
+						type: 'load-layer-texture',
 						layer: name,
 						tile,
 						scene,
@@ -285,20 +286,31 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 
 function onBeforeCompileCallback( shader ) {
 
+	const textures = this.textures || [];
+	shader.defines = {
+		TEXTURE_COUNT: textures.length || 1,
+	};
+
 	shader.uniforms.textures = {
-		value: this.textures || [],
+		value: textures,
 	};
 
 	shader.fragmentShader = shader.fragmentShader
+		.replace( /void main/, m => /* glsl */`
+			uniform sampler2D textures[ TEXTURE_COUNT ];
+			${ m }
+
+		` )
 		.replace( /#include <color_fragment>/, m => /* glsl */`
 
 			${ m }
 
+			vec4 col;
 			#pragma unroll_loop_start
-			for ( int i = 0; i < ${ this.textures.length }; i ++ ) {
+			for ( int i = 0; i < ${ textures.length }; i ++ ) {
 
-				vec4 v = texture( textures[ i ], vMapUv );
-				diffuse = mix( diffuse, v, v.a );
+				col = texture( textures[ i ], vMapUv );
+				diffuseColor = mix( diffuseColor, col, col.a );
 
 			}
 			#pragma unroll_loop_end
@@ -307,9 +319,10 @@ function onBeforeCompileCallback( shader ) {
 
 	this.onBeforeRender = () => {
 
-		if ( this.textures !== this.defines.TEXTURE_COUNT ) {
+		const textures = this.textures || [];
+		if ( textures.length !== shader.defines.TEXTURE_COUNT ) {
 
-			this.defines.TEXTURE_COUNT = this.textures.length;
+			shader.defines.TEXTURE_COUNT = textures.length;
 			this.needsUpdate = true;
 
 		}
