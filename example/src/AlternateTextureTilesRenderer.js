@@ -4,6 +4,7 @@ import { Texture, TextureLoader, ImageBitmapLoader } from 'three';
 // TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
 // TODO: What happens if a tile starts loading and then a layer is added, meaning it's not in the "loaded tiles" callback
 // or active function and we haven't caught it in the parseTile function. Additional callback? Store the loading models?
+
 function canUseImageBitmap() {
 
 	let isSafari = false;
@@ -25,11 +26,37 @@ function canUseImageBitmap() {
 
 class TextureCache {
 
-	constructor() {
+	constructor( loadTextureCallback = null ) {
 
 		this.cache = {};
 		this.urlResolver = url => url;
 		this.fetchOptions = {};
+
+		if ( loadTextureCallback === null ) {
+
+			this.loadTextureCallback = ( url, key ) => {
+
+				const loader = this.getTextureLoader();
+				return loader.loadAsync( url ).then( tex => {
+
+					if ( loader.isImageBitmapLoader ) {
+
+						tex = new Texture( tex );
+						tex.needsUpdate = true;
+
+					}
+
+					return tex;
+
+				} );
+
+			};
+
+		} else {
+
+			this.loadTextureCallback = loadTextureCallback;
+
+		}
 
 	}
 
@@ -81,19 +108,11 @@ class TextureCache {
 		}
 
 		const abortController = new AbortController();
-		const loader = this.getTextureLoader();
-		const promise = loader
-			.loadAsync( this.urlResolver( key ) )
+		const promise = this
+			.loadTextureCallback( this.urlResolver( key ), key )
 			.then( tex => {
 
 				if ( ! abortController.signal.aborted ) {
-
-					if ( loader.isImageBitmapLoader ) {
-
-						tex = new Texture( tex );
-						tex.needsUpdate = true;
-
-					}
 
 					cache[ key ].texture = tex;
 					return tex;
@@ -190,6 +209,37 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 		this.caches = {};
 		this.urlResolver = ( name, key ) => null;
 
+		this.addEventListener( 'delete-layer-texture', ( { scene, tile } ) => {
+
+			const textures = this.getTexturesForTile( tile );
+			scene.traverse( c => {
+
+				if ( c.material ) {
+
+					c.material.textures = textures;
+
+				}
+
+			} );
+
+		} );
+
+		this.addEventListener( 'load-layer-texture', ( { scene, tile } ) => {
+
+			const textures = this.getTexturesForTile( tile );
+			scene.traverse( c => {
+
+				if ( c.material ) {
+
+					c.material.onBeforeCompile = onBeforeCompileCallback;
+					c.material.textures = textures;
+
+				}
+
+			} );
+
+		} );
+
 		this.addEventListener( 'load-model', ( { scene, tile } ) => {
 
 			const caches = this.caches;
@@ -241,13 +291,14 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 
 		const cacheArray = order ? order.map( name => this.caches[ name ] ).filter( c => c ) : Object.values( this.caches );
 		const key = this.getTileKey( tile );
+
 		return cacheArray
 			.map( c => c.getTexture( key ) )
 			.filter( t => t );
 
 	}
 
-	registerLayer( name ) {
+	registerLayer( name, customTextureCallback = null ) {
 
 		if ( name in this.caches ) {
 
@@ -255,7 +306,7 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 
 		}
 
-		const cache = new TextureCache();
+		const cache = new TextureCache( customTextureCallback );
 		cache.fetchOptions = this.fetchOptions;
 		cache.urlResolver = key => {
 
@@ -291,6 +342,8 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 		if ( name in caches ) {
 
 			const cache = caches[ name ];
+			delete caches[ name ];
+
 			this.forEachLoadedModel( ( scene, tile ) => {
 
 				const texture = cache.getTexture( this.getTileKey( tile ) );
@@ -309,7 +362,6 @@ export const AlternateTextureTilesRendererMixin = base => class extends base {
 			} );
 
 			cache.dispose();
-			delete caches[ name ];
 
 		}
 
