@@ -13,7 +13,7 @@ import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { Box3 } from 'three';
 import { Sphere } from 'three';
-import { AlternateTextureTilesRendererMixin } from './src/AlternateTextureTilesRenderer.js';
+import { TextureOverlayTilesRendererMixin } from './src/TextureOverlayTilesRenderer.js';
 import { DataTexture } from 'three';
 
 let camera, controls, scene, renderer;
@@ -65,7 +65,7 @@ function init() {
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
-	const cons = AlternateTextureTilesRendererMixin( TilesRenderer );
+	const cons = TextureOverlayTilesRendererMixin( TilesRenderer );
 
 	const url = '../data/tileset.json';
 	tiles = new cons( url );

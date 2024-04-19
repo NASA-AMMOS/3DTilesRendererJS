@@ -188,6 +188,11 @@ class TextureCache {
 			if ( info.texture ) {
 
 				info.texture.dispose();
+				if ( info.texture.image instanceof ImageBitmap ) {
+
+					info.texture.image.close();
+
+				}
 
 			} else if ( info.abortController ) {
 
@@ -201,7 +206,7 @@ class TextureCache {
 
 }
 
-export const AlternateTextureTilesRendererMixin = base => class extends base {
+export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	constructor( ...args ) {
 
