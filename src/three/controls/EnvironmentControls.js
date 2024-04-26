@@ -222,8 +222,7 @@ export class EnvironmentControls extends EventDispatcher {
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 			// find the hit point
-			raycaster.setFromCamera( _pointer, camera );
-			const hit = this._raycast( raycaster );
+			const hit = this._raycastAtMousePosition( _pointer, raycaster );
 			if ( hit ) {
 
 				// if two fingers, right click, or shift click are being used then we trigger
@@ -951,6 +950,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	_raycastAtMousePosition( coords, raycaster ) {
 
+		// position the ray for the raycaster at the near clip plane
 		const camera = this.camera;
 		const ray = raycaster.ray;
 		ray.origin.setFromMatrixPosition( camera.matrixWorld );
