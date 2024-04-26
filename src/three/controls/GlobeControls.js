@@ -318,9 +318,15 @@ export class GlobeControls extends EnvironmentControls {
 			// zoom the camera
 			const normalizedDelta = Math.pow( 0.95, Math.abs( zoomDelta * 0.05 ) );
 			const scaleFactor = zoomDelta > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			const maxDiameter = 2.0 * Math.max( ...this.ellipsoid.radius );
+			const minZoom = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / maxDiameter;
 
-			camera.zoom = camera.zoom * scaleFactor * zoomSpeed;
+			camera.zoom = Math.max( 0.75 * minZoom, camera.zoom * scaleFactor * zoomSpeed );
 			camera.updateProjectionMatrix();
+
+			const alpha = MathUtils.mapLinear( camera.zoom, minZoom, minZoom * 0.75, 0, 1 );
+			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
 
 			this.zoomDelta = 0;
 
@@ -399,15 +405,13 @@ export class GlobeControls extends EnvironmentControls {
 	_isDistantControls() {
 
 		const { camera, ellipsoid } = this;
-		const maxRadius = Math.max( ...ellipsoid.radius );
+		const maxDiameter = 2.0 * Math.max( ...ellipsoid.radius );
 
 		let isFullyInView = false;
 		if ( camera.isOrthographicCamera ) {
 
 			const maxView = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / camera.zoom;
-			isFullyInView = maxRadius > maxView;
-
-			console.log( maxRadius, maxView );
+			isFullyInView = maxDiameter > maxView;
 
 		} else {
 
