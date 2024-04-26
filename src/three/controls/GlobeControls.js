@@ -12,6 +12,7 @@ const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _pos = new Vector3();
 const _vec = new Vector3();
+const _vec2 = new Vector3();
 const _center = new Vector3();
 const _up = new Vector3();
 const _forward = new Vector3();
@@ -77,6 +78,28 @@ export class GlobeControls extends EnvironmentControls {
 			super.setScene( scene );
 
 		}
+
+	}
+
+	getClosestPointOnSurface( target ) {
+
+		const { ellipsoid, camera, tilesGroup } = this;
+
+		_invMatrix
+			.copy( tilesGroup.matrixWorld )
+			.invert();
+
+		// get camera position in local frame
+		target
+			.setFromMatrixPosition( camera.matrixWorld )
+			.applyMatrix4( _invMatrix );
+
+		// get point on surface
+		ellipsoid
+			.getPositionToSurfacePoint( target, target )
+			.applyMatrix4( tilesGroup.matrixWorld );
+
+		return target;
 
 	}
 
@@ -233,7 +256,7 @@ export class GlobeControls extends EnvironmentControls {
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( dragPoint ) * 1e-10 / devicePixelRatio );
+				.multiplyScalar( camera.position.distanceTo( pivotPoint ) * 1e-9 / devicePixelRatio );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
@@ -280,8 +303,8 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const scale = this.zoomDelta;
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || scale > 0 ) {
+		const zoomDelta = this.zoomDelta;
+		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || zoomDelta > 0 ) {
 
 			super._updateZoom();
 
@@ -292,9 +315,13 @@ export class GlobeControls extends EnvironmentControls {
 			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
 			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
 
+			// get the distance to the surface of the sphere and compute teh zoom scale
+			const dist = this.getClosestPointOnSurface( _vec ).distanceTo( this.camera.position );
+			const scale = zoomDelta * dist * this.zoomSpeed * 0.0025;
+
 			// zoom out directly from the globe center
-			this.getVectorToCenter( _vec );
-			this.camera.position.addScaledVector( _vec, scale * 0.0025 );
+			this.getVectorToCenter( _vec ).normalize();
+			this.camera.position.addScaledVector( _vec, scale );
 			this.camera.updateMatrixWorld();
 
 			this.zoomDelta = 0;
