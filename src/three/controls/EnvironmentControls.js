@@ -100,7 +100,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
 		this.zoomDirection = new Vector3();
-		this.zoomPoint = this.pivotPoint;
+		this.zoomPoint = new Vector3();
 		this.zoomDelta = 0;
 
 		this.pivotMesh = new PivotPointMesh();
@@ -377,11 +377,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
-			if ( ! pointerTracker.updatePointer( e ) ) {
-
-				return;
-
-			}
+			pointerTracker.updatePointer( e );
 
 			this.dispatchEvent( _startEvent );
 

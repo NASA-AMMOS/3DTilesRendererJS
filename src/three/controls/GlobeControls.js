@@ -222,7 +222,7 @@ export class GlobeControls extends EnvironmentControls {
 				rotationSpeed,
 				camera,
 				pivotMesh,
-				dragPoint,
+				pivotPoint,
 				tilesGroup,
 			} = this;
 
