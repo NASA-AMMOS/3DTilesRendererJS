@@ -93,16 +93,19 @@ export class EnvironmentControls extends EventDispatcher {
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
+		this.pivotPoint = new Vector3();
+		this.pivotDirection = new Vector3();
+
 		this.dragPointSet = false;
-		this.dragPoint = new Vector3();
+		this.dragPoint = this.pivotPoint;
 
 		this.rotationPointSet = false;
-		this.rotationPoint = new Vector3();
+		this.rotationPoint = this.pivotPoint;
 
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
-		this.zoomDirection = new Vector3();
-		this.zoomPoint = new Vector3();
+		this.zoomDirection = this.pivotDirection;
+		this.zoomPoint = this.pivotPoint;
 		this.zoomDelta = 0;
 
 		this.pivotMesh = new PivotPointMesh();
