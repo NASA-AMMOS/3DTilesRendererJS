@@ -93,14 +93,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
+		// pivot point for drag and rotation
+		this.pivotPointSet = false;
 		this.pivotPoint = new Vector3();
-		this.pivotDirection = new Vector3();
-
-		this.dragPointSet = false;
-		this.dragPoint = this.pivotPoint;
-
-		this.rotationPointSet = false;
-		this.rotationPoint = this.pivotPoint;
 
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
@@ -237,8 +232,8 @@ export class EnvironmentControls extends EventDispatcher {
 				) {
 
 					this.setState( ROTATE );
-					this.rotationPoint.copy( hit.point );
-					this.rotationPointSet = true;
+					this.pivotPoint.copy( hit.point );
+					this.pivotPointSet = true;
 
 					this.pivotMesh.position.copy( hit.point );
 					this.pivotMesh.updateMatrixWorld();
@@ -250,8 +245,8 @@ export class EnvironmentControls extends EventDispatcher {
 					if ( raycaster.ray.direction.dot( up ) < 0 ) {
 
 						this.setState( DRAG );
-						this.dragPoint.copy( hit.point );
-						this.dragPointSet = true;
+						this.pivotPoint.copy( hit.point );
+						this.pivotPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
 						this.pivotMesh.updateMatrixWorld();
@@ -484,8 +479,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.state = NONE;
 		this.pinchState = NONE;
-		this.dragPointSet = false;
-		this.rotationPointSet = false;
+		this.pivotPointSet = false;
+		this.pivotPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
@@ -522,7 +517,7 @@ export class EnvironmentControls extends EventDispatcher {
 		const {
 			camera,
 			cameraRadius,
-			dragPoint,
+			pivotPoint,
 			up,
 			state,
 			pinchState,
@@ -583,7 +578,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			const { actionHeightOffset } = this;
 			camera.position.addScaledVector( up, - actionHeightOffset );
-			dragPoint.addScaledVector( up, - actionHeightOffset );
+			pivotPoint.addScaledVector( up, - actionHeightOffset );
 
 			// adjust the height
 			if ( hit ) {
@@ -603,7 +598,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 				const delta = cameraRadius - dist;
 				camera.position.addScaledVector( up, delta );
-				dragPoint.addScaledVector( up, delta );
+				pivotPoint.addScaledVector( up, delta );
 				this.actionHeightOffset = delta;
 
 			}
@@ -778,7 +773,7 @@ export class EnvironmentControls extends EventDispatcher {
 		const {
 			raycaster,
 			camera,
-			dragPoint,
+			pivotPoint,
 			up,
 			pointerTracker,
 			domElement,
@@ -788,7 +783,7 @@ export class EnvironmentControls extends EventDispatcher {
 		pointerTracker.getCenterPoint( _pointer );
 		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
-		_plane.setFromNormalAndCoplanarPoint( up, dragPoint );
+		_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
 		raycaster.setFromCamera( _pointer, camera );
 
 		// prevent the drag distance from getting too severe by limiting the drag point
@@ -815,7 +810,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// if we drag to a point that's near the edge of the earth then we want to prevent it
 		// from wrapping around and causing unexpected rotations
-		this.getUpDirection( dragPoint, _localUp );
+		this.getUpDirection( pivotPoint, _localUp );
 		if ( - raycaster.ray.direction.dot( _localUp ) < DRAG_UP_THRESHOLD ) {
 
 			const angle = Math.acos( DRAG_UP_THRESHOLD );
@@ -834,7 +829,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// find the point on the plane that we should drag to
 		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
-			_delta.subVectors( dragPoint, _vec );
+			_delta.subVectors( pivotPoint, _vec );
 			this.camera.position.add( _delta );
 			this.camera.updateMatrixWorld();
 
@@ -846,7 +841,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const {
 			camera,
-			rotationPoint,
+			pivotPoint,
 			minAltitude,
 			maxAltitude,
 			up,
@@ -868,7 +863,7 @@ export class EnvironmentControls extends EventDispatcher {
 			.transformDirection( camera.matrixWorld )
 			.multiplyScalar( - 1 );
 
-		this.getUpDirection( rotationPoint, _localUp );
+		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
 		_vec.crossVectors( up, _forward ).normalize();
@@ -892,14 +887,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// rotate around the up axis
 		_quaternion.setFromAxisAngle( _localUp, azimuth );
-		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
+		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		// get a rotation axis for altitude and rotate
 		_rotationAxis.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
 
 		_quaternion.setFromAxisAngle( _rotationAxis, altitude );
-		makeRotateAroundPoint( rotationPoint, _quaternion, _rotMatrix );
+		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		// update the transform members
