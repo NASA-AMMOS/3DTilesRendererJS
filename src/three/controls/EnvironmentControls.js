@@ -949,6 +949,19 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	_raycastAtMousePosition( coords, raycaster ) {
+
+		const camera = this.camera;
+		const ray = raycaster.ray;
+		ray.origin.setFromMatrixPosition( camera.matrixWorld );
+		ray.origin.set( coords.x, coords.y, - 1 ).unproject( camera );
+		ray.direction.set( coords.x, coords.y, 0.5 ).unproject( camera ).sub( ray.origin ).normalize();
+		raycaster.camera = camera;
+
+		return this._raycast( raycaster );
+
+	}
+
 	_raycast( raycaster ) {
 
 		const { scene, useFallbackPlane, fallbackPlane } = this;
