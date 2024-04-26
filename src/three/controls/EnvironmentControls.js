@@ -455,6 +455,15 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	getLastInteractionPoint( target ) {
+
+		// TODO: Ensure are handling the last zoom point if possible
+		// TODO: Return null (or get center point?) if it can't be provided
+
+		return target.copy( this.pivotPoint );
+
+	}
+
 	detach() {
 
 		this.domElement = null;
