@@ -104,7 +104,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
-		this.zoomDirection = this.pivotDirection;
+		this.zoomDirection = new Vector3();
 		this.zoomPoint = this.pivotPoint;
 		this.zoomDelta = 0;
 
