@@ -378,6 +378,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 			e.preventDefault();
 
+			const { pointerTracker } = this;
+			pointerTracker.setHoverEvent( e );
+			if ( ! pointerTracker.updatePointer( e ) ) {
+
+				return;
+
+			}
+
 			this.dispatchEvent( _startEvent );
 
 			let delta;
