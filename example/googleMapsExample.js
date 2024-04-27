@@ -118,6 +118,7 @@ function init() {
 
 	gui.add( params, 'orthographic' ).onChange( v => {
 
+		transition.fixedPoint.copy( controls.pivotPoint );
 		transition.toggle();
 
 	} );
