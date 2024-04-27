@@ -193,9 +193,9 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	// animate the frame to align to an up direction
-	setFrame( ...args ) {
+	_setFrame( ...args ) {
 
-		super.setFrame( ...args );
+		super._setFrame( ...args );
 
 		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
 
@@ -233,7 +233,7 @@ export class GlobeControls extends EnvironmentControls {
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( pivotPoint ) * 1e-10 / devicePixelRatio );
+				.multiplyScalar( camera.position.distanceTo( pivotPoint ) * 5 * 1e-10 / devicePixelRatio );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;

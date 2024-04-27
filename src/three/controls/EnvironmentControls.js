@@ -46,7 +46,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	get enabled() {
 
-		return this._enabled || true;
+		return this._enabled;
 
 	}
 
