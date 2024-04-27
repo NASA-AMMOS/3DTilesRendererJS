@@ -2,6 +2,14 @@ import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamer
 
 const _forward = new Vector3();
 const _vec = new Vector3();
+
+function easeInOut( x ) {
+
+	// https://stackoverflow.com/questions/30007853/simple-easing-function-in-javascript
+	return 1 - ( ( Math.cos( Math.PI * x ) + 1 ) / 2 );
+
+}
+
 export class CameraTransitionManager extends EventDispatcher {
 
 	get animating() {
@@ -165,7 +173,7 @@ export class CameraTransitionManager extends EventDispatcher {
 	_updateTransitionCamera() {
 
 		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
-		const alpha = this._alpha;
+		const alpha = easeInOut( this._alpha );
 		const fromCamera = this._getFromCamera();
 
 		const fov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
