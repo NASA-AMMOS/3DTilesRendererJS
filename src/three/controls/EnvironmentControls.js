@@ -641,6 +641,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		// addjust the orthographic camera zoom
 		if ( camera.isOrthographicCamera ) {
 
 			// get the mouse position before zoom
@@ -662,52 +663,55 @@ export class EnvironmentControls extends EventDispatcher {
 			camera.position.sub( _mouseAfter ).add( _mouseBefore );
 			camera.updateMatrixWorld();
 
-		} else {
+		}
 
-			// initialize the zoom direction
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
-			zoomDirection.copy( raycaster.ray.direction ).normalize();
-			this.zoomDirectionSet = true;
+		// Adjust zoom position
+		// Needed for orthographic camera, as well, to avoid floating point error when
+		// shifting the camera position to keep the world under the mouse cursor
+		// ie due to the local "up" vector used for the camera orientation
 
-			// track the zoom direction we're going to use
-			const finalZoomDirection = _vec.copy( zoomDirection );
+		// initialize the zoom direction
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+		raycaster.setFromCamera( _pointer, camera );
+		zoomDirection.copy( raycaster.ray.direction ).normalize();
+		this.zoomDirectionSet = true;
 
-			// always update the zoom target point in case the tiles are changing
-			if ( this._updateZoomPoint() ) {
+		// track the zoom direction we're going to use
+		const finalZoomDirection = _vec.copy( zoomDirection );
 
-				const dist = zoomPoint.distanceTo( camera.position );
+		// always update the zoom target point in case the tiles are changing
+		if ( this._updateZoomPoint() ) {
 
-				// scale the distance based on how far there is to move
-				if ( scale < 0 ) {
+			const dist = zoomPoint.distanceTo( camera.position );
 
-					const remainingDistance = Math.min( 0, dist - maxDistance );
-					scale = scale * dist * zoomSpeed * 0.0025;
-					scale = Math.max( scale, remainingDistance );
+			// scale the distance based on how far there is to move
+			if ( scale < 0 ) {
 
-				} else {
-
-					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
-					scale = Math.min( scale, remainingDistance );
-
-				}
-
-				camera.position.addScaledVector( zoomDirection, scale );
-				camera.updateMatrixWorld();
+				const remainingDistance = Math.min( 0, dist - maxDistance );
+				scale = scale * dist * zoomSpeed * 0.0025;
+				scale = Math.max( scale, remainingDistance );
 
 			} else {
 
-				// if we're zooming into nothing then use the distance from the ground to scale movement
-				const hit = this._getPointBelowCamera();
-				if ( hit ) {
+				const remainingDistance = Math.max( 0, dist - minDistance );
+				scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
+				scale = Math.min( scale, remainingDistance );
 
-					const dist = hit.distance;
-					finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-					camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
-					camera.updateMatrixWorld();
+			}
 
-				}
+			camera.position.addScaledVector( zoomDirection, scale );
+			camera.updateMatrixWorld();
+
+		} else {
+
+			// if we're zooming into nothing then use the distance from the ground to scale movement
+			const hit = this._getPointBelowCamera();
+			if ( hit ) {
+
+				const dist = hit.distance;
+				finalZoomDirection.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+				camera.position.addScaledVector( finalZoomDirection, scale * dist * 0.01 );
+				camera.updateMatrixWorld();
 
 			}
 
@@ -843,7 +847,6 @@ export class EnvironmentControls extends EventDispatcher {
 			pivotPoint,
 			minAltitude,
 			maxAltitude,
-			up,
 			pointerTracker,
 			rotationSpeed,
 		} = this;
@@ -865,10 +868,10 @@ export class EnvironmentControls extends EventDispatcher {
 		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
-		_vec.crossVectors( up, _forward ).normalize();
+		_vec.crossVectors( _localUp, _forward ).normalize();
 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
 		const sign = Math.sign( _vec.dot( _right ) );
-		const angle = sign * up.angleTo( _forward );
+		const angle = sign * _localUp.angleTo( _forward );
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range

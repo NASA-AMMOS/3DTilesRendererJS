@@ -12,7 +12,6 @@ const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _pos = new Vector3();
 const _vec = new Vector3();
-const _vec2 = new Vector3();
 const _center = new Vector3();
 const _up = new Vector3();
 const _forward = new Vector3();
@@ -166,7 +165,7 @@ export class GlobeControls extends EnvironmentControls {
 		// if we're outside the transition threshold then we toggle some reorientation behavior
 		// when adjusting the up frame
 		// whether controls are based on a far distance from the camera while moving hte camera
-		if ( ! this._isDistantControls() ) {
+		if ( ! this._isNearControls() ) {
 
 			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
 
@@ -217,13 +216,13 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	// animate the frame to align to an up direction
-	setFrame( ...args ) {
+	_setFrame( ...args ) {
 
-		super.setFrame( ...args );
+		super._setFrame( ...args );
 
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._isNearControls() ) {
 
-			this._alignCameraUp( this.up );
+			this._alignCameraUp( this.up, 1 );
 
 		}
 
@@ -232,7 +231,7 @@ export class GlobeControls extends EnvironmentControls {
 	_updatePosition( ...args ) {
 
 		// whether controls are based on a far distance from the camera
-		if ( this._dragMode === 1 || this._isDistantControls() ) {
+		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
@@ -290,7 +289,7 @@ export class GlobeControls extends EnvironmentControls {
 	_updateRotation( ...args ) {
 
 		// whether controls are based on a far distance from the camera
-		if ( this._rotationMode === 1 || this._isDistantControls() ) {
+		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
 			super._updateRotation( ...args );
@@ -306,36 +305,44 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
+		window.CONTROLS = this;
 		const { zoomDelta, camera, zoomSpeed } = this;
 
 		// whether controls are based on a far distance from the camera
-		if ( this._isDistantControls() || zoomDelta > 0 ) {
+		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			super._updateZoom();
 
-		} else if ( camera.isOrthographicCamera ) {
-
-			// zoom the camera
-			const normalizedDelta = Math.pow( 0.95, Math.abs( zoomDelta * 0.05 ) );
-			const scaleFactor = zoomDelta > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
-			const maxDiameter = 2.0 * Math.max( ...this.ellipsoid.radius );
-			const minZoom = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / maxDiameter;
-
-			camera.zoom = Math.max( 0.75 * minZoom, camera.zoom * scaleFactor * zoomSpeed );
-			camera.updateProjectionMatrix();
-
-			const alpha = MathUtils.mapLinear( camera.zoom, minZoom, minZoom * 0.75, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
-
-			this.zoomDelta = 0;
-
 		} else {
 
-			// orient the camera to focus on the earth during the zoom
-			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+			if ( camera.isOrthographicCamera ) {
+
+				// zoom the camera
+				const normalizedDelta = Math.pow( 0.95, Math.abs( zoomDelta * 0.05 ) );
+				const scaleFactor = zoomDelta > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+				const maxDiameter = 2.0 * Math.max( ...this.ellipsoid.radius );
+				const minZoom = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / maxDiameter;
+
+				camera.zoom = Math.max( 0.75 * minZoom, camera.zoom * scaleFactor * zoomSpeed );
+				camera.updateProjectionMatrix();
+
+				let alpha = MathUtils.mapLinear( camera.zoom, minZoom * 1.25, minZoom * 0.75, 0, 1 );
+				alpha = MathUtils.clamp( alpha, 0, 1 );
+				this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
+				this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+
+				// this.zoomDelta = 0;
+
+			}
+
+			if ( camera.isPerspectiveCamera ) {
+
+				// orient the camera to focus on the earth during the zoom
+				const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
+				this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
+				this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+
+			}
 
 			// get the distance to the surface of the sphere and compute teh zoom scale
 			const dist = this.getClosestPointOnSurface( _vec ).distanceTo( camera.position );
@@ -402,16 +409,16 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	// whether controls are based on a far distance from the camera
-	_isDistantControls() {
+	_isNearControls() {
 
 		const { camera, ellipsoid } = this;
 		const maxDiameter = 2.0 * Math.max( ...ellipsoid.radius );
 
 		let isFullyInView = false;
-		if ( camera.isOrthographicCamera ) {
+		if ( camera.isOrthographicCamera && false ) {
 
 			const maxView = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / camera.zoom;
-			isFullyInView = maxDiameter > maxView;
+			isFullyInView = 0.5 * maxDiameter > maxView;
 
 		} else {
 
