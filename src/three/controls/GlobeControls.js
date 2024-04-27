@@ -113,7 +113,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	update() {
 
-		if ( ! this.tilesGroup || ! this.camera ) {
+		if ( ! this.enabled || ! this.tilesGroup || ! this.camera ) {
 
 			return;
 
@@ -222,7 +222,7 @@ export class GlobeControls extends EnvironmentControls {
 				rotationSpeed,
 				camera,
 				pivotMesh,
-				dragPoint,
+				pivotPoint,
 				tilesGroup,
 			} = this;
 
@@ -233,7 +233,7 @@ export class GlobeControls extends EnvironmentControls {
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( dragPoint ) * 1e-10 / devicePixelRatio );
+				.multiplyScalar( camera.position.distanceTo( pivotPoint ) * 1e-10 / devicePixelRatio );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
