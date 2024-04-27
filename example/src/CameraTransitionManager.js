@@ -199,10 +199,12 @@ export class CameraTransitionManager extends EventDispatcher {
 		// move the camera forward to the plane and then back by the target amount
 		const offset = distToPoint - targetDist;
 
+		// TODO: transition the near and far clips to the values set by the respective cameras
+		// currently it "pops" when the transition is finished
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = fov;
-		transitionCamera.near = perspectiveCamera.near + Math.abs( offset );
-		transitionCamera.far = perspectiveCamera.far + Math.abs( offset );
+		transitionCamera.near = perspectiveCamera.near - offset;
+		transitionCamera.far = perspectiveCamera.far - offset;
 		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, offset );
 		transitionCamera.rotation.copy( fromCamera.rotation );
 		transitionCamera.updateProjectionMatrix();
