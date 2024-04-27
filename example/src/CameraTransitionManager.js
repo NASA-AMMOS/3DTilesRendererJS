@@ -14,7 +14,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.camera = this.perspectiveCamera;
 
 		this.fixedPoint = new Vector3();
-		this.duration = 500;
+		this.duration = 250;
 		this._target = 0;
 		this._alpha = 0;
 		this._clock = new Clock();
@@ -97,12 +97,15 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		} else {
 
+			const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
 			const orthoHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
-			const distToPoint = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
+			const targetDist = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
 
-			// TODO: we need to just back up from the center point of the plane, not the fixed point
 			perspectiveCamera.rotation.copy( fromCamera.rotation );
-			perspectiveCamera.position.copy( this.fixedPoint ).addScaledVector( _forward, - distToPoint );
+			perspectiveCamera.position.copy( fromCamera.position )
+				.addScaledVector( _forward, distToPoint )
+				.addScaledVector( _forward, - targetDist );
+
 			perspectiveCamera.updateMatrixWorld();
 
 		}
@@ -177,12 +180,14 @@ export class CameraTransitionManager extends EventDispatcher {
 		}
 
 		const distance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
+		const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
 
+		// TODO: adjust near plane based on distance set so it's in the same spot
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = fov;
 		transitionCamera.near = perspectiveCamera.near;
 		transitionCamera.far = perspectiveCamera.far;
-		transitionCamera.position.copy( this.fixedPoint ).addScaledVector( _forward, - distance );
+		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, distToPoint - distance );
 		transitionCamera.updateProjectionMatrix();
 
 	}
