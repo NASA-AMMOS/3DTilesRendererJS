@@ -14,7 +14,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.camera = this.perspectiveCamera;
 
 		this.fixedPoint = new Vector3();
-		this.duration = 1000;
+		this.duration = 500;
 		this._target = 0;
 		this._alpha = 0;
 		this._clock = new Clock();
@@ -44,22 +44,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		}
 
 		// update transforms
-		[ perspectiveCamera, orthographicCamera, transitionCamera ].forEach( c => {
-
-			c.position.copy( camera.position );
-			c.rotation.copy( camera.rotation );
-
-		} );
-
-		if ( camera === transitionCamera ) {
-
-			this._updateTransitionCamera();
-			perspectiveCamera.position.copy( camera.position );
-			perspectiveCamera.rotation.copy( camera.rotation );
-			orthographicCamera.position.copy( camera.position );
-			orthographicCamera.rotation.copy( camera.rotation );
-
-		}
+		this._syncCameras();
 
 		// find the new camera
 		const prevCamera = camera;
@@ -88,31 +73,116 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	_syncCameras() {
+
+		const fromCamera = this._getFromCamera();
+		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
+
+		transitionCamera.position.copy( fromCamera.position );
+		transitionCamera.rotation.copy( fromCamera.rotation );
+
+		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
+
+		if ( fromCamera.isPerspectiveCamera ) {
+
+			orthographicCamera.position.copy( fromCamera.position );
+			orthographicCamera.rotation.copy( fromCamera.rotation );
+			orthographicCamera.updateMatrixWorld();
+
+			const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
+			const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * fromCamera.fov * 0.5 ) * distToPoint;
+			const orthoHeight = orthographicCamera.top - orthographicCamera.bottom;
+			orthographicCamera.zoom = orthoHeight / projectionHeight;
+			orthographicCamera.updateProjectionMatrix();
+
+		} else {
+
+			const orthoHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
+			const distToPoint = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
+
+			perspectiveCamera.rotation.copy( fromCamera.rotation );
+			perspectiveCamera.position.copy( this.fixedPoint ).addScaledVector( _forward, - distToPoint );
+			perspectiveCamera.updateMatrixWorld();
+
+		}
+
+	}
+
+	_getTransitionDirection() {
+
+		return Math.sign( this._target - this._alpha );
+
+	}
+
+	_getToCamera() {
+
+		const dir = this._getTransitionDirection();
+		if ( dir === 0 ) {
+
+			return this._target === 0 ? this.perspectiveCamera : this.orthographicCamera;
+
+		} else if ( dir > 0 ) {
+
+			return this.orthographicCamera;
+
+		} else {
+
+			return this.perspectiveCamera;
+
+		}
+
+	}
+
+	_getFromCamera() {
+
+		const dir = this._getTransitionDirection();
+		if ( dir === 0 ) {
+
+			return this._target === 0 ? this.perspectiveCamera : this.orthographicCamera;
+
+		} else if ( dir > 0 ) {
+
+			return this.perspectiveCamera;
+
+		} else {
+
+			return this.orthographicCamera;
+
+		}
+
+	}
+
 	_updateTransitionCamera() {
 
 		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
 		const alpha = this._alpha;
+		const fromCamera = this._getFromCamera();
 
 		// a = o / tan
-		const fov = MathUtils.lerp( perspectiveCamera.fov, 1e-8, alpha );
-		let height = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
+		const fov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
+		transitionCamera.rotation.copy( fromCamera.rotation );
+		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
 
-		_forward.set( 0, 0, - 1 ).transformDirection( transitionCamera.matrixWorld ).normalize();
+		let projectionHeight;
+		if ( fromCamera.isPerspectiveCamera ) {
 
-		// tan = o / a
-		// o = tan * a
-		const currDist = Math.abs( _vec.subVectors( perspectiveCamera.position, this.fixedPoint ).dot( _forward ) );
-		const currHeight = Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * currDist;
-		// height = currHeight;
+			const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, this.fixedPoint ).dot( _forward ) );
+			projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * distToPoint;
 
-		const distance = height * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
+		} else {
+
+			projectionHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
+
+		}
+
+		const distance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
 
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = fov;
+		transitionCamera.near = perspectiveCamera.near;
+		transitionCamera.far = perspectiveCamera.far;
 		transitionCamera.position.copy( this.fixedPoint ).addScaledVector( _forward, - distance );
 		transitionCamera.updateProjectionMatrix();
-
-		console.log( currHeight )
 
 	}
 
