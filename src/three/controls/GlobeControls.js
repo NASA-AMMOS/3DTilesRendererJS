@@ -202,6 +202,19 @@ export class GlobeControls extends EnvironmentControls {
 		const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
 		camera.far = horizonDistance + 0.1;
 
+
+
+		if ( camera.isOrthographicCamera ) {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+
+			const v = new Vector3().setFromMatrixPosition( this.tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
+
+			camera.near = - Math.max( ...this.ellipsoid.radius );
+			camera.far = - v.z;
+
+		}
+
 		camera.updateProjectionMatrix();
 
 	}
@@ -327,9 +340,13 @@ export class GlobeControls extends EnvironmentControls {
 				camera.updateProjectionMatrix();
 
 				let alpha = MathUtils.mapLinear( camera.zoom, minZoom * 1.25, minZoom * 0.75, 0, 1 );
-				alpha = MathUtils.clamp( alpha, 0, 1 );
-				this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-				this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+				if ( alpha > 0 ) {
+
+					alpha = MathUtils.clamp( alpha, 0, 1 );
+					this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
+					this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+
+				}
 
 				// this.zoomDelta = 0;
 
@@ -415,7 +432,7 @@ export class GlobeControls extends EnvironmentControls {
 		const maxDiameter = 2.0 * Math.max( ...ellipsoid.radius );
 
 		let isFullyInView = false;
-		if ( camera.isOrthographicCamera && false ) {
+		if ( camera.isOrthographicCamera ) {
 
 			const maxView = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / camera.zoom;
 			isFullyInView = 0.5 * maxDiameter > maxView;
