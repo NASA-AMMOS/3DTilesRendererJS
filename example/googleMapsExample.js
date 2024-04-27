@@ -16,8 +16,9 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { CameraTransitionManager } from './src/CameraTransitionManager.js';
 
-let camera, orthoCamera, activeCamera, controls, scene, renderer, tiles;
+let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
 
 const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
@@ -66,8 +67,8 @@ function reinstantiateTiles() {
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	scene.add( tiles.group );
 
-	tiles.setResolutionFromRenderer( activeCamera, renderer );
-	tiles.setCamera( activeCamera );
+	tiles.setResolutionFromRenderer( transition.camera, renderer );
+	tiles.setCamera( transition.camera );
 
 	controls.setTilesRenderer( tiles );
 
@@ -83,19 +84,28 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 4800000, 2570000, 14720000 );
-	camera.lookAt( 0, 0, 0 );
+	transition = new CameraTransitionManager();
+	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
-	orthoCamera = new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 );
-	orthoCamera.zoom = 1.5 * 1e-3;
-	orthoCamera.position.set( 4800000, 2570000, 14720000 );
-	orthoCamera.lookAt( 0, 0, 0 );
+		tiles.deleteCamera( prevCamera );
+		tiles.setCamera( camera );
+		controls.setCamera( camera );
 
-	activeCamera = camera;
+	} );
+
+	transition.perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.perspectiveCamera.lookAt( 0, 0, 0 );
+
+	transition.orthographicCamera = new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 );
+	transition.orthographicCamera.zoom = 1.5 * 1e-3;
+	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.orthographicCamera.lookAt( 0, 0, 0 );
+
+	transition.camera = transition.perspectiveCamera;
 
 	// controls
-	controls = new GlobeControls( scene, activeCamera, renderer.domElement, null );
+	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 
 	reinstantiateTiles();
 
@@ -108,9 +118,7 @@ function init() {
 
 	gui.add( params, 'orthographic' ).onChange( v => {
 
-		tiles.deleteCamera( activeCamera );
-		activeCamera = v ? orthoCamera : camera;
-		controls.setCamera( activeCamera );
+		transition.toggle();
 
 	} );
 
@@ -142,13 +150,15 @@ function init() {
 
 function onWindowResize() {
 
+	const { perspectiveCamera, orthographicCamera } = transition;
 	const aspect = window.innerWidth / window.innerHeight;
-	camera.aspect = aspect;
-	camera.updateProjectionMatrix();
 
-	orthoCamera.left = - orthoCamera.top * aspect;
-	orthoCamera.right = - orthoCamera.left;
-	orthoCamera.updateProjectionMatrix();
+	perspectiveCamera.aspect = aspect;
+	perspectiveCamera.updateProjectionMatrix();
+
+	orthographicCamera.left = - orthographicCamera.top * aspect;
+	orthographicCamera.right = - orthographicCamera.left;
+	orthographicCamera.updateProjectionMatrix();
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setPixelRatio( window.devicePixelRatio );
@@ -163,9 +173,10 @@ function updateHash() {
 
 	}
 
+	const camera = transition.camera;
 	const res = {};
 	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = activeCamera.position.clone().applyMatrix4( mat );
+	const vec = camera.position.clone().applyMatrix4( mat );
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 
 	res.lat *= MathUtils.RAD2DEG;
@@ -189,11 +200,12 @@ function initFromHash() {
 
 	//todo it looks like we can't init under a certain height, I assume it has something to do with the first tile loaded and collision
 	const [ lat, lon, height ] = tokens;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, activeCamera.position );
+	const camera = transition.camera;
+	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 
 	tiles.group.updateMatrixWorld();
-	activeCamera.position.applyMatrix4( tiles.group.matrixWorld );
-	activeCamera.lookAt( 0, 0, 0 );
+	camera.position.applyMatrix4( tiles.group.matrixWorld );
+	camera.lookAt( 0, 0, 0 );
 
 }
 
@@ -203,29 +215,24 @@ function animate() {
 
 	if ( ! tiles ) return;
 
+	transition.update();
 	controls.update();
 
-	if ( activeCamera.isOrthographicCamera ) {
+	const camera = transition.camera;
 
-		camera.position.copy( orthoCamera.position )
-		camera.rotation.copy( orthoCamera.rotation )
-		camera.near = 100;
-		camera.updateProjectionMatrix();
-		camera.updateMatrixWorld();
-
-	}
+	window.TRANS = transition;
 
 	// update options
-	tiles.setResolutionFromRenderer( activeCamera, renderer );
-	tiles.setCamera( activeCamera );
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.setCamera( camera );
 	tiles.displayBoxBounds = params.displayBoxBounds;
 	tiles.displayRegionBounds = params.displayRegionBounds;
 
 	// update tiles
-	activeCamera.updateMatrixWorld();
+	camera.updateMatrixWorld();
 	tiles.update();
 
-	renderer.render( scene, activeCamera );
+	renderer.render( scene, camera );
 	stats.update();
 
 	updateHtml();
@@ -287,7 +294,7 @@ function updateHtml() {
 	}
 
 	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = activeCamera.position.clone().applyMatrix4( mat );
+	const vec = transition.camera.position.clone().applyMatrix4( mat );
 
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
