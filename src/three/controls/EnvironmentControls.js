@@ -93,10 +93,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
 
-		this.dragPointSet = false;
 		this.dragPoint = new Vector3();
-
-		this.rotationPointSet = false;
 		this.rotationPoint = new Vector3();
 
 		this.zoomDirectionSet = false;
@@ -236,7 +233,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 					this.setState( ROTATE );
 					this.rotationPoint.copy( hit.point );
-					this.rotationPointSet = true;
 
 					this.pivotMesh.position.copy( hit.point );
 					this.pivotMesh.updateMatrixWorld();
@@ -249,7 +245,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 						this.setState( DRAG );
 						this.dragPoint.copy( hit.point );
-						this.dragPointSet = true;
 
 						this.pivotMesh.position.copy( hit.point );
 						this.pivotMesh.updateMatrixWorld();
@@ -478,8 +473,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.state = NONE;
 		this.pinchState = NONE;
-		this.dragPointSet = false;
-		this.rotationPointSet = false;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
