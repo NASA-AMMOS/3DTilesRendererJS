@@ -4,6 +4,12 @@ const _forward = new Vector3();
 const _vec = new Vector3();
 export class CameraTransitionManager extends EventDispatcher {
 
+	get animating() {
+
+		return this._alpha !== 0 && this._alpha !== 1;
+
+	}
+
 	constructor( perspectiveCamera = new PerspectiveCamera(), orthographicCamera = new OrthographicCamera() ) {
 
 		super();
@@ -162,7 +168,6 @@ export class CameraTransitionManager extends EventDispatcher {
 		const alpha = this._alpha;
 		const fromCamera = this._getFromCamera();
 
-		// a = o / tan
 		const fov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
 		transitionCamera.rotation.copy( fromCamera.rotation );
 		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
@@ -181,13 +186,13 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		const distance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
 		const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
+		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, distToPoint - distance );
 
 		// TODO: adjust near plane based on distance set so it's in the same spot
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = fov;
-		transitionCamera.near = perspectiveCamera.near;
-		transitionCamera.far = perspectiveCamera.far;
-		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, distToPoint - distance );
+		transitionCamera.near = perspectiveCamera.near + Math.abs( distToPoint - distance );
+		transitionCamera.far = perspectiveCamera.far + Math.abs( distToPoint - distance );
 		transitionCamera.updateProjectionMatrix();
 
 	}
