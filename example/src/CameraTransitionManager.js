@@ -28,7 +28,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.camera = this.perspectiveCamera;
 
 		this.fixedPoint = new Vector3();
-		this.duration = 250;
+		this.duration = 200;
 		this._target = 0;
 		this._alpha = 0;
 		this._clock = new Clock();
