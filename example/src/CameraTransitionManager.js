@@ -176,10 +176,10 @@ export class CameraTransitionManager extends EventDispatcher {
 		const alpha = easeInOut( this._alpha );
 		const fromCamera = this._getFromCamera();
 
-		const fov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
-		transitionCamera.rotation.copy( fromCamera.rotation );
+		// get the forward vector
 		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
 
+		// compute the projection height based on the current camera
 		let projectionHeight;
 		if ( fromCamera.isPerspectiveCamera ) {
 
@@ -192,15 +192,19 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		}
 
-		const distance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
+		const fov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
+		const targetDist = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * fov * 0.5 );
 		const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
-		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, distToPoint - distance );
 
-		// TODO: adjust near plane based on distance set so it's in the same spot
+		// move the camera forward to the plane and then back by the target amount
+		const offset = distToPoint - targetDist;
+
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = fov;
-		transitionCamera.near = perspectiveCamera.near + Math.abs( distToPoint - distance );
-		transitionCamera.far = perspectiveCamera.far + Math.abs( distToPoint - distance );
+		transitionCamera.near = perspectiveCamera.near + Math.abs( offset );
+		transitionCamera.far = perspectiveCamera.far + Math.abs( offset );
+		transitionCamera.position.copy( fromCamera.position ).addScaledVector( _forward, offset );
+		transitionCamera.rotation.copy( fromCamera.rotation );
 		transitionCamera.updateProjectionMatrix();
 
 	}
