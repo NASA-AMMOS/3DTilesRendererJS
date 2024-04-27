@@ -116,12 +116,12 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	gui.add( params, 'orthographic' ).onChange( v => {
+	// gui.add( params, 'orthographic' ).onChange( v => {
 
-		transition.fixedPoint.copy( controls.pivotPoint );
-		transition.toggle();
+	// 	transition.fixedPoint.copy( controls.pivotPoint );
+	// 	transition.toggle();
 
-	} );
+	// } );
 
 	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
