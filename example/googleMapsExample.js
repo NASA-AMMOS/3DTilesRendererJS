@@ -216,6 +216,7 @@ function animate() {
 	if ( ! tiles ) return;
 
 	transition.update();
+	controls.enabled = ! transition.animating;
 	controls.update();
 
 	const camera = transition.camera;
