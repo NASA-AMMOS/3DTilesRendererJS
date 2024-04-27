@@ -33,6 +33,9 @@ export class CameraTransitionManager extends EventDispatcher {
 		const clock = this._clock;
 		const delta = clock.getDelta() * 1e3;
 
+		// update transforms
+		this._syncCameras();
+
 		if ( this._alpha !== this._target ) {
 
 			const direction = Math.sign( this._target - this._alpha );
@@ -42,9 +45,6 @@ export class CameraTransitionManager extends EventDispatcher {
 			this.dispatchEvent( { type: 'change' } );
 
 		}
-
-		// update transforms
-		this._syncCameras();
 
 		// find the new camera
 		const prevCamera = camera;
@@ -100,6 +100,7 @@ export class CameraTransitionManager extends EventDispatcher {
 			const orthoHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
 			const distToPoint = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
 
+			// TODO: we need to just back up from the center point of the plane, not the fixed point
 			perspectiveCamera.rotation.copy( fromCamera.rotation );
 			perspectiveCamera.position.copy( this.fixedPoint ).addScaledVector( _forward, - distToPoint );
 			perspectiveCamera.updateMatrixWorld();
