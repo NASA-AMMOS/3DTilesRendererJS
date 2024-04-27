@@ -9,19 +9,23 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	MathUtils,
+	OrthographicCamera,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { CameraTransitionManager } from './src/CameraTransitionManager.js';
 
-let camera, controls, scene, renderer, tiles;
+let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
 
 const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
 
 const params = {
+
+	orthographic: false,
 
 	enableCacheDisplay: false,
 	enableRendererStats: false,
@@ -50,6 +54,7 @@ function reinstantiateTiles() {
 
 	tiles = new GoogleTilesRenderer( params.apiKey );
 	tiles.group.rotation.x = - Math.PI / 2;
+	tiles.errorTarget = 50;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -62,8 +67,8 @@ function reinstantiateTiles() {
 	tiles.manager.addHandler( /\.gltf$/, loader );
 	scene.add( tiles.group );
 
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.setCamera( camera );
+	tiles.setResolutionFromRenderer( transition.camera, renderer );
+	tiles.setCamera( transition.camera );
 
 	controls.setTilesRenderer( tiles );
 
@@ -79,12 +84,28 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 4800000, 2570000, 14720000 );
-	camera.lookAt( 0, 0, 0 );
+	transition = new CameraTransitionManager();
+	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
+
+		tiles.deleteCamera( prevCamera );
+		tiles.setCamera( camera );
+		controls.setCamera( camera );
+
+	} );
+
+	transition.perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
+	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.perspectiveCamera.lookAt( 0, 0, 0 );
+
+	transition.orthographicCamera = new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 );
+	transition.orthographicCamera.zoom = 1.5 * 1e-3;
+	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.orthographicCamera.lookAt( 0, 0, 0 );
+
+	transition.camera = transition.perspectiveCamera;
 
 	// controls
-	controls = new GlobeControls( scene, camera, renderer.domElement, null );
+	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 
 	reinstantiateTiles();
 
@@ -94,6 +115,13 @@ function init() {
 	// GUI
 	const gui = new GUI();
 	gui.width = 300;
+
+	// gui.add( params, 'orthographic' ).onChange( v => {
+
+	// 	transition.fixedPoint.copy( controls.pivotPoint );
+	// 	transition.toggle();
+
+	// } );
 
 	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
@@ -123,10 +151,17 @@ function init() {
 
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	const { perspectiveCamera, orthographicCamera } = transition;
+	const aspect = window.innerWidth / window.innerHeight;
 
-	camera.updateProjectionMatrix();
+	perspectiveCamera.aspect = aspect;
+	perspectiveCamera.updateProjectionMatrix();
+
+	orthographicCamera.left = - orthographicCamera.top * aspect;
+	orthographicCamera.right = - orthographicCamera.left;
+	orthographicCamera.updateProjectionMatrix();
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setPixelRatio( window.devicePixelRatio );
 
 }
@@ -139,6 +174,7 @@ function updateHash() {
 
 	}
 
+	const camera = transition.camera;
 	const res = {};
 	const mat = tiles.group.matrixWorld.clone().invert();
 	const vec = camera.position.clone().applyMatrix4( mat );
@@ -165,6 +201,7 @@ function initFromHash() {
 
 	//todo it looks like we can't init under a certain height, I assume it has something to do with the first tile loaded and collision
 	const [ lat, lon, height ] = tokens;
+	const camera = transition.camera;
 	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 
 	tiles.group.updateMatrixWorld();
@@ -179,7 +216,13 @@ function animate() {
 
 	if ( ! tiles ) return;
 
+	transition.update();
+	controls.enabled = ! transition.animating;
 	controls.update();
+
+	const camera = transition.camera;
+
+	window.TRANS = transition;
 
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
@@ -253,7 +296,7 @@ function updateHtml() {
 	}
 
 	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = camera.position.clone().applyMatrix4( mat );
+	const vec = transition.camera.position.clone().applyMatrix4( mat );
 
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
