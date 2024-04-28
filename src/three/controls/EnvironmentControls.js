@@ -73,7 +73,6 @@ export class EnvironmentControls extends EventDispatcher {
 		// settings
 		this._enabled = true;
 		this.state = NONE;
-		this.pinchState = NONE;
 		this.cameraRadius = 5;
 		this.rotationSpeed = 1;
 		this.minAltitude = 0;
@@ -289,7 +288,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 					if ( this.state === DRAG ) {
 
-						this.setState( WAITING, WAITING, false );
+						this.setState( WAITING, false );
 
 					}
 
@@ -322,12 +321,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-										this.setState( ZOOM, NONE );
+										this.setState( ZOOM );
 										this.zoomDirectionSet = false;
 
 									} else {
 
-										this.setState( ROTATE, NONE );
+										this.setState( ROTATE );
 
 									}
 
@@ -472,36 +471,34 @@ export class EnvironmentControls extends EventDispatcher {
 
 	resetState() {
 
-		if ( this.state !== NONE || this.pinchState !== NONE ) {
+		if ( this.state !== NONE ) {
 
 			this.dispatchEvent( _endEvent );
 
 		}
 
 		this.state = NONE;
-		this.pinchState = NONE;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
 
 	}
 
-	setState( state = this.state, pinchState = this.pinchState, fireEvent = true ) {
+	setState( state = this.state, fireEvent = true ) {
 
-		if ( this.state === state && this.pinchState === pinchState ) {
+		if ( this.state === state ) {
 
 			return;
 
 		}
 
-		if ( this.state === NONE && this.pinchState === NONE && fireEvent ) {
+		if ( this.state === NONE && fireEvent ) {
 
 			this.dispatchEvent( _startEvent );
 
 		}
 
 		this.state = state;
-		this.pinchState = pinchState;
 
 	}
 
