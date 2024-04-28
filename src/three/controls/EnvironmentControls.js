@@ -896,16 +896,29 @@ export class EnvironmentControls extends EventDispatcher {
 	// sets the "up" axis for the current surface of the tile set
 	_setFrame( newUp, pivot ) {
 
-		const { up, camera, state, pinchState, zoomPoint, zoomDirection } = this;
+		const {
+			up,
+			camera,
+			state,
+			pinchState,
+			zoomPoint,
+			zoomDirection,
+			zoomDirectionSet,
+			zoomPointSet,
+			reorientOnDrag,
+			reorientOnZoom
+		} = this;
+
 		camera.updateMatrixWorld();
 
 		// get the amount needed to rotate
 		_quaternion.setFromUnitVectors( up, newUp );
 
+		// If we're zooming then reorient around the zoom point
 		const action = state || pinchState;
-		if ( this.zoomDirectionSet && ( this.zoomPointSet || this._updateZoomPoint() ) ) {
+		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			if ( this.reorientOnZoom ) {
+			if ( reorientOnZoom ) {
 
 				// rotates the camera position around the point being zoomed in to
 				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
@@ -916,7 +929,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-		} else if ( action === NONE || action === DRAG && this.reorientOnDrag ) {
+		} else if ( action === DRAG && reorientOnDrag ) {
+
+			// If we're dragging then reorient around the drag point
 
 			// NOTE: We used to derive the pivot point here by getting the point below the camera
 			// but decided to pass it in via "update" to avoid multiple ray casts

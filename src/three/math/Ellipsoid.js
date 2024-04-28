@@ -1,4 +1,4 @@
-import { Vector3, Spherical, MathUtils } from 'three';
+import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
@@ -6,11 +6,15 @@ const _norm = new Vector3();
 const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _vec3 = new Vector3();
+const _matrix = new Matrix4();
+const _sphere = new Sphere();
 
 const _vecX = new Vector3();
 const _vecY = new Vector3();
 const _vecZ = new Vector3();
 const _pos = new Vector3();
+
+const _ray = new Ray();
 
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
@@ -20,6 +24,27 @@ export class Ellipsoid {
 	constructor( x = 1, y = 1, z = 1 ) {
 
 		this.radius = new Vector3( x, y, z );
+
+	}
+
+	intersectRay( ray, target ) {
+
+		_matrix.makeScale( ...this.radius ).invert();
+		_sphere.center.set( 0, 0, 0 );
+		_sphere.radius = 1;
+
+		_ray.copy( ray ).applyMatrix4( _matrix );
+		if ( _ray.intersectSphere( _sphere, target ) ) {
+
+			_matrix.makeScale( ...this.radius );
+			target.applyMatrix4( _matrix );
+			return target;
+
+		} else {
+
+			return null;
+
+		}
 
 	}
 

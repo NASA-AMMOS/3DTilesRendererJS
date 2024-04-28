@@ -142,7 +142,12 @@ export class GlobeControls extends EnvironmentControls {
 
 		// if we're outside the transition threshold then we toggle some reorientation behavior
 		// when adjusting the up frame while moving hte camera
-		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._isNearControls() ) {
+
+			this.reorientOnDrag = true;
+			this.reorientOnZoom = false;
+
+		} else {
 
 			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
 
@@ -151,11 +156,6 @@ export class GlobeControls extends EnvironmentControls {
 			}
 			this.reorientOnDrag = false;
 			this.reorientOnZoom = true;
-
-		} else {
-
-			this.reorientOnDrag = true;
-			this.reorientOnZoom = false;
 
 		}
 
@@ -192,22 +192,9 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	// animate the frame to align to an up direction
-	_setFrame( ...args ) {
-
-		super._setFrame( ...args );
-
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
-
-			this._alignCameraUp( this.up );
-
-		}
-
-	}
-
 	_updatePosition( ...args ) {
 
-		if ( this._dragMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
@@ -259,12 +246,14 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		this._alignCameraUp( this.up );
+
 	}
 
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
-		if ( this._rotationMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
 			super._updateRotation( ...args );
@@ -276,12 +265,14 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		this._alignCameraUp( this.up );
+
 	}
 
 	_updateZoom() {
 
 		const scale = this.zoomDelta;
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || scale > 0 ) {
+		if ( this._isNearControls() || scale > 0 ) {
 
 			super._updateZoom();
 
@@ -289,8 +280,8 @@ export class GlobeControls extends EnvironmentControls {
 
 			// orient the camera to focus on the earth during the zoom
 			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
@@ -300,6 +291,10 @@ export class GlobeControls extends EnvironmentControls {
 			this.zoomDelta = 0;
 
 		}
+
+		// TODO: we should consider rotating the camera about the zoom point in this case
+		// Possibly for drag, too?
+		this._alignCameraUp( this.up );
 
 	}
 
@@ -320,13 +315,17 @@ export class GlobeControls extends EnvironmentControls {
 		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
 		_targetRight.crossVectors( up, _forward );
 
+		// compute the alpha based on how far away from boresight the up vector is
+		// so we can ease into the correct orientation
 		if ( alpha === null ) {
 
-			alpha = Math.abs( _forward.dot( up ) );
+			alpha = 1 - Math.abs( _forward.dot( up ) );
+			alpha = MathUtils.mapLinear( alpha, 0, 1, - 0.01, 1 );
+			alpha = MathUtils.clamp( alpha, 0, 1 ) ** 2;
 
 		}
 
-		_targetRight.lerp( _right, alpha ).normalize();
+		_targetRight.lerp( _right, 1 - alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _right, _targetRight );
 		camera.quaternion.premultiply( _quaternion );
@@ -344,11 +343,41 @@ export class GlobeControls extends EnvironmentControls {
 
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
 		_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
-		_vec.lerp( _forward, alpha ).normalize();
+		_vec.lerp( _forward, 1 - alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _forward, _vec );
 		camera.quaternion.premultiply( _quaternion );
 		camera.updateMatrixWorld();
+
+	}
+
+	_isNearControls() {
+
+		return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+
+		// const camera = this.camera;
+
+		// if ( camera.isPerspectiveCamera ) {
+
+		// 	// TODO:
+		// 	// - must recalculate the max zoom out distance based on camera fov
+		// 	// - must adjust use of GLOBE_TRANSITION_THRESHOLD above
+
+		// 	// https://physicsforums.com/threads/need-an-equation-for-converting-vertical-to-horizontal-fov.981179/
+		// 	const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+
+		// 	const size = Math.max( ...this.ellipsoid.radius );
+		// 	const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		// 	const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		// 	const dist = Math.max( distVert, distHoriz );
+
+		// 	return this.getDistanceToCenter() < dist * 0.7;
+
+		// } else {
+
+		//	return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+
+		// }
 
 	}
 
