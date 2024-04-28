@@ -142,7 +142,12 @@ export class GlobeControls extends EnvironmentControls {
 
 		// if we're outside the transition threshold then we toggle some reorientation behavior
 		// when adjusting the up frame while moving hte camera
-		if ( distanceToCenter > GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._isNearControls() ) {
+
+			this.reorientOnDrag = true;
+			this.reorientOnZoom = false;
+
+		} else {
 
 			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
 
@@ -151,11 +156,6 @@ export class GlobeControls extends EnvironmentControls {
 			}
 			this.reorientOnDrag = false;
 			this.reorientOnZoom = true;
-
-		} else {
-
-			this.reorientOnDrag = true;
-			this.reorientOnZoom = false;
 
 		}
 
@@ -194,7 +194,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updatePosition( ...args ) {
 
-		if ( this._dragMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
@@ -253,7 +253,7 @@ export class GlobeControls extends EnvironmentControls {
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
-		if ( this._rotationMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
+		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
 			super._updateRotation( ...args );
@@ -272,7 +272,7 @@ export class GlobeControls extends EnvironmentControls {
 	_updateZoom() {
 
 		const scale = this.zoomDelta;
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD || scale > 0 ) {
+		if ( this._isNearControls() || scale > 0 ) {
 
 			super._updateZoom();
 
@@ -348,6 +348,12 @@ export class GlobeControls extends EnvironmentControls {
 		_quaternion.setFromUnitVectors( _forward, _vec );
 		camera.quaternion.premultiply( _quaternion );
 		camera.updateMatrixWorld();
+
+	}
+
+	_isNearControls() {
+
+		return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
 
 	}
 
