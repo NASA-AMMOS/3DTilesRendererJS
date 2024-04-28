@@ -355,6 +355,30 @@ export class GlobeControls extends EnvironmentControls {
 
 		return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
 
+		// const camera = this.camera;
+
+		// if ( camera.isPerspectiveCamera ) {
+
+		// 	// TODO:
+		// 	// - must recalculate the max zoom out distance based on camera fov
+		// 	// - must adjust use of GLOBE_TRANSITION_THRESHOLD above
+
+		// 	// https://physicsforums.com/threads/need-an-equation-for-converting-vertical-to-horizontal-fov.981179/
+		// 	const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+
+		// 	const size = Math.max( ...this.ellipsoid.radius );
+		// 	const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		// 	const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		// 	const dist = Math.max( distVert, distHoriz );
+
+		// 	return this.getDistanceToCenter() < dist * 0.7;
+
+		// } else {
+
+		//	return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+
+		// }
+
 	}
 
 }
