@@ -230,9 +230,17 @@ export class EnvironmentControls extends EventDispatcher {
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
-					this.setState( ROTATE );
-					this.pivotPoint.copy( hit.point );
+					if ( pointerTracker.getPointerType() === 'touch' ) {
 
+						this.setState( WAITING );
+
+					} else {
+
+						this.setState( ROTATE );
+
+					}
+
+					this.pivotPoint.copy( hit.point );
 					this.pivotMesh.position.copy( hit.point );
 					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
@@ -281,7 +289,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 					if ( this.state === DRAG ) {
 
-						this.setState( NONE, WAITING, false );
+						this.setState( WAITING, WAITING, false );
 
 					}
 
@@ -300,7 +308,7 @@ export class EnvironmentControls extends EventDispatcher {
 							const startDist = pointerTracker.getStartPointerDistance();
 							const pointerDist = pointerTracker.getPointerDistance();
 							const separateDelta = pointerDist - startDist;
-							if ( this.pinchState === NONE || this.pinchState === WAITING ) {
+							if ( this.state === NONE || this.state === WAITING ) {
 
 								// check which direction was moved in first - if the pointers are pinching then
 								// it's a zoom. But if they move in parallel it's a rotation
@@ -314,12 +322,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 									if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-										this.setState( NONE, ZOOM );
+										this.setState( ZOOM, NONE );
 										this.zoomDirectionSet = false;
 
 									} else {
 
-										this.setState( NONE, ROTATE );
+										this.setState( ROTATE, NONE );
 
 									}
 
@@ -327,12 +335,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 							}
 
-							if ( this.pinchState === ZOOM ) {
+							if ( this.state === ZOOM ) {
 
 								const previousDist = pointerTracker.getPreviousPointerDistance();
 								this.zoomDelta += pointerDist - previousDist;
 
-							} else if ( this.pinchState === ROTATE ) {
+							} else if ( this.state === ROTATE ) {
 
 								this.pivotMesh.visible = true;
 
@@ -511,14 +519,13 @@ export class EnvironmentControls extends EventDispatcher {
 			pivotPoint,
 			up,
 			state,
-			pinchState,
 			adjustHeight,
 		} = this;
 
 		// update the actions
 		if ( this.needsUpdate ) {
 
-			const action = state || pinchState;
+			const action = state;
 			const zoomDelta = this.zoomDelta;
 			if ( action === DRAG ) {
 
@@ -899,7 +906,6 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			camera,
 			state,
-			pinchState,
 			zoomPoint,
 			zoomDirection,
 			zoomDirectionSet,
@@ -914,7 +920,7 @@ export class EnvironmentControls extends EventDispatcher {
 		_quaternion.setFromUnitVectors( up, newUp );
 
 		// If we're zooming then reorient around the zoom point
-		const action = state || pinchState;
+		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
 			if ( reorientOnZoom ) {
