@@ -195,7 +195,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
-			if ( pointerTracker.getPointerType() === 'touch' ) {
+			if ( pointerTracker.isPointerTouch() ) {
 
 				pivotMesh.visible = false;
 
@@ -229,15 +229,7 @@ export class EnvironmentControls extends EventDispatcher {
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
-					if ( pointerTracker.getPointerType() === 'touch' ) {
-
-						this.setState( WAITING );
-
-					} else {
-
-						this.setState( ROTATE );
-
-					}
+					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
 
 					this.pivotPoint.copy( hit.point );
 					this.pivotMesh.position.copy( hit.point );
@@ -282,72 +274,62 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			if ( pointerTracker.getPointerType() === 'touch' ) {
+			if ( pointerTracker.isPointerTouch() && pointerTracker.getPointerCount() === 2 ) {
 
-				if ( pointerTracker.getPointerCount() === 2 ) {
+				// We queue this event to ensure that all pointers have been updated
+				if ( ! _pointerMoveQueued ) {
 
-					if ( this.state === DRAG ) {
+					_pointerMoveQueued = true;
+					queueMicrotask( () => {
 
-						this.setState( WAITING, false );
+						_pointerMoveQueued = false;
 
-					}
+						// adjust the pointer position to be the center point
+						pointerTracker.getCenterPoint( _centerPoint );
 
-					// We queue this event to ensure that all pointers have been updated
-					if ( ! _pointerMoveQueued ) {
+						// detect zoom transition
+						const startDist = pointerTracker.getStartPointerDistance();
+						const pointerDist = pointerTracker.getPointerDistance();
+						const separateDelta = pointerDist - startDist;
+						if ( this.state === NONE || this.state === WAITING ) {
 
-						_pointerMoveQueued = true;
-						queueMicrotask( () => {
-
-							_pointerMoveQueued = false;
-
-							// adjust the pointer position to be the center point
+							// check which direction was moved in first - if the pointers are pinching then
+							// it's a zoom. But if they move in parallel it's a rotation
 							pointerTracker.getCenterPoint( _centerPoint );
+							pointerTracker.getStartCenterPoint( _startCenterPoint );
 
-							// detect zoom transition
-							const startDist = pointerTracker.getStartPointerDistance();
-							const pointerDist = pointerTracker.getPointerDistance();
-							const separateDelta = pointerDist - startDist;
-							if ( this.state === NONE || this.state === WAITING ) {
+							// adjust the drag requirement by the dpr
+							const dpr = window.devicePixelRatio;
+							const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
+							if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
 
-								// check which direction was moved in first - if the pointers are pinching then
-								// it's a zoom. But if they move in parallel it's a rotation
-								pointerTracker.getCenterPoint( _centerPoint );
-								pointerTracker.getStartCenterPoint( _startCenterPoint );
+								if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-								// adjust the drag requirement by the dpr
-								const dpr = window.devicePixelRatio;
-								const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
-								if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
+									this.setState( ZOOM );
+									this.zoomDirectionSet = false;
 
-									if ( Math.abs( separateDelta ) > parallelDelta ) {
+								} else {
 
-										this.setState( ZOOM );
-										this.zoomDirectionSet = false;
-
-									} else {
-
-										this.setState( ROTATE );
-
-									}
+									this.setState( ROTATE );
 
 								}
 
 							}
 
-							if ( this.state === ZOOM ) {
+						}
 
-								const previousDist = pointerTracker.getPreviousPointerDistance();
-								this.zoomDelta += pointerDist - previousDist;
+						if ( this.state === ZOOM ) {
 
-							} else if ( this.state === ROTATE ) {
+							const previousDist = pointerTracker.getPreviousPointerDistance();
+							this.zoomDelta += pointerDist - previousDist;
 
-								this.pivotMesh.visible = true;
+						} else if ( this.state === ROTATE ) {
 
-							}
+							this.pivotMesh.visible = true;
 
-						} );
+						}
 
-					}
+					} );
 
 				}
 
