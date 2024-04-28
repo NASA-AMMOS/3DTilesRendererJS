@@ -73,7 +73,6 @@ export class EnvironmentControls extends EventDispatcher {
 		// settings
 		this._enabled = true;
 		this.state = NONE;
-		this.pinchState = NONE;
 		this.cameraRadius = 5;
 		this.rotationSpeed = 1;
 		this.minAltitude = 0;
@@ -196,7 +195,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
-			if ( pointerTracker.getPointerType() === 'touch' ) {
+			if ( pointerTracker.isPointerTouch() ) {
 
 				pivotMesh.visible = false;
 
@@ -230,9 +229,9 @@ export class EnvironmentControls extends EventDispatcher {
 					pointerTracker.isLeftClicked() && shiftClicked
 				) {
 
-					this.setState( ROTATE );
-					this.pivotPoint.copy( hit.point );
+					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
 
+					this.pivotPoint.copy( hit.point );
 					this.pivotMesh.position.copy( hit.point );
 					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
@@ -275,72 +274,62 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			if ( pointerTracker.getPointerType() === 'touch' ) {
+			if ( pointerTracker.isPointerTouch() && pointerTracker.getPointerCount() === 2 ) {
 
-				if ( pointerTracker.getPointerCount() === 2 ) {
+				// We queue this event to ensure that all pointers have been updated
+				if ( ! _pointerMoveQueued ) {
 
-					if ( this.state === DRAG ) {
+					_pointerMoveQueued = true;
+					queueMicrotask( () => {
 
-						this.setState( NONE, WAITING, false );
+						_pointerMoveQueued = false;
 
-					}
+						// adjust the pointer position to be the center point
+						pointerTracker.getCenterPoint( _centerPoint );
 
-					// We queue this event to ensure that all pointers have been updated
-					if ( ! _pointerMoveQueued ) {
+						// detect zoom transition
+						const startDist = pointerTracker.getStartPointerDistance();
+						const pointerDist = pointerTracker.getPointerDistance();
+						const separateDelta = pointerDist - startDist;
+						if ( this.state === NONE || this.state === WAITING ) {
 
-						_pointerMoveQueued = true;
-						queueMicrotask( () => {
-
-							_pointerMoveQueued = false;
-
-							// adjust the pointer position to be the center point
+							// check which direction was moved in first - if the pointers are pinching then
+							// it's a zoom. But if they move in parallel it's a rotation
 							pointerTracker.getCenterPoint( _centerPoint );
+							pointerTracker.getStartCenterPoint( _startCenterPoint );
 
-							// detect zoom transition
-							const startDist = pointerTracker.getStartPointerDistance();
-							const pointerDist = pointerTracker.getPointerDistance();
-							const separateDelta = pointerDist - startDist;
-							if ( this.pinchState === NONE || this.pinchState === WAITING ) {
+							// adjust the drag requirement by the dpr
+							const dpr = window.devicePixelRatio;
+							const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
+							if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
 
-								// check which direction was moved in first - if the pointers are pinching then
-								// it's a zoom. But if they move in parallel it's a rotation
-								pointerTracker.getCenterPoint( _centerPoint );
-								pointerTracker.getStartCenterPoint( _startCenterPoint );
+								if ( Math.abs( separateDelta ) > parallelDelta ) {
 
-								// adjust the drag requirement by the dpr
-								const dpr = window.devicePixelRatio;
-								const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
-								if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
+									this.setState( ZOOM );
+									this.zoomDirectionSet = false;
 
-									if ( Math.abs( separateDelta ) > parallelDelta ) {
+								} else {
 
-										this.setState( NONE, ZOOM );
-										this.zoomDirectionSet = false;
-
-									} else {
-
-										this.setState( NONE, ROTATE );
-
-									}
+									this.setState( ROTATE );
 
 								}
 
 							}
 
-							if ( this.pinchState === ZOOM ) {
+						}
 
-								const previousDist = pointerTracker.getPreviousPointerDistance();
-								this.zoomDelta += pointerDist - previousDist;
+						if ( this.state === ZOOM ) {
 
-							} else if ( this.pinchState === ROTATE ) {
+							const previousDist = pointerTracker.getPreviousPointerDistance();
+							this.zoomDelta += pointerDist - previousDist;
 
-								this.pivotMesh.visible = true;
+						} else if ( this.state === ROTATE ) {
 
-							}
+							this.pivotMesh.visible = true;
 
-						} );
+						}
 
-					}
+					} );
 
 				}
 
@@ -464,36 +453,34 @@ export class EnvironmentControls extends EventDispatcher {
 
 	resetState() {
 
-		if ( this.state !== NONE || this.pinchState !== NONE ) {
+		if ( this.state !== NONE ) {
 
 			this.dispatchEvent( _endEvent );
 
 		}
 
 		this.state = NONE;
-		this.pinchState = NONE;
 		this.scene.remove( this.pivotMesh );
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
 
 	}
 
-	setState( state = this.state, pinchState = this.pinchState, fireEvent = true ) {
+	setState( state = this.state, fireEvent = true ) {
 
-		if ( this.state === state && this.pinchState === pinchState ) {
+		if ( this.state === state ) {
 
 			return;
 
 		}
 
-		if ( this.state === NONE && this.pinchState === NONE && fireEvent ) {
+		if ( this.state === NONE && fireEvent ) {
 
 			this.dispatchEvent( _startEvent );
 
 		}
 
 		this.state = state;
-		this.pinchState = pinchState;
 
 	}
 
@@ -511,14 +498,13 @@ export class EnvironmentControls extends EventDispatcher {
 			pivotPoint,
 			up,
 			state,
-			pinchState,
 			adjustHeight,
 		} = this;
 
 		// update the actions
 		if ( this.needsUpdate ) {
 
-			const action = state || pinchState;
+			const action = state;
 			const zoomDelta = this.zoomDelta;
 			if ( action === DRAG ) {
 
@@ -899,7 +885,6 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			camera,
 			state,
-			pinchState,
 			zoomPoint,
 			zoomDirection,
 			zoomDirectionSet,
@@ -914,7 +899,7 @@ export class EnvironmentControls extends EventDispatcher {
 		_quaternion.setFromUnitVectors( up, newUp );
 
 		// If we're zooming then reorient around the zoom point
-		const action = state || pinchState;
+		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
 			if ( reorientOnZoom ) {
