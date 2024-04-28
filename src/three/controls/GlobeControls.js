@@ -289,8 +289,8 @@ export class GlobeControls extends EnvironmentControls {
 
 			// orient the camera to focus on the earth during the zoom
 			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 1, 0.8, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 1, 0.9, alpha ) );
+			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
@@ -322,11 +322,11 @@ export class GlobeControls extends EnvironmentControls {
 
 		if ( alpha === null ) {
 
-			alpha = Math.abs( _forward.dot( up ) );
+			alpha = 1 - Math.abs( _forward.dot( up ) );
 
 		}
 
-		_targetRight.lerp( _right, alpha ).normalize();
+		_targetRight.lerp( _right, 1 - alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _right, _targetRight );
 		camera.quaternion.premultiply( _quaternion );
@@ -344,7 +344,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
 		_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
-		_vec.lerp( _forward, alpha ).normalize();
+		_vec.lerp( _forward, 1 - alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _forward, _vec );
 		camera.quaternion.premultiply( _quaternion );
