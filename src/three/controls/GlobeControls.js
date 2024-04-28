@@ -159,27 +159,39 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		// update the projection matrix
-		// interpolate from the 25% radius margin around the globe down to the surface
-		// so we can avoid z fighting when near value is too far at a high altitude
-		const largestDistance = Math.max( ...ellipsoid.radius );
-		const margin = 0.25 * largestDistance;
-		const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
-		const minNear = MathUtils.lerp( 1, 1000, alpha );
-		camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
+		if ( camera.isPerspectiveCamera ) {
 
-		// update the far plane to the horizon distance
-		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
-		_pos.copy( camera.position ).applyMatrix4( invMatrix );
-		ellipsoid.getPositionToCartographic( _pos, _latLon );
+			// update the projection matrix
+			// interpolate from the 25% radius margin around the globe down to the surface
+			// so we can avoid z fighting when near value is too far at a high altitude
+			const largestDistance = Math.max( ...ellipsoid.radius );
+			const margin = 0.25 * largestDistance;
+			const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
+			const minNear = MathUtils.lerp( 1, 1000, alpha );
+			camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
 
-		// use a minimum elevation for computing the horizon distance to avoid the far clip
-		// plane approaching zero as the camera goes to or below sea level.
-		const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
-		const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
-		camera.far = horizonDistance + 0.1;
+			// update the far plane to the horizon distance
+			const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
+			_pos.copy( camera.position ).applyMatrix4( invMatrix );
+			ellipsoid.getPositionToCartographic( _pos, _latLon );
 
-		camera.updateProjectionMatrix();
+			// use a minimum elevation for computing the horizon distance to avoid the far clip
+			// plane approaching zero as the camera goes to or below sea level.
+			const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
+			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
+			camera.far = horizonDistance + 0.1;
+
+			camera.updateProjectionMatrix();
+
+		} else {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.setFromMatrixPosition( this.tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
+
+			camera.near = - Math.max( ...this.ellipsoid.radius );
+			camera.far = - _vec.z;
+
+		}
 
 	}
 
@@ -271,10 +283,34 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const scale = this.zoomDelta;
-		if ( this._isNearControls() || scale > 0 ) {
+		const zoomDelta = this.zoomDelta;
+		const camera = this.camera;
+		const zoomSpeed = this.zoomSpeed;
+		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			super._updateZoom();
+
+		} else if ( camera.isOrthographicCamera ) {
+
+			// zoom the camera
+			const normalizedDelta = Math.pow( 0.95, Math.abs( zoomDelta * 0.05 ) );
+			const scaleFactor = zoomDelta > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			const maxDiameter = 2.0 * Math.max( ...this.ellipsoid.radius );
+			const minZoom = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / maxDiameter;
+
+			camera.zoom = Math.max( 0.75 * minZoom, camera.zoom * scaleFactor * zoomSpeed );
+			camera.updateProjectionMatrix();
+
+			let alpha = MathUtils.mapLinear( camera.zoom, minZoom * 1.25, minZoom * 0.75, 0, 1 );
+			if ( alpha > 0 ) {
+
+				alpha = MathUtils.clamp( alpha, 0, 1 );
+				this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
+				this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
+
+			}
+
+			this.zoomDelta = 0;
 
 		} else {
 
@@ -285,7 +321,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
-			this.camera.position.addScaledVector( _vec, scale * 0.0025 );
+			this.camera.position.addScaledVector( _vec, zoomDelta * 0.0025 );
 			this.camera.updateMatrixWorld();
 
 			this.zoomDelta = 0;
