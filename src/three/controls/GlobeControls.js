@@ -192,19 +192,6 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	// animate the frame to align to an up direction
-	_setFrame( ...args ) {
-
-		super._setFrame( ...args );
-
-		if ( this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
-
-			this._alignCameraUp( this.up );
-
-		}
-
-	}
-
 	_updatePosition( ...args ) {
 
 		if ( this._dragMode === 1 || this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD ) {
@@ -259,6 +246,8 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		this._alignCameraUp( this.up );
+
 	}
 
 	// disable rotation once we're outside the control transition
@@ -275,6 +264,8 @@ export class GlobeControls extends EnvironmentControls {
 			this._rotationMode = - 1;
 
 		}
+
+		this._alignCameraUp( this.up );
 
 	}
 
@@ -301,6 +292,10 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		// TODO: we should consider rotating the camera about the zoom point in this case
+		// Possibly for drag, too?
+		this._alignCameraUp( this.up );
+
 	}
 
 	// tilt the camera to align with north
@@ -320,9 +315,13 @@ export class GlobeControls extends EnvironmentControls {
 		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
 		_targetRight.crossVectors( up, _forward );
 
+		// compute the alpha based on how far away from boresight the up vector is
+		// so we can ease into the correct orientation
 		if ( alpha === null ) {
 
 			alpha = 1 - Math.abs( _forward.dot( up ) );
+			alpha = MathUtils.mapLinear( alpha, 0, 1, - 0.01, 1 );
+			alpha = MathUtils.clamp( alpha, 0, 1 ) ** 2;
 
 		}
 

@@ -913,11 +913,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// get the amount needed to rotate
 		_quaternion.setFromUnitVectors( up, newUp );
-		// TODO: there's an issue here because we're not reorienting when zooming which can result in the camera being in the
-		// incorrect orientation. But if we rotate around the zoom point when zooming in or out then we wind up in a situation
-		// where the world and focused point rotates away from the camera
-
-		// Instead we should just adjust the "twist" rotation so up is aligned in the right direction
 
 		// If we're zooming then reorient around the zoom point
 		const action = state || pinchState;
@@ -934,7 +929,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-		} else if ( action === NONE || action === DRAG && reorientOnDrag ) {
+		} else if ( action === DRAG && reorientOnDrag ) {
 
 			// If we're dragging then reorient around the drag point
 
