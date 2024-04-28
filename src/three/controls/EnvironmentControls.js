@@ -835,7 +835,6 @@ export class EnvironmentControls extends EventDispatcher {
 			pivotPoint,
 			minAltitude,
 			maxAltitude,
-			up,
 			pointerTracker,
 			rotationSpeed,
 		} = this;
@@ -857,10 +856,10 @@ export class EnvironmentControls extends EventDispatcher {
 		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
-		_vec.crossVectors( up, _forward ).normalize();
+		_vec.crossVectors( _localUp, _forward ).normalize();
 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
 		const sign = Math.sign( _vec.dot( _right ) );
-		const angle = sign * up.angleTo( _forward );
+		const angle = sign * _localUp.angleTo( _forward );
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
