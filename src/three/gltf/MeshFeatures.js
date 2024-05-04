@@ -92,7 +92,7 @@ export class MeshFeatures {
 
 			} else if ( 'attribute' in featureId ) {
 
-				const attr = geometry.getAttribute( `_feature_id${ featureId.attribute }` );
+				const attr = geometry.getAttribute( `_feature_id_${ featureId.attribute }` );
 				const v0 = attr.getX( i0 );
 				const v1 = attr.getX( i1 );
 				const v2 = attr.getX( i2 );
