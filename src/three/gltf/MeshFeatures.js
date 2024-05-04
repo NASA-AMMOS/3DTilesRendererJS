@@ -1,6 +1,5 @@
 import { Vector2 } from 'three';
 
-const EXT_NAME = 'EXT_mesh_features';
 const _canvas = document.createElement( 'canvas', {
 	alpha: true,
 	colorSpace: 'srgb',
@@ -31,7 +30,7 @@ function getTextureCoordAttribute( geometry, index ) {
 
 }
 
-class MeshFeatures {
+export class MeshFeatures {
 
 	constructor( geometry, textures, data ) {
 
@@ -172,7 +171,6 @@ class MeshFeatures {
 
 	}
 
-
 	toJSON() {
 
 		return this.data;
@@ -180,76 +178,3 @@ class MeshFeatures {
 	}
 
 }
-
-// https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features
-export class GLFTMeshFeatures {
-
-	constructor( parser ) {
-
-		this.parser = parser;
-		this.name = EXT_NAME;
-
-	}
-
-	afterRoot( { scene, parser } ) {
-
-		console.log( parser );
-
-		const textures = new Array( parser.json.textures?.length || 0 ).fill( null );
-		const promises = new Array( textures.length ).fill( null );
-
-		scene.traverse( c => {
-
-			if ( parser.associations.has( c ) ) {
-
-				const { meshes, primitives } = parser.associations.get( c );
-				const { extensions } = parser.json.meshes[ meshes ].primitives[ primitives ];
-				if ( extensions[ EXT_NAME ] ) {
-
-					const ext = extensions[ EXT_NAME ];
-					const { featureIds } = ext;
-					featureIds.forEach( info => {
-
-						if ( info.texture ) {
-
-							const index = info.texture.index;
-							if ( promises[ index ] === null ) {
-
-								promises[ index ] = parser
-									.loadTexture( index )
-									.then( tex => textures[ index ] = tex );
-
-							}
-
-						}
-
-					} );
-
-					c.userData.meshFeatures = new MeshFeatures( c.geometry, textures, ext );
-
-				}
-
-			}
-
-		} );
-
-
-	}
-
-}
-
-// _markDefs
-// beforeRoot
-// afterRoot
-// loadNode
-// loadMesh
-// loadBufferView
-// loadMaterial
-// loadTexture
-// loadAnimation
-// getDependency
-// getMaterialType
-// extendMaterialParams
-// createNodeMesh
-// createNodeAttachment
-
