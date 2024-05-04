@@ -749,6 +749,17 @@ export class TilesRenderer extends TilesRendererBase {
 			const textures = cached.textures;
 			const parent = cached.scene.parent;
 
+			// dispose of any textures required by the mesh features extension
+			cached.scene.traverse( child => {
+
+				if ( child.userData.meshFeatures ) {
+
+					child.userData.meshFeatures.dispose();
+
+				}
+
+			} );
+
 			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
 				geometry[ i ].dispose();
@@ -780,7 +791,6 @@ export class TilesRenderer extends TilesRendererBase {
 				parent.remove( cached.scene );
 
 			}
-
 
 			this.dispatchEvent( {
 				type: 'dispose-model',

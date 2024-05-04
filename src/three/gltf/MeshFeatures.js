@@ -40,6 +40,12 @@ export class MeshFeatures {
 
 	}
 
+	getFeaturesAsync( triangle, barycoord ) {
+
+		// TODO: handle async read back to avoid blocking
+
+	}
+
 	getFeatures( triangle, barycoord ) {
 
 		const { geometry, textures, data } = this;
@@ -174,6 +180,22 @@ export class MeshFeatures {
 	toJSON() {
 
 		return this.data;
+
+	}
+
+	dispose() {
+
+		this.textures.forEach( texture => {
+
+			texture.dispose();
+
+			if ( texture.image instanceof ImageBitmap ) {
+
+				texture.image.close();
+
+			}
+
+		} );
 
 	}
 
