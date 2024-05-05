@@ -185,7 +185,6 @@ export class MeshFeatures {
 
 		}
 
-		// TODO: remove this allocation
 		const buffer = new Uint8Array( _target.width * 4 );
 		_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
 
