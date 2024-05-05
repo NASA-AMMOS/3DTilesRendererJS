@@ -1,4 +1,4 @@
-import { ShaderMaterial, Vector2, Vector3, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
+import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
 const _renderer = new WebGLRenderer();

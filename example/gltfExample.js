@@ -54,7 +54,7 @@ function init() {
 
 			// console.log( res );
 			scene.add( res.scene );
-			console.log( res.scene )
+			console.log( res.scene );
 
 		} );
 
