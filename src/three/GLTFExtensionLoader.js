@@ -2,6 +2,7 @@ import { DefaultLoadingManager } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LoaderBase } from '../base/LoaderBase.js';
 import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
+import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
 
 export class GLTFExtensionLoader extends LoaderBase {
 
@@ -25,6 +26,7 @@ export class GLTFExtensionLoader extends LoaderBase {
 				loader = new GLTFLoader( manager );
 
 				loader.register( () => new GLTFCesiumRTCExtension() );
+				loader.register( () => new GLTFMeshFeaturesExtension() );
 				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
 					loader.setCrossOrigin( 'use-credentials' );

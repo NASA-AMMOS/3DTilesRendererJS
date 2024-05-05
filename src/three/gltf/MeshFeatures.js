@@ -1,6 +1,7 @@
 import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
+// renderer and quad for rendering a single pixel
 const _renderer = new WebGLRenderer();
 const _quad = new FullScreenQuad( new ShaderMaterial( {
 	uniforms: {
@@ -40,6 +41,7 @@ const _pixel = new Vector2();
 const _dstPixel = new Vector2();
 const _target = new WebGLRenderTarget();
 
+// retrieve the appropriate UV attribute based on the texcoord index
 function getTextureCoordAttribute( geometry, index ) {
 
 	if ( index === 0 ) {
@@ -54,25 +56,32 @@ function getTextureCoordAttribute( geometry, index ) {
 
 }
 
+// render a single pixel from the source at the destination point on the
+// render target
 function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 
+	// set up the pixel quad
 	_quad.material.uniforms.map.value = texture;
 	_quad.material.uniforms.pixel.value.copy( pixel );
 
+	// save state
 	const currentTarget = _renderer.getRenderTarget();
 	const currentScissorTest = _renderer.getScissorTest();
 	_renderer.getScissor( _currentScissor );
 
+	// render
 	_renderer.setScissorTest( true );
 	_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
 
 	_renderer.setRenderTarget( target );
 	_quad.render( _renderer );
 
+	// reset state
 	_renderer.setScissorTest( currentScissorTest );
 	_renderer.setScissor( _currentScissor );
 	_renderer.setRenderTarget( currentTarget );
 
+	// remove the texture
 	texture.dispose();
 
 }
@@ -94,7 +103,8 @@ export class MeshFeatures {
 
 	// }
 
-	getFeatures( triangle, barycoord, ) {
+	// returns all features for the given point on the given triangle
+	getFeatures( triangle, barycoord ) {
 
 		const { geometry, textures, data } = this;
 		const { featureIds } = data;
@@ -179,6 +189,7 @@ export class MeshFeatures {
 
 		}
 
+		// read the buffer data
 		const buffer = new Uint8Array( _target.width * 4 );
 		_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
 
@@ -214,6 +225,7 @@ export class MeshFeatures {
 
 	}
 
+	// returns a minimal set of info for each feature
 	getFeatureInfo() {
 
 		return this.data.featureIds.map( info => {
@@ -228,12 +240,7 @@ export class MeshFeatures {
 
 	}
 
-	toJSON() {
-
-		return this.data;
-
-	}
-
+	// dispose all of the data used
 	dispose() {
 
 		this.textures.forEach( texture => {
