@@ -14,8 +14,6 @@ export class GLTFMeshFeaturesExtension {
 
 	async afterRoot( { scene, parser } ) {
 
-		console.log( parser );
-
 		const textureCount = parser.json.textures?.length || 0;
 		const textures = new Array( textureCount ).fill( null );
 		const promises = new Array( textureCount ).fill( null );
@@ -56,19 +54,3 @@ export class GLTFMeshFeaturesExtension {
 	}
 
 }
-
-// _markDefs
-// beforeRoot
-// afterRoot
-// loadNode
-// loadMesh
-// loadBufferView
-// loadMaterial
-// loadTexture
-// loadAnimation
-// getDependency
-// getMaterialType
-// extendMaterialParams
-// createNodeMesh
-// createNodeAttachment
-

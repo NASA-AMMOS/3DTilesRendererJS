@@ -87,12 +87,6 @@ export class MeshFeatures {
 
 	}
 
-	getFeaturesAsync( triangle, barycoord ) {
-
-		// TODO: handle async read back to avoid blocking
-
-	}
-
 	// getFeaturesAsync( triangle, barycoord ) {
 
 	// 		TODO: handle async read back to avoid blocking
