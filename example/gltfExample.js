@@ -8,7 +8,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLFTMeshFeatures } from '../src/three/extensions/GLTFMeshFeatures.js';
+import { GLTFMeshFeaturesExtension } from '../src/three/gltf/GLTFMeshFeaturesExtension.js';
 
 let camera, controls, scene, renderer;
 let dirLight;
@@ -29,7 +29,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	camera.position.set( 400, 400, 400 );
+	camera.position.set( 4, 4, 4 );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -45,16 +45,16 @@ function init() {
 	scene.add( ambLight );
 
 	new GLTFLoader()
-		.register( parser => new GLFTMeshFeatures( parser ) )
+		.register( parser => new GLTFMeshFeaturesExtension( parser ) )
 		// .loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/FeatureIdAttribute.gltf' )
 		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/FeatureIdTexture.gltf' )
-
 		.then( res => {
 
 			console.log( res );
 
 			// console.log( res );
-			// scene.add( res.scene );
+			scene.add( res.scene );
+			console.log( res.scene )
 
 		} );
 

@@ -1,20 +1,44 @@
-import { Vector2 } from 'three';
+import { ShaderMaterial, Vector2, Vector3, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
+import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
-const _canvas = document.createElement( 'canvas', {
-	alpha: true,
-	colorSpace: 'srgb',
-	willReadFrequently: true,
-} );
-_canvas.height = 1;
-_canvas.width = 1;
+const _renderer = new WebGLRenderer();
+const _quad = new FullScreenQuad( new ShaderMaterial( {
+	uniforms: {
 
-const _ctx = _canvas.getContext( '2d' );
-_ctx.imageSmoothingEnabled = false;
+		map: { value: null },
+		pixel: { value: new Vector2() }
+
+	},
+
+	vertexShader: /* glsl */`
+		void main() {
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}
+	`,
+
+	fragmentShader: /* glsl */`
+		uniform sampler2D map;
+		uniform ivec2 pixel;
+
+		void main() {
+
+			gl_FragColor = texelFetch( map, pixel, 0 );
+
+		}
+	`,
+
+} ) );
 
 const _uv = new Vector2();
 const _vec2_0 = new Vector2();
 const _vec2_1 = new Vector2();
 const _vec2_2 = new Vector2();
+const _currentScissor = new Vector4();
+const _pixel = new Vector2();
+const _dstPixel = new Vector2();
+const _target = new WebGLRenderTarget();
 
 function getTextureCoordAttribute( geometry, index ) {
 
@@ -27,6 +51,29 @@ function getTextureCoordAttribute( geometry, index ) {
 		return geometry.getAttribute( `uv${ index }` );
 
 	}
+
+}
+
+function renderPixelToTarget( texture, pixel, dstPixel, target ) {
+
+	_quad.material.uniforms.map.value = texture;
+	_quad.material.uniforms.pixel.value.copy( pixel );
+
+	const currentTarget = _renderer.getRenderTarget();
+	const currentScissorTest = _renderer.getScissorTest();
+	_renderer.getScissor( _currentScissor );
+
+	_renderer.setScissorTest( true );
+	_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
+
+	_renderer.setRenderTarget( target );
+	_quad.render( _renderer );
+
+	_renderer.setScissorTest( currentScissorTest );
+	_renderer.setScissor( _currentScissor );
+	_renderer.setRenderTarget( currentTarget );
+
+	texture.dispose();
 
 }
 
@@ -46,14 +93,21 @@ export class MeshFeatures {
 
 	}
 
-	getFeatures( triangle, barycoord ) {
+	// getFeaturesAsync( triangle, barycoord ) {
+
+	// 		TODO: handle async read back to avoid blocking
+	// 		TODO: requires async read back
+
+	// }
+
+	getFeatures( triangle, barycoord, ) {
 
 		const { geometry, textures, data } = this;
 		const { featureIds } = data;
 		const result = new Array( featureIds.length ).fill( null );
 
 		// prep the canvas width
-		_canvas.width = Math.max( _canvas.width, data.featureIds.length );
+		_target.setSize( Math.max( _target.width, data.featureIds.length ), 1 );
 
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
@@ -91,10 +145,13 @@ export class MeshFeatures {
 
 				const fx = _uv.x - Math.floor( _uv.x );
 				const fy = _uv.y - Math.floor( _uv.y );
-				const px = ( fx * width ) % width;
-				const py = ( fy * height ) % height;
+				const px = Math.floor( ( fx * width ) % width );
+				const py = Math.floor( ( fy * height ) % height );
 
-				_ctx.drawImage( image, px, py, 1, 1, i, 0, 1, 1 );
+				_pixel.set( px, py );
+				_dstPixel.set( i, 0 );
+
+				renderPixelToTarget( textures[ featureId.texture.index ], _pixel, _dstPixel, _target );
 
 			} else if ( 'attribute' in featureId ) {
 
@@ -128,10 +185,11 @@ export class MeshFeatures {
 
 		}
 
-		// TODO: make sure this works for alpha and color space does not
-		const imageData = _ctx.getImageData( 0, 0, featureIds.length, 1 );
+		// TODO: remove this allocation
+		const buffer = new Uint8Array( _target.width * 4 );
+		_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
 
-		// get data based on the texture informatino
+		// get data based on the texture information
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
 			const featureId = featureIds[ i ];
@@ -143,7 +201,7 @@ export class MeshFeatures {
 
 				channels.forEach( ( c, index ) => {
 
-					const byte = imageData.data[ 4 * i + c ];
+					const byte = buffer[ 4 * i + c ];
 					const shift = index * 8;
 					value = value | ( byte << shift );
 
