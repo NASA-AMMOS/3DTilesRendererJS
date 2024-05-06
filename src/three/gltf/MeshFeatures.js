@@ -137,7 +137,7 @@ export class MeshFeatures {
 
 		} else {
 
-			return Promise.resolve().then( () => {
+			return queueMicrotask( () => {
 
 				return this.getFeatures( ...args );
 
