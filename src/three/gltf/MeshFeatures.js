@@ -1,4 +1,4 @@
-import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
+import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer, REVISION, Box2 } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
 // renderer and quad for rendering a single pixel
@@ -37,6 +37,7 @@ const _currentScissor = new Vector4();
 const _pixel = new Vector2();
 const _dstPixel = new Vector2();
 const _target = new WebGLRenderTarget();
+const _box = new Box2();
 
 // retrieve the appropriate UV attribute based on the texcoord index
 function getTextureCoordAttribute( geometry, index ) {
@@ -57,29 +58,41 @@ function getTextureCoordAttribute( geometry, index ) {
 // render target
 function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 
-	// set up the pixel quad
-	_quad.material.uniforms.map.value = texture;
-	_quad.material.uniforms.pixel.value.copy( pixel );
+	if ( REVISION >= 165 ) {
 
-	// save state
-	const currentTarget = _renderer.getRenderTarget();
-	const currentScissorTest = _renderer.getScissorTest();
-	_renderer.getScissor( _currentScissor );
+		_box.min.copy( pixel );
+		_box.max.copy( pixel );
+		_box.max.x += 1;
+		_box.max.y += 1;
+		_renderer.copyTextureToTexture( _box, dstPixel, texture, target, 0 );
 
-	// render
-	_renderer.setScissorTest( true );
-	_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
+	} else {
 
-	_renderer.setRenderTarget( target );
-	_quad.render( _renderer );
+		// set up the pixel quad
+		_quad.material.uniforms.map.value = texture;
+		_quad.material.uniforms.pixel.value.copy( pixel );
 
-	// reset state
-	_renderer.setScissorTest( currentScissorTest );
-	_renderer.setScissor( _currentScissor );
-	_renderer.setRenderTarget( currentTarget );
+		// save state
+		const currentTarget = _renderer.getRenderTarget();
+		const currentScissorTest = _renderer.getScissorTest();
+		_renderer.getScissor( _currentScissor );
 
-	// remove the texture
-	texture.dispose();
+		// render
+		_renderer.setScissorTest( true );
+		_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
+
+		_renderer.setRenderTarget( target );
+		_quad.render( _renderer );
+
+		// reset state
+		_renderer.setScissorTest( currentScissorTest );
+		_renderer.setScissor( _currentScissor );
+		_renderer.setRenderTarget( currentTarget );
+
+		// remove the texture
+		texture.dispose();
+
+	}
 
 }
 
@@ -108,15 +121,31 @@ export class MeshFeatures {
 		this.geometry = geometry;
 		this.textures = textures;
 		this.data = data;
+		this._asyncRead = false;
 
 	}
 
-	// getFeaturesAsync( triangle, barycoord ) {
+	// performs texture data read back asynchronously
+	getFeaturesAsync( ...args ) {
 
-	// 		TODO: handle async read back to avoid blocking
-	// 		TODO: requires async read back
+		if ( REVISION >= 165 ) {
 
-	// }
+			this._asyncRead = true;
+			const result = this.getFeatures( ...args );
+			this._asyncRead = false;
+			return result;
+
+		} else {
+
+			return Promise.resolve().then( () => {
+
+				return this.getFeatures( ...args );
+
+			} );
+
+		}
+
+	}
 
 	// returns all features for the given point on the given triangle
 	getFeatures( triangle, barycoord ) {
@@ -190,37 +219,57 @@ export class MeshFeatures {
 
 		// read the buffer data
 		const buffer = new Uint8Array( _target.width * 4 );
-		_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
+		if ( this._asyncRead ) {
 
-		// get data based on the texture information
-		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
+			return _renderer
+				.readRenderTargetPixelsAsync( _target, 0, 0, _target.width, 1, buffer )
+				.then( () => {
 
-			const featureId = featureIds[ i ];
-			const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
-			if ( 'texture' in featureId ) {
-
-				const { channels } = featureId.texture;
-				let value = 0;
-
-				channels.forEach( ( c, index ) => {
-
-					const byte = buffer[ 4 * i + c ];
-					const shift = index * 8;
-					value = value | ( byte << shift );
+					readTextureSampleResults();
+					return result;
 
 				} );
 
-				if ( value !== nullFeatureId ) {
+		} else {
 
-					result[ i ] = value;
+			_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
+			readTextureSampleResults();
+
+			return result;
+
+		}
+
+		function readTextureSampleResults() {
+
+			// get data based on the texture information
+			for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
+
+				const featureId = featureIds[ i ];
+				const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
+				if ( 'texture' in featureId ) {
+
+					const { channels } = featureId.texture;
+					let value = 0;
+
+					channels.forEach( ( c, index ) => {
+
+						const byte = buffer[ 4 * i + c ];
+						const shift = index * 8;
+						value = value | ( byte << shift );
+
+					} );
+
+					if ( value !== nullFeatureId ) {
+
+						result[ i ] = value;
+
+					}
 
 				}
 
 			}
 
 		}
-
-		return result;
 
 	}
 
