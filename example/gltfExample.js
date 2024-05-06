@@ -4,6 +4,7 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
+	Vector3,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -49,7 +50,7 @@ function init() {
 		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/FeatureIdTexture.gltf' )
 		.then( res => {
 
-			console.log( res );
+			console.log( res.scene.children[ 0 ].userData.meshFeatures.getFeatures( 0, new Vector3( 1, 0, 0 ) ) );
 
 			// console.log( res );
 			scene.add( res.scene );
