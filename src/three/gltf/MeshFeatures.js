@@ -33,9 +33,6 @@ const _quad = new FullScreenQuad( new ShaderMaterial( {
 } ) );
 
 const _uv = new Vector2();
-const _vec2_0 = new Vector2();
-const _vec2_1 = new Vector2();
-const _vec2_2 = new Vector2();
 const _currentScissor = new Vector4();
 const _pixel = new Vector2();
 const _dstPixel = new Vector2();
@@ -86,6 +83,24 @@ function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 
 }
 
+function getMaxBarycoordIndex( barycoord ) {
+
+	if ( barycoord.x > barycoord.y && barycoord.x > barycoord.z ) {
+
+		return 0;
+
+	} else if ( barycoord.y > barycoord.z ) {
+
+		return 1;
+
+	} else {
+
+		return 2;
+
+	}
+
+}
+
 export class MeshFeatures {
 
 	constructor( geometry, textures, data ) {
@@ -127,21 +142,14 @@ export class MeshFeatures {
 
 			}
 
+			// the feature id from the closest point is returned
 			const featureId = featureIds[ i ];
 			const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
+			const closestIndex = [ i0, i1, i2 ][ getMaxBarycoordIndex( barycoord ) ];
 			if ( 'texture' in featureId ) {
 
-				// get the interpolated uv value
 				const uv = getTextureCoordAttribute( geometry, featureId.texture.texCoord );
-				_vec2_0.fromBufferAttribute( uv, i0 );
-				_vec2_1.fromBufferAttribute( uv, i1 );
-				_vec2_2.fromBufferAttribute( uv, i2 );
-
-				_uv
-					.setScalar( 0 )
-					.addScaledVector( _vec2_0, barycoord.x )
-					.addScaledVector( _vec2_1, barycoord.y )
-					.addScaledVector( _vec2_2, barycoord.z );
+				_uv.fromBufferAttribute( uv, closestIndex );
 
 				// draw the image
 				const image = textures[ featureId.texture.index ].image;
@@ -160,12 +168,7 @@ export class MeshFeatures {
 			} else if ( 'attribute' in featureId ) {
 
 				const attr = geometry.getAttribute( `_feature_id_${ featureId.attribute }` );
-				const v0 = attr.getX( i0 );
-				const v1 = attr.getX( i1 );
-				const v2 = attr.getX( i2 );
-
-				// TODO: do we need to interpolate here?
-				const value = v0 * barycoord.x + v1 * barycoord.y + v2 * barycoord.z;
+				const value = attr.getX( closestIndex );
 				if ( value !== nullFeatureId ) {
 
 					result[ i ] = value;
@@ -174,11 +177,7 @@ export class MeshFeatures {
 
 			} else {
 
-				// TODO: is this only for points?
-				const i0 = 3 * triangle;
-				const i1 = 3 * triangle + 1;
-				const i2 = 3 * triangle + 2;
-				const value = i0 * barycoord.x + i1 * barycoord.y + i2 * barycoord.z;
+				const value = closestIndex;
 				if ( value !== nullFeatureId ) {
 
 					result[ i ] = value;
@@ -231,9 +230,9 @@ export class MeshFeatures {
 		return this.data.featureIds.map( info => {
 
 			return {
-				featureCount: info.featureCount,
-				label: info.label || null,
-				propertyTable: info.propertyTable || null,
+				label: null,
+				propertyTable: null,
+				...info
 			};
 
 		} );
