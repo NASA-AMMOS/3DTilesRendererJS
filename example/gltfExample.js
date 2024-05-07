@@ -9,6 +9,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFMeshFeaturesExtension } from '../src/three/gltf/GLTFMeshFeaturesExtension.js';
+import { MeshFeaturesMaterial } from './src/MeshFeaturesMaterial.js';
 
 let camera, controls, scene, renderer;
 let dirLight;
@@ -51,6 +52,11 @@ function init() {
 		.then( res => {
 
 			console.log( res.scene.children[ 0 ].userData.meshFeatures.getFeatures( 0, new Vector3( 1, 0, 0 ) ) );
+
+			const group = res.scene.children[ 0 ];
+			const meshFeatures = group.userData.meshFeatures;
+			group.material = new MeshFeaturesMaterial();
+			group.material.setFromFeatureInfo( meshFeatures.getFeatureInfo()[ 0 ], meshFeatures.getTextures() );
 
 			// console.log( res );
 			scene.add( res.scene );

@@ -125,6 +125,12 @@ export class MeshFeatures {
 
 	}
 
+	getTextures() {
+
+		return this.textures;
+
+	}
+
 	// performs texture data read back asynchronously
 	getFeaturesAsync( ...args ) {
 
@@ -206,6 +212,7 @@ export class MeshFeatures {
 
 			} else {
 
+				// TODO: Is this supposed to index based on index buffer or vertex list
 				const value = closestIndex;
 				if ( value !== nullFeatureId ) {
 
