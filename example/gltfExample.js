@@ -58,7 +58,6 @@ function init() {
 			group.material = new MeshFeaturesMaterial();
 			group.material.setFromFeatureInfo( meshFeatures.getFeatureInfo()[ 0 ], meshFeatures.getTextures() );
 
-			// console.log( res );
 			scene.add( res.scene );
 			console.log( res.scene );
 

@@ -46,7 +46,7 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 		} else {
 
 			this.uniforms.highlightFeatureId.value = v;
-			this.setDefine( 'USE_HIGHLIGHT_FEATURE', v );
+			this.setDefine( 'USE_HIGHLIGHT_FEATURE', 1 );
 
 		}
 
@@ -114,6 +114,8 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 			this.setAttributeFeature( null );
 
 		}
+
+		this.nullFeatureId = info.nullFeatureId || null;
 
 	}
 
