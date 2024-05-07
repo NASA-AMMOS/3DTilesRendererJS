@@ -95,7 +95,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 			.then( () => {
 
 				// defer to after the loaded tileset has been initialized
-				Promise.resolve().then( () => {
+				queueMicrotask( () => {
 
 					this.initExtremes();
 
