@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - EnvironmentControls: Add support for othographic zoom.
 - EnvironmentControls: Add "zoom speed" option.
+- `EXT_mesh_features` extension for glTF.
 
 ### Changed
 - EnvironmentControls: Changed default rotation speed.
+- Use `queueMicrotask` in place of `Promise.resolve()`.
 
 ## [0.3.31] - 2024.03.25
 ### Fixed

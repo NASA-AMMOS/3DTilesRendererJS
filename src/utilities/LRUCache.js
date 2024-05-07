@@ -1,10 +1,3 @@
-// Fires at the end of the frame and before the next one
-function enqueueMicrotask( callback ) {
-
-	Promise.resolve().then( callback );
-
-}
-
 class LRUCache {
 
 	constructor() {
@@ -174,7 +167,7 @@ class LRUCache {
 		if ( ! this.scheduled ) {
 
 			this.scheduled = true;
-			enqueueMicrotask( () => {
+			queueMicrotask( () => {
 
 				this.scheduled = false;
 				this.unloadUnusedContent();
