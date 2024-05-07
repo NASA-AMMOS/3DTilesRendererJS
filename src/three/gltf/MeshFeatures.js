@@ -212,7 +212,7 @@ export class MeshFeatures {
 
 			} else {
 
-				// TODO: Is this supposed to index based on index buffer or vertex list
+				// implicit id is based on vertex attributes, see 3d-tiles#763
 				const value = closestIndex;
 				if ( value !== nullFeatureId ) {
 
