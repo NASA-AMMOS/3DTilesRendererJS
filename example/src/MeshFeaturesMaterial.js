@@ -1,6 +1,6 @@
-import { MeshStandardMaterial } from 'three';
+import { MeshBasicMaterial } from 'three';
 
-export class MeshFeaturesMaterial extends MeshStandardMaterial {
+const MeshFeaturesMaterialMixin = base => class extends base {
 
 	get featureTexture() {
 
@@ -65,9 +65,11 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 		};
 		this.defines = {
-			// 0: None
-			// 1: Attribute
-			// 2: Texture
+
+			// 0: Disabled
+			// 1: Implicit
+			// 2: Attribute
+			// 3: Texture
 			FEATURE_TYPE: 0,
 			USE_HIGHLIGHT_FEATURE: 0,
 			USE_NULL_FEATURE: 0,
@@ -75,6 +77,31 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 			FEATURE_TEXTURE_ATTR: 'uv',
 
 		};
+
+	}
+
+	copy( source ) {
+
+		super.copy( source );
+
+		Object.assign( this.defines, source.defines );
+
+		for ( const key in this.uniforms ) {
+
+			const value = source.uniforms[ key ].value;
+			if ( Array.isArray( value ) ) {
+
+				this.uniforms[ key ].value = value.slice();
+
+			} else {
+
+				this.uniforms[ key ].value = value;
+
+			}
+
+		}
+
+		this.needsUpdate = true;
 
 	}
 
@@ -99,9 +126,13 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 	}
 
-	setFromFeatureInfo( info, textureList ) {
+	setFromFeatureInfo( info, textureList = null ) {
 
-		if ( 'attribute' in info ) {
+		if ( info === null ) {
+
+			this.setDefine( 'FEATURE_TYPE', 0 );
+
+		} else if ( 'attribute' in info ) {
 
 			this.setAttributeFeature( info.attribute );
 
@@ -115,7 +146,17 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 		}
 
-		this.nullFeatureId = info.nullFeatureId || null;
+		if ( info !== null ) {
+
+			this.nullFeatureId = info.nullFeatureId || null;
+
+		}
+
+	}
+
+	disableFeatureDisplay() {
+
+		this.setFromFeatureInfo( null );
 
 	}
 
@@ -123,7 +164,7 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 		const uniforms = this.uniforms;
 
-		this.setDefine( 'FEATURE_TYPE', 2 );
+		this.setDefine( 'FEATURE_TYPE', 3 );
 		if ( uv === 0 ) {
 
 			this.setDefine( 'FEATURE_TEXTURE_ATTR', 'uv' );
@@ -152,11 +193,11 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 		if ( attribute === null ) {
 
-			this.setDefine( 'FEATURE_TYPE', 0 );
+			this.setDefine( 'FEATURE_TYPE', 1 );
 
 		} else {
 
-			this.setDefine( 'FEATURE_TYPE', 1 );
+			this.setDefine( 'FEATURE_TYPE', 2 );
 			this.setDefine( 'FEATURE_ATTR', `_feature_id_${ attribute }` );
 
 		}
@@ -185,18 +226,18 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 			.replace( /^/, match =>
 				/* glsl */`
 					// texture
-					#if FEATURE_TYPE == 2
+					#if FEATURE_TYPE == 3
 
 						varying vec2 _feature_uv;
 
 					// attribute
-					#elif FEATURE_TYPE == 1
+					#elif FEATURE_TYPE == 2
 
 						attribute float FEATURE_ATTR;
 						flat varying uint _feature_attr;
 
-					// none
-					#elif FEATURE_TYPE == 0
+					// implicit
+					#elif FEATURE_TYPE == 1
 
 						flat varying uint _feature_attr;
 
@@ -210,17 +251,17 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 					${ match }
 
 					// texture
-					#if FEATURE_TYPE == 2
+					#if FEATURE_TYPE == 3
 
 						_feature_uv = FEATURE_TEXTURE_ATTR;
 
 					// attribute
-					#elif FEATURE_TYPE == 1
+					#elif FEATURE_TYPE == 2
 
 						_feature_attr = uint( FEATURE_ATTR );
 
 					// none
-					#elif FEATURE_TYPE == 0
+					#elif FEATURE_TYPE == 1
 
 						_feature_attr = uint( gl_VertexID );
 
@@ -246,7 +287,7 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 					#endif
 
 					// texture
-					#if FEATURE_TYPE == 2
+					#if FEATURE_TYPE == 3
 
 						uniform sampler2D featureTexture;
 						uniform int featureChannelsLength;
@@ -254,12 +295,12 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 						varying vec2 _feature_uv;
 
 					// attribute
-					#elif FEATURE_TYPE == 1
+					#elif FEATURE_TYPE == 2
 
 						flat varying uint _feature_attr;
 
 					// none
-					#elif FEATURE_TYPE == 0
+					#elif FEATURE_TYPE == 1
 
 						flat varying uint _feature_attr;
 
@@ -302,11 +343,13 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 				/* glsl */`
 					${ match }
 
-					{
+					// disabled
+					#if FEATURE_TYPE != 0
+
 						uint featureId = 0u;
 
 						// texture
-						#if FEATURE_TYPE == 2
+						#if FEATURE_TYPE == 3
 
 							uvec4 fields = uvec4( texture( featureTexture, _feature_uv ) * float( 0xff ) );
 							for ( int i = 0; i < min( featureChannelsLength, 4 ); i ++ ) {
@@ -317,12 +360,12 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 							}
 
 						// attribute
-						#elif FEATURE_TYPE == 1
+						#elif FEATURE_TYPE == 2
 
 							featureId = _feature_attr;
 
-						// none
-						#else
+						// implicit
+						#elif FEATURE_TYPE == 1
 
 							featureId = _feature_attr;
 
@@ -352,11 +395,13 @@ export class MeshFeaturesMaterial extends MeshStandardMaterial {
 
 						#endif
 
-					}
+					#endif
 
 				`,
 			);
 
 	}
 
-}
+};
+
+export const MeshFeaturesMaterial = MeshFeaturesMaterialMixin( MeshBasicMaterial );
