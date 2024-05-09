@@ -1,6 +1,8 @@
 import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer, REVISION, Box2 } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
+const REVISION_165 = parseInt( REVISION ) >= 165;
+
 // renderer and quad for rendering a single pixel
 const _renderer = new WebGLRenderer();
 const _quad = new FullScreenQuad( new ShaderMaterial( {
@@ -58,7 +60,7 @@ function getTextureCoordAttribute( geometry, index ) {
 // render target
 function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 
-	if ( REVISION >= 165 ) {
+	if ( REVISION_165 ) {
 
 		_box.min.copy( pixel );
 		_box.max.copy( pixel );
@@ -134,7 +136,7 @@ export class MeshFeatures {
 	// performs texture data read back asynchronously
 	getFeaturesAsync( ...args ) {
 
-		if ( REVISION >= 165 ) {
+		if ( REVISION_165 ) {
 
 			this._asyncRead = true;
 			const result = this.getFeatures( ...args );

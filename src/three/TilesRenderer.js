@@ -694,21 +694,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 				} );
 
-			} else {
-
-				// We handle raycasting in a custom way so remove it from here
-				scene.traverse( c => {
-
-					const ogRaycast = c.raycast
-					c.raycast = ( ...args ) => {
-
-						ogRaycast.call( c, ...args );
-						// console.log('CUSTOM!');
-
-					};
-
-				} );
-
 			}
 
 			const materials = [];
