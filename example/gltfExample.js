@@ -10,6 +10,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFMeshFeaturesExtension } from '../src/three/gltf/GLTFMeshFeaturesExtension.js';
 import { MeshFeaturesMaterial } from './src/MeshFeaturesMaterial.js';
+import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
+
 
 let camera, controls, scene, renderer;
 let dirLight;
@@ -18,6 +20,10 @@ init();
 animate();
 
 function init() {
+
+	new JPLLandformSiteSceneLoader().load( '../src/scene.json' ).then( res => {
+		console.log( res );
+	})
 
 	scene = new Scene();
 
@@ -51,15 +57,15 @@ function init() {
 		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/FeatureIdTexture.gltf' )
 		.then( res => {
 
-			console.log( res.scene.children[ 0 ].userData.meshFeatures.getFeatures( 0, new Vector3( 1, 0, 0 ) ) );
+			// console.log( res.scene.children[ 0 ].userData.meshFeatures.getFeatures( 0, new Vector3( 1, 0, 0 ) ) );
 
-			const group = res.scene.children[ 0 ];
-			const meshFeatures = group.userData.meshFeatures;
-			group.material = new MeshFeaturesMaterial();
-			group.material.setFromFeatureInfo( meshFeatures.getFeatureInfo()[ 0 ], meshFeatures.getTextures() );
+			// const group = res.scene.children[ 0 ];
+			// const meshFeatures = group.userData.meshFeatures;
+			// group.material = new MeshFeaturesMaterial();
+			// group.material.setFromFeatureInfo( meshFeatures.getFeatureInfo()[ 0 ], meshFeatures.getTextures() );
 
-			scene.add( res.scene );
-			console.log( res.scene );
+			// scene.add( res.scene );
+			// console.log( res.scene );
 
 		} );
 
