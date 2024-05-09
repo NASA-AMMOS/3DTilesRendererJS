@@ -11,12 +11,15 @@ import {
 	Vector2,
 	LoadingManager,
 	EventDispatcher,
+	REVISION,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 
+// In three.js r165 and higher raycast traversal can be ended early
+const REVISION_165 = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -92,18 +95,22 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
-		// Setting up the override raycasting function to be used by
-		// 3D objects created by this renderer
-		const tilesRenderer = this;
-		this._overridenRaycast = function ( raycaster, intersects ) {
+		if ( REVISION_165 ) {
 
-			if ( ! tilesRenderer.optimizeRaycast ) {
+			// Setting up the override raycasting function to be used by
+			// 3D objects created by this renderer
+			const tilesRenderer = this;
+			this._overridenRaycast = function ( raycaster, intersects ) {
 
-				Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+				if ( ! tilesRenderer.optimizeRaycast ) {
 
-			}
+					Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
 
-		};
+				}
+
+			};
+
+		}
 
 	}
 
@@ -678,12 +685,16 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
+			if ( REVISION_165 ) {
 
-				c.raycast = this._overridenRaycast;
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
 
-			} );
+					c.raycast = this._overridenRaycast;
+
+				} );
+
+			}
 
 			const materials = [];
 			const geometry = [];
