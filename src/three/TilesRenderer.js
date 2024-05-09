@@ -18,6 +18,8 @@ import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 
+// In three.js r165 and higher raycast traversal can be ended early
+const OVERRIDE_RAYCAST = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -93,8 +95,7 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
-		// In three.js r165 and higher raycast traversal can be ended early
-		if ( REVISION < 165 ) {
+		if ( OVERRIDE_RAYCAST ) {
 
 			// Setting up the override raycasting function to be used by
 			// 3D objects created by this renderer
@@ -684,12 +685,31 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
+			if ( OVERRIDE_RAYCAST ) {
 
-				c.raycast = this._overridenRaycast;
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
 
-			} );
+					c.raycast = this._overridenRaycast;
+
+				} );
+
+			} else {
+
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
+
+					const ogRaycast = c.raycast
+					c.raycast = ( ...args ) => {
+
+						ogRaycast.call( c, ...args );
+						// console.log('CUSTOM!');
+
+					};
+
+				} );
+
+			}
 
 			const materials = [];
 			const geometry = [];
