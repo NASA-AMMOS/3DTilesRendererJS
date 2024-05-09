@@ -19,7 +19,7 @@ import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 
 // In three.js r165 and higher raycast traversal can be ended early
-const OVERRIDE_RAYCAST = parseInt( REVISION ) < 165;
+const REVISION_165 = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -95,7 +95,7 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
-		if ( OVERRIDE_RAYCAST ) {
+		if ( REVISION_165 ) {
 
 			// Setting up the override raycasting function to be used by
 			// 3D objects created by this renderer
@@ -685,7 +685,7 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			if ( OVERRIDE_RAYCAST ) {
+			if ( REVISION_165 ) {
 
 				// We handle raycasting in a custom way so remove it from here
 				scene.traverse( c => {

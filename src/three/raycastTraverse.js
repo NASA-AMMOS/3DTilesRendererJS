@@ -1,7 +1,7 @@
 import { Matrix4, Ray, Vector3, REVISION } from 'three';
 
 // In three.js r165 and higher raycast traversal can be ended early
-const OVERRIDE_RAYCAST = parseInt( REVISION ) < 165;
+const REVISION_165 = parseInt( REVISION ) < 165;
 const _mat = new Matrix4();
 const _localRay = new Ray();
 const _vec = new Vector3();
@@ -15,7 +15,7 @@ function distanceSort( a, b ) {
 
 function intersectTileScene( scene, raycaster, intersects ) {
 
-	if ( OVERRIDE_RAYCAST ) {
+	if ( REVISION_165 ) {
 
 		// Don't intersect the box3 helpers because those are used for debugging
 		scene.traverse( c => {

@@ -16,7 +16,7 @@ export class TilesGroup extends Group {
 
 	raycast( raycaster, intersects ) {
 
-		// returning "true" ends raycasting traversal
+		// returning "true" ends raycast traversal
 		if ( this.tilesRenderer.optimizeRaycast ) {
 
 			this.tilesRenderer.raycast( raycaster, intersects );
