@@ -11,6 +11,7 @@ import {
 	Vector2,
 	LoadingManager,
 	EventDispatcher,
+	REVISION,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -92,18 +93,23 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
-		// Setting up the override raycasting function to be used by
-		// 3D objects created by this renderer
-		const tilesRenderer = this;
-		this._overridenRaycast = function ( raycaster, intersects ) {
+		// In three.js r165 and higher raycast traversal can be ended early
+		if ( REVISION < 165 ) {
 
-			if ( ! tilesRenderer.optimizeRaycast ) {
+			// Setting up the override raycasting function to be used by
+			// 3D objects created by this renderer
+			const tilesRenderer = this;
+			this._overridenRaycast = function ( raycaster, intersects ) {
 
-				Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+				if ( ! tilesRenderer.optimizeRaycast ) {
 
-			}
+					Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
 
-		};
+				}
+
+			};
+
+		}
 
 	}
 
