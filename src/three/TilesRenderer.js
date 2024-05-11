@@ -484,10 +484,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-		} else {
-
-			transform.identity();
-
 		}
 
 		if ( parentTile ) {
@@ -529,7 +525,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			scene: null,
 			geometry: null,
-			material: null,
+			materials: null,
+			textures: null,
 
 		};
 
@@ -566,7 +563,6 @@ export class TilesRenderer extends TilesRendererBase {
 				break;
 
 			case 'z':
-				upAdjustment.identity();
 				break;
 
 		}
