@@ -75,7 +75,6 @@ function init() {
 				material.addEventListener( 'feature-texture-change', ( { texture } ) => {
 
 					texture.dispose();
-					console.log('DISPOSE')
 
 				} );
 
