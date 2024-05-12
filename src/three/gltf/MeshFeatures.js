@@ -76,26 +76,27 @@ export class MeshFeatures {
 		const width = data.featureIds.length;
 		TextureReadUtility.increaseSizeTo( width );
 
+		// get the attribute indices
+		let i0 = 3 * triangle;
+		let i1 = 3 * triangle + 1;
+		let i2 = 3 * triangle + 2;
+		if ( geometry.index ) {
+
+			i0 = geometry.index.getX( i0 );
+			i1 = geometry.index.getX( i1 );
+			i2 = geometry.index.getX( i2 );
+
+		}
+
+		const closestIndex = [ i0, i1, i2 ][ getMaxBarycoordIndex( barycoord ) ];
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
-
-			// get the attribute indices
-			let i0 = 3 * triangle;
-			let i1 = 3 * triangle + 1;
-			let i2 = 3 * triangle + 2;
-			if ( geometry.index ) {
-
-				i0 = geometry.index.getX( i0 );
-				i1 = geometry.index.getX( i1 );
-				i2 = geometry.index.getX( i2 );
-
-			}
 
 			// the feature id from the closest point is returned
 			const featureId = featureIds[ i ];
 			const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
-			const closestIndex = [ i0, i1, i2 ][ getMaxBarycoordIndex( barycoord ) ];
 			if ( 'texture' in featureId ) {
 
+				// TODO: this shouldn't use the closest attribute
 				const uv = getTextureCoordAttribute( geometry, featureId.texture.texCoord );
 				_uv.fromBufferAttribute( uv, closestIndex );
 

@@ -5,6 +5,7 @@ import {
 	Matrix3,
 	Matrix4,
 } from 'three';
+import { TextureReadUtility } from './TextureReadUtility';
 
 function getField( object, key, def ) {
 
@@ -198,23 +199,168 @@ class PropertyAccessor {
 
 class PropertyTextureAccessor extends PropertyAccessor {
 
-	constructor( ...args ) {
+	constructor( definition, data, classes, enums, geometry ) {
 
-		super( ...args );
+		super( definition, data, classes, enums );
 
 		this.isPropertyTexture = true;
+		this.geometry = geometry;
 
 	}
 
-	getPropertyValueAtTexel( name, x, y, target = null ) {
+	getPropertyValueAtTexelAsync( ...args ) {
 
-		return this.getPropertyValuesAtTexel( [ name ], x, y, target );
+		// TODO
 
 	}
 
-	getPropertyValuesAtTexel( name, x, y, target = null ) {
+	getPropertyValuesAtTexelAsync( ...args ) {
 
-		// TODO: can arrays be handled here
+		// TODO
+
+	}
+
+	getPropertyValueAtTexel( name, triangle, barycoord, target = null ) {
+
+		return this.getPropertyValuesAtTexel( [ name ], triangle, barycoord, target )[ 0 ];
+
+	}
+
+	getPropertyValuesAtTexel( names, triangle, barycoord, target = null ) {
+
+		// // TODO: reduce redundancy with Mesh Features
+		// // TODO: finish this
+		// if ( target = null ) {
+
+		// 	target = [];
+
+		// }
+
+		// target.length = names.length;
+		// TextureReadUtility.increaseSizeTo( target.length );
+
+		// // get the attribute indices
+		// let i0 = 3 * triangle;
+		// let i1 = 3 * triangle + 1;
+		// let i2 = 3 * triangle + 2;
+		// if ( geometry.index ) {
+
+		// 	i0 = geometry.index.getX( i0 );
+		// 	i1 = geometry.index.getX( i1 );
+		// 	i2 = geometry.index.getX( i2 );
+
+		// }
+
+		// const textures = this.data;
+		// const geometry = this;
+		// for ( let i = 0, l = names.length; i < l; i ++ ) {
+
+		// 	const name = names[ i ];
+		// 	const property = this.definition.properties[ name ];
+		// 	if ( ! property ) {
+
+		// 		continue;
+
+		// 	}
+
+		// 	const classProperty = this.class.properties[ name ];
+		// 	const type = classProperty.type;
+		// 	const { index, texCoord } = property;
+
+		// 	const uv = getTextureCoordAttribute( geometry, texCoord );
+		// 	_uv0.fromBufferAttribute( uv, i0 );
+		// 	_uv1.fromBufferAttribute( uv, i1 );
+		// 	_uv2.fromBufferAttribute( uv, i2 );
+
+		// 	_uv
+		// 		.set( 0, 0, 0 )
+		// 		.addScaledVector( _uv0, barycoord.x )
+		// 		.addScaledVector( _uv1, barycoord.y )
+		// 		.addScaledVector( _uv2, barycoord.z );
+
+
+		// 	// draw the image
+		// 	const texture = textures[ index ];
+		// 	const image = texture.image;
+		// 	const { width, height } = image;
+
+		// 	const fx = _uv.x - Math.floor( _uv.x );
+		// 	const fy = _uv.y - Math.floor( _uv.y );
+		// 	const px = Math.floor( ( fx * width ) % width );
+		// 	const py = Math.floor( ( fy * height ) % height );
+
+		// 	_pixel.set( px, py );
+		// 	_dstPixel.set( i, 0 );
+
+		// 	TextureReadUtility.renderPixelToTarget( texture, _pixel, _dstPixel );
+
+		// }
+
+		// const buffer = new Float32Array( width * 4 );
+		// if ( this._asyncRead ) {
+
+		// 	return TextureReadUtility
+		// 		.readDataAsync( buffer ).then( () => {
+
+		// 			readTextureSampleResults();
+		// 			return target;
+
+		// 		} );
+
+		// } else {
+
+		// 	TextureReadUtility.readData( buffer );
+		// 	readTextureSampleResults();
+
+		// 	return target;
+
+		// }
+
+		// function readTextureSampleResults() {
+
+		// 	for ( let i = 0, l = names.length; i < l; i ++ ) {
+
+		// 		const name = names[ i ];
+		// 		const property = this.definition.properties[ name ];
+		// 		const classProperty = this.class.properties[ name ];
+		// 		const type = classProperty.type;
+		// 		if ( ! property ) {
+
+		// 			if ( ! classProperty ) {
+
+		// 				throw new Error( 'PropertyTextureAccessor: Requested property does not exist.' );
+
+		// 			} else {
+
+		// 				target[ i ] = resolveDefault( classProperty.default, type, target );
+		// 				continue;
+
+		// 			}
+
+		// 		}
+
+		// 		const { channels } = property;
+		// 		let value = 0;
+
+		// 		channels.forEach( ( c, index ) => {
+
+		// 			const byte = Math.round( buffer[ 4 * i + c ] );
+		// 			const shift = index * 8;
+		// 			value = value | ( byte << shift );
+
+		// 		} );
+
+		// 		if ( value !== nullFeatureId ) {
+
+		// 			target[ i ] = value;
+
+		// 		}
+
+		// 	}
+
+		// 	// TODO: can arrays be handled here
+
+		// }
 
 	}
 
@@ -266,7 +412,7 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 
 			if ( ! classProperty ) {
 
-				throw new Error( 'PropertyAttributeAccessor: Requested property does not exist in the table class.' );
+				throw new Error( 'PropertyAttributeAccessor: Requested property does not exist.' );
 
 			} else {
 
@@ -363,7 +509,7 @@ class PropertyTableAccessor extends PropertyAccessor {
 
 			if ( ! classProperty ) {
 
-				throw new Error( 'PropertyTableAccessor: Requested property does not exist in the table class.' );
+				throw new Error( 'PropertyTableAccessor: Requested property does not exist.' );
 
 			} else {
 
