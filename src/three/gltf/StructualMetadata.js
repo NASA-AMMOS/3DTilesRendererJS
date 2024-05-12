@@ -319,7 +319,6 @@ class PropertyTextureAccessor extends PropertyAccessor {
 		const indices = getTriangleIndices( geometry, triangle );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
-			const texture = textures[ property.index ];
 			const name = names[ i ];
 			const property = this.definition.properties[ name ];
 			if ( ! property ) {
@@ -329,9 +328,8 @@ class PropertyTextureAccessor extends PropertyAccessor {
 			}
 
 			// get the attribute of the target tex coord
+			const texture = textures[ property.index ];
 			getTexCoord( geometry, property.texCoord, barycoord, indices, _uv );
-
-			// get the target pixel
 			getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
 			_dstPixel.set( i, 0 );
 
@@ -339,11 +337,12 @@ class PropertyTextureAccessor extends PropertyAccessor {
 
 		}
 
-		const buffer = new Float32Array( names.length * 4 );
+		const buffer = new Uint8Array( names.length * 4 );
 		if ( this._asyncRead ) {
 
 			return TextureReadUtility
-				.readDataAsync( buffer ).then( () => {
+				.readDataAsync( buffer )
+				.then( () => {
 
 					readTextureSampleResults();
 					return target;
@@ -366,7 +365,6 @@ class PropertyTextureAccessor extends PropertyAccessor {
 				const name = names[ i ];
 				const property = this.definition.properties[ name ];
 				const classProperty = this.class.properties[ name ];
-				const valueType = this._getPropertyValueType( name );
 				const type = classProperty.type;
 				if ( ! property ) {
 
@@ -386,6 +384,7 @@ class PropertyTextureAccessor extends PropertyAccessor {
 				const { channels } = property;
 				const data = channels.map( c => buffer[ 4 * i + c ] );
 
+				const valueType = this._getPropertyValueType( name );
 				const valueLength = parseInt( valueType.replace( /[^\d]/, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
 
@@ -471,14 +470,14 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 
 	getPropertyValue( name, id, target = null ) {
 
+		// NOTE: arrays are not supported via attribute accessors
 		if ( id >= this.count ) {
 
 			throw new Error( 'PropertyAttributeAccessor: Requested index is outside the range of the table.' );
 
 		}
 
-		// arrays are not supported via attribute accessors
-
+		// TODO: reduce this logic duplication
 		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
 		const type = classProperty.type;
@@ -496,6 +495,7 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 
 		}
 
+		// get a default target
 		if ( target === null ) {
 
 			target = getTypeInstance( type );
@@ -516,23 +516,21 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 
 			target.fromBufferAttribute( attribute, id );
 
-		} else {
+		} else if ( type === 'SCALAR' ) {
 
 			target = attribute.getX( id );
 
-			if ( type === 'BOOLEAN' ) {
+		} else if ( type === 'BOOLEAN' ) {
 
-				target = Boolean( target );
+			target = Boolean( attribute.getX( id ) );
 
-			} else if ( type === 'STRING' ) {
+		} else if ( type === 'STRING' ) {
 
-				target = target.toString();
+			target = attribute.getX( id ).toString();
 
-			} else if ( type === 'ENUM' ) {
+		} else if ( type === 'ENUM' ) {
 
-				target = this._enumValueToName( classProperty.enumType, target );
-
-			}
+			target = this._enumValueToName( classProperty.enumType, attribute.getX( id ) );
 
 		}
 
