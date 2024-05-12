@@ -1,25 +1,12 @@
 import { Vector2 } from 'three';
-import { TextureReadUtility } from './TextureReadUtility';
+import { TextureReadUtility } from './utilities/TextureReadUtility.js';
+import { getTexCoord, getTexelIndices, getTextureCoordAttribute, getTriangleIndices } from './utilities/TexCoordUtilities.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
 
 // retrieve the appropriate UV attribute based on the texcoord index
-function getTextureCoordAttribute( geometry, index ) {
-
-	if ( index === 0 ) {
-
-		return geometry.getAttribute( 'uv' );
-
-	} else {
-
-		return geometry.getAttribute( `uv${ index }` );
-
-	}
-
-}
-
 function getMaxBarycoordIndex( barycoord ) {
 
 	if ( barycoord.x > barycoord.y && barycoord.x > barycoord.z ) {
@@ -77,18 +64,8 @@ export class MeshFeatures {
 		TextureReadUtility.increaseSizeTo( width );
 
 		// get the attribute indices
-		let i0 = 3 * triangle;
-		let i1 = 3 * triangle + 1;
-		let i2 = 3 * triangle + 2;
-		if ( geometry.index ) {
-
-			i0 = geometry.index.getX( i0 );
-			i1 = geometry.index.getX( i1 );
-			i2 = geometry.index.getX( i2 );
-
-		}
-
-		const closestIndex = [ i0, i1, i2 ][ getMaxBarycoordIndex( barycoord ) ];
+		const indices = getTriangleIndices( geometry, triangle );
+		const closestIndex = indices[ getMaxBarycoordIndex( barycoord ) ];
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
 			// the feature id from the closest point is returned
@@ -96,22 +73,16 @@ export class MeshFeatures {
 			const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
 			if ( 'texture' in featureId ) {
 
-				// TODO: this shouldn't use the closest attribute
-				const uv = getTextureCoordAttribute( geometry, featureId.texture.texCoord );
-				_uv.fromBufferAttribute( uv, closestIndex );
+				const texture = textures[ featureId.texture.index ];
 
-				// draw the image
-				const image = textures[ featureId.texture.index ].image;
-				const { width, height } = image;
+				// get the attribute of the target tex coord
+				getTexCoord( geometry, featureId.texCoord.texCoord, barycoord, indices, _uv );
 
-				const fx = _uv.x - Math.floor( _uv.x );
-				const fy = _uv.y - Math.floor( _uv.y );
-				const px = Math.floor( ( fx * width ) % width );
-				const py = Math.floor( ( fy * height ) % height );
-
-				_pixel.set( px, py );
+				// get the target pixel
+				getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
 				_dstPixel.set( i, 0 );
 
+				// draw the image
 				TextureReadUtility.renderPixelToTarget( textures[ featureId.texture.index ], _pixel, _dstPixel );
 
 			} else if ( 'attribute' in featureId ) {

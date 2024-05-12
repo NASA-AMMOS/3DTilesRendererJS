@@ -5,7 +5,7 @@ import {
 	Matrix3,
 	Matrix4,
 } from 'three';
-import { TextureReadUtility } from './TextureReadUtility';
+import { TextureReadUtility } from './utilities/TextureReadUtility';
 
 function getField( object, key, def ) {
 
