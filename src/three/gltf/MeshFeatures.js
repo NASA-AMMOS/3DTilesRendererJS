@@ -1,45 +1,9 @@
-import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer, REVISION, Box2 } from 'three';
-import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+import { Vector2 } from 'three';
+import { TextureReadUtility } from './TextureReadUtility';
 
-const REVISION_165 = parseInt( REVISION ) >= 165;
-
-// renderer and quad for rendering a single pixel
-const _renderer = new WebGLRenderer();
-const _quad = new FullScreenQuad( new ShaderMaterial( {
-	uniforms: {
-
-		map: { value: null },
-		pixel: { value: new Vector2() }
-
-	},
-
-	vertexShader: /* glsl */`
-		void main() {
-
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
-		}
-	`,
-
-	fragmentShader: /* glsl */`
-		uniform sampler2D map;
-		uniform ivec2 pixel;
-
-		void main() {
-
-			gl_FragColor = texelFetch( map, pixel, 0 );
-
-		}
-	`,
-
-} ) );
-
-const _uv = new Vector2();
-const _currentScissor = new Vector4();
-const _pixel = new Vector2();
-const _dstPixel = new Vector2();
-const _target = new WebGLRenderTarget();
-const _box = new Box2();
+const _uv = /* @__PURE__ */ new Vector2();
+const _pixel = /* @__PURE__ */ new Vector2();
+const _dstPixel = /* @__PURE__ */ new Vector2();
 
 // retrieve the appropriate UV attribute based on the texcoord index
 function getTextureCoordAttribute( geometry, index ) {
@@ -51,48 +15,6 @@ function getTextureCoordAttribute( geometry, index ) {
 	} else {
 
 		return geometry.getAttribute( `uv${ index }` );
-
-	}
-
-}
-
-// render a single pixel from the source at the destination point on the
-// render target
-function renderPixelToTarget( texture, pixel, dstPixel, target ) {
-
-	if ( REVISION_165 ) {
-
-		_box.min.copy( pixel );
-		_box.max.copy( pixel );
-		_box.max.x += 1;
-		_box.max.y += 1;
-		_renderer.copyTextureToTexture( _box, dstPixel, texture, target, 0 );
-
-	} else {
-
-		// set up the pixel quad
-		_quad.material.uniforms.map.value = texture;
-		_quad.material.uniforms.pixel.value.copy( pixel );
-
-		// save state
-		const currentTarget = _renderer.getRenderTarget();
-		const currentScissorTest = _renderer.getScissorTest();
-		_renderer.getScissor( _currentScissor );
-
-		// render
-		_renderer.setScissorTest( true );
-		_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
-
-		_renderer.setRenderTarget( target );
-		_quad.render( _renderer );
-
-		// reset state
-		_renderer.setScissorTest( currentScissorTest );
-		_renderer.setScissor( _currentScissor );
-		_renderer.setRenderTarget( currentTarget );
-
-		// remove the texture
-		texture.dispose();
 
 	}
 
@@ -136,22 +58,10 @@ export class MeshFeatures {
 	// performs texture data read back asynchronously
 	getFeaturesAsync( ...args ) {
 
-		if ( REVISION_165 ) {
-
-			this._asyncRead = true;
-			const result = this.getFeatures( ...args );
-			this._asyncRead = false;
-			return result;
-
-		} else {
-
-			return queueMicrotask( () => {
-
-				return this.getFeatures( ...args );
-
-			} );
-
-		}
+		this._asyncRead = true;
+		const result = this.getFeatures( ...args );
+		this._asyncRead = false;
+		return result;
 
 	}
 
@@ -163,7 +73,8 @@ export class MeshFeatures {
 		const result = new Array( featureIds.length ).fill( null );
 
 		// prep the canvas width
-		_target.setSize( Math.max( _target.width, data.featureIds.length ), 1 );
+		const width = data.featureIds.length;
+		TextureReadUtility.increaseSizeTo( width );
 
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
@@ -200,7 +111,7 @@ export class MeshFeatures {
 				_pixel.set( px, py );
 				_dstPixel.set( i, 0 );
 
-				renderPixelToTarget( textures[ featureId.texture.index ], _pixel, _dstPixel, _target );
+				TextureReadUtility.renderPixelToTarget( textures[ featureId.texture.index ], _pixel, _dstPixel );
 
 			} else if ( 'attribute' in featureId ) {
 
@@ -227,12 +138,11 @@ export class MeshFeatures {
 		}
 
 		// read the buffer data
-		const buffer = new Uint8Array( _target.width * 4 );
+		const buffer = new Uint8Array( width * 4 );
 		if ( this._asyncRead ) {
 
-			return _renderer
-				.readRenderTargetPixelsAsync( _target, 0, 0, _target.width, 1, buffer )
-				.then( () => {
+			return TextureReadUtility
+				.readDataAsync( buffer ).then( () => {
 
 					readTextureSampleResults();
 					return result;
@@ -241,7 +151,7 @@ export class MeshFeatures {
 
 		} else {
 
-			_renderer.readRenderTargetPixels( _target, 0, 0, _target.width, 1, buffer );
+			TextureReadUtility.readData( buffer );
 			readTextureSampleResults();
 
 			return result;
