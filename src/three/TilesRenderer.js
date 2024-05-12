@@ -562,9 +562,6 @@ export class TilesRenderer extends TilesRendererBase {
 				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
 				break;
 
-			case 'z':
-				break;
-
 		}
 
 		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
