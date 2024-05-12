@@ -218,6 +218,26 @@ class PropertyTextureAccessor extends PropertyAccessor {
 
 	}
 
+	dispose() {
+
+		this.data.forEach( texture => {
+
+			if ( texture ) {
+
+				texture.dispose();
+
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
+
+				}
+
+			}
+
+		} );
+
+	}
+
 }
 
 class PropertyAttributeAccessor extends PropertyAccessor {

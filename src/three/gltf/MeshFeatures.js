@@ -302,11 +302,15 @@ export class MeshFeatures {
 
 		this.textures.forEach( texture => {
 
-			texture.dispose();
+			if ( texture ) {
 
-			if ( texture.image instanceof ImageBitmap ) {
+				texture.dispose();
 
-				texture.image.close();
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
+
+				}
 
 			}
 
