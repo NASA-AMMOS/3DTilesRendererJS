@@ -5,7 +5,15 @@ import {
 	Matrix3,
 	Matrix4,
 } from 'three';
-import { TextureReadUtility } from './utilities/TextureReadUtility';
+import { TextureReadUtility } from './utilities/TextureReadUtility.js';
+import { getTexCoord, getTexelIndices, getTriangleIndices } from './utilities/TexCoordUtilities.js';
+
+// TODO: there are cases where we create a Matrix or Vector, for example, and immediately
+// discard it due to how "noData" is handled
+
+const _uv = new Vector2();
+const _pixel = new Vector2();
+const _dstPixel = new Vector2();
 
 function getField( object, key, def ) {
 
@@ -55,6 +63,39 @@ function getMaxValue( type ) {
 
 }
 
+function getDataValue( buffer, offset, type, target = null ) {
+
+	if ( isMatrixType( type ) ) {
+
+		const elements = target.elements;
+		for ( let i = 0, l = elements.length; i < l; i ++ ) {
+
+			elements[ i ] = buffer[ i + offset ];
+
+		}
+
+		return target;
+
+	} else if ( isVectorType( type ) ) {
+
+		target.x = buffer[ offset + 0 ];
+		target.y = buffer[ offset + 1 ];
+		if ( 'z' in target ) target.z = buffer[ offset + 2 ];
+		if ( 'w' in target ) target.w = buffer[ offset + 3 ];
+		return target;
+
+	} else if ( type === 'BOOLEAN' ) {
+
+		return Boolean( buffer[ offset ] );
+
+	} else {
+
+		return buffer[ offset ];
+
+	}
+
+}
+
 function getTypeInstance( type ) {
 
 	switch ( type ) {
@@ -69,6 +110,27 @@ function getTypeInstance( type ) {
 		case 'BOOLEAN': return false;
 		case 'STRING': return '';
 		case 'ENUM': return 0;
+
+	}
+
+}
+
+function getArrayConstructorFromType( type ) {
+
+	switch ( type ) {
+
+		case 'INT8': return Int8Array;
+		case 'INT16': return Int16Array;
+		case 'INT32': return Int32Array;
+		case 'INT64': return BigInt64Array;
+
+		case 'UINT8': return Uint8Array;
+		case 'UINT16': return Uint16Array;
+		case 'UINT32': return Uint32Array;
+		case 'UINT64': return BigUint64Array;
+
+		case 'FLOAT32': return Float32Array;
+		case 'FLOAT65': return Float64Array;
 
 	}
 
@@ -179,6 +241,20 @@ class PropertyAccessor {
 
 	}
 
+	_getPropertyValueType( name ) {
+
+		const classProperty = this.class.properties[ name ];
+		const valueType = classProperty.type === 'ENUM' ? this.enums[ classProperty.enumType ].valueType : classProperty.componentType;
+		return valueType;
+
+
+	}
+	_enumTypeToNumericType( enumType ) {
+
+		return this.enums[ enumType ].valueType;
+
+	}
+
 	_enumValueToName( enumType, index ) {
 
 		const enumArray = this.enums[ enumType ];
@@ -228,139 +304,134 @@ class PropertyTextureAccessor extends PropertyAccessor {
 
 	getPropertyValuesAtTexel( names, triangle, barycoord, target = null ) {
 
-		// // TODO: reduce redundancy with Mesh Features
-		// // TODO: finish this
-		// if ( target = null ) {
+		if ( target = null ) {
 
-		// 	target = [];
+			target = [];
 
-		// }
+		}
 
-		// target.length = names.length;
-		// TextureReadUtility.increaseSizeTo( target.length );
+		target.length = names.length;
+		TextureReadUtility.increaseSizeTo( target.length );
 
-		// // get the attribute indices
-		// let i0 = 3 * triangle;
-		// let i1 = 3 * triangle + 1;
-		// let i2 = 3 * triangle + 2;
-		// if ( geometry.index ) {
+		// get the attribute indices
+		const textures = this.data;
+		const geometry = this.geometry;
+		const indices = getTriangleIndices( geometry, triangle );
+		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
-		// 	i0 = geometry.index.getX( i0 );
-		// 	i1 = geometry.index.getX( i1 );
-		// 	i2 = geometry.index.getX( i2 );
+			const texture = textures[ property.index ];
+			const name = names[ i ];
+			const property = this.definition.properties[ name ];
+			if ( ! property ) {
 
-		// }
+				continue;
 
-		// const textures = this.data;
-		// const geometry = this;
-		// for ( let i = 0, l = names.length; i < l; i ++ ) {
+			}
 
-		// 	const name = names[ i ];
-		// 	const property = this.definition.properties[ name ];
-		// 	if ( ! property ) {
+			// get the attribute of the target tex coord
+			getTexCoord( geometry, property.texCoord, barycoord, indices, _uv );
 
-		// 		continue;
+			// get the target pixel
+			getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
+			_dstPixel.set( i, 0 );
 
-		// 	}
+			TextureReadUtility.renderPixelToTarget( texture, _pixel, _dstPixel );
 
-		// 	const classProperty = this.class.properties[ name ];
-		// 	const type = classProperty.type;
-		// 	const { index, texCoord } = property;
+		}
 
-		// 	const uv = getTextureCoordAttribute( geometry, texCoord );
-		// 	_uv0.fromBufferAttribute( uv, i0 );
-		// 	_uv1.fromBufferAttribute( uv, i1 );
-		// 	_uv2.fromBufferAttribute( uv, i2 );
+		const buffer = new Float32Array( names.length * 4 );
+		if ( this._asyncRead ) {
 
-		// 	_uv
-		// 		.set( 0, 0, 0 )
-		// 		.addScaledVector( _uv0, barycoord.x )
-		// 		.addScaledVector( _uv1, barycoord.y )
-		// 		.addScaledVector( _uv2, barycoord.z );
+			return TextureReadUtility
+				.readDataAsync( buffer ).then( () => {
 
+					readTextureSampleResults();
+					return target;
 
-		// 	// draw the image
-		// 	const texture = textures[ index ];
-		// 	const image = texture.image;
-		// 	const { width, height } = image;
+				} );
 
-		// 	const fx = _uv.x - Math.floor( _uv.x );
-		// 	const fy = _uv.y - Math.floor( _uv.y );
-		// 	const px = Math.floor( ( fx * width ) % width );
-		// 	const py = Math.floor( ( fy * height ) % height );
+		} else {
 
-		// 	_pixel.set( px, py );
-		// 	_dstPixel.set( i, 0 );
+			TextureReadUtility.readData( buffer );
+			readTextureSampleResults();
 
-		// 	TextureReadUtility.renderPixelToTarget( texture, _pixel, _dstPixel );
+			return target;
 
-		// }
+		}
 
-		// const buffer = new Float32Array( width * 4 );
-		// if ( this._asyncRead ) {
+		function readTextureSampleResults() {
 
-		// 	return TextureReadUtility
-		// 		.readDataAsync( buffer ).then( () => {
+			for ( let i = 0, l = names.length; i < l; i ++ ) {
 
-		// 			readTextureSampleResults();
-		// 			return target;
+				const name = names[ i ];
+				const property = this.definition.properties[ name ];
+				const classProperty = this.class.properties[ name ];
+				const valueType = this._getPropertyValueType( name );
+				const type = classProperty.type;
+				if ( ! property ) {
 
-		// 		} );
+					if ( ! classProperty ) {
 
-		// } else {
+						throw new Error( 'PropertyTextureAccessor: Requested property does not exist.' );
 
-		// 	TextureReadUtility.readData( buffer );
-		// 	readTextureSampleResults();
+					} else {
 
-		// 	return target;
+						target[ i ] = resolveDefault( classProperty.default, type, target );
+						continue;
 
-		// }
+					}
 
-		// function readTextureSampleResults() {
+				}
 
-		// 	for ( let i = 0, l = names.length; i < l; i ++ ) {
+				const { channels } = property;
+				const data = channels.map( c => buffer[ c ] );
+				const BufferCons = getArrayConstructorFromType( valueType );
 
-		// 		const name = names[ i ];
-		// 		const property = this.definition.properties[ name ];
-		// 		const classProperty = this.class.properties[ name ];
-		// 		const type = classProperty.type;
-		// 		if ( ! property ) {
+				const valueLength = parseInt( valueType.replace( /[^\d]/, '' ) );
+				const length = valueLength * ( classProperty.count || 1 );
+				const readBuffer = new BufferCons( length );
+				new Uint8Array( readBuffer.buffer ).set( data );
 
-		// 			if ( ! classProperty ) {
+				if ( target[ i ] === undefined || target[ i ] === null ) {
 
-		// 				throw new Error( 'PropertyTextureAccessor: Requested property does not exist.' );
+					if ( classProperty.array ) {
 
-		// 			} else {
+						target[ i ] = [];
 
-		// 				target[ i ] = resolveDefault( classProperty.default, type, target );
-		// 				continue;
+					}
 
-		// 			}
+				}
 
-		// 		}
+				if ( classProperty.array ) {
 
-		// 		const { channels } = property;
-		// 		let value = 0;
+					const arr = target[ i ];
+					while ( classProperty.count < arr.length ) arr.push( getTypeInstance( type ) );
+					arr.length = classProperty.count;
 
-		// 		channels.forEach( ( c, index ) => {
+					for ( let j = 0, lj = arr.length; j < lj; lj ++ ) {
 
-		// 			const byte = Math.round( buffer[ 4 * i + c ] );
-		// 			const shift = index * 8;
-		// 			value = value | ( byte << shift );
+						target[ j ] = getDataValue( readBuffer, j * valueLength, type, target[ j ] );
 
-		// 		} );
+					}
 
-		// 		if ( value !== nullFeatureId ) {
+				} else {
 
-		// 			target[ i ] = value;
+					target[ i ] = getDataValue( readBuffer, 0, type );
 
-		// 		}
+				}
 
-		// 	}
+				// TODO: handle scaling, normalization, and offset of values
+				// TODO: handle enums
 
-		// 	// TODO: can arrays be handled here
+				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
-		// }
+					target[ i ] = resolveDefault( classProperty.default, type, target );
+
+				}
+
+			}
+
+		}
 
 	}
 
@@ -405,6 +476,8 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 
 		}
 
+		// arrays are not supported via attribute accessors
+
 		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
 		const type = classProperty.type;
@@ -419,12 +492,6 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 				return resolveDefault( classProperty.default, type, target );
 
 			}
-
-		}
-
-		if ( classProperty.array ) {
-
-			throw new Error( 'PropertyAttributeAccessor: Array values are supported.' );
 
 		}
 
@@ -469,9 +536,7 @@ class PropertyAttributeAccessor extends PropertyAccessor {
 		}
 
 		// handle the case of no data
-		// TODO: there are cases where we create a Matrix or Vector, for example, and immediately
-		// discard it
-		if ( classProperty.noData && isNoDataEqual( target, type, classProperty.noData ) ) {
+		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 			target = resolveDefault( classProperty.default, type, target );
 
@@ -504,6 +569,7 @@ class PropertyTableAccessor extends PropertyAccessor {
 
 		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
+		const valueType = this._getPropertyValueType( name );
 		const type = classProperty.type;
 		if ( ! property ) {
 
@@ -526,6 +592,7 @@ class PropertyTableAccessor extends PropertyAccessor {
 		}
 
 		const bufferView = this.data[ property.values ];
+		const dataArray = new ( getArrayConstructorFromType( valueType ) )( bufferView );
 		// TODO: read data
 		// TODO: assume - 1 is for scalar values
 
@@ -617,9 +684,7 @@ class PropertyTableAccessor extends PropertyAccessor {
 		}
 
 		// handle the case of no data
-		// TODO: there are cases where we create a Matrix or Vector, for example, and immediately
-		// discard it
-		if ( classProperty.noData && isNoDataEqual( target, type, classProperty.noData ) ) {
+		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 			target = resolveDefault( classProperty.default, type, target );
 
@@ -663,7 +728,7 @@ class PropertyTableAccessor extends PropertyAccessor {
 
 }
 
-
+// Matrix2 definition since it doesn't exist in three.js
 class Matrix2 {
 
 	constructor( n11, n12, n21, n22 ) {
@@ -676,6 +741,12 @@ class Matrix2 {
 			0, 1,
 
 		];
+
+		if ( n11 !== undefined ) {
+
+			this.set( n11, n12, n21, n22 );
+
+		}
 
 	}
 
