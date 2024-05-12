@@ -769,6 +769,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
+				if ( child.userData.structuralMetadata ) {
+
+					child.userData.structuralMetadata.dispose();
+
+				}
+
 			} );
 
 			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
