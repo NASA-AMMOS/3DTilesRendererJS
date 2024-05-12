@@ -297,7 +297,7 @@ export class MeshFeatures {
 
 	}
 
-	// dispose all of the data used
+	// dispose all of the texture data used
 	dispose() {
 
 		this.textures.forEach( texture => {

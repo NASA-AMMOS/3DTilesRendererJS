@@ -218,6 +218,7 @@ class PropertyTextureAccessor extends PropertyAccessor {
 
 	}
 
+	// dispose all of the texture data used
 	dispose() {
 
 		this.data.forEach( texture => {
