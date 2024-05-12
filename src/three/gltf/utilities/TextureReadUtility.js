@@ -4,13 +4,15 @@ import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 const REVISION_165 = parseInt( REVISION ) >= 165;
 const _box = /* @__PURE__ */ new Box2();
 const _currentScissor = /* @__PURE__ */ new Vector4();
+const _pos = /* @__PURE__ */ new Vector2();
 
 export const TextureReadUtility = new ( class {
 
 	constructor() {
 
 		this._renderer = new WebGLRenderer();
-		this._target = new WebGLRenderTarget( 1, 1, { type: FloatType } );
+		this._target = new WebGLRenderTarget( 1, 1 );
+		this._texTarget = new WebGLRenderTarget();
 		this._quad = new FullScreenQuad( new ShaderMaterial( {
 			uniforms: {
 
@@ -74,7 +76,7 @@ export const TextureReadUtility = new ( class {
 	// render target
 	renderPixelToTarget( texture, pixel, dstPixel ) {
 
-		const { _quad, _renderer, _target } = this;
+		const { _quad, _renderer, _target, _texTarget } = this;
 
 		if ( REVISION_165 ) {
 
@@ -82,19 +84,27 @@ export const TextureReadUtility = new ( class {
 			_box.max.copy( pixel );
 			_box.max.x += 1;
 			_box.max.y += 1;
-			_renderer.copyTextureToTexture( _box, dstPixel, texture, _target, 0 );
+			_renderer.initRenderTarget( _target );
+			_renderer.copyTextureToTexture( texture, _target.texture, _box, dstPixel, 0 );
 
 		} else {
-
-			// set up the pixel quad
-			_quad.material.uniforms.map.value = texture;
-			_quad.material.uniforms.pixel.value.copy( pixel );
 
 			// save state
 			const currentAutoClear = _renderer.autoClear;
 			const currentTarget = _renderer.getRenderTarget();
 			const currentScissorTest = _renderer.getScissorTest();
 			_renderer.getScissor( _currentScissor );
+
+			// initialize the render target
+			_texTarget.setSize( texture.image.width, texture.image.height );
+			_renderer.setRenderTarget( _texTarget );
+
+			// render the data
+			_pos.set( 0, 0 );
+			_renderer.copyTextureToTexture( _pos, texture, _texTarget.texture );
+
+			_quad.material.uniforms.map.value = _texTarget.texture;
+			_quad.material.uniforms.pixel.value.copy( pixel );
 
 			// render
 			_renderer.setScissorTest( true );
@@ -110,8 +120,8 @@ export const TextureReadUtility = new ( class {
 			_renderer.setRenderTarget( currentTarget );
 			_renderer.autoClear = currentAutoClear;
 
-			// remove the texture
-			texture.dispose();
+			// remove the memory
+			_texTarget.dispose();
 
 		}
 
