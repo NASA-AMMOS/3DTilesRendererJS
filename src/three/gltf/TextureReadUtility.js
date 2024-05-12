@@ -1,7 +1,6 @@
-import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION } from 'three';
+import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION, FloatType } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
-// TODO: adjust this to handle floats
 const REVISION_165 = parseInt( REVISION ) >= 165;
 const _box = /* @__PURE__ */ new Box2();
 const _currentScissor = /* @__PURE__ */ new Vector4();
@@ -11,7 +10,7 @@ export const TextureReadUtility = new ( class {
 	constructor() {
 
 		this._renderer = new WebGLRenderer();
-		this._target = new WebGLRenderTarget();
+		this._target = new WebGLRenderTarget( 1, 1, { type: FloatType } );
 		this._quad = new FullScreenQuad( new ShaderMaterial( {
 			uniforms: {
 

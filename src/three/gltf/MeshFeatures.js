@@ -138,7 +138,7 @@ export class MeshFeatures {
 		}
 
 		// read the buffer data
-		const buffer = new Uint8Array( width * 4 );
+		const buffer = new Float32Array( width * 4 );
 		if ( this._asyncRead ) {
 
 			return TextureReadUtility
@@ -172,7 +172,7 @@ export class MeshFeatures {
 
 					channels.forEach( ( c, index ) => {
 
-						const byte = buffer[ 4 * i + c ];
+						const byte = Math.round( buffer[ 4 * i + c ] );
 						const shift = index * 8;
 						value = value | ( byte << shift );
 
