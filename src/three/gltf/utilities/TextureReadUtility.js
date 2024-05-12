@@ -10,6 +10,7 @@ export const TextureReadUtility = new ( class {
 
 	constructor() {
 
+		// TODO: is it possible for the textures to be a type other than UInt8?
 		this._renderer = new WebGLRenderer();
 		this._target = new WebGLRenderTarget( 1, 1 );
 		this._texTarget = new WebGLRenderTarget();

@@ -76,7 +76,7 @@ export class MeshFeatures {
 				const texture = textures[ featureId.texture.index ];
 
 				// get the attribute of the target tex coord
-				getTexCoord( geometry, featureId.texCoord.texCoord, barycoord, indices, _uv );
+				getTexCoord( geometry, featureId.texture.texCoord, barycoord, indices, _uv );
 
 				// get the target pixel
 				getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
@@ -110,7 +110,7 @@ export class MeshFeatures {
 		}
 
 		// read the buffer data
-		const buffer = new Float32Array( width * 4 );
+		const buffer = new Uint8Array( width * 4 );
 		if ( this._asyncRead ) {
 
 			return TextureReadUtility
