@@ -390,6 +390,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 						// texture
 						#if FEATURE_TYPE == 3
 
+							// TODO: support anti aliasing here at the pixel edges
 							uvec4 fields = uvec4( texture( featureTexture, _feature_uv ) * float( 0xff ) );
 							for ( int i = 0; i < min( featureChannelsLength, 4 ); i ++ ) {
 

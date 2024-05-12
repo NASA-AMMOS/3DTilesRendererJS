@@ -122,13 +122,13 @@ function animate() {
 
 		const meshFeatures = hit.object.userData.meshFeatures;
 		const featureInfo = meshFeatures.getFeatureInfo();
-		object.material.setFromFeatureInfo( featureInfo[ 0 ], meshFeatures.textures );
 
 		meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
 			.then( features => {
 
 				if ( object.material === hoveredMaterial ) {
 
+					object.material.setFromFeatureInfo( featureInfo[ 0 ], meshFeatures.textures );
 					object.material.highlightFeatureId = features[ 0 ];
 					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
 					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
