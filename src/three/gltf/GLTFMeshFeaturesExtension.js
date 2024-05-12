@@ -24,11 +24,11 @@ export class GLTFMeshFeaturesExtension {
 
 				// check if this object has extension references
 				const { meshes, primitives } = parser.associations.get( c );
-				const { extensions } = parser.json.meshes[ meshes ].primitives[ primitives ];
-				if ( extensions[ EXT_NAME ] ) {
+				const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
+				if ( primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
 
 					// make sure the necessary textures are loaded for each feature
-					const ext = extensions[ EXT_NAME ];
+					const ext = primitive.extensions[ EXT_NAME ];
 					const { featureIds } = ext;
 					featureIds.forEach( info => {
 
