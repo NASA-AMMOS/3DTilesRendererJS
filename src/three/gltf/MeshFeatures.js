@@ -1,12 +1,12 @@
 import { Vector2 } from 'three';
 import { TextureReadUtility } from './utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTextureCoordAttribute, getTriangleIndices } from './utilities/TexCoordUtilities.js';
+import { getTexCoord, getTexelIndices, getTriangleIndices } from './utilities/TexCoordUtilities.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
 
-// retrieve the appropriate UV attribute based on the texcoord index
+// retrieve the appropriate UV attribute based on the tex coord index
 function getMaxBarycoordIndex( barycoord ) {
 
 	if ( barycoord.x > barycoord.y && barycoord.x > barycoord.z ) {
@@ -75,10 +75,8 @@ export class MeshFeatures {
 
 				const texture = textures[ featureId.texture.index ];
 
-				// get the attribute of the target tex coord
+				// get the attribute of the target tex coord and pixel
 				getTexCoord( geometry, featureId.texture.texCoord, barycoord, indices, _uv );
-
-				// get the target pixel
 				getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
 				_dstPixel.set( i, 0 );
 
@@ -114,7 +112,8 @@ export class MeshFeatures {
 		if ( this._asyncRead ) {
 
 			return TextureReadUtility
-				.readDataAsync( buffer ).then( () => {
+				.readDataAsync( buffer )
+				.then( () => {
 
 					readTextureSampleResults();
 					return result;
@@ -133,23 +132,19 @@ export class MeshFeatures {
 		function readTextureSampleResults() {
 
 			// get data based on the texture information
+			const readBuffer = new Uint32Array( 1 );
 			for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
 				const featureId = featureIds[ i ];
 				const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
 				if ( 'texture' in featureId ) {
 
+					// TODO: do we nee to handle big-endian here?
 					const { channels } = featureId.texture;
-					let value = 0;
+					const data = channels.map( c => buffer[ 4 * i + c ] );
+					new Uint8Array( readBuffer.buffer ).set( data );
 
-					channels.forEach( ( c, index ) => {
-
-						const byte = Math.round( buffer[ 4 * i + c ] );
-						const shift = index * 8;
-						value = value | ( byte << shift );
-
-					} );
-
+					const value = readBuffer[ 0 ];
 					if ( value !== nullFeatureId ) {
 
 						result[ i ] = value;

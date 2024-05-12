@@ -384,11 +384,12 @@ class PropertyTextureAccessor extends PropertyAccessor {
 				}
 
 				const { channels } = property;
-				const data = channels.map( c => buffer[ c ] );
-				const BufferCons = getArrayConstructorFromType( valueType );
+				const data = channels.map( c => buffer[ 4 * i + c ] );
 
 				const valueLength = parseInt( valueType.replace( /[^\d]/, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
+
+				const BufferCons = getArrayConstructorFromType( valueType );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 
