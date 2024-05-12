@@ -4,7 +4,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta charset="utf-8"/>
 
-        <title>3D Tiles Renderer Composite Format Example</title>
+        <title>3D Tiles Renderer Metadata</title>
 
         <style>
             * {
@@ -22,9 +22,23 @@
                 image-rendering: pixelated;
                 outline: none;
             }
+
+			#metadata {
+
+				position: absolute;
+				left: 0;
+				top: 0;
+				pointer-events: none;
+				color: white;
+				margin: 10px;
+				font-family: monospace;
+				opacity: 0.5;
+
+			}
         </style>
     </head>
     <body>
-        <script src="./gltfExample.js"></script>
+		<div id="metadata"></div>
+        <script src="./metadata.js"></script>
     </body>
 </html>

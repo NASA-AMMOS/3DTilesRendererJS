@@ -34,6 +34,9 @@ const _quad = new FullScreenQuad( new ShaderMaterial( {
 
 } ) );
 
+const _uv0 = new Vector2();
+const _uv1 = new Vector2();
+const _uv2 = new Vector2();
 const _uv = new Vector2();
 const _currentScissor = new Vector4();
 const _pixel = new Vector2();
@@ -145,7 +148,7 @@ export class MeshFeatures {
 
 		} else {
 
-			return queueMicrotask( () => {
+			return Promise.resolve().then( () => {
 
 				return this.getFeatures( ...args );
 
@@ -185,8 +188,15 @@ export class MeshFeatures {
 			const closestIndex = [ i0, i1, i2 ][ getMaxBarycoordIndex( barycoord ) ];
 			if ( 'texture' in featureId ) {
 
-				const uv = getTextureCoordAttribute( geometry, featureId.texture.texCoord );
-				_uv.fromBufferAttribute( uv, closestIndex );
+				const attr = getTextureCoordAttribute( geometry, featureId.texture.texCoord );
+				_uv0.fromBufferAttribute( attr, i0 );
+				_uv1.fromBufferAttribute( attr, i1 );
+				_uv2.fromBufferAttribute( attr, i2 );
+
+				_uv.set( 0, 0, 0 )
+					.addScaledVector( _uv0, barycoord.x )
+					.addScaledVector( _uv1, barycoord.y )
+					.addScaledVector( _uv2, barycoord.z );
 
 				// draw the image
 				const image = textures[ featureId.texture.index ].image;
