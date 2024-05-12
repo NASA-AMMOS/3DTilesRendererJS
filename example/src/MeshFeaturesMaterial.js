@@ -1,10 +1,23 @@
 import { MeshBasicMaterial } from 'three';
 
-const MeshFeaturesMaterialMixin = base => class extends base {
+export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	get featureTexture() {
 
 		return this.uniforms.featureTexture.value;
+
+	}
+
+	set featureTexture( v ) {
+
+		const texture = this.uniforms.featureTexture.value;
+		if ( texture !== v && texture ) {
+
+			texture.dispose();
+
+		}
+
+		this.uniforms.featureTexture.value = v;
 
 	}
 
@@ -64,7 +77,8 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 			highlightFeatureId: { value: - 1 },
 
 		};
-		this.defines = {
+
+		Object.assign( this.defines, {
 
 			// 0: Disabled
 			// 1: Implicit
@@ -76,32 +90,54 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 			FEATURE_ATTR: '',
 			FEATURE_TEXTURE_ATTR: 'uv',
 
-		};
+		} );
+
+		this.addEventListener( 'dispose', () => {
+
+			if ( this.featureTexture ) {
+
+				this.featureTexture.dispose();
+
+			}
+
+		} );
 
 	}
 
 	copy( source ) {
 
+		const currentDefines = this.defines;
+
 		super.copy( source );
 
-		Object.assign( this.defines, source.defines );
+		if ( source.defines ) {
 
-		for ( const key in this.uniforms ) {
+			Object.assign( this.defines, currentDefines, source.defines );
 
-			const value = source.uniforms[ key ].value;
-			if ( Array.isArray( value ) ) {
+		}
 
-				this.uniforms[ key ].value = value.slice();
+		if ( source.uniforms ) {
 
-			} else {
+			for ( const key in this.uniforms ) {
 
-				this.uniforms[ key ].value = value;
+				const value = source.uniforms[ key ].value;
+				if ( Array.isArray( value ) ) {
+
+					this.uniforms[ key ].value = value.slice();
+
+				} else {
+
+					this.uniforms[ key ].value = value;
+
+				}
 
 			}
 
 		}
 
 		this.needsUpdate = true;
+
+
 
 	}
 
@@ -131,6 +167,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 		if ( info === null ) {
 
 			this.setDefine( 'FEATURE_TYPE', 0 );
+			this.featureTexture = null;
 
 		} else if ( 'attribute' in info ) {
 
@@ -185,7 +222,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 		uniforms.featureChannelsLength.value = channels.length;
 		uniforms.featureChannels.value = [ ...channels ];
-		uniforms.featureTexture.value = texture;
+		this.featureTexture = texture;
 
 	}
 
@@ -201,6 +238,8 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 			this.setDefine( 'FEATURE_ATTR', `_feature_id_${ attribute }` );
 
 		}
+
+		this.featureTexture = null;
 
 	}
 
@@ -351,6 +390,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 						// texture
 						#if FEATURE_TYPE == 3
 
+							// TODO: support anti aliasing here at the pixel edges
 							uvec4 fields = uvec4( texture( featureTexture, _feature_uv ) * float( 0xff ) );
 							for ( int i = 0; i < min( featureChannelsLength, 4 ); i ++ ) {
 
