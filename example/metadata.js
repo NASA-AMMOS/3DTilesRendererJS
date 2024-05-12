@@ -72,11 +72,6 @@ function init() {
 				const MaterialConstructor = MeshFeaturesMaterialMixin( c.material.constructor );
 				const material = new MaterialConstructor();
 				material.copy( c.material );
-				material.addEventListener( 'feature-texture-change', ( { texture } ) => {
-
-					texture.dispose();
-
-				} );
 
 				c.material = material;
 
@@ -128,13 +123,15 @@ function animate() {
 		const meshFeatures = hit.object.userData.meshFeatures;
 		const featureInfo = meshFeatures.getFeatureInfo();
 		object.material.setFromFeatureInfo( featureInfo[ 0 ], meshFeatures.textures );
+
 		meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
 			.then( features => {
 
 				if ( object.material === hoveredMaterial ) {
 
 					object.material.highlightFeatureId = features[ 0 ];
-					metadataEl.innerText = `feature: ${ features[ 0 ] }`;
+					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
+					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
 
 				}
 
@@ -158,7 +155,8 @@ function animate() {
 		}
 
 		hoveredMaterial = null;
-		metadataEl.innerText = '';
+		metadataEl.innerText = 'feature : null';
+		metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
 
 	}
 

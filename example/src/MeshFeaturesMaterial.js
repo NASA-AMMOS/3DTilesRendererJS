@@ -10,9 +10,10 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	set featureTexture( v ) {
 
-		if ( this.uniforms.featureTexture.value !== v ) {
+		const texture = this.uniforms.featureTexture.value;
+		if ( texture !== v && texture ) {
 
-			this._fireTextureRemoval();
+			texture.dispose();
 
 		}
 
@@ -93,19 +94,13 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 		this.addEventListener( 'dispose', () => {
 
-			this._fireTextureRemoval();
+			if ( this.featureTexture ) {
+
+				this.featureTexture.dispose();
+
+			}
 
 		} );
-
-	}
-
-	_fireTextureRemoval() {
-
-		if ( this.featureTexture ) {
-
-			this.dispatchEvent( { type: 'feature-texture-change', texture: this.featureTexture } );
-
-		}
 
 	}
 

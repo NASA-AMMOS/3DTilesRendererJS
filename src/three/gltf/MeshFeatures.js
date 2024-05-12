@@ -1,4 +1,4 @@
-import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer, REVISION, Box2 } from 'three';
+import { ShaderMaterial, Vector2, Vector4, WebGLRenderTarget, WebGLRenderer, REVISION, Box2, Texture } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
 const REVISION_165 = parseInt( REVISION ) >= 165;
@@ -34,6 +34,7 @@ const _quad = new FullScreenQuad( new ShaderMaterial( {
 
 } ) );
 
+const _pos = new Vector2();
 const _uv0 = new Vector2();
 const _uv1 = new Vector2();
 const _uv2 = new Vector2();
@@ -42,6 +43,7 @@ const _currentScissor = new Vector4();
 const _pixel = new Vector2();
 const _dstPixel = new Vector2();
 const _target = new WebGLRenderTarget();
+const _texTarget = new WebGLRenderTarget();
 const _box = new Box2();
 
 // retrieve the appropriate UV attribute based on the texcoord index
@@ -69,18 +71,25 @@ function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 		_box.max.copy( pixel );
 		_box.max.x += 1;
 		_box.max.y += 1;
+		_renderer.initRenderTarget( target );
 		_renderer.copyTextureToTexture( _box, dstPixel, texture, target, 0 );
 
 	} else {
-
-		// set up the pixel quad
-		_quad.material.uniforms.map.value = texture;
-		_quad.material.uniforms.pixel.value.copy( pixel );
 
 		// save state
 		const currentTarget = _renderer.getRenderTarget();
 		const currentScissorTest = _renderer.getScissorTest();
 		_renderer.getScissor( _currentScissor );
+
+		// initialize the render target
+		_texTarget.setSize( texture.image.width, texture.image.height );
+		_renderer.setRenderTarget( _texTarget );
+
+		_pos.set( 0, 0 );
+		_renderer.copyTextureToTexture( _pos, texture, _texTarget.texture );
+
+		_quad.material.uniforms.map.value = _texTarget.texture;
+		_quad.material.uniforms.pixel.value.copy( pixel );
 
 		// render
 		_renderer.setScissorTest( true );
@@ -94,8 +103,8 @@ function renderPixelToTarget( texture, pixel, dstPixel, target ) {
 		_renderer.setScissor( _currentScissor );
 		_renderer.setRenderTarget( currentTarget );
 
-		// remove the texture
-		texture.dispose();
+		// dispose of the memory
+		_texTarget.dispose();
 
 	}
 
