@@ -59,7 +59,7 @@ export const TextureReadUtility = new ( class {
 
 		} else {
 
-			return Promise.resolve( () => this.readData( buffer ) );
+			return Promise.resolve().then( () => this.readData( buffer ) );
 
 		}
 
