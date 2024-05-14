@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Add "zoom speed" option.
 - `EXT_mesh_features` extension for glTF.
 
+### Fixed
+- Some cases where the camera jumped and drifted while reorienting the "up" direction.
+
 ### Changed
 - EnvironmentControls: Changed default rotation speed.
 - Use `queueMicrotask` in place of `Promise.resolve()`.
