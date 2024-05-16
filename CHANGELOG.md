@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Add support for othographic zoom.
 - EnvironmentControls: Add "zoom speed" option.
 - `EXT_mesh_features` extension for glTF.
+- PNTSLoader: Add `batchTable` to the returned points object.
 
 ### Fixed
 - Some cases where the camera jumped and drifted while reorienting the "up" direction.
