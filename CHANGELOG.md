@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Add support for othographic zoom.
 - EnvironmentControls: Add "zoom speed" option.
 - PNTSLoader: Add `batchTable` to the returned points object.
+- Support for improved, early termination raycasting from three.js r165.
 
 ### Fixed
 - Some cases where the camera jumped and drifted while reorienting the "up" direction.
