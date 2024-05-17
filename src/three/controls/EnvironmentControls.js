@@ -308,9 +308,9 @@ export class EnvironmentControls extends EventDispatcher {
 							pointerTracker.getStartCenterPoint( _startCenterPoint );
 
 							// adjust the drag requirement by the dpr
-							const dpr = window.devicePixelRatio;
+							const dragThreshold = 2.0 * window.devicePixelRatio;
 							const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
-							if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
+							if ( Math.abs( separateDelta ) > dragThreshold || parallelDelta > dragThreshold ) {
 
 								if ( Math.abs( separateDelta ) > parallelDelta ) {
 
