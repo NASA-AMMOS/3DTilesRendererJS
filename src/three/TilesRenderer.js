@@ -360,6 +360,10 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 
 
+		} ).catch( () => {
+
+			// error is logged internally
+
 		} );
 		return pr;
 
