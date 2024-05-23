@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `EXT_mesh_features` extension for glTF.
 
+### Fixed
+- Remove logged error when a tile set is aborted.
+
 ## [0.3.32] - 2024.05.17
 ### Added
 - EnvironmentControls: Add support for othographic zoom.
