@@ -101,12 +101,7 @@ function onWindowResize() {
 
 }
 
-function animate() {
-
-	requestAnimationFrame( animate );
-
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.update();
+function updateMetadata() {
 
 	raycaster.setFromCamera( pointer, camera );
 
@@ -120,7 +115,8 @@ function animate() {
 		triangle.c.applyMatrix4( object.matrixWorld );
 		triangle.getBarycoord( point, barycoord );
 
-		const meshFeatures = hit.object.userData.meshFeatures;
+
+		const { meshFeatures, structuralMetadata } = hit.object.userData;
 		meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
 			.then( features => {
 
@@ -130,6 +126,13 @@ function animate() {
 					object.material.highlightFeatureId = features[ 0 ];
 					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
 					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
+
+					const info = meshFeatures.getFeatureInfo()[ 0 ];
+					const propertyTable = structuralMetadata.tableAccessors[ info.propertyTable ];
+					propertyTable.getPropertyValue( 'example_VEC3_FLOAT32', features[ 0 ] );
+					// console.log( features[ 0 ] )
+
+
 
 				}
 
@@ -157,6 +160,17 @@ function animate() {
 		metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
 
 	}
+
+}
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	updateMetadata();
+
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.update();
 
 	renderer.render( scene, camera );
 

@@ -31,7 +31,7 @@ function getRelevantTextures( parser, propertyTextures = [] ) {
 
 function getRelevantBuffers( parser, propertyTables = [] ) {
 
-	const textureCount = parser.json.textures?.length || 0;
+	const textureCount = parser.json.bufferViews?.length || 0;
 	const result = new Array( textureCount ).fill( null );
 
 	propertyTables.forEach( ( { properties } ) => {
@@ -41,7 +41,7 @@ function getRelevantBuffers( parser, propertyTables = [] ) {
 			const { values } = properties[ key ];
 			if ( result[ values ] === null ) {
 
-				result[ values ] = parser.loadBuffer( values );
+				result[ values ] = parser.loadBufferView( values );
 
 			}
 
@@ -114,6 +114,10 @@ export class GLTFStructuralMetadataExtension {
 
 					const extension = primitive.extensions[ EXT_NAME ];
 					child.userData.structuralMetadata = new NodeStructuralMetaData( rootMetadata, extension, child );
+
+				} else {
+
+					child.userData.structuralMetadata = rootMetadata;
 
 				}
 

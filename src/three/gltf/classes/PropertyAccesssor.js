@@ -215,7 +215,6 @@ export class PropertyAccessor {
 	constructor( definition, classes = {}, enums = {}, data = null ) {
 
 		this.definition = definition;
-		this.classes = classes;
 		this.class = classes[ definition.class ];
 		this.enums = enums;
 		this.data = data;
