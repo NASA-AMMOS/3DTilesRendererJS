@@ -122,8 +122,19 @@ function updateMetadata() {
 
 				if ( object.material === hoveredMaterial ) {
 
-					object.material.setFromMeshFeatures( meshFeatures, 0 );
-					object.material.highlightFeatureId = features[ 0 ];
+					tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+						// TODO: must find way to ensure the id is referencing the same "type" of feature - either
+						// from feature table or mesh features label
+						if ( child.material ) {
+
+							child.material.setFromMeshFeatures( meshFeatures, 0 );
+							child.material.highlightFeatureId = features[ 0 ];
+
+						}
+
+					} ) );
+
 					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
 					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
 
@@ -151,7 +162,16 @@ function updateMetadata() {
 
 		if ( hoveredMaterial ) {
 
-			hoveredMaterial.disableFeatureDisplay();
+
+			tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+				if ( child.material ) {
+
+					child.material.disableFeatureDisplay();
+
+				}
+
+			} ) );
 
 		}
 
