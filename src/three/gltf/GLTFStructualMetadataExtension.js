@@ -2,7 +2,7 @@
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
 
 import { FileLoader } from 'three';
-import { StructuralMetadata } from './classes/StructualMetadata.js';
+import { NodeStructuralMetaData, StructuralMetadata } from './classes/StructualMetadata.js';
 
 const EXT_NAME = 'EXT_structural_metadata';
 function getRelevantTextures( parser, propertyTextures = [] ) {
@@ -100,29 +100,20 @@ export class GLTFStructuralMetadataExtension {
 		] );
 
 		// initialize the extension
-		scene.userData.structuralMetadata = new StructuralMetadata( rootExtension, textures, buffers );
+		const rootMetadata = new StructuralMetadata( rootExtension, textures, buffers );
+		scene.userData.structuralMetadata = rootMetadata;
 
-		scene.traverse( c => {
+		scene.traverse( child => {
 
-			if ( parser.associations.has( c ) ) {
+			if ( parser.associations.has( child ) ) {
 
 				// check if this object has extension references
-				const { meshes, primitives } = parser.associations.get( c );
+				const { meshes, primitives } = parser.associations.get( child );
 				const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
 				if ( primitive && primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
 
-					// TODO:
-					// - only add structural extension if primitive ext is present?
-					// - share a common root extension if not on children?
-					// - require passing in the relevant geometry to the one root extension?
-					const ext = primitive.extensions[ EXT_NAME ];
-					/*
-					c.userData.structuralMetadata = new StructuralMetadata(
-						rootExtension,
-						primitiveExtension,
-						{ textures, buffers, geometry },
-					)
-					*/
+					const extension = primitive.extensions[ EXT_NAME ];
+					child.userData.structuralMetadata = new NodeStructuralMetaData( rootMetadata, extension, child );
 
 				}
 
