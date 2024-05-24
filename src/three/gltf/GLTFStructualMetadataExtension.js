@@ -71,10 +71,12 @@ export class GLTFStructuralMetadataExtension {
 
 		}
 
-		const [ textures, buffers ] = Promise.all( [
+		const [ textures, buffers ] = await Promise.all( [
 			getRelevantTextures( parser, rootExtension.propertyTextures ),
 			getRelevantBuffers( parser, rootExtension.propertyTables ),
 		] );
+
+		scene.userData.structuralMetadata = new StructuralMetadata( rootExtension, textures, buffers );
 
 		scene.traverse( c => {
 

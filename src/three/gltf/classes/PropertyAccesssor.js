@@ -7,6 +7,8 @@ import {
 } from 'three';
 import { Matrix2 } from './Matrix2.js';
 
+// TODO: make sure we name things correctly - ie "componentType" and "type"
+
 // returns the field in the object with a resolved default
 export function getField( object, key, def ) {
 
@@ -210,7 +212,7 @@ export function resolveDefault( value, type, target = null ) {
 
 export class PropertyAccessor {
 
-	constructor( definition, data, classes, enums ) {
+	constructor( definition, classes = {}, enums = {}, data = null ) {
 
 		this.definition = definition;
 		this.classes = classes;

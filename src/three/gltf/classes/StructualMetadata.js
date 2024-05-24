@@ -7,30 +7,36 @@ import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
 
 export class StructuralMetadata {
 
-	constructor( definition, textures,  ) {
-
-		// TODO
+	constructor( definition, textures, buffers ) {
 
 		const {
 			schema,
-			propertyTables,
-			propertyTextures,
-			propertyAttributes,
+			propertyTables = [],
+			propertyTextures = [],
+			propertyAttributes = [],
 		} = definition;
 
-		this.schema = schema;
-
-		// table: requires a buffer view
-		// texture: requires textures
-
 		const { enums, classes } = schema;
-		this.tableAccessors = propertyTables.map( t => new PropertyTableAccessor( t, null, enums, classes ) );
-		this.textureAccessors = propertyTextures.map( t => new PropertyTextureAccessor( t, null, enums, classes ) );
-		this.attributeAccessors = propertyAttributes.map( t => new PropertyAttributeAccessor( t, null, enums, classes ) );
+		const tableAccessors = propertyTables.map( t => new PropertyTableAccessor( t, classes, enums, buffers ) );
+		const textureAccessors = propertyTextures.map( t => new PropertyTextureAccessor( t, classes, enums, textures ) );
+		const attributeAccessors = propertyAttributes.map( t => new PropertyAttributeAccessor( t, classes, enums ) );
+		const accessors = [
+			...tableAccessors,
+			...textureAccessors,
+			...attributeAccessors,
+		].reduce( ( result, acc ) => result[ acc.name ] = acc, {} );
+
+		this.schema = schema;
+		this.accessors = accessors;
+		this.tableAccessors = tableAccessors;
+		this.textureAccessors = textureAccessors;
+		this.attributeAccessors = attributeAccessors;
 
 	}
 
-	getAccessor( key ) {
+	getAccessor( name ) {
+
+		return this.accessors[ name ];
 
 	}
 
