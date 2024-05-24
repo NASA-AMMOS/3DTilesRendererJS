@@ -360,6 +360,10 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 
 
+		} ).catch( () => {
+
+			// error is logged internally
+
 		} );
 		return pr;
 
@@ -484,10 +488,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-		} else {
-
-			transform.identity();
-
 		}
 
 		if ( parentTile ) {
@@ -529,7 +529,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			scene: null,
 			geometry: null,
-			material: null,
+			materials: null,
+			textures: null,
 
 		};
 
@@ -563,10 +564,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'y':
 				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
-				break;
-
-			case 'z':
-				upAdjustment.identity();
 				break;
 
 		}

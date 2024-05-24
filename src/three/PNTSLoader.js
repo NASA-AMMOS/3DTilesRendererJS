@@ -28,7 +28,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 		return super.parse( buffer ).then( async ( result ) => {
 
-			const { featureTable } = result;
+			const { featureTable, batchTable } = result;
 
 			const material = new PointsMaterial();
 			const extensions = featureTable.header.extensions;
@@ -182,6 +182,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 			object.position.copy( translationOffset );
 			result.scene = object;
 			result.scene.featureTable = featureTable;
+			result.scene.batchTable = batchTable;
 
 			const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 			if ( rtcCenter ) {

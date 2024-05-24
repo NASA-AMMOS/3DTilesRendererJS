@@ -215,9 +215,18 @@ export class EnvironmentControls extends EventDispatcher {
 			// the "pointer" for zooming and rotating should be based on the center point
 			pointerTracker.getCenterPoint( _pointer );
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			raycaster.setFromCamera( _pointer, camera );
+
+			// prevent the drag distance from getting too severe by limiting the drag point
+			// to a reasonable angle and reasonable distance with the drag plane
+			const dot = - raycaster.ray.direction.dot( up );
+			if ( dot < DRAG_PLANE_THRESHOLD || dot < DRAG_UP_THRESHOLD ) {
+
+				return;
+
+			}
 
 			// find the hit point
-			raycaster.setFromCamera( _pointer, camera );
 			const hit = this._raycast( raycaster );
 			if ( hit ) {
 
@@ -299,9 +308,9 @@ export class EnvironmentControls extends EventDispatcher {
 							pointerTracker.getStartCenterPoint( _startCenterPoint );
 
 							// adjust the drag requirement by the dpr
-							const dpr = window.devicePixelRatio;
+							const dragThreshold = 2.0 * window.devicePixelRatio;
 							const parallelDelta = _centerPoint.distanceTo( _startCenterPoint );
-							if ( Math.abs( separateDelta ) > dpr || parallelDelta > dpr ) {
+							if ( Math.abs( separateDelta ) > dragThreshold || parallelDelta > dragThreshold ) {
 
 								if ( Math.abs( separateDelta ) > parallelDelta ) {
 
