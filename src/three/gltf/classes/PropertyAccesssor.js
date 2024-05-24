@@ -31,7 +31,7 @@ export function isFloatType( type ) {
 
 export function isVectorType( type ) {
 
-	return /^VECTOR/.test( type );
+	return /^VEC/.test( type );
 
 }
 

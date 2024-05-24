@@ -1,4 +1,4 @@
-import { PropertyAccessor, getArrayConstructorFromType, getField, getMaxValue, getTypeInstance, isFloatType, isMatrixType, isNoDataEqual, isNumericType, isVectorType, resolveDefault } from './PropertyAccesssor.js';
+import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getField, getMaxValue, getTypeInstance, isFloatType, isMatrixType, isNoDataEqual, isNumericType, isVectorType, resolveDefault } from './PropertyAccesssor.js';
 
 export class PropertyTableAccessor extends PropertyAccessor {
 
@@ -45,8 +45,16 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		const bufferView = this.data[ property.values ];
 		const dataArray = new ( getArrayConstructorFromType( valueType ) )( bufferView );
-		// TODO: read data
-		// TODO: assume - 1 is for scalar values
+
+		// TODO: is this correct?
+		let indexOffset = id;
+		if ( 'arrayOffsets' in property ) {
+
+			const { arrayOffsets, arrayOffsetType } = property;
+			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
+			indexOffset = arr[ indexOffset ];
+
+		}
 
 		if ( type === 'ENUM' ) {
 
@@ -55,9 +63,11 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		} else if ( isNumericType( type ) ) {
 
 			const normalized = getField( classProperty, 'normalized', false );
-			const scale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
-			const offset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
+			const valueScale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
+			const valueOffset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
 			const isFloat = isFloatType( type );
+
+			getDataValue( dataArray, index + indexOffset, type, target );
 
 			if ( isMatrixType( type ) ) {
 
@@ -125,11 +135,30 @@ export class PropertyTableAccessor extends PropertyAccessor {
 				if ( normalized || isFloat ) {
 
 					// TODO: what order are these operations supposed to be performed in?
-					value = value * scale + offset;
+					value = value * valueScale + valueOffset;
 
 				}
 
 				return value;
+
+			}
+
+		} else if ( type === 'STRING' ) {
+
+			// TODO: is this correct?
+			let stringLength = 0;
+			if ( 'stringOffsets' in property ) {
+
+				const { stringOffsets, stringOffsetType } = property;
+				const arr = new ( getArrayConstructorFromType( stringOffsetType ) )( this.data[ stringOffsets ] );
+				stringLength = arr[ indexOffset + 1 ] - arr[ indexOffset ];
+				indexOffset = arr[ indexOffset ];
+
+			}
+
+			for ( let i = 0; i < stringLength; i ++ ) {
+
+				target += String.fromCharCode( dataArray[ i ] );
 
 			}
 
@@ -154,6 +183,8 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		const count = getField( classProperty, 'count', null );
 
 		// TODO: what do we do if the array count isn't defined
+		// TODO: need to determine string length from arrayOffsets / stringOffsets
+		// TODO: it's inefficient to handle arrays this way because recreate the needed buffers every time
 		if ( array && count !== null ) {
 
 			while ( target.length < count ) {
@@ -172,7 +203,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		} else {
 
-			return this.getPropertyValueAtIndex( name, id, - 1, target );
+			return this.getPropertyValueAtIndex( name, id, 0, target );
 
 		}
 
