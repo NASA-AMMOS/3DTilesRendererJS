@@ -1,8 +1,8 @@
 import { MeshFeatures } from './classes/MeshFeatures.js';
 
-const EXT_NAME = 'EXT_mesh_features';
-
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features
+
+const EXT_NAME = 'EXT_mesh_features';
 export class GLTFMeshFeaturesExtension {
 
 	constructor( parser ) {

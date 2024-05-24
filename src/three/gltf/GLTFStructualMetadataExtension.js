@@ -1,4 +1,6 @@
 
+// https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
+
 const EXT_NAME = 'EXT_structural_metadata';
 export class GLTFStructuralMetadataExtension {
 
@@ -19,23 +21,25 @@ export class GLTFStructuralMetadataExtension {
 
 		}
 
-		scene.traverse( c => {
+		console.log( rootExtension )
 
-			if ( parser.associations.has( c ) ) {
+		// scene.traverse( c => {
 
-				// check if this object has extension references
-				const { meshes, primitives } = parser.associations.get( c );
-				const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
-				if ( primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
+		// 	if ( parser.associations.has( c ) ) {
 
-					const ext = primitive.extensions[ EXT_NAME ];
+		// 		// check if this object has extension references
+		// 		const { meshes, primitives } = parser.associations.get( c );
+		// 		const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
+		// 		if ( primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
+
+		// 			const ext = primitive.extensions[ EXT_NAME ];
 
 
-				}
+		// 		}
 
-			}
+		// 	}
 
-		} );
+		// } );
 
 	}
 
