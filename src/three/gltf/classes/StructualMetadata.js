@@ -42,3 +42,72 @@ export class StructuralMetadata {
 
 }
 
+export class NodeStructuralMetaData {
+
+	constructor( rootMetadata, nodeMetadata, object ) {
+
+		this.rootMetadata = rootMetadata;
+		this.nodeMetadata = nodeMetadata;
+		this.object = object;
+
+	}
+
+	// TODO: functions for accessing full class data
+	// TODO: use the node metadata object
+
+	// direct accessors
+	getPropertyValueAtIndex( accessorName, propertyName, id, arrayIndex, target = null ) {
+
+		const accessor = this.getAccessor( accessorName );
+		if ( accessor.isPropertyAttributeTexture ) {
+
+			return accessor.getPropertyValue( propertyName, id, arrayIndex, this.object.geometry, target );
+
+		} else {
+
+			return accessor.getPropertyValue( propertyName, id, arrayIndex, target );
+
+		}
+
+	}
+
+	getPropertyValue( accessorName, propertyName, id, target = null ) {
+
+		const accessor = this.getAccessor( accessorName );
+		if ( accessor.isPropertyAttributeTexture ) {
+
+			return accessor.getPropertyValue( propertyName, id, this.object.geometry, target );
+
+		} else {
+
+			return accessor.getPropertyValue( propertyName, id, target );
+
+		}
+
+	}
+
+	getPropertyValuesAtTexel( accessorName, propertyName, triangle, barycoord, target = null ) {
+
+		this.rootMetadata.getAccessor( accessorName ).getPropertyValuesAtTexel( propertyName, triangle, barycoord, target );
+
+	}
+
+	getPropertyValueAtTexel( accessorName, propertyName, triangle, barycoord, target = null ) {
+
+		return this.getPropertyValuesAtTexel( accessorName, [ propertyName ], triangle, barycoord, target );
+
+	}
+
+	getPropertyValuesAtTexelAsync( accessorName, propertyName, triangle, barycoord, target = null ) {
+
+		this.rootMetadata.getAccessor( accessorName ).getPropertyValuesAtTexelAsync( propertyName, triangle, barycoord, target );
+
+	}
+
+	getPropertyValueAtTexelAsync( accessorName, propertyName, triangle, barycoord, target = null ) {
+
+		return this.getPropertyValuesAtTexelAsync( accessorName, [ propertyName ], triangle, barycoord, target );
+
+	}
+
+}
