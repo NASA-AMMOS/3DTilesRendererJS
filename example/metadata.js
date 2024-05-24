@@ -137,8 +137,8 @@ function updateMetadata() {
 
 					} ) );
 
-					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
-					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
+					metadataEl.innerText = `feature        : ${ features.join( ', ' ) }`;
+					metadataEl.innerText += `\ntexture memory : ${ renderer.info.memory.textures }`;
 
 					const info = meshFeatures.getFeatureInfo()[ 0 ];
 					const propertyTable = structuralMetadata.tableAccessors[ info.propertyTable ];
@@ -178,8 +178,8 @@ function updateMetadata() {
 		}
 
 		hoveredMaterial = null;
-		metadataEl.innerText = 'feature : null';
-		metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
+		metadataEl.innerText = 'feature        : null';
+		metadataEl.innerText += `\ntexture memory : ${ renderer.info.memory.textures }`;
 
 	}
 

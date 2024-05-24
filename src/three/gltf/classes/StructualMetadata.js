@@ -52,6 +52,15 @@ export class NodeStructuralMetaData {
 
 	}
 
+	// returns all the data associated with the id
+	// TODO: how should these functions be exposed?
+	// TODO: rename the functions
+	/*
+	getAccessorValues( id, triangle, barycoord, target = null ) {
+
+	}
+	*/
+
 	// TODO: functions for accessing full class data
 	// TODO: use the node metadata object
 
