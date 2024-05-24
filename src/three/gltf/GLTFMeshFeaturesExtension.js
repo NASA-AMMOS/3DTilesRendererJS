@@ -1,4 +1,4 @@
-import { MeshFeatures } from './MeshFeatures.js';
+import { MeshFeatures } from './classes/MeshFeatures.js';
 
 const EXT_NAME = 'EXT_mesh_features';
 
