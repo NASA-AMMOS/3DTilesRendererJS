@@ -437,7 +437,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 							if ( highlightFeatureId != featureId ) {
 
-								diffuseColor.rgb *= 0.15;
+								diffuseColor.rgb *= 0.35;
 
 							}
 

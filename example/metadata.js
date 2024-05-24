@@ -9,8 +9,7 @@ import {
 	Triangle,
 	Vector3,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TilesRenderer } from '..';
+import { TilesRenderer, EnvironmentControls } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
@@ -23,7 +22,7 @@ let metadataEl;
 let hoveredMaterial = null;
 const barycoord = new Vector3();
 const triangle = new Triangle();
-const pointer = new Vector2();
+const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
 
 init();
@@ -45,12 +44,15 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 400 );
 	camera.position.set( 4, 4, 4 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
-	controls.minDistance = 1;
-	controls.maxDistance = 2000;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.minDistance = 0.1;
+	controls.cameraRadius = 0.1;
+	controls.minAltitude = - Math.PI;
+	controls.maxAltitude = Math.PI;
+	controls.adjustHeight = false;
 
 	// lights
 	dirLight = new DirectionalLight( 0xffffff, 1.25 );
@@ -186,6 +188,9 @@ function updateMetadata() {
 function animate() {
 
 	requestAnimationFrame( animate );
+
+	controls.update();
+	camera.updateMatrixWorld();
 
 	updateMetadata();
 
