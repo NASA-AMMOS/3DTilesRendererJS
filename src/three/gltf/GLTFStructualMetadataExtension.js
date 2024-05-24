@@ -1,6 +1,7 @@
 
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
 
+import { FileLoader } from 'three';
 import { StructuralMetadata } from './classes/StructualMetadata.js';
 
 const EXT_NAME = 'EXT_structural_metadata';
@@ -64,18 +65,41 @@ export class GLTFStructuralMetadataExtension {
 	async afterRoot( { scene, parser } ) {
 
 		const extensions = parser.json.extensions;
-		const rootExtension = extensions && extensions[ EXT_NAME ];
+		let rootExtension = extensions && extensions[ EXT_NAME ];
 		if ( ! rootExtension ) {
 
 			return;
 
 		}
 
+		// load the remote schema definition if present
+		let schemaPromise = null;
+		if ( rootExtension.schemaUri ) {
+
+			const { manager, path, requestHeader, crossOrigin } = parser.options;
+			const finalUri = new URL( rootExtension.schemaUri, path ).toString();
+			const fileLoader = new FileLoader( manager );
+			fileLoader.setCrossOrigin( crossOrigin );
+			fileLoader.setResponseType( 'json' );
+			fileLoader.setRequestHeader( requestHeader );
+
+			schemaPromise = fileLoader.loadAsync( finalUri )
+				.then( schema => {
+
+					rootExtension = { ...rootExtension, schema };
+
+				} );
+
+		}
+
+		// prep the textures and buffers
 		const [ textures, buffers ] = await Promise.all( [
 			getRelevantTextures( parser, rootExtension.propertyTextures ),
 			getRelevantBuffers( parser, rootExtension.propertyTables ),
+			schemaPromise,
 		] );
 
+		// initialize the extension
 		scene.userData.structuralMetadata = new StructuralMetadata( rootExtension, textures, buffers );
 
 		scene.traverse( c => {
