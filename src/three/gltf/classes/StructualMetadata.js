@@ -58,7 +58,7 @@ export class NodeStructuralMetaData {
 	// direct accessors
 	getPropertyValueAtIndex( accessorName, propertyName, id, arrayIndex, target = null ) {
 
-		const accessor = this.getAccessor( accessorName );
+		const accessor = this.rootMetadata.getAccessor( accessorName );
 		if ( accessor.isPropertyAttributeTexture ) {
 
 			return accessor.getPropertyValue( propertyName, id, arrayIndex, this.object.geometry, target );
@@ -73,7 +73,7 @@ export class NodeStructuralMetaData {
 
 	getPropertyValue( accessorName, propertyName, id, target = null ) {
 
-		const accessor = this.getAccessor( accessorName );
+		const accessor = this.rootMetadata.getAccessor( accessorName );
 		if ( accessor.isPropertyAttributeTexture ) {
 
 			return accessor.getPropertyValue( propertyName, id, this.object.geometry, target );
