@@ -13,7 +13,10 @@ import { TilesRenderer, EnvironmentControls } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
-const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SimplePropertyTexture/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
+const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SharedPropertyTable/tileset.json';
 
 let camera, controls, scene, renderer;
 let dirLight, tiles;
@@ -52,7 +55,7 @@ function init() {
 	controls = new EnvironmentControls( scene, camera, renderer.domElement );
 	controls.minDistance = 0.1;
 	controls.cameraRadius = 0.1;
-	controls.minAltitude = - Math.PI;
+	controls.minAltitude = 0;
 	controls.maxAltitude = Math.PI;
 	controls.adjustHeight = false;
 
@@ -140,7 +143,7 @@ function updateMetadata() {
 
 						} ) );
 
-						meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n';
+						meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
 						meshFeaturesEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
 						meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
 
@@ -150,7 +153,8 @@ function updateMetadata() {
 							const propertyTable = structuralMetadata.getPropertyTableAtIndex( info.propertyTable );
 
 							const data = propertyTable.getData( features[ 0 ] );
-							structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n';
+							structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n\n';
+							structuralMetadataEl.innerText += `${ propertyTable.name }\n`;
 
 							for ( const key in data ) {
 
@@ -168,7 +172,7 @@ function updateMetadata() {
 
 								}
 
-								structuralMetadataEl.innerText += `${ key.padEnd( 20 ) } : ${ field }`;
+								structuralMetadataEl.innerText += `  ${ key.padEnd( 20 ) } : ${ field }`;
 
 							}
 
@@ -206,8 +210,8 @@ function updateMetadata() {
 		}
 
 		hoveredMaterial = null;
-		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n';
-		meshFeaturesEl.innerText += 'feature        : null\n';
+		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
+		meshFeaturesEl.innerText += 'feature        : -\n';
 		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
 
 		structuralMetadataEl.innerText = '';
