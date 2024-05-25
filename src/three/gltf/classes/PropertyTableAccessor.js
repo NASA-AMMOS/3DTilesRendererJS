@@ -94,6 +94,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		if ( type === 'ENUM' ) {
 
+			target = getDataValue( dataArray, index + indexOffset, type, target );
 			target = this._enumValueToName( classProperty.enumType, target );
 
 		} else if ( isNumericType( type ) ) {
@@ -107,6 +108,8 @@ export class PropertyTableAccessor extends PropertyAccessor {
 			target = adjustValue( target, type, valueType, valueScale, valueOffset, normalized );
 
 		} else if ( type === 'STRING' ) {
+
+			indexOffset += index;
 
 			// TODO: is this correct?
 			let stringLength = 0;
@@ -124,6 +127,15 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 			const byteArray = new Uint8Array( dataArray.buffer, indexOffset, stringLength );
 			target = new TextDecoder().decode( byteArray );
+
+		} else if ( type === 'BOOLEAN' ) {
+
+			const offset = indexOffset + index;
+			const byteOffset = Math.floor( offset / 8 );
+			const bitOffset = offset % 8;
+			const byte = dataArray[ byteOffset ];
+
+			target = Boolean( byte & ( 1 << bitOffset ) );
 
 		}
 
@@ -182,9 +194,11 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 			for ( let i = 0, l = target.length; i < l; i ++ ) {
 
-				target[ i ] = this.getPropertyValueAtIndex( name, id, i, target );
+				target[ i ] = this.getPropertyValueAtIndex( name, id, i, target[ i ] );
 
 			}
+
+			return target;
 
 		} else {
 
