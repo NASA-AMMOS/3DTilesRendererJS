@@ -17,7 +17,7 @@ const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/gl
 
 let camera, controls, scene, renderer;
 let dirLight, tiles;
-let metadataEl;
+let meshFeaturesEl, structuralMetadataEl;
 
 let hoveredMaterial = null;
 const barycoord = new Vector3();
@@ -30,7 +30,9 @@ animate();
 
 function init() {
 
-	metadataEl = document.getElementById( 'metadata' );
+	meshFeaturesEl = document.getElementById( 'meshFeatures' );
+
+	structuralMetadataEl = document.getElementById( 'structuralMetadata' );
 
 	scene = new Scene();
 
@@ -138,9 +140,9 @@ function updateMetadata() {
 
 						} ) );
 
-						metadataEl.innerText = 'EXT_MESH_FEATURES\n';
-						metadataEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
-						metadataEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
+						meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n';
+						meshFeaturesEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
+						meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
 
 						if ( structuralMetadata ) {
 
@@ -148,8 +150,7 @@ function updateMetadata() {
 							const propertyTable = structuralMetadata.getPropertyTableAtIndex( info.propertyTable );
 
 							const data = propertyTable.getData( features[ 0 ] );
-							metadataEl.innerText += '\n';
-							metadataEl.innerText += 'STRUCTURAL_METADATA\n';
+							structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n';
 
 							for ( const key in data ) {
 
@@ -167,7 +168,7 @@ function updateMetadata() {
 
 								}
 
-								metadataEl.innerText += `${ key.padEnd( 20 ) } : ${ field }`;
+								structuralMetadataEl.innerText += `${ key.padEnd( 20 ) } : ${ field }`;
 
 							}
 
@@ -205,9 +206,11 @@ function updateMetadata() {
 		}
 
 		hoveredMaterial = null;
-		metadataEl.innerText = 'EXT_MESH_FEATURES\n';
-		metadataEl.innerText += 'feature        : null\n';
-		metadataEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
+		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n';
+		meshFeaturesEl.innerText += 'feature        : null\n';
+		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
+
+		structuralMetadataEl.innerText = '';
 
 	}
 
