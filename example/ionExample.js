@@ -1,4 +1,4 @@
-import { CesiumIonTilesRenderer } from '../src/index.js';
+import { CesiumIonTilesRenderer, EnvironmentControls } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -6,20 +6,20 @@ import {
 	Vector3,
 	Quaternion,
 	Sphere,
-	AmbientLight,
 	DataTexture,
 	EquirectangularReflectionMapping
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer, tiles;
 
+const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
+
 const params = {
 	ionAssetId: '40866',
-	ionAccessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmYmE2YWEzOS1lZDUyLTQ0YWMtOTlkNS0wN2VhZWI3NTc4MmEiLCJpZCI6MjU5LCJpYXQiOjE2ODU2MzQ0Njl9.AswCMxsN03WYwuZL-r183OZicN64Ks9aPExWhA3fuLY',
+	ionAccessToken: apiKey,
 	reload: reinstantiateTiles,
 };
 
@@ -66,6 +66,8 @@ function reinstantiateTiles() {
 		tiles = null;
 
 	}
+
+	localStorage.setItem( 'ionApiKey', params.ionAccessToken );
 
 	tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
 	tiles.onLoadTileSet = () => {
@@ -119,12 +121,13 @@ function init() {
 		4000
 	);
 	camera.position.set( 400, 400, 400 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.adjustHeight = false;
 	controls.minDistance = 1;
-	controls.maxDistance = 2000;
+	controls.maxAltitude = Math.PI;
 
 	reinstantiateTiles();
 
@@ -157,6 +160,8 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
+
+	controls.update();
 
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );
