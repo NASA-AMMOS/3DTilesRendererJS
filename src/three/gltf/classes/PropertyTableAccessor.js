@@ -155,7 +155,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 				if ( normalized ) {
 
-					value = value / getMaxValue( type );
+					value = value / getMaxValue( valueType );
 
 				}
 
@@ -213,7 +213,10 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		let count = null;
 		if ( 'arrayOffsets' in property ) {
 
-			const { arrayOffsets, arrayOffsetType } = property;
+			const {
+				arrayOffsets,
+				arrayOffsetType = 'UINT32',
+			} = property;
 			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
 			count = arr[ id + 1 ] - arr[ id ];
 
@@ -225,6 +228,12 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		// TODO: need to determine string length from arrayOffsets / stringOffsets
 		// TODO: it's inefficient to handle arrays this way because recreate the needed buffers every time
 		if ( array && count !== null ) {
+
+			if ( target === null ) {
+
+				target = [];
+
+			}
 
 			while ( target.length < count ) {
 
