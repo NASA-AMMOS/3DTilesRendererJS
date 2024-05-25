@@ -1,6 +1,9 @@
 import { PropertyAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertyAccessor.js';
 
 // TODO: is this only for points?
+// TODO: consider a method for returning a raw type array reference rather than copying into buffer
+// But then how is "no data" handled?
+// TODO: Test "no data" path
 export class PropertyAttributeAccessor extends PropertyAccessor {
 
 	constructor( ...args ) {
@@ -76,17 +79,10 @@ export class PropertyAttributeAccessor extends PropertyAccessor {
 
 			target = attribute.getX( id );
 
-		} else if ( type === 'BOOLEAN' ) {
+		} else {
 
-			target = Boolean( attribute.getX( id ) );
-
-		} else if ( type === 'STRING' ) {
-
-			target = attribute.getX( id ).toString();
-
-		} else if ( type === 'ENUM' ) {
-
-			target = this._enumValueToName( classProperty.enumType, attribute.getX( id ) );
+			// BOOLEAN, STRING, ENUM not supported
+			throw new Error( 'StructuredMetadata.PropertyAttributeAccessor: BOOLEAN, STRING, and ENUM types are not supported by property attributes.' );
 
 		}
 

@@ -1,4 +1,14 @@
-import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getField, getMaxValue, getTypeInstance, isFloatType, isMatrixType, isNoDataEqual, isNumericType, isVectorType, resolveDefault } from './PropertyAccessor.js';
+import {
+	PropertyAccessor,
+	adjustValue,
+	getArrayConstructorFromType,
+	getDataValue,
+	getField,
+	getTypeInstance,
+	isNoDataEqual,
+	isNumericType,
+	resolveDefault,
+} from './PropertyAccessor.js';
 
 export class PropertyTableAccessor extends PropertyAccessor {
 
@@ -91,84 +101,10 @@ export class PropertyTableAccessor extends PropertyAccessor {
 			const normalized = getField( classProperty, 'normalized', false );
 			const valueScale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
 			const valueOffset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
-			const isFloat = isFloatType( type );
 
 			// TODO: we need to handle array lengths correctly here?
 			target = getDataValue( dataArray, index + indexOffset, type, target );
-
-			if ( isMatrixType( type ) ) {
-
-				target = adjustMatrix( target );
-
-			} else if ( isVectorType( type ) ) {
-
-				target = adjustVector( target );
-
-			} else {
-
-				target = adjustScalar( target );
-
-			}
-
-			function adjustVector( value ) {
-
-				if ( value === null ) {
-
-					return null;
-
-				}
-
-				value.x = adjustScalar( value.x );
-				value.y = adjustScalar( value.y );
-				if ( 'z' in value ) value.z = adjustScalar( value.z );
-				if ( 'w' in value ) value.w = adjustScalar( value.w );
-				return value;
-
-			}
-
-			function adjustMatrix( value ) {
-
-				if ( value === null ) {
-
-					return null;
-
-				}
-
-				const elements = value.elements;
-				for ( let i = 0, l = elements.length; i < l; i ++ ) {
-
-					elements[ i ] = adjustScalar( elements[ i ] );
-
-				}
-
-				return value;
-
-			}
-
-			function adjustScalar( value ) {
-
-				if ( value === null ) {
-
-					return null;
-
-				}
-
-				if ( normalized ) {
-
-					value = value / getMaxValue( valueType );
-
-				}
-
-				if ( normalized || isFloat ) {
-
-					// TODO: what order are these operations supposed to be performed in?
-					value = value * valueScale + valueOffset;
-
-				}
-
-				return value;
-
-			}
+			target = adjustValue( target, type, valueType, valueScale, valueOffset, normalized );
 
 		} else if ( type === 'STRING' ) {
 
@@ -192,6 +128,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		}
 
 		// handle the case of no data
+		// TODO: this enum needs to be handled before enum has been converted
 		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 			target = resolveDefault( classProperty.default, type, target );

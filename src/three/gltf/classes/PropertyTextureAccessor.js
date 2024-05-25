@@ -1,5 +1,14 @@
 import { Vector2 } from 'three';
-import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getTypeInstance, isNoDataEqual, resolveDefault } from './PropertyAccessor.js';
+import {
+	PropertyAccessor,
+	adjustValue,
+	getArrayConstructorFromType,
+	getDataValue,
+	getField,
+	getTypeInstance,
+	isNoDataEqual,
+	resolveDefault,
+} from './PropertyAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 
@@ -9,36 +18,40 @@ const _dstPixel = /* @__PURE__ */ new Vector2();
 
 export class PropertyTextureAccessor extends PropertyAccessor {
 
-	constructor( definition, data, classes, enums, geometry ) {
+	constructor( ...args ) {
 
-		super( definition, data, classes, enums );
+		super( ...args );
 
 		this.isPropertyTextureAccessor = true;
-		this.geometry = geometry;
+		this._asyncRead = false;
 
 	}
 
-	getPropertyValueAtTexelAsync( ...args ) {
+	getData( faceIndex, barycoord, geometry, target = {} ) {
 
-		// TODO
+		const properties = this.class.properties;
+		const names = Object.keys( properties );
+		const results = names.map( n => target[ n ] || null );
+		this.getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, results );
+
+		names.forEach( ( n, i ) => target[ n ] = results[ i ] );
+
+		return target;
 
 	}
 
 	getPropertyValuesAtTexelAsync( ...args ) {
 
-		// TODO
+		this._asyncRead = true;
+		const result = this.getFeatures( ...args );
+		this._asyncRead = false;
+		return result;
 
 	}
 
-	getPropertyValueAtTexel( name, triangle, barycoord, target = null ) {
+	getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, target = null ) {
 
-		return this.getPropertyValuesAtTexel( [ name ], triangle, barycoord, target )[ 0 ];
-
-	}
-
-	getPropertyValuesAtTexel( names, triangle, barycoord, target = null ) {
-
-		if ( target = null ) {
+		if ( target === null ) {
 
 			target = [];
 
@@ -49,8 +62,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 		// get the attribute indices
 		const textures = this.data;
-		const geometry = this.geometry;
-		const indices = getTriangleIndices( geometry, triangle );
+		const indices = getTriangleIndices( geometry, faceIndex );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 			const name = names[ i ];
@@ -78,7 +90,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 				.readDataAsync( buffer )
 				.then( () => {
 
-					readTextureSampleResults();
+					readTextureSampleResults.call( this );
 					return target;
 
 				} );
@@ -86,7 +98,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 		} else {
 
 			TextureReadUtility.readData( buffer );
-			readTextureSampleResults();
+			readTextureSampleResults.call( this );
 
 			return target;
 
@@ -119,7 +131,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 				const data = channels.map( c => buffer[ 4 * i + c ] );
 
 				const valueType = this._getPropertyValueType( name );
-				const valueLength = parseInt( valueType.replace( /[^\d]/, '' ) );
+				const valueLength = parseInt( valueType.replace( /[^0-9]/g, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
 
 				const BufferCons = getArrayConstructorFromType( valueType );
@@ -136,6 +148,11 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 				}
 
+				const normalized = getField( classProperty, 'normalized', false );
+				const valueScale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
+				const valueOffset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
+
+				// TODO: reuse some of this value handling logic
 				if ( classProperty.array ) {
 
 					const arr = target[ i ];
@@ -146,17 +163,35 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 						target[ j ] = getDataValue( readBuffer, j * valueLength, type, target[ j ] );
 
+						if ( type === 'ENUM' ) {
+
+							target[ j ] = this._enumValueToName( classProperty.enumType, target[ j ] );
+
+						} else {
+
+							target[ j ] = adjustValue( target[ j ], type, valueType, valueScale, valueOffset, normalized );
+
+						}
+
 					}
 
 				} else {
 
 					target[ i ] = getDataValue( readBuffer, 0, type );
 
+					if ( type === 'ENUM' ) {
+
+						target[ i ] = this._enumValueToName( classProperty.enumType, target[ i ] );
+
+					} else {
+
+						target[ i ] = adjustValue( target[ i ], type, valueType, valueScale, valueOffset, normalized );
+
+					}
+
 				}
 
-				// TODO: handle scaling, normalization, and offset of values
-				// TODO: handle enums
-
+				// TODO: this enum needs to be handled before enum has been converted
 				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 					target[ i ] = resolveDefault( classProperty.default, type, target );

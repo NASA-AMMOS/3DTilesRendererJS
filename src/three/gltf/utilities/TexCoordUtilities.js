@@ -14,12 +14,12 @@ export function getTextureCoordAttribute( geometry, index ) {
 
 }
 
-export function getTriangleIndices( geometry, triangle, target = new Array( 3 ) ) {
+export function getTriangleIndices( geometry, faceIndex, target = new Array( 3 ) ) {
 
 	// get the attribute indices
-	let i0 = 3 * triangle;
-	let i1 = 3 * triangle + 1;
-	let i2 = 3 * triangle + 2;
+	let i0 = 3 * faceIndex;
+	let i1 = 3 * faceIndex + 1;
+	let i2 = 3 * faceIndex + 2;
 	if ( geometry.index ) {
 
 		i0 = geometry.index.getX( i0 );

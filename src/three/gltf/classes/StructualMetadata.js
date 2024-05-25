@@ -5,6 +5,8 @@ import { PropertyAttributeAccessor } from './PropertyAttributeAccessor';
 import { PropertyTableAccessor } from './PropertyTableAccessor.js';
 import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
 
+// TODO: produce a function to help initialize / validate an object structure for a given class
+// to ensure the target values are well-formed
 export class StructuralMetadata {
 
 	constructor( definition, textures, buffers, nodeMetadata = null, object = null ) {
@@ -16,7 +18,6 @@ export class StructuralMetadata {
 			propertyAttributes = [],
 		} = definition;
 
-		// TODO: filter the attribute + texture accessors here?
 		const { enums, classes } = schema;
 		const tableAccessors = propertyTables.map( t => new PropertyTableAccessor( t, classes, enums, buffers ) );
 		let textureAccessors = [];
@@ -38,6 +39,7 @@ export class StructuralMetadata {
 
 		}
 
+
 		this.schema = schema;
 		this.tableAccessors = tableAccessors;
 		this.textureAccessors = textureAccessors;
@@ -48,12 +50,6 @@ export class StructuralMetadata {
 	}
 
 	// Property Tables
-	getPropertyTable( tableIndex ) {
-
-		return this.tableAccessors[ tableIndex ];
-
-	}
-
 	getPropertyTableData( tableIndices, ids, target = [] ) {
 
 		const length = Math.min( tableIndices.length, ids.length );
@@ -61,7 +57,7 @@ export class StructuralMetadata {
 
 		for ( let i = 0; i < length; i ++ ) {
 
-			const table = this.getPropertyTable( tableIndices[ i ] );
+			const table = this.tableAccessors[ tableIndices[ i ] ];
 			target[ i ] = table.getData( ids[ i ], target[ i ] );
 
 		}
@@ -70,26 +66,66 @@ export class StructuralMetadata {
 
 	}
 
-	getPropertyTableInfo( tableIndices ) {
+	getPropertyTableInfo( tableIndices = null ) {
 
-		return tableIndices.map( i => {
+		if ( tableIndices === null ) {
 
-			const table = this.getPropertyTable( i );
-			return {
-				name: table.name,
-				className: table.definition.class,
-			};
+			return this.tableAccessors.map( acc => {
 
-		} );
+				return {
+					name: acc.name,
+					className: acc.definition.class,
+				};
+
+			} );
+
+		} else {
+
+			return tableIndices.map( i => {
+
+				const table = this.tableAccessors[ i ];
+				return {
+					name: table.name,
+					className: table.definition.class,
+				};
+
+			} );
+
+		}
 
 	}
 
 	// Property Textures
-	getPropertyTextureData( triangle, barycoord, target = {} ) {
+	getPropertyTextureData( triangle, barycoord, target = [] ) {
+
+		const textureAccessors = this.textureAccessors;
+		target.length = textureAccessors.length;
+
+		for ( let i = 0; i < textureAccessors.length; i ++ ) {
+
+			const accessor = textureAccessors[ i ];
+			target[ i ] = accessor.getData( triangle, barycoord, this.object.geometry, target[ i ] );
+
+		}
+
+		return target;
 
 	}
 
-	getPropertyTextureDataAsync( triangle, barycoord, target = {} ) {
+	getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
+
+	}
+
+	getPropertyTextureInfo() {
+
+		return this.textureAccessors.map( acc => {
+
+			return {
+				name: acc.name,
+				className: acc.definition.class,
+			};
+
+		} );
 
 	}
 

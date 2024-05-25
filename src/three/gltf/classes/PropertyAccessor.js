@@ -45,8 +45,8 @@ export function isMatrixType( type ) {
 export function getMaxValue( type ) {
 
 	const tokens = /([A-Z]+)([0-9]+)/.exec( type );
-	const unsigned = tokens[ 0 ] === 'UINT';
-	const bits = parseInt( tokens[ 1 ] );
+	const unsigned = tokens[ 1 ] === 'UINT';
+	const bits = parseInt( tokens[ 2 ] );
 
 	if ( unsigned ) {
 
@@ -132,6 +132,7 @@ export function getArrayConstructorFromType( type ) {
 		case 'FLOAT32': return Float32Array;
 		case 'FLOAT64': return Float64Array;
 
+		case 'BOOLEAN': return Uint8Array;
 		case 'STRING': return Uint8Array;
 
 	}
@@ -212,6 +213,87 @@ export function resolveDefault( value, type, target = null ) {
 
 }
 
+// scales the value based on property settings
+export function adjustValue( value, type, valueType, valueScale, valueOffset, normalized ) {
+
+	if ( isMatrixType( type ) ) {
+
+		value = adjustMatrix( value );
+
+	} else if ( isVectorType( type ) ) {
+
+		value = adjustVector( value );
+
+	} else {
+
+		value = adjustScalar( value );
+
+	}
+
+	return value;
+
+	function adjustVector( value ) {
+
+		if ( value === null ) {
+
+			return null;
+
+		}
+
+		value.x = adjustScalar( value.x );
+		value.y = adjustScalar( value.y );
+		if ( 'z' in value ) value.z = adjustScalar( value.z );
+		if ( 'w' in value ) value.w = adjustScalar( value.w );
+		return value;
+
+	}
+
+	function adjustMatrix( value ) {
+
+		if ( value === null ) {
+
+			return null;
+
+		}
+
+		const elements = value.elements;
+		for ( let i = 0, l = elements.length; i < l; i ++ ) {
+
+			elements[ i ] = adjustScalar( elements[ i ] );
+
+		}
+
+		return value;
+
+	}
+
+	function adjustScalar( value ) {
+
+		if ( value === null ) {
+
+			return null;
+
+		}
+
+		if ( normalized ) {
+
+			value = value / getMaxValue( valueType );
+
+		}
+
+		if ( normalized || isFloatType( type ) ) {
+
+			// TODO: what order are these operations supposed to be performed in?
+			value = value * valueScale + valueOffset;
+
+		}
+
+		return value;
+
+	}
+
+}
+
 export class PropertyAccessor {
 
 	constructor( definition, classes = {}, enums = {}, data = null ) {
@@ -233,13 +315,17 @@ export class PropertyAccessor {
 	_getPropertyValueType( name ) {
 
 		const classProperty = this.class.properties[ name ];
+
 		switch ( classProperty.type ) {
 
 			case 'ENUM':
-				return this.enums.values[ classProperty.enumType ].valueType;
+				return this._enumTypeToNumericType( classProperty.enumType );
 
 			case 'STRING':
 				return 'STRING';
+
+			case 'BOOLEAN':
+				return 'BOOLEAN';
 
 			default:
 				return classProperty.componentType;
@@ -250,7 +336,7 @@ export class PropertyAccessor {
 
 	_enumTypeToNumericType( enumType ) {
 
-		return this.enums.values[ enumType ].valueType;
+		return this.enums[ enumType ].valueType || 'UINT16';
 
 	}
 

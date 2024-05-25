@@ -18,7 +18,7 @@ import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
 
 // STRUCTURAL_METADATA
-// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SimplePropertyTexture/tileset.json';
+const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SimplePropertyTexture/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SharedPropertyTable/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/MultipleFeatureIdsAndProperties/tileset.json';
@@ -27,7 +27,7 @@ import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 
 // TODO
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdTextureAndPropertyTable/tileset.json';
-const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
 
 let camera, controls, scene, renderer;
 let dirLight, tiles;
@@ -138,6 +138,8 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 	}
 
+	appendRows( structuralMetadata.getPropertyTextureData( triangle, barycoord ), structuralMetadata.getPropertyTextureInfo() );
+
 	function appendRows( data, info ) {
 
 		for ( const i in data ) {
@@ -231,7 +233,7 @@ function updateMetadata() {
 
 							const info = meshFeatures.getFeatureInfo();
 							const tableIndices = info.map( p => p.propertyTable );
-							appendStructuralMetadata( structuralMetadata, triangle, barycoord, index, tableIndices, features );
+							appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index, tableIndices, features );
 
 						}
 
@@ -241,7 +243,7 @@ function updateMetadata() {
 
 		} else if ( structuralMetadata ) {
 
-			appendStructuralMetadata( structuralMetadata, triangle, barycoord, index );
+			appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index );
 
 		}
 
