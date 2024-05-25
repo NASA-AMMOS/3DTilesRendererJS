@@ -88,6 +88,8 @@ export class GLTFStructuralMetadataExtension {
 		let schemaPromise = null;
 		if ( rootExtension.schemaUri ) {
 
+			// TODO: cache the loaded schema so we can share it and dispose of it when the
+			// extension is no longer available
 			const { manager, path, requestHeader, crossOrigin } = parser.options;
 			const finalUri = new URL( rootExtension.schemaUri, path ).toString();
 			const fileLoader = new FileLoader( manager );

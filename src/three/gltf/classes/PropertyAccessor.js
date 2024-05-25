@@ -130,7 +130,7 @@ export function getArrayConstructorFromType( type ) {
 		case 'UINT64': return BigUint64Array;
 
 		case 'FLOAT32': return Float32Array;
-		case 'FLOAT65': return Float64Array;
+		case 'FLOAT64': return Float64Array;
 
 		case 'STRING': return Uint8Array;
 

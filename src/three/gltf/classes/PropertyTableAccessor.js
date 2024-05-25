@@ -70,6 +70,16 @@ export class PropertyTableAccessor extends PropertyAccessor {
 			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
 			indexOffset = arr[ indexOffset ];
 
+		} else {
+
+			const array = getField( classProperty, 'array', false );
+			if ( array ) {
+
+				const count = getField( classProperty, 'count', 1 );
+				indexOffset *= count;
+
+			}
+
 		}
 
 		if ( type === 'ENUM' ) {
@@ -83,7 +93,8 @@ export class PropertyTableAccessor extends PropertyAccessor {
 			const valueOffset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
 			const isFloat = isFloatType( type );
 
-			getDataValue( dataArray, index + indexOffset, type, target );
+			// TODO: we need to handle array lengths correctly here?
+			target = getDataValue( dataArray, index + indexOffset, type, target );
 
 			if ( isMatrixType( type ) ) {
 
