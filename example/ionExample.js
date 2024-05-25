@@ -19,6 +19,8 @@ const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
 
 const params = {
 	ionAssetId: '40866',
+	// ionAssetId: '2333904',
+	// ionAssetId: '2342602',
 	ionAccessToken: apiKey,
 	reload: reinstantiateTiles,
 };
@@ -120,7 +122,7 @@ function init() {
 		1,
 		100000
 	);
-	camera.position.set( 400, 400, 400 );
+	camera.position.set( 100, 100, - 100 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
