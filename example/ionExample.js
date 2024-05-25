@@ -118,7 +118,7 @@ function init() {
 		60,
 		window.innerWidth / window.innerHeight,
 		1,
-		4000
+		100000
 	);
 	camera.position.set( 400, 400, 400 );
 	camera.lookAt( 0, 0, 0 );

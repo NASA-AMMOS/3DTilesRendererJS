@@ -27,23 +27,25 @@ export class GLTFExtensionLoader extends LoaderBase {
 
 				loader.register( () => new GLTFCesiumRTCExtension() );
 				// loader.register( () => new GLTFMeshFeaturesExtension() );
-				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
-					loader.setCrossOrigin( 'use-credentials' );
+			}
 
-				}
+			if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
-				if ( 'credentials' in fetchOptions ) {
+				loader.setCrossOrigin( 'use-credentials' );
 
-					loader.setWithCredentials( fetchOptions.credentials === 'include' );
+			}
 
-				}
+			if ( 'credentials' in fetchOptions ) {
 
-				if ( fetchOptions.headers ) {
+				loader.setWithCredentials( fetchOptions.credentials === 'include' );
 
-					loader.setRequestHeader( fetchOptions.headers );
+			}
 
-				}
+			if ( fetchOptions.headers ) {
+
+				console.log( fetchOptions );
+				loader.setRequestHeader( fetchOptions.headers );
 
 			}
 
