@@ -11,7 +11,20 @@ export class PropertyAttributeAccessor extends PropertyAccessor {
 
 	}
 
-	getPropertyValue( name, id, target = null ) {
+	getData( id, geometry, target = {} ) {
+
+		const properties = this.class.properties;
+		for ( const name in properties ) {
+
+			target[ name ] = this.getPropertyValue( name, id, geometry, target[ name ] );
+
+		}
+
+		return target;
+
+	}
+
+	getPropertyValue( name, id, geometry, target = null ) {
 
 		// NOTE: arrays are not supported via attribute accessors
 		if ( id >= this.count ) {
@@ -45,7 +58,7 @@ export class PropertyAttributeAccessor extends PropertyAccessor {
 
 		}
 
-		const attribute = this.data[ property.attribute ];
+		const attribute = geometry.getAttribute( property.attribute.toLowerCase() );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;

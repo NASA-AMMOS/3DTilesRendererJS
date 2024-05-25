@@ -244,7 +244,7 @@ export class PropertyAccessor {
 
 	_enumValueToName( enumType, index ) {
 
-		const enumArray = this.enums[ enumType ];
+		const enumArray = this.enums[ enumType ].values;
 		for ( let i = 0, l = enumArray.length; i < l; i ++ ) {
 
 			const e = enumArray[ i ];

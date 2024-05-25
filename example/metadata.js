@@ -8,6 +8,7 @@ import {
 	Raycaster,
 	Triangle,
 	Vector3,
+	Sphere,
 } from 'three';
 import { TilesRenderer, EnvironmentControls } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
@@ -27,6 +28,8 @@ const barycoord = new Vector3();
 const triangle = new Triangle();
 const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
+raycaster.firstHitOnly = true;
+raycaster.params.Points.threshold = 0.05;
 
 init();
 animate();
@@ -108,19 +111,77 @@ function onWindowResize() {
 
 }
 
+function appendStructuralMetadata( structuralMetadata, triangle, barycoord, index, tableIndices = null, features = null ) {
+
+	structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n\n';
+
+	if ( tableIndices !== null ) {
+
+		const data = structuralMetadata.getPropertyTableData( tableIndices, features );
+		appendRows( data );
+
+	}
+
+	appendRows( structuralMetadata.getPropertyAttributeData( index ) );
+
+	function appendRows( data ) {
+
+		for ( const sectionName in data ) {
+
+			structuralMetadataEl.innerText += `${ sectionName }\n`;
+
+			const properties = data[ sectionName ];
+			for ( const propertyName in properties ) {
+
+				let field = properties[ propertyName ];
+				if ( field && field.toArray ) {
+
+					field = field.toArray().map( n => n.toFixed( 3 ) );
+
+				}
+
+				if ( field && field.join ) {
+
+
+					field = field.join( ', ' );
+
+				}
+
+				structuralMetadataEl.innerText += `  ${ propertyName.padEnd( 20 ) } : ${ field }\n`;
+
+			}
+
+		}
+
+	}
+
+}
+
 function updateMetadata() {
 
 	raycaster.setFromCamera( pointer, camera );
 
 	const hit = raycaster.intersectObject( scene )[ 0 ];
-	if ( hit && hit.object.userData.meshFeatures ) {
+	if ( hit ) {
 
-		const { object, face, point } = hit;
-		triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
-		triangle.a.applyMatrix4( object.matrixWorld );
-		triangle.b.applyMatrix4( object.matrixWorld );
-		triangle.c.applyMatrix4( object.matrixWorld );
-		triangle.getBarycoord( point, barycoord );
+		const { object, face, point, index } = hit;
+		if ( face ) {
+
+			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
+			triangle.a.applyMatrix4( object.matrixWorld );
+			triangle.b.applyMatrix4( object.matrixWorld );
+			triangle.c.applyMatrix4( object.matrixWorld );
+			triangle.getBarycoord( point, barycoord );
+
+		} else {
+
+			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, index, index, index );
+			triangle.a.applyMatrix4( object.matrixWorld );
+			triangle.b.applyMatrix4( object.matrixWorld );
+			triangle.c.applyMatrix4( object.matrixWorld );
+			barycoord.set( 0, 0, 0 );
+
+		}
 
 		const { meshFeatures, structuralMetadata } = hit.object.userData;
 		if ( meshFeatures ) {
@@ -134,7 +195,7 @@ function updateMetadata() {
 
 							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
 							// from feature table or mesh features label. Perhaps table name?
-							if ( child.material ) {
+							if ( child.material && child.material.isMeshFeaturesMaterial ) {
 
 								child.material.setFromMeshFeatures( meshFeatures, 0 );
 								child.material.highlightFeatureId = features[ 0 ];
@@ -149,38 +210,9 @@ function updateMetadata() {
 
 						if ( structuralMetadata ) {
 
-							structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n\n';
-
 							const info = meshFeatures.getFeatureInfo();
 							const tableIndices = info.map( p => p.propertyTable );
-							const data = structuralMetadata.getPropertyTableData( tableIndices, features );
-
-							for ( const tableName in data ) {
-
-								structuralMetadataEl.innerText += `${ tableName }\n`;
-
-								const properties = data[ tableName ];
-								for ( const propertyName in properties ) {
-
-									let field = properties[ propertyName ];
-									if ( field.toArray ) {
-
-										field = field.toArray().map( n => n.toFixed( 3 ) );
-
-									}
-
-									if ( field.join ) {
-
-
-										field = field.join( ', ' );
-
-									}
-
-									structuralMetadataEl.innerText += `  ${ propertyName.padEnd( 20 ) } : ${ field }`;
-
-								}
-
-							}
+							appendStructuralMetadata( structuralMetadata, triangle, barycoord, index, tableIndices, features );
 
 						}
 
@@ -188,9 +220,13 @@ function updateMetadata() {
 
 				} );
 
+		} else if ( structuralMetadata ) {
+
+			appendStructuralMetadata( structuralMetadata, triangle, barycoord, index );
+
 		}
 
-		if ( hoveredMaterial && hoveredMaterial !== object.material ) {
+		if ( hoveredMaterial && hoveredMaterial !== object.material && hoveredMaterial.isMeshFeaturesMaterial ) {
 
 			hoveredMaterial.disableFeatureDisplay();
 
@@ -205,7 +241,7 @@ function updateMetadata() {
 
 			tiles.forEachLoadedModel( scene => scene.traverse( child => {
 
-				if ( child.material ) {
+				if ( child.material && child.material.isMeshFeaturesMaterial ) {
 
 					child.material.disableFeatureDisplay();
 
@@ -237,6 +273,10 @@ function animate() {
 
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.update();
+
+	const sphere = new Sphere();
+	tiles.getBoundingSphere( sphere );
+	tiles.group.position.copy( sphere.center ).multiplyScalar( - 1 );
 
 	renderer.render( scene, camera );
 

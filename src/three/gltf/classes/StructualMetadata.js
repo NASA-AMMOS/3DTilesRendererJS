@@ -19,8 +19,24 @@ export class StructuralMetadata {
 		// TODO: filter the attribute + texture accessors here?
 		const { enums, classes } = schema;
 		const tableAccessors = propertyTables.map( t => new PropertyTableAccessor( t, classes, enums, buffers ) );
-		const textureAccessors = propertyTextures.map( t => new PropertyTextureAccessor( t, classes, enums, textures ) );
-		const attributeAccessors = propertyAttributes.map( t => new PropertyAttributeAccessor( t, classes, enums ) );
+		let textureAccessors = [];
+		let attributeAccessors = [];
+
+		if ( nodeMetadata ) {
+
+			if ( nodeMetadata.propertyTextures ) {
+
+				textureAccessors = nodeMetadata.propertyTextures.map( i => new PropertyTextureAccessor( propertyTextures[ i ], classes, enums, textures ) );
+
+			}
+
+			if ( nodeMetadata.propertyAttributes ) {
+
+				attributeAccessors = nodeMetadata.propertyAttributes.map( i => new PropertyAttributeAccessor( propertyAttributes[ i ], classes, enums ) );
+
+			}
+
+		}
 
 		this.schema = schema;
 		this.tableAccessors = tableAccessors;
@@ -37,6 +53,7 @@ export class StructuralMetadata {
 
 	}
 
+	// TODO: name is not guaranteed
 	getPropertyTableData( tableIndices, ids, target = {} ) {
 
 		const l = Math.min( tableIndices.length, ids.length );
@@ -59,7 +76,17 @@ export class StructuralMetadata {
 
 	}
 
-	getPropertyAttributeData( attributeIndex ) {
+	getPropertyAttributeData( attributeIndex, target = {} ) {
+
+		const attributeAccessors = this.attributeAccessors;
+		for ( let i = 0; i < attributeAccessors.length; i ++ ) {
+
+			const accessor = attributeAccessors[ i ];
+			target[ accessor.name ] = accessor.getData( attributeIndex, this.object.geometry, target[ accessor.name ] );
+
+		}
+
+		return target;
 
 	}
 

@@ -68,6 +68,8 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		this.isMeshFeaturesMaterial = true;
 		this.uniforms = {
 
 			featureChannelsLength: { value: 0 },
