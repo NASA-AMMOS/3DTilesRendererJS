@@ -17,7 +17,8 @@ import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SimplePropertyTexture/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
-const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SharedPropertyTable/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SharedPropertyTable/tileset.json';
+const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/MultipleFeatureIdsAndProperties/tileset.json';
 
 let camera, controls, scene, renderer;
 let dirLight, tiles;
@@ -111,26 +112,30 @@ function onWindowResize() {
 
 }
 
-function appendStructuralMetadata( structuralMetadata, triangle, barycoord, index, tableIndices = null, features = null ) {
+function appendStructuralMetadata( structuralMetadata, triangle, barycoord, index = null, tableIndices = null, features = null ) {
 
-	structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n\n';
+	structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n';
 
 	if ( tableIndices !== null ) {
 
 		const data = structuralMetadata.getPropertyTableData( tableIndices, features );
-		appendRows( data );
+		appendRows( data, structuralMetadata.getPropertyTableInfo( tableIndices ) );
 
 	}
 
-	appendRows( structuralMetadata.getPropertyAttributeData( index ) );
+	if ( index !== null ) {
 
-	function appendRows( data ) {
+		appendRows( structuralMetadata.getPropertyAttributeData( index ), structuralMetadata.getPropertyAttributeInfo() );
 
-		for ( const sectionName in data ) {
+	}
 
-			structuralMetadataEl.innerText += `${ sectionName }\n`;
+	function appendRows( data, info ) {
 
-			const properties = data[ sectionName ];
+		for ( const i in data ) {
+
+			structuralMetadataEl.innerText += `\n${ info[ i ].name || info[ i ].className }\n`;
+
+			const properties = data[ i ];
 			for ( const propertyName in properties ) {
 
 				let field = properties[ propertyName ];
@@ -142,8 +147,13 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 				if ( field && field.join ) {
 
-
 					field = field.join( ', ' );
+
+				}
+
+				if ( typeof field === 'number' ) {
+
+					field = field.toFixed( 3 );
 
 				}
 

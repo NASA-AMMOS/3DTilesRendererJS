@@ -63,7 +63,10 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		let indexOffset = id;
 		if ( 'arrayOffsets' in property ) {
 
-			const { arrayOffsets, arrayOffsetType } = property;
+			const {
+				arrayOffsets,
+				arrayOffsetType = 'UINT32',
+			} = property;
 			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
 			indexOffset = arr[ indexOffset ];
 
@@ -162,18 +165,18 @@ export class PropertyTableAccessor extends PropertyAccessor {
 			let stringLength = 0;
 			if ( 'stringOffsets' in property ) {
 
-				const { stringOffsets, stringOffsetType } = property;
+				const {
+					stringOffsets,
+					stringOffsetType = 'UINT32',
+				} = property;
 				const arr = new ( getArrayConstructorFromType( stringOffsetType ) )( this.data[ stringOffsets ] );
 				stringLength = arr[ indexOffset + 1 ] - arr[ indexOffset ];
 				indexOffset = arr[ indexOffset ];
 
 			}
 
-			for ( let i = 0; i < stringLength; i ++ ) {
-
-				target += String.fromCharCode( dataArray[ i ] );
-
-			}
+			const byteArray = new Uint8Array( dataArray.buffer, indexOffset, stringLength );
+			target = new TextDecoder().decode( byteArray );
 
 		}
 

@@ -47,20 +47,22 @@ export class StructuralMetadata {
 
 	}
 
+	// Property Tables
 	getPropertyTable( tableIndex ) {
 
 		return this.tableAccessors[ tableIndex ];
 
 	}
 
-	// TODO: name is not guaranteed
-	getPropertyTableData( tableIndices, ids, target = {} ) {
+	getPropertyTableData( tableIndices, ids, target = [] ) {
 
-		const l = Math.min( tableIndices.length, ids.length );
-		for ( let i = 0; i < l; i ++ ) {
+		const length = Math.min( tableIndices.length, ids.length );
+		target.length = length;
+
+		for ( let i = 0; i < length; i ++ ) {
 
 			const table = this.getPropertyTable( tableIndices[ i ] );
-			target[ table.name ] = table.getData( ids[ i ], target[ table.name ] );
+			target[ i ] = table.getData( ids[ i ], target[ i ] );
 
 		}
 
@@ -68,6 +70,21 @@ export class StructuralMetadata {
 
 	}
 
+	getPropertyTableInfo( tableIndices ) {
+
+		return tableIndices.map( i => {
+
+			const table = this.getPropertyTable( i );
+			return {
+				name: table.name,
+				className: table.definition.class,
+			};
+
+		} );
+
+	}
+
+	// Property Textures
 	getPropertyTextureData( triangle, barycoord, target = {} ) {
 
 	}
@@ -76,17 +93,33 @@ export class StructuralMetadata {
 
 	}
 
-	getPropertyAttributeData( attributeIndex, target = {} ) {
+	// Property Attributes
+	getPropertyAttributeData( attributeIndex, target = [] ) {
 
 		const attributeAccessors = this.attributeAccessors;
+		target.length = attributeAccessors.length;
+
 		for ( let i = 0; i < attributeAccessors.length; i ++ ) {
 
 			const accessor = attributeAccessors[ i ];
-			target[ accessor.name ] = accessor.getData( attributeIndex, this.object.geometry, target[ accessor.name ] );
+			target[ i ] = accessor.getData( attributeIndex, this.object.geometry, target[ i ] );
 
 		}
 
 		return target;
+
+	}
+
+	getPropertyAttributeInfo() {
+
+		return this.attributeAccessors.map( acc => {
+
+			return {
+				name: acc.name,
+				className: acc.definition.class,
+			};
+
+		} );
 
 	}
 

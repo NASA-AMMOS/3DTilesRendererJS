@@ -132,6 +132,8 @@ export function getArrayConstructorFromType( type ) {
 		case 'FLOAT32': return Float32Array;
 		case 'FLOAT65': return Float64Array;
 
+		case 'STRING': return Uint8Array;
+
 	}
 
 }
@@ -231,14 +233,24 @@ export class PropertyAccessor {
 	_getPropertyValueType( name ) {
 
 		const classProperty = this.class.properties[ name ];
-		const valueType = classProperty.type === 'ENUM' ? this.enums[ classProperty.enumType ].valueType : classProperty.componentType;
-		return valueType;
+		switch ( classProperty.type ) {
 
+			case 'ENUM':
+				return this.enums.values[ classProperty.enumType ].valueType;
+
+			case 'STRING':
+				return 'STRING';
+
+			default:
+				return classProperty.componentType;
+
+		}
 
 	}
+
 	_enumTypeToNumericType( enumType ) {
 
-		return this.enums[ enumType ].valueType;
+		return this.enums.values[ enumType ].valueType;
 
 	}
 
