@@ -40,6 +40,12 @@ export class StructuralMetadata {
 
 	}
 
+	getPropertyTableAtIndex( index ) {
+
+		return this.tableAccessors[ index ];
+
+	}
+
 }
 
 export class NodeStructuralMetaData {
@@ -56,7 +62,32 @@ export class NodeStructuralMetaData {
 	// TODO: how should these functions be exposed?
 	// TODO: rename the functions
 	/*
-	getAccessorValues( id, triangle, barycoord, target = null ) {
+	getData( id, triangle, barycoord, target = null ) {
+
+		target = target || {};
+
+		const accessors = this.accessors;
+		for ( const key in accessors ) {
+
+			target[ key ] = target[ key ] || {};
+
+			const accessor = accessors[ key ];
+			accessor.class.properties.forEach( prop => {
+
+				if ( accessor.isPropertyTextureAccessor ) {
+
+					target[ key ][ prop.name ] = this.getPropertyValue( key, prop.name, id, target[ key ][ prop.name ] );
+
+				} else {
+
+					target[ key ][ prop.name ] = this.getPropertyValueAtTexel( key, prop.name, triangle, barycoord, target[ key ][ prop.name ] );
+
+				}
+
+
+			} );
+
+		}
 
 	}
 	*/
@@ -64,11 +95,61 @@ export class NodeStructuralMetaData {
 	// TODO: functions for accessing full class data
 	// TODO: use the node metadata object
 
+	getAccessor( name ) {
+
+		const nodeMetadata = this.nodeMetadata;
+		const accessor = this.rootMetadata.getAccessor( name );
+		if ( nodeMetadata ) {
+
+			if ( accessor.isPropertyTextureAccessor ) {
+
+				const index = this.propertyTextures.indexOf( accessor );
+				if ( ! nodeMetadata.propertyTextures || ! nodeMetadata.propertyTextures.includes( index ) ) {
+
+					throw new Error();
+
+				}
+
+			} else if ( accessor.isPropertyAttributeAccessor ) {
+
+				const index = this.propertyAttributes.indexOf( accessor );
+				if ( ! nodeMetadata.propertyAttributes || ! nodeMetadata.propertyAttributes.includes( index ) ) {
+
+					throw new Error();
+
+				}
+
+			} else {
+
+				throw new Error();
+
+			}
+
+		}
+
+		return accessor;
+
+	}
+
+	getPropertyTableAtIndex( index ) {
+
+		const nodeMetadata = this.nodeMetadata;
+		if ( nodeMetadata ) {
+
+			index = nodeMetadata.propertyTables[ index ];
+
+		}
+
+		const accessor = this.rootMetadata.getPropertyTableAtIndex( index );
+		return this.getAccessor( accessor.name );
+
+	}
+
 	// direct accessors
 	getPropertyValueAtIndex( accessorName, propertyName, id, arrayIndex, target = null ) {
 
-		const accessor = this.rootMetadata.getAccessor( accessorName );
-		if ( accessor.isPropertyAttributeTexture ) {
+		const accessor = this.getAccessor( accessorName );
+		if ( accessor.isPropertyTextureAccessor ) {
 
 			return accessor.getPropertyValue( propertyName, id, arrayIndex, this.object.geometry, target );
 
@@ -82,8 +163,8 @@ export class NodeStructuralMetaData {
 
 	getPropertyValue( accessorName, propertyName, id, target = null ) {
 
-		const accessor = this.rootMetadata.getAccessor( accessorName );
-		if ( accessor.isPropertyAttributeTexture ) {
+		const accessor = this.getAccessor( accessorName );
+		if ( accessor.isPropertyTextureAccessor ) {
 
 			return accessor.getPropertyValue( propertyName, id, this.object.geometry, target );
 
@@ -97,7 +178,7 @@ export class NodeStructuralMetaData {
 
 	getPropertyValuesAtTexel( accessorName, propertyName, triangle, barycoord, target = null ) {
 
-		this.rootMetadata.getAccessor( accessorName ).getPropertyValuesAtTexel( propertyName, triangle, barycoord, target );
+		this.getAccessor( accessorName ).getPropertyValuesAtTexel( propertyName, triangle, barycoord, target );
 
 	}
 
@@ -109,7 +190,7 @@ export class NodeStructuralMetaData {
 
 	getPropertyValuesAtTexelAsync( accessorName, propertyName, triangle, barycoord, target = null ) {
 
-		this.rootMetadata.getAccessor( accessorName ).getPropertyValuesAtTexelAsync( propertyName, triangle, barycoord, target );
+		this.getAccessor( accessorName ).getPropertyValuesAtTexelAsync( propertyName, triangle, barycoord, target );
 
 	}
 

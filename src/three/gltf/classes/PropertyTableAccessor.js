@@ -1,4 +1,4 @@
-import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getField, getMaxValue, getTypeInstance, isFloatType, isMatrixType, isNoDataEqual, isNumericType, isVectorType, resolveDefault } from './PropertyAccesssor.js';
+import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getField, getMaxValue, getTypeInstance, isFloatType, isMatrixType, isNoDataEqual, isNumericType, isVectorType, resolveDefault } from './PropertyAccessor.js';
 
 export class PropertyTableAccessor extends PropertyAccessor {
 
@@ -6,8 +6,21 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		super( ...args );
 
-		this.isPropertyTable = true;
+		this.isPropertyTableAccessor = true;
 		this.count = this.definition.count;
+
+	}
+
+	getData( id, target = {} ) {
+
+		const properties = this.class.properties;
+		for ( const name in properties ) {
+
+			target[ name ] = this.getPropertyValue( name, id, target[ name ] );
+
+		}
+
+		return target;
 
 	}
 
@@ -177,12 +190,24 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 	getPropertyValue( name, id, target = null ) {
 
+		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
 		const type = classProperty.type;
-		const array = getField( classProperty, 'array', false );
-		const count = getField( classProperty, 'count', null );
 
-		// TODO: what do we do if the array count isn't defined
+		// TODO: is this correct?
+		// get the dynamic array count from the property buffer
+		let count = null;
+		if ( 'arrayOffsets' in property ) {
+
+			const { arrayOffsets, arrayOffsetType } = property;
+			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
+			count = arr[ id + 1 ] - arr[ id ];
+
+		}
+
+		const array = getField( classProperty, 'array', false );
+		count = getField( classProperty, 'count', count );
+
 		// TODO: need to determine string length from arrayOffsets / stringOffsets
 		// TODO: it's inefficient to handle arrays this way because recreate the needed buffers every time
 		if ( array && count !== null ) {

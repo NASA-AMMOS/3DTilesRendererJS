@@ -1,5 +1,5 @@
 import { Vector2 } from 'three';
-import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getTypeInstance, isNoDataEqual, resolveDefault } from './PropertyAccesssor.js';
+import { PropertyAccessor, getArrayConstructorFromType, getDataValue, getTypeInstance, isNoDataEqual, resolveDefault } from './PropertyAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 
@@ -13,7 +13,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 		super( definition, data, classes, enums );
 
-		this.isPropertyTexture = true;
+		this.isPropertyTextureAccessor = true;
 		this.geometry = geometry;
 
 	}

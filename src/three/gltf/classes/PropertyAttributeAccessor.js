@@ -1,12 +1,13 @@
-import { PropertyAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertyAccesssor.js';
+import { PropertyAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertyAccessor.js';
 
+// TODO: is this only for points?
 export class PropertyAttributeAccessor extends PropertyAccessor {
 
 	constructor( ...args ) {
 
 		super( ...args );
 
-		this.isPropertyAttribute = true;
+		this.isPropertyAttributeAccessor = true;
 
 	}
 

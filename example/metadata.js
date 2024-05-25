@@ -117,40 +117,67 @@ function updateMetadata() {
 		triangle.c.applyMatrix4( object.matrixWorld );
 		triangle.getBarycoord( point, barycoord );
 
-
 		const { meshFeatures, structuralMetadata } = hit.object.userData;
-		meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
-			.then( features => {
+		if ( meshFeatures ) {
 
-				if ( object.material === hoveredMaterial ) {
+			meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
+				.then( features => {
 
-					tiles.forEachLoadedModel( scene => scene.traverse( child => {
+					if ( object.material === hoveredMaterial ) {
 
-						// TODO: must find way to ensure the id is referencing the same "type" of feature - either
-						// from feature table or mesh features label
-						if ( child.material ) {
+						tiles.forEachLoadedModel( scene => scene.traverse( child => {
 
-							child.material.setFromMeshFeatures( meshFeatures, 0 );
-							child.material.highlightFeatureId = features[ 0 ];
+							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
+							// from feature table or mesh features label
+							if ( child.material ) {
+
+								child.material.setFromMeshFeatures( meshFeatures, 0 );
+								child.material.highlightFeatureId = features[ 0 ];
+
+							}
+
+						} ) );
+
+						metadataEl.innerText = 'EXT_MESH_FEATURES\n';
+						metadataEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
+						metadataEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
+
+						if ( structuralMetadata ) {
+
+							const info = meshFeatures.getFeatureInfo()[ 0 ];
+							const propertyTable = structuralMetadata.getPropertyTableAtIndex( info.propertyTable );
+
+							const data = propertyTable.getData( features[ 0 ] );
+							metadataEl.innerText += '\n';
+							metadataEl.innerText += 'STRUCTURAL_METADATA\n';
+
+							for ( const key in data ) {
+
+								let field = data[ key ];
+								if ( field.toArray ) {
+
+									field = field.toArray().map( n => n.toFixed( 3 ) );
+
+								}
+
+								if ( field.join ) {
+
+
+									field = field.join( ', ' );
+
+								}
+
+								metadataEl.innerText += `${ key.padEnd( 20 ) } : ${ field }`;
+
+							}
 
 						}
 
-					} ) );
+					}
 
-					metadataEl.innerText = `feature        : ${ features.join( ', ' ) }`;
-					metadataEl.innerText += `\ntexture memory : ${ renderer.info.memory.textures }`;
+				} );
 
-					const info = meshFeatures.getFeatureInfo()[ 0 ];
-					const propertyTable = structuralMetadata.tableAccessors[ info.propertyTable ];
-					propertyTable.getPropertyValue( 'example_VEC3_FLOAT32', features[ 0 ] );
-					// console.log( features[ 0 ] )
-
-
-
-				}
-
-			} );
-
+		}
 
 		if ( hoveredMaterial && hoveredMaterial !== object.material ) {
 
@@ -178,8 +205,9 @@ function updateMetadata() {
 		}
 
 		hoveredMaterial = null;
-		metadataEl.innerText = 'feature        : null';
-		metadataEl.innerText += `\ntexture memory : ${ renderer.info.memory.textures }`;
+		metadataEl.innerText = 'EXT_MESH_FEATURES\n';
+		metadataEl.innerText += 'feature        : null\n';
+		metadataEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
 
 	}
 
