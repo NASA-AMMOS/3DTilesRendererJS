@@ -142,6 +142,7 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 	function appendRows( data, info ) {
 
+		const maxPropertyName = Math.max( ...Object.values( data ).flatMap( v => Object.keys( v ) ).map( n => n.length ) );
 		for ( const i in data ) {
 
 			structuralMetadataEl.innerText += `\n${ info[ i ].name || info[ i ].className }\n`;
@@ -152,13 +153,15 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 				let field = properties[ propertyName ];
 				if ( field && field.toArray ) {
 
-					field = field.toArray().map( n => parseFloat( n.toFixed( 3 ) ) );
+					field = field.toArray();
 
 				}
 
 				if ( field && field.join ) {
 
-					field = field.join( ', ' );
+					field = '\n' + field
+						.map( n => n.toFixed ? parseFloat( n.toFixed( 3 ) ) : n )
+						.map( ( v, i ) => `    [${ i }] ${ v }` ).join( '\n' );
 
 				}
 
@@ -168,7 +171,7 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 				}
 
-				structuralMetadataEl.innerText += `  ${ propertyName.padEnd( 20 ) } : ${ field }\n`;
+				structuralMetadataEl.innerText += `  ${ propertyName.padEnd( maxPropertyName + 1 ) } : ${ field }\n`;
 
 			}
 
