@@ -8,30 +8,47 @@ import {
 	Raycaster,
 	Triangle,
 	Vector3,
+	Sphere,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TilesRenderer } from '..';
+import { TilesRenderer, EnvironmentControls } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 
+// FEATURE_IDs
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
-const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdTexture/tileset.json';
+
+// STRUCTURAL_METADATA
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SimplePropertyTexture/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/SharedPropertyTable/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/MultipleFeatureIdsAndProperties/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/MultipleClasses/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdAttributeAndPropertyTable/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdTextureAndPropertyTable/tileset.json';
+
+// TODO
+const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
 
 let camera, controls, scene, renderer;
 let dirLight, tiles;
-let metadataEl;
+let meshFeaturesEl, structuralMetadataEl;
 
 let hoveredMaterial = null;
 const barycoord = new Vector3();
 const triangle = new Triangle();
-const pointer = new Vector2();
+const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
+raycaster.firstHitOnly = true;
+raycaster.params.Points.threshold = 0.05;
 
 init();
 animate();
 
 function init() {
 
-	metadataEl = document.getElementById( 'metadata' );
+	meshFeaturesEl = document.getElementById( 'meshFeatures' );
+
+	structuralMetadataEl = document.getElementById( 'structuralMetadata' );
 
 	scene = new Scene();
 
@@ -45,12 +62,15 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 400 );
 	camera.position.set( 4, 4, 4 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new OrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
-	controls.minDistance = 1;
-	controls.maxDistance = 2000;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.minDistance = 0.1;
+	controls.cameraRadius = 0.1;
+	controls.minAltitude = 0;
+	controls.maxAltitude = Math.PI;
+	controls.adjustHeight = false;
 
 	// lights
 	dirLight = new DirectionalLight( 0xffffff, 1.25 );
@@ -101,44 +121,133 @@ function onWindowResize() {
 
 }
 
-function animate() {
+function appendStructuralMetadata( structuralMetadata, triangle, barycoord, index = null, tableIndices = null, features = null ) {
 
-	requestAnimationFrame( animate );
+	structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n';
 
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.update();
+	if ( tableIndices !== null ) {
+
+		const data = structuralMetadata.getPropertyTableData( tableIndices, features );
+		appendRows( data, structuralMetadata.getPropertyTableInfo( tableIndices ) );
+
+	}
+
+	if ( index !== null ) {
+
+		appendRows( structuralMetadata.getPropertyAttributeData( index ), structuralMetadata.getPropertyAttributeInfo() );
+
+	}
+
+	appendRows( structuralMetadata.getPropertyTextureData( triangle, barycoord ), structuralMetadata.getPropertyTextureInfo() );
+
+	function appendRows( data, info ) {
+
+		for ( const i in data ) {
+
+			structuralMetadataEl.innerText += `\n${ info[ i ].name || info[ i ].className }\n`;
+
+			const properties = data[ i ];
+			for ( const propertyName in properties ) {
+
+				let field = properties[ propertyName ];
+				if ( field && field.toArray ) {
+
+					field = field.toArray().map( n => parseFloat( n.toFixed( 3 ) ) );
+
+				}
+
+				if ( field && field.join ) {
+
+					field = field.join( ', ' );
+
+				}
+
+				if ( typeof field === 'number' ) {
+
+					field = parseFloat( field.toFixed( 3 ) );
+
+				}
+
+				structuralMetadataEl.innerText += `  ${ propertyName.padEnd( 20 ) } : ${ field }\n`;
+
+			}
+
+		}
+
+	}
+
+}
+
+function updateMetadata() {
 
 	raycaster.setFromCamera( pointer, camera );
 
 	const hit = raycaster.intersectObject( scene )[ 0 ];
-	if ( hit && hit.object.userData.meshFeatures ) {
+	if ( hit ) {
 
-		const { object, face, point } = hit;
-		triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
-		triangle.a.applyMatrix4( object.matrixWorld );
-		triangle.b.applyMatrix4( object.matrixWorld );
-		triangle.c.applyMatrix4( object.matrixWorld );
-		triangle.getBarycoord( point, barycoord );
+		const { object, face, point, index } = hit;
+		if ( face ) {
 
-		const meshFeatures = hit.object.userData.meshFeatures;
-		const featureInfo = meshFeatures.getFeatureInfo();
+			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
+			triangle.a.applyMatrix4( object.matrixWorld );
+			triangle.b.applyMatrix4( object.matrixWorld );
+			triangle.c.applyMatrix4( object.matrixWorld );
+			triangle.getBarycoord( point, barycoord );
 
-		meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
-			.then( features => {
+		} else {
 
-				if ( object.material === hoveredMaterial ) {
+			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, index, index, index );
+			triangle.a.applyMatrix4( object.matrixWorld );
+			triangle.b.applyMatrix4( object.matrixWorld );
+			triangle.c.applyMatrix4( object.matrixWorld );
+			barycoord.set( 0, 0, 0 );
 
-					object.material.setFromFeatureInfo( featureInfo[ 0 ], meshFeatures.textures );
-					object.material.highlightFeatureId = features[ 0 ];
-					metadataEl.innerText = `feature : ${ features[ 0 ] }`;
-					metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
+		}
 
-				}
+		const { meshFeatures, structuralMetadata } = hit.object.userData;
+		if ( meshFeatures ) {
 
-			} );
+			meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
+				.then( features => {
 
+					if ( object.material === hoveredMaterial ) {
 
-		if ( hoveredMaterial && hoveredMaterial !== object.material ) {
+						tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
+							// from feature table or mesh features label. Perhaps table name?
+							if ( child.material && child.material.isMeshFeaturesMaterial ) {
+
+								child.material.setFromMeshFeatures( meshFeatures, 0 );
+								child.material.highlightFeatureId = features[ 0 ];
+
+							}
+
+						} ) );
+
+						meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
+						meshFeaturesEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
+						meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
+
+						if ( structuralMetadata ) {
+
+							const info = meshFeatures.getFeatureInfo();
+							const tableIndices = info.map( p => p.propertyTable );
+							appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index, tableIndices, features );
+
+						}
+
+					}
+
+				} );
+
+		} else if ( structuralMetadata ) {
+
+			appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index );
+
+		}
+
+		if ( hoveredMaterial && hoveredMaterial !== object.material && hoveredMaterial.isMeshFeaturesMaterial ) {
 
 			hoveredMaterial.disableFeatureDisplay();
 
@@ -150,15 +259,45 @@ function animate() {
 
 		if ( hoveredMaterial ) {
 
-			hoveredMaterial.disableFeatureDisplay();
+
+			tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+				if ( child.material && child.material.isMeshFeaturesMaterial ) {
+
+					child.material.disableFeatureDisplay();
+
+				}
+
+			} ) );
 
 		}
 
 		hoveredMaterial = null;
-		metadataEl.innerText = 'feature : null';
-		metadataEl.innerText += `\ntextures: ${ renderer.info.memory.textures }`;
+		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
+		meshFeaturesEl.innerText += 'feature        : -\n';
+		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
+
+		structuralMetadataEl.innerText = '';
 
 	}
+
+}
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+	controls.update();
+	camera.updateMatrixWorld();
+
+	updateMetadata();
+
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.update();
+
+	const sphere = new Sphere();
+	tiles.getBoundingSphere( sphere );
+	tiles.group.position.copy( sphere.center ).multiplyScalar( - 1 );
 
 	renderer.render( scene, camera );
 

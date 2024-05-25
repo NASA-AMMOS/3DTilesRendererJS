@@ -68,6 +68,8 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		this.isMeshFeaturesMaterial = true;
 		this.uniforms = {
 
 			featureChannelsLength: { value: 0 },
@@ -162,7 +164,18 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	}
 
-	setFromFeatureInfo( info, textureList = null ) {
+	setFromMeshFeatures( meshFeatures, featureIdOrName ) {
+
+		let info = null;
+		if ( typeof featureIdOrName === 'number' ) {
+
+			info = meshFeatures.getFeatureInfo()[ featureIdOrName ] || null;
+
+		} else if ( typeof featureIdOrName === 'string' ) {
+
+			info = meshFeatures.getFeatureInfo().find( el => el.label === featureIdOrName ) || null;
+
+		}
 
 		if ( info === null ) {
 
@@ -171,15 +184,15 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 		} else if ( 'attribute' in info ) {
 
-			this.setAttributeFeature( info.attribute );
+			this._setAttributeFeature( info.attribute );
 
 		} else if ( 'texture' in info ) {
 
-			this.setTextureFeature( textureList[ info.texture.index ], info.texture.texCoord, info.texture.channels );
+			this._setTextureFeature( meshFeatures.textures[ info.texture.index ], info.texture.texCoord, info.texture.channels );
 
 		} else {
 
-			this.setAttributeFeature( null );
+			this._setAttributeFeature( null );
 
 		}
 
@@ -193,11 +206,12 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	disableFeatureDisplay() {
 
-		this.setFromFeatureInfo( null );
+		this.setDefine( 'FEATURE_TYPE', 0 );
+		this.featureTexture = null;
 
 	}
 
-	setTextureFeature( texture, uv, channels ) {
+	_setTextureFeature( texture, uv, channels ) {
 
 		const uniforms = this.uniforms;
 
@@ -226,7 +240,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	}
 
-	setAttributeFeature( attribute = null ) {
+	_setAttributeFeature( attribute = null ) {
 
 		if ( attribute === null ) {
 
@@ -415,7 +429,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 							if ( nullFeatureId == featureId ) {
 
-								diffuseColor.rgb *= 0.0;
+								diffuseColor.rgb *= vec3( 0.15 );
 
 							}
 
@@ -425,7 +439,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 							if ( highlightFeatureId != featureId ) {
 
-								diffuseColor.rgb *= 0.0;
+								diffuseColor.rgb *= 0.35;
 
 							}
 

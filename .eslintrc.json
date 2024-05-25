@@ -4,7 +4,12 @@
         "ecmaVersion": 2020
 	},
 
-	"extends": ["plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js"],
+	"globals": {
+		"BigInt64Array": "readonly",
+		"BigUInt64Array": "readonly"
+	},
+
+	"extends": [ "plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
 	"plugins": [ "jest" ],
 
 	"rules": {

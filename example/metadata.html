@@ -23,22 +23,41 @@
                 outline: none;
             }
 
-			#metadata {
-
+			#container {
 				position: absolute;
 				left: 0;
 				top: 0;
 				pointer-events: none;
 				color: white;
-				margin: 10px;
 				font-family: monospace;
 				opacity: 0.5;
+				font-size: 12px;
+			}
+
+			#meshFeatures, #structuralMetadata {
+
+				display: inline-block;
+				background-color: rgba( 0, 0, 0, 0.25 );
+				border-radius: 2px;
+				white-space: pre;
+				margin: 5px;
+				padding: 5px;
 
 			}
+
+			#meshFeatures:empty, #structuralMetadata:empty {
+
+				display: none;
+
+			}
+
         </style>
     </head>
     <body>
-		<div id="metadata"></div>
+		<div id="container">
+			<div><div id="meshFeatures"></div></div>
+			<div><div id="structuralMetadata"></div></div>
+		</div>
         <script src="./metadata.js"></script>
     </body>
 </html>
