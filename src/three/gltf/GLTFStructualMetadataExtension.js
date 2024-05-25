@@ -125,7 +125,7 @@ export class GLTFStructuralMetadataExtension {
 				if ( primitive && primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
 
 					const extension = primitive.extensions[ EXT_NAME ];
-					child.userData.structuralMetadata = new NodeStructuralMetaData( rootMetadata, extension, child );
+					child.userData.structuralMetadata = new StructuralMetadata( rootExtension, textures, buffers, extension, child );
 
 				} else {
 

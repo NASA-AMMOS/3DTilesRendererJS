@@ -133,7 +133,7 @@ function updateMetadata() {
 						tiles.forEachLoadedModel( scene => scene.traverse( child => {
 
 							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
-							// from feature table or mesh features label
+							// from feature table or mesh features label. Perhaps table name?
 							if ( child.material ) {
 
 								child.material.setFromMeshFeatures( meshFeatures, 0 );
@@ -149,30 +149,36 @@ function updateMetadata() {
 
 						if ( structuralMetadata ) {
 
-							const info = meshFeatures.getFeatureInfo()[ 0 ];
-							const propertyTable = structuralMetadata.getPropertyTableAtIndex( info.propertyTable );
-
-							const data = propertyTable.getData( features[ 0 ] );
 							structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n\n';
-							structuralMetadataEl.innerText += `${ propertyTable.name }\n`;
 
-							for ( const key in data ) {
+							const info = meshFeatures.getFeatureInfo();
+							const tableIndices = info.map( p => p.propertyTable );
+							const data = structuralMetadata.getPropertyTableData( tableIndices, features );
 
-								let field = data[ key ];
-								if ( field.toArray ) {
+							for ( const tableName in data ) {
 
-									field = field.toArray().map( n => n.toFixed( 3 ) );
+								structuralMetadataEl.innerText += `${ tableName }\n`;
+
+								const properties = data[ tableName ];
+								for ( const propertyName in properties ) {
+
+									let field = properties[ propertyName ];
+									if ( field.toArray ) {
+
+										field = field.toArray().map( n => n.toFixed( 3 ) );
+
+									}
+
+									if ( field.join ) {
+
+
+										field = field.join( ', ' );
+
+									}
+
+									structuralMetadataEl.innerText += `  ${ propertyName.padEnd( 20 ) } : ${ field }`;
 
 								}
-
-								if ( field.join ) {
-
-
-									field = field.join( ', ' );
-
-								}
-
-								structuralMetadataEl.innerText += `  ${ key.padEnd( 20 ) } : ${ field }`;
 
 							}
 
