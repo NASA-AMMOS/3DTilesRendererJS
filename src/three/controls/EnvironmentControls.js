@@ -219,7 +219,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// prevent the drag distance from getting too severe by limiting the drag point
 			// to a reasonable angle and reasonable distance with the drag plane
-			const dot = - raycaster.ray.direction.dot( up );
+			const dot = Math.abs( raycaster.ray.direction.dot( up ) );
 			if ( dot < DRAG_PLANE_THRESHOLD || dot < DRAG_UP_THRESHOLD ) {
 
 				return;
@@ -248,16 +248,12 @@ export class EnvironmentControls extends EventDispatcher {
 				} else if ( pointerTracker.isLeftClicked() ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
-					if ( raycaster.ray.direction.dot( up ) < 0 ) {
+					this.setState( DRAG );
+					this.pivotPoint.copy( hit.point );
 
-						this.setState( DRAG );
-						this.pivotPoint.copy( hit.point );
-
-						this.pivotMesh.position.copy( hit.point );
-						this.pivotMesh.updateMatrixWorld();
-						this.scene.add( this.pivotMesh );
-
-					}
+					this.pivotMesh.position.copy( hit.point );
+					this.pivotMesh.updateMatrixWorld();
+					this.scene.add( this.pivotMesh );
 
 				}
 
@@ -774,7 +770,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// prevent the drag distance from getting too severe by limiting the drag point
 		// to a reasonable angle with the drag plane
-		if ( - raycaster.ray.direction.dot( up ) < DRAG_PLANE_THRESHOLD ) {
+		if ( Math.abs( raycaster.ray.direction.dot( up ) ) < DRAG_PLANE_THRESHOLD ) {
 
 			// rotate the pointer direction down to the correct angle for horizontal dragging
 			const angle = Math.acos( DRAG_PLANE_THRESHOLD );
@@ -797,7 +793,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// if we drag to a point that's near the edge of the earth then we want to prevent it
 		// from wrapping around and causing unexpected rotations
 		this.getUpDirection( pivotPoint, _localUp );
-		if ( - raycaster.ray.direction.dot( _localUp ) < DRAG_UP_THRESHOLD ) {
+		if ( Math.abs( raycaster.ray.direction.dot( _localUp ) ) < DRAG_UP_THRESHOLD ) {
 
 			const angle = Math.acos( DRAG_UP_THRESHOLD );
 
