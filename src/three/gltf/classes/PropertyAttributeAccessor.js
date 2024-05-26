@@ -23,6 +23,17 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		}
 
+		// remove unused fields
+		for ( const key in target ) {
+
+			if ( ! ( key in properties ) ) {
+
+				delete target[ key ];
+
+			}
+
+		}
+
 		return target;
 
 	}

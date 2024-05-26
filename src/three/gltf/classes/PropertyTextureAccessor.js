@@ -36,6 +36,17 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 		names.forEach( ( n, i ) => target[ n ] = results[ i ] );
 
+		// remove unused fields
+		for ( const key in target ) {
+
+			if ( ! ( key in properties ) ) {
+
+				delete target[ key ];
+
+			}
+
+		}
+
 		return target;
 
 	}
