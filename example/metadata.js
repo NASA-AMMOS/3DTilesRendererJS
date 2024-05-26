@@ -160,14 +160,14 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 				if ( field && field.join ) {
 
 					field = '\n' + field
-						.map( n => n.toFixed ? parseFloat( n.toFixed( 3 ) ) : n )
+						.map( n => n.toFixed ? parseFloat( n.toFixed( 6 ) ) : n )
 						.map( ( v, i ) => `    [${ i }] ${ v }` ).join( '\n' );
 
 				}
 
 				if ( typeof field === 'number' ) {
 
-					field = parseFloat( field.toFixed( 3 ) );
+					field = parseFloat( field.toFixed( 6 ) );
 
 				}
 

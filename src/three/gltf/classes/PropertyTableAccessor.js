@@ -44,7 +44,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
-		const valueType = this._getPropertyValueType( name );
+		const valueType = this._getPropertyComponentType( name );
 		const type = classProperty.type;
 		if ( ! property ) {
 

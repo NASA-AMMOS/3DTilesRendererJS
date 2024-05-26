@@ -7,8 +7,6 @@ import {
 } from 'three';
 import { Matrix2 } from './Matrix2.js';
 
-// TODO: make sure we name things correctly - ie "componentType" and "type"
-
 // returns the field in the object with a resolved default
 export function getField( object, key, def ) {
 
@@ -214,7 +212,7 @@ export function resolveDefault( value, type, target = null ) {
 }
 
 // scales the value based on property settings
-export function adjustValue( value, type, valueType, valueScale, valueOffset, normalized ) {
+export function adjustValue( value, type, componentType, valueScale, valueOffset, normalized ) {
 
 	if ( isMatrixType( type ) ) {
 
@@ -277,11 +275,11 @@ export function adjustValue( value, type, valueType, valueScale, valueOffset, no
 
 		if ( normalized ) {
 
-			value = value / getMaxValue( valueType );
+			value = value / getMaxValue( componentType );
 
 		}
 
-		if ( normalized || isFloatType( type ) ) {
+		if ( normalized || isFloatType( componentType ) ) {
 
 			// TODO: what order are these operations supposed to be performed in?
 			value = value * valueScale + valueOffset;
@@ -312,7 +310,7 @@ export class PropertyAccessor {
 
 	}
 
-	_getPropertyValueType( name ) {
+	_getPropertyComponentType( name ) {
 
 		const classProperty = this.class.properties[ name ];
 

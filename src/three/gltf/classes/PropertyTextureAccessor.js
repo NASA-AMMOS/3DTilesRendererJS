@@ -130,7 +130,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 				const { channels } = property;
 				const data = channels.map( c => buffer[ 4 * i + c ] );
 
-				const valueType = this._getPropertyValueType( name );
+				const valueType = this._getPropertyComponentType( name );
 				const valueLength = parseInt( valueType.replace( /[^0-9]/g, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
 
