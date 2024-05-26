@@ -130,11 +130,11 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 				const { channels } = property;
 				const data = channels.map( c => buffer[ 4 * i + c ] );
 
-				const valueType = this._getPropertyComponentType( name );
-				const valueLength = parseInt( valueType.replace( /[^0-9]/g, '' ) );
+				const componentType = this._getPropertyComponentType( name );
+				const valueLength = parseInt( componentType.replace( /[^0-9]/g, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
 
-				const BufferCons = getArrayConstructorFromType( valueType );
+				const BufferCons = getArrayConstructorFromType( componentType );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 
@@ -169,7 +169,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 						} else {
 
-							target[ j ] = adjustValue( target[ j ], type, valueType, valueScale, valueOffset, normalized );
+							target[ j ] = adjustValue( target[ j ], type, componentType, valueScale, valueOffset, normalized );
 
 						}
 
@@ -185,7 +185,7 @@ export class PropertyTextureAccessor extends PropertyAccessor {
 
 					} else {
 
-						target[ i ] = adjustValue( target[ i ], type, valueType, valueScale, valueOffset, normalized );
+						target[ i ] = adjustValue( target[ i ], type, componentType, valueScale, valueOffset, normalized );
 
 					}
 

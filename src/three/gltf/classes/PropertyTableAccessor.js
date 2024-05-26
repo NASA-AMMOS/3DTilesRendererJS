@@ -44,7 +44,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 		const property = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
-		const valueType = this._getPropertyComponentType( name );
+		const componentType = this._getPropertyComponentType( name );
 		const type = classProperty.type;
 		if ( ! property ) {
 
@@ -67,7 +67,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 		}
 
 		const bufferView = this.data[ property.values ];
-		const dataArray = new ( getArrayConstructorFromType( valueType ) )( bufferView );
+		const dataArray = new ( getArrayConstructorFromType( componentType ) )( bufferView );
 
 		// TODO: is this correct?
 		let indexOffset = id;
@@ -105,7 +105,7 @@ export class PropertyTableAccessor extends PropertyAccessor {
 
 			// TODO: we need to handle array lengths correctly here?
 			target = getDataValue( dataArray, index + indexOffset, type, target );
-			target = adjustValue( target, type, valueType, valueScale, valueOffset, normalized );
+			target = adjustValue( target, type, componentType, valueScale, valueOffset, normalized );
 
 		} else if ( type === 'STRING' ) {
 
