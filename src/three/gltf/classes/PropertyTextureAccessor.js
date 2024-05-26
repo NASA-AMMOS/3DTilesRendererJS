@@ -1,6 +1,6 @@
 import { Vector2 } from 'three';
 import {
-	PropertyAccessor,
+	PropertySetAccessor,
 	adjustValue,
 	getArrayConstructorFromType,
 	getDataValue,
@@ -8,7 +8,7 @@ import {
 	getTypeInstance,
 	isNoDataEqual,
 	resolveDefault,
-} from './PropertyAccessor.js';
+} from './PropertySetAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 
@@ -16,7 +16,7 @@ const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
 
-export class PropertyTextureAccessor extends PropertyAccessor {
+export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	constructor( ...args ) {
 

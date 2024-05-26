@@ -292,7 +292,7 @@ export function adjustValue( value, type, componentType, valueScale, valueOffset
 
 }
 
-export class PropertyAccessor {
+export class PropertySetAccessor {
 
 	constructor( definition, classes = {}, enums = {}, data = null ) {
 

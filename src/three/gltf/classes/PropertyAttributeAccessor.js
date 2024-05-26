@@ -1,10 +1,10 @@
-import { PropertyAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertyAccessor.js';
+import { PropertySetAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertySetAccessor.js';
 
 // TODO: is this only for points?
 // TODO: consider a method for returning a raw type array reference rather than copying into buffer
 // But then how is "no data" handled?
 // TODO: Test "no data" path
-export class PropertyAttributeAccessor extends PropertyAccessor {
+export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 	constructor( ...args ) {
 

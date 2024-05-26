@@ -1,5 +1,5 @@
 import {
-	PropertyAccessor,
+	PropertySetAccessor,
 	adjustValue,
 	getArrayConstructorFromType,
 	getDataValue,
@@ -8,9 +8,9 @@ import {
 	isNoDataEqual,
 	isNumericType,
 	resolveDefault,
-} from './PropertyAccessor.js';
+} from './PropertySetAccessor.js';
 
-export class PropertyTableAccessor extends PropertyAccessor {
+export class PropertyTableAccessor extends PropertySetAccessor {
 
 	constructor( ...args ) {
 
