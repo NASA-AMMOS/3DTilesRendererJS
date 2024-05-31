@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `EXT_mesh_features` extension for glTF.
 
+## [0.3.33] - 2024.05.31
 ### Fixed
 - Remove logged error when a tile set is aborted.
+- Adjusted raycast early exit behavior based on three.js r165.
 
 ## [0.3.32] - 2024.05.17
 ### Added
