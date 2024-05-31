@@ -27,8 +27,8 @@ export class GLTFExtensionLoader extends LoaderBase {
 				loader = new GLTFLoader( manager );
 
 				loader.register( () => new GLTFCesiumRTCExtension() );
-				loader.register( () => new GLTFMeshFeaturesExtension() );
-				loader.register( () => new GLTFStructuralMetadataExtension() );
+				// loader.register( () => new GLTFMeshFeaturesExtension() );
+				// loader.register( () => new GLTFStructuralMetadataExtension() );
 
 			}
 
