@@ -1,4 +1,4 @@
-import { initializeFromClass } from './PropertyClassHelpers.js';
+import { initializeFromClass } from './ClassPropertyHelpers.js';
 import {
 	PropertySetAccessor,
 	adjustValue,
@@ -57,7 +57,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 			} else {
 
-				return resolveDefault( classProperty.default, type, target );
+				return resolveDefault( classProperty, target );
 
 			}
 
@@ -146,7 +146,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		// TODO: this enum needs to be handled before enum has been converted
 		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
-			target = resolveDefault( classProperty.default, type, target );
+			target = resolveDefault( classProperty, target );
 
 		}
 

@@ -1,5 +1,5 @@
-import { initializeFromClass } from './PropertyClassHelpers.js';
-import { PropertySetAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertySetAccessor.js';
+import { initializeFromClass } from './ClassPropertyHelpers.js';
+import { PropertySetAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isTypeInstance, isVectorType, resolveDefault } from './PropertySetAccessor.js';
 
 // TODO: is this only for points?
 // TODO: consider a method for returning a raw type array reference rather than copying into buffer
@@ -51,14 +51,14 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 			} else {
 
-				return resolveDefault( classProperty.default, type, target );
+				return resolveDefault( classProperty, target );
 
 			}
 
 		}
 
 		// get a default target
-		if ( target === null ) {
+		if ( target === null || ! isTypeInstance( type, target ) ) {
 
 			target = getTypeInstance( type );
 
@@ -92,7 +92,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		// handle the case of no data
 		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
-			target = resolveDefault( classProperty.default, type, target );
+			target = resolveDefault( classProperty, target );
 
 		}
 

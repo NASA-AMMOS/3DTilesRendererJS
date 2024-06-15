@@ -197,32 +197,35 @@ export function isNoDataEqual( value, type, noData ) {
 }
 
 // gets the default value of the given type
-export function resolveDefault( value, type, target = null ) {
+export function resolveDefault( property, target = null ) {
 
-	if ( value === null || value === undefined ) {
+	const defaultValue = property.default;
+	const type = property.type;
+
+	if ( defaultValue === null || defaultValue === undefined ) {
 
 		return null;
 
 	} else {
 
-		// TODO: make sure the default uses the same major order
+		// TODO: make sure the default uses the same major order for matrices
 		target = target || getTypeInstance( type );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
 			for ( const i = 0, l = elements.length; i < l; i ++ ) {
 
-				elements[ i ] = value[ i ];
+				elements[ i ] = defaultValue[ i ];
 
 			}
 
 		} else if ( isVectorType( type ) ) {
 
-			target.fromArray( value );
+			target.fromArray( defaultValue );
 
 		} else {
 
-			return value;
+			return defaultValue;
 
 		}
 

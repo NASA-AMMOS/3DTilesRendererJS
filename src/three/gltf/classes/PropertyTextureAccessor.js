@@ -11,12 +11,11 @@ import {
 } from './PropertySetAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
-import { initializeFromClass } from './PropertyClassHelpers.js';
+import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
-
 
 // Reads and accesses data encoded to textures
 export class PropertyTextureAccessor extends PropertySetAccessor {
@@ -30,7 +29,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
-	// Reads the full set of
+	// Reads the full set of property data
 	getData( faceIndex, barycoord, geometry, target = {} ) {
 
 		initializeFromClass( this.class, target );
@@ -45,6 +44,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
+	// Reads values asynchronously
 	getPropertyValuesAtTexelAsync( ...args ) {
 
 		this._asyncRead = true;
@@ -54,24 +54,23 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
-	getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, target = null ) {
+	// Reads values from the textures synchronously
+	getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, target = [] ) {
 
-		if ( target === null ) {
-
-			target = [];
-
-		}
-
+		// resize our targets appropriately
 		target.length = names.length;
 		TextureReadUtility.increaseSizeTo( target.length );
 
 		// get the attribute indices
 		const textures = this.data;
+		const properties = this.definition.properties;
+		const classProperties = this.class.properties;
 		const indices = getTriangleIndices( geometry, faceIndex );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
+			// skip any requested properties that are not provided
 			const name = names[ i ];
-			const property = this.definition.properties[ name ];
+			const property = properties[ name ];
 			if ( ! property ) {
 
 				continue;
@@ -88,6 +87,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 		}
 
+		// read the data
 		const buffer = new Uint8Array( names.length * 4 );
 		if ( this._asyncRead ) {
 
@@ -114,8 +114,8 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 			for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 				const name = names[ i ];
-				const property = this.definition.properties[ name ];
-				const classProperty = this.class.properties[ name ];
+				const property = properties[ name ];
+				const classProperty = classProperties[ name ];
 				const type = classProperty.type;
 				if ( ! property ) {
 
@@ -125,33 +125,25 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 					} else {
 
-						target[ i ] = resolveDefault( classProperty.default, type, target );
+						target[ i ] = resolveDefault( classProperty, target );
 						continue;
 
 					}
 
 				}
 
-				const { channels } = property;
-				const data = channels.map( c => buffer[ 4 * i + c ] );
-
+				// get the final array length to read all data based on used buffer data
 				const componentType = this._getPropertyComponentType( name );
 				const valueLength = parseInt( componentType.replace( /[^0-9]/g, '' ) );
 				const length = valueLength * ( classProperty.count || 1 );
 
+				// set the data read back from the texture to the target type
+				const data = property.channels.map( c => buffer[ 4 * i + c ] );
 				const BufferCons = getArrayConstructorFromType( componentType );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 
-				if ( target[ i ] === undefined || target[ i ] === null ) {
-
-					if ( classProperty.array ) {
-
-						target[ i ] = [];
-
-					}
-
-				}
+				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
 
 				const normalized = getField( classProperty, 'normalized', false );
 				const valueScale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
@@ -199,34 +191,13 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				// TODO: this enum needs to be handled before enum has been converted
 				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
-					target[ i ] = resolveDefault( classProperty.default, type, target );
+					target[ i ] = resolveDefault( classProperty, target );
 
 				}
 
 			}
 
 		}
-
-	}
-
-	// dispose all of the texture data used
-	dispose() {
-
-		this.data.forEach( texture => {
-
-			if ( texture ) {
-
-				texture.dispose();
-
-				if ( texture.image instanceof ImageBitmap ) {
-
-					texture.image.close();
-
-				}
-
-			}
-
-		} );
 
 	}
 

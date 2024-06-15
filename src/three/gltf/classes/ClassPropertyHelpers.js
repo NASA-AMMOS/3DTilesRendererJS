@@ -11,7 +11,7 @@ export function initializeFromProperty( prop, target ) {
 		}
 
 		const value = target;
-		for ( let i = 0; i < value.length; i ++ ) {
+		for ( let i = 0, l = value.length; i < l; i ++ ) {
 
 			if ( ! isTypeInstance( prop.type, value[ i ] ) ) {
 
