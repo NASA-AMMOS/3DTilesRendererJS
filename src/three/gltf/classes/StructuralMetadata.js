@@ -112,7 +112,30 @@ export class StructuralMetadata {
 
 	}
 
-	getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
+	async getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
+
+		const textureAccessors = this.textureAccessors;
+		target.length = textureAccessors.length;
+
+		const promises = [];
+		for ( let i = 0; i < textureAccessors.length; i ++ ) {
+
+			const accessor = textureAccessors[ i ];
+			const promise = accessor
+				.getDataAsync( triangle, barycoord, this.object.geometry, target[ i ] )
+				.then( result => {
+
+					target[ i ] = result;
+
+				} );
+
+			promises.push( promise );
+
+		}
+
+		await Promise.all( promises );
+
+		return target;
 
 	}
 
