@@ -53,7 +53,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		this.isPropertyTextureAccessor = true;
 		this._asyncRead = false;
 
-		this.initProperties( PropertyTextureClassProperty );
+		this._initProperties( PropertyTextureClassProperty );
 
 	}
 

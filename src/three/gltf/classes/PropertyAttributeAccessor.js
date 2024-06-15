@@ -24,7 +24,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		this.isPropertyAttributeAccessor = true;
 
-		this.initProperties( PropertyAttributeClassProperty );
+		this._initProperties( PropertyAttributeClassProperty );
 
 	}
 

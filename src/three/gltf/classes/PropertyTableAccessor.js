@@ -67,7 +67,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		this.isPropertyTableAccessor = true;
 		this.count = this.definition.count;
 
-		this.initProperties( PropertyTableClassProperty );
+		this._initProperties( PropertyTableClassProperty );
 
 	}
 

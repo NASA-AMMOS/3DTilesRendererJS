@@ -26,7 +26,7 @@ export class PropertySetAccessor {
 
 	}
 
-	initProperties( propertyClass = ClassProperty ) {
+	_initProperties( propertyClass = ClassProperty ) {
 
 		const properties = {};
 		for ( const key in this.class.properties ) {
