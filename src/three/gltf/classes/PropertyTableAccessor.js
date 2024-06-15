@@ -1,12 +1,12 @@
 import { ClassProperty } from './ClassProperty.js';
-import { initializeFromClass } from './ClassPropertyHelpers.js';
+import { PropertySetAccessor } from './PropertySetAccessor.js';
 import {
-	PropertySetAccessor,
+	initializeFromClass,
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
 	isNumericType,
-} from './PropertySetAccessor.js';
+} from './ClassPropertyHelpers.js';
 
 class PropertyTableClassProperty extends ClassProperty {
 

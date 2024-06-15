@@ -1,15 +1,15 @@
 import { Vector2 } from 'three';
+import { PropertySetAccessor } from './PropertySetAccessor.js';
+import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
+import { ClassProperty } from './ClassProperty.js';
+import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 import {
-	PropertySetAccessor,
+	initializeFromClass,
+	initializeFromProperty,
 	getArrayConstructorFromType,
 	getDataValue,
-	getField,
-	resolveDefault,
-} from './PropertySetAccessor.js';
-import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
-import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
-import { ClassProperty } from './ClassProperty.js';
+	getField
+} from './ClassPropertyHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
@@ -155,7 +155,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 				} else if ( ! accessorProperties[ name ] ) {
 
-					target[ i ] = resolveDefault( property, target );
+					target[ i ] = property.resolveDefault( target );
 					continue;
 
 				}

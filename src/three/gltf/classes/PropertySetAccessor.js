@@ -1,7 +1,5 @@
 import { ClassProperty } from './ClassProperty.js';
 
-export * from './Utils.js';
-
 export class PropertySetAccessor {
 
 	constructor( definition, classes = {}, enums = {}, data = null ) {

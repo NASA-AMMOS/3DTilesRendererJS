@@ -1,6 +1,6 @@
 import { ClassProperty } from './ClassProperty.js';
-import { initializeFromClass } from './ClassPropertyHelpers.js';
-import { PropertySetAccessor, isMatrixType, isVectorType, resolveDefault } from './PropertySetAccessor.js';
+import { initializeFromClass, isMatrixType, isVectorType } from './ClassPropertyHelpers.js';
+import { PropertySetAccessor } from './PropertySetAccessor.js';
 
 class PropertyAttributeClassProperty extends ClassProperty {
 
@@ -61,7 +61,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		} else if ( ! this.definition.properties[ name ] ) {
 
-			return resolveDefault( property, target );
+			return property.resolveDefault( target );
 
 		}
 
