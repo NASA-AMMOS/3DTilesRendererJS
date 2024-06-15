@@ -1,6 +1,7 @@
 import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
+const REVISION_165 = parseInt( REVISION ) >= 165;
 const REVISION_166 = parseInt( REVISION ) >= 166;
 const _box = /* @__PURE__ */ new Box2();
 const _currentScissor = /* @__PURE__ */ new Vector4();
@@ -54,7 +55,7 @@ export const TextureReadUtility = new ( class {
 	readDataAsync( buffer ) {
 
 		const { _renderer, _target } = this;
-		if ( REVISION_166 ) {
+		if ( REVISION_165 ) {
 
 			return _renderer.readRenderTargetPixelsAsync( _target, 0, 0, buffer.length / 4, 1, buffer );
 
@@ -102,7 +103,15 @@ export const TextureReadUtility = new ( class {
 
 			// render the data
 			_pos.set( 0, 0 );
-			_renderer.copyTextureToTexture( _pos, texture, _texTarget.texture );
+			if ( REVISION_165 ) {
+
+				_renderer.copyTextureToTexture( texture, _texTarget.texture, null, _pos );
+
+			} else {
+
+				_renderer.copyTextureToTexture( _pos, texture, _texTarget.texture );
+
+			}
 
 			_quad.material.uniforms.map.value = _texTarget.texture;
 			_quad.material.uniforms.pixel.value.copy( pixel );
