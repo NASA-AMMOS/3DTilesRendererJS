@@ -5,7 +5,6 @@ import {
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
-	getTypeInstance,
 	isNoDataEqual,
 	resolveDefault,
 } from './PropertySetAccessor.js';
@@ -117,7 +116,6 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				const texProperty = properties[ name ];
 				const classProperty = classProperties[ name ];
 				const type = classProperty.type;
-				const enumType = classProperty.enumType;
 
 				// initialize the output value
 				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
@@ -173,6 +171,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				target[ i ] = adjustValue( type, componentType, valueScale, valueOffset, normalized, target[ i ] );
 
 				// resolve to default values
+				// TODO: this needs to handle array cases
 				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 					target[ i ] = resolveDefault( classProperty, target );
@@ -182,6 +181,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				// convert the values to enum strings for output
 				if ( type === 'ENUM' ) {
 
+					const enumType = classProperty.enumType;
 					target[ i ] = this._convertToEnumNames( enumType, target[ i ] );
 
 				}

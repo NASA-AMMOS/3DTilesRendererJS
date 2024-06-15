@@ -5,7 +5,6 @@ import {
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
-	getTypeInstance,
 	isNoDataEqual,
 	isNumericType,
 	resolveDefault,
@@ -39,29 +38,10 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	_getPropertyValueAtIndex( name, id, index, target = null ) {
 
-		if ( id >= this.count ) {
-
-			throw new Error( 'PropertyTableAccessor: Requested index is outside the range of the table.' );
-
-		}
-
 		const tableProperty = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
 		const componentType = this._getPropertyComponentType( name );
 		const type = classProperty.type;
-		if ( ! tableProperty ) {
-
-			if ( ! classProperty ) {
-
-				throw new Error( 'PropertyTableAccessor: Requested property does not exist.' );
-
-			} else {
-
-				return resolveDefault( classProperty, target );
-
-			}
-
-		}
 
 		const bufferView = this.data[ tableProperty.values ];
 		const dataArray = new ( getArrayConstructorFromType( componentType ) )( bufferView );
@@ -92,17 +72,11 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		if ( type === 'ENUM' ) {
 
 			target = getDataValue( dataArray, index + indexOffset, type, target );
-			target = this._enumValueToName( classProperty.enumType, target );
 
 		} else if ( isNumericType( type ) ) {
 
-			const normalized = getField( classProperty, 'normalized', false );
-			const valueScale = getField( tableProperty, 'scale', getField( classProperty, 'scale', 1 ) );
-			const valueOffset = getField( tableProperty, 'offset', getField( classProperty, 'offset', 0 ) );
-
 			// TODO: we need to handle array lengths correctly here?
 			target = getDataValue( dataArray, index + indexOffset, type, target );
-			target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
 
 		} else if ( type === 'STRING' ) {
 
@@ -150,8 +124,30 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	getPropertyValue( name, id, target = null ) {
 
+		// check if the requested id is outside of the size of the table
+		if ( id >= this.count ) {
+
+			throw new Error( 'PropertyTableAccessor: Requested index is outside the range of the table.' );
+
+		}
+
+		// check to see if we skip this field since its not in the table
 		const tableProperty = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
+		const type = classProperty.type;
+		if ( ! tableProperty ) {
+
+			if ( ! classProperty ) {
+
+				throw new Error( 'PropertyTableAccessor: Requested property does not exist.' );
+
+			} else {
+
+				return resolveDefault( classProperty, target );
+
+			}
+
+		}
 
 		// TODO: is this correct?
 		// get the dynamic array count from the property buffer
@@ -167,9 +163,11 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		}
 
+		// get the final array length
 		const array = getField( classProperty, 'array', false );
 		count = getField( classProperty, 'count', count );
 
+		// initialize the array
 		target = initializeFromProperty( classProperty, target, count );
 
 		// TODO: need to determine string length from arrayOffsets / stringOffsets
@@ -185,6 +183,25 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		} else {
 
 			target = this._getPropertyValueAtIndex( name, id, 0, target );
+
+		}
+
+		// scale the numeric values
+		if ( isNumericType( type ) ) {
+
+			const componentType = this._getPropertyComponentType( name );
+			const normalized = getField( classProperty, 'normalized', false );
+			const valueScale = getField( tableProperty, 'scale', getField( classProperty, 'scale', 1 ) );
+			const valueOffset = getField( tableProperty, 'offset', getField( classProperty, 'offset', 0 ) );
+			target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
+
+		}
+
+		// convert to enum strings
+		if ( type === 'ENUM' ) {
+
+			const enumType = classProperty.enumType;
+			target = this._convertToEnumNames( enumType, target );
 
 		}
 

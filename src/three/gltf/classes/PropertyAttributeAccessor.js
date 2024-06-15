@@ -47,7 +47,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		const classProperty = this.class.properties[ name ];
 		const type = classProperty.type;
 		const componentType = classProperty.componentType;
-		const enumType = classProperty.enumType;
+
 		if ( ! accessorProperty ) {
 
 			if ( ! classProperty ) {
@@ -104,6 +104,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		// convert the values to enum strings for output
 		if ( type === 'ENUM' ) {
 
+			const enumType = classProperty.enumType;
 			target = this._convertToEnumNames( enumType, target );
 
 		}

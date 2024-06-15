@@ -201,9 +201,15 @@ export function resolveDefault( property, target = null ) {
 
 	const defaultValue = property.default;
 	const type = property.type;
+	const array = property.array;
 
 	if ( defaultValue === null || defaultValue === undefined ) {
 
+		return null;
+
+	} else if ( array ) {
+
+		// TODO: is this correct?
 		return null;
 
 	} else {
