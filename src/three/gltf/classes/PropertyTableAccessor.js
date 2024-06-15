@@ -157,8 +157,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		// initialize the array
 		target = initializeFromProperty( classProperty, target, count );
 
-		// TODO: need to determine string length from arrayOffsets / stringOffsets
-		// TODO: it's inefficient to handle arrays this way because recreate the needed buffers every time
+		// read all data
 		if ( array ) {
 
 			for ( let i = 0, l = target.length; i < l; i ++ ) {
@@ -184,6 +183,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		}
 
+		// resolve to default values
 		target = resolveNoData( classProperty, target );
 
 		// convert to enum strings
