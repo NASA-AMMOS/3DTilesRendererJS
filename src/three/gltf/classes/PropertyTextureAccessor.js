@@ -114,10 +114,15 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 			for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 				const name = names[ i ];
-				const property = properties[ name ];
+				const texProperty = properties[ name ];
 				const classProperty = classProperties[ name ];
 				const type = classProperty.type;
-				if ( ! property ) {
+
+				// initialize the output value
+				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
+
+				// use a default of the texture accessor definition does not include the value
+				if ( ! texProperty ) {
 
 					if ( ! classProperty ) {
 
@@ -138,16 +143,14 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				const length = valueLength * ( classProperty.count || 1 );
 
 				// set the data read back from the texture to the target type
-				const data = property.channels.map( c => buffer[ 4 * i + c ] );
+				const data = texProperty.channels.map( c => buffer[ 4 * i + c ] );
 				const BufferCons = getArrayConstructorFromType( componentType );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 
-				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
-
 				const normalized = getField( classProperty, 'normalized', false );
-				const valueScale = getField( property, 'scale', getField( classProperty, 'scale', 1 ) );
-				const valueOffset = getField( property, 'offset', getField( classProperty, 'offset', 0 ) );
+				const valueScale = getField( texProperty, 'scale', getField( classProperty, 'scale', 1 ) );
+				const valueOffset = getField( texProperty, 'offset', getField( classProperty, 'offset', 0 ) );
 
 				// TODO: reuse some of this value handling logic
 				if ( classProperty.array ) {

@@ -1,21 +1,21 @@
-import { getTypeInstance, isTypeInstance } from './PropertySetAccessor.js';
+import { getField, getTypeInstance, isTypeInstance } from './PropertySetAccessor.js';
 
-export function initializeFromProperty( prop, target ) {
+export function initializeFromProperty( property, target ) {
 
-	if ( prop.array ) {
+	if ( property.array ) {
 
 		if ( ! Array.isArray( target ) ) {
 
-			target = new Array( prop.count || 0 );
+			target = new Array( property.count || 0 );
 
 		}
 
 		const value = target;
 		for ( let i = 0, l = value.length; i < l; i ++ ) {
 
-			if ( ! isTypeInstance( prop.type, value[ i ] ) ) {
+			if ( ! isTypeInstance( property.type, value[ i ] ) ) {
 
-				value[ i ] = getTypeInstance( prop.type );
+				value[ i ] = getTypeInstance( property.type );
 
 			}
 
@@ -23,9 +23,9 @@ export function initializeFromProperty( prop, target ) {
 
 	} else {
 
-		if ( ! isTypeInstance( prop.type, target ) ) {
+		if ( ! isTypeInstance( property.type, target ) ) {
 
-			target = getTypeInstance( prop.type );
+			target = getTypeInstance( property.type );
 
 		}
 
@@ -35,9 +35,9 @@ export function initializeFromProperty( prop, target ) {
 
 }
 
-export function initializeFromClass( definition, target ) {
+export function initializeFromClass( classDefinition, target ) {
 
-	const properties = definition.properties;
+	const properties = classDefinition.properties;
 
 	// remove unused fields
 	for ( const key in target ) {
