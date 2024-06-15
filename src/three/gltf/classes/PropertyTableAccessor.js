@@ -5,9 +5,9 @@ import {
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
-	isNoDataEqual,
 	isNumericType,
 	resolveDefault,
+	resolveNoData,
 } from './PropertySetAccessor.js';
 
 export class PropertyTableAccessor extends PropertySetAccessor {
@@ -36,7 +36,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	}
 
-	_getPropertyValueAtIndex( name, id, index, target = null ) {
+	_readValueAtIndex( name, id, index, target = null ) {
 
 		const tableProperty = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
@@ -69,13 +69,8 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		}
 
-		if ( type === 'ENUM' ) {
+		if ( isNumericType( type ) || type === 'ENUM' ) {
 
-			target = getDataValue( dataArray, index + indexOffset, type, target );
-
-		} else if ( isNumericType( type ) ) {
-
-			// TODO: we need to handle array lengths correctly here?
 			target = getDataValue( dataArray, index + indexOffset, type, target );
 
 		} else if ( type === 'STRING' ) {
@@ -107,14 +102,6 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 			const byte = dataArray[ byteOffset ];
 
 			target = Boolean( byte & ( 1 << bitOffset ) );
-
-		}
-
-		// handle the case of no data
-		// TODO: this enum needs to be handled before enum has been converted
-		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
-
-			target = resolveDefault( classProperty, target );
 
 		}
 
@@ -176,13 +163,13 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 			for ( let i = 0, l = target.length; i < l; i ++ ) {
 
-				target[ i ] = this._getPropertyValueAtIndex( name, id, i, target[ i ] );
+				target[ i ] = this._readValueAtIndex( name, id, i, target[ i ] );
 
 			}
 
 		} else {
 
-			target = this._getPropertyValueAtIndex( name, id, 0, target );
+			target = this._readValueAtIndex( name, id, 0, target );
 
 		}
 
@@ -196,6 +183,8 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 			target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
 
 		}
+
+		target = resolveNoData( classProperty, target );
 
 		// convert to enum strings
 		if ( type === 'ENUM' ) {

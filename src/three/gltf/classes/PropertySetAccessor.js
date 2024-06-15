@@ -239,6 +239,44 @@ export function resolveDefault( property, target = null ) {
 
 }
 
+export function resolveNoData( classProperty, target ) {
+
+	if ( ! ( 'noData' in classProperty ) ) {
+
+		return target;
+
+	}
+
+	const noData = classProperty.noData;
+	const type = classProperty.type;
+	if ( Array.isArray( target ) ) {
+
+		for ( let i = 0, l = target.length; i < l; i ++ ) {
+
+			target[ i ] = performResolution( target[ i ] );
+
+		}
+
+	} else {
+
+		target = performResolution( target );
+
+	}
+
+	return target;
+
+	function performResolution( target ) {
+
+		if ( isNoDataEqual( target, type, noData ) ) {
+
+
+
+		}
+
+	}
+
+}
+
 // scales the value based on property settings
 export function adjustValue( type, componentType, valueScale, valueOffset, normalized, target ) {
 

@@ -5,8 +5,8 @@ import {
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
-	isNoDataEqual,
 	resolveDefault,
+	resolveNoData,
 } from './PropertySetAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
@@ -171,12 +171,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				target[ i ] = adjustValue( type, componentType, valueScale, valueOffset, normalized, target[ i ] );
 
 				// resolve to default values
-				// TODO: this needs to handle array cases
-				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
-
-					target[ i ] = resolveDefault( classProperty, target );
-
-				}
+				target[ i ] = resolveNoData( classProperty, target[ i ] );
 
 				// convert the values to enum strings for output
 				if ( type === 'ENUM' ) {

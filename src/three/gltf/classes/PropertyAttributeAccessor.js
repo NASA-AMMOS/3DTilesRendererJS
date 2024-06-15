@@ -1,5 +1,5 @@
 import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
-import { PropertySetAccessor, adjustValue, getField, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertySetAccessor.js';
+import { PropertySetAccessor, adjustValue, getField, isMatrixType, isVectorType, resolveDefault, resolveNoData } from './PropertySetAccessor.js';
 
 // TODO: is this only for points?
 // TODO: consider a method for returning a raw type array reference rather than copying into buffer
@@ -95,11 +95,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
 
 		// handle the case of no data
-		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
-
-			target = resolveDefault( classProperty, target );
-
-		}
+		target = resolveNoData( classProperty, target );
 
 		// convert the values to enum strings for output
 		if ( type === 'ENUM' ) {
