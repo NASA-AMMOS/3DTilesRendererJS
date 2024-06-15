@@ -156,46 +156,6 @@ export function getArrayConstructorFromType( type ) {
 
 }
 
-// checks whether the value provided matches the "no data" value
-export function isNoDataEqual( value, type, noData ) {
-
-	if ( isMatrixType( type ) ) {
-
-		const elements = value.elements;
-		for ( let i = 0, l = noData.length; i < l; i ++ ) {
-
-			if ( noData[ i ] !== elements[ i ] ) {
-
-				return false;
-
-			}
-
-		}
-
-		return true;
-
-	} else if ( isVectorType( type ) ) {
-
-		for ( let i = 0, l = noData.length; i < l; i ++ ) {
-
-			if ( noData[ i ] !== value.getComponent( i ) ) {
-
-				return false;
-
-			}
-
-		}
-
-		return true;
-
-	} else {
-
-		return noData === value;
-
-	}
-
-}
-
 // gets the default value of the given type
 export function resolveDefault( property, target = null ) {
 
@@ -267,9 +227,50 @@ export function resolveNoData( classProperty, target ) {
 
 	function performResolution( target ) {
 
-		if ( isNoDataEqual( target, type, noData ) ) {
+		if ( isNoDataEqual( target ) ) {
 
+			target = resolveDefault( classProperty, target );
 
+		}
+
+		return target;
+
+	}
+
+	function isNoDataEqual( value ) {
+
+		if ( isMatrixType( type ) ) {
+
+			const elements = value.elements;
+			for ( let i = 0, l = noData.length; i < l; i ++ ) {
+
+				if ( noData[ i ] !== elements[ i ] ) {
+
+					return false;
+
+				}
+
+			}
+
+			return true;
+
+		} else if ( isVectorType( type ) ) {
+
+			for ( let i = 0, l = noData.length; i < l; i ++ ) {
+
+				if ( noData[ i ] !== value.getComponent( i ) ) {
+
+					return false;
+
+				}
+
+			}
+
+			return true;
+
+		} else {
+
+			return noData === value;
 
 		}
 
