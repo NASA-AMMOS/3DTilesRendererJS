@@ -1,6 +1,6 @@
-import { getField, getTypeInstance, isTypeInstance } from './PropertySetAccessor.js';
+import { getTypeInstance, isTypeInstance } from './PropertySetAccessor.js';
 
-export function initializeFromProperty( property, target ) {
+export function initializeFromProperty( property, target, overrideCount = null ) {
 
 	if ( property.array ) {
 
@@ -10,12 +10,13 @@ export function initializeFromProperty( property, target ) {
 
 		}
 
-		const value = target;
-		for ( let i = 0, l = value.length; i < l; i ++ ) {
+		target.length = overrideCount !== null ? overrideCount : property.count;
 
-			if ( ! isTypeInstance( property.type, value[ i ] ) ) {
+		for ( let i = 0, l = target.length; i < l; i ++ ) {
 
-				value[ i ] = getTypeInstance( property.type );
+			if ( ! isTypeInstance( property.type, target[ i ] ) ) {
+
+				target[ i ] = getTypeInstance( property.type );
 
 			}
 
