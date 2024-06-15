@@ -10,8 +10,9 @@ import {
 	Vector3,
 	Sphere,
 } from 'three';
-import { TilesRenderer, EnvironmentControls } from '..';
+import { TilesRenderer, EnvironmentControls, GLTFMeshFeaturesExtension, GLTFStructuralMetadataExtension } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // FEATURE_IDs
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
@@ -80,6 +81,11 @@ function init() {
 	tiles = new TilesRenderer( URL );
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
+
+	const loader = new GLTFLoader( tiles.manager );
+	loader.register( () => new GLTFMeshFeaturesExtension() );
+	loader.register( () => new GLTFStructuralMetadataExtension() );
+	tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 
 	tiles.addEventListener( 'load-model', ( { scene } ) => {
 

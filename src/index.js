@@ -7,6 +7,8 @@ export { PNTSLoader } from './three/PNTSLoader.js';
 export { I3DMLoader } from './three/I3DMLoader.js';
 export { CMPTLoader } from './three/CMPTLoader.js';
 export { GLTFCesiumRTCExtension } from './three/gltf/GLTFCesiumRTCExtension.js';
+export { GLTFStructuralMetadataExtension } from './three/gltf/GLTFStructuralMetadataExtension.js';
+export { GLTFMeshFeaturesExtension } from './three/gltf/GLTFMeshFeaturesExtension.js';
 export { GLTFExtensionLoader } from './three/GLTFExtensionLoader.js';
 export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
 export { SphereHelper } from './three/objects/SphereHelper.js';
