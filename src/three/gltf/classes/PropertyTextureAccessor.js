@@ -60,9 +60,9 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 	// Reads the full set of property data
 	getData( faceIndex, barycoord, geometry, target = {} ) {
 
-		initializeFromClass( this.class, target );
-
 		const properties = this.properties;
+		initializeFromClass( properties, target );
+
 		const names = Object.keys( properties );
 		const results = names.map( n => target[ n ] || null );
 		this.getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, results );

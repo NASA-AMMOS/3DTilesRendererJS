@@ -421,9 +421,7 @@ export function initializeFromProperty( property, target, overrideCount = null )
 
 }
 
-export function initializeFromClass( classDefinition, target ) {
-
-	const properties = classDefinition.properties;
+export function initializeFromClass( properties, target ) {
 
 	// remove unused fields
 	for ( const key in target ) {

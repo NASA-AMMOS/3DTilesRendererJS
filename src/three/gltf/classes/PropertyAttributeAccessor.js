@@ -30,9 +30,9 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 	getData( id, geometry, target = {} ) {
 
-		initializeFromClass( this.class, target );
+		const properties = this.properties;
+		initializeFromClass( properties, target );
 
-		const properties = this.class.properties;
 		for ( const name in properties ) {
 
 			target[ name ] = this.getPropertyValue( name, id, geometry, target[ name ] );
