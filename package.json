@@ -40,7 +40,7 @@
   "devDependencies": {
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
-    "@types/three": ">=0.152.0",
+    "@types/three": "^0.165.0",
     "babel-jest": "^29.5.0",
     "cesium": "^1.97.0",
     "concurrently": "^6.2.1",
