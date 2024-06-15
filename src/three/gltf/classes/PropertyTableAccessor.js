@@ -1,14 +1,62 @@
-import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
+import { ClassProperty } from './ClassProperty.js';
+import { initializeFromClass } from './ClassPropertyHelpers.js';
 import {
 	PropertySetAccessor,
-	adjustValue,
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
 	isNumericType,
-	resolveDefault,
-	resolveNoData,
 } from './PropertySetAccessor.js';
+
+class PropertyTableClassProperty extends ClassProperty {
+
+	constructor( enums, classProperty, tableProperty ) {
+
+		super( enums, classProperty, tableProperty );
+
+		this.values = tableProperty.values;
+		this.arrayOffsets = getField( tableProperty, 'arrayOffsets', null );
+		this.stringOffsets = getField( tableProperty, 'stringOffsets', null );
+		this.arrayOffsetType = getField( tableProperty, 'arrayOffsetType', 'UINT32' );
+		this.stringOffsetType = getField( tableProperty, 'stringOffsetType', 'UINT32' );
+
+	}
+
+	getArrayLengthFromId( buffers, id ) {
+
+		let count = this.count;
+		if ( this.arrayOffsets !== null ) {
+
+			const { arrayOffsets, arrayOffsetType } = this;
+			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( buffers[ arrayOffsets ] );
+			count = arr[ id + 1 ] - arr[ id ];
+
+		}
+
+		return count;
+
+	}
+
+	getIndexOffsetFromId( buffers, id ) {
+
+		let indexOffset = id;
+		if ( this.arrayOffsets ) {
+
+			const { arrayOffsets, arrayOffsetType } = this;
+			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( buffers[ arrayOffsets ] );
+			indexOffset = arr[ indexOffset ];
+
+		} else if ( this.array ) {
+
+			indexOffset *= this.count;
+
+		}
+
+		return indexOffset;
+
+	}
+
+}
 
 export class PropertyTableAccessor extends PropertySetAccessor {
 
@@ -18,6 +66,8 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		this.isPropertyTableAccessor = true;
 		this.count = this.definition.count;
+
+		this.initProperties( PropertyTableClassProperty );
 
 	}
 
@@ -38,36 +88,15 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	_readValueAtIndex( name, id, index, target = null ) {
 
-		const tableProperty = this.definition.properties[ name ];
-		const classProperty = this.class.properties[ name ];
-		const componentType = this._getPropertyComponentType( name );
-		const type = classProperty.type;
+		const property = this.properties[ name ];
+		const componentType = property.componentType;
+		const type = property.type;
 
-		const bufferView = this.data[ tableProperty.values ];
-		const dataArray = new ( getArrayConstructorFromType( componentType ) )( bufferView );
+		const bufferView = this.data[ property.values ];
+		const dataArray = new ( getArrayConstructorFromType( componentType, type ) )( bufferView );
 
 		// TODO: is this correct?
-		let indexOffset = id;
-		if ( 'arrayOffsets' in tableProperty ) {
-
-			const {
-				arrayOffsets,
-				arrayOffsetType = 'UINT32',
-			} = tableProperty;
-			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
-			indexOffset = arr[ indexOffset ];
-
-		} else {
-
-			const array = getField( classProperty, 'array', false );
-			if ( array ) {
-
-				const count = getField( classProperty, 'count', 1 );
-				indexOffset *= count;
-
-			}
-
-		}
+		let indexOffset = property.getIndexOffsetFromId( this.data, id );
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
@@ -79,12 +108,9 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 			// TODO: is this correct?
 			let stringLength = 0;
-			if ( 'stringOffsets' in tableProperty ) {
+			if ( property.stringOffsets !== null ) {
 
-				const {
-					stringOffsets,
-					stringOffsetType = 'UINT32',
-				} = tableProperty;
+				const { stringOffsets, stringOffsetType } = property;
 				const arr = new ( getArrayConstructorFromType( stringOffsetType ) )( this.data[ stringOffsets ] );
 				stringLength = arr[ indexOffset + 1 ] - arr[ indexOffset ];
 				indexOffset = arr[ indexOffset ];
@@ -120,17 +146,16 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		// check to see if we skip this field since its not in the table
 		const tableProperty = this.definition.properties[ name ];
-		const classProperty = this.class.properties[ name ];
-		const type = classProperty.type;
+		const property = this.properties[ name ];
 		if ( ! tableProperty ) {
 
-			if ( ! classProperty ) {
+			if ( ! property ) {
 
 				throw new Error( 'PropertyTableAccessor: Requested property does not exist.' );
 
 			} else {
 
-				return resolveDefault( classProperty, target );
+				return property.resolveDefault( target );
 
 			}
 
@@ -138,24 +163,11 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		// TODO: is this correct?
 		// get the dynamic array count from the property buffer
-		let count = null;
-		if ( 'arrayOffsets' in tableProperty ) {
-
-			const {
-				arrayOffsets,
-				arrayOffsetType = 'UINT32',
-			} = tableProperty;
-			const arr = new ( getArrayConstructorFromType( arrayOffsetType ) )( this.data[ arrayOffsets ] );
-			count = arr[ id + 1 ] - arr[ id ];
-
-		}
-
-		// get the final array length
-		const array = getField( classProperty, 'array', false );
-		count = getField( classProperty, 'count', count );
+		const array = property.array;
+		const count = property.getArrayLengthFromId( this.data, id );
 
 		// initialize the array
-		target = initializeFromProperty( classProperty, target, count );
+		target = property.shapeToProperty( target, count );
 
 		// read all data
 		if ( array ) {
@@ -173,26 +185,13 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		}
 
 		// scale the numeric values
-		if ( isNumericType( type ) ) {
-
-			const componentType = this._getPropertyComponentType( name );
-			const normalized = getField( classProperty, 'normalized', false );
-			const valueScale = getField( tableProperty, 'scale', getField( classProperty, 'scale', 1 ) );
-			const valueOffset = getField( tableProperty, 'offset', getField( classProperty, 'offset', 0 ) );
-			target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
-
-		}
+		target = property.adjustValueScaleOffset( target );
 
 		// resolve to default values
-		target = resolveNoData( classProperty, target );
+		target = property.resolveNoData( target );
 
 		// convert to enum strings
-		if ( type === 'ENUM' ) {
-
-			const enumType = classProperty.enumType;
-			target = this._convertToEnumNames( enumType, target );
-
-		}
+		target = property.resolveEnumsToStrings( target );
 
 		return target;
 

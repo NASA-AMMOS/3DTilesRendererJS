@@ -12,20 +12,32 @@ export class PropertySetAccessor {
 		this.data = data;
 		this.name = 'name' in definition ? definition.name : null;
 
-		const properties = {};
-		for ( const key in this.class.properties ) {
-
-			properties[ key ] = new ClassProperty( enums, this.class.properties[ key ], definition.properties[ key ] );
-
-		}
-
-		this.properties = properties;
+		this.properties = null;
 
 	}
 
 	getPropertyNames() {
 
 		return Object.keys( this.class.properties );
+
+	}
+
+	includesData( name ) {
+
+		return Boolean( this.definition.properties[ name ] );
+
+	}
+
+	initProperties( propertyClass = ClassProperty ) {
+
+		const properties = {};
+		for ( const key in this.class.properties ) {
+
+			properties[ key ] = new propertyClass( this.enums, this.class.properties[ key ], this.definition.properties[ key ] );
+
+		}
+
+		this.properties = properties;
 
 	}
 

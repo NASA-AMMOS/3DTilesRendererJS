@@ -1,4 +1,5 @@
-import { adjustValue, getField, resolveDefault, resolveNoData } from './Utils.js';
+import { initializeFromProperty } from './ClassPropertyHelpers.js';
+import { adjustValue, getField, isNumericType, resolveDefault, resolveNoData } from './Utils.js';
 
 export class ClassProperty {
 
@@ -19,6 +20,7 @@ export class ClassProperty {
 		this.default = getField( property, 'default', null );
 		this.semantic = getField( property, 'semantic', null );
 		this.enumSet = null;
+		this.accessorProperty = accessorProperty;
 
 		if ( accessorProperty ) {
 
@@ -42,6 +44,12 @@ export class ClassProperty {
 
 	}
 
+	shapeToProperty( target, countOverride = null ) {
+
+		initializeFromProperty( this, target, countOverride );
+
+	}
+
 	resolveDefault( target ) {
 
 		return resolveDefault( this, target );
@@ -54,9 +62,58 @@ export class ClassProperty {
 
 	}
 
-	adjustValueScales( target ) {
+	resolveEnumsToStrings( target ) {
 
-		return adjustValue( this.type, this.componentType, this.scale, this.offset, this.normalized, target );
+		const enumSet = this.enumSet;
+		if ( this.type === 'ENUM' ) {
+
+			if ( Array.isArray( target ) ) {
+
+				for ( let i = 0, l = target.length; i < l; i ++ ) {
+
+					target[ i ] = getEnumName( target[ i ] );
+
+				}
+
+			} else {
+
+				target = getEnumName( target );
+
+			}
+
+
+		}
+
+		return target;
+
+		function getEnumName( index ) {
+
+			const match = enumSet.values.find( e => e.value === index );
+			if ( match === null ) {
+
+				return null;
+
+			} else {
+
+				return match.name;
+
+			}
+
+		}
+
+	}
+
+	adjustValueScaleOffset( target ) {
+
+		if ( isNumericType( this.type ) ) {
+
+			return adjustValue( this.type, this.componentType, this.scale, this.offset, this.normalized, target );
+
+		} else {
+
+			return target;
+
+		}
 
 	}
 

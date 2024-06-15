@@ -132,9 +132,9 @@ export function isTypeInstance( type, value ) {
 }
 
 // gets a new numeric array constructor from the given structural metadata type
-export function getArrayConstructorFromType( type ) {
+export function getArrayConstructorFromType( componentType, type ) {
 
-	switch ( type ) {
+	switch ( componentType ) {
 
 		case 'INT8': return Int8Array;
 		case 'INT16': return Int16Array;
@@ -148,6 +148,10 @@ export function getArrayConstructorFromType( type ) {
 
 		case 'FLOAT32': return Float32Array;
 		case 'FLOAT64': return Float64Array;
+
+	}
+
+	switch ( type ) {
 
 		case 'BOOLEAN': return Uint8Array;
 		case 'STRING': return Uint8Array;
