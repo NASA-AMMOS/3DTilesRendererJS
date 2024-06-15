@@ -34,6 +34,24 @@ export class MeshFeatures {
 		this.data = data;
 		this._asyncRead = false;
 
+		this.featureIds = data.featureIds.map( info => {
+
+			const { texture, ...rest } = info;
+
+			return {
+				label: null,
+				propertyTable: null,
+				nullFeatureId: null,
+				texture: {
+					texCoord: 0,
+					channels: [ 0 ],
+					...texture,
+				},
+				...rest,
+			};
+
+		} );
+
 	}
 
 	getTextures() {
@@ -55,12 +73,11 @@ export class MeshFeatures {
 	// returns all features for the given point on the given triangle
 	getFeatures( triangle, barycoord ) {
 
-		const { geometry, textures, data } = this;
-		const { featureIds } = data;
+		const { geometry, textures, featureIds } = this;
 		const result = new Array( featureIds.length ).fill( null );
 
 		// prep the canvas width
-		const width = data.featureIds.length;
+		const width = featureIds.length;
 		TextureReadUtility.increaseSizeTo( width );
 
 		// get the attribute indices
@@ -162,15 +179,7 @@ export class MeshFeatures {
 	// returns a minimal set of info for each feature
 	getFeatureInfo() {
 
-		return this.data.featureIds.map( info => {
-
-			return {
-				label: null,
-				propertyTable: null,
-				...info
-			};
-
-		} );
+		return this.featureIds;
 
 	}
 

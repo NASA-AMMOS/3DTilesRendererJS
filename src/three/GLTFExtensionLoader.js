@@ -42,7 +42,6 @@ export class GLTFExtensionLoader extends LoaderBase {
 
 			if ( fetchOptions.headers ) {
 
-				console.log( fetchOptions );
 				loader.setRequestHeader( fetchOptions.headers );
 
 			}
