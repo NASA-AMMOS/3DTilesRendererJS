@@ -110,6 +110,12 @@ export function getTypeInstance( type ) {
 
 export function isTypeInstance( type, value ) {
 
+	if ( value === null || value === undefined ) {
+
+		return false;
+
+	}
+
 	switch ( type ) {
 
 		case 'SCALAR': return value instanceof Number;
@@ -201,7 +207,7 @@ export function resolveDefault( property, target = null ) {
 
 export function resolveNoData( classProperty, target ) {
 
-	if ( ! ( 'noData' in classProperty ) ) {
+	if ( classProperty.noData === null ) {
 
 		return target;
 
