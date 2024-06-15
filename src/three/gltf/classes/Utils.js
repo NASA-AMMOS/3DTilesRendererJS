@@ -10,7 +10,7 @@ import { Matrix2 } from './Matrix2.js';
 // returns the field in the object with a resolved default
 export function getField( object, key, def ) {
 
-	return key in object ? object[ key ] : def;
+	return object && key in object ? object[ key ] : def;
 
 }
 
@@ -79,10 +79,6 @@ export function getDataValue( buffer, offset, type, target = null ) {
 		if ( 'z' in target ) target.z = buffer[ offset + 2 ];
 		if ( 'w' in target ) target.w = buffer[ offset + 3 ];
 		return target;
-
-	} else if ( type === 'BOOLEAN' ) {
-
-		return Boolean( buffer[ offset ] );
 
 	} else {
 

@@ -1,20 +1,47 @@
 import { Vector2 } from 'three';
 import {
 	PropertySetAccessor,
-	adjustValue,
 	getArrayConstructorFromType,
 	getDataValue,
 	getField,
 	resolveDefault,
-	resolveNoData,
 } from './PropertySetAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
+import { ClassProperty } from './ClassProperty.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
+
+class PropertyTextureClassProperty extends ClassProperty {
+
+	constructor( enums, classProperty, textureProperty = null ) {
+
+		super( enums, classProperty, textureProperty );
+
+		this.channels = getField( textureProperty, 'channels', [] );
+		this.index = getField( textureProperty, 'index', null );
+		this.texCoord = getField( textureProperty, 'texCoord', null );
+		this.valueLength = parseInt( this.type.replace( /[^0-9]/g, '' ) ) || 1;
+
+	}
+
+	readDataFromBuffer( buffer, index, target = null ) {
+
+		const type = this.type;
+		if ( type === 'BOOLEAN' || type === 'STRING' ) {
+
+			throw new Error( 'PropertyTextureAccessor: BOOLEAN and STRING types not supported.' );
+
+		}
+
+		return getDataValue( buffer, index * this.valueLength, type, target );
+
+	}
+
+}
 
 // Reads and accesses data encoded to textures
 export class PropertyTextureAccessor extends PropertySetAccessor {
@@ -26,6 +53,8 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		this.isPropertyTextureAccessor = true;
 		this._asyncRead = false;
 
+		this.initProperties( PropertyTextureClassProperty );
+
 	}
 
 	// Reads the full set of property data
@@ -33,7 +62,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 		initializeFromClass( this.class, target );
 
-		const properties = this.class.properties;
+		const properties = this.properties;
 		const names = Object.keys( properties );
 		const results = names.map( n => target[ n ] || null );
 		this.getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, results );
@@ -62,21 +91,21 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 		// get the attribute indices
 		const textures = this.data;
-		const properties = this.definition.properties;
-		const classProperties = this.class.properties;
+		const accessorProperties = this.definition.properties;
+		const properties = this.properties;
 		const indices = getTriangleIndices( geometry, faceIndex );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 			// skip any requested properties that are not provided
 			const name = names[ i ];
-			const property = properties[ name ];
-			if ( ! property ) {
+			if ( ! accessorProperties[ name ] ) {
 
 				continue;
 
 			}
 
 			// get the attribute of the target tex coord
+			const property = properties[ name ];
 			const texture = textures[ property.index ];
 			getTexCoord( geometry, property.texCoord, barycoord, indices, _uv );
 			getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
@@ -113,73 +142,58 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 			for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 				const name = names[ i ];
-				const texProperty = properties[ name ];
-				const classProperty = classProperties[ name ];
-				const type = classProperty.type;
+				const property = properties[ name ];
+				const type = property.type;
 
 				// initialize the output value
-				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
+				target[ i ] = initializeFromProperty( property, target[ i ] );
 
 				// use a default of the texture accessor definition does not include the value
-				if ( ! texProperty ) {
+				if ( ! property ) {
 
-					if ( ! classProperty ) {
+					throw new Error( 'PropertyTextureAccessor: Requested property does not exist.' );
 
-						throw new Error( 'PropertyTextureAccessor: Requested property does not exist.' );
+				} else if ( ! accessorProperties[ name ] ) {
 
-					} else {
-
-						target[ i ] = resolveDefault( classProperty, target );
-						continue;
-
-					}
+					target[ i ] = resolveDefault( property, target );
+					continue;
 
 				}
 
 				// get the final array length to read all data based on used buffer data
-				const componentType = this._getPropertyComponentType( name );
-				const valueLength = parseInt( componentType.replace( /[^0-9]/g, '' ) );
-				const length = valueLength * ( classProperty.count || 1 );
+				const length = property.valueLength * ( property.count || 1 );
 
 				// set the data read back from the texture to the target type
-				const data = texProperty.channels.map( c => buffer[ 4 * i + c ] );
-				const BufferCons = getArrayConstructorFromType( componentType );
+				const data = property.channels.map( c => buffer[ 4 * i + c ] );
+				const componentType = property.componentType;
+				const BufferCons = getArrayConstructorFromType( componentType, type );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 
-				const normalized = getField( classProperty, 'normalized', false );
-				const valueScale = getField( texProperty, 'scale', getField( classProperty, 'scale', 1 ) );
-				const valueOffset = getField( texProperty, 'offset', getField( classProperty, 'offset', 0 ) );
-
-				// TODO: reuse some of this value handling logic
-				if ( classProperty.array ) {
+				// read all the data
+				if ( property.array ) {
 
 					const arr = target[ i ];
 					for ( let j = 0, lj = arr.length; j < lj; lj ++ ) {
 
-						arr[ j ] = getDataValue( readBuffer, j * valueLength, type, arr[ j ] );
+						arr[ j ] = property.readDataFromBuffer( readBuffer, j, arr[ j ] );
 
 					}
 
 				} else {
 
-					target[ i ] = getDataValue( readBuffer, 0, type );
+					target[ i ] = property.readDataFromBuffer( readBuffer, 0, target[ i ] );
 
 				}
 
-				// scale the values
-				target[ i ] = adjustValue( type, componentType, valueScale, valueOffset, normalized, target[ i ] );
+				// scale the numeric values
+				target[ i ] = property.adjustValueScaleOffset( target[ i ] );
 
 				// resolve to default values
-				target[ i ] = resolveNoData( classProperty, target[ i ] );
+				target[ i ] = property.resolveNoData( target[ i ] );
 
-				// convert the values to enum strings for output
-				if ( type === 'ENUM' ) {
-
-					const enumType = classProperty.enumType;
-					target[ i ] = this._convertToEnumNames( enumType, target[ i ] );
-
-				}
+				// convert to enum strings
+				target[ i ] = property.resolveEnumsToStrings( target[ i ] );
 
 			}
 

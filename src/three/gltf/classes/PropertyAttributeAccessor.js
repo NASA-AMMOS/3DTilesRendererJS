@@ -1,9 +1,20 @@
-import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
-import { PropertySetAccessor, adjustValue, getField, isMatrixType, isVectorType, resolveDefault, resolveNoData } from './PropertySetAccessor.js';
+import { ClassProperty } from './ClassProperty.js';
+import { initializeFromClass } from './ClassPropertyHelpers.js';
+import { PropertySetAccessor, isMatrixType, isVectorType, resolveDefault } from './PropertySetAccessor.js';
+
+class PropertyAttributeClassProperty extends ClassProperty {
+
+	constructor( enums, classProperty, attributeProperty = null ) {
+
+		super( enums, classProperty, attributeProperty );
+
+		this.attribute = attributeProperty.attribute;
+
+	}
+
+}
 
 // TODO: is this only for points?
-// TODO: consider a method for returning a raw type array reference rather than copying into buffer
-// But then how is "no data" handled?
 // TODO: Test "no data" path
 export class PropertyAttributeAccessor extends PropertySetAccessor {
 
@@ -12,6 +23,8 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		super( ...args );
 
 		this.isPropertyAttributeAccessor = true;
+
+		this.initProperties( PropertyAttributeClassProperty );
 
 	}
 
@@ -39,31 +52,24 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		}
 
-		// initialize the output value
-		target = initializeFromProperty( classProperty, target );
-
 		// use a default of the texture accessor definition does not include the value
-		const accessorProperty = this.definition.properties[ name ];
-		const classProperty = this.class.properties[ name ];
-		const type = classProperty.type;
-		const componentType = classProperty.componentType;
+		const property = this.properties[ name ];
+		const type = property.type;
+		if ( ! property ) {
 
-		if ( ! accessorProperty ) {
+			throw new Error( 'PropertyAttributeAccessor: Requested property does not exist.' );
 
-			if ( ! classProperty ) {
+		} else if ( ! this.definition.properties[ name ] ) {
 
-				throw new Error( 'PropertyAttributeAccessor: Requested property does not exist.' );
-
-			} else {
-
-				return resolveDefault( classProperty, target );
-
-			}
+			return resolveDefault( property, target );
 
 		}
 
+		// initialize the array
+		target = property.shapeToProperty( target );
+
 		// Read the data values from the attribute
-		const attribute = geometry.getAttribute( accessorProperty.attribute.toLowerCase() );
+		const attribute = geometry.getAttribute( property.attribute.toLowerCase() );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
@@ -88,22 +94,14 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		}
 
-		// adjust the value scales
-		const normalized = getField( classProperty, 'normalized', false );
-		const valueScale = getField( accessorProperty, 'scale', getField( classProperty, 'scale', 1 ) );
-		const valueOffset = getField( accessorProperty, 'offset', getField( classProperty, 'offset', 0 ) );
-		target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
+		// scale the numeric values
+		target = property.adjustValueScaleOffset( target );
 
-		// handle the case of no data
-		target = resolveNoData( classProperty, target );
+		// resolve to default values
+		target = property.resolveNoData( target );
 
-		// convert the values to enum strings for output
-		if ( type === 'ENUM' ) {
-
-			const enumType = classProperty.enumType;
-			target = this._convertToEnumNames( enumType, target );
-
-		}
+		// convert to enum strings
+		target = property.resolveEnumsToStrings( target );
 
 		return target;
 
