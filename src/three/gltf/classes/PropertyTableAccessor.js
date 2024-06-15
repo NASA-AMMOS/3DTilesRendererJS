@@ -108,7 +108,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 			// TODO: we need to handle array lengths correctly here?
 			target = getDataValue( dataArray, index + indexOffset, type, target );
-			target = adjustValue( target, type, componentType, valueScale, valueOffset, normalized );
+			target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
 
 		} else if ( type === 'STRING' ) {
 

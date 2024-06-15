@@ -234,23 +234,43 @@ export function resolveDefault( property, target = null ) {
 }
 
 // scales the value based on property settings
-export function adjustValue( value, type, componentType, valueScale, valueOffset, normalized ) {
+export function adjustValue( type, componentType, valueScale, valueOffset, normalized, target ) {
 
-	if ( isMatrixType( type ) ) {
+	if ( Array.isArray( target ) ) {
 
-		value = adjustMatrix( value );
+		for ( let i = 0, l = target.length; i < l; i ++ ) {
 
-	} else if ( isVectorType( type ) ) {
+			target[ i ] = adjustFromType( target[ i ] );
 
-		value = adjustVector( value );
+		}
 
 	} else {
 
-		value = adjustScalar( value );
+		target = adjustFromType( target );
 
 	}
 
-	return value;
+	return target;
+
+	function adjustFromType( target ) {
+
+		if ( isMatrixType( type ) ) {
+
+			target = adjustMatrix( target );
+
+		} else if ( isVectorType( type ) ) {
+
+			target = adjustVector( target );
+
+		} else {
+
+			target = adjustScalar( target );
+
+		}
+
+		return target;
+
+	}
 
 	function adjustVector( value ) {
 
@@ -362,6 +382,12 @@ export class PropertySetAccessor {
 
 	_enumValueToName( enumType, index ) {
 
+		if ( index === null ) {
+
+			return null;
+
+		}
+
 		const enumArray = this.enums[ enumType ].values;
 		for ( let i = 0, l = enumArray.length; i < l; i ++ ) {
 
@@ -373,6 +399,26 @@ export class PropertySetAccessor {
 			}
 
 		}
+
+	}
+
+	_convertToEnumNames( enumType, target ) {
+
+		if ( Array.isArray( target ) ) {
+
+			for ( let i = 0, l = target.length; i < l; i ++ ) {
+
+				target[ i ] = this._enumValueToName( enumType, target[ i ] );
+
+			}
+
+		} else {
+
+			target = this._enumValueToName( enumType, target );
+
+		}
+
+		return target;
 
 	}
 

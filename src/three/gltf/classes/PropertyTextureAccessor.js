@@ -117,6 +117,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				const texProperty = properties[ name ];
 				const classProperty = classProperties[ name ];
 				const type = classProperty.type;
+				const enumType = classProperty.enumType;
 
 				// initialize the output value
 				target[ i ] = initializeFromProperty( classProperty, target[ i ] );
@@ -156,22 +157,9 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				if ( classProperty.array ) {
 
 					const arr = target[ i ];
-					while ( classProperty.count < arr.length ) arr.push( getTypeInstance( type ) );
-					arr.length = classProperty.count;
-
 					for ( let j = 0, lj = arr.length; j < lj; lj ++ ) {
 
-						target[ j ] = getDataValue( readBuffer, j * valueLength, type, target[ j ] );
-
-						if ( type === 'ENUM' ) {
-
-							target[ j ] = this._enumValueToName( classProperty.enumType, target[ j ] );
-
-						} else {
-
-							target[ j ] = adjustValue( target[ j ], type, componentType, valueScale, valueOffset, normalized );
-
-						}
+						arr[ j ] = getDataValue( readBuffer, j * valueLength, type, arr[ j ] );
 
 					}
 
@@ -179,22 +167,22 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 					target[ i ] = getDataValue( readBuffer, 0, type );
 
-					if ( type === 'ENUM' ) {
-
-						target[ i ] = this._enumValueToName( classProperty.enumType, target[ i ] );
-
-					} else {
-
-						target[ i ] = adjustValue( target[ i ], type, componentType, valueScale, valueOffset, normalized );
-
-					}
-
 				}
 
-				// TODO: this enum needs to be handled before enum has been converted
+				// scale the values
+				target[ i ] = adjustValue( type, componentType, valueScale, valueOffset, normalized, target[ i ] );
+
+				// resolve to default values
 				if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 					target[ i ] = resolveDefault( classProperty, target );
+
+				}
+
+				// convert the values to enum strings for output
+				if ( type === 'ENUM' ) {
+
+					target[ i ] = this._convertToEnumNames( enumType, target[ i ] );
 
 				}
 

@@ -1,5 +1,5 @@
-import { initializeFromClass } from './ClassPropertyHelpers.js';
-import { PropertySetAccessor, getTypeInstance, isMatrixType, isNoDataEqual, isTypeInstance, isVectorType, resolveDefault } from './PropertySetAccessor.js';
+import { initializeFromClass, initializeFromProperty } from './ClassPropertyHelpers.js';
+import { PropertySetAccessor, adjustValue, getField, isMatrixType, isNoDataEqual, isVectorType, resolveDefault } from './PropertySetAccessor.js';
 
 // TODO: is this only for points?
 // TODO: consider a method for returning a raw type array reference rather than copying into buffer
@@ -39,11 +39,16 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		}
 
-		// TODO: reduce this logic duplication
-		const property = this.definition.properties[ name ];
+		// initialize the output value
+		target = initializeFromProperty( classProperty, target );
+
+		// use a default of the texture accessor definition does not include the value
+		const accessorProperty = this.definition.properties[ name ];
 		const classProperty = this.class.properties[ name ];
 		const type = classProperty.type;
-		if ( ! property ) {
+		const componentType = classProperty.componentType;
+		const enumType = classProperty.enumType;
+		if ( ! accessorProperty ) {
 
 			if ( ! classProperty ) {
 
@@ -57,14 +62,8 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		}
 
-		// get a default target
-		if ( target === null || ! isTypeInstance( type, target ) ) {
-
-			target = getTypeInstance( type );
-
-		}
-
-		const attribute = geometry.getAttribute( property.attribute.toLowerCase() );
+		// Read the data values from the attribute
+		const attribute = geometry.getAttribute( accessorProperty.attribute.toLowerCase() );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
@@ -78,21 +77,34 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 			target.fromBufferAttribute( attribute, id );
 
-		} else if ( type === 'SCALAR' ) {
+		} else if ( type === 'SCALAR' || type === 'ENUM' ) {
 
 			target = attribute.getX( id );
 
 		} else {
 
-			// BOOLEAN, STRING, ENUM not supported
-			throw new Error( 'StructuredMetadata.PropertyAttributeAccessor: BOOLEAN, STRING, and ENUM types are not supported by property attributes.' );
+			// BOOLEAN, STRING not supported
+			throw new Error( 'StructuredMetadata.PropertyAttributeAccessor: BOOLEAN and STRING types are not supported by property attributes.' );
 
 		}
+
+		// adjust the value scales
+		const normalized = getField( classProperty, 'normalized', false );
+		const valueScale = getField( accessorProperty, 'scale', getField( classProperty, 'scale', 1 ) );
+		const valueOffset = getField( accessorProperty, 'offset', getField( classProperty, 'offset', 0 ) );
+		target = adjustValue( type, componentType, valueScale, valueOffset, normalized, target );
 
 		// handle the case of no data
 		if ( 'noData' in classProperty && isNoDataEqual( target, type, classProperty.noData ) ) {
 
 			target = resolveDefault( classProperty, target );
+
+		}
+
+		// convert the values to enum strings for output
+		if ( type === 'ENUM' ) {
+
+			target = this._convertToEnumNames( enumType, target );
 
 		}
 
