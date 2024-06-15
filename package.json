@@ -22,7 +22,7 @@
     "src/*"
   ],
   "scripts": {
-    "start": "concurrently \"parcel watch example/*.html --out-dir ./example/dev-bundle/ --public-url . --no-cache\" \"static-server\"",
+    "start": "vite --config ./vite.config.js",
     "build-examples": "parcel build --no-content-hash example/*.html --out-dir ./example/bundle/ --public-url . --no-cache",
     "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"example/*.js\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
@@ -52,7 +52,8 @@
     "parcel-bundler": "^1.12.5",
     "static-server": "^2.2.1",
     "three": "^0.165.0",
-    "typescript": "^5.1.3"
+    "typescript": "^5.1.3",
+    "vite": "^5.3.1"
   },
   "peerDependencies": {
     "three": ">=0.123.0"
