@@ -1,3 +1,4 @@
+import { initializeFromClass } from './PropertyClassHelpers.js';
 import {
 	PropertySetAccessor,
 	adjustValue,
@@ -23,21 +24,12 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	getData( id, target = {} ) {
 
+		initializeFromClass( this.class, target );
+
 		const properties = this.class.properties;
 		for ( const name in properties ) {
 
 			target[ name ] = this.getPropertyValue( name, id, target[ name ] );
-
-		}
-
-		// remove unused fields
-		for ( const key in target ) {
-
-			if ( ! ( key in properties ) ) {
-
-				delete target[ key ];
-
-			}
 
 		}
 

@@ -11,11 +11,14 @@ import {
 } from './PropertySetAccessor.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
+import { initializeFromClass } from './PropertyClassHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
 
+
+// Reads and accesses data encoded to textures
 export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	constructor( ...args ) {
@@ -27,7 +30,10 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
+	// Reads the full set of
 	getData( faceIndex, barycoord, geometry, target = {} ) {
+
+		initializeFromClass( this.class, target );
 
 		const properties = this.class.properties;
 		const names = Object.keys( properties );
@@ -35,18 +41,6 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		this.getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, results );
 
 		names.forEach( ( n, i ) => target[ n ] = results[ i ] );
-
-		// remove unused fields
-		for ( const key in target ) {
-
-			if ( ! ( key in properties ) ) {
-
-				delete target[ key ];
-
-			}
-
-		}
-
 		return target;
 
 	}

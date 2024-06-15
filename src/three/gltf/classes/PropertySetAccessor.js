@@ -112,6 +112,25 @@ export function getTypeInstance( type ) {
 
 }
 
+export function isTypeInstance( type, value ) {
+
+	switch ( type ) {
+
+		case 'SCALAR': return value instanceof Number;
+		case 'VEC2': return value.isVector2;
+		case 'VEC3': return value.isVector3;
+		case 'VEC4': return value.isVector4;
+		case 'MAT2': return value.isMatrix2;
+		case 'MAT3': return value.isMatrix3;
+		case 'MAT4': return value.isMatrix4;
+		case 'BOOLEAN': return value instanceof Boolean;
+		case 'STRING': return value instanceof String;
+		case 'ENUM': return value instanceof Number || value instanceof String;
+
+	}
+
+}
+
 // gets a new numeric array constructor from the given structural metadata type
 export function getArrayConstructorFromType( type ) {
 
