@@ -23,7 +23,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	get nullFeatureId() {
 
-		return this.uniforms.nullFeatureValue.value;
+		return this.uniforms.nullFeatureId.value;
 
 	}
 
@@ -31,12 +31,12 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 		if ( v < 0 || v === null || v === undefined ) {
 
-			this.uniforms.nullFeatureValue.value = null;
+			this.uniforms.nullFeatureId.value = null;
 			this.setDefine( 'USE_NULL_FEATURE', 0 );
 
 		} else {
 
-			this.uniforms.nullFeatureValue.value = v;
+			this.uniforms.nullFeatureId.value = v;
 			this.setDefine( 'USE_NULL_FEATURE', 1 );
 
 		}
@@ -75,7 +75,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 			featureChannelsLength: { value: 0 },
 			featureChannels: { value: new Array( 4 ).fill( 0 ) },
 			featureTexture: { value: null },
-			nullFeatureValue: { value: null },
+			nullFeatureId: { value: null },
 			highlightFeatureId: { value: - 1 },
 
 		};
@@ -335,7 +335,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 					#if USE_NULL_FEATURE
 
-						uniform uint nullFeatureValue;
+						uniform uint nullFeatureId;
 
 					#endif
 
