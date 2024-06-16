@@ -89,7 +89,7 @@ function init() {
 
 	// camera
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
-	camera.position.set( - 4, 2, 4 ).multiplyScalar( 30 );
+	camera.position.set( - 4, 2, 0 ).multiplyScalar( 30 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
@@ -112,7 +112,6 @@ function init() {
 
 	// create rotation object to orient the tile set
 	rotationContainer = new Group();
-	rotationContainer.rotation.set( 4, 0.7, - 0.1 );
 	rotationContainer.position.y = 40;
 	scene.add( rotationContainer );
 
@@ -433,8 +432,11 @@ function animate() {
 
 	// center tiles
 	const sphere = new Sphere();
+	const upVector = new Vector3( 0, 1, 0 );
 	tiles.getBoundingSphere( sphere );
 	tiles.group.position.copy( sphere.center ).multiplyScalar( - 1 );
+
+	rotationContainer.quaternion.setFromUnitVectors( sphere.center.normalize(), upVector );
 
 	// update tiles
 	tiles.setResolutionFromRenderer( camera, renderer );
