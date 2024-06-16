@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION } from 'three';
+import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION, CustomBlending, ZeroFactor, OneFactor } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
 const REVISION_165 = parseInt( REVISION ) >= 165;
@@ -16,6 +16,11 @@ export const TextureReadUtility = new ( class {
 		this._target = new WebGLRenderTarget( 1, 1 );
 		this._texTarget = new WebGLRenderTarget();
 		this._quad = new FullScreenQuad( new ShaderMaterial( {
+
+			blending: CustomBlending,
+			blendDst: ZeroFactor,
+			blendSrc: OneFactor,
+
 			uniforms: {
 
 				map: { value: null },
@@ -116,12 +121,15 @@ export const TextureReadUtility = new ( class {
 			_quad.material.uniforms.map.value = _texTarget.texture;
 			_quad.material.uniforms.pixel.value.copy( pixel );
 
-			// render
+			// if we set the render target after setting scissor state it is reset
+			_renderer.setRenderTarget( _target );
+
+			// init state
 			_renderer.setScissorTest( true );
 			_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
 			_renderer.autoClear = false;
 
-			_renderer.setRenderTarget( _target );
+			// render
 			_quad.render( _renderer );
 
 			// reset state
