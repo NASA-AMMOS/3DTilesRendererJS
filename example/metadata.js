@@ -66,7 +66,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 400 );
-	camera.position.set( 4, 4, 4 );
+	camera.position.set( 1, 1, 4 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
@@ -88,6 +88,7 @@ function init() {
 	// tiles = new TilesRenderer( URL );
 	tiles = new CesiumIonTilesRenderer( params.assetId, params.token );
 	tiles.setCamera( camera );
+	tiles.group.rotateX( - Math.PI / 2 );
 	scene.add( tiles.group );
 
 	const loader = new GLTFLoader( tiles.manager );

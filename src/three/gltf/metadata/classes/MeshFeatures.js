@@ -34,11 +34,44 @@ export class MeshFeatures {
 		this.data = data;
 		this._asyncRead = false;
 
+		// fill out feature id default values
+		this.featureIds = data.featureIds.map( info => {
+
+			const { texture, ...rest } = info;
+			const result = {
+				label: null,
+				propertyTable: null,
+				nullFeatureId: null,
+				...rest,
+			};
+
+			if ( texture ) {
+
+				result.texture = {
+					texCoord: 0,
+					channels: [ 0 ],
+					...texture,
+				};
+
+			}
+
+			return result;
+
+		} );
+
 	}
 
+	// returns list of textures
 	getTextures() {
 
 		return this.textures;
+
+	}
+
+	// returns a set of info for each feature
+	getFeatureInfo() {
+
+		return this.featureIds;
 
 	}
 
@@ -55,12 +88,11 @@ export class MeshFeatures {
 	// returns all features for the given point on the given triangle
 	getFeatures( triangle, barycoord ) {
 
-		const { geometry, textures, data } = this;
-		const { featureIds } = data;
+		const { geometry, textures, featureIds } = this;
 		const result = new Array( featureIds.length ).fill( null );
 
 		// prep the canvas width
-		const width = data.featureIds.length;
+		const width = featureIds.length;
 		TextureReadUtility.increaseSizeTo( width );
 
 		// get the attribute indices
@@ -139,7 +171,7 @@ export class MeshFeatures {
 				const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
 				if ( 'texture' in featureId ) {
 
-					// TODO: do we nee to handle big-endian here?
+					// TODO: do we need to handle big-endian here?
 					const { channels } = featureId.texture;
 					const data = channels.map( c => buffer[ 4 * i + c ] );
 					new Uint8Array( readBuffer.buffer ).set( data );
@@ -156,21 +188,6 @@ export class MeshFeatures {
 			}
 
 		}
-
-	}
-
-	// returns a minimal set of info for each feature
-	getFeatureInfo() {
-
-		return this.data.featureIds.map( info => {
-
-			return {
-				label: null,
-				propertyTable: null,
-				...info
-			};
-
-		} );
 
 	}
 
