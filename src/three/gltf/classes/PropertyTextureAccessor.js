@@ -65,7 +65,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		initializeFromClass( properties, target );
 
 		const names = Object.keys( properties );
-		const results = names.map( n => target[ n ] || null );
+		const results = names.map( n => target[ n ] );
 		this.getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, results );
 
 		names.forEach( ( n, i ) => target[ n ] = results[ i ] );
@@ -87,6 +87,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 	getPropertyValuesAtTexel( names, faceIndex, barycoord, geometry, target = [] ) {
 
 		// resize our targets appropriately
+		while ( target.length < names.length ) target.push( null );
 		target.length = names.length;
 		TextureReadUtility.increaseSizeTo( target.length );
 
@@ -156,7 +157,6 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 				} else if ( ! accessorProperties[ name ] ) {
 
-					// TODO: we need to handle arrays here
 					target[ i ] = property.resolveDefault( target );
 					continue;
 
