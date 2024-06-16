@@ -22,6 +22,7 @@ class PropertyTableClassProperty extends ClassProperty {
 
 	}
 
+	// returns the necessary array length based on the array offsets if present
 	getArrayLengthFromId( buffers, id ) {
 
 		let count = this.count;
@@ -37,6 +38,8 @@ class PropertyTableClassProperty extends ClassProperty {
 
 	}
 
+	// returns the index offset into the data buffer for the given id based on the
+	// the array offsets if present
 	getIndexOffsetFromId( buffers, id ) {
 
 		let indexOffset = id;
@@ -48,6 +51,7 @@ class PropertyTableClassProperty extends ClassProperty {
 
 		} else if ( this.array ) {
 
+			// TODO: why do this? Revisit
 			indexOffset *= this.count;
 
 		}
@@ -86,11 +90,11 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	}
 
+	// reads an individual element
 	_readValueAtIndex( name, id, index, target = null ) {
 
 		const property = this.properties[ name ];
-		const componentType = property.componentType;
-		const type = property.type;
+		const { componentType, type } = property;
 
 		const buffers = this.data;
 		const bufferView = buffers[ property.values ];
@@ -101,7 +105,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
-			// TODO: is this correct?
+			// TODO: is this correct? Do we need to account for the stride of the type? Ie mult by 16 for matrices?
 			target = readDataFromBufferToType( dataArray, index + indexOffset, type, target );
 
 		} else if ( type === 'STRING' ) {
@@ -137,6 +141,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 	}
 
+	// Reads the data for the given table index
 	getPropertyValue( name, id, target = null ) {
 
 		// check if the requested id is outside of the size of the table
@@ -154,7 +159,6 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		} else if ( ! this.definition.properties[ name ] ) {
 
-			// TODO: what do we do here for arrays?
 			return property.resolveDefault( target );
 
 		}
