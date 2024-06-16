@@ -75,7 +75,7 @@ function init() {
 
 	document.body.appendChild( renderer.domElement );
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 400 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 	camera.position.set( - 4, 2, 4 ).multiplyScalar( 30 );
 	camera.lookAt( 0, 0, 0 );
 
@@ -286,7 +286,13 @@ function updateMetadata() {
 
 		} else {
 
-			hoveredInfo = null;
+			hoveredInfo = {
+				index,
+				features: null,
+				faceIndex,
+				barycoord,
+				object,
+			};
 
 		}
 
@@ -311,7 +317,7 @@ function updateFeatureIdMaterials() {
 
 	}
 
-	if ( meshFeatures !== null && hoveredInfo.features[ featureIndex ] !== null ) {
+	if ( meshFeatures !== null && hoveredInfo.features && hoveredInfo.features[ featureIndex ] !== null ) {
 
 		const { index, features, faceIndex, barycoord } = hoveredInfo;
 		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
