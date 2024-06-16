@@ -14,6 +14,7 @@ class PropertyTableClassProperty extends ClassProperty {
 
 		super( enums, classProperty, tableProperty );
 
+		this.valueLength = parseInt( this.type.replace( /[^0-9]/g, '' ) ) || 1;
 		this.values = tableProperty.values;
 		this.arrayOffsets = getField( tableProperty, 'arrayOffsets', null );
 		this.stringOffsets = getField( tableProperty, 'stringOffsets', null );
@@ -105,8 +106,9 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
-			// TODO: is this correct? Do we need to account for the stride of the type? Ie mult by 16 for matrices?
-			target = readDataFromBufferToType( dataArray, index + indexOffset, type, target );
+			// multiply the stride of the value type into the index
+			const valueLength = property.valueLength;
+			target = readDataFromBufferToType( dataArray, valueLength * ( index + indexOffset ), type, target );
 
 		} else if ( type === 'STRING' ) {
 

@@ -36,7 +36,6 @@ export class StructuralMetadata {
 
 		}
 
-
 		this.schema = schema;
 		this.tableAccessors = tableAccessors;
 		this.textureAccessors = textureAccessors;
