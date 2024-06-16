@@ -1,4 +1,4 @@
-import { initializeFromProperty, adjustValueScaleOffset, getField, isNumericType, resolveDefault, resolveNoData } from './ClassPropertyHelpers.js';
+import { initializeFromProperty, adjustValueScaleOffset, getField, isNumericType, resolveDefaultElement, resolveNoData, resolveDefault } from './ClassPropertyHelpers.js';
 
 export class ClassProperty {
 
@@ -46,6 +46,12 @@ export class ClassProperty {
 	shapeToProperty( target, countOverride = null ) {
 
 		return initializeFromProperty( this, target, countOverride );
+
+	}
+
+	resolveDefaultElement( target ) {
+
+		return resolveDefaultElement( this, target );
 
 	}
 
@@ -106,7 +112,7 @@ export class ClassProperty {
 
 		if ( isNumericType( this.type ) ) {
 
-			return adjustValueScaleOffset( this.type, this.componentType, this.scale, this.offset, this.normalized, target );
+			return adjustValueScaleOffset( this, target );
 
 		} else {
 

@@ -1,18 +1,5 @@
-import { ClassProperty } from './ClassProperty.js';
 import { initializeFromClass, isMatrixType, isVectorType } from './ClassPropertyHelpers.js';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
-
-class PropertyAttributeClassProperty extends ClassProperty {
-
-	constructor( enums, classProperty, attributeProperty = null ) {
-
-		super( enums, classProperty, attributeProperty );
-
-		this.attribute = attributeProperty.attribute;
-
-	}
-
-}
 
 // TODO: is this only for points?
 // TODO: Test "no data" path
@@ -24,7 +11,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 
 		this.isPropertyAttributeAccessor = true;
 
-		this._initProperties( PropertyAttributeClassProperty );
+		this._initProperties();
 
 	}
 

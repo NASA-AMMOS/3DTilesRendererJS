@@ -7,7 +7,7 @@ import {
 	initializeFromClass,
 	initializeFromProperty,
 	getArrayConstructorFromType,
-	getDataValue,
+	readDataFromBufferToType,
 	getField
 } from './ClassPropertyHelpers.js';
 
@@ -37,7 +37,8 @@ class PropertyTextureClassProperty extends ClassProperty {
 
 		}
 
-		return getDataValue( buffer, index * this.valueLength, type, target );
+		// TODO: is this correct?
+		return readDataFromBufferToType( buffer, index * this.valueLength, type, target );
 
 	}
 
@@ -155,6 +156,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 				} else if ( ! accessorProperties[ name ] ) {
 
+					// TODO: we need to handle arrays here
 					target[ i ] = property.resolveDefault( target );
 					continue;
 

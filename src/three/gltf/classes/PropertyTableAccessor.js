@@ -3,7 +3,7 @@ import { PropertySetAccessor } from './PropertySetAccessor.js';
 import {
 	initializeFromClass,
 	getArrayConstructorFromType,
-	getDataValue,
+	readDataFromBufferToType,
 	getField,
 	isNumericType,
 } from './ClassPropertyHelpers.js';
@@ -101,7 +101,8 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
-			target = getDataValue( dataArray, index + indexOffset, type, target );
+			// TODO: is this correct?
+			target = readDataFromBufferToType( dataArray, index + indexOffset, type, target );
 
 		} else if ( type === 'STRING' ) {
 
@@ -153,6 +154,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		} else if ( ! this.definition.properties[ name ] ) {
 
+			// TODO: what do we do here for arrays?
 			return property.resolveDefault( target );
 
 		}

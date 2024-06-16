@@ -40,9 +40,9 @@ export function isMatrixType( type ) {
 }
 
 // returns the max value of the given type
-export function getMaxValue( type ) {
+export function getMaxValue( componentType ) {
 
-	const tokens = /([A-Z]+)([0-9]+)/.exec( type );
+	const tokens = /([A-Z]+)([0-9]+)/.exec( componentType );
 	const unsigned = tokens[ 1 ] === 'UINT';
 	const bits = parseInt( tokens[ 2 ] );
 
@@ -59,7 +59,7 @@ export function getMaxValue( type ) {
 }
 
 // returns a value from the given buffer of the given type
-export function getDataValue( buffer, offset, type, target = null ) {
+export function readDataFromBufferToType( buffer, offset, type, target = null ) {
 
 	if ( isMatrixType( type ) ) {
 
@@ -108,6 +108,7 @@ export function getTypeInstance( type ) {
 
 }
 
+// returns false if the given value is not of "type"
 export function isTypeInstance( type, value ) {
 
 	if ( value === null || value === undefined ) {
@@ -162,25 +163,43 @@ export function getArrayConstructorFromType( componentType, type ) {
 
 }
 
-// gets the default value of the given type
+// resolve a full default value for the given property including arrays
 export function resolveDefault( property, target = null ) {
+
+	const array = property.array;
+	if ( array ) {
+
+		target = target && Array.isArray( target ) ? target : [];
+		target.length = property.count;
+		for ( let i = 0, l = target.length; i < l; i ++ ) {
+
+			target[ i ] = resolveDefaultElement( property, target[ i ] );
+
+		}
+
+	} else {
+
+		target = resolveDefaultElement( property, target );
+
+	}
+
+	return target;
+
+}
+
+// gets the default value of the given type
+export function resolveDefaultElement( property, target = null ) {
 
 	const defaultValue = property.default;
 	const type = property.type;
-	const array = property.array;
 
-	if ( defaultValue === null || defaultValue === undefined ) {
+	if ( defaultValue === null ) {
 
-		return null;
-
-	} else if ( array ) {
-
-		// TODO: is this correct?
 		return null;
 
 	} else {
 
-		// TODO: make sure the default uses the same major order for matrices
+		// TODO: make sure the default uses the same major order for matrices in three.js
 		target = target || getTypeInstance( type );
 		if ( isMatrixType( type ) ) {
 
@@ -205,16 +224,18 @@ export function resolveDefault( property, target = null ) {
 
 }
 
-export function resolveNoData( classProperty, target ) {
+// check for of instances of "no data" in the given target value and adjust them to the
+// default value.
+export function resolveNoData( property, target ) {
 
-	if ( classProperty.noData === null ) {
+	if ( property.noData === null ) {
 
 		return target;
 
 	}
 
-	const noData = classProperty.noData;
-	const type = classProperty.type;
+	const noData = property.noData;
+	const type = property.type;
 	if ( Array.isArray( target ) ) {
 
 		for ( let i = 0, l = target.length; i < l; i ++ ) {
@@ -231,11 +252,12 @@ export function resolveNoData( classProperty, target ) {
 
 	return target;
 
+	// replace the value with a default if no data is encountered
 	function performResolution( target ) {
 
 		if ( isNoDataEqual( target ) ) {
 
-			target = resolveDefault( classProperty, target );
+			target = resolveDefaultElement( property, target );
 
 		}
 
@@ -243,6 +265,7 @@ export function resolveNoData( classProperty, target ) {
 
 	}
 
+	// checks if the given value is equal to the no data value
 	function isNoDataEqual( value ) {
 
 		if ( isMatrixType( type ) ) {
@@ -285,7 +308,16 @@ export function resolveNoData( classProperty, target ) {
 }
 
 // scales the value based on property settings
-export function adjustValueScaleOffset( type, componentType, valueScale, valueOffset, normalized, target ) {
+// the provided target value is normalized, scaled, and then offset if numeric
+export function adjustValueScaleOffset( property, target ) {
+
+	const {
+		type,
+		componentType,
+		scale,
+		offset,
+		normalized,
+	} = property;
 
 	if ( Array.isArray( target ) ) {
 
@@ -303,33 +335,33 @@ export function adjustValueScaleOffset( type, componentType, valueScale, valueOf
 
 	return target;
 
-	function adjustFromType( target ) {
-
-		if ( isMatrixType( type ) ) {
-
-			target = adjustMatrix( target );
-
-		} else if ( isVectorType( type ) ) {
-
-			target = adjustVector( target );
-
-		} else {
-
-			target = adjustScalar( target );
-
-		}
-
-		return target;
-
-	}
-
-	function adjustVector( value ) {
+	function adjustFromType( value ) {
 
 		if ( value === null ) {
 
 			return null;
 
 		}
+
+		if ( isMatrixType( type ) ) {
+
+			value = adjustMatrix( value );
+
+		} else if ( isVectorType( type ) ) {
+
+			value = adjustVector( value );
+
+		} else {
+
+			value = adjustScalar( value );
+
+		}
+
+		return value;
+
+	}
+
+	function adjustVector( value ) {
 
 		value.x = adjustScalar( value.x );
 		value.y = adjustScalar( value.y );
@@ -340,12 +372,6 @@ export function adjustValueScaleOffset( type, componentType, valueScale, valueOf
 	}
 
 	function adjustMatrix( value ) {
-
-		if ( value === null ) {
-
-			return null;
-
-		}
 
 		const elements = value.elements;
 		for ( let i = 0, l = elements.length; i < l; i ++ ) {
@@ -360,12 +386,6 @@ export function adjustValueScaleOffset( type, componentType, valueScale, valueOf
 
 	function adjustScalar( value ) {
 
-		if ( value === null ) {
-
-			return null;
-
-		}
-
 		if ( normalized ) {
 
 			value = value / getMaxValue( componentType );
@@ -375,7 +395,7 @@ export function adjustValueScaleOffset( type, componentType, valueScale, valueOf
 		if ( normalized || isFloatType( componentType ) ) {
 
 			// TODO: what order are these operations supposed to be performed in?
-			value = value * valueScale + valueOffset;
+			value = value * scale + offset;
 
 		}
 
@@ -385,6 +405,8 @@ export function adjustValueScaleOffset( type, componentType, valueScale, valueOf
 
 }
 
+// Shape the given target object based on the provided property. If overrideCount is
+// provided then it will be used to specify the array length.
 export function initializeFromProperty( property, target, overrideCount = null ) {
 
 	if ( property.array ) {
@@ -421,6 +443,7 @@ export function initializeFromProperty( property, target, overrideCount = null )
 
 }
 
+// Shape the "target" object based on the provided set of properties
 export function initializeFromClass( properties, target ) {
 
 	// remove unused fields
@@ -434,6 +457,7 @@ export function initializeFromClass( properties, target ) {
 
 	}
 
+	// add and adjust any fields required by the set of properties
 	for ( const key in properties ) {
 
 		const prop = properties[ key ];
