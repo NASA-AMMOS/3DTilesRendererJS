@@ -31,7 +31,7 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
 
 let camera, controls, scene, renderer;
-let dirLight, tiles;
+let dirLight, tiles, rotationContainer;
 let meshFeaturesEl, structuralMetadataEl;
 
 let hoveredInfo = null;
@@ -42,9 +42,16 @@ const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 raycaster.params.Points.threshold = 0.05;
 
+const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
 const params = {
-	token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjhlOGM0Yy0xNzcwLTQwNWEtODk4Yy0xMGJkODg4MTA5ZGEiLCJpZCI6MjU5LCJpYXQiOjE3MTc0MzM4NjB9.VwBpSnRTNdg_G6uvU-JNsRNcSOCDMKW_j3Nl5E7wfwg',
+	accessToken: apiKey,
 	assetId: 2333904,
+	reload: () => {
+
+		reinstantiateTiles();
+
+	},
+
 	featureIndex: 0,
 	highlightAllFeatures: false,
 };
@@ -88,15 +95,45 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 1.0 );
 	scene.add( ambLight );
 
-	window.AMB = ambLight;
-
-	const rotationContainer = new Group();
+	rotationContainer = new Group();
 	rotationContainer.rotation.set( 4, 0.7, - 0.1 );
 	rotationContainer.position.y = 40;
 	scene.add( rotationContainer );
 
-	// tiles = new TilesRenderer( URL );
-	tiles = new CesiumIonTilesRenderer( params.assetId, params.token );
+	reinstantiateTiles();
+
+	onWindowResize();
+	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'pointermove', e => {
+
+		pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+		pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+
+	} );
+
+	const gui = new GUI();
+	const ionFolder = gui.addFolder( 'ion' );
+	ionFolder.add( params, 'accessToken' );
+	ionFolder.add( params, 'assetId' );
+	ionFolder.add( params, 'reload' );
+
+	const featureFolder = gui.addFolder( 'features' );
+	featureFolder.add( params, 'featureIndex', [ 0, 1 ] );
+	featureFolder.add( params, 'highlightAllFeatures' );
+
+}
+
+function reinstantiateTiles() {
+
+	localStorage.setItem( 'ionApiKey', params.accessToken );
+
+	if ( tiles ) {
+
+		tiles.dispose();
+
+	}
+
+	tiles = new CesiumIonTilesRenderer( params.assetId, params.accessToken );
 	tiles.setCamera( camera );
 	rotationContainer.add( tiles.group );
 
@@ -123,19 +160,6 @@ function init() {
 		} );
 
 	} );
-
-	onWindowResize();
-	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener( 'pointermove', e => {
-
-		pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-		pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-
-	} );
-
-	const gui = new GUI();
-	gui.add( params, 'featureIndex', [ 0, 1 ] );
-	gui.add( params, 'highlightAllFeatures' );
 
 }
 
