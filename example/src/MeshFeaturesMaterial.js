@@ -377,13 +377,8 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 					vec3 randFeatureColor( uint feature ) {
 
-						uint b0 = feature & 0xffffu;
-						uint b1 = ( feature >> 16 ) & 0xffffu;
-						float h = 0.5 * float( b0 ) / float( 0xffffu ) + 0.5 * float( b1 ) / float( 0xffffu );
-						h *= 100.0;
-
 						vec3 hsl;
-						hsl.r = rand( h );
+						hsl.r = rand( float( feature ) / 5500.0 );
 						hsl.g = 0.75;
 						hsl.b = 0.5;
 						return hsl2rgb( hsl );
