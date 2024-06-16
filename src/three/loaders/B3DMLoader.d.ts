@@ -1,4 +1,4 @@
-import { B3DMBaseResult } from '../../base/B3DMLoaderBase';
+import { B3DMBaseResult } from '../../base/loaders/B3DMLoaderBase';
 import { FeatureTable, BatchTable } from '../../utilities/FeatureTable';
 import { LoadingManager, Group } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';

@@ -30,11 +30,11 @@ export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
 export { TileBase } from './base/TileBase';
 export { Tileset } from './base/Tileset';
-export { B3DMLoaderBase } from './base/B3DMLoaderBase';
-export { I3DMLoaderBase } from './base/I3DMLoaderBase';
-export { PNTSLoaderBase } from './base/PNTSLoaderBase';
-export { CMPTLoaderBase } from './base/CMPTLoaderBase';
-export { LoaderBase } from './base/LoaderBase';
+export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase';
+export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase';
+export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase';
+export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase';
+export { LoaderBase } from './base/loaders/LoaderBase';
 export * from './base/constants';
 
 export { LRUCache } from './utilities/LRUCache';

@@ -1,5 +1,5 @@
 import { Group, DefaultLoadingManager, Matrix4 } from 'three';
-import { CMPTLoaderBase } from '../../base/CMPTLoaderBase.js';
+import { CMPTLoaderBase } from '../../base/loaders/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';

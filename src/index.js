@@ -25,11 +25,11 @@ export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
 
 // common
 export { TilesRendererBase } from './base/TilesRendererBase.js';
-export { LoaderBase } from './base/LoaderBase.js';
-export { B3DMLoaderBase } from './base/B3DMLoaderBase.js';
-export { I3DMLoaderBase } from './base/I3DMLoaderBase.js';
-export { PNTSLoaderBase } from './base/PNTSLoaderBase.js';
-export { CMPTLoaderBase } from './base/CMPTLoaderBase.js';
+export { LoaderBase } from './base/loaders/LoaderBase.js';
+export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase.js';
+export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase.js';
+export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase.js';
+export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase.js';
 export * from './base/constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';

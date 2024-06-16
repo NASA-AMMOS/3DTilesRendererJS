@@ -1,4 +1,4 @@
-import { PNTSBaseResult, PNTSLoaderBase } from '../../base/PNTSLoaderBase';
+import { PNTSBaseResult, PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase';
 import { FeatureTable } from '../../utilities/FeatureTable';
 import { Points, LoadingManager } from 'three';
 
