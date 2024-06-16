@@ -1,4 +1,4 @@
-import { PNTSLoaderBase } from '../base/PNTSLoaderBase.js';
+import { PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase.js';
 import {
 	Points,
 	PointsMaterial,
@@ -8,7 +8,7 @@ import {
 	Vector3,
 	Color,
 } from 'three';
-import { rgb565torgb } from '../utilities/rgb565torgb.js';
+import { rgb565torgb } from '../../utilities/rgb565torgb.js';
 
 const DRACO_ATTRIBUTE_MAP = {
 	RGB: 'color',

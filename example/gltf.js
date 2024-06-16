@@ -1,4 +1,4 @@
-import { GLTFExtensionLoader } from '../src/three/GLTFExtensionLoader.js';
+import { GLTFExtensionLoader } from '..';
 import {
 	Scene,
 	DirectionalLight,

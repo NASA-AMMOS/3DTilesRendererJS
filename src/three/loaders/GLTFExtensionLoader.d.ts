@@ -1,6 +1,6 @@
 
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { LoaderBase } from '../base/LoaderBase';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { LoaderBase } from '../../base/loaders/LoaderBase';
 import { LoadingManager } from 'three';
 
 export class GLTFExtensionLoader extends LoaderBase {

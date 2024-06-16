@@ -1,9 +1,9 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
-import { B3DMLoader } from './B3DMLoader.js';
-import { PNTSLoader } from './PNTSLoader.js';
-import { I3DMLoader } from './I3DMLoader.js';
-import { CMPTLoader } from './CMPTLoader.js';
-import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
+import { B3DMLoader } from './loaders/B3DMLoader.js';
+import { PNTSLoader } from './loaders/PNTSLoader.js';
+import { I3DMLoader } from './loaders/I3DMLoader.js';
+import { CMPTLoader } from './loaders/CMPTLoader.js';
+import { GLTFExtensionLoader } from './loaders/GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
