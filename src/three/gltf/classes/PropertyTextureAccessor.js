@@ -201,4 +201,25 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
+	// dispose all of the texture data used
+	dispose() {
+
+		this.data.forEach( texture => {
+
+			if ( texture ) {
+
+				texture.dispose();
+
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
+
+				}
+
+			}
+
+		} );
+
+	}
+
 }

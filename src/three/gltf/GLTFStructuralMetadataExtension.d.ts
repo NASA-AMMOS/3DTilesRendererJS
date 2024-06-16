@@ -18,6 +18,8 @@ class StructuralMetadata {
 	getPropertyAttributeData( attributeIndex: Number, target: Array = [] ): Array<any>;
 	getPropertyAttributeInfo(): Array<{ name: String, className: string }>;
 
+	dispose(): void;
+
 }
 
 declare module 'three' {

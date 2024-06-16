@@ -26,6 +26,8 @@ export class PropertySetAccessor {
 
 	}
 
+	dispose() {}
+
 	_initProperties( propertyClass = ClassProperty ) {
 
 		const properties = {};

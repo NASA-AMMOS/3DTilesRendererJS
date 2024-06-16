@@ -34,6 +34,7 @@ export class MeshFeatures {
 		this.data = data;
 		this._asyncRead = false;
 
+		// fill out feature id default values
 		this.featureIds = data.featureIds.map( info => {
 
 			const { texture, ...rest } = info;
@@ -54,9 +55,17 @@ export class MeshFeatures {
 
 	}
 
+	// returns list of textures
 	getTextures() {
 
 		return this.textures;
+
+	}
+
+	// returns a set of info for each feature
+	getFeatureInfo() {
+
+		return this.featureIds;
 
 	}
 
@@ -156,7 +165,7 @@ export class MeshFeatures {
 				const nullFeatureId = 'nullFeatureId' in featureId ? featureId.nullFeatureId : null;
 				if ( 'texture' in featureId ) {
 
-					// TODO: do we nee to handle big-endian here?
+					// TODO: do we need to handle big-endian here?
 					const { channels } = featureId.texture;
 					const data = channels.map( c => buffer[ 4 * i + c ] );
 					new Uint8Array( readBuffer.buffer ).set( data );
@@ -173,13 +182,6 @@ export class MeshFeatures {
 			}
 
 		}
-
-	}
-
-	// returns a minimal set of info for each feature
-	getFeatureInfo() {
-
-		return this.featureIds;
 
 	}
 

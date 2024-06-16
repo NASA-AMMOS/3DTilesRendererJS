@@ -182,4 +182,18 @@ export class StructuralMetadata {
 
 	}
 
+	dispose() {
+
+		[
+			...this.textureAccessors,
+			...this.tableAccessors,
+			...this.attributeAccessors,
+		].forEach( acc => {
+
+			acc.dispose();
+
+		} );
+
+	}
+
 }
