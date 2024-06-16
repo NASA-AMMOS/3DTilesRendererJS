@@ -13,12 +13,12 @@ export {
 } from './three/DebugTilesRenderer';
 export { TilesRenderer } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
-export { B3DMLoader } from './three/B3DMLoader';
-export { I3DMLoader } from './three/I3DMLoader';
-export { PNTSLoader } from './three/PNTSLoader';
-export { CMPTLoader } from './three/CMPTLoader';
+export { B3DMLoader } from './three/loaders/B3DMLoader';
+export { I3DMLoader } from './three/loaders/I3DMLoader';
+export { PNTSLoader } from './three/loaders/PNTSLoader';
+export { CMPTLoader } from './three/loaders/CMPTLoader';
 export { GLTFCesiumRTCExtension } from './three/gltf/GLTFCesiumRTCExtension';
-export { GLTFExtensionLoader } from './three/GLTFExtensionLoader';
+export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader';
 export { Ellipsoid } from './three/math/Ellipsoid';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 export * as GeoUtils from './three/math/GeoUtils';
