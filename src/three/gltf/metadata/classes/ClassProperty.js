@@ -1,4 +1,12 @@
-import { initializeFromProperty, adjustValueScaleOffset, getField, isNumericType, resolveDefaultElement, resolveNoData, resolveDefault } from './ClassPropertyHelpers.js';
+import {
+	initializeFromProperty,
+	adjustValueScaleOffset,
+	getField,
+	isNumericType,
+	resolveDefaultElement,
+	resolveNoData,
+	resolveDefault,
+} from '../utilities/ClassPropertyHelpers.js';
 
 export class ClassProperty {
 

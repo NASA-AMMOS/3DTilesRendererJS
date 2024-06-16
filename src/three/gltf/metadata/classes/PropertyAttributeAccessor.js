@@ -1,4 +1,4 @@
-import { initializeFromClass, isMatrixType, isVectorType } from './ClassPropertyHelpers.js';
+import { initializeFromClass, isMatrixType, isVectorType } from '../utilities/ClassPropertyHelpers.js';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 
 // TODO: is this only for points?

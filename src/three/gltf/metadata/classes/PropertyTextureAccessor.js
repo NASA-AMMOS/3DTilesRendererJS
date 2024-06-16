@@ -1,7 +1,7 @@
 import { Vector2 } from 'three';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
-import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { ClassProperty } from './ClassProperty.js';
+import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
 import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
 import {
 	initializeFromClass,
@@ -9,7 +9,7 @@ import {
 	getArrayConstructorFromType,
 	readDataFromBufferToType,
 	getField
-} from './ClassPropertyHelpers.js';
+} from '../utilities/ClassPropertyHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();

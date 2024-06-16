@@ -6,7 +6,7 @@ import {
 	readDataFromBufferToType,
 	getField,
 	isNumericType,
-} from './ClassPropertyHelpers.js';
+} from '../utilities/ClassPropertyHelpers.js';
 
 class PropertyTableClassProperty extends ClassProperty {
 

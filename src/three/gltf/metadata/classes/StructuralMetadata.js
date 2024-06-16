@@ -1,6 +1,3 @@
-// TODO: there are cases where we create a Matrix or Vector, for example, and immediately
-// discard it due to how "noData" is handled
-
 import { PropertyAttributeAccessor } from './PropertyAttributeAccessor.js';
 import { PropertyTableAccessor } from './PropertyTableAccessor.js';
 import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
