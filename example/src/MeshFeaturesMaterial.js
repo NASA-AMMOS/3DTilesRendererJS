@@ -11,7 +11,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 	set featureTexture( v ) {
 
 		const texture = this.uniforms.featureTexture.value;
-		if ( texture !== v && texture ) {
+		if ( texture !== v && texture && this.autoDisposeTexture ) {
 
 			texture.dispose();
 
@@ -70,6 +70,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 		super( ...args );
 
 		this.isMeshFeaturesMaterial = true;
+		this.autoDisposeTexture = false;
 		this.uniforms = {
 
 			featureChannelsLength: { value: 0 },
@@ -445,7 +446,8 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 						#else
 
-							diffuseColor.rgb *= randFeatureColor( featureId );
+							vec3 featureColor = randFeatureColor( featureId );
+							diffuseColor.rgb = mix( diffuseColor.rgb * featureColor, featureColor, 0.05 );
 
 						#endif
 

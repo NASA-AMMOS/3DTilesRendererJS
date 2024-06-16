@@ -9,10 +9,12 @@ import {
 	Triangle,
 	Vector3,
 	Sphere,
+	Group,
 } from 'three';
 import { TilesRenderer, EnvironmentControls, GLTFMeshFeaturesExtension, GLTFStructuralMetadataExtension, CesiumIonTilesRenderer } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 // FEATURE_IDs
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
@@ -32,9 +34,9 @@ let camera, controls, scene, renderer;
 let dirLight, tiles;
 let meshFeaturesEl, structuralMetadataEl;
 
-let hoveredMaterial = null;
-const barycoord = new Vector3();
-const triangle = new Triangle();
+let hoveredInfo = null;
+let updating = false;
+
 const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
@@ -43,7 +45,8 @@ raycaster.params.Points.threshold = 0.05;
 const params = {
 	token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjhlOGM0Yy0xNzcwLTQwNWEtODk4Yy0xMGJkODg4MTA5ZGEiLCJpZCI6MjU5LCJpYXQiOjE3MTc0MzM4NjB9.VwBpSnRTNdg_G6uvU-JNsRNcSOCDMKW_j3Nl5E7wfwg',
 	assetId: 2333904,
-
+	featureIndex: 0,
+	highlightAllFeatures: false,
 };
 
 init();
@@ -66,7 +69,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 400 );
-	camera.position.set( 1, 1, 4 );
+	camera.position.set( - 4, 2, 4 ).multiplyScalar( 30 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
@@ -85,11 +88,17 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 1.0 );
 	scene.add( ambLight );
 
+	window.AMB = ambLight;
+
+	const rotationContainer = new Group();
+	rotationContainer.rotation.set( 4, 0.7, - 0.1 );
+	rotationContainer.position.y = 40;
+	scene.add( rotationContainer );
+
 	// tiles = new TilesRenderer( URL );
 	tiles = new CesiumIonTilesRenderer( params.assetId, params.token );
 	tiles.setCamera( camera );
-	tiles.group.rotateX( - Math.PI / 2 );
-	scene.add( tiles.group );
+	rotationContainer.add( tiles.group );
 
 	const loader = new GLTFLoader( tiles.manager );
 	loader.register( () => new GLTFMeshFeaturesExtension() );
@@ -102,11 +111,12 @@ function init() {
 
 			if ( c.material && c.userData.meshFeatures ) {
 
-				// const MaterialConstructor = MeshFeaturesMaterialMixin( c.material.constructor );
-				// const material = new MaterialConstructor();
-				// material.copy( c.material );
+				const MaterialConstructor = MeshFeaturesMaterialMixin( c.material.constructor );
+				const material = new MaterialConstructor();
+				material.copy( c.material );
+				material.metalness = 0;
 
-				// c.material = material;
+				c.material = material;
 
 			}
 
@@ -122,6 +132,10 @@ function init() {
 		pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
 
 	} );
+
+	const gui = new GUI();
+	gui.add( params, 'featureIndex', [ 0, 1 ] );
+	gui.add( params, 'highlightAllFeatures' );
 
 }
 
@@ -196,12 +210,20 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 function updateMetadata() {
 
+	if ( updating ) {
+
+		return;
+
+	}
+
 	raycaster.setFromCamera( pointer, camera );
 
 	const hit = raycaster.intersectObject( scene )[ 0 ];
 	if ( hit ) {
 
-		const { object, face, point, index } = hit;
+		const { object, face, point, index, faceIndex } = hit;
+		const triangle = new Triangle();
+		const barycoord = new Vector3();
 		if ( face ) {
 
 			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
@@ -220,82 +242,120 @@ function updateMetadata() {
 
 		}
 
-		const { meshFeatures, structuralMetadata } = hit.object.userData;
+		const { meshFeatures } = hit.object.userData;
 		if ( meshFeatures ) {
 
-			meshFeatures.getFeaturesAsync( hit.faceIndex, barycoord )
+			updating = true;
+			meshFeatures.getFeaturesAsync( faceIndex, barycoord )
 				.then( features => {
 
-					if ( object.material === hoveredMaterial ) {
-
-						tiles.forEachLoadedModel( scene => scene.traverse( child => {
-
-
-							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
-							// from feature table or mesh features label. Perhaps table name?
-							if ( child.material && child.material.isMeshFeaturesMaterial ) {
-
-								// TODO: we need to assign the equivalent feature here
-								child.material.setFromMeshFeatures( meshFeatures, 0 );
-								child.material.highlightFeatureId = features[ 0 ];
-
-							}
-
-						} ) );
-
-						meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
-						meshFeaturesEl.innerText += `feature        : ${ features.join( ', ' ) }\n`;
-						meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
-
-						if ( structuralMetadata ) {
-
-							const info = meshFeatures.getFeatureInfo();
-							const tableIndices = info.map( p => p.propertyTable );
-							appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index, tableIndices, features );
-
-						}
-
-					}
+					updating = false;
+					hoveredInfo = {
+						index,
+						features,
+						faceIndex,
+						barycoord,
+						object,
+					};
 
 				} );
 
-		} else if ( structuralMetadata ) {
+		} else {
 
-			appendStructuralMetadata( structuralMetadata, hit.faceIndex, barycoord, index );
-
-		}
-
-		if ( hoveredMaterial && hoveredMaterial !== object.material && hoveredMaterial.isMeshFeaturesMaterial ) {
-
-			hoveredMaterial.disableFeatureDisplay();
+			hoveredInfo = null;
 
 		}
-
-		hoveredMaterial = object.material;
 
 	} else {
 
-		if ( hoveredMaterial ) {
+		hoveredInfo = null;
 
+	}
 
-			tiles.forEachLoadedModel( scene => scene.traverse( child => {
+}
 
-				if ( child.material && child.material.isMeshFeaturesMaterial ) {
+function updateFeatureIdMaterials() {
 
-					child.material.disableFeatureDisplay();
+	const { featureIndex } = params;
 
-				}
+	let meshFeatures = null;
+	let structuralMetadata = null;
+	if ( hoveredInfo ) {
 
-			} ) );
+		meshFeatures = hoveredInfo.object.userData.meshFeatures;
+		structuralMetadata = hoveredInfo.object.userData.structuralMetadata;
+
+	}
+
+	if ( meshFeatures !== null && hoveredInfo.features[ featureIndex ] !== null ) {
+
+		const { index, features, faceIndex, barycoord } = hoveredInfo;
+		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
+		meshFeaturesEl.innerText += `feature        : ${ features.map( v => v + '' ).join( ', ' ) }\n`;
+		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
+
+		if ( structuralMetadata ) {
+
+			const info = meshFeatures.getFeatureInfo();
+			const tableIndices = info.map( p => p.propertyTable );
+			appendStructuralMetadata( structuralMetadata, faceIndex, barycoord, index, tableIndices, features );
 
 		}
 
-		hoveredMaterial = null;
+		tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+			if ( child.material && child.material.isMeshFeaturesMaterial ) {
+
+				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
+
+				if ( params.highlightAllFeatures ) {
+
+					child.material.highlightFeatureId = null;
+
+				} else {
+
+					child.material.highlightFeatureId = features[ featureIndex ];
+
+				}
+
+			}
+
+		} ) );
+
+	} else {
+
 		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
 		meshFeaturesEl.innerText += 'feature        : -\n';
 		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
 
 		structuralMetadataEl.innerText = '';
+
+		if ( structuralMetadata !== null ) {
+
+			const { index, faceIndex, barycoord } = hoveredInfo;
+			appendStructuralMetadata( structuralMetadata, faceIndex, barycoord, index );
+
+		}
+
+		tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+			if ( child.material && child.material.isMeshFeaturesMaterial ) {
+
+				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
+
+				if ( params.highlightAllFeatures ) {
+
+					child.material.highlightFeatureId = null;
+
+				} else {
+
+					child.material.disableFeatureDisplay();
+
+				}
+
+			}
+
+		} ) );
 
 	}
 
@@ -308,6 +368,7 @@ function animate() {
 	controls.update();
 	camera.updateMatrixWorld();
 
+	updateFeatureIdMaterials();
 	updateMetadata();
 
 	tiles.setResolutionFromRenderer( camera, renderer );
