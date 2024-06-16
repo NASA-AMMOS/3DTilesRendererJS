@@ -36,19 +36,23 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdTextureAndPropertyTable/tileset.json';
 const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
 
+// page elements
 let camera, controls, scene, renderer;
 let dirLight, tiles, rotationContainer;
 let meshFeaturesEl, structuralMetadataEl;
-let controlsActive = false;
 
+// hovered feature state
+let controlsActive = false;
 let hoveredInfo = null;
 let updatingFeatures = false;
 
+// raycaster objects
 const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 raycaster.params.Points.threshold = 0.05;
 
+// gui parameters
 const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
 const params = {
 	accessToken: apiKey,
@@ -68,20 +72,22 @@ animate();
 
 function init() {
 
+	// dom elements
 	meshFeaturesEl = document.getElementById( 'meshFeatures' );
 
 	structuralMetadataEl = document.getElementById( 'structuralMetadata' );
 
-	scene = new Scene();
-
-	// primary camera view
+	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x151c1f );
-
 	document.body.appendChild( renderer.domElement );
 
+	// scene
+	scene = new Scene();
+
+	// camera
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 5000 );
 	camera.position.set( - 4, 2, 4 ).multiplyScalar( 30 );
 	camera.lookAt( 0, 0, 0 );
@@ -102,25 +108,18 @@ function init() {
 	dirLight.position.set( 1, 2, 3 ).multiplyScalar( 40 );
 	scene.add( dirLight );
 
-	const ambLight = new AmbientLight( 0xffffff, 1.0 );
-	scene.add( ambLight );
+	scene.add( new AmbientLight( 0xffffff, 1.0 ) );
 
+	// create rotation object to orient the tile set
 	rotationContainer = new Group();
 	rotationContainer.rotation.set( 4, 0.7, - 0.1 );
 	rotationContainer.position.y = 40;
 	scene.add( rotationContainer );
 
+	// initialize tileset
 	reinstantiateTiles();
 
-	onWindowResize();
-	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener( 'pointermove', e => {
-
-		pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
-		pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-
-	} );
-
+	// gui
 	const gui = new GUI();
 	const ionFolder = gui.addFolder( 'ion' );
 	ionFolder.add( params, 'accessToken' );
@@ -131,27 +130,42 @@ function init() {
 	featureFolder.add( params, 'featureIndex', [ 0, 1 ] );
 	featureFolder.add( params, 'highlightAllFeatures' );
 
+	// events
+	onWindowResize();
+	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'pointermove', e => {
+
+		pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+		pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+
+	} );
+
 }
 
 function reinstantiateTiles() {
 
-	localStorage.setItem( 'ionApiKey', params.accessToken );
-
+	// remove any existing tileset
 	if ( tiles ) {
 
 		tiles.dispose();
 
 	}
 
+	// save the ion access token
+	localStorage.setItem( 'ionApiKey', params.accessToken );
+
+	// create tile set
 	tiles = new CesiumIonTilesRenderer( params.assetId, params.accessToken );
 	tiles.setCamera( camera );
 	rotationContainer.add( tiles.group );
 
+	// set up gltf loader to support mesh features and structural metadata
 	const loader = new GLTFLoader( tiles.manager );
 	loader.register( () => new GLTFMeshFeaturesExtension() );
 	loader.register( () => new GLTFStructuralMetadataExtension() );
 	tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 
+	// set up the materials for highlighting features
 	tiles.addEventListener( 'load-model', ( { scene } ) => {
 
 		scene.traverse( c => {
@@ -173,6 +187,7 @@ function reinstantiateTiles() {
 
 }
 
+// resize the renderer
 function onWindowResize() {
 
 	camera.aspect = window.innerWidth / window.innerHeight;
@@ -182,10 +197,12 @@ function onWindowResize() {
 
 }
 
+// append structural metadata information table
 function appendStructuralMetadata( structuralMetadata, triangle, barycoord, index = null, tableIndices = null, features = null ) {
 
 	structuralMetadataEl.innerText = 'STRUCTURAL_METADATA\n';
 
+	// append property table data
 	if ( tableIndices !== null ) {
 
 		const data = structuralMetadata.getPropertyTableData( tableIndices, features );
@@ -193,14 +210,17 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 	}
 
+	// append property attribute data
 	if ( index !== null ) {
 
 		appendRows( structuralMetadata.getPropertyAttributeData( index ), structuralMetadata.getPropertyAttributeInfo() );
 
 	}
 
+	// append property texture data
 	appendRows( structuralMetadata.getPropertyTextureData( triangle, barycoord ), structuralMetadata.getPropertyTextureInfo() );
 
+	// function for writing rows
 	function appendRows( data, info ) {
 
 		const maxPropertyName = Math.max( ...Object.values( data ).flatMap( v => Object.keys( v ) ).map( n => n.length ) );
@@ -242,7 +262,8 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 }
 
-function updateMetadata() {
+// update raycasting to find hovered mesh features
+function updateMeshFeatureRaycast() {
 
 	if ( updatingFeatures || controlsActive ) {
 
@@ -255,6 +276,7 @@ function updateMetadata() {
 	const hit = raycaster.intersectObject( scene )[ 0 ];
 	if ( hit ) {
 
+		// get the barycentric coordinate for sampling mesh feature data
 		const { object, face, point, index, faceIndex } = hit;
 		const triangle = new Triangle();
 		const barycoord = new Vector3();
@@ -276,6 +298,7 @@ function updateMetadata() {
 
 		}
 
+		// save the feature and hit information for use in updating the tables and materials
 		const { meshFeatures } = hit.object.userData;
 		if ( meshFeatures ) {
 
@@ -314,27 +337,32 @@ function updateMetadata() {
 
 }
 
-function updateFeatureIdMaterials() {
+// Update the mesh feature material and meta data table displays
+function updateMetaDataDisplay() {
 
 	const { featureIndex } = params;
 
 	let meshFeatures = null;
 	let structuralMetadata = null;
+	let features = null;
 	if ( hoveredInfo ) {
 
 		meshFeatures = hoveredInfo.object.userData.meshFeatures;
 		structuralMetadata = hoveredInfo.object.userData.structuralMetadata;
+		features = hoveredInfo.features;
 
 	}
 
-	if ( meshFeatures !== null && hoveredInfo.features ) {
+	if ( meshFeatures !== null && features !== null ) {
 
-		const { index, features, faceIndex, barycoord } = hoveredInfo;
+		// update the mesh feature info
+		const { index, faceIndex, barycoord } = hoveredInfo;
 		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
 		meshFeaturesEl.innerText += `feature        : ${ features.map( v => v + '' ).join( ', ' ) }\n`;
 		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }\n`;
 
-		if ( structuralMetadata ) {
+		// update structural metadata table
+		if ( structuralMetadata !== null ) {
 
 			const info = meshFeatures.getFeatureInfo();
 			const tableIndices = info.map( p => p.propertyTable );
@@ -342,85 +370,77 @@ function updateFeatureIdMaterials() {
 
 		}
 
-		tiles.forEachLoadedModel( scene => scene.traverse( child => {
-
-			if ( child.material && child.material.isMeshFeaturesMaterial ) {
-
-				if ( params.highlightAllFeatures ) {
-
-					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-					child.material.highlightFeatureId = null;
-
-				} else if ( features[ featureIndex ] === null ) {
-
-					child.material.disableFeatureDisplay();
-
-				} else {
-
-					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-					child.material.highlightFeatureId = features[ featureIndex ];
-
-				}
-
-			}
-
-		} ) );
-
 	} else {
 
+		// update the mesh feature info
 		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
 		meshFeaturesEl.innerText += 'feature        : -\n';
 		meshFeaturesEl.innerText += `texture memory : ${ renderer.info.memory.textures }`;
 
-		structuralMetadataEl.innerText = '';
-
+		// update structural metadata table
 		if ( structuralMetadata !== null ) {
 
 			const { index, faceIndex, barycoord } = hoveredInfo;
 			appendStructuralMetadata( structuralMetadata, faceIndex, barycoord, index );
 
+		} else {
+
+			structuralMetadataEl.innerText = '';
+
 		}
-
-		tiles.forEachLoadedModel( scene => scene.traverse( child => {
-
-			if ( child.material && child.material.isMeshFeaturesMaterial ) {
-
-				if ( params.highlightAllFeatures ) {
-
-					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-					child.material.highlightFeatureId = null;
-
-				} else {
-
-					child.material.disableFeatureDisplay();
-
-				}
-
-			}
-
-		} ) );
 
 	}
 
+	// update the materials
+	tiles.forEachLoadedModel( scene => scene.traverse( child => {
+
+		if ( child.material && child.material.isMeshFeaturesMaterial ) {
+
+			if ( params.highlightAllFeatures ) {
+
+				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
+				child.material.highlightFeatureId = null;
+
+			} else if ( hoveredInfo === null || features[ featureIndex ] === null ) {
+
+				child.material.disableFeatureDisplay();
+
+			} else {
+
+				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
+				child.material.highlightFeatureId = features[ featureIndex ];
+
+			}
+
+		}
+
+	} ) );
+
 }
 
+// render and animate
 function animate() {
 
 	requestAnimationFrame( animate );
 
+	// update controls and camera
 	controls.update();
 	camera.updateMatrixWorld();
 
-	updateFeatureIdMaterials();
-	updateMetadata();
+	// update metadata
+	updateMetaDataDisplay();
+	updateMeshFeatureRaycast();
 
-	tiles.setResolutionFromRenderer( camera, renderer );
-	tiles.update();
-
+	// center tiles
 	const sphere = new Sphere();
 	tiles.getBoundingSphere( sphere );
 	tiles.group.position.copy( sphere.center ).multiplyScalar( - 1 );
 
+	// update tiles
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.update();
+
+	// render
 	renderer.render( scene, camera );
 
 }
