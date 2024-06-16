@@ -38,18 +38,24 @@ export class MeshFeatures {
 		this.featureIds = data.featureIds.map( info => {
 
 			const { texture, ...rest } = info;
-
-			return {
+			const result = {
 				label: null,
 				propertyTable: null,
 				nullFeatureId: null,
-				texture: {
+				...rest,
+			};
+
+			if ( texture ) {
+
+				result.texture = {
 					texCoord: 0,
 					channels: [ 0 ],
 					...texture,
-				},
-				...rest,
-			};
+				};
+
+			}
+
+			return result;
 
 		} );
 
