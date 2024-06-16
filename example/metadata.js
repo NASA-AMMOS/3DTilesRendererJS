@@ -10,8 +10,9 @@ import {
 	Vector3,
 	Sphere,
 } from 'three';
-import { TilesRenderer, EnvironmentControls } from '..';
+import { TilesRenderer, EnvironmentControls, GLTFMeshFeaturesExtension, GLTFStructuralMetadataExtension, CesiumIonTilesRenderer } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // FEATURE_IDs
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';
@@ -38,6 +39,12 @@ const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 raycaster.params.Points.threshold = 0.05;
+
+const params = {
+	token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YjhlOGM0Yy0xNzcwLTQwNWEtODk4Yy0xMGJkODg4MTA5ZGEiLCJpZCI6MjU5LCJpYXQiOjE3MTc0MzM4NjB9.VwBpSnRTNdg_G6uvU-JNsRNcSOCDMKW_j3Nl5E7wfwg',
+	assetId: 2333904,
+
+};
 
 init();
 animate();
@@ -71,15 +78,22 @@ function init() {
 	controls.adjustHeight = false;
 
 	// lights
-	dirLight = new DirectionalLight( 0xffffff, 1.25 );
+	dirLight = new DirectionalLight( 0xffffff, 3.3 );
 	dirLight.position.set( 1, 2, 3 ).multiplyScalar( 40 );
+	scene.add( dirLight );
 
-	const ambLight = new AmbientLight( 0xffffff, 1.05 );
+	const ambLight = new AmbientLight( 0xffffff, 1.0 );
 	scene.add( ambLight );
 
-	tiles = new TilesRenderer( URL );
+	// tiles = new TilesRenderer( URL );
+	tiles = new CesiumIonTilesRenderer( params.assetId, params.token );
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
+
+	const loader = new GLTFLoader( tiles.manager );
+	loader.register( () => new GLTFMeshFeaturesExtension() );
+	loader.register( () => new GLTFStructuralMetadataExtension() );
+	tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 
 	tiles.addEventListener( 'load-model', ( { scene } ) => {
 
@@ -87,11 +101,11 @@ function init() {
 
 			if ( c.material && c.userData.meshFeatures ) {
 
-				const MaterialConstructor = MeshFeaturesMaterialMixin( c.material.constructor );
-				const material = new MaterialConstructor();
-				material.copy( c.material );
+				// const MaterialConstructor = MeshFeaturesMaterialMixin( c.material.constructor );
+				// const material = new MaterialConstructor();
+				// material.copy( c.material );
 
-				c.material = material;
+				// c.material = material;
 
 			}
 
@@ -215,10 +229,12 @@ function updateMetadata() {
 
 						tiles.forEachLoadedModel( scene => scene.traverse( child => {
 
+
 							// TODO: must find way to ensure the id is referencing the same "type" of feature - either
 							// from feature table or mesh features label. Perhaps table name?
 							if ( child.material && child.material.isMeshFeaturesMaterial ) {
 
+								// TODO: we need to assign the equivalent feature here
 								child.material.setFromMeshFeatures( meshFeatures, 0 );
 								child.material.highlightFeatureId = features[ 0 ];
 
