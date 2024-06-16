@@ -1,14 +1,15 @@
-// PNTS File Format
-// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/PointCloud/README.md
+// B3DM File Format
+// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
 
-import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
-import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { FeatureTable, BatchTable } from '../../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
+import { readMagicBytes } from '../../utilities/readMagicBytes.js';
 
-export class PNTSLoaderBase extends LoaderBase {
+export class B3DMLoaderBase extends LoaderBase {
 
 	parse( buffer ) {
 
+		// TODO: this should be able to take a uint8array with an offset and length
 		const dataView = new DataView( buffer );
 
 		// 28-byte header
@@ -16,7 +17,7 @@ export class PNTSLoaderBase extends LoaderBase {
 		// 4 bytes
 		const magic = readMagicBytes( dataView );
 
-		console.assert( magic === 'pnts' );
+		console.assert( magic === 'b3dm' );
 
 		// 4 bytes
 		const version = dataView.getUint32( 4, true );
@@ -61,19 +62,21 @@ export class PNTSLoaderBase extends LoaderBase {
 		);
 		const batchTable = new BatchTable(
 			batchTableBuffer,
-			featureTable.getData( 'BATCH_LENGTH' ) || featureTable.getData( 'POINTS_LENGTH' ),
+			featureTable.getData( 'BATCH_LENGTH' ),
 			0,
 			batchTableJSONByteLength,
 			batchTableBinaryByteLength,
 		);
 
-		return Promise.resolve( {
+		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
+		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
 
+		return {
 			version,
 			featureTable,
 			batchTable,
-
-		} );
+			glbBytes,
+		};
 
 	}
 
