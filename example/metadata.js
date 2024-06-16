@@ -11,7 +11,13 @@ import {
 	Sphere,
 	Group,
 } from 'three';
-import { TilesRenderer, EnvironmentControls, GLTFMeshFeaturesExtension, GLTFStructuralMetadataExtension, CesiumIonTilesRenderer } from '..';
+import {
+	TilesRenderer,
+	EnvironmentControls,
+	GLTFMeshFeaturesExtension,
+	GLTFStructuralMetadataExtension,
+	CesiumIonTilesRenderer,
+} from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -33,9 +39,10 @@ const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/gl
 let camera, controls, scene, renderer;
 let dirLight, tiles, rotationContainer;
 let meshFeaturesEl, structuralMetadataEl;
+let controlsActive = false;
 
 let hoveredInfo = null;
-let updating = false;
+let updatingFeatures = false;
 
 const pointer = new Vector2( - 1, - 1 );
 const raycaster = new Raycaster();
@@ -86,6 +93,9 @@ function init() {
 	controls.minAltitude = 0;
 	controls.maxAltitude = Math.PI;
 	controls.adjustHeight = false;
+
+	controls.addEventListener( 'start', () => controlsActive = true );
+	controls.addEventListener( 'end', () => controlsActive = false );
 
 	// lights
 	dirLight = new DirectionalLight( 0xffffff, 3.3 );
@@ -234,7 +244,7 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 
 function updateMetadata() {
 
-	if ( updating ) {
+	if ( updatingFeatures || controlsActive ) {
 
 		return;
 
@@ -269,11 +279,11 @@ function updateMetadata() {
 		const { meshFeatures } = hit.object.userData;
 		if ( meshFeatures ) {
 
-			updating = true;
+			updatingFeatures = true;
 			meshFeatures.getFeaturesAsync( faceIndex, barycoord )
 				.then( features => {
 
-					updating = false;
+					updatingFeatures = false;
 					hoveredInfo = {
 						index,
 						features,
@@ -317,7 +327,7 @@ function updateFeatureIdMaterials() {
 
 	}
 
-	if ( meshFeatures !== null && hoveredInfo.features && hoveredInfo.features[ featureIndex ] !== null ) {
+	if ( meshFeatures !== null && hoveredInfo.features ) {
 
 		const { index, features, faceIndex, barycoord } = hoveredInfo;
 		meshFeaturesEl.innerText = 'EXT_MESH_FEATURES\n\n';
@@ -336,14 +346,18 @@ function updateFeatureIdMaterials() {
 
 			if ( child.material && child.material.isMeshFeaturesMaterial ) {
 
-				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-
 				if ( params.highlightAllFeatures ) {
 
+					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
 					child.material.highlightFeatureId = null;
+
+				} else if ( features[ featureIndex ] === null ) {
+
+					child.material.disableFeatureDisplay();
 
 				} else {
 
+					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
 					child.material.highlightFeatureId = features[ featureIndex ];
 
 				}
@@ -371,10 +385,9 @@ function updateFeatureIdMaterials() {
 
 			if ( child.material && child.material.isMeshFeaturesMaterial ) {
 
-				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-
 				if ( params.highlightAllFeatures ) {
 
+					child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
 					child.material.highlightFeatureId = null;
 
 				} else {
