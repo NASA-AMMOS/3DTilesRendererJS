@@ -2,7 +2,7 @@
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
 
 import { FileLoader } from 'three';
-import { StructuralMetadata } from './classes/StructualMetadata.js';
+import { StructuralMetadata } from './metadata/classes/StructuralMetadata.js';
 
 const EXT_NAME = 'EXT_structural_metadata';
 function getRelevantTextures( parser, propertyTextures = [] ) {

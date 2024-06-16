@@ -1,4 +1,4 @@
-import { MeshFeatures } from './classes/MeshFeatures.js';
+import { MeshFeatures } from './metadata/classes/MeshFeatures.js';
 
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features
 

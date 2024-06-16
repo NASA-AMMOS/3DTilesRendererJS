@@ -1,6 +1,3 @@
-// TODO: there are cases where we create a Matrix or Vector, for example, and immediately
-// discard it due to how "noData" is handled
-
 import { PropertyAttributeAccessor } from './PropertyAttributeAccessor.js';
 import { PropertyTableAccessor } from './PropertyTableAccessor.js';
 import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
@@ -38,7 +35,6 @@ export class StructuralMetadata {
 			}
 
 		}
-
 
 		this.schema = schema;
 		this.tableAccessors = tableAccessors;
@@ -112,7 +108,30 @@ export class StructuralMetadata {
 
 	}
 
-	getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
+	async getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
+
+		const textureAccessors = this.textureAccessors;
+		target.length = textureAccessors.length;
+
+		const promises = [];
+		for ( let i = 0; i < textureAccessors.length; i ++ ) {
+
+			const accessor = textureAccessors[ i ];
+			const promise = accessor
+				.getDataAsync( triangle, barycoord, this.object.geometry, target[ i ] )
+				.then( result => {
+
+					target[ i ] = result;
+
+				} );
+
+			promises.push( promise );
+
+		}
+
+		await Promise.all( promises );
+
+		return target;
 
 	}
 
@@ -154,6 +173,20 @@ export class StructuralMetadata {
 				name: acc.name,
 				className: acc.definition.class,
 			};
+
+		} );
+
+	}
+
+	dispose() {
+
+		[
+			...this.textureAccessors,
+			...this.tableAccessors,
+			...this.attributeAccessors,
+		].forEach( acc => {
+
+			acc.dispose();
 
 		} );
 
