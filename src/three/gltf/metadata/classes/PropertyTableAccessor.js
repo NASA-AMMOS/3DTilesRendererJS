@@ -107,6 +107,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
 			// multiply the stride of the value type into the index
+			// TODO: is it correct to multiply it in here when array offsets are provided?
 			const valueLength = property.valueLength;
 			target = readDataFromBufferToType( dataArray, valueLength * ( index + indexOffset ), type, target );
 
