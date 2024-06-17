@@ -12,7 +12,6 @@ import {
 	Group,
 } from 'three';
 import {
-	TilesRenderer,
 	EnvironmentControls,
 	GLTFMeshFeaturesExtension,
 	GLTFStructuralMetadataExtension,
@@ -34,12 +33,12 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/MultipleClasses/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdAttributeAndPropertyTable/tileset.json';
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/FeatureIdTextureAndPropertyTable/tileset.json';
-const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
+// const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/ComplexTypes/tileset.json';
 
 // page elements
 let camera, controls, scene, renderer;
 let dirLight, tiles, rotationContainer;
-let meshFeaturesEl, structuralMetadataEl;
+let meshFeaturesEl, structuralMetadataEl, gui;
 
 // hovered feature state
 let controlsActive = false;
@@ -64,6 +63,7 @@ const params = {
 	},
 
 	featureIndex: 0,
+	propertyTexture: 0,
 	highlightAllFeatures: false,
 };
 
@@ -118,17 +118,6 @@ function init() {
 	// initialize tileset
 	reinstantiateTiles();
 
-	// gui
-	const gui = new GUI();
-	const ionFolder = gui.addFolder( 'ion' );
-	ionFolder.add( params, 'accessToken' );
-	ionFolder.add( params, 'assetId' );
-	ionFolder.add( params, 'reload' );
-
-	const featureFolder = gui.addFolder( 'features' );
-	featureFolder.add( params, 'featureIndex', [ 0, 1 ] );
-	featureFolder.add( params, 'highlightAllFeatures' );
-
 	// events
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -141,12 +130,42 @@ function init() {
 
 }
 
+function buildGUI() {
+
+	if ( gui ) {
+
+		gui.destroy();
+
+	}
+
+	// gui
+	gui = new GUI();
+	const ionFolder = gui.addFolder( 'ion' );
+	ionFolder.add( params, 'accessToken' );
+	ionFolder.add( params, 'assetId', [ 2333904, 2342602 ] ).onChange( reinstantiateTiles );
+	ionFolder.add( params, 'reload' );
+
+	const featureFolder = gui.addFolder( 'features' );
+	if ( params.assetId === 2333904 ) {
+
+		featureFolder.add( params, 'featureIndex', [ 0, 1 ] );
+		featureFolder.add( params, 'highlightAllFeatures' );
+
+	} else {
+
+		featureFolder.add( params, 'propertyTexture', { NONE: 0, HORIZ_UNCERTAINTY: 1, VERT_UNCERTAINTY: 2 } );
+
+	}
+
+}
+
 function reinstantiateTiles() {
 
 	// remove any existing tileset
 	if ( tiles ) {
 
 		tiles.dispose();
+		tiles.group.removeFromParent();
 
 	}
 
@@ -180,9 +199,17 @@ function reinstantiateTiles() {
 
 			}
 
+			if ( c.material && c.userData.structuralMetadata ) {
+
+				c.material.originalMap = c.material.map;
+
+			}
+
 		} );
 
 	} );
+
+	buildGUI();
 
 }
 
@@ -393,21 +420,60 @@ function updateMetaDataDisplay() {
 	// update the materials
 	tiles.forEachLoadedModel( scene => scene.traverse( child => {
 
-		if ( child.material && child.material.isMeshFeaturesMaterial ) {
+		const material = child.material;
+		const { meshFeatures, structuralMetadata } = child.userData;
+
+		// set the highlight state for the mesh features
+		if ( material && meshFeatures ) {
 
 			if ( params.highlightAllFeatures ) {
 
-				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-				child.material.highlightFeatureId = null;
+				material.setFromMeshFeatures( meshFeatures, featureIndex );
+				material.highlightFeatureId = null;
 
 			} else if ( hoveredInfo === null || features[ featureIndex ] === null ) {
 
-				child.material.disableFeatureDisplay();
+				material.disableFeatureDisplay();
 
 			} else {
 
-				child.material.setFromMeshFeatures( child.userData.meshFeatures, featureIndex );
-				child.material.highlightFeatureId = features[ featureIndex ];
+				material.setFromMeshFeatures( meshFeatures, featureIndex );
+				material.highlightFeatureId = features[ featureIndex ];
+
+			}
+
+		}
+
+		// assign textures from structured metadata
+		if ( material && structuralMetadata && structuralMetadata.textureAccessors.length > 0 ) {
+
+			console.log( structuralMetadata.getPropertyTextureInfo() )
+
+			let newTexture = null;
+			if ( params.propertyTexture === 0 ) {
+
+				newTexture = material.originalMap;
+
+			} else if ( params.propertyTexture === 1 ) {
+
+				const info = structuralMetadata.getPropertyTextureInfo()[ 0 ];
+				const prop = info.properties.r3dm_uncertainty_ce90sum;
+				newTexture = structuralMetadata.textures[ prop.index ];
+				newTexture.channel = prop.texCoord;
+
+			} else if ( params.propertyTexture === 2 ) {
+
+				const info = structuralMetadata.getPropertyTextureInfo()[ 1 ];
+				const prop = info.properties.r3dm_uncertainty_le90sum;
+				newTexture = structuralMetadata.textures[ prop.index ];
+				newTexture.channel = prop.texCoord;
+
+			}
+
+			if ( material.map !== newTexture ) {
+
+				material.map = newTexture;
+				material.needsUpdate = true;
 
 			}
 
