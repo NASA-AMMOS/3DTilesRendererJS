@@ -447,8 +447,6 @@ function updateMetaDataDisplay() {
 		// assign textures from structured metadata
 		if ( material && structuralMetadata && structuralMetadata.textureAccessors.length > 0 ) {
 
-			console.log( structuralMetadata.getPropertyTextureInfo() )
-
 			let newTexture = null;
 			if ( params.propertyTexture === 0 ) {
 
