@@ -6,6 +6,7 @@ export class PropertySetAccessor {
 
 		this.definition = definition;
 		this.class = classes[ definition.class ];
+		this.className = definition.class;
 		this.enums = enums;
 		this.data = data;
 		this.name = 'name' in definition ? definition.name : null;

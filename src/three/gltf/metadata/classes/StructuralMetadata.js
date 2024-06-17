@@ -41,6 +41,7 @@ export class StructuralMetadata {
 		this.textureAccessors = textureAccessors;
 		this.attributeAccessors = attributeAccessors;
 		this.object = object;
+		this.textures = textures;
 		this.nodeMetadata = nodeMetadata;
 
 	}
@@ -137,14 +138,7 @@ export class StructuralMetadata {
 
 	getPropertyTextureInfo() {
 
-		return this.textureAccessors.map( acc => {
-
-			return {
-				name: acc.name,
-				className: acc.definition.class,
-			};
-
-		} );
+		return this.textureAccessors;
 
 	}
 

@@ -21,7 +21,7 @@ class PropertyTextureClassProperty extends ClassProperty {
 
 		super( enums, classProperty, textureProperty );
 
-		this.channels = getField( textureProperty, 'channels', [] );
+		this.channels = getField( textureProperty, 'channels', [ 0 ] );
 		this.index = getField( textureProperty, 'index', null );
 		this.texCoord = getField( textureProperty, 'texCoord', null );
 		this.valueLength = parseInt( this.type.replace( /[^0-9]/g, '' ) ) || 1;
