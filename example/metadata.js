@@ -431,14 +431,14 @@ function updateMetaDataDisplay() {
 				material.setFromMeshFeatures( meshFeatures, featureIndex );
 				material.highlightFeatureId = null;
 
-			} else if ( hoveredInfo === null || features[ featureIndex ] === null ) {
+			} else if ( hoveredInfo === null ) {
 
 				material.disableFeatureDisplay();
 
 			} else {
 
 				material.setFromMeshFeatures( meshFeatures, featureIndex );
-				material.highlightFeatureId = features[ featureIndex ];
+				material.highlightFeatureId = features[ featureIndex ] || - 1;
 
 			}
 

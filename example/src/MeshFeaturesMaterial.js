@@ -51,7 +51,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	set highlightFeatureId( v ) {
 
-		if ( v < 0 || v === null || v === undefined ) {
+		if ( v === null || v === undefined ) {
 
 			this.uniforms.highlightFeatureId.value = null;
 			this.setDefine( 'USE_HIGHLIGHT_FEATURE', 0 );
