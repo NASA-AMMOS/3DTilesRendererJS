@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.34] - 2024.06.18
 ### Added
-- `EXT_mesh_features` extension for glTF.
+- Export `EXT_mesh_features` & `EXT_structural_metadata` extensions for glTF.
+
+### Fixed
+- Syntax errors causing failure to import in some cases.
 
 ## [0.3.33] - 2024.05.31
 ### Fixed
