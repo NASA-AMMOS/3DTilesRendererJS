@@ -190,6 +190,8 @@ export function determineFrustumSet( tile, renderer ) {
 	// all sibling tiles as used, as well.
 	if ( anyChildrenUsed && loadSiblings ) {
 
+		lruCache.markUsed( tile );
+
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
