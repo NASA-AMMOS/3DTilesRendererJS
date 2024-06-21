@@ -119,8 +119,6 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 }
 
 // Determine which tiles are within the camera frustum.
-// TODO: this is marking items as used in the lrucache, which means some data is
-// being kept around that isn't being used -- is that okay?
 export function determineFrustumSet( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
@@ -145,7 +143,6 @@ export function determineFrustumSet( tile, renderer ) {
 	}
 
 	tile.__used = true;
-	lruCache.markUsed( tile );
 
 	tile.__inFrustum = true;
 	stats.inFrustum ++;
@@ -160,6 +157,7 @@ export function determineFrustumSet( tile, renderer ) {
 		const error = tile.__error;
 		if ( error <= errorTarget ) {
 
+			lruCache.markUsed( tile );
 			return true;
 
 		}
@@ -167,6 +165,7 @@ export function determineFrustumSet( tile, renderer ) {
 		// Early out if we've reached the maximum allowed depth.
 		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
 
+			lruCache.markUsed( tile );
 			return true;
 
 		}
@@ -183,6 +182,9 @@ export function determineFrustumSet( tile, renderer ) {
 		anyChildrenUsed = anyChildrenUsed || r;
 
 	}
+
+	if ( ! anyChildrenUsed )
+		lruCache.markUsed( tile );
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
