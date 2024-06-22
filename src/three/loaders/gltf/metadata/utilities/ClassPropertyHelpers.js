@@ -204,7 +204,7 @@ export function resolveDefaultElement( property, target = null ) {
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
-			for ( const i = 0, l = elements.length; i < l; i ++ ) {
+			for ( let i = 0, l = elements.length; i < l; i ++ ) {
 
 				elements[ i ] = defaultValue[ i ];
 
