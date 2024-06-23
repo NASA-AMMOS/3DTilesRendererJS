@@ -17,6 +17,7 @@
 		"no-throw-literal": [
 			"error"
 		],
+		"no-const-assign": "error",
 		"prefer-const": [
 			"error",
 			{
