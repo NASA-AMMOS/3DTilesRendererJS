@@ -542,7 +542,7 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex ++;
 
 		const uri = tile.content.uri;
-		const uriSplits = uri.split( /[\\\/]/g );
+		const uriSplits = uri.split( /[\\/]/g );
 		uriSplits.pop();
 		const workingPath = uriSplits.join( '/' );
 		const fetchOptions = this.fetchOptions;
@@ -624,12 +624,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// 3DTILES_content_gltf
 			case 'gltf':
-			case 'glb':
+			case 'glb': {
+
 				const loader = new GLTFExtensionLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 				promise = loader.parse( buffer );
 				break;
+
+			}
 
 			default:
 				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
@@ -659,6 +662,7 @@ export class TilesRenderer extends TilesRendererBase {
 				return;
 
 			}
+
 			// ensure the matrix is up to date in case the scene has a transform applied
 			scene.updateMatrix();
 

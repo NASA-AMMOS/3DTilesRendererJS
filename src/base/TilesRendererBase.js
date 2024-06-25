@@ -370,7 +370,7 @@ export class TilesRendererBase {
 				}
 
 				// remove trailing slash and last path-segment from the URL
-				let basePath = url.replace( /\/[^\/]*\/?$/, '' );
+				let basePath = url.replace( /\/[^/]*\/?$/, '' );
 				basePath = new URL( basePath, window.location.href ).toString();
 				this.preprocessNode( json.root, basePath, parent );
 
@@ -660,7 +660,7 @@ export class TilesRendererBase {
 		} );
 		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
 
- 			lruCache.remove( toRemove[ i ] );
+			lruCache.remove( toRemove[ i ] );
 
 		}
 
