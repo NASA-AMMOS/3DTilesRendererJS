@@ -176,7 +176,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				if ( property.array ) {
 
 					const arr = target[ i ];
-					for ( let j = 0, lj = arr.length; j < lj; lj ++ ) {
+					for ( let j = 0, lj = arr.length; j < lj; j ++ ) {
 
 						arr[ j ] = property.readDataFromBuffer( readBuffer, j, arr[ j ] );
 
