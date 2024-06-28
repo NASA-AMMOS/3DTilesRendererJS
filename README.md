@@ -71,7 +71,7 @@ tilesRenderer.addEventListener( 'load-tile-set', () => {
 	// optionally center the tile set in case it's far off center
 	const sphere = new Sphere();
 	tilesRenderer.getBoundingSphere( sphere );
-	tilesRenderer.position.copy( sphere.center ).multiplyScalar( - 1 );
+	tilesRenderer.group.position.copy( sphere.center ).multiplyScalar( - 1 );
 
 } );
 
