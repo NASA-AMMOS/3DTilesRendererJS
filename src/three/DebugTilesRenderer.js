@@ -408,14 +408,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
-	parseTile( buffer, tile, ext ) {
-
-		tile[ LOAD_TIME ] = performance.now();
-
-		return super.parseTile( buffer, tile, ext );
-
-	}
-
 	setTileVisible( tile, visible ) {
 
 		super.setTileVisible( tile, visible );
@@ -476,6 +468,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 	}
 
 	parseTile( buffer, tile, extension ) {
+
+		tile[ LOAD_TIME ] = performance.now();
 
 		return super
 			.parseTile( buffer, tile, extension )

@@ -1,6 +1,6 @@
 import { MeshBasicMaterial } from 'three';
 
-const MeshFeaturesMaterialMixin = base => class extends base {
+export const MeshFeaturesMaterialMixin = base => class extends base {
 
 	get featureTexture() {
 
@@ -8,9 +8,22 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 	}
 
+	set featureTexture( v ) {
+
+		const texture = this.uniforms.featureTexture.value;
+		if ( texture !== v && texture ) {
+
+			texture.dispose();
+
+		}
+
+		this.uniforms.featureTexture.value = v;
+
+	}
+
 	get nullFeatureId() {
 
-		return this.uniforms.nullFeatureValue.value;
+		return this.uniforms.nullFeatureId.value;
 
 	}
 
@@ -18,12 +31,12 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 		if ( v < 0 || v === null || v === undefined ) {
 
-			this.uniforms.nullFeatureValue.value = null;
+			this.uniforms.nullFeatureId.value = null;
 			this.setDefine( 'USE_NULL_FEATURE', 0 );
 
 		} else {
 
-			this.uniforms.nullFeatureValue.value = v;
+			this.uniforms.nullFeatureId.value = v;
 			this.setDefine( 'USE_NULL_FEATURE', 1 );
 
 		}
@@ -38,7 +51,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 	set highlightFeatureId( v ) {
 
-		if ( v < 0 || v === null || v === undefined ) {
+		if ( v === null || v === undefined ) {
 
 			this.uniforms.highlightFeatureId.value = null;
 			this.setDefine( 'USE_HIGHLIGHT_FEATURE', 0 );
@@ -55,16 +68,19 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		this.isMeshFeaturesMaterial = true;
 		this.uniforms = {
 
 			featureChannelsLength: { value: 0 },
 			featureChannels: { value: new Array( 4 ).fill( 0 ) },
 			featureTexture: { value: null },
-			nullFeatureValue: { value: null },
+			nullFeatureId: { value: null },
 			highlightFeatureId: { value: - 1 },
 
 		};
-		this.defines = {
+
+		Object.assign( this.defines, {
 
 			// 0: Disabled
 			// 1: Implicit
@@ -76,32 +92,54 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 			FEATURE_ATTR: '',
 			FEATURE_TEXTURE_ATTR: 'uv',
 
-		};
+		} );
+
+		this.addEventListener( 'dispose', () => {
+
+			if ( this.featureTexture ) {
+
+				this.featureTexture.dispose();
+
+			}
+
+		} );
 
 	}
 
 	copy( source ) {
 
+		const currentDefines = this.defines;
+
 		super.copy( source );
 
-		Object.assign( this.defines, source.defines );
+		if ( source.defines ) {
 
-		for ( const key in this.uniforms ) {
+			Object.assign( this.defines, currentDefines, source.defines );
 
-			const value = source.uniforms[ key ].value;
-			if ( Array.isArray( value ) ) {
+		}
 
-				this.uniforms[ key ].value = value.slice();
+		if ( source.uniforms ) {
 
-			} else {
+			for ( const key in this.uniforms ) {
 
-				this.uniforms[ key ].value = value;
+				const value = source.uniforms[ key ].value;
+				if ( Array.isArray( value ) ) {
+
+					this.uniforms[ key ].value = value.slice();
+
+				} else {
+
+					this.uniforms[ key ].value = value;
+
+				}
 
 			}
 
 		}
 
 		this.needsUpdate = true;
+
+
 
 	}
 
@@ -126,23 +164,35 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 	}
 
-	setFromFeatureInfo( info, textureList = null ) {
+	setFromMeshFeatures( meshFeatures, featureIdOrName ) {
+
+		let info = null;
+		if ( typeof featureIdOrName === 'number' ) {
+
+			info = meshFeatures.getFeatureInfo()[ featureIdOrName ] || null;
+
+		} else if ( typeof featureIdOrName === 'string' ) {
+
+			info = meshFeatures.getFeatureInfo().find( el => el.label === featureIdOrName ) || null;
+
+		}
 
 		if ( info === null ) {
 
 			this.setDefine( 'FEATURE_TYPE', 0 );
+			this.featureTexture = null;
 
 		} else if ( 'attribute' in info ) {
 
-			this.setAttributeFeature( info.attribute );
+			this._setAttributeFeature( info.attribute );
 
 		} else if ( 'texture' in info ) {
 
-			this.setTextureFeature( textureList[ info.texture.index ], info.texture.texCoord, info.texture.channels );
+			this._setTextureFeature( meshFeatures.textures[ info.texture.index ], info.texture.texCoord, info.texture.channels );
 
 		} else {
 
-			this.setAttributeFeature( null );
+			this._setAttributeFeature( null );
 
 		}
 
@@ -156,11 +206,12 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 	disableFeatureDisplay() {
 
-		this.setFromFeatureInfo( null );
+		this.setDefine( 'FEATURE_TYPE', 0 );
+		this.featureTexture = null;
 
 	}
 
-	setTextureFeature( texture, uv, channels ) {
+	_setTextureFeature( texture, uv, channels ) {
 
 		const uniforms = this.uniforms;
 
@@ -185,11 +236,11 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 		uniforms.featureChannelsLength.value = channels.length;
 		uniforms.featureChannels.value = [ ...channels ];
-		uniforms.featureTexture.value = texture;
+		this.featureTexture = texture;
 
 	}
 
-	setAttributeFeature( attribute = null ) {
+	_setAttributeFeature( attribute = null ) {
 
 		if ( attribute === null ) {
 
@@ -201,6 +252,8 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 			this.setDefine( 'FEATURE_ATTR', `_feature_id_${ attribute }` );
 
 		}
+
+		this.featureTexture = null;
 
 	}
 
@@ -282,7 +335,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 					#if USE_NULL_FEATURE
 
-						uniform uint nullFeatureValue;
+						uniform uint nullFeatureId;
 
 					#endif
 
@@ -323,13 +376,8 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 					vec3 randFeatureColor( uint feature ) {
 
-						uint b0 = feature & 0xffffu;
-						uint b1 = ( feature >> 16 ) & 0xffffu;
-						float h = 0.5 * float( b0 ) / float( 0xffffu ) + 0.5 * float( b1 ) / float( 0xffffu );
-						h *= 100.0;
-
 						vec3 hsl;
-						hsl.r = rand( h );
+						hsl.r = rand( float( feature ) / 5500.0 );
 						hsl.g = 0.75;
 						hsl.b = 0.5;
 						return hsl2rgb( hsl );
@@ -351,6 +399,7 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 						// texture
 						#if FEATURE_TYPE == 3
 
+							// TODO: support anti aliasing here at the pixel edges
 							uvec4 fields = uvec4( texture( featureTexture, _feature_uv ) * float( 0xff ) );
 							for ( int i = 0; i < min( featureChannelsLength, 4 ); i ++ ) {
 
@@ -371,27 +420,28 @@ const MeshFeaturesMaterialMixin = base => class extends base {
 
 						#endif
 
-						#if USE_NULL_FEATURE
-
-							if ( nullFeatureId == featureId ) {
-
-								diffuseColor.rgb *= 0.0;
-
-							}
-
-						#endif
-
 						#if USE_HIGHLIGHT_FEATURE
 
 							if ( highlightFeatureId != featureId ) {
 
-								diffuseColor.rgb *= 0.0;
+								diffuseColor.rgb *= 0.25;
 
 							}
 
 						#else
 
-							diffuseColor.rgb *= randFeatureColor( featureId );
+							vec3 featureColor = randFeatureColor( featureId );
+							diffuseColor.rgb = mix( diffuseColor.rgb * featureColor, featureColor, 0.05 );
+
+						#endif
+
+						#if USE_NULL_FEATURE
+
+							if ( nullFeatureId == featureId ) {
+
+								diffuseColor.rgb *= vec3( 0.0 );
+
+							}
 
 						#endif
 

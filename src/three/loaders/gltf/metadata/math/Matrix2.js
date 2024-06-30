@@ -1,0 +1,34 @@
+// Matrix2 definition since it doesn't exist in three.js
+export class Matrix2 {
+
+	constructor( n11, n12, n21, n22 ) {
+
+		Matrix2.prototype.isMatrix2 = true;
+
+		this.elements = [
+
+			1, 0,
+			0, 1,
+
+		];
+
+		if ( n11 !== undefined ) {
+
+			this.set( n11, n12, n21, n22 );
+
+		}
+
+	}
+
+	set( n11, n12, n21, n22 ) {
+
+		const te = this.elements;
+
+		te[ 0 ] = n11; te[ 1 ] = n21;
+		te[ 2 ] = n12; te[ 3 ] = n22;
+
+		return this;
+
+	}
+
+}

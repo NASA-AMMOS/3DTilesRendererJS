@@ -66,6 +66,15 @@ import { TilesRenderer } from '3d-tiles-renderer';
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
+tilesRenderer.addEventListener( 'load-tile-set', () => {
+
+	// optionally center the tile set in case it's far off center
+	const sphere = new Sphere();
+	tilesRenderer.getBoundingSphere( sphere );
+	tilesRenderer.group.position.copy( sphere.center ).multiplyScalar( - 1 );
+
+} );
+
 scene.add( tilesRenderer.group );
 
 renderLoop();
