@@ -4,14 +4,14 @@ import {
 } from '..';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
+	DataTexture,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
+import { TextureOverlayTilesRendererMixin } from './src/TextureOverlayTilesRenderer.js';
 
 const URLS = [
 
@@ -51,6 +51,7 @@ let camera, controls, scene, renderer;
 const params = {
 
 	errorTarget: 12,
+	layer1: false,
 
 };
 
@@ -89,6 +90,15 @@ function init() {
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
+	const layerFunction = async () => {
+
+		const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 50 ] ) );
+		dt.needsUpdate = true;
+
+		return dt;
+
+	};
+
 	URLS.forEach( async url => {
 
 		const scene = await new JPLLandformSiteSceneLoader().load( url );
@@ -98,7 +108,8 @@ function init() {
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
-			const tiles = new TilesRenderer( url );
+			const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
+			const tiles = new TextureOverlayTilesRenderer( url );
 
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
@@ -123,6 +134,19 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'layer1' ).onChange( v => {
+
+		if ( v ) {
+
+			tileSets.forEach( t => t.registerLayer( 'layer1', layerFunction ) );
+
+		} else {
+
+			tileSets.forEach( t => t.unregisterLayer( 'layer1' ) );
+
+		}
+
+	} );
 	gui.open();
 
 }
