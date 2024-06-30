@@ -52,7 +52,7 @@ let camera, controls, scene, renderer;
 const params = {
 
 	errorTarget: 12,
-	layer1: false,
+	slopeLayer: false,
 
 };
 
@@ -146,15 +146,15 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'errorTarget', 0, 100 );
-	gui.add( params, 'layer1' ).onChange( v => {
+	gui.add( params, 'slopeLayer' ).onChange( v => {
 
 		if ( v ) {
 
-			tileSets.forEach( t => t.registerLayer( 'layer1', layerFunction ) );
+			tileSets.forEach( t => t.registerLayer( 'slopeLayer', layerFunction ) );
 
 		} else {
 
-			tileSets.forEach( t => t.unregisterLayer( 'layer1' ) );
+			tileSets.forEach( t => t.unregisterLayer( 'slopeLayer' ) );
 
 		}
 
