@@ -1,4 +1,4 @@
-import { Texture, TextureLoader, ImageBitmapLoader } from 'three';
+import { TextureLoader, ImageBitmapLoader } from 'three';
 
 // TODO: Enable TilesRenderer to delay load model events until all textures have loaded
 // TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
@@ -26,37 +26,11 @@ function canUseImageBitmap() {
 
 class TextureCache {
 
-	constructor( loadTextureCallback = null ) {
+	constructor( loadTextureCallback ) {
 
 		this.cache = {};
-		this.urlResolver = url => url;
 		this.fetchOptions = {};
-
-		if ( loadTextureCallback === null ) {
-
-			this.loadTextureCallback = ( url, key ) => {
-
-				const loader = this.getTextureLoader();
-				return loader.loadAsync( url ).then( tex => {
-
-					if ( loader.isImageBitmapLoader ) {
-
-						tex = new Texture( tex );
-						tex.needsUpdate = true;
-
-					}
-
-					return tex;
-
-				} );
-
-			};
-
-		} else {
-
-			this.loadTextureCallback = loadTextureCallback;
-
-		}
+		this.loadTextureCallback = loadTextureCallback;
 
 	}
 
@@ -102,14 +76,13 @@ class TextureCache {
 		const cache = this.cache;
 		if ( key in cache ) {
 
-			cache[ key ].refs ++;
 			return cache[ key ].promise;
 
 		}
 
 		const abortController = new AbortController();
 		const promise = this
-			.loadTextureCallback( this.urlResolver( key ), key )
+			.loadTextureCallback( key )
 			.then( tex => {
 
 				if ( ! abortController.signal.aborted ) {
@@ -126,7 +99,6 @@ class TextureCache {
 			} );
 
 		this.cache[ key ] = {
-			refs: 1,
 			texture: null,
 			abortController,
 			promise,
@@ -212,7 +184,6 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		super( ...args );
 		this.caches = {};
-		this.urlResolver = ( name, key ) => null;
 
 		this.addEventListener( 'delete-layer-texture', ( { scene, tile } ) => {
 
@@ -305,7 +276,7 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
-	registerLayer( name, customTextureCallback = null ) {
+	registerLayer( name, customTextureCallback ) {
 
 		if ( name in this.caches ) {
 
@@ -315,11 +286,6 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		const cache = new TextureCache( customTextureCallback );
 		cache.fetchOptions = this.fetchOptions;
-		cache.urlResolver = key => {
-
-			return this.urlResolver( name, key );
-
-		};
 		this.caches[ name ] = cache;
 
 		this.forEachLoadedModel( ( scene, tile ) => {
@@ -371,6 +337,18 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 			cache.dispose();
 
 		}
+
+	}
+
+	enableLayer( name ) {
+
+		// TODO
+
+	}
+
+	disableLayer( name ) {
+
+		// TODO
 
 	}
 
