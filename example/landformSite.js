@@ -4,14 +4,15 @@ import {
 } from '..';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
+	DataTexture,
+	TextureLoader,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
+import { TextureOverlayTilesRendererMixin } from './src/TextureOverlayTilesRenderer.js';
 
 const URLS = [
 
@@ -51,6 +52,7 @@ let camera, controls, scene, renderer;
 const params = {
 
 	errorTarget: 12,
+	slopeLayer: false,
 
 };
 
@@ -89,6 +91,21 @@ function init() {
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
+	const layerFunction = async tileUrl => {
+
+		const url = tileUrl.replace( '/tilesets/', '/textures/SMG/' ).replace( /\.[0-9a-z]+$/i, '.png' );
+
+		return new TextureLoader()
+			.loadAsync( url )
+			.then( tex => {
+
+				tex.flipY = false;
+				return tex;
+
+			} );
+
+	};
+
 	URLS.forEach( async url => {
 
 		const scene = await new JPLLandformSiteSceneLoader().load( url );
@@ -98,7 +115,8 @@ function init() {
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
-			const tiles = new TilesRenderer( url );
+			const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
+			const tiles = new TextureOverlayTilesRenderer( url );
 
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
@@ -123,6 +141,19 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'slopeLayer' ).onChange( v => {
+
+		if ( v ) {
+
+			tileSets.forEach( t => t.registerLayer( 'slopeLayer', layerFunction ) );
+
+		} else {
+
+			tileSets.forEach( t => t.unregisterLayer( 'slopeLayer' ) );
+
+		}
+
+	} );
 	gui.open();
 
 }
