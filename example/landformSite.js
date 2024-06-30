@@ -104,11 +104,6 @@ function init() {
 
 			} );
 
-		const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 50 ] ) );
-		dt.needsUpdate = true;
-
-		return dt;
-
 	};
 
 	URLS.forEach( async url => {
