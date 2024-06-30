@@ -8,6 +8,7 @@ import {
 	PerspectiveCamera,
 	Group,
 	DataTexture,
+	TextureLoader,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
@@ -90,7 +91,18 @@ function init() {
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
-	const layerFunction = async () => {
+	const layerFunction = async tileUrl => {
+
+		const url = tileUrl.replace( '/tilesets/', '/textures/SMG/' ).replace( /\.[0-9a-z]+$/i, '.png' );
+
+		return new TextureLoader()
+			.loadAsync( url )
+			.then( tex => {
+
+				tex.flipY = false;
+				return tex;
+
+			} );
 
 		const dt = new DataTexture( new Uint8Array( [ 255, 0, 0, 50 ] ) );
 		dt.needsUpdate = true;
