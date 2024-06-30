@@ -1,9 +1,9 @@
 import { TilesRendererBase } from '../base/TilesRendererBase.js';
-import { B3DMLoader } from './B3DMLoader.js';
-import { PNTSLoader } from './PNTSLoader.js';
-import { I3DMLoader } from './I3DMLoader.js';
-import { CMPTLoader } from './CMPTLoader.js';
-import { GLTFExtensionLoader } from './GLTFExtensionLoader.js';
+import { B3DMLoader } from './loaders/B3DMLoader.js';
+import { PNTSLoader } from './loaders/PNTSLoader.js';
+import { I3DMLoader } from './loaders/I3DMLoader.js';
+import { CMPTLoader } from './loaders/CMPTLoader.js';
+import { GLTFExtensionLoader } from './loaders/GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -11,12 +11,15 @@ import {
 	Vector2,
 	LoadingManager,
 	EventDispatcher,
+	REVISION,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 
+// In three.js r165 and higher raycast traversal can be ended early
+const REVISION_165 = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -92,18 +95,22 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
-		// Setting up the override raycasting function to be used by
-		// 3D objects created by this renderer
-		const tilesRenderer = this;
-		this._overridenRaycast = function ( raycaster, intersects ) {
+		if ( REVISION_165 ) {
 
-			if ( ! tilesRenderer.optimizeRaycast ) {
+			// Setting up the override raycasting function to be used by
+			// 3D objects created by this renderer
+			const tilesRenderer = this;
+			this._overridenRaycast = function ( raycaster, intersects ) {
 
-				Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
+				if ( ! tilesRenderer.optimizeRaycast ) {
 
-			}
+					Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
 
-		};
+				}
+
+			};
+
+		}
 
 	}
 
@@ -336,7 +343,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// Push this onto the end of the event stack to ensure this runs
 			// after the base renderer has placed the provided json where it
 			// needs to be placed and is ready for an update.
-			Promise.resolve().then( () => {
+			queueMicrotask( () => {
 
 				this.dispatchEvent( {
 					type: 'load-tile-set',
@@ -352,6 +359,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} );
 
+
+		} ).catch( () => {
+
+			// error is logged internally
 
 		} );
 		return pr;
@@ -477,10 +488,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-		} else {
-
-			transform.identity();
-
 		}
 
 		if ( parentTile ) {
@@ -522,7 +529,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			scene: null,
 			geometry: null,
-			material: null,
+			materials: null,
+			textures: null,
 
 		};
 
@@ -534,7 +542,7 @@ export class TilesRenderer extends TilesRendererBase {
 		tile._loadIndex ++;
 
 		const uri = tile.content.uri;
-		const uriSplits = uri.split( /[\\\/]/g );
+		const uriSplits = uri.split( /[\\/]/g );
 		uriSplits.pop();
 		const workingPath = uriSplits.join( '/' );
 		const fetchOptions = this.fetchOptions;
@@ -556,10 +564,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'y':
 				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
-				break;
-
-			case 'z':
-				upAdjustment.identity();
 				break;
 
 		}
@@ -620,12 +624,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// 3DTILES_content_gltf
 			case 'gltf':
-			case 'glb':
+			case 'glb': {
+
 				const loader = new GLTFExtensionLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 				promise = loader.parse( buffer );
 				break;
+
+			}
 
 			default:
 				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
@@ -655,6 +662,7 @@ export class TilesRenderer extends TilesRendererBase {
 				return;
 
 			}
+
 			// ensure the matrix is up to date in case the scene has a transform applied
 			scene.updateMatrix();
 
@@ -678,12 +686,16 @@ export class TilesRenderer extends TilesRendererBase {
 			} );
 			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
+			if ( REVISION_165 ) {
 
-				c.raycast = this._overridenRaycast;
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
 
-			} );
+					c.raycast = this._overridenRaycast;
+
+				} );
+
+			}
 
 			const materials = [];
 			const geometry = [];
@@ -749,6 +761,23 @@ export class TilesRenderer extends TilesRendererBase {
 			const textures = cached.textures;
 			const parent = cached.scene.parent;
 
+			// dispose of any textures required by the mesh features extension
+			cached.scene.traverse( child => {
+
+				if ( child.userData.meshFeatures ) {
+
+					child.userData.meshFeatures.dispose();
+
+				}
+
+				if ( child.userData.structuralMetadata ) {
+
+					child.userData.structuralMetadata.dispose();
+
+				}
+
+			} );
+
 			for ( let i = 0, l = geometry.length; i < l; i ++ ) {
 
 				geometry[ i ].dispose();
@@ -780,7 +809,6 @@ export class TilesRenderer extends TilesRendererBase {
 				parent.remove( cached.scene );
 
 			}
-
 
 			this.dispatchEvent( {
 				type: 'dispose-model',

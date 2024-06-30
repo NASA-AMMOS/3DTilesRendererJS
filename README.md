@@ -5,7 +5,7 @@
 
 ![](./images/header-mars.png)
 
-Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See [Issue #15](https://github.com/NASA-AMMOS/3DTilesRendererJS/issues/15) for information on which features are not yet implemented.
+Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
 If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features.
 
@@ -66,6 +66,15 @@ import { TilesRenderer } from '3d-tiles-renderer';
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
+tilesRenderer.addEventListener( 'load-tile-set', () => {
+
+	// optionally center the tile set in case it's far off center
+	const sphere = new Sphere();
+	tilesRenderer.getBoundingSphere( sphere );
+	tilesRenderer.group.position.copy( sphere.center ).multiplyScalar( - 1 );
+
+} );
+
 scene.add( tilesRenderer.group );
 
 renderLoop();

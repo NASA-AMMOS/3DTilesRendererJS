@@ -1,5 +1,7 @@
-import { Matrix4, Ray, Vector3 } from 'three';
+import { Matrix4, Ray, Vector3, REVISION } from 'three';
 
+// In three.js r165 and higher raycast traversal can be ended early
+const REVISION_165 = parseInt( REVISION ) < 165;
 const _mat = new Matrix4();
 const _localRay = new Ray();
 const _vec = new Vector3();
@@ -13,20 +15,28 @@ function distanceSort( a, b ) {
 
 function intersectTileScene( scene, raycaster, intersects ) {
 
-	// Don't intersect the box3 helpers because those are used for debugging
-	scene.traverse( c => {
+	if ( REVISION_165 ) {
 
-		// We set the default raycast function to empty so three.js doesn't automatically cast against it
-		Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
+		// Don't intersect the box3 helpers because those are used for debugging
+		scene.traverse( c => {
 
-	} );
+			// We set the default raycast function to empty so three.js doesn't automatically cast against it
+			Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
+
+		} );
+		_hitArray.sort( distanceSort );
+
+	} else {
+
+		raycaster.intersectObject( scene, true, intersects );
+
+	}
 
 }
 
 function intersectTileSceneFirstHist( scene, raycaster ) {
 
 	intersectTileScene( scene, raycaster, _hitArray );
-	_hitArray.sort( distanceSort );
 
 	const hit = _hitArray[ 0 ] || null;
 	_hitArray.length = 0;

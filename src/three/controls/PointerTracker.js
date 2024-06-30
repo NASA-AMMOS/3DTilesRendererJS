@@ -219,6 +219,12 @@ export class PointerTracker {
 
 	}
 
+	isPointerTouch() {
+
+		return this.getPointerType() === 'touch';
+
+	}
+
 	getPointerButtons() {
 
 		return this.buttons;

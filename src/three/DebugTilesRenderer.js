@@ -95,7 +95,7 @@ export class DebugTilesRenderer extends TilesRenderer {
 			.then( () => {
 
 				// defer to after the loaded tileset has been initialized
-				Promise.resolve().then( () => {
+				queueMicrotask( () => {
 
 					this.initExtremes();
 
@@ -408,14 +408,6 @@ export class DebugTilesRenderer extends TilesRenderer {
 
 	}
 
-	parseTile( buffer, tile, ext ) {
-
-		tile[ LOAD_TIME ] = performance.now();
-
-		return super.parseTile( buffer, tile, ext );
-
-	}
-
 	setTileVisible( tile, visible ) {
 
 		super.setTileVisible( tile, visible );
@@ -476,6 +468,8 @@ export class DebugTilesRenderer extends TilesRenderer {
 	}
 
 	parseTile( buffer, tile, extension ) {
+
+		tile[ LOAD_TIME ] = performance.now();
 
 		return super
 			.parseTile( buffer, tile, extension )
