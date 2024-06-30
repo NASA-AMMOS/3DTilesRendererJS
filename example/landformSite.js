@@ -80,18 +80,12 @@ function init() {
 	controls.minDistance = 1;
 	controls.maxAltitude = Math.PI;
 
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
-
+	// tile group
 	const tilesParent = new Group();
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
+	// load all tile sets
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
@@ -146,8 +140,8 @@ function render() {
 
 	requestAnimationFrame( render );
 
-	camera.updateMatrixWorld();
 	controls.update();
+	camera.updateMatrixWorld();
 
 	tileSets.forEach( tiles => {
 
