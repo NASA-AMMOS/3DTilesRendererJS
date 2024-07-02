@@ -102,22 +102,19 @@ export class CameraTransitionManager extends EventDispatcher {
 		const fromCamera = this._getFromCamera();
 		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
 
-		transitionCamera.position.copy( fromCamera.position );
-		transitionCamera.rotation.copy( fromCamera.rotation );
-
 		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
 
 		if ( fromCamera.isPerspectiveCamera ) {
 
 			// offset the orthographic camera backwards based on user setting to avoid cases where the ortho
 			// camera position will clip into terrain when once transitioned
-			orthographicCamera.position.copy( fromCamera.position ).addScaledVector( _forward, - this.orthographicOffset );
-			orthographicCamera.rotation.copy( fromCamera.rotation );
+			orthographicCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, - this.orthographicOffset );
+			orthographicCamera.rotation.copy( perspectiveCamera.rotation );
 			orthographicCamera.updateMatrixWorld();
 
 			// calculate the necessary orthographic zoom based on the current perspective camera position
-			const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
-			const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * fromCamera.fov * 0.5 ) * distToPoint;
+			const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, this.fixedPoint ).dot( _forward ) );
+			const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * distToPoint;
 			const orthoHeight = orthographicCamera.top - orthographicCamera.bottom;
 			orthographicCamera.zoom = orthoHeight / projectionHeight;
 			orthographicCamera.updateProjectionMatrix();
@@ -125,19 +122,25 @@ export class CameraTransitionManager extends EventDispatcher {
 		} else {
 
 			// calculate the target distance from the point
-			const distToPoint = Math.abs( _vec.subVectors( fromCamera.position, this.fixedPoint ).dot( _forward ) );
+			const distToPoint = Math.abs( _vec.subVectors( orthographicCamera.position, this.fixedPoint ).dot( _forward ) );
 			const orthoHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
 			const targetDist = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
 
 			// set the final camera position so the pivot point is stable
-			perspectiveCamera.rotation.copy( fromCamera.rotation );
-			perspectiveCamera.position.copy( fromCamera.position )
+			perspectiveCamera.rotation.copy( orthographicCamera.rotation );
+			perspectiveCamera.position.copy( orthographicCamera.position )
 				.addScaledVector( _forward, distToPoint )
 				.addScaledVector( _forward, - targetDist );
 
 			perspectiveCamera.updateMatrixWorld();
 
+			// TODO: is it possible to automatically shift the orthographic camera to where it should be if we transitioned from the perspective camera right now
+			// based on the ortho zoom? Only if not animating?
+
 		}
+
+		transitionCamera.position.copy( perspectiveCamera.position );
+		transitionCamera.rotation.copy( perspectiveCamera.rotation );
 
 	}
 

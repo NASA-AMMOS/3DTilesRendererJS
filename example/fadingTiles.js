@@ -48,6 +48,7 @@ function init() {
 		new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 ),
 	);
 	transition.camera.position.set( 20, 10, 20 );
+	transition.camera.lookAt( 0, 0, 0 );
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
 		skyTiles.deleteCamera( prevCamera );
