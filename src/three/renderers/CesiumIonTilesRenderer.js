@@ -60,6 +60,8 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 				this.rootURL = url;
 				this.fetchOptions.headers = this.fetchOptions.headers || {};
 				this.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+				// Actually load the tileset now that we got its url from the cesium ion server
+				super.update();
 
 			} ).catch( () => {
 
