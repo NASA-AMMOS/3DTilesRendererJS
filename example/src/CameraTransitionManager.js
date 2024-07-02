@@ -175,6 +175,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
 		const alpha = easeInOut( this._alpha );
 		const fromCamera = this._getFromCamera();
+		const toCamera = fromCamera === perspectiveCamera ? orthographicCamera : perspectiveCamera;
 
 		// get the forward vector
 		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
