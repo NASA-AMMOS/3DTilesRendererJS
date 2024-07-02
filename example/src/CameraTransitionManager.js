@@ -36,6 +36,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.transitionCamera = new PerspectiveCamera();
 
 		// settings
+		this.orthographicPositionalZoom = true;
 		this.orthographicOffset = 50;
 		this.fixedPoint = new Vector3();
 		this.duration = 200;
@@ -134,8 +135,14 @@ export class CameraTransitionManager extends EventDispatcher {
 
 			perspectiveCamera.updateMatrixWorld();
 
-			// TODO: is it possible to automatically shift the orthographic camera to where it should be if we transitioned from the perspective camera right now
-			// based on the ortho zoom? Only if not animating?
+			// shift the orthographic camera position so it aligns with the perspective cameras position as
+			// calculated by the FoV. This ensures a consistent orthographic position on transition.
+			if ( this.orthographicPositionalZoom ) {
+
+				orthographicCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, - this.orthographicOffset );
+				orthographicCamera.updateMatrixWorld();
+
+			}
 
 		}
 
