@@ -1,7 +1,5 @@
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	OrthographicCamera,
@@ -33,19 +31,23 @@ render();
 
 function init() {
 
-	scene = new Scene();
-
-	// primary camera view
+	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0xd8cec0 );
 
 	document.body.appendChild( renderer.domElement );
-	renderer.domElement.tabIndex = 1;
+
+	// scene
+	scene = new Scene();
 
 	// set up cameras and ortho / perspective transition
-	transition = new CameraTransitionManager();
+	transition = new CameraTransitionManager(
+		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 ),
+		new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 ),
+	);
+	transition.camera.position.set( 20, 10, 20 );
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
 		skyTiles.deleteCamera( prevCamera );
@@ -58,32 +60,20 @@ function init() {
 
 	} );
 
-	transition.perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 );
-	transition.perspectiveCamera.position.set( 20, 10, 20 );
-
-	transition.orthographicCamera = new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 );
-	transition.camera = transition.perspectiveCamera;
-
 	// controls
 	controls = new EnvironmentControls( scene, transition.camera, renderer.domElement );
 	controls.minZoomDistance = 2;
 	controls.cameraRadius = 1;
-
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
 
 	// tiles parent group
 	tilesParent = new Group();
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
+	// init tiles
 	reinstantiateTiles();
 
+	// events
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 
@@ -161,22 +151,22 @@ function render() {
 	controls.enabled = ! transition.animating;
 	controls.update();
 
-	const cam = transition.camera;
-	cam.updateMatrixWorld();
+	const camera = transition.camera;
+	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.fadeRootTiles = params.fadeRootTiles;
-	groundTiles.setResolutionFromRenderer( cam, renderer );
+	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
 	skyTiles.fadeRootTiles = params.fadeRootTiles;
-	skyTiles.setResolutionFromRenderer( cam, renderer );
+	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();
 
 	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 
-	renderer.render( scene, cam );
+	renderer.render( scene, camera );
 
 	params.fadingGroundTiles = groundTiles.fadingTiles + ' tiles';
 
