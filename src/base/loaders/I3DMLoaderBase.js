@@ -1,23 +1,23 @@
-// B3DM File Format
-// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
+// I3DM File Format
+// https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Instanced3DModel/README.md
 
-import { FeatureTable, BatchTable } from '../utilities/FeatureTable.js';
+import { FeatureTable, BatchTable } from '../../utilities/FeatureTable.js';
+import { arrayToString } from '../../utilities/arrayToString.js';
 import { LoaderBase } from './LoaderBase.js';
-import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { readMagicBytes } from '../../utilities/readMagicBytes.js';
 
-export class B3DMLoaderBase extends LoaderBase {
+export class I3DMLoaderBase extends LoaderBase {
 
 	parse( buffer ) {
 
-		// TODO: this should be able to take a uint8array with an offset and length
 		const dataView = new DataView( buffer );
 
-		// 28-byte header
+		// 32-byte header
 
 		// 4 bytes
 		const magic = readMagicBytes( dataView );
 
-		console.assert( magic === 'b3dm' );
+		console.assert( magic === 'i3dm' );
 
 		// 4 bytes
 		const version = dataView.getUint32( 4, true );
@@ -41,8 +41,11 @@ export class B3DMLoaderBase extends LoaderBase {
 		// 4 bytes
 		const batchTableBinaryByteLength = dataView.getUint32( 24, true );
 
+		// 4 bytes
+		const gltfFormat = dataView.getUint32( 28, true );
+
 		// Feature Table
-		const featureTableStart = 28;
+		const featureTableStart = 32;
 		const featureTableBuffer = buffer.slice(
 			featureTableStart,
 			featureTableStart + featureTableJSONByteLength + featureTableBinaryByteLength,
@@ -62,21 +65,55 @@ export class B3DMLoaderBase extends LoaderBase {
 		);
 		const batchTable = new BatchTable(
 			batchTableBuffer,
-			featureTable.getData( 'BATCH_LENGTH' ),
+			featureTable.getData( 'INSTANCES_LENGTH' ),
 			0,
 			batchTableJSONByteLength,
 			batchTableBinaryByteLength,
 		);
 
 		const glbStart = batchTableStart + batchTableJSONByteLength + batchTableBinaryByteLength;
-		const glbBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
+		const bodyBytes = new Uint8Array( buffer, glbStart, byteLength - glbStart );
 
-		return {
-			version,
-			featureTable,
-			batchTable,
-			glbBytes,
-		};
+		let glbBytes = null;
+		let promise = null;
+		if ( gltfFormat ) {
+
+			glbBytes = bodyBytes;
+			promise = Promise.resolve();
+
+		} else {
+
+			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
+			promise = fetch( externalUri, this.fetchOptions )
+				.then( res => {
+
+					if ( ! res.ok ) {
+
+						throw new Error( `I3DMLoaderBase : Failed to load file "${ externalUri }" with status ${ res.status } : ${ res.statusText }` );
+
+					}
+
+					return res.arrayBuffer();
+
+				} )
+				.then( buffer => {
+
+					glbBytes = new Uint8Array( buffer );
+
+				} );
+
+		}
+
+		return promise.then( () => {
+
+			return {
+				version,
+				featureTable,
+				batchTable,
+				glbBytes,
+			};
+
+		} );
 
 	}
 

@@ -4,21 +4,37 @@
         "ecmaVersion": 2020
 	},
 
-	"extends": ["plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js"],
+	"globals": {
+		"BigInt64Array": "readonly",
+		"BigUInt64Array": "readonly"
+	},
+	"env": {
+		"jest/globals": true
+	},
+
 	"plugins": [ "jest" ],
+	"extends": [ "eslint:recommended", "plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
 
 	"rules": {
+		"no-inner-declarations": "off",
+		"padding-line-between-statements": "off",
+		"no-constant-condition": "off",
+		// "no-constant-condition": [ "error", { "checkLoops": "exceptWhileTrue" } ],
+
 		"no-unused-vars": [ 1, { "args": "none" } ],
-		"no-throw-literal": [
-			"error"
-		],
-		"prefer-const": [
-			"error",
-			{
-				"destructuring": "any",
-				"ignoreReadBeforeAssign": false
-			}
-		],
+		"no-throw-literal": [ "error" ],
+		"prefer-const": [ "error", { "destructuring": "any", "ignoreReadBeforeAssign": false } ],
 		"quotes": [ "error", "single" ]
-	}
+	},
+	"overrides": [
+		{
+			"files": [ "*.ts" ],
+			"parser": "@typescript-eslint/parser",
+			"plugins": [ "@typescript-eslint" ],
+			"rules": {
+				"no-unused-vars": [ "error", { "args": "none" } ],
+				"indent": [ 2, 2 ]
+			}
+		}
+	]
 }

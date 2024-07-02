@@ -1,4 +1,4 @@
-import { FeatureTable, BatchTable } from '../utilities/FeatureTable';
+import { FeatureTable, BatchTable } from '../../utilities/FeatureTable';
 
 export interface I3DMBaseResult {
 

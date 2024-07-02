@@ -4,13 +4,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.35] - 2024.06.25
+### Fixed
+- Lint rules causing build failures.
+
+## [0.3.34] - 2024.06.18
+### Added
+- Export `EXT_mesh_features` & `EXT_structural_metadata` extensions for glTF.
+
+### Fixed
+- Syntax errors causing failure to import in some cases.
+
+## [0.3.33] - 2024.05.31
+### Fixed
+- Remove logged error when a tile set is aborted.
+- Adjusted raycast early exit behavior based on three.js r165.
+- EnvironmentControls: fix case where the dragging does not work from below
+- Remote glTF textures failing to load.
+
+## [0.3.32] - 2024.05.17
 ### Added
 - EnvironmentControls: Add support for othographic zoom.
 - EnvironmentControls: Add "zoom speed" option.
+- PNTSLoader: Add `batchTable` to the returned points object.
+- Support for improved, early termination raycasting from three.js r165.
+
+### Fixed
+- Some cases where the camera jumped and drifted while reorienting the "up" direction.
 
 ### Changed
 - EnvironmentControls: Changed default rotation speed.
+- Use `queueMicrotask` in place of `Promise.resolve()`.
 
 ## [0.3.31] - 2024.03.25
 ### Fixed
