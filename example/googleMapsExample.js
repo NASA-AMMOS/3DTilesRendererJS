@@ -76,15 +76,27 @@ function reinstantiateTiles() {
 
 function init() {
 
-	scene = new Scene();
-
-	// primary camera view
+	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setClearColor( 0x151c1f );
-
 	document.body.appendChild( renderer.domElement );
 
-	transition = new CameraTransitionManager();
+	// scene
+	scene = new Scene();
+
+	// camera and transition set up
+	transition = new CameraTransitionManager(
+		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
+		new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 ),
+	);
+
+	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.perspectiveCamera.lookAt( 0, 0, 0 );
+
+	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
+	transition.orthographicCamera.lookAt( 0, 0, 0 );
+	transition.orthographicCamera.zoom = 1.5 * 1e-3;
+
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
 		tiles.deleteCamera( prevCamera );
@@ -93,20 +105,10 @@ function init() {
 
 	} );
 
-	transition.perspectiveCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
-	transition.perspectiveCamera.lookAt( 0, 0, 0 );
-
-	transition.orthographicCamera = new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 );
-	transition.orthographicCamera.zoom = 1.5 * 1e-3;
-	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
-	transition.orthographicCamera.lookAt( 0, 0, 0 );
-
-	transition.camera = transition.perspectiveCamera;
-
 	// controls
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 
+	// initialize tiles
 	reinstantiateTiles();
 
 	onWindowResize();
@@ -221,8 +223,6 @@ function animate() {
 	controls.update();
 
 	const camera = transition.camera;
-
-	window.TRANS = transition;
 
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );

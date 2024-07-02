@@ -156,15 +156,16 @@ function render() {
 
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.fadeRootTiles = params.fadeRootTiles;
+	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
 	skyTiles.fadeRootTiles = params.fadeRootTiles;
+	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	skyTiles.setCamera( camera );
 	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();
-
-	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
-	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 
 	renderer.render( scene, camera );
 
