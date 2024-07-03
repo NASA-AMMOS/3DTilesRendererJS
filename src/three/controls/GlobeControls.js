@@ -26,8 +26,8 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 10;
-const MAX_GLOBE_DISTANCE = 2 * 1e7;
-const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
+const MAX_GLOBE_DISTANCE = 5 * 1e7;
+const GLOBE_TRANSITION_THRESHOLD = 3 * 1e7;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -119,13 +119,33 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		super.update();
-
 		const {
 			camera,
 			tilesGroup,
 			pivotMesh,
 		} = this;
+
+		// if we're outside the transition threshold then we toggle some reorientation behavior
+		// when adjusting the up frame while moving the camera
+		if ( this._isNearControls() ) {
+
+			this.reorientOnDrag = true;
+			this.reorientOnZoom = this.zoomDelta > 0;
+
+		} else {
+
+			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
+
+				pivotMesh.visible = false;
+
+			}
+			this.reorientOnDrag = false;
+			this.reorientOnZoom = true;
+
+		}
+
+		// fire basic controls update
+		super.update();
 
 		// clamp the camera distance
 		let distanceToCenter = this.getDistanceToCenter();
@@ -137,27 +157,6 @@ export class GlobeControls extends EnvironmentControls {
 			camera.updateMatrixWorld();
 
 			distanceToCenter = maxDistance;
-
-		}
-
-		// TODO: handle ortho
-
-		// if we're outside the transition threshold then we toggle some reorientation behavior
-		// when adjusting the up frame while moving the camera
-		if ( this._isNearControls() ) {
-
-			this.reorientOnDrag = true;
-			this.reorientOnZoom = false;
-
-		} else {
-
-			if ( this.state !== NONE && this._dragMode !== 1 && this._rotationMode !== 1 ) {
-
-				pivotMesh.visible = false;
-
-			}
-			this.reorientOnDrag = false;
-			this.reorientOnZoom = true;
 
 		}
 
@@ -408,7 +407,7 @@ export class GlobeControls extends EnvironmentControls {
 	_getMaxCameraDistance() {
 
 		const { camera, ellipsoid } = this;
-		if ( ! camera.isPerspectiveCamera ) {
+		if ( ! camera.isPerspectiveCamera || true ) {
 
 			return MAX_GLOBE_DISTANCE;
 
