@@ -85,7 +85,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomSpeed = 1;
 
 		this.reorientOnDrag = true;
-		this.reorientOnZoom = false;
+		this.scaleZoomOrientationAtEdges = false;
 		this.adjustHeight = true;
 
 		// internal state
@@ -896,7 +896,7 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirectionSet,
 			zoomPointSet,
 			reorientOnDrag,
-			reorientOnZoom
+			scaleZoomOrientationAtEdges,
 		} = this;
 
 		camera.updateMatrixWorld();
@@ -911,11 +911,11 @@ export class EnvironmentControls extends EventDispatcher {
 			const v = new Vector3();
 			this.getUpDirection( zoomPoint, v );
 
-			if ( ! reorientOnZoom ) {
+			if ( ! scaleZoomOrientationAtEdges ) {
 
 				const quat = new Quaternion();
 				let amt = Math.max( v.dot( up ) - 0.6, 0 ) / 0.4;
-				amt = MathUtils.mapLinear( amt, 0, 0.5, 0.75, 1 );
+				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
 				amt = Math.min( amt, 1 );
 				_quaternion.slerp( quat, 1.0 - amt );
 

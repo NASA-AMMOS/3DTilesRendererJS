@@ -130,7 +130,7 @@ export class GlobeControls extends EnvironmentControls {
 		if ( this._isNearControls() ) {
 
 			this.reorientOnDrag = true;
-			this.reorientOnZoom = this.zoomDelta > 0;
+			this.scaleZoomOrientationAtEdges = this.zoomDelta > 0;
 
 		} else {
 
@@ -140,7 +140,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			}
 			this.reorientOnDrag = false;
-			this.reorientOnZoom = true;
+			this.scaleZoomOrientationAtEdges = true;
 
 		}
 
@@ -299,7 +299,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const zoomDelta = this.zoomDelta;
+		const { zoomDelta, ellipsoid, zoomSpeed } = this;
 		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			super._updateZoom();
@@ -313,9 +313,14 @@ export class GlobeControls extends EnvironmentControls {
 			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
 			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
 
+			// calculate zoom in a similar way to environment controls so
+			// the zoom speeds are comparable
+			const dist = this.getDistanceToCenter() - ellipsoid.radius.x;
+			const scale = zoomDelta * dist * zoomSpeed * 0.0025;
+
 			// zoom out directly from the globe center
-			this.getVectorToCenter( _vec );
-			this.camera.position.addScaledVector( _vec, zoomDelta * 0.0025 );
+			this.getVectorToCenter( _vec ).normalize();
+			this.camera.position.addScaledVector( _vec, scale );
 			this.camera.updateMatrixWorld();
 
 			this.zoomDelta = 0;
@@ -383,37 +388,35 @@ export class GlobeControls extends EnvironmentControls {
 
 	_getPerspectiveTransitionDistance() {
 
-		return GLOBE_TRANSITION_THRESHOLD;
+		const { camera, ellipsoid } = this;
+		if ( ! camera.isPerspectiveCamera ) {
 
-		// TODO: the zooming seems to fail if the camera is too far out and the target
-		// up changes too much on move? Ie zooming into the horizon from afar
-		// const { camera, ellipsoid } = this;
-		// if ( ! camera.isPerspectiveCamera ) {
+			throw new Error();
 
-		// 	throw new Error();
+		}
 
-		// }
+		// When the smallest fov spans 65% of the ellipsoid then we use the near controls
+		const ellipsoidSize = 0.65 * 2 * Math.max( ...ellipsoid.radius );
+		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
+		const dist = Math.min( distVert, distHoriz );
 
-		// const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
-		// const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		// const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		// const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
-		// const dist = Math.max( distVert, distHoriz );
-
-		// return dist * 0.7;
+		return dist;
 
 	}
 
 	_getMaxCameraDistance() {
 
 		const { camera, ellipsoid } = this;
-		if ( ! camera.isPerspectiveCamera || true ) {
+		if ( ! camera.isPerspectiveCamera ) {
 
 			return MAX_GLOBE_DISTANCE;
 
 		}
 
-		const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
+		// allow for zooming out such that the ellipsoid is half the size of the largest fov
+		const ellipsoidSize = 2 * 2 * Math.max( ...ellipsoid.radius );
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
 		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
 		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
