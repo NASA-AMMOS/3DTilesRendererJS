@@ -222,6 +222,8 @@ function animate() {
 	controls.update();
 	transition.update();
 
+	// TODO: ideally we would sync the camera positions, then update the planes, then transition.
+	// Without it we may have an off-by-one-frame issue?
 	controls.updateCameraClipPlanes( transition.perspectiveCamera );
 	controls.updateCameraClipPlanes( transition.orthographicCamera );
 
