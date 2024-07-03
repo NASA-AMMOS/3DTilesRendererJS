@@ -223,8 +223,6 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updatePosition( ...args ) {
 
-		// TODO: handle ortho
-
 		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
@@ -284,8 +282,6 @@ export class GlobeControls extends EnvironmentControls {
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
-		// TODO: handle ortho
-
 		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
@@ -304,36 +300,10 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		// TODO: handle ortho
-
 		const zoomDelta = this.zoomDelta;
-		const camera = this.camera;
-		const zoomSpeed = this.zoomSpeed;
 		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			super._updateZoom();
-
-		} else if ( camera.isOrthographicCamera ) {
-
-			// zoom the camera
-			const normalizedDelta = Math.pow( 0.95, Math.abs( zoomDelta * 0.05 ) );
-			const scaleFactor = zoomDelta > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
-			const maxDiameter = 2.0 * Math.max( ...this.ellipsoid.radius );
-			const minZoom = Math.min( camera.right - camera.left, camera.top - camera.bottom ) / maxDiameter;
-
-			camera.zoom = Math.max( 0.75 * minZoom, camera.zoom * scaleFactor * zoomSpeed );
-			camera.updateProjectionMatrix();
-
-			let alpha = MathUtils.mapLinear( camera.zoom, minZoom * 1.25, minZoom * 0.75, 0, 1 );
-			if ( alpha > 0 ) {
-
-				alpha = MathUtils.clamp( alpha, 0, 1 );
-				this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
-				this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
-
-			}
-
-			this.zoomDelta = 0;
 
 		} else {
 
@@ -456,20 +426,22 @@ export class GlobeControls extends EnvironmentControls {
 
 	_isNearControls() {
 
-		const { camera, ellipsoid } = this;
-		if ( camera.isPerspectiveCamera ) {
+		return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
-			return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
+		// const { camera, ellipsoid } = this;
+		// if ( camera.isPerspectiveCamera ) {
 
-		} else {
+		// 	return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
-			const ellipsoidSize = Math.max( ...ellipsoid.radius );
-			const orthoHeight = ( camera.top - camera.bottom ) / camera.zoom;
-			const orthoWidth = ( camera.right - camera.left ) / camera.zoom;
-			const orthoSize = Math.max( orthoHeight, orthoWidth );
-			return ellipsoidSize > orthoSize * 0.5;
+		// } else {
 
-		}
+		// 	const ellipsoidSize = Math.max( ...ellipsoid.radius );
+		// 	const orthoHeight = ( camera.top - camera.bottom ) / camera.zoom;
+		// 	const orthoWidth = ( camera.right - camera.left ) / camera.zoom;
+		// 	const orthoSize = Math.max( orthoHeight, orthoWidth );
+		// 	return ellipsoidSize > orthoSize * 0.5;
+
+		// }
 
 	}
 
