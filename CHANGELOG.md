@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: Speed change when transitioning between near and far behavior.
 - GlobeControls: Behavior now relies on camera field of view.
 
+### Changed
+- CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
+
 ## [0.3.35] - 2024.06.25
 ### Fixed
 - Lint rules causing build failures.
