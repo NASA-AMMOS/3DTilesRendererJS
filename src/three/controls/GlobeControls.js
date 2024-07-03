@@ -125,23 +125,25 @@ export class GlobeControls extends EnvironmentControls {
 			camera,
 			tilesGroup,
 			pivotMesh,
-			ellipsoid,
 		} = this;
 
 		// clamp the camera distance
 		let distanceToCenter = this.getDistanceToCenter();
-		if ( distanceToCenter > MAX_GLOBE_DISTANCE ) {
+		const maxDistance = this._getMaxCameraDistance();
+		if ( distanceToCenter > maxDistance ) {
 
 			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
-			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
+			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, maxDistance );
 			camera.updateMatrixWorld();
 
-			distanceToCenter = MAX_GLOBE_DISTANCE;
+			distanceToCenter = maxDistance;
 
 		}
 
+		// TODO: handle ortho
+
 		// if we're outside the transition threshold then we toggle some reorientation behavior
-		// when adjusting the up frame while moving hte camera
+		// when adjusting the up frame while moving the camera
 		if ( this._isNearControls() ) {
 
 			this.reorientOnDrag = true;
@@ -159,27 +161,54 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		// update the projection matrix
-		// interpolate from the 25% radius margin around the globe down to the surface
-		// so we can avoid z fighting when near value is too far at a high altitude
-		const largestDistance = Math.max( ...ellipsoid.radius );
-		const margin = 0.25 * largestDistance;
-		const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
-		const minNear = MathUtils.lerp( 1, 1000, alpha );
-		camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
+		// update the camera planes
+		this.updateCameraClipPlanes( camera );
 
-		// update the far plane to the horizon distance
-		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
-		_pos.copy( camera.position ).applyMatrix4( invMatrix );
-		ellipsoid.getPositionToCartographic( _pos, _latLon );
+	}
 
-		// use a minimum elevation for computing the horizon distance to avoid the far clip
-		// plane approaching zero as the camera goes to or below sea level.
-		const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
-		const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
-		camera.far = horizonDistance + 0.1;
+	// Updates the passed camera near and far clip planes to encapsulate the
+	// ellipsoid from their current position.
+	updateCameraClipPlanes( camera ) {
 
-		camera.updateProjectionMatrix();
+		const {
+			tilesGroup,
+			ellipsoid,
+		} = this;
+
+		const distanceToCenter = this.getDistanceToCenter();
+		if ( camera.isPerspectiveCamera ) {
+
+			// update the projection matrix
+			// interpolate from the 25% radius margin around the globe down to the surface
+			// so we can avoid z fighting when near value is too far at a high altitude
+			const largestDistance = Math.max( ...ellipsoid.radius );
+			const margin = 0.25 * largestDistance;
+			const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
+			const minNear = MathUtils.lerp( 1, 1000, alpha );
+			camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
+
+			// update the far plane to the horizon distance
+			const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
+			_pos.copy( camera.position ).applyMatrix4( invMatrix );
+			ellipsoid.getPositionToCartographic( _pos, _latLon );
+
+			// use a minimum elevation for computing the horizon distance to avoid the far clip
+			// plane approaching zero as the camera goes to or below sea level.
+			const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
+			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
+			camera.far = horizonDistance + 0.1;
+
+			camera.updateProjectionMatrix();
+
+		} else {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
+
+			camera.near = - Math.max( ...ellipsoid.radius );
+			camera.far = - _vec.z;
+
+		}
 
 	}
 
@@ -271,21 +300,23 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const scale = this.zoomDelta;
-		if ( this._isNearControls() || scale > 0 ) {
+		const zoomDelta = this.zoomDelta;
+		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			super._updateZoom();
 
 		} else {
 
 			// orient the camera to focus on the earth during the zoom
-			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
+			const transitionDistance = this._getPerspectiveTransitionDistance();
+			const maxDistance = this._getMaxCameraDistance();
+			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), transitionDistance, maxDistance, 0, 1 );
 			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
 			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec );
-			this.camera.position.addScaledVector( _vec, scale * 0.0025 );
+			this.camera.position.addScaledVector( _vec, zoomDelta * 0.0025 );
 			this.camera.updateMatrixWorld();
 
 			this.zoomDelta = 0;
@@ -351,31 +382,64 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	_getPerspectiveTransitionDistance() {
+
+		return GLOBE_TRANSITION_THRESHOLD;
+
+		// TODO: the zooming seems to fail if the camera is too far out and the target
+		// up changes too much on move? Ie zooming into the horizon from afar
+		// const { camera, ellipsoid } = this;
+		// if ( ! camera.isPerspectiveCamera ) {
+
+		// 	throw new Error();
+
+		// }
+
+		// const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
+		// const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		// const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		// const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
+		// const dist = Math.max( distVert, distHoriz );
+
+		// return dist * 0.7;
+
+	}
+
+	_getMaxCameraDistance() {
+
+		const { camera, ellipsoid } = this;
+		if ( ! camera.isPerspectiveCamera ) {
+
+			return MAX_GLOBE_DISTANCE;
+
+		}
+
+		const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
+		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
+		const dist = Math.max( distVert, distHoriz );
+
+		return dist;
+
+	}
+
 	_isNearControls() {
 
-		return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+		return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
-		// const camera = this.camera;
-
+		// const { camera, ellipsoid } = this;
 		// if ( camera.isPerspectiveCamera ) {
 
-		// 	// TODO:
-		// 	// - must recalculate the max zoom out distance based on camera fov
-		// 	// - must adjust use of GLOBE_TRANSITION_THRESHOLD above
-
-		// 	// https://physicsforums.com/threads/need-an-equation-for-converting-vertical-to-horizontal-fov.981179/
-		// 	const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-
-		// 	const size = Math.max( ...this.ellipsoid.radius );
-		// 	const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		// 	const distHoriz = size / Math.tan( fovHoriz * 0.5 );
-		// 	const dist = Math.max( distVert, distHoriz );
-
-		// 	return this.getDistanceToCenter() < dist * 0.7;
+		// 	return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
 		// } else {
 
-		//	return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+		// 	const ellipsoidSize = Math.max( ...ellipsoid.radius );
+		// 	const orthoHeight = ( camera.top - camera.bottom ) / camera.zoom;
+		// 	const orthoWidth = ( camera.right - camera.left ) / camera.zoom;
+		// 	const orthoSize = Math.max( orthoHeight, orthoWidth );
+		// 	return ellipsoidSize > orthoSize * 0.5;
 
 		// }
 

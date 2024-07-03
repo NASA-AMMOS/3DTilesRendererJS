@@ -1,7 +1,5 @@
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	OrthographicCamera,
@@ -10,9 +8,10 @@ import {
 import { FadeTilesRenderer, } from './src/FadeTilesRenderer.js';
 import { EnvironmentControls } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { CameraTransitionManager } from './src/CameraTransitionManager.js';
 
-let camera, ortho, controls, scene, renderer;
-let groundTiles, skyTiles, tilesParent;
+let controls, scene, renderer;
+let groundTiles, skyTiles, tilesParent, transition;
 
 const params = {
 
@@ -23,7 +22,7 @@ const params = {
 	fadeDuration: 0.5,
 	renderScale: 1,
 	fadingGroundTiles: '0 tiles',
-	camera: 'perspective',
+	orthographic: false,
 
 };
 
@@ -32,64 +31,59 @@ render();
 
 function init() {
 
-	scene = new Scene();
-
-	// primary camera view
+	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0xd8cec0 );
 
 	document.body.appendChild( renderer.domElement );
-	renderer.domElement.tabIndex = 1;
 
-	ortho = new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 );
+	// scene
+	scene = new Scene();
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 );
-	camera.position.set( 20, 10, 20 );
+	// set up cameras and ortho / perspective transition
+	transition = new CameraTransitionManager(
+		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 ),
+		new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 ),
+	);
+	transition.camera.position.set( 20, 10, 20 );
+	transition.camera.lookAt( 0, 0, 0 );
+	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
+
+		skyTiles.deleteCamera( prevCamera );
+		groundTiles.deleteCamera( prevCamera );
+
+		skyTiles.setCamera( camera );
+		groundTiles.setCamera( camera );
+
+		controls.setCamera( camera );
+
+	} );
 
 	// controls
-	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls = new EnvironmentControls( scene, transition.camera, renderer.domElement );
 	controls.minZoomDistance = 2;
 	controls.cameraRadius = 1;
 
-	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 2, 3 );
-	scene.add( dirLight );
-
-	const ambLight = new AmbientLight( 0xffffff, 0.2 );
-	scene.add( ambLight );
-
+	// tiles parent group
 	tilesParent = new Group();
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
+	// init tiles
 	reinstantiateTiles();
 
+	// events
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 
+	// gui initialization
 	const gui = new GUI();
-	gui.add( params, 'camera', [ 'perspective', 'orthographic' ] ).onChange( v => {
+	gui.add( params, 'orthographic' ).onChange( v => {
 
-		if ( v === 'perspective' ) {
-
-			camera.position.copy( ortho.position );
-			camera.rotation.copy( ortho.rotation );
-			controls.setCamera( camera );
-			groundTiles.deleteCamera( ortho );
-			skyTiles.deleteCamera( ortho );
-
-		} else {
-
-			ortho.position.copy( camera.position );
-			ortho.rotation.copy( camera.rotation );
-			controls.setCamera( ortho );
-			groundTiles.deleteCamera( camera );
-			skyTiles.deleteCamera( camera );
-
-		}
+		transition.fixedPoint.copy( controls.pivotPoint );
+		transition.toggle();
 
 	} );
 	gui.add( params, 'useFade' );
@@ -121,10 +115,12 @@ function reinstantiateTiles() {
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
+	groundTiles.setCamera( transition.camera );
 
 	skyTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
+	skyTiles.setCamera( transition.camera );
 
 	tilesParent.add( groundTiles.group, skyTiles.group );
 
@@ -132,16 +128,18 @@ function reinstantiateTiles() {
 
 function onWindowResize() {
 
+	const { perspectiveCamera, orthographicCamera } = transition;
 	const aspect = window.innerWidth / window.innerHeight;
 
-	ortho.bottom = - 40;
-	ortho.top = 40;
-	ortho.left = - 40 * aspect;
-	ortho.right = 40 * aspect;
-	ortho.updateProjectionMatrix();
+	orthographicCamera.bottom = - 40;
+	orthographicCamera.top = 40;
+	orthographicCamera.left = - 40 * aspect;
+	orthographicCamera.right = 40 * aspect;
+	orthographicCamera.updateProjectionMatrix();
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
+	perspectiveCamera.aspect = aspect;
+	perspectiveCamera.updateProjectionMatrix();
+
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
@@ -150,26 +148,27 @@ function render() {
 
 	requestAnimationFrame( render );
 
-	const activeCamera = params.camera === 'perspective' ? camera : ortho;
-
+	controls.enabled = ! transition.animating;
 	controls.update();
-	activeCamera.updateMatrixWorld();
+	transition.update();
+
+	const camera = transition.camera;
+	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.fadeRootTiles = params.fadeRootTiles;
-	groundTiles.setCamera( activeCamera );
-	groundTiles.setResolutionFromRenderer( activeCamera, renderer );
+	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	groundTiles.setCamera( camera );
+	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
 	skyTiles.fadeRootTiles = params.fadeRootTiles;
-	skyTiles.setCamera( activeCamera );
-	skyTiles.setResolutionFromRenderer( activeCamera, renderer );
+	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	skyTiles.setCamera( camera );
+	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();
 
-	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
-	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
-
-	renderer.render( scene, activeCamera );
+	renderer.render( scene, camera );
 
 	params.fadingGroundTiles = groundTiles.fadingTiles + ' tiles';
 
