@@ -138,6 +138,8 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		// TODO: handle ortho
+
 		// if we're outside the transition threshold then we toggle some reorientation behavior
 		// when adjusting the up frame while moving the camera
 		if ( this._isNearControls() ) {
@@ -219,6 +221,8 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updatePosition( ...args ) {
 
+		// TODO: handle ortho
+
 		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
@@ -278,6 +282,8 @@ export class GlobeControls extends EnvironmentControls {
 	// disable rotation once we're outside the control transition
 	_updateRotation( ...args ) {
 
+		// TODO: handle ortho
+
 		if ( this._rotationMode === 1 || this._isNearControls() ) {
 
 			this._rotationMode = 1;
@@ -295,6 +301,8 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	_updateZoom() {
+
+		// TODO: handle ortho
 
 		const zoomDelta = this.zoomDelta;
 		const camera = this.camera;
@@ -404,17 +412,17 @@ export class GlobeControls extends EnvironmentControls {
 
 	_getPerspectiveTransitionDistance() {
 
-		const { camera } = this;
+		const { camera, ellipsoid } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
 			throw new Error();
 
 		}
 
+		const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		const size = Math.max( ...this.ellipsoid.radius );
-		const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
 		const dist = Math.max( distVert, distHoriz );
 
 		return dist * 0.7;
@@ -423,7 +431,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	_getMaxCameraDistance() {
 
-		const { camera } = this;
+		const { camera, ellipsoid } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
 			// const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
@@ -432,10 +440,10 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		const size = Math.max( ...this.ellipsoid.radius ) * 2;
-		const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
 		const dist = Math.max( distVert, distHoriz );
 
 		return dist;
@@ -444,15 +452,18 @@ export class GlobeControls extends EnvironmentControls {
 
 	_isNearControls() {
 
-		const camera = this.camera;
+		const { camera, ellipsoid } = this;
 		if ( camera.isPerspectiveCamera ) {
 
 			return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
 		} else {
 
-			// TODO: must use camera zoom state here
-			return false;
+			const ellipsoidSize = Math.max( ...ellipsoid.radius );
+			const orthoHeight = ( camera.top - camera.bottom ) / camera.zoom;
+			const orthoWidth = ( camera.right - camera.left ) / camera.zoom;
+			const orthoSize = Math.max( orthoHeight, orthoWidth );
+			return ellipsoidSize > orthoSize * 0.7;
 
 		}
 
