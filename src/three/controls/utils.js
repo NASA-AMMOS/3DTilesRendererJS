@@ -35,6 +35,7 @@ export function mouseToCoords( clientX, clientY, element, target ) {
 
 // Returns an estimate of the closest point on the ellipsoid to the ray. Returns
 // the surface intersection if they collide.
+// TODO: this will possibly be unused
 export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target ) {
 
 	if ( ellipsoid.intersectRay( ray, target ) ) {
