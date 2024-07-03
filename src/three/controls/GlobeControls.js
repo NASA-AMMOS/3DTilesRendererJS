@@ -26,8 +26,6 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 10;
-const MAX_GLOBE_DISTANCE = 2 * 1e7;
-const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -129,18 +127,19 @@ export class GlobeControls extends EnvironmentControls {
 
 		// clamp the camera distance
 		let distanceToCenter = this.getDistanceToCenter();
-		if ( distanceToCenter > MAX_GLOBE_DISTANCE ) {
+		const maxDistance = this._getMaxCameraDistance();
+		if ( distanceToCenter > maxDistance ) {
 
 			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
-			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, MAX_GLOBE_DISTANCE );
+			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, maxDistance );
 			camera.updateMatrixWorld();
 
-			distanceToCenter = MAX_GLOBE_DISTANCE;
+			distanceToCenter = maxDistance;
 
 		}
 
 		// if we're outside the transition threshold then we toggle some reorientation behavior
-		// when adjusting the up frame while moving hte camera
+		// when adjusting the up frame while moving the camera
 		if ( this._isNearControls() ) {
 
 			this.reorientOnDrag = true;
@@ -159,7 +158,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the camera planes
-		this.updateCameraPlanes( camera );
+		this.updateCameraClipPlanes( camera );
 
 	}
 
@@ -329,7 +328,9 @@ export class GlobeControls extends EnvironmentControls {
 		} else {
 
 			// orient the camera to focus on the earth during the zoom
-			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), GLOBE_TRANSITION_THRESHOLD, MAX_GLOBE_DISTANCE, 0, 1 );
+			const transitionDistance = this._getPerspectiveTransitionDistance();
+			const maxDistance = this._getMaxCameraDistance();
+			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), transitionDistance, maxDistance, 0, 1 );
 			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
 			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
 
@@ -401,33 +402,59 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	_getPerspectiveTransitionDistance() {
+
+		const { camera } = this;
+		if ( ! camera.isPerspectiveCamera ) {
+
+			throw new Error();
+
+		}
+
+		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		const size = Math.max( ...this.ellipsoid.radius );
+		const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		const dist = Math.max( distVert, distHoriz );
+
+		return dist * 0.7;
+
+	}
+
+	_getMaxCameraDistance() {
+
+		const { camera } = this;
+		if ( ! camera.isPerspectiveCamera ) {
+
+			// const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
+			const MAX_GLOBE_DISTANCE = 2 * 1e7;
+			return MAX_GLOBE_DISTANCE;
+
+		}
+
+		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		const size = Math.max( ...this.ellipsoid.radius ) * 2;
+		const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = size / Math.tan( fovHoriz * 0.5 );
+		const dist = Math.max( distVert, distHoriz );
+
+		return dist;
+
+	}
+
 	_isNearControls() {
 
-		return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
+		const camera = this.camera;
+		if ( camera.isPerspectiveCamera ) {
 
-		// const camera = this.camera;
+			return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
 
-		// if ( camera.isPerspectiveCamera ) {
+		} else {
 
-		// 	// TODO:
-		// 	// - must recalculate the max zoom out distance based on camera fov
-		// 	// - must adjust use of GLOBE_TRANSITION_THRESHOLD above
+			// TODO: must use camera zoom state here
+			return false;
 
-		// 	// https://physicsforums.com/threads/need-an-equation-for-converting-vertical-to-horizontal-fov.981179/
-		// 	const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-
-		// 	const size = Math.max( ...this.ellipsoid.radius );
-		// 	const distVert = size / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		// 	const distHoriz = size / Math.tan( fovHoriz * 0.5 );
-		// 	const dist = Math.max( distVert, distHoriz );
-
-		// 	return this.getDistanceToCenter() < dist * 0.7;
-
-		// } else {
-
-		//	return this.getDistanceToCenter() < GLOBE_TRANSITION_THRESHOLD;
-
-		// }
+		}
 
 	}
 
