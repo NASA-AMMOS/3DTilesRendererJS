@@ -125,7 +125,6 @@ export class GlobeControls extends EnvironmentControls {
 			camera,
 			tilesGroup,
 			pivotMesh,
-			ellipsoid,
 		} = this;
 
 		// clamp the camera distance
@@ -159,6 +158,21 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		// update the camera planes
+		this.updateCameraPlanes( camera );
+
+	}
+
+	// Updates the passed camera near and far clip planes to encapsulate the
+	// ellipsoid from their current position.
+	updateCameraClipPlanes( camera ) {
+
+		const {
+			tilesGroup,
+			ellipsoid,
+		} = this;
+
+		const distanceToCenter = this.getDistanceToCenter();
 		if ( camera.isPerspectiveCamera ) {
 
 			// update the projection matrix
@@ -186,9 +200,9 @@ export class GlobeControls extends EnvironmentControls {
 		} else {
 
 			_invMatrix.copy( camera.matrixWorld ).invert();
-			_vec.setFromMatrixPosition( this.tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
+			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
 
-			camera.near = - Math.max( ...this.ellipsoid.radius );
+			camera.near = - Math.max( ...ellipsoid.radius );
 			camera.far = - _vec.z;
 
 		}

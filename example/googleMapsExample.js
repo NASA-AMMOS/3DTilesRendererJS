@@ -222,6 +222,9 @@ function animate() {
 	controls.update();
 	transition.update();
 
+	controls.updateCameraClipPlanes( transition.perspectiveCamera );
+	controls.updateCameraClipPlanes( transition.orthographicCamera );
+
 	const camera = transition.camera;
 
 	// update options
