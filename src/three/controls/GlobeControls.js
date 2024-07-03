@@ -26,6 +26,8 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 10;
+const MAX_GLOBE_DISTANCE = 2 * 1e7;
+const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -412,20 +414,24 @@ export class GlobeControls extends EnvironmentControls {
 
 	_getPerspectiveTransitionDistance() {
 
-		const { camera, ellipsoid } = this;
-		if ( ! camera.isPerspectiveCamera ) {
+		return GLOBE_TRANSITION_THRESHOLD;
 
-			throw new Error();
+		// TODO: the zooming seems to fail if the camera is too far out and the target
+		// up changes too much on move? Ie zooming into the horizon from afar
+		// const { camera, ellipsoid } = this;
+		// if ( ! camera.isPerspectiveCamera ) {
 
-		}
+		// 	throw new Error();
 
-		const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
-		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
-		const dist = Math.max( distVert, distHoriz );
+		// }
 
-		return dist * 0.7;
+		// const ellipsoidSize = Math.max( ...ellipsoid.radius ) * 2;
+		// const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
+		// const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		// const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
+		// const dist = Math.max( distVert, distHoriz );
+
+		// return dist * 0.7;
 
 	}
 
@@ -434,8 +440,6 @@ export class GlobeControls extends EnvironmentControls {
 		const { camera, ellipsoid } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
-			// const GLOBE_TRANSITION_THRESHOLD = 0.75 * 1e7;
-			const MAX_GLOBE_DISTANCE = 2 * 1e7;
 			return MAX_GLOBE_DISTANCE;
 
 		}
