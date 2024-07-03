@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Fixed
-- CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values
+- CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
+- GlobeControls: Speed change when transitioning between near and far behavior.
+- GlobeControls: Behavior now relies on camera field of view.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
