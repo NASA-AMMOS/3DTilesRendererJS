@@ -148,9 +148,9 @@ function render() {
 
 	requestAnimationFrame( render );
 
-	transition.update();
 	controls.enabled = ! transition.animating;
 	controls.update();
+	transition.update();
 
 	const camera = transition.camera;
 	camera.updateMatrixWorld();
