@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
 - GlobeControls: Speed change when transitioning between near and far behavior.
 - GlobeControls: Behavior now relies on camera field of view.
+- GlobeControls: Zooming out from the horizon no longer spins the globe.
 
 ### Changed
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
