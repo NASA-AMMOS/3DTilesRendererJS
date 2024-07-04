@@ -19,6 +19,8 @@ const _right = new Vector3();
 const _targetRight = new Vector3();
 const _globalUp = new Vector3();
 const _quaternion = new Quaternion();
+const _zoomPointUp = new Vector3();
+const _toCenter = new Vector3();
 const _latLon = {};
 
 const _pointer = new Vector2();
@@ -299,8 +301,36 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const { zoomDelta, ellipsoid, zoomSpeed } = this;
+		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, tilesGroup } = this;
 		if ( this._isNearControls() || zoomDelta > 0 ) {
+
+			// When zooming try to tilt the camera towards the center of the planet to avoid the globe
+			// spinning as you zoom out from the horizon
+			if ( zoomDelta < 0 ) {
+
+				// get the forward vector and vector toward the center of the ellipsoid
+				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
+				_toCenter.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
+
+				// Calculate alpha values to use to scale the amount of tilt that occurs as the camera moves.
+				// Scales based on mouse position near the horizon and current tilt.
+				this.getUpDirection( zoomPoint, _zoomPointUp );
+				const upAlpha = MathUtils.clamp( MathUtils.mapLinear( - _zoomPointUp.dot( _toCenter ), 1, 0.95, 0, 1 ), 0, 1 );
+				const forwardAlpha = 1 - _forward.dot( _toCenter );
+
+				// apply scale
+				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha ).normalize();
+
+				// perform rotation
+				_quaternion.setFromUnitVectors( _forward, _toCenter );
+				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _toCenter );
+
+				// update zoom direction
+				this.zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
+
+			}
 
 			super._updateZoom();
 
@@ -396,10 +426,10 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// When the smallest fov spans 65% of the ellipsoid then we use the near controls
-		const ellipsoidSize = 0.65 * 2 * Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
+		const distVert = ellipsoidRadius / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidRadius / Math.tan( fovHoriz * 0.5 );
 		const dist = Math.min( distVert, distHoriz );
 
 		return dist;
@@ -416,11 +446,11 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// allow for zooming out such that the ellipsoid is half the size of the largest fov
-		const ellipsoidSize = 2 * 2 * Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
-		const distVert = ellipsoidSize / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
-		const distHoriz = ellipsoidSize / Math.tan( fovHoriz * 0.5 );
-		const dist = Math.max( distVert, distHoriz );
+		const distVert = ellipsoidRadius / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
+		const distHoriz = ellipsoidRadius / Math.tan( fovHoriz * 0.5 );
+		const dist = 2 * Math.max( distVert, distHoriz );
 
 		return dist;
 
