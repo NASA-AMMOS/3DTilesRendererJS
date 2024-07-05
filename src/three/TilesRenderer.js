@@ -580,11 +580,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'b3dm': {
 
-				const loader = new B3DMLoader( manager );
+				const loader = new B3DMLoader( upAdjustment, manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-
-				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader.parse( buffer );
 				break;
@@ -603,11 +601,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'i3dm': {
 
-				const loader = new I3DMLoader( manager );
+				const loader = new I3DMLoader( upAdjustment, manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-
-				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader.parse( buffer );
 				break;
@@ -616,11 +612,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'cmpt': {
 
-				const loader = new CMPTLoader( manager );
+				const loader = new CMPTLoader( upAdjustment, manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-
-				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader
 					.parse( buffer )
