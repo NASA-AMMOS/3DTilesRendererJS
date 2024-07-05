@@ -11,11 +11,11 @@ const tempSca = new Vector3();
 const tempMat = new Matrix4();
 export class I3DMLoader extends I3DMLoaderBase {
 
-	constructor( manager = DefaultLoadingManager ) {
+	constructor( adjustmentTransform, manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;
-		this.adjustmentTransform = new Matrix4();
+		this.adjustmentTransform = adjustmentTransform;
 
 	}
 
