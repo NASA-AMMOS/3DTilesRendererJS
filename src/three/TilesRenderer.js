@@ -79,6 +79,8 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onDisposeModel = null;
 		this.onTileVisibilityChange = null;
 
+		this.upAdjustment = null;
+
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
 
@@ -551,22 +553,27 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		let promise = null;
 
-		const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
-		const cached = tile.cached;
-		const cachedTransform = cached.transform;
+		if ( ! this.upAdjustment ) {
 
-		const upAdjustment = new Matrix4();
-		switch ( upAxis.toLowerCase() ) {
+			const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
+			this.upAdjustment = new Matrix4();
+			switch ( upAxis.toLowerCase() ) {
 
-			case 'x':
-				upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
-				break;
+				case 'x':
+					this.upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+					break;
 
-			case 'y':
-				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
-				break;
+				case 'y':
+					this.upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
+					break;
+
+			}
 
 		}
+
+		const upAdjustment = this.upAdjustment;
+		const cached = tile.cached;
+		const cachedTransform = cached.transform;
 
 		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
@@ -577,7 +584,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader.parse( buffer );
 				break;
@@ -600,7 +607,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader.parse( buffer );
 				break;
@@ -613,7 +620,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform = upAdjustment;
 
 				promise = loader
 					.parse( buffer )
