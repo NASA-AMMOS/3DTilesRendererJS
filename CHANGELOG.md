@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
+- GlobeControls: Speed change when transitioning between near and far behavior.
+- GlobeControls: Behavior now relies on camera field of view.
+- GlobeControls: Zooming out from the horizon no longer spins the globe.
+
+### Changed
+- CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
+
 ## [0.3.35] - 2024.06.25
 ### Fixed
 - Lint rules causing build failures.

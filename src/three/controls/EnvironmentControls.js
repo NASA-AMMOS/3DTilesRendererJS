@@ -6,6 +6,7 @@ import {
 	Raycaster,
 	Plane,
 	EventDispatcher,
+	MathUtils,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -84,7 +85,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomSpeed = 1;
 
 		this.reorientOnDrag = true;
-		this.reorientOnZoom = false;
+		this.scaleZoomOrientationAtEdges = false;
 		this.adjustHeight = true;
 
 		// internal state
@@ -895,7 +896,7 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirectionSet,
 			zoomPointSet,
 			reorientOnDrag,
-			reorientOnZoom
+			scaleZoomOrientationAtEdges,
 		} = this;
 
 		camera.updateMatrixWorld();
@@ -907,16 +908,25 @@ export class EnvironmentControls extends EventDispatcher {
 		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			if ( reorientOnZoom ) {
+			const v = new Vector3();
+			this.getUpDirection( zoomPoint, v );
 
-				// rotates the camera position around the point being zoomed in to
-				makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+			if ( ! scaleZoomOrientationAtEdges ) {
 
-				zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
+				const quat = new Quaternion();
+				let amt = Math.max( v.dot( up ) - 0.6, 0 ) / 0.4;
+				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
+				amt = Math.min( amt, 1 );
+				_quaternion.slerp( quat, 1.0 - amt );
 
 			}
+
+			// rotates the camera position around the point being zoomed in to
+			makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+			camera.matrixWorld.premultiply( _rotMatrix );
+			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
 
 		} else if ( action === DRAG && reorientOnDrag ) {
 
