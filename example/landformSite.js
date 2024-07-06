@@ -12,7 +12,6 @@ import {
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
-import { TextureOverlayTilesRendererMixin } from './src/plugins/overlays/TextureOverlayTilesRenderer.js';
 import { TextureOverlayMaterialMixin } from './src/plugins/overlays/TextureOverlayMaterial.js';
 import { TextureOverlayPlugin } from './src/plugins/overlays/TextureOverlayPlugin.js';
 
@@ -114,13 +113,24 @@ function init() {
 		const tokens = url.split( /[\\/]/g );
 		tokens.pop();
 
-		const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
 		const TextureOverlayMaterial = TextureOverlayMaterialMixin( MeshBasicMaterial );
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
-			const tiles = new TextureOverlayTilesRenderer( url );
-			const plugin = new TextureOverlayPlugin( scene => {
+			const tiles = new TilesRenderer( url );
+			const plugin = new TextureOverlayPlugin( ( scene, tile, plugin ) => {
+
+				scene.traverse( c => {
+
+					if ( c.material ) {
+
+						c.material.textures = Object.values( plugin.getTexturesForTile( tile ) );
+						c.material.displayAsOverlay = params.slopeDisplay === 'OVERLAY';
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
 
 			} );
 			tiles.registerPlugin( plugin );
@@ -134,25 +144,7 @@ function init() {
 
 						const newMaterial = new TextureOverlayMaterial();
 						newMaterial.copy( c.material );
-						newMaterial.textures = Object.values( tiles.getTexturesForTile( tile ) );
-						newMaterial.displayAsOverlay = params.slopeDisplay === 'OVERLAY';
 						c.material = newMaterial;
-
-					}
-
-				} );
-
-			} );
-
-			// assign the texture layers
-			tiles.addEventListener( 'layer-textures-change', ( { tile, scene } ) => {
-
-				scene.traverse( c => {
-
-					if ( c.material ) {
-
-						c.material.textures = Object.values( plugin.getTexturesForTile( tile ) );
-						c.material.needsUpdate = true;
 
 					}
 
@@ -191,9 +183,10 @@ function init() {
 
 			tileSets.forEach( t => {
 
-				if ( ! t.hasLayer( 'slopeLayer' ) ) {
+				const plugin = t.getPluginByName( 'TEXTURE_OVERLAY_PLUGIN' );
+				if ( ! plugin.hasLayer( 'slopeLayer' ) ) {
 
-					t.registerLayer( 'slopeLayer', layerFunction );
+					plugin.registerLayer( 'slopeLayer', layerFunction );
 
 				}
 
@@ -216,7 +209,12 @@ function init() {
 
 		} else {
 
-			tileSets.forEach( t => t.unregisterLayer( 'slopeLayer' ) );
+			tileSets.forEach( t => {
+
+				const plugin = t.getPluginByName( 'TEXTURE_OVERLAY_PLUGIN' );
+				plugin.unregisterLayer( 'slopeLayer' );
+
+			} );
 
 		}
 
