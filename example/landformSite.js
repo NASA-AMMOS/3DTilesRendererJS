@@ -54,7 +54,7 @@ let camera, controls, scene, renderer;
 const params = {
 
 	errorTarget: 12,
-	slopeLayer: false,
+	slopeDisplay: 'NONE',
 
 };
 
@@ -134,7 +134,8 @@ function init() {
 
 						const newMaterial = new TextureOverlayMaterial();
 						newMaterial.copy( c.material );
-						newMaterial.textures = Object.values( plugin.getTexturesForTile( tile ) );
+						newMaterial.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						newMaterial.displayAsOverlay = params.slopeDisplay === 'OVERLAY';
 						c.material = newMaterial;
 
 					}
@@ -184,11 +185,34 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'errorTarget', 0, 100 );
-	gui.add( params, 'slopeLayer' ).onChange( v => {
+	gui.add( params, 'slopeDisplay', [ 'NONE', 'OVERLAY', 'SOLID' ] ).onChange( v => {
 
-		if ( v ) {
+		if ( v !== 'NONE' ) {
 
-			tileSets.forEach( t => t.registerLayer( 'slopeLayer', layerFunction ) );
+			tileSets.forEach( t => {
+
+				if ( ! t.hasLayer( 'slopeLayer' ) ) {
+
+					t.registerLayer( 'slopeLayer', layerFunction );
+
+				}
+
+				t.forEachLoadedModel( scene => {
+
+					scene.traverse( c => {
+
+						if ( c.material ) {
+
+							c.material.displayAsOverlay = v === 'OVERLAY';
+							c.material.needsUpdate = true;
+
+						}
+
+					} );
+
+				} );
+
+			} );
 
 		} else {
 

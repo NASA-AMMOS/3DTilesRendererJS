@@ -258,6 +258,12 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
+	hasLayer( name ) {
+
+		return name in this.caches;
+
+	}
+
 	registerLayer( name, customTextureCallback ) {
 
 		if ( name in this.caches ) {
