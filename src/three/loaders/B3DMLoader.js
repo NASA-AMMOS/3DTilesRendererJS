@@ -1,14 +1,14 @@
 import { B3DMLoaderBase } from '../../base/loaders/B3DMLoaderBase.js';
-import { DefaultLoadingManager } from 'three';
+import { DefaultLoadingManager, Matrix4 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class B3DMLoader extends B3DMLoaderBase {
 
-	constructor( adjustmentTransform, manager = DefaultLoadingManager ) {
+	constructor( manager = DefaultLoadingManager ) {
 
 		super();
 		this.manager = manager;
-		this.adjustmentTransform = adjustmentTransform;
+		this.adjustmentTransform = new Matrix4();
 
 	}
 

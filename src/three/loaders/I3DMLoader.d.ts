@@ -1,7 +1,7 @@
 import { I3DMBaseResult } from '../../base/loaders/I3DMLoaderBase';
 import { FeatureTable, BatchTable } from '../../utilities/FeatureTable';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Group, LoadingManager, Matrix4 } from 'three';
+import { Group, LoadingManager } from 'three';
 
 interface I3DMScene extends Group {
 
@@ -18,7 +18,7 @@ export interface I3DMResult extends GLTF, I3DMBaseResult {
 
 export class I3DMLoader {
 
-	constructor( adjustmentTransform: Matrix4, manager : LoadingManager );
+	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< I3DMResult >;
 	parse( buffer : ArrayBuffer ) : Promise< I3DMResult >;
 

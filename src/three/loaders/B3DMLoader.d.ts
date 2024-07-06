@@ -1,6 +1,6 @@
 import { B3DMBaseResult } from '../../base/loaders/B3DMLoaderBase';
 import { FeatureTable, BatchTable } from '../../utilities/FeatureTable';
-import { LoadingManager, Group, Matrix4 } from 'three';
+import { LoadingManager, Group } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 interface B3DMScene extends Group {
@@ -18,7 +18,7 @@ export interface B3DMResult extends GLTF, B3DMBaseResult {
 
 export class B3DMLoader {
 
-	constructor( adjustmentTransform: Matrix4, manager : LoadingManager );
+	constructor( manager : LoadingManager );
 	load( url : String ) : Promise< B3DMResult >;
 	parse( buffer : ArrayBuffer ) : Promise < B3DMResult >;
 
