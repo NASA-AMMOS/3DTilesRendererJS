@@ -1,10 +1,5 @@
 import { TextureLoader, ImageBitmapLoader } from 'three';
-import { PriorityQueue } from '../../../../src';
-
-// TODO: Enable TilesRenderer to delay load model events until all textures have loaded
-// TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
-// TODO: What happens if a tile starts loading and then a layer is added, meaning it's not in the "loaded tiles" callback
-// or active function and we haven't caught it in the parseTile function. Additional callback? Store the loading models?
+import { PriorityQueue } from '../../../..';
 
 function canUseImageBitmap() {
 
@@ -185,20 +180,31 @@ class TextureCache {
 
 }
 
-export const TextureOverlayTilesRendererMixin = base => class extends base {
+export class TextureOverlayPlugin {
 
-	constructor( ...args ) {
+	constructor( assignCallback ) {
 
-		super( ...args );
+		this.name = 'TEXTURE_OVERLAY_PLUGIN';
+		this.caches = null;
+		this.queue = null;
+		this.tiles = null;
+		this.assignCallback = assignCallback;
+
+	}
+
+	// plugin functions
+	init( tiles ) {
+
+		this.tiles = tiles;
 		this.caches = {};
 		this.queue = new PriorityQueue();
 		this.queue.priorityCallback = ( a, b ) => {
 
-			return this.downloadQueue.priorityCallback( a, b );
+			return tiles.downloadQueue.priorityCallback( a, b );
 
 		};
 
-		this.addEventListener( 'dispose-model', ( { tile } ) => {
+		this._disposeModelCallback = ( { tile } ) => {
 
 			const caches = this.caches;
 			for ( const key in caches ) {
@@ -208,11 +214,21 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 			}
 
-		} );
+		};
+
+		this._assignTexturesCallback = ( { tile, scene } ) => {
+
+			this.assignCallback( scene, tile, this );
+
+		};
+
+		tiles.addEventListener( 'dispose-model', this._disposeModelCallback );
+		tiles.addEventListener( 'load-model', this._assignTexturesCallback );
+		tiles.addEventListener( 'layer-textures-change', this._assignTexturesCallback );
 
 	}
 
-	_pluginProcessTileModel( scene, tile ) {
+	processTileModel( scene, tile ) {
 
 		const caches = this.caches;
 		const promises = [];
@@ -231,9 +247,24 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
+	dispose() {
+
+		const { caches, tiles } = this;
+		Object.keys( caches ).forEach( key => {
+
+			this.unregisterLayer( key );
+
+		} );
+
+		tiles.removeEventListener( 'dispose-model', this._disposeModelCallback );
+		tiles.removeEventListener( 'load-model', this._assignTexturesCallback );
+		tiles.removeEventListener( 'layer-textures-change', this._assignTexturesCallback );
+
+	}
+
+	// public functions
 	getTileKey( tile ) {
 
-		// TODO
 		return tile.content.uri;
 
 	}
@@ -268,35 +299,20 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		if ( name in this.caches ) {
 
-			throw new Error();
+			throw new Error( `TextureOverlayPlugin: Texture overlay named ${ name } already exists.` );
 
 		}
 
+		const tiles = this.tiles;
 		const cache = new TextureCache( customTextureCallback, this.queue );
-		cache.fetchOptions = this.fetchOptions;
+		cache.fetchOptions = tiles.fetchOptions;
 		this.caches[ name ] = cache;
 
-		this.forEachLoadedModel( ( scene, tile ) => {
+		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			cache
 				.loadTexture( this.getTileKey( tile ) )
-				.then( texture => {
-
-					this.dispatchEvent( {
-						type: 'load-layer-texture',
-						layer: name,
-						tile,
-						scene,
-						texture,
-					} );
-
-					this.dispatchEvent( {
-						type: 'layer-textures-change',
-						tile,
-						scene,
-					} );
-
-				} )
+				.then( () => this.assignCallback( scene, tile, this ) )
 				.catch( () => {} );
 
 		} );
@@ -305,30 +321,19 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	unregisterLayer( name ) {
 
+		const tiles = this.tiles;
 		const caches = this.caches;
 		if ( name in caches ) {
 
 			const cache = caches[ name ];
 			delete caches[ name ];
 
-			this.forEachLoadedModel( ( scene, tile ) => {
+			tiles.forEachLoadedModel( ( scene, tile ) => {
 
 				const texture = cache.getTexture( this.getTileKey( tile ) );
 				if ( texture ) {
 
-					this.dispatchEvent( {
-						type: 'delete-layer-texture',
-						layer: name,
-						tile,
-						scene,
-						texture,
-					} );
-
-					this.dispatchEvent( {
-						type: 'layer-textures-change',
-						tile,
-						scene,
-					} );
+					this.assignCallback( scene, tile, this );
 
 				}
 
@@ -340,5 +345,4 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
-};
-
+}

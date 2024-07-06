@@ -673,9 +673,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// wait for extra processing if needed
-		// TODO: this should be handled by a plugin
-		await this._pluginProcessTileModel( scene, tile );
+		// wait for extra processing by plugins if needed
+		await this.invokeAllPlugins( plugin => {
+
+			return plugin.processTileModel && plugin.processTileModel( scene, tile );
+
+		} );
 
 		// exit early if a new request has already started
 		if ( tile._loadIndex !== loadIndex ) {
@@ -989,10 +992,5 @@ export class TilesRenderer extends TilesRendererBase {
 		return inView;
 
 	}
-
-	/* private */
-	// TODO: this should leverage plugin system in the future
-	async _pluginProcessTileModel( scene, tile ) {}
-
 
 }
