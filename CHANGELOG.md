@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- `tiles-load-start` and `tiles-load-end` callback indicating when tile loading has completed finished.
+
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
 - GlobeControls: Speed change when transitioning between near and far behavior.
