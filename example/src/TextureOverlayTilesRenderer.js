@@ -200,7 +200,7 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		this.addEventListener( 'delete-layer-texture', ( { scene, tile } ) => {
 
-			const textures = this.getTexturesForTile( tile );
+			const textures = Object.values( this.getTexturesForTile( tile ) );
 			scene.traverse( c => {
 
 				if ( c.material ) {
@@ -215,7 +215,7 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		this.addEventListener( 'load-layer-texture', ( { scene, tile } ) => {
 
-			const textures = this.getTexturesForTile( tile );
+			const textures = Object.values( this.getTexturesForTile( tile ) );
 			scene.traverse( c => {
 
 				if ( c.material ) {
@@ -278,14 +278,23 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
-	getTexturesForTile( tile, order = null ) {
+	getTexturesForTile( tile, target = {} ) {
 
-		const cacheArray = order ? order.map( name => this.caches[ name ] ).filter( c => c ) : Object.values( this.caches );
-		const key = this.getTileKey( tile );
+		const tileKey = this.getTileKey( tile );
+		const caches = this.caches;
+		for ( const key in target ) {
 
-		return cacheArray
-			.map( c => c.getTexture( key ) )
-			.filter( t => t );
+			if ( ! ( key in caches ) ) delete target[ key ];
+
+		}
+
+		for ( const key in caches ) {
+
+			target[ key ] = caches[ key ].getTexture( tileKey );
+
+		}
+
+		return target;
 
 	}
 

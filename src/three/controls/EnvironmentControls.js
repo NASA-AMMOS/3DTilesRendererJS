@@ -657,8 +657,8 @@ export class EnvironmentControls extends EventDispatcher {
 			// track the zoom direction we're going to use
 			const finalZoomDirection = _vec.copy( zoomDirection );
 
-			// always update the zoom target point in case the tiles are changing
-			if ( this._updateZoomPoint() ) {
+			// TODO: always update the zoom target point in case the tiles are changing?
+			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
 				const dist = zoomPoint.distanceTo( camera.position );
 
