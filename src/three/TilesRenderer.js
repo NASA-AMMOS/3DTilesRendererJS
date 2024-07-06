@@ -71,8 +71,13 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this.optimizeRaycast = true;
-		this._autoDisableRendererCulling = true;
 		this._eventDispatcher = new EventDispatcher();
+
+		// flag indicating whether frustum culling should be disabled
+		this._autoDisableRendererCulling = true;
+
+		// flag indicating whether tiles are actively loading so events can be fired
+		this._loadingTiles = false;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -536,7 +541,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	async parseTile( buffer, tile, extension ) {
+	parseTile( buffer, tile, extension ) {
 
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
@@ -641,117 +646,132 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// wait for the tile to load
-		const result = await promise;
+		// check if this is the beginning of a new set of tiles to load and dispatch and event
+		const stats = this.stats;
+		const currentlyLoading = stats.parsing + stats.downloading;
+		if ( this._loadingTiles === false && currentlyLoading > 0 ) {
 
-		// get the scene data
-		let scene;
-		let metadata;
-		if ( result.isObject3D ) {
-
-			scene = result;
-			metadata = null;
-
-		} else {
-
-			scene = result.scene;
-			metadata = result;
+			this.dispatchEvent( { type: 'tiles-load-start' } );
+			this._loadingTiles = true;
 
 		}
 
-		// wait for extra processing if needed
-		// TODO: this should be handled by a plugin
-		await this._pluginProcessTileModel( scene, tile );
+		return promise.then( result => {
 
-		// exit early if a new request has already started
-		if ( tile._loadIndex !== loadIndex ) {
+			let scene;
+			let metadata;
+			if ( result.isObject3D ) {
 
-			return;
+				scene = result;
+				metadata = null;
 
-		}
+			} else {
 
-		// ensure the matrix is up to date in case the scene has a transform applied
-		scene.updateMatrix();
-
-		// apply the local up-axis correction rotation
-		// GLTFLoader seems to never set a transformation on the root scene object so
-		// any transformations applied to it can be assumed to be applied after load
-		// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
-		// rotation fix which is why "multiply" happens here.
-		if ( fileType === 'glb' || fileType === 'gltf' ) {
-
-			scene.matrix.multiply( upAdjustment );
-
-		}
-
-		scene.matrix.premultiply( cachedTransform );
-		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
-		scene.traverse( c => {
-
-			c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
-
-		} );
-		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
-
-		if ( REVISION_165 ) {
-
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
-
-				c.raycast = this._overridenRaycast;
-
-			} );
-
-		}
-
-		const materials = [];
-		const geometry = [];
-		const textures = [];
-		scene.traverse( c => {
-
-			if ( c.geometry ) {
-
-				geometry.push( c.geometry );
+				scene = result.scene;
+				metadata = result;
 
 			}
 
-			if ( c.material ) {
+			if ( tile._loadIndex !== loadIndex ) {
 
-				const material = c.material;
-				materials.push( c.material );
+				return;
 
-				for ( const key in material ) {
+			}
 
-					const value = material[ key ];
-					if ( value && value.isTexture ) {
+			// ensure the matrix is up to date in case the scene has a transform applied
+			scene.updateMatrix();
 
-						textures.push( value );
+			// apply the local up-axis correction rotation
+			// GLTFLoader seems to never set a transformation on the root scene object so
+			// any transformations applied to it can be assumed to be applied after load
+			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
+			// rotation fix which is why "multiply" happens here.
+			if ( fileType === 'glb' || fileType === 'gltf' ) {
+
+				scene.matrix.multiply( upAdjustment );
+
+			}
+
+			scene.matrix.premultiply( cachedTransform );
+			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+			scene.traverse( c => {
+
+				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
+
+			} );
+			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
+
+			if ( REVISION_165 ) {
+
+				// We handle raycasting in a custom way so remove it from here
+				scene.traverse( c => {
+
+					c.raycast = this._overridenRaycast;
+
+				} );
+
+			}
+
+			const materials = [];
+			const geometry = [];
+			const textures = [];
+			scene.traverse( c => {
+
+				if ( c.geometry ) {
+
+					geometry.push( c.geometry );
+
+				}
+
+				if ( c.material ) {
+
+					const material = c.material;
+					materials.push( c.material );
+
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							textures.push( value );
+
+						}
 
 					}
 
 				}
 
+			} );
+
+			cached.materials = materials;
+			cached.geometry = geometry;
+			cached.textures = textures;
+			cached.scene = scene;
+			cached.metadata = metadata;
+
+			// dispatch an event indicating that this model has completed
+			this.dispatchEvent( {
+				type: 'load-model',
+				scene,
+				tile,
+			} );
+
+			if ( this.onLoadModel ) {
+
+				this.onLoadModel( scene, tile );
+
+			}
+
+			// dispatch an "end" event if all tiles have finished loading
+			const currentlyLoading = stats.parsing + stats.downloading;
+			if ( this._loadingTiles === true && currentlyLoading === 1 ) {
+
+				this.dispatchEvent( { type: 'tiles-load-end' } );
+				this._loadingTiles = false;
+
 			}
 
 		} );
-
-		cached.materials = materials;
-		cached.geometry = geometry;
-		cached.textures = textures;
-		cached.scene = scene;
-		cached.metadata = metadata;
-
-		this.dispatchEvent( {
-			type: 'load-model',
-			scene,
-			tile,
-		} );
-
-		if ( this.onLoadModel ) {
-
-			this.onLoadModel( scene, tile );
-
-		}
 
 	}
 
@@ -966,9 +986,5 @@ export class TilesRenderer extends TilesRendererBase {
 		return inView;
 
 	}
-
-	/* private */
-	// TODO: this should leverage plugin system in the future
-	async _pluginProcessTileModel( scene, tile ) {}
 
 }
