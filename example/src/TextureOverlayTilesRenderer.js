@@ -1,4 +1,5 @@
 import { TextureLoader, ImageBitmapLoader } from 'three';
+import { PriorityQueue } from '../..';
 
 // TODO: Enable TilesRenderer to delay load model events until all textures have loaded
 // TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?
@@ -26,11 +27,12 @@ function canUseImageBitmap() {
 
 class TextureCache {
 
-	constructor( loadTextureCallback ) {
+	constructor( loadTextureCallback, queue ) {
 
 		this.cache = {};
 		this.fetchOptions = {};
 		this.loadTextureCallback = loadTextureCallback;
+		this.queue = queue;
 
 	}
 
@@ -81,8 +83,12 @@ class TextureCache {
 		}
 
 		const abortController = new AbortController();
-		const promise = this
-			.loadTextureCallback( key )
+		const promise = this.queue
+			.add( key, () => {
+
+				return this.loadTextureCallback( key );
+
+			} )
 			.then( tex => {
 
 				if ( ! abortController.signal.aborted ) {
@@ -140,6 +146,7 @@ class TextureCache {
 				} else if ( info.abortController ) {
 
 					info.abortController.abort();
+					this.queue.remove( key );
 
 				}
 
@@ -184,6 +191,12 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		super( ...args );
 		this.caches = {};
+		this.queue = new PriorityQueue();
+		this.queue.priorityCallback = ( a, b ) => {
+
+			return this.downloadQueue.priorityCallback( a, b );
+
+		};
 
 		this.addEventListener( 'delete-layer-texture', ( { scene, tile } ) => {
 
@@ -284,7 +297,7 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		}
 
-		const cache = new TextureCache( customTextureCallback );
+		const cache = new TextureCache( customTextureCallback, this.queue );
 		cache.fetchOptions = this.fetchOptions;
 		this.caches[ name ] = cache;
 
