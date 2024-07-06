@@ -682,7 +682,7 @@ export class TilesRendererBase {
 
 	}
 
-	_invokeOne( func ) {
+	invokeOnePlugin( func ) {
 
 		const plugins = this.plugins;
 		for ( let i = 0; i < plugins.length; i ++ ) {
@@ -700,7 +700,7 @@ export class TilesRendererBase {
 
 	}
 
-	_invokeAll( func ) {
+	invokeAllPlugins( func ) {
 
 		const plugins = this.plugins;
 		const pending = [];
