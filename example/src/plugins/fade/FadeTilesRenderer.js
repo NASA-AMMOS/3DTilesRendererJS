@@ -1,5 +1,5 @@
 import { Group, Matrix4, Vector3, Quaternion } from 'three';
-import { TilesRenderer } from '../../src/index.js';
+import { TilesRenderer } from '../../../../src/index.js';
 import { FadeManager } from './FadeManager.js';
 
 const _fromPos = new Vector3();
