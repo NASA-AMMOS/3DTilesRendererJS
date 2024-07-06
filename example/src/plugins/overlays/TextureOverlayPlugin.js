@@ -15,7 +15,6 @@ function canUseImageBitmap() {
 
 	}
 
-
 	return ! ( typeof createImageBitmap === 'undefined' || isSafari || ( isFirefox && firefoxVersion < 98 ) );
 
 }
@@ -218,7 +217,8 @@ export class TextureOverlayPlugin {
 
 		this._assignTexturesCallback = ( { tile, scene } ) => {
 
-			this.assignCallback( scene, tile, this );
+			// queue a microtask here so we can make sure this fires after all the other load events
+			queueMicrotask( () => this.assignCallback( scene, tile, this ) );
 
 		};
 

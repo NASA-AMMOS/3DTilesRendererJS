@@ -25,8 +25,6 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 			DISPLAY_AS_OVERLAY: Number( this.displayAsOverlay ),
 		};
 
-		console.log('UPDATE')
-
 		// WebGL does not seem to like empty texture arrays
 		if ( textures.length !== 0 ) {
 
