@@ -82,6 +82,7 @@ export class TilesRendererBase {
 		this.tileSets = {};
 		this.rootURL = url;
 		this.fetchOptions = {};
+		this.plugins = [];
 
 		this.preprocessURL = null;
 
@@ -117,6 +118,10 @@ export class TilesRendererBase {
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 		this.stopAtEmptyTiles = true;
+
+	}
+
+	registerPlugin( plugin ) {
 
 	}
 
@@ -167,6 +172,61 @@ export class TilesRendererBase {
 		toggleTiles( root, this );
 
 		lruCache.scheduleUnload();
+
+	}
+
+	resetFailedTiles() {
+
+		const stats = this.stats;
+		if ( stats.failed === 0 ) {
+
+			return;
+
+		}
+
+		this.traverse( tile => {
+
+			if ( tile.__loadingState === FAILED ) {
+
+				tile.__loadingState = UNLOADED;
+
+			}
+
+		} );
+
+		stats.failed = 0;
+
+	}
+
+	dispose() {
+
+		const lruCache = this.lruCache;
+
+		// Make sure we've collected all children before disposing of the internal tilesets to avoid
+		// dangling children that we inadvertantly skip when deleting the nested tileset.
+		const toRemove = [];
+		this.traverse( t => {
+
+			toRemove.push( t );
+			return false;
+
+		} );
+		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
+
+			lruCache.remove( toRemove[ i ] );
+
+		}
+
+		this.stats = {
+			parsing: 0,
+			downloading: 0,
+			failed: 0,
+			inFrustum: 0,
+			used: 0,
+			active: 0,
+			visible: 0,
+		};
+		this.frameCount = 0;
 
 	}
 
@@ -311,29 +371,6 @@ export class TilesRendererBase {
 			this.preprocessNode( child, tile.__basePath, tile );
 
 		}
-
-	}
-
-	resetFailedTiles() {
-
-		const stats = this.stats;
-		if ( stats.failed === 0 ) {
-
-			return;
-
-		}
-
-		this.traverse( tile => {
-
-			if ( tile.__loadingState === FAILED ) {
-
-				tile.__loadingState = UNLOADED;
-
-			}
-
-		} );
-
-		stats.failed = 0;
 
 	}
 
@@ -645,35 +682,40 @@ export class TilesRendererBase {
 
 	}
 
-	dispose() {
+	_invokeOne( func ) {
 
-		const lruCache = this.lruCache;
+		const plugins = this.plugins;
+		for ( let i = 0; i < plugins.length; i ++ ) {
 
-		// Make sure we've collected all children before disposing of the internal tilesets to avoid
-		// dangling children that we inadvertantly skip when deleting the nested tileset.
-		const toRemove = [];
-		this.traverse( t => {
+			const result = func( plugins[ i ] );
+			if ( result ) {
 
-			toRemove.push( t );
-			return false;
+				return result;
 
-		} );
-		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
-
-			lruCache.remove( toRemove[ i ] );
+			}
 
 		}
 
-		this.stats = {
-			parsing: 0,
-			downloading: 0,
-			failed: 0,
-			inFrustum: 0,
-			used: 0,
-			active: 0,
-			visible: 0,
-		};
-		this.frameCount = 0;
+		return null;
+
+	}
+
+	_invokeAll( func ) {
+
+		const plugins = this.plugins;
+		const pending = [];
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			const result = func( plugins[ i ] );
+			if ( result ) {
+
+				pending.push( result );
+
+			}
+
+		}
+
+		return pending.length === 0 ? null : Promise.all( pending );
 
 	}
 
