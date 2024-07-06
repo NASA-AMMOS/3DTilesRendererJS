@@ -71,8 +71,13 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this.optimizeRaycast = true;
-		this._autoDisableRendererCulling = true;
 		this._eventDispatcher = new EventDispatcher();
+
+		// flag indicating whether frustum culling should be disabled
+		this._autoDisableRendererCulling = true;
+
+		// flag indicating whether tiles are actively loading so events can be fired
+		this._loadingTiles = false;
 
 		this.onLoadTileSet = null;
 		this.onLoadModel = null;
@@ -641,6 +646,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		// check if this is the beginning of a new set of tiles to load and dispatch and event
+		const stats = this.stats;
+		const currentlyLoading = stats.parsing + stats.downloading;
+		if ( this._loadingTiles === false && currentlyLoading > 0 ) {
+
+			this.dispatchEvent( { type: 'tiles-load-start' } );
+			this._loadingTiles = true;
+
+		}
+
 		return promise.then( result => {
 
 			let scene;
@@ -734,6 +749,7 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.scene = scene;
 			cached.metadata = metadata;
 
+			// dispatch an event indicating that this model has completed
 			this.dispatchEvent( {
 				type: 'load-model',
 				scene,
@@ -743,6 +759,15 @@ export class TilesRenderer extends TilesRendererBase {
 			if ( this.onLoadModel ) {
 
 				this.onLoadModel( scene, tile );
+
+			}
+
+			// dispatch an "end" event if all tiles have finished loading
+			const currentlyLoading = stats.parsing + stats.downloading;
+			if ( this._loadingTiles === true && currentlyLoading === 1 ) {
+
+				this.dispatchEvent( { type: 'tiles-load-end' } );
+				this._loadingTiles = false;
 
 			}
 
