@@ -204,7 +204,7 @@ export class TextureOverlayPlugin {
 
 		};
 
-		tiles.addEventListener( 'dispose-model', ( { tile } ) => {
+		this._disposeModelCallback = ( { tile } ) => {
 
 			const caches = this.caches;
 			for ( const key in caches ) {
@@ -214,19 +214,17 @@ export class TextureOverlayPlugin {
 
 			}
 
-		} );
+		};
 
-		tiles.addEventListener( 'load-model', ( { tile, scene } ) => {
-
-			this.assignCallback( scene, tile, this );
-
-		} );
-
-		tiles.addEventListener( 'layer-textures-change', ( { tile, scene } ) => {
+		this._assignTexturesCallback = ( { tile, scene } ) => {
 
 			this.assignCallback( scene, tile, this );
 
-		} );
+		};
+
+		tiles.addEventListener( 'dispose-model', this._disposeModelCallback );
+		tiles.addEventListener( 'load-model', this._assignTexturesCallback );
+		tiles.addEventListener( 'layer-textures-change', this._assignTexturesCallback );
 
 	}
 
@@ -246,6 +244,21 @@ export class TextureOverlayPlugin {
 		}
 
 		return Promise.all( promises );
+
+	}
+
+	dispose() {
+
+		const { caches, tiles } = this;
+		Object.keys( caches ).forEach( key => {
+
+			this.unregisterLayer( key );
+
+		} );
+
+		tiles.removeEventListener( 'dispose-model', this._disposeModelCallback );
+		tiles.removeEventListener( 'load-model', this._assignTexturesCallback );
+		tiles.removeEventListener( 'layer-textures-change', this._assignTexturesCallback );
 
 	}
 
