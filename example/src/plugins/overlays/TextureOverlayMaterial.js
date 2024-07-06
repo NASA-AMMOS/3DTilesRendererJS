@@ -4,6 +4,7 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 
 		super( ...args );
 		this.textures = [];
+		this.displayAsOverlay = false;
 
 	}
 
@@ -19,6 +20,12 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 
 			},
 		};
+
+		shader.defines = {
+			DISPLAY_AS_OVERLAY: Number( this.displayAsOverlay ),
+		};
+
+		console.log('UPDATE')
 
 		// WebGL does not seem to like empty texture arrays
 		if ( textures.length !== 0 ) {
@@ -38,8 +45,16 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 					for ( int i = 0; i < ${ textures.length }; i ++ ) {
 
 						col = texture( textures[ i ], vMapUv );
-						col = vec4( 0, 0, 1, col.r );
-						diffuseColor = mix( diffuseColor, vec4( 0.35, 0.65, 1, 1 ), col.a );
+
+						#if DISPLAY_AS_OVERLAY
+
+						diffuseColor = mix( diffuseColor, vec4( 0.22, 0.73, 0.82, 1 ), col.r * 0.5 );
+
+						#else
+
+						diffuseColor = mix( diffuseColor, col, col.a );
+
+						#endif
 
 					}
 					#pragma unroll_loop_end
@@ -52,7 +67,7 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 
 	customProgramCacheKey() {
 
-		return this.textures.length + this.onBeforeCompile.toString();
+		return String( this.displayAsOverlay ) + String( this.textures.length ) + this.onBeforeCompile.toString();
 
 	}
 
