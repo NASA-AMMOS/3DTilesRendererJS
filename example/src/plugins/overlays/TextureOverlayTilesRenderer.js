@@ -1,5 +1,5 @@
 import { TextureLoader, ImageBitmapLoader } from 'three';
-import { PriorityQueue } from '../..';
+import { PriorityQueue } from '../../../../src';
 
 // TODO: Enable TilesRenderer to delay load model events until all textures have loaded
 // TODO: Load textures while the tile geometry is loading - can we start this sooner than parse tile?

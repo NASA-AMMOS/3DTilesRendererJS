@@ -11,9 +11,9 @@ import {
 	MeshBasicMaterial,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
-import { TextureOverlayTilesRendererMixin } from './src/TextureOverlayTilesRenderer.js';
-import { TextureOverlayMaterialMixin } from './src/TextureOverlayMaterial.js';
+import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
+import { TextureOverlayTilesRendererMixin } from './src/plugins/overlays/TextureOverlayTilesRenderer.js';
+import { TextureOverlayMaterialMixin } from './src/plugins/overlays/TextureOverlayMaterial.js';
 
 const URLS = [
 
@@ -113,12 +113,14 @@ function init() {
 		const tokens = url.split( /[\\/]/g );
 		tokens.pop();
 
+		const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
 		const TextureOverlayMaterial = TextureOverlayMaterialMixin( MeshBasicMaterial );
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
-			const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
 			const tiles = new TextureOverlayTilesRenderer( url );
+
+			// ensure all materials support overlay textures
 			tiles.addEventListener( 'load-model', ( { scene } )=> {
 
 				scene.traverse( c => {
@@ -135,6 +137,7 @@ function init() {
 
 			} );
 
+			// assign the texture layers
 			tiles.addEventListener( 'layer-textures-change', ( { tile, scene } ) => {
 
 				scene.traverse( c => {
@@ -150,6 +153,7 @@ function init() {
 
 			} );
 
+			// assign a common cache and data
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
 			downloadQueue = downloadQueue || tiles.downloadQueue;
@@ -159,6 +163,7 @@ function init() {
 			tiles.parseQueue = parseQueue;
 			tiles.setCamera( camera );
 
+			// update the scene
 			const frame = scene.frames.find( f => f.id === info.frame_id );
 			frame.sceneMatrix.decompose( tiles.group.position, tiles.group.quaternion, tiles.group.scale );
 			tilesParent.add( tiles.group );

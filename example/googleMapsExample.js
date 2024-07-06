@@ -16,7 +16,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { CameraTransitionManager } from './src/CameraTransitionManager.js';
+import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
