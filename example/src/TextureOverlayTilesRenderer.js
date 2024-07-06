@@ -198,38 +198,6 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		};
 
-		this.addEventListener( 'delete-layer-texture', ( { scene, tile } ) => {
-
-			const textures = Object.values( this.getTexturesForTile( tile ) );
-			scene.traverse( c => {
-
-				if ( c.material ) {
-
-					c.material.textures = textures;
-					c.material.needsUpdate = true;
-
-				}
-
-			} );
-
-		} );
-
-		this.addEventListener( 'load-layer-texture', ( { scene, tile } ) => {
-
-			const textures = Object.values( this.getTexturesForTile( tile ) );
-			scene.traverse( c => {
-
-				if ( c.material ) {
-
-					c.material.textures = textures;
-					c.material.needsUpdate = true;
-
-				}
-
-			} );
-
-		} );
-
 		this.addEventListener( 'load-model', ( { scene, tile } ) => {
 
 			const caches = this.caches;
@@ -323,6 +291,12 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 						texture,
 					} );
 
+					this.dispatchEvent( {
+						type: 'layer-textures-change',
+						tile,
+						scene,
+					} );
+
 				} )
 				.catch( () => {} );
 
@@ -349,6 +323,12 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 						tile,
 						scene,
 						texture,
+					} );
+
+					this.dispatchEvent( {
+						type: 'layer-textures-change',
+						tile,
+						scene,
 					} );
 
 				}

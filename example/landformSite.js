@@ -135,6 +135,21 @@ function init() {
 
 			} );
 
+			tiles.addEventListener( 'layer-textures-change', ( { tile, scene } ) => {
+
+				scene.traverse( c => {
+
+					if ( c.material ) {
+
+						c.material.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
+
+			} );
+
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
 			downloadQueue = downloadQueue || tiles.downloadQueue;
