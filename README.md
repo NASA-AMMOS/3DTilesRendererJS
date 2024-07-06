@@ -35,6 +35,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Tile fade transition](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/fadingTiles.html)
 
+[Alterate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/landformSiteOverlay.html)
+
 **Debug Pages**
 
 [B3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/b3dmExample.html)
