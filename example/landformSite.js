@@ -121,7 +121,7 @@ function init() {
 			const tiles = new TextureOverlayTilesRenderer( url );
 
 			// ensure all materials support overlay textures
-			tiles.addEventListener( 'load-model', ( { scene } )=> {
+			tiles.addEventListener( 'load-model', ( { tile, scene } )=> {
 
 				scene.traverse( c => {
 
@@ -129,6 +129,7 @@ function init() {
 
 						const newMaterial = new TextureOverlayMaterial();
 						newMaterial.copy( c.material );
+						newMaterial.textures = Object.values( tiles.getTexturesForTile( tile ) );
 						c.material = newMaterial;
 
 					}

@@ -198,32 +198,6 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 		};
 
-		this.addEventListener( 'load-model', ( { scene, tile } ) => {
-
-			const caches = this.caches;
-			for ( const key in caches ) {
-
-				const cache = caches[ key ];
-				cache
-					.loadTexture( this.getTileKey( tile ) )
-					.then( texture => {
-
-						this.dispatchEvent( {
-							type: 'load-layer-texture',
-							layer: key,
-							tile,
-							scene,
-							texture,
-						} );
-
-					} )
-					.catch( () => {} );
-
-
-			}
-
-		} );
-
 		this.addEventListener( 'dispose-model', ( { tile } ) => {
 
 			const caches = this.caches;
@@ -235,6 +209,25 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 			}
 
 		} );
+
+	}
+
+	_pluginProcessTileModel( scene, tile ) {
+
+		const caches = this.caches;
+		const promises = [];
+		for ( const key in caches ) {
+
+			const cache = caches[ key ];
+			const pr = cache
+				.loadTexture( this.getTileKey( tile ) )
+				.catch( () => {} );
+
+			promises.push( pr );
+
+		}
+
+		return Promise.all( promises );
 
 	}
 
