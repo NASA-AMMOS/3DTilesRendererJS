@@ -523,7 +523,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		tile.cached = {
 
-			loadIndex: 0,
+			_loadIndex: 0,
 			transform,
 			transformInverse,
 
@@ -544,7 +544,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 	async parseTile( buffer, tile, extension ) {
 
-		tile._loadIndex ++;
+		const cached = tile.cached;
+		cached._loadIndex ++;
 
 		const uri = tile.content.uri;
 		const uriSplits = uri.split( /[\\/]/g );
@@ -553,11 +554,10 @@ export class TilesRenderer extends TilesRendererBase {
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
-		const loadIndex = tile._loadIndex;
+		const loadIndex = cached._loadIndex;
 		let promise = null;
 
 		const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
-		const cached = tile.cached;
 		const cachedTransform = cached.transform;
 
 		const upAdjustment = new Matrix4();
@@ -681,7 +681,7 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 
 		// exit early if a new request has already started
-		if ( tile._loadIndex !== loadIndex ) {
+		if ( cached._loadIndex !== loadIndex ) {
 
 			return;
 
@@ -863,7 +863,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.activeTiles.delete( tile );
 		this.visibleTiles.delete( tile );
-		tile._loadIndex ++;
+		cached._loadIndex ++;
 
 	}
 
