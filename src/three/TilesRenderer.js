@@ -532,6 +532,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			boundingVolume,
 
+			metadata: null,
 			scene: null,
 			geometry: null,
 			materials: null,
@@ -543,7 +544,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	async parseTile( buffer, tile, extension ) {
 
-		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
 
 		const uri = tile.content.uri;

@@ -359,6 +359,9 @@ export class TilesRendererBase {
 
 		tile.__basePath = tileSetDir;
 
+		tile._loadIndex = 0;
+		tile.__lastFrameVisited = - 1;
+
 	}
 
 	setTileActive( tile, state ) {
