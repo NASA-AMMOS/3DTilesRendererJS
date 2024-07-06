@@ -131,8 +131,9 @@ export class TilesRendererBase {
 
 		}
 
-		plugin[ PLUGIN_REGISTERED ] = true;
 		this.plugins.push( plugin );
+		plugin[ PLUGIN_REGISTERED ] = true;
+		plugin.init( this );
 
 	}
 
@@ -210,6 +211,13 @@ export class TilesRendererBase {
 	}
 
 	dispose() {
+
+		// dispose of all the plugins
+		this.invokeAllPlugins( plugin => {
+
+			plugin.dispose && plugin.dispose();
+
+		} );
 
 		const lruCache = this.lruCache;
 
