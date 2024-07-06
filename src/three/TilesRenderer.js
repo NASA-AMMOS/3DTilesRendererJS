@@ -24,6 +24,7 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
+let upAdjustment = null;
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -78,8 +79,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.onLoadModel = null;
 		this.onDisposeModel = null;
 		this.onTileVisibilityChange = null;
-
-		this.upAdjustment = null;
 
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
@@ -553,25 +552,24 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = tile._loadIndex;
 		let promise = null;
 
-		if ( ! this.upAdjustment ) {
+		if ( ! upAdjustment ) {
 
 			const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
-			this.upAdjustment = new Matrix4();
+			upAdjustment = new Matrix4();
 			switch ( upAxis.toLowerCase() ) {
 
 				case 'x':
-					this.upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+					upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
 					break;
 
 				case 'y':
-					this.upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
+					upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
 					break;
 
 			}
 
 		}
 
-		const upAdjustment = this.upAdjustment;
 		const cached = tile.cached;
 		const cachedTransform = cached.transform;
 
