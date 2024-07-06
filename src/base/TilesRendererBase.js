@@ -4,6 +4,8 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
+const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
+
 /**
  * Function for provided to sort all tiles for prioritizing loading/unloading.
  *
@@ -122,6 +124,15 @@ export class TilesRendererBase {
 	}
 
 	registerPlugin( plugin ) {
+
+		if ( plugin[ PLUGIN_REGISTERED ] === true ) {
+
+			throw new Error( 'TilesRendererBase: A plugin can only be registered to a single tile set' );
+
+		}
+
+		plugin[ PLUGIN_REGISTERED ] = true;
+		this.plugins.push( plugin );
 
 	}
 
