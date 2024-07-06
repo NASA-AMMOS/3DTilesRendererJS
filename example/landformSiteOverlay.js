@@ -1,7 +1,7 @@
 import {
 	TilesRenderer,
 	EnvironmentControls,
-} from '..';
+} from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -69,7 +69,7 @@ function init() {
 	renderer.domElement.tabIndex = 1;
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.025, 4000 );
-	camera.position.set( 20, 10, 20 );
+	camera.position.set( - 20, 10, 20 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
