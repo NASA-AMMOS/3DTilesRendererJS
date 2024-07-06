@@ -677,6 +677,12 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: this should be handled by a plugin
 		await this._pluginProcessTileModel( scene, tile );
 
+		await this.invokeAllPlugins( plugin => {
+
+			return plugin.processTileModel && plugin.processTileModel( scene, tile );
+
+		} );
+
 		// exit early if a new request has already started
 		if ( tile._loadIndex !== loadIndex ) {
 

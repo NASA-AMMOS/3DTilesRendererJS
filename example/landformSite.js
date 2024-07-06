@@ -14,6 +14,7 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
 import { TextureOverlayTilesRendererMixin } from './src/plugins/overlays/TextureOverlayTilesRenderer.js';
 import { TextureOverlayMaterialMixin } from './src/plugins/overlays/TextureOverlayMaterial.js';
+import { TextureOverlayPlugin } from './src/plugins/overlays/TextureOverlayPlugin.js';
 
 const URLS = [
 
@@ -119,6 +120,10 @@ function init() {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
 			const tiles = new TextureOverlayTilesRenderer( url );
+			const plugin = new TextureOverlayPlugin( scene => {
+
+			} );
+			tiles.registerPlugin( plugin );
 
 			// ensure all materials support overlay textures
 			tiles.addEventListener( 'load-model', ( { tile, scene } )=> {
@@ -129,7 +134,7 @@ function init() {
 
 						const newMaterial = new TextureOverlayMaterial();
 						newMaterial.copy( c.material );
-						newMaterial.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						newMaterial.textures = Object.values( plugin.getTexturesForTile( tile ) );
 						c.material = newMaterial;
 
 					}
@@ -145,7 +150,7 @@ function init() {
 
 					if ( c.material ) {
 
-						c.material.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						c.material.textures = Object.values( plugin.getTexturesForTile( tile ) );
 						c.material.needsUpdate = true;
 
 					}

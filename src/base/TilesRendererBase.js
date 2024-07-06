@@ -137,6 +137,12 @@ export class TilesRendererBase {
 
 	}
 
+	getPluginByName( name ) {
+
+		return this.plugins.find( p => p.name === name );
+
+	}
+
 	traverse( beforecb, aftercb ) {
 
 		const tileSets = this.tileSets;
