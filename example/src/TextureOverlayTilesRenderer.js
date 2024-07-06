@@ -206,6 +206,7 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 				if ( c.material ) {
 
 					c.material.textures = textures;
+					c.material.needsUpdate = true;
 
 				}
 
@@ -220,10 +221,8 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 				if ( c.material ) {
 
-					c.material.onBeforeCompile = onBeforeCompileCallback;
-					c.material.onBeforeRender = onBeforeRender;
-					c.material.customProgramCacheKey = customProgramCacheKey;
 					c.material.textures = textures;
+					c.material.needsUpdate = true;
 
 				}
 
@@ -362,77 +361,5 @@ export const TextureOverlayTilesRendererMixin = base => class extends base {
 
 	}
 
-	enableLayer( name ) {
-
-		// TODO
-
-	}
-
-	disableLayer( name ) {
-
-		// TODO
-
-	}
-
 };
 
-function onBeforeCompileCallback( shader ) {
-
-	const textures = this.textures || [];
-	const material = this;
-
-	shader.uniforms.textures = {
-		get value() {
-
-			return material.textures || [];
-
-		},
-	};
-
-	// WebGL does not seem to like empty texture arrays
-	if ( textures.length !== 0 ) {
-
-
-		shader.fragmentShader = shader.fragmentShader
-			.replace( /void main/, m => /* glsl */`
-				uniform sampler2D textures[ ${ textures.length } ];
-				${ m }
-
-			` )
-			.replace( /#include <color_fragment>/, m => /* glsl */`
-
-				${ m }
-
-				vec4 col;
-				#pragma unroll_loop_start
-				for ( int i = 0; i < ${ textures.length }; i ++ ) {
-
-					col = texture( textures[ i ], vMapUv );
-					diffuseColor = mix( diffuseColor, col, col.a );
-
-				}
-				#pragma unroll_loop_end
-
-			` );
-
-	}
-
-}
-
-function customProgramCacheKey() {
-
-	return this.textures.length + onBeforeCompileCallback.toString();
-
-}
-
-function onBeforeRender() {
-
-	const textures = this.textures || [];
-	if ( textures.length !== this.lastTextureCount ) {
-
-		this.lastTextureCount = textures.length;
-		this.needsUpdate = true;
-
-	}
-
-}

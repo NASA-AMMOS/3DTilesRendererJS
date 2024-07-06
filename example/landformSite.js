@@ -7,12 +7,13 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
-	DataTexture,
 	TextureLoader,
+	MeshBasicMaterial,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
 import { TextureOverlayTilesRendererMixin } from './src/TextureOverlayTilesRenderer.js';
+import { TextureOverlayMaterialMixin } from './src/TextureOverlayMaterial.js';
 
 const URLS = [
 
@@ -112,11 +113,27 @@ function init() {
 		const tokens = url.split( /[\\/]/g );
 		tokens.pop();
 
+		const TextureOverlayMaterial = TextureOverlayMaterialMixin( MeshBasicMaterial );
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
 			const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
 			const tiles = new TextureOverlayTilesRenderer( url );
+			tiles.addEventListener( 'load-model', ( { scene } )=> {
+
+				scene.traverse( c => {
+
+					if ( c.material ) {
+
+						const newMaterial = new TextureOverlayMaterial();
+						newMaterial.copy( c.material );
+						c.material = newMaterial;
+
+					}
+
+				} );
+
+			} );
 
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
