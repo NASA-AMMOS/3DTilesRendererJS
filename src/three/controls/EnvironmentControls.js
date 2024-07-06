@@ -63,13 +63,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	constructor( scene = null, camera = null, domElement = null ) {
+	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
 
 		super();
 
 		this.domElement = null;
 		this.camera = null;
 		this.scene = null;
+		this.tilesRenderer = null;
 
 		// settings
 		this._enabled = true;
@@ -116,10 +117,14 @@ export class EnvironmentControls extends EventDispatcher {
 		this._detachCallback = null;
 		this._upInitialized = false;
 
+		// always update the zoom target point in case the tiles are changing
+		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
+
 		// init
 		if ( domElement ) this.attach( domElement );
 		if ( camera ) this.setCamera( camera );
 		if ( scene ) this.setScene( scene );
+		if ( tilesRenderer ) this.setTilesRenderer( tilesRenderer );
 
 	}
 
@@ -132,6 +137,29 @@ export class EnvironmentControls extends EventDispatcher {
 	setCamera( camera ) {
 
 		this.camera = camera;
+
+	}
+
+	setTilesRenderer( tilesRenderer ) {
+
+		if ( this.tilesRenderer ) {
+
+			this.tilesRenderer.removeEventListener( 'tile-visibility-change', this._tilesOnChangeCallback );
+
+		}
+
+		this.tilesRenderer = tilesRenderer;
+		if ( this.tilesRenderer !== null ) {
+
+			this.tilesRenderer.addEventListener( 'tile-visibility-change', this._tilesOnChangeCallback );
+
+			if ( this.scene === null ) {
+
+				this.setScene( this.tilesRenderer.group );
+
+			}
+
+		}
 
 	}
 
@@ -657,8 +685,7 @@ export class EnvironmentControls extends EventDispatcher {
 			// track the zoom direction we're going to use
 			const finalZoomDirection = _vec.copy( zoomDirection );
 
-			// always update the zoom target point in case the tiles are changing
-			if ( this._updateZoomPoint() ) {
+			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
 				const dist = zoomPoint.distanceTo( camera.position );
 

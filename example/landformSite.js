@@ -4,14 +4,16 @@ import {
 } from '..';
 import {
 	Scene,
-	DirectionalLight,
-	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
 	Group,
+	TextureLoader,
+	MeshBasicMaterial,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { JPLLandformSiteSceneLoader } from './src/JPLLandformSceneLoader.js';
+import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
+import { TextureOverlayTilesRendererMixin } from './src/plugins/overlays/TextureOverlayTilesRenderer.js';
+import { TextureOverlayMaterialMixin } from './src/plugins/overlays/TextureOverlayMaterial.js';
 
 const URLS = [
 
@@ -51,6 +53,7 @@ let camera, controls, scene, renderer;
 const params = {
 
 	errorTarget: 12,
+	slopeLayer: false,
 
 };
 
@@ -89,17 +92,69 @@ function init() {
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
+	const layerFunction = async tileUrl => {
+
+		const url = tileUrl.replace( '/tilesets/', '/textures/SMG/' ).replace( /\.[0-9a-z]+$/i, '.png' );
+
+		return new TextureLoader()
+			.loadAsync( url )
+			.then( tex => {
+
+				tex.flipY = false;
+				return tex;
+
+			} );
+
+	};
+
 	URLS.forEach( async url => {
 
 		const scene = await new JPLLandformSiteSceneLoader().load( url );
 		const tokens = url.split( /[\\/]/g );
 		tokens.pop();
 
+		const TextureOverlayTilesRenderer = TextureOverlayTilesRendererMixin( TilesRenderer );
+		const TextureOverlayMaterial = TextureOverlayMaterialMixin( MeshBasicMaterial );
 		scene.tilesets.forEach( info => {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
-			const tiles = new TilesRenderer( url );
+			const tiles = new TextureOverlayTilesRenderer( url );
 
+			// ensure all materials support overlay textures
+			tiles.addEventListener( 'load-model', ( { tile, scene } )=> {
+
+				scene.traverse( c => {
+
+					if ( c.material ) {
+
+						const newMaterial = new TextureOverlayMaterial();
+						newMaterial.copy( c.material );
+						newMaterial.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						c.material = newMaterial;
+
+					}
+
+				} );
+
+			} );
+
+			// assign the texture layers
+			tiles.addEventListener( 'layer-textures-change', ( { tile, scene } ) => {
+
+				scene.traverse( c => {
+
+					if ( c.material ) {
+
+						c.material.textures = Object.values( tiles.getTexturesForTile( tile ) );
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
+
+			} );
+
+			// assign a common cache and data
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
 			downloadQueue = downloadQueue || tiles.downloadQueue;
@@ -109,6 +164,7 @@ function init() {
 			tiles.parseQueue = parseQueue;
 			tiles.setCamera( camera );
 
+			// update the scene
 			const frame = scene.frames.find( f => f.id === info.frame_id );
 			frame.sceneMatrix.decompose( tiles.group.position, tiles.group.quaternion, tiles.group.scale );
 			tilesParent.add( tiles.group );
@@ -123,6 +179,19 @@ function init() {
 
 	const gui = new GUI();
 	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'slopeLayer' ).onChange( v => {
+
+		if ( v ) {
+
+			tileSets.forEach( t => t.registerLayer( 'slopeLayer', layerFunction ) );
+
+		} else {
+
+			tileSets.forEach( t => t.unregisterLayer( 'slopeLayer' ) );
+
+		}
+
+	} );
 	gui.open();
 
 }

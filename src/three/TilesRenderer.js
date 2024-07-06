@@ -541,7 +541,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	parseTile( buffer, tile, extension ) {
+	async parseTile( buffer, tile, extension ) {
 
 		tile._loadIndex = tile._loadIndex || 0;
 		tile._loadIndex ++;
@@ -648,130 +648,133 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// check if this is the beginning of a new set of tiles to load and dispatch and event
 		const stats = this.stats;
-		const currentlyLoading = stats.parsing + stats.downloading;
-		if ( this._loadingTiles === false && currentlyLoading > 0 ) {
+		if ( this._loadingTiles === false && stats.parsing + stats.downloading > 0 ) {
 
 			this.dispatchEvent( { type: 'tiles-load-start' } );
 			this._loadingTiles = true;
 
 		}
 
-		return promise.then( result => {
+		// wait for the tile to load
+		const result = await promise;
 
-			let scene;
-			let metadata;
-			if ( result.isObject3D ) {
+		// get the scene data
+		let scene;
+		let metadata;
+		if ( result.isObject3D ) {
 
-				scene = result;
-				metadata = null;
+			scene = result;
+			metadata = null;
 
-			} else {
+		} else {
 
-				scene = result.scene;
-				metadata = result;
+			scene = result.scene;
+			metadata = result;
 
-			}
+		}
 
-			if ( tile._loadIndex !== loadIndex ) {
+		// wait for extra processing if needed
+		// TODO: this should be handled by a plugin
+		await this._pluginProcessTileModel( scene, tile );
 
-				return;
+		// exit early if a new request has already started
+		if ( tile._loadIndex !== loadIndex ) {
 
-			}
+			return;
 
-			// ensure the matrix is up to date in case the scene has a transform applied
-			scene.updateMatrix();
+		}
 
-			// apply the local up-axis correction rotation
-			// GLTFLoader seems to never set a transformation on the root scene object so
-			// any transformations applied to it can be assumed to be applied after load
-			// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
-			// rotation fix which is why "multiply" happens here.
-			if ( fileType === 'glb' || fileType === 'gltf' ) {
+		// ensure the matrix is up to date in case the scene has a transform applied
+		scene.updateMatrix();
 
-				scene.matrix.multiply( upAdjustment );
+		// apply the local up-axis correction rotation
+		// GLTFLoader seems to never set a transformation on the root scene object so
+		// any transformations applied to it can be assumed to be applied after load
+		// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
+		// rotation fix which is why "multiply" happens here.
+		if ( fileType === 'glb' || fileType === 'gltf' ) {
 
-			}
+			scene.matrix.multiply( upAdjustment );
 
-			scene.matrix.premultiply( cachedTransform );
-			scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+		}
+
+		scene.matrix.premultiply( cachedTransform );
+		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+		scene.traverse( c => {
+
+			c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
+
+		} );
+		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
+
+		if ( REVISION_165 ) {
+
+			// We handle raycasting in a custom way so remove it from here
 			scene.traverse( c => {
 
-				c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;
+				c.raycast = this._overridenRaycast;
 
 			} );
-			updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-			if ( REVISION_165 ) {
+		}
 
-				// We handle raycasting in a custom way so remove it from here
-				scene.traverse( c => {
+		const materials = [];
+		const geometry = [];
+		const textures = [];
+		scene.traverse( c => {
 
-					c.raycast = this._overridenRaycast;
+			if ( c.geometry ) {
 
-				} );
+				geometry.push( c.geometry );
 
 			}
 
-			const materials = [];
-			const geometry = [];
-			const textures = [];
-			scene.traverse( c => {
+			if ( c.material ) {
 
-				if ( c.geometry ) {
+				const material = c.material;
+				materials.push( c.material );
 
-					geometry.push( c.geometry );
+				for ( const key in material ) {
 
-				}
+					const value = material[ key ];
+					if ( value && value.isTexture ) {
 
-				if ( c.material ) {
-
-					const material = c.material;
-					materials.push( c.material );
-
-					for ( const key in material ) {
-
-						const value = material[ key ];
-						if ( value && value.isTexture ) {
-
-							textures.push( value );
-
-						}
+						textures.push( value );
 
 					}
 
 				}
 
-			} );
-
-			cached.materials = materials;
-			cached.geometry = geometry;
-			cached.textures = textures;
-			cached.scene = scene;
-			cached.metadata = metadata;
-
-			// dispatch an event indicating that this model has completed
-			this.dispatchEvent( {
-				type: 'load-model',
-				scene,
-				tile,
-			} );
-
-			if ( this.onLoadModel ) {
-
-				this.onLoadModel( scene, tile );
-
-			}
-
-			// dispatch an "end" event if all tiles have finished loading
-			const currentlyLoading = stats.parsing + stats.downloading;
-			if ( this._loadingTiles === true && currentlyLoading === 1 ) {
-
-				this.dispatchEvent( { type: 'tiles-load-end' } );
-				this._loadingTiles = false;
-
 			}
 
 		} );
+
+		cached.materials = materials;
+		cached.geometry = geometry;
+		cached.textures = textures;
+		cached.scene = scene;
+		cached.metadata = metadata;
+
+		// dispatch an event indicating that this model has completed
+		this.dispatchEvent( {
+			type: 'load-model',
+			scene,
+			tile,
+		} );
+
+		if ( this.onLoadModel ) {
+
+			this.onLoadModel( scene, tile );
+
+		}
+
+		// dispatch an "end" event if all tiles have finished loading
+		if ( this._loadingTiles === true && stats.parsing + stats.downloading === 1 ) {
+
+			this.dispatchEvent( { type: 'tiles-load-end' } );
+			this._loadingTiles = false;
+
+		}
 
 	}
 
@@ -986,5 +989,10 @@ export class TilesRenderer extends TilesRendererBase {
 		return inView;
 
 	}
+
+	/* private */
+	// TODO: this should leverage plugin system in the future
+	async _pluginProcessTileModel( scene, tile ) {}
+
 
 }

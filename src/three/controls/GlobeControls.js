@@ -34,13 +34,13 @@ export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
 
-		return this._tilesRenderer ? this._tilesRenderer.ellipsoid : null;
+		return this.tilesRenderer ? this.tilesRenderer.ellipsoid : null;
 
 	}
 
 	get tilesGroup() {
 
-		return this._tilesRenderer ? this._tilesRenderer.group : null;
+		return this.tilesRenderer ? this.tilesRenderer.group : null;
 
 	}
 
@@ -48,7 +48,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		// store which mode the drag stats are in
 		super( scene, camera, domElement );
-		this._tilesRenderer = null;
 		this._dragMode = 0;
 		this._rotationMode = 0;
 		this.useFallbackPlane = false;
@@ -57,22 +56,11 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	setTilesRenderer( tilesRenderer ) {
-
-		this._tilesRenderer = tilesRenderer;
-		if ( this.scene === null && this._tilesRenderer !== null ) {
-
-			this.setScene( this._tilesRenderer.group );
-
-		}
-
-	}
-
 	setScene( scene ) {
 
-		if ( scene === null && this._tilesRenderer !== null ) {
+		if ( scene === null && this.tilesRenderer !== null ) {
 
-			super.setScene( this._tilesRenderer.group );
+			super.setScene( this.tilesRenderer.group );
 
 		} else {
 
