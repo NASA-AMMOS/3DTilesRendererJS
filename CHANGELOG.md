@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `tiles-load-start` and `tiles-load-end` callback indicating when tile loading has completed finished.
+- initial implementation of plugin system.
 
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
