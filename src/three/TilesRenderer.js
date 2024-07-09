@@ -17,6 +17,7 @@ import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
+import {SUBTREELoader} from "./loaders/SUBTREELoader.js";
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_165 = parseInt( REVISION ) < 165;
@@ -505,6 +506,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.preprocessNode( tile, tileSetDir, parentTile );
 
+
 		const transform = new Matrix4();
 		if ( tile.transform ) {
 
@@ -560,6 +562,7 @@ export class TilesRenderer extends TilesRendererBase {
 			textures: null,
 
 		};
+
 
 	}
 
@@ -646,6 +649,18 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
+
+			case 'subt': {
+
+				const loader = new SUBTREELoader( manager, tile, this.root );
+				loader.workingPath = workingPath;
+				loader.fetchOptions = fetchOptions;
+				loader.parse( buffer );
+				promise = Promise.resolve( null );
+				break;
+
+			}
+
 			default:
 				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
 				promise = Promise.resolve( null );
@@ -668,13 +683,17 @@ export class TilesRenderer extends TilesRendererBase {
 		// get the scene data
 		let scene;
 		let metadata;
-		if ( result.isObject3D ) {
+
+		if(!result){
+
+			return;
+
+		} else if ( result.isObject3D ) {
 
 			scene = result;
 			metadata = null;
 
 		} else {
-
 			scene = result.scene;
 			metadata = result;
 
@@ -865,6 +884,9 @@ export class TilesRenderer extends TilesRendererBase {
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.cached.scene;
+		if(!scene){
+			return;
+		}
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 		if ( visible ) {
@@ -967,6 +989,8 @@ export class TilesRenderer extends TilesRendererBase {
 		return false;
 
 	}
+
+
 
 }
 

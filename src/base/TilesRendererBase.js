@@ -202,10 +202,10 @@ export class TilesRendererBase {
 
 		const root = rootTileSet.root;
 
-		stats.inFrustum = 0,
-		stats.used = 0,
-		stats.active = 0,
-		stats.visible = 0,
+		stats.inFrustum = 0;
+		stats.used = 0;
+		stats.active = 0;
+		stats.visible = 0;
 		this.frameCount ++;
 
 		markUsedTiles( root, this );
@@ -290,22 +290,15 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null ) {
-
-		if ( tile.content ) {
+	preprocessNode( tile, tileSetDir, parentTile = null) {
+		let uri;
+		if (tile.content) {
 
 			// Fix old file formats
 			if ( ! ( 'uri' in tile.content ) && 'url' in tile.content ) {
 
 				tile.content.uri = tile.content.url;
 				delete tile.content.url;
-
-			}
-
-			if ( tile.content.uri ) {
-
-				// tile content uri has to be interpreted relative to the tileset.json
-				tile.content.uri = new URL( tile.content.uri, tileSetDir + '/' ).toString();
 
 			}
 
@@ -323,13 +316,35 @@ export class TilesRendererBase {
 				delete tile.content.boundingVolume;
 
 			}
+			uri = tile.content?.uri;
 
 		}
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		const uri = tile.content && tile.content.uri;
+		if ( tile.implicitTiling ) {	//only for root
+
+			// Store the infos from the tileset
+			tile.availableLevels = tile.implicitTiling.availableLevels;
+			tile.subdivisionScheme = tile.implicitTiling.subdivisionScheme;
+			tile.__subtreeLevels = tile.implicitTiling.subtreeLevels;
+			tile.subtrees = tile.implicitTiling.subtrees;
+			tile.__subtreeDivider = tile.subdivisionScheme === "QUADTREE" ? 4 : 8;
+			tile.__subtreeUri = tile.implicitTiling.subtrees.uri;
+			tile.__contentUri = tile.content?.uri;
+
+			// Declare some properties
+			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
+
+			// Coords of the tile
+			tile.__x = 0;
+			tile.__y = 0;
+
+			uri = tile.implicitTiling.subtrees.uri;
+		}
+
+
 		if ( uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
@@ -389,6 +404,16 @@ export class TilesRendererBase {
 		tile.__basePath = tileSetDir;
 
 		tile.__lastFrameVisited = - 1;
+
+
+		if (tile.implicitTiling) {
+			tile.content = {
+				uri: parseImplicitURI(tile, tile.__basePath, tile.__subtreeUri)
+			}
+		} else if (tile.content?.uri) {
+			// tile content uri has to be interpreted relative to the tileset.json
+			tile.content.uri = new URL(tile.content.uri, tileSetDir + '/').toString();
+		}
 
 	}
 
@@ -789,4 +814,13 @@ export class TilesRendererBase {
 
 	}
 
+}
+
+export function parseImplicitURI(tile, basePath, uri) {
+	uri = uri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
+	uri = uri.replace("{x}", tile.__x ?? 0);
+	uri = uri.replace("{y}", tile.__y ?? 0);
+	uri = uri.replace("{z}", tile.__z ?? 0);
+	uri = new URL(uri, basePath + '/').toString();
+	return uri;
 }

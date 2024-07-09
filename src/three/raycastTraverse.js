@@ -26,7 +26,7 @@ function intersectTileScene( scene, raycaster, intersects ) {
 		} );
 		_hitArray.sort( distanceSort );
 
-	} else {
+	} else if( scene ) {
 
 		raycaster.intersectObject( scene, true, intersects );
 
