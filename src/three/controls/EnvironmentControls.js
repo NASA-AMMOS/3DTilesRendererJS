@@ -46,16 +46,15 @@ const _endEvent = { type: 'end' };
 
 function setRaycasterFromCamera( raycaster, mouse, camera ) {
 
-	if ( camera.isPerspectiveCamera ) {
-
-		raycaster.setFromCamera( mouse, camera );
-
-	} else {
-
-		raycaster.ray.origin.set( mouse.x, mouse.y, - 1 ).unproject( camera );
-		raycaster.ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-
-	}
+	const { origin, direction } = raycaster.ray;
+	origin
+		.set( mouse.x, mouse.y, - 1 )
+		.unproject( camera );
+	direction
+		.set( mouse.x, mouse.y, 0 )
+		.applyMatrix4( camera.projectionMatrixInverse )
+		.transformDirection( camera.matrixWorld )
+		.normalize();
 
 }
 
