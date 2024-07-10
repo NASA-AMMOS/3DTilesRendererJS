@@ -177,13 +177,13 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the camera planes
-		this.updateCameraClipPlanes( camera );
+		this.updateCameraClipPlanes( camera, true );
 
 	}
 
 	// Updates the passed camera near and far clip planes to encapsulate the
 	// ellipsoid from their current position.
-	updateCameraClipPlanes( camera ) {
+	updateCameraClipPlanes( camera, updateOrthoPosition = false ) {
 
 		const {
 			tilesGroup,
@@ -220,8 +220,21 @@ export class GlobeControls extends EnvironmentControls {
 			_invMatrix.copy( camera.matrixWorld ).invert();
 			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
 
-			camera.near = - Math.max( ...ellipsoid.radius );
-			camera.far = - _vec.z;
+			const distanceToCenter = - _vec.z;
+			camera.near = distanceToCenter - Math.max( ...ellipsoid.radius ) * 1.1;
+			camera.far = distanceToCenter;
+
+			// adjust the position of the ortho camera such that the near value is 0
+			if ( updateOrthoPosition && camera.near < 0 ) {
+
+				camera.position.addScaledVector( _forward, camera.near );
+				camera.far -= camera.near;
+				camera.near = 0;
+				camera.updateMatrixWorld();
+
+			}
+
+			camera.updateProjectionMatrix();
 
 		}
 
