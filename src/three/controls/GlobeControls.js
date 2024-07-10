@@ -23,6 +23,7 @@ const _quaternion = new Quaternion();
 const _zoomPointUp = new Vector3();
 const _toCenter = new Vector3();
 const _latLon = {};
+const _ray = new Ray();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -71,6 +72,28 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	getPivotPoint( target ) {
+
+		const { camera, tilesGroup, ellipsoid, pivotPoint } = this;
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+
+		_ray.origin.copy( camera.position );
+		_ray.direction.copy( _forward );
+		_ray.applyMatrix4( _invMatrix );
+		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
+		target.applyMatrix4( tilesGroup.matrixWorld );
+
+		if ( camera.position.distanceTo( target ) > camera.position.distanceTo( pivotPoint ) ) {
+
+			target.copy( pivotPoint );
+
+		}
+
+		return target;
+
+	}
+
 	// get the vector to the center of the provided globe
 	getVectorToCenter( target ) {
 
@@ -102,6 +125,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		if ( point === camera.position && camera.isOrthographicCamera ) {
 
+			// TODO: make this cleaner
 			const ray = new Ray();
 			ray.origin.copy( camera.position );
 			ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
@@ -190,8 +214,11 @@ export class GlobeControls extends EnvironmentControls {
 			ellipsoid,
 		} = this;
 
-		const distanceToCenter = this.getDistanceToCenter();
 		if ( camera.isPerspectiveCamera ) {
+
+			const distanceToCenter = _vec
+				.setFromMatrixPosition( tilesGroup.matrixWorld )
+				.sub( camera.position ).length();
 
 			// update the projection matrix
 			// interpolate from the 25% radius margin around the globe down to the surface
@@ -284,8 +311,8 @@ export class GlobeControls extends EnvironmentControls {
 					camera.zoom,
 					this._getOrthographicTransitionZoom(),
 					this._getMinOrthographicZoom(),
-					0.01,
-					0.1,
+					0.001,
+					0.005,
 				);
 
 			}

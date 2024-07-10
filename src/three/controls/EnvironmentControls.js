@@ -472,6 +472,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	getPivotPoint( target ) {
+
+		target.copy( this.pivotPoint );
+
+		return target;
+
+	}
+
 	detach() {
 
 		this.domElement = null;
