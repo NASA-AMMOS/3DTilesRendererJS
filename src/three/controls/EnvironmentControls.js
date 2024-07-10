@@ -44,6 +44,21 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
+function setRaycasterFromCamera( raycaster, mouse, camera ) {
+
+	if ( camera.isPerspectiveCamera ) {
+
+		raycaster.setFromCamera( mouse, camera );
+
+	} else {
+
+		raycaster.ray.origin.set( mouse.x, mouse.y, - 1 ).unproject( camera );
+		raycaster.ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+
+	}
+
+}
+
 export class EnvironmentControls extends EventDispatcher {
 
 	get enabled() {
@@ -252,7 +267,7 @@ export class EnvironmentControls extends EventDispatcher {
 			// the "pointer" for zooming and rotating should be based on the center point
 			pointerTracker.getCenterPoint( _pointer );
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// prevent the drag distance from getting too severe by limiting the drag point
 			// to a reasonable angle and reasonable distance with the drag plane
@@ -708,7 +723,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// update the zoom direction
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 			zoomDirection.copy( raycaster.ray.direction ).normalize();
 			this.zoomDirectionSet = true;
 
@@ -734,7 +749,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// initialize the zoom direction
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 			zoomDirection.copy( raycaster.ray.direction ).normalize();
 			this.zoomDirectionSet = true;
 
@@ -807,7 +822,7 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _pointer ) ) {
 
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 		} else {
 
@@ -866,7 +881,7 @@ export class EnvironmentControls extends EventDispatcher {
 		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 		_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
-		raycaster.setFromCamera( _pointer, camera );
+		setRaycasterFromCamera( raycaster, _pointer, camera );
 
 		// prevent the drag distance from getting too severe by limiting the drag point
 		// to a reasonable angle with the drag plane
