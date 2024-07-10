@@ -273,11 +273,28 @@ export class GlobeControls extends EnvironmentControls {
 			// get the delta movement with magic numbers scaled by the distance to the
 			// grabbed point so it feels okay
 			// TODO: it would be better to properly calculate angle based on drag distance
+			let scaleAmount;
+			if ( camera.isPerspectiveCamera ) {
+
+				scaleAmount = camera.position.distanceTo( pivotPoint ) * 5 * 1e-10 / devicePixelRatio;
+
+			} else {
+
+				scaleAmount = MathUtils.mapLinear(
+					camera.zoom,
+					this._getOrthographicTransitionZoom(),
+					this._getMinOrthographicZoom(),
+					0.01,
+					0.1,
+				);
+
+			}
+
 			pointerTracker.getCenterPoint( _pointer );
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer
 				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( camera.position.distanceTo( pivotPoint ) * 5 * 1e-10 / devicePixelRatio );
+				.multiplyScalar( scaleAmount );
 
 			const azimuth = - _deltaPointer.x * rotationSpeed;
 			const altitude = - _deltaPointer.y * rotationSpeed;
