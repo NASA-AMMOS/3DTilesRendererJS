@@ -415,11 +415,9 @@ export class GlobeControls extends EnvironmentControls {
 			camera.updateProjectionMatrix();
 
 			this.zoomDelta = 0;
+			this.zoomDirectionSet = false;
 
 		}
-
-		// TODO: this seems to not be needed?
-		// this._alignCameraUp( this.up );
 
 	}
 

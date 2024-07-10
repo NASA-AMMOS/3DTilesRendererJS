@@ -966,7 +966,7 @@ export class EnvironmentControls extends EventDispatcher {
 				// GlobeControls works correctly
 				if ( camera.isOrthographicCamera ) {
 
-					amt *= 0.25;
+					amt *= 0.1;
 
 				}
 
