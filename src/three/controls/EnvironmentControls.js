@@ -961,6 +961,15 @@ export class EnvironmentControls extends EventDispatcher {
 				let amt = Math.max( _vec.dot( up ) - 0.6, 0 ) / 0.4;
 				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
 				amt = Math.min( amt, 1 );
+
+				// scale the value if we're using an orthographic camera so
+				// GlobeControls works correctly
+				if ( camera.isOrthographicCamera ) {
+
+					amt *= 0.25;
+
+				}
+
 				_quaternion.slerp( _identityQuat, 1.0 - amt );
 
 			}
