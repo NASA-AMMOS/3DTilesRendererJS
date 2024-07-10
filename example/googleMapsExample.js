@@ -120,6 +120,9 @@ function init() {
 	gui.add( params, 'orthographic' ).onChange( v => {
 
 		controls.getPivotPoint( transition.fixedPoint );
+		controls.updateCameraClipPlanes( transition.perspectiveCamera );
+		controls.updateCameraClipPlanes( transition.orthographicCamera );
+
 		transition.toggle();
 
 	} );
@@ -220,11 +223,6 @@ function animate() {
 	controls.enabled = ! transition.animating;
 	controls.update();
 	transition.update();
-
-	// TODO: ideally we would sync the camera positions, then update the planes, then transition.
-	// Without it we may have an off-by-one-frame issue?
-	controls.updateCameraClipPlanes( transition.perspectiveCamera );
-	controls.updateCameraClipPlanes( transition.orthographicCamera );
 
 	const camera = transition.camera;
 

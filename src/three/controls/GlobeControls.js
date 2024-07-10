@@ -51,7 +51,7 @@ export class GlobeControls extends EnvironmentControls {
 		super( scene, camera, domElement );
 		this._dragMode = 0;
 		this._rotationMode = 0;
-		this.maxZoom = 50;
+		this.maxZoom = 1000;
 		this.useFallbackPlane = false;
 
 		this.setTilesRenderer( tilesRenderer );
@@ -146,7 +146,7 @@ export class GlobeControls extends EnvironmentControls {
 			// get ortho camera info
 			const orthoHeight = ( camera.top - camera.bottom );
 			const orthoWidth = ( camera.right - camera.left );
-			const orthoSize = Math.max( orthoHeight, orthoWidth );
+			const orthoSize = Math.max( orthoHeight, orthoWidth ) / camera.zoom;
 			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
 			// shift the point backwards based on the size of the size of the orthographic view
