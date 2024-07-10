@@ -659,6 +659,10 @@ export class EnvironmentControls extends EventDispatcher {
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
 			_mouseBefore.unproject( camera );
 
+			raycaster.setFromCamera( _pointer, camera );
+			zoomDirection.copy( raycaster.ray.direction ).normalize();
+			this.zoomDirectionSet = true;
+
 			// zoom the camera
 			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
 			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;

@@ -5,7 +5,6 @@ import {
 	Vector3,
 	MathUtils,
 	Ray,
-	Raycaster,
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint } from './utils.js';
@@ -51,6 +50,7 @@ export class GlobeControls extends EnvironmentControls {
 		super( scene, camera, domElement );
 		this._dragMode = 0;
 		this._rotationMode = 0;
+		this.maxZoom = 50;
 		this.useFallbackPlane = false;
 
 		this.setTilesRenderer( tilesRenderer );
@@ -146,7 +146,7 @@ export class GlobeControls extends EnvironmentControls {
 		if ( this._isNearControls() ) {
 
 			this.reorientOnDrag = true;
-			this.scaleZoomOrientationAtEdges = this.zoomDelta > 0;
+			this.scaleZoomOrientationAtEdges = this.zoomDelta > 0 || camera.isOrthographicCamera;
 
 		} else {
 
@@ -388,9 +388,8 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		// TODO: we should consider rotating the camera about the zoom point in this case
-		// Possibly for drag, too?
-		this._alignCameraUp( this.up );
+		// TODO: this seems to not be needed?
+		// this._alignCameraUp( this.up );
 
 	}
 
