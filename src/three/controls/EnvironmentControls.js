@@ -117,6 +117,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this._detachCallback = null;
 		this._upInitialized = false;
+		this._lastUsedState = NONE;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -485,9 +486,21 @@ export class EnvironmentControls extends EventDispatcher {
 
 	getPivotPoint( target ) {
 
-		target.copy( this.pivotPoint );
+		if ( this._lastUsedState === ZOOM && this.zoomPointSet ) {
 
-		return target;
+			target.copy( this.zoomPoint );
+			return target;
+
+		} else if ( this._lastUsedState === ROTATE || this._lastUsedState === DRAG ) {
+
+			target.copy( this.pivotPoint );
+			return target;
+
+		} else {
+
+			return null;
+
+		}
 
 	}
 
@@ -535,6 +548,11 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.state = state;
+		if ( state !== NONE && state !== WAITING ) {
+
+			this._lastUsedState = state;
+
+		}
 
 	}
 
