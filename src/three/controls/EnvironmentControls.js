@@ -138,6 +138,10 @@ export class EnvironmentControls extends EventDispatcher {
 	setCamera( camera ) {
 
 		this.camera = camera;
+		this._upInitialized = false;
+		this.zoomDirectionSet = false;
+		this.zoomPointSet = false;
+		this.needsUpdate = true;
 
 	}
 
