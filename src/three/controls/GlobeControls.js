@@ -31,7 +31,6 @@ const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 10;
 const MAX_GLOBE_DISTANCE = 5 * 1e7;
-const GLOBE_TRANSITION_THRESHOLD = 3 * 1e7;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -372,8 +371,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		} else {
 
-			console.log( this.zoomPointSet)
-
 			const transitionZoom = this._getOrthographicTransitionZoom();
 			const minZoom = this._getMinOrthographicZoom();
 			const alpha = MathUtils.mapLinear( camera.zoom, transitionZoom, minZoom, 0, 1 );
@@ -516,9 +513,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	_isNearControls() {
 
-		// return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
-
-		const { camera, ellipsoid } = this;
+		const { camera } = this;
 		if ( camera.isPerspectiveCamera ) {
 
 			return this.getDistanceToCenter() < this._getPerspectiveTransitionDistance();
