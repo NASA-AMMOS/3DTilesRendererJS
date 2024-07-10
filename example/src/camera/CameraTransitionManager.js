@@ -234,11 +234,17 @@ export class CameraTransitionManager extends EventDispatcher {
 		const orthoFarPlane = orthoDistanceToPoint - virtOrthoFar;
 		const targetFarPlane = MathUtils.lerp( perspFarPlane, orthoFarPlane, alpha );
 
+		// compute delta between planes so we can scale the minimum near plane value
+		// and avoid depth artifacts from floating point calculations
+		const finalNearPlane = targetDistance - targetNearPlane;
+		const finalFarPlane = targetDistance - targetFarPlane;
+		const planeDelta = finalFarPlane - finalNearPlane;
+
 		// update the camera state
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = targetFov;
-		transitionCamera.near = Math.max( targetDistance - targetNearPlane, 1e-1 );
-		transitionCamera.far = targetDistance - targetFarPlane;
+		transitionCamera.near = Math.max( finalNearPlane, planeDelta * 1e-5 );
+		transitionCamera.far = finalFarPlane;
 		transitionCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, perspDistanceToPoint - targetDistance );
 		transitionCamera.rotation.copy( perspectiveCamera.rotation );
 
