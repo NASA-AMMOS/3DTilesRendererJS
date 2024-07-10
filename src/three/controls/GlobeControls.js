@@ -397,9 +397,10 @@ export class GlobeControls extends EnvironmentControls {
 				this.getUpDirection( zoomPoint, _zoomPointUp );
 				const upAlpha = MathUtils.clamp( MathUtils.mapLinear( - _zoomPointUp.dot( _toCenter ), 1, 0.95, 0, 1 ), 0, 1 );
 				const forwardAlpha = 1 - _forward.dot( _toCenter );
+				const cameraAlpha = camera.isOrthographicCamera ? 0.05 : 1;
 
 				// apply scale
-				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha ).normalize();
+				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha * cameraAlpha ).normalize();
 
 				// perform rotation
 				_quaternion.setFromUnitVectors( _forward, _toCenter );
