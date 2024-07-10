@@ -105,6 +105,9 @@ function init() {
 
 	} );
 
+	// disable adjusting the orthographic camera position since globe controls will do this
+	transition.orthographicPositionalZoom = false;
+
 	// controls
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 
