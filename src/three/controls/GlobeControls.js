@@ -146,7 +146,7 @@ export class GlobeControls extends EnvironmentControls {
 		if ( this._isNearControls() ) {
 
 			this.reorientOnDrag = true;
-			this.scaleZoomOrientationAtEdges = this.zoomDelta < 0;// || camera.isOrthographicCamera;
+			this.scaleZoomOrientationAtEdges = this.zoomDelta < 0;
 
 		} else {
 

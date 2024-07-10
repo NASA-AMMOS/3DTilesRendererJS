@@ -656,13 +656,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		if ( camera.isOrthographicCamera ) {
 
-			// get the mouse position before zoom
+			// update the zoom direction
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
-			_mouseBefore.unproject( camera );
-
 			raycaster.setFromCamera( _pointer, camera );
 			zoomDirection.copy( raycaster.ray.direction ).normalize();
 			this.zoomDirectionSet = true;
+
+			// get the mouse position before zoom
+			_mouseBefore.unproject( camera );
 
 			// zoom the camera
 			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
@@ -740,6 +741,8 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirection,
 			raycaster,
 			zoomPoint,
+			pointerTracker,
+			domElement,
 		} = this;
 
 		if ( ! zoomDirectionSet ) {
@@ -748,9 +751,20 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		raycaster.ray.origin.copy( camera.position );
-		raycaster.ray.direction.copy( zoomDirection );
+		// If using an orthographic camera we have to account for the mouse position when picking the point
+		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _pointer ) ) {
 
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			raycaster.setFromCamera( _pointer, camera );
+
+		} else {
+
+			raycaster.ray.origin.copy( camera.position );
+			raycaster.ray.direction.copy( zoomDirection );
+
+		}
+
+		// get the hit point
 		const hit = this._raycast( raycaster );
 		if ( hit ) {
 
