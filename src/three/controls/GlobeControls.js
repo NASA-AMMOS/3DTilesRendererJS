@@ -116,14 +116,21 @@ export class GlobeControls extends EnvironmentControls {
 	getUpDirection( point, target ) {
 
 		// get the "up" direction based on the wgs84 ellipsoid
-		const { tilesGroup, ellipsoid, camera } = this;
+		const { tilesGroup, ellipsoid } = this;
 		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 		_vec.copy( point ).applyMatrix4( _invMatrix );
 
 		ellipsoid.getPositionToNormal( _vec, target );
 		target.transformDirection( tilesGroup.matrixWorld );
 
-		if ( point === camera.position && camera.isOrthographicCamera ) {
+	}
+
+	getCameraUpDirection( target ) {
+
+		const { tilesGroup, ellipsoid, camera } = this;
+		if ( camera.isOrthographicCamera ) {
+
+			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 
 			// get ray in globe coordinate frame
 			_ray.origin.copy( camera.position );
@@ -144,6 +151,10 @@ export class GlobeControls extends EnvironmentControls {
 			_vec.addScaledVector( _forward, - orthoSize ).applyMatrix4( _invMatrix );
 			ellipsoid.getPositionToNormal( _vec, target );
 			target.transformDirection( tilesGroup.matrixWorld );
+
+		} else {
+
+			this.getUpDirection( camera.position, target );
 
 		}
 

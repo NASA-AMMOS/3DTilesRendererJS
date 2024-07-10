@@ -477,6 +477,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	getCameraUpDirection( target ) {
+
+		this.getUpDirection( this.camera.position, target );
+
+	}
+
 	getPivotPoint( target ) {
 
 		target.copy( this.pivotPoint );
@@ -587,7 +593,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// if using an orthographic camera then rotate around drag pivot
 		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
-		this.getUpDirection( camera.position, _localUp );
+		this.getCameraUpDirection( _localUp );
 		if ( ! this._upInitialized ) {
 
 			this._upInitialized = true;
