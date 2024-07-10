@@ -53,21 +53,11 @@ function setRaycasterFromCamera( raycaster, mouse, camera ) {
 		.set( mouse.x, mouse.y, - 1 )
 		.unproject( camera );
 
-	if ( camera.isOrthographicCamera ) {
-
-		direction
-			.set( 0, 0, - 1 )
-			.transformDirection( camera.matrixWorld );
-
-	} else {
-
-		direction
-			.set( mouse.x, mouse.y, 0 )
-			.applyMatrix4( camera.projectionMatrixInverse )
-			.transformDirection( camera.matrixWorld )
-			.normalize();
-
-	}
+	direction
+		.set( mouse.x, mouse.y, 0 )
+		.unproject( camera )
+		.sub( origin )
+		.normalize();
 
 	raycaster.camera = camera;
 
