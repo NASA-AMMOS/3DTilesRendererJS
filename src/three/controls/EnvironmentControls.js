@@ -142,6 +142,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
 		this.needsUpdate = true;
+		this.resetState();
 
 	}
 
@@ -507,7 +508,7 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.state = NONE;
-		this.scene.remove( this.pivotMesh );
+		this.pivotMesh.removeFromParent();
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
 

@@ -117,34 +117,32 @@ export class GlobeControls extends EnvironmentControls {
 
 		// get the "up" direction based on the wgs84 ellipsoid
 		const { tilesGroup, ellipsoid, camera } = this;
-		const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
-		const pos = _vec.copy( point ).applyMatrix4( invMatrix );
+		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+		_vec.copy( point ).applyMatrix4( _invMatrix );
 
-		ellipsoid.getPositionToNormal( pos, target );
+		ellipsoid.getPositionToNormal( _vec, target );
 		target.transformDirection( tilesGroup.matrixWorld );
 
 		if ( point === camera.position && camera.isOrthographicCamera ) {
 
-			// TODO: make this cleaner
-			const ray = new Ray();
-			ray.origin.copy( camera.position );
-			ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-			ray.applyMatrix4( _invMatrix );
+			// get ray in globe coordinate frame
+			_ray.origin.copy( camera.position );
+			_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+			_ray.applyMatrix4( _invMatrix );
 
-			const closestPoint = new Vector3();
-			closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, closestPoint );
-			closestPoint.applyMatrix4( tilesGroup.matrixWorld );
+			// get the closest point to the ray on the globe in the global coordinate frame
+			closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
+			_vec.applyMatrix4( tilesGroup.matrixWorld );
 
+			// get ortho camera info
 			const orthoHeight = ( camera.top - camera.bottom );
 			const orthoWidth = ( camera.right - camera.left );
 			const orthoSize = Math.max( orthoHeight, orthoWidth );
-
 			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
-			const virtualPoint = new Vector3();
-			virtualPoint.copy( closestPoint ).addScaledVector( _forward, - orthoSize ).applyMatrix4( _invMatrix );
-			ellipsoid.getPositionToNormal( virtualPoint, target );
+			// shift the point backwards based on the size of the size of the orthographic view
+			_vec.addScaledVector( _forward, - orthoSize ).applyMatrix4( _invMatrix );
+			ellipsoid.getPositionToNormal( _vec, target );
 			target.transformDirection( tilesGroup.matrixWorld );
 
 		}
