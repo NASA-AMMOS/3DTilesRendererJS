@@ -32,6 +32,7 @@ const _plane = new Plane();
 const _localUp = new Vector3();
 const _mouseBefore = new Vector3();
 const _mouseAfter = new Vector3();
+const _identityQuat = new Quaternion();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -939,16 +940,14 @@ export class EnvironmentControls extends EventDispatcher {
 		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			const v = new Vector3();
-			this.getUpDirection( zoomPoint, v );
+			this.getUpDirection( zoomPoint, _vec );
 
-			if ( ! scaleZoomOrientationAtEdges ) {
+			if ( scaleZoomOrientationAtEdges ) {
 
-				const quat = new Quaternion();
-				let amt = Math.max( v.dot( up ) - 0.6, 0 ) / 0.4;
+				let amt = Math.max( _vec.dot( up ) - 0.6, 0 ) / 0.4;
 				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
 				amt = Math.min( amt, 1 );
-				_quaternion.slerp( quat, 1.0 - amt );
+				_quaternion.slerp( _identityQuat, 1.0 - amt );
 
 			}
 
