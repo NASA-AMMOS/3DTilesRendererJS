@@ -578,7 +578,10 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = adjustHeight && this._getPointBelowCamera() || null;
+		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
+
+		// if using an orthographic camera then rotate around drag pivot
+		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
 		this.getUpDirection( camera.position, _localUp );
 		if ( ! this._upInitialized ) {
 
@@ -587,7 +590,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else {
 
-			this._setFrame( _localUp, hit && hit.point || null );
+			this._setFrame( _localUp, rotationPoint );
 
 		}
 
