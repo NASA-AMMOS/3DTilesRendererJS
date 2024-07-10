@@ -93,10 +93,6 @@ function init() {
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
 
-	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
-	transition.orthographicCamera.lookAt( 0, 0, 0 );
-	transition.orthographicCamera.zoom = 1.5 * 1e-3;
-
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
 		tiles.deleteCamera( prevCamera );

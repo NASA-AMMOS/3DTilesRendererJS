@@ -381,16 +381,16 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, tilesGroup, maxZoom } = this;
+		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, maxZoom } = this;
 		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			// When zooming try to tilt the camera towards the center of the planet to avoid the globe
 			// spinning as you zoom out from the horizon
-			if ( zoomDelta < 0 && camera.isPerspectiveCamera ) {
+			if ( zoomDelta < 0 ) {
 
 				// get the forward vector and vector toward the center of the ellipsoid
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
-				_toCenter.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
+				_toCenter.copy( this.up ).multiplyScalar( - 1 );
 
 				// Calculate alpha values to use to scale the amount of tilt that occurs as the camera moves.
 				// Scales based on mouse position near the horizon and current tilt.
