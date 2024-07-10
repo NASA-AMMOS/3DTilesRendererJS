@@ -118,6 +118,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this._detachCallback = null;
 		this._upInitialized = false;
 		this._lastUsedState = NONE;
+		this._zoomPointWasSet = false;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -429,6 +430,7 @@ export class EnvironmentControls extends EventDispatcher {
 			this.zoomDelta -= 3 * deltaSign * normalizedDelta;
 			this.needsUpdate = true;
 
+			this._lastUsedState = ZOOM;
 			this.dispatchEvent( _endEvent );
 
 		};
@@ -486,10 +488,18 @@ export class EnvironmentControls extends EventDispatcher {
 
 	getPivotPoint( target ) {
 
-		if ( this._lastUsedState === ZOOM && this.zoomPointSet ) {
+		if ( this._lastUsedState === ZOOM ) {
 
-			target.copy( this.zoomPoint );
-			return target;
+			if ( this._zoomPointWasSet ) {
+
+				target.copy( this.zoomPoint );
+				return target;
+
+			} else {
+
+				return null;
+
+			}
 
 		} else if ( this._lastUsedState === ROTATE || this._lastUsedState === DRAG ) {
 
@@ -785,6 +795,8 @@ export class EnvironmentControls extends EventDispatcher {
 			domElement,
 		} = this;
 
+		this._zoomPointWasSet = false;
+
 		if ( ! zoomDirectionSet ) {
 
 			return false;
@@ -810,6 +822,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			zoomPoint.copy( hit.point );
 			this.zoomPointSet = true;
+			this._zoomPointWasSet = true;
 			return true;
 
 		}

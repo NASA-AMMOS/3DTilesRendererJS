@@ -75,7 +75,7 @@ export class GlobeControls extends EnvironmentControls {
 	getPivotPoint( target ) {
 
 		const { camera, tilesGroup, ellipsoid } = this;
-		if ( this._lastUsedState === NONE ) {
+		if ( super.getPivotPoint( target ) === null ) {
 
 			// get camera values
 			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
@@ -89,13 +89,10 @@ export class GlobeControls extends EnvironmentControls {
 			// get the estimated closest point
 			closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
 			target.applyMatrix4( tilesGroup.matrixWorld );
-			return target;
-
-		} else {
-
-			return super.getPivotPoint( target );
 
 		}
+
+		return target;
 
 	}
 
