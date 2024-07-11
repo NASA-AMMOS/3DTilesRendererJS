@@ -608,8 +608,8 @@ export class GlobeControls extends EnvironmentControls {
 		_ray.applyMatrix4( _invMatrix );
 
 		// get the closest point to the ray on the globe in the global coordinate frame
-		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
-		target.applyMatrix4( tilesGroup.matrixWorld );
+		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
+		_pos.applyMatrix4( tilesGroup.matrixWorld );
 
 		// get ortho camera info
 		const orthoHeight = ( camera.top - camera.bottom );
@@ -617,8 +617,10 @@ export class GlobeControls extends EnvironmentControls {
 		const orthoSize = Math.max( orthoHeight, orthoWidth ) / camera.zoom;
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
-		// shift the point backwards based on the size of the size of the orthographic view
-		target.addScaledVector( _forward, - orthoSize * 4 );
+		// ensure we move the camera exactly along the forward vector to avoid shifting
+		// the camera in other directions due to floating point error
+		const dist = _pos.sub( camera.position ).dot( _forward );
+		target.copy( camera.position ).addScaledVector( _forward, dist - orthoSize * 4 );
 
 	}
 
