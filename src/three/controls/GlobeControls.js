@@ -581,7 +581,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
-		const orthoSize = Math.max( orthoHeight, orthoWidth );
+		const orthoSize = Math.min( orthoHeight, orthoWidth );
 		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
 		const ellipsoidDiameter = 2 * ellipsoidRadius;
 		return 0.5 * orthoSize / ellipsoidDiameter;
