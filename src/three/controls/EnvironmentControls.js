@@ -908,6 +908,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		if ( camera.isPerspectiveCamera && raycaster.ray.direction.dot( _localUp ) > - 0.1 ) {
+
+			return;
+
+		}
+
 		// find the point on the plane that we should drag to
 		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
 
