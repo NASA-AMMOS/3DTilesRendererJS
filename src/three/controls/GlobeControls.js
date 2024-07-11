@@ -523,7 +523,7 @@ export class GlobeControls extends EnvironmentControls {
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
 		const distVert = ellipsoidRadius / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
 		const distHoriz = ellipsoidRadius / Math.tan( fovHoriz * 0.5 );
-		const dist = Math.min( distVert, distHoriz );
+		const dist = Math.max( distVert, distHoriz );
 
 		return dist;
 

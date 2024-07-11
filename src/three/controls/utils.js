@@ -56,3 +56,22 @@ export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target 
 	}
 
 }
+
+// custom version of set raycaster from camera that relies on the underlying matrices
+// so the ray origin is position at the camera near clip.
+export function setRaycasterFromCamera( raycaster, mouse, camera ) {
+
+	const { origin, direction } = raycaster.ray;
+	origin
+		.set( mouse.x, mouse.y, - 1 )
+		.unproject( camera );
+
+	direction
+		.set( mouse.x, mouse.y, 0 )
+		.unproject( camera )
+		.sub( origin )
+		.normalize();
+
+	raycaster.camera = camera;
+
+}
