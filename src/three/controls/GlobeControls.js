@@ -383,7 +383,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// When zooming try to tilt the camera towards the center of the planet to avoid the globe
 			// spinning as you zoom out from the horizon
-			if ( zoomDelta < 0 ) {
+			if ( zoomDelta < 0 && ( this.zoomPointSet || this._updateZoomPoint() ) ) {
 
 				// get the forward vector and vector toward the center of the ellipsoid
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
