@@ -34,6 +34,7 @@ const _mouseBefore = new Vector3();
 const _mouseAfter = new Vector3();
 const _identityQuat = new Quaternion();
 
+const _zoomPointPointer = new Vector2();
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
@@ -712,23 +713,35 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirection.copy( raycaster.ray.direction ).normalize();
 			this.zoomDirectionSet = true;
 
-			// get the mouse position before zoom
-			_mouseBefore.unproject( camera );
+			// zoom straight into the globe if we haven't hit anything
+			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
-			// zoom the camera
-			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+				// get the mouse position before zoom
+				_mouseBefore.unproject( camera );
 
-			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
-			camera.updateProjectionMatrix();
+				// zoom the camera
+				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
 
-			// get the mouse position after zoom
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
-			_mouseAfter.unproject( camera );
+				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+				camera.updateProjectionMatrix();
 
-			// shift the camera on the near plane so the mouse is in the same spot
-			camera.position.sub( _mouseAfter ).add( _mouseBefore );
-			camera.updateMatrixWorld();
+				// get the mouse position after zoom
+				mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
+				_mouseAfter.unproject( camera );
+
+				// shift the camera on the near plane so the mouse is in the same spot
+				camera.position.sub( _mouseAfter ).add( _mouseBefore );
+				camera.updateMatrixWorld();
+
+			} else {
+
+				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+				camera.updateProjectionMatrix();
+
+			}
 
 		} else {
 
@@ -804,10 +817,10 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		// If using an orthographic camera we have to account for the mouse position when picking the point
-		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _pointer ) ) {
+		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _zoomPointPointer ) ) {
 
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			setRaycasterFromCamera( raycaster, _pointer, camera );
+			mouseToCoords( _zoomPointPointer.x, _zoomPointPointer.y, domElement, _zoomPointPointer );
+			setRaycasterFromCamera( raycaster, _zoomPointPointer, camera );
 
 		} else {
 
