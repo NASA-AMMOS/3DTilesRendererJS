@@ -54,6 +54,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.maxZoom = 1000;
 		this.useFallbackPlane = false;
 
+		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
 
 	}
@@ -212,7 +213,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the camera planes
-		this.updateCameraClipPlanes( camera, true );
+		this.updateCameraClipPlanes( camera, ! this.allowNegativeNearPlanes );
 
 	}
 
@@ -513,6 +514,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	// returns the perspective camera transition distance can move to based on globe size and fov
 	_getPerspectiveTransitionDistance() {
 
 		const { camera, ellipsoid } = this;
@@ -533,12 +535,13 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	// returns the max distance the perspective camera can move to based on globe size and fov
 	_getMaxPerspectiveDistance() {
 
 		const { camera, ellipsoid } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
-			return MAX_GLOBE_DISTANCE;
+			throw new Error();
 
 		}
 
@@ -553,9 +556,16 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	// returns the transition threshold for orthographic zoom based on the globe size and camera settings
 	_getOrthographicTransitionZoom() {
 
 		const { camera, ellipsoid } = this;
+		if ( ! camera.isOrthographicCamera ) {
+
+			throw new Error();
+
+		}
+
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
 		const orthoSize = Math.max( orthoHeight, orthoWidth );
@@ -565,15 +575,55 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	// returns the minimum allowed orthographic zoom based on the globe size and camera settings
 	_getMinOrthographicZoom() {
 
 		const { camera, ellipsoid } = this;
+		if ( ! camera.isOrthographicCamera ) {
+
+			throw new Error();
+
+		}
+
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
 		const orthoSize = Math.max( orthoHeight, orthoWidth );
 		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
 		const ellipsoidDiameter = 2 * ellipsoidRadius;
 		return 0.5 * orthoSize / ellipsoidDiameter;
+
+	}
+
+	// returns the "virtual position" of the orthographic based on where it is and
+	// where it's looking primarily so we can reasonably position the camera object
+	// in space and derive a reasonable "up" value.
+	_getVirtualOrthoCameraPosition( target ) {
+
+		const { tilesGroup, ellipsoid, camera } = this;
+		if ( ! camera.isOrthographicCamera ) {
+
+			throw new Error();
+
+		}
+
+		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+
+		// get ray in globe coordinate frame
+		_ray.origin.copy( camera.position );
+		_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_ray.applyMatrix4( _invMatrix );
+
+		// get the closest point to the ray on the globe in the global coordinate frame
+		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
+		target.applyMatrix4( tilesGroup.matrixWorld );
+
+		// get ortho camera info
+		const orthoHeight = ( camera.top - camera.bottom );
+		const orthoWidth = ( camera.right - camera.left );
+		const orthoSize = Math.max( orthoHeight, orthoWidth ) / camera.zoom;
+
+		// shift the point backwards based on the size of the size of the orthographic view
+		target.addScaledVector( _ray.direction, - orthoSize );
 
 	}
 
