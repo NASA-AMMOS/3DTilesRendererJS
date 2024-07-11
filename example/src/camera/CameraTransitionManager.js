@@ -243,7 +243,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		// update the camera state
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = targetFov;
-		transitionCamera.near = Math.max( finalNearPlane, planeDelta * 1e-4 );
+		transitionCamera.near = Math.max( finalNearPlane, planeDelta * 1e-5 );
 		transitionCamera.far = finalFarPlane;
 		transitionCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, perspDistanceToPoint - targetDistance );
 		transitionCamera.rotation.copy( perspectiveCamera.rotation );
