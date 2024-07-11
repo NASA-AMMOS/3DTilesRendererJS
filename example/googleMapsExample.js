@@ -87,7 +87,7 @@ function init() {
 	// camera and transition set up
 	transition = new CameraTransitionManager(
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
-		new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 ),
+		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
 
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );

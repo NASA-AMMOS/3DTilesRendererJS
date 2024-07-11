@@ -30,7 +30,6 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 10;
-const MAX_GLOBE_DISTANCE = 5 * 1e7;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -51,7 +50,7 @@ export class GlobeControls extends EnvironmentControls {
 		super( scene, camera, domElement );
 		this._dragMode = 0;
 		this._rotationMode = 0;
-		this.maxZoom = 1000;
+		this.maxZoom = 0.01;
 		this.useFallbackPlane = false;
 
 		this.allowNegativeNearPlanes = true;
@@ -133,25 +132,11 @@ export class GlobeControls extends EnvironmentControls {
 		const { tilesGroup, ellipsoid, camera } = this;
 		if ( camera.isOrthographicCamera ) {
 
+			this._getVirtualOrthoCameraPosition( _vec );
+
 			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+			_vec.applyMatrix4( _invMatrix );
 
-			// get ray in globe coordinate frame
-			_ray.origin.copy( camera.position );
-			_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-			_ray.applyMatrix4( _invMatrix );
-
-			// get the closest point to the ray on the globe in the global coordinate frame
-			closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
-			_vec.applyMatrix4( tilesGroup.matrixWorld );
-
-			// get ortho camera info
-			const orthoHeight = ( camera.top - camera.bottom );
-			const orthoWidth = ( camera.right - camera.left );
-			const orthoSize = Math.max( orthoHeight, orthoWidth ) / camera.zoom;
-			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-
-			// shift the point backwards based on the size of the size of the orthographic view
-			_vec.addScaledVector( _forward, - orthoSize ).applyMatrix4( _invMatrix );
 			ellipsoid.getPositionToNormal( _vec, target );
 			target.transformDirection( tilesGroup.matrixWorld );
 
@@ -199,16 +184,25 @@ export class GlobeControls extends EnvironmentControls {
 		// fire basic controls update
 		super.update();
 
-		// clamp the camera distance
-		let distanceToCenter = this.getDistanceToCenter();
-		const maxDistance = this._getMaxPerspectiveDistance();
-		if ( distanceToCenter > maxDistance ) {
+		if ( camera.isPerspectiveCamera ) {
 
-			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
-			camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, maxDistance );
+			// clamp the camera distance
+			let distanceToCenter = this.getDistanceToCenter();
+			const maxDistance = this._getMaxPerspectiveDistance();
+			if ( distanceToCenter > maxDistance ) {
+
+				_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
+				camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, maxDistance );
+				camera.updateMatrixWorld();
+
+				distanceToCenter = maxDistance;
+
+			}
+
+		} else {
+
+			this._getVirtualOrthoCameraPosition( camera.position );
 			camera.updateMatrixWorld();
-
-			distanceToCenter = maxDistance;
 
 		}
 
@@ -621,9 +615,10 @@ export class GlobeControls extends EnvironmentControls {
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
 		const orthoSize = Math.max( orthoHeight, orthoWidth ) / camera.zoom;
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
 		// shift the point backwards based on the size of the size of the orthographic view
-		target.addScaledVector( _ray.direction, - orthoSize );
+		target.addScaledVector( _forward, - orthoSize * 4 );
 
 	}
 
