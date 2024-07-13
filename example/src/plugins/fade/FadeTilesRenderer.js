@@ -1,5 +1,4 @@
 import { Group, Matrix4, Vector3, Quaternion } from 'three';
-import { TilesRenderer } from '../../../../src/index.js';
 import { FadeManager } from './FadeManager.js';
 
 const _fromPos = new Vector3();
@@ -134,12 +133,12 @@ export class FadeTilesPlugin {
 		const displayActiveTiles = this.displayActiveTiles;
 		const fadeManager = this._fadeManager;
 		const tiles = this.tiles;
-		this.displayActiveTiles = true;
+		tiles.displayActiveTiles = true;
 
 		// update the tiles
 		const fadingBefore = fadeManager.fadeCount;
 
-		super.update( ...args );
+		super.update();
 		fadeManager.update();
 
 		const fadingAfter = fadeManager.fadeCount;
