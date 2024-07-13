@@ -278,6 +278,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			cameraMap.set( camera, new Vector2() );
 			cameras.push( camera );
+			this.dispatchEvent( { type: 'add-camera', camera } );
+
 			return true;
 
 		}
@@ -332,6 +334,8 @@ export class TilesRenderer extends TilesRendererBase {
 			const index = cameras.indexOf( camera );
 			cameras.splice( index, 1 );
 			cameraMap.delete( camera );
+			this.dispatchEvent( { type: 'delete-camera', camera } );
+
 			return true;
 
 		}
@@ -375,6 +379,8 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	update() {
+
+		this.dispatchEvent( { type: 'update-before' } );
 
 		const group = this.group;
 		const cameras = this.cameras;
@@ -476,6 +482,8 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		super.update();
+
+		this.dispatchEvent( { type: 'update-after' } );
 
 	}
 
