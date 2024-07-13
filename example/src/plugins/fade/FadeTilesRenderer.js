@@ -64,7 +64,7 @@ function onFadeComplete( object ) {
 
 }
 
-export const FadeTilesRendererMixin = base => class extends base {
+export class FadeTilesPlugin {
 
 	get fadeDuration() {
 
@@ -84,38 +84,56 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	}
 
-	constructor( ...args ) {
+	constructor( options ) {
 
-		super( ...args );
+		options = {
 
-		this.maximumFadeOutTiles = 50;
-		this.fadeRootTiles = false;
+			maximumFadeOutTiles: 50,
+			fadeRootTiles: false,
+			...options,
+
+		};
+
+		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
+		this.fadeRootTiles = options.fadeRootTiles;
+
+		this.tiles = null;
+		this.initialLayerRendered = false;
+		this.prevCameraTransforms = new Map();
+		this._fadeManager = null;
+		this._fadeGroup = null;
+		this._tileMap = null;
+
+	}
+
+	init( tiles ) {
 
 		const fadeGroup = new Group();
 		const fadeManager = new FadeManager();
-		fadeManager.onFadeSetStart = () => this.dispatchEvent( { type: 'fade-start' } );
-		fadeManager.onFadeSetComplete = () => this.dispatchEvent( { type: 'fade-end' } );
+		fadeManager.onFadeSetStart = () => tiles.dispatchEvent( { type: 'fade-start' } );
+		fadeManager.onFadeSetComplete = () => tiles.dispatchEvent( { type: 'fade-end' } );
 
-		this.group.add( fadeGroup );
+		tiles.group.add( fadeGroup );
 		fadeManager.onFadeComplete = onFadeComplete.bind( this );
 
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
 		this._tileMap = new Map();
+		this.tiles = tiles;
 
-		this.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
-		this.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
-		this.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
-
-		this.initialLayerRendered = false;
-		this.prevCameraTransforms = new Map();
+		tiles.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
+		tiles.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
+		tiles.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
 
 	}
 
-	update( ...args ) {
+	update() {
+
+		// TODO: need "beforeUpdate" and "afterUpdate" callbacks? Just events? We don't need to delay or replace anything
 
 		const displayActiveTiles = this.displayActiveTiles;
 		const fadeManager = this._fadeManager;
+		const tiles = this.tiles;
 		this.displayActiveTiles = true;
 
 		// update the tiles
@@ -127,17 +145,17 @@ export const FadeTilesRendererMixin = base => class extends base {
 		const fadingAfter = fadeManager.fadeCount;
 		if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
-			this.dispatchEvent( { type: 'fade-change' } );
+			tiles.dispatchEvent( { type: 'fade-change' } );
 
 		}
 
-		this.displayActiveTiles = displayActiveTiles;
+		tiles.displayActiveTiles = displayActiveTiles;
 
 		// update the visibility of tiles based on visibility since we must use
 		// the active tiles for rendering fade
 		if ( ! displayActiveTiles ) {
 
-			this.visibleTiles.forEach( t => {
+			tiles.visibleTiles.forEach( t => {
 
 				t.cached.scene.visible = t.__inFrustum;
 
@@ -145,7 +163,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		}
 
-		const cameras = this.cameras;
+		const cameras = tiles.cameras;
 		const prevCameraTransforms = this.prevCameraTransforms;
 		if ( this.maximumFadeOutTiles < this._fadeGroup.children.length ) {
 
@@ -196,7 +214,7 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 		} );
 
-		const lruCache = this.lruCache;
+		const lruCache = tiles.lruCache;
 		const tileMap = this._tileMap;
 		fadeManager.forEachObject( scene => {
 
@@ -208,11 +226,10 @@ export const FadeTilesRendererMixin = base => class extends base {
 
 	deleteCamera( camera ) {
 
+		// TODO: need callbacks for camera
 		super.deleteCamera( camera );
 		this.prevCameraTransforms.delete( camera );
 
 	}
 
-};
-
-export const FadeTilesRenderer = FadeTilesRendererMixin( TilesRenderer );
+}
