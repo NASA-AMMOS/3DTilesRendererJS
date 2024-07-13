@@ -2,7 +2,7 @@ import {
 	WGS84_ELLIPSOID,
 	GeoUtils,
 	GlobeControls,
-	DebugGoogleTilesRenderer as GoogleTilesRenderer,
+	GoogleTilesRenderer,
 } from '../src/index.js';
 import {
 	Scene,
