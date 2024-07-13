@@ -63,6 +63,26 @@ function onFadeComplete( object ) {
 
 }
 
+function onAddCamera( camera ) {
+
+	this._prevCameraTransforms.set( camera, new Matrix4() );
+
+}
+
+function onDeleteCamera( camera ) {
+
+	this._prevCameraTransforms.delete( camera );
+
+}
+
+function onUpdateBefore() {
+
+}
+
+function onUpdateAfter() {
+
+}
+
 export class FadeTilesPlugin {
 
 	get fadeDuration() {
@@ -98,7 +118,7 @@ export class FadeTilesPlugin {
 
 		this.tiles = null;
 		this.initialLayerRendered = false;
-		this.prevCameraTransforms = new Map();
+		this._prevCameraTransforms = new Map();
 		this._fadeManager = null;
 		this._fadeGroup = null;
 		this._tileMap = null;
@@ -120,9 +140,28 @@ export class FadeTilesPlugin {
 		this._tileMap = new Map();
 		this.tiles = tiles;
 
-		tiles.addEventListener( 'load-model', e => onLoadModel.call( this, e.scene, e.tile ) );
-		tiles.addEventListener( 'dispose-model', e => onDisposeModel.call( this, e.scene ) );
-		tiles.addEventListener( 'tile-visibility-change', e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible ) );
+		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
+		this._onDisposeModel = e => onDisposeModel.call( this, e.scene );
+		this._onTileVisibilityChange = e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible );
+		this._onAddCamera = e => onAddCamera.call( this, e.camera );
+		this._onDeleteCamera = e => onDeleteCamera.call( this, e.camera );
+
+		tiles.addEventListener( 'load-model', this._onLoadModel );
+		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
+		tiles.addEventListener( 'add-camera', this._onAddCamera );
+		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
+
+	}
+
+	dispose() {
+
+		const tiles = this.tiles;
+		tiles.removeEventListener( 'load-model', this._onLoadModel );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
+		tiles.removeEventListener( 'add-camera', this._onAddCamera );
+		tiles.removeEventListener( 'delete-camera', this._onDeleteCamera );
 
 	}
 
@@ -163,7 +202,7 @@ export class FadeTilesPlugin {
 		}
 
 		const cameras = tiles.cameras;
-		const prevCameraTransforms = this.prevCameraTransforms;
+		const prevCameraTransforms = this._prevCameraTransforms;
 		if ( this.maximumFadeOutTiles < this._fadeGroup.children.length ) {
 
 			// determine whether all the rendering cameras are moving
@@ -203,12 +242,6 @@ export class FadeTilesPlugin {
 		// track the camera movement so we can use it for next frame
 		cameras.forEach( camera => {
 
-			if ( ! prevCameraTransforms.has( camera ) ) {
-
-				prevCameraTransforms.set( camera, new Matrix4() );
-
-			}
-
 			prevCameraTransforms.get( camera ).copy( camera.matrixWorld );
 
 		} );
@@ -220,14 +253,6 @@ export class FadeTilesPlugin {
 			lruCache.markUsed( tileMap.get( scene ) );
 
 		} );
-
-	}
-
-	deleteCamera( camera ) {
-
-		// TODO: need callbacks for camera
-		super.deleteCamera( camera );
-		this.prevCameraTransforms.delete( camera );
 
 	}
 
