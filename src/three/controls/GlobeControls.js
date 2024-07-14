@@ -54,7 +54,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
-		this.allowNegativeNearPlanes = true;
+		this.allowNegativeNearPlanes = false;
 		this.setTilesRenderer( tilesRenderer );
 
 	}
@@ -206,13 +206,13 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// update the camera planes
-		this.updateCameraClipPlanes( camera, ! this.allowNegativeNearPlanes );
+		this.updateCameraClipPlanes( camera );
 
 	}
 
 	// Updates the passed camera near and far clip planes to encapsulate the
 	// ellipsoid from their current position.
-	updateCameraClipPlanes( camera, updateOrthoPosition = false ) {
+	updateCameraClipPlanes( camera, updateOrthoPosition = ! this.allowNegativeNearPlanes ) {
 
 		const {
 			tilesGroup,
