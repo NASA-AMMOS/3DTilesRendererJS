@@ -2,7 +2,7 @@ import {
 	WGS84_ELLIPSOID,
 	GeoUtils,
 	GlobeControls,
-	DebugGoogleTilesRenderer as GoogleTilesRenderer,
+	GoogleTilesRenderer,
 } from '../src/index.js';
 import {
 	Scene,
@@ -32,8 +32,6 @@ const params = {
 	apiKey: apiKey,
 
 	'reload': reinstantiateTiles,
-	displayBoxBounds: false,
-	displayRegionBounds: false,
 
 };
 
@@ -87,15 +85,11 @@ function init() {
 	// camera and transition set up
 	transition = new CameraTransitionManager(
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
-		new OrthographicCamera( - 1e4, 1e4, 1e4, - 1e4, 1, 160000000 ),
+		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
 
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
-
-	transition.orthographicCamera.position.set( 4800000, 2570000, 14720000 );
-	transition.orthographicCamera.lookAt( 0, 0, 0 );
-	transition.orthographicCamera.zoom = 1.5 * 1e-3;
 
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
@@ -104,6 +98,9 @@ function init() {
 		controls.setCamera( camera );
 
 	} );
+
+	// disable adjusting the orthographic camera position since globe controls will do this
+	transition.orthographicPositionalZoom = false;
 
 	// controls
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
@@ -118,20 +115,19 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 
-	// gui.add( params, 'orthographic' ).onChange( v => {
+	gui.add( params, 'orthographic' ).onChange( v => {
 
-	// 	transition.fixedPoint.copy( controls.pivotPoint );
-	// 	transition.toggle();
+		controls.getPivotPoint( transition.fixedPoint );
+		controls.updateCameraClipPlanes( transition.perspectiveCamera );
+		controls.updateCameraClipPlanes( transition.orthographicCamera );
 
-	// } );
+		transition.toggle();
+
+	} );
 
 	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
-
-	const debug = gui.addFolder( 'Debug Options' );
-	debug.add( params, 'displayBoxBounds' );
-	debug.add( params, 'displayRegionBounds' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
@@ -222,18 +218,11 @@ function animate() {
 	controls.update();
 	transition.update();
 
-	// TODO: ideally we would sync the camera positions, then update the planes, then transition.
-	// Without it we may have an off-by-one-frame issue?
-	controls.updateCameraClipPlanes( transition.perspectiveCamera );
-	controls.updateCameraClipPlanes( transition.orthographicCamera );
-
 	const camera = transition.camera;
 
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
 
 	// update tiles
 	camera.updateMatrixWorld();

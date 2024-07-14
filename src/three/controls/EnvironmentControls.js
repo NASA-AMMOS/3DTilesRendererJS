@@ -10,7 +10,7 @@ import {
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
-import { mouseToCoords, makeRotateAroundPoint } from './utils.js';
+import { mouseToCoords, makeRotateAroundPoint, setRaycasterFromCamera } from './utils.js';
 
 export const NONE = 0;
 export const DRAG = 1;
@@ -32,7 +32,9 @@ const _plane = new Plane();
 const _localUp = new Vector3();
 const _mouseBefore = new Vector3();
 const _mouseAfter = new Vector3();
+const _identityQuat = new Quaternion();
 
+const _zoomPointPointer = new Vector2();
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
@@ -116,6 +118,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this._detachCallback = null;
 		this._upInitialized = false;
+		this._lastUsedState = NONE;
+		this._zoomPointWasSet = false;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -137,6 +141,11 @@ export class EnvironmentControls extends EventDispatcher {
 	setCamera( camera ) {
 
 		this.camera = camera;
+		this._upInitialized = false;
+		this.zoomDirectionSet = false;
+		this.zoomPointSet = false;
+		this.needsUpdate = true;
+		this.resetState();
 
 	}
 
@@ -244,7 +253,7 @@ export class EnvironmentControls extends EventDispatcher {
 			// the "pointer" for zooming and rotating should be based on the center point
 			pointerTracker.getCenterPoint( _pointer );
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// prevent the drag distance from getting too severe by limiting the drag point
 			// to a reasonable angle and reasonable distance with the drag plane
@@ -422,6 +431,7 @@ export class EnvironmentControls extends EventDispatcher {
 			this.zoomDelta -= 3 * deltaSign * normalizedDelta;
 			this.needsUpdate = true;
 
+			this._lastUsedState = ZOOM;
 			this.dispatchEvent( _endEvent );
 
 		};
@@ -465,9 +475,45 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	// override-able functions for retrieving the up direction at a point
 	getUpDirection( point, target ) {
 
 		target.copy( this.up );
+
+	}
+
+	getCameraUpDirection( target ) {
+
+		this.getUpDirection( this.camera.position, target );
+
+	}
+
+	// returns the active / last used pivot point for the scene
+	getPivotPoint( target ) {
+
+		if ( this._lastUsedState === ZOOM ) {
+
+			if ( this._zoomPointWasSet ) {
+
+				target.copy( this.zoomPoint );
+				return target;
+
+			} else {
+
+				return null;
+
+			}
+
+		} else if ( this._lastUsedState === ROTATE || this._lastUsedState === DRAG ) {
+
+			target.copy( this.pivotPoint );
+			return target;
+
+		} else {
+
+			return null;
+
+		}
 
 	}
 
@@ -494,7 +540,7 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.state = NONE;
-		this.scene.remove( this.pivotMesh );
+		this.pivotMesh.removeFromParent();
 		this.pivotMesh.visible = true;
 		this.actionHeightOffset = 0;
 
@@ -515,6 +561,11 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.state = state;
+		if ( state !== NONE && state !== WAITING ) {
+
+			this._lastUsedState = state;
+
+		}
 
 	}
 
@@ -569,8 +620,11 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = adjustHeight && this._getPointBelowCamera() || null;
-		this.getUpDirection( camera.position, _localUp );
+		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
+
+		// if using an orthographic camera then rotate around drag pivot
+		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
+		this.getCameraUpDirection( _localUp );
 		if ( ! this._upInitialized ) {
 
 			this._upInitialized = true;
@@ -578,7 +632,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else {
 
-			this._setFrame( _localUp, hit && hit.point || null );
+			this._setFrame( _localUp, rotationPoint );
 
 		}
 
@@ -655,30 +709,47 @@ export class EnvironmentControls extends EventDispatcher {
 
 		if ( camera.isOrthographicCamera ) {
 
-			// get the mouse position before zoom
+			// update the zoom direction
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
-			_mouseBefore.unproject( camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
+			zoomDirection.copy( raycaster.ray.direction ).normalize();
+			this.zoomDirectionSet = true;
 
-			// zoom the camera
-			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			// zoom straight into the globe if we haven't hit anything
+			if ( this.zoomPointSet || this._updateZoomPoint() ) {
 
-			camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
-			camera.updateProjectionMatrix();
+				// get the mouse position before zoom
+				_mouseBefore.unproject( camera );
 
-			// get the mouse position after zoom
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
-			_mouseAfter.unproject( camera );
+				// zoom the camera
+				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
 
-			// shift the camera on the near plane so the mouse is in the same spot
-			camera.position.sub( _mouseAfter ).add( _mouseBefore );
-			camera.updateMatrixWorld();
+				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+				camera.updateProjectionMatrix();
+
+				// get the mouse position after zoom
+				mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
+				_mouseAfter.unproject( camera );
+
+				// shift the camera on the near plane so the mouse is in the same spot
+				camera.position.sub( _mouseAfter ).add( _mouseBefore );
+				camera.updateMatrixWorld();
+
+			} else {
+
+				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+				camera.updateProjectionMatrix();
+
+			}
 
 		} else {
 
 			// initialize the zoom direction
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 			zoomDirection.copy( raycaster.ray.direction ).normalize();
 			this.zoomDirectionSet = true;
 
@@ -735,7 +806,11 @@ export class EnvironmentControls extends EventDispatcher {
 			zoomDirection,
 			raycaster,
 			zoomPoint,
+			pointerTracker,
+			domElement,
 		} = this;
+
+		this._zoomPointWasSet = false;
 
 		if ( ! zoomDirectionSet ) {
 
@@ -743,14 +818,26 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		raycaster.ray.origin.copy( camera.position );
-		raycaster.ray.direction.copy( zoomDirection );
+		// If using an orthographic camera we have to account for the mouse position when picking the point
+		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _zoomPointPointer ) ) {
 
+			mouseToCoords( _zoomPointPointer.x, _zoomPointPointer.y, domElement, _zoomPointPointer );
+			setRaycasterFromCamera( raycaster, _zoomPointPointer, camera );
+
+		} else {
+
+			raycaster.ray.origin.copy( camera.position );
+			raycaster.ray.direction.copy( zoomDirection );
+
+		}
+
+		// get the hit point
 		const hit = this._raycast( raycaster );
 		if ( hit ) {
 
 			zoomPoint.copy( hit.point );
 			this.zoomPointSet = true;
+			this._zoomPointWasSet = true;
 			return true;
 
 		}
@@ -794,7 +881,7 @@ export class EnvironmentControls extends EventDispatcher {
 		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
 		_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
-		raycaster.setFromCamera( _pointer, camera );
+		setRaycasterFromCamera( raycaster, _pointer, camera );
 
 		// prevent the drag distance from getting too severe by limiting the drag point
 		// to a reasonable angle with the drag plane
@@ -935,16 +1022,23 @@ export class EnvironmentControls extends EventDispatcher {
 		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			const v = new Vector3();
-			this.getUpDirection( zoomPoint, v );
+			this.getUpDirection( zoomPoint, _vec );
 
-			if ( ! scaleZoomOrientationAtEdges ) {
+			if ( scaleZoomOrientationAtEdges ) {
 
-				const quat = new Quaternion();
-				let amt = Math.max( v.dot( up ) - 0.6, 0 ) / 0.4;
+				let amt = Math.max( _vec.dot( up ) - 0.6, 0 ) / 0.4;
 				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
 				amt = Math.min( amt, 1 );
-				_quaternion.slerp( quat, 1.0 - amt );
+
+				// scale the value if we're using an orthographic camera so
+				// GlobeControls works correctly
+				if ( camera.isOrthographicCamera ) {
+
+					amt *= 0.1;
+
+				}
+
+				_quaternion.slerp( _identityQuat, 1.0 - amt );
 
 			}
 
