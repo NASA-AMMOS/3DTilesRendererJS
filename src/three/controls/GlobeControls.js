@@ -52,6 +52,7 @@ export class GlobeControls extends EnvironmentControls {
 		this._rotationMode = 0;
 		this.maxZoom = 0.01;
 		this.useFallbackPlane = false;
+		this.reorientOnDrag = false;
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
@@ -166,7 +167,6 @@ export class GlobeControls extends EnvironmentControls {
 		// when adjusting the up frame while moving the camera
 		if ( this._isNearControls() ) {
 
-			this.reorientOnDrag = false;
 			this.scaleZoomOrientationAtEdges = this.zoomDelta < 0;
 
 		} else {
@@ -176,7 +176,6 @@ export class GlobeControls extends EnvironmentControls {
 				pivotMesh.visible = false;
 
 			}
-			this.reorientOnDrag = false;
 			this.scaleZoomOrientationAtEdges = false;
 
 		}
@@ -307,30 +306,25 @@ export class GlobeControls extends EnvironmentControls {
 			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 			raycaster.ray.applyMatrix4( _invMatrix );
 
-			// check if we hit the ellipsoid
-			if ( ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
+			closestRayEllipsoidSurfacePointEstimate( raycaster.ray, ellipsoid, _vec );
+			_vec.applyMatrix4( tilesGroup.matrixWorld );
 
-				// reuse cache variables
-				const pivotDir = _pos;
-				const newPivotDir = _targetRight;
+			// reuse cache variables
+			const pivotDir = _pos;
+			const newPivotDir = _targetRight;
 
-				// transform to world frame
-				_vec.applyMatrix4( tilesGroup.matrixWorld );
+			// get the point directions
+			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+			pivotDir.subVectors( pivotPoint, _center ).normalize();
+			newPivotDir.subVectors( _vec, _center ).normalize();
 
-				// get the point directions
-				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-				pivotDir.subVectors( pivotPoint, _center ).normalize();
-				newPivotDir.subVectors( _vec, _center ).normalize();
+			// construct the rotation
+			_quaternion.setFromUnitVectors( newPivotDir, pivotDir );
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
-				// construct the rotation
-				_quaternion.setFromUnitVectors( newPivotDir, pivotDir );
-				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-
-				// apply the rotation
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-			}
+			// apply the rotation
+			camera.matrixWorld.premultiply( _rotMatrix );
+			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 		} else {
 
