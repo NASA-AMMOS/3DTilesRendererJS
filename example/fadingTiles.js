@@ -157,21 +157,23 @@ function render() {
 	const camera = transition.camera;
 	camera.updateMatrixWorld();
 
-	groundTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeRootTiles = params.fadeRootTiles;
-	groundTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	const groundPlugin = groundTiles.getPluginByName( 'FADE_TILES_PLUGIN' );
+	groundPlugin.fadeRootTiles = params.fadeRootTiles;
+	groundPlugin.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
-	skyTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeRootTiles = params.fadeRootTiles;
-	skyTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	const skyPlugin = skyTiles.getPluginByName( 'FADE_TILES_PLUGIN' );
+	skyPlugin.fadeRootTiles = params.fadeRootTiles;
+	skyPlugin.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	skyTiles.setCamera( camera );
 	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();
 
 	renderer.render( scene, camera );
 
-	params.fadingGroundTiles = groundTiles.fadingTiles + ' tiles';
+	params.fadingGroundTiles = groundPlugin.fadingTiles + ' tiles';
 
 }
