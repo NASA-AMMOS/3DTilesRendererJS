@@ -5,7 +5,7 @@ import {
 	OrthographicCamera,
 	Group,
 } from 'three';
-import { FadeTilesPlugin } from './src/plugins/fade/FadeTilesRenderer.js';
+import { FadeTilesPlugin } from './src/plugins/fade/FadeTilesPlugin.js';
 import { EnvironmentControls, TilesRenderer } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
