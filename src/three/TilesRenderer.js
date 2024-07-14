@@ -72,6 +72,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.visibleTiles = new Set();
 		this.optimizeRaycast = true;
 		this._eventDispatcher = new EventDispatcher();
+		this._upRotationMatrix = new Matrix4();
 
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
@@ -378,6 +379,30 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	loadRootTileSet( ...args ) {
+
+		return super.loadRootTileSet( ...args )
+			.then( () => {
+
+				// cache the gltf tile set rotation matrix
+				const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
+				switch ( upAxis.toLowerCase() ) {
+
+					case 'x':
+						this._upRotationMatrix.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
+						break;
+
+					case 'y':
+						this._upRotationMatrix.makeRotationAxis( X_AXIS, Math.PI / 2 );
+						break;
+
+				}
+
+			} )
+			.catch( () => {} );
+
+	}
+
 	update() {
 
 		this.dispatchEvent( { type: 'update-before' } );
@@ -565,22 +590,8 @@ export class TilesRenderer extends TilesRendererBase {
 		const loadIndex = cached._loadIndex;
 		let promise = null;
 
-		const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
 		const cachedTransform = cached.transform;
-
-		const upAdjustment = tempMat.identity();
-		switch ( upAxis.toLowerCase() ) {
-
-			case 'x':
-				upAdjustment.makeRotationAxis( Y_AXIS, - Math.PI / 2 );
-				break;
-
-			case 'y':
-				upAdjustment.makeRotationAxis( X_AXIS, Math.PI / 2 );
-				break;
-
-		}
-
+		const upRotationMatrix = this._upRotationMatrix;
 		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
 
@@ -590,7 +601,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform.copy( upRotationMatrix );
 
 				promise = loader.parse( buffer );
 				break;
@@ -613,7 +624,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform.copy( upRotationMatrix );
 
 				promise = loader.parse( buffer );
 				break;
@@ -626,7 +637,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 
-				loader.adjustmentTransform.copy( upAdjustment );
+				loader.adjustmentTransform.copy( upRotationMatrix );
 
 				promise = loader
 					.parse( buffer )
@@ -705,7 +716,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// rotation fix which is why "multiply" happens here.
 		if ( fileType === 'glb' || fileType === 'gltf' ) {
 
-			scene.matrix.multiply( upAdjustment );
+			scene.matrix.multiply( upRotationMatrix );
 
 		}
 
