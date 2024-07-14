@@ -7,7 +7,7 @@ import {
 	Ray,
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint } from './utils.js';
+import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords } from './utils.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -166,7 +166,7 @@ export class GlobeControls extends EnvironmentControls {
 		// when adjusting the up frame while moving the camera
 		if ( this._isNearControls() ) {
 
-			this.reorientOnDrag = true;
+			this.reorientOnDrag = false;
 			this.scaleZoomOrientationAtEdges = this.zoomDelta < 0;
 
 		} else {
@@ -282,13 +282,55 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	_updatePosition( ...args ) {
+	_updatePosition() {
 
 		if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
-			super._updatePosition( ...args );
+			const {
+				raycaster,
+				camera,
+				pivotPoint,
+				pointerTracker,
+				domElement,
+				tilesGroup,
+				ellipsoid
+			} = this;
+
+			// get the pointer and ray
+			pointerTracker.getCenterPoint( _pointer );
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			raycaster.setFromCamera( _pointer, camera );
+
+			// transform to ellipsoid frame
+			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+			raycaster.ray.applyMatrix4( _invMatrix );
+
+			// check if we hit the ellipsoid
+			if ( ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
+
+				// reuse cache variables
+				const pivotDir = _pos;
+				const newPivotDir = _targetRight;
+
+				// transform to world frame
+				_vec.applyMatrix4( tilesGroup.matrixWorld );
+
+				// get the point directions
+				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+				pivotDir.subVectors( pivotPoint, _center ).normalize();
+				newPivotDir.subVectors( _vec, _center ).normalize();
+
+				// construct the rotation
+				_quaternion.setFromUnitVectors( newPivotDir, pivotDir );
+				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+
+				// apply the rotation
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			}
 
 		} else {
 
