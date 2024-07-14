@@ -7,7 +7,7 @@ import {
 	Ray,
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords } from './utils.js';
+import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -301,7 +301,7 @@ export class GlobeControls extends EnvironmentControls {
 			// get the pointer and ray
 			pointerTracker.getCenterPoint( _pointer );
 			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			raycaster.setFromCamera( _pointer, camera );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// transform to ellipsoid frame
 			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
