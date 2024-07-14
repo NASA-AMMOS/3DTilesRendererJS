@@ -475,6 +475,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	// override-able functions for retrieving the up direction at a point
 	getUpDirection( point, target ) {
 
 		target.copy( this.up );
@@ -487,6 +488,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	// returns the active / last used pivot point for the scene
 	getPivotPoint( target ) {
 
 		if ( this._lastUsedState === ZOOM ) {
