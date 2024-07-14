@@ -54,7 +54,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
-		this.allowNegativeNearPlanes = false;
+		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
 
 	}
@@ -198,21 +198,16 @@ export class GlobeControls extends EnvironmentControls {
 
 			}
 
-		} else {
-
-			this._getVirtualOrthoCameraPosition( camera.position );
-			camera.updateMatrixWorld();
-
 		}
 
-		// update the camera planes
+		// update the camera planes and the ortho camera position
 		this.updateCameraClipPlanes( camera );
 
 	}
 
 	// Updates the passed camera near and far clip planes to encapsulate the
 	// ellipsoid from their current position.
-	updateCameraClipPlanes( camera, updateOrthoPosition = ! this.allowNegativeNearPlanes ) {
+	updateCameraClipPlanes( camera ) {
 
 		const {
 			tilesGroup,
@@ -256,17 +251,20 @@ export class GlobeControls extends EnvironmentControls {
 			camera.near = distanceToCenter - Math.max( ...ellipsoid.radius ) * 1.1;
 			camera.far = distanceToCenter;
 
+			this._getVirtualOrthoCameraPosition( camera.position, camera );
+
 			// adjust the position of the ortho camera such that the near value is 0
-			if ( updateOrthoPosition && camera.near < 0 ) {
+			if ( ! this.allowNegativeNearPlanes && camera.near < 0 ) {
 
 				camera.position.addScaledVector( _forward, camera.near );
 				camera.far -= camera.near;
 				camera.near = 0;
-				camera.updateMatrixWorld();
 
 			}
 
 			camera.updateProjectionMatrix();
+			camera.updateMatrixWorld();
+
 
 		}
 
@@ -627,9 +625,9 @@ export class GlobeControls extends EnvironmentControls {
 	// returns the "virtual position" of the orthographic based on where it is and
 	// where it's looking primarily so we can reasonably position the camera object
 	// in space and derive a reasonable "up" value.
-	_getVirtualOrthoCameraPosition( target ) {
+	_getVirtualOrthoCameraPosition( target, camera = this.camera ) {
 
-		const { tilesGroup, ellipsoid, camera } = this;
+		const { tilesGroup, ellipsoid } = this;
 		if ( ! camera.isOrthographicCamera ) {
 
 			throw new Error();
