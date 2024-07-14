@@ -101,7 +101,7 @@ export class CameraTransitionManager extends EventDispatcher {
 	_syncCameras() {
 
 		const fromCamera = this._getFromCamera();
-		const { perspectiveCamera, orthographicCamera, transitionCamera } = this;
+		const { perspectiveCamera, orthographicCamera, transitionCamera, fixedPoint } = this;
 
 		_forward.set( 0, 0, - 1 ).transformDirection( fromCamera.matrixWorld ).normalize();
 
@@ -109,12 +109,26 @@ export class CameraTransitionManager extends EventDispatcher {
 
 			// offset the orthographic camera backwards based on user setting to avoid cases where the ortho
 			// camera position will clip into terrain when once transitioned
-			orthographicCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, - this.orthographicOffset );
-			orthographicCamera.rotation.copy( perspectiveCamera.rotation );
-			orthographicCamera.updateMatrixWorld();
+			if ( this.orthographicPositionalZoom ) {
+
+				orthographicCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, - this.orthographicOffset );
+				orthographicCamera.rotation.copy( perspectiveCamera.rotation );
+				orthographicCamera.updateMatrixWorld();
+
+			} else {
+
+				const orthoDist = _vec.subVectors( fixedPoint, orthographicCamera.position ).dot( _forward );
+				const perspDist = _vec.subVectors( fixedPoint, perspectiveCamera.position ).dot( _forward );
+
+				_vec.copy( perspectiveCamera.position ).addScaledVector( _forward, perspDist );
+				orthographicCamera.rotation.copy( perspectiveCamera.rotation );
+				orthographicCamera.position.copy( _vec ).addScaledVector( _forward, - orthoDist );
+				orthographicCamera.updateMatrixWorld();
+
+			}
 
 			// calculate the necessary orthographic zoom based on the current perspective camera position
-			const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, this.fixedPoint ).dot( _forward ) );
+			const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, fixedPoint ).dot( _forward ) );
 			const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * distToPoint;
 			const orthoHeight = orthographicCamera.top - orthographicCamera.bottom;
 			orthographicCamera.zoom = orthoHeight / projectionHeight;
@@ -123,7 +137,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		} else {
 
 			// calculate the target distance from the point
-			const distToPoint = Math.abs( _vec.subVectors( orthographicCamera.position, this.fixedPoint ).dot( _forward ) );
+			const distToPoint = Math.abs( _vec.subVectors( orthographicCamera.position, fixedPoint ).dot( _forward ) );
 			const orthoHeight = ( orthographicCamera.top - orthographicCamera.bottom ) / orthographicCamera.zoom;
 			const targetDist = orthoHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 );
 

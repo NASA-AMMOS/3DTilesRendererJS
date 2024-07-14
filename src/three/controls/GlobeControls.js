@@ -244,6 +244,9 @@ export class GlobeControls extends EnvironmentControls {
 
 		} else {
 
+			this._getVirtualOrthoCameraPosition( camera.position, camera );
+			camera.updateMatrixWorld();
+
 			_invMatrix.copy( camera.matrixWorld ).invert();
 			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
 
@@ -251,7 +254,6 @@ export class GlobeControls extends EnvironmentControls {
 			camera.near = distanceToCenter - Math.max( ...ellipsoid.radius ) * 1.1;
 			camera.far = distanceToCenter;
 
-			this._getVirtualOrthoCameraPosition( camera.position, camera );
 
 			// adjust the position of the ortho camera such that the near value is 0
 			if ( ! this.allowNegativeNearPlanes && camera.near < 0 ) {
