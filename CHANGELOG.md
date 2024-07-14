@@ -7,16 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `tiles-load-start` and `tiles-load-end` callback indicating when tile loading has completed finished.
-- initial implementation of plugin system.
+- `camera-add`, `camera-delete`, `update-before`, `update-after` events.
+- Initial implementation of plugin system.
 
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
 - GlobeControls: Speed change when transitioning between near and far behavior.
 - GlobeControls: Behavior now relies on camera field of view.
 - GlobeControls: Zooming out from the horizon no longer spins the globe.
+- Remove unnecessary matrix instantiation during tiles parse.
 
 ### Changed
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
+- Examples FadeTilesRenderer has been changed to a plugin.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
