@@ -80,9 +80,13 @@ function onUpdateBefore() {
 	const fadeManager = this._fadeManager;
 	const tiles = this.tiles;
 
+	// store the tiles renderer state before the tiles update so we can check
+	// whether fading started or stopped completely
 	this._fadingBefore = fadeManager.fadeCount;
 	this._displayActiveTiles = this.displayActiveTiles;
 
+	// we need to display all active tiles in this case so we don't fade tiles in
+	// when moving from off screen
 	tiles.displayActiveTiles = true;
 
 }
@@ -94,19 +98,24 @@ function onUpdateAfter() {
 	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
 	const tiles = this.tiles;
-	const cameras = tiles.cameras;
 	const prevCameraTransforms = this._prevCameraTransforms;
+	const tileMap = this._tileMap;
+	const lruCache = tiles.lruCache;
+	const cameras = tiles.cameras;
 
+	// reset state
+	tiles.displayActiveTiles = displayActiveTiles;
+
+	// update fades
 	fadeManager.update();
 
+	// fire an event
 	const fadingAfter = fadeManager.fadeCount;
 	if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
 		tiles.dispatchEvent( { type: 'fade-change' } );
 
 	}
-
-	tiles.displayActiveTiles = displayActiveTiles;
 
 	// update the visibility of tiles based on visibility since we must use
 	// the active tiles for rendering fade
@@ -163,8 +172,7 @@ function onUpdateAfter() {
 
 	} );
 
-	const lruCache = tiles.lruCache;
-	const tileMap = this._tileMap;
+	// prevent faded tiles from being unloaded
 	fadeManager.forEachObject( scene => {
 
 		lruCache.markUsed( tileMap.get( scene ) );
@@ -203,12 +211,13 @@ export class FadeTilesPlugin {
 
 		};
 
+		this.name = 'FADE_TILES_PLUGIN';
 		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
 		this.fadeRootTiles = options.fadeRootTiles;
 
 		this.tiles = null;
 		this._initialLayerRendered = false;
-		this._prevCameraTransforms = new Map();
+		this._prevCameraTransforms = null;
 		this._fadeManager = null;
 		this._fadeGroup = null;
 		this._tileMap = null;
@@ -218,17 +227,25 @@ export class FadeTilesPlugin {
 	init( tiles ) {
 
 		const fadeGroup = new Group();
+		fadeGroup.name = 'TilesFadeGroup';
+		tiles.group.add( fadeGroup );
+
 		const fadeManager = new FadeManager();
 		fadeManager.onFadeSetStart = () => tiles.dispatchEvent( { type: 'fade-start' } );
 		fadeManager.onFadeSetComplete = () => tiles.dispatchEvent( { type: 'fade-end' } );
-
-		tiles.group.add( fadeGroup );
 		fadeManager.onFadeComplete = onFadeComplete.bind( this );
 
+		this.tiles = tiles;
 		this._fadeManager = fadeManager;
 		this._fadeGroup = fadeGroup;
 		this._tileMap = new Map();
-		this.tiles = tiles;
+		this._prevCameraTransforms = new Map();
+
+		tiles.cameras.forEach( camera => {
+
+			this._prevCameraTransforms.set( camera, new Matrix4() );
+
+		} );
 
 		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
 		this._onDisposeModel = e => onDisposeModel.call( this, e.scene );

@@ -5,8 +5,8 @@ import {
 	OrthographicCamera,
 	Group,
 } from 'three';
-import { FadeTilesRenderer, } from './src/plugins/fade/FadeTilesRenderer.js';
-import { EnvironmentControls } from '../src/index.js';
+import { FadeTilesPlugin } from './src/plugins/fade/FadeTilesRenderer.js';
+import { EnvironmentControls, TilesRenderer } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 
@@ -110,16 +110,18 @@ function reinstantiateTiles() {
 
 	}
 
-	groundTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
+	groundTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	groundTiles.fetchOptions.mode = 'cors';
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
+	groundTiles.registerPlugin( new FadeTilesPlugin() );
 	groundTiles.setCamera( transition.camera );
 
-	skyTiles = new FadeTilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
+	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
+	skyTiles.registerPlugin( new FadeTilesPlugin() );
 	skyTiles.setCamera( transition.camera );
 
 	tilesParent.add( groundTiles.group, skyTiles.group );
@@ -155,15 +157,15 @@ function render() {
 	const camera = transition.camera;
 	camera.updateMatrixWorld();
 
+	groundTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeRootTiles = params.fadeRootTiles;
+	groundTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	groundTiles.errorTarget = params.errorTarget;
-	groundTiles.fadeRootTiles = params.fadeRootTiles;
-	groundTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
 	groundTiles.update();
 
-	skyTiles.fadeRootTiles = params.fadeRootTiles;
-	skyTiles.fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
+	skyTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeRootTiles = params.fadeRootTiles;
+	skyTiles.getPluginByName( 'FADE_TILES_PLUGIN' ).fadeDuration = params.useFade ? params.fadeDuration * 1000 : 0;
 	skyTiles.setCamera( camera );
 	skyTiles.setResolutionFromRenderer( camera, renderer );
 	skyTiles.update();
