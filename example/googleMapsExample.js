@@ -32,8 +32,6 @@ const params = {
 	apiKey: apiKey,
 
 	'reload': reinstantiateTiles,
-	displayBoxBounds: false,
-	displayRegionBounds: false,
 
 };
 
@@ -131,10 +129,6 @@ function init() {
 	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'reload' );
 
-	const debug = gui.addFolder( 'Debug Options' );
-	debug.add( params, 'displayBoxBounds' );
-	debug.add( params, 'displayRegionBounds' );
-
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
@@ -229,8 +223,6 @@ function animate() {
 	// update options
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
 
 	// update tiles
 	camera.updateMatrixWorld();
