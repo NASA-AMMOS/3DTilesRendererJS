@@ -560,7 +560,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
 		const cachedTransform = cached.transform;
 
-		const upAdjustment = new Matrix4();
+		const upAdjustment = tempMat;
 		switch ( upAxis.toLowerCase() ) {
 
 			case 'x':
