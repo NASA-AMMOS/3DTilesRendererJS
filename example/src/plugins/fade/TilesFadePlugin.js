@@ -181,7 +181,7 @@ function onUpdateAfter() {
 
 }
 
-export class FadeTilesPlugin {
+export class TilesFadePlugin {
 
 	get fadeDuration() {
 
