@@ -22,7 +22,9 @@ const params = {
 	fadeDuration: 0.5,
 	renderScale: 1,
 	fadingGroundTiles: '0 tiles',
+
 	orthographic: false,
+	transitionDuration: 0.25,
 
 };
 
@@ -80,19 +82,23 @@ function init() {
 
 	// gui initialization
 	const gui = new GUI();
-	gui.add( params, 'orthographic' ).onChange( v => {
+	const cameraFolder = gui.addFolder( 'camera' );
+	cameraFolder.add( params, 'orthographic' ).onChange( v => {
 
 		transition.fixedPoint.copy( controls.pivotPoint );
 		transition.toggle();
 
 	} );
-	gui.add( params, 'useFade' );
-	gui.add( params, 'fadeRootTiles' );
-	gui.add( params, 'errorTarget', 0, 1000 );
-	gui.add( params, 'fadeDuration', 0, 5 );
-	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
+	cameraFolder.add( params, 'transitionDuration', 0, 1.5 );
 
-	const textController = gui.add( params, 'fadingGroundTiles' ).listen().disable();
+	const fadeFolder = gui.addFolder( 'fade' );
+	fadeFolder.add( params, 'useFade' );
+	fadeFolder.add( params, 'fadeRootTiles' );
+	fadeFolder.add( params, 'errorTarget', 0, 1000 );
+	fadeFolder.add( params, 'fadeDuration', 0, 5 );
+	fadeFolder.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
+
+	const textController = fadeFolder.add( params, 'fadingGroundTiles' ).listen().disable();
 	textController.domElement.style.opacity = 1.0;
 
 	gui.add( params, 'reinstantiateTiles' );
@@ -152,6 +158,8 @@ function render() {
 
 	controls.enabled = ! transition.animating;
 	controls.update();
+
+	transition.duration = 1000 * params.transitionDuration;
 	transition.update();
 
 	const camera = transition.camera;
