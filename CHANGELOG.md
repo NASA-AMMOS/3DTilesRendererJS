@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `tiles-load-start` and `tiles-load-end` callback indicating when tile loading has completed finished.
 - `camera-add`, `camera-delete`, `update-before`, `update-after` events.
 - Initial implementation of plugin system.
+- TileCompressionPlugin to examples for lowering memory usage.
 
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
