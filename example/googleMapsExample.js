@@ -17,6 +17,7 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
+import { CompressionPlugin } from './src/plugins/CompressionPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -53,6 +54,7 @@ function reinstantiateTiles() {
 	tiles = new GoogleTilesRenderer( params.apiKey );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.errorTarget = 50;
+	tiles.registerPlugin( new CompressionPlugin() );
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
