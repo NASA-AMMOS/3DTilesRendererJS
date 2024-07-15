@@ -10,7 +10,7 @@ function compressAttribute( attribute, arrayType ) {
 
 	}
 
-	const signed = arrayType === Int8Array || arrayType === Int16Array;
+	const signed = arrayType === Int8Array || arrayType === Int16Array || arrayType === Int32Array;
 	const minValue = signed ? - 1 : 0;
 
 	const array = new arrayType( attribute.count * attribute.itemSize );
@@ -97,6 +97,8 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 	mesh.geometry.boundingBox = null;
 	mesh.geometry.boundingSphere = null;
 
+	mesh.updateMatrixWorld();
+
 }
 
 export class TileCompressionPlugin {
@@ -116,7 +118,7 @@ export class TileCompressionPlugin {
 			compressIndex: true,
 			compressNormals: true,
 			compressUvs: true,
-			compressPosition: false,
+			compressPosition: true,
 
 			// the TypedArray type to use when compressing the attributes
 			uvType: Int8Array,
