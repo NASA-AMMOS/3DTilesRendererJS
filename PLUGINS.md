@@ -225,11 +225,81 @@ Whether to fade the root tile objects in.
 
 ## EnvironmentControls
 
+### .enabled
+
+```js
+enabled = true : boolean
+```
+
+Whether the controls are enabled and active.
+
 ### .constructor
+
+```js
+constructor(
+	scene = null : Scene,
+	camera = null : Camera,
+	domElement = null : DomElement,
+)
+```
+
+Takes the scene to raycast against for click events, the camera being animated, and the dom element to listen for clicks on.
+
+### .attach
+
+```js
+attach( domElement : DomElement ) : void
+```
+
+The dom element to attach to for events.
+
+### .detach
+
+```js
+detach() : void
+```
+
+Detaches from the current dom element.
+
+### .setCamera
+
+```js
+setCamera( camera : Camera ) : void
+```
+
+Sets the camera the controls are using.
+
+### .setScene
+
+```js
+setScene( scene : Object3D ) : void
+```
+
+The scene to raycast against for control interactions.
 
 ### .update
 
+```js
+update() : void
+```
+
+Updates the controls.
+
+### .dispose
+
+```js
+dispose() : void
+```
+
+Detaches all events and makes the controls unusable.
+
 ### .getPivotPoint
+
+```js
+getPivotPoint( target : Vector3 ) : target
+```
+
+Gets the last used interaction point.
 
 ## GlobeControls
 
@@ -237,16 +307,98 @@ _extends [EnvironmentControls](#environmentcontrols)_
 
 ### .constructor
 
+```js
+constructor(
+	scene = null : Scene,
+	camera = null : Camera,
+	domElement = null : DomElement,
+	tilesRenderer = null : GoogleTilesRenderer,
+)
+```
+
+Takes the same items as `EnvironmentControls` in addition to the Google globe tiles renderer.
+
+### .updateCameraClipPlanes
+
+```js
+updateCameraClipPlanes( camera : Camera ) : void
+```
+
+Updates the clip planes (and position if orthographic) of the given camera so the globe is encapsulated correctly. Used when working with the transition manager to make sure both cameras being transitioned are positioned properly.
+
 ## CameraTransitionManager
+
+Helper class for performing a transition animation between a perspective and orthographic camera.
+
+```js
+const transition = new CameraTransitionManager( perspCamera, orthoCamera );
+toggleButton.addEventListener( 'click', () => transition.toggle() );
+
+// ...
+
+renderer.setAnimationLoop( () => {
+
+    // set transition.fixedPoint to point that should remain stable
+
+    transition.update();
+    renderer.render( transition.camera, scene );
+
+} );
+```
 
 ### .fixedPoint
 
+```js
+fixedPoint = ( 0, 0, 0 ) : Vector3
+```
+
+The point that will represents the plan that will remain fixed during the animation. This point should be in front of the cameras.
+
 ### .animating
+
+```js
+readonly animation : boolean
+```
+
+A flag indicating whether the transition is currently animating or not.
 
 ### .camera
 
+```js
+readonly camera : Camera
+```
+
+The current camera to render with. Switches between the perspective camera, orthographic camera, and animated transition camera.
+
+### .orthographicPositionalZoom
+
+```js
+orthographicPositionalZoom = true : boolean
+```
+
+Whether the orthographic camera position should be updated so be synchronized with the necessary perspective camera position so
+the orthographic near clip planes do not get into into unexpected configurations.
+
 ### .constructor
+
+```js
+constructor( perspectiveCamera : PerspectiveCamera, orthographicCamera : OrthographicCamera )
+```
+
+Constructor takes the two cameras to animate between.
 
 ### .update
 
+```js
+update() : void
+```
+
+Synchronizes the two camera positions and performs the transition animation if active.
+
 ### .toggle
+
+```js
+toggle() : void
+```
+
+Starts the transition animation.
