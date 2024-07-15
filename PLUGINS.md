@@ -171,11 +171,21 @@ hasLayer( name : string ) : boolean
 
 _available in the examples directory_
 
-TODO
+Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+See available options and descriptions in class implementation.
 
 ## TilesFadePlugin
 
 _available in the examples directory_
+
+Plugin that overrides material shaders to fade tile geometry in and out as tile LODs change. Based on [this Cesium article](https://cesium.com/blog/2022/10/20/smoother-lod-transitions-in-cesium-for-unreal/) on the topic.
 
 ### .fadeDuration
 
@@ -183,14 +193,20 @@ _available in the examples directory_
 fadeDuration = 250 : number
 ```
 
+Amount of time a tile takes to fade in and out.
+
 ### .maximumFadeOutTiles
 
 ```js
 maximumFadeOutTiles = 50 : number
 ```
 
+Maximum number of tiles to be fading at once. If this quantity is exceeded the animation ends and tiles pop in.
+
 ### .fadeRootTiles
 
 ```js
-maximumFadeOutTiles = 50 : number
+fadeRootTiles = false : boolean
 ```
+
+Whether to fade the root tile objects in.
