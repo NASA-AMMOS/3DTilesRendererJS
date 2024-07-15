@@ -17,6 +17,7 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
+import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -51,6 +52,7 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	tiles = new GoogleTilesRenderer( params.apiKey );
+	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.errorTarget = 50;
 
