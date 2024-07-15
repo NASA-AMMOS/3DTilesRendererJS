@@ -103,20 +103,27 @@ export class TileCompressionPlugin {
 
 	constructor( options ) {
 
-		this.options = {
+		this.tiles = null;
+		this._options = {
+			// whether to generate normals if they don't already exist.
 			generateNormals: false,
 
+			// whether to disable use of mipmaps since they are typically not necessary
+			// with something like 3d tiles.
 			disableMipmaps: true,
+
+			// whether to compress certain attributes
 			compressNormals: true,
 			compressUvs: true,
 			compressPosition: true,
 
+			// the TypedArray type to use when compressing the attributes
 			uvType: Int8Array,
 			normalType: Int8Array,
 			positionType: Int16Array,
+
 			...options,
 		};
-		this.tiles = null;
 
 	}
 
@@ -124,23 +131,24 @@ export class TileCompressionPlugin {
 
 		this.tiles = tiles;
 
-		const {
-			generateNormals,
-
-			disableMipmaps,
-			compressUvs,
-			compressNormals,
-			compressPosition,
-
-			uvType,
-			normalType,
-			positionType,
-		} = this.options;
-
 		this._onLoadModel = ( { scene } ) => {
+
+			const {
+				generateNormals,
+
+				disableMipmaps,
+				compressUvs,
+				compressNormals,
+				compressPosition,
+
+				uvType,
+				normalType,
+				positionType,
+			} = this._options;
 
 			scene.traverse( c => {
 
+				// handle materials
 				if ( c.material && disableMipmaps ) {
 
 					const material = c.material;
@@ -157,6 +165,7 @@ export class TileCompressionPlugin {
 
 				}
 
+				// handle geometry attribute compression
 				if ( c.geometry ) {
 
 					const geometry = c.geometry;
