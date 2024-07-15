@@ -177,4 +177,20 @@ TODO
 
 _available in the examples directory_
 
-TODO
+### .fadeDuration
+
+```js
+fadeDuration = 250 : number
+```
+
+### .maximumFadeOutTiles
+
+```js
+maximumFadeOutTiles = 50 : number
+```
+
+### .fadeRootTiles
+
+```js
+maximumFadeOutTiles = 50 : number
+```
