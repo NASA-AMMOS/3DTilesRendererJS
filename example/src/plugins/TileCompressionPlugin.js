@@ -10,7 +10,7 @@ function compressAttribute( attribute, arrayType ) {
 
 	}
 
-	const signed = arrayType === Int8Array || array === Int16Array;
+	const signed = arrayType === Int8Array || arrayType === Int16Array;
 	const minValue = signed ? - 1 : 0;
 
 	const array = new arrayType( attribute.count * attribute.itemSize );
@@ -113,9 +113,10 @@ export class TileCompressionPlugin {
 			disableMipmaps: true,
 
 			// whether to compress certain attributes
+			compressIndex: true,
 			compressNormals: true,
 			compressUvs: true,
-			compressPosition: true,
+			compressPosition: false,
 
 			// the TypedArray type to use when compressing the attributes
 			uvType: Int8Array,
@@ -137,6 +138,7 @@ export class TileCompressionPlugin {
 				generateNormals,
 
 				disableMipmaps,
+				compressIndex,
 				compressUvs,
 				compressNormals,
 				compressPosition,
@@ -195,6 +197,23 @@ export class TileCompressionPlugin {
 					if ( compressPosition ) {
 
 						compressPositionAttribute( c, positionType );
+
+					}
+
+					if ( compressIndex && geometry.index ) {
+
+						const vertCount = attributes.position.count;
+						const index = geometry.index;
+						const type = vertCount > 65535 ? Uint32Array : vertCount > 255 ? Uint16Array : Uint8Array;
+						if ( ! ( index.array instanceof type ) ) {
+
+							const array = new type( geometry.index.count );
+							array.set( index.array );
+
+							const attribute = new BufferAttribute( array, 1 );
+							geometry.setIndex( attribute );
+
+						}
 
 					}
 
