@@ -567,6 +567,22 @@ onTileVisibilityChange = null : ( scene : Object3D, tile : Tile, visible : boole
 
 Callback that is called when a tile's visibility changed. The parameter `visible` is `true` when the tile is visible
 
+### .registerPlugin
+
+```js
+registerPlugin( plugin : TilesPlugin ) : void
+```
+
+Register a plugin to the TilesRenderer. See the [plugins documentation](./PLUGINS.md) for more information.
+
+### .getPluginByName
+
+```js
+getPluginByName( name : string ) : TilesPlugin
+```
+
+Returns the plugin with the given name if it has been registered. Returns the first one if multiple have been registered.
+
 ### .dispose
 
 ```js
