@@ -52,11 +52,9 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 	const count = attribute.count;
 
 	// bounding box stride
-	if ( geometry.boundingBox === null ) {
-
-		geometry.computeBoundingBox();
-
-	}
+	// TODO: the bounding box is computed every time even if it already exists because
+	// it's possible that the encoded value is incorrect causing artifacts
+	geometry.computeBoundingBox();
 
 	const boundingBox = geometry.boundingBox;
 	const { min, max } = boundingBox;
@@ -106,6 +104,8 @@ export class TileCompressionPlugin {
 	constructor( options ) {
 
 		this.options = {
+			generateNormals: false,
+
 			disableMipmaps: true,
 			compressNormals: true,
 			compressUvs: true,
@@ -125,6 +125,8 @@ export class TileCompressionPlugin {
 		this.tiles = tiles;
 
 		const {
+			generateNormals,
+
 			disableMipmaps,
 			compressUvs,
 			compressNormals,
@@ -166,6 +168,12 @@ export class TileCompressionPlugin {
 						if ( uv1 ) attributes.uv1 = compressAttribute( uv1, uvType );
 						if ( uv2 ) attributes.uv2 = compressAttribute( uv2, uvType );
 						if ( uv3 ) attributes.uv3 = compressAttribute( uv3, uvType );
+
+					}
+
+					if ( generateNormals && ! attributes.normals ) {
+
+						geometry.computeVertexNormals();
 
 					}
 
