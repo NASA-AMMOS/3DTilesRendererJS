@@ -181,7 +181,7 @@ function onUpdateAfter() {
 
 }
 
-export class FadeTilesPlugin {
+export class TilesFadePlugin {
 
 	get fadeDuration() {
 
@@ -207,20 +207,23 @@ export class FadeTilesPlugin {
 
 			maximumFadeOutTiles: 50,
 			fadeRootTiles: false,
+			fadeDuration: 250,
 			...options,
 
 		};
 
 		this.name = 'FADE_TILES_PLUGIN';
-		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
-		this.fadeRootTiles = options.fadeRootTiles;
 
 		this.tiles = null;
+		this._fadeManager = new FadeManager();
 		this._initialLayerRendered = false;
 		this._prevCameraTransforms = null;
-		this._fadeManager = null;
 		this._fadeGroup = null;
 		this._tileMap = null;
+
+		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
+		this.fadeRootTiles = options.fadeRootTiles;
+		this.fadeDuration = options.fadeDuration;
 
 	}
 
@@ -230,7 +233,7 @@ export class FadeTilesPlugin {
 		fadeGroup.name = 'TilesFadeGroup';
 		tiles.group.add( fadeGroup );
 
-		const fadeManager = new FadeManager();
+		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => tiles.dispatchEvent( { type: 'fade-start' } );
 		fadeManager.onFadeSetComplete = () => tiles.dispatchEvent( { type: 'fade-end' } );
 		fadeManager.onFadeComplete = onFadeComplete.bind( this );

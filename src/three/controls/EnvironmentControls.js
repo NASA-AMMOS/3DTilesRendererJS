@@ -76,7 +76,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// settings
 		this._enabled = true;
-		this.state = NONE;
 		this.cameraRadius = 5;
 		this.rotationSpeed = 1;
 		this.minAltitude = 0;
@@ -86,12 +85,14 @@ export class EnvironmentControls extends EventDispatcher {
 		this.minZoom = 0;
 		this.maxZoom = Infinity;
 		this.zoomSpeed = 1;
-
-		this.reorientOnDrag = true;
-		this.scaleZoomOrientationAtEdges = false;
 		this.adjustHeight = true;
 
+		// settings for GlobeControls
+		this.reorientOnDrag = true;
+		this.scaleZoomOrientationAtEdges = false;
+
 		// internal state
+		this.state = NONE;
 		this.pointerTracker = new PointerTracker();
 		this.needsUpdate = false;
 		this.actionHeightOffset = 0;
@@ -151,6 +152,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	setTilesRenderer( tilesRenderer ) {
 
+		// TODO: what if a scene has multiple tile sets?
 		if ( this.tilesRenderer ) {
 
 			this.tilesRenderer.removeEventListener( 'tile-visibility-change', this._tilesOnChangeCallback );

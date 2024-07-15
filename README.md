@@ -300,6 +300,8 @@ if ( intersects.length ) {
 
 # API
 
+See the [plugins documentation](./PLUGINS.md) for GLTFLoader extension plugins, TilesRenderer plugins, and extra classes.
+
 ## TilesRenderer
 
 _extends `THREE.EventDispatcher`` & [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/base/TilesRendererBase.js), which can be used to implement a 3d tiles renderer in other engines_
@@ -570,6 +572,22 @@ onTileVisibilityChange = null : ( scene : Object3D, tile : Tile, visible : boole
 ```
 
 Callback that is called when a tile's visibility changed. The parameter `visible` is `true` when the tile is visible
+
+### .registerPlugin
+
+```js
+registerPlugin( plugin : TilesPlugin ) : void
+```
+
+Register a plugin to the TilesRenderer. See the [plugins documentation](./PLUGINS.md) for more information.
+
+### .getPluginByName
+
+```js
+getPluginByName( name : string ) : TilesPlugin
+```
+
+Returns the plugin with the given name if it has been registered. Returns the first one if multiple have been registered.
 
 ### .dispose
 

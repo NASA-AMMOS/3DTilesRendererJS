@@ -5,7 +5,7 @@ import {
 	OrthographicCamera,
 	Group,
 } from 'three';
-import { FadeTilesPlugin } from './src/plugins/fade/FadeTilesPlugin.js';
+import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 import { EnvironmentControls, TilesRenderer } from '../src/index.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
@@ -121,13 +121,13 @@ function reinstantiateTiles() {
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
-	groundTiles.registerPlugin( new FadeTilesPlugin() );
+	groundTiles.registerPlugin( new TilesFadePlugin() );
 	groundTiles.setCamera( transition.camera );
 
 	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
-	skyTiles.registerPlugin( new FadeTilesPlugin() );
+	skyTiles.registerPlugin( new TilesFadePlugin() );
 	skyTiles.setCamera( transition.camera );
 
 	tilesParent.add( groundTiles.group, skyTiles.group );
