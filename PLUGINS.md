@@ -107,7 +107,17 @@ getPropertyTextureDataAsync(
 ### .getPropertyTextureInfo
 
 ```js
-getPropertyTextureInfo() : Array<Object>
+getPropertyTextureInfo() : Array<{
+	name: string,
+	className: string,
+	properties: {
+		[name]: {
+			channels: Array<number>,
+			index: number | null,
+			texCoord: number | null,
+		},
+	},
+}>
 ```
 
 ### .getPropertyAttributeData
@@ -210,3 +220,33 @@ fadeRootTiles = false : boolean
 ```
 
 Whether to fade the root tile objects in.
+
+# Controls
+
+## EnvironmentControls
+
+### .constructor
+
+### .update
+
+### .getPivotPoint
+
+## GlobeControls
+
+_extends [EnvironmentControls](#environmentcontrols)_
+
+### .constructor
+
+## CameraTransitionManager
+
+### .fixedPoint
+
+### .animating
+
+### .camera
+
+### .constructor
+
+### .update
+
+### .toggle
