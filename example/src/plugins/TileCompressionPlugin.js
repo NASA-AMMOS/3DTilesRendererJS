@@ -52,7 +52,12 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 	const count = attribute.count;
 
 	// bounding box stride
-	geometry.computeBoundingBox();
+	if ( geometry.boundingBox === null ) {
+
+		geometry.computeBoundingBox();
+
+	}
+
 	const boundingBox = geometry.boundingBox;
 	const { min, max } = boundingBox;
 
@@ -92,10 +97,11 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 
 	attributes.position = newAttribute;
 	mesh.geometry.boundingBox = null;
+	mesh.geometry.boundingSphere = null;
 
 }
 
-export class CompressionPlugin {
+export class TileCompressionPlugin {
 
 	constructor( options ) {
 
@@ -104,6 +110,10 @@ export class CompressionPlugin {
 			compressNormals: true,
 			compressUvs: true,
 			compressPosition: true,
+
+			uvType: Int8Array,
+			normalType: Int8Array,
+			positionType: Int16Array,
 			...options,
 		};
 		this.tiles = null;
@@ -119,6 +129,10 @@ export class CompressionPlugin {
 			compressUvs,
 			compressNormals,
 			compressPosition,
+
+			uvType,
+			normalType,
+			positionType,
 		} = this.options;
 
 		this._onLoadModel = ( { scene } ) => {
@@ -148,22 +162,22 @@ export class CompressionPlugin {
 					if ( compressUvs ) {
 
 						const { uv, uv1, uv2, uv3 } = attributes;
-						if ( uv ) attributes.uv = compressAttribute( uv, Int8Array );
-						if ( uv1 ) attributes.uv1 = compressAttribute( uv1, Int8Array );
-						if ( uv2 ) attributes.uv2 = compressAttribute( uv2, Int8Array );
-						if ( uv3 ) attributes.uv3 = compressAttribute( uv3, Int8Array );
+						if ( uv ) attributes.uv = compressAttribute( uv, uvType );
+						if ( uv1 ) attributes.uv1 = compressAttribute( uv1, uvType );
+						if ( uv2 ) attributes.uv2 = compressAttribute( uv2, uvType );
+						if ( uv3 ) attributes.uv3 = compressAttribute( uv3, uvType );
 
 					}
 
 					if ( compressNormals && attributes.normals ) {
 
-						attributes.normals = compressAttribute( attributes.normals, Int8Array );
+						attributes.normals = compressAttribute( attributes.normals, normalType );
 
 					}
 
 					if ( compressPosition ) {
 
-						compressPositionAttribute( c );
+						compressPositionAttribute( c, positionType );
 
 					}
 
