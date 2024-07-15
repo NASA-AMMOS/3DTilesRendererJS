@@ -15,13 +15,16 @@ tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 
 ## GLTFMeshFeaturesExtension
 
-Plugin that adds support for the [EXT_mesh_features](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features) extension. Adds a `Object3D.userData.meshFeatures` to each object with the extension that provides the following API:
+Plugin that adds support for the [EXT_mesh_features](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features) extension.
+Adds a `Object3D.userData.meshFeatures` to each object with the extension that provides the following API:
 
 ### .getTextures
 
 ```js
 getTextures() : Array<Texture>
 ```
+
+Returns an indexed list of all textures used by features in the extension.
 
 ### .getFeatureInfo
 
@@ -37,10 +40,34 @@ getFeatureInfo() : {
 }
 ```
 
+Returns the feature information information associated with all features on the object.
+
 ### .getFeatures
 
 ```js
 getFeatures( triangle : number, barycoord : Vector3 ) : Array<number>
+```
+
+Takes the triangle index from something like a raycast hit as well as the calculated barycentric coordinate and returns the list of feature ids extracted from
+the object at the given point. Indexed in the same order as the list of feature info in the extension.
+
+```js
+const barycoord = new Vector3();
+const triangle = new Triangle();
+const hit = raycaster.raycast( object );
+if ( hit ) {
+
+	const { face, point, faceIndex } = hit;
+	triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
+	triangle.a.applyMatrix4( object.matrixWorld );
+	triangle.b.applyMatrix4( object.matrixWorld );
+	triangle.c.applyMatrix4( object.matrixWorld );
+	triangle.getBarycoord( point, barycoord );
+
+	const features = meshFeatures.getFeatures( faceIndex, barycoord );
+	// ...
+
+}
 ```
 
 ### .getFeaturesAsync
@@ -48,6 +75,8 @@ getFeatures( triangle : number, barycoord : Vector3 ) : Array<number>
 ```js
 getFeaturesAsync( triangle : number, barycoord : Vector3 ) : Promise<Array<number>>
 ```
+
+Performs the same function as `getFeatures` but with the texture asynchronous texture read operation.
 
 ## GLTFStructuralMetadataExtension
 
@@ -59,11 +88,15 @@ Plugin that adds support for the [EXT_structural_metadata](https://github.com/Ce
 textures: Array<Texture>
 ```
 
+Returns an indexed list of all textures used by metadata accessors in the extension.
+
 ### .schema
 
 ```js
 schema: Object
 ```
+
+The extension schema object.
 
 ### .getPropertyTableData
 
@@ -75,6 +108,8 @@ getPropertyTableData(
 ) : target
 ```
 
+Returns data stored in property tables. Takes a list of table ids and ids from those tables, and returns a list of objects adhering to the structure class referenced in the table schema.
+
 ### .getPropertyTableInfo
 
 ```js
@@ -83,6 +118,8 @@ getPropertyTableInfo( tableIndices = null : Array<number> ) : Array<{
 	className: string,
 }>
 ```
+
+Returns information about the tables.
 
 ### .getPropertyTextureData
 
@@ -94,6 +131,8 @@ getPropertyTextureData(
 ) : target
 ```
 
+Returns data stored in property textures. Takes a triangle index and barycentric coordinate, and returns a list of objects adhering to the structure class referenced in the table schema. See `MeshFeatures.getFeatures` for how to calculate the index and barycoord.
+
 ### .getPropertyTextureDataAsync
 
 ```js
@@ -103,6 +142,8 @@ getPropertyTextureDataAsync(
 	target = [] : Array,
 ) : Promise<target>
 ```
+
+Returns the same data from `getPropertyTextureData` but performs texture read operations asynchronously.
 
 ### .getPropertyTextureInfo
 
@@ -120,11 +161,15 @@ getPropertyTextureInfo() : Array<{
 }>
 ```
 
+Returns information about the property texture accessors from the extension.
+
 ### .getPropertyAttributeData
 
 ```js
 getPropertyAttributeData( attributeIndex : number, target = [] : Array) : target
 ```
+
+Returns data stored as property attributes. Takes the index of an index from length of the attributes, and returns a list of objects adhering to the structure class referenced in the table schema.
 
 ### .getPropertyAttributeInfo
 
@@ -134,6 +179,8 @@ getPropertyAttributeInfo() : Array<{
 	className: string,
 }>
 ```
+
+Returns information about the attribute accessors from the extension.
 
 ## GLTFCesiumRTCExtension
 
