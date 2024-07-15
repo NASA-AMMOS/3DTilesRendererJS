@@ -37,6 +37,10 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Alterate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/landformSiteOverlay.html)
 
+**Plugins**
+
+[Tile Metadata](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/metadata.html)
+
 **Debug Pages**
 
 [B3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/b3dmExample.html)
