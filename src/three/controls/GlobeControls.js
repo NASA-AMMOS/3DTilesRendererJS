@@ -8,6 +8,7 @@ import {
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
+import { Ellipsoid } from '../math/Ellipsoid.js';
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -24,6 +25,7 @@ const _zoomPointUp = new Vector3();
 const _toCenter = new Vector3();
 const _latLon = {};
 const _ray = new Ray();
+const _ellipsoid = new Ellipsoid();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -294,8 +296,11 @@ export class GlobeControls extends EnvironmentControls {
 				pointerTracker,
 				domElement,
 				tilesGroup,
-				ellipsoid
 			} = this;
+
+			// reuse cache variables
+			const pivotDir = _pos;
+			const newPivotDir = _targetRight;
 
 			// get the pointer and ray
 			pointerTracker.getCenterPoint( _pointer );
@@ -306,12 +311,14 @@ export class GlobeControls extends EnvironmentControls {
 			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 			raycaster.ray.applyMatrix4( _invMatrix );
 
-			closestRayEllipsoidSurfacePointEstimate( raycaster.ray, ellipsoid, _vec );
-			_vec.applyMatrix4( tilesGroup.matrixWorld );
+			// construct an ellipsoid that matches a sphere with the radius of the globe so
+			// the drag position matches where the initial click was
+			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( _invMatrix ).length();
+			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// reuse cache variables
-			const pivotDir = _pos;
-			const newPivotDir = _targetRight;
+			// find the hit point
+			closestRayEllipsoidSurfacePointEstimate( raycaster.ray, _ellipsoid, _vec );
+			_vec.applyMatrix4( tilesGroup.matrixWorld );
 
 			// get the point directions
 			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
