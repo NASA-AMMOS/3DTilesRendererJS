@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: Speed change when transitioning between near and far behavior.
 - GlobeControls: Behavior now relies on camera field of view.
 - GlobeControls: Zooming out from the horizon no longer spins the globe.
+- GlobeControls: Add support for orthographi camera.
 - Remove unnecessary matrix instantiation during tiles parse.
 
 ### Changed
