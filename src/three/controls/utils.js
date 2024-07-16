@@ -3,7 +3,6 @@ import { Matrix4, Ray, Vector3 } from 'three';
 const _matrix = new Matrix4();
 const _ray = new Ray();
 const _vec = new Vector3();
-const _vec2 = new Vector3();
 
 // helper function for constructing a matrix for rotating around a point
 export function makeRotateAroundPoint( point, quat, target ) {
@@ -58,15 +57,30 @@ export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target 
 
 }
 
-export function closestRaySpherePointRotation( ray, radius, target ) {
+export function closestRaySpherePointFromRotation( ray, radius, target ) {
 
-	const x = radius;
-	const y = ray.origin.length();
-	const theta = Math.acos( x / y );
-	const cameraDir = _vec2.copy( ray.origin ).multiplyScalar( - 1 ).normalize();
-	const rotationVec = _vec.crossVectors( cameraDir, ray.direction ).normalize();
-	cameraDir.multiplyScalar( - 1 ).applyAxisAngle( rotationVec, - theta );
-	target.copy( cameraDir );
+	const hypotenuse = ray.origin.length();
+
+	// angle inside the sphere
+	const theta = Math.acos( radius / hypotenuse );
+
+	// the direction to the camera
+	target
+		.copy( ray.origin )
+		.multiplyScalar( - 1 )
+		.normalize();
+
+	// get the normal of the plane the ray and origin lie in
+	const rotationVec = _vec
+		.crossVectors( target, ray.direction )
+		.normalize();
+
+	// rotate the camera direction by angle and scale it to the surface
+	target
+		.multiplyScalar( - 1 )
+		.applyAxisAngle( rotationVec, - theta )
+		.normalize()
+		.multiplyScalar( radius );
 
 }
 
