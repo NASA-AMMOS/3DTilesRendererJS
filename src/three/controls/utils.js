@@ -35,7 +35,6 @@ export function mouseToCoords( clientX, clientY, element, target ) {
 
 // Returns an estimate of the closest point on the ellipsoid to the ray. Returns
 // the surface intersection if they collide.
-// TODO: this will possibly be unused
 export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target ) {
 
 	if ( ellipsoid.intersectRay( ray, target ) ) {
@@ -57,6 +56,7 @@ export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target 
 
 }
 
+// find the closest ray on the horizon when the ray passes above the sphere
 export function closestRaySpherePointFromRotation( ray, radius, target ) {
 
 	const hypotenuse = ray.origin.length();

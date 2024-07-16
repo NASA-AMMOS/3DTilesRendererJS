@@ -322,7 +322,7 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( _invMatrix ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// find the hit point
+			// find the hit point and use the closest point on the horizon if we miss
 			if ( camera.isPerspectiveCamera ) {
 
 				if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
