@@ -78,20 +78,27 @@ export class GlobeControls extends EnvironmentControls {
 	getPivotPoint( target ) {
 
 		const { camera, tilesGroup, ellipsoid } = this;
-		if ( super.getPivotPoint( target ) === null ) {
 
-			// get camera values
-			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+		// get camera values
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 
-			// set a ray in the local ellipsoid frame
-			_ray.origin.copy( camera.position );
-			_ray.direction.copy( _forward );
-			_ray.applyMatrix4( _invMatrix );
+		// set a ray in the local ellipsoid frame
+		_ray.origin.copy( camera.position );
+		_ray.direction.copy( _forward );
+		_ray.applyMatrix4( _invMatrix );
 
-			// get the estimated closest point
-			closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
-			target.applyMatrix4( tilesGroup.matrixWorld );
+		// get the estimated closest point
+		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
+		_vec.applyMatrix4( tilesGroup.matrixWorld );
+
+		// use the closest point if no pivot was provided or it's closer
+		if (
+			super.getPivotPoint( target ) === null ||
+			target.distanceTo( _ray.origin ) > _vec.distanceTo( _ray.origin )
+		) {
+
+			target.copy( _vec );
 
 		}
 
