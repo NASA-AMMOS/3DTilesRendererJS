@@ -47,15 +47,28 @@ export class StructuralMetadata {
 	}
 
 	// Property Tables
-	getPropertyTableData( tableIndices, ids, target = [] ) {
+	getPropertyTableData( tableIndices, ids, target = null ) {
 
-		const length = Math.min( tableIndices.length, ids.length );
-		target.length = length;
+		if ( ! Array.isArray( tableIndices ) || ! Array.isArray( ids ) ) {
 
-		for ( let i = 0; i < length; i ++ ) {
+			target = target || {};
 
-			const table = this.tableAccessors[ tableIndices[ i ] ];
-			target[ i ] = table.getData( ids[ i ], target[ i ] );
+			const table = this.tableAccessors[ tableIndices ];
+			target = table.getData( ids, target );
+
+		} else {
+
+			target = target || [];
+
+			const length = Math.min( tableIndices.length, ids.length );
+			target.length = length;
+
+			for ( let i = 0; i < length; i ++ ) {
+
+				const table = this.tableAccessors[ tableIndices[ i ] ];
+				target[ i ] = table.getData( ids[ i ], target[ i ] );
+
+			}
 
 		}
 

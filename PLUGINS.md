@@ -106,6 +106,12 @@ getPropertyTableData(
 	ids : Array<number>,
 	target = [] : Array,
 ) : target
+
+getPropertyTableData(
+	tableIndices : number,
+	ids : number,
+	target = {} : Object,
+) : target
 ```
 
 Returns data stored in property tables. Takes a list of table ids and ids from those tables, and returns a list of objects adhering to the structure class referenced in the table schema.
