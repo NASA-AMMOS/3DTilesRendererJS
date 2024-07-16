@@ -254,8 +254,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			const distanceToCenter = - _vec.z;
 			camera.near = distanceToCenter - Math.max( ...ellipsoid.radius ) * 1.1;
-			camera.far = distanceToCenter;
-
+			camera.far = distanceToCenter + 0.1;
 
 			// adjust the position of the ortho camera such that the near value is 0
 			if ( ! this.allowNegativeNearPlanes && camera.near < 0 ) {
