@@ -78,18 +78,14 @@ export class StructuralMetadata {
 
 	getPropertyTableInfo( tableIndices = null ) {
 
+		// default to all table information
 		if ( tableIndices === null ) {
 
-			return this.tableAccessors.map( acc => {
+			tableIndices = this.tableAccessors.map( ( t, i ) => i );
 
-				return {
-					name: acc.name,
-					className: acc.definition.class,
-				};
+		}
 
-			} );
-
-		} else {
+		if ( Array.isArray( tableIndices ) ) {
 
 			return tableIndices.map( i => {
 
@@ -100,6 +96,14 @@ export class StructuralMetadata {
 				};
 
 			} );
+
+		} else {
+
+			const table = this.tableAccessors[ tableIndices ];
+			return {
+				name: table.name,
+				className: table.definition.class,
+			};
 
 		}
 

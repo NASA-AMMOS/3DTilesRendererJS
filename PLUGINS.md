@@ -102,15 +102,15 @@ The extension schema object.
 
 ```js
 getPropertyTableData(
-	tableIndices : Array<number>,
-	ids : Array<number>,
-	target = [] : Array,
+	tableIndex : number,
+	id : number,
+	target = {} : Object,
 ) : target
 
 getPropertyTableData(
-	tableIndices : number,
-	ids : number,
-	target = {} : Object,
+	tableIndices : Array<number>,
+	ids : Array<number>,
+	target = [] : Array,
 ) : target
 ```
 
@@ -119,6 +119,11 @@ Returns data stored in property tables. Takes a list of table ids and ids from t
 ### .getPropertyTableInfo
 
 ```js
+getPropertyTableInfo( tableIndex : number ) : {
+	name: string,
+	className: string,
+}
+
 getPropertyTableInfo( tableIndices = null : Array<number> ) : Array<{
 	name: string,
 	className: string,
