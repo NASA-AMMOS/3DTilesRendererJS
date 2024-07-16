@@ -7,7 +7,7 @@ import {
 	Ray,
 } from 'three';
 import { EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
+import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
 const _invMatrix = new Matrix4();
@@ -78,20 +78,27 @@ export class GlobeControls extends EnvironmentControls {
 	getPivotPoint( target ) {
 
 		const { camera, tilesGroup, ellipsoid } = this;
-		if ( super.getPivotPoint( target ) === null ) {
 
-			// get camera values
-			_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+		// get camera values
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 
-			// set a ray in the local ellipsoid frame
-			_ray.origin.copy( camera.position );
-			_ray.direction.copy( _forward );
-			_ray.applyMatrix4( _invMatrix );
+		// set a ray in the local ellipsoid frame
+		_ray.origin.copy( camera.position );
+		_ray.direction.copy( _forward );
+		_ray.applyMatrix4( _invMatrix );
 
-			// get the estimated closest point
-			closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, target );
-			target.applyMatrix4( tilesGroup.matrixWorld );
+		// get the estimated closest point
+		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
+		_vec.applyMatrix4( tilesGroup.matrixWorld );
+
+		// use the closest point if no pivot was provided or it's closer
+		if (
+			super.getPivotPoint( target ) === null ||
+			target.distanceTo( _ray.origin ) > _vec.distanceTo( _ray.origin )
+		) {
+
+			target.copy( _vec );
 
 		}
 
@@ -240,7 +247,7 @@ export class GlobeControls extends EnvironmentControls {
 			// plane approaching zero as the camera goes to or below sea level.
 			const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
 			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
-			camera.far = horizonDistance + 0.1;
+			camera.far = horizonDistance * 3 + 0.1;
 
 			camera.updateProjectionMatrix();
 
@@ -315,8 +322,20 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( _invMatrix ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// find the hit point
-			closestRayEllipsoidSurfacePointEstimate( raycaster.ray, _ellipsoid, _vec );
+			// find the hit point and use the closest point on the horizon if we miss
+			if ( camera.isPerspectiveCamera ) {
+
+				if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
+
+					closestRaySpherePointFromRotation( raycaster.ray, pivotRadius, _vec );
+
+				}
+
+			} else {
+
+				closestRayEllipsoidSurfacePointEstimate( raycaster.ray, _ellipsoid, _vec );
+
+			}
 			_vec.applyMatrix4( tilesGroup.matrixWorld );
 
 			// get the point directions
