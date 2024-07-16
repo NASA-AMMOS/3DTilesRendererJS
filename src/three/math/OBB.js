@@ -16,6 +16,33 @@ export class OBB {
 
 	}
 
+	/**
+	 * Clamps the given point within the bounds of this OBB
+	 * @param {Vector3} point
+	 * @param {Vector3} result
+	 * @returns {Vector3}
+	 */
+	clampPoint( point, result ) {
+
+		return result.copy( point )
+			.applyMatrix4( this.inverseTransform )
+			.clamp( this.box.min, this.box.max )
+			.applyMatrix4( this.transform );
+
+	}
+
+	/**
+	 * Returns the distance from any edge of this OBB to the specified point.
+	 * If the point lies inside of this box, the distance will be 0.
+	 * @param {Vector3} point
+	 * @returns {number}
+	 */
+	distanceToPoint( point ) {
+
+		return this.clampPoint( point, _norm ).distanceTo( point );
+
+	}
+
 	update() {
 
 		const { points, inverseTransform, transform, box } = this;
