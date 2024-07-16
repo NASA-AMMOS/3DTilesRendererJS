@@ -87,6 +87,7 @@ export class StructuralMetadata {
 
 		if ( Array.isArray( tableIndices ) ) {
 
+			// return all table information from the requested list
 			return tableIndices.map( i => {
 
 				const table = this.tableAccessors[ i ];
@@ -99,6 +100,7 @@ export class StructuralMetadata {
 
 		} else {
 
+			// return the one piece of table information
 			const table = this.tableAccessors[ tableIndices ];
 			return {
 				name: table.name,
