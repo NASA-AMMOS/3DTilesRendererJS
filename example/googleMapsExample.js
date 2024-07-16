@@ -220,6 +220,12 @@ function animate() {
 	controls.update();
 	transition.update();
 
+	if ( transition.animating ) {
+
+		controls.updateCameraClipPlanes( transition.camera );
+
+	}
+
 	const camera = transition.camera;
 
 	// update options
