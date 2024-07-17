@@ -175,7 +175,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			return true;
+			return false;
 
 		}
 
@@ -197,7 +197,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			return true;
+			return false;
 
 		}
 
