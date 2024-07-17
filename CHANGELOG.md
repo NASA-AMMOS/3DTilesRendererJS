@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: Zooming out from the horizon no longer spins the globe.
 - GlobeControls: Add support for orthographi camera.
 - Remove unnecessary matrix instantiation during tiles parse.
+- `getBoundingBox` and `getOrientedBoundingBox` returning an incorrect condition when no bounding volume is present.
 
 ### Changed
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
