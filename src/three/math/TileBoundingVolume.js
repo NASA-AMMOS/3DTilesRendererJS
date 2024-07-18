@@ -115,9 +115,7 @@ export class TileBoundingVolume {
 
 		if ( obb ) {
 
-			// the obb transform contains no scale
-			_vec.copy( point ).applyMatrix4( obb.inverseTransform );
-			obbDistance = obb.box.distanceToPoint( _vec );
+			obbDistance = obb.distanceToPoint( point );
 
 		}
 
