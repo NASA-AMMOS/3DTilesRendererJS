@@ -44,7 +44,7 @@ export class OBB {
 
 	}
 
-	// returns boolean indicating whether the ray intersected the box
+	// returns boolean indicating whether the ray has intersected the obb
 	intersectsRay( ray ) {
 
 		_ray.copy( ray ).applyMatrix4( this.inverseTransform );
@@ -57,7 +57,16 @@ export class OBB {
 	intersectRay( ray, target ) {
 
 		_ray.copy( ray ).applyMatrix4( this.inverseTransform );
-		return _ray.intersectBox( this.box, target );
+		if ( _ray.intersectBox( this.box, target ) ) {
+
+			target.applyMatrix4( this.transform );
+			return target;
+
+		} else {
+
+			return null;
+
+		}
 
 	}
 
