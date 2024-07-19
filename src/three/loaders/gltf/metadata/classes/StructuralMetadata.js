@@ -49,6 +49,7 @@ export class StructuralMetadata {
 
 		if ( ! Array.isArray( tableIndices ) || ! Array.isArray( ids ) ) {
 
+			// only return a single tables data
 			target = target || {};
 
 			const table = this.tableAccessors[ tableIndices ];
@@ -56,6 +57,7 @@ export class StructuralMetadata {
 
 		} else {
 
+			// return data from an array of tables and ids
 			target = target || [];
 
 			const length = Math.min( tableIndices.length, ids.length );
@@ -191,15 +193,9 @@ export class StructuralMetadata {
 
 	dispose() {
 
-		[
-			...this.textureAccessors,
-			...this.tableAccessors,
-			...this.attributeAccessors,
-		].forEach( acc => {
-
-			acc.dispose();
-
-		} );
+		this.textureAccessors.forEach( acc => acc.dispose() );
+		this.tableAccessors.forEach( acc => acc.dispose() );
+		this.attributeAccessors.forEach( acc => acc.dispose() );
 
 	}
 
