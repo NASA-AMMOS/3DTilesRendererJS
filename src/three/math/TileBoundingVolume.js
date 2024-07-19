@@ -65,8 +65,7 @@ export class TileBoundingVolume {
 
 		if ( obb ) {
 
-			// the obb transform contains no scale
-			if ( obb.intersectsRay( ray, _obbVec ) ) {
+			if ( obb.intersectRay( ray, _obbVec ) ) {
 
 				obbDistSq = obb.box.containsPoint( ray.origin ) ? 0 : ray.origin.distanceToSquared( _obbVec );
 
