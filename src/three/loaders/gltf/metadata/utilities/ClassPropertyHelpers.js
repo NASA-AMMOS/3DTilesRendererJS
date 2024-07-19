@@ -21,25 +21,28 @@ export function isNumericType( type ) {
 
 }
 
-export function isFloatType( type ) {
+// check if the class property type is a float component type value
+export function isFloatComponentType( type ) {
 
 	return /^FLOAT/.test( type );
 
 }
 
+// check if the class property type is a vector type
 export function isVectorType( type ) {
 
 	return /^VEC/.test( type );
 
 }
 
+// check if the class property type is a matrix type
 export function isMatrixType( type ) {
 
 	return /^MATRIX/.test( type );
 
 }
 
-// returns the max value of the given type
+// returns the max value of the given component type
 export function getMaxValue( componentType ) {
 
 	const tokens = /([A-Z]+)([0-9]+)/.exec( componentType );
@@ -58,6 +61,7 @@ export function getMaxValue( componentType ) {
 
 }
 
+// TODO: check implementation
 // returns a value from the given buffer of the given type
 export function readDataFromBufferToType( buffer, offset, type, target = null ) {
 
@@ -132,6 +136,8 @@ export function isTypeInstance( type, value ) {
 
 	}
 
+	throw new Error( 'ClassProperty: invalid type.' );
+
 }
 
 // gets a new numeric array constructor from the given structural metadata type
@@ -160,6 +166,8 @@ export function getArrayConstructorFromType( componentType, type ) {
 		case 'STRING': return Uint8Array;
 
 	}
+
+	throw new Error( 'ClassProperty: invalid type.' );
 
 }
 
@@ -257,7 +265,6 @@ export function resolveNoData( property, target ) {
 
 		if ( isNoDataEqual( target ) ) {
 
-			// TODO: should this be the default value or null?
 			target = resolveDefaultElement( property, target );
 
 		}
@@ -393,9 +400,8 @@ export function adjustValueScaleOffset( property, target ) {
 
 		}
 
-		if ( normalized || isFloatType( componentType ) ) {
+		if ( normalized || isFloatComponentType( componentType ) ) {
 
-			// TODO: what order are these operations supposed to be performed in?
 			value = value * scale + offset;
 
 		}
