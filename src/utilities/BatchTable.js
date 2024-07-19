@@ -1,3 +1,4 @@
+import { BatchTableHierarchyExtension } from './BatchTableHierarchyExtension.js';
 import { FeatureTable } from './FeatureTable.js';
 
 export class BatchTable extends FeatureTable {
@@ -6,6 +7,18 @@ export class BatchTable extends FeatureTable {
 
 		super( buffer, start, headerLength, binLength );
 		this.batchSize = batchSize;
+
+		this.extensions = {};
+		const extensions = this.header.extensions;
+		if ( extensions ) {
+
+			if ( extensions[ '3DTILES_batch_table_hierarchy' ] ) {
+
+				this.extensions[ '3DTILES_batch_table_hierarchy' ] = new BatchTableHierarchyExtension( this );
+
+			}
+
+		}
 
 	}
 
@@ -29,6 +42,19 @@ export class BatchTable extends FeatureTable {
 			if ( key !== 'extensions' ) {
 
 				target[ key ] = super.getData( key, this.batchSize )[ id ];
+
+			}
+
+		}
+
+		for ( const extensionName in this.extensions ) {
+
+			const extension = this.extensions[ extensionName ];
+
+			if ( extension.getDataFromId instanceof Function ) {
+
+				target[ extensionName ] = target[ extensionName ] || {};
+				extension.getDataFromId( id, target[ extensionName ] );
 
 			}
 
