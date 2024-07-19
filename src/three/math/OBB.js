@@ -1,8 +1,9 @@
-import { Matrix4, Box3, Vector3, Plane } from 'three';
+import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
 
 const _worldMin = new Vector3();
 const _worldMax = new Vector3();
 const _norm = new Vector3();
+const _ray = new Ray();
 
 export class OBB {
 
@@ -40,6 +41,32 @@ export class OBB {
 	distanceToPoint( point ) {
 
 		return this.clampPoint( point, _norm ).distanceTo( point );
+
+	}
+
+	// returns boolean indicating whether the ray has intersected the obb
+	intersectsRay( ray ) {
+
+		_ray.copy( ray ).applyMatrix4( this.inverseTransform );
+		return _ray.intersectsBox( this.box );
+
+	}
+
+	// Sets "target" equal to the intersection point.
+	// Returns "null" if no intersection found.
+	intersectRay( ray, target ) {
+
+		_ray.copy( ray ).applyMatrix4( this.inverseTransform );
+		if ( _ray.intersectBox( this.box, target ) ) {
+
+			target.applyMatrix4( this.transform );
+			return target;
+
+		} else {
+
+			return null;
+
+		}
 
 	}
 
