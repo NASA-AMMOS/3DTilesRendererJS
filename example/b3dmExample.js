@@ -186,12 +186,13 @@ function onMouseMove( e ) {
 			// Log the batch data
 			const batchTable = batchTableObject.batchTable;
 			hoveredBatchid = batchidAttr.getX( face.a );
+			const batchData = batchTable.getDataFromId( hoveredBatchid );
 
 			infoEl.innerText =
 				`_batchid   : ${ hoveredBatchid }\n` +
-				`Latitude   : ${ batchTable.getData( 'Latitude' )[ hoveredBatchid ].toFixed( 3 ) }\n` +
-				`Longitude  : ${ batchTable.getData( 'Longitude' )[ hoveredBatchid ].toFixed( 3 ) }\n` +
-				`Height     : ${ batchTable.getData( 'Height' )[ hoveredBatchid ].toFixed( 3 ) }\n`;
+				`Latitude   : ${ batchData[ 'Latitude' ].toFixed( 3 ) }\n` +
+				`Longitude  : ${ batchData[ 'Longitude' ].toFixed( 3 ) }\n` +
+				`Height     : ${ batchData[ 'Height' ].toFixed( 3 ) }\n`;
 
 		}
 

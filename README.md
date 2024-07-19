@@ -286,12 +286,8 @@ if ( intersects.length ) {
 		// Log the batch data
 		const batchTable = batchTableObject.batchTable;
 		const hoveredBatchid = batchidAttr.getX( face.a );
-		const batchData = batchTable.getData( 'BatchTableKey' );
-		if ( batchData ) {
-
-			console.log( batchData[ hoveredBatchid ] );
-
-		}
+		const batchData = batchTable.getDataFromId( hoveredBatchid );
+		console.log( batchData );
 
 	}
 

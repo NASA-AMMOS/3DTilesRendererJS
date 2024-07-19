@@ -10,10 +10,9 @@ export class BatchTable {
 
 	getKeys() : Array< String >;
 
-	getData(
-		key : String,
-		componentType : String | null,
-		type : String | null
-	) : Number | String | ArrayBufferView;
+	getDataFromId(
+		id: Number,
+		target?: Object
+	) : Object;
 
 }
