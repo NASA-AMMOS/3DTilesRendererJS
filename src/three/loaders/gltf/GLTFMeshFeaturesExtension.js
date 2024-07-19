@@ -37,6 +37,14 @@ export class GLTFMeshFeaturesExtension {
 
 	async afterRoot( { scene, parser } ) {
 
+		const extensions = parser.json.extensions;
+		const rootExtension = extensions && extensions[ EXT_NAME ];
+		if ( ! rootExtension ) {
+
+			return;
+
+		}
+
 		// get fetch the relevant textures are loaded
 		const textureCount = parser.json.textures?.length || 0;
 		const promises = new Array( textureCount ).fill( null );
