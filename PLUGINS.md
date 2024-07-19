@@ -80,7 +80,9 @@ Performs the same function as `getFeatures` but with the texture asynchronous te
 
 ## GLTFStructuralMetadataExtension
 
-Plugin that adds support for the [EXT_structural_metadata](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata) extension. Adds a `Object3D.userData.structuralMetadata` to each object with the extension that provides the following API:
+Plugin that adds support for the [EXT_structural_metadata](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata) extension. Adds a `Object3D.userData.structuralMetadata` to each object with the extension that provides the following API.
+
+_Note that 64 bit integer types are not fully supported._
 
 ### .textures
 
