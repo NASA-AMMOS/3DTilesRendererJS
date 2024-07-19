@@ -2,8 +2,6 @@ import { PropertyAttributeAccessor } from './PropertyAttributeAccessor.js';
 import { PropertyTableAccessor } from './PropertyTableAccessor.js';
 import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
 
-// TODO: produce a function to help initialize / validate an object structure for a given class
-// to ensure the target values are well-formed
 export class StructuralMetadata {
 
 	constructor( definition, textures, buffers, nodeMetadata = null, object = null ) {

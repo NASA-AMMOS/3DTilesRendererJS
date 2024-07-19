@@ -1,11 +1,12 @@
-
 // https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
 
 import { FileLoader } from 'three';
 import { StructuralMetadata } from './metadata/classes/StructuralMetadata.js';
 
 const EXT_NAME = 'EXT_structural_metadata';
-function getRelevantTextures( parser, propertyTextures = [] ) {
+
+// returns the set of textures required by the property texture definitions
+function getRelevantTextures( parser, propertyTextures ) {
 
 	const textureCount = parser.json.textures?.length || 0;
 	const result = new Array( textureCount ).fill( null );
@@ -29,6 +30,7 @@ function getRelevantTextures( parser, propertyTextures = [] ) {
 
 }
 
+// returns the set of buffers required by the property table definitions
 function getRelevantBuffers( parser, propertyTables = [] ) {
 
 	const textureCount = parser.json.bufferViews?.length || 0;
@@ -76,6 +78,7 @@ export class GLTFStructuralMetadataExtension {
 
 	async afterRoot( { scene, parser } ) {
 
+		// skip if the extension is not present
 		const extensions = parser.json.extensions;
 		let rootExtension = extensions && extensions[ EXT_NAME ];
 		if ( ! rootExtension ) {
@@ -121,7 +124,7 @@ export class GLTFStructuralMetadataExtension {
 
 			if ( parser.associations.has( child ) ) {
 
-				// check if this object has extension references
+				// check if this object has extension references and use a child-specific version of the extension
 				const { meshes, primitives } = parser.associations.get( child );
 				const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
 				if ( primitive && primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
