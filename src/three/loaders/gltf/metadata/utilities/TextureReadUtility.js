@@ -7,14 +7,16 @@ const _box = /* @__PURE__ */ new Box2();
 const _currentScissor = /* @__PURE__ */ new Vector4();
 const _pos = /* @__PURE__ */ new Vector2();
 
+// Utility for reading sets of individual pixel values from textures
 export const TextureReadUtility = new ( class {
 
 	constructor() {
 
-		// TODO: is it possible for the textures to be a type other than UInt8?
 		this._renderer = new WebGLRenderer();
 		this._target = new WebGLRenderTarget( 1, 1 );
 		this._texTarget = new WebGLRenderTarget();
+
+		// quad to render just a single pixel from the provided texture
 		this._quad = new FullScreenQuad( new ShaderMaterial( {
 
 			blending: CustomBlending,
@@ -51,12 +53,14 @@ export const TextureReadUtility = new ( class {
 
 	}
 
+	// increases the width of the target render target to support more data
 	increaseSizeTo( width ) {
 
 		this._target.setSize( Math.max( this._target.width, width ), 1 );
 
 	}
 
+	// read data from the rendered texture asynchronously
 	readDataAsync( buffer ) {
 
 		const { _renderer, _target } = this;
@@ -72,6 +76,7 @@ export const TextureReadUtility = new ( class {
 
 	}
 
+	// read data from the rendered texture
 	readData( buffer ) {
 
 		const { _renderer, _target } = this;
@@ -79,14 +84,15 @@ export const TextureReadUtility = new ( class {
 
 	}
 
-	// render a single pixel from the source at the destination point on the
-	// render target
+	// render a single pixel from the source at the destination point on the render target
+	// takes the texture, pixel to read from, and pixel to render in to
 	renderPixelToTarget( texture, pixel, dstPixel ) {
 
 		const { _quad, _renderer, _target, _texTarget } = this;
 
 		if ( REVISION_166 ) {
 
+			// copies the pixel directly to the target buffer
 			_box.min.copy( pixel );
 			_box.max.copy( pixel );
 			_box.max.x += 1;

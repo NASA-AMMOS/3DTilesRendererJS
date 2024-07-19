@@ -2,7 +2,7 @@ import { Vector2 } from 'three';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 import { ClassProperty } from './ClassProperty.js';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
+import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utilities/TexCoordUtilities.js';
 import {
 	initializeFromClass,
 	initializeFromProperty,
@@ -95,7 +95,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		const textures = this.data;
 		const accessorProperties = this.definition.properties;
 		const properties = this.properties;
-		const indices = getTriangleIndices( geometry, faceIndex );
+		const indices = getTriangleVertexIndices( geometry, faceIndex );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
 			// skip any requested properties that are not provided

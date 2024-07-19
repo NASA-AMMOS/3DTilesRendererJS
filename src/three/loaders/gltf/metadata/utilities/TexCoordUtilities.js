@@ -1,5 +1,10 @@
 import { Vector2 } from 'three';
 
+const _uv0 = /* @__PURE__ */ new Vector2();
+const _uv1 = /* @__PURE__ */ new Vector2();
+const _uv2 = /* @__PURE__ */ new Vector2();
+
+// returns the uv attribute of the given index
 export function getTextureCoordAttribute( geometry, index ) {
 
 	if ( index === 0 ) {
@@ -14,7 +19,8 @@ export function getTextureCoordAttribute( geometry, index ) {
 
 }
 
-export function getTriangleIndices( geometry, faceIndex, target = new Array( 3 ) ) {
+// returns the vertex indices associated with the triangle index
+export function getTriangleVertexIndices( geometry, faceIndex, target = new Array( 3 ) ) {
 
 	// get the attribute indices
 	let i0 = 3 * faceIndex;
@@ -35,9 +41,8 @@ export function getTriangleIndices( geometry, faceIndex, target = new Array( 3 )
 
 }
 
-const _uv0 = new Vector2();
-const _uv1 = new Vector2();
-const _uv2 = new Vector2();
+// takes a tex coord index, barycoord, vertex indices, and target to set
+// sets target to the interpolated uv value
 export function getTexCoord( geometry, texCoord, barycoord, indices, target ) {
 
 	const [ i0, i1, i2 ] = indices;
@@ -54,6 +59,7 @@ export function getTexCoord( geometry, texCoord, barycoord, indices, target ) {
 
 }
 
+// gets the x, y index of the pixel at the given uv coordinate
 export function getTexelIndices( uv, width, height, target ) {
 
 	const fx = uv.x - Math.floor( uv.x );

@@ -1,6 +1,6 @@
 import { Vector2 } from 'three';
 import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTriangleIndices } from '../utilities/TexCoordUtilities.js';
+import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utilities/TexCoordUtilities.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();
@@ -96,7 +96,7 @@ export class MeshFeatures {
 		TextureReadUtility.increaseSizeTo( width );
 
 		// get the attribute indices
-		const indices = getTriangleIndices( geometry, triangle );
+		const indices = getTriangleVertexIndices( geometry, triangle );
 		const closestIndex = indices[ getMaxBarycoordIndex( barycoord ) ];
 		for ( let i = 0, l = featureIds.length; i < l; i ++ ) {
 
