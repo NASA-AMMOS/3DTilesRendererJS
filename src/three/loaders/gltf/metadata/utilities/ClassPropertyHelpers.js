@@ -93,11 +93,12 @@ export function readDataFromBufferToType( buffer, offset, type, target = null ) 
 }
 
 // gets a new instance of the given structural metadata type
-export function getTypeInstance( type ) {
+export function getTypeInstance( property ) {
 
+	const { type, componentType } = property;
 	switch ( type ) {
 
-		case 'SCALAR': return 0;
+		case 'SCALAR': return componentType === 'INT64' ? 0n : 0;
 		case 'VEC2': return new Vector2();
 		case 'VEC3': return new Vector3();
 		case 'VEC4': return new Vector4();
@@ -123,16 +124,16 @@ export function isTypeInstance( type, value ) {
 
 	switch ( type ) {
 
-		case 'SCALAR': return value instanceof Number;
+		case 'SCALAR': return typeof value === 'number' || typeof value === 'bigint';
 		case 'VEC2': return value.isVector2;
 		case 'VEC3': return value.isVector3;
 		case 'VEC4': return value.isVector4;
 		case 'MAT2': return value.isMatrix2;
 		case 'MAT3': return value.isMatrix3;
 		case 'MAT4': return value.isMatrix4;
-		case 'BOOLEAN': return value instanceof Boolean;
-		case 'STRING': return value instanceof String;
-		case 'ENUM': return value instanceof Number || value instanceof String;
+		case 'BOOLEAN': return typeof value === 'boolean';
+		case 'STRING': return typeof value === 'string';
+		case 'ENUM': return typeof value === 'number' || typeof value === 'bigint' || typeof value === 'string';
 
 	}
 
@@ -208,7 +209,7 @@ export function resolveDefaultElement( property, target = null ) {
 	} else {
 
 		// TODO: make sure the default uses the same major order for matrices in three.js
-		target = target || getTypeInstance( type );
+		target = target || getTypeInstance( property );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
@@ -430,7 +431,7 @@ export function initializeFromProperty( property, target, overrideCount = null )
 
 			if ( ! isTypeInstance( property.type, target[ i ] ) ) {
 
-				target[ i ] = getTypeInstance( property.type );
+				target[ i ] = getTypeInstance( property );
 
 			}
 
@@ -440,7 +441,7 @@ export function initializeFromProperty( property, target, overrideCount = null )
 
 		if ( ! isTypeInstance( property.type, target ) ) {
 
-			target = getTypeInstance( property.type );
+			target = getTypeInstance( property );
 
 		}
 
