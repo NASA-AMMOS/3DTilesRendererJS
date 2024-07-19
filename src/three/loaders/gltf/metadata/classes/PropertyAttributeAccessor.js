@@ -10,7 +10,6 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		super( ...args );
 
 		this.isPropertyAttributeAccessor = true;
-
 		this._initProperties();
 
 	}
@@ -35,7 +34,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		// NOTE: arrays are not supported via attribute accessors
 		if ( id >= this.count ) {
 
-			throw new Error( 'PropertyAttributeAccessor: Requested index is outside the range of the table.' );
+			throw new Error( 'PropertyAttributeAccessor: Requested index is outside the range of the buffer.' );
 
 		}
 
@@ -44,7 +43,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		const type = property.type;
 		if ( ! property ) {
 
-			throw new Error( 'PropertyAttributeAccessor: Requested property does not exist.' );
+			throw new Error( 'PropertyAttributeAccessor: Requested class property does not exist.' );
 
 		} else if ( ! this.definition.properties[ name ] ) {
 
@@ -85,6 +84,7 @@ export class PropertyAttributeAccessor extends PropertySetAccessor {
 		target = property.adjustValueScaleOffset( target );
 
 		// resolve to default values
+		// TODO: are no data enums stored as strings or ints?
 		target = property.resolveNoData( target );
 
 		// convert to enum strings
