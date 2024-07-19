@@ -12,6 +12,7 @@ export class ClassProperty {
 
 	constructor( enums, property, accessorProperty = null ) {
 
+		// initialize defaults for class property info
 		this.type = property.type;
 		this.componentType = property.componentType || null;
 		this.enumType = property.enumType || null;
@@ -29,6 +30,7 @@ export class ClassProperty {
 		this.enumSet = null;
 		this.accessorProperty = accessorProperty;
 
+		// accessor properties can override min, max, offset, and scale values
 		if ( accessorProperty ) {
 
 			this.offset = getField( accessorProperty, 'offset', this.offset );
@@ -38,6 +40,7 @@ export class ClassProperty {
 
 		}
 
+		// get the component type for the provided enum
 		if ( property.type === 'ENUM' ) {
 
 			this.enumSet = enums[ this.enumType ];
@@ -51,30 +54,35 @@ export class ClassProperty {
 
 	}
 
+	// shape the given target to match the data type of the property
 	shapeToProperty( target, countOverride = null ) {
 
 		return initializeFromProperty( this, target, countOverride );
 
 	}
 
+	// resolve the given object to the default value for the property for a single element
 	resolveDefaultElement( target ) {
 
 		return resolveDefaultElement( this, target );
 
 	}
 
+	// resolve the target to the default value for the property for every element if it's an array
 	resolveDefault( target ) {
 
 		return resolveDefault( this, target );
 
 	}
 
+	// TODO
 	resolveNoData( target ) {
 
 		return resolveNoData( this, target );
 
 	}
 
+	// converts enums integers in the given target to strings
 	resolveEnumsToStrings( target ) {
 
 		const enumSet = this.enumSet;
@@ -116,6 +124,7 @@ export class ClassProperty {
 
 	}
 
+	// apply scales
 	adjustValueScaleOffset( target ) {
 
 		if ( isNumericType( this.type ) ) {

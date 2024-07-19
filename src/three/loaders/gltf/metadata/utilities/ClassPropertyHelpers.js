@@ -257,6 +257,7 @@ export function resolveNoData( property, target ) {
 
 		if ( isNoDataEqual( target ) ) {
 
+			// TODO: should this be the default value or null?
 			target = resolveDefaultElement( property, target );
 
 		}
