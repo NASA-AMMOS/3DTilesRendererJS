@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `getBoundingBox` and `getOrientedBoundingBox` returning an incorrect condition when no bounding volume is present.
 - Fix case where an incorrect SSE metric was produced when tiles used non-uniform scales with oriented bounding box volumes.
 - Fix case where potentially incorrect raycast results were produced when tiles used non-uniform scales with oriented bounding box volumes.
+- GLTFStructureMetadata extension exits gracefully if no extension is present.
 
 ### Changed
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
