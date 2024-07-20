@@ -437,8 +437,9 @@ function updateMetaDataDisplay() {
 
 			} else {
 
+				const id = features[ featureIndex ];
 				material.setFromMeshFeatures( meshFeatures, featureIndex );
-				material.highlightFeatureId = features[ featureIndex ] || - 1;
+				material.highlightFeatureId = id === null ? - 1 : id;
 
 			}
 

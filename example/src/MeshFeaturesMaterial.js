@@ -198,7 +198,7 @@ export const MeshFeaturesMaterialMixin = base => class extends base {
 
 		if ( info !== null ) {
 
-			this.nullFeatureId = info.nullFeatureId || null;
+			this.nullFeatureId = info.nullFeatureId == null ? null : info.nullFeatureId;
 
 		}
 
