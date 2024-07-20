@@ -210,7 +210,6 @@ export function resolveDefaultElement( property, target = null ) {
 
 	} else {
 
-		// TODO: make sure the default uses the same major order for matrices in three.js
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
