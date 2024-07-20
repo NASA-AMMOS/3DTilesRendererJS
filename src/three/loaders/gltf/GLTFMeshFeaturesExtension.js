@@ -38,9 +38,8 @@ export class GLTFMeshFeaturesExtension {
 	async afterRoot( { scene, parser } ) {
 
 		// skip if the extension is not present
-		const extensions = parser.json.extensions;
-		const rootExtension = extensions && extensions[ EXT_NAME ];
-		if ( ! rootExtension ) {
+		const extensionsUsed = parser.json.extensionsUsed;
+		if ( ! extensionsUsed || ! extensionsUsed.includes( EXT_NAME ) ) {
 
 			return;
 

@@ -79,9 +79,8 @@ export class GLTFStructuralMetadataExtension {
 	async afterRoot( { scene, parser } ) {
 
 		// skip if the extension is not present
-		const extensions = parser.json.extensions;
-		let rootExtension = extensions && extensions[ EXT_NAME ];
-		if ( ! rootExtension ) {
+		const extensionsUsed = parser.json.extensionsUsed;
+		if ( ! extensionsUsed || ! extensionsUsed.includes( EXT_NAME ) ) {
 
 			return;
 
@@ -89,6 +88,7 @@ export class GLTFStructuralMetadataExtension {
 
 		// load the remote schema definition if present
 		let schemaPromise = null;
+		let rootExtension = parser.json.extensions[ EXT_NAME ];
 		if ( rootExtension.schemaUri ) {
 
 			// TODO: cache the loaded schema so we can share it and dispose of it when the
