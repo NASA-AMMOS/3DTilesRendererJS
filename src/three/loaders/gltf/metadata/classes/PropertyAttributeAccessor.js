@@ -2,8 +2,6 @@ import { initializeFromClass, isMatrixType, isVectorType } from '../utilities/Cl
 import { ClassProperty } from './ClassProperty.js';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 
-// TODO: is this only for points?
-// TODO: Test "no data" path
 class PropertyAttributeClassProperty extends ClassProperty {
 
 	constructor( enums, classProperty, attributeProperty = null ) {
