@@ -6,7 +6,7 @@ import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utili
 import {
 	initializeFromClass,
 	initializeFromProperty,
-	getArrayConstructorFromType,
+	getArrayConstructorFromComponentType,
 	readDataFromBufferToType,
 	getField
 } from '../utilities/ClassPropertyHelpers.js';
@@ -185,7 +185,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				// set the data read back from the texture to the target type
 				const data = property.channels.map( c => buffer[ 4 * i + c ] );
 				const componentType = property.componentType;
-				const BufferCons = getArrayConstructorFromType( componentType, type );
+				const BufferCons = getArrayConstructorFromComponentType( componentType, type );
 				const readBuffer = new BufferCons( length );
 				new Uint8Array( readBuffer.buffer ).set( data );
 

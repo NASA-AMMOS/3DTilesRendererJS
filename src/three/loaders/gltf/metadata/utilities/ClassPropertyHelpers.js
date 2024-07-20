@@ -114,7 +114,7 @@ export function isTypeInstance( type, value ) {
 }
 
 // gets a new numeric array constructor from the given structural metadata type
-export function getArrayConstructorFromType( componentType, type ) {
+export function getArrayConstructorFromComponentType( componentType, type = null ) {
 
 	switch ( componentType ) {
 
@@ -466,6 +466,29 @@ export function initializeFromClass( properties, target ) {
 
 		const prop = properties[ key ];
 		target[ key ] = initializeFromProperty( prop, target[ key ] );
+
+	}
+
+}
+
+// Returns the number of components required for the given type
+export function typeToComponentCount( type ) {
+
+	switch ( type ) {
+
+		case 'ENUM': return 1;
+		case 'SCALAR': return 1;
+		case 'VEC2': return 2;
+		case 'VEC3': return 3;
+		case 'VEC4': return 4;
+		case 'MAT2': return 4;
+		case 'MAT3': return 9;
+		case 'MAT4': return 16;
+
+		// unused
+		case 'BOOLEAN': return - 1;
+		case 'STRING': return - 1;
+		default: return - 1;
 
 	}
 

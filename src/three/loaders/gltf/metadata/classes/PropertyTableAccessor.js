@@ -2,10 +2,11 @@ import { ClassProperty } from './ClassProperty.js';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 import {
 	initializeFromClass,
-	getArrayConstructorFromType,
+	getArrayConstructorFromComponentType,
 	readDataFromBufferToType,
 	getField,
 	isNumericType,
+	typeToComponentCount,
 } from '../utilities/ClassPropertyHelpers.js';
 
 class PropertyTableClassProperty extends ClassProperty {
@@ -14,8 +15,8 @@ class PropertyTableClassProperty extends ClassProperty {
 
 		super( enums, classProperty, tableProperty );
 
-		this.valueLength = parseInt( this.type.replace( /[^0-9]/g, '' ) ) || 1;
 		this.values = tableProperty.values;
+		this.valueLength = typeToComponentCount( this.type );
 		this.arrayOffsets = getField( tableProperty, 'arrayOffsets', null );
 		this.stringOffsets = getField( tableProperty, 'stringOffsets', null );
 		this.arrayOffsetType = getField( tableProperty, 'arrayOffsetType', 'UINT32' );
@@ -29,8 +30,9 @@ class PropertyTableClassProperty extends ClassProperty {
 		let count = this.count;
 		if ( this.arrayOffsets !== null ) {
 
-			const { arrayOffsets, arrayOffsetType, type } = this;
-			const arr = new ( getArrayConstructorFromType( arrayOffsetType, type ) )( buffers[ arrayOffsets ] );
+			const { arrayOffsets, arrayOffsetType } = this;
+			const bufferCons = getArrayConstructorFromComponentType( arrayOffsetType );
+			const arr = new bufferCons( buffers[ arrayOffsets ] );
 			count = arr[ id + 1 ] - arr[ id ];
 
 		}
@@ -46,8 +48,9 @@ class PropertyTableClassProperty extends ClassProperty {
 		let indexOffset = id;
 		if ( this.arrayOffsets ) {
 
-			const { arrayOffsets, arrayOffsetType, type } = this;
-			const arr = new ( getArrayConstructorFromType( arrayOffsetType, type ) )( buffers[ arrayOffsets ] );
+			const { arrayOffsets, arrayOffsetType } = this;
+			const bufferCons = getArrayConstructorFromComponentType( arrayOffsetType );
+			const arr = new bufferCons( buffers[ arrayOffsets ] );
 			indexOffset = arr[ indexOffset ];
 
 		} else if ( this.array ) {
@@ -99,17 +102,17 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		const buffers = this.data;
 		const bufferView = buffers[ property.values ];
-		const dataArray = new ( getArrayConstructorFromType( componentType, type ) )( bufferView );
+		const bufferCons = getArrayConstructorFromComponentType( componentType, type );
+		const dataArray = new bufferCons( bufferView );
 
-		// TODO: is this correct?
+		// array offsets contain element offsets, not byte offsets
 		let indexOffset = property.getIndexOffsetFromId( buffers, id );
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
-			// multiply the stride of the value type into the index
-			// TODO: is it correct to multiply it in here when array offsets are provided?
-			const valueLength = property.valueLength;
-			target = readDataFromBufferToType( dataArray, valueLength * ( index + indexOffset ), type, target );
+			// "readDataFromBufferToType" takes the start offset to read from so we multiply the
+			// index by the final value length
+			return readDataFromBufferToType( dataArray, index * this.valueLength, type, target );
 
 		} else if ( type === 'STRING' ) {
 
@@ -122,7 +125,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 			if ( property.stringOffsets !== null ) {
 
 				const { stringOffsets, stringOffsetType } = property;
-				const arr = new ( getArrayConstructorFromType( stringOffsetType, type ) )( buffers[ stringOffsets ] );
+				const arr = new ( getArrayConstructorFromComponentType( stringOffsetType, type ) )( buffers[ stringOffsets ] );
 				stringLength = arr[ indexOffset + 1 ] - arr[ indexOffset ];
 				indexOffset = arr[ indexOffset ];
 
@@ -167,7 +170,6 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		}
 
-		// TODO: is this correct?
 		// get the dynamic array count from the property buffer
 		const array = property.array;
 		const buffers = this.data;
