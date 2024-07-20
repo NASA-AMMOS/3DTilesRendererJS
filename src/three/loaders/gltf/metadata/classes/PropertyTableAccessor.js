@@ -106,7 +106,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		const dataArray = new bufferCons( bufferView );
 
 		// array offsets contain element offsets, not byte offsets
-		let indexOffset = property.getIndexOffsetFromId( buffers, id );
+		const indexOffset = property.getIndexOffsetFromId( buffers, id );
 
 		if ( isNumericType( type ) || type === 'ENUM' ) {
 
@@ -116,22 +116,22 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 		} else if ( type === 'STRING' ) {
 
-			indexOffset += index;
-
-			// TODO: is this correct?
-			// TODO: check here
 			// https://github.com/CesiumGS/3d-tiles/tree/main/specification/Metadata/#variable-length-arrays
+
+			let stringIndex = indexOffset + index;
 			let stringLength = 0;
 			if ( property.stringOffsets !== null ) {
 
+				// get the string lengths and beginning offsets if variable
 				const { stringOffsets, stringOffsetType } = property;
-				const arr = new ( getArrayConstructorFromComponentType( stringOffsetType, type ) )( buffers[ stringOffsets ] );
-				stringLength = arr[ indexOffset + 1 ] - arr[ indexOffset ];
-				indexOffset = arr[ indexOffset ];
+				const bufferCons = getArrayConstructorFromComponentType( stringOffsetType );
+				const stringOffsetBuffer = new bufferCons( buffers[ stringOffsets ] );
+				stringLength = stringOffsetBuffer[ stringIndex + 1 ] - stringOffsetBuffer[ stringIndex ];
+				stringIndex = stringOffsetBuffer[ stringIndex ];
 
 			}
 
-			const byteArray = new Uint8Array( dataArray.buffer, indexOffset, stringLength );
+			const byteArray = new Uint8Array( dataArray.buffer, stringIndex, stringLength );
 			target = new TextDecoder().decode( byteArray );
 
 		} else if ( type === 'BOOLEAN' ) {
