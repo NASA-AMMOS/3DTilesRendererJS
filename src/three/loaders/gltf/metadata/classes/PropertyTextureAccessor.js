@@ -12,7 +12,7 @@ import {
 } from '../utilities/ClassPropertyHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
-const _pixel = /* @__PURE__ */ new Vector2();
+const _srcPixel = /* @__PURE__ */ new Vector2();
 const _dstPixel = /* @__PURE__ */ new Vector2();
 
 class PropertyTextureClassProperty extends ClassProperty {
@@ -28,6 +28,7 @@ class PropertyTextureClassProperty extends ClassProperty {
 
 	}
 
+	// takes the buffer to read from and the value index to read
 	readDataFromBuffer( buffer, index, target = null ) {
 
 		const type = this.type;
@@ -37,7 +38,8 @@ class PropertyTextureClassProperty extends ClassProperty {
 
 		}
 
-		// TODO: is this correct?
+		// "readDataFromBufferToType" takes the start offset to read from so we multiply the index by the
+		// final value length
 		return readDataFromBufferToType( buffer, index * this.valueLength, type, target );
 
 	}
@@ -73,11 +75,26 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 
 	}
 
+	// Reads the full set of property data asynchronously
+	async getDataAsync( faceIndex, barycoord, geometry, target = {} ) {
+
+		const properties = this.properties;
+		initializeFromClass( properties, target );
+
+		const names = Object.keys( properties );
+		const results = names.map( n => target[ n ] );
+		await this.getPropertyValuesAtTexelAsync( names, faceIndex, barycoord, geometry, results );
+
+		names.forEach( ( n, i ) => target[ n ] = results[ i ] );
+		return target;
+
+	}
+
 	// Reads values asynchronously
 	getPropertyValuesAtTexelAsync( ...args ) {
 
 		this._asyncRead = true;
-		const result = this.getFeatures( ...args );
+		const result = this.getPropertyValuesAtTexel( ...args );
 		this._asyncRead = false;
 		return result;
 
@@ -98,7 +115,7 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 		const indices = getTriangleVertexIndices( geometry, faceIndex );
 		for ( let i = 0, l = names.length; i < l; i ++ ) {
 
-			// skip any requested properties that are not provided
+			// skip any requested class schema properties that are not provided via the accessor
 			const name = names[ i ];
 			if ( ! accessorProperties[ name ] ) {
 
@@ -110,10 +127,10 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 			const property = properties[ name ];
 			const texture = textures[ property.index ];
 			getTexCoord( geometry, property.texCoord, barycoord, indices, _uv );
-			getTexelIndices( _uv, texture.image.width, texture.image.height, _pixel );
+			getTexelIndices( _uv, texture.image.width, texture.image.height, _srcPixel );
 			_dstPixel.set( i, 0 );
 
-			TextureReadUtility.renderPixelToTarget( texture, _pixel, _dstPixel );
+			TextureReadUtility.renderPixelToTarget( texture, _srcPixel, _dstPixel );
 
 		}
 

@@ -116,6 +116,8 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 			indexOffset += index;
 
 			// TODO: is this correct?
+			// TODO: check here
+			// https://github.com/CesiumGS/3d-tiles/tree/main/specification/Metadata/#variable-length-arrays
 			let stringLength = 0;
 			if ( property.stringOffsets !== null ) {
 
