@@ -132,11 +132,10 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		} else if ( type === 'BOOLEAN' ) {
 
 			const offset = indexOffset + index;
-			const byteOffset = Math.floor( offset / 8 );
-			const bitOffset = offset % 8;
-			const byte = dataArray[ byteOffset ];
-
-			target = Boolean( byte & ( 1 << bitOffset ) );
+			const byteIndex = Math.floor( offset / 8 );
+			const bitIndex = offset % 8;
+			const bitValue = ( dataArray[ byteIndex ] >> bitIndex ) & 1;
+			target = bitValue === 1;
 
 		}
 
