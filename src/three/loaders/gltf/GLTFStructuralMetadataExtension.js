@@ -6,7 +6,7 @@ import { StructuralMetadata } from './metadata/classes/StructuralMetadata.js';
 const EXT_NAME = 'EXT_structural_metadata';
 
 // returns the set of textures required by the property texture definitions
-function getRelevantTextures( parser, propertyTextures ) {
+function getRelevantTextures( parser, propertyTextures = [] ) {
 
 	const textureCount = parser.json.textures?.length || 0;
 	const result = new Array( textureCount ).fill( null );
