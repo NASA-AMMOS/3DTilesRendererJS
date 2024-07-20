@@ -191,11 +191,11 @@ export class PropertyTextureAccessor extends PropertySetAccessor {
 				// scale the numeric values
 				target[ i ] = property.adjustValueScaleOffset( target[ i ] );
 
+				// resolve to default values - no data enum values are stored as strings
+				target[ i ] = property.resolveEnumsToStrings( target[ i ] );
+
 				// resolve to default values
 				target[ i ] = property.resolveNoData( target[ i ] );
-
-				// convert to enum strings
-				target[ i ] = property.resolveEnumsToStrings( target[ i ] );
 
 			}
 
