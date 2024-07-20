@@ -13,6 +13,8 @@ export class ClassProperty {
 	constructor( enums, property, accessorProperty = null ) {
 
 		// initialize defaults for class property info
+		this.name = property.name || null;
+		this.description = property.description || null;
 		this.type = property.type;
 		this.componentType = property.componentType || null;
 		this.enumType = property.enumType || null;
