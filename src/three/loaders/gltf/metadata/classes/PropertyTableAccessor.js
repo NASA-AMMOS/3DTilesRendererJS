@@ -112,7 +112,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 
 			// "readDataFromBufferToType" takes the start offset to read from so we multiply the
 			// index by the final value length
-			return readDataFromBufferToType( dataArray, indexOffset * property.valueLength, type, target );
+			return readDataFromBufferToType( dataArray, ( indexOffset + index ) * property.valueLength, type, target );
 
 		} else if ( type === 'STRING' ) {
 
