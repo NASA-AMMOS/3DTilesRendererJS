@@ -42,25 +42,6 @@ export function isMatrixType( type ) {
 
 }
 
-// returns the max value of the given component type
-export function getMaxValue( componentType ) {
-
-	const tokens = /([A-Z]+)([0-9]+)/.exec( componentType );
-	const unsigned = tokens[ 1 ] === 'UINT';
-	const bits = parseInt( tokens[ 2 ] );
-
-	if ( unsigned ) {
-
-		return ( 1 << bits ) - 1;
-
-	} else {
-
-		return ( 1 << ( bits - 1 ) ) - 1;
-
-	}
-
-}
-
 // TODO: check implementation
 // returns a value from the given buffer of the given type
 export function readDataFromBufferToType( buffer, offset, type, target = null ) {
@@ -316,6 +297,25 @@ export function resolveNoData( property, target ) {
 
 }
 
+export function normalizeValue( componentType, v ) {
+
+	// formulas defined here but normalizing 64 bit ints will result in precision loss:
+	// https://github.com/CesiumGS/3d-tiles/tree/main/specification/Metadata/#normalized-values
+	switch ( componentType ) {
+
+		case 'INT8': return Math.max( v / 127.0, - 1.0 );
+		case 'UINT8': return v / 255.0;
+		case 'INT16': return Math.max( v, 32767.0, - 1.0 );
+		case 'UINT16': return v / 65535.0;
+		case 'INT32': return Math.max( v / 2147483647.0, - 1.0 );
+		case 'UINT32': return v / 4294967295.0;
+		case 'INT64': return Math.max( Number( v ) / 9223372036854775807.0, - 1.0 );
+		case 'UINT64': return Number( v ) / 18446744073709551615.0;
+
+	}
+
+}
+
 // scales the value based on property settings
 // the provided target value is normalized, scaled, and then offset if numeric
 export function adjustValueScaleOffset( property, target ) {
@@ -397,7 +397,7 @@ export function adjustValueScaleOffset( property, target ) {
 
 		if ( normalized ) {
 
-			value = value / getMaxValue( componentType );
+			value = normalizeValue( componentType, value );
 
 		}
 
