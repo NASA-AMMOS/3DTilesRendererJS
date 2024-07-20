@@ -42,28 +42,16 @@ export function isMatrixType( type ) {
 
 }
 
-// TODO: check implementation
 // returns a value from the given buffer of the given type
 export function readDataFromBufferToType( buffer, offset, type, target = null ) {
 
 	if ( isMatrixType( type ) ) {
 
-		const elements = target.elements;
-		for ( let i = 0, l = elements.length; i < l; i ++ ) {
-
-			elements[ i ] = buffer[ i + offset ];
-
-		}
-
-		return target;
+		return target.fromArray( buffer, offset );
 
 	} else if ( isVectorType( type ) ) {
 
-		target.x = buffer[ offset + 0 ];
-		target.y = buffer[ offset + 1 ];
-		if ( 'z' in target ) target.z = buffer[ offset + 2 ];
-		if ( 'w' in target ) target.w = buffer[ offset + 3 ];
-		return target;
+		return target.fromArray( buffer, offset );
 
 	} else {
 
@@ -212,12 +200,7 @@ export function resolveDefaultElement( property, target = null ) {
 
 		if ( isMatrixType( type ) ) {
 
-			const elements = target.elements;
-			for ( let i = 0, l = elements.length; i < l; i ++ ) {
-
-				elements[ i ] = defaultValue[ i ];
-
-			}
+			target.fromArray( defaultValue );
 
 		} else if ( isVectorType( type ) ) {
 
@@ -323,12 +306,13 @@ export function normalizeValue( componentType, v ) {
 	switch ( componentType ) {
 
 		case 'INT8': return Math.max( v / 127.0, - 1.0 );
-		case 'UINT8': return v / 255.0;
 		case 'INT16': return Math.max( v, 32767.0, - 1.0 );
-		case 'UINT16': return v / 65535.0;
 		case 'INT32': return Math.max( v / 2147483647.0, - 1.0 );
-		case 'UINT32': return v / 4294967295.0;
 		case 'INT64': return Math.max( Number( v ) / 9223372036854775807.0, - 1.0 ); // eslint-disable-line no-loss-of-precision
+
+		case 'UINT8': return v / 255.0;
+		case 'UINT16': return v / 65535.0;
+		case 'UINT32': return v / 4294967295.0;
 		case 'UINT64': return Number( v ) / 18446744073709551615.0; // eslint-disable-line no-loss-of-precision
 
 	}

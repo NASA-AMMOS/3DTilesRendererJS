@@ -29,6 +29,18 @@ export class Matrix2 {
 
 	}
 
+	fromArray( array, offset = 0 ) {
+
+		for ( let i = 0; i < 4; i ++ ) {
+
+			this.elements[ i ] = array[ i + offset ];
+
+		}
+
+		return this;
+
+	}
+
 	set( n11, n12, n21, n22 ) {
 
 		const te = this.elements;
