@@ -6,10 +6,8 @@ export class Matrix2 {
 		Matrix2.prototype.isMatrix2 = true;
 
 		this.elements = [
-
 			1, 0,
 			0, 1,
-
 		];
 
 		if ( n11 !== undefined ) {
@@ -17,6 +15,17 @@ export class Matrix2 {
 			this.set( n11, n12, n21, n22 );
 
 		}
+
+	}
+
+	identity() {
+
+		this.set(
+			1, 0,
+			0, 1,
+		);
+
+		return this;
 
 	}
 

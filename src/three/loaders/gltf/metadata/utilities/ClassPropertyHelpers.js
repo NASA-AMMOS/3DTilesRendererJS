@@ -183,14 +183,31 @@ export function resolveDefaultElement( property, target = null ) {
 	const defaultValue = property.default;
 	const type = property.type;
 
+	target = target || getTypeInstance( property );
+
+	// TODO: is this getting run anywhere where we need an enum to be an integer?
 	if ( defaultValue === null ) {
+
+		switch ( type ) {
+
+			case 'SCALAR': return 0;
+			case 'VEC2': return target.set( 0, 0 );
+			case 'VEC3': return target.set( 0, 0, 0 );
+			case 'VEC4': return target.set( 0, 0, 0, 0 );
+			case 'MAT2': return target.identity();
+			case 'MAT3': return target.identity();
+			case 'MAT4': return target.identity();
+			case 'BOOLEAN': return false;
+			case 'STRING': return '';
+			case 'ENUM': return '';
+
+		}
 
 		return null;
 
 	} else {
 
 		// TODO: make sure the default uses the same major order for matrices in three.js
-		target = target || getTypeInstance( property );
 		if ( isMatrixType( type ) ) {
 
 			const elements = target.elements;
