@@ -117,6 +117,8 @@ export class ClassProperty {
 			const match = enumSet.values.find( e => e.value === index );
 			if ( match === null ) {
 
+				// the default "default enum" value is an empty string when we can't find a match
+				// in a case where enums are defined correctly we should never get here.
 				return '';
 
 			} else {
