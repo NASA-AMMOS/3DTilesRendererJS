@@ -176,7 +176,6 @@ export function resolveDefaultElement( property, target = null ) {
 
 	target = target || getTypeInstance( property );
 
-	// TODO: is this getting run anywhere where we need an enum to be an integer?
 	if ( defaultValue === null ) {
 
 		switch ( type ) {
@@ -194,7 +193,7 @@ export function resolveDefaultElement( property, target = null ) {
 
 		}
 
-		return null;
+		throw new Error( 'ClassProperty: invalid type.' );
 
 	} else {
 
@@ -348,12 +347,6 @@ export function adjustValueScaleOffset( property, target ) {
 	return target;
 
 	function adjustFromType( value ) {
-
-		if ( value === null ) {
-
-			return null;
-
-		}
 
 		if ( isMatrixType( type ) ) {
 
