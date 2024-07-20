@@ -88,6 +88,9 @@ export function getTypeInstance( property ) {
 		case 'MAT4': return new Matrix4();
 		case 'BOOLEAN': return false;
 		case 'STRING': return '';
+
+		// the final value for enums is a string but are represented as integers
+		// during intermediate steps
 		case 'ENUM': return 0;
 
 	}
@@ -114,7 +117,7 @@ export function isTypeInstance( type, value ) {
 		case 'MAT4': return value.isMatrix4;
 		case 'BOOLEAN': return typeof value === 'boolean';
 		case 'STRING': return typeof value === 'string';
-		case 'ENUM': return typeof value === 'number' || typeof value === 'bigint' || typeof value === 'string';
+		case 'ENUM': return typeof value === 'number' || typeof value === 'bigint';
 
 	}
 

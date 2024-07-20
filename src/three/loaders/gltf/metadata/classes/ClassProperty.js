@@ -55,6 +55,7 @@ export class ClassProperty {
 	}
 
 	// shape the given target to match the data type of the property
+	// enums are set to their integer value
 	shapeToProperty( target, countOverride = null ) {
 
 		return initializeFromProperty( this, target, countOverride );
@@ -62,6 +63,7 @@ export class ClassProperty {
 	}
 
 	// resolve the given object to the default value for the property for a single element
+	// enums are set to a default string
 	resolveDefaultElement( target ) {
 
 		return resolveDefaultElement( this, target );
@@ -69,13 +71,14 @@ export class ClassProperty {
 	}
 
 	// resolve the target to the default value for the property for every element if it's an array
+	// enums are set to a default string
 	resolveDefault( target ) {
 
 		return resolveDefault( this, target );
 
 	}
 
-	// TODO
+	// converts any instances of no data to the default value
 	resolveNoData( target ) {
 
 		return resolveNoData( this, target );
@@ -112,7 +115,7 @@ export class ClassProperty {
 			const match = enumSet.values.find( e => e.value === index );
 			if ( match === null ) {
 
-				return null;
+				return '';
 
 			} else {
 
