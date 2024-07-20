@@ -326,8 +326,8 @@ export function normalizeValue( componentType, v ) {
 		case 'UINT16': return v / 65535.0;
 		case 'INT32': return Math.max( v / 2147483647.0, - 1.0 );
 		case 'UINT32': return v / 4294967295.0;
-		case 'INT64': return Math.max( Number( v ) / 9223372036854775807.0, - 1.0 );
-		case 'UINT64': return Number( v ) / 18446744073709551615.0;
+		case 'INT64': return Math.max( Number( v ) / 9223372036854775807.0, - 1.0 ); // eslint-disable-line no-loss-of-precision
+		case 'UINT64': return Number( v ) / 18446744073709551615.0; // eslint-disable-line no-loss-of-precision
 
 	}
 

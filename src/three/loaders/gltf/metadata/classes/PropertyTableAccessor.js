@@ -193,7 +193,7 @@ export class PropertyTableAccessor extends PropertySetAccessor {
 		// scale the numeric values
 		target = property.adjustValueScaleOffset( target );
 
-		// resolve to default values - no data enum values are stored as strings
+		// convert to enum strings - no data enum values are stored as strings
 		target = property.resolveEnumsToStrings( target );
 
 		// resolve to default values
