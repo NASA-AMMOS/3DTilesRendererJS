@@ -55,9 +55,83 @@ function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
 
 }
 
+
+// function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCount ) {
+
+// 	renderer.ensureChildrenArePreprocessed( tile );
+
+// 	const lruCache = renderer.lruCache;
+// 	if ( isUsedThisFrame( tile, frameCount ) && ! lruCache.isFull() ) {
+
+// 		if ( ( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState ) ) {
+
+// 			renderer.requestTileContents( tile );
+
+// 		}
+
+// 		tile.__depthFromRenderedParent = depthFromRenderedParent;
+
+// 		const children = tile.children;
+// 		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+// 			const child = children[ i ];
+// 			recursivelyLoadTiles2( child, tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer );
+
+// 		}
+
+// 	}
+
+// }
+
+function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCount ) {
+
+	renderer.ensureChildrenArePreprocessed( tile );
+
+
+	const lruCache = renderer.lruCache;
+	if ( isUsedThisFrame( tile, frameCount ) && ! lruCache.isFull() ) {
+
+		tile.__depthFromRenderedParent = depthFromRenderedParent;
+
+
+
+
+
+
+
+
+		const doLoad =
+			( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState );
+
+		if ( doLoad ) {
+
+			renderer.requestTileContents( tile );
+
+		}
+
+		const children = tile.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			// don't increment depth to rendered parent here because we should treat
+			// the next layer of rendered children as just a single depth away for the
+			// sake of sorting.
+			const child = children[ i ];
+			child.__depthFromRenderedParent = depthFromRenderedParent;
+			recursivelyLoadTiles( child, ! doLoad ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer );
+
+		}
+
+
+	}
+
+}
+
+
 function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
+
+	// TODO: is this triggering loads for children
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
@@ -364,17 +438,23 @@ export function skipTraversal( tile, renderer ) {
 		// layer when the data has loaded.
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
+			// TODO: we should perform this recursion down to all the leaves of tiles that need to be
+			// be loaded rather than just the next layer of visible children
 			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+			recursivelyLoadTiles2( c, tile.__depthFromRenderedParent + 1, renderer, frameCount );
 
-				c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-				recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
+			// if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
-			}
+			// 	c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
+			// 	recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
+
+			// }
+
 
 		}
 
 	} else {
+
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
