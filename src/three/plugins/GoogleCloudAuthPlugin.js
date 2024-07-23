@@ -55,4 +55,10 @@ export class GoogleCloudAuthPlugin {
 
 	}
 
+	dispose() {
+
+		this.removeEventListener( 'load-tile-set', this._onLoadCallback );
+
+	}
+
 }
