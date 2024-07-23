@@ -78,7 +78,7 @@ export class TilesRendererBase {
 
 	}
 
-	constructor( url ) {
+	constructor( url = null ) {
 
 		// state
 		this.tileSets = {};
@@ -167,7 +167,7 @@ export class TilesRendererBase {
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! ( this.rootURL in tileSets ) ) {
 
-			this.loadRootTileSet( this.rootURL );
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( this.rootURL ) );
 			return;
 
 		} else if ( ! rootTileSet || ! rootTileSet.root ) {
