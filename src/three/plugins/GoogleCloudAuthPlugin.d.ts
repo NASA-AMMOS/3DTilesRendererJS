@@ -1,5 +1,5 @@
 export class GoogleCloudAuthPlugin {
 
-	constructor( options : { accessToken: String } );
+	constructor( options : { apiToken: String } );
 
 }
