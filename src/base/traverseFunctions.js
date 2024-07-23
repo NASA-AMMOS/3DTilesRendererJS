@@ -55,35 +55,7 @@ function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
 
 }
 
-
-// function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCount ) {
-
-// 	renderer.ensureChildrenArePreprocessed( tile );
-
-// 	const lruCache = renderer.lruCache;
-// 	if ( isUsedThisFrame( tile, frameCount ) && ! lruCache.isFull() ) {
-
-// 		if ( ( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState ) ) {
-
-// 			renderer.requestTileContents( tile );
-
-// 		}
-
-// 		tile.__depthFromRenderedParent = depthFromRenderedParent;
-
-// 		const children = tile.children;
-// 		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-// 			const child = children[ i ];
-// 			recursivelyLoadTiles2( child, tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer );
-
-// 		}
-
-// 	}
-
-// }
-
-function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCount ) {
+function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer, frameCount ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
@@ -107,7 +79,7 @@ function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCo
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			recursivelyLoadTiles2( child, ! tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer, frameCount );
+			recursivelyLoadTiles( child, ! tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer, frameCount );
 
 		}
 
@@ -115,8 +87,7 @@ function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCo
 
 }
 
-
-function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
+function recursivelyLoadTiles_old( tile, depthFromRenderedParent, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
@@ -430,7 +401,7 @@ export function skipTraversal( tile, renderer ) {
 			// TODO: we should perform this recursion down to all the leaves of tiles that need to be
 			// be loaded rather than just the next layer of visible children
 			const c = children[ i ];
-			recursivelyLoadTiles2( c, tile.__depthFromRenderedParent + 1, renderer, frameCount );
+			recursivelyLoadTiles( c, tile.__depthFromRenderedParent + 1, renderer, frameCount );
 
 			// if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
