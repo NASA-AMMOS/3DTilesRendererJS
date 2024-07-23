@@ -370,7 +370,6 @@ export function skipTraversal( tile, renderer ) {
 
 	} else {
 
-
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
