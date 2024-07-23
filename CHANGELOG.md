@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `camera-add`, `camera-delete`, `update-before`, `update-after` events.
 - Initial implementation of plugin system.
 - TileCompressionPlugin to examples for lowering memory usage.
+- `GoogleCloudAuthPlugin` and `CesiumIonAuthPlugin` to enable fetching data from the associated APIs.
+- Added `GooglePhotoRealisticTilesRenderer` class.
 
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
 - Examples FadeTilesRenderer has been changed to a plugin.
+- Deprecated `GoogleTilesRenderer` and `CesiumIonTilesRenderer` in favor of using the new authentication plugins.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
