@@ -495,7 +495,7 @@ export class TilesRendererBase {
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const isExternalTileSet = tile.__externalTileSet;
-		lruCache.add( tile, t => {
+		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
 			if ( t.__loadingState === LOADING ) {
@@ -531,6 +531,13 @@ export class TilesRendererBase {
 			downloadQueue.remove( t );
 
 		} );
+
+		// if we couldn't add the tile to the lru cache because it's full then skip
+		if ( ! addedSuccessfully ) {
+
+			return;
+
+		}
 
 		// Track a new load index so we avoid the condition where this load is stopped and
 		// another begins soon after so we don't parse twice.

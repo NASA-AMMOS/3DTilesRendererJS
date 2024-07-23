@@ -87,40 +87,6 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer, frameCou
 
 }
 
-function recursivelyLoadTiles_old( tile, depthFromRenderedParent, renderer ) {
-
-	renderer.ensureChildrenArePreprocessed( tile );
-
-	// TODO: is this triggering loads for children
-
-	// Try to load any external tile set children if the external tile set has loaded.
-	const doTraverse =
-		tile.__contentEmpty && (
-			! tile.__externalTileSet ||
-			isDownloadFinished( tile.__loadingState )
-		);
-	if ( doTraverse ) {
-
-		const children = tile.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			// don't increment depth to rendered parent here because we should treat
-			// the next layer of rendered children as just a single depth away for the
-			// sake of sorting.
-			const child = children[ i ];
-			child.__depthFromRenderedParent = depthFromRenderedParent;
-			recursivelyLoadTiles( child, depthFromRenderedParent, renderer );
-
-		}
-
-	} else {
-
-		renderer.requestTileContents( tile );
-
-	}
-
-}
-
 // Helper function for recursively traversing a tile set. If `beforeCb` returns `true` then the
 // traversal will end early.
 export function traverseSet( tile, beforeCb = null, afterCb = null, parent = null, depth = 0 ) {
@@ -398,18 +364,7 @@ export function skipTraversal( tile, renderer ) {
 		// layer when the data has loaded.
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			// TODO: we should perform this recursion down to all the leaves of tiles that need to be
-			// be loaded rather than just the next layer of visible children
-			const c = children[ i ];
-			recursivelyLoadTiles( c, tile.__depthFromRenderedParent + 1, renderer, frameCount );
-
-			// if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
-
-			// 	c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-			// 	recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
-
-			// }
-
+			recursivelyLoadTiles( children[ i ], tile.__depthFromRenderedParent + 1, renderer, frameCount );
 
 		}
 
