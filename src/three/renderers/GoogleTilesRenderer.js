@@ -3,75 +3,12 @@ import { TilesRenderer } from '../TilesRenderer.js';
 import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GoogleMapsTilesCredits } from './GoogleMapsTilesCredits.js';
+import { GoogleCloudAuthPlugin } from '../plugins/GoogleCloudAuthPlugin.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
 const _mat = new Matrix4();
 const _euler = new Euler();
-
-class GoogleCloudAuthPlugin {
-
-	constructor( { apiToken } ) {
-
-		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
-		this.apiToken = apiToken;
-		this.sessionToken = null;
-
-		this._onLoadCallback = null;
-		this._visibilityChangeCallback = null;
-
-	}
-
-	init( tiles ) {
-
-		this._onLoadCallback = () => {
-
-			// find the session id in the first sub tile set
-			tiles.traverse( tile => {
-
-				if ( tile.content && tile.content.uri ) {
-
-					this.sessionToken = new URL( tile.content.uri ).searchParams.get( 'session' );
-					return true;
-
-				}
-
-				return false;
-
-			} );
-
-			// clear the callback once the root is loaded
-			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
-
-		};
-
-		tiles.addEventListener( 'load-tile-set', this._onLoadCallback );
-
-	}
-
-	preprocessURL( uri ) {
-
-		if ( this.sessionToken !== null ) {
-
-			uri = new URL( uri );
-			if ( /^http/.test( uri.protocol ) ) {
-
-				uri.searchParams.append( 'session', this.sessionToken );
-				uri.searchParams.append( 'key', this.apiToken );
-
-			}
-			return uri.toString();
-
-		} else {
-
-			return uri;
-
-		}
-
-	}
-
-}
-
 
 const GoogleTilesRendererMixin = base => class extends base {
 
