@@ -445,7 +445,7 @@ The manager used when loading tile geometry.
 ### .constructor
 
 ```js
-constructor( url : String )
+constructor( url = null : String | null )
 ```
 
 Takes the url of the `tileset.json` for the tile set to be rendered.

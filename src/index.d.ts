@@ -1,16 +1,5 @@
-export {
-	DebugTilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR,
-} from './three/DebugTilesRenderer';
+// three.js
+export * from './three/DebugTilesRenderer';
 export { TilesRenderer } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
 export { B3DMLoader } from './three/loaders/B3DMLoader';
@@ -26,6 +15,11 @@ export * from './three/math/GeoConstants';
 export * from './three/renderers/GoogleTilesRenderer';
 export * from './three/renderers/CesiumIonTilesRenderer';
 
+// three.js plugins
+export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin';
+export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin';
+
+// common
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
 export { TileBase } from './base/TileBase';

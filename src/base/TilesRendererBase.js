@@ -78,7 +78,7 @@ export class TilesRendererBase {
 
 	}
 
-	constructor( url ) {
+	constructor( url = null ) {
 
 		// state
 		this.tileSets = {};
@@ -167,7 +167,7 @@ export class TilesRendererBase {
 		const rootTileSet = tileSets[ this.rootURL ];
 		if ( ! ( this.rootURL in tileSets ) ) {
 
-			this.loadRootTileSet( this.rootURL );
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( this.rootURL ) );
 			return;
 
 		} else if ( ! rootTileSet || ! rootTileSet.root ) {
@@ -221,7 +221,7 @@ export class TilesRendererBase {
 		// dispose of all the plugins
 		this.invokeAllPlugins( plugin => {
 
-			plugin.dispose && plugin.dispose();
+			plugin !== this && plugin.dispose && plugin.dispose();
 
 		} );
 
@@ -449,8 +449,11 @@ export class TilesRendererBase {
 		const tileSets = this.tileSets;
 		if ( ! ( url in tileSets ) ) {
 
+			let processedUrl = url;
+			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+
 			const pr = this
-				.fetchTileSet( this.preprocessURL ? this.preprocessURL( url ) : url, this.fetchOptions )
+				.fetchTileSet( processedUrl, this.fetchOptions )
 				.then( json => {
 
 					tileSets[ url ] = json;
@@ -599,8 +602,10 @@ export class TilesRendererBase {
 
 				}
 
-				const uri = this.preprocessURL ? this.preprocessURL( tileCb.content.uri ) : tileCb.content.uri;
-				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
+				let processedUrl = tileCb.content.uri;
+				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+
+				return this.fetchTileSet( processedUrl, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
 				.then( json => {
@@ -631,8 +636,10 @@ export class TilesRendererBase {
 
 				}
 
-				const uri = this.preprocessURL ? this.preprocessURL( downloadTile.content.uri ) : downloadTile.content.uri;
-				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+				let processedUrl = downloadTile.content.uri;
+				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+
+				return fetch( processedUrl, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {
@@ -718,7 +725,7 @@ export class TilesRendererBase {
 
 	invokeOnePlugin( func ) {
 
-		const plugins = this.plugins;
+		const plugins = [ ...this.plugins, this ];
 		for ( let i = 0; i < plugins.length; i ++ ) {
 
 			const result = func( plugins[ i ] );
@@ -736,7 +743,7 @@ export class TilesRendererBase {
 
 	invokeAllPlugins( func ) {
 
-		const plugins = this.plugins;
+		const plugins = [ ...this.plugins, this ];
 		const pending = [];
 		for ( let i = 0; i < plugins.length; i ++ ) {
 

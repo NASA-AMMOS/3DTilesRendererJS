@@ -3,12 +3,14 @@ import { TilesRenderer } from '../TilesRenderer.js';
 import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GoogleMapsTilesCredits } from './GoogleMapsTilesCredits.js';
+import { GoogleCloudAuthPlugin } from '../plugins/GoogleCloudAuthPlugin.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
 const _mat = new Matrix4();
 const _euler = new Euler();
-const GoogleTilesRendererMixin = base => class extends base {
+
+const GooglePhotorealisticTilesRendererMixin = base => class extends base {
 
 	get ellipsoid() {
 
@@ -16,9 +18,9 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 	}
 
-	constructor( apiKey, baseUrl = TILE_URL ) {
+	constructor( url = TILE_URL ) {
 
-		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
+		super( url );
 
 		this._credits = new GoogleMapsTilesCredits();
 
@@ -28,44 +30,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
 		this.errorTarget = 40;
-
-		const onLoadCallback = () => {
-
-			// find the session id in the first sub tile set
-			let session;
-			this.traverse( tile => {
-
-				if ( tile.content && tile.content.uri ) {
-
-					session = new URL( tile.content.uri ).searchParams.get( 'session' );
-					return true;
-
-				}
-
-				return false;
-
-			} );
-
-			// adjust the url preprocessor to include the api key, session
-			this.preprocessURL = uri => {
-
-				uri = new URL( uri );
-				if ( /^http/.test( uri.protocol ) ) {
-
-					uri.searchParams.append( 'session', session );
-					uri.searchParams.append( 'key', apiKey );
-
-				}
-				return uri.toString();
-
-			};
-
-			// clear the callback once the root is loaded
-			this.removeEventListener( 'load-tile-set', onLoadCallback );
-
-		};
-
-		this.addEventListener( 'load-tile-set', onLoadCallback );
 
 		this.addEventListener( 'tile-visibility-change', e => {
 
@@ -114,5 +78,21 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 };
 
+const GoogleTilesRendererMixin = base => class extends GooglePhotorealisticTilesRendererMixin( base ) {
+
+	constructor( apiToken, url ) {
+
+		super( url );
+		this.registerPlugin( new GoogleCloudAuthPlugin( { apiToken } ) );
+
+		console.warn( 'GoogleTilesRenderer: Class has been deprecated. Use "GooglePhotorealisticTilesRenderer" with "GoogleCloudAuthPlugin" instead.' );
+
+	}
+
+};
+
 export const GoogleTilesRenderer = GoogleTilesRendererMixin( TilesRenderer );
 export const DebugGoogleTilesRenderer = GoogleTilesRendererMixin( DebugTilesRenderer );
+
+export const GooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( TilesRenderer );
+export const DebugGooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( DebugTilesRenderer );

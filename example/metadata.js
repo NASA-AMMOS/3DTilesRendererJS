@@ -15,7 +15,8 @@ import {
 	EnvironmentControls,
 	GLTFMeshFeaturesExtension,
 	GLTFStructuralMetadataExtension,
-	CesiumIonTilesRenderer,
+	TilesRenderer,
+	CesiumIonAuthPlugin,
 } from '..';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -173,7 +174,8 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'ionApiKey', params.accessToken );
 
 	// create tile set
-	tiles = new CesiumIonTilesRenderer( params.assetId, params.accessToken );
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.accessToken, assetId: params.assetId } ) );
 	tiles.setCamera( camera );
 	rotationContainer.add( tiles.group );
 

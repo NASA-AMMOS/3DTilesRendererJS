@@ -198,6 +198,26 @@ tiles.registerPlugin( new TilesCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
+## GoogleCloudAuthPlugin
+
+### constructor
+
+```js
+constructor( { accessToken : String } )
+```
+
+Takes the Google Cloud access token.
+
+## CesiumIonAuthPlugin
+
+### constructor
+
+```js
+constructor( { accessToken : String, assetId = null : String | null } )
+```
+
+Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor.
+
 ## TilesOverlayPlugin
 
 _available in the examples directory_
