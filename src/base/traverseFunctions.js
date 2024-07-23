@@ -87,27 +87,18 @@ function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCo
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-
 	const lruCache = renderer.lruCache;
 	if ( isUsedThisFrame( tile, frameCount ) && ! lruCache.isFull() ) {
 
-		tile.__depthFromRenderedParent = depthFromRenderedParent;
-
-
-
-
-
-
-
-
-		const doLoad =
-			( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState );
+		const doLoad = ( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState );
 
 		if ( doLoad ) {
 
 			renderer.requestTileContents( tile );
 
 		}
+
+		tile.__depthFromRenderedParent = depthFromRenderedParent;
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -116,11 +107,9 @@ function recursivelyLoadTiles2( tile, depthFromRenderedParent, renderer, frameCo
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			child.__depthFromRenderedParent = depthFromRenderedParent;
-			recursivelyLoadTiles( child, ! doLoad ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer );
+			recursivelyLoadTiles2( child, ! tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer, frameCount );
 
 		}
-
 
 	}
 
