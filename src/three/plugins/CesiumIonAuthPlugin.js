@@ -17,6 +17,12 @@ export class CesiumIonAuthPlugin {
 
 	}
 
+	init( tiles ) {
+
+		this.tiles = tiles;
+
+	}
+
 	loadRootTileSet() {
 
 		if ( this._tokenState === UNLOADED ) {
