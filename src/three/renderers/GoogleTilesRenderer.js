@@ -10,7 +10,7 @@ const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
 const _mat = new Matrix4();
 const _euler = new Euler();
 
-const GoogleTilesRendererMixin = base => class extends base {
+const GooglePhotorealisticTilesRendererMixin = base => class extends base {
 
 	get ellipsoid() {
 
@@ -18,7 +18,7 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 	}
 
-	constructor( apiToken, url = TILE_URL ) {
+	constructor( url = TILE_URL ) {
 
 		super( url );
 
@@ -46,8 +46,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 			}
 
 		} );
-
-		this.registerPlugin( new GoogleCloudAuthPlugin( { apiToken } ) );
 
 	}
 
@@ -80,5 +78,21 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 };
 
+const GoogleTilesRendererMixin = base => class extends GooglePhotorealisticTilesRendererMixin( base ) {
+
+	constructor( apiToken, url ) {
+
+		super( url );
+		this.registerPlugin( new GoogleCloudAuthPlugin( { apiToken } ) );
+
+		console.warn( 'GoogleTilesRenderer: Class has been deprecated. Use "GooglePhotorealisticTilesRenderer" with "GoogleCloudAuthPlugin" instead.' );
+
+	}
+
+};
+
 export const GoogleTilesRenderer = GoogleTilesRendererMixin( TilesRenderer );
 export const DebugGoogleTilesRenderer = GoogleTilesRendererMixin( DebugTilesRenderer );
+
+export const GooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( TilesRenderer );
+export const DebugGooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( DebugTilesRenderer );
