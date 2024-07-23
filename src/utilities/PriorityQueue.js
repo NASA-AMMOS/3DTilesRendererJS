@@ -4,6 +4,7 @@ class PriorityQueue {
 
 		// options
 		this.maxJobs = 6;
+		this.schedulePerFrame = 6;
 
 		this.items = [];
 		this.callbacks = new Map();
@@ -84,10 +85,14 @@ class PriorityQueue {
 		const items = this.items;
 		const callbacks = this.callbacks;
 		const maxJobs = this.maxJobs;
+		const schedulePerFrame = this.schedulePerFrame;
+
 		let currJobs = this.currJobs;
-		while ( maxJobs > currJobs && items.length > 0 ) {
+		let scheduled = 0;
+		while ( maxJobs > currJobs && items.length > 0 && schedulePerFrame > scheduled ++ ) {
 
 			currJobs ++;
+			scheduled ++;
 			const item = items.pop();
 			const callback = callbacks.get( item );
 			callbacks.delete( item );
