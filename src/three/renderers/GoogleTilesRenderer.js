@@ -8,6 +8,71 @@ const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
 const _mat = new Matrix4();
 const _euler = new Euler();
+
+class GoogleCloudAuthPlugin {
+
+	constructor( { apiToken } ) {
+
+		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
+		this.apiToken = apiToken;
+		this.sessionToken = null;
+
+		this._onLoadCallback = null;
+		this._visibilityChangeCallback = null;
+
+	}
+
+	init( tiles ) {
+
+		this._onLoadCallback = () => {
+
+			// find the session id in the first sub tile set
+			tiles.traverse( tile => {
+
+				if ( tile.content && tile.content.uri ) {
+
+					this.sessionToken = new URL( tile.content.uri ).searchParams.get( 'session' );
+					return true;
+
+				}
+
+				return false;
+
+			} );
+
+			// clear the callback once the root is loaded
+			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+
+		};
+
+		tiles.addEventListener( 'load-tile-set', this._onLoadCallback );
+
+	}
+
+	preprocessURL( uri ) {
+
+		if ( this.sessionToken !== null ) {
+
+			uri = new URL( uri );
+			if ( /^http/.test( uri.protocol ) ) {
+
+				uri.searchParams.append( 'session', this.sessionToken );
+				uri.searchParams.append( 'key', this.apiToken );
+
+			}
+			return uri.toString();
+
+		} else {
+
+			return uri;
+
+		}
+
+	}
+
+}
+
+
 const GoogleTilesRendererMixin = base => class extends base {
 
 	get ellipsoid() {
@@ -16,9 +81,9 @@ const GoogleTilesRendererMixin = base => class extends base {
 
 	}
 
-	constructor( apiKey, baseUrl = TILE_URL ) {
+	constructor( apiToken, baseUrl = TILE_URL ) {
 
-		super( new URL( `${ baseUrl }?key=${ apiKey }` ).toString() );
+		super( new URL( `${ baseUrl }?key=${ apiToken }` ).toString() );
 
 		this._credits = new GoogleMapsTilesCredits();
 
@@ -28,44 +93,6 @@ const GoogleTilesRendererMixin = base => class extends base {
 		this.lruCache.minSize = 3000;
 		this.lruCache.maxSize = 5000;
 		this.errorTarget = 40;
-
-		const onLoadCallback = () => {
-
-			// find the session id in the first sub tile set
-			let session;
-			this.traverse( tile => {
-
-				if ( tile.content && tile.content.uri ) {
-
-					session = new URL( tile.content.uri ).searchParams.get( 'session' );
-					return true;
-
-				}
-
-				return false;
-
-			} );
-
-			// adjust the url preprocessor to include the api key, session
-			this.preprocessURL = uri => {
-
-				uri = new URL( uri );
-				if ( /^http/.test( uri.protocol ) ) {
-
-					uri.searchParams.append( 'session', session );
-					uri.searchParams.append( 'key', apiKey );
-
-				}
-				return uri.toString();
-
-			};
-
-			// clear the callback once the root is loaded
-			this.removeEventListener( 'load-tile-set', onLoadCallback );
-
-		};
-
-		this.addEventListener( 'load-tile-set', onLoadCallback );
 
 		this.addEventListener( 'tile-visibility-change', e => {
 
@@ -82,6 +109,8 @@ const GoogleTilesRendererMixin = base => class extends base {
 			}
 
 		} );
+
+		this.registerPlugin( new GoogleCloudAuthPlugin( { apiToken } ) );
 
 	}
 
