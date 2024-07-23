@@ -40,22 +40,18 @@ export class GoogleCloudAuthPlugin {
 
 	preprocessURL( uri ) {
 
-		if ( this.sessionToken !== null ) {
+		uri = new URL( uri );
+		if ( /^http/.test( uri.protocol ) ) {
 
-			uri = new URL( uri );
-			if ( /^http/.test( uri.protocol ) ) {
+			uri.searchParams.append( 'key', this.apiToken );
+			if ( this.sessionToken !== null ) {
 
 				uri.searchParams.append( 'session', this.sessionToken );
-				uri.searchParams.append( 'key', this.apiToken );
 
 			}
-			return uri.toString();
-
-		} else {
-
-			return uri;
 
 		}
+		return uri.toString();
 
 	}
 
