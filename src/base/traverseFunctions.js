@@ -55,17 +55,22 @@ function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
 
 }
 
-function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
+function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer, frameCount ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	// Try to load any external tile set children if the external tile set has loaded.
-	const doTraverse =
-		tile.__contentEmpty && (
-			! tile.__externalTileSet ||
-			isDownloadFinished( tile.__loadingState )
-		);
-	if ( doTraverse ) {
+	const lruCache = renderer.lruCache;
+	if ( isUsedThisFrame( tile, frameCount ) && ! lruCache.isFull() ) {
+
+		const doLoad = ( ! tile.__contentEmpty || tile.__externalTileSet ) && ! isDownloadFinished( tile.__loadingState );
+
+		if ( doLoad ) {
+
+			renderer.requestTileContents( tile );
+
+		}
+
+		tile.__depthFromRenderedParent = depthFromRenderedParent;
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -74,14 +79,9 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			child.__depthFromRenderedParent = depthFromRenderedParent;
-			recursivelyLoadTiles( child, depthFromRenderedParent, renderer );
+			recursivelyLoadTiles( child, ! tile.__contentEmpty ? depthFromRenderedParent : depthFromRenderedParent + 1, renderer, frameCount );
 
 		}
-
-	} else {
-
-		renderer.requestTileContents( tile );
 
 	}
 
@@ -364,13 +364,7 @@ export function skipTraversal( tile, renderer ) {
 		// layer when the data has loaded.
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
-
-				c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-				recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
-
-			}
+			recursivelyLoadTiles( children[ i ], tile.__depthFromRenderedParent + 1, renderer, frameCount );
 
 		}
 

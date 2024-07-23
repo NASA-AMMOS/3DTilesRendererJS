@@ -40,6 +40,11 @@ class LRUCache {
 
 		if ( this.isFull() ) {
 
+			// TODO: can we check if the tile being added is a better tile to include and remove
+			// other tiles to make space. Ideally this would use the other priority sort function as
+			// the other callback functions.
+			// But how can we efficiently find the less viable tile? Sort every time on add when full?
+			// Binary sort insert? It will be slow when reaching the limits
 			return false;
 
 		}
