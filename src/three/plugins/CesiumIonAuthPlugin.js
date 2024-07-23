@@ -5,7 +5,7 @@ const FAILED = 3;
 
 export class CesiumIonAuthPlugin {
 
-	constructor( { apiToken, assetId } ) {
+	constructor( { apiToken, assetId = null } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.apiToken = apiToken;
@@ -23,14 +23,24 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	loadRootTileSet() {
+	loadRootTileSet( rootUrl ) {
 
 		if ( this._tokenState === UNLOADED ) {
 
 			this._tokenState = LOADING;
 
 			// construct the url to fetch the endpoint
-			const url = new URL( `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint` );
+			let url;
+			if ( this.assetId === null ) {
+
+				url = rootUrl;
+
+			} else {
+
+				url = new URL( `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint` );
+
+			}
+
 			url.searchParams.append( 'access_token', this.apiToken );
 
 			this._loadPromise = fetch( url, { mode: 'cors' } )
