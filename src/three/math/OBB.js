@@ -44,6 +44,13 @@ export class OBB {
 
 	}
 
+	containsPoint( point ) {
+
+		_norm.copy( point ).applyMatrix4( this.inverseTransform );
+		return this.box.containsPoint( _norm );
+
+	}
+
 	// returns boolean indicating whether the ray has intersected the obb
 	intersectsRay( ray ) {
 

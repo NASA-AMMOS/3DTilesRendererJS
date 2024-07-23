@@ -67,7 +67,7 @@ export class TileBoundingVolume {
 
 			if ( obb.intersectRay( ray, _obbVec ) ) {
 
-				obbDistSq = obb.box.containsPoint( ray.origin ) ? 0 : ray.origin.distanceToSquared( _obbVec );
+				obbDistSq = obb.containsPoint( ray.origin ) ? 0 : ray.origin.distanceToSquared( _obbVec );
 
 			}
 
