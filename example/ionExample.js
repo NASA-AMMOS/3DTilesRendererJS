@@ -1,4 +1,4 @@
-import { CesiumIonTilesRenderer, EnvironmentControls } from '../src/index.js';
+import { CesiumIonAuthPlugin, EnvironmentControls, TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -71,7 +71,8 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'ionApiKey', params.ionAccessToken );
 
-	tiles = new CesiumIonTilesRenderer( params.ionAssetId, params.ionAccessToken );
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.ionAccessToken, assetId: params.ionAssetId } ) );
 	tiles.onLoadTileSet = () => {
 
 		// because ion examples typically are positioned on the planet surface we can orient
