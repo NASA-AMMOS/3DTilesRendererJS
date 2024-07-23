@@ -21,3 +21,23 @@ export class DebugGoogleTilesRenderer extends DebugTilesRenderer {
 	setLatLonToYUp( lat: Number, lon: Number ): void;
 
 }
+
+export class GooglePhotorealisticTilesRenderer extends TilesRenderer {
+
+	ellipsoid: Ellipsoid;
+
+	constructor( url?: string );
+	getCreditsString(): String;
+	setLatLonToYUp( lat: Number, lon: Number ): void;
+
+}
+
+export class DebugGooglePhotorealisticTilesRenderer extends DebugTilesRenderer {
+
+	ellipsoid: Ellipsoid;
+
+	constructor( url?: string );
+	getCreditsString(): String;
+	setLatLonToYUp( lat: Number, lon: Number ): void;
+
+}

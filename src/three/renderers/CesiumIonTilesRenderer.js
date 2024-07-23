@@ -9,6 +9,7 @@ const CesiumIonTilesRendererMixin = base => class extends base {
 		super();
 
 		this.registerPlugin( new CesiumIonAuthPlugin( { apiToken: ionAccessToken, assetId: ionAssetId } ) );
+		console.warn( 'CesiumIonTilesRenderer: Class has been deprecated. Use "TilesRenderer" with "CesiumIonAuthPlugin" instead.' );
 
 	}
 

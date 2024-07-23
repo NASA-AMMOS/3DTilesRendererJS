@@ -1,4 +1,4 @@
-import { GeoUtils, WGS84_ELLIPSOID, GoogleTilesRenderer } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, GooglePhotorealisticTilesRenderer, GoogleCloudAuthPlugin } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -41,7 +41,8 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new GoogleTilesRenderer( params.apiKey );
+	tiles = new GooglePhotorealisticTilesRenderer();
+	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	// tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
 	// tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower

@@ -1,7 +1,7 @@
 export class CesiumIonAuthPlugin {
 
 	constructor( options : {
-		accessToken: String,
+		apiToken: String,
 		assetId?: String | null
 	} );
 

@@ -2,7 +2,8 @@ import {
 	WGS84_ELLIPSOID,
 	GeoUtils,
 	GlobeControls,
-	GoogleTilesRenderer,
+	GooglePhotorealisticTilesRenderer,
+	GoogleCloudAuthPlugin,
 } from '../src/index.js';
 import {
 	Scene,
@@ -51,7 +52,8 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
-	tiles = new GoogleTilesRenderer( params.apiKey );
+	tiles = new GooglePhotorealisticTilesRenderer();
+	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.errorTarget = 50;
