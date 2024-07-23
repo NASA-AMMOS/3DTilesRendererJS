@@ -33,7 +33,7 @@ export class CesiumIonAuthPlugin {
 			let url;
 			if ( this.assetId === null ) {
 
-				url = rootUrl;
+				url = new URL( rootUrl );
 
 			} else {
 
@@ -43,6 +43,7 @@ export class CesiumIonAuthPlugin {
 
 			url.searchParams.append( 'access_token', this.apiToken );
 
+			// load the ion asset information
 			this._loadPromise = fetch( url, { mode: 'cors' } )
 				.then( res => {
 
@@ -52,7 +53,7 @@ export class CesiumIonAuthPlugin {
 
 					} else {
 
-						return Promise.reject( `${ res.status } : ${ res.statusText }` );
+						return Promise.reject( new Error( `${ res.status } : ${ res.statusText }` ) );
 
 					}
 
@@ -70,9 +71,10 @@ export class CesiumIonAuthPlugin {
 
 					return tiles.loadRootTileSet( tiles.rootURL );
 
-				} ).catch( () => {
+				} ).catch( err => {
 
 					this._tokenState = FAILED;
+					return Promise.reject( err );
 
 				} );
 
