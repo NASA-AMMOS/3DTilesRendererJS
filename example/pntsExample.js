@@ -58,7 +58,7 @@ function init() {
 	scene.add( ambLight );
 
 	new PNTSLoader()
-		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithRequestVolume/points.pnts' )
+		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithRequestVolume/points.pnts' )
 		.then( res => {
 
 			console.log( res );

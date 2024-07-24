@@ -40,7 +40,7 @@ export class JPLLandformSiteSceneLoader {
 
 	}
 
-	load( url ) {
+	loadAsync( url ) {
 
 		return fetch( url, this.fetchOptions )
 			.then( res => res.json() )

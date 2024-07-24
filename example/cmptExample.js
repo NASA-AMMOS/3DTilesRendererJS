@@ -58,7 +58,7 @@ function init() {
 	scene.add( ambLight );
 
 	new CMPTLoader()
-		.load( '...' )
+		.loadAsync( '...' )
 		.then( res => {
 
 			console.log( res );
