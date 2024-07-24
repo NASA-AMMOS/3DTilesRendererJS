@@ -9,6 +9,13 @@ export class LoaderBase {
 
 	load( url ) {
 
+		console.warn( 'Loader: "load" function has been deprecated in favor of "loadAsync".' );
+		return this.loadAsync( url );
+
+	}
+
+	loadAsync( url ) {
+
 		return fetch( url, this.fetchOptions )
 			.then( res => {
 

@@ -61,7 +61,7 @@ function init() {
 	scene.add( ambLight );
 
 	new I3DMLoader()
-		.load( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithTreeBillboards/tree.i3dm' )
+		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithTreeBillboards/tree.i3dm' )
 		.then( res => {
 
 			let instance = null;
