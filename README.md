@@ -814,10 +814,10 @@ The maximum percentage of [minSize](#minSize) to unload during a given frame.
 ### .unloadPriorityCallback
 
 ```js
-unloadPriorityCallback = null : ( item ) => Number
+unloadPriorityCallback = null : ( itemA, itemB ) => Number
 ```
 
-Function to derive the unload priority of the given item. Higher priority values get unloaded first.
+Function to derive the unload priority of the given item. Higher priority values (ie return 1 to have itemA removed first) get unloaded first.
 
 ## BatchTable
 

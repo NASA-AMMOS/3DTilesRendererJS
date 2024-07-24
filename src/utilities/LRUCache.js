@@ -1,5 +1,35 @@
 class LRUCache {
 
+	get unloadPriorityCallback() {
+
+		return this._unloadPriorityCallback;
+
+	}
+
+	set unloadPriorityCallback( cb ) {
+
+		if ( cb.length === 1 ) {
+
+			console.warn( 'LRUCache: "unloadPriorityCallback" function has been changed to take two arguments.' );
+			this._unloadPriorityCallback = ( a, b ) => {
+
+				const valA = cb( a );
+				const valB = cb( b );
+
+				if ( valA < valB ) return 1;
+				if ( valA > valB ) return - 1;
+				return 0;
+
+			};
+
+		} else {
+
+			this._unloadPriorityCallback = cb;
+
+		}
+
+	}
+
 	constructor() {
 
 		// options
@@ -15,7 +45,7 @@ class LRUCache {
 		this.usedSet = new Set();
 		this.callbacks = new Map();
 
-		this.unloadPriorityCallback = null;
+		this._unloadPriorityCallback = null;
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -130,7 +160,10 @@ class LRUCache {
 
 					// Use the sort function otherwise
 					// higher priority should be further to the left
-					return unloadPriorityCallback( b ) - unloadPriorityCallback( a );
+
+					// TODO: ensure this sort order aligns with the function that the PriorityQueue will work with
+					// so the same functions will work - or at least think about how these functions should relate.
+					return unloadPriorityCallback( a, b );
 
 				} else {
 

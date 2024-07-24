@@ -17,6 +17,7 @@ const priorityCallback = ( a, b ) => {
 
 	if ( a.__depth !== b.__depth ) {
 
+		// TODO: is it best to sort this by "depth from rendered parent"?
 		// load shallower tiles first
 		return a.__depth > b.__depth ? - 1 : 1;
 
@@ -48,11 +49,18 @@ const priorityCallback = ( a, b ) => {
 };
 
 /**
+ * TODO: correct this comment
  * Function for sorting the evicted LRU items. We should evict the shallowest depth first.
  * @param {Tile} tile
  * @returns number
  */
-const lruPriorityCallback = ( tile ) => 1 / ( tile.__depthFromRenderedParent + 1 );
+const lruPriorityCallback = ( a, b ) => {
+
+	const aVal = 1 / ( a.__depthFromRenderedParent + 1 );
+	const bVal = 1 / ( b.__depthFromRenderedParent + 1 );
+	return bVal - aVal;
+
+};
 
 export class TilesRendererBase {
 
