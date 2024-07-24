@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
 - Examples FadeTilesRenderer has been changed to a plugin.
 - Deprecated `GoogleTilesRenderer` and `CesiumIonTilesRenderer` in favor of using the new authentication plugins.
+- Loaders: ".load" function has been renamed to ".loadAsync".
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
