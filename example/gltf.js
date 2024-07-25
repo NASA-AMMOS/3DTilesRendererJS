@@ -71,7 +71,7 @@ function init() {
 
 		const loader = new GLTFExtensionLoader();
 		loader.workingPath = loader.workingPathForURL( url );
-		loader.load( url )
+		loader.loadAsync( url )
 			.then( res => {
 
 				res.scene.position.set( insertPosition += 5, 0, 0 );
@@ -102,7 +102,7 @@ function init() {
 
 		const loader = new GLTFExtensionLoader( manager );
 		loader.workingPath = loader.workingPathForURL( url );
-		loader.load( url )
+		loader.loadAsync( url )
 			.then( res => {
 
 				res.scene.position.set( insertPosition += 5, 0, 0 );

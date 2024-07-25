@@ -80,11 +80,6 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether tiles are actively loading so events can be fired
 		this._loadingTiles = false;
 
-		this.onLoadTileSet = null;
-		this.onLoadModel = null;
-		this.onDisposeModel = null;
-		this.onTileVisibilityChange = null;
-
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
 
@@ -360,12 +355,6 @@ export class TilesRenderer extends TilesRendererBase {
 					tileSet: json,
 					url,
 				} );
-
-				if ( this.onLoadTileSet ) {
-
-					this.onLoadTileSet( json, url );
-
-				}
 
 			} );
 
@@ -784,12 +773,6 @@ export class TilesRenderer extends TilesRendererBase {
 			tile,
 		} );
 
-		if ( this.onLoadModel ) {
-
-			this.onLoadModel( scene, tile );
-
-		}
-
 		// dispatch an "end" event if all tiles have finished loading
 		if ( this._loadingTiles === true && stats.parsing + stats.downloading === 1 ) {
 
@@ -866,12 +849,6 @@ export class TilesRenderer extends TilesRendererBase {
 				tile,
 			} );
 
-			if ( this.onDisposeModel ) {
-
-				this.onDisposeModel( cached.scene, tile );
-
-			}
-
 			cached.scene = null;
 			cached.materials = null;
 			cached.textures = null;
@@ -910,12 +887,6 @@ export class TilesRenderer extends TilesRendererBase {
 			tile,
 			visible,
 		} );
-
-		if ( this.onTileVisibilityChange ) {
-
-			this.onTileVisibilityChange( scene, tile, visible );
-
-		}
 
 	}
 
@@ -1013,3 +984,41 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 }
+
+
+[
+	[ 'onLoadTileSet', 'load-tile-set' ],
+	[ 'onLoadModel', 'load-model' ],
+	[ 'onDisposeModel', 'dispose-model' ],
+	[ 'onTileVisibilityChange', 'tile-visibility-change' ],
+].forEach( ( [ methodName, eventName ] ) => {
+
+	const cachedName = Symbol( methodName );
+	Object.defineProperty(
+		TilesRenderer.prototype,
+		methodName,
+		{
+			get() {
+
+				return this[ cachedName ] || null;
+
+			},
+
+			set( cb ) {
+
+				console.warn( `TilesRenderer: "${ methodName }" has been deprecated in favor of the "${ eventName }" event.` );
+
+				if ( this[ cachedName ] ) {
+
+					this.removeEventListener( eventName, this[ cachedName ] );
+
+				}
+
+				this[ cachedName ] = cb;
+				this.addEventListener( eventName, cb );
+
+			}
+		}
+	);
+
+} );

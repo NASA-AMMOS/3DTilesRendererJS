@@ -104,7 +104,7 @@ function init() {
 
 	URLS.forEach( async url => {
 
-		const scene = await new JPLLandformSiteSceneLoader().load( url );
+		const scene = await new JPLLandformSiteSceneLoader().loadAsync( url );
 		const tokens = url.split( /[\\/]/g );
 		tokens.pop();
 
