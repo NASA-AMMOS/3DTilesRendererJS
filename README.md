@@ -697,7 +697,7 @@ The maximum number of jobs to be processing at once.
 priorityCallback = null : ( itemA, itemB ) => Number
 ```
 
-Function to derive the job priority of the given item. Higher priority values get processed first.
+Function to derive the job priority of the given item. Higher priority values get processed first (ie return 1 to have itemA processed first).
 
 ### .schedulingCallback
 
@@ -785,7 +785,7 @@ The maximum percentage of [minSize](#minSize) to unload during a given frame.
 unloadPriorityCallback = null : ( itemA, itemB ) => Number
 ```
 
-Function to derive the unload priority of the given item. Higher priority values (ie return 1 to have itemA removed first) get unloaded first.
+Function to derive the unload priority of the given item. Higher priority values get unloaded first (ie return 1 to have itemA removed first).
 
 ## BatchTable
 
