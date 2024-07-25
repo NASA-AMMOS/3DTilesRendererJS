@@ -17,6 +17,7 @@ const priorityCallback = ( a, b ) => {
 
 	if ( a.__depth !== b.__depth ) {
 
+		// TODO: is it best to sort this by "depth from rendered parent"?
 		// load shallower tiles first
 		return a.__depth > b.__depth ? - 1 : 1;
 
@@ -52,7 +53,15 @@ const priorityCallback = ( a, b ) => {
  * @param {Tile} tile
  * @returns number
  */
-const lruPriorityCallback = ( tile ) => 1 / ( tile.__depthFromRenderedParent + 1 );
+const lruPriorityCallback = ( a, b ) => {
+
+	const aVal = 1 / ( a.__depthFromRenderedParent + 1 );
+	const bVal = 1 / ( b.__depthFromRenderedParent + 1 );
+	if ( aVal < bVal ) return - 1;
+	if ( aVal > bVal ) return 1;
+	return 0;
+
+};
 
 export class TilesRendererBase {
 
