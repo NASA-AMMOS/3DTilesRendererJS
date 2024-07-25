@@ -1,14 +1,4 @@
-import {
-	DebugTilesRenderer as TilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-} from '../src/index.js';
+import { TilesRenderer } from '../src/index.js';
 import {
 	Scene,
 	DirectionalLight,
@@ -47,8 +37,6 @@ const upVector = new Vector3( 0, 1, 0 );
 
 const params = {
 
-	'displayBoxBounds': false,
-	'colorMode': 0,
 	'displayGrid': true,
 
 };
@@ -174,19 +162,6 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 	gui.add( params, 'displayGrid' );
-	gui.add( params, 'displayBoxBounds' );
-	gui.add( params, 'colorMode', {
-
-		NONE,
-		SCREEN_ERROR,
-		GEOMETRIC_ERROR,
-		DISTANCE,
-		DEPTH,
-		RELATIVE_DEPTH,
-		IS_LEAF,
-		RANDOM_COLOR,
-
-	} );
 	gui.open();
 
 }
@@ -291,10 +266,6 @@ function handleTasks() {
 function animate() {
 
 	grid.visible = params.displayGrid;
-
-	// update options
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.colorMode = parseFloat( params.colorMode );
 
 	// update tiles center
 	if ( tiles.getBoundingBox( box ) ) {
