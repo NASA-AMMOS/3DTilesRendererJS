@@ -1,7 +1,7 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere } from 'three';
-import { getIndexedRandomColor } from './utilities.js';
-import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { getIndexedRandomColor } from '../utilities.js';
+import { SphereHelper } from '../objects/SphereHelper.js';
+import { EllipsoidRegionLineHelper } from '../objects/EllipsoidRegionHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -36,9 +36,9 @@ export class DebugTilesPlugin {
 		this.displayRegionBounds = false;
 		this.colorMode = NONE;
 		this.customColorCallback = null;
-		this.boxGroup = boxGroup;
-		this.sphereGroup = sphereGroup;
-		this.regionGroup = regionGroup;
+		this.boxGroup = null;
+		this.sphereGroup = null;
+		this.regionGroup = null;
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
@@ -52,7 +52,6 @@ export class DebugTilesPlugin {
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
 
-
 	}
 
 	init( tiles ) {
@@ -60,17 +59,17 @@ export class DebugTilesPlugin {
 		this.tiles = tiles;
 
 		const tilesGroup = tiles.group;
-		const boxGroup = new Group();
-		boxGroup.name = 'DebugTilesRenderer.boxGroup';
-		tilesGroup.add( boxGroup );
+		this.boxGroup = new Group();
+		this.boxGroup.name = 'DebugTilesRenderer.boxGroup';
+		tilesGroup.add( this.boxGroup );
 
-		const sphereGroup = new Group();
-		sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
-		tilesGroup.add( sphereGroup );
+		this.sphereGroup = new Group();
+		this.sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
+		tilesGroup.add( this.sphereGroup );
 
-		const regionGroup = new Group();
-		regionGroup.name = 'DebugTilesRenderer.regionGroup';
-		tilesGroup.add( regionGroup );
+		this.regionGroup = new Group();
+		this.regionGroup.name = 'DebugTilesRenderer.regionGroup';
+		tilesGroup.add( this.regionGroup );
 
 		this._onLoadTileSetCB = () => {
 
@@ -96,10 +95,17 @@ export class DebugTilesPlugin {
 
 		};
 
+		this._onTileVisibilityChangeCB = ( { scene, tile, visible } ) => {
+
+			this._onTileVisibilityChange( tile, visible );
+
+		};
+
 		tiles.addEventListener( 'load-tile-set', this._onLoadTileSetCB );
 		tiles.addEventListener( 'load-model', this._onLoadModelCB );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.addEventListener( 'update-after', this._onUpdateAfterCB );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
 
 	}
 
@@ -483,7 +489,6 @@ export class DebugTilesPlugin {
 		tile[ LOAD_TIME ] = performance.now();
 
 		const cached = tile.cached;
-		const scene = cached.scene;
 		const { sphere, obb, region } = cached.boundingVolume;
 		if ( obb ) {
 
@@ -501,7 +506,7 @@ export class DebugTilesPlugin {
 
 			cached.boxHelperGroup = boxHelperGroup;
 
-			if ( this.visibleTiles.has( tile ) && this.displayBoxBounds ) {
+			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
 				this.boxGroup.add( boxHelperGroup );
 				boxHelperGroup.updateMatrixWorld( true );
@@ -517,7 +522,7 @@ export class DebugTilesPlugin {
 			sphereHelper.raycast = emptyRaycast;
 			cached.sphereHelper = sphereHelper;
 
-			if ( this.visibleTiles.has( tile ) && this.displaySphereBounds ) {
+			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
 
 				this.sphereGroup.add( sphereHelper );
 				sphereHelper.updateMatrixWorld( true );
@@ -542,7 +547,7 @@ export class DebugTilesPlugin {
 
 			cached.regionHelper = regionHelper;
 
-			if ( this.visibleTiles.has( tile ) && this.displayRegionBounds ) {
+			if ( tiles.visibleTiles.has( tile ) && this.displayRegionBounds ) {
 
 				this.regionGroup.add( regionHelper );
 				regionHelper.updateMatrixWorld( true );
