@@ -34,7 +34,7 @@ const params = {
 init();
 animate();
 
-function onLoadModel( scene ) {
+function onLoadModel( { scene } ) {
 
 	scene.traverse( c => {
 
@@ -118,8 +118,8 @@ function init() {
 	// tiles
 	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
 	tiles = new TilesRenderer( url );
-	tiles.onLoadModel = onLoadModel;
-	tiles.onDisposeModel = onDisposeModel;
+	tiles.addEventListener( 'load-model', onLoadModel );
+	tiles.addEventListener( 'dispose-model', onDisposeModel );
 	offsetParent.add( tiles.group );
 
 
