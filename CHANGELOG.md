@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Loaders: ".load" function has been renamed to ".loadAsync".
 - Deprecated `onLoadTileset`, `onLoadModel`, `onDisposeModel`, and `onTileVisibilityChange` in favor of their event equivalents.
 - LRUCache: "unloadPriorityCallback" has been changted to take two tile arguments to sort instead of one.
-- DebugTilesRenderer has been derecated in favor of the "DebugTilesPlugin".
+- DebugTilesRenderer has been deprecated in favor of the "DebugTilesPlugin".
 - LRU Cache unload priority function now unloads deepest tiles first, then least recently used, then non-external tile sets.
 
 ## [0.3.35] - 2024.06.25
