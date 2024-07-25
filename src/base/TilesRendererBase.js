@@ -57,7 +57,9 @@ const lruPriorityCallback = ( a, b ) => {
 
 	const aVal = 1 / ( a.__depthFromRenderedParent + 1 );
 	const bVal = 1 / ( b.__depthFromRenderedParent + 1 );
-	return bVal - aVal;
+	if ( aVal < bVal ) return - 1;
+	if ( aVal > bVal ) return 1;
+	return 0;
 
 };
 
