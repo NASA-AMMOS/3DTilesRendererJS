@@ -94,7 +94,7 @@ function reinstantiateTiles() {
 
 		tiles.group.position.y = - distanceToEllipsoidCenter;
 
-	};
+	} );
 
 	setupTiles();
 
