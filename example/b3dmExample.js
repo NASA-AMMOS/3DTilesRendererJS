@@ -119,7 +119,7 @@ function init() {
 	scene.add( offsetGroup );
 
 	new B3DMLoader()
-		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithRequestVolume/city/lr.b3dm' )
+		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/Cesium3DTiles/Hierarchy/BatchTableHierarchy/tile.b3dm' )
 		.then( res => {
 
 			console.log( res );
@@ -189,10 +189,22 @@ function onMouseMove( e ) {
 			const batchData = batchTable.getDataFromId( hoveredBatchid );
 
 			infoEl.innerText =
-				`_batchid   : ${ hoveredBatchid }\n` +
-				`Latitude   : ${ batchData[ 'Latitude' ].toFixed( 3 ) }\n` +
-				`Longitude  : ${ batchData[ 'Longitude' ].toFixed( 3 ) }\n` +
-				`Height     : ${ batchData[ 'Height' ].toFixed( 3 ) }\n`;
+				`_batchid : ${ hoveredBatchid }\n` +
+				`Area     : ${ batchData[ 'height' ].toFixed( 3 ) }\n` +
+				`Height   : ${ batchData[ 'height' ].toFixed( 3 ) }\n`;
+
+			const hierarchyData = batchData[ '3DTILES_batch_table_hierarchy' ];
+			for ( const className in hierarchyData ) {
+
+
+				for ( const instance in hierarchyData[ className ] ) {
+
+					infoEl.innerText +=
+						`${ instance } : ${ hierarchyData[ className ][ instance ] }\n`;
+
+				}
+
+			}
 
 		}
 
