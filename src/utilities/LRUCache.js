@@ -16,8 +16,8 @@ class LRUCache {
 				const valA = cb( a );
 				const valB = cb( b );
 
-				if ( valA < valB ) return 1;
-				if ( valA > valB ) return - 1;
+				if ( valA < valB ) return - 1;
+				if ( valA > valB ) return 1;
 				return 0;
 
 			};
@@ -160,10 +160,7 @@ class LRUCache {
 
 					// Use the sort function otherwise
 					// higher priority should be further to the left
-
-					// TODO: ensure this sort order aligns with the function that the PriorityQueue will work with
-					// so the same functions will work - or at least think about how these functions should relate.
-					return unloadPriorityCallback( a, b );
+					return - unloadPriorityCallback( a, b );
 
 				} else {
 
