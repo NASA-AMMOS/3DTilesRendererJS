@@ -48,17 +48,26 @@ const priorityCallback = ( a, b ) => {
 
 };
 
-/**
- * Function for sorting the evicted LRU items. We should evict the shallowest depth first.
- * @param {Tile} tile
- * @returns number
- */
+// lru cache unload callback that takes two tiles to compare
 const lruPriorityCallback = ( a, b ) => {
 
-	const aVal = 1 / ( a.__depthFromRenderedParent + 1 );
-	const bVal = 1 / ( b.__depthFromRenderedParent + 1 );
-	if ( aVal < bVal ) return - 1;
-	if ( aVal > bVal ) return 1;
+	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+
+		// dispose of deeper tiles first
+		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
+
+	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
+
+		// dispose of least recent tiles first
+		return a.__lastFrameVisited > b.__lastFrameVisited ? - 1 : 1;
+
+	} else if ( a.__externalTileSet !== b.__externalTileSet ) {
+
+		// dispose of external tile sets last
+		return a.__externalTileSet ? - 1 : 1;
+
+	}
+
 	return 0;
 
 };
