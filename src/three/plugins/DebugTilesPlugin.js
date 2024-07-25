@@ -107,6 +107,23 @@ export class DebugTilesPlugin {
 		tiles.addEventListener( 'update-after', this._onUpdateAfterCB );
 		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
 
+		// initialize an already-loaded tiles
+		tiles.traverse( tile => {
+
+			if ( tile.cached && tile.cached.scene ) {
+
+				this._onLoadTileSetCB( tile.cached.scene, tile );
+
+			}
+
+		} );
+
+		tiles.visibleTiles.forEach( tile => {
+
+			this._onTileVisibilityChange( tile, true );
+
+		} );
+
 	}
 
 	getTileInformationFromActiveObject( object ) {
@@ -592,6 +609,7 @@ export class DebugTilesPlugin {
 
 	dispose() {
 
+		const tiles = this.tiles;
 		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
 		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
