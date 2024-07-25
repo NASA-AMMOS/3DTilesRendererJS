@@ -1,7 +1,8 @@
 // I3DM File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Instanced3DModel/README.md
 
-import { FeatureTable, BatchTable } from '../../utilities/FeatureTable.js';
+import { BatchTable } from '../../utilities/BatchTable.js';
+import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { arrayToString } from '../../utilities/arrayToString.js';
 import { LoaderBase } from './LoaderBase.js';
 import { readMagicBytes } from '../../utilities/readMagicBytes.js';

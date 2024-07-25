@@ -1,4 +1,5 @@
-import { FeatureTable, BatchTable } from '../../utilities/FeatureTable';
+import { BatchTable } from '../../utilities/BatchTable';
+import { FeatureTable } from '../../utilities/FeatureTable';
 
 export interface PNTSBaseResult {
 
