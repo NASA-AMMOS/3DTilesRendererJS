@@ -565,6 +565,34 @@ dispose() : void
 
 Disposes of all the tiles in the renderer. Calls dispose on all materials, textures, and geometries that were loaded by the renderer and subsequently calls [onDisposeModel](#onDisposeModel) for any loaded tile model.
 
+## PriorityQueue
+
+Piority-sorted queue to prioritize file downloads and parsing.
+
+### .maxJobs
+
+```js
+maxJobs = 6 : number
+```
+
+The maximum number of jobs to be processing at once.
+
+### .priorityCallback
+
+```js
+priorityCallback = null : ( itemA, itemB ) => Number
+```
+
+Function to derive the job priority of the given item. Higher priority values get processed first (ie return 1 to have itemA processed first).
+
+### .schedulingCallback
+
+```js
+schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
+```
+
+A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
+
 ## GoogleTilesRenderer
 
 _extends [TilesRenderer](#TilesRenderer)_
