@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TileCompressionPlugin to examples for lowering memory usage.
 - `GoogleCloudAuthPlugin` and `CesiumIonAuthPlugin` to enable fetching data from the associated APIs.
 - Added `GooglePhotoRealisticTilesRenderer` class.
+- Added support for the `3DTILES_batch_table_hierarchy` extension.
 
 ### Fixed
 - CameraTransitionManager: Variety of cases relating to negative orthographic camera "near" values.
