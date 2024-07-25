@@ -12,7 +12,8 @@ const priorityCallback = ( a, b ) => {
 
 	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
-		// load shallower tiles first
+		// load shallower tiles first using "depth from rendered parent" to help
+		// even out depth disparities caused by non-content parent tiles
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
 
 	} else if ( a.__inFrustum !== b.__inFrustum ) {
