@@ -1,5 +1,5 @@
 // three.js
-export * from './three/DebugTilesRenderer.js';
+export { DebugTilesRenderer } from './three/DebugTilesRenderer.js';
 export { TilesRenderer } from './three/TilesRenderer.js';
 export { B3DMLoader } from './three/loaders/B3DMLoader.js';
 export { PNTSLoader } from './three/loaders/PNTSLoader.js';
@@ -25,6 +25,7 @@ export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
 // three.js plugins
 export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin.js';
 export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin.js';
+export * from './three/plugins/DebugTilesPlugin.js';
 
 // common
 export { TilesRendererBase } from './base/TilesRendererBase.js';
