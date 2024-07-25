@@ -1,5 +1,4 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere } from 'three';
-import { getIndexedRandomColor } from '../utilities.js';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
 import { SphereHelper } from '../objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from '../objects/EllipsoidRegionHelper.js';
 
@@ -8,8 +7,28 @@ const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
 const LOAD_TIME = Symbol( 'LOAD_TIME' );
 
-function emptyRaycast() {}
+const _sphere = /* @__PURE__ */ new Sphere();
+const _color = /* @__PURE__ */ new Color();
+const emptyRaycast = () => {};
+const colors = {};
 
+// Return a consistant random color for an index
+export function getIndexedRandomColor( index ) {
+
+	if ( ! colors[ index ] ) {
+
+		const h = Math.random();
+		const s = 0.5 + Math.random() * 0.5;
+		const l = 0.375 + Math.random() * 0.25;
+
+		colors[ index ] = new Color().setHSL( h, s, l );
+
+	}
+	return colors[ index ];
+
+}
+
+// color modes
 export const NONE = 0;
 export const SCREEN_ERROR = 1;
 export const GEOMETRIC_ERROR = 2;
@@ -22,7 +41,6 @@ export const RANDOM_NODE_COLOR = 8;
 export const CUSTOM_COLOR = 9;
 export const LOAD_ORDER = 10;
 
-const _sphere = new Sphere();
 export class DebugTilesPlugin {
 
 	constructor() {
@@ -54,10 +72,12 @@ export class DebugTilesPlugin {
 
 	}
 
+	// initialize the groups for displaying helpers, register events, and initialize existing tiles
 	init( tiles ) {
 
 		this.tiles = tiles;
 
+		// initialize groups
 		const tilesGroup = tiles.group;
 		this.boxGroup = new Group();
 		this.boxGroup.name = 'DebugTilesRenderer.boxGroup';
@@ -74,6 +94,7 @@ export class DebugTilesPlugin {
 		tilesGroup.add( this.regionGroup );
 		this.regionGroup.updateMatrixWorld();
 
+		// register events
 		this._onLoadTileSetCB = () => {
 
 			this._initExtremes();
@@ -113,7 +134,7 @@ export class DebugTilesPlugin {
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
 
-			if ( tile.cached && tile.cached.scene ) {
+			if ( tile.cached.scene ) {
 
 				this._onLoadModel( tile.cached.scene, tile );
 
@@ -266,6 +287,7 @@ export class DebugTilesPlugin {
 
 		}
 
+		// update plugins
 		visibleTiles.forEach( tile => {
 
 			const scene = tile.cached.scene;
@@ -591,7 +613,7 @@ export class DebugTilesPlugin {
 
 	}
 
-	_onDisposeTile( tile ) {
+	_onDisposeModel( tile ) {
 
 		const cached = tile.cached;
 		if ( cached.boxHelperGroup ) {
@@ -608,6 +630,13 @@ export class DebugTilesPlugin {
 
 		}
 
+		if ( cached.regionHelper ) {
+
+			cached.regionHelper.geometry.dispose();
+			delete cached.regionHelper;
+
+		}
+
 	}
 
 	dispose() {
@@ -617,6 +646,21 @@ export class DebugTilesPlugin {
 		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
+
+		// reset all materials
+		this.colorMode = NONE;
+		this._onUpdateAfter();
+
+		// dispose of all helper objects
+		tiles.traverse( tile => {
+
+			this._onDisposeModel( tile );
+
+		} );
+
+		this.boxGroup.dispose();
+		this.sphereGroup.dispose();
+		this.regionGroup.dispose();
 
 	}
 
