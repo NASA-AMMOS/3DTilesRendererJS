@@ -30,27 +30,27 @@ export class DebugTilesPlugin {
 		this.name = 'DEBUG_TILES_PLUGIN';
 		this.tiles = null;
 
+		this.extremeDebugDepth = - 1;
+		this.extremeDebugError = - 1;
+		this.boxGroup = null;
+		this.sphereGroup = null;
+		this.regionGroup = null;
+
 		// options
 		this.displayBoxBounds = false;
 		this.displaySphereBounds = false;
 		this.displayRegionBounds = false;
 		this.colorMode = NONE;
-		this.customColorCallback = null;
-		this.boxGroup = null;
-		this.sphereGroup = null;
-		this.regionGroup = null;
 		this.maxDebugDepth = - 1;
 		this.maxDebugDistance = - 1;
 		this.maxDebugError = - 1;
+		this.customColorCallback = null;
 
 		this.getDebugColor = ( value, target ) => {
 
 			target.setRGB( value, value, value );
 
 		};
-
-		this.extremeDebugDepth = - 1;
-		this.extremeDebugError = - 1;
 
 	}
 
