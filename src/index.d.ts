@@ -18,6 +18,7 @@ export * from './three/renderers/CesiumIonTilesRenderer';
 // three.js plugins
 export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin';
 export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin';
+export * from './three/plugins/DebugTilesPlugin';
 
 // common
 export { TilesRendererBase } from './base/TilesRendererBase';
