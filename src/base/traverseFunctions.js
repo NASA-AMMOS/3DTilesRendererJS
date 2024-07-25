@@ -55,7 +55,7 @@ function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
 
 }
 
-function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
+function recursivelyLoadTiles( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
@@ -74,8 +74,7 @@ function recursivelyLoadTiles( tile, depthFromRenderedParent, renderer ) {
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			child.__depthFromRenderedParent = depthFromRenderedParent;
-			recursivelyLoadTiles( child, depthFromRenderedParent, renderer );
+			recursivelyLoadTiles( child, renderer );
 
 		}
 
@@ -278,15 +277,9 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
-	const parent = tile.parent;
-	const parentDepthToParent = parent ? parent.__depthFromRenderedParent : - 1;
-	tile.__depthFromRenderedParent = parentDepthToParent;
-
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	const lruCache = renderer.lruCache;
 	if ( tile.__isLeaf ) {
-
-		tile.__depthFromRenderedParent ++;
 
 		if ( tile.__loadingState === LOADED ) {
 
@@ -318,14 +311,6 @@ export function skipTraversal( tile, renderer ) {
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
 	const allChildrenHaveContent = tile.__allChildrenLoaded;
-
-	// Increment the relative depth of the node to the nearest rendered parent if it has content
-	// and is being rendered.
-	if ( includeTile && hasModel ) {
-
-		tile.__depthFromRenderedParent ++;
-
-	}
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
@@ -367,8 +352,7 @@ export function skipTraversal( tile, renderer ) {
 			const c = children[ i ];
 			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
-				c.__depthFromRenderedParent = tile.__depthFromRenderedParent + 1;
-				recursivelyLoadTiles( c, c.__depthFromRenderedParent, renderer );
+				recursivelyLoadTiles( c, renderer );
 
 			}
 
