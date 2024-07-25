@@ -49,7 +49,6 @@ const priorityCallback = ( a, b ) => {
 };
 
 /**
- * TODO: correct this comment
  * Function for sorting the evicted LRU items. We should evict the shallowest depth first.
  * @param {Tile} tile
  * @returns number
