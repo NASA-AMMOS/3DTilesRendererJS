@@ -164,7 +164,7 @@ function updateMaterial( scene ) {
 
 }
 
-function onLoadModel( scene ) {
+function onLoadModel( { scene } ) {
 
 	scene.traverse( c => {
 
@@ -180,7 +180,7 @@ function onLoadModel( scene ) {
 
 }
 
-function onDisposeModel( scene ) {
+function onDisposeModel( { scene } ) {
 
 	scene.traverse( c => {
 
@@ -206,8 +206,8 @@ function initTiles() {
 	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
 	tiles = new TilesRenderer( url );
 	tiles.errorTarget = 2;
-	tiles.onLoadModel = onLoadModel;
-	tiles.onDisposeModel = onDisposeModel;
+	tiles.addEventListener( 'load-model', onLoadModel );
+	tiles.addEventListener( 'dispose-model', onDisposeModel );
 	offsetParent.add( tiles.group );
 
 }

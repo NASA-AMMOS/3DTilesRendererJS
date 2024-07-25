@@ -73,7 +73,7 @@ function reinstantiateTiles() {
 
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.ionAccessToken, assetId: params.ionAssetId } ) );
-	tiles.onLoadTileSet = () => {
+	tiles.addEventListener( 'load-tile-set', () => {
 
 		// because ion examples typically are positioned on the planet surface we can orient
 		// it such that up is Y+ and center the model

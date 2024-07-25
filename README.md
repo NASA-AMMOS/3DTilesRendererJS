@@ -239,8 +239,8 @@ The tile set and model load callbacks can be used to detect when the data has ch
 ```js
 let needsRerender = true;
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.onLoadTileSet = () => needsRerender = true;
-tilesRenderer.onLoadModel = () => needsRerender = true;
+tilesRenderer.addEventListener( 'load-tile-set', () => needsRerender = true );
+tilesRenderer.addEventListener( 'load-model', () => needsRerender = true );
 
 function renderLoop() {
 
@@ -540,38 +540,6 @@ forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : v
 ```
 
 Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
-
-### .onLoadTileSet
-
-```js
-onLoadTileSet = null : ( tileSet : Tileset ) => void
-```
-
-Callback that is called whenever a tile set is loaded.
-
-### .onLoadModel
-
-```js
-onLoadModel = null : ( scene : Object3D, tile : Tile ) => void
-```
-
-Callback that is called every time a model is loaded. This can be used in conjunction with [.forEachLoadedModel](#forEachLoadedModel) to set the material of all load and still yet to load meshes in the tile set.
-
-### .onDisposeModel
-
-```js
-onDisposeModel = null : ( scene : Object3D, tile : Tile ) => void
-```
-
-Callback that is called every time a model is disposed of. This should be used in conjunction with [.onLoadModel](#onLoadModel) to dispose of any custom materials created for a tile. Note that the textures, materials, and geometries that a tile loaded in with are all automatically disposed of even if they have been removed from the tile meshes.
-
-### .onTileVisibilityChange
-
-```js
-onTileVisibilityChange = null : ( scene : Object3D, tile : Tile, visible : boolean ) => void
-```
-
-Callback that is called when a tile's visibility changed. The parameter `visible` is `true` when the tile is visible
 
 ### .registerPlugin
 
