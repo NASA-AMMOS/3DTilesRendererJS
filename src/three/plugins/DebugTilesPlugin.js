@@ -62,14 +62,17 @@ export class DebugTilesPlugin {
 		this.boxGroup = new Group();
 		this.boxGroup.name = 'DebugTilesRenderer.boxGroup';
 		tilesGroup.add( this.boxGroup );
+		this.boxGroup.updateMatrixWorld();
 
 		this.sphereGroup = new Group();
 		this.sphereGroup.name = 'DebugTilesRenderer.sphereGroup';
 		tilesGroup.add( this.sphereGroup );
+		this.sphereGroup.updateMatrixWorld();
 
 		this.regionGroup = new Group();
 		this.regionGroup.name = 'DebugTilesRenderer.regionGroup';
 		tilesGroup.add( this.regionGroup );
+		this.regionGroup.updateMatrixWorld();
 
 		this._onLoadTileSetCB = () => {
 
@@ -112,7 +115,7 @@ export class DebugTilesPlugin {
 
 			if ( tile.cached && tile.cached.scene ) {
 
-				this._onLoadTileSetCB( tile.cached.scene, tile );
+				this._onLoadModel( tile.cached.scene, tile );
 
 			}
 
