@@ -6,20 +6,15 @@ import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
-/**
- * Function for provided to sort all tiles for prioritizing loading/unloading.
- *
- * @param {Tile} a
- * @param {Tile} b
- * @returns number
- */
+// priority queue sort function that takes two tiles to compare. Returning 1 means
+// "tile a" is loaded first.
 const priorityCallback = ( a, b ) => {
 
-	if ( a.__depth !== b.__depth ) {
+	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
-		// TODO: is it best to sort this by "depth from rendered parent"?
-		// load shallower tiles first
-		return a.__depth > b.__depth ? - 1 : 1;
+		// load shallower tiles first using "depth from rendered parent" to help
+		// even out depth disparities caused by non-content parent tiles
+		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
 
 	} else if ( a.__inFrustum !== b.__inFrustum ) {
 
@@ -48,7 +43,8 @@ const priorityCallback = ( a, b ) => {
 
 };
 
-// lru cache unload callback that takes two tiles to compare
+// lru cache unload callback that takes two tiles to compare. Returning 1 means "tile a"
+// is unloaded first.
 const lruPriorityCallback = ( a, b ) => {
 
 	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
@@ -370,8 +366,9 @@ export class TilesRendererBase {
 
 		} else {
 
+			// increment the "depth from parent" when we encounter a new tile with content
 			tile.__depth = parentTile.__depth + 1;
-			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( parentTile.__contentEmpty ? 0 : 1 );
+			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__contentEmpty ? 0 : 1 );
 
 			tile.refine = tile.refine || parentTile.refine;
 
