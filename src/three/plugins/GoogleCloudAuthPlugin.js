@@ -5,6 +5,7 @@ export class GoogleCloudAuthPlugin {
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.sessionToken = null;
+		this.tiles = null;
 
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
@@ -13,6 +14,7 @@ export class GoogleCloudAuthPlugin {
 
 	init( tiles ) {
 
+		this.tiles = tiles;
 		this._onLoadCallback = () => {
 
 			// find the session id in the first sub tile set
@@ -57,7 +59,7 @@ export class GoogleCloudAuthPlugin {
 
 	dispose() {
 
-		this.removeEventListener( 'load-tile-set', this._onLoadCallback );
+		this.tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
 
 	}
 
