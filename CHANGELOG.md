@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Deprecated `GoogleTilesRenderer` and `CesiumIonTilesRenderer` in favor of using the new authentication plugins.
 - Loaders: ".load" function has been renamed to ".loadAsync".
 - Deprecated `onLoadTileset`, `onLoadModel`, `onDisposeModel`, and `onTileVisibilityChange` in favor of their event equivalents.
+- LRUCache: "unloadPriorityCallback" has been changted to take two tile arguments to sort instead of one.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
