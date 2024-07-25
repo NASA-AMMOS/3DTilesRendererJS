@@ -1,5 +1,7 @@
 import {
 	TilesRenderer,
+	DebugTilesPlugin,
+	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -11,8 +13,6 @@ import {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
-	GLTFCesiumRTCExtension,
-	DebugTilesPlugin,
 } from '../src/index.js';
 import {
 	Scene,
