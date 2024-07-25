@@ -707,7 +707,7 @@ schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 
 A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
 
-## GoogleTilesRenderer
+## GooglePhotorealisticTilesRenderer
 
 _extends [TilesRenderer](#TilesRenderer)_
 
@@ -736,20 +736,6 @@ setLatLonToYUp( lat: Number, lon: Number ): void;
 ```
 
 Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+, X+ points north, and Z+ points east and is centered at 0, 0, 0.
-
-## CesiumIonTilesRenderer
-
-_extends [TilesRenderer](#TilesRenderer)_
-
-Variant of TilesRenderer designed to easily support the [Cesium Ion API](https://cesium.com/learn/ion/rest-api/#section/Authentication). Handles initial url resolution, access tokens in the header, and query parameter additions.
-
-### constructor
-
-```js
-constructor( ionAssetId: String | Number, ionAccessToken: String )
-```
-
-Takes the Ion asset id and access token.
 
 ## LRUCache
 
