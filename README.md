@@ -304,7 +304,7 @@ See the [plugins documentation](./PLUGINS.md) for GLTFLoader extension plugins, 
 
 ## TilesRenderer
 
-_extends `THREE.EventDispatcher`` & [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/base/TilesRendererBase.js), which can be used to implement a 3d tiles renderer in other engines_
+_extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/src/base/TilesRendererBase.js), which can be used to implement a 3d tiles renderer in other engines_
 
 ### events
 
