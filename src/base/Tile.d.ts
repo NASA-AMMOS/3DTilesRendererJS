@@ -43,7 +43,7 @@ export interface Tile extends TileBase {
 	__inFrustum : boolean;
 
 	/**
-	 * TODO: Document this if it is useful enough to be the default property in the LRU sorting.
+	 * The depth of the tiles that increments only when a child with geometry content is encountered
 	 */
 	__depthFromRenderedParent : number;
 
