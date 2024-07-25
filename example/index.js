@@ -1,5 +1,7 @@
 import {
-	DebugTilesRenderer as TilesRenderer,
+	TilesRenderer,
+	DebugTilesPlugin,
+	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -11,7 +13,6 @@ import {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
-	GLTFCesiumRTCExtension,
 } from '../src/index.js';
 import {
 	Scene,
@@ -95,6 +96,7 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer( url );
+	tiles.registerPlugin( new DebugTilesPlugin() );
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -484,10 +486,13 @@ function animate() {
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
-	tiles.displayBoxBounds = params.displayBoxBounds;
-	tiles.displaySphereBounds = params.displaySphereBounds;
-	tiles.displayRegionBounds = params.displayRegionBounds;
-	tiles.colorMode = parseFloat( params.colorMode );
+
+	// update plugin
+	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
+	plugin.displayBoxBounds = params.displayBoxBounds;
+	plugin.displaySphereBounds = params.displaySphereBounds;
+	plugin.displayRegionBounds = params.displayRegionBounds;
+	plugin.colorMode = parseFloat( params.colorMode );
 
 	if ( params.orthographic ) {
 
