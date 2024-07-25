@@ -488,6 +488,7 @@ export class DebugTilesPlugin {
 
 		tile[ LOAD_TIME ] = performance.now();
 
+		const tiles = this.tiles;
 		const cached = tile.cached;
 		const { sphere, obb, region } = cached.boundingVolume;
 		if ( obb ) {
