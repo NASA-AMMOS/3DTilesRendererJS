@@ -658,9 +658,9 @@ export class DebugTilesPlugin {
 
 		} );
 
-		this.boxGroup.dispose();
-		this.sphereGroup.dispose();
-		this.regionGroup.dispose();
+		this.boxGroup.removeFromParent();
+		this.sphereGroup.removeFromParent();
+		this.regionGroup.removeFromParent();
 
 	}
 
