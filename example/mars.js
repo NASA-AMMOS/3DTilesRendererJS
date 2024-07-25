@@ -1,5 +1,6 @@
 import {
-	DebugTilesRenderer as TilesRenderer,
+	TilesRenderer,
+	DebugTilesPlugin,
 } from '../src/index.js';
 import {
 	Scene,
@@ -66,12 +67,14 @@ function init() {
 	scene.add( tilesParent );
 
 	groundTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
+	groundTiles.registerPlugin( new DebugTilesPlugin() );
 	groundTiles.fetchOptions.mode = 'cors';
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
 	groundTiles.errorTarget = 12;
 
 	skyTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_sky/0528_0260184_to_s64o256_sky_tileset.json' );
+	skyTiles.registerPlugin( new DebugTilesPlugin() );
 	skyTiles.fetchOptions.mode = 'cors';
 	skyTiles.lruCache = groundTiles.lruCache;
 
@@ -109,8 +112,8 @@ function render() {
 	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;
-	groundTiles.displayBoxBounds = params.displayBoxBounds;
-	skyTiles.displayBoxBounds = params.displayBoxBounds;
+	groundTiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = params.displayBoxBounds;
+	skyTiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = params.displayBoxBounds;
 
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
