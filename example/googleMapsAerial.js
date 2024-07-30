@@ -96,6 +96,7 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'hashchange', initFromHash );
 
 	// GUI
 	const gui = new GUI();
@@ -129,11 +130,9 @@ function initFromHash() {
 
 	}
 
-	const [ lat, lon ] = tokens;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, 0, controls.target );
 
-	tiles.group.updateMatrixWorld();
-	controls.target.applyMatrix4( tiles.group.matrixWorld );
+	const [ lat, lon ] = tokens;
+	tiles.setLatLonToYUp( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD );
 
 }
 
