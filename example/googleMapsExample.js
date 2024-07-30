@@ -187,8 +187,12 @@ function updateHash() {
 	res.lon *= MathUtils.RAD2DEG;
 
 	const elevation = WGS84_ELLIPSOID.getPositionElevation( vec );
-
-	window.history.replaceState( undefined, undefined, `#${ res.lat.toFixed( 4 ) },${ res.lon.toFixed( 4 ) },${ elevation.toFixed( 4 ) }` );
+	const tokens = [
+		parseFloat( res.lat.toFixed( 4 ) ),
+		parseFloat( res.lon.toFixed( 4 ) ),
+		elevation.toFixed( 4 ),
+	];
+	window.history.replaceState( undefined, undefined, `#${ tokens.join() }` );
 
 }
 
@@ -196,14 +200,14 @@ function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
 	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
-	if ( tokens.length < 3 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
+	if ( tokens.length < 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
 
 		return;
 
 	}
 
 	//todo it looks like we can't init under a certain height, I assume it has something to do with the first tile loaded and collision
-	const [ lat, lon, height ] = tokens;
+	const [ lat, lon, height = 1000 ] = tokens;
 	const camera = transition.camera;
 	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 
