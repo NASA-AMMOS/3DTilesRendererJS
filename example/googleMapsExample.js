@@ -114,6 +114,7 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'hashchange', initFromHash );
 
 	// GUI
 	const gui = new GUI();
