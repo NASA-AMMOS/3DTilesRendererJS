@@ -181,13 +181,31 @@ class TextureCache {
 
 export class TextureOverlayPlugin {
 
-	constructor( assignCallback ) {
+	constructor( options = {} ) {
+
+		options = {
+
+			// callback fired when textures have loaded
+			textureUpdateCallback: () => {
+
+				throw new Error( 'TextureOverlayPlugin: "textureUpdateCallback" required.' );
+
+			},
+
+			// if true then the plugin will wait until all tile textures have loaded before firing
+			// the update callback to avoid textures trickling in
+			waitForLoadCompletion: true,
+			...options,
+		},
 
 		this.name = 'TEXTURE_OVERLAY_PLUGIN';
 		this.caches = null;
 		this.queue = null;
 		this.tiles = null;
-		this.assignCallback = assignCallback;
+
+		// options
+		this.textureUpdateCallback = options.textureUpdateCallback;
+		this.waitForLoadCompletion = options.waitForLoadCompletion;
 
 	}
 
@@ -218,7 +236,7 @@ export class TextureOverlayPlugin {
 		this._assignTexturesCallback = ( { tile, scene } ) => {
 
 			// queue a microtask here so we can make sure this fires after all the other load events
-			queueMicrotask( () => this.assignCallback( scene, tile, this ) );
+			queueMicrotask( () => this.textureUpdateCallback( scene, tile, this ) );
 
 		};
 
@@ -308,14 +326,60 @@ export class TextureOverlayPlugin {
 		cache.fetchOptions = tiles.fetchOptions;
 		this.caches[ name ] = cache;
 
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		if ( this.waitForLoadCompletion ) {
 
-			cache
-				.loadTexture( this.getTileKey( tile ) )
-				.then( () => this.assignCallback( scene, tile, this ) )
-				.catch( () => {} );
+			// trigger all tile loads
+			const promises = [];
+			tiles.forEachLoadedModel( ( scene, tile ) => {
 
-		} );
+				const pr = cache
+					.loadTexture( this.getTileKey( tile ) )
+					.then( () => {
+
+						return { scene, tile };
+
+					} );
+
+				promises.push( pr );
+
+			} );
+
+			// await all of them to finish before assigning them
+			Promise.allSettled( promises )
+				.then( results => {
+
+					// if the layer has already been unregistered then skip
+					if ( ! ( name in this.caches ) ) {
+
+						return;
+
+					}
+
+					// trigger the texture updates
+					results.forEach( info => {
+
+						if ( info.status === 'fulfilled' ) {
+
+							this.textureUpdateCallback( info.value.scene, info.value.tile, this );
+
+						}
+
+					} );
+
+				} );
+
+		} else {
+
+			tiles.forEachLoadedModel( ( scene, tile ) => {
+
+				cache
+					.loadTexture( this.getTileKey( tile ) )
+					.then( () => this.textureUpdateCallback( scene, tile, this ) )
+					.catch( () => {} );
+
+			} );
+
+		}
 
 	}
 
@@ -333,7 +397,7 @@ export class TextureOverlayPlugin {
 				const texture = cache.getTexture( this.getTileKey( tile ) );
 				if ( texture ) {
 
-					this.assignCallback( scene, tile, this );
+					this.textureUpdateCallback( scene, tile, this );
 
 				}
 
