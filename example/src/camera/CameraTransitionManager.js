@@ -4,13 +4,6 @@ const _forward = new Vector3();
 const _vec = new Vector3();
 const _virtOrthoPos = new Vector3();
 
-function easeInOut( x ) {
-
-	// https://stackoverflow.com/questions/30007853/simple-easing-function-in-javascript
-	return 1 - ( ( Math.cos( Math.PI * x ) + 1 ) / 2 );
-
-}
-
 export class CameraTransitionManager extends EventDispatcher {
 
 	get animating() {
@@ -212,7 +205,7 @@ export class CameraTransitionManager extends EventDispatcher {
 	_updateTransitionCamera() {
 
 		const { perspectiveCamera, orthographicCamera, transitionCamera, fixedPoint } = this;
-		const alpha = easeInOut( this._alpha );
+		const alpha = this._alpha;
 
 		// get the forward vector
 		_forward.set( 0, 0, - 1 ).transformDirection( perspectiveCamera.matrixWorld ).normalize();
