@@ -260,4 +260,10 @@ export class Ellipsoid {
 
 	}
 
+	copy( source ) {
+
+		this.radius.copy( source.radius );
+
+	}
+
 }
