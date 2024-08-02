@@ -113,7 +113,7 @@ function init() {
 
 			const url = [ ...tokens, `${ info.id }_tileset.json` ].join( '/' );
 			const tiles = new TilesRenderer( url );
-			const plugin = new TextureOverlayPlugin( ( scene, tile, plugin ) => {
+			const textureUpdateCallback = ( scene, tile, plugin ) => {
 
 				scene.traverse( c => {
 
@@ -127,7 +127,8 @@ function init() {
 
 				} );
 
-			} );
+			};
+			const plugin = new TextureOverlayPlugin( { textureUpdateCallback } );
 			tiles.registerPlugin( plugin );
 
 			// ensure all materials support overlay textures

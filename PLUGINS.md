@@ -331,9 +331,36 @@ constructor( { accessToken : String, assetId = null : String | null } )
 
 Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor.
 
-## TilesOverlayPlugin
+## TextureOverlayPlugin
 
 _available in the examples directory_
+
+Plugin for loading alternate texture sets and assigning them to geometry in the tile set.
+
+### .textureUpdateCallback
+
+```
+textureUpdateCallback : ( tile, model, plugin ) => void;
+```
+
+Callback fired when the textures for a specific tile has been loaded. This function is required.
+
+### .waitForLoadCompletion
+
+```js
+waitForLoadCompletion : Boolean
+```
+
+If true then the update callback will only fire for tiles once all the associated textures have loaded.
+
+### constructor
+
+```
+constructor( options = {
+	textureUpdateCallback: null,
+	waitForLoadCompletion: true,
+} );
+```
 
 ### .getTexturesForTile
 
