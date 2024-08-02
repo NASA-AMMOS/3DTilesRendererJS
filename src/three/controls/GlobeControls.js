@@ -440,6 +440,9 @@ export class GlobeControls extends EnvironmentControls {
 	_updateZoom() {
 
 		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, maxZoom } = this;
+
+		// used to scale the tilt transitions based on zoom intensity
+		const deltaAlpha = MathUtils.clamp( MathUtils.mapLinear( Math.abs( zoomDelta ), 0, 20, 0, 1 ), 0, 1 );
 		if ( this._isNearControls() || zoomDelta > 0 ) {
 
 			// When zooming try to tilt the camera towards the center of the planet to avoid the globe
@@ -456,9 +459,10 @@ export class GlobeControls extends EnvironmentControls {
 				const upAlpha = MathUtils.clamp( MathUtils.mapLinear( - _zoomPointUp.dot( _toCenter ), 1, 0.95, 0, 1 ), 0, 1 );
 				const forwardAlpha = 1 - _forward.dot( _toCenter );
 				const cameraAlpha = camera.isOrthographicCamera ? 0.05 : 1;
+				const adjustedDeltaAlpha = MathUtils.clamp( deltaAlpha * 3, 0, 1 );
 
 				// apply scale
-				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha * cameraAlpha ).normalize();
+				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha * cameraAlpha * adjustedDeltaAlpha ).normalize();
 
 				// perform rotation
 				_quaternion.setFromUnitVectors( _forward, _toCenter );
@@ -478,9 +482,9 @@ export class GlobeControls extends EnvironmentControls {
 			// orient the camera to focus on the earth during the zoom
 			const transitionDistance = this._getPerspectiveTransitionDistance();
 			const maxDistance = this._getMaxPerspectiveDistance();
-			const alpha = MathUtils.mapLinear( this.getDistanceToCenter(), transitionDistance, maxDistance, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
+			const distanceAlpha = MathUtils.mapLinear( this.getDistanceToCenter(), transitionDistance, maxDistance, 0, 1 );
+			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.4, distanceAlpha * deltaAlpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.2, distanceAlpha * deltaAlpha ) );
 
 			// calculate zoom in a similar way to environment controls so
 			// the zoom speeds are comparable
@@ -498,9 +502,9 @@ export class GlobeControls extends EnvironmentControls {
 
 			const transitionZoom = this._getOrthographicTransitionZoom();
 			const minZoom = this._getMinOrthographicZoom();
-			const alpha = MathUtils.mapLinear( camera.zoom, transitionZoom, minZoom, 0, 1 );
-			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.2, alpha ) );
-			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.1, alpha ) );
+			const distanceAlpha = MathUtils.mapLinear( camera.zoom, transitionZoom, minZoom, 0, 1 );
+			this._tiltTowardsCenter( MathUtils.lerp( 0, 0.4, distanceAlpha * deltaAlpha ) );
+			this._alignCameraUpToNorth( MathUtils.lerp( 0, 0.2, distanceAlpha * deltaAlpha ) );
 
 			const scale = this.zoomDelta;
 			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
