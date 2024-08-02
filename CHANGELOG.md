@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.
+- GlobeControls: When zooming out the amount that the camera automatically orients is now based in part on zoom amount.
 
 ## [0.3.36] - 2024.07.25
 ### Added
