@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
 
+### Fixed
+- GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.
+
 ## [0.3.36] - 2024.07.25
 ### Added
 - `tiles-load-start` and `tiles-load-end` callback indicating when tile loading has completed finished.
