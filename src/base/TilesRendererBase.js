@@ -92,6 +92,12 @@ export class TilesRendererBase {
 
 	}
 
+	set loadSiblings( v ) {
+
+		console.warn( 'TilesRenderer: "loadSiblings" option has been removed.' );
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -130,7 +136,6 @@ export class TilesRendererBase {
 		// options
 		this.errorTarget = 6.0;
 		this.errorThreshold = Infinity;
-		this.loadSiblings = true;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 		this.stopAtEmptyTiles = true;

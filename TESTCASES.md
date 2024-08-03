@@ -2,12 +2,11 @@
 
 Series of manually performed test cases for scenarios that are difficult / not feasible to test in an automated fashion.
 
-## Verify all sibling tiles load when loadSiblings = true
+## Verify all sibling tiles load
 
 #### steps
 
 1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is enabled.
 1. Ensure `displayActiveTiles` is enabled.
 1. Zoom in as much as possible so much of the tileset is not visible.
 1. Wait until all tiles have loaded.
@@ -18,18 +17,6 @@ Series of manually performed test cases for scenarios that are difficult / not f
 
 Tiles are displayed all the way out to the edge of the tileset.
 
-## Verify sibling tiles do _not_ load when loadSiblings = false
-
-#### steps
-
-1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is disabled.
-1. Ensure `displayActiveTiles` is enabled.
-1. Zoom in as much as possible so much of the tileset is not visible.
-1. Wait until all tiles have loaded.
-1. Disable the `enableUpdate` option.
-1. Zoom out to view the whole tileset.
-
 #### expected
 
 Only tiles that were visible when zoomed in are displayed.
@@ -39,7 +26,6 @@ Only tiles that were visible when zoomed in are displayed.
 #### steps
 
 1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is enabled.
 1. Ensure `displayActiveTiles` is enabled.
 1. Zoom in as much as possible so much of the tileset is not visible.
 1. Wait until all tiles have loaded.

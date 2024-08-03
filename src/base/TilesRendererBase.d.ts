@@ -8,7 +8,6 @@ export class TilesRendererBase {
 
 	errorTarget : Number;
 	errorThreshold : Number;
-	loadSiblings : Boolean;
 	displayActiveTiles : Boolean;
 	maxDepth : Number;
 	stopAtEmptyTiles : Boolean;

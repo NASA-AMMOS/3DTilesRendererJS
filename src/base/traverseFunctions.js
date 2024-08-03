@@ -130,7 +130,6 @@ export function determineFrustumSet( tile, renderer ) {
 	const frameCount = renderer.frameCount;
 	const errorTarget = renderer.errorTarget;
 	const maxDepth = renderer.maxDepth;
-	const loadSiblings = renderer.loadSiblings;
 	const lruCache = renderer.lruCache;
 	const stopAtEmptyTiles = renderer.stopAtEmptyTiles;
 	resetFrameState( tile, frameCount );
@@ -185,7 +184,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
-	if ( anyChildrenUsed && loadSiblings ) {
+	if ( anyChildrenUsed && tile.refine !== 'ADD' ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
