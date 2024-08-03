@@ -103,7 +103,7 @@ function init() {
 
 	} );
 
-	// disable adjusting the orthographic camera position since globe controls will do this
+	// disable adjusting the orthographic camera position for zoom since globe controls will do this
 	transition.orthographicPositionalZoom = false;
 
 	// controls
@@ -122,6 +122,10 @@ function init() {
 
 	gui.add( params, 'orthographic' ).onChange( v => {
 
+		// TODO: this updates the clip planes based on the current position of the camera which is
+		// synced by the transition manager. However the position and clip planes that would be applied
+		// by the globe controls when using the controls with the camera are different resulting in
+		// some clipping artifacts during transition that "pop" once finished.
 		controls.getPivotPoint( transition.fixedPoint );
 		controls.updateCameraClipPlanes( transition.perspectiveCamera );
 		controls.updateCameraClipPlanes( transition.orthographicCamera );
