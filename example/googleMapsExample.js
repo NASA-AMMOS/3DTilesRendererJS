@@ -227,15 +227,8 @@ function animate() {
 	controls.update();
 	transition.update();
 
-	if ( transition.animating ) {
-
-		controls.updateCameraClipPlanes( transition.camera );
-
-	}
-
-	const camera = transition.camera;
-
 	// update options
+	const camera = transition.camera;
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
