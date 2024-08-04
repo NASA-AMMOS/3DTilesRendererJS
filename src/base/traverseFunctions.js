@@ -123,7 +123,7 @@ function canTraverse( tile, renderer ) {
 
 	}
 
-	if ( ! renderer.__used ) {
+	if ( ! tile.__used ) {
 
 		return false;
 
