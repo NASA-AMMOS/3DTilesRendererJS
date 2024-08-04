@@ -9,6 +9,7 @@ import {
 	Group,
 	TextureLoader,
 	MeshBasicMaterial,
+	SRGBColorSpace,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { JPLLandformSiteSceneLoader } from './src/jpl/JPLLandformSceneLoader.js';
@@ -95,6 +96,7 @@ function init() {
 			.loadAsync( url )
 			.then( tex => {
 
+				tex.colorSpace = SRGBColorSpace;
 				tex.flipY = false;
 				return tex;
 
