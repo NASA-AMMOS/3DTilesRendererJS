@@ -34,20 +34,19 @@ function resetFrameState( tile, frameCount ) {
 }
 
 // Recursively mark tiles used down to the next tile with content
-function recursivelyMarkUsed( tile, frameCount, lruCache, renderer ) {
+function recursivelyMarkUsed( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	resetFrameState( tile, frameCount );
+	resetFrameState( tile, renderer.frameCount );
+	markUsed( tile, renderer );
 
-	tile.__used = true;
-	lruCache.markUsed( tile );
 	if ( tile.__contentEmpty ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], frameCount, lruCache, renderer );
+			recursivelyMarkUsed( children[ i ], renderer );
 
 		}
 
@@ -83,6 +82,13 @@ function recursivelyLoadTiles( tile, renderer ) {
 		renderer.requestTileContents( tile );
 
 	}
+
+}
+
+function markUsed( tile, renderer ) {
+
+	tile.__used = true;
+	renderer.lruCache.markUsed( tile );
 
 }
 
@@ -130,7 +136,6 @@ export function determineFrustumSet( tile, renderer ) {
 	const frameCount = renderer.frameCount;
 	const errorTarget = renderer.errorTarget;
 	const maxDepth = renderer.maxDepth;
-	const lruCache = renderer.lruCache;
 	resetFrameState( tile, frameCount );
 
 	// Early out if this tile is not within view.
@@ -141,8 +146,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 	}
 
-	tile.__used = true;
-	lruCache.markUsed( tile );
+	markUsed( tile, renderer );
 
 	tile.__inFrustum = true;
 	stats.inFrustum ++;
@@ -190,7 +194,7 @@ export function determineFrustumSet( tile, renderer ) {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
-			recursivelyMarkUsed( c, frameCount, lruCache, renderer );
+			recursivelyMarkUsed( c, renderer );
 
 		}
 
