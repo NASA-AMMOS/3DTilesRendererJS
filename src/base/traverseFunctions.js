@@ -137,7 +137,7 @@ export function determineFrustumSet( tile, renderer ) {
 	const inFrustum = renderer.tileInView( tile );
 	if ( inFrustum === false ) {
 
-		return false;
+		return;
 
 	}
 
@@ -159,14 +159,14 @@ export function determineFrustumSet( tile, renderer ) {
 		const error = tile.__error;
 		if ( error <= errorTarget ) {
 
-			return true;
+			return;
 
 		}
 
 		// Early out if we've reached the maximum allowed depth.
 		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
 
-			return true;
+			return;
 
 		}
 
@@ -178,8 +178,8 @@ export function determineFrustumSet( tile, renderer ) {
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
-		const r = determineFrustumSet( c, renderer );
-		anyChildrenUsed = anyChildrenUsed || r;
+		determineFrustumSet( c, renderer );
+		anyChildrenUsed = anyChildrenUsed || c.__used;
 
 	}
 
@@ -196,7 +196,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 	}
 
-	return true;
+	return;
 
 }
 
