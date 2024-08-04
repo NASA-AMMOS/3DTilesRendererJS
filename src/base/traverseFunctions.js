@@ -90,6 +90,7 @@ function markUsed( tile, renderer ) {
 
 	tile.__used = true;
 	renderer.lruCache.markUsed( tile );
+	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {
 
@@ -170,9 +171,7 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 
 }
 
-// Determine which tiles are within the camera frustum.
-// TODO: this is marking items as used in the lrucache, which means some data is
-// being kept around that isn't being used -- is that okay?
+// Determine which tiles are used by the renderer given the current camera configuration
 export function determineFrustumSet( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
@@ -219,15 +218,12 @@ export function determineFrustumSet( tile, renderer ) {
 // Traverse and mark the tiles that are at the leaf nodes of the "used" tree.
 export function markUsedSetLeaves( tile, renderer ) {
 
-	const stats = renderer.stats;
 	const frameCount = renderer.frameCount;
 	if ( ! isUsedThisFrame( tile, frameCount ) ) {
 
 		return;
 
 	}
-
-	stats.used ++;
 
 	// This tile is a leaf if none of the children had been used.
 	const children = tile.children;
