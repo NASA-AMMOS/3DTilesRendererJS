@@ -65,7 +65,6 @@ const params = {
 	errorTarget: 6,
 	errorThreshold: 60,
 	maxDepth: 15,
-	stopAtEmptyTiles: true,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 

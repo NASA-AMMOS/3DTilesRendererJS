@@ -10,7 +10,6 @@ export class TilesRendererBase {
 	errorThreshold : Number;
 	displayActiveTiles : Boolean;
 	maxDepth : Number;
-	stopAtEmptyTiles : Boolean;
 
 	fetchOptions : RequestInit;
 	/** function to preprocess the url for each individual tile */

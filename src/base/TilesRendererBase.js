@@ -98,6 +98,12 @@ export class TilesRendererBase {
 
 	}
 
+	set stopAtEmptyTiles( v ) {
+
+		console.warn( 'TilesRenderer: "stopAtEmptyTiles" option has been removed.' );
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -138,7 +144,6 @@ export class TilesRendererBase {
 		this.errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
-		this.stopAtEmptyTiles = true;
 
 	}
 

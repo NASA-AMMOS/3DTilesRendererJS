@@ -131,7 +131,6 @@ export function determineFrustumSet( tile, renderer ) {
 	const errorTarget = renderer.errorTarget;
 	const maxDepth = renderer.maxDepth;
 	const lruCache = renderer.lruCache;
-	const stopAtEmptyTiles = renderer.stopAtEmptyTiles;
 	resetFrameState( tile, frameCount );
 
 	// Early out if this tile is not within view.
@@ -150,9 +149,11 @@ export function determineFrustumSet( tile, renderer ) {
 
 	// Early out if this tile has less error than we're targeting but don't stop
 	// at an external tile set.
-	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
+	// TODO: it's possible we should remove this external tile set check, too. The tile set
+	// should embed the necessary logic internally to stop or continue traversal.
+	if ( ! tile.__externalTileSet ) {
 
-		// compute the _error and __distanceFromCamera fields
+		// compute the __error and __distanceFromCamera fields
 		renderer.calculateError( tile );
 
 		const error = tile.__error;
