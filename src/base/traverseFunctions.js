@@ -39,9 +39,10 @@ function recursivelyMarkUsed( tile, renderer ) {
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
-	markUsed( tile, renderer );
+	updateTile( tile, renderer );
+	if ( canTraverse( tile, renderer ) ) {
 
-	if ( tile.__contentEmpty ) {
+		markUsed( tile, renderer );
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -90,6 +91,13 @@ function markUsed( tile, renderer ) {
 	tile.__used = true;
 	renderer.lruCache.markUsed( tile );
 
+	if ( tile.__inFrustum === true ) {
+
+		tile.__inFrustum = true;
+		renderer.stats.inFrustum ++;
+
+	}
+
 }
 
 function updateTile( tile, renderer ) {
@@ -103,14 +111,6 @@ function updateTile( tile, renderer ) {
 	// Early out if this tile is not within view.
 	tile.__inFrustum = renderer.tileInView( tile );
 	renderer.calculateError( tile );
-
-	if ( tile.__inFrustum === true ) {
-
-		markUsed( tile, renderer );
-		tile.__inFrustum = true;
-		renderer.stats.inFrustum ++;
-
-	}
 
 }
 
@@ -182,12 +182,13 @@ export function determineFrustumSet( tile, renderer ) {
 	// TODO: can we merge reset frame state and update tile?
 	resetFrameState( tile, renderer );
 	updateTile( tile, renderer );
-
-	if ( canTraverse( tile, renderer ) === false ) {
+	if ( ! canTraverse( tile, renderer ) ) {
 
 		return;
 
 	}
+
+	markUsed( tile, renderer );
 
 	// Traverse children and see if any children are in view.
 	let anyChildrenUsed = false;
@@ -212,8 +213,6 @@ export function determineFrustumSet( tile, renderer ) {
 		}
 
 	}
-
-	return;
 
 }
 
