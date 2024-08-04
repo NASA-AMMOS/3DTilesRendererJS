@@ -14,11 +14,11 @@ function isUsedThisFrame( tile, frameCount ) {
 }
 
 // Resets the frame frame information for the given tile
-function resetFrameState( tile, frameCount ) {
+function resetFrameState( tile, renderer ) {
 
-	if ( tile.__lastFrameVisited !== frameCount ) {
+	if ( tile.__lastFrameVisited !== renderer.frameCount ) {
 
-		tile.__lastFrameVisited = frameCount;
+		tile.__lastFrameVisited = renderer.frameCount;
 		tile.__used = false;
 		tile.__inFrustum = false;
 		tile.__isLeaf = false;
@@ -38,7 +38,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	resetFrameState( tile, renderer.frameCount );
+	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
 	if ( tile.__contentEmpty ) {
@@ -92,6 +92,53 @@ function markUsed( tile, renderer ) {
 
 }
 
+function updateTile( tile, renderer ) {
+
+	if ( tile.__lastFrameUpdated === renderer.frameCount ) {
+
+		return;
+
+	}
+
+	// Early out if this tile is not within view.
+	tile.__inFrustum = renderer.tileInView( tile );
+	renderer.calculateError( tile );
+
+	if ( tile.__inFrustum === true ) {
+
+		markUsed( tile, renderer );
+		tile.__inFrustum = true;
+		renderer.stats.inFrustum ++;
+
+	}
+
+}
+
+function canTraverse( tile, renderer ) {
+
+	if ( tile.__inFrustum === false ) {
+
+		return false;
+
+	}
+
+	if ( tile.__error <= renderer.errorTarget ) {
+
+		return false;
+
+	}
+
+	// Early out if we've reached the maximum allowed depth.
+	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= renderer.maxDepth ) {
+
+		return false;
+
+	}
+
+	return true;
+
+}
+
 // Helper function for recursively traversing a tile set. If `beforeCb` returns `true` then the
 // traversal will end early.
 export function traverseSet( tile, beforeCb = null, afterCb = null, parent = null, depth = 0 ) {
@@ -132,47 +179,13 @@ export function determineFrustumSet( tile, renderer ) {
 	// child tiles has happened here.
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	const stats = renderer.stats;
-	const frameCount = renderer.frameCount;
-	const errorTarget = renderer.errorTarget;
-	const maxDepth = renderer.maxDepth;
-	resetFrameState( tile, frameCount );
+	// TODO: can we merge reset frame state and update tile?
+	resetFrameState( tile, renderer );
+	updateTile( tile, renderer );
 
-	// Early out if this tile is not within view.
-	const inFrustum = renderer.tileInView( tile );
-	if ( inFrustum === false ) {
+	if ( canTraverse( tile, renderer ) === false ) {
 
 		return;
-
-	}
-
-	markUsed( tile, renderer );
-
-	tile.__inFrustum = true;
-	stats.inFrustum ++;
-
-	// Early out if this tile has less error than we're targeting but don't stop
-	// at an external tile set.
-	// TODO: it's possible we should remove this external tile set check, too. The tile set
-	// should embed the necessary logic internally to stop or continue traversal.
-	if ( ! tile.__externalTileSet ) {
-
-		// compute the __error and __distanceFromCamera fields
-		renderer.calculateError( tile );
-
-		const error = tile.__error;
-		if ( error <= errorTarget ) {
-
-			return;
-
-		}
-
-		// Early out if we've reached the maximum allowed depth.
-		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
-
-			return;
-
-		}
 
 	}
 
