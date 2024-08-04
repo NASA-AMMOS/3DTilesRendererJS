@@ -62,6 +62,8 @@ function recursivelyLoadTiles( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
+	// TODO: this is loading downward without checking used state or error state for lading
+
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
 		tile.__contentEmpty && (
@@ -116,6 +118,12 @@ function canTraverse( tile, renderer ) {
 
 	// Early out if we've reached the maximum allowed depth.
 	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= renderer.maxDepth ) {
+
+		return false;
+
+	}
+
+	if ( ! renderer.__used ) {
 
 		return false;
 
@@ -193,7 +201,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
-	if ( anyChildrenUsed && tile.refine !== 'ADD' ) {
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -206,6 +214,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 }
 
+// TODO: revisit implementation
 // Traverse and mark the tiles that are at the leaf nodes of the "used" tree.
 export function markUsedSetLeaves( tile, renderer ) {
 
@@ -236,6 +245,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
+		// TODO: do we still need this
 		let childrenWereVisible = false;
 		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -269,6 +279,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 }
 
+// TODO: revisit implementation
 // Skip past tiles we consider unrenderable because they are outside the error threshold.
 export function skipTraversal( tile, renderer ) {
 
@@ -346,7 +357,7 @@ export function skipTraversal( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( tile.refine !== 'ADD' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
+	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
