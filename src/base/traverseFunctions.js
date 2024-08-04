@@ -39,10 +39,10 @@ function recursivelyMarkUsed( tile, renderer ) {
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
+	markUsed( tile, renderer );
 	updateTile( tile, renderer );
-	if ( canTraverse( tile, renderer ) ) {
 
-		markUsed( tile, renderer );
+	if ( canTraverse( tile, renderer ) && tile.__contentEmpty ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -117,11 +117,7 @@ function updateTile( tile, renderer ) {
 
 function canTraverse( tile, renderer ) {
 
-	if ( tile.__inFrustum === false ) {
-
-		return false;
-
-	}
+	// frustum is not checked here since we still want to traverse for child tiles that are out of view
 
 	if ( tile.__error <= renderer.errorTarget ) {
 
@@ -180,14 +176,13 @@ export function determineFrustumSet( tile, renderer ) {
 
 	// TODO: can we merge reset frame state and update tile?
 	resetFrameState( tile, renderer );
+	markUsed( tile, renderer );
 	updateTile( tile, renderer );
-	if ( ! canTraverse( tile, renderer ) ) {
+	if ( ! canTraverse( tile, renderer ) || ! tile.__inFrustum ) {
 
 		return;
 
 	}
-
-	markUsed( tile, renderer );
 
 	// Traverse children and see if any children are in view.
 	let anyChildrenUsed = false;
