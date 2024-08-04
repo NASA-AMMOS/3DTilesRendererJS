@@ -1,9 +1,12 @@
+import { Color } from 'three';
+
 export const TextureOverlayMaterialMixin = base => class extends base {
 
 	constructor( ...args ) {
 
 		super( ...args );
 		this.textures = [];
+		this.overlayColor = new Color( 0x84ffff );
 		this.displayAsOverlay = false;
 
 	}
@@ -21,6 +24,14 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 			},
 		};
 
+		shader.uniforms.overlayColor = {
+			get value() {
+
+				return material.overlayColor;
+
+			},
+		};
+
 		shader.defines = {
 			DISPLAY_AS_OVERLAY: Number( this.displayAsOverlay ),
 		};
@@ -31,6 +42,7 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 			shader.fragmentShader = shader.fragmentShader
 				.replace( /void main/, m => /* glsl */`
 					uniform sampler2D textures[ ${ textures.length } ];
+					uniform vec3 overlayColor;
 					${ m }
 
 				` )
@@ -46,7 +58,7 @@ export const TextureOverlayMaterialMixin = base => class extends base {
 
 						#if DISPLAY_AS_OVERLAY
 
-						diffuseColor = mix( diffuseColor, vec4( 0.22, 0.73, 0.82, 1 ), col.r * 0.5 );
+						diffuseColor = mix( diffuseColor, vec4( overlayColor, 1.0 ), col.r * 0.5 );
 
 						#else
 
