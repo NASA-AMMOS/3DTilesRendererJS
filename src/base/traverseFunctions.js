@@ -67,7 +67,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
 		! tile.__hasRenderableContent && (
-			! tile.__externalTileSet ||
+			! tile.__hasUnrenderableContent ||
 			isDownloadFinished( tile.__loadingState )
 		);
 	if ( doTraverse ) {
@@ -266,8 +266,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 				const childLoaded =
 					c.__allChildrenLoaded ||
 					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
-					( ! c.__externalTileSet && ! c.__hasRenderableContent && c.children.length === 0 ) ||
-					( c.__externalTileSet && c.__loadingState === FAILED );
+					( ! c.__hasUnrenderableContent && ! c.__hasRenderableContent && c.children.length === 0 ) ||
+					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
@@ -308,7 +308,7 @@ export function markVisibleTiles( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ( tile.__hasRenderableContent || tile.__externalTileSet ) ) {
+		} else if ( ! lruCache.isFull() && ( tile.__hasRenderableContent || tile.__hasUnrenderableContent ) ) {
 
 			renderer.requestTileContents( tile );
 
@@ -322,7 +322,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	const hasModel = tile.__hasRenderableContent;
-	const hasContent = hasModel || tile.__externalTileSet;
+	const hasContent = hasModel || tile.__hasUnrenderableContent;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
 	const children = tile.children;
