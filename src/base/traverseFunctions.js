@@ -65,7 +65,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
-		canTraverse( tile, renderer ) &&
+		isUsedThisFrame( tile, renderer.frameCount ) &&
 		! tile.__hasRenderableContent && (
 			! tile.__hasUnrenderableContent ||
 			isDownloadFinished( tile.__loadingState )
@@ -107,8 +107,7 @@ function markUsed( tile, renderer ) {
 
 }
 
-// Returns whether the tile can be traversed to the next layer of children
-// TODO: possibly this can just return the __used field?
+// Returns whether the tile can be traversed to the next layer of children by checking the tile metrics
 function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further
@@ -120,13 +119,6 @@ function canTraverse( tile, renderer ) {
 
 	// Early out if we've reached the maximum allowed depth.
 	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= renderer.maxDepth ) {
-
-		return false;
-
-	}
-
-	// If the tile isn't used don't traverse further
-	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		return false;
 
@@ -204,7 +196,8 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' ) {
+	const emptyRootTile = tile.__depthFromRenderedParent === 0;
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ! emptyRootTile ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -217,7 +210,6 @@ export function markUsedTiles( tile, renderer ) {
 
 }
 
-// TODO: revisit implementation
 // Traverse and mark the tiles that are at the leaf nodes of the "used" tree.
 export function markUsedSetLeaves( tile, renderer ) {
 
@@ -244,7 +236,6 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
-		// TODO: do we still need this
 		let childrenWereVisible = false;
 		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -283,8 +274,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 export function markVisibleTiles( tile, renderer ) {
 
 	const stats = renderer.stats;
-	const frameCount = renderer.frameCount;
-	if ( ! isUsedThisFrame( tile, frameCount ) ) {
+	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		return;
 
@@ -315,16 +305,19 @@ export function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
-	const meetsSSE = tile.__error <= errorRequirement;
-	const includeTile = meetsSSE || tile.refine === 'ADD';
+	const children = tile.children;
 	const hasContent = tile.__hasContent;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
+	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
+	const meetsSSE = tile.__error <= errorRequirement;
 	const childrenWereVisible = tile.__childrenWereVisible;
-	const children = tile.children;
-	const allChildrenHaveContent = tile.__allChildrenLoaded;
+
+	// we don't wait for all children tiles to load if this tile set has empty tiles at the root
+	const emptyRootTile = tile.__depthFromRenderedParent === 0;
+	const allChildrenLoaded = tile.__allChildrenLoaded || emptyRootTile;
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
+	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
 		renderer.requestTileContents( tile );
@@ -338,7 +331,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Skip the tile entirely if there's no content to load
 	if (
-		( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
+		( meetsSSE && ! allChildrenLoaded && ! childrenWereVisible && loadedContent )
 			|| ( tile.refine === 'ADD' && loadedContent )
 	) {
 
@@ -355,14 +348,14 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
+	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenLoaded && loadedContent ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+			if ( isUsedThisFrame( c, renderer.frameCount ) && ! lruCache.isFull() ) {
 
 				recursivelyLoadNextRenderableTiles( c, renderer );
 
@@ -374,12 +367,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) ) {
-
-				markVisibleTiles( c, renderer );
-
-			}
+			markVisibleTiles( children[ i ], renderer );
 
 		}
 
