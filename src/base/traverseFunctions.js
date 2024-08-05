@@ -130,16 +130,14 @@ export function determineFrustumSet( tile, renderer ) {
 	const frameCount = renderer.frameCount;
 	const errorTarget = renderer.errorTarget;
 	const maxDepth = renderer.maxDepth;
-	const loadSiblings = renderer.loadSiblings;
 	const lruCache = renderer.lruCache;
-	const stopAtEmptyTiles = renderer.stopAtEmptyTiles;
 	resetFrameState( tile, frameCount );
 
 	// Early out if this tile is not within view.
 	const inFrustum = renderer.tileInView( tile );
 	if ( inFrustum === false ) {
 
-		return false;
+		return;
 
 	}
 
@@ -151,22 +149,24 @@ export function determineFrustumSet( tile, renderer ) {
 
 	// Early out if this tile has less error than we're targeting but don't stop
 	// at an external tile set.
-	if ( ( stopAtEmptyTiles || ! tile.__contentEmpty ) && ! tile.__externalTileSet ) {
+	// TODO: it's possible we should remove this external tile set check, too. The tile set
+	// should embed the necessary logic internally to stop or continue traversal.
+	if ( ! tile.__externalTileSet ) {
 
-		// compute the _error and __distanceFromCamera fields
+		// compute the __error and __distanceFromCamera fields
 		renderer.calculateError( tile );
 
 		const error = tile.__error;
 		if ( error <= errorTarget ) {
 
-			return true;
+			return;
 
 		}
 
 		// Early out if we've reached the maximum allowed depth.
 		if ( renderer.maxDepth > 0 && tile.__depth + 1 >= maxDepth ) {
 
-			return true;
+			return;
 
 		}
 
@@ -178,14 +178,14 @@ export function determineFrustumSet( tile, renderer ) {
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
-		const r = determineFrustumSet( c, renderer );
-		anyChildrenUsed = anyChildrenUsed || r;
+		determineFrustumSet( c, renderer );
+		anyChildrenUsed = anyChildrenUsed || c.__used;
 
 	}
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
-	if ( anyChildrenUsed && loadSiblings ) {
+	if ( anyChildrenUsed && tile.refine !== 'ADD' ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -196,7 +196,7 @@ export function determineFrustumSet( tile, renderer ) {
 
 	}
 
-	return true;
+	return;
 
 }
 

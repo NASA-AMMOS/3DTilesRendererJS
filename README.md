@@ -352,14 +352,6 @@ maxDepth = Infinity : Number
 
 The max depth to which tiles will be loaded and rendered. Setting it to `1` will only render the root tile. If the tile at depth `maxDepth` is an empty tile then the next set of visible children will be rendered.
 
-### .loadSiblings
-
-```js
-loadSiblings = true : Boolean
-```
-
-If true then all sibling tiles will be loaded, as well, to ensure coherence when moving the camera. If false then only currently viewed tiles will be loaded.
-
 ### .displayActiveTiles
 
 ```js

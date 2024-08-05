@@ -2,12 +2,11 @@
 
 Series of manually performed test cases for scenarios that are difficult / not feasible to test in an automated fashion.
 
-## Verify all sibling tiles load when loadSiblings = true
+## Verify all sibling tiles load
 
 #### steps
 
 1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is enabled.
 1. Ensure `displayActiveTiles` is enabled.
 1. Zoom in as much as possible so much of the tileset is not visible.
 1. Wait until all tiles have loaded.
@@ -18,18 +17,6 @@ Series of manually performed test cases for scenarios that are difficult / not f
 
 Tiles are displayed all the way out to the edge of the tileset.
 
-## Verify sibling tiles do _not_ load when loadSiblings = false
-
-#### steps
-
-1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is disabled.
-1. Ensure `displayActiveTiles` is enabled.
-1. Zoom in as much as possible so much of the tileset is not visible.
-1. Wait until all tiles have loaded.
-1. Disable the `enableUpdate` option.
-1. Zoom out to view the whole tileset.
-
 #### expected
 
 Only tiles that were visible when zoomed in are displayed.
@@ -39,7 +26,6 @@ Only tiles that were visible when zoomed in are displayed.
 #### steps
 
 1. Open the kitchen sink example.
-1. Ensure `loadSiblings` is enabled.
 1. Ensure `displayActiveTiles` is enabled.
 1. Zoom in as much as possible so much of the tileset is not visible.
 1. Wait until all tiles have loaded.
@@ -273,52 +259,6 @@ Verify no errors are logged.
 #### expected
 
 Verify that the stats display 125 geometries, 126 textures, and 1 programs.
-
-## Verify stopAtEmptyTiles works
-
-#### steps
-
-1. Open the kitchen sink example by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/).
-1. Set `maxDepth` to 1.
-1. Verify that only 1 tile is visible.
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
-1. Set `maxDepth` to 1.
-1. Verify that all tiles disappear.
-
-#### expected
-
-No tiles are visible when the active leafs have no content.
-
-## Verify maxDepth limit does not stop at empty tiles when stopAtEmptyTiles = false
-
-1. Open the kitchen sink example by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/).
-1. Set `maxDepth` to 1.
-1. Verify that only 1 tile is visible.
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-root-content.json).
-1. Disable `stopAtEmptyTiles`.
-1. Set `maxDepth` to 1.
-1. Verify that 4 tiles are visible.
-
-#### expected
-
-The next shallowest tiles are visible past the `maxDepth` cutoff.
-
-## Verify tileset with missing mid tile content loads and renders correctly
-
-#### steps
-
-1. Open the kitchen sink example with the no root content tileset by navigating [here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/#../data/tileset-no-midtile-content.json).
-1. Zoom in slowly and verify the tiles load correctly and completely.
-1. Set `errorTarget` to 0.
-1. Set `maxDepth` to 3.
-1. Set `colorMode` to `RANDOM_COLOR`.
-1. Verify that one tile is missing.
-1. Disable `stopAtEmptyTiles`.
-1. Verify that there are four smaller tiles compared to the rest of the tileset where the missing midtile with content is.
-
-#### expected
-
-The tileset renders and loads correctly.
 
 ## Verify tileset with additive tiles renders correctly
 

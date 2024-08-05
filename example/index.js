@@ -65,8 +65,6 @@ const params = {
 	errorTarget: 6,
 	errorThreshold: 60,
 	maxDepth: 15,
-	loadSiblings: true,
-	stopAtEmptyTiles: true,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
@@ -263,7 +261,6 @@ function init() {
 	gui.width = 300;
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'loadSiblings' );
 	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
@@ -481,7 +478,6 @@ function animate() {
 	// update options
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
-	tiles.loadSiblings = params.loadSiblings;
 	tiles.optimizeRaycast = params.optimizeRaycast;
 	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
