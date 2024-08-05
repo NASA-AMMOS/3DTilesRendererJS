@@ -550,7 +550,6 @@ export class TilesRenderer extends TilesRendererBase {
 			transformInverse,
 
 			active: false,
-			inFrustum: [],
 
 			boundingVolume,
 
@@ -908,7 +907,6 @@ export class TilesRenderer extends TilesRendererBase {
 	calculateError( tile ) {
 
 		const cached = tile.cached;
-		const inFrustum = cached.inFrustum;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
 		const boundingVolume = cached.boundingVolume;
@@ -917,12 +915,6 @@ export class TilesRenderer extends TilesRendererBase {
 		let minDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
-
-			if ( ! inFrustum[ i ] ) {
-
-				continue;
-
-			}
 
 			// transform camera position into local frame of the tile bounding box
 			const info = cameraInfo[ i ];
@@ -958,9 +950,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const boundingVolume = cached.boundingVolume;
-		const inFrustum = cached.inFrustum;
 		const cameraInfo = this.cameraInfo;
-		let inView = false;
 		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
 			// Track which camera frustums this tile is in so we can use it
@@ -968,18 +958,13 @@ export class TilesRenderer extends TilesRendererBase {
 			const frustum = cameraInfo[ i ].frustum;
 			if ( boundingVolume.intersectsFrustum( frustum ) ) {
 
-				inView = true;
-				inFrustum[ i ] = true;
-
-			} else {
-
-				inFrustum[ i ] = false;
+				return true;
 
 			}
 
 		}
 
-		return inView;
+		return false;
 
 	}
 
