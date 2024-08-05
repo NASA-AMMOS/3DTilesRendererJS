@@ -339,8 +339,8 @@ export class TilesRendererBase {
 			tile.__contentEmpty = isExternalTileSet;
 
 			tile.__hasContent = true;
-			tile.__hasRenderableContent = Boolean( extension && /json$/.test( extension ) );
-			tile.__hasUnrenderableContent = ! tile.__hasRenderableContent;
+			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
+			tile.__hasRenderableContent = ! tile.__hasUnrenderableContent;
 
 
 		} else {
@@ -349,8 +349,8 @@ export class TilesRendererBase {
 			tile.__contentEmpty = true;
 
 			tile.__hasContent = false;
-			tile.__hasRenderableContent = false;
 			tile.__hasUnrenderableContent = false;
+			tile.__hasRenderableContent = false;
 
 		}
 

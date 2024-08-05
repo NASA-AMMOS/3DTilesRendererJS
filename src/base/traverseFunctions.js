@@ -45,7 +45,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
-	if ( canTraverse( tile, renderer ) && tile.__contentEmpty ) {
+	if ( canTraverse( tile, renderer ) && ! tile.__hasRenderableContent ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -66,7 +66,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
-		tile.__contentEmpty && (
+		! tile.__hasRenderableContent && (
 			! tile.__externalTileSet ||
 			isDownloadFinished( tile.__loadingState )
 		);
@@ -265,8 +265,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// - the child tileset has tried to load but failed
 				const childLoaded =
 					c.__allChildrenLoaded ||
-					( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) ||
-					( ! c.__externalTileSet && c.__contentEmpty && c.children.length === 0 ) ||
+					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
+					( ! c.__externalTileSet && ! c.__hasRenderableContent && c.children.length === 0 ) ||
 					( c.__externalTileSet && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
@@ -308,7 +308,7 @@ export function markVisibleTiles( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ( ! tile.__contentEmpty || tile.__externalTileSet ) ) {
+		} else if ( ! lruCache.isFull() && ( tile.__hasRenderableContent || tile.__externalTileSet ) ) {
 
 			renderer.requestTileContents( tile );
 
@@ -321,7 +321,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
-	const hasModel = ! tile.__contentEmpty;
+	const hasModel = tile.__hasRenderableContent;
 	const hasContent = hasModel || tile.__externalTileSet;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
@@ -417,7 +417,7 @@ export function toggleTiles( tile, renderer ) {
 		}
 
 		// If the active or visible state changed then call the functions.
-		if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
+		if ( tile.__hasRenderableContent && tile.__loadingState === LOADED ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
