@@ -183,14 +183,24 @@ export function markUsedTiles( tile, renderer ) {
 	}
 
 	// Traverse children and see if any children are in view.
-	// TODO: if no children are in view then we should consider this tile to not be in view
 	let anyChildrenUsed = false;
+	let anyChildrenInFrustum = false;
 	const children = tile.children;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
 		markUsedTiles( c, renderer );
 		anyChildrenUsed = anyChildrenUsed || isUsedThisFrame( c, renderer.frameCount );
+		anyChildrenInFrustum = anyChildrenInFrustum || c.__inFrustum;
+
+	}
+
+	// if none of the children are in the frustum then this tile shouldn't be displayed
+	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
+
+		tile.__inFrustum = false;
+		tile.__used = false;
+		return;
 
 	}
 
