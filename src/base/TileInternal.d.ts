@@ -7,8 +7,6 @@ import { Tile } from './Tile';
 export interface TileInternal extends Tile {
 
 	// tile description
-	__externalTileSet: boolean;
-	__contentEmpty: boolean;
 	__isLeaf: boolean;
 
 	// resource tracking

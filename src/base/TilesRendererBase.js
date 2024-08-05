@@ -334,8 +334,6 @@ export class TilesRendererBase {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
-			const isExternalTileSet = Boolean( extension && extension.toLowerCase() === 'json' );
-			tile.__contentEmpty = isExternalTileSet;
 
 			tile.__hasContent = true;
 			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
@@ -343,8 +341,6 @@ export class TilesRendererBase {
 
 
 		} else {
-
-			tile.__contentEmpty = true;
 
 			tile.__hasContent = false;
 			tile.__hasUnrenderableContent = false;
@@ -385,7 +381,7 @@ export class TilesRendererBase {
 
 			// increment the "depth from parent" when we encounter a new tile with content
 			tile.__depth = parentTile.__depth + 1;
-			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__contentEmpty ? 0 : 1 );
+			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 );
 
 			tile.refine = tile.refine || parentTile.refine;
 
