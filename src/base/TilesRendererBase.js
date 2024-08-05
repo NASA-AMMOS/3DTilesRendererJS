@@ -1,7 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
-import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
+import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
@@ -208,9 +208,9 @@ export class TilesRendererBase {
 		stats.visible = 0,
 		this.frameCount ++;
 
-		determineFrustumSet( root, this );
+		markUsedTiles( root, this );
 		markUsedSetLeaves( root, this );
-		skipTraversal( root, this );
+		markVisibleTiles( root, this );
 		toggleTiles( root, this );
 
 		lruCache.scheduleUnload();
@@ -338,10 +338,19 @@ export class TilesRendererBase {
 			tile.__externalTileSet = isExternalTileSet;
 			tile.__contentEmpty = isExternalTileSet;
 
+			tile.__hasContent = true;
+			tile.__hasRenderableContent = Boolean( extension && /json$/.test( extension ) );
+			tile.__hasUnrenderableContent = ! tile.__hasRenderableContent;
+
+
 		} else {
 
 			tile.__externalTileSet = false;
 			tile.__contentEmpty = true;
+
+			tile.__hasContent = false;
+			tile.__hasRenderableContent = false;
+			tile.__hasUnrenderableContent = false;
 
 		}
 

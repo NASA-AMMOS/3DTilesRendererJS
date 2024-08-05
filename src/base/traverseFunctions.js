@@ -167,7 +167,7 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 }
 
 // Determine which tiles are used by the renderer given the current camera configuration
-export function determineFrustumSet( tile, renderer ) {
+export function markUsedTiles( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
 	// child tiles has happened here.
@@ -196,7 +196,7 @@ export function determineFrustumSet( tile, renderer ) {
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
-		determineFrustumSet( c, renderer );
+		markUsedTiles( c, renderer );
 		anyChildrenUsed = anyChildrenUsed || c.__used;
 
 	}
@@ -283,7 +283,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 // TODO: revisit implementation
 // Skip past tiles we consider unrenderable because they are outside the error threshold.
-export function skipTraversal( tile, renderer ) {
+export function markVisibleTiles( tile, renderer ) {
 
 	const stats = renderer.stats;
 	const frameCount = renderer.frameCount;
@@ -381,7 +381,7 @@ export function skipTraversal( tile, renderer ) {
 			const c = children[ i ];
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				skipTraversal( c, renderer );
+				markVisibleTiles( c, renderer );
 
 			}
 
