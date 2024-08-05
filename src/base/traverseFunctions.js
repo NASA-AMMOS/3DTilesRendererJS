@@ -58,18 +58,19 @@ function recursivelyMarkUsed( tile, renderer ) {
 
 }
 
-function recursivelyLoadTiles( tile, renderer ) {
+// Recursively traverses to the next tiles with unloaded renderable content to load them
+function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	// TODO: this is loading downward without checking used state or error state for lading
-
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
+		canTraverse( tile, renderer ) &&
 		! tile.__hasRenderableContent && (
 			! tile.__hasUnrenderableContent ||
 			isDownloadFinished( tile.__loadingState )
 		);
+
 	if ( doTraverse ) {
 
 		const children = tile.children;
@@ -79,7 +80,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			recursivelyLoadTiles( child, renderer );
+			recursivelyLoadNextRenderableTiles( child, renderer );
 
 		}
 
@@ -91,6 +92,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 
 }
 
+// Mark a tile as being used by current view
 function markUsed( tile, renderer ) {
 
 	tile.__used = true;
@@ -99,16 +101,15 @@ function markUsed( tile, renderer ) {
 
 	if ( tile.__inFrustum === true ) {
 
-		tile.__inFrustum = true;
 		renderer.stats.inFrustum ++;
 
 	}
 
 }
 
+// Returns whether the tile can be traversed to the next layer of children
+// TODO: possibly this can just return the __used field?
 function canTraverse( tile, renderer ) {
-
-	// frustum is not checked here since we still want to traverse for child tiles that are out of view
 
 	// If we've met the error requirements then don't load further
 	if ( tile.__error <= renderer.errorTarget ) {
@@ -367,7 +368,7 @@ export function markVisibleTiles( tile, renderer ) {
 			const c = children[ i ];
 			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
 
-				recursivelyLoadTiles( c, renderer );
+				recursivelyLoadNextRenderableTiles( c, renderer );
 
 			}
 
