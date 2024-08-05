@@ -7,9 +7,10 @@ import { Tile } from './Tile';
 export interface TileInternal extends Tile {
 
 	// tile description
-	__externalTileSet: boolean;
-	__contentEmpty: boolean;
 	__isLeaf: boolean;
+	__hasContent: boolean;
+	__hasRenderableContent: boolean;
+	__hasUnrenderableContent: boolean;
 
 	// resource tracking
 	__usedLastFrame: boolean;

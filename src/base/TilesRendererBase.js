@@ -1,7 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
-import { determineFrustumSet, toggleTiles, skipTraversal, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
+import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
@@ -57,10 +57,10 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of least recent tiles first
 		return a.__lastFrameVisited > b.__lastFrameVisited ? - 1 : 1;
 
-	} else if ( a.__externalTileSet !== b.__externalTileSet ) {
+	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
 
 		// dispose of external tile sets last
-		return a.__externalTileSet ? - 1 : 1;
+		return a.__hasUnrenderableContent ? - 1 : 1;
 
 	}
 
@@ -208,9 +208,9 @@ export class TilesRendererBase {
 		stats.visible = 0,
 		this.frameCount ++;
 
-		determineFrustumSet( root, this );
+		markUsedTiles( root, this );
 		markUsedSetLeaves( root, this );
-		skipTraversal( root, this );
+		markVisibleTiles( root, this );
 		toggleTiles( root, this );
 
 		lruCache.scheduleUnload();
@@ -334,14 +334,16 @@ export class TilesRendererBase {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
-			const isExternalTileSet = Boolean( extension && extension.toLowerCase() === 'json' );
-			tile.__externalTileSet = isExternalTileSet;
-			tile.__contentEmpty = isExternalTileSet;
+
+			tile.__hasContent = true;
+			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
+			tile.__hasRenderableContent = ! tile.__hasUnrenderableContent;
 
 		} else {
 
-			tile.__externalTileSet = false;
-			tile.__contentEmpty = true;
+			tile.__hasContent = false;
+			tile.__hasUnrenderableContent = false;
+			tile.__hasRenderableContent = false;
 
 		}
 
@@ -378,7 +380,7 @@ export class TilesRendererBase {
 
 			// increment the "depth from parent" when we encounter a new tile with content
 			tile.__depth = parentTile.__depth + 1;
-			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__contentEmpty ? 0 : 1 );
+			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 );
 
 			tile.refine = tile.refine || parentTile.refine;
 
@@ -524,7 +526,7 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const isExternalTileSet = tile.__externalTileSet;
+		const isExternalTileSet = tile.__hasUnrenderableContent;
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started

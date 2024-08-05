@@ -45,7 +45,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
-	if ( canTraverse( tile, renderer ) && tile.__contentEmpty ) {
+	if ( canTraverse( tile, renderer ) && ! tile.__hasRenderableContent ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -58,18 +58,19 @@ function recursivelyMarkUsed( tile, renderer ) {
 
 }
 
-function recursivelyLoadTiles( tile, renderer ) {
+// Recursively traverses to the next tiles with unloaded renderable content to load them
+function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	// TODO: this is loading downward without checking used state or error state for lading
-
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
-		tile.__contentEmpty && (
-			! tile.__externalTileSet ||
+		isUsedThisFrame( tile, renderer.frameCount ) &&
+		! tile.__hasRenderableContent && (
+			! tile.__hasUnrenderableContent ||
 			isDownloadFinished( tile.__loadingState )
 		);
+
 	if ( doTraverse ) {
 
 		const children = tile.children;
@@ -79,7 +80,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 			// the next layer of rendered children as just a single depth away for the
 			// sake of sorting.
 			const child = children[ i ];
-			recursivelyLoadTiles( child, renderer );
+			recursivelyLoadNextRenderableTiles( child, renderer );
 
 		}
 
@@ -91,6 +92,7 @@ function recursivelyLoadTiles( tile, renderer ) {
 
 }
 
+// Mark a tile as being used by current view
 function markUsed( tile, renderer ) {
 
 	tile.__used = true;
@@ -99,16 +101,14 @@ function markUsed( tile, renderer ) {
 
 	if ( tile.__inFrustum === true ) {
 
-		tile.__inFrustum = true;
 		renderer.stats.inFrustum ++;
 
 	}
 
 }
 
+// Returns whether the tile can be traversed to the next layer of children by checking the tile metrics
 function canTraverse( tile, renderer ) {
-
-	// frustum is not checked here since we still want to traverse for child tiles that are out of view
 
 	// If we've met the error requirements then don't load further
 	if ( tile.__error <= renderer.errorTarget ) {
@@ -119,13 +119,6 @@ function canTraverse( tile, renderer ) {
 
 	// Early out if we've reached the maximum allowed depth.
 	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= renderer.maxDepth ) {
-
-		return false;
-
-	}
-
-	// If the tile isn't used don't traverse further
-	if ( ! tile.__used ) {
 
 		return false;
 
@@ -167,7 +160,7 @@ export function traverseSet( tile, beforeCb = null, afterCb = null, parent = nul
 }
 
 // Determine which tiles are used by the renderer given the current camera configuration
-export function determineFrustumSet( tile, renderer ) {
+export function markUsedTiles( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
 	// child tiles has happened here.
@@ -196,14 +189,15 @@ export function determineFrustumSet( tile, renderer ) {
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
-		determineFrustumSet( c, renderer );
-		anyChildrenUsed = anyChildrenUsed || c.__used;
+		markUsedTiles( c, renderer );
+		anyChildrenUsed = anyChildrenUsed || isUsedThisFrame( c, renderer.frameCount );
 
 	}
 
 	// If there are children within view and we are loading siblings then mark
 	// all sibling tiles as used, as well.
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' ) {
+	const emptyRootTile = tile.__depthFromRenderedParent === 0;
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ! emptyRootTile ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -216,7 +210,6 @@ export function determineFrustumSet( tile, renderer ) {
 
 }
 
-// TODO: revisit implementation
 // Traverse and mark the tiles that are at the leaf nodes of the "used" tree.
 export function markUsedSetLeaves( tile, renderer ) {
 
@@ -237,17 +230,12 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
-
 	if ( ! anyChildrenUsed ) {
 
-		// TODO: This isn't necessarily right because it's possible that a parent tile is considered in the
-		// frustum while the child tiles are not, making them unused. If all children have loaded and were properly
-		// considered to be in the used set then we shouldn't set ourselves to a leaf here.
 		tile.__isLeaf = true;
 
 	} else {
 
-		// TODO: do we still need this
 		let childrenWereVisible = false;
 		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -262,12 +250,12 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// - the children's children have been loaded
 				// - the tile content has loaded
 				// - the tile is completely empty - ie has no children and no content
-				// - the child tileset has tried to load but failed
+				// - the child tile set has tried to load but failed
 				const childLoaded =
 					c.__allChildrenLoaded ||
-					( ! c.__contentEmpty && isDownloadFinished( c.__loadingState ) ) ||
-					( ! c.__externalTileSet && c.__contentEmpty && c.children.length === 0 ) ||
-					( c.__externalTileSet && c.__loadingState === FAILED );
+					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
+					( ! c.__hasContent && c.children.length === 0 ) ||
+					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
 				allChildrenLoaded = allChildrenLoaded && childLoaded;
 
 			}
@@ -283,11 +271,10 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 // TODO: revisit implementation
 // Skip past tiles we consider unrenderable because they are outside the error threshold.
-export function skipTraversal( tile, renderer ) {
+export function markVisibleTiles( tile, renderer ) {
 
 	const stats = renderer.stats;
-	const frameCount = renderer.frameCount;
-	if ( ! isUsedThisFrame( tile, frameCount ) ) {
+	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		return;
 
@@ -308,7 +295,7 @@ export function skipTraversal( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && ( ! tile.__contentEmpty || tile.__externalTileSet ) ) {
+		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
 
 			renderer.requestTileContents( tile );
 
@@ -318,17 +305,19 @@ export function skipTraversal( tile, renderer ) {
 
 	}
 
+	const children = tile.children;
+	const hasContent = tile.__hasContent;
+	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
-	const includeTile = meetsSSE || tile.refine === 'ADD';
-	const hasModel = ! tile.__contentEmpty;
-	const hasContent = hasModel || tile.__externalTileSet;
-	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const childrenWereVisible = tile.__childrenWereVisible;
-	const children = tile.children;
-	const allChildrenHaveContent = tile.__allChildrenLoaded;
+
+	// we don't wait for all children tiles to load if this tile set has empty tiles at the root
+	const emptyRootTile = tile.__depthFromRenderedParent === 0;
+	const allChildrenLoaded = tile.__allChildrenLoaded || emptyRootTile;
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
+	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
 		renderer.requestTileContents( tile );
@@ -342,7 +331,7 @@ export function skipTraversal( tile, renderer ) {
 
 	// Skip the tile entirely if there's no content to load
 	if (
-		( meetsSSE && ! allChildrenHaveContent && ! childrenWereVisible && loadedContent )
+		( meetsSSE && ! allChildrenLoaded && ! childrenWereVisible && loadedContent )
 			|| ( tile.refine === 'ADD' && loadedContent )
 	) {
 
@@ -359,16 +348,16 @@ export function skipTraversal( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenHaveContent && loadedContent ) {
+	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenLoaded && loadedContent ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) && ! lruCache.isFull() ) {
+			if ( isUsedThisFrame( c, renderer.frameCount ) && ! lruCache.isFull() ) {
 
-				recursivelyLoadTiles( c, renderer );
+				recursivelyLoadNextRenderableTiles( c, renderer );
 
 			}
 
@@ -378,12 +367,7 @@ export function skipTraversal( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, frameCount ) ) {
-
-				skipTraversal( c, renderer );
-
-			}
+			markVisibleTiles( children[ i ], renderer );
 
 		}
 
@@ -394,8 +378,7 @@ export function skipTraversal( tile, renderer ) {
 // Final traverse to toggle tile visibility.
 export function toggleTiles( tile, renderer ) {
 
-	const frameCount = renderer.frameCount;
-	const isUsed = isUsedThisFrame( tile, frameCount );
+	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed || tile.__usedLastFrame ) {
 
 		let setActive = false;
@@ -417,7 +400,7 @@ export function toggleTiles( tile, renderer ) {
 		}
 
 		// If the active or visible state changed then call the functions.
-		if ( ! tile.__contentEmpty && tile.__loadingState === LOADED ) {
+		if ( tile.__hasRenderableContent && tile.__loadingState === LOADED ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
