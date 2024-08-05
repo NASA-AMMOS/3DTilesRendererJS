@@ -110,6 +110,7 @@ function canTraverse( tile, renderer ) {
 
 	// frustum is not checked here since we still want to traverse for child tiles that are out of view
 
+	// If we've met the error requirements then don't load further
 	if ( tile.__error <= renderer.errorTarget ) {
 
 		return false;
@@ -123,6 +124,7 @@ function canTraverse( tile, renderer ) {
 
 	}
 
+	// If the tile isn't used don't traverse further
 	if ( ! tile.__used ) {
 
 		return false;
