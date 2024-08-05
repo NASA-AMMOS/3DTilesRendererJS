@@ -17,7 +17,6 @@ import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
-import {SUBTREELoader} from "./loaders/SUBTREELoader.js";
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_165 = parseInt( REVISION ) < 165;
@@ -650,16 +649,6 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 
-			case 'subt': {
-
-				const loader = new SUBTREELoader( manager, tile, this.root );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-				loader.parse( buffer );
-				promise = Promise.resolve( null );
-				break;
-
-			}
 
 			default:
 				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );

@@ -3,6 +3,7 @@ import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
+import {SUBTREELoader} from "../three/loaders/SUBTREELoader.js";
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
@@ -281,7 +282,6 @@ export class TilesRendererBase {
 
 	// Overrideable
 	parseTile( buffer, tile, extension ) {
-
 		return null;
 
 	}
@@ -291,6 +291,7 @@ export class TilesRendererBase {
 	}
 
 	preprocessNode( tile, tileSetDir, parentTile = null) {
+
 		let uri;
 		if (tile.content) {
 
@@ -323,32 +324,11 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		if ( tile.implicitTiling ) {	//only for root
-
-			// Store the infos from the tileset
-			tile.availableLevels = tile.implicitTiling.availableLevels;
-			tile.subdivisionScheme = tile.implicitTiling.subdivisionScheme;
-			tile.__subtreeLevels = tile.implicitTiling.subtreeLevels;
-			tile.subtrees = tile.implicitTiling.subtrees;
-			tile.__subtreeDivider = tile.subdivisionScheme === "QUADTREE" ? 4 : 8;
-			tile.__subtreeUri = tile.implicitTiling.subtrees.uri;
-			tile.__contentUri = tile.content?.uri;
-
-			// Declare some properties
-			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
-
-			// Coords of the tile
-			tile.__x = 0;
-			tile.__y = 0;
-
-			uri = tile.implicitTiling.subtrees.uri;
-		}
-
 
 		if ( uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
-			const extension = getUrlExtension( tile.content.uri );
+			const extension = getUrlExtension( uri );
 
 			tile.__hasContent = true;
 			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
@@ -406,15 +386,14 @@ export class TilesRendererBase {
 		tile.__lastFrameVisited = - 1;
 
 
-		if (tile.implicitTiling) {
-			tile.content = {
-				uri: parseImplicitURI(tile, tile.__basePath, tile.__subtreeUri)
-			}
-		} else if (tile.content?.uri) {
-			// tile content uri has to be interpreted relative to the tileset.json
+	 	if (tile.content?.uri) {
 			tile.content.uri = new URL(tile.content.uri, tileSetDir + '/').toString();
 		}
+		this.invokeAllPlugins( plugin => {
 
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode(tile, uri);
+
+		} );
 	}
 
 	setTileActive( tile, state ) {
@@ -680,6 +659,106 @@ export class TilesRendererBase {
 				} )
 				.catch( errorCallback );
 
+		} else if ( /subtree$/i.test( tile.content.uri ) ) {	// no magic type ?
+
+			downloadQueue.add( tile, downloadTile => {
+
+				if ( downloadTile.__loadIndex !== loadIndex ) {
+
+					return Promise.resolve();
+
+				}
+
+				let processedUrl = downloadTile.content.uri;
+				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+
+				return fetch( processedUrl, Object.assign( { signal }, this.fetchOptions ) );
+
+			} )
+				.then( res => {
+
+					if ( tile.__loadIndex !== loadIndex ) {
+
+						return;
+
+					}
+
+					if ( res.ok ) {
+
+						return res.arrayBuffer();
+
+					} else {
+
+						throw new Error( `Failed to load model with error code ${res.status}` );
+
+					}
+
+
+				} )
+				.then( buffer => {
+
+					// if it has been unloaded then the tile has been disposed
+					if ( tile.__loadIndex !== loadIndex ) {
+
+						return;
+
+					}
+
+					stats.downloading --;
+					stats.parsing ++;
+					tile.__loadAbort = null;
+					tile.__loadingState = PARSING;
+
+					return parseQueue.add( tile, parseTile => {
+
+						// if it has been unloaded then the tile has been disposed
+						if ( parseTile.__loadIndex !== loadIndex ) {
+
+							return Promise.resolve();
+
+						}
+
+						const uri = parseTile.content.uri;
+						const extension = getUrlExtension( uri );
+
+
+						// handle parsing of subtree data and assignment of tile children
+						const loader = new SUBTREELoader( null, tile, this.root );
+						loader.parse( buffer );
+						return Promise.resolve()
+						// const subTreeRoot = loader.parse( buffer );
+						// tile.children.push( subTreeRoot );
+
+					} );
+
+
+				} ).then( () => {
+
+				// if it has been unloaded then the tile has been disposed
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return;
+
+				}
+
+				stats.parsing --;
+				tile.__loadingState = LOADED;
+
+				if ( tile.__wasSetVisible ) {
+
+					this.setTileVisible( tile, true );
+
+				}
+
+				if ( tile.__wasSetActive ) {
+
+					this.setTileActive( tile, true );
+
+				}
+
+			} )
+				.catch( errorCallback );
+
 		} else {
 
 			downloadQueue.add( tile, downloadTile => {
@@ -741,6 +820,7 @@ export class TilesRendererBase {
 						const uri = parseTile.content.uri;
 						const extension = getUrlExtension( uri );
 
+						// todo use plugin here instead ?
 						return this.parseTile( buffer, parseTile, extension );
 
 					} );
