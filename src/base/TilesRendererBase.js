@@ -339,7 +339,6 @@ export class TilesRendererBase {
 			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
 			tile.__hasRenderableContent = ! tile.__hasUnrenderableContent;
 
-
 		} else {
 
 			tile.__hasContent = false;
