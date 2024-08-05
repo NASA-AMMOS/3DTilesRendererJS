@@ -126,7 +126,7 @@ function canTraverse( tile, renderer ) {
 	}
 
 	// If the tile isn't used don't traverse further
-	if ( ! tile.__used ) {
+	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		return false;
 
@@ -198,7 +198,7 @@ export function markUsedTiles( tile, renderer ) {
 
 		const c = children[ i ];
 		markUsedTiles( c, renderer );
-		anyChildrenUsed = anyChildrenUsed || c.__used;
+		anyChildrenUsed = anyChildrenUsed || isUsedThisFrame( c, renderer.frameCount );
 
 	}
 
@@ -394,8 +394,7 @@ export function markVisibleTiles( tile, renderer ) {
 // Final traverse to toggle tile visibility.
 export function toggleTiles( tile, renderer ) {
 
-	const frameCount = renderer.frameCount;
-	const isUsed = isUsedThisFrame( tile, frameCount );
+	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed || tile.__usedLastFrame ) {
 
 		let setActive = false;
