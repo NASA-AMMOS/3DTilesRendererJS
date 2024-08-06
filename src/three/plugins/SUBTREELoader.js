@@ -3,10 +3,13 @@
  * https://github.com/CesiumGS/cesium
  */
 import { Matrix3, Vector3} from 'three';
-import {SUBTREELoaderBase} from "./SUBTREELoaderBase.js";
 import {SubtreeTile} from "../../base/SubtreeTile.js";
+import { LoaderBase } from '../../base/loaders/LoaderBase.js';
+import { readMagicBytes } from '../../utilities/readMagicBytes.js';
+import {arrayToString} from "../../utilities/arrayToString.js";
 
-export class SUBTREELoader extends SUBTREELoaderBase {
+
+export class SUBTREELoader extends LoaderBase {
 
 	constructor(tile, rootTile) {
 		super();
@@ -15,10 +18,71 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 
 	}
 
+	/**
+	 * A helper object for storing the two parts of the subtree binary
+	 *
+	 * @typedef {object} Subtree
+	 * @property {number} version
+	 * @property {JSON} subtreeJson
+	 * @property {ArrayBuffer} subtreeByte
+	 * @private
+	 */
+
+	/**
+	 *
+	 * @param buffer
+	 * @return {Subtree}
+	 */
+
+	parseBuffer( buffer ) {
+
+		const dataView = new DataView( buffer );
+		let offset = 0;
+
+		// 16-byte header
+
+		// 4 bytes
+		const magic = readMagicBytes( dataView );
+		console.assert( magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".' );
+		offset += 4;
+
+		// 4 bytes
+		const version = dataView.getUint32( offset, true );
+		console.assert( version === 1, 'SUBTREELoader: The version listed in the header is "1".' );
+		offset += 4;
+
+		// From Cesium
+		// Read the bottom 32 bits of the 64-bit byte length.
+		// This is ok for now because:
+		// 1) not all browsers have native 64-bit operations
+		// 2) the data is well under 4GB
+
+		// 8 bytes
+		const jsonLength = dataView.getUint32( offset, true );
+		offset += 8;
+
+		// 8 bytes
+		const byteLength = dataView.getUint32( offset, true );
+		offset += 8;
+
+		const subtreeJson = JSON.parse( arrayToString(  new Uint8Array( buffer, offset, jsonLength ) ) );
+		offset += jsonLength;
+
+		const subtreeByte = buffer.slice(offset, offset + byteLength);
+
+		return {
+			version,
+			subtreeJson,
+			subtreeByte
+		};
+
+	}
+
+
 	parse(buffer) {
 
 		// todo here : handle json
-		let subtree = super.parse(buffer);
+		let subtree = this.parseBuffer(buffer);
 		const subtreeJson = subtree.subtreeJson;
 
 
@@ -84,7 +148,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 	 * This function modifies the buffer view headers' isActive flags in place.
 	 * </p>
 	 *
-	 * @param {Object[]} subtreeJson The JSON chunk from the subtree
+	 * @param {JSON} subtreeJson The JSON chunk from the subtree
 	 * @param {BufferViewHeader[]} bufferViewHeaders The preprocessed buffer view headers
 	 * @private
 	 */
@@ -135,7 +199,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 
 
 	/**
-	 * Go through the list of buffers and gather all the active ones into a
+	 * Go through the list of buffers and gather all the active ones into
 	 * a dictionary.
 	 * <p>
 	 * The results are put into a dictionary object. The keys are indices of
@@ -147,7 +211,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 	 * dictionary if it is marked active.
 	 * </p>
 	 * @param {BufferHeader[]} bufferHeaders The preprocessed buffer headers
-	 * @param {Uint8Array} internalBuffer The binary chunk of the subtree file
+	 * @param {ArrayBuffer} internalBuffer The binary chunk of the subtree file
 	 * @returns {object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
 	 * @private
 	 */
@@ -424,7 +488,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 	}
 
 	/**
-	 * Transcode the implicitly-defined tiles within this subtree and generate
+	 * Transcode the implicitly defined tiles within this subtree and generate
 	 * explicit {@link SubtreeTile} objects. This function only transcode tiles,
 	 * child subtrees are handled separately.
 	 *
