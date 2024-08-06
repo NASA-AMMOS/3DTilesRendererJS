@@ -30,7 +30,7 @@ export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase';
 export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase';
 export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase';
 export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase';
-export { SUBTREELoaderBase } from './base/plugins/SUBTREELoaderBase';
+export { SUBTREELoaderBase } from './three/plugins/SUBTREELoaderBase';
 export { LoaderBase } from './base/loaders/LoaderBase';
 export * from './base/constants';
 
