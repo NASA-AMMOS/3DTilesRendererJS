@@ -4,9 +4,7 @@
  */
 import {DefaultLoadingManager, Matrix3, Matrix4, Vector3} from 'three';
 import {SUBTREELoaderBase} from "../../base/loaders/SUBTREELoaderBase.js";
-import {TilesRenderer} from "../TilesRenderer.js";
 import {SubtreeTile} from "../../base/SubtreeTile.js";
-import {parseImplicitURI} from "../../base/TilesRendererBase.js";
 
 export class SUBTREELoader extends SUBTREELoaderBase {
 
@@ -198,8 +196,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 			const start = bufferViewHeader.byteOffset;
 			const end = start + bufferViewHeader.byteLength;
 			const buffer = buffersU8[bufferViewHeader.buffer];
-			const bufferView = buffer.slice(start, end);
-			bufferViewsU8[i] = bufferView;
+			bufferViewsU8[i] = buffer.slice(start, end);
 		}
 		return bufferViewsU8;
 	}
@@ -264,8 +261,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 		bufferViewHeaders ??= [];
 		for (let i = 0; i < bufferViewHeaders.length; i++) {
 			const bufferViewHeader = bufferViewHeaders[i];
-			const bufferHeader = bufferHeaders[bufferViewHeader.buffer];
-			bufferViewHeader.bufferHeader = bufferHeader;
+			bufferViewHeader.bufferHeader = bufferHeaders[bufferViewHeader.buffer];
 			bufferViewHeader.isActive = false;
 		}
 		return bufferViewHeaders;
@@ -396,7 +392,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
 				let contentTile = {
-					content: {uri: parseImplicitURI(subtreeRoot, this.rootTile.__basePath, this.rootTile.__contentUri)},
+					content: {uri: this.parseImplicitURI(subtreeRoot, this.rootTile.__basePath, this.rootTile.__contentUri)},
 					boundingVolume: subtreeRoot.boundingVolume,
 					geometricError: subtreeRoot.geometricError
 				}
@@ -423,7 +419,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 				subtreeLocator.childMortonIndex
 			)
 			// Assign subtree uri as content
-			subtreeTile.content = {uri: parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__subtreeUri)};
+			subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__subtreeUri)};
 			leafTile.children.push(subtreeTile);
 		}
 
@@ -517,7 +513,7 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 		// Todo Multiple contents not handled, keep the first found content
 		for(let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++){
 			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], childBitIndex)) {
-				subtreeTile.content = {uri: parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__contentUri)};
+				subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__contentUri)};
 				break;
 			}
 		}
@@ -685,6 +681,17 @@ export class SUBTREELoader extends SUBTREELoaderBase {
 			}
 		}
 		return results;
+	}
+
+
+
+	parseImplicitURI(tile, basePath, uri) {
+		uri = uri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
+		uri = uri.replace("{x}", tile.__x ?? 0);
+		uri = uri.replace("{y}", tile.__y ?? 0);
+		uri = uri.replace("{z}", tile.__z ?? 0);
+		uri = new URL(uri, basePath + '/').toString();
+		return uri;
 	}
 
 }

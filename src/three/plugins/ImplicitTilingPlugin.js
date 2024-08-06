@@ -1,4 +1,4 @@
-import {parseImplicitURI} from "../../base/TilesRendererBase.js";
+import {SUBTREELoader} from "../loaders/SUBTREELoader.js";
 
 export class ImplicitTilingPlugin {
 
@@ -30,27 +30,27 @@ export class ImplicitTilingPlugin {
 			// Coords of the tile
 			tile.__x = 0;
 			tile.__y = 0;
-			tile.content.uri = parseImplicitURI(tile, tile.__basePath, tile.__subtreeUri)
+			tile.__z = 0;
+
+			let implicitUri = tile.__subtreeUri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
+			implicitUri = implicitUri.replace("{x}", "0");
+			implicitUri = implicitUri.replace("{y}",  "0");
+			implicitUri = implicitUri.replace("{z}", "0");
+			tile.content.uri =  new URL(implicitUri, tile.__basePath + '/').toString();
+
 		}
 
 
 	}
 
+	parseTile(buffer, parseTile, extension  ) {
+		if ( /subtree$/i.test( parseTile.content.uri ) ) {
+			const loader = new SUBTREELoader(null, parseTile, this.tiles.root);
+			loader.parse(buffer);
+			return Promise.resolve()
+		}
+
+	}
 
 
-	// preprocessURL( uri, tile ) {
-	//
-	// 	uri = uri.replace(new URL("{level}"), (tile.__depth ?? tile.__level) ?? 0);
-	// 	uri = uri.replace(new URL("{x}"), tile.__x ?? 0);
-	// 	uri = uri.replace(new URL("{y}"), tile.__y ?? 0);
-	// 	uri = uri.replace(new URL("{z}"), tile.__z ?? 0);
-	// 	return uri.toString();
-	// }
-
-
-
-
-	// preprocessNode
-	// requestTileContents
-
-}
+	}
