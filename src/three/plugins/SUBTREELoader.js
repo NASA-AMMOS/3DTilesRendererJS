@@ -2,10 +2,10 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium
  */
-import { Matrix3, Vector3} from 'three';
+import {Matrix3, Vector3} from 'three';
 import {SubtreeTile} from "../../base/SubtreeTile.js";
-import { LoaderBase } from '../../base/loaders/LoaderBase.js';
-import { readMagicBytes } from '../../utilities/readMagicBytes.js';
+import {LoaderBase} from '../../base/loaders/LoaderBase.js';
+import {readMagicBytes} from '../../utilities/readMagicBytes.js';
 import {arrayToString} from "../../utilities/arrayToString.js";
 
 
@@ -34,21 +34,21 @@ export class SUBTREELoader extends LoaderBase {
 	 * @return {Subtree}
 	 */
 
-	parseBuffer( buffer ) {
+	parseBuffer(buffer) {
 
-		const dataView = new DataView( buffer );
+		const dataView = new DataView(buffer);
 		let offset = 0;
 
 		// 16-byte header
 
 		// 4 bytes
-		const magic = readMagicBytes( dataView );
-		console.assert( magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".' );
+		const magic = readMagicBytes(dataView);
+		console.assert(magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".');
 		offset += 4;
 
 		// 4 bytes
-		const version = dataView.getUint32( offset, true );
-		console.assert( version === 1, 'SUBTREELoader: The version listed in the header is "1".' );
+		const version = dataView.getUint32(offset, true);
+		console.assert(version === 1, 'SUBTREELoader: The version listed in the header is "1".');
 		offset += 4;
 
 		// From Cesium
@@ -58,14 +58,14 @@ export class SUBTREELoader extends LoaderBase {
 		// 2) the data is well under 4GB
 
 		// 8 bytes
-		const jsonLength = dataView.getUint32( offset, true );
+		const jsonLength = dataView.getUint32(offset, true);
 		offset += 8;
 
 		// 8 bytes
-		const byteLength = dataView.getUint32( offset, true );
+		const byteLength = dataView.getUint32(offset, true);
 		offset += 8;
 
-		const subtreeJson = JSON.parse( arrayToString(  new Uint8Array( buffer, offset, jsonLength ) ) );
+		const subtreeJson = JSON.parse(arrayToString(new Uint8Array(buffer, offset, jsonLength)));
 		offset += jsonLength;
 
 		const subtreeByte = buffer.slice(offset, offset + byteLength);
@@ -93,8 +93,6 @@ export class SUBTREELoader extends LoaderBase {
 		 */
 
 
-
-
 		/*
 			Tile availability indicates which tiles exist within the subtree
 
@@ -103,7 +101,6 @@ export class SUBTREELoader extends LoaderBase {
 			Child subtree availability indicates what subtrees are reachable from this subtree
 
 		 */
-
 
 
 		// After identifying how availability is stored, put the results in this new array for consistent processing later
@@ -294,8 +291,6 @@ export class SUBTREELoader extends LoaderBase {
 	}
 
 
-
-
 	/**
 	 * A buffer header is the JSON header from the subtree JSON chunk plus
 	 * the isActive flag and a reference to the header for the underlying buffer
@@ -327,8 +322,6 @@ export class SUBTREELoader extends LoaderBase {
 		}
 		return bufferViewHeaders;
 	}
-
-
 
 
 	/**
@@ -413,7 +406,6 @@ export class SUBTREELoader extends LoaderBase {
 		}
 
 
-
 		let bufferView;
 
 		// Check for bitstream first, which is part of the current schema.
@@ -433,7 +425,6 @@ export class SUBTREELoader extends LoaderBase {
 	}
 
 
-
 	/**
 	 * Expand a single subtree tile. This transcodes the subtree into
 	 * a tree of {@link SubtreeTile}. The root of this tree is stored in
@@ -448,7 +439,7 @@ export class SUBTREELoader extends LoaderBase {
 
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
 		// Todo Multiple contents not handled, keep the first found content
-		for(let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++){
+		for (let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++) {
 			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], 0)) {
 
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
@@ -564,7 +555,6 @@ export class SUBTREELoader extends LoaderBase {
 		parentTile,
 		childBitIndex,
 		childMortonIndex
-
 	) {
 		let subtreeTile = new SubtreeTile(parentTile, childMortonIndex);
 		subtreeTile.boundingVolume = this.getTileBoundingVolume(subtreeTile);
@@ -572,7 +562,7 @@ export class SUBTREELoader extends LoaderBase {
 		subtreeTile.geometricError = this.getGeometricError(subtreeTile);
 
 		// Todo Multiple contents not handled, keep the first found content
-		for(let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++){
+		for (let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++) {
 			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], childBitIndex)) {
 				subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__contentUri)};
 				break;
@@ -620,7 +610,7 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	getTileBoundingVolume(tile) {
 		let boundingVolume;
-		if( this.rootTile.boundingVolume.region ) {
+		if (this.rootTile.boundingVolume.region) {
 			boundingVolume = [...this.rootTile.boundingVolume.region];
 			const minX = boundingVolume[0];
 			const maxX = boundingVolume[2];
@@ -639,7 +629,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 			return {region: boundingVolume}
 
-		}else if( this.rootTile.boundingVolume.box ){
+		} else if (this.rootTile.boundingVolume.box) {
 			/*
 			An array of 12 numbers that define an oriented bounding box.
 			 The first three elements define the x, y, and z values for the center of the box.
@@ -654,15 +644,15 @@ export class SUBTREELoader extends LoaderBase {
 
 
 			const vecCenter = new Vector3();
-			vecCenter.fromArray(boundingVolume.slice(0,3));
+			vecCenter.fromArray(boundingVolume.slice(0, 3));
 
 			const modelSpaceX = -1 + (2 * tile.__x + 1) * scale;
 			const modelSpaceY = -1 + (2 * tile.__y + 1) * scale;
 			let modelSpaceZ = 0;
 
 			let rootHalfAxes = new Matrix3();
-			rootHalfAxes.fromArray(boundingVolume,3);
-			const scaleFactors =new Vector3(scale,scale,1);
+			rootHalfAxes.fromArray(boundingVolume, 3);
+			const scaleFactors = new Vector3(scale, scale, 1);
 
 			if (!isNaN(tile.__z)) {
 				modelSpaceZ = -1 + (2 * tile.__z + 1) * scale;
@@ -683,13 +673,13 @@ export class SUBTREELoader extends LoaderBase {
 			rootHalfAxes = rootHalfAxes.toArray();
 			rootHalfAxes[0] *= scaleFactors.x;
 			rootHalfAxes[1] *= scaleFactors.x;
-			rootHalfAxes[2] *=  scaleFactors.x;
-			rootHalfAxes[3] *=  scaleFactors.y;
+			rootHalfAxes[2] *= scaleFactors.x;
+			rootHalfAxes[3] *= scaleFactors.y;
 			rootHalfAxes[4] *= scaleFactors.y;
 			rootHalfAxes[5] *= scaleFactors.y;
 			rootHalfAxes[6] *= scaleFactors.z;
 			rootHalfAxes[7] *= scaleFactors.z;
-			rootHalfAxes[8] *=  scaleFactors.z;
+			rootHalfAxes[8] *= scaleFactors.z;
 
 			let res = [];
 			center = center.toArray();
@@ -743,7 +733,6 @@ export class SUBTREELoader extends LoaderBase {
 		}
 		return results;
 	}
-
 
 
 	parseImplicitURI(tile, basePath, uri) {

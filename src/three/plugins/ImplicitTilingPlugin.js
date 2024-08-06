@@ -1,19 +1,19 @@
-import {SUBTREELoader} from "../plugins/SUBTREELoader.js";
+import {SUBTREELoader} from "./SUBTREELoader.js";
 
 export class ImplicitTilingPlugin {
 
-	constructor( ) {
+	constructor() {
 		this.name = 'IMPLICIT_TILING_PLUGIN';
 	}
 
-	init( tiles ) {
+	init(tiles) {
 
 		this.tiles = tiles;
 
 	}
 
-	preprocessNode( tile, uri ) {
-		if ( tile.implicitTiling ) {	//only for root
+	preprocessNode(tile, uri) {
+		if (tile.implicitTiling) {	//only for root
 
 			// Store the infos from the tileset
 			tile.__availableLevels = tile.implicitTiling.availableLevels;
@@ -34,17 +34,18 @@ export class ImplicitTilingPlugin {
 
 			let implicitUri = tile.__subtreeUri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
 			implicitUri = implicitUri.replace("{x}", "0");
-			implicitUri = implicitUri.replace("{y}",  "0");
+			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
-			tile.content.uri =  new URL(implicitUri, tile.__basePath + '/').toString();
+			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
 
 		}
 
 
 	}
 
-	parseTile(buffer, parseTile, extension  ) {
-		if ( /subtree$/i.test( parseTile.content.uri ) ) {
+	parseTile(buffer, parseTile, extension) {
+		//todo use extension instead ?
+		if (/subtree$/i.test(parseTile.content.uri)) {
 			const loader = new SUBTREELoader(parseTile, this.tiles.root);
 			loader.parse(buffer);
 			return Promise.resolve()

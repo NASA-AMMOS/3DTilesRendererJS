@@ -1,6 +1,6 @@
 export class SubtreeTile {
 
-	constructor( parentTile, childMortonIndex ) {
+	constructor(parentTile, childMortonIndex) {
 
 		this.parent = parentTile;
 		this.children = [];
@@ -20,15 +20,12 @@ export class SubtreeTile {
 		this.__y = coord.y;
 
 
-
 	}
-
-
 
 
 }
 
-function getSubtreeCoordinates( tile, parentTile ) {
+function getSubtreeCoordinates(tile, parentTile) {
 
 	if (!parentTile) {
 		return {x: 0, y: 0}
