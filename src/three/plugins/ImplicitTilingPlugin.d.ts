@@ -1,5 +1,3 @@
 export class ImplicitTilingPlugin {
-
-	constructor(  );
-
+	constructor();
 }

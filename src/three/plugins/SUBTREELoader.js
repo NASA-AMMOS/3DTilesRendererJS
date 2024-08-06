@@ -2,17 +2,14 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium
  */
-import {DefaultLoadingManager, Matrix3, Matrix4, Vector3} from 'three';
-import {SUBTREELoaderBase} from "../../base/loaders/SUBTREELoaderBase.js";
+import { Matrix3, Vector3} from 'three';
+import {SUBTREELoaderBase} from "./SUBTREELoaderBase.js";
 import {SubtreeTile} from "../../base/SubtreeTile.js";
 
 export class SUBTREELoader extends SUBTREELoaderBase {
 
-	constructor(manager = DefaultLoadingManager, tile, rootTile) {
-
+	constructor(tile, rootTile) {
 		super();
-		this.manager = manager;
-		this.adjustmentTransform = new Matrix4();
 		this.tile = tile;
 		this.rootTile = rootTile;	//The first tile build from the tileset
 

@@ -1,4 +1,4 @@
-import { LoaderBase } from './LoaderBase.js';
+import { LoaderBase } from '../../base/loaders/LoaderBase.js';
 import { readMagicBytes } from '../../utilities/readMagicBytes.js';
 import {arrayToString} from "../../utilities/arrayToString.js";
 

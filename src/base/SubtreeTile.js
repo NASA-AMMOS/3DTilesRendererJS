@@ -1,6 +1,5 @@
 export class SubtreeTile {
 
-
 	constructor( parentTile, childMortonIndex ) {
 
 		this.parent = parentTile;
@@ -16,7 +15,7 @@ export class SubtreeTile {
 
 		this.__basePath = parentTile.__basePath;
 
-		let coord = this.getSubtreeCoordinates(this, parentTile);
+		let coord = getSubtreeCoordinates(this, parentTile);
 		this.__x = coord.x;
 		this.__y = coord.y;
 
@@ -25,22 +24,22 @@ export class SubtreeTile {
 	}
 
 
-	getSubtreeCoordinates( tile, parentTile ) {
 
-		if (!parentTile) {
-			return {x: 0, y: 0}
-		}
-
-		const x = 2 * parentTile.__x + (tile.__subtreeIdx % 2);
-		const y = 2 * parentTile.__y + (Math.floor(tile.__subtreeIdx / 2) % 2);
-
-
-		return {x, y};
-
-	};
 
 }
 
+function getSubtreeCoordinates( tile, parentTile ) {
 
+	if (!parentTile) {
+		return {x: 0, y: 0}
+	}
+
+	const x = 2 * parentTile.__x + (tile.__subtreeIdx % 2);
+	const y = 2 * parentTile.__y + (Math.floor(tile.__subtreeIdx / 2) % 2);
+	//TODO z coord
+
+	return {x, y};
+
+}
 
 

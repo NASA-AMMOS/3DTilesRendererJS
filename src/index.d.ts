@@ -6,7 +6,7 @@ export { B3DMLoader } from './three/loaders/B3DMLoader';
 export { I3DMLoader } from './three/loaders/I3DMLoader';
 export { PNTSLoader } from './three/loaders/PNTSLoader';
 export { CMPTLoader } from './three/loaders/CMPTLoader';
-export { SUBTREELoader } from './three/loaders/SUBTREELoader';
+export { SUBTREELoader } from './three/plugins/SUBTREELoader';
 export { GLTFCesiumRTCExtension } from './three/loaders/gltf/GLTFCesiumRTCExtension';
 export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader';
 export { Ellipsoid } from './three/math/Ellipsoid';
@@ -30,7 +30,7 @@ export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase';
 export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase';
 export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase';
 export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase';
-export { SUBTREELoaderBase } from './base/loaders/SUBTREELoaderBase';
+export { SUBTREELoaderBase } from './base/plugins/SUBTREELoaderBase';
 export { LoaderBase } from './base/loaders/LoaderBase';
 export * from './base/constants';
 
