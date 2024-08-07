@@ -1,7 +1,7 @@
 import {
 	GlobeControls,
 	EllipsoidTilesRenderer,
-	MOON_ELLIPSOID,
+	LUNAR_ELLIPSOID,
 	CesiumIonAuthPlugin,
 } from '../src/index.js';
 import {
@@ -38,7 +38,7 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'ionApiKey', params.apiKey );
 
-	tiles = new EllipsoidTilesRenderer( null, MOON_ELLIPSOID );
+	tiles = new EllipsoidTilesRenderer( null, LUNAR_ELLIPSOID );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829' } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
@@ -61,7 +61,8 @@ function init() {
 	// scene
 	scene = new Scene();
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 0, 0, 14720000 );
+	camera.position.set( 2620409, 0, - 6249816 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
