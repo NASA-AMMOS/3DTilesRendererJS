@@ -1,3 +1,5 @@
+import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
+
 const UNLOADED = 0;
 const LOADING = 1;
 const LOADED = 2;
@@ -61,13 +63,35 @@ export class CesiumIonAuthPlugin {
 
 					this._tokenState = LOADED;
 
-					// retrieve the url version
 					const tiles = this.tiles;
-					const url = new URL( json.url );
-					this._tileSetVersion = url.searchParams.get( 'v' );
-					tiles.rootURL = url;
-					tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
-					tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+
+					if ( 'externalType' in json ) {
+
+						const url = new URL( json.options.url );
+						tiles.rootURL = json.options.url;
+
+						// if the tile set is "external" then assume it's a google API tile set
+						if ( ! tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) ) {
+
+							tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
+
+						}
+
+					} else {
+
+						const url = new URL( json.url );
+						tiles.rootURL = json.url;
+
+						// save the version key if present
+						if ( url.searchParams.has( 'v' ) ) {
+
+							this._tileSetVersion = url.searchParams.get( 'v' );
+							tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+							tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+
+						}
+
+					}
 
 					return tiles.loadRootTileSet( tiles.rootURL );
 
