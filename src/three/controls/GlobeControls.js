@@ -360,8 +360,9 @@ export class GlobeControls extends EnvironmentControls {
 				rotationSpeed,
 				camera,
 				pivotMesh,
-				pivotPoint,
 				tilesGroup,
+				ellipsoid,
+				domElement,
 			} = this;
 
 			// get the delta movement with magic numbers scaled by the distance to the
@@ -370,7 +371,26 @@ export class GlobeControls extends EnvironmentControls {
 			let scaleAmount;
 			if ( camera.isPerspectiveCamera ) {
 
-				scaleAmount = camera.position.distanceTo( pivotPoint ) * 5 * 1e-10 / devicePixelRatio;
+				// get pointer positions
+				pointerTracker.getCenterPoint( _pointer );
+				pointerTracker.getPreviousCenterPoint( _prevPointer );
+
+				// convert to [0, 1] coords
+				mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+				mouseToCoords( _prevPointer.x, _prevPointer.y, domElement, _prevPointer );
+
+				// project to near plane and take delta
+				_vec.set( _pointer.x, _pointer.y, - 1 ).unproject( camera );
+				_pos.set( _prevPointer.x, _prevPointer.y, - 1 ).unproject( camera );
+				_vec.sub( _pos );
+
+				// find the drag vector at the distance of the ellipsoid
+				const radius = Math.max( ...ellipsoid.radius );
+				const distToSurface = this.getDistanceToCenter() - radius;
+				const scaledDragDist = _vec.distanceTo( _pos ) * distToSurface / camera.near;
+
+				// scale the rotation amount by the radius of the ellipsoid
+				scaleAmount = 5 * 1e-4 * scaledDragDist / radius;
 
 			} else {
 
