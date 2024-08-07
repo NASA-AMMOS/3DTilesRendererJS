@@ -1,3 +1,2 @@
-export class ImplicitTilingPlugin {
-	constructor();
-}
+export class ImplicitTilingPlugin {}
+

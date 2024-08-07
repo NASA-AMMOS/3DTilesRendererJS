@@ -339,7 +339,7 @@ export class SUBTREELoader extends LoaderBase {
 	) {
 
 		const branchingFactor = this.rootTile.__subtreeDivider;
-		const subtreeLevels = this.rootTile.__subtreeLevels;
+		const subtreeLevels = this.rootTile.implicitTiling.subtreeLevels;
 		const tileAvailabilityBits =
 			(Math.pow(branchingFactor, subtreeLevels) - 1) / (branchingFactor - 1);
 		const childSubtreeBits = Math.pow(branchingFactor, subtreeLevels);
@@ -489,7 +489,7 @@ export class SUBTREELoader extends LoaderBase {
 		let parentRow = [subtreeRoot];
 		let currentRow = [];
 
-		for (let level = 1; level < this.rootTile.__subtreeLevels; level++) {
+		for (let level = 1; level < this.rootTile.implicitTiling.subtreeLevels; level++) {
 			const branchingFactor = this.rootTile.__subtreeDivider;
 			const levelOffset = (Math.pow(branchingFactor, level) - 1) / (branchingFactor - 1);
 			const numberOfChildren = this.rootTile.__subtreeDivider * parentRow.length;

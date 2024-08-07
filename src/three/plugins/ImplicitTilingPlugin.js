@@ -16,18 +16,16 @@ export class ImplicitTilingPlugin {
 
 	preprocessNode(tile, uri) {
 
-		if (tile.implicitTiling) {	//only for root
+		if (tile.implicitTiling) {	//only for root of the tileset
 
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
 
 			// Store the infos from the tileset
-			tile.__availableLevels = tile.implicitTiling.availableLevels;
-			tile.__subdivisionScheme = tile.implicitTiling.subdivisionScheme;
-			tile.__subtreeLevels = tile.implicitTiling.subtreeLevels;
-			tile.__subtrees = tile.implicitTiling.subtrees;
-			tile.__subtreeDivider = tile.__subdivisionScheme === "QUADTREE" ? 4 : 8;
+			tile.__subtreeDivider =  tile.implicitTiling.subdivisionScheme === "QUADTREE" ? 4 : 8;
 			tile.__subtreeUri = tile.implicitTiling.subtrees.uri;
+
+			// Original content uri
 			tile.__contentUri = uri ?? tile.content?.uri;
 
 			// Declare some properties
@@ -44,7 +42,7 @@ export class ImplicitTilingPlugin {
 			implicitUri = implicitUri.replace("{z}", "0");
 			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
 			// Handling subtree uri or empty content from subtree (using __subtreeIdx as a parameter discriminating subtrees)
-		}else if (/.subtree$/i.test(tile.content?.uri) || (tile.__subtreeIdx !== undefined && !uri)){
+		}else if (/.subtree$/i.test(tile.content?.uri) || !(tile.__subtreeIdx  || uri)){
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
 
