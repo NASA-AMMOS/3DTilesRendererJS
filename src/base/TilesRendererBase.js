@@ -281,6 +281,7 @@ export class TilesRendererBase {
 
 	// Overrideable
 	parseTile( buffer, tile, extension ) {
+
 		return null;
 
 	}
@@ -764,7 +765,9 @@ export class TilesRendererBase {
 
 			const result = func( plugins[ i ] );
 			if ( result ) {
+
 				return result;
+
 			}
 
 		}

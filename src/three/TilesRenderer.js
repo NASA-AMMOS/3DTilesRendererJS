@@ -505,7 +505,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.preprocessNode( tile, tileSetDir, parentTile );
 
-
 		const transform = new Matrix4();
 		if ( tile.transform ) {
 
@@ -561,7 +560,6 @@ export class TilesRenderer extends TilesRendererBase {
 			textures: null,
 
 		};
-
 
 	}
 
@@ -648,8 +646,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-
-
 			default:
 				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
 				promise = Promise.resolve( null );
@@ -678,6 +674,7 @@ export class TilesRenderer extends TilesRendererBase {
 			metadata = null;
 
 		} else {
+
 			scene = result.scene;
 			metadata = result;
 
@@ -868,9 +865,6 @@ export class TilesRenderer extends TilesRendererBase {
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.cached.scene;
-		if(!scene){
-			return;
-		}
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 		if ( visible ) {
@@ -973,8 +967,6 @@ export class TilesRenderer extends TilesRendererBase {
 		return false;
 
 	}
-
-
 
 }
 

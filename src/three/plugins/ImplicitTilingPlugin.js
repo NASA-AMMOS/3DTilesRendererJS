@@ -43,6 +43,11 @@ export class ImplicitTilingPlugin {
 			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
 			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
+			// Handling subtree uri or empty content from subtree (using __subtreeIdx as a parameter discriminating subtrees)
+		}else if (/.subtree$/i.test(tile.content?.uri) || (tile.__subtreeIdx !== undefined && !uri)){
+			tile.__hasUnrenderableContent = true;
+			tile.__hasRenderableContent = false;
+
 		}
 
 	}
@@ -50,7 +55,7 @@ export class ImplicitTilingPlugin {
 	parseTile(buffer, parseTile, extension) {
 
 		//todo use extension instead ?
-		if (/subtree$/i.test(parseTile.content.uri)) {
+		if (/.subtree$/i.test(parseTile.content.uri)) {
 			const loader = new SUBTREELoader(parseTile, this.tiles.root);
 			loader.parse(buffer);
 			return Promise.resolve()
