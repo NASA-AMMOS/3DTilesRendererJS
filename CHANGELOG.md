@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: When zooming out the amount that the camera automatically orients is now based in part on zoom amount.
 - TilesRenderer: Adjust tile traversal behavior so child tiles are not forced to load from empty root tiles even with the "REPLACE" refinement.
 - TilesRenderer: Adjust tile traversal behavior so child tiles of "ADD" refinement are not forced to load.
+- GlobeControls: Zoomed-out ellipsoid rotation is now scaled based on camera parameters and ellipsoid size.
 
 ## [0.3.36] - 2024.07.25
 ### Added
