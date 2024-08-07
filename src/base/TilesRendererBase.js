@@ -530,7 +530,8 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const isExternalTileSet = tile.__hasUnrenderableContent;
+		const uriExtension = getUrlExtension( tile.content.uri );
+		const isExternalTileSet =  Boolean( uriExtension && /json$/.test( uriExtension ) );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started

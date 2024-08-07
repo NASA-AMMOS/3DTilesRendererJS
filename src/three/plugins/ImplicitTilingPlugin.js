@@ -18,6 +18,9 @@ export class ImplicitTilingPlugin {
 
 		if (tile.implicitTiling) {	//only for root
 
+			tile.__hasUnrenderableContent = true;
+			tile.__hasRenderableContent = false;
+
 			// Store the infos from the tileset
 			tile.__availableLevels = tile.implicitTiling.availableLevels;
 			tile.__subdivisionScheme = tile.implicitTiling.subdivisionScheme;
