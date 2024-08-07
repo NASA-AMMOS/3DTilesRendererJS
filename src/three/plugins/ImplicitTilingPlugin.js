@@ -14,7 +14,7 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	preprocessNode(tile, uri) {
+	preprocessNode(tile, uri, parentTile) {
 
 		if (tile.implicitTiling) {	//only for root of the tileset
 

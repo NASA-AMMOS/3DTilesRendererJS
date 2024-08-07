@@ -393,7 +393,7 @@ export class TilesRendererBase {
 		tile.__lastFrameVisited = - 1;
 
 		this.invokeAllPlugins( plugin => {
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode(tile, uri);
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode(tile, uri, parentTile);
 		} );
 	}
 
