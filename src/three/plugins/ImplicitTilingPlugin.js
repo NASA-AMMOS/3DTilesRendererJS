@@ -41,7 +41,7 @@ export class ImplicitTilingPlugin {
 			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
 			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
-			// Handling subtree uri
+		// Handling content uri pointing to a subtree file
 		}else if (/.subtree$/i.test(tile.content?.uri)){
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
