@@ -4,38 +4,27 @@ export class SubtreeTile {
 
 		this.parent = parentTile;
 		this.children = [];
-
-
-		// Number of leaves in the subtree	(should go from 0 to 4 (Quadtree) or 8 (Octree)
 		this.__level = (parentTile.__depth ?? parentTile.__level) + 1;
 
-		//index inside of the tree
+		//index inside the tree
 		this.__subtreeIdx = childMortonIndex;
-
-
-		this.__basePath = parentTile.__basePath;
-
-		let coord = getSubtreeCoordinates(this, parentTile);
-		this.__x = coord.x;
-		this.__y = coord.y;
-
+		[this.__x, this.__y] = getSubtreeCoordinates(this, parentTile);
 
 	}
-
 
 }
 
 function getSubtreeCoordinates(tile, parentTile) {
 
 	if (!parentTile) {
-		return {x: 0, y: 0}
+		return [0, 0]
 	}
 
 	const x = 2 * parentTile.__x + (tile.__subtreeIdx % 2);
 	const y = 2 * parentTile.__y + (Math.floor(tile.__subtreeIdx / 2) % 2);
 	//TODO z coord
 
-	return {x, y};
+	return [x, y];
 
 }
 

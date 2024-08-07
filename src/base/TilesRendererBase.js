@@ -291,7 +291,9 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null) {
 
-		let uri;
+		// Store the original content uri
+		const uri = tile.content?.uri;
+
 		if (tile.content) {
 
 			// Fix old file formats
@@ -299,6 +301,13 @@ export class TilesRendererBase {
 
 				tile.content.uri = tile.content.url;
 				delete tile.content.url;
+
+			}
+
+			if ( tile.content.uri ) {
+
+				// tile content uri has to be interpreted relative to the tileset.json
+				tile.content.uri = new URL( tile.content.uri, tileSetDir + '/' ).toString();
 
 			}
 
@@ -316,18 +325,16 @@ export class TilesRendererBase {
 				delete tile.content.boundingVolume;
 
 			}
-			uri = tile.content?.uri;
 
 		}
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-
 		if ( uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
-			const extension = getUrlExtension( uri );
+			const extension = getUrlExtension( tile.content.uri );
 
 			tile.__hasContent = true;
 			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
@@ -384,14 +391,8 @@ export class TilesRendererBase {
 
 		tile.__lastFrameVisited = - 1;
 
-
-	 	if (tile.content?.uri) {
-			tile.content.uri = new URL(tile.content.uri, tileSetDir + '/').toString();
-		}
 		this.invokeAllPlugins( plugin => {
-
 			plugin !== this && plugin.preprocessNode && plugin.preprocessNode(tile, uri);
-
 		} );
 	}
 

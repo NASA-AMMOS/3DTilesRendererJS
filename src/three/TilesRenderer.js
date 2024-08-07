@@ -672,12 +672,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// get the scene data
 		let scene;
 		let metadata;
-
-		if(!result){
-
-			return;
-
-		} else if ( result.isObject3D ) {
+		if ( result.isObject3D ) {
 
 			scene = result;
 			metadata = null;

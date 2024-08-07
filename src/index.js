@@ -5,6 +5,7 @@ export { B3DMLoader } from './three/loaders/B3DMLoader.js';
 export { PNTSLoader } from './three/loaders/PNTSLoader.js';
 export { I3DMLoader } from './three/loaders/I3DMLoader.js';
 export { CMPTLoader } from './three/loaders/CMPTLoader.js';
+export { SUBTREELoader } from './three/plugins/SUBTREELoader';
 export { GLTFCesiumRTCExtension } from './three/loaders/gltf/GLTFCesiumRTCExtension.js';
 export { GLTFStructuralMetadataExtension } from './three/loaders/gltf/GLTFStructuralMetadataExtension.js';
 export { GLTFMeshFeaturesExtension } from './three/loaders/gltf/GLTFMeshFeaturesExtension.js';

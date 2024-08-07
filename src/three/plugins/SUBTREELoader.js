@@ -8,10 +8,10 @@ import {LoaderBase} from '../../base/loaders/LoaderBase.js';
 import {readMagicBytes} from '../../utilities/readMagicBytes.js';
 import {arrayToString} from "../../utilities/arrayToString.js";
 
-
 export class SUBTREELoader extends LoaderBase {
 
 	constructor(tile, rootTile) {
+
 		super();
 		this.tile = tile;
 		this.rootTile = rootTile;	//The first tile build from the tileset
@@ -85,7 +85,6 @@ export class SUBTREELoader extends LoaderBase {
 		let subtree = this.parseBuffer(buffer);
 		const subtreeJson = subtree.subtreeJson;
 
-
 		// TODO Handle metadata
 		/*
 		 const subtreeMetadata = subtreeJson.subtreeMetadata;
@@ -106,13 +105,11 @@ export class SUBTREELoader extends LoaderBase {
 		// After identifying how availability is stored, put the results in this new array for consistent processing later
 		subtreeJson.contentAvailabilityHeaders = [].concat(subtreeJson.contentAvailability);
 
-
 		const bufferHeaders = this.preprocessBuffers(subtreeJson.buffers);
 		const bufferViewHeaders = this.preprocessBufferViews(
 			subtreeJson.bufferViews,
 			bufferHeaders
 		);
-
 
 		// Buffers and buffer views are inactive until explicitly marked active.
 		// This way we can avoid fetching buffers that will not be used.
@@ -125,8 +122,6 @@ export class SUBTREELoader extends LoaderBase {
 
 		const bufferViewsU8 = this.parseActiveBufferViews(bufferViewHeaders, buffersU8);
 		this.parseAvailability(subtree, subtreeJson, bufferViewsU8);
-
-
 		this.expandSubtree(this.tile, subtree);
 
 	};
@@ -150,6 +145,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	markActiveBufferViews(subtreeJson, bufferViewHeaders) {
+
 		let header;
 		const tileAvailabilityHeader = subtreeJson.tileAvailability;
 
@@ -174,13 +170,11 @@ export class SUBTREELoader extends LoaderBase {
 			} else if (!isNaN(contentAvailabilityHeaders[i].bufferView)) {
 				header = bufferViewHeaders[contentAvailabilityHeaders[i].bufferView];
 			}
-
 			if (header) {
 				header.isActive = true;
 				header.bufferHeader.isActive = true;
 			}
 		}
-
 		header = undefined;
 		const childSubtreeAvailabilityHeader = subtreeJson.childSubtreeAvailability;
 		if (!isNaN(childSubtreeAvailabilityHeader.bitstream)) {
@@ -192,6 +186,7 @@ export class SUBTREELoader extends LoaderBase {
 			header.isActive = true;
 			header.bufferHeader.isActive = true;
 		}
+
 	}
 
 
@@ -213,6 +208,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	requestActiveBuffers(bufferHeaders, internalBuffer) {
+
 		const bufferResults = [];
 		for (let i = 0; i < bufferHeaders.length; i++) {
 			const bufferHeader = bufferHeaders[i];
@@ -231,6 +227,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 		}
 		return buffersU8;
+
 	}
 
 	/**
@@ -243,20 +240,20 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	parseActiveBufferViews(bufferViewHeaders, buffersU8) {
+
 		const bufferViewsU8 = {};
 		for (let i = 0; i < bufferViewHeaders.length; i++) {
 			const bufferViewHeader = bufferViewHeaders[i];
-
 			if (!bufferViewHeader.isActive) {
 				continue;
 			}
-
 			const start = bufferViewHeader.byteOffset;
 			const end = start + bufferViewHeader.byteLength;
 			const buffer = buffersU8[bufferViewHeader.buffer];
 			bufferViewsU8[i] = buffer.slice(start, end);
 		}
 		return bufferViewsU8;
+
 	}
 
 	/**
@@ -281,13 +278,14 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	preprocessBuffers(bufferHeaders) {
+
 		bufferHeaders ??= [];
 		for (let i = 0; i < bufferHeaders.length; i++) {
 			const bufferHeader = bufferHeaders[i];
 			bufferHeader.isActive = false;
 		}
-
 		return bufferHeaders;
+
 	}
 
 
@@ -314,6 +312,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	preprocessBufferViews(bufferViewHeaders, bufferHeaders) {
+
 		bufferViewHeaders ??= [];
 		for (let i = 0; i < bufferViewHeaders.length; i++) {
 			const bufferViewHeader = bufferViewHeaders[i];
@@ -321,6 +320,7 @@ export class SUBTREELoader extends LoaderBase {
 			bufferViewHeader.isActive = false;
 		}
 		return bufferViewHeaders;
+
 	}
 
 
@@ -337,6 +337,7 @@ export class SUBTREELoader extends LoaderBase {
 		subtreeJson,
 		bufferViewsU8
 	) {
+
 		const branchingFactor = this.rootTile.__subtreeDivider;
 		const subtreeLevels = this.rootTile.__subtreeLevels;
 		const tileAvailabilityBits =
@@ -349,7 +350,6 @@ export class SUBTREELoader extends LoaderBase {
 			tileAvailabilityBits
 		);
 
-
 		subtree._contentAvailabilityBitstreams = [];
 		for (let i = 0; i < subtreeJson.contentAvailabilityHeaders.length; i++) {
 			const bitstream = this.parseAvailabilityBitstream(
@@ -361,13 +361,11 @@ export class SUBTREELoader extends LoaderBase {
 			subtree._contentAvailabilityBitstreams.push(bitstream);
 		}
 
-
 		subtree._childSubtreeAvailability = this.parseAvailabilityBitstream(
 			subtreeJson.childSubtreeAvailability,
 			bufferViewsU8,
 			childSubtreeBits
 		);
-
 
 	}
 
@@ -404,10 +402,7 @@ export class SUBTREELoader extends LoaderBase {
 				lengthBits: lengthBits,
 			};
 		}
-
-
 		let bufferView;
-
 		// Check for bitstream first, which is part of the current schema.
 		// bufferView is the name of the bitstream from an older schema.
 
@@ -416,7 +411,6 @@ export class SUBTREELoader extends LoaderBase {
 		} else if (!isNaN(availabilityJson.bufferView)) {
 			bufferView = bufferViewsU8[availabilityJson.bufferView];
 		}
-
 		return {
 			bitstream: bufferView,
 			lengthBits: lengthBits
@@ -444,7 +438,7 @@ export class SUBTREELoader extends LoaderBase {
 
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
 				let contentTile = {
-					content: {uri: this.parseImplicitURI(subtreeRoot, this.rootTile.__basePath, this.rootTile.__contentUri)},
+					content: {uri: this.parseImplicitURI(subtreeRoot, this.rootTile.__contentUri)},
 					boundingVolume: subtreeRoot.boundingVolume,
 					geometricError: subtreeRoot.geometricError
 				}
@@ -471,10 +465,9 @@ export class SUBTREELoader extends LoaderBase {
 				subtreeLocator.childMortonIndex
 			)
 			// Assign subtree uri as content
-			subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__subtreeUri)};
+			subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__subtreeUri)};
 			leafTile.children.push(subtreeTile);
 		}
-
 
 	}
 
@@ -489,7 +482,6 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	transcodeSubtreeTiles(subtreeRoot, subtree) {
-
 
 		// Sliding window over the levels of the tree.
 		// Each row is branchingFactor * length of previous row
@@ -523,15 +515,12 @@ export class SUBTREELoader extends LoaderBase {
 					childBitIndex,
 					childMortonIndex
 				);
-
 				parentTile.children.push(childTile);
 				currentRow.push(childTile);
 			}
-
 			parentRow = currentRow;
 			currentRow = [];
 		}
-
 		return parentRow;
 
 	}
@@ -556,20 +545,20 @@ export class SUBTREELoader extends LoaderBase {
 		childBitIndex,
 		childMortonIndex
 	) {
+
 		let subtreeTile = new SubtreeTile(parentTile, childMortonIndex);
 		subtreeTile.boundingVolume = this.getTileBoundingVolume(subtreeTile);
-
 		subtreeTile.geometricError = this.getGeometricError(subtreeTile);
 
 		// Todo Multiple contents not handled, keep the first found content
 		for (let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++) {
 			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], childBitIndex)) {
-				subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__basePath, this.rootTile.__contentUri)};
+				subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__contentUri)};
 				break;
 			}
 		}
-
 		return subtreeTile;
+
 	}
 
 
@@ -583,25 +572,23 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	getBit(object, index) {
+
 		if (index < 0 || index >= object.lengthBits) {
 			throw new Error("Bit index out of bounds.");
 
 		}
-
 		if (object.constant !== undefined) {
 			return object.constant;
 		}
-
-
 		// byteIndex is floor(index / 8)
 		const byteIndex = index >> 3;
 		const bitIndex = index % 8;
-
 		return ((new Uint8Array(object.bitstream)[byteIndex] >> bitIndex) & 1) === 1;
+
 	}
 
 	/**
-	 * //TODO Adapt for Box & Sphere
+	 * //TODO Adapt for Sphere
 	 * To maintain numerical stability during this subdivision process,
 	 * the actual bounding volumes should not be computed progressively by subdividing a non-root tile volume.
 	 * Instead, the exact bounding volumes are computed directly for a given level.
@@ -609,6 +596,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @return {Object} object containing the bounding volume
 	 */
 	getTileBoundingVolume(tile) {
+
 		let boundingVolume;
 		if (this.rootTile.boundingVolume.region) {
 			boundingVolume = [...this.rootTile.boundingVolume.region];
@@ -616,8 +604,8 @@ export class SUBTREELoader extends LoaderBase {
 			const maxX = boundingVolume[2];
 			const minY = boundingVolume[1];
 			const maxY = boundingVolume[3];
-			const sizeX = (maxX - minX) / (Math.pow(2, tile.__depth ?? tile.__level));
-			const sizeY = (maxY - minY) / (Math.pow(2, tile.__depth ?? tile.__level));
+			const sizeX = (maxX - minX) / (Math.pow(2, tile.__level));
+			const sizeY = (maxY - minY) / (Math.pow(2, tile.__level));
 			boundingVolume[0] = minX + sizeX * tile.__x;	//west
 			boundingVolume[2] = minX + sizeX * (tile.__x + 1);	//east
 			boundingVolume[1] = minY + sizeY * tile.__y;	//south
@@ -638,10 +626,8 @@ export class SUBTREELoader extends LoaderBase {
 			 The last three elements (indices 9, 10, and 11) define the z axis direction and half-length.
 			 */
 
-
 			boundingVolume = [...this.rootTile.boundingVolume.box];
-			const scale = Math.pow(2, -(tile.__depth ?? tile.__level));
-
+			const scale = Math.pow(2, -tile.__level);
 
 			const vecCenter = new Vector3();
 			vecCenter.fromArray(boundingVolume.slice(0, 3));
@@ -653,13 +639,10 @@ export class SUBTREELoader extends LoaderBase {
 			let rootHalfAxes = new Matrix3();
 			rootHalfAxes.fromArray(boundingVolume, 3);
 			const scaleFactors = new Vector3(scale, scale, 1);
-
 			if (!isNaN(tile.__z)) {
 				modelSpaceZ = -1 + (2 * tile.__z + 1) * scale;
 				scaleFactors.z = scale;
 			}
-
-
 			let center = new Vector3(
 				modelSpaceX,
 				modelSpaceY,
@@ -667,7 +650,6 @@ export class SUBTREELoader extends LoaderBase {
 			);
 			center = center.applyMatrix3(rootHalfAxes);
 			center = center.add(vecCenter);
-
 
 			//todo implement better multiply
 			rootHalfAxes = rootHalfAxes.toArray();
@@ -687,9 +669,7 @@ export class SUBTREELoader extends LoaderBase {
 			res = res.concat(rootHalfAxes)
 
 			return {box: res}
-
 		}
-
 
 	}
 
@@ -699,7 +679,9 @@ export class SUBTREELoader extends LoaderBase {
 	 * @return {number}
 	 */
 	getGeometricError(tile) {
-		return this.rootTile.geometricError / Math.pow(2, tile.__depth ?? tile.__level);
+
+		return this.rootTile.geometricError / Math.pow(2, tile.__level);
+
 	}
 
 
@@ -712,6 +694,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @private
 	 */
 	listChildSubtrees(subtree, bottomRow) {
+
 		const results = [];
 		const branchingFactor = this.rootTile.__subtreeDivider;
 		for (let i = 0; i < bottomRow.length; i++) {
@@ -719,9 +702,7 @@ export class SUBTREELoader extends LoaderBase {
 			if (leafTile === undefined) {
 				continue;
 			}
-
 			for (let j = 0; j < branchingFactor; j++) {
-
 				const index = i * branchingFactor + j;
 				if (this.getBit(subtree._childSubtreeAvailability, index)) {
 					results.push({
@@ -732,16 +713,18 @@ export class SUBTREELoader extends LoaderBase {
 			}
 		}
 		return results;
+
 	}
 
 
-	parseImplicitURI(tile, basePath, uri) {
-		uri = uri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
-		uri = uri.replace("{x}", tile.__x ?? 0);
-		uri = uri.replace("{y}", tile.__y ?? 0);
-		uri = uri.replace("{z}", tile.__z ?? 0);
-		uri = new URL(uri, basePath + '/').toString();
+	parseImplicitURI(tile, uri) {
+
+		uri = uri.replace("{level}", tile.__level);
+		uri = uri.replace("{x}", tile.__x);
+		uri = uri.replace("{y}", tile.__y);
+		uri = uri.replace("{z}", tile.__z);
 		return uri;
+
 	}
 
 }

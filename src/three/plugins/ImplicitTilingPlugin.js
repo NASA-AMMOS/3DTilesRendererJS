@@ -3,7 +3,9 @@ import {SUBTREELoader} from "./SUBTREELoader.js";
 export class ImplicitTilingPlugin {
 
 	constructor() {
+
 		this.name = 'IMPLICIT_TILING_PLUGIN';
+
 	}
 
 	init(tiles) {
@@ -13,6 +15,7 @@ export class ImplicitTilingPlugin {
 	}
 
 	preprocessNode(tile, uri) {
+
 		if (tile.implicitTiling) {	//only for root
 
 			// Store the infos from the tileset
@@ -37,13 +40,12 @@ export class ImplicitTilingPlugin {
 			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
 			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
-
 		}
-
 
 	}
 
 	parseTile(buffer, parseTile, extension) {
+
 		//todo use extension instead ?
 		if (/subtree$/i.test(parseTile.content.uri)) {
 			const loader = new SUBTREELoader(parseTile, this.tiles.root);
