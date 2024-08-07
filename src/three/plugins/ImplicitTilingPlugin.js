@@ -41,11 +41,10 @@ export class ImplicitTilingPlugin {
 			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
 			tile.content.uri = new URL(implicitUri, tile.__basePath + '/').toString();
-			// Handling subtree uri or empty content from subtree (using __subtreeIdx as a parameter discriminating subtrees)
-		}else if (/.subtree$/i.test(tile.content?.uri) || !(tile.__subtreeIdx  || uri)){
+			// Handling subtree uri
+		}else if (/.subtree$/i.test(tile.content?.uri)){
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
-
 		}
 
 	}
