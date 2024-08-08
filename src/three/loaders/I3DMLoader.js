@@ -93,9 +93,21 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						} );
+						const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 
 						const instanceMap = new Map();
 						const instances = [];
+						const { scene } = model;
+
+						if ( rtcCenter ) {
+
+							scene.position.x += rtcCenter[ 0 ];
+							scene.position.y += rtcCenter[ 1 ];
+							scene.position.z += rtcCenter[ 2 ];
+							scene.updateMatrix();
+
+						}
+
 						model.scene.traverse( child => {
 
 							if ( child.isMesh ) {
