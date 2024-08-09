@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
 - TilesRenderer: Removed `loadSiblings` option.
 - TilesRenderer: Removed `stopAtEmptyTiles` option.
+- LRUCache: Tiles continue to be unloaded even when the tiles renderer update function has not been called.
 
 ### Fixed
 - GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.
