@@ -945,12 +945,13 @@ export class EnvironmentControls extends EventDispatcher {
 			maxAltitude,
 			pointerTracker,
 			rotationSpeed,
+			domElement,
 		} = this;
 
-		// get the rotation motion and scale the rotation based on pixel ratio for consistency
+		// get the rotation motion and divide out the container height to normalize for element size
 		pointerTracker.getCenterPoint( _pointer );
 		pointerTracker.getPreviousCenterPoint( _prevPointer );
-		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 0.02 / devicePixelRatio );
+		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
 
 		const azimuth = - _deltaPointer.x * rotationSpeed;
 		let altitude = _deltaPointer.y * rotationSpeed;
