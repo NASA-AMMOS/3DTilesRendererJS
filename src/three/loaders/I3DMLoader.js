@@ -198,11 +198,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 							// scale
-							if ( SCALE ) {
+							tempSca.set( 1, 1, 1 );
 
-								tempSca.setScalar( SCALE[ i ] );
-
-							} else if ( SCALE_NON_UNIFORM ) {
+							if ( SCALE_NON_UNIFORM ) {
 
 								tempSca.set(
 									SCALE_NON_UNIFORM[ i * 3 + 0 ],
@@ -210,11 +208,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 									SCALE_NON_UNIFORM[ i * 3 + 2 ],
 								);
 
-							} else {
+							}
+							if ( SCALE ) {
 
-								tempSca.set( 1, 1, 1 );
+								tempSca.multiplyScalar( SCALE[ i ] );
 
 							}
+
 
 
 							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
