@@ -48,6 +48,18 @@ export interface TileBase {
 		url?: string;
 
 	};
+	// An object that describes the implicit subdivision of this tile.
+	implicitTiling: {
+		// A string describing the subdivision scheme used within the tileset.
+		subdivisionScheme: 'QUADTREE' | 'OCTREE';
+		subtreeLevels: number;
+		availableLevels: number;
+		// An object describing the location of subtree files.
+		subtrees: {
+			// A template URI pointing to subtree files
+			uri: string;
+		}
+	},
 
 
 	/**
