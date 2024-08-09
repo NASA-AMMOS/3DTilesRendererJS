@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<meta charset="utf-8"/>
+
+		<title>Dither Fade Tiles</title>
+
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+			}
+
+			html {
+				overflow: hidden;
+				font-family: Arial, Helvetica, sans-serif;
+				user-select: none;
+			}
+
+			canvas {
+				image-rendering: pixelated;
+				outline: none;
+			}
+
+			#info {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				text-align: center;
+				padding: 5px;
+				pointer-events: none;
+				line-height: 1.5em;
+			}
+
+			#info, #info a {
+				color: #234;
+			}
+
+			#info a {
+				pointer-events: all;
+			}
+        </style>
+      <script type="module" crossorigin src="./assets/fadingTiles-BzGN5E00.js"></script>
+      <link rel="modulepreload" crossorigin href="./assets/three.module-BB2USAyE.js">
+      <link rel="modulepreload" crossorigin href="./assets/TilesFadePlugin-CyUpxPB4.js">
+      <link rel="modulepreload" crossorigin href="./assets/lil-gui.module.min-D95Toaa3.js">
+      <link rel="modulepreload" crossorigin href="./assets/CameraTransitionManager-Dj8t98oE.js">
+      <link rel="modulepreload" crossorigin href="./assets/EnvironmentControls-BSw-XyT-.js">
+      <link rel="modulepreload" crossorigin href="./assets/readMagicBytes-jydveJgU.js">
+      <link rel="modulepreload" crossorigin href="./assets/LoaderBase-QLlipkOW.js">
+      <link rel="modulepreload" crossorigin href="./assets/GLTFLoader-_VBLdhWf.js">
+      <link rel="modulepreload" crossorigin href="./assets/B3DMLoader-DkbFLGRR.js">
+      <link rel="modulepreload" crossorigin href="./assets/PNTSLoader-Cb7x1xFL.js">
+      <link rel="modulepreload" crossorigin href="./assets/I3DMLoader-cIbRTIJW.js">
+      <link rel="modulepreload" crossorigin href="./assets/CMPTLoader-DuAe8H2m.js">
+      <link rel="modulepreload" crossorigin href="./assets/GLTFExtensionLoader-Dn4yPdlw.js">
+      <link rel="modulepreload" crossorigin href="./assets/TilesRenderer-BHzvOd_T.js">
+    </head>
+    <body>
+		<div id="info">
+			Demonstration of tiles using a dither fade to change, smoothing out the transition.
+		</div>
+    </body>
+</html>
