@@ -1,5 +1,8 @@
 import { LRUCache } from '../src/utilities/LRUCache.js';
 
+globalThis.requestAnimationFrame = setTimeout;
+globalThis.cancelAnimationFrame = clearTimeout;
+
 describe( 'LRUCache', () => {
 
 	it( 'should not allow the same object to be added more than once.', () => {
