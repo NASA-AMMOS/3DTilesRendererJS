@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- TilesOverlayPlugin: Added support for waiting until textures finish loading to dislay.
+- TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
+- BatchTable: `count` field to get the number of id / entries.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
