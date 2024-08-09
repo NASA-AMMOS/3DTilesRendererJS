@@ -303,6 +303,14 @@ maxDebugDistance = - 1 : Number
 
 The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tile set is used.
 
+### .constructor
+
+```js
+constructor( options = {} )
+```
+
+Takes a set of options to initialize to.
+
 ### .getDebugColor
 
 ```js

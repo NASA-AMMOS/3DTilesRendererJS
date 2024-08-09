@@ -43,7 +43,19 @@ export const LOAD_ORDER = 10;
 
 export class DebugTilesPlugin {
 
-	constructor() {
+	constructor( options ) {
+
+		options = {
+			displayBoxBounds: false,
+			displaySphereBounds: false,
+			displayRegionBounds: false,
+			colorMode: NONE,
+			maxDebugDepth: - 1,
+			maxDebugDistance: - 1,
+			maxDebugError: - 1,
+			customColorCallback: null,
+			...options,
+		};
 
 		this.name = 'DEBUG_TILES_PLUGIN';
 		this.tiles = null;
@@ -55,14 +67,14 @@ export class DebugTilesPlugin {
 		this.regionGroup = null;
 
 		// options
-		this.displayBoxBounds = false;
-		this.displaySphereBounds = false;
-		this.displayRegionBounds = false;
-		this.colorMode = NONE;
-		this.maxDebugDepth = - 1;
-		this.maxDebugDistance = - 1;
-		this.maxDebugError = - 1;
-		this.customColorCallback = null;
+		this.displayBoxBounds = options.displayBoxBounds;
+		this.displaySphereBounds = options.displaySphereBounds;
+		this.displayRegionBounds = options.displayRegionBounds;
+		this.colorMode = options.colorMode;
+		this.maxDebugDepth = options.maxDebugDepth;
+		this.maxDebugDistance = options.maxDebugDistance;
+		this.maxDebugError = options.maxDebugError;
+		this.customColorCallback = options.customColorCallback;
 
 		this.getDebugColor = ( value, target ) => {
 
