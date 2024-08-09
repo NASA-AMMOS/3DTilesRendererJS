@@ -390,7 +390,7 @@ export class GlobeControls extends EnvironmentControls {
 				const scaledDragDist = _vec.distanceTo( _pos ) * distToSurface / camera.near;
 
 				// scale the rotation amount by the radius of the ellipsoid
-				scaleAmount = 5 * 1e-4 * scaledDragDist / radius;
+				scaleAmount = 7.5 * 1e-4 * scaledDragDist / radius;
 
 			} else {
 
