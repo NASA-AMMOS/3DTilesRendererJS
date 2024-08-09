@@ -44,6 +44,8 @@ class LRUCache {
 		this.itemList = [];
 		this.usedSet = new Set();
 		this.callbacks = new Map();
+		this.markUnusedQueued = false;
+		this.unloadingHandle = - 1;
 
 		this._unloadPriorityCallback = null;
 
@@ -60,6 +62,12 @@ class LRUCache {
 	}
 
 	add( item, removeCb ) {
+
+		if ( this.markUnusedQueued ) {
+
+			this.markAllUnused();
+
+		}
 
 		const itemSet = this.itemSet;
 		if ( itemSet.has( item ) ) {
@@ -113,6 +121,12 @@ class LRUCache {
 
 	markUsed( item ) {
 
+		if ( this.markUnusedQueued ) {
+
+			this.markAllUnused();
+
+		}
+
 		const itemSet = this.itemSet;
 		const usedSet = this.usedSet;
 		if ( itemSet.has( item ) && ! usedSet.has( item ) ) {
@@ -127,6 +141,13 @@ class LRUCache {
 	markAllUnused() {
 
 		this.usedSet.clear();
+		this.markUnusedQueued = false;
+		if ( this.unloadingHandle !== - 1 ) {
+
+			cancelAnimationFrame( this.unloadingHandle );
+			this.unloadingHandle = - 1;
+
+		}
 
 	}
 
@@ -143,6 +164,7 @@ class LRUCache {
 		const unused = itemList.length - usedSet.size;
 		const excess = itemList.length - targetSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
+		let remaining = excess;
 
 		if ( excess > 0 && unused > 0 ) {
 
@@ -177,6 +199,7 @@ class LRUCache {
 			const maxUnload = Math.max( targetSize * unloadPercent, unusedExcess * unloadPercent );
 			let nodesToUnload = Math.min( maxUnload, unused );
 			nodesToUnload = Math.ceil( nodesToUnload );
+			remaining = excess - nodesToUnload;
 
 			const removedItems = itemList.splice( 0, nodesToUnload );
 			for ( let i = 0, l = removedItems.length; i < l; i ++ ) {
@@ -190,9 +213,15 @@ class LRUCache {
 
 		}
 
+		if ( remaining ) {
+
+			this.unloadingHandle = requestAnimationFrame( () => this.scheduleUnload() );
+
+		}
+
 	}
 
-	scheduleUnload( markAllUnused = true ) {
+	scheduleUnload() {
 
 		if ( ! this.scheduled ) {
 
@@ -201,11 +230,7 @@ class LRUCache {
 
 				this.scheduled = false;
 				this.unloadUnusedContent();
-				if ( markAllUnused ) {
-
-					this.markAllUnused();
-
-				}
+				this.markUnusedQueued = true;
 
 			} );
 
