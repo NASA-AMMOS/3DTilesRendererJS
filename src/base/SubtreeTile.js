@@ -4,7 +4,7 @@ export class SubtreeTile {
 
 		this.parent = parentTile;
 		this.children = [];
-		this.__level = (parentTile.__depth ?? parentTile.__level) + 1;
+		this.__level = parentTile.__level + 1;
 
 		//index inside the tree
 		this.__subtreeIdx = childMortonIndex;

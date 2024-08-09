@@ -16,7 +16,7 @@ export class ImplicitTilingPlugin {
 
 	preprocessNode(tile, uri, parentTile) {
 
-		if (tile.implicitTiling) {	//only for root of the tileset
+		if (tile.implicitTiling) {	//Check if the tile has a declaration of an implicitTiling
 
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
@@ -35,8 +35,8 @@ export class ImplicitTilingPlugin {
 			tile.__x = 0;
 			tile.__y = 0;
 			tile.__z = 0;
-
-			let implicitUri = tile.__subtreeUri.replace("{level}", (tile.__depth ?? tile.__level) ?? 0);
+			tile.__level = tile.__depth;
+			let implicitUri = tile.__subtreeUri.replace("{level}", tile.__level);
 			implicitUri = implicitUri.replace("{x}", "0");
 			implicitUri = implicitUri.replace("{y}", "0");
 			implicitUri = implicitUri.replace("{z}", "0");
