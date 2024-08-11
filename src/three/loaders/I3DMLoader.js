@@ -125,16 +125,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						} );
 
-						// get the average vector center
-						const averageVector = new Vector3();
-						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
-
-							averageVector.x += POSITION[ i * 3 + 0 ] / INSTANCES_LENGTH;
-							averageVector.y += POSITION[ i * 3 + 1 ] / INSTANCES_LENGTH;
-							averageVector.z += POSITION[ i * 3 + 2 ] / INSTANCES_LENGTH;
-
-						}
-
 						// generate positions for all instances
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
