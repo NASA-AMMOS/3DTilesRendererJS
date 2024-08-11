@@ -277,9 +277,8 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {BufferHeader[]} The same array of headers with additional fields.
 	 * @private
 	 */
-	preprocessBuffers(bufferHeaders) {
+	preprocessBuffers(bufferHeaders = []) {
 
-		bufferHeaders ??= [];
 		for (let i = 0; i < bufferHeaders.length; i++) {
 			const bufferHeader = bufferHeaders[i];
 			bufferHeader.isActive = false;
@@ -311,9 +310,8 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {BufferViewHeader[]} The same array of bufferView headers with additional fields
 	 * @private
 	 */
-	preprocessBufferViews(bufferViewHeaders, bufferHeaders) {
+	preprocessBufferViews(bufferViewHeaders = [], bufferHeaders) {
 
-		bufferViewHeaders ??= [];
 		for (let i = 0; i < bufferViewHeaders.length; i++) {
 			const bufferViewHeader = bufferViewHeaders[i];
 			bufferViewHeader.bufferHeader = bufferHeaders[bufferViewHeader.buffer];
