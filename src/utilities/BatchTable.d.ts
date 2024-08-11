@@ -1,10 +1,10 @@
 export class BatchTable {
 
-	batchSize : Number;
+	count : Number;
 
 	constructor(
 		buffer : ArrayBuffer,
-		batchSize : Number,
+		count : Number,
 		start : Number,
 		headerLength : Number,
 		binLength : Number

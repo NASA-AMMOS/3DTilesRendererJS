@@ -3,10 +3,17 @@ import { FeatureTable } from './FeatureTable.js';
 
 export class BatchTable extends FeatureTable {
 
-	constructor( buffer, batchSize, start, headerLength, binLength ) {
+	get batchSize() {
+
+		console.warn( 'BatchTable.batchSize has been deprecated and replaced with BatchTable.count.' );
+		return this.count;
+
+	}
+
+	constructor( buffer, count, start, headerLength, binLength ) {
 
 		super( buffer, start, headerLength, binLength );
-		this.batchSize = batchSize;
+		this.count = count;
 
 		this.extensions = {};
 		const extensions = this.header.extensions;
@@ -25,15 +32,15 @@ export class BatchTable extends FeatureTable {
 	getData( key, componentType = null, type = null ) {
 
 		console.warn( 'BatchTable: BatchTable.getData is deprecated. Use BatchTable.getDataFromId instead.' );
-		return super.getData( key, this.batchSize, componentType, type );
+		return super.getData( key, this.count, componentType, type );
 
 	}
 
 	getDataFromId( id, target = {} ) {
 
-		if ( id < 0 || id >= this.batchSize ) {
+		if ( id < 0 || id >= this.count ) {
 
-			throw new Error( `BatchTable: id value "${ id }" out of bounds for "${ this.batchSize }" features number.` );
+			throw new Error( `BatchTable: id value "${ id }" out of bounds for "${ this.count }" features number.` );
 
 		}
 
@@ -41,7 +48,7 @@ export class BatchTable extends FeatureTable {
 
 			if ( key !== 'extensions' ) {
 
-				target[ key ] = super.getData( key, this.batchSize )[ id ];
+				target[ key ] = super.getData( key, this.count )[ id ];
 
 			}
 
