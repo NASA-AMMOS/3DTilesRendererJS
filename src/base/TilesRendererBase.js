@@ -290,12 +290,12 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null) {
+	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
 		// Store the original content uri
 		const uri = tile.content?.uri;
 
-		if (tile.content) {
+		if ( tile.content ) {
 
 			// Fix old file formats
 			if ( ! ( 'uri' in tile.content ) && 'url' in tile.content ) {
@@ -393,8 +393,11 @@ export class TilesRendererBase {
 		tile.__lastFrameVisited = - 1;
 
 		this.invokeAllPlugins( plugin => {
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode(tile, uri, parentTile);
+
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, uri, parentTile );
+
 		} );
+
 	}
 
 	setTileActive( tile, state ) {
@@ -532,7 +535,7 @@ export class TilesRendererBase {
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const uriExtension = getUrlExtension( tile.content.uri );
-		const isExternalTileSet =  Boolean( uriExtension && /json$/.test( uriExtension ) );
+		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
@@ -722,7 +725,7 @@ export class TilesRendererBase {
 						const uri = parseTile.content.uri;
 						const extension = getUrlExtension( uri );
 
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ));
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ) );
 
 					} );
 
