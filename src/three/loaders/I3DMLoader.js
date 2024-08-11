@@ -95,10 +95,20 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						} );
 
-						const instances = [];
-						const meshes = [];
+						// get the average vector center so we can avoid floating point error due to lower
+						// precision transformation calculations on the GPU
+						const averageVector = new Vector3();
+						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
+
+							averageVector.x += POSITION[ i * 3 + 0 ] / INSTANCES_LENGTH;
+							averageVector.y += POSITION[ i * 3 + 1 ] / INSTANCES_LENGTH;
+							averageVector.z += POSITION[ i * 3 + 2 ] / INSTANCES_LENGTH;
+
+						}
 
 						// find all the children and create associated instance meshes
+						const instances = [];
+						const meshes = [];
 						model.scene.updateMatrixWorld();
 						model.scene.traverse( child => {
 
@@ -108,9 +118,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 								const { geometry, material } = child;
 								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
-								instancedMesh.position.copy( child.position );
-								instancedMesh.rotation.copy( child.rotation );
-								instancedMesh.scale.copy( child.scale );
+								instancedMesh.position.copy( averageVector );
 								instances.push( instancedMesh );
 
 							}
