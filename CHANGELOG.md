@@ -6,18 +6,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- TilesOverlayPlugin: Added support for waiting until textures finish loading to dislay.
+- TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
+- BatchTable: `count` field to get the number of id / entries.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
 - TilesRenderer: Removed `loadSiblings` option.
 - TilesRenderer: Removed `stopAtEmptyTiles` option.
+- LRUCache: Tiles continue to be unloaded even when the tiles renderer update function has not been called.
 
 ### Fixed
 - GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.
 - GlobeControls: When zooming out the amount that the camera automatically orients is now based in part on zoom amount.
 - TilesRenderer: Adjust tile traversal behavior so child tiles are not forced to load from empty root tiles even with the "REPLACE" refinement.
 - TilesRenderer: Adjust tile traversal behavior so child tiles of "ADD" refinement are not forced to load.
+- GlobeControls: Zoomed-out ellipsoid rotation is now scaled based on camera parameters and ellipsoid size.
 
 ## [0.3.36] - 2024.07.25
 ### Added

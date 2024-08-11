@@ -45,7 +45,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
-	if ( canTraverse( tile, renderer ) && ! tile.__hasRenderableContent ) {
+	if ( ! tile.__hasRenderableContent ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {

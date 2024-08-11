@@ -10,17 +10,43 @@ const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
 const _mat = new Matrix4();
 const _euler = new Euler();
 
-const GooglePhotorealisticTilesRendererMixin = base => class extends base {
+const EllipsoidTilesRendererMixin = base => class extends base {
 
-	get ellipsoid() {
+	constructor( url, ellipsoid = WGS84_ELLIPSOID ) {
 
-		return WGS84_ELLIPSOID;
+		super( url );
+		this.ellipsoid = ellipsoid;
 
 	}
 
+	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
+	setLatLonToYUp( lat, lon ) {
+
+		const { ellipsoid, group } = this;
+
+		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
+		_mat.makeRotationFromEuler( _euler );
+
+		ellipsoid.constructLatLonFrame( lat, lon, group.matrix )
+			.multiply( _mat )
+			.invert()
+			.decompose(
+				group.position,
+				group.quaternion,
+				group.scale,
+			);
+
+		group.updateMatrixWorld( true );
+
+	}
+
+};
+
+const GooglePhotorealisticTilesRendererMixin = base => class extends EllipsoidTilesRendererMixin( base ) {
+
 	constructor( url = TILE_URL ) {
 
-		super( url );
+		super( url, WGS84_ELLIPSOID );
 
 		this._credits = new GoogleMapsTilesCredits();
 
@@ -55,27 +81,6 @@ const GooglePhotorealisticTilesRendererMixin = base => class extends base {
 
 	}
 
-	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
-	setLatLonToYUp( lat, lon ) {
-
-		const { ellipsoid, group } = this;
-
-		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
-		_mat.makeRotationFromEuler( _euler );
-
-		ellipsoid.constructLatLonFrame( lat, lon, group.matrix )
-			.multiply( _mat )
-			.invert()
-			.decompose(
-				group.position,
-				group.quaternion,
-				group.scale,
-			);
-
-		group.updateMatrixWorld( true );
-
-	}
-
 };
 
 const GoogleTilesRendererMixin = base => class extends GooglePhotorealisticTilesRendererMixin( base ) {
@@ -96,3 +101,5 @@ export const DebugGoogleTilesRenderer = GoogleTilesRendererMixin( DebugTilesRend
 
 export const GooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( TilesRenderer );
 export const DebugGooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( DebugTilesRenderer );
+
+export const EllipsoidTilesRenderer = EllipsoidTilesRendererMixin( TilesRenderer );

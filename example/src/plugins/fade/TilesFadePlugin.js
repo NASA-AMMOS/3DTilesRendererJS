@@ -22,7 +22,7 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 		// if this is a root tile and we haven't rendered any child tiles yet then pop in
 		// the root tiles immediately rather than fading from nothing
-		const isRootTile = tile.__depthFromRenderedParent === 0;
+		const isRootTile = tile.__depthFromRenderedParent === 1;
 		if ( ! isRootTile ) {
 
 			this._initialLayerRendered = true;
