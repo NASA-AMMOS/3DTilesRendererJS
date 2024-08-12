@@ -78,7 +78,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 
 						[
-							'RTC_CENTER',
 							'QUANTIZED_VOLUME_OFFSET',
 							'QUANTIZED_VOLUME_SCALE',
 							'EAST_NORTH_UP',
@@ -94,6 +93,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						} );
+						const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 
 						// get the average vector center so we can avoid floating point error due to lower
 						// precision transformation calculations on the GPU
@@ -110,6 +110,14 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const instances = [];
 						const meshes = [];
 						model.scene.updateMatrixWorld();
+						if ( rtcCenter ) {
+
+							model.scene.position.x += rtcCenter[ 0 ];
+							model.scene.position.y += rtcCenter[ 1 ];
+							model.scene.position.z += rtcCenter[ 2 ];
+
+						}
+
 						model.scene.traverse( child => {
 
 							if ( child.isMesh ) {
