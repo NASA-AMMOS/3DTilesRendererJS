@@ -60,4 +60,10 @@ export class ImplicitTilingPlugin {
 
 	}
 
+	disposeTile(tile){
+		if (/.subtree$/i.test(tile.content?.uri)){
+			tile.children.length = 0;
+		}
+	}
+
 }

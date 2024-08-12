@@ -547,7 +547,9 @@ export class TilesRendererBase {
 
 			} else {
 
-				this.disposeTile( t );
+				this.invokeAllPlugins( plugin => {
+					plugin.disposeTile && plugin.disposeTile(t);
+				} );
 
 			}
 
