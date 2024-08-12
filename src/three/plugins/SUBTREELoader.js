@@ -2,15 +2,15 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium/blob/0a69f67b393ba194eefb7254600811c4b712ddc0/packages/engine/Source/Scene/Implicit3DTileContent.js
  */
-import {Matrix3, Vector3} from 'three';
-import {SubtreeTile} from "../../base/SubtreeTile.js";
-import {LoaderBase} from '../../base/loaders/LoaderBase.js';
-import {readMagicBytes} from '../../utilities/readMagicBytes.js';
-import {arrayToString} from "../../utilities/arrayToString.js";
+import { Matrix3, Vector3 } from 'three';
+import { SubtreeTile } from '../../base/SubtreeTile.js';
+import { LoaderBase } from '../../base/loaders/LoaderBase.js';
+import { readMagicBytes } from '../../utilities/readMagicBytes.js';
+import { arrayToString } from '../../utilities/arrayToString.js';
 
 export class SUBTREELoader extends LoaderBase {
 
-	constructor(tile, rootTile) {
+	constructor( tile, rootTile ) {
 
 		super();
 		this.tile = tile;
@@ -34,21 +34,21 @@ export class SUBTREELoader extends LoaderBase {
 	 * @return {Subtree}
 	 */
 
-	parseBuffer(buffer) {
+	parseBuffer( buffer ) {
 
-		const dataView = new DataView(buffer);
+		const dataView = new DataView( buffer );
 		let offset = 0;
 
 		// 16-byte header
 
 		// 4 bytes
-		const magic = readMagicBytes(dataView);
-		console.assert(magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".');
+		const magic = readMagicBytes( dataView );
+		console.assert( magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".' );
 		offset += 4;
 
 		// 4 bytes
-		const version = dataView.getUint32(offset, true);
-		console.assert(version === 1, 'SUBTREELoader: The version listed in the header is "1".');
+		const version = dataView.getUint32( offset, true );
+		console.assert( version === 1, 'SUBTREELoader: The version listed in the header is "1".' );
 		offset += 4;
 
 		// From Cesium
@@ -58,17 +58,17 @@ export class SUBTREELoader extends LoaderBase {
 		// 2) the data is well under 4GB
 
 		// 8 bytes
-		const jsonLength = dataView.getUint32(offset, true);
+		const jsonLength = dataView.getUint32( offset, true );
 		offset += 8;
 
 		// 8 bytes
-		const byteLength = dataView.getUint32(offset, true);
+		const byteLength = dataView.getUint32( offset, true );
 		offset += 8;
 
-		const subtreeJson = JSON.parse(arrayToString(new Uint8Array(buffer, offset, jsonLength)));
+		const subtreeJson = JSON.parse( arrayToString( new Uint8Array( buffer, offset, jsonLength ) ) );
 		offset += jsonLength;
 
-		const subtreeByte = buffer.slice(offset, offset + byteLength);
+		const subtreeByte = buffer.slice( offset, offset + byteLength );
 
 		return {
 			version,
@@ -79,10 +79,10 @@ export class SUBTREELoader extends LoaderBase {
 	}
 
 
-	parse(buffer) {
+	parse( buffer ) {
 
 		// todo here : handle json
-		let subtree = this.parseBuffer(buffer);
+		const subtree = this.parseBuffer( buffer );
 		const subtreeJson = subtree.subtreeJson;
 
 		// TODO Handle metadata
@@ -103,9 +103,9 @@ export class SUBTREELoader extends LoaderBase {
 
 
 		// After identifying how availability is stored, put the results in this new array for consistent processing later
-		subtreeJson.contentAvailabilityHeaders = [].concat(subtreeJson.contentAvailability);
+		subtreeJson.contentAvailabilityHeaders = [].concat( subtreeJson.contentAvailability );
 
-		const bufferHeaders = this.preprocessBuffers(subtreeJson.buffers);
+		const bufferHeaders = this.preprocessBuffers( subtreeJson.buffers );
 		const bufferViewHeaders = this.preprocessBufferViews(
 			subtreeJson.bufferViews,
 			bufferHeaders
@@ -113,18 +113,18 @@ export class SUBTREELoader extends LoaderBase {
 
 		// Buffers and buffer views are inactive until explicitly marked active.
 		// This way we can avoid fetching buffers that will not be used.
-		this.markActiveBufferViews(subtreeJson, bufferViewHeaders);
+		this.markActiveBufferViews( subtreeJson, bufferViewHeaders );
 
 		const buffersU8 = this.requestActiveBuffers(
 			bufferHeaders,
 			subtree.subtreeByte
 		);
 
-		const bufferViewsU8 = this.parseActiveBufferViews(bufferViewHeaders, buffersU8);
-		this.parseAvailability(subtree, subtreeJson, bufferViewsU8);
-		this.expandSubtree(this.tile, subtree);
+		const bufferViewsU8 = this.parseActiveBufferViews( bufferViewHeaders, buffersU8 );
+		this.parseAvailability( subtree, subtreeJson, bufferViewsU8 );
+		this.expandSubtree( this.tile, subtree );
 
-	};
+	}
 
 
 	/**
@@ -144,47 +144,67 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {BufferViewHeader[]} bufferViewHeaders The preprocessed buffer view headers
 	 * @private
 	 */
-	markActiveBufferViews(subtreeJson, bufferViewHeaders) {
+	markActiveBufferViews( subtreeJson, bufferViewHeaders ) {
 
 		let header;
 		const tileAvailabilityHeader = subtreeJson.tileAvailability;
 
 		// Check for bitstream first, which is part of the current schema.
 		// bufferView is the name of the bitstream from an older schema.
-		if (!isNaN(tileAvailabilityHeader.bitstream)) {
-			header = bufferViewHeaders[tileAvailabilityHeader.bitstream];
-		} else if (!isNaN(tileAvailabilityHeader.bufferView)) {
-			header = bufferViewHeaders[tileAvailabilityHeader.bufferView];
+		if ( ! isNaN( tileAvailabilityHeader.bitstream ) ) {
+
+			header = bufferViewHeaders[ tileAvailabilityHeader.bitstream ];
+
+		} else if ( ! isNaN( tileAvailabilityHeader.bufferView ) ) {
+
+			header = bufferViewHeaders[ tileAvailabilityHeader.bufferView ];
+
 		}
 
-		if (header) {
+		if ( header ) {
+
 			header.isActive = true;
 			header.bufferHeader.isActive = true;
+
 		}
 
 		const contentAvailabilityHeaders = subtreeJson.contentAvailabilityHeaders;
-		for (let i = 0; i < contentAvailabilityHeaders.length; i++) {
+		for ( let i = 0; i < contentAvailabilityHeaders.length; i ++ ) {
+
 			header = undefined;
-			if (!isNaN(contentAvailabilityHeaders[i].bitstream)) {
-				header = bufferViewHeaders[contentAvailabilityHeaders[i].bitstream];
-			} else if (!isNaN(contentAvailabilityHeaders[i].bufferView)) {
-				header = bufferViewHeaders[contentAvailabilityHeaders[i].bufferView];
+			if ( ! isNaN( contentAvailabilityHeaders[ i ].bitstream ) ) {
+
+				header = bufferViewHeaders[ contentAvailabilityHeaders[ i ].bitstream ];
+
+			} else if ( ! isNaN( contentAvailabilityHeaders[ i ].bufferView ) ) {
+
+				header = bufferViewHeaders[ contentAvailabilityHeaders[ i ].bufferView ];
+
 			}
-			if (header) {
+			if ( header ) {
+
 				header.isActive = true;
 				header.bufferHeader.isActive = true;
+
 			}
+
 		}
 		header = undefined;
 		const childSubtreeAvailabilityHeader = subtreeJson.childSubtreeAvailability;
-		if (!isNaN(childSubtreeAvailabilityHeader.bitstream)) {
-			header = bufferViewHeaders[childSubtreeAvailabilityHeader.bitstream];
-		} else if (!isNaN(childSubtreeAvailabilityHeader.bufferView)) {
-			header = bufferViewHeaders[childSubtreeAvailabilityHeader.bufferView];
+		if ( ! isNaN( childSubtreeAvailabilityHeader.bitstream ) ) {
+
+			header = bufferViewHeaders[ childSubtreeAvailabilityHeader.bitstream ];
+
+		} else if ( ! isNaN( childSubtreeAvailabilityHeader.bufferView ) ) {
+
+			header = bufferViewHeaders[ childSubtreeAvailabilityHeader.bufferView ];
+
 		}
-		if (header) {
+		if ( header ) {
+
 			header.isActive = true;
 			header.bufferHeader.isActive = true;
+
 		}
 
 	}
@@ -207,24 +227,34 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
 	 * @private
 	 */
-	requestActiveBuffers(bufferHeaders, internalBuffer) {
+	requestActiveBuffers( bufferHeaders, internalBuffer ) {
 
 		const bufferResults = [];
-		for (let i = 0; i < bufferHeaders.length; i++) {
-			const bufferHeader = bufferHeaders[i];
-			if (bufferHeader.isActive) {
-				bufferResults.push(internalBuffer);
+		for ( let i = 0; i < bufferHeaders.length; i ++ ) {
+
+			const bufferHeader = bufferHeaders[ i ];
+			if ( bufferHeader.isActive ) {
+
+				bufferResults.push( internalBuffer );
+
 			} else {
-				bufferResults.push(undefined);
+
+				bufferResults.push( undefined );
+
 			}
+
 		}
 
 		const buffersU8 = {};
-		for (let i = 0; i < bufferResults.length; i++) {
-			const result = bufferResults[i];
-			if (result) {
-				buffersU8[i] = result;
+		for ( let i = 0; i < bufferResults.length; i ++ ) {
+
+			const result = bufferResults[ i ];
+			if ( result ) {
+
+				buffersU8[ i ] = result;
+
 			}
+
 		}
 		return buffersU8;
 
@@ -239,18 +269,22 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {object} A dictionary of buffer view index to a Uint8Array of its contents.
 	 * @private
 	 */
-	parseActiveBufferViews(bufferViewHeaders, buffersU8) {
+	parseActiveBufferViews( bufferViewHeaders, buffersU8 ) {
 
 		const bufferViewsU8 = {};
-		for (let i = 0; i < bufferViewHeaders.length; i++) {
-			const bufferViewHeader = bufferViewHeaders[i];
-			if (!bufferViewHeader.isActive) {
+		for ( let i = 0; i < bufferViewHeaders.length; i ++ ) {
+
+			const bufferViewHeader = bufferViewHeaders[ i ];
+			if ( ! bufferViewHeader.isActive ) {
+
 				continue;
+
 			}
 			const start = bufferViewHeader.byteOffset;
 			const end = start + bufferViewHeader.byteLength;
-			const buffer = buffersU8[bufferViewHeader.buffer];
-			bufferViewsU8[i] = buffer.slice(start, end);
+			const buffer = buffersU8[ bufferViewHeader.buffer ];
+			bufferViewsU8[ i ] = buffer.slice( start, end );
+
 		}
 		return bufferViewsU8;
 
@@ -277,12 +311,13 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {BufferHeader[]} The same array of headers with additional fields.
 	 * @private
 	 */
-	preprocessBuffers(bufferHeaders) {
+	preprocessBuffers( bufferHeaders = [] ) {
 
-		bufferHeaders ??= [];
-		for (let i = 0; i < bufferHeaders.length; i++) {
-			const bufferHeader = bufferHeaders[i];
+		for ( let i = 0; i < bufferHeaders.length; i ++ ) {
+
+			const bufferHeader = bufferHeaders[ i ];
 			bufferHeader.isActive = false;
+
 		}
 		return bufferHeaders;
 
@@ -311,13 +346,14 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {BufferViewHeader[]} The same array of bufferView headers with additional fields
 	 * @private
 	 */
-	preprocessBufferViews(bufferViewHeaders, bufferHeaders) {
+	preprocessBufferViews( bufferViewHeaders = [], bufferHeaders ) {
 
-		bufferViewHeaders ??= [];
-		for (let i = 0; i < bufferViewHeaders.length; i++) {
-			const bufferViewHeader = bufferViewHeaders[i];
-			bufferViewHeader.bufferHeader = bufferHeaders[bufferViewHeader.buffer];
+		for ( let i = 0; i < bufferViewHeaders.length; i ++ ) {
+
+			const bufferViewHeader = bufferViewHeaders[ i ];
+			bufferViewHeader.bufferHeader = bufferHeaders[ bufferViewHeader.buffer ];
 			bufferViewHeader.isActive = false;
+
 		}
 		return bufferViewHeaders;
 
@@ -341,8 +377,8 @@ export class SUBTREELoader extends LoaderBase {
 		const branchingFactor = this.rootTile.__subtreeDivider;
 		const subtreeLevels = this.rootTile.implicitTiling.subtreeLevels;
 		const tileAvailabilityBits =
-			(Math.pow(branchingFactor, subtreeLevels) - 1) / (branchingFactor - 1);
-		const childSubtreeBits = Math.pow(branchingFactor, subtreeLevels);
+			( Math.pow( branchingFactor, subtreeLevels ) - 1 ) / ( branchingFactor - 1 );
+		const childSubtreeBits = Math.pow( branchingFactor, subtreeLevels );
 
 		subtree._tileAvailability = this.parseAvailabilityBitstream(
 			subtreeJson.tileAvailability,
@@ -351,14 +387,16 @@ export class SUBTREELoader extends LoaderBase {
 		);
 
 		subtree._contentAvailabilityBitstreams = [];
-		for (let i = 0; i < subtreeJson.contentAvailabilityHeaders.length; i++) {
+		for ( let i = 0; i < subtreeJson.contentAvailabilityHeaders.length; i ++ ) {
+
 			const bitstream = this.parseAvailabilityBitstream(
-				subtreeJson.contentAvailabilityHeaders[i],
+				subtreeJson.contentAvailabilityHeaders[ i ],
 				bufferViewsU8,
 				// content availability has the same length as tile availability.
 				tileAvailabilityBits
 			);
-			subtree._contentAvailabilityBitstreams.push(bitstream);
+			subtree._contentAvailabilityBitstreams.push( bitstream );
+
 		}
 
 		subtree._childSubtreeAvailability = this.parseAvailabilityBitstream(
@@ -396,20 +434,26 @@ export class SUBTREELoader extends LoaderBase {
 		lengthBits,
 	) {
 
-		if (!isNaN(availabilityJson.constant)) {
+		if ( ! isNaN( availabilityJson.constant ) ) {
+
 			return {
-				constant: Boolean(availabilityJson.constant),
+				constant: Boolean( availabilityJson.constant ),
 				lengthBits: lengthBits,
 			};
+
 		}
 		let bufferView;
 		// Check for bitstream first, which is part of the current schema.
 		// bufferView is the name of the bitstream from an older schema.
 
-		if (!isNaN(availabilityJson.bitstream)) {
-			bufferView = bufferViewsU8[availabilityJson.bitstream];
-		} else if (!isNaN(availabilityJson.bufferView)) {
-			bufferView = bufferViewsU8[availabilityJson.bufferView];
+		if ( ! isNaN( availabilityJson.bitstream ) ) {
+
+			bufferView = bufferViewsU8[ availabilityJson.bitstream ];
+
+		} else if ( ! isNaN( availabilityJson.bufferView ) ) {
+
+			bufferView = bufferViewsU8[ availabilityJson.bufferView ];
+
 		}
 		return {
 			bitstream: bufferView,
@@ -429,22 +473,25 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {Subtree} subtree The parsed subtree
 	 * @private
 	 */
-	expandSubtree(subtreeRoot, subtree) {
+	expandSubtree( subtreeRoot, subtree ) {
 
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
 		// Todo Multiple contents not handled, keep the first found content
-		for (let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++) {
-			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], 0)) {
+		for ( let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i ++ ) {
+
+			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], 0 ) ) {
 
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
-				let contentTile = {
-					content: {uri: this.parseImplicitURI(subtreeRoot, this.rootTile.__contentUri)},
+				const contentTile = {
+					content: { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.__contentUri ) },
 					boundingVolume: subtreeRoot.boundingVolume,
 					geometricError: subtreeRoot.geometricError
-				}
-				subtreeRoot.children.push(contentTile);
+				};
+				subtreeRoot.children.push( contentTile );
 				break;
+
 			}
+
 		}
 
 		// Creating each leaf inside the current subtree
@@ -454,19 +501,21 @@ export class SUBTREELoader extends LoaderBase {
 		);
 
 		// For each child subtree, create a tile containing the uri of the next subtree to fetch
-		const childSubtrees = this.listChildSubtrees(subtree, bottomRow);
-		for (let i = 0; i < childSubtrees.length; i++) {
-			const subtreeLocator = childSubtrees[i];
+		const childSubtrees = this.listChildSubtrees( subtree, bottomRow );
+		for ( let i = 0; i < childSubtrees.length; i ++ ) {
+
+			const subtreeLocator = childSubtrees[ i ];
 			const leafTile = subtreeLocator.tile;
-			let subtreeTile = this.deriveChildTile(
+			const subtreeTile = this.deriveChildTile(
 				null,
 				leafTile,
 				null,
 				subtreeLocator.childMortonIndex
-			)
+			);
 			// Assign subtree uri as content
-			subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__subtreeUri)};
-			leafTile.children.push(subtreeTile);
+			subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.__subtreeUri ) };
+			leafTile.children.push( subtreeTile );
+
 		}
 
 	}
@@ -481,31 +530,35 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {Array} The bottom row of transcoded tiles. This is helpful for processing child subtrees
 	 * @private
 	 */
-	transcodeSubtreeTiles(subtreeRoot, subtree) {
+	transcodeSubtreeTiles( subtreeRoot, subtree ) {
 
 		// Sliding window over the levels of the tree.
 		// Each row is branchingFactor * length of previous row
 		// Tiles within a row are ordered by Morton index.
-		let parentRow = [subtreeRoot];
+		let parentRow = [ subtreeRoot ];
 		let currentRow = [];
 
-		for (let level = 1; level < this.rootTile.implicitTiling.subtreeLevels; level++) {
+		for ( let level = 1; level < this.rootTile.implicitTiling.subtreeLevels; level ++ ) {
+
 			const branchingFactor = this.rootTile.__subtreeDivider;
-			const levelOffset = (Math.pow(branchingFactor, level) - 1) / (branchingFactor - 1);
+			const levelOffset = ( Math.pow( branchingFactor, level ) - 1 ) / ( branchingFactor - 1 );
 			const numberOfChildren = this.rootTile.__subtreeDivider * parentRow.length;
 			for (
 				let childMortonIndex = 0;
 				childMortonIndex < numberOfChildren;
-				childMortonIndex++
+				childMortonIndex ++
 			) {
+
 				const childBitIndex = levelOffset + childMortonIndex;
-				const parentMortonIndex = childMortonIndex >> Math.log2(branchingFactor);
-				const parentTile = parentRow[parentMortonIndex];
+				const parentMortonIndex = childMortonIndex >> Math.log2( branchingFactor );
+				const parentTile = parentRow[ parentMortonIndex ];
 
 				// Check if tile is available
-				if (!this.getBit(subtree._tileAvailability, childBitIndex)) {
-					currentRow.push(undefined);
+				if ( ! this.getBit( subtree._tileAvailability, childBitIndex ) ) {
+
+					currentRow.push( undefined );
 					continue;
+
 				}
 
 				// Create a tile and add it as a child
@@ -515,11 +568,13 @@ export class SUBTREELoader extends LoaderBase {
 					childBitIndex,
 					childMortonIndex
 				);
-				parentTile.children.push(childTile);
-				currentRow.push(childTile);
+				parentTile.children.push( childTile );
+				currentRow.push( childTile );
+
 			}
 			parentRow = currentRow;
 			currentRow = [];
+
 		}
 		return parentRow;
 
@@ -546,16 +601,20 @@ export class SUBTREELoader extends LoaderBase {
 		childMortonIndex
 	) {
 
-		let subtreeTile = new SubtreeTile(parentTile, childMortonIndex);
-		subtreeTile.boundingVolume = this.getTileBoundingVolume(subtreeTile);
-		subtreeTile.geometricError = this.getGeometricError(subtreeTile);
+		const subtreeTile = new SubtreeTile( parentTile, childMortonIndex );
+		subtreeTile.boundingVolume = this.getTileBoundingVolume( subtreeTile );
+		subtreeTile.geometricError = this.getGeometricError( subtreeTile );
 
 		// Todo Multiple contents not handled, keep the first found content
-		for (let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i++) {
-			if (subtree && this.getBit(subtree._contentAvailabilityBitstreams[i], childBitIndex)) {
-				subtreeTile.content = {uri: this.parseImplicitURI(subtreeTile, this.rootTile.__contentUri)};
+		for ( let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i ++ ) {
+
+			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], childBitIndex ) ) {
+
+				subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.__contentUri ) };
 				break;
+
 			}
+
 		}
 		return subtreeTile;
 
@@ -571,19 +630,22 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {boolean} The value of the bit
 	 * @private
 	 */
-	getBit(object, index) {
+	getBit( object, index ) {
 
-		if (index < 0 || index >= object.lengthBits) {
-			throw new Error("Bit index out of bounds.");
+		if ( index < 0 || index >= object.lengthBits ) {
+
+			throw new Error( 'Bit index out of bounds.' );
 
 		}
-		if (object.constant !== undefined) {
+		if ( object.constant !== undefined ) {
+
 			return object.constant;
+
 		}
 		// byteIndex is floor(index / 8)
 		const byteIndex = index >> 3;
 		const bitIndex = index % 8;
-		return ((new Uint8Array(object.bitstream)[byteIndex] >> bitIndex) & 1) === 1;
+		return ( ( new Uint8Array( object.bitstream )[ byteIndex ] >> bitIndex ) & 1 ) === 1;
 
 	}
 
@@ -595,29 +657,33 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {Object | SubtreeTile} tile
 	 * @return {Object} object containing the bounding volume
 	 */
-	getTileBoundingVolume(tile) {
+	getTileBoundingVolume( tile ) {
 
 		let boundingVolume;
-		if (this.rootTile.boundingVolume.region) {
-			boundingVolume = [...this.rootTile.boundingVolume.region];
-			const minX = boundingVolume[0];
-			const maxX = boundingVolume[2];
-			const minY = boundingVolume[1];
-			const maxY = boundingVolume[3];
-			const sizeX = (maxX - minX) / (Math.pow(2, tile.__level));
-			const sizeY = (maxY - minY) / (Math.pow(2, tile.__level));
-			boundingVolume[0] = minX + sizeX * tile.__x;	//west
-			boundingVolume[2] = minX + sizeX * (tile.__x + 1);	//east
-			boundingVolume[1] = minY + sizeY * tile.__y;	//south
-			boundingVolume[3] = minY + sizeY * (tile.__y + 1);	//north
+		if ( this.rootTile.boundingVolume.region ) {
 
-			for (let k = 0; k < 4; k++) {
-				const coord = boundingVolume[k];
-				if (coord < -Math.PI) boundingVolume[k] += 2 * Math.PI; else if (coord > Math.PI) boundingVolume[k] -= 2 * Math.PI;
+			boundingVolume = [ ...this.rootTile.boundingVolume.region ];
+			const minX = boundingVolume[ 0 ];
+			const maxX = boundingVolume[ 2 ];
+			const minY = boundingVolume[ 1 ];
+			const maxY = boundingVolume[ 3 ];
+			const sizeX = ( maxX - minX ) / ( Math.pow( 2, tile.__level ) );
+			const sizeY = ( maxY - minY ) / ( Math.pow( 2, tile.__level ) );
+			boundingVolume[ 0 ] = minX + sizeX * tile.__x;	//west
+			boundingVolume[ 2 ] = minX + sizeX * ( tile.__x + 1 );	//east
+			boundingVolume[ 1 ] = minY + sizeY * tile.__y;	//south
+			boundingVolume[ 3 ] = minY + sizeY * ( tile.__y + 1 );	//north
+
+			for ( let k = 0; k < 4; k ++ ) {
+
+				const coord = boundingVolume[ k ];
+				if ( coord < - Math.PI ) boundingVolume[ k ] += 2 * Math.PI; else if ( coord > Math.PI ) boundingVolume[ k ] -= 2 * Math.PI;
+
 			}
-			return {region: boundingVolume}
+			return { region: boundingVolume };
 
-		} else if (this.rootTile.boundingVolume.box) {
+		} else if ( this.rootTile.boundingVolume.box ) {
+
 			/*
 			An array of 12 numbers that define an oriented bounding box.
 			 The first three elements define the x, y, and z values for the center of the box.
@@ -626,49 +692,52 @@ export class SUBTREELoader extends LoaderBase {
 			 The last three elements (indices 9, 10, and 11) define the z axis direction and half-length.
 			 */
 
-			boundingVolume = [...this.rootTile.boundingVolume.box];
-			const scale = Math.pow(2, -tile.__level);
+			boundingVolume = [ ...this.rootTile.boundingVolume.box ];
+			const scale = Math.pow( 2, - tile.__level );
 
 			const vecCenter = new Vector3();
-			vecCenter.fromArray(boundingVolume.slice(0, 3));
+			vecCenter.fromArray( boundingVolume.slice( 0, 3 ) );
 
-			const modelSpaceX = -1 + (2 * tile.__x + 1) * scale;
-			const modelSpaceY = -1 + (2 * tile.__y + 1) * scale;
+			const modelSpaceX = - 1 + ( 2 * tile.__x + 1 ) * scale;
+			const modelSpaceY = - 1 + ( 2 * tile.__y + 1 ) * scale;
 			let modelSpaceZ = 0;
 
 			let rootHalfAxes = new Matrix3();
-			rootHalfAxes.fromArray(boundingVolume, 3);
-			const scaleFactors = new Vector3(scale, scale, 1);
-			if (!isNaN(tile.__z)) {
-				modelSpaceZ = -1 + (2 * tile.__z + 1) * scale;
+			rootHalfAxes.fromArray( boundingVolume, 3 );
+			const scaleFactors = new Vector3( scale, scale, 1 );
+			if ( ! isNaN( tile.__z ) ) {
+
+				modelSpaceZ = - 1 + ( 2 * tile.__z + 1 ) * scale;
 				scaleFactors.z = scale;
+
 			}
 			let center = new Vector3(
 				modelSpaceX,
 				modelSpaceY,
 				modelSpaceZ
 			);
-			center = center.applyMatrix3(rootHalfAxes);
-			center = center.add(vecCenter);
+			center = center.applyMatrix3( rootHalfAxes );
+			center = center.add( vecCenter );
 
 			//todo implement better multiply
 			rootHalfAxes = rootHalfAxes.toArray();
-			rootHalfAxes[0] *= scaleFactors.x;
-			rootHalfAxes[1] *= scaleFactors.x;
-			rootHalfAxes[2] *= scaleFactors.x;
-			rootHalfAxes[3] *= scaleFactors.y;
-			rootHalfAxes[4] *= scaleFactors.y;
-			rootHalfAxes[5] *= scaleFactors.y;
-			rootHalfAxes[6] *= scaleFactors.z;
-			rootHalfAxes[7] *= scaleFactors.z;
-			rootHalfAxes[8] *= scaleFactors.z;
+			rootHalfAxes[ 0 ] *= scaleFactors.x;
+			rootHalfAxes[ 1 ] *= scaleFactors.x;
+			rootHalfAxes[ 2 ] *= scaleFactors.x;
+			rootHalfAxes[ 3 ] *= scaleFactors.y;
+			rootHalfAxes[ 4 ] *= scaleFactors.y;
+			rootHalfAxes[ 5 ] *= scaleFactors.y;
+			rootHalfAxes[ 6 ] *= scaleFactors.z;
+			rootHalfAxes[ 7 ] *= scaleFactors.z;
+			rootHalfAxes[ 8 ] *= scaleFactors.z;
 
 			let res = [];
 			center = center.toArray();
-			res = res.concat(center)
-			res = res.concat(rootHalfAxes)
+			res = res.concat( center );
+			res = res.concat( rootHalfAxes );
 
-			return {box: res}
+			return { box: res };
+
 		}
 
 	}
@@ -678,9 +747,9 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {Object | SubtreeTile} tile
 	 * @return {number}
 	 */
-	getGeometricError(tile) {
+	getGeometricError( tile ) {
 
-		return this.rootTile.geometricError / Math.pow(2, tile.__level);
+		return this.rootTile.geometricError / Math.pow( 2, tile.__level );
 
 	}
 
@@ -693,36 +762,44 @@ export class SUBTREELoader extends LoaderBase {
 	 * @returns {[]} A list of identifiers for the child subtrees.
 	 * @private
 	 */
-	listChildSubtrees(subtree, bottomRow) {
+	listChildSubtrees( subtree, bottomRow ) {
 
 		const results = [];
 		const branchingFactor = this.rootTile.__subtreeDivider;
-		for (let i = 0; i < bottomRow.length; i++) {
-			const leafTile = bottomRow[i];
-			if (leafTile === undefined) {
+		for ( let i = 0; i < bottomRow.length; i ++ ) {
+
+			const leafTile = bottomRow[ i ];
+			if ( leafTile === undefined ) {
+
 				continue;
+
 			}
-			for (let j = 0; j < branchingFactor; j++) {
+			for ( let j = 0; j < branchingFactor; j ++ ) {
+
 				const index = i * branchingFactor + j;
-				if (this.getBit(subtree._childSubtreeAvailability, index)) {
-					results.push({
+				if ( this.getBit( subtree._childSubtreeAvailability, index ) ) {
+
+					results.push( {
 						tile: leafTile,
 						childMortonIndex: index
-					});
+					} );
+
 				}
+
 			}
+
 		}
 		return results;
 
 	}
 
 
-	parseImplicitURI(tile, uri) {
+	parseImplicitURI( tile, uri ) {
 
-		uri = uri.replace("{level}", tile.__level);
-		uri = uri.replace("{x}", tile.__x);
-		uri = uri.replace("{y}", tile.__y);
-		uri = uri.replace("{z}", tile.__z);
+		uri = uri.replace( '{level}', tile.__level );
+		uri = uri.replace( '{x}', tile.__x );
+		uri = uri.replace( '{y}', tile.__y );
+		uri = uri.replace( '{z}', tile.__z );
 		return uri;
 
 	}
