@@ -9,6 +9,7 @@ const tempPos = new Vector3();
 const tempQuat = new Quaternion();
 const tempSca = new Vector3();
 const tempMat = new Matrix4();
+const tempMat2 = new Matrix4();
 export class I3DMLoader extends I3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -94,24 +95,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						} );
 
-						const instanceMap = new Map();
-						const instances = [];
-						model.scene.traverse( child => {
-
-							if ( child.isMesh ) {
-
-								const { geometry, material } = child;
-								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
-								instancedMesh.position.copy( child.position );
-								instancedMesh.rotation.copy( child.rotation );
-								instancedMesh.scale.copy( child.scale );
-								instances.push( instancedMesh );
-								instanceMap.set( child, instancedMesh );
-
-							}
-
-						} );
-
+						// get the average vector center so we can avoid floating point error due to lower
+						// precision transformation calculations on the GPU
 						const averageVector = new Vector3();
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
@@ -121,29 +106,26 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 						}
 
-						// replace the meshes with instanced meshes
-						instanceMap.forEach( ( instancedMesh, mesh ) => {
+						// find all the children and create associated instance meshes
+						const instances = [];
+						const meshes = [];
+						model.scene.updateMatrixWorld();
+						model.scene.traverse( child => {
 
-							const parent = mesh.parent;
-							if ( parent ) {
+							if ( child.isMesh ) {
 
-								// Mesh have no children
-								parent.remove( mesh );
-								parent.add( instancedMesh );
+								meshes.push( child );
 
-								// Center the instance around an average point to avoid jitter at large scales.
-								// Transform the average vector by matrix world so we can account for any existing
-								// transforms of the instanced mesh.
-								instancedMesh.updateMatrixWorld();
-								instancedMesh
-									.position
-									.copy( averageVector )
-									.applyMatrix4( instancedMesh.matrixWorld );
+								const { geometry, material } = child;
+								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
+								instancedMesh.position.copy( averageVector );
+								instances.push( instancedMesh );
 
 							}
 
 						} );
 
+						// generate positions for all instances
 						for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
 							// position
@@ -204,18 +186,24 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							}
 
-
+							// compose the instance matrix
 							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
 
+							// multiple in the original meshes world transform
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
 								const instance = instances[ j ];
-								instance.setMatrixAt( i, tempMat );
+								const mesh = meshes[ j ];
+								tempMat2.multiplyMatrices( tempMat, mesh.matrixWorld );
+								instance.setMatrixAt( i, tempMat2 );
 
 							}
 
 						}
 
+						// replace all geometry with the instances
+						model.scene.clear();
+						model.scene.add( ...instances );
 
 						model.batchTable = batchTable;
 						model.featureTable = featureTable;
