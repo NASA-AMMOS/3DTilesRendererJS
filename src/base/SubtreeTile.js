@@ -5,8 +5,9 @@ export class SubtreeTile {
 		this.parent = parentTile;
 		this.children = [];
 		this.__level = parentTile.__level + 1;
+		this.__implicitRoot = parentTile.__implicitRoot;
 
-		//index inside the tree
+		// Index inside the tree
 		this.__subtreeIdx = childMortonIndex;
 		[ this.__x, this.__y ] = getSubtreeCoordinates( this, parentTile );
 

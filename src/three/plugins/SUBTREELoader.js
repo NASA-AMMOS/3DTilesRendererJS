@@ -10,11 +10,11 @@ import { arrayToString } from '../../utilities/arrayToString.js';
 
 export class SUBTREELoader extends LoaderBase {
 
-	constructor( tile, rootTile ) {
+	constructor( tile ) {
 
 		super();
 		this.tile = tile;
-		this.rootTile = rootTile;	//The first tile build from the tileset
+		this.rootTile = tile.__implicitRoot;	// The implicit root tile
 
 	}
 
