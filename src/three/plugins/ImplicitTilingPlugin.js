@@ -16,7 +16,7 @@ export class ImplicitTilingPlugin {
 
 	preprocessNode( tile, uri, parentTile ) {
 
-		if ( tile.implicitTiling ) {	//Check if the tile has a declaration of an implicitTiling
+		if ( tile.implicitTiling ) {	//Check if the tile is an Implicit Root Tile
 
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
@@ -35,11 +35,11 @@ export class ImplicitTilingPlugin {
 			tile.__x = 0;
 			tile.__y = 0;
 			tile.__z = 0;
-			tile.__level = tile.__depth;
+			tile.__level = 0;
 			let implicitUri = tile.__subtreeUri.replace( '{level}', tile.__level );
-			implicitUri = implicitUri.replace( '{x}', '0' );
-			implicitUri = implicitUri.replace( '{y}', '0' );
-			implicitUri = implicitUri.replace( '{z}', '0' );
+			implicitUri = implicitUri.replace( '{x}', tile.__x );
+			implicitUri = implicitUri.replace( '{y}', tile.__y );
+			implicitUri = implicitUri.replace( '{z}', tile.__z );
 			tile.content.uri = new URL( implicitUri, tile.__basePath + '/' ).toString();
 			// Handling content uri pointing to a subtree file
 
