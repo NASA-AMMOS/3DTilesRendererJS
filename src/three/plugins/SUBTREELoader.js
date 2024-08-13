@@ -475,6 +475,7 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	expandSubtree( subtreeRoot, subtree ) {
 
+		// TODO If multiple contents were supported then this tile could contain both renderable and un renderable content.
 		let contentTile = SubtreeTile.copy(subtreeRoot);
 
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
