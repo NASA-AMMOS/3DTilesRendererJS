@@ -76,9 +76,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
+						const RTC_CENTER = featureTable.getData( 'RTC_CENTER' );
 
 						[
-							'RTC_CENTER',
 							'QUANTIZED_VOLUME_OFFSET',
 							'QUANTIZED_VOLUME_SCALE',
 							'EAST_NORTH_UP',
@@ -110,6 +110,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const instances = [];
 						const meshes = [];
 						model.scene.updateMatrixWorld();
+
 						model.scene.traverse( child => {
 
 							if ( child.isMesh ) {
@@ -119,6 +120,15 @@ export class I3DMLoader extends I3DMLoaderBase {
 								const { geometry, material } = child;
 								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
 								instancedMesh.position.copy( averageVector );
+
+								if ( RTC_CENTER ) {
+
+									instancedMesh.position.x += RTC_CENTER[ 0 ];
+									instancedMesh.position.y += RTC_CENTER[ 1 ];
+									instancedMesh.position.z += RTC_CENTER[ 2 ];
+
+								}
+
 								instances.push( instancedMesh );
 
 							}
@@ -168,11 +178,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 							// scale
-							if ( SCALE ) {
+							tempSca.set( 1, 1, 1 );
 
-								tempSca.setScalar( SCALE[ i ] );
-
-							} else if ( SCALE_NON_UNIFORM ) {
+							if ( SCALE_NON_UNIFORM ) {
 
 								tempSca.set(
 									SCALE_NON_UNIFORM[ i * 3 + 0 ],
@@ -180,9 +188,10 @@ export class I3DMLoader extends I3DMLoaderBase {
 									SCALE_NON_UNIFORM[ i * 3 + 2 ],
 								);
 
-							} else {
+							}
+							if ( SCALE ) {
 
-								tempSca.set( 1, 1, 1 );
+								tempSca.multiplyScalar( SCALE[ i ] );
 
 							}
 
