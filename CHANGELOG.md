@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
 - BatchTable: `count` field to get the number of id / entries.
+- I3DMLoader: Added support for `RTC_CENTER` feature.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
@@ -21,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Adjust tile traversal behavior so child tiles are not forced to load from empty root tiles even with the "REPLACE" refinement.
 - TilesRenderer: Adjust tile traversal behavior so child tiles of "ADD" refinement are not forced to load.
 - GlobeControls: Zoomed-out ellipsoid rotation is now scaled based on camera parameters and ellipsoid size.
+- I3DMLoader: `SCALE` and `SCALE_NON_UNIFORM` are now both applied when present.
+- I3DMLoader: Instances now work correctly when parent group transforms are applied.
 
 ## [0.3.36] - 2024.07.25
 ### Added
