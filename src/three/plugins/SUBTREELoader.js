@@ -476,13 +476,14 @@ export class SUBTREELoader extends LoaderBase {
 	expandSubtree( subtreeRoot, subtree ) {
 
 		// TODO If multiple contents were supported then this tile could contain both renderable and un renderable content.
-		let contentTile = SubtreeTile.copy(subtreeRoot);
+		const contentTile = SubtreeTile.copy( subtreeRoot );
 
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
 		// Todo Multiple contents not handled, keep the first content found
 		for ( let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i ++ ) {
 
 			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], 0 ) ) {
+
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
 				contentTile.content = { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.__contentUri ) };
 				break;

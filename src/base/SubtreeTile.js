@@ -13,7 +13,7 @@ export class SubtreeTile {
 
 	}
 
-	static copy(tile){
+	static copy( tile ) {
 
 		const copyTile = {};
 		copyTile.children = [];
