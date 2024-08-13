@@ -76,6 +76,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
+						const RTC_CENTER = featureTable.getData( 'RTC_CENTER' );
 
 						[
 							'QUANTIZED_VOLUME_OFFSET',
@@ -93,7 +94,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						} );
-						const rtcCenter = featureTable.getData( 'RTC_CENTER' );
 
 						// get the average vector center so we can avoid floating point error due to lower
 						// precision transformation calculations on the GPU
@@ -110,13 +110,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const instances = [];
 						const meshes = [];
 						model.scene.updateMatrixWorld();
-						if ( rtcCenter ) {
-
-							model.scene.position.x += rtcCenter[ 0 ];
-							model.scene.position.y += rtcCenter[ 1 ];
-							model.scene.position.z += rtcCenter[ 2 ];
-
-						}
 
 						model.scene.traverse( child => {
 
@@ -127,6 +120,15 @@ export class I3DMLoader extends I3DMLoaderBase {
 								const { geometry, material } = child;
 								const instancedMesh = new InstancedMesh( geometry, material, INSTANCES_LENGTH );
 								instancedMesh.position.copy( averageVector );
+
+								if ( RTC_CENTER ) {
+
+									instancedMesh.position.x += RTC_CENTER[ 0 ];
+									instancedMesh.position.y += RTC_CENTER[ 1 ];
+									instancedMesh.position.z += RTC_CENTER[ 2 ];
+
+								}
+
 								instances.push( instancedMesh );
 
 							}
