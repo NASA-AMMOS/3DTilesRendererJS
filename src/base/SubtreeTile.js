@@ -10,7 +10,22 @@ export class SubtreeTile {
 		// Index inside the tree
 		this.__subtreeIdx = childMortonIndex;
 		[ this.__x, this.__y ] = getSubtreeCoordinates( this, parentTile );
+	}
 
+	static copy(tile){
+		const copyTile = {};
+		copyTile.parent = tile.parent;
+		copyTile.children = [];
+		copyTile.__level = tile.__level;
+		copyTile.__implicitRoot = tile.__implicitRoot;
+
+		// Index inside the tree
+		copyTile.__subtreeIdx = tile.__subtreeIdx;
+		[ copyTile.__x, copyTile.__y ] = [ tile.__x, tile.__y ];
+
+		copyTile.boundingVolume = tile.boundingVolume;
+		copyTile.geometricError = tile.geometricError;
+		return copyTile;
 	}
 
 }

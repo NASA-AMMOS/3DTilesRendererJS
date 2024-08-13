@@ -475,28 +475,26 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	expandSubtree( subtreeRoot, subtree ) {
 
+		let contentTile = SubtreeTile.copy(subtreeRoot);
+
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
-		// Todo Multiple contents not handled, keep the first found content
+		// Todo Multiple contents not handled, keep the first content found
 		for ( let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i ++ ) {
 
 			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], 0 ) ) {
-
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
-				const contentTile = {
-					content: { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.__contentUri ) },
-					boundingVolume: subtreeRoot.boundingVolume,
-					geometricError: subtreeRoot.geometricError
-				};
-				subtreeRoot.children.push( contentTile );
+				contentTile.content = { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.__contentUri ) };
 				break;
 
 			}
 
 		}
 
+		subtreeRoot.children.push( contentTile );
+
 		// Creating each leaf inside the current subtree
 		const bottomRow = this.transcodeSubtreeTiles(
-			subtreeRoot,
+			contentTile,
 			subtree
 		);
 
