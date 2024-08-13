@@ -428,7 +428,7 @@ export class TilesRendererBase {
 			const child = children[ i ];
 			if ( '__depth' in child ) {
 
-				continue;
+				break;
 
 			}
 
