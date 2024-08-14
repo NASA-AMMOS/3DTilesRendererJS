@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
 - BatchTable: `count` field to get the number of id / entries.
 - I3DMLoader: Added support for `RTC_CENTER` feature.
+- TilesRenderer: Added initial support for implicit tiling.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
