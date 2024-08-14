@@ -2,7 +2,6 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium/blob/0a69f67b393ba194eefb7254600811c4b712ddc0/packages/engine/Source/Scene/Implicit3DTileContent.js
  */
-import { Matrix3, Vector3 } from 'three';
 import { SubtreeTile } from '../../base/SubtreeTile.js';
 import { LoaderBase } from '../../base/loaders/LoaderBase.js';
 import { readMagicBytes } from '../../utilities/readMagicBytes.js';
@@ -659,86 +658,65 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	getTileBoundingVolume( tile ) {
 
-		let boundingVolume;
+		const boundingVolume = {};
 		if ( this.rootTile.boundingVolume.region ) {
 
-			boundingVolume = [ ...this.rootTile.boundingVolume.region ];
-			const minX = boundingVolume[ 0 ];
-			const maxX = boundingVolume[ 2 ];
-			const minY = boundingVolume[ 1 ];
-			const maxY = boundingVolume[ 3 ];
+			const region = [ ...this.rootTile.boundingVolume.region ];
+			const minX = region[ 0 ];
+			const maxX = region[ 2 ];
+			const minY = region[ 1 ];
+			const maxY = region[ 3 ];
 			const sizeX = ( maxX - minX ) / ( Math.pow( 2, tile.__level ) );
 			const sizeY = ( maxY - minY ) / ( Math.pow( 2, tile.__level ) );
-			boundingVolume[ 0 ] = minX + sizeX * tile.__x;	//west
-			boundingVolume[ 2 ] = minX + sizeX * ( tile.__x + 1 );	//east
-			boundingVolume[ 1 ] = minY + sizeY * tile.__y;	//south
-			boundingVolume[ 3 ] = minY + sizeY * ( tile.__y + 1 );	//north
+			region[ 0 ] = minX + sizeX * tile.__x;	//west
+			region[ 2 ] = minX + sizeX * ( tile.__x + 1 );	//east
+			region[ 1 ] = minY + sizeY * tile.__y;	//south
+			region[ 3 ] = minY + sizeY * ( tile.__y + 1 );	//north
 
 			for ( let k = 0; k < 4; k ++ ) {
 
-				const coord = boundingVolume[ k ];
-				if ( coord < - Math.PI ) boundingVolume[ k ] += 2 * Math.PI; else if ( coord > Math.PI ) boundingVolume[ k ] -= 2 * Math.PI;
+				const coord = region[ k ];
+				if ( coord < - Math.PI ) region[ k ] += 2 * Math.PI; else if ( coord > Math.PI ) region[ k ] -= 2 * Math.PI;
 
 			}
-			return { region: boundingVolume };
 
-		} else if ( this.rootTile.boundingVolume.box ) {
-
-			/*
-			An array of 12 numbers that define an oriented bounding box.
-			 The first three elements define the x, y, and z values for the center of the box.
-			 The next three elements (with indices 3, 4, and 5) define the x axis direction and half-length.
-			  The next three elements (indices 6, 7, and 8) define the y axis direction and half-length.
-			 The last three elements (indices 9, 10, and 11) define the z axis direction and half-length.
-			 */
-
-			boundingVolume = [ ...this.rootTile.boundingVolume.box ];
-			const scale = Math.pow( 2, - tile.__level );
-
-			const vecCenter = new Vector3();
-			vecCenter.fromArray( boundingVolume.slice( 0, 3 ) );
-
-			const modelSpaceX = - 1 + ( 2 * tile.__x + 1 ) * scale;
-			const modelSpaceY = - 1 + ( 2 * tile.__y + 1 ) * scale;
-			let modelSpaceZ = 0;
-
-			let rootHalfAxes = new Matrix3();
-			rootHalfAxes.fromArray( boundingVolume, 3 );
-			const scaleFactors = new Vector3( scale, scale, 1 );
-			if ( ! isNaN( tile.__z ) ) {
-
-				modelSpaceZ = - 1 + ( 2 * tile.__z + 1 ) * scale;
-				scaleFactors.z = scale;
-
-			}
-			let center = new Vector3(
-				modelSpaceX,
-				modelSpaceY,
-				modelSpaceZ
-			);
-			center = center.applyMatrix3( rootHalfAxes );
-			center = center.add( vecCenter );
-
-			//todo implement better multiply
-			rootHalfAxes = rootHalfAxes.toArray();
-			rootHalfAxes[ 0 ] *= scaleFactors.x;
-			rootHalfAxes[ 1 ] *= scaleFactors.x;
-			rootHalfAxes[ 2 ] *= scaleFactors.x;
-			rootHalfAxes[ 3 ] *= scaleFactors.y;
-			rootHalfAxes[ 4 ] *= scaleFactors.y;
-			rootHalfAxes[ 5 ] *= scaleFactors.y;
-			rootHalfAxes[ 6 ] *= scaleFactors.z;
-			rootHalfAxes[ 7 ] *= scaleFactors.z;
-			rootHalfAxes[ 8 ] *= scaleFactors.z;
-
-			let res = [];
-			center = center.toArray();
-			res = res.concat( center );
-			res = res.concat( rootHalfAxes );
-
-			return { box: res };
+			boundingVolume.region = region;
 
 		}
+
+		if ( this.rootTile.boundingVolume.box ) {
+
+			// 0-2: center of the box
+			// 3-5: x axis direction and half length
+			// 6-8: y axis direction and half length
+			// 9-11: z axis direction and half length
+
+			const box = [ ...this.rootTile.boundingVolume.box ];
+			const cellSteps = 2 ** tile.__level - 1;
+			const scale = Math.pow( 2, - tile.__level );
+			for ( let i = 0; i < 3; i ++ ) {
+
+				// multiply x and y axes by the scale
+				// don't scale z because octree mode isn't supported, yet
+				box[ 3 + i * 3 + 0 ] *= scale;
+				box[ 3 + i * 3 + 1 ] *= scale;
+				box[ 3 + i * 3 + 2 ] *= 1;
+
+				// adjust the center value by offsetting based ons the cell identifier
+				// and start points
+				const x = box[ 3 + i * 3 + 0 ];
+				const y = box[ 3 + i * 3 + 1 ];
+				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + tile.__x );
+				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + tile.__y );
+				box[ 2 ] += 0;
+
+			}
+
+			boundingVolume.box = box;
+
+		}
+
+		return boundingVolume;
 
 	}
 
