@@ -13,6 +13,20 @@ function isUsedThisFrame( tile, frameCount ) {
 
 }
 
+// Lazily get error
+function getError( tile, renderer ) {
+
+	if ( tile.__errorGeneratedFrame !== renderer.frameCount ) {
+
+		tile.__errorGeneratedFrame = renderer.frameCount;
+		renderer.calculateError( tile );
+
+	}
+
+	return tile.__error;
+
+}
+
 // Resets the frame frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
@@ -111,7 +125,7 @@ function markUsed( tile, renderer ) {
 function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further
-	if ( tile.__error <= renderer.errorTarget ) {
+	if ( getError( tile, renderer ) <= renderer.errorTarget ) {
 
 		return false;
 
@@ -319,7 +333,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const hasContent = tile.__hasContent;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
-	const meetsSSE = tile.__error <= errorRequirement;
+	const meetsSSE = getError( tile, renderer ) <= errorRequirement;
 	const childrenWereVisible = tile.__childrenWereVisible;
 
 	// we don't wait for all children tiles to load if this tile set has empty tiles at the root
