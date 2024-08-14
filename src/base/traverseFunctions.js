@@ -16,9 +16,8 @@ function isUsedThisFrame( tile, frameCount ) {
 // Lazily get error
 function getError( tile, renderer ) {
 
-	if ( tile.__errorGeneratedFrame !== renderer.frameCount ) {
+	if ( tile.__error === Infinity ) {
 
-		tile.__errorGeneratedFrame = renderer.frameCount;
 		renderer.calculateError( tile );
 
 	}
@@ -45,7 +44,6 @@ function resetFrameState( tile, renderer ) {
 
 		// update tile frustum and error state
 		tile.__inFrustum = renderer.tileInView( tile );
-		renderer.calculateError( tile );
 
 	}
 
@@ -100,6 +98,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	} else {
 
+		getError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
@@ -321,6 +320,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
 
+			getError( tile, renderer );
 			renderer.requestTileContents( tile );
 
 		}
@@ -344,6 +344,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
+		getError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
