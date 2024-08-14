@@ -21,10 +21,6 @@ export class ImplicitTilingPlugin {
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
 
-			// Store the infos from the tileset
-			tile.__subtreeDivider = tile.implicitTiling.subdivisionScheme === 'QUADTREE' ? 4 : 8;
-			tile.__subtreeUri = tile.implicitTiling.subtrees.uri;
-
 			// Keep the original content uri
 			tile.__contentUri = uri ?? tile.content?.uri;
 
@@ -39,19 +35,19 @@ export class ImplicitTilingPlugin {
 			tile.__level = 0;
 
 			// Replace the original content uri to the subtree uri
-			let implicitUri = tile.__subtreeUri.replace( '{level}', tile.__level );
-			implicitUri = implicitUri.replace( '{x}', tile.__x );
-			implicitUri = implicitUri.replace( '{y}', tile.__y );
-			implicitUri = implicitUri.replace( '{z}', tile.__z );
-			tile.content.uri = new URL( implicitUri, tile.__basePath + '/' ).toString();
+			const implicitUri = tile.implicitTiling.subtrees.uri
+				.replace( '{level}', tile.__level )
+				.replace( '{x}', tile.__x )
+				.replace( '{y}', tile.__y )
+				.replace( '{z}', tile.__z );
 
-			// Handling content uri pointing to a subtree file
+			tile.content.uri = new URL( implicitUri, tile.__basePath + '/' ).toString();
 
 		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
+			// Handling content uri pointing to a subtree file
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
-			tile.__implicitRoot = parentTile?.__implicitRoot;	// Idx of the tile in its subtree
 
 		}
 

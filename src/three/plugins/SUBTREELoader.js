@@ -7,6 +7,12 @@ import { LoaderBase } from '../../base/loaders/LoaderBase.js';
 import { readMagicBytes } from '../../utilities/readMagicBytes.js';
 import { arrayToString } from '../../utilities/arrayToString.js';
 
+function getBoundsDivider( tile ) {
+
+	return tile.implicitTiling.subdivisionScheme === 'QUADTREE' ? 4 : 8;
+
+}
+
 export class SUBTREELoader extends LoaderBase {
 
 	constructor( tile ) {
@@ -373,7 +379,7 @@ export class SUBTREELoader extends LoaderBase {
 		bufferViewsU8
 	) {
 
-		const branchingFactor = this.rootTile.__subtreeDivider;
+		const branchingFactor = getBoundsDivider( this.rootTile );
 		const subtreeLevels = this.rootTile.implicitTiling.subtreeLevels;
 		const tileAvailabilityBits =
 			( Math.pow( branchingFactor, subtreeLevels ) - 1 ) / ( branchingFactor - 1 );
@@ -512,7 +518,7 @@ export class SUBTREELoader extends LoaderBase {
 				subtreeLocator.childMortonIndex
 			);
 			// Assign subtree uri as content
-			subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.__subtreeUri ) };
+			subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.implicitTiling.subtrees.uri ) };
 			leafTile.children.push( subtreeTile );
 
 		}
@@ -539,9 +545,9 @@ export class SUBTREELoader extends LoaderBase {
 
 		for ( let level = 1; level < this.rootTile.implicitTiling.subtreeLevels; level ++ ) {
 
-			const branchingFactor = this.rootTile.__subtreeDivider;
+			const branchingFactor = getBoundsDivider( this.rootTile );
 			const levelOffset = ( Math.pow( branchingFactor, level ) - 1 ) / ( branchingFactor - 1 );
-			const numberOfChildren = this.rootTile.__subtreeDivider * parentRow.length;
+			const numberOfChildren = branchingFactor * parentRow.length;
 			for (
 				let childMortonIndex = 0;
 				childMortonIndex < numberOfChildren;
@@ -756,7 +762,7 @@ export class SUBTREELoader extends LoaderBase {
 	listChildSubtrees( subtree, bottomRow ) {
 
 		const results = [];
-		const branchingFactor = this.rootTile.__subtreeDivider;
+		const branchingFactor = getBoundsDivider( this.rootTile );
 		for ( let i = 0; i < bottomRow.length; i ++ ) {
 
 			const leafTile = bottomRow[ i ];
