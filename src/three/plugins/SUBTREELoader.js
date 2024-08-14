@@ -666,8 +666,8 @@ export class SUBTREELoader extends LoaderBase {
 			const maxX = region[ 2 ];
 			const minY = region[ 1 ];
 			const maxY = region[ 3 ];
-			const sizeX = ( maxX - minX ) / ( Math.pow( 2, tile.__level ) );
-			const sizeY = ( maxY - minY ) / ( Math.pow( 2, tile.__level ) );
+			const sizeX = ( maxX - minX ) / Math.pow( 2, tile.__level );
+			const sizeY = ( maxY - minY ) / Math.pow( 2, tile.__level );
 			region[ 0 ] = minX + sizeX * tile.__x;	//west
 			region[ 2 ] = minX + sizeX * ( tile.__x + 1 );	//east
 			region[ 1 ] = minY + sizeY * tile.__y;	//south
@@ -676,7 +676,15 @@ export class SUBTREELoader extends LoaderBase {
 			for ( let k = 0; k < 4; k ++ ) {
 
 				const coord = region[ k ];
-				if ( coord < - Math.PI ) region[ k ] += 2 * Math.PI; else if ( coord > Math.PI ) region[ k ] -= 2 * Math.PI;
+				if ( coord < - Math.PI ) {
+
+					region[ k ] += 2 * Math.PI;
+
+				} else if ( coord > Math.PI ) {
+
+					region[ k ] -= 2 * Math.PI;
+
+				}
 
 			}
 
