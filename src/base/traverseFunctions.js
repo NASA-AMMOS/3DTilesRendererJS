@@ -13,7 +13,7 @@ function isUsedThisFrame( tile, frameCount ) {
 
 }
 
-// Lazily get error
+// Lazily generate error
 function generateError( tile, renderer ) {
 
 	if ( tile.__error === Infinity ) {
