@@ -14,15 +14,13 @@ function isUsedThisFrame( tile, frameCount ) {
 }
 
 // Lazily get error
-function getError( tile, renderer ) {
+function generateError( tile, renderer ) {
 
 	if ( tile.__error === Infinity ) {
 
 		renderer.calculateError( tile );
 
 	}
-
-	return tile.__error;
 
 }
 
@@ -98,7 +96,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	} else {
 
-		getError( tile, renderer );
+		generateError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
@@ -124,7 +122,8 @@ function markUsed( tile, renderer ) {
 function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further
-	if ( getError( tile, renderer ) <= renderer.errorTarget ) {
+	generateError( tile, renderer );
+	if ( tile.__error <= renderer.errorTarget ) {
 
 		return false;
 
@@ -303,6 +302,8 @@ export function markVisibleTiles( tile, renderer ) {
 
 	}
 
+	generateError( tile, renderer );
+
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	const lruCache = renderer.lruCache;
 	if ( tile.__isLeaf ) {
@@ -320,7 +321,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
 
-			getError( tile, renderer );
+			generateError( tile, renderer );
 			renderer.requestTileContents( tile );
 
 		}
@@ -333,7 +334,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const hasContent = tile.__hasContent;
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
-	const meetsSSE = getError( tile, renderer ) <= errorRequirement;
+	const meetsSSE = tile.__error <= errorRequirement;
 	const childrenWereVisible = tile.__childrenWereVisible;
 
 	// we don't wait for all children tiles to load if this tile set has empty tiles at the root
@@ -344,7 +345,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
-		getError( tile, renderer );
+		generateError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
