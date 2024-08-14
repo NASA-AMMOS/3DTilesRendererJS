@@ -708,15 +708,15 @@ export class SUBTREELoader extends LoaderBase {
 				// don't scale z because octree mode isn't supported, yet
 				box[ 3 + i * 3 + 0 ] *= scale;
 				box[ 3 + i * 3 + 1 ] *= scale;
-				box[ 3 + i * 3 + 2 ] *= 1;
+				// box[ 3 + i * 3 + 2 ] *= scale;
 
-				// adjust the center value by offsetting based ons the cell identifier
+				// adjust the center value by offsetting based on the cell identifier
 				// and start points
 				const x = box[ 3 + i * 3 + 0 ];
 				const y = box[ 3 + i * 3 + 1 ];
 				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + tile.__x );
 				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + tile.__y );
-				box[ 2 ] += 0;
+				// box[ 2 ] += 2 * y * ( - 0.5 * cellSteps + tile.__z );
 
 			}
 
