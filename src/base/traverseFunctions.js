@@ -96,7 +96,6 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	} else {
 
-		generateError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
@@ -321,7 +320,6 @@ export function markVisibleTiles( tile, renderer ) {
 
 		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
 
-			generateError( tile, renderer );
 			renderer.requestTileContents( tile );
 
 		}
@@ -345,7 +343,6 @@ export function markVisibleTiles( tile, renderer ) {
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
-		generateError( tile, renderer );
 		renderer.requestTileContents( tile );
 
 	}
