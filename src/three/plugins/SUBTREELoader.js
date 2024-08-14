@@ -702,6 +702,8 @@ export class SUBTREELoader extends LoaderBase {
 			const box = [ ...this.rootTile.boundingVolume.box ];
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
+
+			// iterate over the three obb axes
 			for ( let i = 0; i < 3; i ++ ) {
 
 				// multiply x and y axes by the scale
