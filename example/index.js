@@ -1,6 +1,7 @@
 import {
 	TilesRenderer,
 	DebugTilesPlugin,
+	ImplicitTilingPlugin,
 	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
@@ -95,6 +96,7 @@ function reinstantiateTiles() {
 
 	tiles = new TilesRenderer( url );
 	tiles.registerPlugin( new DebugTilesPlugin() );
+	tiles.registerPlugin( new ImplicitTilingPlugin() );
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -261,7 +263,6 @@ function init() {
 	gui.width = 300;
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'stopAtEmptyTiles' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
 	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
@@ -479,7 +480,6 @@ function animate() {
 	tiles.errorTarget = params.errorTarget;
 	tiles.errorThreshold = params.errorThreshold;
 	tiles.optimizeRaycast = params.optimizeRaycast;
-	tiles.stopAtEmptyTiles = params.stopAtEmptyTiles;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 
