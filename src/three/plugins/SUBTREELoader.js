@@ -703,22 +703,25 @@ export class SUBTREELoader extends LoaderBase {
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
 
-			// iterate over the three obb axes
-			for ( let i = 0; i < 3; i ++ ) {
+			// Iterate over the three obb axes. Skip the z axis since octree
+			// implicit bounds are not supported.
+			for ( let i = 0; i < 2; i ++ ) {
 
-				// multiply x and y axes by the scale
-				// don't scale z because octree mode isn't supported, yet
+				// scale the bounds axes
 				box[ 3 + i * 3 + 0 ] *= scale;
 				box[ 3 + i * 3 + 1 ] *= scale;
-				// box[ 3 + i * 3 + 2 ] *= scale;
+				box[ 3 + i * 3 + 2 ] *= scale;
 
-				// adjust the center value by offsetting based on the cell identifier
-				// and start points
+				// axis vector
 				const x = box[ 3 + i * 3 + 0 ];
 				const y = box[ 3 + i * 3 + 1 ];
-				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + tile.__x );
-				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + tile.__y );
-				// box[ 2 ] += 2 * y * ( - 0.5 * cellSteps + tile.__z );
+				const z = box[ 3 + i * 3 + 2 ];
+
+				// adjust the center by the x and y axes
+				const axisOffset = i === 0 ? tile.__x : tile.__y;
+				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + axisOffset );
+				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + axisOffset );
+				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
 
 			}
 
