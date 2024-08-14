@@ -202,10 +202,10 @@ export class TilesRendererBase {
 
 		const root = rootTileSet.root;
 
-		stats.inFrustum = 0,
-		stats.used = 0,
-		stats.active = 0,
-		stats.visible = 0,
+		stats.inFrustum = 0;
+		stats.used = 0;
+		stats.active = 0;
+		stats.visible = 0;
 		this.frameCount ++;
 
 		markUsedTiles( root, this );
@@ -292,6 +292,9 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
+		// Store the original content uri
+		const uri = tile.content?.uri;
+
 		if ( tile.content ) {
 
 			// Fix old file formats
@@ -329,7 +332,6 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		const uri = tile.content && tile.content.uri;
 		if ( uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
@@ -389,6 +391,12 @@ export class TilesRendererBase {
 		tile.__basePath = tileSetDir;
 
 		tile.__lastFrameVisited = - 1;
+
+		this.invokeAllPlugins( plugin => {
+
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, uri, parentTile );
+
+		} );
 
 	}
 
@@ -526,7 +534,8 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const isExternalTileSet = tile.__hasUnrenderableContent;
+		const uriExtension = getUrlExtension( tile.content.uri );
+		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
@@ -541,7 +550,11 @@ export class TilesRendererBase {
 
 			} else {
 
-				this.disposeTile( t );
+				this.invokeAllPlugins( plugin => {
+
+					plugin.disposeTile && plugin.disposeTile( t );
+
+				} );
 
 			}
 
@@ -716,7 +729,7 @@ export class TilesRendererBase {
 						const uri = parseTile.content.uri;
 						const extension = getUrlExtension( uri );
 
-						return this.parseTile( buffer, parseTile, extension );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ) );
 
 					} );
 
