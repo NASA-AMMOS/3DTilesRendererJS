@@ -58,7 +58,7 @@ export class ImplicitTilingPlugin {
 
 	preprocessURL( url, tile ) {
 
-		if ( tile.implicitTiling ) {
+		if ( tile && tile.implicitTiling ) {
 
 			const implicitUri = tile.implicitTiling.subtrees.uri
 				.replace( '{level}', tile.__level )
@@ -69,6 +69,8 @@ export class ImplicitTilingPlugin {
 			return new URL( implicitUri, tile.__basePath + '/' ).toString();
 
 		}
+
+		return url;
 
 	}
 
