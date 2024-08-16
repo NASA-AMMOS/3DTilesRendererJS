@@ -1,3 +1,5 @@
+const GB_BYTES = 2 ** 30;
+
 class LRUCache {
 
 	get unloadPriorityCallback() {
@@ -35,8 +37,8 @@ class LRUCache {
 		// options
 		this.maxSize = 800;
 		this.minSize = 600;
-		this.minBytesSize = 1000;
-		this.maxBytesSize = 5000;
+		this.minBytesSize = 0.2 * GB_BYTES;
+		this.maxBytesSize = 0.3 * GB_BYTES;
 		this.unloadPercent = 0.05;
 
 		// "itemSet" doubles as both the list of the full set of items currently

@@ -17,6 +17,7 @@ import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
+import { estimateBytesUsed } from './utilities.js';
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_165 = parseInt( REVISION ) < 165;
@@ -73,6 +74,8 @@ export class TilesRenderer extends TilesRendererBase {
 		this.optimizeRaycast = true;
 		this._eventDispatcher = new EventDispatcher();
 		this._upRotationMatrix = new Matrix4();
+
+		this.lruCache.getMemoryUsageCallback = tile => tile.cached.bytesUsed || 0;
 
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
@@ -764,6 +767,7 @@ export class TilesRenderer extends TilesRendererBase {
 		cached.textures = textures;
 		cached.scene = scene;
 		cached.metadata = metadata;
+		cached.bytesUsed = estimateBytesUsed( scene );
 
 		// dispatch an event indicating that this model has completed
 		this.dispatchEvent( {
