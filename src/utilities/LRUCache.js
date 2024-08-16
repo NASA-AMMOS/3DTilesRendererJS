@@ -62,7 +62,7 @@ class LRUCache {
 	// Returns whether or not the cache has reached the maximum size
 	isFull() {
 
-		return this.itemSet.size >= this.maxSize;
+		return this.itemSet.size >= this.maxSize || this.currBytes >= this.maxBytesSize;
 
 	}
 
@@ -98,7 +98,7 @@ class LRUCache {
 
 		const bytes = this.getMemoryUsageCallback( item );
 		this.currBytes += bytes;
-		bytesMap.add( item, bytes );
+		bytesMap.set( item, bytes );
 
 		return true;
 
@@ -187,20 +187,24 @@ class LRUCache {
 	// Maybe call it "cleanup" or "unloadToMinSize"
 	unloadUnusedContent() {
 
-		const unloadPercent = this.unloadPercent;
-		const targetSize = this.minSize;
-		const itemList = this.itemList;
-		const itemSet = this.itemSet;
-		const usedSet = this.usedSet;
-		const callbacks = this.callbacks;
-		const bytesMap = this.bytesMap;
+		const {
+			unloadPercent,
+			minSize,
+			itemList,
+			itemSet,
+			usedSet,
+			callbacks,
+			bytesMap,
+			minBytesSize,
+		} = this;
+
 		const unused = itemList.length - usedSet.size;
-		const excess = itemList.length - targetSize;
+		const excessNodes = Math.min( itemList.length - minSize, unused );
 		const excessBytes = this.currBytes - this.minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
-		let remaining = excess;
+		let remaining = excessNodes;
 
-		const hasNodesToUnload = excess > 0 && unused > 0;
+		const hasNodesToUnload = excessNodes > 0 && unused > 0;
 		const hasBytesToUnload = unused && this.currBytes > this.minBytesSize || this.currBytes > this.maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
@@ -231,17 +235,13 @@ class LRUCache {
 
 			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
 			// which would result in a very small or no items being unloaded.
-			const unusedExcess = Math.min( excess, unused );
-			const maxUnload = Math.max( targetSize * unloadPercent, unusedExcess * unloadPercent );
-			let nodesToUnload = Math.min( maxUnload, unused );
-			nodesToUnload = Math.ceil( nodesToUnload );
-			remaining = excess - nodesToUnload;
-
-			const bytesToUnload = Math.max( unloadPercent * excessBytes, unloadPercent * this.minBytesSize );
+			const maxUnload = Math.max( minSize * unloadPercent, excessNodes * unloadPercent );
+			const nodesToUnload = Math.ceil( Math.min( maxUnload, unused ) );
+			const bytesToUnload = Math.max( unloadPercent * excessBytes, unloadPercent * minBytesSize );
 
 			let removedNodes = 0;
 			let removedBytes = 0;
-			while ( removedNodes < nodesToUnload || removedBytes < bytesToUnload || this.currBytes > this.maxBytesSize ) {
+			while ( removedNodes < nodesToUnload || removedBytes < bytesToUnload ) {
 
 				// don't unload any used tiles
 				if ( removedNodes >= unused ) {
@@ -252,17 +252,20 @@ class LRUCache {
 
 				const item = itemList[ removedNodes ];
 				removedBytes += bytesMap.get( item );
+				removedNodes ++;
+
 				bytesMap.delete( item );
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
 
-				removedNodes ++;
 
 			}
 
 			itemList.splice( 0, nodesToUnload );
 			this.currBytes -= removedBytes;
+
+			remaining = nodesToUnload < excessNodes || bytesToUnload < excessBytes;
 
 		}
 
