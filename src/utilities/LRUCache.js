@@ -35,6 +35,8 @@ class LRUCache {
 		// options
 		this.maxSize = 800;
 		this.minSize = 600;
+		this.minBytesSize = 1000;
+		this.maxBytesSize = 5000;
 		this.unloadPercent = 0.05;
 
 		// "itemSet" doubles as both the list of the full set of items currently
@@ -46,8 +48,11 @@ class LRUCache {
 		this.callbacks = new Map();
 		this.markUnusedQueued = false;
 		this.unloadingHandle = - 1;
+		this.currBytes = 0;
+		this.bytesMap = new Map();
 
 		this._unloadPriorityCallback = null;
+		this.getMemoryUsageCallback = () => 0;
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -85,10 +90,15 @@ class LRUCache {
 		const usedSet = this.usedSet;
 		const itemList = this.itemList;
 		const callbacks = this.callbacks;
+		const bytesMap = this.bytesMap;
 		itemList.push( item );
 		usedSet.add( item );
 		itemSet.set( item, Date.now() );
 		callbacks.set( item, removeCb );
+
+		const bytes = this.getMemoryUsageCallback( item );
+		this.currBytes += bytes;
+		bytesMap.add( item, bytes );
 
 		return true;
 
@@ -99,9 +109,13 @@ class LRUCache {
 		const usedSet = this.usedSet;
 		const itemSet = this.itemSet;
 		const itemList = this.itemList;
+		const bytesMap = this.bytesMap;
 		const callbacks = this.callbacks;
 
 		if ( itemSet.has( item ) ) {
+
+			this.currBytes -= bytesMap.get( item );
+			bytesMap.delete( item );
 
 			callbacks.get( item )( item );
 
@@ -116,6 +130,24 @@ class LRUCache {
 		}
 
 		return false;
+
+	}
+
+	updateMemoryUsed( item ) {
+
+		const itemSet = this.itemSet;
+		const bytesMap = this.bytesMap;
+		if ( ! itemSet.has( item ) ) {
+
+			return;
+
+		}
+
+		this.currBytes -= bytesMap.get( item );
+
+		const bytes = this.getMemoryUsageCallback( item );
+		bytesMap.set( item, bytes );
+		this.currBytes += bytes;
 
 	}
 
@@ -202,14 +234,19 @@ class LRUCache {
 			remaining = excess - nodesToUnload;
 
 			const removedItems = itemList.splice( 0, nodesToUnload );
+			let removedBytes = 0;
 			for ( let i = 0, l = removedItems.length; i < l; i ++ ) {
 
 				const item = removedItems[ i ];
+				removedBytes -= bytesMap.get( item );
+				bytesMap.delete( item );
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
 
 			}
+
+			this.currBytes -= removedBytes;
 
 		}
 
