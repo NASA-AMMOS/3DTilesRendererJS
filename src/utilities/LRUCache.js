@@ -1,4 +1,4 @@
-const GB_BYTES = 2 ** 30;
+const GIGABYTE_BYTES = 2 ** 30;
 
 class LRUCache {
 
@@ -37,8 +37,8 @@ class LRUCache {
 		// options
 		this.maxSize = 800;
 		this.minSize = 600;
-		this.minBytesSize = 0.2 * GB_BYTES;
-		this.maxBytesSize = 0.3 * GB_BYTES;
+		this.minBytesSize = 0.2 * GIGABYTE_BYTES;
+		this.maxBytesSize = 0.3 * GIGABYTE_BYTES;
 		this.unloadPercent = 0.05;
 
 		// "itemSet" doubles as both the list of the full set of items currently
@@ -50,7 +50,7 @@ class LRUCache {
 		this.callbacks = new Map();
 		this.markUnusedQueued = false;
 		this.unloadingHandle = - 1;
-		this.currBytes = 0;
+		this.cachedBytes = 0;
 		this.bytesMap = new Map();
 
 		this._unloadPriorityCallback = null;
@@ -64,7 +64,7 @@ class LRUCache {
 	// Returns whether or not the cache has reached the maximum size
 	isFull() {
 
-		return this.itemSet.size >= this.maxSize || this.currBytes >= this.maxBytesSize;
+		return this.itemSet.size >= this.maxSize || this.cachedBytes >= this.maxBytesSize;
 
 	}
 
@@ -99,7 +99,7 @@ class LRUCache {
 		callbacks.set( item, removeCb );
 
 		const bytes = this.getMemoryUsageCallback( item );
-		this.currBytes += bytes;
+		this.cachedBytes += bytes;
 		bytesMap.set( item, bytes );
 
 		return true;
@@ -116,7 +116,7 @@ class LRUCache {
 
 		if ( itemSet.has( item ) ) {
 
-			this.currBytes -= bytesMap.get( item );
+			this.cachedBytes -= bytesMap.get( item );
 			bytesMap.delete( item );
 
 			callbacks.get( item )( item );
@@ -145,11 +145,11 @@ class LRUCache {
 
 		}
 
-		this.currBytes -= bytesMap.get( item );
+		this.cachedBytes -= bytesMap.get( item );
 
 		const bytes = this.getMemoryUsageCallback( item );
 		bytesMap.set( item, bytes );
-		this.currBytes += bytes;
+		this.cachedBytes += bytes;
 
 	}
 
@@ -202,12 +202,12 @@ class LRUCache {
 
 		const unused = itemList.length - usedSet.size;
 		const excessNodes = Math.min( itemList.length - minSize, unused );
-		const excessBytes = this.currBytes - this.minBytesSize;
+		const excessBytes = this.cachedBytes - this.minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 		let remaining = excessNodes;
 
 		const hasNodesToUnload = excessNodes > 0 && unused > 0;
-		const hasBytesToUnload = unused && this.currBytes > this.minBytesSize || this.currBytes > this.maxBytesSize;
+		const hasBytesToUnload = unused && this.cachedBytes > this.minBytesSize || this.cachedBytes > this.maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
 			// used items should be at the end of the array
@@ -265,7 +265,7 @@ class LRUCache {
 			}
 
 			itemList.splice( 0, nodesToUnload );
-			this.currBytes -= removedBytes;
+			this.cachedBytes -= removedBytes;
 
 			remaining = nodesToUnload < excessNodes || bytesToUnload < excessBytes;
 
