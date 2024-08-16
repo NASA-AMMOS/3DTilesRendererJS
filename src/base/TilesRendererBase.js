@@ -287,6 +287,20 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		if ( tile.__visible ) {
+
+			this.setTileVisible( tile, false );
+			tile.__visible = false;
+
+		}
+
+		if ( tile.__active ) {
+
+			this.setTileActive( tile, false );
+			tile.__active = false;
+
+		}
+
 	}
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {

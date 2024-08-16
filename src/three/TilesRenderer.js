@@ -803,6 +803,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		super.disposeTile( tile );
+
 		// This could get called before the tile has finished downloading
 		const cached = tile.cached;
 		if ( cached.scene ) {
@@ -875,8 +877,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		this.activeTiles.delete( tile );
-		this.visibleTiles.delete( tile );
 		cached._loadIndex ++;
 
 	}
