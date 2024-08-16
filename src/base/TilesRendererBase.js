@@ -70,21 +70,6 @@ const lruPriorityCallback = ( a, b ) => {
 
 export class TilesRendererBase {
 
-	get rootTileSet() {
-
-		const tileSet = this.tileSets[ this.rootURL ];
-		if ( ! tileSet || tileSet instanceof Promise ) {
-
-			return null;
-
-		} else {
-
-			return tileSet;
-
-		}
-
-	}
-
 	get root() {
 
 		const tileSet = this.rootTileSet;
@@ -120,7 +105,8 @@ export class TilesRendererBase {
 	constructor( url = null ) {
 
 		// state
-		this.tileSets = {};
+		this.rootTileSetTriggered = false;
+		this.rootTileSet = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
 		this.plugins = [];
@@ -182,11 +168,9 @@ export class TilesRendererBase {
 
 	traverse( beforecb, aftercb ) {
 
-		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootURL ];
-		if ( ! rootTileSet || ! rootTileSet.root ) return;
+		if ( ! this.root ) return;
 
-		traverseSet( rootTileSet.root, ( tile, ...args ) => {
+		traverseSet( this.root, ( tile, ...args ) => {
 
 			this.ensureChildrenArePreprocessed( tile );
 			return beforecb ? beforecb( tile, ...args ) : false;
@@ -200,20 +184,18 @@ export class TilesRendererBase {
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
-		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootURL ];
-		if ( ! ( this.rootURL in tileSets ) ) {
+		if ( ! this.rootTileSetTriggered ) {
 
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( this.rootURL ) );
 			return;
 
-		} else if ( ! rootTileSet || ! rootTileSet.root ) {
+		} else if ( ! this.root ) {
 
 			return;
 
 		}
 
-		const root = rootTileSet.root;
+		const root = this.root;
 
 		stats.inFrustum = 0;
 		stats.used = 0;
@@ -466,13 +448,15 @@ export class TilesRendererBase {
 
 	loadRootTileSet( url ) {
 
-		// TODO: remove "tileSets" objects since it's not used anywhere else
-		const tileSets = this.tileSets;
-		if ( ! ( url in tileSets ) ) {
+		if ( ! this.rootTileSetTriggered ) {
 
+			this.rootTileSetTriggered = true;
+
+			// transform the url
 			let processedUrl = url;
 			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
+			// load the tile set root
 			const pr = fetch( processedUrl, this.fetchOptions )
 				.then( res => {
 
@@ -490,28 +474,18 @@ export class TilesRendererBase {
 				.then( json => {
 
 					this.preprocessTileSet( json, processedUrl );
-					tileSets[ url ] = json;
+					this.rootTileSet = json;
 
 				} );
 
 			pr.catch( err => {
 
 				console.error( err );
-				tileSets[ url ] = err;
+				this.rootTileSet = null;
 
 			} );
 
-			tileSets[ url ] = pr;
-
 			return pr;
-
-		} else if ( tileSets[ url ] instanceof Error ) {
-
-			return Promise.reject( tileSets[ url ] );
-
-		} else {
-
-			return Promise.resolve( tileSets[ url ] );
 
 		}
 
