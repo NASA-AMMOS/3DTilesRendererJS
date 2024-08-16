@@ -104,6 +104,19 @@ export class TilesRendererBase {
 
 	}
 
+	set preprocessURL( v ) {
+
+		console.warn( 'TilesRendererBase: The "preprocessURL" callback has been deprecated. Use a plugin, instead.' );
+		this._preprocessURL = v;
+
+	}
+
+	get preprocessURL() {
+
+		return this._preprocessURL;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -112,7 +125,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 		this.plugins = [];
 
-		this.preprocessURL = null;
+		this._preprocessURL = null;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -480,7 +493,7 @@ export class TilesRendererBase {
 		if ( ! ( url in tileSets ) ) {
 
 			let processedUrl = url;
-			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 			const pr = this
 				.fetchTileSet( processedUrl, this.fetchOptions )
@@ -524,6 +537,8 @@ export class TilesRendererBase {
 		}
 
 		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
+		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
+
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
@@ -638,8 +653,6 @@ export class TilesRendererBase {
 
 				}
 
-				this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri ) : uri );
-
 				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
@@ -670,8 +683,6 @@ export class TilesRendererBase {
 					return Promise.resolve();
 
 				}
-
-				this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri ) : uri );
 
 				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
