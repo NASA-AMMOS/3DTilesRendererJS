@@ -662,6 +662,7 @@ export class TilesRendererBase {
 					stats.downloading --;
 					tile.__loadAbort = null;
 					tile.__loadingState = LOADED;
+					lruCache.updateMemoryUsed( tile );
 
 					tile.children.push( json.root );
 
@@ -745,6 +746,7 @@ export class TilesRendererBase {
 
 					stats.parsing --;
 					tile.__loadingState = LOADED;
+					lruCache.updateMemoryUsed( tile );
 
 					if ( tile.__wasSetVisible ) {
 
