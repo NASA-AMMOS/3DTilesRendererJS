@@ -442,7 +442,7 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
-	preprocessTileSet( json, url ) {
+	preprocessTileSet( json, url, parent = null ) {
 
 		const version = json.asset.version;
 		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
@@ -539,6 +539,7 @@ export class TilesRendererBase {
 
 		}
 
+		let isExternalTileSet = false;
 		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
 
@@ -546,8 +547,7 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const uriExtension = getUrlExtension( uri );
-		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
+		const extension = getUrlExtension( uri );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
@@ -645,127 +645,102 @@ export class TilesRendererBase {
 
 		};
 
-		if ( isExternalTileSet ) {
+		// queue the download and parse
+		downloadQueue.add( tile, downloadTile => {
 
-			downloadQueue.add( tile, tileCb => {
+			if ( downloadTile.__loadIndex !== loadIndex ) {
+
+				return Promise.resolve();
+
+			}
+
+			return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+
+		} )
+			.then( res => {
+
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return;
+
+				}
+
+				if ( res.ok ) {
+
+					return extension === 'json' ? res.json() : res.arrayBuffer();
+
+				} else {
+
+					throw new Error( `Failed to load model with error code ${res.status}` );
+
+				}
+
+			} )
+			.then( content => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tileCb.__loadIndex !== loadIndex ) {
+				if ( tile.__loadIndex !== loadIndex ) {
 
-					return Promise.resolve();
+					return;
 
 				}
 
-				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
+				stats.downloading --;
+				stats.parsing ++;
+				tile.__loadAbort = null;
+				tile.__loadingState = PARSING;
 
-			} )
-				.then( json => {
+				return parseQueue.add( tile, parseTile => {
 
 					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
+					if ( parseTile.__loadIndex !== loadIndex ) {
 
-						return;
-
-					}
-
-					stats.downloading --;
-					tile.__loadAbort = null;
-					tile.__loadingState = LOADED;
-
-					tile.children.push( json.root );
-
-				} )
-				.catch( errorCallback );
-
-		} else {
-
-			downloadQueue.add( tile, downloadTile => {
-
-				if ( downloadTile.__loadIndex !== loadIndex ) {
-
-					return Promise.resolve();
-
-				}
-
-				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
-
-			} )
-				.then( res => {
-
-					if ( tile.__loadIndex !== loadIndex ) {
-
-						return;
+						return Promise.resolve();
 
 					}
 
-					if ( res.ok ) {
+					if ( extension === 'json' && content.root ) {
 
-						return res.arrayBuffer();
+						this.preprocessTileSet( content, uri, tile );
+						tile.children.push( content.root );
+						isExternalTileSet = true;
+						return Promise.resolve();
 
 					} else {
 
-						throw new Error( `Failed to load model with error code ${res.status}` );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri ) );
 
 					}
 
-				} )
-				.then( buffer => {
+				} );
 
-					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
+			} )
+			.then( () => {
 
-						return;
+				// if it has been unloaded then the tile has been disposed
+				if ( tile.__loadIndex !== loadIndex ) {
 
-					}
+					return;
 
-					stats.downloading --;
-					stats.parsing ++;
-					tile.__loadAbort = null;
-					tile.__loadingState = PARSING;
+				}
 
-					return parseQueue.add( tile, parseTile => {
+				stats.parsing --;
+				tile.__loadingState = LOADED;
 
-						// if it has been unloaded then the tile has been disposed
-						if ( parseTile.__loadIndex !== loadIndex ) {
+				if ( tile.__wasSetVisible ) {
 
-							return Promise.resolve();
+					this.setTileVisible( tile, true );
 
-						}
+				}
 
-						const extension = getUrlExtension( uri );
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension, uri ) );
+				if ( tile.__wasSetActive ) {
 
-					} );
+					this.setTileActive( tile, true );
 
-				} )
-				.then( () => {
+				}
 
-					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
-
-						return;
-
-					}
-
-					stats.parsing --;
-					tile.__loadingState = LOADED;
-
-					if ( tile.__wasSetVisible ) {
-
-						this.setTileVisible( tile, true );
-
-					}
-
-					if ( tile.__wasSetActive ) {
-
-						this.setTileActive( tile, true );
-
-					}
-
-				} )
-				.catch( errorCallback );
-
-		}
+			} )
+			.catch( errorCallback );
 
 	}
 
