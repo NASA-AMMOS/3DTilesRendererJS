@@ -31,8 +31,8 @@ export class UpdateOnChangePlugin {
 		this._onCameraResolutionChange = () => this.needsUpdate = true;
 
 		tiles.addEventListener( 'load-content', this._onLoadContent );
-		tiles.addEventListener( 'camera-add', this._onCameraAdd );
-		tiles.addEventListener( 'camera-delete', this._onCameraDelete );
+		tiles.addEventListener( 'add-camera', this._onCameraAdd );
+		tiles.addEventListener( 'delete-camera', this._onCameraDelete );
 		tiles.addEventListener( 'camera-resolution-change', this._onCameraResolutionChange );
 
 	}
@@ -48,12 +48,16 @@ export class UpdateOnChangePlugin {
 				.premultiply( camera.matrixWorldInverse )
 				.premultiply( camera.projectionMatrixInverse );
 
-			didCamerasChange = didCamerasChange || _matrix.equals( matrix );
+			didCamerasChange = didCamerasChange || ! _matrix.equals( matrix );
 			matrix.copy( _matrix );
 
 		} );
 
-		return this.needsUpdate || didCamerasChange;
+
+		const needsUpdate = this.needsUpdate;
+		this.needsUpdate = false;
+
+		return needsUpdate || didCamerasChange;
 
 	}
 

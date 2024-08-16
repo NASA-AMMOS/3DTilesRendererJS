@@ -372,12 +372,32 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
+				this.dispatchEvent( { type: 'load-content' } );
+
 			} )
 			.catch( () => {} );
 
 	}
 
 	update() {
+
+		let needsUpdate = null;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin.doesNeedUpdate ) {
+
+				const res = plugin.doesNeedUpdate();
+				needsUpdate = needsUpdate === null ? res : needsUpdate || res;
+
+			}
+
+		} );
+
+		if ( needsUpdate === false ) {
+
+			return;
+
+		}
 
 		this.dispatchEvent( { type: 'update-before' } );
 
