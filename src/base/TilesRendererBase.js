@@ -608,7 +608,7 @@ export class TilesRendererBase {
 		};
 
 		// queue the download and parse
-		downloadQueue.add( tile, downloadTile => {
+		return downloadQueue.add( tile, downloadTile => {
 
 			if ( downloadTile.__loadIndex !== loadIndex ) {
 

@@ -24,6 +24,7 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
+const tempVector2 = new Vector2();
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -292,32 +293,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		if ( xOrVec instanceof Vector2 ) {
+		const width = xOrVec.isVector2 ? xOrVec.x : xOrVec;
+		const height = xOrVec.isVector2 ? xOrVec.y : y;
+		const cameraVec = cameraMap.get( camera );
 
-			cameraMap.get( camera ).copy( xOrVec );
+		if ( cameraVec.width !== width || cameraVec.height !== height ) {
 
-		} else {
-
-			cameraMap.get( camera ).set( xOrVec, y );
+			cameraVec.set( width, height );
+			this.dispatchEvent( { type: 'camera-resolution-change' } );
 
 		}
+
 		return true;
 
 	}
 
 	setResolutionFromRenderer( camera, renderer ) {
 
-		const cameraMap = this.cameraMap;
-		if ( ! cameraMap.has( camera ) ) {
+		renderer
+			.getSize( tempVector2 )
+			.multiplyScalar( renderer.getPixelRatio() );
 
-			return false;
-
-		}
-
-		const resolution = cameraMap.get( camera );
-		renderer.getSize( resolution );
-		resolution.multiplyScalar( renderer.getPixelRatio() );
-		return true;
+		return this.setResolution( camera, tempVector2.x, tempVector2.y );
 
 	}
 
@@ -375,6 +372,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
+				this.dispatchEvent( { type: 'load-content' } );
+
 			} )
 			.catch( () => {} );
 
@@ -382,6 +381,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 	update() {
 
+		// check if the plugins that can block the tile updates require it
+		let needsUpdate = null;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin.doTilesNeedUpdate ) {
+
+				const res = plugin.doTilesNeedUpdate();
+				needsUpdate = needsUpdate === null ? res : needsUpdate || res;
+
+			}
+
+		} );
+
+		if ( needsUpdate === false ) {
+
+			this.dispatchEvent( { type: 'update-before' } );
+			this.dispatchEvent( { type: 'update-after' } );
+			return;
+
+		}
+
+		// follow through with the update
 		this.dispatchEvent( { type: 'update-before' } );
 
 		const group = this.group;
@@ -548,6 +569,13 @@ export class TilesRenderer extends TilesRendererBase {
 			textures: null,
 
 		};
+
+	}
+
+	async requestTileContents( ...args ) {
+
+		await super.requestTileContents( ...args );
+		this.dispatchEvent( { type: 'load-content' } );
 
 	}
 
