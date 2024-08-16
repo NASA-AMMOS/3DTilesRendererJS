@@ -203,8 +203,8 @@ class LRUCache {
 		} = this;
 
 		const unused = itemList.length - usedSet.size;
-		const excessNodes = Math.min( itemList.length - minSize, unused );
-		const excessBytes = this.cachedBytes - this.minBytesSize;
+		const excessNodes = Math.max( Math.min( itemList.length - minSize, unused ), 0 );
+		const excessBytes = this.cachedBytes - minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 		let remaining = excessNodes;
 
@@ -240,8 +240,9 @@ class LRUCache {
 			// address corner cases where the minSize might be zero or smaller than maxSize - minSize,
 			// which would result in a very small or no items being unloaded.
 			const maxUnload = Math.max( minSize * unloadPercent, excessNodes * unloadPercent );
-			const nodesToUnload = Math.ceil( Math.min( maxUnload, unused ) );
-			const bytesToUnload = Math.max( unloadPercent * excessBytes, unloadPercent * minBytesSize );
+			const nodesToUnload = Math.ceil( Math.min( maxUnload, unused, excessNodes ) );
+			const maxBytesUnload = Math.max( unloadPercent * excessBytes, unloadPercent * minBytesSize );
+			const bytesToUnload = Math.min( maxBytesUnload, excessBytes );
 
 			let removedNodes = 0;
 			let removedBytes = 0;

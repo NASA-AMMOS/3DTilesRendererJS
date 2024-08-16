@@ -118,4 +118,29 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should limit the amount of bytes allowed in the cache.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 5;
+		cache.maxBytesSize = 25;
+		cache.unloadPercent = 1;
+		cache.getMemoryUsageCallback = () => 4;
+
+		for ( let i = 0; i < 10; i ++ ) {
+
+			const item = { priority: 1 };
+			cache.add( item, () => {} );
+
+		}
+
+		expect( cache.itemList.length ).toEqual( 6 );
+		expect( cache.cachedBytes ).toEqual( 24 );
+
+		cache.markAllUnused();
+		cache.unloadUnusedContent();
+		expect( cache.itemList.length ).toEqual( 1 );
+		expect( cache.cachedBytes ).toEqual( 4 );
+
+	} );
+
 } );
