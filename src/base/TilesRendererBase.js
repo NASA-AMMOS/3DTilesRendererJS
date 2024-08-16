@@ -442,6 +442,28 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
+	preprocessTileSet( json, url ) {
+
+		const version = json.asset.version;
+		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
+		console.assert(
+			major <= 1,
+			'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.',
+		);
+
+		if ( major === 1 && minor > 0 ) {
+
+			console.warn( 'TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.' );
+
+		}
+
+		// remove trailing slash and last path-segment from the URL
+		let basePath = url.replace( /\/[^/]*\/?$/, '' );
+		basePath = new URL( basePath, window.location.href ).toString();
+		this.preprocessNode( json.root, basePath, parent );
+
+	}
+
 	fetchTileSet( url, fetchOptions, parent = null ) {
 
 		return fetch( url, fetchOptions )
@@ -460,23 +482,7 @@ export class TilesRendererBase {
 			} )
 			.then( json => {
 
-				const version = json.asset.version;
-				const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
-				console.assert(
-					major <= 1,
-					'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.',
-				);
-
-				if ( major === 1 && minor > 0 ) {
-
-					console.warn( 'TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.' );
-
-				}
-
-				// remove trailing slash and last path-segment from the URL
-				let basePath = url.replace( /\/[^/]*\/?$/, '' );
-				basePath = new URL( basePath, window.location.href ).toString();
-				this.preprocessNode( json.root, basePath, parent );
+				this.preprocessTileSet( json, url );
 
 				return json;
 
