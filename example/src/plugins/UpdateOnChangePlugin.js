@@ -15,7 +15,12 @@ export class UpdateOnChangePlugin {
 
 		this.tiles = tiles;
 
-		this._onLoadContent = () => this.needsUpdate = true;
+		// register callbacks to add cameras and force a new update
+		this._needsUpdateCallback = () => {
+
+			this.needsUpdate = true;
+
+		};
 		this._onCameraAdd = ( { camera } ) => {
 
 			this.needsUpdate = true;
@@ -28,12 +33,11 @@ export class UpdateOnChangePlugin {
 			this.cameraMatrices.delete( camera );
 
 		};
-		this._onCameraResolutionChange = () => this.needsUpdate = true;
 
-		tiles.addEventListener( 'load-content', this._onLoadContent );
+		tiles.addEventListener( 'camera-resolution-change', this._needsUpdateCallback );
+		tiles.addEventListener( 'load-content', this._needsUpdateCallback );
 		tiles.addEventListener( 'add-camera', this._onCameraAdd );
 		tiles.addEventListener( 'delete-camera', this._onCameraDelete );
-		tiles.addEventListener( 'camera-resolution-change', this._onCameraResolutionChange );
 
 	}
 
@@ -43,6 +47,8 @@ export class UpdateOnChangePlugin {
 		let didCamerasChange = false;
 		this.cameraMatrices.forEach( ( matrix, camera ) => {
 
+			// check if the camera position or frustum changed by comparing the MVP
+			// matrix between frames
 			_matrix
 				.copy( tiles.group.matrixWorld )
 				.premultiply( camera.matrixWorldInverse )
@@ -63,10 +69,10 @@ export class UpdateOnChangePlugin {
 	dispose() {
 
 		const tiles = this.tiles;
-		tiles.removeEventListener( 'content-load', this._onLoadContent );
+		tiles.removeEventListener( 'camera-resolution-change', this._needsUpdateCallback );
+		tiles.removeEventListener( 'content-load', this._needsUpdateCallback );
 		tiles.removeEventListener( 'camera-add', this._onCameraAdd );
 		tiles.removeEventListener( 'camera-delete', this._onCameraDelete );
-		tiles.removeEventListener( 'camera-resolution-change', this._onCameraResolutionChange );
 
 	}
 
