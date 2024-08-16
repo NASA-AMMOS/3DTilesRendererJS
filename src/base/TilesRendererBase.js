@@ -157,7 +157,11 @@ export class TilesRendererBase {
 
 		this.plugins.push( plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
-		plugin.init( this );
+		if ( plugin.init ) {
+
+			plugin.init( this );
+
+		}
 
 	}
 
