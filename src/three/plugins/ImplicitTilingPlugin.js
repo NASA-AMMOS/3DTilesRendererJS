@@ -34,15 +34,6 @@ export class ImplicitTilingPlugin {
 			tile.__z = 0;
 			tile.__level = 0;
 
-			// Replace the original content uri to the subtree uri
-			const implicitUri = tile.implicitTiling.subtrees.uri
-				.replace( '{level}', tile.__level )
-				.replace( '{x}', tile.__x )
-				.replace( '{y}', tile.__y )
-				.replace( '{z}', tile.__z );
-
-			tile.content.uri = new URL( implicitUri, tile.__basePath + '/' ).toString();
-
 		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
 			// Handling content uri pointing to a subtree file
@@ -55,12 +46,27 @@ export class ImplicitTilingPlugin {
 
 	parseTile( buffer, parseTile, extension ) {
 
-		//todo use extension instead ?
-		if ( /.subtree$/i.test( parseTile.content.uri ) ) {
+		if ( /^subtree$/i.test( extension ) ) {
 
 			const loader = new SUBTREELoader( parseTile );
 			loader.parse( buffer );
 			return Promise.resolve();
+
+		}
+
+	}
+
+	preprocessURL( url, tile ) {
+
+		if ( tile.implicitTiling ) {
+
+			const implicitUri = tile.implicitTiling.subtrees.uri
+				.replace( '{level}', tile.__level )
+				.replace( '{x}', tile.__x )
+				.replace( '{y}', tile.__y )
+				.replace( '{z}', tile.__z );
+
+			return new URL( implicitUri, tile.__basePath + '/' ).toString();
 
 		}
 
