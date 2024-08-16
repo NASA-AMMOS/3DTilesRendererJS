@@ -305,9 +305,6 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
-		// Store the original content uri
-		const uri = tile.content?.uri;
-
 		if ( tile.content ) {
 
 			// Fix old file formats
@@ -338,7 +335,7 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		if ( uri ) {
+		if ( tile.content?.uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
@@ -400,7 +397,7 @@ export class TilesRendererBase {
 
 		this.invokeAllPlugins( plugin => {
 
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, uri, parentTile );
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tileSetDir, parentTile );
 
 		} );
 

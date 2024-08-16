@@ -14,15 +14,12 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	preprocessNode( tile, uri, parentTile ) {
+	preprocessNode( tile, tileSetDir, parentTile ) {
 
-		if ( tile.implicitTiling ) {	//Check if the tile is an Implicit Root Tile
+		if ( tile.implicitTiling ) {
 
 			tile.__hasUnrenderableContent = true;
 			tile.__hasRenderableContent = false;
-
-			// Keep the original content uri
-			tile.__contentUri = uri ?? tile.content?.uri;
 
 			// Declare some properties
 			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
