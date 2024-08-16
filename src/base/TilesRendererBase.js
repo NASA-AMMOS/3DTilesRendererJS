@@ -104,6 +104,19 @@ export class TilesRendererBase {
 
 	}
 
+	set preprocessURL( v ) {
+
+		console.warn( 'TilesRendererBase: The "preprocessURL" callback has been deprecated. Use a plugin, instead.' );
+		this._preprocessURL = v;
+
+	}
+
+	get preprocessURL() {
+
+		return this._preprocessURL;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -112,7 +125,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 		this.plugins = [];
 
-		this.preprocessURL = null;
+		this._preprocessURL = null;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -292,9 +305,6 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
-		// Store the original content uri
-		const uri = tile.content?.uri;
-
 		if ( tile.content ) {
 
 			// Fix old file formats
@@ -302,13 +312,6 @@ export class TilesRendererBase {
 
 				tile.content.uri = tile.content.url;
 				delete tile.content.url;
-
-			}
-
-			if ( tile.content.uri ) {
-
-				// tile content uri has to be interpreted relative to the tileset.json
-				tile.content.uri = new URL( tile.content.uri, tileSetDir + '/' ).toString();
 
 			}
 
@@ -332,7 +335,7 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		if ( uri ) {
+		if ( tile.content?.uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
@@ -394,7 +397,7 @@ export class TilesRendererBase {
 
 		this.invokeAllPlugins( plugin => {
 
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, uri, parentTile );
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tileSetDir, parentTile );
 
 		} );
 
@@ -487,7 +490,7 @@ export class TilesRendererBase {
 		if ( ! ( url in tileSets ) ) {
 
 			let processedUrl = url;
-			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 			const pr = this
 				.fetchTileSet( processedUrl, this.fetchOptions )
@@ -530,11 +533,14 @@ export class TilesRendererBase {
 
 		}
 
+		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
+		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
+
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const uriExtension = getUrlExtension( tile.content.uri );
+		const uriExtension = getUrlExtension( uri );
 		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
@@ -644,10 +650,7 @@ export class TilesRendererBase {
 
 				}
 
-				let processedUrl = tileCb.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
-
-				return this.fetchTileSet( processedUrl, Object.assign( { signal }, this.fetchOptions ), tileCb );
+				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
 				.then( json => {
@@ -678,10 +681,7 @@ export class TilesRendererBase {
 
 				}
 
-				let processedUrl = downloadTile.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
-
-				return fetch( processedUrl, Object.assign( { signal }, this.fetchOptions ) );
+				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {
@@ -726,10 +726,8 @@ export class TilesRendererBase {
 
 						}
 
-						const uri = parseTile.content.uri;
 						const extension = getUrlExtension( uri );
-
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ) );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension, uri ) );
 
 					} );
 

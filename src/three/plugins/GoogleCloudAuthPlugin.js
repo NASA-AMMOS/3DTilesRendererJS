@@ -22,7 +22,7 @@ export class GoogleCloudAuthPlugin {
 
 				if ( tile.content && tile.content.uri ) {
 
-					this.sessionToken = new URL( tile.content.uri ).searchParams.get( 'session' );
+					this.sessionToken = new URL( tile.content.uri, tile.__basePath ).searchParams.get( 'session' );
 					return true;
 
 				}
