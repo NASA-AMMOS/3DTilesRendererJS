@@ -381,12 +381,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 	update() {
 
+		// check if the plugins that can block the tile updates require it
 		let needsUpdate = null;
 		this.invokeAllPlugins( plugin => {
 
-			if ( plugin.doesNeedUpdate ) {
+			if ( plugin.doTilesNeedUpdate ) {
 
-				const res = plugin.doesNeedUpdate();
+				const res = plugin.doTilesNeedUpdate();
 				needsUpdate = needsUpdate === null ? res : needsUpdate || res;
 
 			}
@@ -395,10 +396,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( needsUpdate === false ) {
 
+			this.dispatchEvent( { type: 'update-before' } );
+			this.dispatchEvent( { type: 'update-after' } );
 			return;
 
 		}
 
+		// follow through with the update
 		this.dispatchEvent( { type: 'update-before' } );
 
 		const group = this.group;

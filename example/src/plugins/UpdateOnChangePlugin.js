@@ -37,7 +37,7 @@ export class UpdateOnChangePlugin {
 
 	}
 
-	doesNeedUpdate() {
+	doTilesNeedUpdate() {
 
 		const tiles = this.tiles;
 		let didCamerasChange = false;
@@ -52,7 +52,6 @@ export class UpdateOnChangePlugin {
 			matrix.copy( _matrix );
 
 		} );
-
 
 		const needsUpdate = this.needsUpdate;
 		this.needsUpdate = false;
