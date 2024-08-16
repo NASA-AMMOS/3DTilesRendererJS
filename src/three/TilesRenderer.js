@@ -340,31 +340,19 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	fetchTileSet( url, ...rest ) {
+	preprocessTileSet( json, url ) {
 
-		const pr = super.fetchTileSet( url, ...rest );
-		pr.then( json => {
+		super.preprocessTileSet( json, url );
 
-			// Push this onto the end of the event stack to ensure this runs
-			// after the base renderer has placed the provided json where it
-			// needs to be placed and is ready for an update.
-			queueMicrotask( () => {
+		queueMicrotask( () => {
 
-				this.dispatchEvent( {
-					type: 'load-tile-set',
-					tileSet: json,
-					url,
-				} );
-
+			this.dispatchEvent( {
+				type: 'load-tile-set',
+				tileSet: json,
+				url,
 			} );
 
-
-		} ).catch( () => {
-
-			// error is logged internally
-
 		} );
-		return pr;
 
 	}
 
