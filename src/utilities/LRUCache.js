@@ -192,12 +192,14 @@ class LRUCache {
 		const {
 			unloadPercent,
 			minSize,
+			maxSize,
 			itemList,
 			itemSet,
 			usedSet,
 			callbacks,
 			bytesMap,
 			minBytesSize,
+			maxBytesSize,
 		} = this;
 
 		const unused = itemList.length - usedSet.size;
@@ -206,8 +208,8 @@ class LRUCache {
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 		let remaining = excessNodes;
 
-		const hasNodesToUnload = excessNodes > 0 && unused > 0;
-		const hasBytesToUnload = unused && this.cachedBytes > this.minBytesSize || this.cachedBytes > this.maxBytesSize;
+		const hasNodesToUnload = excessNodes > 0 && unused > 0 || itemList.length > maxSize;
+		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || this.cachedBytes > maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
 			// used items should be at the end of the array
@@ -243,10 +245,19 @@ class LRUCache {
 
 			let removedNodes = 0;
 			let removedBytes = 0;
-			while ( removedNodes < nodesToUnload || removedBytes < bytesToUnload ) {
+			while (
+				removedNodes < nodesToUnload ||
+				removedBytes < bytesToUnload ||
+				this.cachedBytes - removedBytes > maxBytesSize ||
+				itemList.length - removedNodes > maxSize
+			) {
 
-				// don't unload any used tiles
-				if ( removedNodes >= unused ) {
+				// don't unload any used tiles unless we're above our size cap
+				if (
+					removedNodes >= unused &&
+					this.cachedBytes - removedBytes <= maxBytesSize &&
+					itemList.length - removedNodes <= maxSize
+				) {
 
 					break;
 
@@ -264,10 +275,10 @@ class LRUCache {
 
 			}
 
-			itemList.splice( 0, nodesToUnload );
+			itemList.splice( 0, removedNodes );
 			this.cachedBytes -= removedBytes;
 
-			remaining = nodesToUnload < excessNodes || bytesToUnload < excessBytes;
+			remaining = removedNodes < excessNodes || removedBytes < excessBytes;
 
 		}
 
