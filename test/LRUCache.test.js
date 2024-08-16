@@ -95,4 +95,27 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should evict items if they are the max item length even if they are used.', () => {
+
+		const cache = new LRUCache();
+		cache.unloadPriorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
+		cache.minSize = 0;
+		cache.maxSize = 10;
+
+		for ( let i = 0; i < 10; i ++ ) {
+
+			const item = { priority: 1 };
+			cache.add( item, () => {} );
+			cache.markUsed( item );
+
+		}
+
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.maxSize = 3;
+		cache.unloadUnusedContent();
+		expect( cache.itemList.length ).toEqual( 3 );
+
+	} );
+
 } );
