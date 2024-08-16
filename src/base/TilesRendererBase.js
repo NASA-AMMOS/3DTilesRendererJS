@@ -305,13 +305,6 @@ export class TilesRendererBase {
 
 			}
 
-			if ( tile.content.uri ) {
-
-				// tile content uri has to be interpreted relative to the tileset.json
-				tile.content.uri = new URL( tile.content.uri, tileSetDir + '/' ).toString();
-
-			}
-
 			// NOTE: fix for some cases where tilesets provide the bounding volume
 			// but volumes are not present.
 			if (
@@ -530,11 +523,12 @@ export class TilesRendererBase {
 
 		}
 
+		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const uriExtension = getUrlExtension( tile.content.uri );
+		const uriExtension = getUrlExtension( uri );
 		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
@@ -644,10 +638,9 @@ export class TilesRendererBase {
 
 				}
 
-				let processedUrl = tileCb.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+				this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri ) : uri );
 
-				return this.fetchTileSet( processedUrl, Object.assign( { signal }, this.fetchOptions ), tileCb );
+				return this.fetchTileSet( uri, Object.assign( { signal }, this.fetchOptions ), tileCb );
 
 			} )
 				.then( json => {
@@ -678,10 +671,9 @@ export class TilesRendererBase {
 
 				}
 
-				let processedUrl = downloadTile.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+				this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri ) : uri );
 
-				return fetch( processedUrl, Object.assign( { signal }, this.fetchOptions ) );
+				return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 			} )
 				.then( res => {
@@ -726,10 +718,8 @@ export class TilesRendererBase {
 
 						}
 
-						const uri = parseTile.content.uri;
 						const extension = getUrlExtension( uri );
-
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ) );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension, uri ) );
 
 					} );
 

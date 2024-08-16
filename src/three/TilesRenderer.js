@@ -563,12 +563,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	async parseTile( buffer, tile, extension ) {
+	async parseTile( buffer, tile, extension, uri ) {
 
 		const cached = tile.cached;
 		cached._loadIndex ++;
 
-		const uri = tile.content.uri;
 		const uriSplits = uri.split( /[\\/]/g );
 		uriSplits.pop();
 		const workingPath = uriSplits.join( '/' );
