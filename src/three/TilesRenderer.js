@@ -548,6 +548,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	async requestTileContents( ...args ) {
+
+		await super.requestTileContents( ...args );
+		this.dispatchEvent( { type: 'load-content' } );
+
+	}
+
 	async parseTile( buffer, tile, extension, uri ) {
 
 		const cached = tile.cached;
