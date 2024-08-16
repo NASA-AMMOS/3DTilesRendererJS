@@ -12,6 +12,7 @@ import {
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
+import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 
 let controls, scene, camera, renderer, tiles;
 
@@ -41,6 +42,7 @@ function reinstantiateTiles() {
 	tiles = new EllipsoidTilesRenderer( null, LUNAR_ELLIPSOID );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829' } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.errorTarget = 20;

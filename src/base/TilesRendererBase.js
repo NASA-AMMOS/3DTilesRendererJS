@@ -70,21 +70,6 @@ const lruPriorityCallback = ( a, b ) => {
 
 export class TilesRendererBase {
 
-	get rootTileSet() {
-
-		const tileSet = this.tileSets[ this.rootURL ];
-		if ( ! tileSet || tileSet instanceof Promise ) {
-
-			return null;
-
-		} else {
-
-			return tileSet;
-
-		}
-
-	}
-
 	get root() {
 
 		const tileSet = this.rootTileSet;
@@ -104,15 +89,29 @@ export class TilesRendererBase {
 
 	}
 
+	set preprocessURL( v ) {
+
+		console.warn( 'TilesRendererBase: The "preprocessURL" callback has been deprecated. Use a plugin, instead.' );
+		this._preprocessURL = v;
+
+	}
+
+	get preprocessURL() {
+
+		return this._preprocessURL;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
-		this.tileSets = {};
+		this.rootTileSetTriggered = false;
+		this.rootTileSet = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
 		this.plugins = [];
 
-		this.preprocessURL = null;
+		this._preprocessURL = null;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -173,11 +172,9 @@ export class TilesRendererBase {
 
 	traverse( beforecb, aftercb ) {
 
-		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootURL ];
-		if ( ! rootTileSet || ! rootTileSet.root ) return;
+		if ( ! this.root ) return;
 
-		traverseSet( rootTileSet.root, ( tile, ...args ) => {
+		traverseSet( this.root, ( tile, ...args ) => {
 
 			this.ensureChildrenArePreprocessed( tile );
 			return beforecb ? beforecb( tile, ...args ) : false;
@@ -191,20 +188,18 @@ export class TilesRendererBase {
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
-		const tileSets = this.tileSets;
-		const rootTileSet = tileSets[ this.rootURL ];
-		if ( ! ( this.rootURL in tileSets ) ) {
+		if ( ! this.rootTileSetTriggered ) {
 
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( this.rootURL ) );
 			return;
 
-		} else if ( ! rootTileSet || ! rootTileSet.root ) {
+		} else if ( ! this.root ) {
 
 			return;
 
 		}
 
-		const root = rootTileSet.root;
+		const root = this.root;
 
 		stats.inFrustum = 0;
 		stats.used = 0;
@@ -296,9 +291,6 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
-		// Store the original content uri
-		const uri = tile.content?.uri;
-
 		if ( tile.content ) {
 
 			// Fix old file formats
@@ -306,13 +298,6 @@ export class TilesRendererBase {
 
 				tile.content.uri = tile.content.url;
 				delete tile.content.url;
-
-			}
-
-			if ( tile.content.uri ) {
-
-				// tile content uri has to be interpreted relative to the tileset.json
-				tile.content.uri = new URL( tile.content.uri, tileSetDir + '/' ).toString();
 
 			}
 
@@ -336,7 +321,7 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
-		if ( uri ) {
+		if ( tile.content?.uri ) {
 
 			// "content" should only indicate loadable meshes, not external tile sets
 			const extension = getUrlExtension( tile.content.uri );
@@ -398,7 +383,7 @@ export class TilesRendererBase {
 
 		this.invokeAllPlugins( plugin => {
 
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, uri, parentTile );
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tileSetDir, parentTile );
 
 		} );
 
@@ -443,82 +428,68 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
-	fetchTileSet( url, fetchOptions, parent = null ) {
+	preprocessTileSet( json, url, parent = null ) {
 
-		return fetch( url, fetchOptions )
-			.then( res => {
+		const version = json.asset.version;
+		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
+		console.assert(
+			major <= 1,
+			'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.',
+		);
 
-				if ( res.ok ) {
+		if ( major === 1 && minor > 0 ) {
 
-					return res.json();
+			console.warn( 'TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.' );
 
-				} else {
+		}
 
-					throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-				}
-
-			} )
-			.then( json => {
-
-				const version = json.asset.version;
-				const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
-				console.assert(
-					major <= 1,
-					'TilesRenderer: asset.version is expected to be a 1.x or a compatible version.',
-				);
-
-				if ( major === 1 && minor > 0 ) {
-
-					console.warn( 'TilesRenderer: tiles versions at 1.1 or higher have limited support. Some new extensions and features may not be supported.' );
-
-				}
-
-				// remove trailing slash and last path-segment from the URL
-				let basePath = url.replace( /\/[^/]*\/?$/, '' );
-				basePath = new URL( basePath, window.location.href ).toString();
-				this.preprocessNode( json.root, basePath, parent );
-
-				return json;
-
-			} );
+		// remove trailing slash and last path-segment from the URL
+		let basePath = url.replace( /\/[^/]*\/?$/, '' );
+		basePath = new URL( basePath, window.location.href ).toString();
+		this.preprocessNode( json.root, basePath, parent );
 
 	}
 
 	loadRootTileSet( url ) {
 
-		const tileSets = this.tileSets;
-		if ( ! ( url in tileSets ) ) {
+		if ( ! this.rootTileSetTriggered ) {
 
+			this.rootTileSetTriggered = true;
+
+			// transform the url
 			let processedUrl = url;
-			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
-			const pr = this
-				.fetchTileSet( processedUrl, this.fetchOptions )
+			// load the tile set root
+			const pr = fetch( processedUrl, this.fetchOptions )
+				.then( res => {
+
+					if ( res.ok ) {
+
+						return res.json();
+
+					} else {
+
+						throw new Error( `TilesRenderer: Failed to load tileset "${ processedUrl }" with status ${ res.status } : ${ res.statusText }` );
+
+					}
+
+				} )
 				.then( json => {
 
-					tileSets[ url ] = json;
+					this.preprocessTileSet( json, processedUrl );
+					this.rootTileSet = json;
 
 				} );
 
 			pr.catch( err => {
 
 				console.error( err );
-				tileSets[ url ] = err;
+				this.rootTileSet = null;
 
 			} );
 
-			tileSets[ url ] = pr;
-
 			return pr;
-
-		} else if ( tileSets[ url ] instanceof Error ) {
-
-			return Promise.reject( tileSets[ url ] );
-
-		} else {
-
-			return Promise.resolve( tileSets[ url ] );
 
 		}
 
@@ -534,12 +505,15 @@ export class TilesRendererBase {
 
 		}
 
+		let isExternalTileSet = false;
+		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
+		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
+
 		const stats = this.stats;
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
-		const uriExtension = getUrlExtension( tile.content.uri );
-		const isExternalTileSet = Boolean( uriExtension && /json$/.test( uriExtension ) );
+		const extension = getUrlExtension( uri );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
@@ -637,137 +611,103 @@ export class TilesRendererBase {
 
 		};
 
-		if ( isExternalTileSet ) {
+		// queue the download and parse
+		return downloadQueue.add( tile, downloadTile => {
 
-			downloadQueue.add( tile, tileCb => {
+			if ( downloadTile.__loadIndex !== loadIndex ) {
+
+				return Promise.resolve();
+
+			}
+
+			return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+
+		} )
+			.then( res => {
+
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return;
+
+				}
+
+				if ( res.ok ) {
+
+					return extension === 'json' ? res.json() : res.arrayBuffer();
+
+				} else {
+
+					throw new Error( `Failed to load model with error code ${res.status}` );
+
+				}
+
+			} )
+			.then( content => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tileCb.__loadIndex !== loadIndex ) {
+				if ( tile.__loadIndex !== loadIndex ) {
 
-					return Promise.resolve();
+					return;
 
 				}
 
-				let processedUrl = tileCb.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
+				stats.downloading --;
+				stats.parsing ++;
+				tile.__loadAbort = null;
+				tile.__loadingState = PARSING;
 
-				return this.fetchTileSet( processedUrl, Object.assign( { signal }, this.fetchOptions ), tileCb );
-
-			} )
-				.then( json => {
+				return parseQueue.add( tile, parseTile => {
 
 					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
+					if ( parseTile.__loadIndex !== loadIndex ) {
 
-						return;
-
-					}
-
-					stats.downloading --;
-					tile.__loadAbort = null;
-					tile.__loadingState = LOADED;
-					lruCache.updateMemoryUsed( tile );
-
-					tile.children.push( json.root );
-
-				} )
-				.catch( errorCallback );
-
-		} else {
-
-			downloadQueue.add( tile, downloadTile => {
-
-				if ( downloadTile.__loadIndex !== loadIndex ) {
-
-					return Promise.resolve();
-
-				}
-
-				let processedUrl = downloadTile.content.uri;
-				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl ) : processedUrl );
-
-				return fetch( processedUrl, Object.assign( { signal }, this.fetchOptions ) );
-
-			} )
-				.then( res => {
-
-					if ( tile.__loadIndex !== loadIndex ) {
-
-						return;
+						return Promise.resolve();
 
 					}
 
-					if ( res.ok ) {
+					if ( extension === 'json' && content.root ) {
 
-						return res.arrayBuffer();
+						this.preprocessTileSet( content, uri, tile );
+						tile.children.push( content.root );
+						isExternalTileSet = true;
+						return Promise.resolve();
 
 					} else {
 
-						throw new Error( `Failed to load model with error code ${res.status}` );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri ) );
 
 					}
 
-				} )
-				.then( buffer => {
+				} );
 
-					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
+			} )
+			.then( () => {
 
-						return;
+				// if it has been unloaded then the tile has been disposed
+				if ( tile.__loadIndex !== loadIndex ) {
 
-					}
+					return;
 
-					stats.downloading --;
-					stats.parsing ++;
-					tile.__loadAbort = null;
-					tile.__loadingState = PARSING;
+				}
 
-					return parseQueue.add( tile, parseTile => {
+				stats.parsing --;
+				tile.__loadingState = LOADED;
+				lruCache.updateMemoryUsed( tile );
 
-						// if it has been unloaded then the tile has been disposed
-						if ( parseTile.__loadIndex !== loadIndex ) {
+				if ( tile.__wasSetVisible ) {
 
-							return Promise.resolve();
+					this.setTileVisible( tile, true );
 
-						}
+				}
 
-						const uri = parseTile.content.uri;
-						const extension = getUrlExtension( uri );
+				if ( tile.__wasSetActive ) {
 
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( buffer, parseTile, extension ) );
+					this.setTileActive( tile, true );
 
-					} );
+				}
 
-				} )
-				.then( () => {
-
-					// if it has been unloaded then the tile has been disposed
-					if ( tile.__loadIndex !== loadIndex ) {
-
-						return;
-
-					}
-
-					stats.parsing --;
-					tile.__loadingState = LOADED;
-					lruCache.updateMemoryUsed( tile );
-
-					if ( tile.__wasSetVisible ) {
-
-						this.setTileVisible( tile, true );
-
-					}
-
-					if ( tile.__wasSetActive ) {
-
-						this.setTileActive( tile, true );
-
-					}
-
-				} )
-				.catch( errorCallback );
-
-		}
+			} )
+			.catch( errorCallback );
 
 	}
 

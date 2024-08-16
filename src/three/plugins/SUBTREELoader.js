@@ -490,7 +490,7 @@ export class SUBTREELoader extends LoaderBase {
 			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], 0 ) ) {
 
 				// Create a child holding the content uri, this child is similar to its parent and doesn't have any children
-				contentTile.content = { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.__contentUri ) };
+				contentTile.content = { uri: this.parseImplicitURI( subtreeRoot, this.rootTile.content.uri ) };
 				break;
 
 			}
@@ -615,7 +615,7 @@ export class SUBTREELoader extends LoaderBase {
 
 			if ( subtree && this.getBit( subtree._contentAvailabilityBitstreams[ i ], childBitIndex ) ) {
 
-				subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.__contentUri ) };
+				subtreeTile.content = { uri: this.parseImplicitURI( subtreeTile, this.rootTile.content.uri ) };
 				break;
 
 			}
