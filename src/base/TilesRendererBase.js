@@ -464,44 +464,32 @@ export class TilesRendererBase {
 
 	}
 
-	fetchTileSet( url, fetchOptions, parent = null ) {
-
-		return fetch( url, fetchOptions )
-			.then( res => {
-
-				if ( res.ok ) {
-
-					return res.json();
-
-				} else {
-
-					throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
-
-				}
-
-			} )
-			.then( json => {
-
-				this.preprocessTileSet( json, url );
-
-				return json;
-
-			} );
-
-	}
-
 	loadRootTileSet( url ) {
 
+		// TODO: remove "tileSets" objects since it's not used anywhere else
 		const tileSets = this.tileSets;
 		if ( ! ( url in tileSets ) ) {
 
 			let processedUrl = url;
 			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
-			const pr = this
-				.fetchTileSet( processedUrl, this.fetchOptions )
+			const pr = fetch( processedUrl, this.fetchOptions )
+				.then( res => {
+
+					if ( res.ok ) {
+
+						return res.json();
+
+					} else {
+
+						throw new Error( `TilesRenderer: Failed to load tileset "${ processedUrl }" with status ${ res.status } : ${ res.statusText }` );
+
+					}
+
+				} )
 				.then( json => {
 
+					this.preprocessTileSet( json, processedUrl );
 					tileSets[ url ] = json;
 
 				} );
