@@ -337,9 +337,9 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	preprocessTileSet( json, url ) {
+	preprocessTileSet( json, url, tile ) {
 
-		super.preprocessTileSet( json, url );
+		super.preprocessTileSet( json, url, tile );
 
 		queueMicrotask( () => {
 
