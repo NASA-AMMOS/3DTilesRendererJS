@@ -156,7 +156,11 @@ export class TilesRendererBase {
 
 		this.plugins.push( plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
-		plugin.init( this );
+		if ( plugin.init ) {
+
+			plugin.init( this );
+
+		}
 
 	}
 
@@ -282,6 +286,20 @@ export class TilesRendererBase {
 	}
 
 	disposeTile( tile ) {
+
+		if ( tile.__visible ) {
+
+			this.setTileVisible( tile, false );
+			tile.__visible = false;
+
+		}
+
+		if ( tile.__active ) {
+
+			this.setTileActive( tile, false );
+			tile.__active = false;
+
+		}
 
 	}
 
@@ -688,6 +706,7 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
+				lruCache.updateMemoryUsage( tile );
 
 				if ( tile.__wasSetVisible ) {
 

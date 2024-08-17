@@ -623,7 +623,7 @@ Utility class for the TilesRenderer to keep track of currently used items so ren
 maxSize = 800 : number
 ```
 
-The maximum cached size. If that current amount of cached items is equal to this value then no more items can be cached.
+The maximum cached size in number of items. If that current amount of cached items is equal to this value then no more items can be cached.
 
 ### .minSize
 
@@ -631,7 +631,23 @@ The maximum cached size. If that current amount of cached items is equal to this
 minSize = 600 : number
 ```
 
-The minimum cache size. Above this cached data will be unloaded if it's unused.
+The minimum cache size in number of items. Above this cached data will be unloaded if it's unused.
+
+### .maxByteSize
+
+```js
+maxByteSize = 0.3 * 2**30 : Number
+```
+
+The maximum cached size in bytes. If that current amount of cached bytes is equal to this value then no more items can be cached.
+
+### .minByteSize
+
+```js
+minByteSize = 0.2 * 2**30 : Number
+```
+
+The minimum cache size in number of bytes. Above this cached data will be unloaded if it's unused.
 
 ### .unloadPercent
 

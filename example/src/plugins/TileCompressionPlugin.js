@@ -105,7 +105,6 @@ export class TileCompressionPlugin {
 
 	constructor( options ) {
 
-		this.tiles = null;
 		this._options = {
 			// whether to generate normals if they don't already exist.
 			generateNormals: false,
@@ -130,108 +129,94 @@ export class TileCompressionPlugin {
 
 	}
 
-	init( tiles ) {
+	processTileModel( scene, tile ) {
 
-		this.tiles = tiles;
+		const {
+			generateNormals,
 
-		this._onLoadModel = ( { scene } ) => {
+			disableMipmaps,
+			compressIndex,
+			compressUvs,
+			compressNormals,
+			compressPosition,
 
-			const {
-				generateNormals,
+			uvType,
+			normalType,
+			positionType,
+		} = this._options;
 
-				disableMipmaps,
-				compressIndex,
-				compressUvs,
-				compressNormals,
-				compressPosition,
+		scene.traverse( c => {
 
-				uvType,
-				normalType,
-				positionType,
-			} = this._options;
+			// handle materials
+			if ( c.material && disableMipmaps ) {
 
-			scene.traverse( c => {
+				const material = c.material;
+				for ( const key in material ) {
 
-				// handle materials
-				if ( c.material && disableMipmaps ) {
+					const value = material[ key ];
+					if ( value && value.isTexture ) {
 
-					const material = c.material;
-					for ( const key in material ) {
-
-						const value = material[ key ];
-						if ( value && value.isTexture ) {
-
-							value.generateMipmaps = false;
-
-						}
+						value.generateMipmaps = false;
 
 					}
 
 				}
 
-				// handle geometry attribute compression
-				if ( c.geometry ) {
+			}
 
-					const geometry = c.geometry;
-					const attributes = geometry.attributes;
-					if ( compressUvs ) {
+			// handle geometry attribute compression
+			if ( c.geometry ) {
 
-						const { uv, uv1, uv2, uv3 } = attributes;
-						if ( uv ) attributes.uv = compressAttribute( uv, uvType );
-						if ( uv1 ) attributes.uv1 = compressAttribute( uv1, uvType );
-						if ( uv2 ) attributes.uv2 = compressAttribute( uv2, uvType );
-						if ( uv3 ) attributes.uv3 = compressAttribute( uv3, uvType );
+				const geometry = c.geometry;
+				const attributes = geometry.attributes;
+				if ( compressUvs ) {
 
-					}
+					const { uv, uv1, uv2, uv3 } = attributes;
+					if ( uv ) attributes.uv = compressAttribute( uv, uvType );
+					if ( uv1 ) attributes.uv1 = compressAttribute( uv1, uvType );
+					if ( uv2 ) attributes.uv2 = compressAttribute( uv2, uvType );
+					if ( uv3 ) attributes.uv3 = compressAttribute( uv3, uvType );
 
-					if ( generateNormals && ! attributes.normals ) {
+				}
 
-						geometry.computeVertexNormals();
+				if ( generateNormals && ! attributes.normals ) {
 
-					}
+					geometry.computeVertexNormals();
 
-					if ( compressNormals && attributes.normals ) {
+				}
 
-						attributes.normals = compressAttribute( attributes.normals, normalType );
+				if ( compressNormals && attributes.normals ) {
 
-					}
+					attributes.normals = compressAttribute( attributes.normals, normalType );
 
-					if ( compressPosition ) {
+				}
 
-						compressPositionAttribute( c, positionType );
+				if ( compressPosition ) {
 
-					}
+					compressPositionAttribute( c, positionType );
 
-					if ( compressIndex && geometry.index ) {
+				}
 
-						const vertCount = attributes.position.count;
-						const index = geometry.index;
-						const type = vertCount > 65535 ? Uint32Array : vertCount > 255 ? Uint16Array : Uint8Array;
-						if ( ! ( index.array instanceof type ) ) {
+				if ( compressIndex && geometry.index ) {
 
-							const array = new type( geometry.index.count );
-							array.set( index.array );
+					const vertCount = attributes.position.count;
+					const index = geometry.index;
+					const type = vertCount > 65535 ? Uint32Array : vertCount > 255 ? Uint16Array : Uint8Array;
+					if ( ! ( index.array instanceof type ) ) {
 
-							const attribute = new BufferAttribute( array, 1 );
-							geometry.setIndex( attribute );
+						const array = new type( geometry.index.count );
+						array.set( index.array );
 
-						}
+						const attribute = new BufferAttribute( array, 1 );
+						geometry.setIndex( attribute );
 
 					}
 
 				}
 
-			} );
+			}
 
-		};
-
-		tiles.addEventListener( 'load-model', this._onLoadModel );
-
-	}
-
-	dispose() {
-
-		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
+		} );
 
 	}
 

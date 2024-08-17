@@ -95,4 +95,90 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should evict items if they are the max item length even if they are used.', () => {
+
+		const cache = new LRUCache();
+		cache.unloadPriorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
+		cache.minSize = 0;
+		cache.maxSize = 10;
+
+		for ( let i = 0; i < 10; i ++ ) {
+
+			const item = { priority: 1 };
+			cache.add( item, () => {} );
+			cache.markUsed( item );
+
+		}
+
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.maxSize = 3;
+		cache.unloadUnusedContent();
+		expect( cache.itemList.length ).toEqual( 3 );
+
+	} );
+
+	it( 'should limit the amount of bytes allowed in the cache.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 5;
+		cache.maxBytesSize = 25;
+		cache.unloadPercent = 1;
+		cache.getMemoryUsageCallback = () => 4;
+
+		for ( let i = 0; i < 10; i ++ ) {
+
+			const item = { priority: 1 };
+			cache.add( item, () => {} );
+
+		}
+
+		expect( cache.itemList.length ).toEqual( 7 );
+		expect( cache.cachedBytes ).toEqual( 28 );
+
+		cache.markAllUnused();
+		cache.unloadUnusedContent();
+		expect( cache.itemList.length ).toEqual( 1 );
+		expect( cache.cachedBytes ).toEqual( 4 );
+
+	} );
+
+	it( 'should update memory usage when the items are triggers.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 10;
+		cache.maxBytesSize = 25;
+		cache.unloadPercent = 1;
+		cache.getMemoryUsageCallback = () => 1;
+
+		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.add( items[ i ], () => {} );
+
+		}
+
+		expect( cache.cachedBytes ).toEqual( 10 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.cachedBytes ).toEqual( 10 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.getMemoryUsageCallback = () => 4;
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.updateMemoryUsage( items[ i ] );
+
+		}
+
+		expect( cache.cachedBytes ).toEqual( 40 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.cachedBytes ).toEqual( 28 );
+		expect( cache.itemList.length ).toEqual( 7 );
+
+	} );
+
 } );
