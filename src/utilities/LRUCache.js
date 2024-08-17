@@ -37,8 +37,8 @@ class LRUCache {
 		// options
 		this.maxSize = 800;
 		this.minSize = 600;
-		this.minBytesSize = 0.2 * GIGABYTE_BYTES;
-		this.maxBytesSize = 0.3 * GIGABYTE_BYTES;
+		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
+		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 		this.unloadPercent = 0.05;
 
 		// "itemSet" doubles as both the list of the full set of items currently
