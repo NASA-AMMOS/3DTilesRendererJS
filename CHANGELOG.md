@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - BatchTable: `count` field to get the number of id / entries.
 - I3DMLoader: Added support for `RTC_CENTER` feature.
 - TilesRenderer: Added initial support for implicit tiling.
+- LRUCache: Support for setting the min and max byte size for the cache which accounts for geometry and texture sizes.
+- Plugins: Added "UpdateOnChangePlugin" to the examples folder.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
