@@ -260,4 +260,17 @@ export class Ellipsoid {
 
 	}
 
+	copy( source ) {
+
+		this.radius.copy( source.copy );
+		return this;
+
+	}
+
+	clone() {
+
+		return new this.constructor().copy( this );
+
+	}
+
 }
