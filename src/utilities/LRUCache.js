@@ -246,17 +246,26 @@ class LRUCache {
 
 			let removedNodes = 0;
 			let removedBytes = 0;
-			while (
-				removedNodes < nodesToUnload ||
-				removedBytes < bytesToUnload ||
-				this.cachedBytes - removedBytes > maxBytesSize ||
-				itemList.length - removedNodes > maxSize
-			) {
+			while ( true ) {
+
+				const item = itemList[ removedNodes ];
+				const bytes = bytesMap.get( item );
+
+				// note that these conditions ensure we keep one tile over the byte cap so we can
+				// align with the the isFull function reports.
+
+				// base while condition
+				const doContinue =
+					removedNodes < nodesToUnload ||
+					removedBytes < bytesToUnload ||
+					this.cachedBytes - removedBytes - bytes > maxBytesSize ||
+					itemList.length - removedNodes > maxSize;
 
 				// don't unload any used tiles unless we're above our size cap
 				if (
+					! doContinue ||
 					removedNodes >= unused &&
-					this.cachedBytes - removedBytes <= maxBytesSize &&
+					this.cachedBytes - removedBytes - bytes <= maxBytesSize &&
 					itemList.length - removedNodes <= maxSize
 				) {
 
@@ -264,15 +273,13 @@ class LRUCache {
 
 				}
 
-				const item = itemList[ removedNodes ];
-				removedBytes += bytesMap.get( item );
+				removedBytes += bytes;
 				removedNodes ++;
 
 				bytesMap.delete( item );
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
-
 
 			}
 

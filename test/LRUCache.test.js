@@ -133,8 +133,8 @@ describe( 'LRUCache', () => {
 
 		}
 
-		expect( cache.itemList.length ).toEqual( 6 );
-		expect( cache.cachedBytes ).toEqual( 24 );
+		expect( cache.itemList.length ).toEqual( 7 );
+		expect( cache.cachedBytes ).toEqual( 28 );
 
 		cache.markAllUnused();
 		cache.unloadUnusedContent();
@@ -176,8 +176,8 @@ describe( 'LRUCache', () => {
 		expect( cache.itemList.length ).toEqual( 10 );
 
 		cache.unloadUnusedContent();
-		expect( cache.cachedBytes ).toEqual( 24 );
-		expect( cache.itemList.length ).toEqual( 6 );
+		expect( cache.cachedBytes ).toEqual( 28 );
+		expect( cache.itemList.length ).toEqual( 7 );
 
 	} );
 
