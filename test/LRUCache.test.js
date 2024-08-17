@@ -143,4 +143,42 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should update memory usage when the items are triggers.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 10;
+		cache.maxBytesSize = 25;
+		cache.unloadPercent = 1;
+		cache.getMemoryUsageCallback = () => 1;
+
+		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.add( items[ i ], () => {} );
+
+		}
+
+		expect( cache.cachedBytes ).toEqual( 10 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.cachedBytes ).toEqual( 10 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.getMemoryUsageCallback = () => 4;
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.updateMemoryUsage( items[ i ] );
+
+		}
+
+		expect( cache.cachedBytes ).toEqual( 40 );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.cachedBytes ).toEqual( 24 );
+		expect( cache.itemList.length ).toEqual( 6 );
+
+	} );
+
 } );

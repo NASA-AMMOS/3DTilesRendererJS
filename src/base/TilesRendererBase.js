@@ -706,7 +706,7 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
-				lruCache.updateMemoryUsed( tile );
+				lruCache.updateMemoryUsage( tile );
 
 				if ( tile.__wasSetVisible ) {
 

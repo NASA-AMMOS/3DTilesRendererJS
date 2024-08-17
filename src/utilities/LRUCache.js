@@ -135,7 +135,7 @@ class LRUCache {
 
 	}
 
-	updateMemoryUsed( item ) {
+	updateMemoryUsage( item ) {
 
 		const itemSet = this.itemSet;
 		const bytesMap = this.bytesMap;
@@ -279,7 +279,9 @@ class LRUCache {
 			itemList.splice( 0, removedNodes );
 			this.cachedBytes -= removedBytes;
 
-			remaining = removedNodes < excessNodes || removedBytes < excessBytes;
+			// if we didn't remove enough nodes or we still have excess bytes and there are nodes to removed
+			// then we want to fire another round of unloading
+			remaining = removedNodes < excessNodes || removedBytes < excessBytes && removedNodes < unused;
 
 		}
 
