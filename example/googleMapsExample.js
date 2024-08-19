@@ -210,8 +210,14 @@ function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
 	const params = new URLSearchParams( hash );
-	const lat = parseFloat( params.get( 'lat' ) ) || 0;
-	const lon = parseFloat( params.get( 'lon' ) ) || 0;
+	if ( ! params.has( 'lat' ) && ! params.has( 'lon' ) ) {
+
+		return;
+
+	}
+
+	const lat = parseFloat( params.get( 'lat' ) );
+	const lon = parseFloat( params.get( 'lon' ) );
 	const el = parseFloat( params.get( 'el' ) ) || 1000;
 
 	const camera = transition.camera;
