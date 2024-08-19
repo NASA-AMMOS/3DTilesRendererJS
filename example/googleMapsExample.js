@@ -20,6 +20,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
+import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -57,6 +58,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.errorTarget = 50;
 
