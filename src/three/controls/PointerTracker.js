@@ -47,7 +47,7 @@ export class PointerTracker {
 
 	setHoverEvent( e ) {
 
-		if ( e.pointerType === 'mouse' ) {
+		if ( e.pointerType === 'mouse' || e.type === 'wheel' ) {
 
 			this.getAdjustedPointer( e, this.hoverPosition );
 			this.hoverSet = true;

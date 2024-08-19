@@ -193,33 +193,43 @@ function updateHash() {
 	res.lon *= MathUtils.RAD2DEG;
 
 	const elevation = WGS84_ELLIPSOID.getPositionElevation( vec );
-	const tokens = [
-		parseFloat( res.lat.toFixed( 4 ) ),
-		parseFloat( res.lon.toFixed( 4 ) ),
-		elevation.toFixed( 4 ),
-	];
-	window.history.replaceState( undefined, undefined, `#${ tokens.join() }` );
+	const params = new URLSearchParams();
+	params.set( 'lat', res.lat.toFixed( 4 ) );
+	params.set( 'lon', res.lon.toFixed( 4 ) );
+	params.set( 'el', elevation.toFixed( 4 ) );
+	params.set( 'rx', camera.rotation.x.toFixed( 2 ) );
+	params.set( 'ry', camera.rotation.y.toFixed( 2 ) );
+	params.set( 'rz', camera.rotation.z.toFixed( 2 ) );
+	window.history.replaceState( undefined, undefined, `#${ params }` );
 
 }
 
 function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
-	const tokens = hash.split( /,/g ).map( t => parseFloat( t ) );
-	if ( tokens.length < 2 || tokens.findIndex( t => Number.isNaN( t ) ) !== - 1 ) {
+	const params = new URLSearchParams( hash );
+	const lat = parseFloat( params.get( 'lat' ) ) || 0;
+	const lon = parseFloat( params.get( 'lon' ) ) || 0;
+	const el = parseFloat( params.get( 'el' ) ) || 1000;
 
-		return;
-
-	}
-
-	//todo it looks like we can't init under a certain height, I assume it has something to do with the first tile loaded and collision
-	const [ lat, lon, height = 1000 ] = tokens;
 	const camera = transition.camera;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
-
+	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, el, camera.position );
 	tiles.group.updateMatrixWorld();
 	camera.position.applyMatrix4( tiles.group.matrixWorld );
-	camera.lookAt( 0, 0, 0 );
+
+	if ( params.has( 'rx' ) && params.has( 'ry' ) && params.has( 'rz' ) ) {
+
+		const rx = parseFloat( params.get( 'rx' ) );
+		const ry = parseFloat( params.get( 'ry' ) );
+		const rz = parseFloat( params.get( 'rz' ) );
+
+		camera.rotation.set( rx, ry, rz );
+
+	} else {
+
+		camera.lookAt( 0, 0, 0 );
+
+	}
 
 }
 
