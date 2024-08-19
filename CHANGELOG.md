@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: Zoomed-out ellipsoid rotation is now scaled based on camera parameters and ellipsoid size.
 - I3DMLoader: `SCALE` and `SCALE_NON_UNIFORM` are now both applied when present.
 - I3DMLoader: Instances now work correctly when parent group transforms are applied.
+- EnvironmentControls: Fixed case where zoom would not work if the mouse had not been moved.
 
 ## [0.3.36] - 2024.07.25
 ### Added
