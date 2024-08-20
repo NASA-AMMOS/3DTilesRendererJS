@@ -911,7 +911,7 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// update the drag action
-	_updatePosition() {
+	_updatePosition( deltaTime ) {
 
 		const {
 			raycaster,
@@ -981,6 +981,8 @@ export class EnvironmentControls extends EventDispatcher {
 				camera.position.add( _delta );
 				camera.updateMatrixWorld();
 
+				// update the drag inertia
+				_delta.multiplyScalar( 1 / deltaTime );
 				if ( _delta.lengthSq() < 1e-8 ) {
 
 					dragInertia.lerp( _delta, 0.5 );
@@ -995,14 +997,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else if ( enableDamping ) {
 
-			camera.position.add( dragInertia );
+			camera.position.add( dragInertia * deltaTime );
 			camera.updateMatrixWorld();
 
 		}
 
 	}
 
-	_updateRotation() {
+	_updateRotation( deltaTime ) {
 
 		const {
 			pivotPoint,
@@ -1021,11 +1023,13 @@ export class EnvironmentControls extends EventDispatcher {
 			_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
 			rotationInertia.lerp( _deltaPointer, 0.9 );
 
+			// update rotation inertia
+			_deltaPointer.multiplyScalar( 1 / deltaTime );
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
 
 		} else if ( enableDamping ) {
 
-			this._applyRotation( rotationInertia.x, rotationInertia.y, pivotPoint );
+			this._applyRotation( rotationInertia.x * deltaTime, rotationInertia.y * deltaTime, pivotPoint );
 
 		}
 

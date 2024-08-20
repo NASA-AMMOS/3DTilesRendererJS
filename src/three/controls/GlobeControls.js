@@ -314,28 +314,32 @@ export class GlobeControls extends EnvironmentControls {
 
 		if ( this.state !== DRAG ) {
 
-			if ( this.inertiaDragMode === 1 ) {
+			if ( this.enableDamping ) {
 
-				const {
-					tilesGroup,
-					inertiaAxis,
-					dragInertia,
-					camera,
-				} = this;
+				if ( this.inertiaDragMode === 1 ) {
 
-				const angle = dragInertia.x * 1e-3;
-				_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
-				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+					const {
+						tilesGroup,
+						inertiaAxis,
+						dragInertia,
+						camera,
+					} = this;
 
-				// apply the rotation
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+					const angle = dragInertia.x * 1e-3;
+					_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
+					_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+					makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
-			} else {
+					// apply the rotation
+					camera.matrixWorld.premultiply( _rotMatrix );
+					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-				const { dragInertia } = this;
-				this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
+				} else {
+
+					const { dragInertia } = this;
+					this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
+
+				}
 
 			}
 
