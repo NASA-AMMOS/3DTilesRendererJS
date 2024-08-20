@@ -6,7 +6,7 @@ import {
 	MathUtils,
 	Ray,
 } from 'three';
-import { EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
@@ -55,6 +55,8 @@ export class GlobeControls extends EnvironmentControls {
 		this.maxZoom = 0.01;
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
+
+		this.inertiaDragMode = 0;
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
@@ -291,7 +293,16 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updatePosition() {
 
-		if ( this._dragMode === 1 || this._isNearControls() ) {
+		if ( this.state !== DRAG ) {
+
+			if ( this.inertiaDragMode === 1 ) {
+			} else {
+
+				this._applyZoomedOutRotation( this.dragInertia.x, this.dragInertia.y );
+
+			}
+
+		} else if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
@@ -432,9 +443,46 @@ export class GlobeControls extends EnvironmentControls {
 
 			pivotMesh.visible = false;
 
+			this.inertiaDragMode = - 1;
+			if ( _deltaPointer.lengthSq() < 1e-8 ) {
+
+				this.dragInertia.lerp( _deltaPointer, 0.5 );
+
+			} else {
+
+				this.dragInertia.copy( _deltaPointer );
+
+			}
+
 		}
 
 		this._alignCameraUp( this.up );
+
+	}
+
+	_applyZoomedOutRotation( x, y ) {
+
+		const { rotationSpeed, tilesGroup, camera } = this;
+		const azimuth = - x * rotationSpeed;
+		const altitude = - y * rotationSpeed;
+		camera.updateMatrixWorld();
+
+		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
+
+		// apply the altitude and azimuth adjustment
+		_quaternion.setFromAxisAngle( _right, altitude );
+		camera.quaternion.premultiply( _quaternion );
+		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+		camera.matrixWorld.premultiply( _rotMatrix );
+
+		_quaternion.setFromAxisAngle( _up, azimuth );
+		camera.quaternion.premultiply( _quaternion );
+		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+		camera.matrixWorld.premultiply( _rotMatrix );
+
+		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 	}
 
