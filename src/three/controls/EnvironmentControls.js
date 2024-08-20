@@ -105,8 +105,8 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomPoint = new Vector3();
 		this.zoomDelta = 0;
 
-		this.rotationMomentum = new Vector2();
-		this.dragMomentum = new Vector3();
+		this.rotationInertia = new Vector2();
+		this.dragInertia = new Vector3();
 
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
@@ -565,8 +565,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		this.dragMomentum.set( 0, 0, 0 );
-		this.rotationMomentum.set( 0, 0 );
+		this.dragInertia.set( 0, 0, 0 );
+		this.rotationInertia.set( 0, 0 );
 		this.state = state;
 		if ( state !== NONE && state !== WAITING ) {
 
@@ -684,21 +684,21 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// update the damping of momentum variables
 		const {
-			rotationMomentum,
-			dragMomentum,
+			rotationInertia,
+			dragInertia,
 		} = this;
 
-		rotationMomentum.multiplyScalar( 0.95 );
-		if ( rotationMomentum.lengthSq() < 1e-8 ) {
+		rotationInertia.multiplyScalar( 0.95 );
+		if ( rotationInertia.lengthSq() < 1e-8 ) {
 
-			rotationMomentum.set( 0, 0 );
+			rotationInertia.set( 0, 0 );
 
 		}
 
-		dragMomentum.multiplyScalar( 0.95 );
-		if ( dragMomentum.lengthSq() < 1e-8 ) {
+		dragInertia.multiplyScalar( 0.95 );
+		if ( dragInertia.lengthSq() < 1e-8 ) {
 
-			dragMomentum.set( 0, 0, 0 );
+			dragInertia.set( 0, 0, 0 );
 
 		}
 
@@ -707,10 +707,10 @@ export class EnvironmentControls extends EventDispatcher {
 	_momentumNeedsUpdate() {
 
 		const {
-			rotationMomentum,
-			dragMomentum,
+			rotationInertia,
+			dragInertia,
 		} = this;
-		return rotationMomentum.lengthSq() !== 0 || dragMomentum.lengthSq() !== 0;
+		return rotationInertia.lengthSq() !== 0 || dragInertia.lengthSq() !== 0;
 
 	}
 
@@ -908,7 +908,7 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker,
 			domElement,
 			state,
-			dragMomentum,
+			dragInertia,
 		} = this;
 
 		if ( state === DRAG ) {
@@ -969,11 +969,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 				if ( _delta.lengthSq() < 1e-8 ) {
 
-					dragMomentum.lerp( _delta, 0.5 );
+					dragInertia.lerp( _delta, 0.5 );
 
 				} else {
 
-					dragMomentum.copy( _delta );
+					dragInertia.copy( _delta );
 
 				}
 
@@ -981,7 +981,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else {
 
-			camera.position.add( dragMomentum );
+			camera.position.add( dragInertia );
 			camera.updateMatrixWorld();
 
 		}
@@ -995,7 +995,7 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker,
 			domElement,
 			state,
-			rotationMomentum,
+			rotationInertia,
 		} = this;
 
 		if ( state === ROTATE ) {
@@ -1004,13 +1004,13 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.getCenterPoint( _pointer );
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
-			rotationMomentum.lerp( _deltaPointer, 0.9 );
+			rotationInertia.lerp( _deltaPointer, 0.9 );
 
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
 
 		} else {
 
-			this._applyRotation( rotationMomentum.x, rotationMomentum.y, pivotPoint );
+			this._applyRotation( rotationInertia.x, rotationInertia.y, pivotPoint );
 
 		}
 
