@@ -86,6 +86,8 @@ export class EnvironmentControls extends EventDispatcher {
 		this.maxZoom = Infinity;
 		this.zoomSpeed = 1;
 		this.adjustHeight = true;
+		this.enableDamping = true;
+		this.dampingFactor = 0.05;
 
 		// settings for GlobeControls
 		this.reorientOnDrag = true;
@@ -413,6 +415,7 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.setHoverEvent( e );
 			pointerTracker.updatePointer( e );
 
+			// TODO: do we need events here?
 			this.dispatchEvent( _startEvent );
 
 			let delta;
@@ -594,19 +597,23 @@ export class EnvironmentControls extends EventDispatcher {
 		} = this;
 
 		// update the actions
-		if ( this.needsUpdate || this._momentumNeedsUpdate() ) {
+		const inertiaNeedsUpdate = this._momentumNeedsUpdate();
+		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
 			const zoomDelta = this.zoomDelta;
-			this._updatePosition();
-			this._updateRotation();
-
 			if ( state === ZOOM || zoomDelta !== 0 ) {
 
 				this._updateZoom();
 
+				this.rotationInertia.set( 0, 0 );
+				this.dragInertia.set( 0, 0, 0 );
+
 			}
 
-			if ( state !== NONE || zoomDelta !== 0 ) {
+			this._updatePosition();
+			this._updateRotation();
+
+			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
 				this.dispatchEvent( _changeEvent );
 
@@ -616,7 +623,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		this._updateMomentumDamping();
+		if ( inertiaNeedsUpdate ) {
+
+			this._updateInertiaDamping();
+
+		}
 
 		// reuse the "hit" information since it can be slow to perform multiple hits
 		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
@@ -680,23 +691,25 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// private
-	_updateMomentumDamping() {
+	_updateInertiaDamping() {
 
 		// update the damping of momentum variables
 		const {
 			rotationInertia,
 			dragInertia,
+			enableDamping,
+			dampingFactor,
 		} = this;
 
-		rotationInertia.multiplyScalar( 0.95 );
-		if ( rotationInertia.lengthSq() < 1e-8 ) {
+		rotationInertia.multiplyScalar( 1 - dampingFactor );
+		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			rotationInertia.set( 0, 0 );
 
 		}
 
-		dragInertia.multiplyScalar( 0.95 );
-		if ( dragInertia.lengthSq() < 1e-8 ) {
+		dragInertia.multiplyScalar( 1 - dampingFactor );
+		if ( dragInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			dragInertia.set( 0, 0, 0 );
 
@@ -909,6 +922,7 @@ export class EnvironmentControls extends EventDispatcher {
 			domElement,
 			state,
 			dragInertia,
+			enableDamping,
 		} = this;
 
 		if ( state === DRAG ) {
@@ -979,7 +993,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-		} else {
+		} else if ( enableDamping ) {
 
 			camera.position.add( dragInertia );
 			camera.updateMatrixWorld();
@@ -996,6 +1010,7 @@ export class EnvironmentControls extends EventDispatcher {
 			domElement,
 			state,
 			rotationInertia,
+			enableDamping,
 		} = this;
 
 		if ( state === ROTATE ) {
@@ -1008,7 +1023,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
 
-		} else {
+		} else if ( enableDamping ) {
 
 			this._applyRotation( rotationInertia.x, rotationInertia.y, pivotPoint );
 
