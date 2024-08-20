@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Removed `stopAtEmptyTiles` option.
 - LRUCache: Tiles continue to be unloaded even when the tiles renderer update function has not been called.
 - TilesRenderer: Deprecate "preprocessURL" function.
+- Ellipsoid: Renamed "constructLatLonFrame" to "getEastNorthUpFrame".
 
 ### Fixed
 - GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.

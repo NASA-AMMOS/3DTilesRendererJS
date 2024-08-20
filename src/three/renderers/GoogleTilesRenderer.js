@@ -27,7 +27,7 @@ const EllipsoidTilesRendererMixin = base => class extends base {
 		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
 		_mat.makeRotationFromEuler( _euler );
 
-		ellipsoid.constructLatLonFrame( lat, lon, group.matrix )
+		ellipsoid.constructEastNorthUpFrame( lat, lon, group.matrix )
 			.multiply( _mat )
 			.invert()
 			.decompose(

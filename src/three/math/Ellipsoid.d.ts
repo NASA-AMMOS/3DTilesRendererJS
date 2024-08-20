@@ -12,6 +12,6 @@ export class Ellipsoid {
 	getPositionToSurfacePoint( pos: Vector3, target: Vector3 ): Vector3;
 
 	getNorthernTangent( lat: Number, lon: Number, target: Vector3, westTarget?: Vector3 ): Matrix4;
-	constructLatLonFrame( lat: Number, lon: Number, target: Matrix4 ): Matrix4;
+	getEastNorthUpFrame( lat: Number, lon: Number, target: Matrix4 ): Matrix4;
 
 }
