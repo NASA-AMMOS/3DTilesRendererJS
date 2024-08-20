@@ -1021,11 +1021,12 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.getCenterPoint( _pointer );
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
-			rotationInertia.lerp( _deltaPointer, 0.9 );
 
 			// update rotation inertia
-			_deltaPointer.multiplyScalar( 1 / deltaTime );
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
+
+			_deltaPointer.multiplyScalar( 1 / deltaTime );
+			rotationInertia.lerp( _deltaPointer, 0.9 );
 
 		} else if ( enableDamping ) {
 
