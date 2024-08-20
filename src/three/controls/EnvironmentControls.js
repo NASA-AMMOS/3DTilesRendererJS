@@ -87,7 +87,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomSpeed = 1;
 		this.adjustHeight = true;
 		this.enableDamping = true;
-		this.dampingFactor = 0.05;
+		this.dampingFactor = 0.2;
 
 		// settings for GlobeControls
 		this.reorientOnDrag = true;
