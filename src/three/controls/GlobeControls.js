@@ -179,7 +179,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	update() {
+	update( deltaTime ) {
 
 		if ( ! this.enabled || ! this.tilesGroup || ! this.camera ) {
 
@@ -211,7 +211,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// fire basic controls update
-		super.update();
+		super.update( deltaTime );
 
 		if ( camera.isPerspectiveCamera ) {
 
@@ -310,7 +310,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	_updatePosition() {
+	_updatePosition( deltaTime ) {
 
 		if ( this.state !== DRAG ) {
 
@@ -324,7 +324,7 @@ export class GlobeControls extends EnvironmentControls {
 				} = this;
 
 				const angle = dragInertia.x * 1e-3;
-				_quaternion.setFromAxisAngle( inertiaAxis, angle );
+				_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
 				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
 				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
@@ -334,7 +334,8 @@ export class GlobeControls extends EnvironmentControls {
 
 			} else {
 
-				this._applyZoomedOutRotation( this.dragInertia.x, this.dragInertia.y );
+				const { dragInertia } = this;
+				this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
 
 			}
 
@@ -401,7 +402,7 @@ export class GlobeControls extends EnvironmentControls {
 			// track inertia variables
 			this.inertiaDragMode = 1;
 
-			const angle = getAxisAngle( _quaternion, _vec ) * 1000;
+			const angle = getAxisAngle( _quaternion, _vec ) * 1000 / deltaTime;
 			const { dragInertia, inertiaAxis } = this;
 			if ( angle < 1e-1 ) {
 
@@ -498,6 +499,7 @@ export class GlobeControls extends EnvironmentControls {
 			pivotMesh.visible = false;
 
 			this.inertiaDragMode = - 1;
+			_deltaPointer.multiplyScalar( 1 / deltaTime );
 			if ( _deltaPointer.lengthSq() < 1e-8 ) {
 
 				this.dragInertia.lerp( _deltaPointer, 0.5 );

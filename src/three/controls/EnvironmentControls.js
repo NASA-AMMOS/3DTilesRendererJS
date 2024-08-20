@@ -579,7 +579,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	update() {
+	update( deltaTime = 16 / 1000 ) {
 
 		if ( ! this.enabled || ! this.camera ) {
 
@@ -610,8 +610,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			this._updatePosition();
-			this._updateRotation();
+			this._updatePosition( deltaTime );
+			this._updateRotation( deltaTime );
 
 			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
