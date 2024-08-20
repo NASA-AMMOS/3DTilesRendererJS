@@ -625,7 +625,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		if ( inertiaNeedsUpdate ) {
 
-			this._updateInertiaDamping();
+			this._updateInertiaDamping( deltaTime );
 
 		}
 
@@ -691,7 +691,7 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// private
-	_updateInertiaDamping() {
+	_updateInertiaDamping( deltaTime ) {
 
 		// update the damping of momentum variables
 		const {
@@ -701,14 +701,14 @@ export class EnvironmentControls extends EventDispatcher {
 			dampingFactor,
 		} = this;
 
-		rotationInertia.multiplyScalar( 1 - dampingFactor );
+		rotationInertia.multiplyScalar( 1 - dampingFactor * deltaTime );
 		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			rotationInertia.set( 0, 0 );
 
 		}
 
-		dragInertia.multiplyScalar( 1 - dampingFactor );
+		dragInertia.multiplyScalar( 1 - dampingFactor * deltaTime );
 		if ( dragInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			dragInertia.set( 0, 0, 0 );
