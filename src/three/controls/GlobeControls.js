@@ -32,6 +32,23 @@ const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 400;
+function getAxisAngle( quaternion, target ) {
+
+	const qx = quaternion.x;
+	const qy = quaternion.y;
+	const qz = quaternion.z;
+	const qw = quaternion.w;
+
+	const angle = 2 * Math.acos( qw );
+	const x = qx / Math.sqrt( 1 - qw * qw );
+	const y = qy / Math.sqrt( 1 - qw * qw );
+	const z = qz / Math.sqrt( 1 - qw * qw );
+
+	target.set( x, y, z );
+	return angle;
+
+}
+
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -56,6 +73,8 @@ export class GlobeControls extends EnvironmentControls {
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
+		this.inertiaAxis = new Vector3();
+		this.quaternion = new Quaternion();
 		this.inertiaDragMode = 0;
 
 		this.allowNegativeNearPlanes = true;
@@ -296,6 +315,23 @@ export class GlobeControls extends EnvironmentControls {
 		if ( this.state !== DRAG ) {
 
 			if ( this.inertiaDragMode === 1 ) {
+
+				const {
+					tilesGroup,
+					inertiaAxis,
+					dragInertia,
+					camera,
+				} = this;
+
+				const angle = dragInertia.x * 1e-3;
+				_quaternion.setFromAxisAngle( inertiaAxis, angle );
+				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+
+				// apply the rotation
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
 			} else {
 
 				this._applyZoomedOutRotation( this.dragInertia.x, this.dragInertia.y );
@@ -361,6 +397,24 @@ export class GlobeControls extends EnvironmentControls {
 			// apply the rotation
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			// track inertia variables
+			this.inertiaDragMode = 1;
+
+			const angle = getAxisAngle( _quaternion, _vec ) * 1000;
+			const { dragInertia, inertiaAxis } = this;
+			if ( angle < 1e-1 ) {
+
+				dragInertia.x = MathUtils.lerp( dragInertia.x, angle, 0.5 );
+				dragInertia.y = 0;
+				dragInertia.z = 0;
+
+			} else {
+
+				dragInertia.set( angle, 0, 0 );
+				inertiaAxis.copy( _vec );
+
+			}
 
 		} else {
 
