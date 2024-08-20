@@ -504,7 +504,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			this.inertiaDragMode = - 1;
 			_deltaPointer.multiplyScalar( 1 / deltaTime );
-			if ( _deltaPointer.lengthSq() < 1e-8 ) {
+			if ( _deltaPointer.lengthSq() < 1e-3 ) {
 
 				this.dragInertia.lerp( _deltaPointer, 0.5 );
 

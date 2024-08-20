@@ -701,14 +701,16 @@ export class EnvironmentControls extends EventDispatcher {
 			dampingFactor,
 		} = this;
 
-		rotationInertia.multiplyScalar( 1 - dampingFactor * deltaTime );
+
+		const factor = Math.pow( 2, - deltaTime / dampingFactor );
+		rotationInertia.multiplyScalar( factor );
 		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			rotationInertia.set( 0, 0 );
 
 		}
 
-		dragInertia.multiplyScalar( 1 - dampingFactor * deltaTime );
+		dragInertia.multiplyScalar( factor );
 		if ( dragInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
 			dragInertia.set( 0, 0, 0 );
@@ -983,7 +985,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 				// update the drag inertia
 				_delta.multiplyScalar( 1 / deltaTime );
-				if ( _delta.lengthSq() < 1e-8 ) {
+				if ( _delta.lengthSq() < 1e-3 ) {
 
 					dragInertia.lerp( _delta, 0.5 );
 
@@ -1026,7 +1028,15 @@ export class EnvironmentControls extends EventDispatcher {
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
 
 			_deltaPointer.multiplyScalar( 1 / deltaTime );
-			rotationInertia.lerp( _deltaPointer, 0.9 );
+			if ( _deltaPointer.lengthSq() < 1e-3 ) {
+
+				rotationInertia.lerp( _deltaPointer, 0.5 );
+
+			} else {
+
+				rotationInertia.copy( _deltaPointer );
+
+			}
 
 		} else if ( enableDamping ) {
 
