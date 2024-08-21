@@ -338,8 +338,8 @@ export class EnvironmentControls extends EventDispatcher {
 						pointerTracker.getCenterPoint( _centerPoint );
 
 						// detect zoom transition
-						const startDist = pointerTracker.getStartPointerDistance();
-						const pointerDist = pointerTracker.getPointerDistance();
+						const startDist = pointerTracker.getStartTouchPointerDistance();
+						const pointerDist = pointerTracker.getTouchPointerDistance();
 						const separateDelta = pointerDist - startDist;
 						if ( this.state === NONE || this.state === WAITING ) {
 
@@ -370,7 +370,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 						if ( this.state === ZOOM ) {
 
-							const previousDist = pointerTracker.getPreviousPointerDistance();
+							const previousDist = pointerTracker.getPreviousTouchPointerDistance();
 							this.zoomDelta += pointerDist - previousDist;
 
 						} else if ( this.state === ROTATE ) {

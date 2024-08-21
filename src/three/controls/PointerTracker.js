@@ -1,5 +1,7 @@
 import { Vector2 } from 'three';
 
+const _vec = new Vector2();
+const _vec2 = new Vector2();
 export class PointerTracker {
 
 	constructor() {
@@ -182,7 +184,16 @@ export class PointerTracker {
 
 	}
 
-	getPointerDistance( pointerPositions = this.pointerPositions ) {
+	getMoveDistance() {
+
+		this.getCenterPoint( _vec );
+		this.getPreviousCenterPoint( _vec2 );
+
+		return _vec.sub( _vec2 ).length();
+
+	}
+
+	getTouchPointerDistance( pointerPositions = this.pointerPositions ) {
 
 		if ( this.getPointerCount() <= 1 || this.getPointerType() === 'mouse' ) {
 
@@ -201,15 +212,15 @@ export class PointerTracker {
 
 	}
 
-	getPreviousPointerDistance() {
+	getPreviousTouchPointerDistance() {
 
-		return this.getPointerDistance( this.previousPositions );
+		return this.getTouchPointerDistance( this.previousPositions );
 
 	}
 
-	getStartPointerDistance() {
+	getStartTouchPointerDistance() {
 
-		return this.getPointerDistance( this.startPositions );
+		return this.getTouchPointerDistance( this.startPositions );
 
 	}
 
