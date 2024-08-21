@@ -13,6 +13,13 @@ import { Ellipsoid } from '../math/Ellipsoid.js';
 
 function getAxisAngle( quaternion, target ) {
 
+	if ( quaternion.w >= 1 - 1e-12 ) {
+
+		target.set( 0, 0, 1 );
+		return 0;
+
+	}
+
 	const qx = quaternion.x;
 	const qy = quaternion.y;
 	const qz = quaternion.z;
