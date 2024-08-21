@@ -60,7 +60,6 @@ export class GlobeControls extends EnvironmentControls {
 		this.inertiaAxis = new Vector3();
 		this.dragQuaternion = new Quaternion();
 		this.inertiaDragMode = 0;
-		this.inertia
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
