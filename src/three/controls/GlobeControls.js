@@ -179,7 +179,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	update( deltaTime ) {
+	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.tilesGroup || ! this.camera ) {
 

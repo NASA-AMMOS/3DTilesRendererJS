@@ -7,6 +7,7 @@ import {
 	Plane,
 	EventDispatcher,
 	MathUtils,
+	Clock,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -87,7 +88,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomSpeed = 1;
 		this.adjustHeight = true;
 		this.enableDamping = true;
-		this.dampingFactor = 0.2;
+		this.dampingFactor = 0.15;
 
 		// settings for GlobeControls
 		this.reorientOnDrag = true;
@@ -118,6 +119,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.raycaster.firstHitOnly = true;
 
 		this.up = new Vector3( 0, 1, 0 );
+		this.clock = new Clock();
 
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
 		this.useFallbackPlane = true;
@@ -580,7 +582,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	update( deltaTime = 16 / 1000 ) {
+	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera ) {
 
