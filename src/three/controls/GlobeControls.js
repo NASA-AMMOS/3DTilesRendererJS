@@ -11,6 +11,23 @@ import { DRAG, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
+function getAxisAngle( quaternion, target ) {
+
+	const qx = quaternion.x;
+	const qy = quaternion.y;
+	const qz = quaternion.z;
+	const qw = quaternion.w;
+
+	const angle = 2 * Math.acos( qw );
+	const x = qx / Math.sqrt( 1 - qw * qw );
+	const y = qy / Math.sqrt( 1 - qw * qw );
+	const z = qz / Math.sqrt( 1 - qw * qw );
+
+	target.set( x, y, z );
+	return angle;
+
+}
+
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
 const _pos = new Vector3();
@@ -395,11 +412,12 @@ export class GlobeControls extends EnvironmentControls {
 			// track inertia variables
 			this.inertiaDragMode = 1;
 
-			_axisAngle.setAxisAngleFromQuaternion( _quaternion );
-			const angle = _axisAngle.w * 1000 / deltaTime;
-			_vec.copy( _axisAngle );
-
+			// NOTE: using Vector4's built-in axis angle function breaks ths inertia behavior because
+			// floating point tolerance threshold is too high resulting in an incorrect axis.
+			// TODO: if we're concerned about floating point error we may want to use a quaternion
+			// to book keep the animation
 			const { dragInertia, inertiaAxis } = this;
+			const angle = getAxisAngle( _quaternion, _vec ) * 1000 / deltaTime;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
 				dragInertia.x = MathUtils.lerp( dragInertia.x, angle, 0.5 );
