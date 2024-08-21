@@ -583,6 +583,8 @@ export class GlobeControls extends EnvironmentControls {
 		const deltaAlpha = MathUtils.clamp( MathUtils.mapLinear( Math.abs( zoomDelta ), 0, 20, 0, 1 ), 0, 1 );
 		if ( this._isNearControls() || zoomDelta > 0 ) {
 
+			this._updateZoomDirection();
+
 			// When zooming try to tilt the camera towards the center of the planet to avoid the globe
 			// spinning as you zoom out from the horizon
 			if ( zoomDelta < 0 && ( this.zoomPointSet || this._updateZoomPoint() ) ) {

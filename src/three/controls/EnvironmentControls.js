@@ -744,7 +744,6 @@ export class EnvironmentControls extends EventDispatcher {
 			camera,
 			minDistance,
 			maxDistance,
-			raycaster,
 			pointerTracker,
 			domElement,
 			minZoom,
@@ -765,10 +764,7 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( camera.isOrthographicCamera ) {
 
 			// update the zoom direction
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
-			setRaycasterFromCamera( raycaster, _pointer, camera );
-			zoomDirection.copy( raycaster.ray.direction ).normalize();
-			this.zoomDirectionSet = true;
+			this._updateZoomDirection();
 
 			// zoom straight into the globe if we haven't hit anything
 			if ( this.zoomPointSet || this._updateZoomPoint() ) {
@@ -803,10 +799,7 @@ export class EnvironmentControls extends EventDispatcher {
 		} else {
 
 			// initialize the zoom direction
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-			setRaycasterFromCamera( raycaster, _pointer, camera );
-			zoomDirection.copy( raycaster.ray.direction ).normalize();
-			this.zoomDirectionSet = true;
+			this._updateZoomDirection();
 
 			// track the zoom direction we're going to use
 			const finalZoomDirection = _vec.copy( zoomDirection );
@@ -849,6 +842,23 @@ export class EnvironmentControls extends EventDispatcher {
 			}
 
 		}
+
+	}
+
+	_updateZoomDirection() {
+
+		if ( this.zoomDirectionSet ) {
+
+			return;
+
+		}
+
+		const { domElement, raycaster, camera, zoomDirection, pointerTracker } = this;
+		pointerTracker.getLatestPoint( _pointer );
+		mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
+		setRaycasterFromCamera( raycaster, _mouseBefore, camera );
+		zoomDirection.copy( raycaster.ray.direction ).normalize();
+		this.zoomDirectionSet = true;
 
 	}
 
