@@ -575,6 +575,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		this.pivotMesh.visible = true;
 		this.dragInertia.set( 0, 0, 0 );
 		this.rotationInertia.set( 0, 0 );
 		this.state = state;

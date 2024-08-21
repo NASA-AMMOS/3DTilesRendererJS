@@ -602,7 +602,8 @@ export class GlobeControls extends EnvironmentControls {
 				const adjustedDeltaAlpha = MathUtils.clamp( deltaAlpha * 3, 0, 1 );
 
 				// apply scale
-				_toCenter.lerpVectors( _forward, _toCenter, upAlpha * forwardAlpha * cameraAlpha * adjustedDeltaAlpha ).normalize();
+				const alpha = Math.min( upAlpha * forwardAlpha * cameraAlpha * adjustedDeltaAlpha, 0.1 );
+				_toCenter.lerpVectors( _forward, _toCenter, alpha ).normalize();
 
 				// perform rotation
 				_quaternion.setFromUnitVectors( _forward, _toCenter );
