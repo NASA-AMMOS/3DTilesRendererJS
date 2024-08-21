@@ -3,37 +3,12 @@ import {
 	Quaternion,
 	Vector2,
 	Vector3,
-	Vector4,
 	MathUtils,
 	Ray,
 } from 'three';
 import { DRAG, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
-
-function getAxisAngle( quaternion, target ) {
-
-	if ( quaternion.w >= 1 - 1e-12 ) {
-
-		target.set( 0, 0, 1 );
-		return 0;
-
-	}
-
-	const qx = quaternion.x;
-	const qy = quaternion.y;
-	const qz = quaternion.z;
-	const qw = quaternion.w;
-
-	const angle = 2 * Math.acos( qw );
-	const x = qx / Math.sqrt( 1 - qw * qw );
-	const y = qy / Math.sqrt( 1 - qw * qw );
-	const z = qz / Math.sqrt( 1 - qw * qw );
-
-	target.set( x, y, z );
-	return angle;
-
-}
 
 const _invMatrix = new Matrix4();
 const _rotMatrix = new Matrix4();
@@ -51,7 +26,6 @@ const _toCenter = new Vector3();
 const _latLon = {};
 const _ray = new Ray();
 const _ellipsoid = new Ellipsoid();
-const _axisAngle = new Vector4();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
@@ -84,8 +58,9 @@ export class GlobeControls extends EnvironmentControls {
 		this.reorientOnDrag = false;
 
 		this.inertiaAxis = new Vector3();
-		this.quaternion = new Quaternion();
+		this.dragQuaternion = new Quaternion();
 		this.inertiaDragMode = 0;
+		this.inertia
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
@@ -328,7 +303,7 @@ export class GlobeControls extends EnvironmentControls {
 				enableDamping,
 				inertiaDragMode,
 				tilesGroup,
-				inertiaAxis,
+				dragQuaternion,
 				dragInertia,
 				camera,
 			} = this;
@@ -339,9 +314,23 @@ export class GlobeControls extends EnvironmentControls {
 				// drag mode 1 means we're near the globe
 				if ( inertiaDragMode === 1 ) {
 
-					const angle = dragInertia.x * 1e-3;
-					_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
+					// ensure our w component is non-one if the xyz values are
+					// non zero to ensure we can animate
+					if (
+						dragQuaternion.w === 1 && (
+							dragQuaternion.x !== 0 ||
+							dragQuaternion.y !== 0 ||
+							dragQuaternion.z !== 0
+						)
+					) {
+
+						dragQuaternion.w = Math.min( dragQuaternion.w, 1 - 1e-9 );
+
+					}
+
+					// construct the rotation matrix
 					_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+					_quaternion.identity().slerp( dragQuaternion, dragInertia.x * deltaTime );
 					makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
 					// apply the rotation
@@ -419,22 +408,16 @@ export class GlobeControls extends EnvironmentControls {
 			// track inertia variables
 			this.inertiaDragMode = 1;
 
-			// NOTE: using Vector4's built-in axis angle function breaks ths inertia behavior because
-			// floating point tolerance threshold is too high resulting in an incorrect axis.
-			// TODO: if we're concerned about floating point error we may want to use a quaternion
-			// to book keep the animation
-			const { dragInertia, inertiaAxis } = this;
-			const angle = getAxisAngle( _quaternion, _vec ) * 1000 / deltaTime;
+			const { dragInertia, dragQuaternion } = this;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-				dragInertia.x = MathUtils.lerp( dragInertia.x, angle, 0.5 );
-				dragInertia.y = 0;
-				dragInertia.z = 0;
+				dragQuaternion.slerp( _quaternion, 0.5 );
+				dragInertia.set( 1 / deltaTime, 0, 0 );
 
 			} else {
 
-				dragInertia.set( angle, 0, 0 );
-				inertiaAxis.copy( _vec );
+				dragQuaternion.copy( _quaternion );
+				dragInertia.set( 1 / deltaTime, 0, 0 );
 
 			}
 
@@ -519,9 +502,11 @@ export class GlobeControls extends EnvironmentControls {
 
 			pivotMesh.visible = false;
 
+			// update drag variables
 			this.inertiaDragMode = - 1;
 			_deltaPointer.multiplyScalar( 1 / deltaTime );
-			if ( _deltaPointer.lengthSq() < 1e-3 ) {
+
+			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
 				this.dragInertia.lerp( _deltaPointer, 0.5 );
 
