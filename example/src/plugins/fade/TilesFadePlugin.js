@@ -83,7 +83,7 @@ function onUpdateBefore() {
 	// store the tiles renderer state before the tiles update so we can check
 	// whether fading started or stopped completely
 	this._fadingBefore = fadeManager.fadeCount;
-	this._displayActiveTiles = this.displayActiveTiles;
+	this._displayActiveTiles = tiles.displayActiveTiles;
 
 	// we need to display all active tiles in this case so we don't fade tiles in
 	// when moving from off screen
