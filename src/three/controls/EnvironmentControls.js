@@ -600,7 +600,7 @@ export class EnvironmentControls extends EventDispatcher {
 		} = this;
 
 		// update the actions
-		const inertiaNeedsUpdate = this._momentumNeedsUpdate();
+		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
 			const zoomDelta = this.zoomDelta;
@@ -722,7 +722,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	_momentumNeedsUpdate() {
+	_inertiaNeedsUpdate() {
 
 		const {
 			rotationInertia,
