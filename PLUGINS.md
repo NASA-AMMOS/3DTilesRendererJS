@@ -450,6 +450,14 @@ enabled = true : boolean
 
 Whether the controls are enabled and active.
 
+### .enableDamping
+
+```js
+enableDamping = false : boolean
+```
+
+Flag indicating whether residual inertial animation is played after interaction finishes.
+
 ### .constructor
 
 ```js
@@ -497,10 +505,10 @@ The scene to raycast against for control interactions.
 ### .update
 
 ```js
-update() : void
+update( deltaTime = null ) : void
 ```
 
-Updates the controls.
+Updates the controls. Takes a delta time value in seconds to normalize inertia and damping speeds. Defaults to the time between call to the function.
 
 ### .dispose
 

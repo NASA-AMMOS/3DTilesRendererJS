@@ -7,6 +7,7 @@ import {
 	Plane,
 	EventDispatcher,
 	MathUtils,
+	Clock,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -86,6 +87,8 @@ export class EnvironmentControls extends EventDispatcher {
 		this.maxZoom = Infinity;
 		this.zoomSpeed = 1;
 		this.adjustHeight = true;
+		this.enableDamping = true;
+		this.dampingFactor = 0.15;
 
 		// settings for GlobeControls
 		this.reorientOnDrag = true;
@@ -105,6 +108,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomPoint = new Vector3();
 		this.zoomDelta = 0;
 
+		this.rotationInertia = new Vector2();
+		this.dragInertia = new Vector3();
+
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
 		this.pivotMesh.scale.setScalar( 0.25 );
@@ -113,6 +119,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.raycaster.firstHitOnly = true;
 
 		this.up = new Vector3( 0, 1, 0 );
+		this.clock = new Clock();
 
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
 		this.useFallbackPlane = true;
@@ -333,8 +340,8 @@ export class EnvironmentControls extends EventDispatcher {
 						pointerTracker.getCenterPoint( _centerPoint );
 
 						// detect zoom transition
-						const startDist = pointerTracker.getStartPointerDistance();
-						const pointerDist = pointerTracker.getPointerDistance();
+						const startDist = pointerTracker.getStartTouchPointerDistance();
+						const pointerDist = pointerTracker.getTouchPointerDistance();
 						const separateDelta = pointerDist - startDist;
 						if ( this.state === NONE || this.state === WAITING ) {
 
@@ -365,7 +372,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 						if ( this.state === ZOOM ) {
 
-							const previousDist = pointerTracker.getPreviousPointerDistance();
+							const previousDist = pointerTracker.getPreviousTouchPointerDistance();
 							this.zoomDelta += pointerDist - previousDist;
 
 						} else if ( this.state === ROTATE ) {
@@ -410,6 +417,7 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.setHoverEvent( e );
 			pointerTracker.updatePointer( e );
 
+			// TODO: do we need events here?
 			this.dispatchEvent( _startEvent );
 
 			let delta;
@@ -562,7 +570,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		this.dragInertia.set( 0, 0, 0 );
+		this.rotationInertia.set( 0, 0 );
 		this.state = state;
+
 		if ( state !== NONE && state !== WAITING ) {
 
 			this._lastUsedState = state;
@@ -571,7 +582,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	update() {
+	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera ) {
 
@@ -589,35 +600,35 @@ export class EnvironmentControls extends EventDispatcher {
 		} = this;
 
 		// update the actions
-		if ( this.needsUpdate ) {
+		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
+		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
-			const action = state;
 			const zoomDelta = this.zoomDelta;
-			if ( action === DRAG ) {
-
-				this._updatePosition();
-
-			}
-
-			if ( action === ROTATE ) {
-
-				this._updateRotation();
-
-			}
-
-			if ( action === ZOOM || zoomDelta !== 0 ) {
+			if ( state === ZOOM || zoomDelta !== 0 ) {
 
 				this._updateZoom();
 
+				this.rotationInertia.set( 0, 0 );
+				this.dragInertia.set( 0, 0, 0 );
+
 			}
 
-			if ( action !== NONE || zoomDelta !== 0 ) {
+			this._updatePosition( deltaTime );
+			this._updateRotation( deltaTime );
+
+			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
 				this.dispatchEvent( _changeEvent );
 
 			}
 
 			this.needsUpdate = false;
+
+		}
+
+		if ( inertiaNeedsUpdate ) {
+
+			this._updateInertiaDamping( deltaTime );
 
 		}
 
@@ -683,6 +694,43 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// private
+	_updateInertiaDamping( deltaTime ) {
+
+		// update the damping of momentum variables
+		const {
+			rotationInertia,
+			dragInertia,
+			enableDamping,
+			dampingFactor,
+		} = this;
+
+		// Based on Freya Holmer's frame-rate independent lerp function
+		const factor = Math.pow( 2, - deltaTime / dampingFactor );
+
+		// scale the residual motion
+		rotationInertia.multiplyScalar( factor );
+		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
+
+			rotationInertia.set( 0, 0 );
+
+		}
+
+		dragInertia.multiplyScalar( factor );
+		if ( dragInertia.lengthSq() < 1e-8 || ! enableDamping ) {
+
+			dragInertia.set( 0, 0, 0 );
+
+		}
+
+	}
+
+	_inertiaNeedsUpdate() {
+
+		const { rotationInertia, dragInertia } = this;
+		return rotationInertia.lengthSq() !== 0 || dragInertia.lengthSq() !== 0;
+
+	}
+
 	_updateZoom() {
 
 		const {
@@ -867,7 +915,7 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// update the drag action
-	_updatePosition() {
+	_updatePosition( deltaTime ) {
 
 		const {
 			raycaster,
@@ -876,85 +924,141 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			pointerTracker,
 			domElement,
+			state,
+			dragInertia,
+			enableDamping,
 		} = this;
 
-		// get the pointer and plane
-		pointerTracker.getCenterPoint( _pointer );
-		mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+		if ( state === DRAG ) {
 
-		_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
-		setRaycasterFromCamera( raycaster, _pointer, camera );
+			// get the pointer and plane
+			pointerTracker.getCenterPoint( _pointer );
+			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
 
-		// prevent the drag distance from getting too severe by limiting the drag point
-		// to a reasonable angle with the drag plane
-		if ( Math.abs( raycaster.ray.direction.dot( up ) ) < DRAG_PLANE_THRESHOLD ) {
+			_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
+			setRaycasterFromCamera( raycaster, _pointer, camera );
 
-			// rotate the pointer direction down to the correct angle for horizontal dragging
-			const angle = Math.acos( DRAG_PLANE_THRESHOLD );
+			// prevent the drag distance from getting too severe by limiting the drag point
+			// to a reasonable angle with the drag plane
+			if ( Math.abs( raycaster.ray.direction.dot( up ) ) < DRAG_PLANE_THRESHOLD ) {
 
-			_rotationAxis
-				.crossVectors( raycaster.ray.direction, up )
-				.normalize();
+				// rotate the pointer direction down to the correct angle for horizontal dragging
+				const angle = Math.acos( DRAG_PLANE_THRESHOLD );
 
-			raycaster.ray.direction
-				.copy( up )
-				.applyAxisAngle( _rotationAxis, angle )
-				.multiplyScalar( - 1 );
+				_rotationAxis
+					.crossVectors( raycaster.ray.direction, up )
+					.normalize();
 
-		}
+				raycaster.ray.direction
+					.copy( up )
+					.applyAxisAngle( _rotationAxis, angle )
+					.multiplyScalar( - 1 );
 
-		// TODO: dragging causes the camera to rise because we're getting "pushed" up by lower resolution tiles and
-		// don't lower back down. We should maintain a target height above tiles where possible
-		// prevent the drag from inverting
+			}
 
-		// if we drag to a point that's near the edge of the earth then we want to prevent it
-		// from wrapping around and causing unexpected rotations
-		this.getUpDirection( pivotPoint, _localUp );
-		if ( Math.abs( raycaster.ray.direction.dot( _localUp ) ) < DRAG_UP_THRESHOLD ) {
+			// TODO: dragging causes the camera to rise because we're getting "pushed" up by lower resolution tiles and
+			// don't lower back down. We should maintain a target height above tiles where possible
+			// prevent the drag from inverting
 
-			const angle = Math.acos( DRAG_UP_THRESHOLD );
+			// if we drag to a point that's near the edge of the earth then we want to prevent it
+			// from wrapping around and causing unexpected rotations
+			this.getUpDirection( pivotPoint, _localUp );
+			if ( Math.abs( raycaster.ray.direction.dot( _localUp ) ) < DRAG_UP_THRESHOLD ) {
 
-			_rotationAxis
-				.crossVectors( raycaster.ray.direction, _localUp )
-				.normalize();
+				const angle = Math.acos( DRAG_UP_THRESHOLD );
 
-			raycaster.ray.direction
-				.copy( _localUp )
-				.applyAxisAngle( _rotationAxis, angle )
-				.multiplyScalar( - 1 );
+				_rotationAxis
+					.crossVectors( raycaster.ray.direction, _localUp )
+					.normalize();
 
-		}
+				raycaster.ray.direction
+					.copy( _localUp )
+					.applyAxisAngle( _rotationAxis, angle )
+					.multiplyScalar( - 1 );
 
-		// find the point on the plane that we should drag to
-		if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+			}
 
-			_delta.subVectors( pivotPoint, _vec );
-			this.camera.position.add( _delta );
-			this.camera.updateMatrixWorld();
+			// find the point on the plane that we should drag to
+			if ( raycaster.ray.intersectPlane( _plane, _vec ) ) {
+
+				_delta.subVectors( pivotPoint, _vec );
+				camera.position.add( _delta );
+				camera.updateMatrixWorld();
+
+				// update the drag inertia
+				_delta.multiplyScalar( 1 / deltaTime );
+				if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
+
+					dragInertia.lerp( _delta, 0.5 );
+
+				} else {
+
+					dragInertia.copy( _delta );
+
+				}
+
+			}
+
+		} else if ( enableDamping ) {
+
+			camera.position.addScaledVector( dragInertia, deltaTime );
+			camera.updateMatrixWorld();
 
 		}
 
 	}
 
-	_updateRotation() {
+	_updateRotation( deltaTime ) {
+
+		const {
+			pivotPoint,
+			pointerTracker,
+			domElement,
+			state,
+			rotationInertia,
+			enableDamping,
+		} = this;
+
+		if ( state === ROTATE ) {
+
+			// get the rotation motion and divide out the container height to normalize for element size
+			pointerTracker.getCenterPoint( _pointer );
+			pointerTracker.getPreviousCenterPoint( _prevPointer );
+			_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
+
+			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
+
+			// update rotation inertia
+			_deltaPointer.multiplyScalar( 1 / deltaTime );
+			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
+
+				rotationInertia.lerp( _deltaPointer, 0.5 );
+
+			} else {
+
+				rotationInertia.copy( _deltaPointer );
+
+			}
+
+		} else if ( enableDamping ) {
+
+			this._applyRotation( rotationInertia.x * deltaTime, rotationInertia.y * deltaTime, pivotPoint );
+
+		}
+
+	}
+
+	_applyRotation( x, y, pivotPoint ) {
 
 		const {
 			camera,
-			pivotPoint,
 			minAltitude,
 			maxAltitude,
-			pointerTracker,
 			rotationSpeed,
-			domElement,
 		} = this;
 
-		// get the rotation motion and divide out the container height to normalize for element size
-		pointerTracker.getCenterPoint( _pointer );
-		pointerTracker.getPreviousCenterPoint( _prevPointer );
-		_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
-
-		const azimuth = - _deltaPointer.x * rotationSpeed;
-		let altitude = _deltaPointer.y * rotationSpeed;
+		const azimuth = - x * rotationSpeed;
+		let altitude = y * rotationSpeed;
 
 		// calculate current angles and clamp
 		_forward

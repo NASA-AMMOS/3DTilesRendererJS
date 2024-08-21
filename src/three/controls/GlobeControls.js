@@ -3,10 +3,11 @@ import {
 	Quaternion,
 	Vector2,
 	Vector3,
+	Vector4,
 	MathUtils,
 	Ray,
 } from 'three';
-import { EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
@@ -26,12 +27,14 @@ const _toCenter = new Vector3();
 const _latLon = {};
 const _ray = new Ray();
 const _ellipsoid = new Ellipsoid();
+const _axisAngle = new Vector4();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 400;
+
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -55,6 +58,10 @@ export class GlobeControls extends EnvironmentControls {
 		this.maxZoom = 0.01;
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
+
+		this.inertiaAxis = new Vector3();
+		this.quaternion = new Quaternion();
+		this.inertiaDragMode = 0;
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
@@ -158,7 +165,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	update() {
+	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.tilesGroup || ! this.camera ) {
 
@@ -190,7 +197,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// fire basic controls update
-		super.update();
+		super.update( deltaTime );
 
 		if ( camera.isPerspectiveCamera ) {
 
@@ -289,9 +296,43 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	_updatePosition() {
+	_updatePosition( deltaTime ) {
 
-		if ( this._dragMode === 1 || this._isNearControls() ) {
+		if ( this.state !== DRAG ) {
+
+			const {
+				enableDamping,
+				inertiaDragMode,
+				tilesGroup,
+				inertiaAxis,
+				dragInertia,
+				camera,
+			} = this;
+
+			// apply inertia for movement
+			if ( enableDamping ) {
+
+				// drag mode 1 means we're near the globe
+				if ( inertiaDragMode === 1 ) {
+
+					const angle = dragInertia.x * 1e-3;
+					_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
+					_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+					makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+
+					// apply the rotation
+					camera.matrixWorld.premultiply( _rotMatrix );
+					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+				} else {
+
+					this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
+
+				}
+
+			}
+
+		} else if ( this._dragMode === 1 || this._isNearControls() ) {
 
 			this._dragMode = 1;
 
@@ -350,6 +391,27 @@ export class GlobeControls extends EnvironmentControls {
 			// apply the rotation
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+			// track inertia variables
+			this.inertiaDragMode = 1;
+
+			_axisAngle.setAxisAngleFromQuaternion( _quaternion );
+			const angle = _axisAngle.w * 1000 / deltaTime;
+			_vec.copy( _axisAngle );
+
+			const { dragInertia, inertiaAxis } = this;
+			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
+
+				dragInertia.x = MathUtils.lerp( dragInertia.x, angle, 0.5 );
+				dragInertia.y = 0;
+				dragInertia.z = 0;
+
+			} else {
+
+				dragInertia.set( angle, 0, 0 );
+				inertiaAxis.copy( _vec );
+
+			}
 
 		} else {
 
@@ -432,9 +494,47 @@ export class GlobeControls extends EnvironmentControls {
 
 			pivotMesh.visible = false;
 
+			this.inertiaDragMode = - 1;
+			_deltaPointer.multiplyScalar( 1 / deltaTime );
+			if ( _deltaPointer.lengthSq() < 1e-3 ) {
+
+				this.dragInertia.lerp( _deltaPointer, 0.5 );
+
+			} else {
+
+				this.dragInertia.copy( _deltaPointer );
+
+			}
+
 		}
 
 		this._alignCameraUp( this.up );
+
+	}
+
+	_applyZoomedOutRotation( x, y ) {
+
+		const { rotationSpeed, tilesGroup, camera } = this;
+		const azimuth = - x * rotationSpeed;
+		const altitude = - y * rotationSpeed;
+		camera.updateMatrixWorld();
+
+		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
+
+		// apply the altitude and azimuth adjustment
+		_quaternion.setFromAxisAngle( _right, altitude );
+		camera.quaternion.premultiply( _quaternion );
+		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+		camera.matrixWorld.premultiply( _rotMatrix );
+
+		_quaternion.setFromAxisAngle( _up, azimuth );
+		camera.quaternion.premultiply( _quaternion );
+		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+		camera.matrixWorld.premultiply( _rotMatrix );
+
+		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 	}
 
