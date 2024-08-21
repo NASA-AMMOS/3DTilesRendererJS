@@ -505,10 +505,10 @@ The scene to raycast against for control interactions.
 ### .update
 
 ```js
-update( deltaTime = 16 / 1000 ) : void
+update( deltaTime = null ) : void
 ```
 
-Updates the controls. Takes a delta time value in seconds to normalize inertia and damping speeds.
+Updates the controls. Takes a delta time value in seconds to normalize inertia and damping speeds. Defaults to the time between call to the function.
 
 ### .dispose
 
