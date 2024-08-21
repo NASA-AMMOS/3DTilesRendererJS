@@ -604,9 +604,6 @@ export class EnvironmentControls extends EventDispatcher {
 			adjustHeight,
 		} = this;
 
-		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
-
 		// set the "up" vector immediately so it's available in the following functions
 		this.getCameraUpDirection( _localUp );
 		if ( ! this._upInitialized ) {
@@ -651,7 +648,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// update the up direction based on where the camera moved to
 		// if using an orthographic camera then rotate around drag pivot
+		// reuse the "hit" information since it can be slow to perform multiple hits
+		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
 		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
+		this.getCameraUpDirection( _localUp );
 		this._setFrame( _localUp, rotationPoint );
 
 		// when dragging the camera and drag point may be moved
