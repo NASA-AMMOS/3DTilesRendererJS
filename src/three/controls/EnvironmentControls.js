@@ -1170,7 +1170,9 @@ export class EnvironmentControls extends EventDispatcher {
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-			zoomDirection.subVectors( zoomPoint, camera.position ).normalize();
+			// recompute the zoom direction after updating rotation to align with frame
+			this.zoomDirectionSet = false;
+			this._updateZoomDirection();
 
 		} else if ( action === DRAG && reorientOnDrag ) {
 
