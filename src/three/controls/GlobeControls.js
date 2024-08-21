@@ -300,16 +300,20 @@ export class GlobeControls extends EnvironmentControls {
 
 		if ( this.state !== DRAG ) {
 
-			if ( this.enableDamping ) {
+			const {
+				enableDamping,
+				inertiaDragMode,
+				tilesGroup,
+				inertiaAxis,
+				dragInertia,
+				camera,
+			} = this;
 
-				if ( this.inertiaDragMode === 1 ) {
+			// apply inertia for movement
+			if ( enableDamping ) {
 
-					const {
-						tilesGroup,
-						inertiaAxis,
-						dragInertia,
-						camera,
-					} = this;
+				// drag mode 1 means we're near the globe
+				if ( inertiaDragMode === 1 ) {
 
 					const angle = dragInertia.x * 1e-3;
 					_quaternion.setFromAxisAngle( inertiaAxis, angle * deltaTime );
@@ -322,7 +326,6 @@ export class GlobeControls extends EnvironmentControls {
 
 				} else {
 
-					const { dragInertia } = this;
 					this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
 
 				}
