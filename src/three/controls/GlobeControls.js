@@ -3,6 +3,7 @@ import {
 	Quaternion,
 	Vector2,
 	Vector3,
+	Vector4,
 	MathUtils,
 	Ray,
 } from 'three';
@@ -26,28 +27,13 @@ const _toCenter = new Vector3();
 const _latLon = {};
 const _ray = new Ray();
 const _ellipsoid = new Ellipsoid();
+const _axisAngle = new Vector4();
 
 const _pointer = new Vector2();
 const _prevPointer = new Vector2();
 const _deltaPointer = new Vector2();
 
 const MIN_ELEVATION = 400;
-function getAxisAngle( quaternion, target ) {
-
-	const qx = quaternion.x;
-	const qy = quaternion.y;
-	const qz = quaternion.z;
-	const qw = quaternion.w;
-
-	const angle = 2 * Math.acos( qw );
-	const x = qx / Math.sqrt( 1 - qw * qw );
-	const y = qy / Math.sqrt( 1 - qw * qw );
-	const z = qz / Math.sqrt( 1 - qw * qw );
-
-	target.set( x, y, z );
-	return angle;
-
-}
 
 export class GlobeControls extends EnvironmentControls {
 
@@ -406,7 +392,10 @@ export class GlobeControls extends EnvironmentControls {
 			// track inertia variables
 			this.inertiaDragMode = 1;
 
-			const angle = getAxisAngle( _quaternion, _vec ) * 1000 / deltaTime;
+			_axisAngle.setAxisAngleFromQuaternion( _quaternion );
+			const angle = _axisAngle.w * 1000 / deltaTime;
+			_vec.copy( _axisAngle );
+
 			const { dragInertia, inertiaAxis } = this;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 

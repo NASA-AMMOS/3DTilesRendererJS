@@ -704,8 +704,10 @@ export class EnvironmentControls extends EventDispatcher {
 			dampingFactor,
 		} = this;
 
-
+		// Based on Freya Holmer's frame-rate independent lerp function
 		const factor = Math.pow( 2, - deltaTime / dampingFactor );
+
+		// scale the residual motion
 		rotationInertia.multiplyScalar( factor );
 		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
 
@@ -724,10 +726,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	_inertiaNeedsUpdate() {
 
-		const {
-			rotationInertia,
-			dragInertia,
-		} = this;
+		const { rotationInertia, dragInertia } = this;
 		return rotationInertia.lengthSq() !== 0 || dragInertia.lengthSq() !== 0;
 
 	}
