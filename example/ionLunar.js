@@ -68,6 +68,7 @@ function init() {
 
 	// controls
 	controls = new GlobeControls( scene, camera, renderer.domElement, null );
+	controls.enableDamping = true;
 
 	// initialize tiles
 	reinstantiateTiles();
