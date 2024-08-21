@@ -571,6 +571,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.dragInertia.set( 0, 0, 0 );
 		this.rotationInertia.set( 0, 0 );
 		this.state = state;
+
 		if ( state !== NONE && state !== WAITING ) {
 
 			this._lastUsedState = state;
@@ -985,7 +986,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 				// update the drag inertia
 				_delta.multiplyScalar( 1 / deltaTime );
-				if ( _delta.lengthSq() < 1e-3 ) {
+				if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
 					dragInertia.lerp( _delta, 0.5 );
 
@@ -999,7 +1000,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else if ( enableDamping ) {
 
-			camera.position.add( dragInertia * deltaTime );
+			camera.position.addScaledVector( dragInertia, deltaTime );
 			camera.updateMatrixWorld();
 
 		}
@@ -1024,11 +1025,11 @@ export class EnvironmentControls extends EventDispatcher {
 			pointerTracker.getPreviousCenterPoint( _prevPointer );
 			_deltaPointer.subVectors( _pointer, _prevPointer ).multiplyScalar( 2 * Math.PI / domElement.clientHeight );
 
-			// update rotation inertia
 			this._applyRotation( _deltaPointer.x, _deltaPointer.y, pivotPoint );
 
+			// update rotation inertia
 			_deltaPointer.multiplyScalar( 1 / deltaTime );
-			if ( _deltaPointer.lengthSq() < 1e-3 ) {
+			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
 				rotationInertia.lerp( _deltaPointer, 0.5 );
 

@@ -408,7 +408,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			const angle = getAxisAngle( _quaternion, _vec ) * 1000 / deltaTime;
 			const { dragInertia, inertiaAxis } = this;
-			if ( angle < 1e-1 ) {
+			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
 				dragInertia.x = MathUtils.lerp( dragInertia.x, angle, 0.5 );
 				dragInertia.y = 0;
