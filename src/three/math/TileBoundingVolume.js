@@ -35,7 +35,7 @@ export class TileBoundingVolume {
 		}
 
 		// Early out if we don't this this tile box
-		if ( obb && ! obb.intersectRay( ray ) ) {
+		if ( obb && ! obb.intersectsRay( ray ) ) {
 
 			return false;
 
