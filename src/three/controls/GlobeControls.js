@@ -341,7 +341,7 @@ export class GlobeControls extends EnvironmentControls {
 					camera.matrixWorld.premultiply( _rotMatrix );
 					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-				} else {
+				} else if ( inertiaDragMode === - 1 ) {
 
 					this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
 

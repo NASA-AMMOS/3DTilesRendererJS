@@ -316,7 +316,12 @@ export class EnvironmentControls extends EventDispatcher {
 			// whenever the pointer moves we need to re-derive the zoom direction and point
 			this.zoomDirectionSet = false;
 			this.zoomPointSet = false;
-			this.needsUpdate = true;
+
+			if ( this.state !== NONE ) {
+
+				this.needsUpdate = true;
+
+			}
 
 			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
@@ -599,6 +604,18 @@ export class EnvironmentControls extends EventDispatcher {
 			adjustHeight,
 		} = this;
 
+		// reuse the "hit" information since it can be slow to perform multiple hits
+		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
+
+		// set the "up" vector immediately so it's available in the following functions
+		this.getCameraUpDirection( _localUp );
+		if ( ! this._upInitialized ) {
+
+			this._upInitialized = true;
+			this.up.copy( _localUp );
+
+		}
+
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
@@ -632,22 +649,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		// reuse the "hit" information since it can be slow to perform multiple hits
-		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
-
+		// update the up direction based on where the camera moved to
 		// if using an orthographic camera then rotate around drag pivot
 		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
-		this.getCameraUpDirection( _localUp );
-		if ( ! this._upInitialized ) {
-
-			this._upInitialized = true;
-			this.up.copy( _localUp );
-
-		} else {
-
-			this._setFrame( _localUp, rotationPoint );
-
-		}
+		this._setFrame( _localUp, rotationPoint );
 
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
