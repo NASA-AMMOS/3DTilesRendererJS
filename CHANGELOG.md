@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Added initial support for implicit tiling.
 - LRUCache: Support for setting the min and max byte size for the cache which accounts for geometry and texture sizes.
 - Plugins: Added "UpdateOnChangePlugin" to the examples folder.
+- EnvironmentControls: Added "enableDamping" option for inertial animation.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
