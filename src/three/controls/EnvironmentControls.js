@@ -1066,6 +1066,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 	_applyRotation( x, y, pivotPoint ) {
 
+		if ( x === 0 && y === 0 ) {
+
+			return;
+
+		}
+
 		const {
 			camera,
 			minAltitude,
