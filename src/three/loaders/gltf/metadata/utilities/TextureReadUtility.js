@@ -1,8 +1,8 @@
 import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION, CustomBlending, ZeroFactor, OneFactor } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
-const REVISION_165 = parseInt( REVISION ) >= 165;
-const REVISION_166 = parseInt( REVISION ) >= 166;
+const REVISION_GEQ_165 = parseInt( REVISION ) >= 165;
+const REVISION_GEQ_166 = parseInt( REVISION ) >= 166;
 const _box = /* @__PURE__ */ new Box2();
 const _currentScissor = /* @__PURE__ */ new Vector4();
 const _pos = /* @__PURE__ */ new Vector2();
@@ -64,7 +64,7 @@ export const TextureReadUtility = new ( class {
 	readDataAsync( buffer ) {
 
 		const { _renderer, _target } = this;
-		if ( REVISION_165 ) {
+		if ( REVISION_GEQ_165 ) {
 
 			return _renderer.readRenderTargetPixelsAsync( _target, 0, 0, buffer.length / 4, 1, buffer );
 
@@ -90,7 +90,7 @@ export const TextureReadUtility = new ( class {
 
 		const { _quad, _renderer, _target, _texTarget } = this;
 
-		if ( REVISION_166 ) {
+		if ( REVISION_GEQ_166 ) {
 
 			// copies the pixel directly to the target buffer
 			_box.min.copy( pixel );
@@ -114,7 +114,7 @@ export const TextureReadUtility = new ( class {
 
 			// render the data
 			_pos.set( 0, 0 );
-			if ( REVISION_165 ) {
+			if ( REVISION_GEQ_165 ) {
 
 				_renderer.copyTextureToTexture( texture, _texTarget.texture, null, _pos );
 
