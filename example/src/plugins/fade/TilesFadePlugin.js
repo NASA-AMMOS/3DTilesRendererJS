@@ -1,6 +1,7 @@
 import { Group, Matrix4, Vector3, Quaternion } from 'three';
 import { FadeManager } from './FadeManager.js';
 
+const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
 const _fromPos = new Vector3();
 const _toPos = new Vector3();
 const _fromQuat = new Quaternion();
@@ -20,16 +21,21 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 	} else {
 
-		// if this is a root tile and we haven't rendered any child tiles yet then pop in
-		// the root tiles immediately rather than fading from nothing
-		const isRootTile = tile.__depthFromRenderedParent === 1;
-		if ( ! isRootTile ) {
+		// if this is a root renderable tile and this is the first time rendering in
+		// then pop it in
+		const isRootRenderableTile = tile.__depthFromRenderedParent === 1;
+		if ( isRootRenderableTile ) {
 
-			this._initialLayerRendered = true;
+			if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {
 
-		}
+				this._fadeManager.fadeIn( scene );
 
-		if ( ! isRootTile || this.fadeRootTiles || this._initialLayerRendered ) {
+			}
+
+			tile[ HAS_POPPED_IN ] = true;
+
+
+		} else {
 
 			this._fadeManager.fadeIn( scene );
 
@@ -216,7 +222,6 @@ export class TilesFadePlugin {
 
 		this.tiles = null;
 		this._fadeManager = new FadeManager();
-		this._initialLayerRendered = false;
 		this._prevCameraTransforms = null;
 		this._fadeGroup = null;
 		this._tileMap = null;
