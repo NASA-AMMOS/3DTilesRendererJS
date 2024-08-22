@@ -422,7 +422,7 @@ function onPointerUp( e ) {
 	if ( results.length ) {
 
 		const object = results[ 0 ].object;
-		const info = tiles.getTileInformationFromActiveObject( object );
+		const info = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).getTileInformationFromActiveObject( object );
 
 		let str = '';
 		for ( const key in info ) {

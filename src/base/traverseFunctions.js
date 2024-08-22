@@ -204,10 +204,9 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
-	// If there are children within view and we are loading siblings then mark
-	// all sibling tiles as used, as well.
-	const emptyRootTile = tile.__depthFromRenderedParent === 0;
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ! emptyRootTile ) {
+	// If this is a tile that needs children loaded to refine then recursively load child
+	// tiles until error is met
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' && tile.__hasRenderableContent ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
