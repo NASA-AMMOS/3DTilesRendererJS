@@ -33,7 +33,7 @@
 			"plugins": [ "@typescript-eslint" ],
 			"rules": {
 				"no-unused-vars": [ "error", { "args": "none" } ],
-				"indent": [ 2, 2 ]
+				"indent": [ "error", "tab" ]
 			}
 		}
 	]
