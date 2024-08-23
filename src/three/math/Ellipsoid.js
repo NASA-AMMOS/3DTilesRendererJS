@@ -53,36 +53,27 @@ export class Ellipsoid {
 	// X pointing east
 	getEastNorthUpFrame( lat, lon, target ) {
 
-		this.getCartographicToPosition( lat, lon, 0, _pos );
-		this.getCartographicToNormal( lat, lon, _vecZ );
-		this.getNorthernTangent( lat, lon, _vecY );
-		_vecX.crossVectors( _vecY, _vecZ );
-
+		this.getEastNorthUpAxes( lat, lon, _vecX, _vecY, _vecZ, _pos );
 		return target.makeBasis( _vecX, _vecY, _vecZ ).setPosition( _pos );
+
+	}
+
+	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = _pos ) {
+
+		this.getCartographicToPosition( lat, lon, 0, point );
+		this.getCartographicToNormal( lat, lon, vecUp );	 // up
+		vecEast.set( - _pos.y, _pos.x, 0 ).normalize(); 	 // east
+		vecNorth.crossVectors( vecUp, vecEast ).normalize(); // north
 
 	}
 
 	getNorthernTangent( lat, lon, target, westTarget = _vec3 ) {
 
-		let multiplier = 1;
-		let latPrime = lat + 1e-7;
-		if ( lat > Math.PI / 4 ) {
+		console.log( 'Ellipsoid: getNorthernTangent has been deprecated. Use getEastNorthUpAxes instead.' );
 
-			multiplier = - 1;
-			latPrime = lat - 1e-7;
-
-		}
-
-		const norm = this.getCartographicToNormal( lat, lon, _vec ).normalize();
-		const normPrime = this.getCartographicToNormal( latPrime, lon, _vec2 ).normalize();
-		westTarget
-			.crossVectors( norm, normPrime )
-			.normalize()
-			.multiplyScalar( multiplier );
-
-		return target
-			.crossVectors( westTarget, norm )
-			.normalize();
+		this.getEastNorthUpAxes( lat, lon, westTarget, target, _vecZ );
+		westTarget.multiplyScalar( - 1 );
+		return target;
 
 	}
 
