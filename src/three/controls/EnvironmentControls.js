@@ -605,6 +605,8 @@ export class EnvironmentControls extends EventDispatcher {
 			adjustHeight,
 		} = this;
 
+		camera.updateMatrixWorld();
+
 		// set the "up" vector immediately so it's available in the following functions
 		this.getCameraUpDirection( _localUp );
 		if ( ! this._upInitialized ) {
