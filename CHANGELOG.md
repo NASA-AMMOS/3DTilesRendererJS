@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - LRUCache: Support for setting the min and max byte size for the cache which accounts for geometry and texture sizes.
 - Plugins: Added "UpdateOnChangePlugin" to the examples folder.
 - EnvironmentControls: Added "enableDamping" option for inertial animation.
+- Ellipsoid: Added "getEastNorthUpAxes".
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - LRUCache: Tiles continue to be unloaded even when the tiles renderer update function has not been called.
 - TilesRenderer: Deprecate "preprocessURL" function.
 - Ellipsoid: Renamed "constructLatLonFrame" to "getEastNorthUpFrame".
+- Ellipsoid: "getNorthernTangent" function has been deprecated.
 
 ### Fixed
 - GlobeControls: cases where the camera far clip plane was set too close causing some far tiles to not display.
