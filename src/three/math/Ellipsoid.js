@@ -1,4 +1,4 @@
-import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere } from 'three';
+import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere, Euler } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
 const _spherical = new Spherical();
@@ -7,7 +7,9 @@ const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _vec3 = new Vector3();
 const _matrix = new Matrix4();
+const _matrix2 = new Matrix4();
 const _sphere = new Sphere();
+const _euler = new Euler();
 
 const _vecX = new Vector3();
 const _vecY = new Vector3();
@@ -73,6 +75,40 @@ export class Ellipsoid {
 
 		this.getEastNorthUpAxes( lat, lon, westTarget, target, _vecZ );
 		westTarget.multiplyScalar( - 1 );
+		return target;
+
+	}
+
+	// azimuth: measured off of true north, increasing towards "east"
+	// elevation: measured off of the horizon, increasing towards sky
+	// roll: rotation around northern axis
+	getAzimuthElevationRollFromRotationFrame( lat, lon, frame, target ) {
+
+		this.getEastNorthUpFrame( lat, lon, _matrix ).invert();
+		_matrix2.copy( frame ).premultiply( _matrix );
+		_euler.setFromRotationMatrix( frame, 'ZXY' );
+
+		target.azimuth = - _euler.z * MathUtils.RAD2DEG;
+		target.elevation = _euler.x * MathUtils.RAD2DEG;
+		target.roll = _euler.y * MathUtils.RAD2DEG;
+		return target;
+
+	}
+
+	getRotationFrameFromAzimuthElevationRoll( lat, lon, az, el, roll, target ) {
+
+		az *= MathUtils.DEG2RAD;
+		el *= MathUtils.DEG2RAD;
+		roll *= MathUtils.DEG2RAD;
+
+		this.getEastNorthUpFrame( lat, lon, _matrix );
+		_euler.set( el, roll, - az, 'ZXY' );
+
+		target
+			.makeRotationFromEuler( _euler )
+			.premultiply( _matrix )
+			.setPosition( 0, 0, 0 );
+
 		return target;
 
 	}
