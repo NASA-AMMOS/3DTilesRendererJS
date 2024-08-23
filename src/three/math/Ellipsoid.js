@@ -86,7 +86,7 @@ export class Ellipsoid {
 
 		this.getEastNorthUpFrame( lat, lon, _matrix ).invert();
 		_matrix2.copy( frame ).premultiply( _matrix );
-		_euler.setFromRotationMatrix( frame, 'ZXY' );
+		_euler.setFromRotationMatrix( _matrix2, 'ZXY' );
 
 		target.azimuth = - _euler.z * MathUtils.RAD2DEG;
 		target.elevation = _euler.x * MathUtils.RAD2DEG;

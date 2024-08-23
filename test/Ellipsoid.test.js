@@ -4,6 +4,7 @@ import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
 import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/base/constants.js';
+import { WGS84_ELLIPSOID } from '../src/three/math/GeoConstants.js';
 
 function epsCompare( a, b, EPSILON = 1e-10 ) {
 
@@ -273,6 +274,39 @@ describe( 'EllipsoidRegion', () => {
 			}
 
 		} );
+
+	} );
+
+} );
+
+describe( 'Ellipsoid Azimuth Elevation', () => {
+
+	it( 'should produce the same values when retrieving data.', () => {
+
+		const mat = new Matrix4();
+		const LAT = 35.6586;
+		const LON = 139.7454;
+		const res = {};
+		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, 0, 0, 0, mat );
+		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+
+		expect( res.elevation ).toBeCloseTo( 0 );
+		expect( res.azimuth ).toBeCloseTo( 0 );
+		expect( res.roll ).toBeCloseTo( 0 );
+
+		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, 25, 25, 25, mat );
+		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+
+		expect( res.elevation ).toBeCloseTo( 25 );
+		expect( res.azimuth ).toBeCloseTo( 25 );
+		expect( res.roll ).toBeCloseTo( 25 );
+
+		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, - 25, - 25, - 25, mat );
+		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+
+		expect( res.elevation ).toBeCloseTo( - 25 );
+		expect( res.azimuth ).toBeCloseTo( - 25 );
+		expect( res.roll ).toBeCloseTo( - 25 );
 
 	} );
 
