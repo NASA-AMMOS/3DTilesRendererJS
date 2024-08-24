@@ -82,7 +82,7 @@ export class Ellipsoid {
 	// azimuth: measured off of true north, increasing towards "east"
 	// elevation: measured off of the horizon, increasing towards sky
 	// roll: rotation around northern axis
-	getAzimuthElevationRollFromRotationFrame( lat, lon, frame, target ) {
+	getAzElRollFromRotationMatrix( lat, lon, frame, target ) {
 
 		this.getEastNorthUpFrame( lat, lon, _matrix ).invert();
 		_matrix2.copy( frame ).premultiply( _matrix );
@@ -95,7 +95,7 @@ export class Ellipsoid {
 
 	}
 
-	getRotationFrameFromAzimuthElevationRoll( lat, lon, az, el, roll, target ) {
+	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target ) {
 
 		this.getEastNorthUpFrame( lat, lon, _matrix );
 		_euler.set( el, roll, - az, 'ZXY' );

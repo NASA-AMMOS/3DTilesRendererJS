@@ -202,7 +202,7 @@ function updateHash() {
 
 	// get the data
 	WGS84_ELLIPSOID.getPositionToCartographic( localCameraPos, cartographicResult );
-	WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( cartographicResult.lat, cartographicResult.lon, orientedENUMat, orientationResult );
+	WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( cartographicResult.lat, cartographicResult.lon, orientedENUMat, orientationResult );
 
 	// convert to DEG
 	orientationResult.azimuth *= MathUtils.RAD2DEG;
@@ -250,7 +250,7 @@ function initFromHash() {
 		const cameraForwardMat = new Matrix4().makeRotationFromEuler( new Euler( Math.PI / 2, 0, 0 ) );
 
 		// extract the east-north-up frame into matrix world
-		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll(
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
 			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
 			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
 			camera.matrixWorld,

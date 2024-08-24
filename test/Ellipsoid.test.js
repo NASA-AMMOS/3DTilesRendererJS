@@ -288,22 +288,22 @@ describe( 'Ellipsoid Azimuth Elevation', () => {
 		const LON = 139.7454;
 		const angles = 25 * MathUtils.DEG2RAD;
 		const res = {};
-		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, 0, 0, 0, mat );
-		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, 0, 0, 0, mat );
+		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
 
 		expect( res.elevation ).toBeCloseTo( 0 );
 		expect( res.azimuth ).toBeCloseTo( 0 );
 		expect( res.roll ).toBeCloseTo( 0 );
 
-		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, angles, angles, angles, mat );
-		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, angles, angles, angles, mat );
+		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
 
 		expect( res.elevation ).toBeCloseTo( angles );
 		expect( res.azimuth ).toBeCloseTo( angles );
 		expect( res.roll ).toBeCloseTo( angles );
 
-		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll( LAT, LON, - angles, - angles, - angles, mat );
-		WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, - angles, - angles, - angles, mat );
+		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
 
 		expect( res.elevation ).toBeCloseTo( - angles );
 		expect( res.azimuth ).toBeCloseTo( - angles );
