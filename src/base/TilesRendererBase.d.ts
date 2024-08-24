@@ -21,6 +21,7 @@ export class TilesRendererBase {
 
 	constructor( url : String );
 	update() : void;
+	registerPlugin( plugin: Object ) : void;
 	traverse(
 		beforeCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null,
 		afterCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null
