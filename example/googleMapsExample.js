@@ -11,6 +11,8 @@ import {
 	PerspectiveCamera,
 	MathUtils,
 	OrthographicCamera,
+	Matrix4,
+	Euler,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -21,9 +23,6 @@ import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
-import { Matrix4 } from 'three';
-import { Euler } from 'three';
-import { AxesHelper } from 'three';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
