@@ -21,6 +21,9 @@ import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
+import { Matrix4 } from 'three';
+import { Euler } from 'three';
+import { AxesHelper } from 'three';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -188,8 +191,8 @@ function updateHash() {
 
 	const camera = transition.camera;
 	const res = {};
-	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = camera.position.clone().applyMatrix4( mat );
+	const invMat = tiles.group.matrixWorld.clone().invert();
+	const vec = camera.position.clone().applyMatrix4( invMat );
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
 
 	res.lat *= MathUtils.RAD2DEG;
@@ -199,9 +202,19 @@ function updateHash() {
 	params.set( 'lat', res.lat.toFixed( 4 ) );
 	params.set( 'lon', res.lon.toFixed( 4 ) );
 	params.set( 'height', res.height.toFixed( 4 ) );
-	params.set( 'rx', camera.rotation.x.toFixed( 2 ) );
-	params.set( 'ry', camera.rotation.y.toFixed( 2 ) );
-	params.set( 'rz', camera.rotation.z.toFixed( 2 ) );
+
+	const cameraForwardEulerInv = new Euler( - Math.PI / 2, 0, 0 );
+	const cameraForwardMatInv = new Matrix4().makeRotationFromEuler( cameraForwardEulerInv );
+	const enuMat = new Matrix4();
+	const target = {};
+	enuMat.copy( camera.matrixWorld ).multiply( cameraForwardMatInv ).premultiply( invMat );
+	WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( res.lat * MathUtils.DEG2RAD, res.lon * MathUtils.DEG2RAD, enuMat, target );
+
+	target.azimuth *= MathUtils.RAD2DEG;
+	target.elevation *= MathUtils.RAD2DEG;
+
+	params.set( 'az', target.azimuth.toFixed( 2 ) );
+	params.set( 'el', target.elevation.toFixed( 2 ) );
 	window.history.replaceState( undefined, undefined, `#${ params }` );
 
 }
@@ -216,26 +229,38 @@ function initFromHash() {
 
 	}
 
+	tiles.group.updateMatrixWorld();
+
 	const lat = parseFloat( params.get( 'lat' ) );
 	const lon = parseFloat( params.get( 'lon' ) );
-	const el = parseFloat( params.get( 'el' ) ) || 1000;
-
+	const height = parseFloat( params.get( 'height' ) ) || 1000;
 	const camera = transition.camera;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, el, camera.position );
-	tiles.group.updateMatrixWorld();
-	camera.position.applyMatrix4( tiles.group.matrixWorld );
 
-	if ( params.has( 'rx' ) && params.has( 'ry' ) && params.has( 'rz' ) ) {
+	if ( params.has( 'az' ) && params.has( 'el' ) ) {
 
-		const rx = parseFloat( params.get( 'rx' ) );
-		const ry = parseFloat( params.get( 'ry' ) );
-		const rz = parseFloat( params.get( 'rz' ) );
+		const cameraForwardEuler = new Euler( Math.PI / 2, 0, 0 );
+		const cameraForwardMat = new Matrix4().makeRotationFromEuler( cameraForwardEuler );
 
-		camera.rotation.set( rx, ry, rz );
+		const az = parseFloat( params.get( 'az' ) );
+		const el = parseFloat( params.get( 'el' ) );
+		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll(
+			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
+			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
+			camera.matrixWorld,
+		);
+		camera.matrixWorld.multiply( cameraForwardMat ).premultiply( tiles.group.matrixWorld );
+		camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
+
+		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
+		camera.position.applyMatrix4( tiles.group.matrixWorld );
+		camera.updateMatrixWorld();
 
 	} else {
 
+		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
+		camera.position.applyMatrix4( tiles.group.matrixWorld );
 		camera.lookAt( 0, 0, 0 );
+		camera.updateMatrixWorld();
 
 	}
 
