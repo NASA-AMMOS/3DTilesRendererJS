@@ -195,11 +195,10 @@ function updateHash() {
 	res.lat *= MathUtils.RAD2DEG;
 	res.lon *= MathUtils.RAD2DEG;
 
-	const elevation = WGS84_ELLIPSOID.getPositionElevation( vec );
 	const params = new URLSearchParams();
 	params.set( 'lat', res.lat.toFixed( 4 ) );
 	params.set( 'lon', res.lon.toFixed( 4 ) );
-	params.set( 'el', elevation.toFixed( 4 ) );
+	params.set( 'height', res.height.toFixed( 4 ) );
 	params.set( 'rx', camera.rotation.x.toFixed( 2 ) );
 	params.set( 'ry', camera.rotation.y.toFixed( 2 ) );
 	params.set( 'rz', camera.rotation.z.toFixed( 2 ) );
