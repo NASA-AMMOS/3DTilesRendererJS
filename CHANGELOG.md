@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Plugins: Added "UpdateOnChangePlugin" to the examples folder.
 - EnvironmentControls: Added "enableDamping" option for inertial animation.
 - Ellipsoid: Added "getEastNorthUpAxes".
+- Ellipsoid: Added "getAzElRollFromRotationMatrix" and "getRotationMatrixFromAzElRoll"
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
