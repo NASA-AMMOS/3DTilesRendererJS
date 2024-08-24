@@ -63,9 +63,9 @@ export class Ellipsoid {
 	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = _pos ) {
 
 		this.getCartographicToPosition( lat, lon, 0, point );
-		this.getCartographicToNormal( lat, lon, vecUp );	 // up
-		vecEast.set( - _pos.y, _pos.x, 0 ).normalize(); 	 // east
-		vecNorth.crossVectors( vecUp, vecEast ).normalize(); // north
+		this.getCartographicToNormal( lat, lon, vecUp );		// up
+		vecEast.set( - point.y, point.x, 0 ).normalize();		// east
+		vecNorth.crossVectors( vecUp, vecEast ).normalize();	// north
 
 	}
 
@@ -96,10 +96,6 @@ export class Ellipsoid {
 	}
 
 	getRotationFrameFromAzimuthElevationRoll( lat, lon, az, el, roll, target ) {
-
-		az *= MathUtils.DEG2RAD;
-		el *= MathUtils.DEG2RAD;
-		roll *= MathUtils.DEG2RAD;
 
 		this.getEastNorthUpFrame( lat, lon, _matrix );
 		_euler.set( el, roll, - az, 'ZXY' );
