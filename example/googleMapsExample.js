@@ -11,6 +11,8 @@ import {
 	PerspectiveCamera,
 	MathUtils,
 	OrthographicCamera,
+	Matrix4,
+	Euler,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
@@ -187,22 +189,34 @@ function updateHash() {
 	}
 
 	const camera = transition.camera;
-	const res = {};
-	const mat = tiles.group.matrixWorld.clone().invert();
-	const vec = camera.position.clone().applyMatrix4( mat );
-	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+	const cartographicResult = {};
+	const orientationResult = {};
+	const tilesMatInv = tiles.group.matrixWorld.clone().invert();
+	const localCameraPos = camera.position.clone().applyMatrix4( tilesMatInv );
 
-	res.lat *= MathUtils.RAD2DEG;
-	res.lon *= MathUtils.RAD2DEG;
+	// camera offset to get to ENU orientation
+	const cameraForwardMatInv = new Matrix4().makeRotationFromEuler( new Euler( - Math.PI / 2, 0, 0 ) );
 
-	const elevation = WGS84_ELLIPSOID.getPositionElevation( vec );
+	// oriented ENU frame in local coordinates
+	const orientedENUMat = new Matrix4().copy( camera.matrixWorld ).multiply( cameraForwardMatInv ).premultiply( tilesMatInv );
+
+	// get the data
+	WGS84_ELLIPSOID.getPositionToCartographic( localCameraPos, cartographicResult );
+	WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( cartographicResult.lat, cartographicResult.lon, orientedENUMat, orientationResult );
+
+	// convert to DEG
+	orientationResult.azimuth *= MathUtils.RAD2DEG;
+	orientationResult.elevation *= MathUtils.RAD2DEG;
+	cartographicResult.lat *= MathUtils.RAD2DEG;
+	cartographicResult.lon *= MathUtils.RAD2DEG;
+
+	// update hash
 	const params = new URLSearchParams();
-	params.set( 'lat', res.lat.toFixed( 4 ) );
-	params.set( 'lon', res.lon.toFixed( 4 ) );
-	params.set( 'el', elevation.toFixed( 4 ) );
-	params.set( 'rx', camera.rotation.x.toFixed( 2 ) );
-	params.set( 'ry', camera.rotation.y.toFixed( 2 ) );
-	params.set( 'rz', camera.rotation.z.toFixed( 2 ) );
+	params.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
+	params.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
+	params.set( 'height', cartographicResult.height.toFixed( 4 ) );
+	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
+	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
 	window.history.replaceState( undefined, undefined, `#${ params }` );
 
 }
@@ -217,25 +231,44 @@ function initFromHash() {
 
 	}
 
+	// update the tiles matrix world so we can use it
+	tiles.group.updateMatrixWorld();
+
+	// get the position fields
+	const camera = transition.camera;
 	const lat = parseFloat( params.get( 'lat' ) );
 	const lon = parseFloat( params.get( 'lon' ) );
-	const el = parseFloat( params.get( 'el' ) ) || 1000;
+	const height = parseFloat( params.get( 'height' ) ) || 1000;
 
-	const camera = transition.camera;
-	WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, el, camera.position );
-	tiles.group.updateMatrixWorld();
-	camera.position.applyMatrix4( tiles.group.matrixWorld );
+	if ( params.has( 'az' ) && params.has( 'el' ) ) {
 
-	if ( params.has( 'rx' ) && params.has( 'ry' ) && params.has( 'rz' ) ) {
+		// get the az el fields for rotation if present
+		const az = parseFloat( params.get( 'az' ) );
+		const el = parseFloat( params.get( 'el' ) );
 
-		const rx = parseFloat( params.get( 'rx' ) );
-		const ry = parseFloat( params.get( 'ry' ) );
-		const rz = parseFloat( params.get( 'rz' ) );
+		// get the necessary rotation from East-North-Up frame to camera orientation
+		const cameraForwardMat = new Matrix4().makeRotationFromEuler( new Euler( Math.PI / 2, 0, 0 ) );
 
-		camera.rotation.set( rx, ry, rz );
+		// extract the east-north-up frame into matrix world
+		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll(
+			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
+			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
+			camera.matrixWorld,
+		);
+
+		// apply the necessary camera offset and tiles transform
+		camera.matrixWorld.multiply( cameraForwardMat ).premultiply( tiles.group.matrixWorld );
+		camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
+
+		// get the height
+		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
+		camera.position.applyMatrix4( tiles.group.matrixWorld );
 
 	} else {
 
+		// default to looking down if no az el are present
+		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
+		camera.position.applyMatrix4( tiles.group.matrixWorld );
 		camera.lookAt( 0, 0, 0 );
 
 	}
