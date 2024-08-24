@@ -88,9 +88,9 @@ export class Ellipsoid {
 		_matrix2.copy( frame ).premultiply( _matrix );
 		_euler.setFromRotationMatrix( _matrix2, 'ZXY' );
 
-		target.azimuth = - _euler.z * MathUtils.RAD2DEG;
-		target.elevation = _euler.x * MathUtils.RAD2DEG;
-		target.roll = _euler.y * MathUtils.RAD2DEG;
+		target.azimuth = - _euler.z;
+		target.elevation = _euler.x;
+		target.roll = _euler.y;
 		return target;
 
 	}

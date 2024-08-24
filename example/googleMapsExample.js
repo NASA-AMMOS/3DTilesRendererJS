@@ -190,31 +190,34 @@ function updateHash() {
 	}
 
 	const camera = transition.camera;
-	const res = {};
-	const invMat = tiles.group.matrixWorld.clone().invert();
-	const vec = camera.position.clone().applyMatrix4( invMat );
-	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+	const cartographicResult = {};
+	const orientationResult = {};
+	const tilesMatInv = tiles.group.matrixWorld.clone().invert();
+	const localCameraPos = camera.position.clone().applyMatrix4( tilesMatInv );
 
-	res.lat *= MathUtils.RAD2DEG;
-	res.lon *= MathUtils.RAD2DEG;
+	// camera offset to get to ENU orientation
+	const cameraForwardMatInv = new Matrix4().makeRotationFromEuler( new Euler( - Math.PI / 2, 0, 0 ) );
 
+	// oriented ENU frame in local coordinates
+	const orientedENUMat = new Matrix4().copy( camera.matrixWorld ).multiply( cameraForwardMatInv ).premultiply( tilesMatInv );
+
+	// get the data
+	WGS84_ELLIPSOID.getPositionToCartographic( localCameraPos, cartographicResult );
+	WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( cartographicResult.lat, cartographicResult.lon, orientedENUMat, orientationResult );
+
+	// convert to DEG
+	orientationResult.azimuth *= MathUtils.RAD2DEG;
+	orientationResult.elevation *= MathUtils.RAD2DEG;
+	cartographicResult.lat *= MathUtils.RAD2DEG;
+	cartographicResult.lon *= MathUtils.RAD2DEG;
+
+	// update hash
 	const params = new URLSearchParams();
-	params.set( 'lat', res.lat.toFixed( 4 ) );
-	params.set( 'lon', res.lon.toFixed( 4 ) );
-	params.set( 'height', res.height.toFixed( 4 ) );
-
-	const cameraForwardEulerInv = new Euler( - Math.PI / 2, 0, 0 );
-	const cameraForwardMatInv = new Matrix4().makeRotationFromEuler( cameraForwardEulerInv );
-	const enuMat = new Matrix4();
-	const target = {};
-	enuMat.copy( camera.matrixWorld ).multiply( cameraForwardMatInv ).premultiply( invMat );
-	WGS84_ELLIPSOID.getAzimuthElevationRollFromRotationFrame( res.lat * MathUtils.DEG2RAD, res.lon * MathUtils.DEG2RAD, enuMat, target );
-
-	target.azimuth *= MathUtils.RAD2DEG;
-	target.elevation *= MathUtils.RAD2DEG;
-
-	params.set( 'az', target.azimuth.toFixed( 2 ) );
-	params.set( 'el', target.elevation.toFixed( 2 ) );
+	params.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
+	params.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
+	params.set( 'height', cartographicResult.height.toFixed( 4 ) );
+	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
+	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
 	window.history.replaceState( undefined, undefined, `#${ params }` );
 
 }
@@ -229,38 +232,45 @@ function initFromHash() {
 
 	}
 
+	// update the tiles matrix world so we can use it
 	tiles.group.updateMatrixWorld();
 
+	// get the position fields
+	const camera = transition.camera;
 	const lat = parseFloat( params.get( 'lat' ) );
 	const lon = parseFloat( params.get( 'lon' ) );
 	const height = parseFloat( params.get( 'height' ) ) || 1000;
-	const camera = transition.camera;
 
 	if ( params.has( 'az' ) && params.has( 'el' ) ) {
 
-		const cameraForwardEuler = new Euler( Math.PI / 2, 0, 0 );
-		const cameraForwardMat = new Matrix4().makeRotationFromEuler( cameraForwardEuler );
-
+		// get the az el fields for rotation if present
 		const az = parseFloat( params.get( 'az' ) );
 		const el = parseFloat( params.get( 'el' ) );
+
+		// get the necessary rotation from East-North-Up frame to camera orientation
+		const cameraForwardMat = new Matrix4().makeRotationFromEuler( new Euler( Math.PI / 2, 0, 0 ) );
+
+		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationFrameFromAzimuthElevationRoll(
 			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
 			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
 			camera.matrixWorld,
 		);
+
+		// apply the necessary camera offset and tiles transform
 		camera.matrixWorld.multiply( cameraForwardMat ).premultiply( tiles.group.matrixWorld );
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
 
+		// get the height
 		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 		camera.position.applyMatrix4( tiles.group.matrixWorld );
-		camera.updateMatrixWorld();
 
 	} else {
 
+		// default to looking down if no az el are present
 		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 		camera.position.applyMatrix4( tiles.group.matrixWorld );
 		camera.lookAt( 0, 0, 0 );
-		camera.updateMatrixWorld();
 
 	}
 
