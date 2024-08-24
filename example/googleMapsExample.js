@@ -214,7 +214,7 @@ function updateHash() {
 	const params = new URLSearchParams();
 	params.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
 	params.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
-	params.set( 'height', cartographicResult.height.toFixed( 4 ) );
+	params.set( 'height', cartographicResult.height.toFixed( 2 ) );
 	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
 	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
 	window.history.replaceState( undefined, undefined, `#${ params }` );
