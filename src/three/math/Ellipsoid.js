@@ -21,6 +21,10 @@ const _ray = new Ray();
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
 
+export const ENU_FRAME = 0;
+export const CAMERA_FRAME = 1;
+export const OBJECT_FRAME = 2;
+
 export class Ellipsoid {
 
 	constructor( x = 1, y = 1, z = 1 ) {
@@ -82,10 +86,28 @@ export class Ellipsoid {
 	// azimuth: measured off of true north, increasing towards "east"
 	// elevation: measured off of the horizon, increasing towards sky
 	// roll: rotation around northern axis
-	getAzElRollFromRotationMatrix( lat, lon, frame, target ) {
+	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
+
+		// if working with a frame that is not the ENU_FRAME then multiply in the
+		// offset for a camera or object so "forward" and "up" are oriented correct
+		if ( frame === CAMERA_FRAME ) {
+
+			_euler.set( - Math.PI / 2, 0, 0, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler ).premultiply( rotationMatrix );
+
+		} else if ( frame === OBJECT_FRAME ) {
+
+			_euler.set( - Math.PI / 2, 0, Math.PI, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler ).premultiply( rotationMatrix );
+
+		} else {
+
+			_matrix2.copy( rotationMatrix );
+
+		}
 
 		this.getEastNorthUpFrame( lat, lon, _matrix ).invert();
-		_matrix2.copy( frame ).premultiply( _matrix );
+		_matrix2.premultiply( _matrix );
 		_euler.setFromRotationMatrix( _matrix2, 'ZXY' );
 
 		target.azimuth = - _euler.z;
@@ -95,7 +117,7 @@ export class Ellipsoid {
 
 	}
 
-	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target ) {
+	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
 
 		this.getEastNorthUpFrame( lat, lon, _matrix );
 		_euler.set( el, roll, - az, 'ZXY' );
@@ -104,6 +126,22 @@ export class Ellipsoid {
 			.makeRotationFromEuler( _euler )
 			.premultiply( _matrix )
 			.setPosition( 0, 0, 0 );
+
+		// Add in the orientation adjustment for objects and cameras so "forward" and "up" are oriented
+		// correctly
+		if ( frame === CAMERA_FRAME ) {
+
+			_euler.set( Math.PI / 2, 0, 0, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler );
+			target.multiply( _matrix2 );
+
+		} else if ( frame === OBJECT_FRAME ) {
+
+			_euler.set( - Math.PI / 2, 0, Math.PI, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler );
+			target.multiply( _matrix2 );
+
+		}
 
 		return target;
 

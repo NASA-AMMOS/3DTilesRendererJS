@@ -1,5 +1,6 @@
 import {
 	WGS84_ELLIPSOID,
+	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
 	GooglePhotorealisticTilesRenderer,
@@ -193,16 +194,14 @@ function updateHash() {
 	const orientationResult = {};
 	const tilesMatInv = tiles.group.matrixWorld.clone().invert();
 	const localCameraPos = camera.position.clone().applyMatrix4( tilesMatInv );
-
-	// camera offset to get to ENU orientation
-	const cameraForwardMatInv = new Matrix4().makeRotationFromEuler( new Euler( - Math.PI / 2, 0, 0 ) );
-
-	// oriented ENU frame in local coordinates
-	const orientedENUMat = new Matrix4().copy( camera.matrixWorld ).multiply( cameraForwardMatInv ).premultiply( tilesMatInv );
+	const localCameraMat = camera.matrixWorld.clone().premultiply( tilesMatInv );
 
 	// get the data
 	WGS84_ELLIPSOID.getPositionToCartographic( localCameraPos, cartographicResult );
-	WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( cartographicResult.lat, cartographicResult.lon, orientedENUMat, orientationResult );
+	WGS84_ELLIPSOID.getAzElRollFromRotationMatrix(
+		cartographicResult.lat, cartographicResult.lon, localCameraMat,
+		orientationResult, CAMERA_FRAME,
+	);
 
 	// convert to DEG
 	orientationResult.azimuth *= MathUtils.RAD2DEG;
@@ -246,18 +245,15 @@ function initFromHash() {
 		const az = parseFloat( params.get( 'az' ) );
 		const el = parseFloat( params.get( 'el' ) );
 
-		// get the necessary rotation from East-North-Up frame to camera orientation
-		const cameraForwardMat = new Matrix4().makeRotationFromEuler( new Euler( Math.PI / 2, 0, 0 ) );
-
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
 			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
 			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
-			camera.matrixWorld,
+			camera.matrixWorld, CAMERA_FRAME,
 		);
 
-		// apply the necessary camera offset and tiles transform
-		camera.matrixWorld.multiply( cameraForwardMat ).premultiply( tiles.group.matrixWorld );
+		// apply the necessary tiles transform
+		camera.matrixWorld.premultiply( tiles.group.matrixWorld );
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
 
 		// get the height
