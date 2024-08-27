@@ -406,7 +406,29 @@ Plugin that processes geometry buffer attributes into smaller data types on load
 constructor( options : Object )
 ```
 
-See available options and descriptions in class implementation.
+Available options are as follows:
+
+```js
+{
+	// whether to generate normals if they don't already exist.
+	generateNormals: false,
+
+	// whether to disable use of mipmaps since they are typically not necessary
+	// with something like 3d tiles.
+	disableMipmaps: true,
+
+	// whether to compress certain attributes
+	compressIndex: true,
+	compressNormals: true,
+	compressUvs: true,
+	compressPosition: true,
+
+	// the TypedArray type to use when compressing the attributes
+	uvType: Int8Array,
+	normalType: Int8Array,
+	positionType: Int16Array,
+}
+```
 
 ## TilesFadePlugin
 
