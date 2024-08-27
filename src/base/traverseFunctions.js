@@ -206,7 +206,7 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' && tile.__hasRenderableContent ) {
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
