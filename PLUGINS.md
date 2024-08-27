@@ -410,20 +410,20 @@ Available options are as follows:
 
 ```js
 {
-	// whether to generate normals if they don't already exist.
+	// Whether to generate normals if they don't already exist.
 	generateNormals: false,
 
-	// whether to disable use of mipmaps since they are typically not necessary
-	// with something like 3d tiles.
+	// Whether to disable use of mipmaps on all textures since they are typically
+	// not necessary.
 	disableMipmaps: true,
 
-	// whether to compress certain attributes
+	// Whether to compress and quantize attributes.
 	compressIndex: true,
 	compressNormals: true,
 	compressUvs: true,
 	compressPosition: true,
 
-	// the TypedArray type to use when compressing the attributes
+	// The TypedArray type to use when compressing attributes.
 	uvType: Int8Array,
 	normalType: Int8Array,
 	positionType: Int16Array,
