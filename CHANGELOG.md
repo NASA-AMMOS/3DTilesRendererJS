@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Added "enableDamping" option for inertial animation.
 - Ellipsoid: Added "getEastNorthUpAxes".
 - Ellipsoid: Added "getAzElRollFromRotationMatrix" and "getRotationMatrixFromAzElRoll"
+- TilesRendererBase: Tiles are now queued and sorted before triggering load to avoid only a single tile set branch loading and filling up the lru cache.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
