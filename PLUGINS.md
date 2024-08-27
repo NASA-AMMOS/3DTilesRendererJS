@@ -398,7 +398,7 @@ hasLayer( name : string ) : boolean
 
 _available in the examples directory_
 
-Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half.
+Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
 
 ### .constructor
 
