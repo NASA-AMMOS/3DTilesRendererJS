@@ -86,7 +86,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	} else {
 
-		renderer.requestTileContents( tile );
+		renderer.queueTileForDownload( tile );
 
 	}
 
@@ -306,7 +306,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
 
-			renderer.requestTileContents( tile );
+			renderer.queueTileForDownload( tile );
 
 		}
 
@@ -329,7 +329,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
-		renderer.requestTileContents( tile );
+		renderer.queueTileForDownload( tile );
 
 	}
 

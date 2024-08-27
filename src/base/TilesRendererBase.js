@@ -110,6 +110,7 @@ export class TilesRendererBase {
 		this.rootURL = url;
 		this.fetchOptions = {};
 		this.plugins = [];
+		this.queuedTiles = [];
 
 		this._preprocessURL = null;
 
@@ -146,6 +147,7 @@ export class TilesRendererBase {
 
 	}
 
+	// Plugins
 	registerPlugin( plugin ) {
 
 		if ( plugin[ PLUGIN_REGISTERED ] === true ) {
@@ -183,6 +185,12 @@ export class TilesRendererBase {
 
 	}
 
+	queueTileForDownload( tile ) {
+
+		this.queuedTiles.push( tile );
+
+	}
+
 	// Public API
 	update() {
 
@@ -212,6 +220,20 @@ export class TilesRendererBase {
 		markVisibleTiles( root, this );
 		toggleTiles( root, this );
 
+		// TODO: This will only sort for one tile set. We may want to store this queue on the
+		// LRUCache so multiple tile sets can use it at once
+		// start the downloads of the tiles as needed
+		const queuedTiles = this.queuedTiles;
+		queuedTiles.sort( lruCache.unloadPriorityCallback );
+		for ( let i = 0, l = queuedTiles.length; i < l && ! lruCache.isFull(); i ++ ) {
+
+			this.requestTileContents( queuedTiles[ i ] );
+
+		}
+
+		queuedTiles.length = 0;
+
+		// start the downloads
 		lruCache.scheduleUnload();
 
 	}
