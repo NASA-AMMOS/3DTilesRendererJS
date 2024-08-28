@@ -95,6 +95,12 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 // Mark a tile as being used by current view
 function markUsed( tile, renderer ) {
 
+	if ( tile.__used ) {
+
+		return;
+
+	}
+
 	tile.__used = true;
 	renderer.lruCache.markUsed( tile );
 	renderer.stats.used ++;
