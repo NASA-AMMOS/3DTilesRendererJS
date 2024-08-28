@@ -65,9 +65,10 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
+		canTraverse( tile, renderer ) &&
 		isUsedThisFrame( tile, renderer.frameCount ) &&
 		! tile.__hasRenderableContent && (
-			! tile.__hasUnrenderableContent ||
+			! tile.__hasContent ||
 			isDownloadFinished( tile.__loadingState )
 		);
 
@@ -84,7 +85,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 		}
 
-	} else {
+	} else if ( isUsedThisFrame( tile, renderer.frameCount ) && ! renderer.lruCache.isFull() ) {
 
 		renderer.queueTileForDownload( tile );
 
@@ -370,7 +371,7 @@ export function markVisibleTiles( tile, renderer ) {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
-			if ( isUsedThisFrame( c, renderer.frameCount ) && ! lruCache.isFull() ) {
+			if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
 				recursivelyLoadNextRenderableTiles( c, renderer );
 
