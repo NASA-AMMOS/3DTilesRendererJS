@@ -8,6 +8,9 @@ import {
 	EventDispatcher,
 	MathUtils,
 	Clock,
+	PerspectiveCamera,
+	OrthographicCamera,
+	Object3D,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -60,12 +63,21 @@ export class EnvironmentControls extends EventDispatcher {
 
 			this.resetState();
 			this.pointerTracker.reset();
+			/** @private */
 			this._enabled = v;
 
 		}
 
 	}
 
+	/**
+	 * Represents a book.
+	 * @constructor
+	 * @param {Object3D | null} scene - The scene that should be controlled, currently only relevant for adding the pivot point, defaults to `tilesRenderer.group`, if set, otherwise `null`
+	 * @param {PerspectiveCamera | OrthographicCamera | null} camera - The camera that should be controlled.
+	 * @param {HTMLElement | null} domElement - The dom element that is used for receiving pointer events
+	 * @param {import('../TilesRenderer.js').TilesRenderer | null} tilesRenderer
+	 */
 	constructor( scene = null, camera = null, domElement = null, tilesRenderer = null ) {
 
 		super();
@@ -124,12 +136,19 @@ export class EnvironmentControls extends EventDispatcher {
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
 		this.useFallbackPlane = true;
 
+		/** @private */
 		this._detachCallback = null;
+		/** @private */
 		this._upInitialized = false;
+		/** @private */
 		this._lastUsedState = NONE;
+		/** @private */
 		this._zoomPointWasSet = false;
 
-		// always update the zoom target point in case the tiles are changing
+		/**
+		 * Always update the zoom target point in case the tiles are changing
+		 * @private
+		 */
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
 
 		// init
@@ -490,7 +509,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// override-able functions for retrieving the up direction at a point
+	/** override-able functions for retrieving the up direction at a point */
 	getUpDirection( point, target ) {
 
 		target.copy( this.up );
@@ -503,7 +522,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// returns the active / last used pivot point for the scene
+	/**
+	 * @returns the active / last used pivot point for the scene
+	 */
 	getPivotPoint( target ) {
 
 		if ( this._lastUsedState === ZOOM ) {
@@ -701,7 +722,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// private
+	/** @private */
 	_updateInertiaDamping( deltaTime ) {
 
 		// update the damping of momentum variables
@@ -732,6 +753,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_inertiaNeedsUpdate() {
 
 		const { rotationInertia, dragInertia } = this;
@@ -739,6 +761,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_updateZoom() {
 
 		const {
@@ -848,6 +871,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_updateZoomDirection() {
 
 		if ( this.zoomDirectionSet ) {
@@ -865,7 +889,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// update the point being zoomed in to based on the zoom direction
+	/**
+	 * Update the point being zoomed in to based on the zoom direction
+	 * @private
+	 */
 	_updateZoomPoint() {
 
 		const {
@@ -914,7 +941,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// returns the point below the camera
+	/**
+	 * @returns the point below the camera
+	 * @private
+	 */
 	_getPointBelowCamera() {
 
 		const { camera, raycaster, up } = this;
@@ -932,7 +962,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// update the drag action
+	/**
+	 * Update the drag action
+	 * @private
+	 */
 	_updatePosition( deltaTime ) {
 
 		const {
@@ -1026,6 +1059,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_updateRotation( deltaTime ) {
 
 		const {
@@ -1066,6 +1100,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_applyRotation( x, y, pivotPoint ) {
 
 		if ( x === 0 && y === 0 ) {
@@ -1129,7 +1164,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// sets the "up" axis for the current surface of the tile set
+	/**
+	 * Sets the "up" axis for the current surface of the tile set
+	 * @private
+	 */
 	_setFrame( newUp, pivot ) {
 
 		const {
@@ -1205,6 +1243,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/** @private */
 	_raycast( raycaster ) {
 
 		const { scene, useFallbackPlane, fallbackPlane } = this;
