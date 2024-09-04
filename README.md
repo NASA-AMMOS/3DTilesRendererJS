@@ -675,19 +675,22 @@ getKeys() : Array<String>
 
 Returns the keys of all the data in the batch table.
 
-### .getData
+### .getDataFromId
 
 ```js
-getData(
-	key : String,
-	defaultComponentType = null : String | null,
-	defaultType = null : String | null,
-) : Array | TypedArray | null
+getDataFromId( id: Number, target?: Object ) : Object;
 ```
 
-Returns the data associated with the `key` passed into the function. If the component and type are specified in the batch table contents then those values are used otherwise the values in `defaultComponentType` and `defaultType` are used. Returns null if the key is not in the table.
+Returns an object definition for all properties of the batch table and its extensions for a given `id`.
+A `target` object can be specified to store the result. Throws an error if the id is out of the batch table bounds.
 
-`defaultComponentType` can be set to `BYTE`, `UNSIGNED_BYTE`, `SHORT`, `UNSIGNED_SHORT`, `INT`, `UNSIGNED_INT`, `FLOAT`, or `DOUBLE`. `defaultType` can be set to `SCALAR`, `VEC2`, `VEC3`, or `VEC4`.
+### .getPropertyArray
+
+```js
+getPropertyArray( key : String ) : Array | TypedArray | null
+```
+
+Returns an array of data associated with the `key` passed into the function. Returns null if the key is not in the table.
 
 # LICENSE
 
