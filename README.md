@@ -181,7 +181,7 @@ dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/dr
 const loader = new GLTFLoader( tilesRenderer.manager );
 loader.setDRACOLoader( dracoLoader );
 
-tilesRenderer.manager.addHandler( /\.gltf$/, loader );
+tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
 ```
 
 Adding support for DRACO decompression within the PNTS files.
@@ -195,7 +195,7 @@ dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/dr
 
 
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.manager.addHandler( /\.drc$/, loader );
+tilesRenderer.manager.addHandler( /\.drc$/g, loader );
 ```
 
 
