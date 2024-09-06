@@ -421,7 +421,7 @@ Available options are as follows:
 	compressIndex: true,
 	compressNormals: true,
 	compressUvs: true,
-	compressPosition: true,
+	compressPosition: false,
 
 	// The TypedArray type to use when compressing attributes.
 	uvType: Int8Array,

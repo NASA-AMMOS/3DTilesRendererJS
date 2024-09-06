@@ -117,7 +117,7 @@ export class TileCompressionPlugin {
 			compressIndex: true,
 			compressNormals: true,
 			compressUvs: true,
-			compressPosition: true,
+			compressPosition: false,
 
 			// the TypedArray type to use when compressing the attributes
 			uvType: Int8Array,
