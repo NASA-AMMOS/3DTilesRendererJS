@@ -43,7 +43,7 @@ export class LoaderBase {
 
 	resolveExternalURL( url ) {
 
-		if ( /^[^\\/]/.test( url ) ) {
+		if ( /^[^\\/]/.test( url ) && !/^http/.test(url)) {
 
 			return this.workingPath + '/' + url;
 
