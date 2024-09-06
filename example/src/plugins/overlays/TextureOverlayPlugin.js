@@ -283,7 +283,7 @@ export class TextureOverlayPlugin {
 	// public functions
 	getTileKey( tile ) {
 
-		return tile.content.uri;
+		return new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 
 	}
 
