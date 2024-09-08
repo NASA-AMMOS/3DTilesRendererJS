@@ -896,6 +896,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 			raycaster.ray.origin.copy( camera.position );
 			raycaster.ray.direction.copy( zoomDirection );
+			raycaster.near = 0;
+			raycaster.far = Infinity;
 
 		}
 
@@ -920,6 +922,8 @@ export class EnvironmentControls extends EventDispatcher {
 		const { camera, raycaster, up } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
 		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
+		raycaster.near = 0;
+		raycaster.far = Infinity;
 
 		const hit = this._raycast( raycaster );
 		if ( hit ) {
