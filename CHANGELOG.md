@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - BatchTable: Added "getPropertyArray".
 
+### Fixed
+- GlobeControls, EnvironmentControls: Account for near and far camera clip distances
+
 ## [0.3.37] - 2024.08.27
 ### Added
 - TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
