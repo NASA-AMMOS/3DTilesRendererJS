@@ -77,6 +77,7 @@ export class I3DMLoaderBase extends LoaderBase {
 
 		let glbBytes = null;
 		let promise = null;
+		let gltfWorkingPath = null;
 		if ( gltfFormat ) {
 
 			glbBytes = bodyBytes;
@@ -84,13 +85,19 @@ export class I3DMLoaderBase extends LoaderBase {
 
 		} else {
 
-			this.workingPath = this.resolveExternalURL( arrayToString( bodyBytes ) );
-			promise = fetch( this.workingPath, this.fetchOptions )
+			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
+
+			//Store the gltf working path
+			const uriSplits = externalUri.split( /[\\/]/g );
+			uriSplits.pop();
+			gltfWorkingPath = uriSplits.join( '/' );
+
+			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => {
 
 					if ( ! res.ok ) {
 
-						throw new Error( `I3DMLoaderBase : Failed to load file "${ this.workingPath }" with status ${ res.status } : ${ res.statusText }` );
+						throw new Error( `I3DMLoaderBase : Failed to load file "${ externalUri }" with status ${ res.status } : ${ res.statusText }` );
 
 					}
 
@@ -112,7 +119,7 @@ export class I3DMLoaderBase extends LoaderBase {
 				featureTable,
 				batchTable,
 				glbBytes,
-
+				gltfWorkingPath
 			};
 
 		} );
