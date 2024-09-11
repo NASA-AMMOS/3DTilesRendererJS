@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - BatchTable: Added "getPropertyArray".
 
 ### Fixed
-- GlobeControls, EnvironmentControls: Account for near and far camera clip distances
+- GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
+- I3DMLoader: Fix cases where external files may not be loaded correctly.
 
 ## [0.3.37] - 2024.08.27
 ### Added
