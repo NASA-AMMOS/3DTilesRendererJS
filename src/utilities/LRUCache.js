@@ -217,12 +217,7 @@ class LRUCache {
 
 				const usedA = usedSet.has( a );
 				const usedB = usedSet.has( b );
-				if ( usedA && usedB ) {
-
-					// If they're both used then don't bother moving them
-					return 0;
-
-				} else if ( ! usedA && ! usedB ) {
+				if ( usedA === usedB ) {
 
 					// Use the sort function otherwise
 					// higher priority should be further to the left
