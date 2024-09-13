@@ -181,10 +181,9 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
-	markUsed( tile, renderer );
-
 	if ( ! canTraverse( tile, renderer ) ) {
 
+		markUsed( tile, renderer );
 		return;
 
 	}
@@ -206,10 +205,12 @@ export function markUsedTiles( tile, renderer ) {
 	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
 		tile.__inFrustum = false;
-		tile.__used = false;
 		return;
 
 	}
+
+	// wait until after the above condition to mark the traversed tile as used or not
+	markUsed( tile, renderer );
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
