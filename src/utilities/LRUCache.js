@@ -251,17 +251,19 @@ class LRUCache {
 
 				// base while condition
 				const doContinue =
-					removedNodes < nodesToUnload ||
-					removedBytes < bytesToUnload ||
-					this.cachedBytes - removedBytes - bytes > maxBytesSize ||
-					itemList.length - removedNodes > maxSize;
+					removedNodes < nodesToUnload
+					|| removedBytes < bytesToUnload;
+
+				// comment out since these can cause tiles to be removed resulting in tile gaps
+				//	|| this.cachedBytes - removedBytes - bytes > maxBytesSize
+				//	|| itemList.length - removedNodes > maxSize;
 
 				// don't unload any used tiles unless we're above our size cap
 				if (
-					! doContinue ||
-					removedNodes >= unused &&
-					this.cachedBytes - removedBytes - bytes <= maxBytesSize &&
-					itemList.length - removedNodes <= maxSize
+					! doContinue
+					|| removedNodes >= unused
+					// && this.cachedBytes - removedBytes - bytes <= maxBytesSize
+					// && itemList.length - removedNodes <= maxSize
 				) {
 
 					break;
