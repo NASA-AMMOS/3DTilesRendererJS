@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
 - I3DMLoader: Fix cases where external files may not be loaded correctly.
+- Documentation typo: `maxByteSize` -> `maxBytesSize`.
 
 ## [0.3.37] - 2024.08.27
 ### Added
