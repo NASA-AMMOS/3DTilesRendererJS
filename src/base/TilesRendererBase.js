@@ -733,17 +733,16 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
-				lruCache.updateMemoryUsage( tile );
 
-				if ( tile.__wasSetVisible ) {
+				// if the cache is full due to newly loaded memory then lets discard this tile - it will
+				// be loaded again later from the disk cache if needed.
+				if ( lruCache.isFull() ) {
 
-					this.setTileVisible( tile, true );
+					lruCache.remove( tile );
 
-				}
+				} else {
 
-				if ( tile.__wasSetActive ) {
-
-					this.setTileActive( tile, true );
+					lruCache.updateMemoryUsage( tile );
 
 				}
 
