@@ -217,12 +217,7 @@ class LRUCache {
 
 				const usedA = usedSet.has( a );
 				const usedB = usedSet.has( b );
-				if ( usedA && usedB ) {
-
-					// If they're both used then don't bother moving them
-					return 0;
-
-				} else if ( ! usedA && ! usedB ) {
+				if ( usedA === usedB ) {
 
 					// Use the sort function otherwise
 					// higher priority should be further to the left
@@ -256,17 +251,19 @@ class LRUCache {
 
 				// base while condition
 				const doContinue =
-					removedNodes < nodesToUnload ||
-					removedBytes < bytesToUnload ||
-					this.cachedBytes - removedBytes - bytes > maxBytesSize ||
-					itemList.length - removedNodes > maxSize;
+					removedNodes < nodesToUnload
+					|| removedBytes < bytesToUnload;
+
+				// comment out since these can cause tiles to be removed resulting in tile gaps
+				//	|| this.cachedBytes - removedBytes - bytes > maxBytesSize
+				//	|| itemList.length - removedNodes > maxSize;
 
 				// don't unload any used tiles unless we're above our size cap
 				if (
-					! doContinue ||
-					removedNodes >= unused &&
-					this.cachedBytes - removedBytes - bytes <= maxBytesSize &&
-					itemList.length - removedNodes <= maxSize
+					! doContinue
+					|| removedNodes >= unused
+					// && this.cachedBytes - removedBytes - bytes <= maxBytesSize
+					// && itemList.length - removedNodes <= maxSize
 				) {
 
 					break;

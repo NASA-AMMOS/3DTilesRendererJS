@@ -62,6 +62,11 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of external tile sets last
 		return a.__hasUnrenderableContent ? - 1 : 1;
 
+	} else if ( a.__error !== b.__error ) {
+
+		// unload the tile with lower error
+		return a.__error > b.__error ? - 1 : 1;
+
 	}
 
 	return 0;
