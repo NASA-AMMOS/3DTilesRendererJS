@@ -206,7 +206,7 @@ class LRUCache {
 		const excessNodes = Math.max( Math.min( itemList.length - minSize, unused ), 0 );
 		const excessBytes = this.cachedBytes - minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
-		let remaining = excessNodes;
+		let needsRerun = false;
 
 		const hasNodesToUnload = excessNodes > 0 && unused > 0 || itemList.length > maxSize;
 		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || this.cachedBytes > maxBytesSize;
@@ -252,18 +252,16 @@ class LRUCache {
 				// base while condition
 				const doContinue =
 					removedNodes < nodesToUnload
-					|| removedBytes < bytesToUnload;
-
-				// comment out since these can cause tiles to be removed resulting in tile gaps
-				//	|| this.cachedBytes - removedBytes - bytes > maxBytesSize
-				//	|| itemList.length - removedNodes > maxSize;
+					|| removedBytes < bytesToUnload
+					|| this.cachedBytes - removedBytes - bytes > maxBytesSize
+					|| itemList.length - removedNodes > maxSize;
 
 				// don't unload any used tiles unless we're above our size cap
 				if (
 					! doContinue
 					|| removedNodes >= unused
-					// && this.cachedBytes - removedBytes - bytes <= maxBytesSize
-					// && itemList.length - removedNodes <= maxSize
+					&& this.cachedBytes - removedBytes - bytes <= maxBytesSize
+					&& itemList.length - removedNodes <= maxSize
 				) {
 
 					break;
@@ -285,11 +283,12 @@ class LRUCache {
 
 			// if we didn't remove enough nodes or we still have excess bytes and there are nodes to removed
 			// then we want to fire another round of unloading
-			remaining = removedNodes < excessNodes || removedBytes < excessBytes && removedNodes < unused;
+			needsRerun = removedNodes < excessNodes || removedBytes < excessBytes && removedNodes < unused;
+			needsRerun = needsRerun && removedNodes > 0;
 
 		}
 
-		if ( remaining ) {
+		if ( needsRerun ) {
 
 			this.unloadingHandle = requestAnimationFrame( () => this.scheduleUnload() );
 

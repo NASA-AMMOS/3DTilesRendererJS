@@ -95,7 +95,7 @@ describe( 'LRUCache', () => {
 
 	} );
 
-	it.skip( 'should evict items if they are the max item length even if they are used.', () => {
+	it( 'should evict items if they are the max item length even if they are used.', () => {
 
 		const cache = new LRUCache();
 		cache.unloadPriorityCallback = ( itemA, itemB ) => itemA.priority - itemB.priority;
@@ -143,7 +143,7 @@ describe( 'LRUCache', () => {
 
 	} );
 
-	it.skip( 'should update memory usage when the items are triggers.', () => {
+	it( 'should update memory usage when the items are triggers.', () => {
 
 		const cache = new LRUCache();
 		cache.minBytesSize = 10;
