@@ -11,6 +11,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OrbitControls } from './src/lib/OrbitControls.js';
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
+import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 
 let camera, controls, scene, renderer, tiles;
 
@@ -44,6 +45,7 @@ function reinstantiateTiles() {
 	tiles = new GooglePhotorealisticTilesRenderer();
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	// tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
 	// tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
 	// tiles.setLatLonToYUp( 41.8902 * MathUtils.DEG2RAD, 12.4922 * MathUtils.DEG2RAD ); // Colosseum
