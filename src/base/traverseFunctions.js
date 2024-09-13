@@ -201,13 +201,14 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
+	// Disabled for now because this will cause otherwise unused children to be added to the lru cache
 	// if none of the children are in the frustum then this tile shouldn't be displayed
-	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
+	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-		tile.__inFrustum = false;
-		return;
+	// 	tile.__inFrustum = false;
+	// 	return;
 
-	}
+	// }
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
