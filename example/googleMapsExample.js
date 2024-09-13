@@ -12,8 +12,6 @@ import {
 	PerspectiveCamera,
 	MathUtils,
 	OrthographicCamera,
-	Matrix4,
-	Euler,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';

@@ -398,7 +398,7 @@ hasLayer( name : string ) : boolean
 
 _available in the examples directory_
 
-Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half.
+Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
 
 ### .constructor
 
@@ -406,7 +406,29 @@ Plugin that processes geometry buffer attributes into smaller data types on load
 constructor( options : Object )
 ```
 
-See available options and descriptions in class implementation.
+Available options are as follows:
+
+```js
+{
+	// Whether to generate normals if they don't already exist.
+	generateNormals: false,
+
+	// Whether to disable use of mipmaps on all textures since they are typically
+	// not necessary.
+	disableMipmaps: true,
+
+	// Whether to compress and quantize attributes.
+	compressIndex: true,
+	compressNormals: true,
+	compressUvs: true,
+	compressPosition: false,
+
+	// The TypedArray type to use when compressing attributes.
+	uvType: Int8Array,
+	normalType: Int8Array,
+	positionType: Int16Array,
+}
+```
 
 ## TilesFadePlugin
 

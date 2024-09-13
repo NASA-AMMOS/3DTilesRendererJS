@@ -306,10 +306,10 @@ function updateMeshFeatureRaycast() {
 
 		// get the barycentric coordinate for sampling mesh feature data
 		const { object, face, point, index, faceIndex } = hit;
-		const triangle = new Triangle();
 		const barycoord = new Vector3();
 		if ( face ) {
 
+			const triangle = new Triangle();
 			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, face.a, face.b, face.c );
 			triangle.a.applyMatrix4( object.matrixWorld );
 			triangle.b.applyMatrix4( object.matrixWorld );
@@ -318,10 +318,6 @@ function updateMeshFeatureRaycast() {
 
 		} else {
 
-			triangle.setFromAttributeAndIndices( object.geometry.attributes.position, index, index, index );
-			triangle.a.applyMatrix4( object.matrixWorld );
-			triangle.b.applyMatrix4( object.matrixWorld );
-			triangle.c.applyMatrix4( object.matrixWorld );
 			barycoord.set( 0, 0, 0 );
 
 		}

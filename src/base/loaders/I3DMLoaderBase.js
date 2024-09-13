@@ -77,6 +77,7 @@ export class I3DMLoaderBase extends LoaderBase {
 
 		let glbBytes = null;
 		let promise = null;
+		let gltfWorkingPath = null;
 		if ( gltfFormat ) {
 
 			glbBytes = bodyBytes;
@@ -85,6 +86,12 @@ export class I3DMLoaderBase extends LoaderBase {
 		} else {
 
 			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
+
+			//Store the gltf working path
+			const uriSplits = externalUri.split( /[\\/]/g );
+			uriSplits.pop();
+			gltfWorkingPath = uriSplits.join( '/' );
+
 			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => {
 
@@ -112,6 +119,7 @@ export class I3DMLoaderBase extends LoaderBase {
 				featureTable,
 				batchTable,
 				glbBytes,
+				gltfWorkingPath
 			};
 
 		} );

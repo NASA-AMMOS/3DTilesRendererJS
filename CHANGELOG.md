@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- BatchTable: Added "getPropertyArray".
+
+### Fixed
+- GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
+- I3DMLoader: Fix cases where external files may not be loaded correctly.
+
+## [0.3.37] - 2024.08.27
+### Added
 - TilesOverlayPlugin: Added support for waiting until textures finish loading to display.
 - BatchTable: `count` field to get the number of id / entries.
 - I3DMLoader: Added support for `RTC_CENTER` feature.

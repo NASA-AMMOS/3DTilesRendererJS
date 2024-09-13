@@ -31,7 +31,8 @@ export class BatchTable extends FeatureTable {
 
 	getData( key, componentType = null, type = null ) {
 
-		console.warn( 'BatchTable: BatchTable.getData is deprecated. Use BatchTable.getDataFromId instead.' );
+		console.warn( 'BatchTable: BatchTable.getData is deprecated. Use BatchTable.getDataFromId to get all' +
+			'properties for an id or BatchTable.getPropertyArray for getting an array of value for a property.' );
 		return super.getData( key, this.count, componentType, type );
 
 	}
@@ -70,5 +71,12 @@ export class BatchTable extends FeatureTable {
 		return target;
 
 	}
+
+	getPropertyArray( key ) {
+
+		return super.getData( key, this.count );
+
+	}
+
 
 }

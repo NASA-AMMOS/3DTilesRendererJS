@@ -87,19 +87,27 @@ export function closestRaySpherePointFromRotation( ray, radius, target ) {
 
 // custom version of set raycaster from camera that relies on the underlying matrices
 // so the ray origin is position at the camera near clip.
-export function setRaycasterFromCamera( raycaster, mouse, camera ) {
+export function setRaycasterFromCamera( raycaster, coords, camera ) {
 
 	const { origin, direction } = raycaster.ray;
+
+	// get the origin and direction of the frustum ray
 	origin
-		.set( mouse.x, mouse.y, - 1 )
+		.set( coords.x, coords.y, - 1 )
 		.unproject( camera );
 
 	direction
-		.set( mouse.x, mouse.y, 0 )
+		.set( coords.x, coords.y, 1 )
 		.unproject( camera )
-		.sub( origin )
-		.normalize();
+		.sub( origin );
 
+	// compute the far value based on the distance from point on the near
+	// plane and point on the far plane. Then normalize the direction.
+	raycaster.near = 0;
+	raycaster.far = direction.length();
 	raycaster.camera = camera;
+
+	// normalize the ray direction
+	direction.normalize();
 
 }

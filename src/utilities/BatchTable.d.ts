@@ -17,4 +17,8 @@ export class BatchTable {
 		target?: Object
 	) : Object;
 
+	getPropertyArray(
+		key: String,
+	) : Number | String | ArrayBufferView;
+
 }
