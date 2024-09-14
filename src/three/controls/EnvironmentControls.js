@@ -590,7 +590,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
-		if ( ! this.enabled || ! this.camera ) {
+		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 
 			return;
 
