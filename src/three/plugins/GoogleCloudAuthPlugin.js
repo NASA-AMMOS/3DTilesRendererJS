@@ -1,3 +1,26 @@
+import { traverseSet } from '../../base/traverseFunctions.js';
+
+function getSessionToken( root ) {
+
+	let sessionToken = null;
+	traverseSet( root, tile => {
+
+		if ( tile.content && tile.content.uri ) {
+
+			const [ , params ] = tile.content.uri.split( '?' );
+			sessionToken = new URLSearchParams( params ).get( 'session' );
+			return true;
+
+		}
+
+		return false;
+
+	} );
+
+	return sessionToken;
+
+}
+
 export class GoogleCloudAuthPlugin {
 
 	constructor( { apiToken } ) {
@@ -17,19 +40,7 @@ export class GoogleCloudAuthPlugin {
 		this.tiles = tiles;
 		this._onLoadCallback = () => {
 
-			// find the session id in the first sub tile set
-			tiles.traverse( tile => {
-
-				if ( tile.content && tile.content.uri ) {
-
-					this.sessionToken = new URL( tile.content.uri, tile.__basePath ).searchParams.get( 'session' );
-					return true;
-
-				}
-
-				return false;
-
-			} );
+			this.sessionToken = getSessionToken( tiles.root );
 
 			// clear the callback once the root is loaded
 			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
@@ -60,6 +71,32 @@ export class GoogleCloudAuthPlugin {
 	dispose() {
 
 		this.tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+
+	}
+
+	async fetchData( uri, options ) {
+
+		const res = await fetch( uri, options );
+		if ( res.status >= 400 && res.status <= 499 ) {
+
+			// refetch the root if the token has expired
+			const rootURL = new URL( this.tiles.rootURL );
+			rootURL.searchParams.append( 'key', this.apiToken );
+			await fetch( rootURL, options )
+				.then( res => res.json() )
+				.then( res => {
+
+					this.sessionToken = getSessionToken( res.root );
+
+				} );
+
+			return fetch( this.preprocessURL( uri ), options );
+
+		} else {
+
+			return res;
+
+		}
 
 	}
 
