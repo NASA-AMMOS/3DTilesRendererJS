@@ -508,7 +508,8 @@ export class TilesRendererBase {
 			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 			// load the tile set root
-			const pr = this.fetchData( processedUrl, this.fetchOptions )
+			const pr = this
+				.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( processedUrl, this.fetchOptions ) )
 				.then( res => {
 
 					if ( res.ok ) {
@@ -667,7 +668,7 @@ export class TilesRendererBase {
 
 			}
 
-			return this.fetchData( uri, Object.assign( { signal }, this.fetchOptions ) );
+			return this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
 
 		} )
 			.then( res => {
