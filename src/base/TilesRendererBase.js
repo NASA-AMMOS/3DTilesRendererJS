@@ -306,6 +306,12 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
+	fetchData( url, options ) {
+
+		return fetch( url, options );
+
+	}
+
 	parseTile( buffer, tile, extension ) {
 
 		return null;
@@ -502,7 +508,7 @@ export class TilesRendererBase {
 			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 			// load the tile set root
-			const pr = fetch( processedUrl, this.fetchOptions )
+			const pr = this.fetchData( processedUrl, this.fetchOptions )
 				.then( res => {
 
 					if ( res.ok ) {
@@ -661,7 +667,7 @@ export class TilesRendererBase {
 
 			}
 
-			return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+			return this.fetchData( uri, Object.assign( { signal }, this.fetchOptions ) );
 
 		} )
 			.then( res => {
