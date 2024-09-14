@@ -252,8 +252,9 @@ export class GlobeControls extends EnvironmentControls {
 			// plane approaching zero as the camera goes to or below sea level.
 			const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
 			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
-			camera.far = horizonDistance * 3 + 0.1;
 
+			// extend the horizon distance by 2.5 to handle cases where geometry extends above the horizon
+			camera.far = horizonDistance * 2.5 + 0.1;
 			camera.updateProjectionMatrix();
 
 		} else {
