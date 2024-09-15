@@ -324,10 +324,10 @@ The function used to map a [0, 1] value to a color for debug visualizations. By 
 ### constructor
 
 ```js
-constructor( { accessToken : String } )
+constructor( { accessToken : String, autoRefreshToken = false : Boolean } )
 ```
 
-Takes the Google Cloud access token.
+Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
 
 ## CesiumIonAuthPlugin
 

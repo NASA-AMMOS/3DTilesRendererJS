@@ -23,10 +23,11 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken } ) {
+	constructor( { apiToken, autoRefreshToken = false } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
+		this.autoRefreshToken = autoRefreshToken;
 		this.sessionToken = null;
 		this.tiles = null;
 
@@ -85,7 +86,7 @@ export class GoogleCloudAuthPlugin {
 		}
 
 		const res = await fetch( uri, options );
-		if ( res.status >= 400 && res.status <= 499 ) {
+		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 			// refetch the root if the token has expired
 			const rootURL = new URL( this.tiles.rootURL );
