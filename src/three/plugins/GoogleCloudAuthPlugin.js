@@ -32,6 +32,7 @@ export class GoogleCloudAuthPlugin {
 
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
+		this._tokenRefreshPromise = null;
 
 	}
 
@@ -76,17 +77,25 @@ export class GoogleCloudAuthPlugin {
 
 	async fetchData( uri, options ) {
 
+		// wait for the token to refresh if loading
+		if ( this._tokenRefreshPromise !== null ) {
+
+			await this._tokenRefreshPromise;
+
+		}
+
 		const res = await fetch( uri, options );
 		if ( res.status >= 400 && res.status <= 499 ) {
 
 			// refetch the root if the token has expired
 			const rootURL = new URL( this.tiles.rootURL );
 			rootURL.searchParams.append( 'key', this.apiToken );
-			await fetch( rootURL, options )
+			this._tokenRefreshPromise = await fetch( rootURL, options )
 				.then( res => res.json() )
 				.then( res => {
 
 					this.sessionToken = getSessionToken( res.root );
+					this._tokenRefreshPromise = null;
 
 				} );
 
