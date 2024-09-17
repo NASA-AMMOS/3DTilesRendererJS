@@ -203,6 +203,7 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		if ( ! this.rootTileSetTriggered ) {
 
+			this.rootTileSetTriggered = true;
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() );
 
 		}
