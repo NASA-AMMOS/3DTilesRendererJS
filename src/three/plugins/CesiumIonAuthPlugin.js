@@ -31,6 +31,7 @@ export class CesiumIonAuthPlugin {
 
 	loadRootTileSet( rootUrl ) {
 
+		// TODO: see if we can get rid of this "load root tile set" function
 		if ( this._tokenState === UNLOADED ) {
 
 			this._tokenState = LOADING;

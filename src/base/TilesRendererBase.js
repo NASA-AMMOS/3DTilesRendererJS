@@ -499,7 +499,6 @@ export class TilesRendererBase {
 
 	loadRootTileSet( url ) {
 
-		// TODO: see if we can get rid of this "load root tile set" function
 		if ( ! this.rootTileSetTriggered ) {
 
 			this.rootTileSetTriggered = true;
