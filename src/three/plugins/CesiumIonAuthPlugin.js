@@ -7,15 +7,19 @@ const FAILED = 3;
 
 export class CesiumIonAuthPlugin {
 
-	constructor( { apiToken, assetId = null } ) {
+	constructor( { apiToken, assetId = null, autoRefreshToken = false } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.assetId = assetId;
+		this.autoRefreshToken = autoRefreshToken;
 		this.tiles = null;
 		this._tileSetVersion = - 1;
 		this._tokenState = UNLOADED;
 		this._loadPromise = null;
+		this._tokenRefreshPromise = null;
+		this._endpointURL = null;
+		this._deferredToPlugin = false;
 
 	}
 
@@ -42,6 +46,8 @@ export class CesiumIonAuthPlugin {
 				url = new URL( `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint` );
 
 			}
+
+			this._endpointURL = url.toString();
 
 			url.searchParams.append( 'access_token', this.apiToken );
 
@@ -71,11 +77,8 @@ export class CesiumIonAuthPlugin {
 						tiles.rootURL = json.options.url;
 
 						// if the tile set is "external" then assume it's a google API tile set
-						if ( ! tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) ) {
-
-							tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
-
-						}
+						tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
+						this._deferredToPlugin = true;
 
 					} else {
 
@@ -92,6 +95,8 @@ export class CesiumIonAuthPlugin {
 						}
 
 					}
+
+					this._loadPromise = null;
 
 					return tiles.loadRootTileSet( tiles.rootURL );
 
@@ -117,6 +122,53 @@ export class CesiumIonAuthPlugin {
 
 		}
 		return uri.toString();
+
+	}
+
+	fetchData( uri, options ) {
+
+		if ( this._deferredToPlugin === true ) {
+
+			return null;
+
+		} else {
+
+			return Promise.resolve().then( async () => {
+
+				// wait for the token to refresh if loading
+				if ( this._tokenRefreshPromise !== null ) {
+
+					await this._tokenRefreshPromise;
+
+				}
+
+				const res = await fetch( uri, options );
+				if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
+
+					// refetch the root if the token has expired
+					const rootURL = new URL( this._endpointURL );
+					rootURL.searchParams.append( 'access_token', this.apiToken );
+					this._tokenRefreshPromise = await fetch( rootURL, options )
+						.then( res => res.json() )
+						.then( json => {
+
+							this.tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+							this._tokenRefreshPromise = null;
+
+						} );
+
+					return fetch( this.preprocessURL( uri ), options );
+
+				} else {
+
+					return res;
+
+				}
+
+			} );
+
+		}
+
 
 	}
 
