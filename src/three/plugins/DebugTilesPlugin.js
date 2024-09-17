@@ -8,7 +8,6 @@ const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
 const LOAD_TIME = Symbol( 'LOAD_TIME' );
 
 const _sphere = /* @__PURE__ */ new Sphere();
-const _color = /* @__PURE__ */ new Color();
 const emptyRaycast = () => {};
 const colors = {};
 
@@ -417,7 +416,6 @@ export class DebugTilesPlugin {
 							if ( ! tile.children || tile.children.length === 0 ) {
 
 								this.getDebugColor( 1.0, c.material.color );
-
 
 							} else {
 

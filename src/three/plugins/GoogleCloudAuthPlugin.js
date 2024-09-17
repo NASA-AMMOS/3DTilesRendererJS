@@ -40,9 +40,10 @@ export class GoogleCloudAuthPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
-		this._onLoadCallback = () => {
+		this._onLoadCallback = ( { tileSet } ) => {
 
-			this.sessionToken = getSessionToken( tiles.root );
+			// the first tile set loaded will be the root
+			this.sessionToken = getSessionToken( tileSet );
 
 			// clear the callback once the root is loaded
 			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
