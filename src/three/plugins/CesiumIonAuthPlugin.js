@@ -16,7 +16,7 @@ export class CesiumIonAuthPlugin {
 		this.tiles = null;
 		this._tileSetVersion = - 1;
 		this._tokenState = UNLOADED;
-		this._loadPromise = null;
+		this._rootEndpointPromise = null;
 		this._tokenRefreshPromise = null;
 		this._endpointURL = null;
 		this._deferredToPlugin = false;
@@ -25,7 +25,14 @@ export class CesiumIonAuthPlugin {
 
 	init( tiles ) {
 
+		if ( this.assetId !== null ) {
+
+			tiles.rootURL = `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint`;
+
+		}
+
 		this.tiles = tiles;
+		this._endpointURL = tiles.rootURL;
 
 	}
 
@@ -37,23 +44,11 @@ export class CesiumIonAuthPlugin {
 			this._tokenState = LOADING;
 
 			// construct the url to fetch the endpoint
-			let url;
-			if ( this.assetId === null ) {
-
-				url = new URL( rootUrl );
-
-			} else {
-
-				url = new URL( `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint` );
-
-			}
-
-			this._endpointURL = url.toString();
-
+			const url = new URL( rootUrl );
 			url.searchParams.append( 'access_token', this.apiToken );
 
 			// load the ion asset information
-			this._loadPromise = fetch( url, { mode: 'cors' } )
+			this._rootEndpointPromise = fetch( url, { mode: 'cors' } )
 				.then( res => {
 
 					if ( res.ok ) {
@@ -71,7 +66,6 @@ export class CesiumIonAuthPlugin {
 					this._tokenState = LOADED;
 
 					const tiles = this.tiles;
-
 					if ( 'externalType' in json ) {
 
 						const url = new URL( json.options.url );
@@ -83,21 +77,19 @@ export class CesiumIonAuthPlugin {
 
 					} else {
 
-						const url = new URL( json.url );
 						tiles.rootURL = json.url;
+						tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+						tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
 
 						// save the version key if present
+						const url = new URL( json.url );
 						if ( url.searchParams.has( 'v' ) ) {
 
 							this._tileSetVersion = url.searchParams.get( 'v' );
-							tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
-							tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
 
 						}
 
 					}
-
-					this._loadPromise = null;
 
 					return tiles.loadRootTileSet( tiles.rootURL );
 
@@ -110,7 +102,7 @@ export class CesiumIonAuthPlugin {
 
 		}
 
-		return this._loadPromise;
+		return this._rootEndpointPromise;
 
 	}
 
@@ -153,7 +145,10 @@ export class CesiumIonAuthPlugin {
 						.then( res => res.json() )
 						.then( json => {
 
-							this.tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+							const tiles = this.tiles;
+							tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+							tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+
 							this._tokenRefreshPromise = null;
 
 						} );
@@ -169,7 +164,6 @@ export class CesiumIonAuthPlugin {
 			} );
 
 		}
-
 
 	}
 
