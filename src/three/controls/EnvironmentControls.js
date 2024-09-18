@@ -58,9 +58,16 @@ export class EnvironmentControls extends EventDispatcher {
 
 		if ( v !== this.enabled ) {
 
+			this._enabled = v;
 			this.resetState();
 			this.pointerTracker.reset();
-			this._enabled = v;
+
+			if ( ! this.enabled ) {
+
+				this.dragInertia.set( 0, 0, 0 );
+				this.rotationInertia.set( 0, 0 );
+
+			}
 
 		}
 
@@ -382,7 +389,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 						} else if ( this.state === ROTATE ) {
 
-							this.pivotMesh.visible = true;
+							this.pivotMesh.visible = this.enabled;
 
 						}
 
@@ -556,7 +563,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.state = NONE;
 		this.pivotMesh.removeFromParent();
-		this.pivotMesh.visible = true;
+		this.pivotMesh.visible = this.enabled;
 		this.actionHeightOffset = 0;
 
 	}
@@ -575,7 +582,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		this.pivotMesh.visible = true;
+		this.pivotMesh.visible = this.enabled;
 		this.dragInertia.set( 0, 0, 0 );
 		this.rotationInertia.set( 0, 0 );
 		this.state = state;
@@ -1089,10 +1096,7 @@ export class EnvironmentControls extends EventDispatcher {
 		let altitude = y * rotationSpeed;
 
 		// calculate current angles and clamp
-		_forward
-			.set( 0, 0, - 1 )
-			.transformDirection( camera.matrixWorld )
-			.multiplyScalar( - 1 );
+		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
 
 		this.getUpDirection( pivotPoint, _localUp );
 
