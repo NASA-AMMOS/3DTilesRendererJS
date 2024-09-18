@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
 - I3DMLoader: Fix cases where external files may not be loaded correctly.
 - Documentation typo: `maxByteSize` -> `maxBytesSize`.
+- Documented that LRUCache's `maxByteSize` and `minByteSize` are only compatible with three.js >= r166
+- Environment / GlobeControls: Fixed the pivot point mesh appearing when controls are disabled.
 
 ## [0.3.37] - 2024.08.27
 ### Added
