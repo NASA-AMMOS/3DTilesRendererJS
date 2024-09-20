@@ -1,6 +1,7 @@
 import { I3DMLoaderBase } from '../../base/loaders/I3DMLoaderBase.js';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {WGS84_ELLIPSOID} from "../math/GeoConstants.js";
 
 const tempFwd = new Vector3();
 const tempUp = new Vector3();
@@ -77,6 +78,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 						const RTC_CENTER = featureTable.getData( 'RTC_CENTER' );
+						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
+						let modifiedRot = false;
 
 						[
 							'QUANTIZED_VOLUME_OFFSET',
@@ -171,7 +174,17 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 								tempQuat.setFromRotationMatrix( tempMat );
 
-							} else {
+							}/* else if (EAST_NORTH_UP) {
+								let pos = {};
+								pos = WGS84_ELLIPSOID.getPositionToCartographic( tempPos, pos ) ;
+								let rotMat = new Matrix4();
+
+								rotMat = WGS84_ELLIPSOID.getEastNorthUpFrame( pos.lat, pos.lon, rotMat )
+								const tempQuat2 = new Quaternion();
+
+								tempQuat.setFromRotationMatrix( rotMat );
+							}*/
+							if(!(NORMAL_UP || EAST_NORTH_UP)){
 
 								tempQuat.set( 0, 0, 0, 1 );
 
@@ -194,17 +207,35 @@ export class I3DMLoader extends I3DMLoaderBase {
 								tempSca.multiplyScalar( SCALE[ i ] );
 
 							}
-
+							//THIS COMMENTED
 							// compose the instance matrix
-							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
+							// tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
 
 							// multiple in the original meshes world transform
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
 								const instance = instances[ j ];
+
+								//EDITED HERE
+								if (EAST_NORTH_UP) {
+									let pos = {};
+									let inst_pos = instance.position;
+									pos = WGS84_ELLIPSOID.getPositionToCartographic( inst_pos, pos ) ;
+									let rotMat = new Matrix4();
+
+									rotMat = WGS84_ELLIPSOID.getEastNorthUpFrame( pos.lat, pos.lon, rotMat )
+
+									tempQuat.setFromRotationMatrix( rotMat );
+
+								}
+								tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
+
+								//END EDITED
+
 								const mesh = meshes[ j ];
 								tempMat2.multiplyMatrices( tempMat, mesh.matrixWorld );
 								instance.setMatrixAt( i, tempMat2 );
+
 
 							}
 
