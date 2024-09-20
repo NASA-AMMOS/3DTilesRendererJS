@@ -66,6 +66,7 @@ export class CesiumIonAuthPlugin {
 				if ( this._tokenRefreshPromise !== null ) {
 
 					await this._tokenRefreshPromise;
+					uri = this.preprocessURL( uri );
 
 				}
 
