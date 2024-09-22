@@ -1,110 +1,41 @@
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 
-const UNLOADED = 0;
-const LOADING = 1;
-const LOADED = 2;
-const FAILED = 3;
-
 export class CesiumIonAuthPlugin {
 
-	constructor( { apiToken, assetId = null } ) {
+	constructor( { apiToken, assetId = null, autoRefreshToken = false } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.assetId = assetId;
+		this.autoRefreshToken = autoRefreshToken;
 		this.tiles = null;
+		this.endpointURL = null;
+
+		this._bearerToken = null;
 		this._tileSetVersion = - 1;
-		this._tokenState = UNLOADED;
-		this._loadPromise = null;
+		this._tokenRefreshPromise = null;
 
 	}
 
 	init( tiles ) {
 
-		this.tiles = tiles;
+		if ( this.assetId !== null ) {
 
-	}
-
-	loadRootTileSet( rootUrl ) {
-
-		if ( this._tokenState === UNLOADED ) {
-
-			this._tokenState = LOADING;
-
-			// construct the url to fetch the endpoint
-			let url;
-			if ( this.assetId === null ) {
-
-				url = new URL( rootUrl );
-
-			} else {
-
-				url = new URL( `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint` );
-
-			}
-
-			url.searchParams.append( 'access_token', this.apiToken );
-
-			// load the ion asset information
-			this._loadPromise = fetch( url, { mode: 'cors' } )
-				.then( res => {
-
-					if ( res.ok ) {
-
-						return res.json();
-
-					} else {
-
-						return Promise.reject( new Error( `${ res.status } : ${ res.statusText }` ) );
-
-					}
-
-				} ).then( json => {
-
-					this._tokenState = LOADED;
-
-					const tiles = this.tiles;
-
-					if ( 'externalType' in json ) {
-
-						const url = new URL( json.options.url );
-						tiles.rootURL = json.options.url;
-
-						// if the tile set is "external" then assume it's a google API tile set
-						if ( ! tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) ) {
-
-							tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
-
-						}
-
-					} else {
-
-						const url = new URL( json.url );
-						tiles.rootURL = json.url;
-
-						// save the version key if present
-						if ( url.searchParams.has( 'v' ) ) {
-
-							this._tileSetVersion = url.searchParams.get( 'v' );
-							tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
-							tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
-
-						}
-
-					}
-
-					return tiles.loadRootTileSet( tiles.rootURL );
-
-				} ).catch( err => {
-
-					this._tokenState = FAILED;
-					return Promise.reject( err );
-
-				} );
+			tiles.rootURL = `https://api.cesium.com/v1/assets/${ this.assetId }/endpoint`;
 
 		}
 
-		return this._loadPromise;
+		this.tiles = tiles;
+		this.endpointURL = tiles.rootURL;
+
+	}
+
+	loadRootTileSet() {
+
+		// ensure we have an up-to-date token and root url, then trigger the internal
+		// root tile set load function
+		return this._refreshToken()
+			.then( () => this.tiles.loadRootTileSet() );
 
 	}
 
@@ -117,6 +48,94 @@ export class CesiumIonAuthPlugin {
 
 		}
 		return uri.toString();
+
+	}
+
+	fetchData( uri, options ) {
+
+		const tiles = this.tiles;
+		if ( tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) !== null ) {
+
+			return null;
+
+		} else {
+
+			return Promise.resolve().then( async () => {
+
+				// wait for the token to refresh if loading
+				if ( this._tokenRefreshPromise !== null ) {
+
+					await this._tokenRefreshPromise;
+					uri = this.preprocessURL( uri );
+
+				}
+
+				const res = await fetch( uri, options );
+				if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
+
+					await this._refreshToken( options );
+					return fetch( this.preprocessURL( uri ), options );
+
+				} else {
+
+					return res;
+
+				}
+
+			} );
+
+		}
+
+	}
+
+	_refreshToken( options ) {
+
+		if ( this._tokenRefreshPromise === null ) {
+
+			// construct the url to fetch the endpoint
+			const url = new URL( this.endpointURL );
+			url.searchParams.append( 'access_token', this.apiToken );
+
+			this._tokenRefreshPromise = fetch( url, options )
+				.then( res => res.json() )
+				.then( json => {
+
+					const tiles = this.tiles;
+					if ( 'externalType' in json ) {
+
+						const url = new URL( json.options.url );
+						tiles.rootURL = json.options.url;
+
+						// if the tile set is "external" then assume it's a google API tile set
+						tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
+
+					} else {
+
+						tiles.rootURL = json.url;
+						tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+						tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
+
+						// save the version key if present
+						if ( url.searchParams.has( 'v' ) && this._tileSetVersion === - 1 ) {
+
+							const url = new URL( json.url );
+							this._tileSetVersion = url.searchParams.get( 'v' );
+
+						}
+
+						this._bearerToken = json.accessToken;
+
+					}
+
+					this._tokenRefreshPromise = null;
+
+					return json;
+
+				} );
+
+		}
+
+		return this._tokenRefreshPromise;
 
 	}
 

@@ -173,7 +173,7 @@ export class TilesRendererBase {
 
 	getPluginByName( name ) {
 
-		return this.plugins.find( p => p.name === name );
+		return this.plugins.find( p => p.name === name ) || null;
 
 	}
 
@@ -203,10 +203,12 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		if ( ! this.rootTileSetTriggered ) {
 
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( this.rootURL ) );
-			return;
+			this.rootTileSetTriggered = true;
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() );
 
-		} else if ( ! this.root ) {
+		}
+
+		if ( ! this.root ) {
 
 			return;
 
@@ -306,6 +308,12 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
+	fetchData( url, options ) {
+
+		return fetch( url, options );
+
+	}
+
 	parseTile( buffer, tile, extension ) {
 
 		return null;
@@ -491,48 +499,43 @@ export class TilesRendererBase {
 
 	}
 
-	loadRootTileSet( url ) {
+	loadRootTileSet() {
 
-		if ( ! this.rootTileSetTriggered ) {
+		// transform the url
+		let processedUrl = this.rootURL;
+		this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
-			this.rootTileSetTriggered = true;
+		// load the tile set root
+		const pr = this
+			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( processedUrl, this.fetchOptions ) )
+			.then( res => {
 
-			// transform the url
-			let processedUrl = url;
-			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+				if ( res.ok ) {
 
-			// load the tile set root
-			const pr = fetch( processedUrl, this.fetchOptions )
-				.then( res => {
+					return res.json();
 
-					if ( res.ok ) {
+				} else {
 
-						return res.json();
+					throw new Error( `TilesRenderer: Failed to load tileset "${ processedUrl }" with status ${ res.status } : ${ res.statusText }` );
 
-					} else {
+				}
 
-						throw new Error( `TilesRenderer: Failed to load tileset "${ processedUrl }" with status ${ res.status } : ${ res.statusText }` );
+			} )
+			.then( json => {
 
-					}
-
-				} )
-				.then( json => {
-
-					this.preprocessTileSet( json, processedUrl );
-					this.rootTileSet = json;
-
-				} );
-
-			pr.catch( err => {
-
-				console.error( err );
-				this.rootTileSet = null;
+				this.preprocessTileSet( json, processedUrl );
+				this.rootTileSet = json;
 
 			} );
 
-			return pr;
+		pr.catch( err => {
 
-		}
+			console.error( err );
+			this.rootTileSet = null;
+
+		} );
+
+		return pr;
 
 	}
 
@@ -661,7 +664,7 @@ export class TilesRendererBase {
 
 			}
 
-			return fetch( uri, Object.assign( { signal }, this.fetchOptions ) );
+			return this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
 
 		} )
 			.then( res => {
