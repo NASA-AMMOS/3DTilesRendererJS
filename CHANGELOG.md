@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - BatchTable: Added "getPropertyArray".
+- GoogleCloudAuthPlugin, CesiumIonAuthPlugin: added "autoRefreshToken" option to enable automatically refreshing the token when requests fail due to timeout.
 
 ### Fixed
 - GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
