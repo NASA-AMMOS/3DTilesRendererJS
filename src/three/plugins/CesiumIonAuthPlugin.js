@@ -74,7 +74,6 @@ export class CesiumIonAuthPlugin {
 				if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 					await this._refreshToken( options );
-
 					return fetch( this.preprocessURL( uri ), options );
 
 				} else {
@@ -112,15 +111,14 @@ export class CesiumIonAuthPlugin {
 
 					} else {
 
-
 						tiles.rootURL = json.url;
 						tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
 						tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
 
 						// save the version key if present
-						const url = new URL( json.url );
 						if ( url.searchParams.has( 'v' ) && this._tileSetVersion === - 1 ) {
 
+							const url = new URL( json.url );
 							this._tileSetVersion = url.searchParams.get( 'v' );
 
 						}

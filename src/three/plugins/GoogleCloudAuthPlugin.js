@@ -91,7 +91,6 @@ export class GoogleCloudAuthPlugin {
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 			await this._refreshToken( options );
-
 			return fetch( this.preprocessURL( uri ), options );
 
 		} else {
