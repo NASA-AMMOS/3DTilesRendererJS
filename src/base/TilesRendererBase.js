@@ -173,7 +173,7 @@ export class TilesRendererBase {
 
 	getPluginByName( name ) {
 
-		return this.plugins.find( p => p.name === name );
+		return this.plugins.find( p => p.name === name ) || null;
 
 	}
 

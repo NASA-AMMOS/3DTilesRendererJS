@@ -73,7 +73,8 @@ export class CesiumIonAuthPlugin {
 				const res = await fetch( uri, options );
 				if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
-					await this._refreshToken();
+					await this._refreshToken( options );
+
 					return fetch( this.preprocessURL( uri ), options );
 
 				} else {
@@ -88,7 +89,7 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	_refreshToken() {
+	_refreshToken( options ) {
 
 		if ( this._tokenRefreshPromise === null ) {
 
@@ -96,7 +97,7 @@ export class CesiumIonAuthPlugin {
 			const url = new URL( this.endpointURL );
 			url.searchParams.append( 'access_token', this.apiToken );
 
-			this._tokenRefreshPromise = fetch( url, { mode: 'cors' } )
+			this._tokenRefreshPromise = fetch( url, options )
 				.then( res => res.json() )
 				.then( json => {
 

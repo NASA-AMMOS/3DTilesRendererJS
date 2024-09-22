@@ -43,7 +43,7 @@ export class GoogleCloudAuthPlugin {
 		this._onLoadCallback = ( { tileSet } ) => {
 
 			// the first tile set loaded will be the root
-			this.sessionToken = getSessionToken( tileSet );
+			this.sessionToken = getSessionToken( tileSet.root );
 
 			// clear the callback once the root is loaded
 			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
@@ -90,17 +90,7 @@ export class GoogleCloudAuthPlugin {
 		const res = await fetch( uri, options );
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
-			// refetch the root if the token has expired
-			const rootURL = new URL( this.tiles.rootURL );
-			rootURL.searchParams.append( 'key', this.apiToken );
-			this._tokenRefreshPromise = await fetch( rootURL, options )
-				.then( res => res.json() )
-				.then( res => {
-
-					this.sessionToken = getSessionToken( res.root );
-					this._tokenRefreshPromise = null;
-
-				} );
+			await this._refreshToken( options );
 
 			return fetch( this.preprocessURL( uri ), options );
 
@@ -109,6 +99,28 @@ export class GoogleCloudAuthPlugin {
 			return res;
 
 		}
+
+	}
+
+	_refreshToken( options ) {
+
+		if ( this._tokenRefreshPromise === null ) {
+
+			// refetch the root if the token has expired
+			const rootURL = new URL( this.tiles.rootURL );
+			rootURL.searchParams.append( 'key', this.apiToken );
+			this._tokenRefreshPromise = fetch( rootURL, options )
+				.then( res => res.json() )
+				.then( res => {
+
+					this.sessionToken = getSessionToken( res.root );
+					this._tokenRefreshPromise = null;
+
+				} );
+
+		}
+
+		return this._tokenRefreshPromise;
 
 	}
 
