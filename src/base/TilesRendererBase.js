@@ -560,6 +560,8 @@ export class TilesRendererBase {
 		const extension = getUrlExtension( uri );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
+			console.log('REMOVAL', tile.content )
+
 			// Stop the load if it's started
 			if ( t.__loadingState === LOADING ) {
 
@@ -737,15 +739,21 @@ export class TilesRendererBase {
 				stats.parsing --;
 				tile.__loadingState = LOADED;
 
-				// if the cache is full due to newly loaded memory then lets discard this tile - it will
-				// be loaded again later from the disk cache if needed.
-				if ( lruCache.isFull() ) {
+				// If the memory of the item hasn't been registered yet
+				if ( lruCache.getMemoryUsage( tile ) === null ) {
 
-					lruCache.remove( tile );
+					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
 
-				} else {
+						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
+						// be loaded again later from the disk cache if needed.
+						lruCache.remove( tile );
 
-					lruCache.updateMemoryUsage( tile );
+					} else {
+
+						// Otherwise update the item to the latest known value
+						lruCache.updateMemoryUsage( tile );
+
+					}
 
 				}
 

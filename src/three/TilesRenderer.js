@@ -76,7 +76,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this._eventDispatcher = new EventDispatcher();
 		this._upRotationMatrix = new Matrix4();
 
-		this.lruCache.getMemoryUsageCallback = tile => tile.cached.bytesUsed || 0;
+		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
 
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;

@@ -54,7 +54,7 @@ class LRUCache {
 		this.bytesMap = new Map();
 
 		this._unloadPriorityCallback = null;
-		this.getMemoryUsageCallback = () => 0;
+		this.computeMemoryUsageCallback = () => null;
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -65,6 +65,12 @@ class LRUCache {
 	isFull() {
 
 		return this.itemSet.size >= this.maxSize || this.cachedBytes >= this.maxBytesSize;
+
+	}
+
+	getMemoryUsage( item ) {
+
+		return this.bytesMap.get( item ) ?? null;
 
 	}
 
@@ -98,8 +104,9 @@ class LRUCache {
 		itemSet.set( item, Date.now() );
 		callbacks.set( item, removeCb );
 
-		const bytes = this.getMemoryUsageCallback( item );
-		this.cachedBytes += bytes;
+		// computeMemoryUsageCallback can return "null" if memory usage is not known, yet
+		const bytes = this.computeMemoryUsageCallback( item );
+		this.cachedBytes += bytes || 0;
 		bytesMap.set( item, bytes );
 
 		return true;
@@ -116,7 +123,7 @@ class LRUCache {
 
 		if ( itemSet.has( item ) ) {
 
-			this.cachedBytes -= bytesMap.get( item );
+			this.cachedBytes -= bytesMap.get( item ) || 0;
 			bytesMap.delete( item );
 
 			callbacks.get( item )( item );
@@ -145,9 +152,9 @@ class LRUCache {
 
 		}
 
-		this.cachedBytes -= bytesMap.get( item );
+		this.cachedBytes -= bytesMap.get( item ) || 0;
 
-		const bytes = this.getMemoryUsageCallback( item );
+		const bytes = this.computeMemoryUsageCallback( item );
 		bytesMap.set( item, bytes );
 		this.cachedBytes += bytes;
 
@@ -244,7 +251,7 @@ class LRUCache {
 			while ( true ) {
 
 				const item = itemList[ removedNodes ];
-				const bytes = bytesMap.get( item );
+				const bytes = bytesMap.get( item ) || 0;
 
 				// note that these conditions ensure we keep one tile over the byte cap so we can
 				// align with the the isFull function reports.
