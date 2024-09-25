@@ -65,7 +65,6 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	// Try to load any external tile set children if the external tile set has loaded.
 	const doTraverse =
-		canTraverse( tile, renderer ) &&
 		isUsedThisFrame( tile, renderer.frameCount ) &&
 		! tile.__hasRenderableContent && (
 			! tile.__hasContent ||
