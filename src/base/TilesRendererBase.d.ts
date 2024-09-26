@@ -3,7 +3,7 @@ import { PriorityQueue } from '../utilities/PriorityQueue';
 
 export class TilesRendererBase {
 
-	readonly rootTileset : Object | null;
+	readonly rootTileSet : Object | null;
 	readonly root : Object | null;
 
 	errorTarget : Number;
