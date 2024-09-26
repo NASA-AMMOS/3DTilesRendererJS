@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GoogleCloudAuthPlugin, CesiumIonAuthPlugin: added "autoRefreshToken" option to enable automatically refreshing the token when requests fail due to timeout.
 
 ### Fixed
+- Fixed type definition.
 - GlobeControls, EnvironmentControls: Account for near and far camera clip distances.
 - I3DMLoader: Fix cases where external files may not be loaded correctly.
 - Documentation typo: `maxByteSize` -> `maxBytesSize`.
