@@ -266,6 +266,7 @@ class LRUCache {
 				// don't unload any used tiles unless we're above our size cap
 				if (
 					! doContinue
+					|| usedSet.has( item )
 					|| removedNodes >= unused
 					&& this.cachedBytes - removedBytes - bytes <= maxBytesSize
 					&& itemList.length - removedNodes <= maxSize

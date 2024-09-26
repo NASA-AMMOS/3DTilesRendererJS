@@ -52,6 +52,11 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of deeper tiles first
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
 
+	} else if ( a.__loadingState !== b.__loadingState ) {
+
+		// dispose of tiles that are further along in the loading process
+		return a.__loadingState > b.__loadingState ? - 1 : 1;
+
 	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
 
 		// dispose of least recent tiles first
