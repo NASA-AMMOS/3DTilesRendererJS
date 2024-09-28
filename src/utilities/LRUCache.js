@@ -249,32 +249,19 @@ class LRUCache {
 			let removedNodes = 0;
 			let removedBytes = 0;
 
-			// TODO: unload up to "max bytes" limit as possible
-			// TODO: unload up to "min bytes" limit as possible
-			// TODO: unload up to "min nodes" limit as possible
+			// evict up to the max node or bytes size
+			while (
+				this.cachedBytes - removedBytes > maxBytesSize ||
+				itemList.length - removedNodes > maxSize
+			) {
 
-			while ( true ) {
-
+				// TODO: allow for disposing actively-loading items if they are above the
+				// maximum limits
 				const item = itemList[ removedNodes ];
 				const bytes = bytesMap.get( item ) || 0;
-
-				// note that these conditions ensure we keep one tile over the byte cap so we can
-				// align with the the isFull function reports.
-
-				// base while condition
-				const doContinue =
-					removedNodes < nodesToUnload
-					|| removedBytes < bytesToUnload
-					|| this.cachedBytes - removedBytes - bytes > maxBytesSize
-					|| itemList.length - removedNodes > maxSize;
-
-				// don't unload any used tiles unless we're above our size cap
 				if (
-					! doContinue
-					|| usedSet.has( item )
-					|| removedNodes >= unused
-					&& this.cachedBytes - removedBytes - bytes <= maxBytesSize
-					&& itemList.length - removedNodes <= maxSize
+					usedSet.has( item ) ||
+					this.cachedBytes - removedBytes - bytes < maxBytesSize
 				) {
 
 					break;
@@ -286,13 +273,37 @@ class LRUCache {
 
 			}
 
+			// evict up to the min size
+			while (
+				removedBytes < bytesToUnload ||
+				removedNodes < nodesToUnload
+			) {
+
+				const item = itemList[ removedNodes ];
+				const bytes = bytesMap.get( item ) || 0;
+				if (
+					usedSet.has( item ) ||
+					this.cachedBytes - removedBytes - bytes < minBytesSize
+				) {
+
+					break;
+
+				}
+
+				removedBytes += bytes;
+				removedNodes ++;
+
+			}
+
+			// remove the nodes
 			itemList.splice( 0, removedNodes ).forEach( item => {
+
+				this.cachedBytes -= bytesMap.get( item ) || 0;
 
 				bytesMap.delete( item );
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
-				this.cachedBytes -= bytesMap.get( item ) || 0;
 
 			} );
 
