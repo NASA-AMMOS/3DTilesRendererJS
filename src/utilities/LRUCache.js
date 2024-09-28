@@ -52,6 +52,7 @@ class LRUCache {
 		this.unloadingHandle = - 1;
 		this.cachedBytes = 0;
 		this.bytesMap = new Map();
+		this.loadingSet = new Set();
 
 		this._unloadPriorityCallback = null;
 		this.computeMemoryUsageCallback = () => null;
@@ -120,6 +121,7 @@ class LRUCache {
 		const itemList = this.itemList;
 		const bytesMap = this.bytesMap;
 		const callbacks = this.callbacks;
+		const loadingSet = this.loadingSet;
 
 		if ( itemSet.has( item ) ) {
 
@@ -133,12 +135,32 @@ class LRUCache {
 			usedSet.delete( item );
 			itemSet.delete( item );
 			callbacks.delete( item );
+			loadingSet.delete( item );
 
 			return true;
 
 		}
 
 		return false;
+
+	}
+
+	setLoading( item, value ) {
+
+		const { itemSet, loadingSet } = this;
+		if ( itemSet.has( item ) ) {
+
+			if ( value === true ) {
+
+				loadingSet.add( item );
+
+			} else {
+
+				loadingSet.delete( item );
+
+			}
+
+		}
 
 	}
 
@@ -203,6 +225,7 @@ class LRUCache {
 			itemList,
 			itemSet,
 			usedSet,
+			loadingSet,
 			callbacks,
 			bytesMap,
 			minBytesSize,
@@ -226,9 +249,19 @@ class LRUCache {
 				const usedB = usedSet.has( b );
 				if ( usedA === usedB ) {
 
-					// Use the sort function otherwise
-					// higher priority should be further to the left
-					return - unloadPriorityCallback( a, b );
+					const loadingA = loadingSet.has( a );
+					const loadingB = loadingSet.has( b );
+					if ( loadingA === loadingB ) {
+
+						// Use the sort function otherwise
+						// higher priority should be further to the left
+						return - unloadPriorityCallback( a, b );
+
+					} else {
+
+						return loadingA ? 1 : - 1;
+
+					}
 
 				} else {
 
@@ -255,12 +288,10 @@ class LRUCache {
 				itemList.length - removedNodes > maxSize
 			) {
 
-				// TODO: allow for disposing actively-loading items if they are above the
-				// maximum limits
 				const item = itemList[ removedNodes ];
 				const bytes = bytesMap.get( item ) || 0;
 				if (
-					usedSet.has( item ) ||
+					usedSet.has( item ) && ! loadingSet.has( item ) ||
 					this.cachedBytes - removedBytes - bytes < maxBytesSize
 				) {
 
@@ -300,10 +331,12 @@ class LRUCache {
 
 				this.cachedBytes -= bytesMap.get( item ) || 0;
 
-				bytesMap.delete( item );
 				callbacks.get( item )( item );
+				bytesMap.delete( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
+				loadingSet.delete( item );
+				usedSet.delete( item );
 
 			} );
 

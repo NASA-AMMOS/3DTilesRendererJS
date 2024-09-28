@@ -615,6 +615,7 @@ export class TilesRendererBase {
 
 		// Track a new load index so we avoid the condition where this load is stopped and
 		// another begins soon after so we don't parse twice.
+		lruCache.setLoading( tile, true );
 		tile.__loadIndex ++;
 		const loadIndex = tile.__loadIndex;
 		const controller = new AbortController();
@@ -653,6 +654,7 @@ export class TilesRendererBase {
 				console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
 				console.error( e );
 				tile.__loadingState = FAILED;
+				lruCache.setLoading( tile, false );
 
 			} else {
 
@@ -743,6 +745,7 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
+				lruCache.setLoading( tile, false );
 
 				// If the memory of the item hasn't been registered yet
 				if ( lruCache.getMemoryUsage( tile ) === null ) {
