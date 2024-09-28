@@ -246,7 +246,7 @@ class LRUCache {
 		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || unloaded && this.cachedBytes > maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
-			// used items should be at the end of the array
+			// used items should be at the end of the array, "unloaded" items in the middle of the array
 			itemList.sort( ( a, b ) => {
 
 				const usedA = usedSet.has( a );
@@ -286,7 +286,8 @@ class LRUCache {
 			let removedNodes = 0;
 			let removedBytes = 0;
 
-			// evict up to the max node or bytes size
+			// evict up to the max node or bytes size, keeping one more item over the max bytes limit
+			// so the "full" function behaves correctly.
 			while (
 				this.cachedBytes - removedBytes > maxBytesSize ||
 				itemList.length - removedNodes > maxSize
