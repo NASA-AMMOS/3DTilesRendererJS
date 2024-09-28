@@ -565,8 +565,6 @@ export class TilesRendererBase {
 		const extension = getUrlExtension( uri );
 		const addedSuccessfully = lruCache.add( tile, t => {
 
-			console.log('REMOVAL', tile.content )
-
 			// Stop the load if it's started
 			if ( t.__loadingState === LOADING ) {
 
