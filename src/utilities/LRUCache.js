@@ -52,7 +52,7 @@ class LRUCache {
 		this.unloadingHandle = - 1;
 		this.cachedBytes = 0;
 		this.bytesMap = new Map();
-		this.loadingSet = new Set();
+		this.loadedSet = new Set();
 
 		this._unloadPriorityCallback = null;
 		this.computeMemoryUsageCallback = () => null;
@@ -121,7 +121,7 @@ class LRUCache {
 		const itemList = this.itemList;
 		const bytesMap = this.bytesMap;
 		const callbacks = this.callbacks;
-		const loadingSet = this.loadingSet;
+		const loadedSet = this.loadedSet;
 
 		if ( itemSet.has( item ) ) {
 
@@ -135,7 +135,7 @@ class LRUCache {
 			usedSet.delete( item );
 			itemSet.delete( item );
 			callbacks.delete( item );
-			loadingSet.delete( item );
+			loadedSet.delete( item );
 
 			return true;
 
@@ -145,18 +145,18 @@ class LRUCache {
 
 	}
 
-	setLoading( item, value ) {
+	setLoaded( item, value ) {
 
-		const { itemSet, loadingSet } = this;
+		const { itemSet, loadedSet } = this;
 		if ( itemSet.has( item ) ) {
 
 			if ( value === true ) {
 
-				loadingSet.add( item );
+				loadedSet.add( item );
 
 			} else {
 
-				loadingSet.delete( item );
+				loadedSet.delete( item );
 
 			}
 
@@ -225,7 +225,7 @@ class LRUCache {
 			itemList,
 			itemSet,
 			usedSet,
-			loadingSet,
+			loadedSet,
 			callbacks,
 			bytesMap,
 			minBytesSize,
@@ -249,9 +249,9 @@ class LRUCache {
 				const usedB = usedSet.has( b );
 				if ( usedA === usedB ) {
 
-					const loadingA = loadingSet.has( a );
-					const loadingB = loadingSet.has( b );
-					if ( loadingA === loadingB ) {
+					const loadedA = loadedSet.has( a );
+					const loadedB = loadedSet.has( b );
+					if ( loadedA === loadedB ) {
 
 						// Use the sort function otherwise
 						// higher priority should be further to the left
@@ -259,7 +259,7 @@ class LRUCache {
 
 					} else {
 
-						return loadingA ? 1 : - 1;
+						return loadedA ? 1 : - 1;
 
 					}
 
@@ -291,7 +291,7 @@ class LRUCache {
 				const item = itemList[ removedNodes ];
 				const bytes = bytesMap.get( item ) || 0;
 				if (
-					usedSet.has( item ) && ! loadingSet.has( item ) ||
+					usedSet.has( item ) && loadedSet.has( item ) ||
 					this.cachedBytes - removedBytes - bytes < maxBytesSize
 				) {
 
@@ -335,7 +335,7 @@ class LRUCache {
 				bytesMap.delete( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
-				loadingSet.delete( item );
+				loadedSet.delete( item );
 				usedSet.delete( item );
 
 			} );
