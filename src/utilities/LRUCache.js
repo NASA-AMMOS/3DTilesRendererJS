@@ -233,13 +233,14 @@ class LRUCache {
 		} = this;
 
 		const unused = itemList.length - usedSet.size;
+		const unloaded = itemList.length - loadedSet.size;
 		const excessNodes = Math.max( Math.min( itemList.length - minSize, unused ), 0 );
 		const excessBytes = this.cachedBytes - minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 		let needsRerun = false;
 
-		const hasNodesToUnload = excessNodes > 0 && unused > 0 || itemList.length > maxSize;
-		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || this.cachedBytes > maxBytesSize;
+		const hasNodesToUnload = excessNodes > 0 && unused > 0 || unloaded && itemList.length > maxSize;
+		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || unloaded && this.cachedBytes > maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
 			// used items should be at the end of the array
