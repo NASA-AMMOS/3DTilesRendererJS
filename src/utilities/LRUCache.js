@@ -248,6 +248,11 @@ class LRUCache {
 
 			let removedNodes = 0;
 			let removedBytes = 0;
+
+			// TODO: unload up to "max bytes" limit as possible
+			// TODO: unload up to "min bytes" limit as possible
+			// TODO: unload up to "min nodes" limit as possible
+
 			while ( true ) {
 
 				const item = itemList[ removedNodes ];
@@ -279,15 +284,17 @@ class LRUCache {
 				removedBytes += bytes;
 				removedNodes ++;
 
+			}
+
+			itemList.splice( 0, removedNodes ).forEach( item => {
+
 				bytesMap.delete( item );
 				callbacks.get( item )( item );
 				itemSet.delete( item );
 				callbacks.delete( item );
+				this.cachedBytes -= bytesMap.get( item ) || 0;
 
-			}
-
-			itemList.splice( 0, removedNodes );
-			this.cachedBytes -= removedBytes;
+			} );
 
 			// if we didn't remove enough nodes or we still have excess bytes and there are nodes to removed
 			// then we want to fire another round of unloading
