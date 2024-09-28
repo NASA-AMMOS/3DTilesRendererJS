@@ -54,7 +54,7 @@ const lruPriorityCallback = ( a, b ) => {
 
 	} else if ( a.__loadingState !== b.__loadingState ) {
 
-		// dispose of tiles that are further along in the loading process
+		// dispose of tiles that are earlier along in the loading process first
 		return a.__loadingState > b.__loadingState ? - 1 : 1;
 
 	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
@@ -744,7 +744,8 @@ export class TilesRendererBase {
 				tile.__loadingState = LOADED;
 				lruCache.setLoaded( tile, true );
 
-				// If the memory of the item hasn't been registered yet
+				// If the memory of the item hasn't been registered yet then that means the memory usage hasn't
+				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
 				if ( lruCache.getMemoryUsage( tile ) === null ) {
 
 					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
