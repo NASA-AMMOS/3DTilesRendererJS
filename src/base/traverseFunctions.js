@@ -208,6 +208,9 @@ export function markUsedTiles( tile, renderer ) {
 		// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
 		// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
 		// sets around even when they're not needed. See issue #741.
+
+		// TODO: what if we mark the tile as not in the frustum but we _do_ mark it as used? Then we can stop frustum traversal and at least
+		// prevent tiles from rendering unless they're needed.
 		tile.__inFrustum = false;
 		return;
 
