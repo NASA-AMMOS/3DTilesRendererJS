@@ -181,4 +181,71 @@ describe( 'LRUCache', () => {
 
 	} );
 
+	it( 'should allow for unloading "used" items if they are unloaded and above the max bytes size threshold.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 0;
+		cache.maxBytesSize = 5;
+		cache.unloadPercent = 1;
+		cache.computeMemoryUsageCallback = () => null;
+
+		// insert items with unknown memory quantity
+		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.add( items[ i ], () => {} );
+
+		}
+
+		expect( cache.isFull() ).toEqual( false );
+
+		// update all items to have a memory quantity that's over the cache limit and update the items
+		cache.computeMemoryUsageCallback = () => 1;
+		cache.itemList.forEach( item => cache.updateMemoryUsage( item ) );
+
+		expect( cache.isFull() ).toEqual( true );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.isFull() ).toEqual( true );
+		expect( cache.itemList.length ).toEqual( 5 );
+
+	} );
+
+	it( 'should not unload "used" items if they are loaded and above the max bytes size threshold.', () => {
+
+		const cache = new LRUCache();
+		cache.minBytesSize = 0;
+		cache.maxBytesSize = 5;
+		cache.unloadPercent = 1;
+		cache.computeMemoryUsageCallback = () => null;
+
+		// insert items with unknown memory quantity
+		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.add( items[ i ], () => {} );
+
+		}
+
+		expect( cache.isFull() ).toEqual( false );
+
+		// update all items to have a memory quantity that's over the cache limit and update the items
+		cache.computeMemoryUsageCallback = () => 1;
+		cache.itemList.forEach( item => {
+
+			cache.updateMemoryUsage( item );
+			cache.setLoaded( item, true );
+
+		} );
+
+		expect( cache.isFull() ).toEqual( true );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+		cache.unloadUnusedContent();
+		expect( cache.isFull() ).toEqual( true );
+		expect( cache.itemList.length ).toEqual( 10 );
+
+	} );
+
 } );
