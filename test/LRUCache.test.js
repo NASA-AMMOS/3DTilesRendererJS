@@ -52,10 +52,10 @@ describe( 'LRUCache', () => {
 		cache.add( {}, () => {} );
 
 		expect( cache.isFull() ).toEqual( true );
-		cache.unloadUnusedContent( null );
+		cache.unloadUnusedContent();
 		expect( cache.isFull() ).toEqual( true );
 		cache.markAllUnused();
-		cache.unloadUnusedContent( null );
+		cache.unloadUnusedContent();
 
 		expect( cache.isFull() ).toEqual( false );
 
@@ -124,7 +124,7 @@ describe( 'LRUCache', () => {
 		cache.minBytesSize = 5;
 		cache.maxBytesSize = 25;
 		cache.unloadPercent = 1;
-		cache.getMemoryUsageCallback = () => 4;
+		cache.computeMemoryUsageCallback = () => 4;
 
 		for ( let i = 0; i < 10; i ++ ) {
 
@@ -138,8 +138,8 @@ describe( 'LRUCache', () => {
 
 		cache.markAllUnused();
 		cache.unloadUnusedContent();
-		expect( cache.itemList.length ).toEqual( 1 );
-		expect( cache.cachedBytes ).toEqual( 4 );
+		expect( cache.itemList.length ).toEqual( 2 );
+		expect( cache.cachedBytes ).toEqual( 8 );
 
 	} );
 
@@ -149,7 +149,7 @@ describe( 'LRUCache', () => {
 		cache.minBytesSize = 10;
 		cache.maxBytesSize = 25;
 		cache.unloadPercent = 1;
-		cache.getMemoryUsageCallback = () => 1;
+		cache.computeMemoryUsageCallback = () => 1;
 
 		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
 		for ( let i = 0; i < 10; i ++ ) {
@@ -165,7 +165,7 @@ describe( 'LRUCache', () => {
 		expect( cache.cachedBytes ).toEqual( 10 );
 		expect( cache.itemList.length ).toEqual( 10 );
 
-		cache.getMemoryUsageCallback = () => 4;
+		cache.computeMemoryUsageCallback = () => 4;
 		for ( let i = 0; i < 10; i ++ ) {
 
 			cache.updateMemoryUsage( items[ i ] );

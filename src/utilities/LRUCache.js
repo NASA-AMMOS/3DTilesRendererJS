@@ -297,7 +297,8 @@ class LRUCache {
 				const bytes = bytesMap.get( item ) || 0;
 				if (
 					usedSet.has( item ) && loadedSet.has( item ) ||
-					this.cachedBytes - removedBytes - bytes < maxBytesSize
+					this.cachedBytes - removedBytes - bytes < maxBytesSize &&
+					itemList.length - removedNodes <= maxSize
 				) {
 
 					break;
@@ -309,7 +310,8 @@ class LRUCache {
 
 			}
 
-			// evict up to the min size
+			// evict up to the min node or bytes size, keeping one more item over the min bytes limit
+			// so we're meeting it
 			while (
 				removedBytes < bytesToUnload ||
 				removedNodes < nodesToUnload
@@ -319,7 +321,8 @@ class LRUCache {
 				const bytes = bytesMap.get( item ) || 0;
 				if (
 					usedSet.has( item ) ||
-					this.cachedBytes - removedBytes - bytes < minBytesSize
+					this.cachedBytes - removedBytes - bytes < minBytesSize &&
+					removedNodes >= nodesToUnload
 				) {
 
 					break;
