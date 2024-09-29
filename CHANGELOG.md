@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Documentation typo: `maxByteSize` -> `maxBytesSize`.
 - Documented that LRUCache's `maxByteSize` and `minByteSize` are only compatible with three.js >= r166
 - Environment / GlobeControls: Fixed the pivot point mesh appearing when controls are disabled.
+- Case where LRUCache could cause tiles to load repeatedly.
 
 ## [0.3.37] - 2024.08.27
 ### Added
