@@ -202,12 +202,16 @@ export function markUsedTiles( tile, renderer ) {
 
 	// Disabled for now because this will cause otherwise unused children to be added to the lru cache
 	// if none of the children are in the frustum then this tile shouldn't be displayed
-	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
+	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 && ! tile.__hasUnrenderableContent ) {
 
-	// 	tile.__inFrustum = false;
-	// 	return;
+		// TODO: we're not checking tiles with unrenderable content here since external tile sets might look like they're in the frustum,
+		// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
+		// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
+		// sets around even when they're not needed. See issue #741.
+		tile.__inFrustum = false;
+		return;
 
-	// }
+	}
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
