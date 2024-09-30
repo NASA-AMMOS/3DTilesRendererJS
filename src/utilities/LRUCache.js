@@ -146,8 +146,8 @@ class LRUCache {
 	}
 
 	// Marks whether tiles in the cache have been completely loaded or not. Tiles that have not been completely
-	// loaded are subject to being disposed early even if the are marked as used if the cache is full above its
-	// max size limits.
+	// loaded are subject to being disposed early if the cache is full above its max size limits, even if they
+	// are marked as used.
 	setLoaded( item, value ) {
 
 		const { itemSet, loadedSet } = this;
