@@ -40,7 +40,7 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'ionApiKey', params.apiKey );
 
 	tiles = new EllipsoidTilesRenderer( null, LUNAR_ELLIPSOID );
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829' } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );

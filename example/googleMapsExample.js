@@ -56,7 +56,7 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	tiles = new GooglePhotorealisticTilesRenderer();
-	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
+	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
