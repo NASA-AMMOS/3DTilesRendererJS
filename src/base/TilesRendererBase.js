@@ -176,6 +176,29 @@ export class TilesRendererBase {
 
 	}
 
+	unregisterPlugin( plugin ) {
+
+		const plugins = this.plugins;
+		if ( typeof plugin === 'string' ) {
+
+			plugin = this.getPluginByName( name );
+
+		}
+
+		if ( plugins.includes( plugin ) ) {
+
+			const index = plugins.indexOf( plugin );
+			plugins.splice( index, 1 );
+			if ( plugin.dispose ) {
+
+				plugin.dispose();
+
+			}
+
+		}
+
+	}
+
 	getPluginByName( name ) {
 
 		return this.plugins.find( p => p.name === name ) || null;

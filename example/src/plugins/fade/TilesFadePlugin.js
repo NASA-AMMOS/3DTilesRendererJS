@@ -283,6 +283,11 @@ export class TilesFadePlugin {
 		tiles.removeEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		tiles.forEachLoadedModel( scene => {
+
+			this._fadeManager.deleteObject( scene );
+
+		} );
 
 	}
 
