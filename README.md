@@ -539,6 +539,14 @@ registerPlugin( plugin : TilesPlugin ) : void
 
 Register a plugin to the TilesRenderer. See the [plugins documentation](./PLUGINS.md) for more information.
 
+### .unregisterPlugin
+
+```js
+unregisterPlugin( plugin : TilesPlugin | String ) : Boolean
+```
+
+Removes a plugin from the tiles renderer. Returns `true` if the plugin was in the renderer and was removed. Returns `false` otherwise.
+
 ### .getPluginByName
 
 ```js
