@@ -195,7 +195,11 @@ export class TilesRendererBase {
 
 			}
 
+			return true;
+
 		}
+
+		return false;
 
 	}
 
