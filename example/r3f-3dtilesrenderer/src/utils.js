@@ -109,6 +109,52 @@ const computeCrsTransform = (
 
 };
 
+
+const computeTransformToLocalZup = (
+    originCoords,
+    sourceCrs,
+    targetCrs = null
+  ) => {
+    /* 
+          TILESET_CRS_GEOCENTRIC (found in tileset.json) or default EPSG:4978
+          https://epsg.io/?q=EPSG:4978&format=json
+        */
+    // target crs is 3d tiles crs
+    const targetCrsProj4 =
+      targetCrs || "+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs";
+    // source crs is found in rcInfo of glb
+    const sourceCrsProj4 = sourceCrs;
+    // source crs origin coords found in transformToModel matrix of glb rcInfo
+    const sourceCrsOriginCoords = new THREE.Vector3(
+      parseFloat(originCoords.x),
+      parseFloat(originCoords.y),
+      parseFloat(originCoords.z)
+    );
+    const crsTransform = computeCrsTransform(
+      sourceCrsOriginCoords,
+      sourceCrsProj4,
+      targetCrsProj4
+    );
+    const inverseOriginCoords = originCoords.clone().negate();
+    const translateBack = new THREE.Matrix4().makeTranslation(
+      inverseOriginCoords
+    );
+    const transform = crsTransform.clone().premultiply(translateBack);
+    return transform;
+  };
+  const computeTransformToLocalYup = (
+      originCoords,
+      sourceCrs,
+      targetCrs = null
+    ) => {
+      const transformToLocalZup = computeTransformToLocalZup(originCoords, sourceCrs, targetCrs);
+      const rotateZToY = new THREE.Matrix4().makeRotationX (- Math.PI / 2);
+      const transform = transformToLocalZup.clone().premultiply(rotateZToY);
+      return transform;
+    };
+
 export {
-	computeCrsTransform
+    computeCrsTransform, 
+    computeTransformToLocalZup, 
+    computeTransformToLocalYup, 
 };

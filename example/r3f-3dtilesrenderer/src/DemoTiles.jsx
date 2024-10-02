@@ -1,14 +1,22 @@
 import { useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
+import {computeTransformToLocalYup, computeTransformToLocalZup} from './utils'
+import {Vector3} from "three";
 
 import R3F3DTilesRenderer from '../../../src/r3f/R3F3DTilesRenderer'
 import {TilesRendererType} from '../../../src/r3f/R3F3DTilesRenderer'
 
-import { TransformControls, Grid, GizmoHelper, GizmoViewport, Lathe } from "@react-three/drei";
+import { TransformControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import { useControls, folder } from 'leva'
 
 
 function Simple3dTileset(props) {
+
+  const matrixTransform = computeTransformToLocalYup (
+    new Vector3(288807, 4642039, 100),
+    '+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs +type=crs',  // EPSG:32633 UTM 33N Roma
+    '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs'        // EPSG:4978 metric
+  )
 
   const { debug, tilesRendererType, latlon, googleApiKey, ionAccessToken, ionAssetId, resetTransform, tilesetPath } = useControls({ 
     debug: true,
@@ -52,10 +60,12 @@ function Simple3dTileset(props) {
     type={tilesRendererType}
     debug={debug}
     
-    path={openDataTilesets.iconem_int_merged_473M}
     // resetTransform={resetTransform}
-    resetTransform={true}
+    resetTransform={false}
+    matrixTransform={matrixTransform}
     
+    path={tilesetPath}
+    // path={openDataTilesets.iconem_int_merged_473M}
     googleApiKey={googleApiKey}
     ionAssetId={ionAssetId}
     ionAccessToken={ionAccessToken}
