@@ -7,56 +7,77 @@ import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
 
 import { TilesRenderer } from "../three/TilesRenderer";
 import { DebugTilesRenderer } from "../three/DebugTilesRenderer";
+import { GooglePhotorealisticTilesRenderer, DebugGooglePhotorealisticTilesRenderer } from '../three/renderers/GoogleTilesRenderer';
+import {CesiumIonTilesRenderer, DebugCesiumIonTilesRenderer } from '../three/renderers/CesiumIonTilesRenderer'
 
-const draco = new DRACOLoader();
-draco.setDecoderConfig({ type: "js" });
-draco.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
-// https://github.com/pmndrs/drei/discussions/1335
-const THREE_PATH = `https://unpkg.com/three@0.${THREE.REVISION}.x`;
-const ktx2Loader = new KTX2Loader().setTranscoderPath(
-  `${THREE_PATH}/examples/jsm/libs/basis/`
-);
+import { TileCompressionPlugin } from '../../example/src/plugins/TileCompressionPlugin.js';
+import { UpdateOnChangePlugin } from '../../example/src/plugins/UpdateOnChangePlugin.js';
+import { TilesFadePlugin } from '../../example/src/plugins/fade/TilesFadePlugin.js';
+// import { CesiumIonAuthPlugin } from '../src/plugins/CesiumIonAuthPlugin.js';
 
-const applyMatrix4_matrixVersion = (obj, matrix) => {
-  // https://github.com/mrdoob/three.js/blob/76bff1eb9584c47d521755b87e49246079a8ae24/src/core/Object3D.js#L128
-  // mat.(de)compose(p, q, s) introduces errors in scale+quaternion computation
-  // So using this method to update the matrix itself
-  /*
-  // For reference: Object3D.applyMatrix4
-  applyMatrix4( matrix ) {
-    if ( this.matrixAutoUpdate ) this.updateMatrix();
-    // updateMatrix() {
-    // 	this.matrix.compose( this.position, this.quaternion, this.scale );
-    // 	this.matrixWorldNeedsUpdate = true;
-    // }
-    this.matrix.premultiply( matrix );
-    this.matrix.decompose( this.position, this.quaternion, this.scale );
-  }
-  */
-  obj.matrix.premultiply(matrix);
-  obj.matrixAutoUpdate = false;
-  obj.updateMatrixWorld(true);
-};
-export {applyMatrix4_matrixVersion};
+import {applyMatrix4_matrixVersion} from './utils'
+
+const TilesRendererType = {
+  Standard: 'Standard',
+  Google: 'Google',
+  CesiumIon: 'CesiumIon',
+}
+
+export {TilesRendererType}
 
 function R3F3DTilesRenderer(props) {
   const tilesRendererRef = useRef(null);
   const groupRef = useRef(null);
   const { camera, gl } = useThree();
 
-  useEffect(() => {
+  const draco = new DRACOLoader();
+  draco.setDecoderConfig({ type: "js" });
+  draco.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+  // draco.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
+  // https://github.com/pmndrs/drei/discussions/1335
+  const THREE_PATH = `https://unpkg.com/three@0.${THREE.REVISION}.x`;
+  const ktx2Loader = new KTX2Loader().setTranscoderPath(
+    `${THREE_PATH}/examples/jsm/libs/basis/`
+  );
 
+  useEffect(() => {
     // Create the TilesRenderer Object
-    if (!props.path) return;
     let tilesRenderer;
-    if (!props.debug) {
-      tilesRenderer = new TilesRenderer(props.path);
-    } else {
-      tilesRenderer = new DebugTilesRenderer(props.path);
-      Object.entries(props.debug).forEach(
-        (entry, idx) => (tilesRenderer[entry[0]] = entry[1])
-      );
+    if (props.type === TilesRendererType.Standard){
+      if (!props.path) throw('No path provided for a Standard tileRenderer');
+      if (!props.debug) {
+        tilesRenderer = new TilesRenderer(props.path);
+      } else {
+        tilesRenderer = new DebugTilesRenderer(props.path);
+      }
     }
+    else if (props.type === TilesRendererType.Google){
+      if (!props.googleApiKey) throw('No googleApiKey provided for a GooglePhotorealisticTilesRenderer');
+      if (!props.debug) {
+        tilesRenderer = new GooglePhotorealisticTilesRenderer();
+      } else {
+        tilesRenderer = new DebugGooglePhotorealisticTilesRenderer();
+      }
+      tilesRenderer.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: props.googleApiKey, autoRefreshToken: true } ) );
+      tilesRenderer.errorTarget = 50;
+    }
+    else if (props.type === TilesRendererType.CesiumIon){
+      if (!props.ionAssetId || !props.ionAccessToken) throw('No ionAccessToken or ionAssetId provided for a CesiumIonTilesRenderer');
+      if (!props.debug) {
+        tilesRenderer = new CesiumIonTilesRenderer(props.ionAssetId, props.ionAccessToken);
+      } else {
+        tilesRenderer = new DebugCesiumIonTilesRenderer(props.ionAssetId, props.ionAccessToken);
+      }
+      // tilesRenderer.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.ionAccessToken, assetId: params.ionAssetId } ) );
+      // tilesRenderer.fetchOptions.mode = 'cors';
+    } else {
+      throw ('R3F3DTilesRenderer component has to have type prop that takes values among `Standard, Google, CesiumIon`')
+    }
+    
+    // tilesRenderer.registerPlugin( new TileCompressionPlugin() );
+    // tilesRenderer.registerPlugin( new UpdateOnChangePlugin() );
+    // tilesRenderer.registerPlugin( new TilesFadePlugin() );
+
     // Set tile loader manager
     const loader = new GLTFLoader(tilesRenderer.manager);
     loader.setDRACOLoader(draco);
@@ -81,30 +102,37 @@ function R3F3DTilesRenderer(props) {
     }
     
     // Handle Clipping Planes and material properties applied to every tile mesh
-    if (props.clippingPlanes) {
-      tilesRenderer.addEventListener( 'load-model', (scene) => {
+    if (true || props.clippingPlanes) {
+      tilesRenderer.addEventListener( 'load-model', ({scene}) => {
+        console.log('SCENEEEEEEEEEEEE', scene)
         scene.traverse((child) => {
           if (child.isMesh) {
             // see https://github.com/orgs/Iconem/projects/3/views/6?pane=issue&itemId=75278208
-            child.material.map.generateMipmaps = false;
+            child.material.color = new THREE.Color('#ddd')
+            child.material.emissive = new THREE.Color('#444')
+            child.material.metalness = 0.5
+            child.material.roughness = 0.5
+            // child.material.emissiveMap = child.material.map
+            console.log('child.material', child.material)
+            // child.material.map.generateMipmaps = false;
             if (props.clippingPlanes) {
-              child.material.clippingPlanes = props.clippingPlanes;
-              child.material.clipIntersection = props.clippingVolume
-                ? true
-                : false;
+              // child.material.clippingPlanes = props.clippingPlanes;
+              // child.material.clipIntersection = props.clippingVolume
+              //   ? true
+              //   : false;
             }
           }
         });
       } );
 
-      tilesRenderer.addEventListener( 'dispose-model', (scene) => {
-        scene.traverse((child) => {
-          if (child.isMesh) {
-            const material = child.material;
-            material.dispose();
-          }
-        });
-      });
+      // tilesRenderer.addEventListener( 'dispose-model', (scene) => {
+      //   scene.traverse((child) => {
+      //     if (child.isMesh) {
+      //       const material = child.material;
+      //       material.dispose();
+      //     }
+      //   });
+      // });
     }
 
     tilesRendererRef.current = tilesRenderer;
