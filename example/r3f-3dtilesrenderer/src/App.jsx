@@ -7,7 +7,7 @@ import {
   Environment
 } from '@react-three/drei'
 
-import TilesComponents from './TilesComponents'
+import DemoTiles from './DemoTiles'
 
 import modelPath from '../public/DamagedHelmet.glb'
 function HelmetModel(props) {
@@ -24,10 +24,7 @@ function Suzi(props) {
   )
 }
 
-
-
 function App() {
-
 
   return (
     <div id="canvas-container" style={{
@@ -39,18 +36,16 @@ function App() {
       top: 0,
     }}>    
       <Canvas>
-        <ambientLight />
-        <directionalLight color="white" position={[0, 5, 5]} intensity={10} />
+        <ambientLight  intensity={2} />
+        {/* <directionalLight color="white" position={[0, 5, 5]} intensity={1} /> */}
         <Environment preset="sunset" />
-        <CameraControls distance={2}/>
+        <CameraControls distance={10} polarAngle={Math.PI / 2 - 0.3} azimuthAngle={-0.4} />
           <Suspense>
             <HelmetModel />
-          </Suspense>
-          <Suspense>
             <Suzi position={[2, 0, 2]} />
           </Suspense>
           
-          <TilesComponents />
+          <DemoTiles />
       </Canvas>
     </div>
   )
