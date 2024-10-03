@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { TilesRenderer } from '../three/TilesRenderer.js';
+import { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { Matrix4, Vector3 } from 'three';
+import { TilesRenderer } from '../three/TilesRenderer.js';
+import { WGS84_ELLIPSOID } from '../three/math/GeoConstants.js';
 
 // returns a sorted dependency array from an object
 function getDepsArray( object ) {
@@ -68,6 +70,57 @@ function setValueAtPath( object, path, value ) {
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
+
+// group that matches the transform of the tile set root group
+function TileSetRoot( { children } ) {
+
+	const tiles = useContext( TilesRendererContext );
+	const ref = useRef();
+	useEffect( () => {
+
+		if ( tiles ) {
+
+			ref.current.matrixWorld = tiles.group.matrixWorld;
+
+		}
+
+
+	}, [ tiles ] );
+
+	return <group ref={ ref } matrixWorldAutoUpdate={ false } matrixAutoUpdate={ false }>{ children }</group>;
+
+}
+
+const _vec = /* @__PURE__ */ new Vector3();
+export function EastNorthUpFrame( props ) {
+
+	const {
+		lat = 0,
+		lon = 0,
+		height = 0,
+		az = 0,
+		el = 0,
+		roll = 0,
+		children,
+	} = props;
+	const ref = useRef();
+	useEffect( () => {
+
+		const group = ref.current;
+		group.matrix.identity()
+
+		// TODO: use the ellipsoid associated with the tiles renderer
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
+		WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, height, _vec );
+		group.matrix.setPosition( _vec );
+		group.matrix.decompose( group.position, group.quaternion, group.scale );
+		group.updateMatrixWorld();
+
+	}, [ lat, lon, height, az, el, roll ] );
+
+	return <group ref={ ref }>{ children }</group>;
+
+}
 
 // component for registering a plugin
 export function TilesPluginComponent( props ) {
@@ -230,7 +283,9 @@ export function TilesRendererComponent( props ) {
 	return <>
 		{ tiles ? <primitive object={ tiles.group }/> : null }
 		<TilesRendererContext.Provider value={ tiles }>
-			{ children }
+			<TileSetRoot>
+				{ children }
+			</TileSetRoot>
 		</TilesRendererContext.Provider>
 	</>;
 
