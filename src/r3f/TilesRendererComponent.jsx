@@ -188,12 +188,13 @@ export function TilesRendererComponent( props ) {
 
 	const { url, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
-	const [ camera, gl ] = useThree( state => [ state.camera, state.gl ] );
+	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
 
 	// create the tile set
 	useEffect( () => {
 
 		const tiles = new TilesRenderer( url );
+		tiles.addEventListener( 'load-content', () => invalidate() );
 		setTiles( tiles );
 
 		return () => {
