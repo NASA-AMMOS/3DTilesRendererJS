@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Group, Matrix4, Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import { TilesRenderer } from '../three/TilesRenderer.js';
 import { WGS84_ELLIPSOID } from '../three/math/GeoConstants.js';
 
@@ -72,17 +72,22 @@ function setValueAtPath( object, path, value ) {
 export const TilesRendererContext = createContext( null );
 
 // group that matches the transform of the tile set root group
-function TileSetRoot() {
+function TileSetRoot( { children } ) {
 
 	const tiles = useContext( TilesRendererContext );
-	const group = useMemo( () => new Group(), [] );
-	if ( tiles ) {
+	const ref = useRef();
+	useEffect( () => {
 
-		group.matrixWorld = tiles.group.matrixWorld;
+		if ( tiles ) {
 
-	}
+			ref.current.matrixWorld = tiles.group.matrixWorld;
 
-	return <primitive object={ group }/>;
+		}
+
+
+	}, [ tiles ] );
+
+	return <group ref={ ref }>{ children }</group>;
 
 }
 
@@ -99,9 +104,10 @@ export function EastNorthUpFrame( props ) {
 		el = 0,
 		roll = 0,
 	} = props;
-	const group = useMemo( () => new Group(), [] );
+	const ref = useRef();
 	useEffect( () => {
 
+		const group = ref.current;
 		group.matrix.identity()
 
 		// TODO: use the ellipsoid associated with the tiles renderer
@@ -118,7 +124,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ lat, lon, height, az, el, roll ] );
 
-	return <primitive object={ group }/>;
+	return <group ref={ ref }>{ children }</group>;
 
 }
 
