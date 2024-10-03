@@ -1,0 +1,60 @@
+
+import { Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { 
+  useGLTF, 
+  CameraControls, 
+  Environment
+} from '@react-three/drei'
+
+import DemoTiles from './DemoTiles'
+
+import modelPath from '../public/DamagedHelmet.glb'
+function HelmetModel(props) {
+  const gltf = useGLTF(modelPath)
+  return <primitive {...props} object={gltf.scene} />
+}
+
+function Suzi(props) {
+  const { nodes } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/suzanne-high-poly/model.gltf')
+  return (
+    <mesh castShadow receiveShadow geometry={nodes.Suzanne.geometry} {...props}>
+      <meshStandardMaterial color="#9d4b4b" />
+    </mesh>
+  )
+}
+
+function App() {
+
+  return (
+    <div id="canvas-container" style={{
+      width: '100%',
+      height: '100%', 
+      position: 'absolute',
+      margin: 0,
+      left: 0,
+      top: 0,
+    }}>    
+      <Canvas>
+        <ambientLight  intensity={2} />
+        <directionalLight color="white" position={[0, 5, 5]} intensity={1} />
+        <Environment 
+          preset="sunset" 
+          background={true} 
+          backgroundBlurriness={0.9} 
+          environmentIntensity={10}
+        />
+        <CameraControls distance={10} polarAngle={Math.PI / 2 - 0.3} azimuthAngle={-0.4} />
+        {/* earth radius in meters: 6371000 */}
+        <Suspense>
+          {/* <HelmetModel /> */}
+          <Suzi position={[2, 0, 2]} />
+        </Suspense>
+        
+        <DemoTiles />
+      </Canvas>
+    </div>
+  )
+}
+
+export default App

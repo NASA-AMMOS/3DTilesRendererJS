@@ -22,7 +22,7 @@
     "src/*"
   ],
   "scripts": {
-    "start": "vite --config ./vite.config.js",
+    "start": "vite --config ./vite.config.js --host",
     "build-examples": "vite build --config ./vite.config.js",
     "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"example/*.js\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
