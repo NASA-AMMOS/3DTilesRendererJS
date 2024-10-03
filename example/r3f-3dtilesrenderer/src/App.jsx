@@ -37,15 +37,21 @@ function App() {
     }}>    
       <Canvas>
         <ambientLight  intensity={2} />
-        {/* <directionalLight color="white" position={[0, 5, 5]} intensity={1} /> */}
-        <Environment preset="sunset" />
+        <directionalLight color="white" position={[0, 5, 5]} intensity={1} />
+        <Environment 
+          preset="sunset" 
+          background={true} 
+          backgroundBlurriness={0.9} 
+          environmentIntensity={10}
+        />
         <CameraControls distance={10} polarAngle={Math.PI / 2 - 0.3} azimuthAngle={-0.4} />
-          <Suspense>
-            <HelmetModel />
-            <Suzi position={[2, 0, 2]} />
-          </Suspense>
-          
-          <DemoTiles />
+        {/* earth radius in meters: 6371000 */}
+        <Suspense>
+          {/* <HelmetModel /> */}
+          <Suzi position={[2, 0, 2]} />
+        </Suspense>
+        
+        <DemoTiles />
       </Canvas>
     </div>
   )
