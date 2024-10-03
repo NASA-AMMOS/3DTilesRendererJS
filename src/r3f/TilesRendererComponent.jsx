@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Group } from 'three';
+import { Group, Matrix4, Vector3 } from 'three';
 import { TilesRenderer } from '../three/TilesRenderer.js';
+import { WGS84_ELLIPSOID } from '../three/math/GeoConstants.js';
 
 // returns a sorted dependency array from an object
 function getDepsArray( object ) {
@@ -80,6 +81,42 @@ function TileSetRoot() {
 		group.matrixWorld = tiles.group.matrixWorld;
 
 	}
+
+	return <primitive object={ group }/>;
+
+}
+
+// TODO: test
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _vec = /* @__PURE__ */ new Vector3();
+export function EastNorthUpFrame( props ) {
+
+	const {
+		lat = 0,
+		lon = 0,
+		height = 0,
+		az = 0,
+		el = 0,
+		roll = 0,
+	} = props;
+	const group = useMemo( () => new Group(), [] );
+	useEffect( () => {
+
+		group.matrix.identity()
+
+		// TODO: use the ellipsoid associated with the tiles renderer
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, _matrix );
+		group.matrix.premultiply( _matrix );
+
+		WGS84_ELLIPSOID.getEastNorthUpFrame( lat, lon, _matrix );
+		group.matrix.premultiply( _matrix );
+		group.matrix.decompose( group.position, group.quaternion, group.scale );
+
+		_vec.set( 0, 0, 1 ).transformDirection( _matrix );
+		group.position.addScaledVector( _vec, height );
+		group.updateMatrixWorld();
+
+	}, [ lat, lon, height, az, el, roll ] );
 
 	return <primitive object={ group }/>;
 
