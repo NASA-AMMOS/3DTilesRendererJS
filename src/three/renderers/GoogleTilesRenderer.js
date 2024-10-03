@@ -12,13 +12,6 @@ const _euler = new Euler();
 
 const EllipsoidTilesRendererMixin = base => class extends base {
 
-	constructor( url, ellipsoid = WGS84_ELLIPSOID ) {
-
-		super( url );
-		this.ellipsoid = ellipsoid;
-
-	}
-
 	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
 	setLatLonToYUp( lat, lon ) {
 

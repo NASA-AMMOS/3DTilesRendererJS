@@ -18,6 +18,7 @@ import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
+import { WGS84_ELLIPSOID } from './math/GeoConstants.js';
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_LESS_165 = parseInt( REVISION ) < 165;
@@ -67,6 +68,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super( ...args );
 		this.group = new TilesGroup( this );
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
