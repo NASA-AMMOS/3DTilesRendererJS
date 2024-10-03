@@ -87,12 +87,10 @@ function TileSetRoot( { children } ) {
 
 	}, [ tiles ] );
 
-	return <group ref={ ref }>{ children }</group>;
+	return <group ref={ ref } matrixWorldAutoUpdate={ false } matrixAutoUpdate={ false }>{ children }</group>;
 
 }
 
-// TODO: test
-const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
 export function EastNorthUpFrame( props ) {
 
@@ -103,6 +101,7 @@ export function EastNorthUpFrame( props ) {
 		az = 0,
 		el = 0,
 		roll = 0,
+		children,
 	} = props;
 	const ref = useRef();
 	useEffect( () => {
@@ -111,15 +110,10 @@ export function EastNorthUpFrame( props ) {
 		group.matrix.identity()
 
 		// TODO: use the ellipsoid associated with the tiles renderer
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, _matrix );
-		group.matrix.premultiply( _matrix );
-
-		WGS84_ELLIPSOID.getEastNorthUpFrame( lat, lon, _matrix );
-		group.matrix.premultiply( _matrix );
+		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
+		WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, height, _vec );
+		group.matrix.setPosition( _vec );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
-
-		_vec.set( 0, 0, 1 ).transformDirection( _matrix );
-		group.position.addScaledVector( _vec, height );
 		group.updateMatrixWorld();
 
 	}, [ lat, lon, height, az, el, roll ] );
