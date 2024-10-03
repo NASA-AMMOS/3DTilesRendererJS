@@ -10,9 +10,9 @@ import { TransformControls, Grid, GizmoHelper, GizmoViewport } from "@react-thre
 import { useControls, folder } from 'leva'
 
 import {DebugTilesPlugin, NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER} from '../../../src/three/plugins/DebugTilesPlugin'
-import { TileCompressionPlugin } from '../../example/src/plugins/TileCompressionPlugin.js';
-import { UpdateOnChangePlugin } from '../../example/src/plugins/UpdateOnChangePlugin.js';
-import { TilesFadePlugin } from '../../example/src/plugins/fade/TilesFadePlugin.js';
+// import { TileCompressionPlugin } from '../../example/src/plugins/TileCompressionPlugin.js';
+// import { UpdateOnChangePlugin } from '../../example/src/plugins/UpdateOnChangePlugin.js';
+// import { TilesFadePlugin } from '../../example/src/plugins/fade/TilesFadePlugin.js';
 
 function Simple3dTileset(props) {
 
@@ -27,27 +27,27 @@ function Simple3dTileset(props) {
     '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs'        // EPSG:4978 metric
   )
 
-  const { debug, tilesRendererType, latlon, googleApiKey, ionAccessToken, ionAssetId, resetTransform, tilesetPath } = useControls({ 
+  const { debug, tilesRendererType, latlon, googleApiKey, ionAccessToken, ionAssetId, resetTransform, tilesetPath } = useControls({
     debug: false, // TODO DEBUG RENDERERS WERE REPLACED BY A PLUGIN
     tilesRendererType: {
-      value: TilesRendererType.Google, 
+      value: TilesRendererType.Google,
       options : {
-        [TilesRendererType.Standard]: TilesRendererType.Standard, 
-        [TilesRendererType.Google]: TilesRendererType.Google, 
-        [TilesRendererType.CesiumIon]: TilesRendererType.CesiumIon, 
+        [TilesRendererType.Standard]: TilesRendererType.Standard,
+        [TilesRendererType.Google]: TilesRendererType.Google,
+        [TilesRendererType.CesiumIon]: TilesRendererType.CesiumIon,
       }
-    }, 
+    },
     latlon: [0, 0],
     'Standard': folder(
-      {tilesetPath: '3dtiles tileset path'}, 
+      {tilesetPath: '3dtiles tileset path'},
       { render: (get) => get('tilesRendererType') == TilesRendererType.Standard }
-    ), 
+    ),
     'Google 3D Cities': folder(
       {
         googleApiKey: import.meta.env.VITE_GOOGLEAPIKEY
-      }, 
+      },
       { render: (get) => get('tilesRendererType') == TilesRendererType.Google }
-    ), 
+    ),
     CesiumIon: folder(
       {
         ionAccessToken: import.meta.env.VITE_IONACCESSTOKEN,
@@ -58,7 +58,7 @@ function Simple3dTileset(props) {
         //   max: 10e6,
         //   step: 1,
         // }
-      }, 
+      },
       { render: (get) => get('tilesRendererType') == TilesRendererType.CesiumIon }
     ), // 2684829, 2644092, 2275207, 1415196, 354759, 354307, 96188, 75343, 69380, 57590, 57588, 57587, 43978, 29335, 29332, 29331, 28945
     resetTransform: true,
@@ -77,15 +77,15 @@ function Simple3dTileset(props) {
 			// maxDebugDistance: - 1,
 			// maxDebugError: - 1,
 			// customColorCallback: null,
-    }), 
+    }),
     // new TileCompressionPlugin(),
     // new UpdateOnChangePlugin(),
     // new TilesFadePlugin(),
   ]
-  
+
   // Add event listeners to tilesRenderer
   const addRendererEventListeners = tilesRenderer => {
-    
+
     // Handle Clipping Planes and material properties applied to every tile mesh
     if (false || props.clippingPlanes) {
       tilesRenderer.addEventListener( 'load-model', ({scene}) => {
@@ -137,7 +137,7 @@ function Simple3dTileset(props) {
     matrixTransform={matrixTransform_Roma}
     addRendererEventListeners={addRendererEventListeners}
     // matrixTransform={matrixTransform_NY}
-    
+
     // path={tilesetPath}
     googleApiKey={googleApiKey}
     ionAssetId={'57587'} // 57587 cesium ion asset is oer New York
@@ -160,11 +160,11 @@ function DemoTiles() {
 
   return (
     <>
-      <Grid 
+      <Grid
         infiniteGrid={ true }
         fadeDistance={ 200 }
         fadeStrength={ 0.5 }
-        fadeFrom={ 1 } 
+        fadeFrom={ 1 }
         cellSize={ 1 }
         sectionSize={ 5 }
         cellColor={ '#6f6f6f' }
@@ -179,7 +179,7 @@ function DemoTiles() {
 
       {/* <group rotation={[ -0*Math.PI / 2, 0*Math.PI / 2, 0*Math.PI / 2]}> */}
       {/* <TransformControls mode='rotate' > */}
-        <Simple3dTileset 
+        <Simple3dTileset
         />
         {/*<EnvLayer /> */}
       {/* </TransformControls> */}

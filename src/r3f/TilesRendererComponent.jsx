@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { TilesRenderer } from '../three/TilesRenderer.js';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { Group } from 'three';
+import { TilesRenderer } from '../three/TilesRenderer.js';
 
 // returns a sorted dependency array from an object
 function getDepsArray( object ) {
@@ -70,7 +71,7 @@ function setValueAtPath( object, path, value ) {
 export const TilesRendererContext = createContext( null );
 
 // group that matches the transform of the tile set root group
-function TileSetRoot( props ) {
+function TileSetRoot() {
 
 	const tiles = useContext( TilesRendererContext );
 	const group = useMemo( () => new Group(), [] );
