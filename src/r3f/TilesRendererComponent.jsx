@@ -69,6 +69,21 @@ function setValueAtPath( object, path, value ) {
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
 
+// group that matches the transform of the tile set root group
+function TileSetRoot( props ) {
+
+	const tiles = useContext( TilesRendererContext );
+	const group = useMemo( () => new Group(), [] );
+	if ( tiles ) {
+
+		group.matrixWorld = tiles.group.matrixWorld;
+
+	}
+
+	return <primitive object={ group }/>;
+
+}
+
 // component for registering a plugin
 export function TilesPluginComponent( props ) {
 
@@ -230,7 +245,9 @@ export function TilesRendererComponent( props ) {
 	return <>
 		{ tiles ? <primitive object={ tiles.group }/> : null }
 		<TilesRendererContext.Provider value={ tiles }>
-			{ children }
+			<TileSetRoot>
+				{ children }
+			</TileSetRoot>
 		</TilesRendererContext.Provider>
 	</>;
 
