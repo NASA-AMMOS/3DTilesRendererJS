@@ -49,15 +49,7 @@ function getValueAtPath( object, path ) {
 	while ( tokens.length !== 0 ) {
 
 		const key = tokens.shift();
-		if ( key in curr ) {
-
-			curr = curr[ key ];
-
-		} else {
-
-			return undefined;
-
-		}
+		curr = curr[ key ];
 
 	}
 
@@ -68,34 +60,9 @@ function getValueAtPath( object, path ) {
 // sets the value of the object at the given path
 function setValueAtPath( object, path, value ) {
 
-	let curr = object;
 	const tokens = [ ...path ];
-	while ( tokens.length !== 1 ) {
-
-		const key = tokens.shift();
-		if ( key in curr ) {
-
-			curr = curr[ key ];
-
-		} else {
-
-			return false;
-
-		}
-
-	}
-
-	const key = tokens[ 0 ];
-	if ( curr && typeof curr === 'object' && key in curr ) {
-
-		curr[ key ] = value;
-		return true;
-
-	} else {
-
-		return false;
-
-	}
+	const finalKey = tokens.pop();
+	getValueAtPath( object, tokens )[ finalKey ] = value;
 
 }
 
@@ -230,12 +197,8 @@ export function TilesRendererComponent( props ) {
 			} else {
 
 				const path = getPath( key );
-				const prevValue = getValueAtPath( tiles, path );
-				if ( prevValue !== undefined && setValueAtPath( tiles, path, options[ key ] ) ) {
-
-					previousState[ key ] = prevValue;
-
-				}
+				previousState[ key ] = getValueAtPath( tiles, path );
+				setValueAtPath( tiles, path, options[ key ] );
 
 			}
 
