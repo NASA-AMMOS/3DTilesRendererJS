@@ -48,6 +48,7 @@ const GooglePhotorealisticTilesRendererMixin = base => class extends EllipsoidTi
 
 	getCreditsString() {
 
+		console.warn( 'GooglePhotorealisticTilesRenderer: "getCreditsString" function is deprecated. Use "getAttributions", instead.' );
 		return this.getAttributions()[ 0 ].value;
 
 	}
