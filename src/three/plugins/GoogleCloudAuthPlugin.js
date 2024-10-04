@@ -1,5 +1,5 @@
 import { traverseSet } from '../../base/traverseFunctions.js';
-import { GoogleMapsTilesCredits } from '../renderers/GoogleMapsTilesCredits.js';
+import { GoogleAttributionsManager } from '../renderers/GoogleAttributionsManager.js';
 
 function getSessionToken( root ) {
 
@@ -35,7 +35,7 @@ export class GoogleCloudAuthPlugin {
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
 		this._tokenRefreshPromise = null;
-		this._credits = new GoogleMapsTilesCredits();
+		this._attributionsManager = new GoogleAttributionsManager();
 		this._attribution = {
 			value: '',
 			type: 'string',
@@ -61,11 +61,11 @@ export class GoogleCloudAuthPlugin {
 			const copyright = tile.cached.metadata.asset.copyright || '';
 			if ( visible ) {
 
-				this._credits.addCredits( copyright );
+				this._attributionsManager.addAttributions( copyright );
 
 			} else {
 
-				this._credits.removeCredits( copyright );
+				this._attributionsManager.removeAttributions( copyright );
 
 			}
 
@@ -78,7 +78,7 @@ export class GoogleCloudAuthPlugin {
 
 	getAttributions( target ) {
 
-		this._attribution.value = this._credits.toString();
+		this._attribution.value = this._attributionsManager.toString();
 		target.push( this._attribution );
 
 	}
