@@ -1,5 +1,5 @@
 import { traverseSet } from '../../base/traverseFunctions.js';
-import { GoogleAttributionsManager } from '../renderers/GoogleAttributionsManager.js';
+import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 
 function getSessionToken( root ) {
 
