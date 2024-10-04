@@ -1,45 +1,19 @@
-import { Euler, Matrix4 } from 'three';
 import { TilesRenderer } from '../TilesRenderer.js';
 import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
 import { GoogleCloudAuthPlugin } from '../plugins/GoogleCloudAuthPlugin.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
 const TILE_URL = `${ API_ORIGIN }/v1/3dtiles/root.json`;
-const _mat = new Matrix4();
-const _euler = new Euler();
 
-const EllipsoidTilesRendererMixin = base => class extends base {
-
-	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
-	setLatLonToYUp( lat, lon ) {
-
-		const { ellipsoid, group } = this;
-
-		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
-		_mat.makeRotationFromEuler( _euler );
-
-		ellipsoid.getEastNorthUpFrame( lat, lon, group.matrix )
-			.multiply( _mat )
-			.invert()
-			.decompose(
-				group.position,
-				group.quaternion,
-				group.scale,
-			);
-
-		group.updateMatrixWorld( true );
-
-	}
-
-};
-
-const GooglePhotorealisticTilesRendererMixin = base => class extends EllipsoidTilesRendererMixin( base ) {
+const GooglePhotorealisticTilesRendererMixin = base => class extends base {
 
 	constructor( url = TILE_URL ) {
 
 		super( url );
 
-		this.fetchOptions.mode = 'cors';
+		// TODO: how do we handle the default setting assignments and the google tiles URL?
+		// console.warn( 'GooglePhotorealisticTilesRenderer: Class has been deprecated. Use "GoogleCloudAuthPlugin" instead.' );
+
 		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
 		this.errorTarget = 40;
@@ -62,7 +36,7 @@ const GoogleTilesRendererMixin = base => class extends GooglePhotorealisticTiles
 		super( url );
 		this.registerPlugin( new GoogleCloudAuthPlugin( { apiToken } ) );
 
-		console.warn( 'GoogleTilesRenderer: Class has been deprecated. Use "GooglePhotorealisticTilesRenderer" with "GoogleCloudAuthPlugin" instead.' );
+		console.warn( 'GoogleTilesRenderer: Class has been deprecated. Use "GoogleCloudAuthPlugin" instead.' );
 
 	}
 
@@ -73,5 +47,3 @@ export const DebugGoogleTilesRenderer = GoogleTilesRendererMixin( DebugTilesRend
 
 export const GooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( TilesRenderer );
 export const DebugGooglePhotorealisticTilesRenderer = GooglePhotorealisticTilesRendererMixin( DebugTilesRenderer );
-
-export const EllipsoidTilesRenderer = EllipsoidTilesRendererMixin( TilesRenderer );

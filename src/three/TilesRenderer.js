@@ -9,6 +9,7 @@ import {
 	Matrix4,
 	Vector3,
 	Vector2,
+	Euler,
 	LoadingManager,
 	EventDispatcher,
 	REVISION,
@@ -19,6 +20,9 @@ import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
 import { WGS84_ELLIPSOID } from './math/GeoConstants.js';
+
+const _mat = new Matrix4();
+const _euler = new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_LESS_165 = parseInt( REVISION ) < 165;
@@ -986,6 +990,28 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		return false;
+
+	}
+
+	// TODO: deprecate this function and provide a plugin to help with this
+	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
+	setLatLonToYUp( lat, lon ) {
+
+		const { ellipsoid, group } = this;
+
+		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
+		_mat.makeRotationFromEuler( _euler );
+
+		ellipsoid.getEastNorthUpFrame( lat, lon, group.matrix )
+			.multiply( _mat )
+			.invert()
+			.decompose(
+				group.position,
+				group.quaternion,
+				group.scale,
+			);
+
+		group.updateMatrixWorld( true );
 
 	}
 
