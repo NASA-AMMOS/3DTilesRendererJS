@@ -795,6 +795,13 @@ export class TilesRendererBase {
 
 	}
 
+	getAttributions( target = [] ) {
+
+		this.invokeAllPlugins( plugin => plugin !== this && plugin.getAttributions && plugin.getAttributions( target ) );
+		return target;
+
+	}
+
 	invokeOnePlugin( func ) {
 
 		const plugins = [ ...this.plugins, this ];

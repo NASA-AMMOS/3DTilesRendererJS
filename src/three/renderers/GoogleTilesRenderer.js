@@ -1,8 +1,6 @@
 import { Euler, Matrix4 } from 'three';
 import { TilesRenderer } from '../TilesRenderer.js';
 import { DebugTilesRenderer } from '../DebugTilesRenderer.js';
-import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
-import { GoogleMapsTilesCredits } from './GoogleMapsTilesCredits.js';
 import { GoogleCloudAuthPlugin } from '../plugins/GoogleCloudAuthPlugin.js';
 
 const API_ORIGIN = 'https://tile.googleapis.com';
@@ -39,36 +37,19 @@ const GooglePhotorealisticTilesRendererMixin = base => class extends EllipsoidTi
 
 	constructor( url = TILE_URL ) {
 
-		super( url, WGS84_ELLIPSOID );
-
-		this._credits = new GoogleMapsTilesCredits();
+		super( url );
 
 		this.fetchOptions.mode = 'cors';
 		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
 		this.errorTarget = 40;
 
-		this.addEventListener( 'tile-visibility-change', e => {
-
-			const { tile, visible } = e;
-			const copyright = tile.cached.metadata.asset.copyright || '';
-			if ( visible ) {
-
-				this._credits.addCredits( copyright );
-
-			} else {
-
-				this._credits.removeCredits( copyright );
-
-			}
-
-		} );
-
 	}
 
 	getCreditsString() {
 
-		return this._credits.toString();
+		console.warn( 'GooglePhotorealisticTilesRenderer: "getCreditsString" function is deprecated. Use "getAttributions", instead.' );
+		return this.getAttributions()[ 0 ].value;
 
 	}
 

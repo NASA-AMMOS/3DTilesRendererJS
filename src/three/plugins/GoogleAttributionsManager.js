@@ -1,4 +1,4 @@
-export class GoogleMapsTilesCredits {
+export class GoogleAttributionsManager {
 
 	constructor() {
 
@@ -6,7 +6,7 @@ export class GoogleMapsTilesCredits {
 
 	}
 
-	_adjustCredits( line, add ) {
+	_adjustAttributions( line, add ) {
 
 		const creditsCount = this.creditsCount;
 		const tokens = line.split( /;/g );
@@ -31,15 +31,15 @@ export class GoogleMapsTilesCredits {
 
 	}
 
-	addCredits( line ) {
+	addAttributions( line ) {
 
-		this._adjustCredits( line, true );
+		this._adjustAttributions( line, true );
 
 	}
 
-	removeCredits( line ) {
+	removeAttributions( line ) {
 
-		this._adjustCredits( line, false );
+		this._adjustAttributions( line, false );
 
 	}
 

@@ -1,4 +1,5 @@
 import { traverseSet } from '../../base/traverseFunctions.js';
+import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 
 function getSessionToken( root ) {
 
@@ -34,6 +35,11 @@ export class GoogleCloudAuthPlugin {
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
 		this._tokenRefreshPromise = null;
+		this._attributionsManager = new GoogleAttributionsManager();
+		this._attribution = {
+			value: '',
+			type: 'string',
+		};
 
 	}
 
@@ -50,7 +56,30 @@ export class GoogleCloudAuthPlugin {
 
 		};
 
+		this._visibilityChangeCallback = ( { tile, visible } ) => {
+
+			const copyright = tile.cached.metadata.asset.copyright || '';
+			if ( visible ) {
+
+				this._attributionsManager.addAttributions( copyright );
+
+			} else {
+
+				this._attributionsManager.removeAttributions( copyright );
+
+			}
+
+		};
+
 		tiles.addEventListener( 'load-tile-set', this._onLoadCallback );
+		tiles.addEventListener( 'tile-visibility-change', this._visibilityChangeCallback );
+
+	}
+
+	getAttributions( target ) {
+
+		this._attribution.value = this._attributionsManager.toString();
+		target.push( this._attribution );
 
 	}
 
@@ -73,7 +102,9 @@ export class GoogleCloudAuthPlugin {
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+		const { tiles } = this;
+		tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+		tiles.removeEventListener( 'tile-visibility-change', this._visibilityChangeCallback );
 
 	}
 

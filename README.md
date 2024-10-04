@@ -555,6 +555,19 @@ getPluginByName( name : string ) : TilesPlugin
 
 Returns the plugin with the given name if it has been registered. Returns the first one if multiple have been registered.
 
+### .getAttributions
+
+```js
+getAttributions( target = [] : Array ) : Array<{
+	type: string,
+	value: any,
+}>
+```
+
+Returns a list of attributions for the data in the tile set. The list can change when tile visibility changes.
+
+The "type" can be a "string", "html", or "image" depending on the type of attribution. Google Photorealistic Tiles, for example, returns a list of sources as a string.
+
 ### .dispose
 
 ```js
