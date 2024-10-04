@@ -1,21 +1,12 @@
-import { useMemo, useEffect, createRoot } from 'react';
+import { useMemo, useEffect, StrictMode } from 'react';
+import { createRoot } from 'react-dom/client'
 import { useThree } from '@react-three/fiber';
 
-export function CanvasDOMOverlay( { children } ) {
+export function CanvasDOMOverlay( { children, styles, ...rest } ) {
 
-	const [ gl ] = useThree( state => state.gl );
-	const container = useMemo( () => {
-
-		const container = document.createElement( 'div' );
-		container.style.pointerEvents = 'none';
-
-	} );
-
-	const root = useMemo( () => {
-
-		return createRoot( container );
-
-	} );
+	const [ gl ] = useThree( state => [ state.gl ] );
+	const container = useMemo( () => document.createElement( 'div' ), [] );
+	const root = useMemo( () => createRoot( container ), [ container ] );
 
 	const observer = useMemo( () => {
 
@@ -33,14 +24,24 @@ export function CanvasDOMOverlay( { children } ) {
 
 	useEffect( () => {
 
+		container.style.pointerEvents = 'none';
+		container.style.position = 'absolute';
+		document.body.appendChild( container );
+
 		return () => {
 
+			container.remove();
 			observer.disconnect();
 
 		};
 
-	}, [ observer ] );
+	}, [ observer, container ] );
 
-	root.render( <StrictMode>{ children }</StrictMode> );
-
+	root.render(
+		<StrictMode>
+			<div style={ { pointerEvents: 'all', ...styles } } { ...rest }>
+				{ children }
+			</div>
+		</StrictMode>
+	);
 }
