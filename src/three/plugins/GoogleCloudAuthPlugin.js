@@ -39,6 +39,7 @@ export class GoogleCloudAuthPlugin {
 		this._attribution = {
 			value: '',
 			type: 'string',
+			collapsible: true,
 		};
 
 	}
@@ -78,8 +79,11 @@ export class GoogleCloudAuthPlugin {
 
 	getAttributions( target ) {
 
-		this._attribution.value = this._attributionsManager.toString();
-		target.push( this._attribution );
+		if ( this._attribution.value ) {
+
+			target.push( this._attribution );
+
+		}
 
 	}
 

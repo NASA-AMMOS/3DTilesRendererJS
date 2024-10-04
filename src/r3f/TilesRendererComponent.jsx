@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Matrix4, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { TilesRenderer } from '../three/TilesRenderer.js';
 import { WGS84_ELLIPSOID } from '../three/math/GeoConstants.js';
 

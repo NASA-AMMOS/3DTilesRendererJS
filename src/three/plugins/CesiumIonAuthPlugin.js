@@ -14,6 +14,7 @@ export class CesiumIonAuthPlugin {
 		this._bearerToken = null;
 		this._tileSetVersion = - 1;
 		this._tokenRefreshPromise = null;
+		this._attributions = [];
 
 	}
 
@@ -88,6 +89,16 @@ export class CesiumIonAuthPlugin {
 
 	}
 
+	getAttributions( target ) {
+
+		if ( this.tiles.visibleTiles.size > 0 ) {
+
+			target.push( ...this._attributions );
+
+		}
+
+	}
+
 	_refreshToken( options ) {
 
 		if ( this._tokenRefreshPromise === null ) {
@@ -124,6 +135,11 @@ export class CesiumIonAuthPlugin {
 						}
 
 						this._bearerToken = json.accessToken;
+						this._attributions = json.attributions.map( att => ( {
+							value: att.html,
+							type: 'html',
+							required: att.required,
+						} ) );
 
 					}
 
