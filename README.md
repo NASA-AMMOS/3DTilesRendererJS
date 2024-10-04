@@ -558,7 +558,7 @@ Returns the plugin with the given name if it has been registered. Returns the fi
 ### .getAttributions
 
 ```js
-getAttributions( target = [] : string ) : Array<{
+getAttributions( target = [] : Array ) : Array<{
 	type: string,
 	value: any,
 }>
