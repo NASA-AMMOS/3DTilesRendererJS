@@ -323,7 +323,7 @@ export class Ellipsoid {
 
 	copy( source ) {
 
-		this.radius.copy( source.copy );
+		this.radius.copy( source.radius );
 		return this;
 
 	}
