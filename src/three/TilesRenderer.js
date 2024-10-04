@@ -553,7 +553,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( 'region' in tile.boundingVolume ) {
 
-			boundingVolume.setRegionData( ...tile.boundingVolume.region );
+			boundingVolume.setRegionData( this.ellipsoid, ...tile.boundingVolume.region );
 
 		}
 

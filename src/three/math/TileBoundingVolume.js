@@ -252,10 +252,10 @@ export class TileBoundingVolume {
 
 	}
 
-	setRegionData( west, south, east, north, minHeight, maxHeight ) {
+	setRegionData( ellipsoid, west, south, east, north, minHeight, maxHeight ) {
 
 		const region = new EllipsoidRegion(
-			WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT,
+			...ellipsoid.radius,
 			south, north,
 			west, east,
 			minHeight, maxHeight,
