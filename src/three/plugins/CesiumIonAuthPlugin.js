@@ -91,7 +91,11 @@ export class CesiumIonAuthPlugin {
 
 	getAttributions( target ) {
 
-		target.push( ...this._attributions );
+		if ( this.tiles.visibleTiles.size > 0 ) {
+
+			target.push( ...this._attributions );
+
+		}
 
 	}
 
