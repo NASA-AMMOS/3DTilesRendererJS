@@ -12,7 +12,6 @@ export class TilesRendererBase {
 	maxDepth : Number;
 
 	fetchOptions : RequestInit;
-	/** function to preprocess the url for each individual tile */
 	preprocessURL : ( ( uri: string | URL ) => string ) | null;
 
 	lruCache : LRUCache;
@@ -28,6 +27,8 @@ export class TilesRendererBase {
 		beforeCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null,
 		afterCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null
 	) : void;
+	getAttributions( target? : Array<{ type: String, value: any }> ) : Array<{ type: String, value: any }>;
+
 	dispose() : void;
 	resetFailedTiles() : void;
 
