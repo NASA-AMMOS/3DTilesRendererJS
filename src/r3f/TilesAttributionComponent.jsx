@@ -54,7 +54,7 @@ export function TilesAttributionComponent( { children, style, ...rest } ) {
 
 		} else if ( att.type === 'html' ) {
 
-			element = <div key={ i } dangerouslySetInnerHTML={ { __html: att.value } }/>;
+			element = <div key={ i } dangerouslySetInnerHTML={ { __html: att.value } } style={ { pointerEvents: 'all' } }/>;
 
 		} else if ( att.type === 'image' ) {
 

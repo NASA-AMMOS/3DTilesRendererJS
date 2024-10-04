@@ -2,7 +2,7 @@ import { useMemo, useEffect, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client'
 import { useThree } from '@react-three/fiber';
 
-export function CanvasDOMOverlay( { children, style, ...rest } ) {
+export function CanvasDOMOverlay( { children, ...rest } ) {
 
 	const [ gl ] = useThree( state => [ state.gl ] );
 	const container = useMemo( () => document.createElement( 'div' ), [] );
@@ -40,7 +40,7 @@ export function CanvasDOMOverlay( { children, style, ...rest } ) {
 
 	root.render(
 		<StrictMode>
-			<div style={ { pointerEvents: 'all', ...style } } { ...rest }>
+			<div { ...rest }>
 				{ children }
 			</div>
 		</StrictMode>
