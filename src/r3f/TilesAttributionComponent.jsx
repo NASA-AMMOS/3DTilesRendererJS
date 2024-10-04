@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { TilesRendererContext } from './TilesRendererComponent.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
-export function AttributionsComponent( { children, style, ...rest } ) {
+export function TilesAttributionComponent( { children, style, ...rest } ) {
 
 	const tiles = useContext( TilesRendererContext );
 	const [ attributions, setAttributions ] = useState( [] );
