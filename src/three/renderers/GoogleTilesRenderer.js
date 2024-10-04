@@ -46,8 +46,6 @@ const GooglePhotorealisticTilesRendererMixin = base => class extends EllipsoidTi
 		this.fetchOptions.mode = 'cors';
 		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
-		this.lruCache.minSize = 3000;
-		this.lruCache.maxSize = 5000;
 		this.errorTarget = 40;
 
 		this.addEventListener( 'tile-visibility-change', e => {
