@@ -618,14 +618,6 @@ constructor( apiKey: String )
 
 Takes the Google Photorealistic Tiles API Key.
 
-### .getCreditsString
-
-```js
-getCreditsString(): String;
-```
-
-Returns a string of unique credits for all the tiles currently displayed.
-
 ### .setLatLonToYUp
 
 ```js
