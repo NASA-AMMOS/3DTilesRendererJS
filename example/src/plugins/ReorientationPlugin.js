@@ -1,17 +1,20 @@
-import { Sphere } from 'three';
+import { Matrix4, Sphere, Vector3 } from 'three';
 
-const sphere = new Sphere();
+const sphere = /* @__PURE__ */ new Sphere();
+const vec = /* @__PURE__ */ new Vector3();
+const matrix = /* @__PURE__ */ new Matrix4();
 export class ReorientationPlugin {
 
 	constructor( options ) {
 
 		options = {
 			up: 'z',
+			recenter: true,
 
 			lat: null,
 			lon: null,
 			height: 0,
-
+			...options,
 		};
 
 		this.tiles = null;
@@ -20,6 +23,7 @@ export class ReorientationPlugin {
 		this.lat = options.lat;
 		this.lon = options.lon;
 		this.height = options.height;
+		this.recenter = options.recenter;
 		this._callback = null;
 
 	}
@@ -30,10 +34,11 @@ export class ReorientationPlugin {
 
 		this._callback = () => {
 
-			const { up, lat, lon, height } = this;
+			const { up, lat, lon, height, recenter } = this;
 
 			if ( lat !== null && lon !== null ) {
 
+				// if the latitude and longitude are provided then remove the position offset
 				this.transformLatLonHeightToOrigin( lat, lon, height );
 
 			} else {
@@ -43,43 +48,53 @@ export class ReorientationPlugin {
 				tiles.getBoundingSphere( sphere );
 				if ( sphere.center.length() > minRadii * 0.5 ) {
 
-					const cart = ellipsoid.getPositionToCartographic( sphere.position );
+					// otherwise see if this is possibly a tile set on the surface of the globe based on the positioning
+					const cart = {};
+					ellipsoid.getPositionToCartographic( sphere.center, cart );
 					this.transformLatLonHeightToOrigin( cart.lat, cart.lon, cart.height );
 
 				} else {
 
+					console.log('GOT HERE', up)
+					// lastly fall back to orienting the up direction to +Y
 					const group = tiles.group;
-					group.euler.setScalar( 0 );
+					group.rotation.set( 0, 0, 0 );
 					switch ( up ) {
 
 						case 'x': case '+x':
-							group.euler.z = Math.PI / 2;
+							group.rotation.z = Math.PI / 2;
 							break;
 						case '-x':
-							group.euler.z = - Math.PI / 2;
+							group.rotation.z = - Math.PI / 2;
 							break;
 
 						case 'y': case '+y':
 							break;
 						case '-y':
-							group.euler.z = Math.PI;
+							group.rotation.z = Math.PI;
 							break;
 
 						case 'z': case '+z':
-							group.euler.x = - Math.PI / 2;
+							group.rotation.x = - Math.PI / 2;
 							break;
 						case '-z':
-							group.euler.x = Math.PI / 2;
+							group.rotation.x = Math.PI / 2;
 							break;
 
 					}
 
 					tiles.group.position
 						.copy( sphere.center )
-						.applyEuler( group.euler )
+						.applyEuler( group.rotation )
 						.multiplyScalar( - 1 );
 
 				}
+
+			}
+
+			if ( ! recenter ) {
+
+				tiles.group.position.setScalar( 0 );
 
 			}
 
@@ -92,6 +107,21 @@ export class ReorientationPlugin {
 	}
 
 	transformLatLonHeightToOrigin( lat, lon, height = 0 ) {
+
+		const { group, ellipsoid } = this.tiles;
+
+		// get ENU orientation and position
+		ellipsoid.getEastNorthUpFrame( lat, lon, matrix );
+		ellipsoid.getCartographicToPosition( lat, lon, height, vec );
+
+		// adjust the group matrix
+		group.matrix
+			.makeRotationX( Math.PI / 2 )
+			.premultiply( matrix )
+			.setPosition( vec )
+			.invert()
+			.decompose( group.position, group.quaternion, group.scale );
+		group.updateMatrixWorld();
 
 	}
 
