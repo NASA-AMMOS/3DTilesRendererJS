@@ -3,7 +3,7 @@ import { useThree, useFrame } from '@react-three/fiber';
 import { EnvironmentControls as EnvironmentControlsImpl } from '../three/controls/EnvironmentControls.js';
 import { GlobeControls as GlobeControlsImpl } from '../three/controls/GlobeControls.js';
 import { useShallowOptions } from './utilities/useOptions.jsx';
-import { TilesRendererContext } from './TilesRendererComponent.jsx';
+import { TilesRendererContext } from './TilesRenderer.jsx';
 
 const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 

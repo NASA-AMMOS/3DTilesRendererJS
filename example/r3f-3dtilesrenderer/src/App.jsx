@@ -6,7 +6,7 @@ import {
   CameraControls,
   Environment
 } from '@react-three/drei'
-import { TilesPluginComponent, TilesRendererComponent } from '../../../src/r3f/TilesRendererComponent';
+import { TilesPlugin, TilesRenderer } from '../../../src/r3f/TilesRenderer';
 
 import DemoTiles from './DemoTiles'
 import { TilesFadePlugin } from '../../src/plugins/fade/TilesFadePlugin';
@@ -42,10 +42,10 @@ function App() {
       <Canvas>
         <ambientLight  intensity={2} />
         <directionalLight color="white" position={[0, 5, 5]} intensity={1} />
-        <Environment 
-          preset="sunset" 
-          background={true} 
-          backgroundBlurriness={0.9} 
+        <Environment
+          preset="sunset"
+          background={true}
+          backgroundBlurriness={0.9}
           environmentIntensity={10}
         />
         <CameraControls distance={10} polarAngle={Math.PI / 2 - 0.3} azimuthAngle={-0.4} />
@@ -56,9 +56,9 @@ function App() {
 
           {/* <DemoTiles /> */}
 					<group rotation-x={ Math.PI / 2 }>
-						<TilesRendererComponent url={ URL } lruCache-minSize={ 0 }>
-							<TilesPluginComponent plugin={ TilesFadePlugin } fadeDuration={500} />
-						</TilesRendererComponent>
+						<TilesRenderer url={ URL } lruCache-minSize={ 0 }>
+							<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={500} />
+						</TilesRenderer>
 					</group>
       </Canvas>
     </div>

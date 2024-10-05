@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, forwardRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
-import { TilesRenderer } from '../three/TilesRenderer.js';
-import { WGS84_ELLIPSOID } from '../three/math/GeoConstants.js';
+import { TilesRenderer as TilesRendererImpl } from '../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions, getDepsArray } from './utilities/useOptions.jsx';
 
 // context for accessing the tile set
@@ -60,7 +59,7 @@ export function EastNorthUpFrame( props ) {
 }
 
 // component for registering a plugin
-export const TilesPluginComponent = forwardRef( ( props, ref ) => {
+export const TilesPlugin = forwardRef( ( props, ref ) => {
 
 	const { plugin, args, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
@@ -122,7 +121,7 @@ export const TilesPluginComponent = forwardRef( ( props, ref ) => {
 } );
 
 // component for adding a TilesRenderer to the scene
-export const TilesRendererComponent = forwardRef( ( props, ref ) => {
+export const TilesRenderer = forwardRef( ( props, ref ) => {
 
 	const { url, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
@@ -131,7 +130,7 @@ export const TilesRendererComponent = forwardRef( ( props, ref ) => {
 	// create the tile set
 	useEffect( () => {
 
-		const tiles = new TilesRenderer( url );
+		const tiles = new TilesRendererImpl( url );
 		tiles.addEventListener( 'load-content', () => invalidate() );
 		setTiles( tiles );
 

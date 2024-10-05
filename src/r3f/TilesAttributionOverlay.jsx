@@ -1,9 +1,8 @@
 import { useContext, useState, useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
-import { TilesRendererContext } from './TilesRendererComponent.jsx';
+import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
-export function TilesAttributionComponent( { children, style, ...rest } ) {
+export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	const tiles = useContext( TilesRendererContext );
 	const [ attributions, setAttributions ] = useState( [] );
@@ -70,8 +69,6 @@ export function TilesAttributionComponent( { children, style, ...rest } ) {
 
 	} );
 
-
-	console.log( attributions )
 	return (
 		<CanvasDOMOverlay
 			style={ {
