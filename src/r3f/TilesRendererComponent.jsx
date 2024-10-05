@@ -41,19 +41,19 @@ export function EastNorthUpFrame( props ) {
 		children,
 	} = props;
 	const ref = useRef();
+	const tiles = useContext( TilesRendererContext );
 	useEffect( () => {
 
 		const group = ref.current;
 		group.matrix.identity()
 
-		// TODO: use the ellipsoid associated with the tiles renderer
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
-		WGS84_ELLIPSOID.getCartographicToPosition( lat, lon, height, _vec );
+		tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
+		tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
 		group.matrix.setPosition( _vec );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
 
-	}, [ lat, lon, height, az, el, roll ] );
+	}, [ tiles, lat, lon, height, az, el, roll ] );
 
 	return <group ref={ ref }>{ children }</group>;
 
