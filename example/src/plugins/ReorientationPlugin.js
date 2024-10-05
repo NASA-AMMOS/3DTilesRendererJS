@@ -8,7 +8,7 @@ export class ReorientationPlugin {
 	constructor( options ) {
 
 		options = {
-			up: 'z',
+			up: '+z',
 			recenter: true,
 
 			lat: null,
