@@ -5,8 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- `ReorientationPlugin` and `GLTFExtensionsPlugin`.
+- Ability to remove plugins via the `unregisterPlugin` function.
+
 ### Changed
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
+- Added `getAttributions` function, deprecated `getCreditsString` function.
 
 ## [0.3.38] - 2024.09.30
 ### Added
