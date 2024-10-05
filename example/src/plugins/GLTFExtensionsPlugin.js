@@ -26,12 +26,13 @@ export class GLTFExtensionsPlugin {
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
 		this._regex = /(gltf|glb)$/g;
+		this._loader = null;
 
 	}
 
 	init( tiles ) {
 
-		const loader = new GLTFLoader();
+		const loader = new GLTFLoader( tiles.manager );
 		if ( this.dracoLoader ) {
 
 			loader.setDRACOLoader( this.dracoLoader );
@@ -61,6 +62,7 @@ export class GLTFExtensionsPlugin {
 
 		tiles.manager.setHandler( this._regex, loader );
 		this.tiles = tiles;
+		this._loader = loader;
 
 	}
 
