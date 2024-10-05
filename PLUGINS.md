@@ -464,7 +464,7 @@ Whether to fade the root tile objects in.
 
 Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry.
 
-### constructor
+### .constructor
 
 ```js
 constructor( options : Object )
@@ -496,7 +496,7 @@ Available options are as follows:
 
 Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
 
-### constructor
+### .constructor
 
 ```js
 constructor( options : Object )
@@ -521,6 +521,14 @@ Available options are as follows:
 	recenter: true,
 }
 ```
+
+### transformLatLonHeightToOrigin
+
+```js
+transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
+```
+
+Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
 # Controls
 

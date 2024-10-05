@@ -1,8 +1,8 @@
-import { Matrix4, Sphere, Vector3 } from 'three';
+import { Sphere, Vector3 } from 'three';
+import { OBJECT_FRAME } from '../../../src/index.js';
 
 const sphere = /* @__PURE__ */ new Sphere();
 const vec = /* @__PURE__ */ new Vector3();
-const matrix = /* @__PURE__ */ new Matrix4();
 export class ReorientationPlugin {
 
 	constructor( options ) {
@@ -109,14 +109,12 @@ export class ReorientationPlugin {
 
 		const { group, ellipsoid } = this.tiles;
 
-		// get ENU orientation and position
-		ellipsoid.getEastNorthUpFrame( lat, lon, matrix );
+		// get ENU orientation (Z facing north and X facing west) and position
+		ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, group.matrix, OBJECT_FRAME );
 		ellipsoid.getCartographicToPosition( lat, lon, height, vec );
 
 		// adjust the group matrix
 		group.matrix
-			.makeRotationX( Math.PI / 2 )
-			.premultiply( matrix )
 			.setPosition( vec )
 			.invert()
 			.decompose( group.position, group.quaternion, group.scale );
