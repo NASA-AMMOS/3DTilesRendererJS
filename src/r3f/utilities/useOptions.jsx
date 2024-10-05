@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 // returns a sorted dependency array from an object
-function getDepsArray( object ) {
+export function getDepsArray( object ) {
 
 	if ( ! object ) {
 
@@ -64,7 +64,8 @@ function setValueAtPath( object, path, value ) {
 
 }
 
-export function useOptions( target, options ) {
+// TODO: should we save previous state? Basic r3f components don't and it keeps handles to memory around
+export function useDeepOptions( target, options ) {
 
 	// assign options recursively
 	useEffect( () => {
@@ -114,5 +115,42 @@ export function useOptions( target, options ) {
 		};
 
 	}, [ target, ...getDepsArray( options ) ] );
+
+}
+
+export function useShallowOptions( instance, options ) {
+
+	// assigns any provided options to the plugin
+	useEffect( () => {
+
+		if ( instance === null ) {
+
+			return;
+
+		}
+
+		const previousState = {};
+		for ( const key in options ) {
+
+			if ( key in instance ) {
+
+				previousState[ key ] = instance[ key ];
+				instance[ key ] = options[ key ];
+
+			}
+
+		}
+
+		return () => {
+
+			for ( const key in previousState ) {
+
+				instance[ key ] = previousState[ key ];
+
+			}
+
+		};
+
+	}, [ instance, ...getDepsArray( options ) ] );
 
 }

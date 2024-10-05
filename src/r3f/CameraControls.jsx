@@ -2,7 +2,7 @@ import { forwardRef, useMemo, useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { EnvironmentControls as EnvironmentControlsImpl } from '../three/controls/EnvironmentControls.js';
 import { GlobeControls as GlobeControlsImpl } from '../three/controls/GlobeControls.js';
-import { useOptions } from './utilities/useOptions.jsx';
+import { useShallowOptions } from './utilities/useOptions.jsx';
 import { TilesRendererContext } from './TilesRendererComponent.jsx';
 
 const ControlsBaseComponent = forwardRef( ( props, ref ) => {
@@ -64,7 +64,7 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 
 	}, [ controls, appliedDomElement ] );
 
-	useOptions( controls, rest );
+	useShallowOptions( controls, rest );
 
 } );
 
