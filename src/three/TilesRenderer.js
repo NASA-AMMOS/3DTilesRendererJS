@@ -452,8 +452,6 @@ export class TilesRenderer extends TilesRendererBase {
 		tempMat2.copy( group.matrixWorld ).invert();
 
 		tempVector.setFromMatrixScale( tempMat2 );
-		const invScale = tempVector.x;
-
 		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
 			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
@@ -496,8 +494,6 @@ export class TilesRenderer extends TilesRendererBase {
 				info.sseDenominator = ( 2 / projection[ 5 ] ) / resolution.height;
 
 			}
-
-			info.invScale = invScale;
 
 			// get frustum in group root frame
 			tempMat.copy( group.matrixWorld );
@@ -943,22 +939,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// transform camera position into local frame of the tile bounding box
 			const info = cameraInfo[ i ];
-			const invScale = info.invScale;
-
 			let error;
 			if ( info.isOrthographic ) {
 
 				const pixelSize = info.pixelSize;
-				error = tile.geometricError / ( pixelSize * invScale );
+				error = tile.geometricError / pixelSize;
 
 			} else {
 
 				const distance = boundingVolume.distanceToPoint( info.position );
-				const scaledDistance = distance * invScale;
 				const sseDenominator = info.sseDenominator;
-				error = tile.geometricError / ( scaledDistance * sseDenominator );
+				error = tile.geometricError / ( distance * sseDenominator );
 
-				minDistance = Math.min( minDistance, scaledDistance );
+				minDistance = Math.min( minDistance, distance );
 
 			}
 
