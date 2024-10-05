@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, forwardRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer } from '../three/TilesRenderer.js';
@@ -123,7 +123,7 @@ export function EastNorthUpFrame( props ) {
 }
 
 // component for registering a plugin
-export function TilesPluginComponent( props ) {
+export const TilesPluginComponent = forwardRef( ( props, ref ) => {
 
 	const { plugin, args, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
@@ -181,10 +181,29 @@ export function TilesPluginComponent( props ) {
 
 	}, [ instance, ...getDepsArray( options ) ] );
 
-}
+	// assign ref
+	useEffect( () => {
+
+		if ( ref ) {
+
+			if ( ref instanceof Function ) {
+
+				ref( instance );
+
+			} else {
+
+				ref.current = instance;
+
+			}
+
+		}
+
+	}, [ instance, ref ] );
+
+} );
 
 // component for adding a TilesRenderer to the scene
-export function TilesRendererComponent( props ) {
+export const TilesRendererComponent = forwardRef( ( props, ref ) => {
 
 	const { url, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
@@ -231,6 +250,25 @@ export function TilesRendererComponent( props ) {
 		};
 
 	}, [ tiles, camera ] );
+
+	// assign ref
+	useEffect( () => {
+
+		if ( ref ) {
+
+			if ( ref instanceof Function ) {
+
+				ref( tiles );
+
+			} else {
+
+				ref.current = tiles;
+
+			}
+
+		}
+
+	}, [ tiles, ref ] );
 
 	// assign options recursively
 	useEffect( () => {
@@ -290,4 +328,4 @@ export function TilesRendererComponent( props ) {
 		</TilesRendererContext.Provider>
 	</>;
 
-}
+} );
