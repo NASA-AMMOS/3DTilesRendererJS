@@ -399,6 +399,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
+			// TODO: we have the potential to fire change multiple times per frame - should we debounce?
 			this.dispatchEvent( _changeEvent );
 
 		};
