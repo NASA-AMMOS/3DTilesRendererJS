@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
 - Added `getAttributions` function, deprecated `getCreditsString` function.
 
+### Fixed
+- Case where tile set scale was incorrectly used when computed screenspace error.
+
 ## [0.3.38] - 2024.09.30
 ### Added
 - BatchTable: Added "getPropertyArray".
