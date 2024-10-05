@@ -1,5 +1,5 @@
-import { forwardRef, useMemo, useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
+import { forwardRef, useMemo, useEffect, useContext } from 'react';
+import { useThree, useFrame } from '@react-three/fiber';
 import { EnvironmentControls as EnvironmentControlsImpl } from '../three/controls/EnvironmentControls.js';
 import { GlobeControls as GlobeControlsImpl } from '../three/controls/GlobeControls.js';
 import { useShallowOptions } from './utilities/useOptions.jsx';
@@ -8,7 +8,7 @@ import { TilesRendererContext } from './TilesRendererComponent.jsx';
 const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 
 	const { controlsConstructor, domElement, scene, camera, tilesRenderer, ...rest } = props;
-	const [ defaultCamera, gl, defaultScene ] = useThree( state => [ state.camera, state.gl, state.scene ] );
+	const [ defaultCamera, gl, defaultScene, invalidate ] = useThree( state => [ state.camera, state.gl, state.scene, state.invalidate ] );
 	const defaultTilesRenderer = useContext( TilesRendererContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
@@ -34,6 +34,22 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 		}
 
 	}, [ controls, ref ] );
+
+	useEffect( () => {
+
+		const callback = e => invalidate();
+		controls.addEventListener( 'change', callback );
+		controls.addEventListener( 'start', callback );
+		controls.addEventListener( 'end', callback );
+		return () => {
+
+			controls.removeEventListener( 'change', callback );
+			controls.removeEventListener( 'start', callback );
+			controls.removeEventListener( 'end', callback );
+
+		};
+
+	}, [ controls ] );
 
 	useEffect( () => {
 
@@ -63,6 +79,12 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 		};
 
 	}, [ controls, appliedDomElement ] );
+
+	useFrame( () => {
+
+		controls.update();
+
+	} );
 
 	useShallowOptions( controls, rest );
 

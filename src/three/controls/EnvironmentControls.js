@@ -399,6 +399,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
+			this.dispatchEvent( _changeEvent );
+
 		};
 
 		const pointerupCallback = e => {
