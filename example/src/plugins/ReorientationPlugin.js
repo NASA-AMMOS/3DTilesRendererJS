@@ -19,7 +19,7 @@ export class ReorientationPlugin {
 
 		this.tiles = null;
 
-		this.up = options.up.toLowerCase().replace(/\s+/, '' );
+		this.up = options.up.toLowerCase().replace( /\s+/, '' );
 		this.lat = options.lat;
 		this.lon = options.lon;
 		this.height = options.height;
@@ -55,7 +55,6 @@ export class ReorientationPlugin {
 
 				} else {
 
-					console.log('GOT HERE', up)
 					// lastly fall back to orienting the up direction to +Y
 					const group = tiles.group;
 					group.rotation.set( 0, 0, 0 );

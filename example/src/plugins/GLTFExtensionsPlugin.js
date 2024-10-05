@@ -25,7 +25,7 @@ export class GLTFExtensionsPlugin {
 
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
-		this._regex = /(gltf|glb)$/g;
+		this._regex = /\.(gltf|glb)$/g;
 		this._loader = null;
 
 	}
@@ -60,7 +60,7 @@ export class GLTFExtensionsPlugin {
 
 		this.plugins.forEach( plugin => loader.register( plugin ) );
 
-		tiles.manager.setHandler( this._regex, loader );
+		tiles.manager.addHandler( this._regex, loader );
 		this.tiles = tiles;
 		this._loader = loader;
 
