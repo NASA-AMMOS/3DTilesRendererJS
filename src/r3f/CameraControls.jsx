@@ -15,7 +15,7 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 	const appliedDomElement = domElement || gl.domElement || null;
 	const appliedTilesRenderer = tilesRenderer || defaultTilesRenderer || null;
 
-	const controls = useMemo( () => new EnvironmentControlsImpl(), [ controlsConstructor ] );
+	const controls = useMemo( () => new controlsConstructor(), [ controlsConstructor ] );
 
 	useEffect( () => {
 
