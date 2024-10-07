@@ -20,7 +20,7 @@ export class GLTFExtensionsPlugin {
 		this.tiles = null;
 
 		this.metadata = options.metadata;
-		this.rtc = options.rtcPlugin;
+		this.rtc = options.rtc;
 		this.plugins = options.plugins;
 
 		this.dracoLoader = options.dracoLoader;

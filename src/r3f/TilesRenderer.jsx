@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, forwardRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, forwardRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../three/TilesRenderer.js';
@@ -63,14 +63,13 @@ export const TilesPlugin = forwardRef( ( props, ref ) => {
 
 	const { plugin, args, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
-	const [ instance, setInstance ] = useState( null );
 
-	// creates the instance
-	useEffect( () => {
+	// create the instance
+	const instance = useMemo( () => {
 
 		if ( tiles === null ) {
 
-			return;
+			return null;
 
 		}
 
@@ -85,16 +84,13 @@ export const TilesPlugin = forwardRef( ( props, ref ) => {
 
 		}
 
-		tiles.registerPlugin( instance );
-		setInstance( instance );
+		return instance;
 
-		return () => {
+		// we must create a new plugin if the tile set has changed
+	}, [ tiles, plugin ] );
 
-			tiles.unregisterPlugin( instance );
-
-		};
-
-	}, [ plugin, tiles, ...getDepsArray( args ) ] );
+	// assigns any provided options to the plugin
+	useShallowOptions( instance, options );
 
 	// assign ref
 	useEffect( () => {
@@ -115,8 +111,23 @@ export const TilesPlugin = forwardRef( ( props, ref ) => {
 
 	}, [ instance, ref ] );
 
-	// assigns any provided options to the plugin
-	useShallowOptions( instance, options );
+	// register the instance
+	useEffect( () => {
+
+		if ( tiles === null ) {
+
+			return;
+
+		}
+
+		tiles.registerPlugin( instance );
+		return () => {
+
+			tiles.unregisterPlugin( instance );
+
+		};
+
+	}, [ plugin, tiles, ...getDepsArray( args ) ] );
 
 } );
 
