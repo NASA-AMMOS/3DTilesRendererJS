@@ -16,15 +16,16 @@ function getSubtreeCoordinates( tile, parentTile ) {
 
 	if ( ! parentTile ) {
 
-		return [ 0, 0 ];
+		return [ 0, 0, 0 ];
 
 	}
 
 	const x = 2 * parentTile.__x + ( tile.__subtreeIdx % 2 );
 	const y = 2 * parentTile.__y + ( Math.floor( tile.__subtreeIdx / 2 ) % 2 );
-	//TODO z coord
+	const z = tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ?
+		2 * parentTile.__z + (Math.floor(tile.__subtreeIdx / 4) % 2) : 0;
 
-	return [ x, y ];
+	return [ x, y, z ];
 
 }
 
@@ -39,7 +40,7 @@ class SubtreeTile {
 
 		// Index inside the tree
 		this.__subtreeIdx = childMortonIndex;
-		[ this.__x, this.__y ] = getSubtreeCoordinates( this, parentTile );
+		[ this.__x, this.__y, this.__z ] = getSubtreeCoordinates( this, parentTile );
 
 	}
 
@@ -52,7 +53,7 @@ class SubtreeTile {
 
 		// Index inside the tree
 		copyTile.__subtreeIdx = tile.__subtreeIdx;
-		[ copyTile.__x, copyTile.__y ] = [ tile.__x, tile.__y ];
+		[ copyTile.__x, copyTile.__y , copyTile.__z ] = [ tile.__x, tile.__y, tile.__z ];
 
 		copyTile.boundingVolume = tile.boundingVolume;
 		copyTile.geometricError = tile.geometricError;
@@ -740,6 +741,17 @@ export class SUBTREELoader extends LoaderBase {
 					region[ k ] -= 2 * Math.PI;
 
 				}
+
+			}
+
+			if (tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE') {
+
+				let minZ = region[4];
+				let maxZ = region[5];
+
+				const sizeZ = (maxZ - minZ) / Math.pow( 2, tile.__level );
+				region[4] += tile.__z * sizeZ;
+				region[5] = region[4] + sizeZ;
 
 			}
 
