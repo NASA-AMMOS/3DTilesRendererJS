@@ -284,6 +284,11 @@ export class EnvironmentControls extends EventDispatcher {
 			const hit = this._raycast( raycaster );
 			if ( hit ) {
 
+				this.pivotPoint.copy( hit.point );
+				this.pivotMesh.position.copy( hit.point );
+				this.pivotMesh.updateMatrixWorld();
+				this.scene.add( this.pivotMesh );
+
 				// if two fingers, right click, or shift click are being used then we trigger
 				// a rotation action to begin
 				if (
@@ -294,20 +299,16 @@ export class EnvironmentControls extends EventDispatcher {
 
 					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
 
-					this.pivotPoint.copy( hit.point );
-					this.pivotMesh.position.copy( hit.point );
-					this.pivotMesh.updateMatrixWorld();
-					this.scene.add( this.pivotMesh );
-
 				} else if ( pointerTracker.isLeftClicked() ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
 					this.setState( DRAG );
-					this.pivotPoint.copy( hit.point );
 
-					this.pivotMesh.position.copy( hit.point );
-					this.pivotMesh.updateMatrixWorld();
-					this.scene.add( this.pivotMesh );
+				} else if ( pointerTracker.isMiddleClicked() ) {
+
+					this.setState( ZOOM );
+					this.zoomDirectionSet = false;
+					this._updateZoomDirection();
 
 				}
 
@@ -396,6 +397,17 @@ export class EnvironmentControls extends EventDispatcher {
 					} );
 
 				}
+
+			}
+
+			// Add mouse click handle in pointerMove
+			if ( this.state === ZOOM ) {
+
+				const delta = e.movementY;
+				// use LOG to scale the scroll delta and hopefully normalize them across platforms
+				const deltaSign = Math.sign( delta );
+				const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
+				this.zoomDelta -= 3 * deltaSign * normalizedDelta * 1;
 
 			}
 
