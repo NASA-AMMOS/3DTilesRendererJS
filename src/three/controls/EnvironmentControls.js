@@ -403,11 +403,7 @@ export class EnvironmentControls extends EventDispatcher {
 			// Add mouse click handle in pointerMove
 			if ( this.state === ZOOM ) {
 
-				const delta = e.movementY;
-				// use LOG to scale the scroll delta and hopefully normalize them across platforms
-				const deltaSign = Math.sign( delta );
-				const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
-				this.zoomDelta -= 3 * deltaSign * normalizedDelta * 1;
+				this.zoomDelta -= 2 * e.movementY;
 
 			}
 
