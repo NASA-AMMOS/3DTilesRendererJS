@@ -76,13 +76,11 @@ function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, i
     </GoogleTiles>
 
     <TransformControls mode='translate' >
-      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId}>
+      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={ionAssetId}>
         <TilesAttributionOverlay /> 
         <CommonPlugins 
           {...commonPluginsProps}
-          lat={40.70439150614563} 
-          lon={-74.00952717236795} 
-          // key={ionAssetId}
+          lat={null} // set lat=null to center tileset automatically rather than on user-specified latlon
         />
       </CesiumIonTiles> 
     </TransformControls>
@@ -164,14 +162,20 @@ function CommonPlugins ( props ) {
       //   dracoLoader, ktxLoader:ktx2Loader
       // }}
     />
-    {props.lat && props.lon && props.height && 
-    <TilesPlugin plugin={ ReorientationPlugin } 
-      lat={props.lat * Math.PI / 180}
-      lon={props.lon * Math.PI / 180}
-      height={props.height}
-      up={'+z'}
-      recenter={true}
-    /> }
+    {
+      (props.lat && props.lon) ? 
+      <TilesPlugin plugin={ ReorientationPlugin } 
+        lat={props.lat * Math.PI / 180}
+        lon={props.lon * Math.PI / 180}
+        height={props.height || 100}
+        up={'+z'}
+        recenter={true}
+      /> : 
+      // If no lat/lon passed as props, recenter automatically
+      <TilesPlugin plugin={ ReorientationPlugin } 
+        recenter={true}
+      />  
+    }
     {props.fade && <TilesPlugin plugin={ TilesFadePlugin } fadeDuration={props.fadeDuration || 500} />}
     {props.debug && <TilesPlugin plugin={ DebugTilesPlugin } 
       colorMode={NONE} // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
@@ -195,7 +199,7 @@ const URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/mast
 function App() {
   const { debug, fade, lonlat, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
     debug: false, 
-    fade: true, 
+    fade: {value: true, disabled: true}, 
     lonlat: [12.455084, 41.902149], // Vatican, Roma
     // lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
     'Standard': folder(
@@ -209,10 +213,32 @@ function App() {
     CesiumIon: folder(
       {
         ionAccessToken: import.meta.env.VITE_IONACCESSTOKEN,
-        ionAssetId: '57587'
+        // ionAssetId: '57587'
+        ionAssetId:{
+          value: '57587',
+          options: { 
+            'Cesium Moon Terrain': '2684829',
+            'Vexcel 3D Cities Data for Sydney': '2644092',
+            'Google Photorealistic': '2275207',
+            'Aerometrex San Francisco High Resolution 3D Model with Street Level Enhanced 3D (Non-Commercial Trial)': '1415196',
+            'Nearmap Boston Photogrammetry': '354759',
+            'Aerometrex Denver High Resolution 3D Model with Street Level Enhanced 3D (Non-Commercial Trial)': '354307',
+            'Cesium OSM Buildings': '96188',
+            'New York City 3D Buildings': '75343',
+            'Melbourne Photogrammetry': '69380',
+            'Vricon 3D Surface Model - Washington State': '57590',
+            'Vricon 3D Surface Model - Washington DC': '57588',
+            'Vricon 3D Surface Model - New York City': '57587',
+            'Melbourne Point Cloud': '43978',
+            'Vricon 3D Surface Model - Tehran': '29335',
+            'Vricon 3D Surface Model - Damascus': '29332',
+            'Vricon 3D Surface Model - Caracas': '29331',
+            'Montreal Point Cloud': '28945',
+          },
+        },
       },
     ), // 2684829, 2644092, 2275207, 1415196, 354759, 354307, 96188, 75343, 69380, 57590, 57588, 57587, 43978, 29335, 29332, 29331, 28945
-  })
+  });
 
   const commonPluginsProps = {
     lat: lonlat[1], 
