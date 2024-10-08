@@ -40,7 +40,7 @@ const ktx2Loader = new KTX2Loader().setTranscoderPath(`${THREE_PATH_LIBS}/basis/
 function GoogleTiles( { children, apiToken, ...rest } ) {
   return (
     <TilesRenderer { ...rest }>
-      <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+      <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } useRecommendedSettings={true} />
       { children }
     </TilesRenderer>
   );

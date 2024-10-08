@@ -52,9 +52,15 @@ export class GoogleCloudAuthPlugin {
 
 	init( tiles ) {
 
-		if ( tiles.url === null ) {
+		if ( tiles == null ) {
 
-			tiles.url = 'https://tile.googleapis.com/v1/3dtiles/root.json';
+			return;
+
+		}
+
+		if ( tiles.rootURL == null ) {
+
+			tiles.rootURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';
 
 		}
 
