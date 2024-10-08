@@ -55,13 +55,14 @@ function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
   );
 }
 
-function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId}) {
+function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath}) {
+  const tilesetUrl = (tilesetPath && tilesetPath.length > 0) ? tilesetPath : URL
   return <>
     {/* Example provided below for different TilesRenderer-s */}
     {/* Default TilesRenderer with provided url */}
     <group rotation-x={ Math.PI / 2 }>
-      <TilesRenderer url={ URL } lruCache-minSize={ 0 }>
-        <TilesPlugin plugin={ TilesFadePlugin } fadeDuration={500} />
+      <TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
+        <CommonPlugins {...commonPluginsProps} />
       </TilesRenderer>
     </group> 
 
@@ -172,11 +173,6 @@ function CommonPlugins ( props ) {
       colorMode={NONE} // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
       displayBoxBounds={true}
       displayRegionBounds={false}
-      // displaySphereBounds={false}
-      // maxDebugDepth={- 1}
-      // maxDebugDistance={- 1}
-      // maxDebugError={- 1}
-      // customColorCallback={null}
     />}
     <TilesPlugin plugin={ TileCompressionPlugin } 
       generateNormals={false}
@@ -193,15 +189,13 @@ const URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/mast
 
 
 function App() {
-
-
-  const { debug, fade, tilesRendererType, lonlat, googleApiKey, ionAccessToken, ionAssetId, resetTransform, tilesetPath } = useControls({ 
+  const { debug, fade, lonlat, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
     debug: false, 
-    fade: true, // WARNING: error on unmount tiles.unregisterPlugin is not a function 
-    resetTransform: false,
-    lonlat: [12.455084, 41.902149],
+    fade: true, 
+    // lonlat: [12.455084, 41.902149], // Vatican, Roma
+    lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
     'Standard': folder(
-      {tilesetPath: '3dtiles tileset path'},
+      {tilesetPath: ''},
     ),
     'Google 3D Cities': folder(
       {
@@ -212,18 +206,9 @@ function App() {
       {
         ionAccessToken: import.meta.env.VITE_IONACCESSTOKEN,
         ionAssetId: '57587'
-        // ionAssetId: {
-        //   value: 57587,
-        //   min: 0,
-        //   max: 10e6,
-        //   step: 1,
-        // }
       },
     ), // 2684829, 2644092, 2275207, 1415196, 354759, 354307, 96188, 75343, 69380, 57590, 57588, 57587, 43978, 29335, 29332, 29331, 28945
   })
-
-  const lon = lonlat[0];
-  const lat = lonlat[1];
 
   const commonPluginsProps = {
     lat: lonlat[1], 
@@ -244,7 +229,7 @@ function App() {
     }}>
       <Canvas>
         <StagingComponent />
-        <TilesRenderersDemo {...{commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId}} />
+        <TilesRenderersDemo {...{commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath}} />
         <Additional3dObjects {...{commonPluginsProps}} />
       </Canvas>
     </div>
