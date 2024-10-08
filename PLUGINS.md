@@ -328,6 +328,12 @@ constructor( { accessToken : String, autoRefreshToken = false : Boolean } )
 ```
 
 Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
+This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`: 
+```js
+tiles.parseQueue.maxJobs = 10;
+tiles.downloadQueue.maxJobs = 30;
+tiles.errorTarget = 40;
+```
 
 ## CesiumIonAuthPlugin
 

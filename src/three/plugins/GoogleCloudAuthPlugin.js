@@ -24,11 +24,12 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false } ) {
+	constructor( { apiToken, autoRefreshToken = false, useRecommendedSettings = true } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
+		this.useRecommendedSettings = useRecommendedSettings;
 		this.sessionToken = null;
 		this.tiles = null;
 
@@ -52,6 +53,14 @@ export class GoogleCloudAuthPlugin {
 
 		}
 
+		if ( this.useRecommendedSettings ) {
+
+			// This plugin changes below values to be more efficient for the photorealistic tiles
+			tiles.parseQueue.maxJobs = 10;
+			tiles.downloadQueue.maxJobs = 30;
+			tiles.errorTarget = 40;
+
+		}
 
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {
