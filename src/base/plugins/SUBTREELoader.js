@@ -23,7 +23,7 @@ function getSubtreeCoordinates( tile, parentTile ) {
 	const x = 2 * parentTile.__x + ( tile.__subtreeIdx % 2 );
 	const y = 2 * parentTile.__y + ( Math.floor( tile.__subtreeIdx / 2 ) % 2 );
 	const z = tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ?
-		2 * parentTile.__z + (Math.floor(tile.__subtreeIdx / 4) % 2) : 0;
+		2 * parentTile.__z + ( Math.floor( tile.__subtreeIdx / 4 ) % 2 ) : 0;
 
 	return [ x, y, z ];
 
@@ -53,7 +53,7 @@ class SubtreeTile {
 
 		// Index inside the tree
 		copyTile.__subtreeIdx = tile.__subtreeIdx;
-		[ copyTile.__x, copyTile.__y , copyTile.__z ] = [ tile.__x, tile.__y, tile.__z ];
+		[ copyTile.__x, copyTile.__y, copyTile.__z ] = [ tile.__x, tile.__y, tile.__z ];
 
 		copyTile.boundingVolume = tile.boundingVolume;
 		copyTile.geometricError = tile.geometricError;
@@ -744,14 +744,14 @@ export class SUBTREELoader extends LoaderBase {
 
 			}
 
-			if (tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE') {
+			if ( tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ) {
 
-				let minZ = region[4];
-				let maxZ = region[5];
+				const minZ = region[ 4 ];
+				const maxZ = region[ 5 ];
 
-				const sizeZ = (maxZ - minZ) / Math.pow( 2, tile.__level );
-				region[4] += tile.__z * sizeZ;
-				region[5] = region[4] + sizeZ;
+				const sizeZ = ( maxZ - minZ ) / Math.pow( 2, tile.__level );
+				region[ 4 ] += tile.__z * sizeZ;
+				region[ 5 ] = region[ 4 ] + sizeZ;
 
 			}
 
@@ -769,7 +769,7 @@ export class SUBTREELoader extends LoaderBase {
 			const box = [ ...this.rootTile.boundingVolume.box ];
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
-			const axisNumber = 	tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ? 3 : 2 ;
+			const axisNumber = 	tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ? 3 : 2;
 
 
 			for ( let i = 0; i < axisNumber; i ++ ) {
@@ -785,7 +785,7 @@ export class SUBTREELoader extends LoaderBase {
 				const z = box[ 3 + i * 3 + 2 ];
 
 				// adjust the center by the x and y axes
-				const axisOffset = i === 0 ? tile.__x : (i === 1 ? tile.__y : tile.__z);
+				const axisOffset = i === 0 ? tile.__x : ( i === 1 ? tile.__y : tile.__z );
 				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + axisOffset );
 				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + axisOffset );
 				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
