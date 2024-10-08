@@ -16,7 +16,7 @@ function isOctreeSubdivision( tile ) {
 
 function getBoundsDivider( tile ) {
 
-	return isOctreeSubdivision(tile) ? 8 : 4;
+	return isOctreeSubdivision( tile ) ? 8 : 4;
 
 }
 
@@ -31,7 +31,7 @@ function getSubtreeCoordinates( tile, parentTile ) {
 
 	const x = 2 * parentTile.__x + ( tile.__subtreeIdx % 2 );
 	const y = 2 * parentTile.__y + ( Math.floor( tile.__subtreeIdx / 2 ) % 2 );
-	const z = isOctreeSubdivision(tile) ?
+	const z = isOctreeSubdivision( tile ) ?
 		2 * parentTile.__z + ( Math.floor( tile.__subtreeIdx / 4 ) % 2 ) : 0;
 
 	return [ x, y, z ];
@@ -754,7 +754,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 			//Also divide the height in the case of octree.
-			if ( isOctreeSubdivision(tile) ) {
+			if ( isOctreeSubdivision( tile ) ) {
 
 				const minZ = region[ 4 ];
 				const maxZ = region[ 5 ];
@@ -780,7 +780,7 @@ export class SUBTREELoader extends LoaderBase {
 			const box = [ ...this.rootTile.boundingVolume.box ];
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
-			const axisNumber = isOctreeSubdivision(tile) ? 3 : 2;
+			const axisNumber = isOctreeSubdivision( tile ) ? 3 : 2;
 
 
 			for ( let i = 0; i < axisNumber; i ++ ) {
