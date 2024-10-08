@@ -753,7 +753,7 @@ export class SUBTREELoader extends LoaderBase {
 
 			}
 
-			//	Also divide the height in the case of octree.
+			//Also divide the height in the case of octree.
 			if ( isOctreeSubdivision(tile) ) {
 
 				const minZ = region[ 4 ];
@@ -761,8 +761,8 @@ export class SUBTREELoader extends LoaderBase {
 
 				const sizeZ = ( maxZ - minZ ) / Math.pow( 2, tile.__level );
 
-				region[ 4 ] = minZ + sizeZ * tile.__z;
-				region[ 5 ] = minZ + sizeZ * ( tile.__z + 1 );
+				region[ 4 ] = minZ + sizeZ * tile.__z;	//minimum height
+				region[ 5 ] = minZ + sizeZ * ( tile.__z + 1 );	// maximum height
 
 			}
 
