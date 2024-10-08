@@ -421,6 +421,13 @@ export function toggleTiles( tile, renderer ) {
 
 			}
 
+		} else {
+
+			// if the tile was used last frame but not this one then there's potential for the tile
+			// to not have been visited during the traversal, meaning it hasn't been reset and has
+			// stale values. This ensures the values are not stale.
+			resetFrameState( tile, renderer );
+
 		}
 
 		// If the active or visible state changed then call the functions.
