@@ -769,10 +769,10 @@ export class SUBTREELoader extends LoaderBase {
 			const box = [ ...this.rootTile.boundingVolume.box ];
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
+			const axisNumber = 	tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE' ? 3 : 2 ;
 
-			// Iterate over the three obb axes. Skip the z axis since octree
-			// implicit bounds are not supported.
-			for ( let i = 0; i < 2; i ++ ) {
+
+			for ( let i = 0; i < axisNumber; i ++ ) {
 
 				// scale the bounds axes
 				box[ 3 + i * 3 + 0 ] *= scale;
@@ -785,7 +785,7 @@ export class SUBTREELoader extends LoaderBase {
 				const z = box[ 3 + i * 3 + 2 ];
 
 				// adjust the center by the x and y axes
-				const axisOffset = i === 0 ? tile.__x : tile.__y;
+				const axisOffset = i === 0 ? tile.__x : (i === 1 ? tile.__y : tile.__z);
 				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + axisOffset );
 				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + axisOffset );
 				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
