@@ -24,12 +24,13 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false, useRecommendedSettings = true } ) {
+	constructor( { apiToken, autoRefreshToken = false, logoUrl = null, useRecommendedSettings = true } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
 		this.useRecommendedSettings = useRecommendedSettings;
+		this.logoUrl = logoUrl;
 		this.sessionToken = null;
 		this.tiles = null;
 
@@ -37,6 +38,10 @@ export class GoogleCloudAuthPlugin {
 		this._visibilityChangeCallback = null;
 		this._tokenRefreshPromise = null;
 		this._attributionsManager = new GoogleAttributionsManager();
+		this._logoAttribution = {
+			value: '',
+			type: 'image',
+		};
 		this._attribution = {
 			value: '',
 			type: 'string',
@@ -100,11 +105,19 @@ export class GoogleCloudAuthPlugin {
 
 	getAttributions( target ) {
 
-		target.push( {
-			value: this._attributionsManager.toString(),
-			type: 'string',
-			required: true,
-		} );
+		if ( this._attribution.value ) {
+
+			if ( this.logoUrl ) {
+
+				this._logoAttribution.value = this.logoUrl;
+				target.push( this._logoAttribution );
+
+			}
+
+			this._attribution.value = this._attributionsManager.toString();
+			target.push( this._attribution );
+
+		}
 
 	}
 
