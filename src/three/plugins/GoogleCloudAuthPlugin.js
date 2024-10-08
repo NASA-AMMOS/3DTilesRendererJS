@@ -24,13 +24,14 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false } ) {
+	constructor( { apiToken, autoRefreshToken = false, endpointURL = null } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
 		this.sessionToken = null;
 		this.tiles = null;
+		this.endpointURL = endpointURL;
 
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
@@ -45,6 +46,15 @@ export class GoogleCloudAuthPlugin {
 	}
 
 	init( tiles ) {
+
+		if ( this.endpointURL === null ) {
+
+			this.endpointURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';
+
+		}
+
+		tiles.rootURL = this.endpointURL;
+
 
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {

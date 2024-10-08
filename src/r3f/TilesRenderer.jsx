@@ -42,6 +42,12 @@ export function EastNorthUpFrame( props ) {
 	const ref = useRef();
 	const tiles = useContext( TilesRendererContext );
 	useEffect( () => {
+		
+		if ( tiles === null ) {
+
+			return;
+
+		}
 
 		const group = ref.current;
 		group.matrix.identity()
@@ -165,6 +171,12 @@ export const TilesRenderer = forwardRef( ( props, ref ) => {
 	// add the camera
 	useEffect( () => {
 
+		if ( tiles === null ) {
+
+			return;
+
+		}
+		
 		if ( tiles === null ) {
 
 			return;

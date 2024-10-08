@@ -57,7 +57,7 @@ function R3F3DTilesRenderer(props) {
     }
 
     if (props.rendererPlugins) 
-      for (plugin of props.rendererPlugins) 
+      for (const plugin of props.rendererPlugins) 
         tilesRenderer.registerPlugin( plugin );
 
     // Set tile loader manager

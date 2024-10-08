@@ -334,7 +334,7 @@ Takes the Google Cloud access token. If `autoRefreshToken` is set to true then t
 ### constructor
 
 ```js
-constructor( { accessToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
+constructor( { apiToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
 ```
 
 Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after an hour.
