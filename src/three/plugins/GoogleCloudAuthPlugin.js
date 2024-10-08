@@ -24,14 +24,13 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false, endpointURL = null } ) {
+	constructor( { apiToken, autoRefreshToken = false } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
 		this.sessionToken = null;
 		this.tiles = null;
-		this.endpointURL = endpointURL;
 
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
@@ -47,17 +46,17 @@ export class GoogleCloudAuthPlugin {
 
 	init( tiles ) {
 
-		if ( this.endpointURL === null ) {
+		if ( tiles.url === null ) {
 
-			this.endpointURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';
+			tiles.url = 'https://tile.googleapis.com/v1/3dtiles/root.json';
 
 		}
-
-		tiles.rootURL = this.endpointURL;
 
 
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {
+
+			// console.log( 'tile', tile.cached.metadata.asset.copyright, tile, tile.cached.metadata.asset, tile.cached.metadata );
 
 			// the first tile set loaded will be the root
 			this.sessionToken = getSessionToken( tileSet.root );
@@ -69,7 +68,10 @@ export class GoogleCloudAuthPlugin {
 
 		this._visibilityChangeCallback = ( { tile, visible } ) => {
 
+
 			const copyright = tile.cached.metadata.asset.copyright || '';
+
+
 			if ( visible ) {
 
 				this._attributionsManager.addAttributions( copyright );
@@ -89,11 +91,11 @@ export class GoogleCloudAuthPlugin {
 
 	getAttributions( target ) {
 
-		if ( this._attribution.value ) {
-
-			target.push( this._attribution );
-
-		}
+		target.push( {
+			value: this._attributionsManager.toString(),
+			type: 'string',
+			required: true,
+		} );
 
 	}
 

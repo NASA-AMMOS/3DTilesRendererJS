@@ -62,7 +62,9 @@
   "peerDependencies": {
     "three": ">=0.123.0"
   },
-  "dependencies": {
+  "optionalDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "@react-three/fiber": "^8.17.9"
   }
 }

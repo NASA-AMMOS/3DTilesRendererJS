@@ -49,38 +49,42 @@ function GoogleTiles( { children, apiToken, ...rest } ) {
 function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
   return (
     <TilesRenderer { ...rest }>
-      <TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken : true  } } />
+      <TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken : true  } } key={assetId} />
       { children }
     </TilesRenderer>
   );
 }
 
 function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath}) {
-  const tilesetUrl = (tilesetPath && tilesetPath.length > 0) ? tilesetPath : URL
+  // Assume if a tileset url is provided, it is georefed. Otherwise, fallback to nasa local tileset
+  const georefed_tileset = tilesetPath && tilesetPath.length > 0
+  const tilesetUrl = georefed_tileset ? tilesetPath : URL
   return <>
     {/* Example provided below for different TilesRenderer-s */}
     {/* Default TilesRenderer with provided url */}
-    <group rotation-x={ Math.PI / 2 }>
+    <group rotation-x={ georefed_tileset ? 0 : Math.PI / 2 }>
       <TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
-        <CommonPlugins {...commonPluginsProps} />
+        {georefed_tileset && <CommonPlugins {...commonPluginsProps} /> }
       </TilesRenderer>
     </group> 
 
     {/* Google and CesiumIon Tiles Renderers */}
-    <TilesAttributionOverlay />
     {/* can pass url, endpointUrl, or nothing which will fallback to google endpointUrl={'https://tile.googleapis.com/v1/3dtiles/root.json'}> */}
     <GoogleTiles apiToken={googleApiKey} >
+      <TilesAttributionOverlay />
       <CommonPlugins {...commonPluginsProps} />
     </GoogleTiles>
 
     <TransformControls mode='translate' >
       <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId}>
+        <TilesAttributionOverlay /> 
         <CommonPlugins 
           {...commonPluginsProps}
           lat={40.70439150614563} 
           lon={-74.00952717236795} 
+          // key={ionAssetId}
         />
-      </CesiumIonTiles>
+      </CesiumIonTiles> 
     </TransformControls>
   </>
 }
@@ -112,7 +116,7 @@ function StagingComponent() {
     <PerspectiveCamera
       // ref={refCamera}
       makeDefault
-      near={0.1}
+      near={1}
       far={15000}
       fov={60}
     /> 
@@ -192,8 +196,8 @@ function App() {
   const { debug, fade, lonlat, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
     debug: false, 
     fade: true, 
-    // lonlat: [12.455084, 41.902149], // Vatican, Roma
-    lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
+    lonlat: [12.455084, 41.902149], // Vatican, Roma
+    // lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
     'Standard': folder(
       {tilesetPath: ''},
     ),

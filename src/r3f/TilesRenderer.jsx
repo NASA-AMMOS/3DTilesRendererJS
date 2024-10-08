@@ -176,12 +176,6 @@ export const TilesRenderer = forwardRef( ( props, ref ) => {
 			return;
 
 		}
-		
-		if ( tiles === null ) {
-
-			return;
-
-		}
 
 		tiles.setCamera( camera );
 		return () => {
