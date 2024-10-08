@@ -76,7 +76,6 @@ export class GoogleCloudAuthPlugin {
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {
 
-			// console.log( 'tile', tile.cached.metadata.asset.copyright, tile, tile.cached.metadata.asset, tile.cached.metadata );
 
 			// the first tile set loaded will be the root
 			this.sessionToken = getSessionToken( tileSet.root );
@@ -111,19 +110,15 @@ export class GoogleCloudAuthPlugin {
 
 	getAttributions( target ) {
 
-		if ( this._attribution.value ) {
+		if ( this.logoUrl ) {
 
-			if ( this.logoUrl ) {
-
-				this._logoAttribution.value = this.logoUrl;
-				target.push( this._logoAttribution );
-
-			}
-
-			this._attribution.value = this._attributionsManager.toString();
-			target.push( this._attribution );
+			this._logoAttribution.value = this.logoUrl;
+			target.push( this._logoAttribution );
 
 		}
+
+		this._attribution.value = this._attributionsManager.toString();
+		target.push( this._attribution );
 
 	}
 
