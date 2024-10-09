@@ -1,7 +1,11 @@
 {
 	"root": true,
 	"parserOptions": {
-        "ecmaVersion": 2020
+        "ecmaVersion": 2020,
+		"sourceType": "module",
+		"ecmaFeatures": {
+			"jsx": true
+		}
 	},
 
 	"globals": {
@@ -12,8 +16,8 @@
 		"jest/globals": true
 	},
 
-	"plugins": [ "jest" ],
-	"extends": [ "eslint:recommended", "plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
+	"plugins": [ "jest", "react", "react-hooks" ],
+	"extends": [ "eslint:recommended", "plugin:jest/recommended", "plugin:react/recommended", "plugin:react-hooks/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
 
 	"rules": {
 		"no-inner-declarations": "off",
