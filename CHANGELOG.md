@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `ReorientationPlugin` and `GLTFExtensionsPlugin`.
 - Ability to remove plugins via the `unregisterPlugin` function.
+- Support for octree subdivision to implicit tiling.
 
 ### Changed
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
