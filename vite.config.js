@@ -1,11 +1,13 @@
 import { searchForWorkspaceRoot } from 'vite';
 import fs from 'fs';
+import react from '@vitejs/plugin-react';
 
 export default {
 
 	root: './example/',
 	base: '',
 	build: {
+		minify: false,
 		outDir: './bundle/',
 		rollupOptions: {
 			input: fs
@@ -21,6 +23,11 @@ export default {
 				searchForWorkspaceRoot( process.cwd() ),
 			],
 		},
-	}
+	},
+	plugins: [
+		react( {
+			jsxRuntime: 'automatic',
+		} )
+	]
 
 };
