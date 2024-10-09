@@ -254,4 +254,10 @@ export class PointerTracker {
 
 	}
 
+	isMiddleClicked() {
+
+		return Boolean( this.buttons & 4 );
+
+	}
+
 }
