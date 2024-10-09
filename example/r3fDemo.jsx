@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 // R3F 3DTilesRenderer, controls and attribution imports
 import { 
@@ -29,7 +30,7 @@ import {
   GizmoHelper, 
   GizmoViewport
 } from '@react-three/drei'
-// import { useControls, folder } from 'leva'
+import { useControls, folder } from 'leva'
 
 // Loaders
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
@@ -62,7 +63,7 @@ function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
 function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath}) {
   // Assume if a tileset url is provided, it is georefed. Otherwise, fallback to nasa local tileset
   const georefed_tileset = tilesetPath && tilesetPath.length > 0
-  const tilesetUrl = georefed_tileset ? tilesetPath : URL
+  const tilesetUrl = georefed_tileset ? tilesetPath : URL; 
   return <>
     {/* Example provided below for different TilesRenderer-s */}
     {/* Default TilesRenderer with provided url */}
@@ -74,13 +75,13 @@ function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, i
 
     {/* Google and CesiumIon Tiles Renderers */}
     {/* can pass url, endpointUrl, or nothing which will fallback to google endpointUrl={'https://tile.googleapis.com/v1/3dtiles/root.json'}> */}
-    <GoogleTiles apiToken={googleApiKey} >
+    <GoogleTiles apiToken={googleApiKey} key={`${googleApiKey}-${commonPluginsProps.lat}-${commonPluginsProps.lon}-${commonPluginsProps.height}`} >
       <TilesAttributionOverlay />
       <CommonPlugins {...commonPluginsProps} />
     </GoogleTiles>
 
     <TransformControls mode='translate' >
-      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={ionAssetId}>
+      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={`${ionAssetId}-${ionAccessToken}-${commonPluginsProps.lat}-${commonPluginsProps.lon}-${commonPluginsProps.height}`}>
         <TilesAttributionOverlay /> 
         <CommonPlugins 
           {...commonPluginsProps}
@@ -174,6 +175,7 @@ function CommonPlugins ( props ) {
         height={props.height || 100}
         up={'+z'}
         recenter={true}
+        key={`${props.lat}-${props.lon}-${props.height}`}
       /> : 
       // If no lat/lon passed as props, recenter automatically
       <TilesPlugin plugin={ ReorientationPlugin } 
@@ -199,25 +201,39 @@ function CommonPlugins ( props ) {
 
 const URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
+const googleApiKey_ = import.meta.env.VITE_IONACCESSTOKEN || 'put-your-api-key-here' 
+const ionAccessToken_ = import.meta.env.VITE_IONACCESSTOKEN || 'put-your-api-key-here'
 
-function App() {
-  /*
-  const { debug, fade, lonlat, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
+
+function App() { 
+	// // GUI
+	// const gui = new GUI();
+	// gui.width = 300;
+	// gui.add( params, 'debug' );
+	// gui.add( params, 'fade' );
+	// gui.add( params, 'lonlat' );
+	// gui.add( params, 'googleApiKey' );
+	// gui.add( params, 'ionAccessToken' );
+	// gui.add( params, 'ionAssetId' );
+	// gui.add( params, 'tilesetPath' );
+	// gui.open();
+
+
+  const { debug, fade, lon_lat_height, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
     debug: false, 
-    fade: {value: true, disabled: true}, 
-    lonlat: [12.455084, 41.902149], // Vatican, Roma
-    // lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
+    // lon_lat_height: [12.455084, 41.902149, 90], // Roma Vatican
+    lon_lat_height: [2.2968877321156422, 48.857756887115485, 90], // Paris Eiffel
     'Standard': folder(
       {tilesetPath: ''},
     ),
     'Google 3D Cities': folder(
       {
-        googleApiKey: import.meta.env.VITE_GOOGLEAPIKEY
+        googleApiKey: googleApiKey_ // import.meta.env.VITE_GOOGLEAPIKEY
       },
     ),
     CesiumIon: folder(
       {
-        ionAccessToken: import.meta.env.VITE_IONACCESSTOKEN,
+        ionAccessToken: ionAccessToken_, // import.meta.env.VITE_IONACCESSTOKEN,
         // ionAssetId: '57587'
         ionAssetId:{
           value: '57587',
@@ -242,25 +258,13 @@ function App() {
           },
         },
       },
-    ), // 2684829, 2644092, 2275207, 1415196, 354759, 354307, 96188, 75343, 69380, 57590, 57588, 57587, 43978, 29335, 29332, 29331, 28945
-  });
-  */
-  const { debug, fade, lonlat, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = { 
-    debug: false, 
-    fade: true, 
-    lonlat: [12.455084, 41.902149], // Vatican, Roma
-    // lonlat: [2.2968877321156422, 48.857756887115485], // Paris Eiffel
-    tilesetPath: '', 
-    googleApiKey: import.meta.env.VITE_GOOGLEAPIKEY, 
-    ionAccessToken: import.meta.env.VITE_IONACCESSTOKEN,
-    ionAssetId: '57587',
-  }
-
+    ),
+  })
 
   const commonPluginsProps = {
-    lat: lonlat[1], 
-    lon: lonlat[0], 
-    height: 90, 
+    lat: lon_lat_height[1], 
+    lon: lon_lat_height[0], 
+    height: lon_lat_height[2], 
     fade: fade, 
     debug: debug, 
   }
