@@ -6,25 +6,35 @@ import { LoaderBase } from '../loaders/LoaderBase.js';
 import { readMagicBytes } from '../../utilities/readMagicBytes.js';
 import { arrayToString } from '../../utilities/arrayToString.js';
 
-function getBoundsDivider( tile ) {
 
-	return tile.implicitTiling.subdivisionScheme === 'QUADTREE' ? 4 : 8;
+
+function isOctreeSubdivision( tile ) {
+
+	return tile.__implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE';
 
 }
+
+function getBoundsDivider( tile ) {
+
+	return isOctreeSubdivision( tile ) ? 8 : 4;
+
+}
+
 
 function getSubtreeCoordinates( tile, parentTile ) {
 
 	if ( ! parentTile ) {
 
-		return [ 0, 0 ];
+		return [ 0, 0, 0 ];
 
 	}
 
 	const x = 2 * parentTile.__x + ( tile.__subtreeIdx % 2 );
 	const y = 2 * parentTile.__y + ( Math.floor( tile.__subtreeIdx / 2 ) % 2 );
-	//TODO z coord
+	const z = isOctreeSubdivision( tile ) ?
+		2 * parentTile.__z + ( Math.floor( tile.__subtreeIdx / 4 ) % 2 ) : 0;
 
-	return [ x, y ];
+	return [ x, y, z ];
 
 }
 
@@ -39,7 +49,7 @@ class SubtreeTile {
 
 		// Index inside the tree
 		this.__subtreeIdx = childMortonIndex;
-		[ this.__x, this.__y ] = getSubtreeCoordinates( this, parentTile );
+		[ this.__x, this.__y, this.__z ] = getSubtreeCoordinates( this, parentTile );
 
 	}
 
@@ -52,7 +62,7 @@ class SubtreeTile {
 
 		// Index inside the tree
 		copyTile.__subtreeIdx = tile.__subtreeIdx;
-		[ copyTile.__x, copyTile.__y ] = [ tile.__x, tile.__y ];
+		[ copyTile.__x, copyTile.__y, copyTile.__z ] = [ tile.__x, tile.__y, tile.__z ];
 
 		copyTile.boundingVolume = tile.boundingVolume;
 		copyTile.geometricError = tile.geometricError;
@@ -743,6 +753,19 @@ export class SUBTREELoader extends LoaderBase {
 
 			}
 
+			//Also divide the height in the case of octree.
+			if ( isOctreeSubdivision( tile ) ) {
+
+				const minZ = region[ 4 ];
+				const maxZ = region[ 5 ];
+
+				const sizeZ = ( maxZ - minZ ) / Math.pow( 2, tile.__level );
+
+				region[ 4 ] = minZ + sizeZ * tile.__z;	//minimum height
+				region[ 5 ] = minZ + sizeZ * ( tile.__z + 1 );	// maximum height
+
+			}
+
 			boundingVolume.region = region;
 
 		}
@@ -757,10 +780,10 @@ export class SUBTREELoader extends LoaderBase {
 			const box = [ ...this.rootTile.boundingVolume.box ];
 			const cellSteps = 2 ** tile.__level - 1;
 			const scale = Math.pow( 2, - tile.__level );
+			const axisNumber = isOctreeSubdivision( tile ) ? 3 : 2;
 
-			// Iterate over the three obb axes. Skip the z axis since octree
-			// implicit bounds are not supported.
-			for ( let i = 0; i < 2; i ++ ) {
+
+			for ( let i = 0; i < axisNumber; i ++ ) {
 
 				// scale the bounds axes
 				box[ 3 + i * 3 + 0 ] *= scale;
@@ -772,8 +795,8 @@ export class SUBTREELoader extends LoaderBase {
 				const y = box[ 3 + i * 3 + 1 ];
 				const z = box[ 3 + i * 3 + 2 ];
 
-				// adjust the center by the x and y axes
-				const axisOffset = i === 0 ? tile.__x : tile.__y;
+				// adjust the center by the x, y and z axes
+				const axisOffset = i === 0 ? tile.__x : ( i === 1 ? tile.__y : tile.__z );
 				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + axisOffset );
 				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + axisOffset );
 				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
