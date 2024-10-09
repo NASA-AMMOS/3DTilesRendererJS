@@ -44,7 +44,7 @@ export function EastNorthUpFrame( props ) {
 	useEffect( () => {
 
 		const group = ref.current;
-		group.matrix.identity()
+		group.matrix.identity();
 
 		tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
 		tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
