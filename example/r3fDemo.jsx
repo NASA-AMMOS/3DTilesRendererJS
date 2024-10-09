@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 // R3F 3DTilesRenderer, controls and attribution imports
 import { 
@@ -206,17 +205,6 @@ const ionAccessToken_ = import.meta.env.VITE_IONACCESSTOKEN || 'put-your-api-key
 
 
 function App() { 
-	// // GUI
-	// const gui = new GUI();
-	// gui.width = 300;
-	// gui.add( params, 'debug' );
-	// gui.add( params, 'fade' );
-	// gui.add( params, 'lonlat' );
-	// gui.add( params, 'googleApiKey' );
-	// gui.add( params, 'ionAccessToken' );
-	// gui.add( params, 'ionAssetId' );
-	// gui.add( params, 'tilesetPath' );
-	// gui.open();
 
 
   const { debug, fade, lon_lat_height, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
