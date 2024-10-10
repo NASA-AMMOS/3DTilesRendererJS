@@ -72,17 +72,18 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 					_freeIds.forEach( id => this.deleteGeometry( id ) );
 					_freeIds.length = 0;
 
+					// TODO: optimize is breaking this?
 					this.optimize();
 					resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
 				} catch {
 
-					const index = geometry.index;
-					const position = geometry.attributes.position;
+					const index = this.geometry.index;
+					const position = this.geometry.attributes.position;
 					const addIndexCount = index ? Math.ceil( expandPercent * index.count ) : - 1;
-					const newIndexCount = index ? Math.max( addIndexCount, reservedIndexRange ) + index.count : - 1;
+					const newIndexCount = index ? Math.max( addIndexCount, reservedIndexRange, geometry.index.count ) + index.count + 1 : - 1;
 					const addVertexCount = Math.ceil( expandPercent * position.count );
-					const newVertexCount = Math.max( addVertexCount, reservedVertexRange ) + position.count;
+					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, geometry.attributes.position.count ) + position.count + 1;
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
 					resultId = super.addGeometry( geometry, vertexCount, indexCount );

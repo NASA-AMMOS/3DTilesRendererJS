@@ -21,9 +21,9 @@ export class BatchedTilesPlugin {
 		}
 
 		options = {
-			instanceCount: 1000,
-			vertexCount: 2500,
-			indexCount: 2500,
+			instanceCount: 1,
+			vertexCount: 1250,
+			indexCount: 1250,
 			expandPercent: 0.25,
 			maxExpansionCount: 3, // TODO
 			material: new MeshBasicMaterial(),
