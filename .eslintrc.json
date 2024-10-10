@@ -16,10 +16,9 @@
 		"jest/globals": true
 	},
 
-	"plugins": [ "jest", "react", "react-hooks", "import" ],
+	"plugins": [ "jest", "react", "react-hooks" ],
 	"extends": [
 		"eslint:recommended",
-		"plugin:import/recommended",
 		"plugin:jest/recommended",
 		"plugin:react/recommended",
 		"plugin:react-hooks/recommended",
@@ -35,10 +34,7 @@
 		"no-unused-vars": [ 1, { "args": "none" } ],
 		"no-throw-literal": [ "error" ],
 		"prefer-const": [ "error", { "destructuring": "any", "ignoreReadBeforeAssign": false } ],
-		"quotes": [ "error", "single" ],
-
-		"import/no-unresolved": "off",
-		"import/extensions": [ "error", "ignorePackages" ]
+		"quotes": [ "error", "single" ]
 	},
 	"overrides": [ {
 		"files": [ "*.ts" ],
@@ -47,9 +43,7 @@
 		"rules": {
 			"no-unused-vars": [ "error", { "args": "none" } ],
 			"indent": [ "error", "tab" ],
-			"no-dupe-class-members": "off",
-			"import/named": "off",
-			"import/extensions": "off"
+			"no-dupe-class-members": "off"
 		}
 	}, {
 		"files": [ "*.jsx" ],
