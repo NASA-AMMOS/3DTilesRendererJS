@@ -1,5 +1,6 @@
 import { searchForWorkspaceRoot } from 'vite';
 import fs from 'fs';
+import react from '@vitejs/plugin-react';
 
 export default {
 
@@ -21,6 +22,9 @@ export default {
 				searchForWorkspaceRoot( process.cwd() ),
 			],
 		},
-	}
+	},
+	plugins: [
+		react( )
+	]
 
 };
