@@ -80,7 +80,7 @@ function TilesRenderersDemo({commonPluginsProps, googleApiKey, ionAccessToken, i
     </GoogleTiles>
 
     <TransformControls mode='translate' >
-      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={`${ionAssetId}-${ionAccessToken}-${commonPluginsProps.lat}-${commonPluginsProps.lon}-${commonPluginsProps.height}`}>
+      <CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={`${ionAssetId}-${ionAccessToken}`}>
         <TilesAttributionOverlay /> 
         <CommonPlugins 
           {...commonPluginsProps}
@@ -210,8 +210,11 @@ const onChangeLeva = (value, path, context) => {
 const levaParams = {
   // onChange: 'onChangeLeva', // cannot be applied at object level 
   debug: false, 
-  // lon_lat_height: [12.455084, 41.902149, 90], // Roma Vatican
-  lon_lat_height: [2.2968877321156422, 48.857756887115485, 90], // Paris Eiffel
+  lon_lat_height: {
+    value: [2.2968877321156422, 48.857756887115485, 90], // Paris Eiffel
+    // value: [12.455084, 41.902149, 90], // Roma Vatican
+    step: 0.001,
+  },
   'Standard': folder(
     {tilesetPath: ''},
   ),
@@ -220,7 +223,7 @@ const levaParams = {
       googleApiKey: {
         value: googleApiKey_,
         onChange: onChangeLeva
-      },  // import.meta.env.VITE_GOOGLEAPIKEY
+      }, 
     },
   ),
   CesiumIon: folder(
@@ -228,7 +231,7 @@ const levaParams = {
       ionAccessToken: {
         value: ionAccessToken_,
         onChange: onChangeLeva
-      },  // import.meta.env.VITE_GOOGLEAPIKEY
+      }, 
       // ionAssetId: '57587'
       ionAssetId:{
         value: '57587',
