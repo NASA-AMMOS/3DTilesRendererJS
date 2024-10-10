@@ -36,7 +36,8 @@
 		"plugins": [ "@typescript-eslint" ],
 		"rules": {
 			"no-unused-vars": [ "error", { "args": "none" } ],
-			"indent": [ "error", "tab" ]
+			"indent": [ "error", "tab" ],
+			"no-dupe-class-members": "off"
 		}
 	}, {
 		"files": [ "*.jsx" ],
