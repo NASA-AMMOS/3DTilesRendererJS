@@ -1,4 +1,4 @@
-import { BatchedMesh, WebGLArrayRenderTarget, MeshBasicMaterial } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 
@@ -32,7 +32,7 @@ export class BatchTilesPlugin {
 		this.expandPercent = expandPercent;
 		this.renderer = renderer;
 
-		this.mesh = null;
+		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
 		this._onLoadModel = null;
@@ -69,11 +69,13 @@ export class BatchTilesPlugin {
 				const mesh = meshes[ 0 ];
 				this.initFrom( mesh );
 
-				const { geometry, material } = mesh;
-				const geometryId = this.mesh.addGeometry( geometry );
-				const instanceId = this.addInstance( geometryId );
+				const { geometry, batchedMesh, material, expandPercent } = mesh;
+
+				batchedMesh.expandPercent = expandPercent;
+				const geometryId = batchedMesh.addGeometry( geometry );
+				const instanceId = batchedMesh.addInstance( geometryId );
 				mesh.setMatrixAt( instanceId, mesh.matrixWorld );
-				if ( isColorWhite( material.color ) ) {
+				if ( ! isColorWhite( material.color ) ) {
 
 					mesh.setColorAt( material.color );
 
@@ -93,7 +95,7 @@ export class BatchTilesPlugin {
 		this._onDisposeModel = ( { tile } ) => {
 
 			const { geometryId, instanceId } = this._tileMap.get( tile );
-			this.mesh.deleteInstance( instanceId );
+			this.batchedMesh.deleteInstance( instanceId );
 
 			this._tileMap.delete( tile );
 			this._instanceIdMap.delete( instanceId );
@@ -109,7 +111,7 @@ export class BatchTilesPlugin {
 
 	initFrom( target ) {
 
-		if ( this.mesh !== null ) {
+		if ( this.batchedMesh !== null ) {
 
 			return;
 
@@ -123,10 +125,15 @@ export class BatchTilesPlugin {
 
 		// init the render target
 		const map = target.material.map;
-		const arrayTarget = new WebGLArrayRenderTarget( target.width, target.height, instanceCount, {
-			colorSpace: map.colorSpace,
-			generateMipmaps: map.generateMipmaps,
-		} );
+		const arrayTarget = new WebGLArrayRenderTarget(
+			target.width,
+			target.height,
+			instanceCount,
+			{
+				colorSpace: map.colorSpace,
+				generateMipmaps: map.generateMipmaps,
+			},
+		);
 
 		// init the material
 		material.texture_array_uniform = { value: arrayTarget.texture };
@@ -134,52 +141,55 @@ export class BatchTilesPlugin {
 		material.needsUpdate = true;
 
 		this.arrayTarget = arrayTarget;
-		this.mesh = mesh;
-
-	}
-
-	addInstance( geomId ) {
-
-		const { mesh, renderer, material, expandPercent, arrayTarget } = this;
-		mesh.expandPercent = expandPercent;
-		const id = mesh.addInstance( geomId );
-
-		if ( mesh.maxInstanceCount >= arrayTarget.depth ) {
-
-			const newTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, mesh.maxInstanceCount, {
-				colorSpace: arrayTarget.texture.colorSpace,
-				generateMipmaps: arrayTarget.texture.generateMipmaps,
-			} );
-
-			renderer.copyTextureToTexture3D( arrayTarget.texture, newTarget.texture );
-			arrayTarget.dispose();
-
-			material.texture_array_uniform.value = newTarget.texture;
-			this.arrayTarget = newTarget;
-
-		}
-
-		return id;
+		this.batchedMesh = mesh;
 
 	}
 
 	renderTextureToLayer( texture, layer ) {
 
+		this.expandArrayTargetIfNeeded();
+
 		const { renderer } = this;
-		const ogRenderTarget = renderer.getRenderTarget();
+		const currentRenderTarget = renderer.getRenderTarget();
 		renderer.setRenderTarget( this.arrayTarget, layer );
 		quad.material.map = texture;
 		quad.render( renderer );
-		renderer.setRenderTarget( ogRenderTarget );
+		renderer.setRenderTarget( currentRenderTarget );
 
+		quad.material.map = null;
 		texture.dispose();
+
+	}
+
+	expandArrayTargetIfNeeded() {
+
+		const { batchedMesh, arrayTarget, renderer, material } = this;
+		if ( batchedMesh.maxInstanceCount >= arrayTarget.depth ) {
+
+			const newArrayTarget = new WebGLArrayRenderTarget(
+				arrayTarget.width,
+				arrayTarget.height,
+				batchedMesh.maxInstanceCount,
+				{
+					colorSpace: arrayTarget.texture.colorSpace,
+					generateMipmaps: arrayTarget.texture.generateMipmaps,
+				},
+			);
+
+			renderer.copyTextureToTexture3D( arrayTarget.texture, newArrayTarget.texture );
+			arrayTarget.dispose();
+
+			material.texture_array_uniform.value = newArrayTarget.texture;
+			this.arrayTarget = newArrayTarget;
+
+		}
 
 	}
 
 	dispose() {
 
-		this.mesh.geometry.dispose();
-		this.mesh.material.dispose();
+		this.batchedMesh.geometry.dispose();
+		this.batchedMesh.material.dispose();
 		this.arrayTarget.dispose();
 
 		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
