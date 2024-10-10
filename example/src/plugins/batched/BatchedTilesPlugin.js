@@ -36,7 +36,7 @@ export class BatchedTilesPlugin {
 		this.instanceCount = options.instanceCount;
 		this.vertexCount = options.vertexCount;
 		this.indexCount = options.indexCount;
-		this.material = options.material;
+		this.material = options.material.clone();
 		this.expandPercent = options.expandPercent;
 		this.renderer = options.renderer;
 

@@ -106,6 +106,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 		}
 
+		this._currentInstances ++;
 		return super.addInstance( geometryId );
 
 	}
