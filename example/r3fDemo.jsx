@@ -200,54 +200,66 @@ function CommonPlugins ( props ) {
 
 const URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
-const googleApiKey_ = import.meta.env.VITE_IONACCESSTOKEN || 'put-your-api-key-here' 
-const ionAccessToken_ = import.meta.env.VITE_IONACCESSTOKEN || 'put-your-api-key-here'
+const googleApiKey_ = localStorage.getItem( 'Google3DCities.googleApiKey' ) || 'put-your-api-key-here' 
+const ionAccessToken_ = localStorage.getItem( 'CesiumIon.ionAccessToken' ) || 'put-your-api-key-here'
 
+const onChangeLeva = (value, path, context) => {
+  localStorage.setItem( path, value );
+}
+
+const levaParams = {
+  // onChange: 'onChangeLeva', // cannot be applied at object level 
+  debug: false, 
+  // lon_lat_height: [12.455084, 41.902149, 90], // Roma Vatican
+  lon_lat_height: [2.2968877321156422, 48.857756887115485, 90], // Paris Eiffel
+  'Standard': folder(
+    {tilesetPath: ''},
+  ),
+  'Google3DCities': folder(
+    {
+      googleApiKey: {
+        value: googleApiKey_,
+        onChange: onChangeLeva
+      },  // import.meta.env.VITE_GOOGLEAPIKEY
+    },
+  ),
+  CesiumIon: folder(
+    {
+      ionAccessToken: {
+        value: ionAccessToken_,
+        onChange: onChangeLeva
+      },  // import.meta.env.VITE_GOOGLEAPIKEY
+      // ionAssetId: '57587'
+      ionAssetId:{
+        value: '57587',
+        options: { 
+          'Aerometrex - San Francisco': '1415196',
+          'Aerometrex - Denver': '354307',
+          'Vexcel - Sydney': '2644092',
+          'Nearmap - Boston': '354759',
+          'Vricon - New York City': '57587',
+          'Vricon - Washington DC': '57588',
+          'Vricon - Damascus': '29332',
+          'Vricon - Tehran': '29335',
+          'Vricon - Caracas': '29331',
+          'Vricon - Washington State': '57590',
+          'Google Photorealistic': '2275207',
+          'Cesium Moon Terrain': '2684829',
+          'Cesium OSM Buildings': '96188',
+          'New York City 3D Buildings': '75343',
+          'Melbourne Photogrammetry': '69380',
+          'Melbourne Point Cloud': '43978',
+          'Montreal Point Cloud': '28945',
+        },
+      },
+    },
+  ),
+}
 
 function App() { 
 
-
-  const { debug, fade, lon_lat_height, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls({ 
-    debug: false, 
-    // lon_lat_height: [12.455084, 41.902149, 90], // Roma Vatican
-    lon_lat_height: [2.2968877321156422, 48.857756887115485, 90], // Paris Eiffel
-    'Standard': folder(
-      {tilesetPath: ''},
-    ),
-    'Google 3D Cities': folder(
-      {
-        googleApiKey: googleApiKey_ // import.meta.env.VITE_GOOGLEAPIKEY
-      },
-    ),
-    CesiumIon: folder(
-      {
-        ionAccessToken: ionAccessToken_, // import.meta.env.VITE_IONACCESSTOKEN,
-        // ionAssetId: '57587'
-        ionAssetId:{
-          value: '57587',
-          options: { 
-            'Aerometrex - San Francisco': '1415196',
-            'Aerometrex - Denver': '354307',
-            'Vexcel - Sydney': '2644092',
-            'Nearmap - Boston': '354759',
-            'Vricon - New York City': '57587',
-            'Vricon - Washington DC': '57588',
-            'Vricon - Damascus': '29332',
-            'Vricon - Tehran': '29335',
-            'Vricon - Caracas': '29331',
-            'Vricon - Washington State': '57590',
-            'Google Photorealistic': '2275207',
-            'Cesium Moon Terrain': '2684829',
-            'Cesium OSM Buildings': '96188',
-            'New York City 3D Buildings': '75343',
-            'Melbourne Photogrammetry': '69380',
-            'Melbourne Point Cloud': '43978',
-            'Montreal Point Cloud': '28945',
-          },
-        },
-      },
-    ),
-  })
+  const { debug, fade, lon_lat_height, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } = useControls(levaParams)
+  // const lon_lat_height = [2.2968877321156422, 48.857756887115485, 90]
 
   const commonPluginsProps = {
     lat: lon_lat_height[1], 
