@@ -1,4 +1,4 @@
-import { WebGLArrayRenderTarget, MeshBasicMaterial } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { Group } from 'three';
@@ -13,6 +13,12 @@ const quad = new FullScreenQuad( new MeshBasicMaterial() );
 export class BatchedTilesPlugin {
 
 	constructor( options = {} ) {
+
+		if ( parseInt( REVISION ) < 170 ) {
+
+			throw new Error( 'BatchedTilesPlugin: Three.js revision 170 or higher required.' );
+
+		}
 
 		options = {
 			instanceCount: 1000,
