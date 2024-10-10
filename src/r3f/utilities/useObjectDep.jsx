@@ -1,19 +1,23 @@
 import { useRef } from 'react';
 
+// checks if the first level of object key-values are equal
 function areObjectsEqual( a, b ) {
 
+	// early check for equivalence
 	if ( a === b ) {
 
 		return true;
 
 	}
 
-	if ( Boolean( a ) !== Boolean( b ) ) {
+	// if either of the objects is null or undefined, then perform a simple check
+	if ( ! a || ! b ) {
 
-		return false;
+		return a === b;
 
 	}
 
+	// check all keys and values in the first object
 	for ( const key in a ) {
 
 		if ( a[ key ] !== b[ key ] ) {
@@ -24,6 +28,7 @@ function areObjectsEqual( a, b ) {
 
 	}
 
+	// check all keys and values in the second object
 	for ( const key in b ) {
 
 		if ( a[ key ] !== b[ key ] ) {
