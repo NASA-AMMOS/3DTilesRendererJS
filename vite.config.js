@@ -7,7 +7,6 @@ export default {
 	root: './example/',
 	base: '',
 	build: {
-		minify: false,
 		outDir: './bundle/',
 		rollupOptions: {
 			input: fs
@@ -25,9 +24,7 @@ export default {
 		},
 	},
 	plugins: [
-		react( {
-			jsxRuntime: 'automatic',
-		} )
+		react( )
 	]
 
 };

@@ -57,13 +57,13 @@
     "jest-cli": "^27.1.1",
     "three": "^0.166.0",
     "typescript": "^5.1.3",
-    "vite": "^5.3.1"
+    "vite": "^5.3.1",
+    "@react-three/drei": "^9.114.3"
   },
   "peerDependencies": {
     "three": ">=0.123.0"
   },
   "optionalDependencies": {
-    "@react-three/drei": "^9.114.3",
     "@react-three/fiber": "^8.17.9",
     "@vitejs/plugin-react": "^4.3.2",
     "react": "^18.3.1",
