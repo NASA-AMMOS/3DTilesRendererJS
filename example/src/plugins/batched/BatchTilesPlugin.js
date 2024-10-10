@@ -22,6 +22,8 @@ export class BatchTilesPlugin {
 			renderer = null,
 		} = options;
 
+		this.name = 'BATCHED_MESH_PLUGIN';
+
 		this.instanceCount = instanceCount;
 		this.vertexCount = vertexCount;
 		this.indexCount = indexCount;
@@ -225,6 +227,8 @@ export class BatchTilesPlugin {
 		quad.material.map = texture;
 		quad.render( renderer );
 		renderer.setRenderTarget( ogRenderTarget );
+
+		texture.dispose();
 
 	}
 
