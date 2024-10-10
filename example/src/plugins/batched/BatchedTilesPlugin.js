@@ -145,18 +145,20 @@ export class BatchedTilesPlugin {
 
 		// init the render target
 		const map = target.material.map;
-		const arrayTarget = new WebGLArrayRenderTarget(
-			target.width,
-			target.height,
-			instanceCount,
-			{
-				colorSpace: map.colorSpace,
-				generateMipmaps: map.generateMipmaps,
-			},
-		);
+		const textureOptions = 			{
+			colorSpace: map.colorSpace,
+			generateMipmaps: map.generateMipmaps,
+			wrapS: map.wrapS,
+			wrapT: map.wrapT,
+			minFilter: map.minFilter,
+			magFilter: map.magFilter,
+		};
+		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
+		Object.assign( arrayTarget.texture, textureOptions );
 
 		// init the material
 		material.texture_array_uniform = { value: arrayTarget.texture };
+		material.map = arrayTarget.texture;
 		material.onBeforeCompile = onBeforeCompile;
 		material.needsUpdate = true;
 
@@ -184,18 +186,21 @@ export class BatchedTilesPlugin {
 	expandArrayTargetIfNeeded() {
 
 		const { batchedMesh, arrayTarget, renderer, material } = this;
-		if ( batchedMesh.maxInstanceCount >= arrayTarget.depth ) {
+		if ( batchedMesh.maxInstanceCount > arrayTarget.depth ) {
 
-			const newArrayTarget = new WebGLArrayRenderTarget(
-				arrayTarget.width,
-				arrayTarget.height,
-				batchedMesh.maxInstanceCount,
-				{
-					colorSpace: arrayTarget.texture.colorSpace,
-					generateMipmaps: arrayTarget.texture.generateMipmaps,
-				},
-			);
+			const textureOptions = {
+				colorSpace: arrayTarget.texture.colorSpace,
+				generateMipmaps: arrayTarget.texture.generateMipmaps,
+				wrapS: arrayTarget.texture.wrapS,
+				wrapT: arrayTarget.texture.wrapT,
+				minFilter: arrayTarget.texture.minFilter,
+				magFilter: arrayTarget.texture.magFilter,
+			};
 
+			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, batchedMesh.maxInstanceCount );
+			Object.assign( newArrayTarget.texture, textureOptions );
+
+			renderer.initRenderTarget( newArrayTarget );
 			renderer.copyTextureToTexture3D( arrayTarget.texture, newArrayTarget.texture );
 			arrayTarget.dispose();
 
@@ -228,32 +233,34 @@ function onBeforeCompile( shader ) {
 	shader.vertexShader = shader.vertexShader
 		.replace(
 			'#include <common>',
-			`#include <common>
+			/* glsl */`
+			#include <common>
 			varying float texture_index;
 			`,
 		)
 		.replace(
 			'#include <uv_vertex>',
-			`#include <uv_vertex>
+			/* glsl */`
+			#include <uv_vertex>
 			texture_index = getIndirectIndex( gl_DrawID );
 			`,
 		);
 	shader.fragmentShader = shader.fragmentShader
 		.replace(
 			'#include <map_pars_fragment>',
-			`
-			#include <map_pars_fragment>
-
+			/* glsl */`
+			#ifdef USE_MAP
 			precision highp sampler2DArray;
-			uniform sampler2DArray texture_array;
+			uniform sampler2DArray map;
 			varying float texture_index;
+			#endif
 			`,
 		)
 		.replace(
 			'#include <map_fragment>',
-			`
-			#if defined( USE_MAP ) && ! defined( COLOR_ONLY )
-				diffuseColor *= texture( texture_array, vec3( vMapUv, texture_index ) );
+			/* glsl */`
+			#ifdef USE_MAP
+				diffuseColor *= texture( map, vec3( vMapUv, texture_index ) );
 			#endif
 			`
 		);
