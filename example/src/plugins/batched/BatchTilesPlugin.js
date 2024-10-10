@@ -1,5 +1,6 @@
 import { BatchedMesh, WebGLArrayRenderTarget, MeshBasicMaterial } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 
 function isColorWhite( color ) {
 
@@ -34,17 +35,12 @@ export class BatchTilesPlugin {
 		this.mesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
-		this._vertexCount = - 1;
-		this._indexCount = - 1;
-		this._instanceCount = - 1;
 		this._onLoadModel = null;
+		this._onDisposeModel = null;
 
 		this._geometryIdMap = new Map();
 		this._instanceIdMap = new Map();
 		this._tileMap = new Map();
-
-		this._instances = 0;
-		this._freeGeomIds = [];
 
 	}
 
@@ -74,7 +70,7 @@ export class BatchTilesPlugin {
 				this.initFrom( mesh );
 
 				const { geometry, material } = mesh;
-				const geometryId = this.addGeometry( geometry );
+				const geometryId = this.mesh.addGeometry( geometry );
 				const instanceId = this.addInstance( geometryId );
 				mesh.setMatrixAt( instanceId, mesh.matrixWorld );
 				if ( isColorWhite( material.color ) ) {
@@ -103,9 +99,6 @@ export class BatchTilesPlugin {
 			this._instanceIdMap.delete( instanceId );
 			this._geometryIdMap.delete( geometryId );
 
-			this._instances --;
-			this._freeGeomIds.push( geometryId );
-
 		};
 
 		tiles.addEventListener( 'load-model', this._onLoadModel );
@@ -124,7 +117,7 @@ export class BatchTilesPlugin {
 
 		// init the batched mesh
 		const { instanceCount, vertexCount, indexCount, material, tiles } = this;
-		const mesh = new BatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
+		const mesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		mesh.name = 'BatchTilesPlugin';
 		tiles.scene.add( mesh );
 
@@ -147,75 +140,26 @@ export class BatchTilesPlugin {
 
 	addInstance( geomId ) {
 
-		const { mesh, renderer, material } = this;
-		if ( mesh.maxInstanceCount >= this._instances ) {
+		const { mesh, renderer, material, expandPercent, arrayTarget } = this;
+		mesh.expandPercent = expandPercent;
+		const id = mesh.addInstance( geomId );
 
-			const newCount = Math.ceil( mesh.maxInstanceCount * this.expandPercent );
-			mesh.setInstanceCount( newCount );
+		if ( mesh.maxInstanceCount >= arrayTarget.depth ) {
 
-			const target = this.arrayTarget;
-			const newTarget = new WebGLArrayRenderTarget( target.width, target.height, target.depth, {
-				colorSpace: target.texture.colorSpace,
-				generateMipmaps: target.texture.generateMipmaps,
+			const newTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, mesh.maxInstanceCount, {
+				colorSpace: arrayTarget.texture.colorSpace,
+				generateMipmaps: arrayTarget.texture.generateMipmaps,
 			} );
 
-			renderer.copyTextureToTexture3D( target.texture, newTarget.texture );
-			target.dispose();
+			renderer.copyTextureToTexture3D( arrayTarget.texture, newTarget.texture );
+			arrayTarget.dispose();
 
 			material.texture_array_uniform.value = newTarget.texture;
 			this.arrayTarget = newTarget;
 
 		}
 
-		return mesh.addInstance( geomId );
-
-	}
-
-	addGeometry( geometry, id = - 1 ) {
-
-		const { indexCount, vertexCount, expandPercent, mesh } = this;
-		const batchGeometry = mesh.geometry;
-
-		let resultId = - 1;
-		if ( id !== - 1 ) {
-
-			try {
-
-				batchGeometry.setGeometryAt( id, geometry );
-				resultId = id;
-
-			} catch {} // eslint-disable-line
-
-		}
-
-		if ( resultId === - 1 ) {
-
-			try {
-
-				resultId = batchGeometry.addGeometry( geometry, vertexCount, indexCount );
-
-			} catch {
-
-				try {
-
-					this._freeGeomIds.forEach( id => batchGeometry.deleteGeometry( id ) );
-					batchGeometry.optimize();
-					resultId = batchGeometry.addGeometry( geometry, vertexCount, indexCount );
-
-				} catch {
-
-					const newIndexCount = batchGeometry.index ? Math.ceil( expandPercent * batchGeometry.index.count ) : - 1;
-					const newVertexCount = Math.ceil( expandPercent * batchGeometry.attributes.position.count );
-					batchGeometry.setGeometrySize( newVertexCount, newIndexCount );
-					resultId = batchGeometry.addGeometry( geometry, vertexCount, indexCount );
-
-				}
-
-			}
-
-		}
-
-		return resultId;
+		return id;
 
 	}
 

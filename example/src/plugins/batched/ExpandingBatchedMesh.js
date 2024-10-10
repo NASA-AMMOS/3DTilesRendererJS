@@ -2,6 +2,12 @@ import { BatchedMesh } from 'three';
 
 export class ExpandingBatchedMesh extends BatchedMesh {
 
+	get instanceCount() {
+
+		return this._currentInstances;
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
@@ -102,6 +108,14 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 		}
 
 		super.addInstance( geometryId );
+
+	}
+
+	deleteInstance( instanceId ) {
+
+		super.deleteInstance( instanceId );
+		this._freeIds.push( instanceId );
+		this._currentInstances --;
 
 	}
 
