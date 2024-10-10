@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
 - Added `getAttributions` function, deprecated `getCreditsString` function.
+- GoogleCloudAuthPlugin: Use the photorealistic tiles url if a user has not provided one.
+- GoogleCloudAuthPlugin: Modify the tiles renderer to use recommended settings for Google Photorealistic Tiles by default.
+- Deprecated GooglePhotorealisticTilesRenderer.
 
 ### Fixed
 - Case where tile set scale was incorrectly used when computed screenspace error.
