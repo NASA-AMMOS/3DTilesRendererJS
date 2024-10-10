@@ -1,6 +1,7 @@
 import { WebGLArrayRenderTarget, MeshBasicMaterial } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
+import { Group } from 'three';
 
 function isColorWhite( color ) {
 
@@ -9,28 +10,29 @@ function isColorWhite( color ) {
 }
 
 const quad = new FullScreenQuad( new MeshBasicMaterial() );
-export class BatchTilesPlugin {
+export class BatchedTilesPlugin {
 
-	constructor( options ) {
+	constructor( options = {} ) {
 
-		const {
-			instanceCount = 1000,
-			vertexCount = 2500,
-			indexCount = 2500,
-			expandPercent = 0.25,
-			maxExpansionCount = 3, // TODO
-			material = new MeshBasicMaterial(),
-			renderer = null,
-		} = options;
+		options = {
+			instanceCount: 1000,
+			vertexCount: 2500,
+			indexCount: 2500,
+			expandPercent: 0.25,
+			maxExpansionCount: 3, // TODO
+			material: new MeshBasicMaterial(),
+			renderer: null,
+			...options
+		};
 
 		this.name = 'BATCHED_MESH_PLUGIN';
 
-		this.instanceCount = instanceCount;
-		this.vertexCount = vertexCount;
-		this.indexCount = indexCount;
-		this.material = material;
-		this.expandPercent = expandPercent;
-		this.renderer = renderer;
+		this.instanceCount = options.instanceCount;
+		this.vertexCount = options.vertexCount;
+		this.indexCount = options.indexCount;
+		this.material = options.material;
+		this.expandPercent = options.expandPercent;
+		this.renderer = options.renderer;
 
 		this.batchedMesh = null;
 		this.arrayTarget = null;
@@ -61,18 +63,19 @@ export class BatchTilesPlugin {
 
 			if ( meshes.length === 1 ) {
 
-				tile.cached.scene = null;
-				tile.cached.materials = null;
-				tile.cached.geometries = null;
-				tile.cached.textures = null;
+				tile.cached.scene = new Group();
+				tile.cached.materials = [];
+				tile.cached.geometries = [];
+				tile.cached.textures = [];
 
 				const mesh = meshes[ 0 ];
 				this.initFrom( mesh );
 
-				const { geometry, batchedMesh, material, expandPercent } = mesh;
+				const { geometry, material } = mesh;
+				const { batchedMesh, expandPercent } = this;
 
 				batchedMesh.expandPercent = expandPercent;
-				const geometryId = batchedMesh.addGeometry( geometry );
+				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 				const instanceId = batchedMesh.addInstance( geometryId );
 				mesh.setMatrixAt( instanceId, mesh.matrixWorld );
 				if ( ! isColorWhite( material.color ) ) {
@@ -121,7 +124,7 @@ export class BatchTilesPlugin {
 		const { instanceCount, vertexCount, indexCount, material, tiles } = this;
 		const mesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		mesh.name = 'BatchTilesPlugin';
-		tiles.scene.add( mesh );
+		tiles.group.add( mesh );
 
 		// init the render target
 		const map = target.material.map;
