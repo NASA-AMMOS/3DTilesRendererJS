@@ -198,6 +198,10 @@ tiles.registerPlugin( new TilesCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
+## ImplicitTilingPlugin
+
+Plugin that adds support for 3d tiles [implicit tiling](https://github.com/CesiumGS/3d-tiles/tree/main/specification/ImplicitTiling) feature.
+
 ## DebugTilesPlugin
 
 Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
