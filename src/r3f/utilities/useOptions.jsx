@@ -1,19 +1,5 @@
 import { useEffect } from 'react';
-
-// returns a sorted dependency array from an object
-export function getDepsArray( object ) {
-
-	if ( ! object ) {
-
-		return [];
-
-	}
-
-	return Object.entries( object )
-		.sort( ( a, b ) => a[ 0 ] > b[ 0 ] ? 1 : - 1 )
-		.flatMap( item => item );
-
-}
+import { useObjectDep } from './useObjectDep.jsx';
 
 // return true if the given key is for registering an event
 function isEventName( key ) {
@@ -114,7 +100,7 @@ export function useDeepOptions( target, options ) {
 
 		};
 
-	}, [ target, ...getDepsArray( options ) ] );
+	}, [ target, useObjectDep( options ) ] ); // eslint-disable-line
 
 }
 
@@ -151,6 +137,6 @@ export function useShallowOptions( instance, options ) {
 
 		};
 
-	}, [ instance, ...getDepsArray( options ) ] );
+	}, [ instance, useObjectDep( options ) ] ); // eslint-disable-line
 
 }

@@ -17,7 +17,13 @@
 	},
 
 	"plugins": [ "jest", "react", "react-hooks" ],
-	"extends": [ "eslint:recommended", "plugin:jest/recommended", "plugin:react/recommended", "plugin:react-hooks/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
+	"extends": [
+		"eslint:recommended",
+		"plugin:jest/recommended",
+		"plugin:react/recommended",
+		"plugin:react-hooks/recommended",
+		"./node_modules/eslint-config-mdcs/index.js"
+	],
 
 	"rules": {
 		"no-inner-declarations": "off",

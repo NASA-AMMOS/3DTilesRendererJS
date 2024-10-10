@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect, useRef, forwardRef, use
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../three/TilesRenderer.js';
-import { useDeepOptions, useShallowOptions, getDepsArray } from './utilities/useOptions.jsx';
+import { useDeepOptions, useShallowOptions } from './utilities/useOptions.jsx';
+import { useObjectDep } from './utilities/useObjectDep.jsx';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
@@ -88,7 +89,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		// we must create a new plugin if the tile set has changed
 
-	}, [ tiles, plugin, ...getDepsArray( args ) ] );
+	}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
 
 	// assigns any provided options to the plugin
 	useShallowOptions( instance, options );
