@@ -62,7 +62,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 			try {
 
-				resultId = this.addGeometry( geometry, vertexCount, indexCount );
+				resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
 			} catch {
 
@@ -73,7 +73,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 					_freeIds.length = 0;
 
 					this.optimize();
-					resultId = this.addGeometry( geometry, vertexCount, indexCount );
+					resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
 				} catch {
 
@@ -85,7 +85,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 					const newVertexCount = Math.max( addVertexCount, reservedVertexRange ) + position.count;
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
-					resultId = this.addGeometry( geometry, vertexCount, indexCount );
+					resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
 				}
 
@@ -99,14 +99,14 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 	addInstance( geometryId ) {
 
-		if ( this.maxInstanceCount >= this._currentInstances ) {
+		if ( this.maxInstanceCount === this._currentInstances ) {
 
-			const newCount = Math.ceil( this.maxInstanceCount * this.expandPercent );
+			const newCount = Math.ceil( this.maxInstanceCount * ( 1 + this.expandPercent ) );
 			this.setInstanceCount( newCount );
 
 		}
 
-		super.addInstance( geometryId );
+		return super.addInstance( geometryId );
 
 	}
 

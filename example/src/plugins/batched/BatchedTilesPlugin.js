@@ -39,6 +39,7 @@ export class BatchedTilesPlugin {
 		this.tiles = null;
 		this._onLoadModel = null;
 		this._onDisposeModel = null;
+		this._onVisibilityChange = null;
 
 		this._geometryIdMap = new Map();
 		this._instanceIdMap = new Map();
@@ -77,10 +78,12 @@ export class BatchedTilesPlugin {
 				batchedMesh.expandPercent = expandPercent;
 				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 				const instanceId = batchedMesh.addInstance( geometryId );
-				mesh.setMatrixAt( instanceId, mesh.matrixWorld );
+				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
+				batchedMesh.setVisibleAt( instanceId, false );
 				if ( ! isColorWhite( material.color ) ) {
 
-					mesh.setColorAt( material.color );
+					material.color.setHSL( Math.random(), 0.5, 0.5 );
+					batchedMesh.setColorAt( instanceId, material.color );
 
 				}
 
@@ -106,8 +109,15 @@ export class BatchedTilesPlugin {
 
 		};
 
+		this._onVisibilityChange = ( { tile, visible } ) => {
+
+			this.batchedMesh.setVisibleAt( this._tileMap.get( tile ).instanceId, visible );
+
+		};
+
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 		this.tiles = tiles;
 
 	}
@@ -125,6 +135,7 @@ export class BatchedTilesPlugin {
 		const mesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		mesh.name = 'BatchTilesPlugin';
 		tiles.group.add( mesh );
+		mesh.updateMatrixWorld();
 
 		// init the render target
 		const map = target.material.map;
@@ -197,6 +208,7 @@ export class BatchedTilesPlugin {
 
 		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
 		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 	}
 
