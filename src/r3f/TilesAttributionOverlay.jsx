@@ -57,7 +57,7 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 		} else if ( att.type === 'image' ) {
 
-			element = <div key={ i }><img src={ att.value } /></div>
+			element = <div key={ i }><img src={ att.value } /></div>;
 
 		}
 

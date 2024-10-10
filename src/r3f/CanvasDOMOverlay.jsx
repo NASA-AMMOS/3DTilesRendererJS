@@ -1,5 +1,5 @@
 import { useMemo, useEffect, StrictMode } from 'react';
-import { createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client';
 import { useThree } from '@react-three/fiber';
 
 export function CanvasDOMOverlay( { children, ...rest } ) {
@@ -21,7 +21,7 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 		observer.observe( gl.domElement );
 		return observer;
 
-	}, [ gl ] );
+	}, [ gl, container ] );
 
 	useEffect( () => {
 
@@ -45,4 +45,5 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 			</div>
 		</StrictMode>
 	);
+
 }
