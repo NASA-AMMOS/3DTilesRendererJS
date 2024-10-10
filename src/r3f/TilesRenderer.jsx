@@ -44,7 +44,7 @@ export function EastNorthUpFrame( props ) {
 	useEffect( () => {
 
 		const group = ref.current;
-		group.matrix.identity()
+		group.matrix.identity();
 
 		tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
 		tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
@@ -59,7 +59,7 @@ export function EastNorthUpFrame( props ) {
 }
 
 // component for registering a plugin
-export const TilesPlugin = forwardRef( ( props, ref ) => {
+export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	const { plugin, args, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
@@ -87,7 +87,8 @@ export const TilesPlugin = forwardRef( ( props, ref ) => {
 		return instance;
 
 		// we must create a new plugin if the tile set has changed
-	}, [ tiles, plugin ] );
+
+	}, [ tiles, plugin, ...getDepsArray( args ) ] );
 
 	// assigns any provided options to the plugin
 	useShallowOptions( instance, options );
@@ -127,12 +128,12 @@ export const TilesPlugin = forwardRef( ( props, ref ) => {
 
 		};
 
-	}, [ plugin, tiles, ...getDepsArray( args ) ] );
+	}, [ instance, tiles ] );
 
 } );
 
 // component for adding a TilesRenderer to the scene
-export const TilesRenderer = forwardRef( ( props, ref ) => {
+export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
@@ -151,7 +152,7 @@ export const TilesRenderer = forwardRef( ( props, ref ) => {
 
 		};
 
-	}, [ url ] );
+	}, [ url, invalidate ] );
 
 	// update the resolution for the camera
 	useFrame( () => {

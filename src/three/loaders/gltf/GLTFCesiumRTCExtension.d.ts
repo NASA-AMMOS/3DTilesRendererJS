@@ -1,4 +1,4 @@
-export class GLTFCesiumRTCExtension{
+export class GLTFCesiumRTCExtension {
 
 	name: 'CESIUM_RTC';
 

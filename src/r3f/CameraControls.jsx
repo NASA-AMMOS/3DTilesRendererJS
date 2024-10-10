@@ -5,7 +5,7 @@ import { GlobeControls as GlobeControlsImpl } from '../three/controls/GlobeContr
 import { useShallowOptions } from './utilities/useOptions.jsx';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 
-const ControlsBaseComponent = forwardRef( ( props, ref ) => {
+const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
 	const { controlsConstructor, domElement, scene, camera, tilesRenderer, ...rest } = props;
 	const [ defaultCamera, gl, defaultScene, invalidate ] = useThree( state => [ state.camera, state.gl, state.scene, state.invalidate ] );
@@ -49,7 +49,7 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 
 		};
 
-	}, [ controls ] );
+	}, [ controls, invalidate ] );
 
 	useEffect( () => {
 
@@ -92,12 +92,12 @@ const ControlsBaseComponent = forwardRef( ( props, ref ) => {
 
 export function EnvironmentControls( props ) {
 
-	return <ControlsBaseComponent { ...props } controlsConstructor={ EnvironmentControlsImpl } />
+	return <ControlsBaseComponent { ...props } controlsConstructor={ EnvironmentControlsImpl } />;
 
 }
 
 export function GlobeControls( props ) {
 
-	return <ControlsBaseComponent { ...props } controlsConstructor={ GlobeControlsImpl } />
+	return <ControlsBaseComponent { ...props } controlsConstructor={ GlobeControlsImpl } />;
 
 }

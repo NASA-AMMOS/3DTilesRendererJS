@@ -21,14 +21,14 @@
   "files": [
     "src/*"
   ],
-	"exports": {
-		".": "./src/index.js",
-		"./r3f": "./src/r3f/index.jsx"
-	},
+  "exports": {
+    ".": "./src/index.js",
+    "./r3f": "./src/r3f/index.jsx"
+  },
   "scripts": {
     "start": "vite --config ./vite.config.js --host",
     "build-examples": "vite build --config ./vite.config.js",
-    "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"example/*.js\" && tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.js\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },
   "repository": {
@@ -44,15 +44,17 @@
   "devDependencies": {
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
+    "@types/eslint": "^7.28.1",
     "@types/three": "^0.166.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
     "babel-jest": "^29.5.0",
     "cesium": "^1.97.0",
     "concurrently": "^6.2.1",
-    "@types/eslint": "^7.28.1",
     "eslint-config-mdcs": "^5.0.0",
     "eslint-plugin-jest": "^28.6.0",
+    "eslint-plugin-react": "^7.37.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
     "jest": "^27.1.1",
     "jest-cli": "^27.1.1",
     "three": "^0.166.0",
