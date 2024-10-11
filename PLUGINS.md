@@ -534,6 +534,45 @@ transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
 
 Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
+## BatchedTilesPlugin
+
+_available in the examples directory_
+
+Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed.
+
+> [!WARNING]
+> All tile geometry rendered with BatchedMesh will use the same material and only a single material "map" is supported. Only tiles geometry containing a single mesh are supported. Not compatible with other plugins that modify mesh materials or rely on other bespoke mesh data (eg TilesFadePlugin, GLTF Metadata extensions).
+
+### .constructor
+
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// WebGLRenderer used for generating a WebGLArrayRenderTarget
+	renderer,
+
+	// The initial number of instances to use for rendering
+	instanceCount: 1500,
+
+	// The minimum amount of vertex and index space to save per tile geometry added. If adequate tile space is already allocated
+	// when a new tile geometry is added then it can prevent more expensive geometry resizing and optimization.
+	vertexCount: 1,
+	indexCount: 1,
+
+	// The amount to increase the geometry and instance allocation when the operations must occur
+	expandPercent: 0.25,
+
+	// The material to use for the BatchedMesh. The material of the first tile rendered with be used if not set.
+	material: null,
+}
+```
+
 # Controls
 
 ## EnvironmentControls
