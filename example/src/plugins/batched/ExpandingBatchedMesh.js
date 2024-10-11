@@ -23,6 +23,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 		const neededIndexCount = Math.max( geometry.index ? geometry.index.count : - 1, reservedIndexRange );
 		const neededVertexCount = Math.max( geometry.attributes.position.count, reservedVertexRange );
 
+		// TODO: fix this
 		let bestId = - 1;
 		let bestScore = Infinity;
 		this._freeIds.forEach( id => {
@@ -66,13 +67,17 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 			} catch {
 
+				// TODO: should we delete all the ids? Or save them for later?
+				_freeIds.forEach( id => {
+
+					this.deleteGeometry( id );
+
+				} );
+				_freeIds.length = 0;
+				this.optimize();
+
 				try {
 
-					// TODO: should we delete all the ids? Or save them for later?
-					_freeIds.forEach( id => this.deleteGeometry( id ) );
-					_freeIds.length = 0;
-
-					this.optimize();
 					resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
 				} catch {
@@ -119,9 +124,9 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 		}
 
-		super.deleteInstance( instanceId );
-		this._freeIds.push( instanceId );
+		this._freeIds.push( this.getGeometryIdAt( instanceId ) );
 		this._currentInstances --;
+		return super.deleteInstance( instanceId );
 
 	}
 
