@@ -113,6 +113,12 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 	deleteInstance( instanceId ) {
 
+		if ( this._drawInfo[ instanceId ].active === false ) {
+
+			return;
+
+		}
+
 		super.deleteInstance( instanceId );
 		this._freeIds.push( instanceId );
 		this._currentInstances --;
