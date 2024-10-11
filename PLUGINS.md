@@ -558,12 +558,12 @@ Available options are as follows:
 	renderer,
 
 	// The initial number of instances to use for rendering
-	instanceCount: 1500,
+	instanceCount: 500,
 
 	// The minimum amount of vertex and index space to save per tile geometry added. If adequate tile space is already allocated
 	// when a new tile geometry is added then it can prevent more expensive geometry resizing and optimization.
-	vertexCount: 1,
-	indexCount: 1,
+	vertexCount: 1000,
+	indexCount: 1000,
 
 	// The amount to increase the geometry and instance allocation when the operations must occur
 	expandPercent: 0.25,

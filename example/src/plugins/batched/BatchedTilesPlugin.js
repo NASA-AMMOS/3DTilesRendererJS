@@ -1,14 +1,8 @@
-import { WebGLArrayRenderTarget, MeshBasicMaterial, REVISION } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
-import { Group } from 'three';
 import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
-
-function isColorWhite( color ) {
-
-	return color.r === 1 && color.g === 1 && color.b === 1;
-
-}
+import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
 const textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
@@ -24,9 +18,9 @@ export class BatchedTilesPlugin {
 		}
 
 		options = {
-			instanceCount: 1,
-			vertexCount: 1250,
-			indexCount: 1250,
+			instanceCount: 500,
+			vertexCount: 1000,
+			indexCount: 1000,
 			expandPercent: 0.25,
 			maxExpansionCount: 3, // TODO
 			material: null,
@@ -73,6 +67,7 @@ export class BatchedTilesPlugin {
 
 			if ( meshes.length === 1 ) {
 
+				// TODO: ideally we could just set these to null
 				tile.cached.scene = new Group();
 				tile.cached.materials = [];
 				tile.cached.geometries = [];
@@ -163,8 +158,7 @@ export class BatchedTilesPlugin {
 
 		// init the material
 		material.map = arrayTarget.texture;
-		material.onBeforeCompile = onBeforeCompile;
-		material.needsUpdate = true;
+		convertMapToArrayTexture( material );
 
 		this.arrayTarget = arrayTarget;
 		this.batchedMesh = batchedMesh;
@@ -251,45 +245,5 @@ export class BatchedTilesPlugin {
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 	}
-
-}
-
-function onBeforeCompile( shader ) {
-
-	shader.vertexShader = shader.vertexShader
-		.replace(
-			'#include <common>',
-			/* glsl */`
-			#include <common>
-			varying float texture_index;
-			`,
-		)
-		.replace(
-			'#include <uv_vertex>',
-			/* glsl */`
-			#include <uv_vertex>
-			texture_index = getIndirectIndex( gl_DrawID );
-			`,
-		);
-
-	shader.fragmentShader = shader.fragmentShader
-		.replace(
-			'#include <map_pars_fragment>',
-			/* glsl */`
-			#ifdef USE_MAP
-			precision highp sampler2DArray;
-			uniform sampler2DArray map;
-			varying float texture_index;
-			#endif
-			`,
-		)
-		.replace(
-			'#include <map_fragment>',
-			/* glsl */`
-			#ifdef USE_MAP
-				diffuseColor *= texture( map, vec3( vMapUv, texture_index ) );
-			#endif
-			`
-		);
 
 }
