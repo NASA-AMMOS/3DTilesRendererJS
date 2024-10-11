@@ -141,10 +141,11 @@ export class BatchedTilesPlugin {
 
 		// init the batched mesh
 		const { instanceCount, vertexCount, indexCount, material, tiles } = this;
-		const mesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
-		mesh.name = 'BatchTilesPlugin';
-		tiles.group.add( mesh );
-		mesh.updateMatrixWorld();
+		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
+		batchedMesh.name = 'BatchTilesPlugin';
+		batchedMesh.frustumCulled = false;
+		tiles.group.add( batchedMesh );
+		batchedMesh.updateMatrixWorld();
 
 		// init the render target
 		const map = target.material.map;
@@ -165,7 +166,7 @@ export class BatchedTilesPlugin {
 		material.needsUpdate = true;
 
 		this.arrayTarget = arrayTarget;
-		this.batchedMesh = mesh;
+		this.batchedMesh = batchedMesh;
 
 	}
 
