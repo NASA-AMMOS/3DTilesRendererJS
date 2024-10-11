@@ -709,6 +709,10 @@ getPropertyArray( key : String ) : Array | TypedArray | null
 
 Returns an array of data associated with the `key` passed into the function. Returns null if the key is not in the table.
 
+# React-Three-Fiber R3F components
+
+See the [r3f documentation](./src/r3f/README.md) for react components wrapping the TilesRenderer functionnality, like `TilesRenderer`, `EastNorthUpFrame`, `Controls` and `TilesPlugin` (among which `GLTFExtensionsPlugin`, `ReorientationPlugin`, `TilesFadePlugin`, `TileCompressionPlugin`, `DebugTilesPlugin`) as well as wrappers for Google or Cesium Ion Tilesets components and `TilesAttributionOverlay`.
+
 # LICENSE
 
 The software is available under the [Apache V2.0 license](../LICENSE.txt).
