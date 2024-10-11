@@ -70,6 +70,8 @@ export class BatchedTilesPlugin {
 
 			if ( meshes.length === 1 ) {
 
+				scene.updateMatrixWorld();
+
 				// TODO: ideally we could just set these to null
 				tile.cached.scene = new Group();
 				tile.cached.materials = [];
@@ -204,7 +206,7 @@ export class BatchedTilesPlugin {
 	// check if the array texture target needs to be expanded
 	expandArrayTargetIfNeeded() {
 
-		const { batchedMesh, arrayTarget, renderer, material } = this;
+		const { batchedMesh, arrayTarget, renderer } = this;
 		if ( batchedMesh.maxInstanceCount > arrayTarget.depth ) {
 
 			// create a new array texture target
@@ -237,7 +239,7 @@ export class BatchedTilesPlugin {
 
 			// replace the old array target
 			arrayTarget.dispose();
-			material.map = newArrayTarget.texture;
+			batchedMesh.material.map = newArrayTarget.texture;
 			this.arrayTarget = newArrayTarget;
 
 		}
