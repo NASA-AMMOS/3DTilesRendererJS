@@ -157,7 +157,7 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 	}
 
-	// override the raycasting per tile
+	// add a function for raycasting per tile
 	raycastInstance( instanceId, raycaster, intersects ) {
 
 		const batchGeometry = this.geometry;

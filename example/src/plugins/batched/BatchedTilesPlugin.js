@@ -4,8 +4,8 @@ import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
-const textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
-const layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
+const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
+const _layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
 
 export class BatchedTilesPlugin {
 
@@ -30,6 +30,7 @@ export class BatchedTilesPlugin {
 
 		this.name = 'BATCHED_MESH_PLUGIN';
 
+		// save options
 		this.instanceCount = options.instanceCount;
 		this.vertexCount = options.vertexCount;
 		this.indexCount = options.indexCount;
@@ -37,6 +38,7 @@ export class BatchedTilesPlugin {
 		this.expandPercent = options.expandPercent;
 		this.renderer = options.renderer;
 
+		// local variables
 		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
@@ -54,6 +56,7 @@ export class BatchedTilesPlugin {
 
 		this._onLoadModel = ( { scene, tile } ) => {
 
+			// find the meshes in the scene
 			const meshes = [];
 			scene.traverse( c => {
 
@@ -74,12 +77,15 @@ export class BatchedTilesPlugin {
 				tile.cached.textures = [];
 
 				const mesh = meshes[ 0 ];
-				this.initFrom( mesh );
+				this.initBatchedMesh( mesh );
 
 				const { geometry, material } = mesh;
 				const { batchedMesh, expandPercent } = this;
 
+				// assign expandPercent in case it has changed
 				batchedMesh.expandPercent = expandPercent;
+
+				// add the geometry and an instance to the mesh
 				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 				const instanceId = batchedMesh.addInstance( geometryId );
 				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
@@ -91,6 +97,7 @@ export class BatchedTilesPlugin {
 
 				}
 
+				// render the material
 				const texture = material.map;
 				this.renderTextureToLayer( texture, instanceId );
 
@@ -119,10 +126,12 @@ export class BatchedTilesPlugin {
 
 		};
 
+		// register events
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
+		// prepare all already loaded geometry
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this._onLoadModel( { scene, tile } );
@@ -132,7 +141,8 @@ export class BatchedTilesPlugin {
 
 	}
 
-	initFrom( target ) {
+	// init the batched mesh if it's not ready
+	initBatchedMesh( target ) {
 
 		if ( this.batchedMesh !== null ) {
 
@@ -149,7 +159,7 @@ export class BatchedTilesPlugin {
 		tiles.group.add( batchedMesh );
 		batchedMesh.updateMatrixWorld();
 
-		// init the render target
+		// init the array texture render target
 		const map = target.material.map;
 		const textureOptions = 			{
 			colorSpace: map.colorSpace,
@@ -171,27 +181,33 @@ export class BatchedTilesPlugin {
 
 	}
 
+	// render the given into the given layer
 	renderTextureToLayer( texture, layer ) {
 
 		this.expandArrayTargetIfNeeded();
 
 		const { renderer } = this;
 		const currentRenderTarget = renderer.getRenderTarget();
-		renderer.setRenderTarget( this.arrayTarget, layer );
-		textureRenderQuad.material.map = texture;
-		textureRenderQuad.render( renderer );
-		renderer.setRenderTarget( currentRenderTarget );
 
-		textureRenderQuad.material.map = null;
+		// render the layer
+		renderer.setRenderTarget( this.arrayTarget, layer );
+		_textureRenderQuad.material.map = texture;
+		_textureRenderQuad.render( renderer );
+
+		// reset state
+		renderer.setRenderTarget( currentRenderTarget );
+		_textureRenderQuad.material.map = null;
 		texture.dispose();
 
 	}
 
+	// check if the array texture target needs to be expanded
 	expandArrayTargetIfNeeded() {
 
 		const { batchedMesh, arrayTarget, renderer, material } = this;
 		if ( batchedMesh.maxInstanceCount > arrayTarget.depth ) {
 
+			// create a new array texture target
 			const textureOptions = {
 				colorSpace: arrayTarget.texture.colorSpace,
 				generateMipmaps: arrayTarget.texture.generateMipmaps,
@@ -204,20 +220,23 @@ export class BatchedTilesPlugin {
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, batchedMesh.maxInstanceCount );
 			Object.assign( newArrayTarget.texture, textureOptions );
 
+			// render each old layer into the new texture target
 			const currentRenderTarget = renderer.getRenderTarget();
 			for ( let i = 0; i < arrayTarget.depth; i ++ ) {
 
-				layerCopyQuad.material.map = arrayTarget.texture;
-				layerCopyQuad.material.layer = i;
+				_layerCopyQuad.material.map = arrayTarget.texture;
+				_layerCopyQuad.material.layer = i;
 				renderer.setRenderTarget( newArrayTarget, i );
-				layerCopyQuad.render( renderer );
+				_layerCopyQuad.render( renderer );
 
 			}
 
+			// reset the state
 			renderer.setRenderTarget( currentRenderTarget );
-			layerCopyQuad.material.map = null;
-			arrayTarget.dispose();
+			_layerCopyQuad.material.map = null;
 
+			// replace the old array target
+			arrayTarget.dispose();
 			material.map = newArrayTarget.texture;
 			this.arrayTarget = newArrayTarget;
 
@@ -225,6 +244,7 @@ export class BatchedTilesPlugin {
 
 	}
 
+	// Override raycasting per tile to defer to the batched mesh
 	raycastTile( tile, scene, raycaster, intersects ) {
 
 		if ( ! this._tileMap.has( tile ) ) {
