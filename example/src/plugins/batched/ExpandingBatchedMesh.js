@@ -20,18 +20,18 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 
 	findSuitableId( geometry, reservedVertexRange, reservedIndexRange ) {
 
-		const neededIndexCount = Math.max( geometry.index ? geometry.index.count : - 1, reservedIndexRange );
+		const needsIndex = Boolean( this.geometry.index );
+		const neededIndexCount = Math.max( needsIndex ? geometry.index.count : - 1, reservedIndexRange );
 		const neededVertexCount = Math.max( geometry.attributes.position.count, reservedVertexRange );
 
-		// TODO: fix this
 		let bestId = - 1;
 		let bestScore = Infinity;
 		this._freeIds.forEach( id => {
 
+			// if indices are not needed then they default to - 1
 			const reservedRange = this._reservedRanges[ id ];
 			const { indexCount, vertexCount } = reservedRange;
-
-			if ( indexCount > neededIndexCount && vertexCount > neededVertexCount ) {
+			if ( indexCount >= neededIndexCount && vertexCount >= neededVertexCount ) {
 
 				const score = ( neededIndexCount - indexCount ) + ( neededVertexCount - vertexCount );
 				if ( score < bestScore ) {
