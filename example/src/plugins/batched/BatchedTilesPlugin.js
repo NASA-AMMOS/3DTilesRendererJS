@@ -2,6 +2,7 @@ import { WebGLArrayRenderTarget, MeshBasicMaterial, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { Group } from 'three';
+import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
 
 function isColorWhite( color ) {
 
@@ -9,7 +10,9 @@ function isColorWhite( color ) {
 
 }
 
-const quad = new FullScreenQuad( new MeshBasicMaterial() );
+const textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
+const layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
+
 export class BatchedTilesPlugin {
 
 	constructor( options = {} ) {
@@ -157,7 +160,6 @@ export class BatchedTilesPlugin {
 		Object.assign( arrayTarget.texture, textureOptions );
 
 		// init the material
-		material.texture_array_uniform = { value: arrayTarget.texture };
 		material.map = arrayTarget.texture;
 		material.onBeforeCompile = onBeforeCompile;
 		material.needsUpdate = true;
@@ -174,11 +176,11 @@ export class BatchedTilesPlugin {
 		const { renderer } = this;
 		const currentRenderTarget = renderer.getRenderTarget();
 		renderer.setRenderTarget( this.arrayTarget, layer );
-		quad.material.map = texture;
-		quad.render( renderer );
+		textureRenderQuad.material.map = texture;
+		textureRenderQuad.render( renderer );
 		renderer.setRenderTarget( currentRenderTarget );
 
-		quad.material.map = null;
+		textureRenderQuad.material.map = null;
 		texture.dispose();
 
 	}
@@ -200,11 +202,21 @@ export class BatchedTilesPlugin {
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, batchedMesh.maxInstanceCount );
 			Object.assign( newArrayTarget.texture, textureOptions );
 
-			renderer.initRenderTarget( newArrayTarget );
-			renderer.copyTextureToTexture3D( arrayTarget.texture, newArrayTarget.texture );
+			const currentRenderTarget = renderer.getRenderTarget();
+			for ( let i = 0; i < arrayTarget.depth; i ++ ) {
+
+				layerCopyQuad.material.map = arrayTarget.texture;
+				layerCopyQuad.material.layer = i;
+				renderer.setRenderTarget( newArrayTarget, i );
+				layerCopyQuad.render( renderer );
+
+			}
+
+			renderer.setRenderTarget( currentRenderTarget );
+			layerCopyQuad.material.map = null;
 			arrayTarget.dispose();
 
-			material.texture_array_uniform.value = newArrayTarget.texture;
+			material.map = newArrayTarget.texture;
 			this.arrayTarget = newArrayTarget;
 
 		}
@@ -227,9 +239,6 @@ export class BatchedTilesPlugin {
 
 function onBeforeCompile( shader ) {
 
-	this.uniforms = shader.uniforms;
-
-	shader.uniforms.texture_array = this.texture_array_uniform || { value: null };
 	shader.vertexShader = shader.vertexShader
 		.replace(
 			'#include <common>',
@@ -245,6 +254,7 @@ function onBeforeCompile( shader ) {
 			texture_index = getIndirectIndex( gl_DrawID );
 			`,
 		);
+
 	shader.fragmentShader = shader.fragmentShader
 		.replace(
 			'#include <map_pars_fragment>',

@@ -72,7 +72,6 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 					_freeIds.forEach( id => this.deleteGeometry( id ) );
 					_freeIds.length = 0;
 
-					// TODO: optimize is breaking this?
 					this.optimize();
 					resultId = super.addGeometry( geometry, vertexCount, indexCount );
 
