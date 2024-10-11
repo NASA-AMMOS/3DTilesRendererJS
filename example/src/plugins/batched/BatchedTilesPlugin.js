@@ -224,6 +224,21 @@ export class BatchedTilesPlugin {
 
 	}
 
+	raycastTile( tile, scene, raycaster, intersects ) {
+
+		if ( ! this._tileMap.has( tile ) ) {
+
+			return false;
+
+		}
+
+		const { instanceId } = this._tileMap.get( tile );
+		this.batchedMesh.raycastInstance( instanceId, raycaster, intersects );
+
+		return true;
+
+	}
+
 	dispose() {
 
 		this.batchedMesh.geometry.dispose();

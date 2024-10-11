@@ -13,7 +13,7 @@ function distanceSort( a, b ) {
 
 }
 
-function intersectTileScene( tile, raycaster, intersects ) {
+function intersectTileScene( tile, raycaster, renderer, intersects ) {
 
 	const { scene } = tile.cached;
 	if ( REVISION_LESS_165 ) {
@@ -29,15 +29,20 @@ function intersectTileScene( tile, raycaster, intersects ) {
 
 	} else {
 
-		raycaster.intersectObject( scene, true, intersects );
+		const didRaycast = renderer.invokeOnePlugin( plugin => plugin.raycastTile && plugin.raycastTile( tile, scene, raycaster, intersects ) );
+		if ( ! didRaycast ) {
+
+			raycaster.intersectObject( scene, true, intersects );
+
+		}
 
 	}
 
 }
 
-function intersectTileSceneFirstHist( tile, raycaster ) {
+function intersectTileSceneFirstHist( tile, raycaster, renderer ) {
 
-	intersectTileScene( tile, raycaster, _hitArray );
+	intersectTileScene( tile, raycaster, renderer, _hitArray );
 
 	const hit = _hitArray[ 0 ] || null;
 	_hitArray.length = 0;
@@ -94,7 +99,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	let bestHitDistSq = Infinity;
 	if ( activeTiles.has( tile ) ) {
 
-		const hit = intersectTileSceneFirstHist( tile, raycaster );
+		const hit = intersectTileSceneFirstHist( tile, raycaster, renderer );
 		if ( hit ) {
 
 			bestHit = hit;
@@ -159,7 +164,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 
 	if ( activeTiles.has( tile ) ) {
 
-		intersectTileScene( tile, raycaster, intersects );
+		intersectTileScene( tile, raycaster, renderer, intersects );
 
 	}
 

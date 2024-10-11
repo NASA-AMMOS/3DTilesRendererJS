@@ -1,4 +1,7 @@
-import { BatchedMesh } from 'three';
+import { BatchedMesh, Mesh, Box3, Sphere } from 'three';
+
+const raycastMesh = new Mesh();
+const batchIntersects = [];
 
 export class ExpandingBatchedMesh extends BatchedMesh {
 
@@ -127,6 +130,51 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 		this._freeIds.push( this.getGeometryIdAt( instanceId ) );
 		this._currentInstances --;
 		return super.deleteInstance( instanceId );
+
+	}
+
+	raycastInstance( instanceId, raycaster, intersects ) {
+
+		const batchGeometry = this.geometry;
+		const geometryId = this.getGeometryIdAt( instanceId );
+
+		// initialize the mesh
+		raycastMesh.material = this.material;
+		raycastMesh.geometry.index = batchGeometry.index;
+		raycastMesh.geometry.attributes = batchGeometry.attributes;
+
+		// initialize the geometry
+		const drawRange = this.getGeometryRangeAt( geometryId );
+		raycastMesh.geometry.setDrawRange( drawRange.start, drawRange.count );
+		if ( raycastMesh.geometry.boundingBox === null ) {
+
+			raycastMesh.geometry.boundingBox = new Box3();
+
+		}
+
+		if ( raycastMesh.geometry.boundingSphere === null ) {
+
+			raycastMesh.geometry.boundingSphere = new Sphere();
+
+		}
+
+		// get the intersects
+		this.getMatrixAt( instanceId, raycastMesh.matrixWorld ).premultiply( this.matrixWorld );
+		this.getBoundingBoxAt( geometryId, raycastMesh.geometry.boundingBox );
+		this.getBoundingSphereAt( geometryId, raycastMesh.geometry.boundingSphere );
+		raycastMesh.raycast( raycaster, batchIntersects );
+
+		// add batch id to the intersects
+		for ( let j = 0, l = batchIntersects.length; j < l; j ++ ) {
+
+			const intersect = batchIntersects[ j ];
+			intersect.object = this;
+			intersect.batchId = instanceId;
+			intersects.push( intersect );
+
+		}
+
+		batchIntersects.length = 0;
 
 	}
 
