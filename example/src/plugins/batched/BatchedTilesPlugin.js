@@ -45,10 +45,8 @@ export class BatchedTilesPlugin {
 		this._onLoadModel = null;
 		this._onDisposeModel = null;
 		this._onVisibilityChange = null;
+		this._tileToInstanceId = new Map();
 
-		this._geometryIdMap = new Map();
-		this._instanceIdMap = new Map();
-		this._tileMap = new Map();
 
 	}
 
@@ -103,9 +101,7 @@ export class BatchedTilesPlugin {
 				const texture = material.map;
 				this.renderTextureToLayer( texture, instanceId );
 
-				this._tileMap.set( tile, { geometryId, instanceId } );
-				this._instanceIdMap.set( instanceId, tile );
-				this._geometryIdMap.set( geometryId, tile );
+				this._tileToInstanceId.set( tile, instanceId );
 
 			}
 
@@ -113,18 +109,15 @@ export class BatchedTilesPlugin {
 
 		this._onDisposeModel = ( { tile } ) => {
 
-			const { geometryId, instanceId } = this._tileMap.get( tile );
+			const instanceId = this._tileToInstanceId.get( tile );
 			this.batchedMesh.deleteInstance( instanceId );
-
-			this._tileMap.delete( tile );
-			this._instanceIdMap.delete( instanceId );
-			this._geometryIdMap.delete( geometryId );
+			this._tileToInstanceId.delete( tile );
 
 		};
 
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
-			this.batchedMesh.setVisibleAt( this._tileMap.get( tile ).instanceId, visible );
+			this.batchedMesh.setVisibleAt( this._tileToInstanceId.get( tile ), visible );
 
 		};
 
@@ -249,13 +242,13 @@ export class BatchedTilesPlugin {
 	// Override raycasting per tile to defer to the batched mesh
 	raycastTile( tile, scene, raycaster, intersects ) {
 
-		if ( ! this._tileMap.has( tile ) ) {
+		if ( ! this._tileToInstanceId.has( tile ) ) {
 
 			return false;
 
 		}
 
-		const { instanceId } = this._tileMap.get( tile );
+		const instanceId = this._tileToInstanceId.get( tile );
 		this.batchedMesh.raycastInstance( instanceId, raycaster, intersects );
 
 		return true;
