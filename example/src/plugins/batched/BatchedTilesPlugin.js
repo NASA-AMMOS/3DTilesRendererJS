@@ -122,6 +122,12 @@ export class BatchedTilesPlugin {
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
+
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this._onLoadModel( { scene, tile } );
+
+		} );
 		this.tiles = tiles;
 
 	}
