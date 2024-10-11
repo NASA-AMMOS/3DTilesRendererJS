@@ -29,7 +29,7 @@ export class BatchedTilesPlugin {
 			indexCount: 1250,
 			expandPercent: 0.25,
 			maxExpansionCount: 3, // TODO
-			material: new MeshBasicMaterial(),
+			material: null,
 			renderer: null,
 			...options
 		};
@@ -39,7 +39,7 @@ export class BatchedTilesPlugin {
 		this.instanceCount = options.instanceCount;
 		this.vertexCount = options.vertexCount;
 		this.indexCount = options.indexCount;
-		this.material = options.material.clone();
+		this.material = options.material ? options.material.clone() : null;
 		this.expandPercent = options.expandPercent;
 		this.renderer = options.renderer;
 
@@ -140,7 +140,8 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, material, tiles } = this;
+		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
 		batchedMesh.frustumCulled = false;
