@@ -13,8 +13,9 @@ function distanceSort( a, b ) {
 
 }
 
-function intersectTileScene( scene, raycaster, intersects ) {
+function intersectTileScene( tile, raycaster, intersects ) {
 
+	const { scene } = tile.cached;
 	if ( REVISION_LESS_165 ) {
 
 		// Don't intersect the box3 helpers because those are used for debugging
@@ -34,9 +35,9 @@ function intersectTileScene( scene, raycaster, intersects ) {
 
 }
 
-function intersectTileSceneFirstHist( scene, raycaster ) {
+function intersectTileSceneFirstHist( tile, raycaster ) {
 
-	intersectTileScene( scene, raycaster, _hitArray );
+	intersectTileScene( tile, raycaster, _hitArray );
 
 	const hit = _hitArray[ 0 ] || null;
 	_hitArray.length = 0;
@@ -93,7 +94,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	let bestHitDistSq = Infinity;
 	if ( activeTiles.has( tile ) ) {
 
-		const hit = intersectTileSceneFirstHist( tile.cached.scene, raycaster );
+		const hit = intersectTileSceneFirstHist( tile, raycaster );
 		if ( hit ) {
 
 			bestHit = hit;
@@ -138,7 +139,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
-	const { scene, boundingVolume } = tile.cached;
+	const { boundingVolume } = tile.cached;
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
@@ -158,7 +159,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 
 	if ( activeTiles.has( tile ) ) {
 
-		intersectTileScene( scene, raycaster, intersects );
+		intersectTileScene( tile, raycaster, intersects );
 
 	}
 
