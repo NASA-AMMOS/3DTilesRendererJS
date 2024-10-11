@@ -81,9 +81,9 @@ export class ExpandingBatchedMesh extends BatchedMesh {
 					const index = this.geometry.index;
 					const position = this.geometry.attributes.position;
 					const addIndexCount = index ? Math.ceil( expandPercent * index.count ) : - 1;
-					const newIndexCount = index ? Math.max( addIndexCount, reservedIndexRange, geometry.index.count ) + index.count + 1 : - 1;
+					const newIndexCount = index ? Math.max( addIndexCount, reservedIndexRange, geometry.index.count ) + index.count : - 1;
 					const addVertexCount = Math.ceil( expandPercent * position.count );
-					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, geometry.attributes.position.count ) + position.count + 1;
+					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, geometry.attributes.position.count ) + position.count;
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
 					resultId = super.addGeometry( geometry, vertexCount, indexCount );
