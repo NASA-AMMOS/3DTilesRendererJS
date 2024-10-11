@@ -1,10 +1,11 @@
-import { BatchedMesh, Mesh, Box3, Sphere } from 'three';
+import { Mesh, Box3, Sphere } from 'three';
+import { ModelViewBatchedMesh } from './ModelViewBatchedMesh.js';
 
 const _raycastMesh = new Mesh();
 const _batchIntersects = [];
 
 // Implementation of BatchedMesh that automatically expands
-export class ExpandingBatchedMesh extends BatchedMesh {
+export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 	get instanceCount() {
 
