@@ -262,10 +262,19 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		this.arrayTarget.dispose();
-		this.batchedMesh.material.dispose();
-		this.batchedMesh.dispose();
-		this.batchedMesh.removeFromParent();
+		if ( this.arrayTarget ) {
+
+			this.arrayTarget.dispose();
+
+		}
+
+		if ( this.batchedMesh ) {
+
+			this.batchedMesh.material.dispose();
+			this.batchedMesh.dispose();
+			this.batchedMesh.removeFromParent();
+
+		}
 
 		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
 		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
