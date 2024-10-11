@@ -1,5 +1,6 @@
 import { MeshBasicMaterial } from 'three';
 
+// A MeshBasicMaterial that supports taking a TextureArray and a layer to render
 export class ArrayTextureCopyMaterial extends MeshBasicMaterial {
 
 	set layer( v ) {
@@ -30,9 +31,9 @@ export class ArrayTextureCopyMaterial extends MeshBasicMaterial {
 				'#include <map_pars_fragment>',
 				/* glsl */`
 				#ifdef USE_MAP
-				precision highp sampler2DArray;
-				uniform sampler2DArray map;
-				uniform int layer;
+					precision highp sampler2DArray;
+					uniform sampler2DArray map;
+					uniform int layer;
 				#endif
 				`,
 			)

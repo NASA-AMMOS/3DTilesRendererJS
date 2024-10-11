@@ -1,9 +1,11 @@
+// Returns whether the passed color is white or not
 export function isColorWhite( color ) {
 
 	return color.r === 1 && color.g === 1 && color.b === 1;
 
 }
 
+// Adjusts the given material to take an ArrayTexture for a map
 export function convertMapToArrayTexture( material ) {
 
 	material.needsUpdate = true;
