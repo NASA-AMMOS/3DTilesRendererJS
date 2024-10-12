@@ -22,10 +22,6 @@ export class BatchedTilesPlugin {
 			vertexCount: 750,
 			indexCount: 2000,
 			expandPercent: 0.25,
-
-			// TODO
-			maxVertexCount: Infinity,
-			maxIndexCount: Infinity,
 			maxInstanceCount: Infinity,
 
 			material: null,
@@ -44,8 +40,6 @@ export class BatchedTilesPlugin {
 		this.indexCount = options.indexCount;
 		this.material = options.material ? options.material.clone() : null;
 		this.expandPercent = options.expandPercent;
-		this.maxVertexCount = options.maxVertexCount;
-		this.maxIndexCount = options.maxIndexCount;
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
 
@@ -76,9 +70,7 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			if ( meshes.length === 1 && ( ! this.batchedMesh || this.batchedMesh.instanceCount < this.maxInstanceCount ) ) {
-
-				scene.updateMatrixWorld();
+			if ( ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount ) {
 
 				// TODO: ideally we could just set these to null
 				tile.cached.scene = new Group();
@@ -86,33 +78,38 @@ export class BatchedTilesPlugin {
 				tile.cached.geometries = [];
 				tile.cached.textures = [];
 
-				const mesh = meshes[ 0 ];
-				this.initBatchedMesh( mesh );
+				scene.updateMatrixWorld();
 
-				const { geometry, material } = mesh;
-				const { batchedMesh, expandPercent } = this;
+				const instanceIds = [];
+				meshes.forEach( mesh => {
 
-				// assign expandPercent in case it has changed
-				batchedMesh.expandPercent = expandPercent;
+					this.initBatchedMesh( mesh );
 
-				// TODO: we should let the batched mesh functions fail to add the geometry and an instance to the mesh
-				// and then defer to meshes if necessary
-				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
-				const instanceId = batchedMesh.addInstance( geometryId );
-				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
-				batchedMesh.setVisibleAt( instanceId, false );
-				if ( ! isColorWhite( material.color ) ) {
+					const { geometry, material } = mesh;
+					const { batchedMesh, expandPercent } = this;
 
-					material.color.setHSL( Math.random(), 0.5, 0.5 );
-					batchedMesh.setColorAt( instanceId, material.color );
+					// assign expandPercent in case it has changed
+					batchedMesh.expandPercent = expandPercent;
 
-				}
+					const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
+					const instanceId = batchedMesh.addInstance( geometryId );
+					batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
+					batchedMesh.setVisibleAt( instanceId, false );
+					if ( ! isColorWhite( material.color ) ) {
 
-				// render the material
-				const texture = material.map;
-				this.renderTextureToLayer( texture, instanceId );
+						material.color.setHSL( Math.random(), 0.5, 0.5 );
+						batchedMesh.setColorAt( instanceId, material.color );
 
-				this._tileToInstanceId.set( tile, instanceId );
+					}
+
+					// render the material
+					const texture = material.map;
+					this.renderTextureToLayer( texture, instanceId );
+					instanceIds.push( instanceId );
+
+				} );
+
+				this._tileToInstanceId.set( tile, instanceIds );
 
 			} else {
 
@@ -126,9 +123,13 @@ export class BatchedTilesPlugin {
 
 			if ( this._tileToInstanceId.has( tile ) ) {
 
-				const instanceId = this._tileToInstanceId.get( tile );
-				this.batchedMesh.deleteInstance( instanceId );
+				const instanceIds = this._tileToInstanceId.get( tile );
 				this._tileToInstanceId.delete( tile );
+				instanceIds.forEach( instanceId => {
+
+					this.batchedMesh.deleteInstance( instanceId );
+
+				} );
 
 			}
 
@@ -138,7 +139,12 @@ export class BatchedTilesPlugin {
 
 			if ( this._tileToInstanceId.has( tile ) ) {
 
-				this.batchedMesh.setVisibleAt( this._tileToInstanceId.get( tile ), visible );
+				const instanceIds = this._tileToInstanceId.get( tile );
+				instanceIds.forEach( instanceId => {
+
+					this.batchedMesh.setVisibleAt( instanceId, visible );
+
+				} );
 
 			}
 
@@ -273,8 +279,12 @@ export class BatchedTilesPlugin {
 
 		}
 
-		const instanceId = this._tileToInstanceId.get( tile );
-		this.batchedMesh.raycastInstance( instanceId, raycaster, intersects );
+		const instanceIds = this._tileToInstanceId.get( tile );
+		instanceIds.forEach( instanceId => {
+
+			this.batchedMesh.raycastInstance( instanceId, raycaster, intersects );
+
+		} );
 
 		return true;
 
