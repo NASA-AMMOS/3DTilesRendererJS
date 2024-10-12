@@ -1,4 +1,4 @@
-import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, REVISION } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
@@ -6,6 +6,8 @@ import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
 const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const _layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
+const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
+_whiteTex.needsUpdate = true;
 
 export class BatchedTilesPlugin {
 
@@ -70,7 +72,31 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			if ( ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount ) {
+			// don't add the geometry if it doesn't have the right attributes
+			let hasCorrectAttributes = true;
+			meshes.forEach( mesh => {
+
+				if ( this.batchedMesh && hasCorrectAttributes ) {
+
+					const attrs = mesh.geometry.attributes;
+					const batchedAttrs = this.batchedMesh.geometry.attributes;
+					for ( const key in batchedAttrs ) {
+
+						if ( ! ( key in attrs ) ) {
+
+							hasCorrectAttributes = false;
+							return;
+
+						}
+
+					}
+
+				}
+
+			} );
+
+			const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
+			if ( hasCorrectAttributes && canAddMeshes ) {
 
 				// TODO: ideally we could just set these to null
 				tile.cached.scene = new Group();
@@ -93,6 +119,7 @@ export class BatchedTilesPlugin {
 
 					const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 					const instanceId = batchedMesh.addInstance( geometryId );
+					instanceIds.push( instanceId );
 					batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
 					batchedMesh.setVisibleAt( instanceId, false );
 					if ( ! isColorWhite( material.color ) ) {
@@ -104,16 +131,19 @@ export class BatchedTilesPlugin {
 
 					// render the material
 					const texture = material.map;
-					this.renderTextureToLayer( texture, instanceId );
-					instanceIds.push( instanceId );
+					if ( texture ) {
+
+						this.renderTextureToLayer( texture, instanceId );
+
+					} else {
+
+						this.renderTextureToLayer( _whiteTex, instanceId );
+
+					}
 
 				} );
 
 				this._tileToInstanceId.set( tile, instanceIds );
-
-			} else {
-
-				meshes.map( m => m.material.color.set( 0xff0000 ) );
 
 			}
 
@@ -231,7 +261,8 @@ export class BatchedTilesPlugin {
 	expandArrayTargetIfNeeded() {
 
 		const { batchedMesh, arrayTarget, renderer } = this;
-		if ( batchedMesh.maxInstanceCount > arrayTarget.depth ) {
+		const targetDepth = Math.min( batchedMesh.maxInstanceCount, this.maxInstanceCount );
+		if ( targetDepth > arrayTarget.depth ) {
 
 			// create a new array texture target
 			const textureOptions = {
@@ -243,7 +274,7 @@ export class BatchedTilesPlugin {
 				magFilter: arrayTarget.texture.magFilter,
 			};
 
-			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, batchedMesh.maxInstanceCount );
+			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, targetDepth );
 			Object.assign( newArrayTarget.texture, textureOptions );
 
 			// render each old layer into the new texture target
