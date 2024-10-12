@@ -35,12 +35,18 @@ export class BatchedTilesPlugin {
 
 		this.name = 'BATCHED_MESH_PLUGIN';
 
+		// limit the amount of instances to the size of a 3d texture to avoid over flowing the
+		const gl = options.renderer.getContext();
+
 		// save options
 		this.instanceCount = options.instanceCount;
 		this.vertexCount = options.vertexCount;
 		this.indexCount = options.indexCount;
 		this.material = options.material ? options.material.clone() : null;
 		this.expandPercent = options.expandPercent;
+		this.maxVertexCount = options.maxVertexCount;
+		this.maxIndexCount = options.maxIndexCount;
+		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
 
 		// local variables
@@ -70,7 +76,7 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			if ( meshes.length === 1 && ( ! this.batchedMesh || this.batchedMesh.instanceCount < this.batchedMesh.maxInstanceExpansionSize ) ) {
+			if ( meshes.length === 1 && ( ! this.batchedMesh || this.batchedMesh.instanceCount < this.maxInstanceCount ) ) {
 
 				scene.updateMatrixWorld();
 
@@ -107,6 +113,10 @@ export class BatchedTilesPlugin {
 				this.renderTextureToLayer( texture, instanceId );
 
 				this._tileToInstanceId.set( tile, instanceId );
+
+			} else {
+
+				meshes.map( m => m.material.color.set( 0xff0000 ) );
 
 			}
 
@@ -159,17 +169,13 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { renderer, instanceCount, vertexCount, indexCount, tiles } = this;
+		const { instanceCount, vertexCount, indexCount, tiles } = this;
 		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
 		batchedMesh.frustumCulled = false;
 		tiles.group.add( batchedMesh );
 		batchedMesh.updateMatrixWorld();
-
-		// limit the amount of instances to the size of a 3d texture to avoid over flowing the
-		const gl = renderer.getContext();
-		batchedMesh.maxInstanceExpansionSize = gl.getParameter( gl.MAX_3D_TEXTURE_SIZE );
 
 		// init the array texture render target
 		const map = target.material.map;
