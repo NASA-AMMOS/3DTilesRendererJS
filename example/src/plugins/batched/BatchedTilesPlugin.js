@@ -22,7 +22,12 @@ export class BatchedTilesPlugin {
 			vertexCount: 750,
 			indexCount: 2000,
 			expandPercent: 0.25,
-			maxExpansionCount: 3, // TODO
+
+			// TODO
+			maxVertexCount: Infinity,
+			maxIndexCount: Infinity,
+			maxInstanceCount: Infinity,
+
 			material: null,
 			renderer: null,
 			...options
