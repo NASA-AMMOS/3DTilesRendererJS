@@ -19,8 +19,8 @@ export class BatchedTilesPlugin {
 
 		options = {
 			instanceCount: 500,
-			vertexCount: 1000,
-			indexCount: 1000,
+			vertexCount: 750,
+			indexCount: 2000,
 			expandPercent: 0.25,
 			maxExpansionCount: 3, // TODO
 			material: null,

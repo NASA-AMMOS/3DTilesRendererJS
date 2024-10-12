@@ -75,7 +75,12 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// Overrides addGeometry to find an option geometry slot, expand, or optimized if needed
 	addGeometry( geometry, reservedVertexRange, reservedIndexRange ) {
 
-		const { indexCount, vertexCount, expandPercent, _freeGeometryIds } = this;
+		// expand the reserved range to what geometry needs since add geometry will throw an error otherwise
+		const needsIndex = Boolean( this.geometry.index );
+		reservedIndexRange = Math.max( needsIndex ? geometry.index.count : - 1, reservedIndexRange );
+		reservedVertexRange = Math.max( geometry.attributes.position.count, reservedVertexRange );
+
+		const { expandPercent, _freeGeometryIds } = this;
 		let resultId = this.findFreeId( geometry, reservedVertexRange, reservedIndexRange );
 		if ( resultId !== - 1 ) {
 
@@ -87,19 +92,20 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 			try {
 
 				// try to add the geometry, catching the error if it cannot fit
-				resultId = super.addGeometry( geometry, vertexCount, indexCount );
+				resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 			} catch {
 
 				// shift all the unused geometries to try to make space
 				_freeGeometryIds.forEach( id => this.deleteGeometry( id ) );
 				_freeGeometryIds.length = 0;
+
 				this.optimize();
 
 				try {
 
 					// see if we can insert geometry now
-					resultId = super.addGeometry( geometry, vertexCount, indexCount );
+					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 				} catch {
 
@@ -115,7 +121,7 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, position.count ) + batchedPosition.count;
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
-					resultId = super.addGeometry( geometry, vertexCount, indexCount );
+					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 				}
 
