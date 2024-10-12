@@ -109,15 +109,23 @@ export class BatchedTilesPlugin {
 
 		this._onDisposeModel = ( { tile } ) => {
 
-			const instanceId = this._tileToInstanceId.get( tile );
-			this.batchedMesh.deleteInstance( instanceId );
-			this._tileToInstanceId.delete( tile );
+			if ( this._tileToInstanceId.has( tile ) ) {
+
+				const instanceId = this._tileToInstanceId.get( tile );
+				this.batchedMesh.deleteInstance( instanceId );
+				this._tileToInstanceId.delete( tile );
+
+			}
 
 		};
 
 		this._onVisibilityChange = ( { tile, visible } ) => {
 
-			this.batchedMesh.setVisibleAt( this._tileToInstanceId.get( tile ), visible );
+			if ( this._tileToInstanceId.has( tile ) ) {
+
+				this.batchedMesh.setVisibleAt( this._tileToInstanceId.get( tile ), visible );
+
+			}
 
 		};
 
