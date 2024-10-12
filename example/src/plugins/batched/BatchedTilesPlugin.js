@@ -158,10 +158,11 @@ export class BatchedTilesPlugin {
 		const map = target.material.map;
 		const textureOptions = 			{
 			colorSpace: map.colorSpace,
-			generateMipmaps: map.generateMipmaps,
 			wrapS: map.wrapS,
 			wrapT: map.wrapT,
-			minFilter: map.minFilter,
+			wrapR: map.wrapS,
+			generateMipmaps: map.generateMipmaps,
+			// minFilter: map.minFilter,
 			magFilter: map.magFilter,
 		};
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
@@ -205,10 +206,10 @@ export class BatchedTilesPlugin {
 			// create a new array texture target
 			const textureOptions = {
 				colorSpace: arrayTarget.texture.colorSpace,
-				generateMipmaps: arrayTarget.texture.generateMipmaps,
 				wrapS: arrayTarget.texture.wrapS,
 				wrapT: arrayTarget.texture.wrapT,
-				minFilter: arrayTarget.texture.minFilter,
+				generateMipmaps: arrayTarget.texture.generateMipmaps,
+				// minFilter: arrayTarget.texture.minFilter,
 				magFilter: arrayTarget.texture.magFilter,
 			};
 
