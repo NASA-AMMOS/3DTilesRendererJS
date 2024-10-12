@@ -18,6 +18,7 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 		super( ...args );
 
 		this.expandPercent = 0.25;
+		this.maxInstanceExpansionSize = Infinity;
 		this._currentInstances = 0;
 
 		// set of available geometry ids that are no longer being used
@@ -139,7 +140,7 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 		if ( this.maxInstanceCount === this._currentInstances ) {
 
 			const newCount = Math.ceil( this.maxInstanceCount * ( 1 + this.expandPercent ) );
-			this.setInstanceCount( newCount );
+			this.setInstanceCount( Math.min( newCount, this.maxInstanceExpansionSize ) );
 
 		}
 

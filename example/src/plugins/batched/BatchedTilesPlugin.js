@@ -47,7 +47,6 @@ export class BatchedTilesPlugin {
 		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
 
-
 	}
 
 	init( tiles ) {
@@ -66,7 +65,7 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			if ( meshes.length === 1 ) {
+			if ( meshes.length === 1 && ( ! this.batchedMesh || this.batchedMesh.instanceCount < this.batchedMesh.maxInstanceExpansionSize ) ) {
 
 				scene.updateMatrixWorld();
 
@@ -85,7 +84,8 @@ export class BatchedTilesPlugin {
 				// assign expandPercent in case it has changed
 				batchedMesh.expandPercent = expandPercent;
 
-				// add the geometry and an instance to the mesh
+				// TODO: we should let the batched mesh functions fail to add the geometry and an instance to the mesh
+				// and then defer to meshes if necessary
 				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
 				const instanceId = batchedMesh.addInstance( geometryId );
 				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
@@ -154,13 +154,17 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const { renderer, instanceCount, vertexCount, indexCount, tiles } = this;
 		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
 		batchedMesh.frustumCulled = false;
 		tiles.group.add( batchedMesh );
 		batchedMesh.updateMatrixWorld();
+
+		// limit the amount of instances to the size of a 3d texture to avoid over flowing the
+		const gl = renderer.getContext();
+		batchedMesh.maxInstanceExpansionSize = gl.getParameter( gl.MAX_3D_TEXTURE_SIZE );
 
 		// init the array texture render target
 		const map = target.material.map;
@@ -173,6 +177,7 @@ export class BatchedTilesPlugin {
 			// minFilter: map.minFilter,
 			magFilter: map.magFilter,
 		};
+
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
 		Object.assign( arrayTarget.texture, textureOptions );
 
