@@ -61,7 +61,6 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
-	tiles.errorTarget = 50;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
