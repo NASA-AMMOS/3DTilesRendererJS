@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>@react-three/fiber 3D Tiles Renderer</title>
+		<title>@react-three/fiber Cesium Ion</title>
 		<style>
 			html {
 				overflow: hidden;
@@ -31,8 +31,12 @@
 		</style>
 	</head>
 	<body>
-	<div id="info">Demonstration using <a href="https://r3f.docs.pmnd.rs">@react-three/fiber</a> and <a href="https://drei.docs.pmnd.rs/">@react-three/drei</a></div>
+		<div id="info">
+			Example using <a href="https://ion.cesium.com/">Cesium Ion</a> & <a href="https://r3f.docs.pmnd.rs">@react-three/fiber</a>.
+			<br/>
+			Paste the evaluation token from the <a target="_blank" href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repository</a> or your own.
+		</div>
 		<div id="root"></div>
-		<script type="module" src="./simple.jsx"></script>
+		<script type="module" src="./ion.jsx"></script>
 	</body>
 </html>
