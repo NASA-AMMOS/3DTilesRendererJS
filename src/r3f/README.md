@@ -141,11 +141,21 @@ And a practical example of creating and using a plugin:
 
 ## Controls
 
-Components have also been exported for Controls to handle user-interaction, especially for globe-wide tilesets. These components are `EnvironmentControls` and `GlobeControls`, and they can be passed each its own set of options as below - only use one Control in your r3f canvas at a time.
+These `EnvironmentControls` and `GlobeControls` classes have been wrapped as components to handle user-interaction. They will both be set to the `controls` react three fiber state field when in use. All properties on the original classes can be passed as properties:
 
 ```jsx
-<EnvironmentControls enableDamping={true} />
-<GlobeControls enableDamping={true}  enable={true}  />
+<>
+  <TilesRenderer url={ url } { ...props } />
+  <EnvironmentControls enableDamping={ true } enabled={ true } />
+</>
+```
+
+The `GlobeControls` component must be set as a child of the `TilesRenderer` component that is providing the ellipsoid to orbit around.
+
+```jsx
+<TilesRenderer url={ url } { ...props }>
+  <GlobeControls enableDamping={ true } />
+</TilesRenderer>
 ```
 
 ## EastNorthUpFrame
@@ -181,3 +191,10 @@ function SuziModel( props ) {
 ## TilesAttributionOverlay
 
 TODO
+
+```jsx
+```jsx
+<TilesRenderer url={ url } { ...props }>
+  <TilesAttributionOverlay />
+</TilesRenderer>
+```
