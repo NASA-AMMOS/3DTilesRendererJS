@@ -108,7 +108,17 @@ export class CesiumIonAuthPlugin {
 			url.searchParams.append( 'access_token', this.apiToken );
 
 			this._tokenRefreshPromise = fetch( url, options )
-				.then( res => res.json() )
+				.then( res => {
+
+					if ( ! res.ok ) {
+
+						throw new Error( `CesiumIonAuthPlugin: Failed to load data with error code ${ res.status }` );
+
+					}
+
+					return res.json();
+
+				} )
 				.then( json => {
 
 					const tiles = this.tiles;
@@ -135,11 +145,15 @@ export class CesiumIonAuthPlugin {
 						}
 
 						this._bearerToken = json.accessToken;
-						this._attributions = json.attributions.map( att => ( {
-							value: att.html,
-							type: 'html',
-							required: att.required,
-						} ) );
+						if ( json.attributions ) {
+
+							this._attributions = json.attributions.map( att => ( {
+								value: att.html,
+								type: 'html',
+								required: att.required,
+							} ) );
+
+						}
 
 					}
 

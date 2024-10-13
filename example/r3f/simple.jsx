@@ -44,7 +44,7 @@ function App() {
 		>
 			{/* 3D Tiles renderer tileset */}
 			<group rotation-x={ Math.PI / 2 }>
-				<TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
+				<TilesRenderer url={ tilesetUrl }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 
 					{/* add mesh to local frame of the tile set*/}
