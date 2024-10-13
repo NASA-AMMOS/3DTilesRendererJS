@@ -4,18 +4,18 @@ import { createRoot } from 'react-dom/client';
 // R3F 3DTilesRenderer, controls and attribution imports
 import {
 	TilesPlugin, TilesRenderer, EastNorthUpFrame,
-	EnvironmentControls, GlobeControls,
+
 	TilesAttributionOverlay
-} from '../src/r3f/index';
+} from '../../src/r3f/index';
 
 // Plugins
-import { GLTFExtensionsPlugin } from './src/plugins/GLTFExtensionsPlugin';
-import { ReorientationPlugin } from './src/plugins/ReorientationPlugin';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin';
-import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin';
-import { DebugTilesPlugin, NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER } from '../src/index.js';
+import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
+import { ReorientationPlugin } from '../src/plugins/ReorientationPlugin.js';
+import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
+import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';
+import { DebugTilesPlugin, NONE } from '../../src/index.js';
 // Auth plugins
-import { GoogleCloudAuthPlugin, CesiumIonAuthPlugin } from '../src/index.js';
+import { GoogleCloudAuthPlugin, CesiumIonAuthPlugin } from '../../src/index.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas } from '@react-three/fiber';

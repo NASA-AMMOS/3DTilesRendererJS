@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { TilesPlugin, TilesRenderer, EnvironmentControls } from '../src/r3f/index';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin';
+import { TilesPlugin, TilesRenderer, EnvironmentControls } from '../../src/r3f/index';
+import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin';
 
 // R3F + DREI
 import { Canvas } from '@react-three/fiber';
