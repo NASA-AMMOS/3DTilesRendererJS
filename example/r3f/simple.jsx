@@ -7,7 +7,7 @@ import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
-function RotatingMesh() {
+function RotatingMesh( props ) {
 
 	const ref = useRef();
 
@@ -19,7 +19,7 @@ function RotatingMesh() {
 
 	} );
 
-	return <mesh position={ [ 0, 4, - 4 ] } scale={ 2 } ref={ ref }>
+	return <mesh { ...props } ref={ ref }>
 		<icosahedronGeometry />
 		<MeshTransmissionMaterial thickness={ 1.5 } chromaticAberration={ 0.25 } color={ 0x80DEEA } />
 	</mesh>;
@@ -46,11 +46,12 @@ function App() {
 			<group rotation-x={ Math.PI / 2 }>
 				<TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
+
+					{/* add mesh to local frame of the tile set*/}
+					<RotatingMesh position={ [ 0, - 4, - 4 ] } scale={ 2 } />
+
 				</TilesRenderer>
 			</group>
-
-			{/* add mesh to local frame */}
-			<RotatingMesh />
 
 			{/* Controls */}
 			<EnvironmentControls enableDamping={ true } />
