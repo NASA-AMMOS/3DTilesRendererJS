@@ -8,11 +8,43 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 
 [Cesium Ion example]()
 
-[Goohle Photorealistic Tiles example]()
+[Google Photorealistic Tiles example]()
 
 # Use
 
-TODO
+## Simple
+
+```jsx
+import { TilesRenderer } from '3d-tiles-renderer/r3f';
+
+const TILESET_URL = /* your tile set url */;
+export default function App() {
+  return (
+    <Canvas>
+      <TilesRenderer url={ TILESET_URL } />
+    </Canvas>
+  );
+}
+```
+
+## With Plugins
+
+```jsx
+import { TilesRenderer, TilesPlugin } from '3d-tiles-renderer/r3f';
+import { DebugTilesPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+
+const TILESET_URL = /* your tile set url */;
+export default function App() {
+  return (
+    <Canvas>
+      <TilesRenderer url={ TILESET_URL }>
+        <TilesPlugin plugin={ DebugTilesPlugin } displayBoxBounds={ true } />
+        <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken: /* your api token here */ } } />
+      </TilesRenderer>
+    </Canvas>
+  );
+}
+```
 
 # Components
 
