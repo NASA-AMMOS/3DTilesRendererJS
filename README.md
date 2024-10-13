@@ -53,6 +53,9 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Ellipsoid Region Bounds](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ellipsoid.html)
 
+**React Three Fiber**
+
+See the [dedicated documentation](./src/r3f/README.md) for information on using the project with @react-three/fiber.
 
 # Use
 
