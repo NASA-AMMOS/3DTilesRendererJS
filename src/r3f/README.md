@@ -6,9 +6,9 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 
 [Basic example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/basic.html)
 
-[Cesium Ion example]()
+[Cesium Ion example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ion.html)
 
-[Google Photorealistic Tiles example]()
+[Google Photorealistic Tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/globe.html)
 
 # Use
 
@@ -52,7 +52,7 @@ export default function App() {
 
 ### Standard syntax
 
-A `TilesRenderer` component can be added to an r3f `Canvas` in order to add a 3d-tiles renderer to the scene, specified by a tileset URL prop.   
+A `TilesRenderer` component can be added to an r3f `Canvas` in order to add a 3d-tiles renderer to the scene, specified by a tileset URL prop.
 ```jsx
 <Canvas>
 	<TilesRenderer url={ tilesetUrl } > </TilesRenderer>
@@ -62,7 +62,7 @@ A `TilesRenderer` component can be added to an r3f `Canvas` in order to add a 3d
 
 ### Additional Options
 
-Options can be passed via the below syntax, a dash-separated options path representation for properties like: 
+Options can be passed via the below syntax, a dash-separated options path representation for properties like:
  - [TilesRenderer](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#tilesrenderer)
  - [priorityQueue](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#priorityqueue) for `parseQueue` and `downloadQueue` settings like `maxJobs`
 -  [LRUCache](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#lrucache-1)
@@ -70,8 +70,8 @@ Options can be passed via the below syntax, a dash-separated options path repres
 
 ```jsx
 
-<TilesRenderer 
-	url={ tilesetUrl } 
+<TilesRenderer
+	url={ tilesetUrl }
 	// set options to the tilesRenderer object
 	errorTarget= { 6 }
 	errorThreshold= { 10 }
@@ -83,7 +83,7 @@ Options can be passed via the below syntax, a dash-separated options path repres
 	lruCache-minBytesSize={ 0.25 * 1e6 }
 	lruCache-maxBytesSize={ 0.5 * 1e6 }
 	fetchOptions={ { mode: 'cors' } }
-	// event registration 
+	// event registration
 	onTileSetLoad={ e => {} }
 	onModelLoad={ e => {} }
 >
@@ -93,11 +93,11 @@ Options can be passed via the below syntax, a dash-separated options path repres
 
 ## TilesPlugin components
 
-Plugins can be set as children of the TilesRenderer component to add additional functionality. 
+Plugins can be set as children of the TilesRenderer component to add additional functionality.
 ```jsx
 
 <TilesRenderer url={ tilesetUrl } >
-	<TilesPlugin plugin={ PluginClassName } {...pluginProps} /> 
+	<TilesPlugin plugin={ PluginClassName } {...pluginProps} />
 </TilesRenderer>
 
 ```
@@ -112,7 +112,7 @@ Existing TilesRenderer or GLTF [plugins](https://github.com/NASA-AMMOS/3DTilesRe
 
 ```jsx
 <TilesRenderer url={ tilesetUrl } >
-	<TilesPlugin plugin={ GLTFExtensionsPlugin } 
+	<TilesPlugin plugin={ GLTFExtensionsPlugin }
 		dracoLoader={dracoLoader}
 		ktxLoader={ktx2Loader}
 		autoDispose={false}
@@ -121,19 +121,19 @@ Existing TilesRenderer or GLTF [plugins](https://github.com/NASA-AMMOS/3DTilesRe
 		//   dracoLoader, ktxLoader:ktx2Loader
 		// }}
 	/>
-	<TilesPlugin plugin={ ReorientationPlugin } 
+	<TilesPlugin plugin={ ReorientationPlugin }
 		lat={props.lat * Math.PI / 180}
 		lon={props.lon * Math.PI / 180}
 		height={props.height || 100}
 		up={'+z'}
 		recenter={true}
-		/> : 
+		/> :
 		// If no lat/lon passed as props, recenter automatically
-		<TilesPlugin plugin={ ReorientationPlugin } 
+		<TilesPlugin plugin={ ReorientationPlugin }
 		recenter={true}
-	/>  
+	/>
 	<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={500} />
-	<TilesPlugin plugin={ TileCompressionPlugin } 
+	<TilesPlugin plugin={ TileCompressionPlugin }
 		generateNormals={false}
 		disableMipmaps={true}
 		compressIndex={false}
@@ -141,7 +141,7 @@ Existing TilesRenderer or GLTF [plugins](https://github.com/NASA-AMMOS/3DTilesRe
 		// compressUvs={false} uvType={Int8Array}
 		// compressPosition={false} positionType={Int16Array}
 	/>
-	<TilesPlugin plugin={ DebugTilesPlugin } 
+	<TilesPlugin plugin={ DebugTilesPlugin }
 		colorMode={NONE} // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
 		displayBoxBounds={true}
 		displayRegionBounds={false}
@@ -175,7 +175,7 @@ function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
 	);
 }
 
-// Above auth wrappers can then be used this way: 
+// Above auth wrappers can then be used this way:
 function App () {
 	return <>
 		<GoogleTiles apiToken={googleApiKey} >
@@ -186,7 +186,7 @@ function App () {
 }
 ```
 
-The `TilesAttributionOverlay` component handles crediting Google or Cesium data sources automatically, based on tileset or loaded tiles metadata, at the bottom-left of the screen. 
+The `TilesAttributionOverlay` component handles crediting Google or Cesium data sources automatically, based on tileset or loaded tiles metadata, at the bottom-left of the screen.
 
 ## EastNorthUpFrame
 
@@ -203,7 +203,7 @@ function GeopositionnededModel(props) {
 			az = {0}
 			el = {0}
 			roll = {0}
-		> 
+		>
 			<SuziModel position={[0, 0, 2]} rotation-z={Math.PI/2 * 0} rotation-y={- Math.PI/2} scale={1} materialProps={{color:'#0000cc'}} />
 		</EastNorthUpFrame>
 	);
@@ -223,9 +223,9 @@ function SuziModel(props) {
 
 ## Controls
 
-Components have also been exported for Controls to handle user-interaction, especially for globe-wide tilesets. These components are `EnvironmentControls` and `GlobeControls`, and they can be passed each its own set of options as below - only use one Control in your r3f canvas at a time. 
+Components have also been exported for Controls to handle user-interaction, especially for globe-wide tilesets. These components are `EnvironmentControls` and `GlobeControls`, and they can be passed each its own set of options as below - only use one Control in your r3f canvas at a time.
 
 ```jsx
-<EnvironmentControls enableDamping={true} /> 
-<GlobeControls enableDamping={true}  enable={true}  /> 
+<EnvironmentControls enableDamping={true} />
+<GlobeControls enableDamping={true}  enable={true}  />
 ```

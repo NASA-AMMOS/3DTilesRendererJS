@@ -19,10 +19,9 @@ const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/d
 
 function App() {
 
-	const ionAccessToken_ = localStorage.getItem( 'ion-token' ) || 'put-your-api-key-here';
 	const levaParams = {
 		apiToken: {
-			value: ionAccessToken_,
+			value: localStorage.getItem( 'ion-token' ) || 'put-your-api-key-here',
 			onChange: ( value ) => localStorage.setItem( 'ion-token', value ),
 			transient: false,
 		},
@@ -64,7 +63,7 @@ function App() {
 			<TilesRenderer key={ assetId + apiToken }>
 				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken: true } } />
 				<TilesPlugin plugin={ ReorientationPlugin } />
-				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } autoDispose={ false } />
+				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } autoDispose={ true } />
 
 				<TilesAttributionOverlay />
 			</TilesRenderer>
