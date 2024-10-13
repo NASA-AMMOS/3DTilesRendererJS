@@ -1148,7 +1148,6 @@ export class EnvironmentControls extends EventDispatcher {
 			camera,
 			state,
 			zoomPoint,
-			zoomDirection,
 			zoomDirectionSet,
 			zoomPointSet,
 			reorientOnDrag,

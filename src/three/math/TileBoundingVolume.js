@@ -1,5 +1,4 @@
 import { Vector3, Sphere } from 'three';
-import { WGS84_RADIUS, WGS84_HEIGHT } from '../../base/constants.js';
 import { OBB } from './OBB.js';
 import { EllipsoidRegion } from './EllipsoidRegion.js';
 
