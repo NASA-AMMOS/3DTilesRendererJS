@@ -468,7 +468,7 @@ Whether to fade the root tile objects in.
 
 ## GLTFExtensionsPlugin
 
-Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry.
+Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
 
 ### .constructor
 
