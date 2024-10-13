@@ -41,6 +41,7 @@ export class GoogleCloudAuthPlugin {
 		this._logoAttribution = {
 			value: '',
 			type: 'image',
+			collapsible: false,
 		};
 		this._attribution = {
 			value: '',

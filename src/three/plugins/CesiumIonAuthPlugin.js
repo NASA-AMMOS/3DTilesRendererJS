@@ -150,7 +150,7 @@ export class CesiumIonAuthPlugin {
 							this._attributions = json.attributions.map( att => ( {
 								value: att.html,
 								type: 'html',
-								required: att.required,
+								collapsible: att.collapsible,
 							} ) );
 
 						}

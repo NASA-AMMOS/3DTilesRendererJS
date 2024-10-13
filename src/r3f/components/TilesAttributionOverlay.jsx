@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useMemo } from 'react';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
@@ -69,18 +69,34 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	} );
 
+	const classId = useMemo( () => 'class_' + window.crypto.randomUUID(), [] );
+	const styles = useMemo( () => `
+		#${ classId } a {
+			color: white;
+		}
+
+		#${ classId } img {
+			max-width: 125px;
+			display: block;
+			margin: 5px 0;
+		}
+	`, [ classId ] );
+
 	return (
 		<CanvasDOMOverlay
+			id={ classId }
 			style={ {
 				position: 'absolute',
 				bottom: 0,
 				left: 0,
-				padding: '5px',
-				color: 'rgba( 255, 255, 255, 0.5 )',
-				fontSize: '12px',
+				padding: '10px',
+				color: 'rgba( 255, 255, 255, 0.75 )',
+				fontSize: '10px',
+				...style,
 			} }
 			{ ...rest }
 		>
+			<style>{ styles }</style>
 			{ children }
 			{ output }
 		</CanvasDOMOverlay>
