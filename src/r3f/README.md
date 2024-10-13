@@ -160,11 +160,13 @@ The `GlobeControls` component must be set as a child of the `TilesRenderer` comp
 
 ## EastNorthUpFrame
 
-The `EastNorthUpFrame` is used to place 3D objects in a local reference frame that is centered on the provided origin, specified via lat/lon/height and euler angles props. `EastNorthUpFrame` does not transform the tileset root while `ReorientationPlugin` does transform the tileset. `EastNorthUpFrame`, instead, creates a frame on the surface of the globe that you can add children to if one, for example, want to create markers on the planet surface.
+The `EastNorthUpFrame` creates a root object that is centered on the provided point relative to the tile sets ellipsoid, specified via lat/lon/height and euler angle props and is used to place 3D objects relative to that point. It does not rotate the original tile set and must be a child of a `TilesRenderer` component.
+
+It can be used to place markers on the surface of the ellipsoid, such as a cone for pointing to a location:
 
 ```jsx
 <TilesRenderer url={ url } { ...props }>
-  <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+  { /* ... */ }
   <EastNorthUpFrame
     {/* The latitude and longitude to place the frame at in radians */}
     lat={ lat }
@@ -173,12 +175,19 @@ The `EastNorthUpFrame` is used to place 3D objects in a local reference frame th
     {/* The height above the ellipsoid to place the frame at in meters */}
     height={ 100 }
 
-    {/* The azimuth, elevation, and roll around the "north" axis, applied in that order intrinsicly, in radians */}
+    {/*
+      The azimuth, elevation, and roll around the "north" axis, applied
+      in that order intrinsicly, in radians
+    */}
     az={ 0 }
     el={ 0 }
     roll={ 0 }
   >
-    <SuziModel position={ [ 0, 0, 2 ] } rotation-z={ Math.PI / 2 * 0 } rotation-y={ - Math.PI / 2 } scale={ 1 } materialProps={ { color:'#0000cc' } } />
+    {/* Children are position relative to the east, north, up frame */}
+    <mesh rotation-x={ - Math.PI / 2 } scale={ 100 } position-z={ 50 }>
+      <coneGeometry args={ [ 0.5 ] } />
+      <meshStandardMaterial color={ 'red' } />
+    </mesh>
   </EastNorthUpFrame>
 </TilesRenderer>
 ```
