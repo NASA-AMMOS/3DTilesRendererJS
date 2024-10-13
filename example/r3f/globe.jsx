@@ -3,16 +3,17 @@ import { createRoot } from 'react-dom/client';
 
 // TilesRenderer, controls and attribution imports
 import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, GlobeControls, EastNorthUpFrame } from '../../src/r3f/index.jsx';
-import { GoogleCloudAuthPlugin } from '../../src/index.js';
 
 // Plugins
+import { GoogleCloudAuthPlugin } from '../../src/index.js';
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
+import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { useControls } from 'leva';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { MathUtils, Vector3 } from 'three';
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
@@ -83,6 +84,7 @@ function App() {
 				<TilesRenderer key={ apiToken }>
 					<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken, autoRefreshToken: true } } />
 					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } autoDispose={ true } />
+					<TilesPlugin plugin={ TilesFadePlugin } />
 
 					{/* Controls */}
 					<GlobeControls enableDamping={ true } />
