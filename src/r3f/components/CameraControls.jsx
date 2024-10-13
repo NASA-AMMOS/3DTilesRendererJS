@@ -8,7 +8,7 @@ import { TilesRendererContext } from './TilesRenderer.jsx';
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
 	const { controlsConstructor, domElement, scene, camera, tilesRenderer, ...rest } = props;
-	const [ defaultCamera, gl, defaultScene, invalidate ] = useThree( state => [ state.camera, state.gl, state.scene, state.invalidate ] );
+	const [ defaultCamera, gl, defaultScene, invalidate, get, set ] = useThree( state => [ state.camera, state.gl, state.scene, state.invalidate, state.get, state.set ] );
 	const defaultTilesRenderer = useContext( TilesRendererContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
@@ -79,6 +79,14 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 		};
 
 	}, [ controls, appliedDomElement ] );
+
+	useEffect( () => {
+
+		const old = get().controls;
+		set( { controls } );
+		return () => set( { controls: old } );
+
+	}, [ controls, get, set ] );
 
 	useFrame( () => {
 
