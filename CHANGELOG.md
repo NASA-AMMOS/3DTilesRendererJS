@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Case where tile set scale was incorrectly used when computed screenspace error.
 - Case where `setTileVisibility` could get called asymmetrically.
+- Case where `TilesFadePlugin` would hold on to scene geometry after disposal.
 
 ## [0.3.38] - 2024.09.30
 ### Added
