@@ -44,6 +44,12 @@ export function EastNorthUpFrame( props ) {
 	const tiles = useContext( TilesRendererContext );
 	useEffect( () => {
 
+		if ( tiles === null ) {
+
+			return;
+
+		}
+
 		const group = ref.current;
 		group.matrix.identity();
 
@@ -157,6 +163,12 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	// update the resolution for the camera
 	useFrame( () => {
+
+		if ( tiles === null ) {
+
+			return;
+
+		}
 
 		camera.updateMatrixWorld();
 		tiles.setResolutionFromRenderer( camera, gl );
