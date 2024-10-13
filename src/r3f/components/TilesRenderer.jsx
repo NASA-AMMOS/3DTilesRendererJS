@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, useRef, forwardRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
-import { TilesRenderer as TilesRendererImpl } from '../three/TilesRenderer.js';
-import { useDeepOptions, useShallowOptions } from './utilities/useOptions.jsx';
-import { useObjectDep } from './utilities/useObjectDep.jsx';
+import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
+import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.jsx';
+import { useObjectDep } from '../utilities/useObjectDep.jsx';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
