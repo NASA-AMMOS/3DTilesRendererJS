@@ -22,8 +22,5 @@ export default {
 			],
 		},
 	},
-	plugins: [
-		react( )
-	]
-
+	plugins: [ react() ],
 };
