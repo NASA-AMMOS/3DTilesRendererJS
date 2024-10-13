@@ -328,7 +328,7 @@ constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl
 ```
 
 Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
-This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`: 
+This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`:
 ```js
 tiles.parseQueue.maxJobs = 10;
 tiles.downloadQueue.maxJobs = 30;
@@ -468,6 +468,8 @@ Whether to fade the root tile objects in.
 
 ## GLTFExtensionsPlugin
 
+_available in the examples directory_
+
 Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
 
 ### .constructor
@@ -499,6 +501,8 @@ Available options are as follows:
 ```
 
 ## ReorientationPlugin
+
+_available in the examples directory_
 
 Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
 
