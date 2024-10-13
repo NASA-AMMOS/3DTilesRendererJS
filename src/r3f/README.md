@@ -163,36 +163,30 @@ The `GlobeControls` component must be set as a child of the `TilesRenderer` comp
 The `EastNorthUpFrame` is used to place 3D objects in a local reference frame that is centered on the provided origin, specified via lat/lon/height and euler angles props. `EastNorthUpFrame` does not transform the tileset root while `ReorientationPlugin` does transform the tileset. `EastNorthUpFrame`, instead, creates a frame on the surface of the globe that you can add children to if one, for example, want to create markers on the planet surface.
 
 ```jsx
-function GeopositionedModel( props ) {
-  return (
-    <EastNorthUpFrame
-      lat = { lat * Math.PI / 180 }
-      lon = { lon * Math.PI / 180 }
-      height = { 100 }
-      az = { 0 }
-      el = { 0 }
-      roll = { 0 }
-    >
-      <SuziModel position={ [ 0, 0, 2 ] } rotation-z={ Math.PI / 2 * 0 } rotation-y={ - Math.PI / 2 } scale={ 1 } materialProps={ { color:'#0000cc' } } />
-    </EastNorthUpFrame>
-  );
-}
+<TilesRenderer url={ url } { ...props }>
+  <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+  <EastNorthUpFrame
+    {/* The latitude and longitude to place the frame at in radians */}
+    lat={ lat }
+    lon={ lon }
 
-function SuziModel( props ) {
-  const { nodes } = useGLTF( 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/suzanne-high-poly/model.gltf' );
-  return (
-    <mesh castShadow receiveShadow geometry={ nodes.Suzanne.geometry } { ...props }>
-      <meshStandardMaterial color={ "#9d4b4b" } { ...props.materialProps } />
-    </mesh>
-  );
-}
+    {/* The height above the ellipsoid to place the frame at in meters */}
+    height={ 100 }
+
+    {/* The azimuth, elevation, and roll around the "north" axis, applied in that order intrinsicly, in radians */}
+    az={ 0 }
+    el={ 0 }
+    roll={ 0 }
+  >
+    <SuziModel position={ [ 0, 0, 2 ] } rotation-z={ Math.PI / 2 * 0 } rotation-y={ - Math.PI / 2 } scale={ 1 } materialProps={ { color:'#0000cc' } } />
+  </EastNorthUpFrame>
+</TilesRenderer>
 ```
 
 ## TilesAttributionOverlay
 
-TODO
+The `TilesAttributionOverlay` component must be embedded in a tile set and will automatically display the credits associated with the loaded data set.
 
-```jsx
 ```jsx
 <TilesRenderer url={ url } { ...props }>
   <TilesAttributionOverlay />
