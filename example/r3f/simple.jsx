@@ -54,7 +54,7 @@ function App() {
 			</group>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } />
+			<EnvironmentControls enableDamping={ true } maxDistance={ 50 } />
 
 			{/* other r3f staging */}
 			<Environment
