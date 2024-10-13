@@ -27,19 +27,22 @@ export default function App() {
 }
 ```
 
-## With Plugins
+## With Plugins, Controls, & Attribution
+
+Basic set up for Google Photorealistic tiles, Globe controls, and an overlay for displaying data set attributions.
 
 ```jsx
-import { TilesRenderer, TilesPlugin } from '3d-tiles-renderer/r3f';
+import { TilesRenderer, TilesPlugin, GlobeControls, TilesAttributionOverlay } from '3d-tiles-renderer/r3f';
 import { DebugTilesPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
 
-const TILESET_URL = /* your tile set url */;
 export default function App() {
   return (
-    <Canvas>
-      <TilesRenderer url={ TILESET_URL }>
+    <Canvas camera={ { position: [ 0, 0, 1e8 ] } }>
+      <TilesRenderer>
         <TilesPlugin plugin={ DebugTilesPlugin } displayBoxBounds={ true } />
         <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken: /* your api token here */ } } />
+        <GlobeControls />
+        <TilesAttributionOverlay />
       </TilesRenderer>
     </Canvas>
   );
@@ -48,8 +51,13 @@ export default function App() {
 
 ## Cesium Ion & Google Cloud
 
+Simplified wrappers for using the TilesRenderer with Cesium Ion and Google Cloud for Photorealistic Tiles. Use the `TilesAttributionOverlay` to display appropriate credits for the data sets.
+
 ```jsx
-function GoogleTiles( { children, apiToken, ...rest } ) {
+import { TilesRenderer, TilesPlugin } from '3d-tiles-renderer/r3f';
+import { CesiumIonAuthPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+
+function GoogleTilesRenderer( { children, apiToken, ...rest } ) {
   return (
     <TilesRenderer { ...rest } key={ apiToken }>
       <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
@@ -58,7 +66,7 @@ function GoogleTiles( { children, apiToken, ...rest } ) {
   );
 }
 
-function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
+function CesiumIonTilesRenderer( { children, apiToken, assetId, ...rest } ) {
   return (
     <TilesRenderer { ...rest } key={ apiToken + assetId }>
       <TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId } } />
@@ -72,143 +80,64 @@ function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
 
 ## TilesRenderer
 
-### Standard syntax
-
-A `TilesRenderer` component can be added to an r3f `Canvas` in order to add a 3d-tiles renderer to the scene, specified by a tileset URL prop.
-```jsx
-<Canvas>
-	<TilesRenderer url={ tilesetUrl } > </TilesRenderer>
-</Canvas>
-
-```
-
-### Additional Options
-
-Options can be passed via the below syntax, a dash-separated options path representation for properties like:
- - [TilesRenderer](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#tilesrenderer)
- - [priorityQueue](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#priorityqueue) for `parseQueue` and `downloadQueue` settings like `maxJobs`
--  [LRUCache](https://github.com/NASA-AMMOS/3DTilesRendererJS?tab=readme-ov-file#lrucache-1)
-
+Wrapper for the three.js `TilesRenderer` class. Listening for events are specified with a camel-case property prefixed with `on`, such as `onModelLoad`, and all other properties are specified as individual properties with dashes being used to indicate nested properties. For example, `lruCache-minSize` is used to set `lruCache.minSize`.
 
 ```jsx
-
 <TilesRenderer
-	url={ tilesetUrl }
-	// set options to the tilesRenderer object
-	errorTarget= { 6 }
-	errorThreshold= { 10 }
-	// set options to grand-children of the tilesRenderer
-	parseQueue-maxJobs={ 30 }
-	downloadQueue-maxJobs={ 10 }
-	// Additional lruCache options
-	lruCache-minSize={ 0 }
-	lruCache-minBytesSize={ 0.25 * 1e6 }
-	lruCache-maxBytesSize={ 0.5 * 1e6 }
-	fetchOptions={ { mode: 'cors' } }
-	// event registration
-	onTileSetLoad={ e => {} }
-	onModelLoad={ e => {} }
->
-</TilesRenderer>
+  url={ tilesetUrl }
 
+  // set options to the TilesRenderer object
+  errorTarget={ 6 }
+  errorThreshold={ 10 }
+
+  // set nested object options of the TilesRenderer
+  parseQueue-maxJobs={ 30 }
+  downloadQueue-maxJobs={ 10 }
+  lruCache-minBytesSize={ 0.25 * 1e6 }
+  lruCache-maxBytesSize={ 0.5 * 1e6 }
+
+  // event registration
+  onTileSetLoad={ onTileSetLoadCallback }
+  onModelLoad={ onModelLoadCallback }
+/>
 ```
 
-## TilesPlugin components
+## TilesPlugin
 
-Plugins can be set as children of the TilesRenderer component to add additional functionality.
+Plugins can be set as children of the TilesRenderer component to add additional functionality. TilePlugin components must be nested inside a TilesRenderer component. Constructor arguments are passed via the `args` parameter while local members can be passed via the regular properties. But note that depending on the plugin some properties cannot be changed after construction and initialization.
+
+See the [PLUGINS documentation](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/PLUGINS.md) for docs on all avilable plugins.
+
 ```jsx
-
-<TilesRenderer url={ tilesetUrl } >
-	<TilesPlugin plugin={ PluginClassName } {...pluginProps} />
+<TilesRenderer url={ tilesetUrl }>
+  <TilesPlugin
+    plugin={ PluginClassName }
+    args={ /* constructor arguments as array or object */ }
+    { ...pluginProps }
+  />
 </TilesRenderer>
-
 ```
 
-
-Existing TilesRenderer or GLTF [plugins](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/PLUGINS.md) can be passed to the `TilesPlugin` component to manage tile trasnformations and loading, like :
- - `GLTFExtensionsPlugin` to pass decompression loaders (draco and ktx)
- - `ReorientationPlugin` to apply a rigid transformation to the tileset to either center-it on origin or to the user-provided lat/lon/height as reference origin to the coordinate-system
- - `TilesFadePlugin` to have smooth tiles loading
- - `TileCompressionPlugin` to optimize tile mesh content to easen the burden on the GPU
- - `DebugTilesPlugin` to enable debugging bounding volumes, tiles coloring based on given metric
+And a practical example of setting the fields:
 
 ```jsx
 <TilesRenderer url={ tilesetUrl } >
-	<TilesPlugin plugin={ GLTFExtensionsPlugin }
-		dracoLoader={dracoLoader}
-		ktxLoader={ktx2Loader}
-		autoDispose={false}
-		// both args and props/options do work to pass loaders
-		// args = {{
-		//   dracoLoader, ktxLoader:ktx2Loader
-		// }}
-	/>
-	<TilesPlugin plugin={ ReorientationPlugin }
-		lat={props.lat * Math.PI / 180}
-		lon={props.lon * Math.PI / 180}
-		height={props.height || 100}
-		up={'+z'}
-		recenter={true}
-		/> :
-		// If no lat/lon passed as props, recenter automatically
-		<TilesPlugin plugin={ ReorientationPlugin }
-		recenter={true}
-	/>
-	<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={500} />
-	<TilesPlugin plugin={ TileCompressionPlugin }
-		generateNormals={false}
-		disableMipmaps={true}
-		compressIndex={false}
-		// compressNormals={true} normalType={Int8Array}
-		// compressUvs={false} uvType={Int8Array}
-		// compressPosition={false} positionType={Int16Array}
-	/>
-	<TilesPlugin plugin={ DebugTilesPlugin }
-		colorMode={NONE} // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
-		displayBoxBounds={true}
-		displayRegionBounds={false}
-	/>
+  <TilesPlugin plugin={ GLTFExtensionsPlugin }
+    dracoLoader={ dracoLoader }
+    ktxLoader={ ktx2Loader }
+    autoDispose={ false }
+    { /*
+      // alternatively the options can be passed via constructor arguments
+      // or a mix of both can be used.
+      args = { {
+        dracoLoader,
+        ktxLoader,
+        autoDispose: false,
+      } }
+    */ }
+  />
 </TilesRenderer>
-
 ```
-
-
-## Wrappers for Google or Cesium Ion Tilesets
-
-Wrappers tiles-renderer components can be set-up for Google Photorealistic 3D Tiles or Cesium Ion tilesets, based on the corresponding GoogleCloud and CesiumIon auth plugins. Both these plugins setup the TielsRenderer url based on assetId for cesium, or default one for google. The Google auth plugin also sets-up default renderer settings if it is passed prop `useRecommendedSettings=true (default)` (`tiles.parseQueue.maxJobs = 10; tiles.downloadQueue.maxJobs = 30; tiles.errorTarget = 40`)
-
-```jsx
-
-function GoogleTiles( { children, apiToken, ...rest } ) {
-	return (
-		<TilesRenderer { ...rest }>
-			<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } useRecommendedSettings={true} />
-			{ children }
-		</TilesRenderer>
-);
-}
-
-function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
-	return (
-		<TilesRenderer { ...rest }>
-			<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken : true  } } key={assetId} />
-			{ children }
-		</TilesRenderer>
-	);
-}
-
-// Above auth wrappers can then be used this way:
-function App () {
-	return <>
-		<GoogleTiles apiToken={googleApiKey} >
-			<TilesAttributionOverlay />
-			{/* <TilesPlugin plugin={ CustomPlugin } {...pluginProps} /> */}
-		</GoogleTiles>
-	</>;
-}
-```
-
-The `TilesAttributionOverlay` component handles crediting Google or Cesium data sources automatically, based on tileset or loaded tiles metadata, at the bottom-left of the screen.
 
 ## EastNorthUpFrame
 
