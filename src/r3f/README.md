@@ -1,4 +1,20 @@
-# R3F Components for TilesRenderer for react-three-fiber
+# 3D Tiles React Components
+
+Set of components for loading and rendering 3D Tiles in [@react-three/fiber](https://r3f.docs.pmnd.rs/).
+
+**Examples**
+
+[Basic example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/basic.html)
+
+[Cesium Ion example]()
+
+[Goohle Photorealistic Tiles example]()
+
+# Use
+
+TODO
+
+# Components
 
 ## TilesRenderer
 
