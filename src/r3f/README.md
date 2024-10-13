@@ -118,7 +118,7 @@ See the [PLUGINS documentation](https://github.com/NASA-AMMOS/3DTilesRendererJS/
 </TilesRenderer>
 ```
 
-And a practical example of setting the fields:
+And a practical example of creating and using a plugin:
 
 ```jsx
 <TilesRenderer url={ tilesetUrl } >
@@ -139,39 +139,6 @@ And a practical example of setting the fields:
 </TilesRenderer>
 ```
 
-## EastNorthUpFrame
-
-The `EastNorthUpFrame` is used to place 3D objects in a local reference frame that is centered on the provided origin, specified via lat/lon/height and euler angles props. `EastNorthUpFrame` does not transform the tileset root while `ReorientationPlugin` does transform the tileset. `EastNorthUpFrame`, instead, creates a frame on the surface of the globe that you can add children to if one, for example, want to create markers on the planet surface.
-
-```jsx
-
-function GeopositionnededModel(props) {
-	return (
-		<EastNorthUpFrame
-			lat = {lat * Math.PI / 180}
-			lon = {lon * Math.PI / 180}
-			height = { 100}
-			az = {0}
-			el = {0}
-			roll = {0}
-		>
-			<SuziModel position={[0, 0, 2]} rotation-z={Math.PI/2 * 0} rotation-y={- Math.PI/2} scale={1} materialProps={{color:'#0000cc'}} />
-		</EastNorthUpFrame>
-	);
-}
-
-
-function SuziModel(props) {
-	const { nodes } = useGLTF('https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/suzanne-high-poly/model.gltf')
-	return (
-		<mesh castShadow receiveShadow geometry={nodes.Suzanne.geometry} {...props}>
-			<meshStandardMaterial color={"#9d4b4b"} {...props.materialProps} />
-		</mesh>
-	)
-}
-
-```
-
 ## Controls
 
 Components have also been exported for Controls to handle user-interaction, especially for globe-wide tilesets. These components are `EnvironmentControls` and `GlobeControls`, and they can be passed each its own set of options as below - only use one Control in your r3f canvas at a time.
@@ -180,3 +147,37 @@ Components have also been exported for Controls to handle user-interaction, espe
 <EnvironmentControls enableDamping={true} />
 <GlobeControls enableDamping={true}  enable={true}  />
 ```
+
+## EastNorthUpFrame
+
+The `EastNorthUpFrame` is used to place 3D objects in a local reference frame that is centered on the provided origin, specified via lat/lon/height and euler angles props. `EastNorthUpFrame` does not transform the tileset root while `ReorientationPlugin` does transform the tileset. `EastNorthUpFrame`, instead, creates a frame on the surface of the globe that you can add children to if one, for example, want to create markers on the planet surface.
+
+```jsx
+function GeopositionedModel( props ) {
+  return (
+    <EastNorthUpFrame
+      lat = { lat * Math.PI / 180 }
+      lon = { lon * Math.PI / 180 }
+      height = { 100 }
+      az = { 0 }
+      el = { 0 }
+      roll = { 0 }
+    >
+      <SuziModel position={ [ 0, 0, 2 ] } rotation-z={ Math.PI / 2 * 0 } rotation-y={ - Math.PI / 2 } scale={ 1 } materialProps={ { color:'#0000cc' } } />
+    </EastNorthUpFrame>
+  );
+}
+
+function SuziModel( props ) {
+  const { nodes } = useGLTF( 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/suzanne-high-poly/model.gltf' );
+  return (
+    <mesh castShadow receiveShadow geometry={ nodes.Suzanne.geometry } { ...props }>
+      <meshStandardMaterial color={ "#9d4b4b" } { ...props.materialProps } />
+    </mesh>
+  );
+}
+```
+
+## TilesAttributionOverlay
+
+TODO
