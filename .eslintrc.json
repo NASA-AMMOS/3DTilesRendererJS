@@ -50,7 +50,8 @@
 		"rules": {
 			"react/react-in-jsx-scope": "off",
 			"react/prop-types": "off",
-			"react/no-unknown-property": "off"
+			"react/no-unknown-property": "off",
+			"react/jsx-curly-spacing": [ "error", { "when": "always" } ]
 		}
 	} ]
 }

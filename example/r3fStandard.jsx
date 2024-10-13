@@ -17,43 +17,43 @@ const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleDa
 function App() {
 
 	return (
-		<div id="canvas-container" style={{
+		<div id="canvas-container" style={ {
 			width: '100%',
 			height: '100%',
 			position: 'absolute',
 			margin: 0,
 			left: 0,
 			top: 0,
-		}}>
+		} }>
 			<Canvas>
 				{/* 3D Tiles renderer tileset */}
 				<group rotation-x={ Math.PI / 2 }>
 					<TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
-						<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={500} />
+						<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 					</TilesRenderer>
 				</group>
 
 				{/* add mesh to local frame */}
-				<mesh position={[ 0, 2, 0 ]}>
+				<mesh position={ [ 0, 2, 0 ] }>
 					<boxGeometry />
 					<meshStandardMaterial />
 				</mesh>
 
 				{/* Controls */}
-				<EnvironmentControls enableDamping={true} />
+				<EnvironmentControls enableDamping={ true } />
 
 				{/* other r3f staging */}
 				<Environment
-					preset="sunset" background={true}
-					backgroundBlurriness={0.9}
-					environmentIntensity={1}
+					preset="sunset" background={ true }
+					backgroundBlurriness={ 0.9 }
+					environmentIntensity={ 1 }
 				/>
 				<Grid
 					infiniteGrid={ true } cellSize={ 1 } sectionSize={ 10 }
 					fadeDistance={ 20000 } fadeStrength={ 50 }
 				/>
-				<GizmoHelper alignment="bottom-right" margin={[ 80, 80 ]}>
-					<GizmoViewport axisColors={[ '#9d4b4b', '#2f7f4f', '#3b5b9d' ]} labelColor="white" />
+				<GizmoHelper alignment="bottom-right" margin={ [ 80, 80 ] }>
+					<GizmoViewport axisColors={ [ '#9d4b4b', '#2f7f4f', '#3b5b9d' ] } labelColor="white" />
 				</GizmoHelper>
 
 			</Canvas>

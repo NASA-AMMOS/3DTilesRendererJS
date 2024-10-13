@@ -45,7 +45,7 @@ function GoogleTiles( { children, apiToken, ...rest } ) {
 
 	return (
 		<TilesRenderer { ...rest }>
-			<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } useRecommendedSettings={true} />
+			<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } useRecommendedSettings={ true } />
 			{ children }
 		</TilesRenderer>
 	);
@@ -56,7 +56,7 @@ function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
 
 	return (
 		<TilesRenderer { ...rest }>
-			<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken: true } } key={assetId} />
+			<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken: true } } key={ assetId } />
 			{ children }
 		</TilesRenderer>
 	);
@@ -73,26 +73,26 @@ function TilesRenderersDemo( { commonPluginsProps, googleApiKey, ionAccessToken,
 		{/* Default TilesRenderer with provided url */}
 		<group rotation-x={ georefed_tileset ? 0 : Math.PI / 2 }>
 			<TilesRenderer url={ tilesetUrl } lruCache-minSize={ 0 }>
-				{georefed_tileset && <CommonPlugins {...commonPluginsProps} /> }
+				{georefed_tileset && <CommonPlugins { ...commonPluginsProps } /> }
 			</TilesRenderer>
 		</group>
 
 		{/* Google and CesiumIon Tiles Renderers */}
 		{/* can pass url, endpointUrl, or nothing which will fallback to google endpointUrl={'https://tile.googleapis.com/v1/3dtiles/root.json'}> */}
 		{ googleApiKey !== templateEmptyKey && (
-			<GoogleTiles apiToken={googleApiKey} key={`${googleApiKey}-${commonPluginsProps.lat}-${commonPluginsProps.lon}-${commonPluginsProps.height}`} >
+			<GoogleTiles apiToken={ googleApiKey } key={ `${googleApiKey}-${commonPluginsProps.lat}-${commonPluginsProps.lon}-${commonPluginsProps.height}` } >
 				<TilesAttributionOverlay />
-				<CommonPlugins {...commonPluginsProps} />
+				<CommonPlugins { ...commonPluginsProps } />
 			</GoogleTiles> )
 		}
 
 		{ ionAccessToken !== templateEmptyKey && (
 			<TransformControls mode='translate' >
-				<CesiumIonTiles apiToken={ionAccessToken} assetId={ionAssetId} key={`${ionAssetId}-${ionAccessToken}`}>
+				<CesiumIonTiles apiToken={ ionAccessToken } assetId={ ionAssetId } key={ `${ionAssetId}-${ionAccessToken}` }>
 					<TilesAttributionOverlay />
 					<CommonPlugins
-						{...commonPluginsProps}
-						lat={null} // set lat=null to center tileset automatically rather than on user-specified latlon
+						{ ...commonPluginsProps }
+						lat={ null } // set lat=null to center tileset automatically rather than on user-specified latlon
 					/>
 				</CesiumIonTiles>
 			</TransformControls> )
@@ -104,19 +104,19 @@ function TilesRenderersDemo( { commonPluginsProps, googleApiKey, ionAccessToken,
 function StagingComponent() {
 
 	return <>
-		<ambientLight intensity={1} />
-		<directionalLight color="white" position={[ 0, 5, 5 ]} intensity={1} />
+		<ambientLight intensity={ 1 } />
+		<directionalLight color="white" position={ [ 0, 5, 5 ] } intensity={ 1 } />
 		<Environment
-			preset="sunset" background={true}
-			backgroundBlurriness={0.9}
-			environmentIntensity={1}
+			preset="sunset" background={ true }
+			backgroundBlurriness={ 0.9 }
+			environmentIntensity={ 1 }
 		/>
 		<Grid
 			infiniteGrid={ true } cellSize={ 1 } sectionSize={ 10 }
 			fadeDistance={ 20000 } fadeStrength={ 50 }
 		/>
-		<GizmoHelper alignment="bottom-right" margin={[ 80, 80 ]}>
-			<GizmoViewport axisColors={[ '#9d4b4b', '#2f7f4f', '#3b5b9d' ]} labelColor="white" />
+		<GizmoHelper alignment="bottom-right" margin={ [ 80, 80 ] }>
+			<GizmoViewport axisColors={ [ '#9d4b4b', '#2f7f4f', '#3b5b9d' ] } labelColor="white" />
 		</GizmoHelper>
 
 		{/* Controls */}
@@ -124,14 +124,14 @@ function StagingComponent() {
 		{/* <EnvironmentControls enableDamping={true} /> */}
 		{/* <GlobeControls enableDamping={true}  enable={true}  /> // Not working*/}
 		{/* r3f camera controls */}
-		<CameraControls makeDefault distance={10} polarAngle={Math.PI / 2 - 0.3} azimuthAngle={- 0.4} />
+		<CameraControls makeDefault distance={ 10 } polarAngle={ Math.PI / 2 - 0.3 } azimuthAngle={ - 0.4 } />
 		{/* Camera is here to update the far clip plane */}
 		<PerspectiveCamera
 			// ref={refCamera}
 			makeDefault
-			near={1}
-			far={15000}
-			fov={60}
+			near={ 1 }
+			far={ 15000 }
+			fov={ 60 }
 		/>
 	</>;
 
@@ -141,8 +141,8 @@ function SuziModel( props ) {
 
 	const { nodes } = useGLTF( 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/suzanne-high-poly/model.gltf' );
 	return (
-		<mesh castShadow receiveShadow geometry={nodes.Suzanne.geometry} {...props}>
-			<meshStandardMaterial color={'#9d4b4b'} {...props.materialProps} />
+		<mesh castShadow receiveShadow geometry={ nodes.Suzanne.geometry } { ...props }>
+			<meshStandardMaterial color={ '#9d4b4b' } { ...props.materialProps } />
 		</mesh>
 	);
 
@@ -154,18 +154,18 @@ function Additional3dObjects( { commonPluginsProps } ) {
 	return <>
 		{/* Other standard r3f objects added to scene */}
 		{/* either to local frame */}
-		<SuziModel position={[ 0, 0, 0 ]} />
+		<SuziModel position={ [ 0, 0, 0 ] } />
 
 		{/* or ENUFrame center to provided lat-lon-height */}
 		<EastNorthUpFrame
-			lat = {lat * Math.PI / 180}
-			lon = {lon * Math.PI / 180}
-			height = { 100}
-			az = {0}
-			el = {0}
-			roll = {0}
+			lat = { lat * Math.PI / 180 }
+			lon = { lon * Math.PI / 180 }
+			height = { 100 }
+			az = { 0 }
+			el = { 0 }
+			roll = { 0 }
 		>
-			<SuziModel position={[ 0, 0, 2 ]} rotation-z={Math.PI / 2 * 0} rotation-y={- Math.PI / 2} scale={1} materialProps={{ color: '#0000cc' }} />
+			<SuziModel position={ [ 0, 0, 2 ] } rotation-z={ Math.PI / 2 * 0 } rotation-y={ - Math.PI / 2 } scale={ 1 } materialProps={ { color: '#0000cc' } } />
 		</EastNorthUpFrame>
 	</>;
 
@@ -175,9 +175,9 @@ function CommonPlugins( props ) {
 
 	return <>
 		<TilesPlugin plugin={ GLTFExtensionsPlugin }
-			dracoLoader={dracoLoader}
-			ktxLoader={ktx2Loader}
-			autoDispose={false}
+			dracoLoader={ dracoLoader }
+			ktxLoader={ ktx2Loader }
+			autoDispose={ false }
 			// both args and props/options do work to pass loaders
 			// args = {{
 			//   dracoLoader, ktxLoader:ktx2Loader
@@ -186,28 +186,28 @@ function CommonPlugins( props ) {
 		{
 			( props.lat && props.lon ) ?
 				<TilesPlugin plugin={ ReorientationPlugin }
-					lat={props.lat * Math.PI / 180}
-					lon={props.lon * Math.PI / 180}
-					height={props.height || 100}
-					up={'+z'}
-					recenter={true}
-					key={`${props.lat}-${props.lon}-${props.height}`}
+					lat={ props.lat * Math.PI / 180 }
+					lon={ props.lon * Math.PI / 180 }
+					height={ props.height || 100 }
+					up={ '+z' }
+					recenter={ true }
+					key={ `${props.lat}-${props.lon}-${props.height}` }
 				/> :
 			// If no lat/lon passed as props, recenter automatically
 				<TilesPlugin plugin={ ReorientationPlugin }
-					recenter={true}
+					recenter={ true }
 				/>
 		}
-		{props.fade && <TilesPlugin plugin={ TilesFadePlugin } fadeDuration={props.fadeDuration || 500} />}
+		{props.fade && <TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ props.fadeDuration || 500 } />}
 		{props.debug && <TilesPlugin plugin={ DebugTilesPlugin }
-			colorMode={NONE} // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
-			displayBoxBounds={true}
-			displayRegionBounds={false}
+			colorMode={ NONE } // NONE, SCREEN_ERROR, GEOMETRIC_ERROR, DISTANCE, DEPTH, RELATIVE_DEPTH, IS_LEAF, RANDOM_COLOR, RANDOM_NODE_COLOR, CUSTOM_COLOR, LOAD_ORDER
+			displayBoxBounds={ true }
+			displayRegionBounds={ false }
 		/>}
 		<TilesPlugin plugin={ TileCompressionPlugin }
-			generateNormals={false}
-			disableMipmaps={true}
-			compressIndex={false}
+			generateNormals={ false }
+			disableMipmaps={ true }
+			compressIndex={ false }
 			// compressNormals={true} normalType={Int8Array}
 			// compressUvs={false} uvType={Int8Array}
 			// compressPosition={false} positionType={Int16Array}
@@ -297,18 +297,18 @@ function App() {
 	};
 
 	return (
-		<div id="canvas-container" style={{
+		<div id="canvas-container" style={ {
 			width: '100%',
 			height: '100%',
 			position: 'absolute',
 			margin: 0,
 			left: 0,
 			top: 0,
-		}}>
+		} }>
 			<Canvas>
 				<StagingComponent />
-				<TilesRenderersDemo {...{ commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath }} />
-				<Additional3dObjects {...{ commonPluginsProps }} />
+				<TilesRenderersDemo { ...{ commonPluginsProps, googleApiKey, ionAccessToken, ionAssetId, tilesetPath } } />
+				<Additional3dObjects { ...{ commonPluginsProps } } />
 			</Canvas>
 		</div>
 	);

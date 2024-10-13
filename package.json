@@ -28,7 +28,7 @@
   "scripts": {
     "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
-    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.js\" && tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
     "test": "jest"
   },
   "repository": {
