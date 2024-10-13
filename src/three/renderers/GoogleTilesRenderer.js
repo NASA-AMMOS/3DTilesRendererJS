@@ -11,8 +11,7 @@ const GooglePhotorealisticTilesRendererMixin = base => class extends base {
 
 		super( url );
 
-		// TODO: how do we handle the default setting assignments and the google tiles URL?
-		// console.warn( 'GooglePhotorealisticTilesRenderer: Class has been deprecated. Use "GoogleCloudAuthPlugin" instead.' );
+		console.warn( 'GooglePhotorealisticTilesRenderer: Class has been deprecated. Use "TilesRenderer" with "GoogleCloudAuthPlugin" instead.' );
 
 		this.parseQueue.maxJobs = 10;
 		this.downloadQueue.maxJobs = 30;
