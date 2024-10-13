@@ -46,6 +46,28 @@ export default function App() {
 }
 ```
 
+## Cesium Ion & Google Cloud
+
+```jsx
+function GoogleTiles( { children, apiToken, ...rest } ) {
+  return (
+    <TilesRenderer { ...rest } key={ apiToken }>
+      <TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+      { children }
+    </TilesRenderer>
+  );
+}
+
+function CesiumIonTiles( { children, apiToken, assetId, ...rest } ) {
+  return (
+    <TilesRenderer { ...rest } key={ apiToken + assetId }>
+      <TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId } } />
+      { children }
+    </TilesRenderer>
+  );
+}
+```
+
 # Components
 
 ## TilesRenderer
