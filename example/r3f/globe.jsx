@@ -8,6 +8,8 @@ import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, GlobeControls, Eas
 import { GoogleCloudAuthPlugin } from '../../src/index.js';
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
 import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
+import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';
+import { UpdateOnChangePlugin } from '../src/plugins/UpdateOnChangePlugin.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
@@ -82,8 +84,10 @@ function App() {
 			*/}
 			<group rotation-x={ - Math.PI / 2 }>
 				<TilesRenderer key={ apiToken }>
-					<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken, autoRefreshToken: true } } />
-					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } autoDispose={ true } />
+					<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
+					<TilesPlugin plugin={ TileCompressionPlugin } />
+					<TilesPlugin plugin={ UpdateOnChangePlugin } />
 					<TilesPlugin plugin={ TilesFadePlugin } />
 
 					{/* Controls */}
