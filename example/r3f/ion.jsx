@@ -8,12 +8,13 @@ import { CesiumIonAuthPlugin } from '../../src/index.js';
 // Plugins
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
 import { ReorientationPlugin } from '../src/plugins/ReorientationPlugin.js';
+import { UpdateOnChangePlugin } from '../src/plugins/UpdateOnChangePlugin.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { useControls } from 'leva';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 
@@ -42,6 +43,7 @@ function App() {
 	const { apiToken, assetId } = useControls( levaParams );
 	return (
 		<Canvas
+			frameloop='demand'
 			camera={ {
 				position: [ 300, 300, 300 ],
 				near: 1,
@@ -61,15 +63,16 @@ function App() {
 				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
 			*/}
 			<TilesRenderer key={ assetId + apiToken }>
-				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId, autoRefreshToken: true } } />
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId } } />
+				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ ReorientationPlugin } />
-				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } autoDispose={ true } />
+				<TilesPlugin plugin={ UpdateOnChangePlugin } />
 
 				<TilesAttributionOverlay />
 			</TilesRenderer>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } />
+			<EnvironmentControls enableDamping={ true } maxDistance={ 5000 } />
 
 			{/* other r3f staging */}
 			<Environment
