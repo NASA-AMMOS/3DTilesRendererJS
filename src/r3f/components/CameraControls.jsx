@@ -92,7 +92,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 		controls.update();
 
-	} );
+	}, - 1 );
 
 	useShallowOptions( controls, rest );
 
