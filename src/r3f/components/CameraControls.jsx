@@ -37,7 +37,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 	useEffect( () => {
 
-		const callback = e => invalidate();
+		const callback = () => invalidate();
 		controls.addEventListener( 'change', callback );
 		controls.addEventListener( 'start', callback );
 		controls.addEventListener( 'end', callback );
