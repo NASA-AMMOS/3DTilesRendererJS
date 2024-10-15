@@ -3,6 +3,7 @@ import { CMPTLoaderBase } from '../../base/loaders/CMPTLoaderBase.js';
 import { B3DMLoader } from './B3DMLoader.js';
 import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
 export class CMPTLoader extends CMPTLoaderBase {
 
@@ -11,14 +12,14 @@ export class CMPTLoader extends CMPTLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 	}
 
 	parse( buffer ) {
 
 		const result = super.parse( buffer );
-		const manager = this.manager;
-		const adjustmentTransform = this.adjustmentTransform;
+		const { manager, ellipsoid, adjustmentTransform } = this;
 		const promises = [];
 
 		for ( const i in result.tiles ) {
@@ -32,7 +33,6 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new B3DMLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
-
 					loader.adjustmentTransform.copy( adjustmentTransform );
 
 					const promise = loader.parse( slicedBuffer.buffer );
@@ -47,6 +47,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					const loader = new PNTSLoader( manager );
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
+
 					const promise = loader.parse( slicedBuffer.buffer );
 					promises.push( promise );
 					break;
@@ -60,6 +61,7 @@ export class CMPTLoader extends CMPTLoaderBase {
 					loader.workingPath = this.workingPath;
 					loader.fetchOptions = this.fetchOptions;
 
+					loader.ellipsoid.copy( ellipsoid );
 					loader.adjustmentTransform.copy( adjustmentTransform );
 
 					const promise = loader.parse( slicedBuffer.buffer );
