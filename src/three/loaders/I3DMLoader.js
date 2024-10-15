@@ -14,6 +14,7 @@ const tempMat2 = /* @__PURE__ */ new Matrix4();
 
 const tempGlobePos = /* @__PURE__ */ new Vector3();
 const tempEnuFrame = /* @__PURE__ */ new Matrix4();
+const tempLocalQuat = /* @__PURE__ */ new Quaternion();
 const tempLatLon = {};
 
 export class I3DMLoader extends I3DMLoaderBase {
@@ -207,6 +208,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
 								const instance = instances[ j ];
+								tempLocalQuat.copy( tempQuat );
 
 								// Handle east-north-up frame generation
 								if ( EAST_NORTH_UP ) {
@@ -217,11 +219,11 @@ export class I3DMLoader extends I3DMLoaderBase {
 									tempGlobePos.copy( tempPos ).applyMatrix4( instance.matrixWorld );
 									this.ellipsoid.getPositionToCartographic( tempGlobePos, tempLatLon );
 									this.ellipsoid.getEastNorthUpFrame( tempLatLon.lat, tempLatLon.lon, tempEnuFrame );
-									tempQuat.setFromRotationMatrix( tempEnuFrame );
+									tempLocalQuat.setFromRotationMatrix( tempEnuFrame );
 
 								}
 
-								tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
+								tempMat.compose( tempPos, tempLocalQuat, tempSca ).multiply( adjustmentTransform );
 
 								const mesh = meshes[ j ];
 								tempMat2.multiplyMatrices( tempMat, mesh.matrixWorld );
