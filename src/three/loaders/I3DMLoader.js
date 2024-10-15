@@ -1,15 +1,22 @@
 import { I3DMLoaderBase } from '../../base/loaders/I3DMLoaderBase.js';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
-const tempFwd = new Vector3();
-const tempUp = new Vector3();
-const tempRight = new Vector3();
-const tempPos = new Vector3();
-const tempQuat = new Quaternion();
-const tempSca = new Vector3();
-const tempMat = new Matrix4();
-const tempMat2 = new Matrix4();
+const tempFwd = /* @__PURE__ */ new Vector3();
+const tempUp = /* @__PURE__ */ new Vector3();
+const tempRight = /* @__PURE__ */ new Vector3();
+const tempPos = /* @__PURE__ */ new Vector3();
+const tempQuat = /* @__PURE__ */ new Quaternion();
+const tempSca = /* @__PURE__ */ new Vector3();
+const tempMat = /* @__PURE__ */ new Matrix4();
+const tempMat2 = /* @__PURE__ */ new Matrix4();
+
+const tempGlobePos = /* @__PURE__ */ new Vector3();
+const tempEnuFrame = /* @__PURE__ */ new Matrix4();
+const tempLocalQuat = /* @__PURE__ */ new Quaternion();
+const tempLatLon = {};
+
 export class I3DMLoader extends I3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -17,6 +24,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 	}
 
@@ -77,11 +85,11 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 						const RTC_CENTER = featureTable.getData( 'RTC_CENTER' );
+						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
 
 						[
 							'QUANTIZED_VOLUME_OFFSET',
 							'QUANTIZED_VOLUME_SCALE',
-							'EAST_NORTH_UP',
 							'POSITION_QUANTIZED',
 							'NORMAL_UP_OCT32P',
 							'NORMAL_RIGHT_OCT32P',
@@ -146,6 +154,10 @@ export class I3DMLoader extends I3DMLoaderBase {
 							);
 
 							// rotation
+							tempQuat.identity();
+
+							// account for EAST_NORTH_UP per-instance below
+
 							if ( NORMAL_UP ) {
 
 								tempUp.set(
@@ -171,10 +183,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 								tempQuat.setFromRotationMatrix( tempMat );
 
-							} else {
-
-								tempQuat.set( 0, 0, 0, 1 );
-
 							}
 
 							// scale
@@ -189,19 +197,34 @@ export class I3DMLoader extends I3DMLoaderBase {
 								);
 
 							}
+
 							if ( SCALE ) {
 
 								tempSca.multiplyScalar( SCALE[ i ] );
 
 							}
 
-							// compose the instance matrix
-							tempMat.compose( tempPos, tempQuat, tempSca ).multiply( adjustmentTransform );
-
 							// multiple in the original meshes world transform
 							for ( let j = 0, l = instances.length; j < l; j ++ ) {
 
 								const instance = instances[ j ];
+								tempLocalQuat.copy( tempQuat );
+
+								// Handle east-north-up frame generation
+								if ( EAST_NORTH_UP ) {
+
+									instance.updateMatrixWorld();
+
+									// transform the instance position to global frame and get the rotation from the associated ENU frame.
+									tempGlobePos.copy( tempPos ).applyMatrix4( instance.matrixWorld );
+									this.ellipsoid.getPositionToCartographic( tempGlobePos, tempLatLon );
+									this.ellipsoid.getEastNorthUpFrame( tempLatLon.lat, tempLatLon.lon, tempEnuFrame );
+									tempLocalQuat.setFromRotationMatrix( tempEnuFrame );
+
+								}
+
+								tempMat.compose( tempPos, tempLocalQuat, tempSca ).multiply( adjustmentTransform );
+
 								const mesh = meshes[ j ];
 								tempMat2.multiplyMatrices( tempMat, mesh.matrixWorld );
 								instance.setMatrixAt( i, tempMat2 );

@@ -633,6 +633,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.fetchOptions = fetchOptions;
 
 				loader.adjustmentTransform.copy( upRotationMatrix );
+				loader.ellipsoid.copy( this.ellipsoid );
 
 				promise = loader.parse( buffer );
 				break;
