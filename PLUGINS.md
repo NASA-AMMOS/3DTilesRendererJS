@@ -446,6 +446,8 @@ _available in the examples directory_
 
 Plugin that overrides material shaders to fade tile geometry in and out as tile LODs change. Based on [this Cesium article](https://cesium.com/blog/2022/10/20/smoother-lod-transitions-in-cesium-for-unreal/) on the topic.
 
+The plugin will dispatch `fade-change`, `fade-start`, and `fade-end` events per tile on the TilesRenderer when the animation updates. These events should be used in addition to any others required when performing on-demand rendering.
+
 ### .fadeDuration
 
 ```js
