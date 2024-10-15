@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ability to remove plugins via the `unregisterPlugin` function.
 - Support for octree subdivision to implicit tiling.
 - Initial `BatchedTilePlugin` implementation to examples.
+- Initial support for `@react-three/fiber` component implementations exported as `3d-tiles-renderer/r3f`. See the r3f docs for more information.
 
 ### Changed
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GoogleCloudAuthPlugin: Use the photorealistic tiles url if a user has not provided one.
 - GoogleCloudAuthPlugin: Modify the tiles renderer to use recommended settings for Google Photorealistic Tiles by default.
 - Deprecated GooglePhotorealisticTilesRenderer.
+- Improve EnvironmentControls momementum thresholds so movement stops sooner.
 
 ### Fixed
 - Case where tile set scale was incorrectly used when computed screenspace error.
