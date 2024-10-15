@@ -43,8 +43,10 @@ function areObjectsEqual( a, b ) {
 
 }
 
+// Helper for using an object as a dependency in a useEffect or useMemo array
 export function useObjectDep( object ) {
 
+	// only modify the returned object reference if it has changed
 	const ref = useRef();
 	if ( ! areObjectsEqual( ref.current, object ) ) {
 

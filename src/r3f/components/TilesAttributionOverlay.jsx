@@ -2,10 +2,13 @@ import { useContext, useState, useEffect, useMemo } from 'react';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
+// Overlay for displaying tile data set attributions
 export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	const tiles = useContext( TilesRendererContext );
 	const [ attributions, setAttributions ] = useState( [] );
+
+	// Add events for checking when attributions may be updated
 	useEffect( () => {
 
 		if ( ! tiles ) {
@@ -43,6 +46,7 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	}, [ tiles ] );
 
+	// generate elements for each type of attribution
 	const output = [];
 	attributions.forEach( ( att, i ) => {
 
@@ -69,6 +73,7 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	} );
 
+	// Generate CSS for modifying child elements implicit to the html attributions
 	const classId = useMemo( () => 'class_' + window.crypto.randomUUID(), [] );
 	const styles = useMemo( () => `
 		#${ classId } a {

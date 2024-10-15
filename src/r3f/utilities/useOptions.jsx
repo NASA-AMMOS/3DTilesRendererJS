@@ -50,7 +50,7 @@ function setValueAtPath( object, path, value ) {
 
 }
 
-// TODO: should we save previous state? Basic r3f components don't and it keeps handles to memory around
+// Recursively assigns a set of options to an object, interpreting dashes as periods
 export function useDeepOptions( target, options ) {
 
 	// assign options recursively
@@ -104,6 +104,7 @@ export function useDeepOptions( target, options ) {
 
 }
 
+// Assigns a set of options to an object shallowly, interpreting dashes as periods
 export function useShallowOptions( instance, options ) {
 
 	// assigns any provided options to the plugin

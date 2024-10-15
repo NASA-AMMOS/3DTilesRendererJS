@@ -5,18 +5,32 @@ import { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeCo
 import { useShallowOptions } from '../utilities/useOptions.jsx';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 
+// Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
 	const { controlsConstructor, domElement, scene, camera, tilesRenderer, ...rest } = props;
-	const [ defaultCamera, gl, defaultScene, invalidate, get, set ] = useThree( state => [ state.camera, state.gl, state.scene, state.invalidate, state.get, state.set ] );
+
+	const [ defaultCamera ] = useThree( state => [ state.camera ] );
+	const [ gl ] = useThree( state => [ state.gl ] );
+	const [ defaultScene ] = useThree( state => [ state.scene ] );
+	const [ invalidate ] = useThree( state => [ state.invalidate ] );
+	const [ get ] = useThree( state => [ state.get ] );
+	const [ set ] = useThree( state => [ state.set ] );
+
 	const defaultTilesRenderer = useContext( TilesRendererContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
 	const appliedTilesRenderer = tilesRenderer || defaultTilesRenderer || null;
 
-	const controls = useMemo( () => new controlsConstructor(), [ controlsConstructor ] );
+	// create a controls instance
+	const controls = useMemo( () => {
 
+		return new controlsConstructor();
+
+	}, [ controlsConstructor ] );
+
+	// assign / call the reference
 	useEffect( () => {
 
 		if ( ref ) {
@@ -35,6 +49,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 	}, [ controls, ref ] );
 
+	// fire invalidate callbacks
 	useEffect( () => {
 
 		const callback = () => invalidate();
@@ -51,24 +66,28 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 	}, [ controls, invalidate ] );
 
+	// assign the camera
 	useEffect( () => {
 
 		controls.setCamera( appliedCamera );
 
 	}, [ controls, appliedCamera ] );
 
+	// assign the scene
 	useEffect( () => {
 
 		controls.setScene( appliedScene );
 
 	}, [ controls, appliedScene ] );
 
+	// assign the tiles renderer
 	useEffect( () => {
 
 		controls.setTilesRenderer( appliedTilesRenderer );
 
 	}, [ controls, appliedTilesRenderer ] );
 
+	// attach to the dom element
 	useEffect( () => {
 
 		controls.attach( appliedDomElement );
@@ -80,6 +99,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 	}, [ controls, appliedDomElement ] );
 
+	// set the controls for global use
 	useEffect( () => {
 
 		const old = get().controls;
@@ -88,6 +108,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 	}, [ controls, get, set ] );
 
+	// update the controls with a priority of - 1 so it happens before tiles renderer update
 	useFrame( () => {
 
 		controls.update();

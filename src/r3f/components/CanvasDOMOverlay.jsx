@@ -2,12 +2,15 @@ import { useMemo, useEffect, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useThree } from '@react-three/fiber';
 
+// Utility class for overlaying dom elements on top of the canvas
 export function CanvasDOMOverlay( { children, ...rest } ) {
 
+	// create the dom element and react root
 	const [ gl ] = useThree( state => [ state.gl ] );
 	const container = useMemo( () => document.createElement( 'div' ), [] );
 	const root = useMemo( () => createRoot( container ), [ container ] );
 
+	// watch for canvas resize
 	const observer = useMemo( () => {
 
 		const observer = new ResizeObserver( ( [ { contentRect } ] ) => {
@@ -23,6 +26,7 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 
 	}, [ gl, container ] );
 
+	// position the container
 	useEffect( () => {
 
 		container.style.pointerEvents = 'none';
@@ -38,6 +42,7 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 
 	}, [ observer, container ] );
 
+	// render the children into the container
 	root.render(
 		<StrictMode>
 			<div { ...rest }>
