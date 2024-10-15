@@ -2,9 +2,11 @@ import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager
 import { Tile } from '../base/Tile';
 import { TilesRendererBase } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
+import { Ellipsoid } from './math/Ellipsoid';
 
 export class TilesRenderer extends TilesRendererBase {
 
+	ellipsoid: Ellipsoid;
 	autoDisableRendererCulling : Boolean;
 	optimizeRaycast : Boolean;
 

@@ -34,9 +34,6 @@ export class UpdateOnChangePlugin {
 
 		};
 
-		// dispose tile is included here because the LRUCache can evict tiles that are actively used if they're
-		// above the byte cap causing tile gaps
-		tiles.addEventListener( 'dispose-model', this._needsUpdateCallback );
 		tiles.addEventListener( 'camera-resolution-change', this._needsUpdateCallback );
 		tiles.addEventListener( 'load-content', this._needsUpdateCallback );
 		tiles.addEventListener( 'add-camera', this._onCameraAdd );
@@ -72,7 +69,6 @@ export class UpdateOnChangePlugin {
 	dispose() {
 
 		const tiles = this.tiles;
-		tiles.removeEventListener( 'dispose-model', this._needsUpdateCallback );
 		tiles.removeEventListener( 'camera-resolution-change', this._needsUpdateCallback );
 		tiles.removeEventListener( 'content-load', this._needsUpdateCallback );
 		tiles.removeEventListener( 'camera-add', this._onCameraAdd );

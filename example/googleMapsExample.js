@@ -56,7 +56,7 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	tiles = new GooglePhotorealisticTilesRenderer();
-	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
+	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
@@ -354,6 +354,6 @@ function updateHtml() {
 
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
+	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getAttributions()[ 0 ].value;
 
 }

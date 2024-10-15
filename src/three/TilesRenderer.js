@@ -9,6 +9,7 @@ import {
 	Matrix4,
 	Vector3,
 	Vector2,
+	Euler,
 	LoadingManager,
 	EventDispatcher,
 	REVISION,
@@ -18,6 +19,10 @@ import { readMagicBytes } from '../utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
+import { WGS84_ELLIPSOID } from './math/GeoConstants.js';
+
+const _mat = new Matrix4();
+const _euler = new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
 const REVISION_LESS_165 = parseInt( REVISION ) < 165;
@@ -67,6 +72,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super( ...args );
 		this.group = new TilesGroup( this );
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
@@ -76,7 +82,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this._eventDispatcher = new EventDispatcher();
 		this._upRotationMatrix = new Matrix4();
 
-		this.lruCache.getMemoryUsageCallback = tile => tile.cached.bytesUsed || 0;
+		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
 
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
@@ -446,8 +452,6 @@ export class TilesRenderer extends TilesRendererBase {
 		tempMat2.copy( group.matrixWorld ).invert();
 
 		tempVector.setFromMatrixScale( tempMat2 );
-		const invScale = tempVector.x;
-
 		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
 			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
@@ -490,8 +494,6 @@ export class TilesRenderer extends TilesRendererBase {
 				info.sseDenominator = ( 2 / projection[ 5 ] ) / resolution.height;
 
 			}
-
-			info.invScale = invScale;
 
 			// get frustum in group root frame
 			tempMat.copy( group.matrixWorld );
@@ -551,7 +553,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( 'region' in tile.boundingVolume ) {
 
-			boundingVolume.setRegionData( ...tile.boundingVolume.region );
+			boundingVolume.setRegionData( this.ellipsoid, ...tile.boundingVolume.region );
 
 		}
 
@@ -937,22 +939,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// transform camera position into local frame of the tile bounding box
 			const info = cameraInfo[ i ];
-			const invScale = info.invScale;
-
 			let error;
 			if ( info.isOrthographic ) {
 
 				const pixelSize = info.pixelSize;
-				error = tile.geometricError / ( pixelSize * invScale );
+				error = tile.geometricError / pixelSize;
 
 			} else {
 
 				const distance = boundingVolume.distanceToPoint( info.position );
-				const scaledDistance = distance * invScale;
 				const sseDenominator = info.sseDenominator;
-				error = tile.geometricError / ( scaledDistance * sseDenominator );
+				error = tile.geometricError / ( distance * sseDenominator );
 
-				minDistance = Math.min( minDistance, scaledDistance );
+				minDistance = Math.min( minDistance, distance );
 
 			}
 
@@ -984,6 +983,28 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		return false;
+
+	}
+
+	// TODO: deprecate this function and provide a plugin to help with this
+	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
+	setLatLonToYUp( lat, lon ) {
+
+		const { ellipsoid, group } = this;
+
+		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
+		_mat.makeRotationFromEuler( _euler );
+
+		ellipsoid.getEastNorthUpFrame( lat, lon, group.matrix )
+			.multiply( _mat )
+			.invert()
+			.decompose(
+				group.position,
+				group.quaternion,
+				group.scale,
+			);
+
+		group.updateMatrixWorld( true );
 
 	}
 

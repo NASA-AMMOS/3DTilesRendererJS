@@ -1,6 +1,6 @@
 import {
 	GlobeControls,
-	EllipsoidTilesRenderer,
+	TilesRenderer,
 	LUNAR_ELLIPSOID,
 	CesiumIonAuthPlugin,
 } from '../src/index.js';
@@ -39,8 +39,9 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'ionApiKey', params.apiKey );
 
-	tiles = new EllipsoidTilesRenderer( null, LUNAR_ELLIPSOID );
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829' } ) );
+	tiles = new TilesRenderer();
+	tiles.ellipsoid.copy( LUNAR_ELLIPSOID );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );

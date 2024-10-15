@@ -324,20 +324,20 @@ The function used to map a [0, 1] value to a color for debug visualizations. By 
 ### constructor
 
 ```js
-constructor( { accessToken : String } )
+constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl = null : String | null } )
 ```
 
-Takes the Google Cloud access token.
+Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours. The url in "logoUrl" will be used to create an image attribution required for use with Google Photorealistic Tiles.
 
 ## CesiumIonAuthPlugin
 
 ### constructor
 
 ```js
-constructor( { accessToken : String, assetId = null : String | null } )
+constructor( { accessToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
 ```
 
-Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor.
+Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after an hour.
 
 ## TextureOverlayPlugin
 
@@ -459,6 +459,80 @@ fadeRootTiles = false : boolean
 ```
 
 Whether to fade the root tile objects in.
+
+## GLTFExtensionsPlugin
+
+_available in the examples directory_
+
+Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// If true then the StructuralMetadata and MeshFeatures extensions are included.
+	metadata: true,
+
+	// If true then the Cesium RTC Center extension is included.
+	rtc: true,
+
+	// A list of other extensions to include in the loader. All elements are passed to the "GLTFLoader.register" function.
+	plugins: [],
+
+	// DRACOLoader and KTX2Loader instances to add to the loader.
+	dracoLoader: null,
+	ktxLoader: null,
+
+	// Whether to automatically dispose of the DRACO and KTX Loaders when the plugin is disposed.
+	autoDispose: true,
+}
+```
+
+## ReorientationPlugin
+
+_available in the examples directory_
+
+Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// The latitude, longitude, and height of the point on the surface to orient to. Lat and lon are in radians. If
+	// no coordinates are provided then the plugin tries to determine if the tile set is a tile set on the globe surface
+	// and estimates the coordinates.
+	lat: null,
+	lon: null,
+	height: 0,
+
+	// If a set of lat and lon coordinates cannot be determined then the tile set is simple oriented so the provided axes
+	// is oriented to three.js' +Y up direction. Valid values are positive or negative x, y, or z.
+	up: '+z',
+
+	// Whether or not to recenter the tile set.
+	recenter: true,
+}
+```
+
+### transformLatLonHeightToOrigin
+
+```js
+transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
+```
+
+Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
 # Controls
 

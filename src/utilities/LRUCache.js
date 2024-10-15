@@ -35,8 +35,8 @@ class LRUCache {
 	constructor() {
 
 		// options
-		this.maxSize = 800;
-		this.minSize = 600;
+		this.minSize = 6000;
+		this.maxSize = 8000;
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 		this.unloadPercent = 0.05;
@@ -52,9 +52,10 @@ class LRUCache {
 		this.unloadingHandle = - 1;
 		this.cachedBytes = 0;
 		this.bytesMap = new Map();
+		this.loadedSet = new Set();
 
 		this._unloadPriorityCallback = null;
-		this.getMemoryUsageCallback = () => 0;
+		this.computeMemoryUsageCallback = () => null;
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -65,6 +66,12 @@ class LRUCache {
 	isFull() {
 
 		return this.itemSet.size >= this.maxSize || this.cachedBytes >= this.maxBytesSize;
+
+	}
+
+	getMemoryUsage( item ) {
+
+		return this.bytesMap.get( item ) ?? null;
 
 	}
 
@@ -98,8 +105,9 @@ class LRUCache {
 		itemSet.set( item, Date.now() );
 		callbacks.set( item, removeCb );
 
-		const bytes = this.getMemoryUsageCallback( item );
-		this.cachedBytes += bytes;
+		// computeMemoryUsageCallback can return "null" if memory usage is not known, yet
+		const bytes = this.computeMemoryUsageCallback( item );
+		this.cachedBytes += bytes || 0;
 		bytesMap.set( item, bytes );
 
 		return true;
@@ -113,10 +121,11 @@ class LRUCache {
 		const itemList = this.itemList;
 		const bytesMap = this.bytesMap;
 		const callbacks = this.callbacks;
+		const loadedSet = this.loadedSet;
 
 		if ( itemSet.has( item ) ) {
 
-			this.cachedBytes -= bytesMap.get( item );
+			this.cachedBytes -= bytesMap.get( item ) || 0;
 			bytesMap.delete( item );
 
 			callbacks.get( item )( item );
@@ -126,12 +135,35 @@ class LRUCache {
 			usedSet.delete( item );
 			itemSet.delete( item );
 			callbacks.delete( item );
+			loadedSet.delete( item );
 
 			return true;
 
 		}
 
 		return false;
+
+	}
+
+	// Marks whether tiles in the cache have been completely loaded or not. Tiles that have not been completely
+	// loaded are subject to being disposed early if the cache is full above its max size limits, even if they
+	// are marked as used.
+	setLoaded( item, value ) {
+
+		const { itemSet, loadedSet } = this;
+		if ( itemSet.has( item ) ) {
+
+			if ( value === true ) {
+
+				loadedSet.add( item );
+
+			} else {
+
+				loadedSet.delete( item );
+
+			}
+
+		}
 
 	}
 
@@ -145,9 +177,9 @@ class LRUCache {
 
 		}
 
-		this.cachedBytes -= bytesMap.get( item );
+		this.cachedBytes -= bytesMap.get( item ) || 0;
 
-		const bytes = this.getMemoryUsageCallback( item );
+		const bytes = this.computeMemoryUsageCallback( item );
 		bytesMap.set( item, bytes );
 		this.cachedBytes += bytes;
 
@@ -196,6 +228,7 @@ class LRUCache {
 			itemList,
 			itemSet,
 			usedSet,
+			loadedSet,
 			callbacks,
 			bytesMap,
 			minBytesSize,
@@ -203,25 +236,36 @@ class LRUCache {
 		} = this;
 
 		const unused = itemList.length - usedSet.size;
+		const unloaded = itemList.length - loadedSet.size;
 		const excessNodes = Math.max( Math.min( itemList.length - minSize, unused ), 0 );
 		const excessBytes = this.cachedBytes - minBytesSize;
 		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
 		let needsRerun = false;
 
-		const hasNodesToUnload = excessNodes > 0 && unused > 0 || itemList.length > maxSize;
-		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || this.cachedBytes > maxBytesSize;
+		const hasNodesToUnload = excessNodes > 0 && unused > 0 || unloaded && itemList.length > maxSize;
+		const hasBytesToUnload = unused && this.cachedBytes > minBytesSize || unloaded && this.cachedBytes > maxBytesSize;
 		if ( hasBytesToUnload || hasNodesToUnload ) {
 
-			// used items should be at the end of the array
+			// used items should be at the end of the array, "unloaded" items in the middle of the array
 			itemList.sort( ( a, b ) => {
 
 				const usedA = usedSet.has( a );
 				const usedB = usedSet.has( b );
 				if ( usedA === usedB ) {
 
-					// Use the sort function otherwise
-					// higher priority should be further to the left
-					return - unloadPriorityCallback( a, b );
+					const loadedA = loadedSet.has( a );
+					const loadedB = loadedSet.has( b );
+					if ( loadedA === loadedB ) {
+
+						// Use the sort function otherwise
+						// higher priority should be further to the left
+						return - unloadPriorityCallback( a, b );
+
+					} else {
+
+						return loadedA ? 1 : - 1;
+
+					}
 
 				} else {
 
@@ -241,27 +285,20 @@ class LRUCache {
 
 			let removedNodes = 0;
 			let removedBytes = 0;
-			while ( true ) {
+
+			// evict up to the max node or bytes size, keeping one more item over the max bytes limit
+			// so the "full" function behaves correctly.
+			while (
+				this.cachedBytes - removedBytes > maxBytesSize ||
+				itemList.length - removedNodes > maxSize
+			) {
 
 				const item = itemList[ removedNodes ];
-				const bytes = bytesMap.get( item );
-
-				// note that these conditions ensure we keep one tile over the byte cap so we can
-				// align with the the isFull function reports.
-
-				// base while condition
-				const doContinue =
-					removedNodes < nodesToUnload
-					|| removedBytes < bytesToUnload
-					|| this.cachedBytes - removedBytes - bytes > maxBytesSize
-					|| itemList.length - removedNodes > maxSize;
-
-				// don't unload any used tiles unless we're above our size cap
+				const bytes = bytesMap.get( item ) || 0;
 				if (
-					! doContinue
-					|| removedNodes >= unused
-					&& this.cachedBytes - removedBytes - bytes <= maxBytesSize
-					&& itemList.length - removedNodes <= maxSize
+					usedSet.has( item ) && loadedSet.has( item ) ||
+					this.cachedBytes - removedBytes - bytes < maxBytesSize &&
+					itemList.length - removedNodes <= maxSize
 				) {
 
 					break;
@@ -271,15 +308,45 @@ class LRUCache {
 				removedBytes += bytes;
 				removedNodes ++;
 
-				bytesMap.delete( item );
-				callbacks.get( item )( item );
-				itemSet.delete( item );
-				callbacks.delete( item );
+			}
+
+			// evict up to the min node or bytes size, keeping one more item over the min bytes limit
+			// so we're meeting it
+			while (
+				removedBytes < bytesToUnload ||
+				removedNodes < nodesToUnload
+			) {
+
+				const item = itemList[ removedNodes ];
+				const bytes = bytesMap.get( item ) || 0;
+				if (
+					usedSet.has( item ) ||
+					this.cachedBytes - removedBytes - bytes < minBytesSize &&
+					removedNodes >= nodesToUnload
+				) {
+
+					break;
+
+				}
+
+				removedBytes += bytes;
+				removedNodes ++;
 
 			}
 
-			itemList.splice( 0, removedNodes );
-			this.cachedBytes -= removedBytes;
+			// remove the nodes
+			itemList.splice( 0, removedNodes ).forEach( item => {
+
+				this.cachedBytes -= bytesMap.get( item ) || 0;
+
+				callbacks.get( item )( item );
+				bytesMap.delete( item );
+				itemSet.delete( item );
+				callbacks.delete( item );
+				loadedSet.delete( item );
+				usedSet.delete( item );
+
+			} );
 
 			// if we didn't remove enough nodes or we still have excess bytes and there are nodes to removed
 			// then we want to fire another round of unloading
