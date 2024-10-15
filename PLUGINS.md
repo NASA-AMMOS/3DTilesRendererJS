@@ -328,17 +328,23 @@ The function used to map a [0, 1] value to a color for debug visualizations. By 
 ### constructor
 
 ```js
-constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl = null : String | null } )
+constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl = null : String | null, useRecommendedSettings = true : Boolean } )
 ```
 
-Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours. The url in "logoUrl" will be used to create an image attribution required for use with Google Photorealistic Tiles.
+Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
+This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`:
+```js
+tiles.parseQueue.maxJobs = 10;
+tiles.downloadQueue.maxJobs = 30;
+tiles.errorTarget = 40;
+```
 
 ## CesiumIonAuthPlugin
 
 ### constructor
 
 ```js
-constructor( { accessToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
+constructor( { apiToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
 ```
 
 Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after an hour.
@@ -468,7 +474,7 @@ Whether to fade the root tile objects in.
 
 _available in the examples directory_
 
-Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry.
+Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
 
 ### .constructor
 

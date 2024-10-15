@@ -55,6 +55,7 @@ function onLoadModel( scene, tile ) {
 function onDisposeModel( scene ) {
 
 	this._fadeManager.deleteObject( scene );
+	this._tileMap.delete( scene );
 
 }
 
@@ -255,6 +256,12 @@ export class TilesFadePlugin {
 
 		} );
 
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			onLoadModel.call( this, scene, tile );
+
+		} );
+
 		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
 		this._onDisposeModel = e => onDisposeModel.call( this, e.scene );
 		this._onTileVisibilityChange = e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible );
@@ -286,8 +293,12 @@ export class TilesFadePlugin {
 		tiles.forEachLoadedModel( scene => {
 
 			this._fadeManager.deleteObject( scene );
+			this._tileMap.delete( scene );
+			scene.visible = true;
 
 		} );
+
+		this._fadeGroup.removeFromParent();
 
 	}
 

@@ -53,6 +53,9 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Ellipsoid Region Bounds](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ellipsoid.html)
 
+**React Three Fiber**
+
+See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
 
 # Use
 
@@ -708,6 +711,10 @@ getPropertyArray( key : String ) : Array | TypedArray | null
 ```
 
 Returns an array of data associated with the `key` passed into the function. Returns null if the key is not in the table.
+
+# React-Three-Fiber R3F components
+
+See the [r3f documentation](./src/r3f/README.md) for react components wrapping the TilesRenderer functionnality, like `TilesRenderer`, `EastNorthUpFrame`, `Controls` and `TilesPlugin` (among which `GLTFExtensionsPlugin`, `ReorientationPlugin`, `TilesFadePlugin`, `TileCompressionPlugin`, `DebugTilesPlugin`) as well as wrappers for Google or Cesium Ion Tilesets components and `TilesAttributionOverlay`.
 
 # LICENSE
 

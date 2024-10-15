@@ -24,11 +24,12 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false, logoUrl = null } ) {
+	constructor( { apiToken, autoRefreshToken = false, logoUrl = null, useRecommendedSettings = true } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
+		this.useRecommendedSettings = useRecommendedSettings;
 		this.logoUrl = logoUrl;
 		this.sessionToken = null;
 		this.tiles = null;
@@ -40,15 +41,38 @@ export class GoogleCloudAuthPlugin {
 		this._logoAttribution = {
 			value: '',
 			type: 'image',
+			collapsible: false,
 		};
 		this._attribution = {
 			value: '',
 			type: 'string',
+			collapsible: true,
 		};
 
 	}
 
 	init( tiles ) {
+
+		if ( tiles == null ) {
+
+			return;
+
+		}
+
+		if ( tiles.rootURL == null ) {
+
+			tiles.rootURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';
+
+		}
+
+		if ( this.useRecommendedSettings ) {
+
+			// This plugin changes below values to be more efficient for the photorealistic tiles
+			tiles.parseQueue.maxJobs = 10;
+			tiles.downloadQueue.maxJobs = 30;
+			tiles.errorTarget = 40;
+
+		}
 
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {

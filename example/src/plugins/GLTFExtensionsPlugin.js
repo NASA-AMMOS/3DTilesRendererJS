@@ -20,12 +20,13 @@ export class GLTFExtensionsPlugin {
 		this.tiles = null;
 
 		this.metadata = options.metadata;
-		this.rtc = options.rtcPlugin;
+		this.rtc = options.rtc;
 		this.plugins = options.plugins;
 
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
-		this._regex = /\.(gltf|glb)$/g;
+		this._gltfRegex = /\.(gltf|glb)$/g;
+		this._dracoRegex = /\.drc$/g;
 		this._loader = null;
 
 	}
@@ -36,6 +37,7 @@ export class GLTFExtensionsPlugin {
 		if ( this.dracoLoader ) {
 
 			loader.setDRACOLoader( this.dracoLoader );
+			tiles.manager.addHandler( this._dracoRegex, this.dracoLoader );
 
 		}
 
@@ -60,7 +62,7 @@ export class GLTFExtensionsPlugin {
 
 		this.plugins.forEach( plugin => loader.register( plugin ) );
 
-		tiles.manager.addHandler( this._regex, loader );
+		tiles.manager.addHandler( this._gltfRegex, loader );
 		this.tiles = tiles;
 		this._loader = loader;
 
@@ -68,7 +70,8 @@ export class GLTFExtensionsPlugin {
 
 	dispose() {
 
-		this.tiles.manager.removeHandler( this._regex );
+		this.tiles.manager.removeHandler( this._gltfRegex );
+		this.tiles.manager.removeHandler( this._dracoRegex );
 		if ( this.autoDispose ) {
 
 			this.ktxLoader.dispose();

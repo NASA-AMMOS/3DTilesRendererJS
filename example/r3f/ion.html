@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>@react-three/fiber Cesium Ion</title>
+		<style>
+			html {
+				overflow: hidden;
+				font-family: Arial, Helvetica, sans-serif;
+				user-select: none;
+			}
+
+			#info {
+				position: absolute;
+				top: 0;
+				left: 0;
+				color: white;
+				width: 100%;
+				text-align: center;
+				padding: 5px;
+				pointer-events: none;
+				line-height: 1.5em;
+				z-index: 1;
+			}
+
+			#info a {
+				color: white;
+				pointer-events: all;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="info">
+			Example using <a href="https://ion.cesium.com/">Cesium Ion</a> & <a href="https://r3f.docs.pmnd.rs">@react-three/fiber</a>.
+			<br/>
+			Paste the evaluation token from the <a target="_blank" href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repository</a> or your own.
+		</div>
+		<div id="root"></div>
+		<script type="module" src="./ion.jsx"></script>
+	</body>
+</html>
