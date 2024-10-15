@@ -3,17 +3,17 @@ import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } fr
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
-const tempFwd = new Vector3();
-const tempUp = new Vector3();
-const tempRight = new Vector3();
-const tempPos = new Vector3();
-const tempQuat = new Quaternion();
-const tempSca = new Vector3();
-const tempMat = new Matrix4();
-const tempMat2 = new Matrix4();
+const tempFwd = /* @__PURE__ */ new Vector3();
+const tempUp = /* @__PURE__ */ new Vector3();
+const tempRight = /* @__PURE__ */ new Vector3();
+const tempPos = /* @__PURE__ */ new Vector3();
+const tempQuat = /* @__PURE__ */ new Quaternion();
+const tempSca = /* @__PURE__ */ new Vector3();
+const tempMat = /* @__PURE__ */ new Matrix4();
+const tempMat2 = /* @__PURE__ */ new Matrix4();
 
-const tempGlobePos = new Vector3();
-const tempEnuFrame = new Matrix4();
+const tempGlobePos = /* @__PURE__ */ new Vector3();
+const tempEnuFrame = /* @__PURE__ */ new Matrix4();
 const tempLatLon = {};
 
 export class I3DMLoader extends I3DMLoaderBase {
@@ -88,7 +88,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						[
 							'QUANTIZED_VOLUME_OFFSET',
 							'QUANTIZED_VOLUME_SCALE',
-							'EAST_NORTH_UP',
 							'POSITION_QUANTIZED',
 							'NORMAL_UP_OCT32P',
 							'NORMAL_RIGHT_OCT32P',
@@ -153,6 +152,10 @@ export class I3DMLoader extends I3DMLoaderBase {
 							);
 
 							// rotation
+							tempQuat.identity();
+
+							// account for EAST_NORTH_UP per-instance below
+
 							if ( NORMAL_UP ) {
 
 								tempUp.set(
@@ -180,12 +183,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							}
 
-							if ( ! ( NORMAL_UP || EAST_NORTH_UP ) ) {
-
-								tempQuat.identity();
-
-							}
-
 							// scale
 							tempSca.set( 1, 1, 1 );
 
@@ -198,6 +195,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 								);
 
 							}
+
 							if ( SCALE ) {
 
 								tempSca.multiplyScalar( SCALE[ i ] );
