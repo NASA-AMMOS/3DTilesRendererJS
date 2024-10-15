@@ -4,13 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.39] - 2024.10.15
 ### Added
 - `ReorientationPlugin` and `GLTFExtensionsPlugin`.
 - Ability to remove plugins via the `unregisterPlugin` function.
 - Support for octree subdivision to implicit tiling.
 - Initial `BatchedTilePlugin` implementation to examples.
-- Initial support for `@react-three/fiber` component implementations exported as `3d-tiles-renderer/r3f`. See the r3f docs for more information.
+- Initial support for `@react-three/fiber` with component implementations exported as `3d-tiles-renderer/r3f`. See the r3f docs for more information.
 
 ### Changed
 - LRUCache minSize and maxSize variables to default to 6000, 8000.
