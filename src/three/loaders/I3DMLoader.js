@@ -23,6 +23,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 		super();
 		this.manager = manager;
 		this.adjustmentTransform = new Matrix4();
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 
 	}
 
@@ -214,8 +215,8 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 									// transform the instance position to global frame and get the rotation from the associated ENU frame.
 									tempGlobePos.copy( tempPos ).applyMatrix4( instance.matrixWorld );
-									WGS84_ELLIPSOID.getPositionToCartographic( tempGlobePos, tempLatLon );
-									WGS84_ELLIPSOID.getEastNorthUpFrame( tempLatLon.lat, tempLatLon.lon, tempEnuFrame );
+									this.ellipsoid.getPositionToCartographic( tempGlobePos, tempLatLon );
+									this.ellipsoid.getEastNorthUpFrame( tempLatLon.lat, tempLatLon.lon, tempEnuFrame );
 									tempQuat.setFromRotationMatrix( tempEnuFrame );
 
 								}
