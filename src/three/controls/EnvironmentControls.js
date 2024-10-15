@@ -162,6 +162,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
 		this.needsUpdate = true;
+		this.raycaster.camera = camera;
 		this.resetState();
 
 	}
