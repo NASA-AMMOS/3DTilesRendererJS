@@ -9,7 +9,10 @@ export default {
 	build: {
 		outDir: './bundle/',
 		rollupOptions: {
-			input: [ ...fs.readdirSync( './example/' ), ...fs.readdirSync( './example/r3f/' ) ]
+			input: [
+				...fs.readdirSync( './example/' ),
+				...fs.readdirSync( './example/r3f/' ).map( name => 'r3f/' + name ),
+			]
 				.filter( p => /\.html$/.test( p ) )
 				.map( p => `./example/${ p }` ),
 		},
