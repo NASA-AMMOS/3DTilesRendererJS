@@ -22,6 +22,7 @@ import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
+import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -35,8 +36,9 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	apiKey: apiKey,
+	batched: false,
 
-	'reload': reinstantiateTiles,
+	reload: reinstantiateTiles,
 
 };
 
@@ -59,7 +61,17 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new TilesFadePlugin() );
+
+	if ( params.batched ) {
+
+		tiles.registerPlugin( new BatchedTilesPlugin( { renderer } ) );
+
+	} else {
+
+		tiles.registerPlugin( new TilesFadePlugin() );
+
+	}
+
 	tiles.group.rotation.x = - Math.PI / 2;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
@@ -141,6 +153,7 @@ function init() {
 
 	const mapsOptions = gui.addFolder( 'Google Tiles' );
 	mapsOptions.add( params, 'apiKey' );
+	mapsOptions.add( params, 'batched' ).listen();
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -207,21 +220,33 @@ function updateHash() {
 	cartographicResult.lon *= MathUtils.RAD2DEG;
 
 	// update hash
-	const params = new URLSearchParams();
-	params.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
-	params.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
-	params.set( 'height', cartographicResult.height.toFixed( 2 ) );
-	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
-	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
-	window.history.replaceState( undefined, undefined, `#${ params }` );
+	const urlParams = new URLSearchParams();
+	urlParams.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
+	urlParams.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
+	urlParams.set( 'height', cartographicResult.height.toFixed( 2 ) );
+	urlParams.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
+	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
+
+	if ( params.batched ) {
+
+		urlParams.set( 'batched', 1 );
+
+	}
+	window.history.replaceState( undefined, undefined, `#${ urlParams }` );
 
 }
 
 function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
-	const params = new URLSearchParams( hash );
-	if ( ! params.has( 'lat' ) && ! params.has( 'lon' ) ) {
+	const urlParams = new URLSearchParams( hash );
+	if ( urlParams.has( 'batched' ) ) {
+
+		params.batched = Boolean( urlParams.get( 'batched' ) );
+
+	}
+
+	if ( ! urlParams.has( 'lat' ) && ! urlParams.has( 'lon' ) ) {
 
 		return;
 
@@ -232,15 +257,15 @@ function initFromHash() {
 
 	// get the position fields
 	const camera = transition.camera;
-	const lat = parseFloat( params.get( 'lat' ) );
-	const lon = parseFloat( params.get( 'lon' ) );
-	const height = parseFloat( params.get( 'height' ) ) || 1000;
+	const lat = parseFloat( urlParams.get( 'lat' ) );
+	const lon = parseFloat( urlParams.get( 'lon' ) );
+	const height = parseFloat( urlParams.get( 'height' ) ) || 1000;
 
-	if ( params.has( 'az' ) && params.has( 'el' ) ) {
+	if ( urlParams.has( 'az' ) && urlParams.has( 'el' ) ) {
 
 		// get the az el fields for rotation if present
-		const az = parseFloat( params.get( 'az' ) );
-		const el = parseFloat( params.get( 'el' ) );
+		const az = parseFloat( urlParams.get( 'az' ) );
+		const el = parseFloat( urlParams.get( 'el' ) );
 
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
