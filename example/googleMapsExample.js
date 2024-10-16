@@ -37,6 +37,7 @@ const params = {
 	enableRendererStats: false,
 	apiKey: apiKey,
 	batched: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	errorTarget: 40,
 
 	reload: reinstantiateTiles,
 
@@ -159,6 +160,11 @@ function init() {
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
+	exampleOptions.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
+
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
 
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
@@ -310,6 +316,7 @@ function animate() {
 
 	// update tiles
 	camera.updateMatrixWorld();
+	tiles.errorTarget = params.errorTarget;
 	tiles.update();
 
 	renderer.render( scene, camera );
@@ -322,40 +329,14 @@ function animate() {
 function updateHtml() {
 
 	// render html text updates
-	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = '';
 
 	if ( params.enableCacheDisplay ) {
 
+		const lruCache = tiles.lruCache;
+		const cacheFullness = lruCache.cachedBytes / lruCache.maxBytesSize;
 		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
-
-		const geomSet = new Set();
-		tiles.traverse( tile => {
-
-			const scene = tile.cached.scene;
-			if ( scene ) {
-
-				scene.traverse( c => {
-
-					if ( c.geometry ) {
-
-						geomSet.add( c.geometry );
-
-					}
-
-				} );
-
-			}
-
-		} );
-
-		let count = 0;
-		geomSet.forEach( g => {
-
-			count += estimateBytesUsed( g );
-
-		} );
-		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
+		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( lruCache.cachedBytes / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
 

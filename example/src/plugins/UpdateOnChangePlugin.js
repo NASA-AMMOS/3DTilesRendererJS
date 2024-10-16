@@ -5,6 +5,7 @@ export class UpdateOnChangePlugin {
 
 	constructor() {
 
+		this.name = 'UPDATE_ON_CHANGE_PLUGIN';
 		this.tiles = null;
 		this.needsUpdate = false;
 		this.cameraMatrices = new Map();
