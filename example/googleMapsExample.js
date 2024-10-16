@@ -36,7 +36,7 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	apiKey: apiKey,
-	batched: false,
+	batched: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
 
 	reload: reinstantiateTiles,
 
@@ -362,8 +362,9 @@ function updateHtml() {
 	if ( params.enableRendererStats ) {
 
 		const memory = renderer.info.memory;
+		const render = renderer.info.render;
 		const programCount = renderer.info.programs.length;
-		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
+		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount } Draw Calls: ${ render.calls }`;
 
 	}
 
