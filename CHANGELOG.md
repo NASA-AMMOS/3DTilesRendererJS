@@ -6,6 +6,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
+- I3DMLoader: Add support for EAST_NORTH_UP semantic.
+
+### Fixed
+- EnvironmentControls: Assign the current camera to the raycaster.
+- Typescript definitions for TilesRenderer.
+
+## [0.3.39] - 2024.10.15
+### Added
+- `ReorientationPlugin` and `GLTFExtensionsPlugin`.
+- Ability to remove plugins via the `unregisterPlugin` function.
+- Support for octree subdivision to implicit tiling.
+- Initial `BatchedTilePlugin` implementation to examples.
+- Initial support for `@react-three/fiber` with component implementations exported as `3d-tiles-renderer/r3f`. See the r3f docs for more information.
+
+### Changed
+- LRUCache minSize and maxSize variables to default to 6000, 8000.
+- Added `getAttributions` function, deprecated `getCreditsString` function.
+- GoogleCloudAuthPlugin: Use the photorealistic tiles url if a user has not provided one.
+- GoogleCloudAuthPlugin: Modify the tiles renderer to use recommended settings for Google Photorealistic Tiles by default.
+- Deprecated GooglePhotorealisticTilesRenderer.
+- Improve EnvironmentControls momementum thresholds so movement stops sooner.
+
+### Fixed
+- Case where tile set scale was incorrectly used when computed screenspace error.
+- Case where `setTileVisibility` could get called asymmetrically.
+- Case where `TilesFadePlugin` would hold on to scene geometry after disposal.
+
+## [0.3.38] - 2024.09.30
+### Added
 - BatchTable: Added "getPropertyArray".
 - GoogleCloudAuthPlugin, CesiumIonAuthPlugin: added "autoRefreshToken" option to enable automatically refreshing the token when requests fail due to timeout.
 
@@ -16,6 +45,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Documentation typo: `maxByteSize` -> `maxBytesSize`.
 - Documented that LRUCache's `maxByteSize` and `minByteSize` are only compatible with three.js >= r166
 - Environment / GlobeControls: Fixed the pivot point mesh appearing when controls are disabled.
+- Case where LRUCache could cause tiles to load repeatedly.
 
 ## [0.3.37] - 2024.08.27
 ### Added

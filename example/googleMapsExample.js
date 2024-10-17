@@ -3,7 +3,7 @@ import {
 	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
-	GooglePhotorealisticTilesRenderer,
+	TilesRenderer,
 	GoogleCloudAuthPlugin,
 } from '../src/index.js';
 import {
@@ -55,13 +55,12 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
-	tiles = new GooglePhotorealisticTilesRenderer();
-	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
-	tiles.errorTarget = 50;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
@@ -354,6 +353,7 @@ function updateHtml() {
 
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getCreditsString();
+	const attributions = tiles.getAttributions()[ 0 ]?.value || '';
+	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + attributions;
 
 }

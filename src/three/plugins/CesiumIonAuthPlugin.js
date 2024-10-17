@@ -14,6 +14,7 @@ export class CesiumIonAuthPlugin {
 		this._bearerToken = null;
 		this._tileSetVersion = - 1;
 		this._tokenRefreshPromise = null;
+		this._attributions = [];
 
 	}
 
@@ -88,6 +89,16 @@ export class CesiumIonAuthPlugin {
 
 	}
 
+	getAttributions( target ) {
+
+		if ( this.tiles.visibleTiles.size > 0 ) {
+
+			target.push( ...this._attributions );
+
+		}
+
+	}
+
 	_refreshToken( options ) {
 
 		if ( this._tokenRefreshPromise === null ) {
@@ -97,7 +108,17 @@ export class CesiumIonAuthPlugin {
 			url.searchParams.append( 'access_token', this.apiToken );
 
 			this._tokenRefreshPromise = fetch( url, options )
-				.then( res => res.json() )
+				.then( res => {
+
+					if ( ! res.ok ) {
+
+						throw new Error( `CesiumIonAuthPlugin: Failed to load data with error code ${ res.status }` );
+
+					}
+
+					return res.json();
+
+				} )
 				.then( json => {
 
 					const tiles = this.tiles;
@@ -124,6 +145,15 @@ export class CesiumIonAuthPlugin {
 						}
 
 						this._bearerToken = json.accessToken;
+						if ( json.attributions ) {
+
+							this._attributions = json.attributions.map( att => ( {
+								value: att.html,
+								type: 'html',
+								collapsible: att.collapsible,
+							} ) );
+
+						}
 
 					}
 

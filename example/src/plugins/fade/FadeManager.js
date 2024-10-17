@@ -50,7 +50,7 @@ export class FadeManager {
 			if ( material ) {
 
 				fadeParams.delete( material );
-				material.onBeforeCompile = null;
+				material.onBeforeCompile = () => {};
 				material.needsUpdate = true;
 
 			}

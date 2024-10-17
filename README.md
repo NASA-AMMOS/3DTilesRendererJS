@@ -5,9 +5,9 @@
 
 ![](./images/header-mars.png)
 
-Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
+Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
 
-If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features.
+If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
 **Examples**
 
@@ -53,6 +53,9 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Ellipsoid Region Bounds](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ellipsoid.html)
 
+**React Three Fiber**
+
+See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
 
 # Use
 
@@ -539,6 +542,14 @@ registerPlugin( plugin : TilesPlugin ) : void
 
 Register a plugin to the TilesRenderer. See the [plugins documentation](./PLUGINS.md) for more information.
 
+### .unregisterPlugin
+
+```js
+unregisterPlugin( plugin : TilesPlugin | String ) : Boolean
+```
+
+Removes a plugin from the tiles renderer. Returns `true` if the plugin was in the renderer and was removed. Returns `false` otherwise.
+
 ### .getPluginByName
 
 ```js
@@ -546,6 +557,19 @@ getPluginByName( name : string ) : TilesPlugin
 ```
 
 Returns the plugin with the given name if it has been registered. Returns the first one if multiple have been registered.
+
+### .getAttributions
+
+```js
+getAttributions( target = [] : Array ) : Array<{
+	type: string,
+	value: any,
+}>
+```
+
+Returns a list of attributions for the data in the tile set. The list can change when tile visibility changes.
+
+The "type" can be a "string", "html", or "image" depending on the type of attribution. Google Photorealistic Tiles, for example, returns a list of sources as a string.
 
 ### .dispose
 
@@ -596,14 +620,6 @@ constructor( apiKey: String )
 ```
 
 Takes the Google Photorealistic Tiles API Key.
-
-### .getCreditsString
-
-```js
-getCreditsString(): String;
-```
-
-Returns a string of unique credits for all the tiles currently displayed.
 
 ### .setLatLonToYUp
 
@@ -695,6 +711,10 @@ getPropertyArray( key : String ) : Array | TypedArray | null
 ```
 
 Returns an array of data associated with the `key` passed into the function. Returns null if the key is not in the table.
+
+# React-Three-Fiber R3F components
+
+See the [r3f documentation](./src/r3f/README.md) for react components wrapping the TilesRenderer functionnality, like `TilesRenderer`, `EastNorthUpFrame`, `Controls` and `TilesPlugin` (among which `GLTFExtensionsPlugin`, `ReorientationPlugin`, `TilesFadePlugin`, `TileCompressionPlugin`, `DebugTilesPlugin`) as well as wrappers for Google or Cesium Ion Tilesets components and `TilesAttributionOverlay`.
 
 # LICENSE
 

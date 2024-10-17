@@ -1,4 +1,5 @@
 import { traverseSet } from '../../base/traverseFunctions.js';
+import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 
 function getSessionToken( root ) {
 
@@ -23,21 +24,55 @@ function getSessionToken( root ) {
 
 export class GoogleCloudAuthPlugin {
 
-	constructor( { apiToken, autoRefreshToken = false } ) {
+	constructor( { apiToken, autoRefreshToken = false, logoUrl = null, useRecommendedSettings = true } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
+		this.useRecommendedSettings = useRecommendedSettings;
+		this.logoUrl = logoUrl;
 		this.sessionToken = null;
 		this.tiles = null;
 
 		this._onLoadCallback = null;
 		this._visibilityChangeCallback = null;
 		this._tokenRefreshPromise = null;
+		this._attributionsManager = new GoogleAttributionsManager();
+		this._logoAttribution = {
+			value: '',
+			type: 'image',
+			collapsible: false,
+		};
+		this._attribution = {
+			value: '',
+			type: 'string',
+			collapsible: true,
+		};
 
 	}
 
 	init( tiles ) {
+
+		if ( tiles == null ) {
+
+			return;
+
+		}
+
+		if ( tiles.rootURL == null ) {
+
+			tiles.rootURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';
+
+		}
+
+		if ( this.useRecommendedSettings ) {
+
+			// This plugin changes below values to be more efficient for the photorealistic tiles
+			tiles.parseQueue.maxJobs = 10;
+			tiles.downloadQueue.maxJobs = 30;
+			tiles.errorTarget = 40;
+
+		}
 
 		this.tiles = tiles;
 		this._onLoadCallback = ( { tileSet } ) => {
@@ -50,7 +85,41 @@ export class GoogleCloudAuthPlugin {
 
 		};
 
+		this._visibilityChangeCallback = ( { tile, visible } ) => {
+
+			const copyright = tile.cached.metadata.asset.copyright || '';
+			if ( visible ) {
+
+				this._attributionsManager.addAttributions( copyright );
+
+			} else {
+
+				this._attributionsManager.removeAttributions( copyright );
+
+			}
+
+		};
+
 		tiles.addEventListener( 'load-tile-set', this._onLoadCallback );
+		tiles.addEventListener( 'tile-visibility-change', this._visibilityChangeCallback );
+
+	}
+
+	getAttributions( target ) {
+
+		if ( this.tiles.visibleTiles.size > 0 ) {
+
+			if ( this.logoUrl ) {
+
+				this._logoAttribution.value = this.logoUrl;
+				target.push( this._logoAttribution );
+
+			}
+
+			this._attribution.value = this._attributionsManager.toString();
+			target.push( this._attribution );
+
+		}
 
 	}
 
@@ -73,7 +142,9 @@ export class GoogleCloudAuthPlugin {
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+		const { tiles } = this;
+		tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
+		tiles.removeEventListener( 'tile-visibility-change', this._visibilityChangeCallback );
 
 	}
 

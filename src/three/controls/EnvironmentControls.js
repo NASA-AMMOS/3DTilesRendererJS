@@ -21,6 +21,8 @@ export const WAITING = 4;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
+const ROT_MOMENTUM_THRESHOLD = 1e-4;
+const POS_MOMENTUM_THRESHOLD = 1e-2;
 
 const _rotMatrix = new Matrix4();
 const _delta = new Vector3();
@@ -160,6 +162,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
 		this.needsUpdate = true;
+		this.raycaster.camera = camera;
 		this.resetState();
 
 	}
@@ -398,6 +401,9 @@ export class EnvironmentControls extends EventDispatcher {
 				}
 
 			}
+
+			// TODO: we have the potential to fire change multiple times per frame - should we debounce?
+			this.dispatchEvent( _changeEvent );
 
 		};
 
@@ -724,14 +730,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// scale the residual motion
 		rotationInertia.multiplyScalar( factor );
-		if ( rotationInertia.lengthSq() < 1e-8 || ! enableDamping ) {
+		if ( rotationInertia.lengthSq() < ROT_MOMENTUM_THRESHOLD || ! enableDamping ) {
 
 			rotationInertia.set( 0, 0 );
 
 		}
 
 		dragInertia.multiplyScalar( factor );
-		if ( dragInertia.lengthSq() < 1e-8 || ! enableDamping ) {
+		if ( dragInertia.lengthSq() < POS_MOMENTUM_THRESHOLD || ! enableDamping ) {
 
 			dragInertia.set( 0, 0, 0 );
 
@@ -1145,7 +1151,6 @@ export class EnvironmentControls extends EventDispatcher {
 			camera,
 			state,
 			zoomPoint,
-			zoomDirection,
 			zoomDirectionSet,
 			zoomPointSet,
 			reorientOnDrag,

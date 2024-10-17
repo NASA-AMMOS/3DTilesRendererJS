@@ -198,6 +198,10 @@ tiles.registerPlugin( new TilesCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
+## ImplicitTilingPlugin
+
+Plugin that adds support for 3d tiles [implicit tiling](https://github.com/CesiumGS/3d-tiles/tree/main/specification/ImplicitTiling) feature.
+
 ## DebugTilesPlugin
 
 Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
@@ -324,17 +328,23 @@ The function used to map a [0, 1] value to a color for debug visualizations. By 
 ### constructor
 
 ```js
-constructor( { accessToken : String, autoRefreshToken = false : Boolean } )
+constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl = null : String | null, useRecommendedSettings = true : Boolean } )
 ```
 
 Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
+This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`:
+```js
+tiles.parseQueue.maxJobs = 10;
+tiles.downloadQueue.maxJobs = 30;
+tiles.errorTarget = 40;
+```
 
 ## CesiumIonAuthPlugin
 
 ### constructor
 
 ```js
-constructor( { accessToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
+constructor( { apiToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
 ```
 
 Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after an hour.
@@ -436,6 +446,8 @@ _available in the examples directory_
 
 Plugin that overrides material shaders to fade tile geometry in and out as tile LODs change. Based on [this Cesium article](https://cesium.com/blog/2022/10/20/smoother-lod-transitions-in-cesium-for-unreal/) on the topic.
 
+The plugin will dispatch `fade-change`, `fade-start`, and `fade-end` events per tile on the TilesRenderer when the animation updates. These events should be used in addition to any others required when performing on-demand rendering.
+
 ### .fadeDuration
 
 ```js
@@ -459,6 +471,119 @@ fadeRootTiles = false : boolean
 ```
 
 Whether to fade the root tile objects in.
+
+## GLTFExtensionsPlugin
+
+_available in the examples directory_
+
+Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// If true then the StructuralMetadata and MeshFeatures extensions are included.
+	metadata: true,
+
+	// If true then the Cesium RTC Center extension is included.
+	rtc: true,
+
+	// A list of other extensions to include in the loader. All elements are passed to the "GLTFLoader.register" function.
+	plugins: [],
+
+	// DRACOLoader and KTX2Loader instances to add to the loader.
+	dracoLoader: null,
+	ktxLoader: null,
+
+	// Whether to automatically dispose of the DRACO and KTX Loaders when the plugin is disposed.
+	autoDispose: true,
+}
+```
+
+## ReorientationPlugin
+
+_available in the examples directory_
+
+Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// The latitude, longitude, and height of the point on the surface to orient to. Lat and lon are in radians. If
+	// no coordinates are provided then the plugin tries to determine if the tile set is a tile set on the globe surface
+	// and estimates the coordinates.
+	lat: null,
+	lon: null,
+	height: 0,
+
+	// If a set of lat and lon coordinates cannot be determined then the tile set is simple oriented so the provided axes
+	// is oriented to three.js' +Y up direction. Valid values are positive or negative x, y, or z.
+	up: '+z',
+
+	// Whether or not to recenter the tile set.
+	recenter: true,
+}
+```
+
+### transformLatLonHeightToOrigin
+
+```js
+transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
+```
+
+Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
+
+## BatchedTilesPlugin
+
+_available in the examples directory_
+
+Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture.
+
+> [!WARNING]
+> All tile geometry rendered with BatchedMesh will use the same material and only a single material "map" is supported. Only tiles geometry containing a single mesh are supported. Not compatible with other plugins that modify mesh materials or rely on other bespoke mesh data (eg TilesFadePlugin, DebugTilesPlugin, GLTF Metadata extensions).
+
+### .constructor
+
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// WebGLRenderer used for generating a WebGLArrayRenderTarget
+	renderer,
+
+	// The initial number of instances to use for rendering
+	instanceCount: 500,
+
+	// The minimum amount of vertex and index space to save per tile geometry added. If adequate tile space is already allocated
+	// when a new tile geometry is added then it can prevent more expensive geometry resizing and optimization.
+	vertexCount: 1000,
+	indexCount: 1000,
+
+	// The amount to increase the geometry and instance allocation when the operations must occur
+	expandPercent: 0.25,
+
+	// The material to use for the BatchedMesh. The material of the first tile rendered with be used if not set.
+	material: null,
+}
+```
 
 # Controls
 

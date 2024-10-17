@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, Texture } from 'three';
 
 export class GLTFStructuralMetadataExtension {
 
@@ -19,7 +19,7 @@ class StructuralMetadata {
 		name: String,
 		className: string,
 		properties: {
-			[key]: {
+			[key: string]: {
 				index: Number,
 				texCoord: Number,
 				channels: Array<Number>,

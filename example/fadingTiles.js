@@ -112,7 +112,10 @@ function reinstantiateTiles() {
 	if ( groundTiles ) {
 
 		groundTiles.dispose();
+		groundTiles.group.removeFromParent();
+
 		skyTiles.dispose();
+		skyTiles.group.removeFromParent();
 
 	}
 

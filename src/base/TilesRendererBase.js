@@ -52,6 +52,11 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of deeper tiles first
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
 
+	} else if ( a.__loadingState !== b.__loadingState ) {
+
+		// dispose of tiles that are earlier along in the loading process first
+		return a.__loadingState > b.__loadingState ? - 1 : 1;
+
 	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
 
 		// dispose of least recent tiles first
@@ -168,6 +173,33 @@ export class TilesRendererBase {
 			plugin.init( this );
 
 		}
+
+	}
+
+	unregisterPlugin( plugin ) {
+
+		const plugins = this.plugins;
+		if ( typeof plugin === 'string' ) {
+
+			plugin = this.getPluginByName( name );
+
+		}
+
+		if ( plugins.includes( plugin ) ) {
+
+			const index = plugins.indexOf( plugin );
+			plugins.splice( index, 1 );
+			if ( plugin.dispose ) {
+
+				plugin.dispose();
+
+			}
+
+			return true;
+
+		}
+
+		return false;
 
 	}
 
@@ -646,6 +678,7 @@ export class TilesRendererBase {
 				console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
 				console.error( e );
 				tile.__loadingState = FAILED;
+				lruCache.setLoaded( tile, true );
 
 			} else {
 
@@ -736,21 +769,36 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 				tile.__loadingState = LOADED;
+				lruCache.setLoaded( tile, true );
 
-				// if the cache is full due to newly loaded memory then lets discard this tile - it will
-				// be loaded again later from the disk cache if needed.
-				if ( lruCache.isFull() ) {
+				// If the memory of the item hasn't been registered yet then that means the memory usage hasn't
+				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
+				if ( lruCache.getMemoryUsage( tile ) === null ) {
 
-					lruCache.remove( tile );
+					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
 
-				} else {
+						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
+						// be loaded again later from the disk cache if needed.
+						lruCache.remove( tile );
 
-					lruCache.updateMemoryUsage( tile );
+					} else {
+
+						// Otherwise update the item to the latest known value
+						lruCache.updateMemoryUsage( tile );
+
+					}
 
 				}
 
 			} )
 			.catch( errorCallback );
+
+	}
+
+	getAttributions( target = [] ) {
+
+		this.invokeAllPlugins( plugin => plugin !== this && plugin.getAttributions && plugin.getAttributions( target ) );
+		return target;
 
 	}
 

@@ -1,7 +1,11 @@
 {
 	"root": true,
 	"parserOptions": {
-        "ecmaVersion": 2020
+		"ecmaVersion": 2020,
+		"sourceType": "module",
+		"ecmaFeatures": {
+			"jsx": true
+		}
 	},
 
 	"globals": {
@@ -12,8 +16,14 @@
 		"jest/globals": true
 	},
 
-	"plugins": [ "jest" ],
-	"extends": [ "eslint:recommended", "plugin:jest/recommended", "./node_modules/eslint-config-mdcs/index.js" ],
+	"plugins": [ "jest", "react", "react-hooks" ],
+	"extends": [
+		"eslint:recommended",
+		"plugin:jest/recommended",
+		"plugin:react/recommended",
+		"plugin:react-hooks/recommended",
+		"./node_modules/eslint-config-mdcs/index.js"
+	],
 
 	"rules": {
 		"no-inner-declarations": "off",
@@ -21,20 +31,27 @@
 		"no-constant-condition": "off",
 		// "no-constant-condition": [ "error", { "checkLoops": "exceptWhileTrue" } ],
 
-		"no-unused-vars": [ 1, { "args": "none" } ],
+		"no-unused-vars": [ "error", { "args": "none" } ],
 		"no-throw-literal": [ "error" ],
 		"prefer-const": [ "error", { "destructuring": "any", "ignoreReadBeforeAssign": false } ],
 		"quotes": [ "error", "single" ]
 	},
-	"overrides": [
-		{
-			"files": [ "*.ts" ],
-			"parser": "@typescript-eslint/parser",
-			"plugins": [ "@typescript-eslint" ],
-			"rules": {
-				"no-unused-vars": [ "error", { "args": "none" } ],
-				"indent": [ "error", "tab" ]
-			}
+	"overrides": [ {
+		"files": [ "*.ts" ],
+		"parser": "@typescript-eslint/parser",
+		"plugins": [ "@typescript-eslint" ],
+		"rules": {
+			"no-unused-vars": [ "error", { "args": "none" } ],
+			"indent": [ "error", "tab" ],
+			"no-dupe-class-members": "off"
 		}
-	]
+	}, {
+		"files": [ "*.jsx" ],
+		"rules": {
+			"react/react-in-jsx-scope": "off",
+			"react/prop-types": "off",
+			"react/no-unknown-property": "off",
+			"react/jsx-curly-spacing": [ "error", { "when": "always" } ]
+		}
+	} ]
 }
