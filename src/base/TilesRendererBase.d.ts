@@ -18,7 +18,7 @@ export class TilesRendererBase {
 	parseQueue : PriorityQueue;
 	downloadQueue : PriorityQueue;
 
-	constructor( url : String );
+	constructor( url?: String );
 	update() : void;
 	registerPlugin( plugin: Object ) : void;
 	unregisterPlugin( plugin: Object | String ) : Boolean;
