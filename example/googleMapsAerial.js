@@ -1,4 +1,4 @@
-import { GeoUtils, WGS84_ELLIPSOID, GooglePhotorealisticTilesRenderer, GoogleCloudAuthPlugin } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer, GoogleCloudAuthPlugin } from '../src/index.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -42,7 +42,7 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new GooglePhotorealisticTilesRenderer();
+	tiles = new TilesRenderer();
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
