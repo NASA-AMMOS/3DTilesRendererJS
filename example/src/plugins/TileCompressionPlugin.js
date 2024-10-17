@@ -154,9 +154,10 @@ export class TileCompressionPlugin {
 				for ( const key in material ) {
 
 					const value = material[ key ];
-					if ( value && value.isTexture ) {
+					if ( value && value.isTexture && value.generateMipmaps ) {
 
 						value.generateMipmaps = false;
+						value.minFilter = value.LinearFilter;
 
 					}
 
