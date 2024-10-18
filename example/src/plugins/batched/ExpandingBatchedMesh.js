@@ -39,13 +39,13 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 		freeGeometryIds.forEach( ( id, i ) => {
 
 			// if indices are not needed then they default to - 1
-			const reservedRange = this._reservedRanges[ id ];
-			const { indexCount, vertexCount } = reservedRange;
-			if ( indexCount >= neededIndexCount && vertexCount >= neededVertexCount ) {
+			const geometryInfo = this._geometryInfo[ id ];
+			const { reservedIndexCount, reservedVertexCount } = geometryInfo;
+			if ( reservedIndexCount >= neededIndexCount && reservedVertexCount >= neededVertexCount ) {
 
 				// generate score that is a combination of how much unused space a geometry would have if used and pick the
 				// one with the least amount of unused space.
-				const score = ( neededIndexCount - indexCount ) + ( neededVertexCount - vertexCount );
+				const score = ( neededIndexCount - reservedIndexCount ) + ( neededVertexCount - reservedVertexCount );
 				if ( score < bestScore ) {
 
 					bestIndex = i;

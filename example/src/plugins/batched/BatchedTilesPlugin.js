@@ -215,7 +215,7 @@ export class BatchedTilesPlugin {
 
 		// init the array texture render target
 		const map = target.material.map;
-		const textureOptions = 			{
+		const textureOptions = {
 			colorSpace: map.colorSpace,
 			wrapS: map.wrapS,
 			wrapT: map.wrapT,
