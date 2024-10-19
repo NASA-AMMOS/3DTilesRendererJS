@@ -353,6 +353,7 @@ function updateHtml() {
 
 	const res = {};
 	WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
+
 	const attributions = tiles.getAttributions()[ 0 ]?.value || '';
 	document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + attributions;
 

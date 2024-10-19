@@ -170,7 +170,9 @@ function render() {
 
 		const res = {};
 		WGS84_ELLIPSOID.getPositionToCartographic( vec, res );
-		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + tiles.getAttributions()[ 0 ].value;
+
+		const attributions = tiles.getAttributions()[ 0 ]?.value || '';
+		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + attributions;
 
 	}
 
