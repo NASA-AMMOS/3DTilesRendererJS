@@ -220,9 +220,10 @@ export class BatchedTilesPlugin {
 			wrapS: map.wrapS,
 			wrapT: map.wrapT,
 			wrapR: map.wrapS,
-			generateMipmaps: map.generateMipmaps,
+			// TODO: Generating mipmaps for the volume every time a new texture is added is extremely slow
+			// generateMipmaps: map.generateMipmaps,
 			// minFilter: map.minFilter,
-			magFilter: map.magFilter,
+			// magFilter: map.magFilter,
 		};
 
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
@@ -270,7 +271,7 @@ export class BatchedTilesPlugin {
 				wrapS: arrayTarget.texture.wrapS,
 				wrapT: arrayTarget.texture.wrapT,
 				generateMipmaps: arrayTarget.texture.generateMipmaps,
-				// minFilter: arrayTarget.texture.minFilter,
+				minFilter: arrayTarget.texture.minFilter,
 				magFilter: arrayTarget.texture.magFilter,
 			};
 
