@@ -325,23 +325,26 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		if ( this.arrayTarget ) {
 
-			this.arrayTarget.dispose();
+		const { arrayTarget, tiles, batchedMesh } = this;
+		if ( arrayTarget ) {
 
-		}
-
-		if ( this.batchedMesh ) {
-
-			this.batchedMesh.material.dispose();
-			this.batchedMesh.dispose();
-			this.batchedMesh.removeFromParent();
+			arrayTarget.dispose();
 
 		}
 
-		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
-		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
-		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		if ( batchedMesh ) {
+
+			batchedMesh.material.dispose();
+			batchedMesh.geometry.dispose();
+			batchedMesh.dispose();
+			batchedMesh.removeFromParent();
+
+		}
+
+		tiles.removeEventListener( 'load-model', this._onLoadModel );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 	}
 
