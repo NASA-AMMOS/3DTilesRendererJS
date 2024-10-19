@@ -83,12 +83,20 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 		} else {
 
-			try {
+			const needsMoreSpace = () => {
 
-				// try to add the geometry, catching the error if it cannot fit
-				resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
+				const vertexNeedsSpace = this.unusedVertexCount < reservedVertexRange;
+				const indexNeedsSpace = this.unusedIndexCount < reservedIndexRange;
+				return vertexNeedsSpace || indexNeedsSpace;
 
-			} catch {
+			};
+
+			const index = geometry.index;
+			const position = geometry.attributes.position;
+			reservedVertexRange = Math.max( reservedVertexRange, position.count );
+			reservedIndexRange = Math.max( reservedIndexRange, index ? index.count : 0 );
+
+			if ( needsMoreSpace() ) {
 
 				// shift all the unused geometries to try to make space
 				_freeGeometryIds.forEach( id => this.deleteGeometry( id ) );
@@ -96,30 +104,44 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 				this.optimize();
 
-				try {
-
-					// see if we can insert geometry now
-					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
-
-				} catch {
+				if ( needsMoreSpace() ) {
 
 					// lastly try to expand the batched mesh size so the new geometry fits
+
 					const batchedIndex = this.geometry.index;
 					const batchedPosition = this.geometry.attributes.position;
-					const index = geometry.index;
-					const position = geometry.attributes.position;
 
-					const addIndexCount = batchedIndex ? Math.ceil( expandPercent * batchedIndex.count ) : - 1;
-					const newIndexCount = batchedIndex ? Math.max( addIndexCount, reservedIndexRange, index.count ) + batchedIndex.count : - 1;
-					const addVertexCount = Math.ceil( expandPercent * batchedPosition.count );
-					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, position.count ) + batchedPosition.count;
+					// compute the new geometry size to expand to accounting for the case where the geometry is not initialized
+					let newIndexCount, newVertexCount;
+					if ( batchedIndex ) {
+
+						const addIndexCount = Math.ceil( expandPercent * batchedIndex.count );
+						newIndexCount = Math.max( addIndexCount, reservedIndexRange, index.count ) + batchedIndex.count;
+
+					} else {
+
+						newIndexCount = Math.max( this.unusedIndexCount, reservedIndexRange );
+
+					}
+
+					if ( batchedPosition ) {
+
+						const addVertexCount = Math.ceil( expandPercent * batchedPosition.count );
+						newVertexCount = Math.max( addVertexCount, reservedVertexRange, position.count ) + batchedPosition.count;
+
+					} else {
+
+						newVertexCount = Math.max( this.unusedVertexCount, reservedVertexRange );
+
+					}
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
-					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 				}
 
 			}
+
+			resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 		}
 
