@@ -61,7 +61,7 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 			const matricesArray = matricesTexture.image.data;
 			const modelViewArray = modelViewMatricesTexture.image.data;
-			for ( let i = 0; i < this.instanceCount; i ++ ) {
+			for ( let i = 0; i < this.maxInstanceCount; i ++ ) {
 
 				matrix
 					.fromArray( matricesArray, i * 16 )

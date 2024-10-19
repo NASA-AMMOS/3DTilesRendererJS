@@ -1,11 +1,9 @@
 import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
-import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
 const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
-const _layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
 _whiteTex.needsUpdate = true;
 
@@ -279,20 +277,9 @@ export class BatchedTilesPlugin {
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, targetDepth );
 			Object.assign( newArrayTarget.texture, textureOptions );
 
-			// render each old layer into the new texture target
-			const currentRenderTarget = renderer.getRenderTarget();
-			for ( let i = 0; i < arrayTarget.depth; i ++ ) {
-
-				_layerCopyQuad.material.map = arrayTarget.texture;
-				_layerCopyQuad.material.layer = i;
-				renderer.setRenderTarget( newArrayTarget, i );
-				_layerCopyQuad.render( renderer );
-
-			}
-
-			// reset the state
-			renderer.setRenderTarget( currentRenderTarget );
-			_layerCopyQuad.material.map = null;
+			// copy the contents
+			renderer.initRenderTarget( newArrayTarget );
+			renderer.copyTextureToTexture3D( arrayTarget.texture, newArrayTarget.texture );
 
 			// replace the old array target
 			arrayTarget.dispose();
