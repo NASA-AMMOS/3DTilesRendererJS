@@ -3,7 +3,7 @@ import {
 	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
-	GooglePhotorealisticTilesRenderer,
+	TilesRenderer,
 	GoogleCloudAuthPlugin,
 } from '../src/index.js';
 import {
@@ -58,7 +58,7 @@ function reinstantiateTiles() {
 
 	localStorage.setItem( 'googleApiKey', params.apiKey );
 
-	tiles = new GooglePhotorealisticTilesRenderer();
+	tiles = new TilesRenderer();
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );

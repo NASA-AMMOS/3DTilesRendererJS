@@ -10,29 +10,12 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 		super( ...args );
 
 		this.resetDistance = 1e4;
-		this._initMatricesTexture();
 		this._matricesTextureHandle = null;
 		this._lastCameraPos = new Matrix4();
 		this._forceUpdate = true;
 
 	}
 
-	_initModelViewMatricesTexture() {
-
-		this._modelViewMatricesTexture = this._matricesTexture.clone();
-		this._modelViewMatricesTexture.source = new Source( {
-			...this._modelViewMatricesTexture.image,
-			data: this._modelViewMatricesTexture.image.data.slice(),
-		} );
-
-	}
-
-	_initMatricesTexture() {
-
-		super._initMatricesTexture();
-		this._initModelViewMatricesTexture();
-
-	}
 
 	setMatrixAt( ...args ) {
 
@@ -48,11 +31,36 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 		vec1.setFromMatrixPosition( camera.matrixWorld );
 		vec2.setFromMatrixPosition( this._lastCameraPos );
 
+		const matricesTexture = this._matricesTexture;
+		let modelViewMatricesTexture = this._modelViewMatricesTexture;
+
+		if (
+			! modelViewMatricesTexture ||
+			modelViewMatricesTexture.image.width !== matricesTexture.image.width ||
+			modelViewMatricesTexture.image.height !== matricesTexture.image.height
+		) {
+
+			if ( modelViewMatricesTexture ) {
+
+				modelViewMatricesTexture.dispose();
+
+			}
+
+			modelViewMatricesTexture = matricesTexture.clone();
+			modelViewMatricesTexture.source = new Source( {
+				...modelViewMatricesTexture.image,
+				data: modelViewMatricesTexture.image.data.slice(),
+			} );
+
+			this._modelViewMatricesTexture = modelViewMatricesTexture;
+
+		}
+
+
 		if ( this._forceUpdate || vec1.distanceTo( vec2 ) > this.resetDistance ) {
 
-			// TODO: resize and re-instantiate the texture here if the size is different
-			const matricesArray = this._matricesTexture.image.data;
-			const modelViewArray = this._modelViewMatricesTexture.image.data;
+			const matricesArray = matricesTexture.image.data;
+			const modelViewArray = modelViewMatricesTexture.image.data;
 			for ( let i = 0; i < this.instanceCount; i ++ ) {
 
 				matrix
@@ -63,7 +71,7 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 			}
 
-			this._modelViewMatricesTexture.needsUpdate = true;
+			modelViewMatricesTexture.needsUpdate = true;
 			this._lastCameraPos.copy( camera.matrixWorld );
 			this._forceUpdate = false;
 
