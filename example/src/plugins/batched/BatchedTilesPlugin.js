@@ -224,7 +224,7 @@ export class BatchedTilesPlugin {
 			// TODO: Generating mipmaps for the volume every time a new texture is added is extremely slow
 			// generateMipmaps: map.generateMipmaps,
 			// minFilter: map.minFilter,
-			// magFilter: map.magFilter,
+			magFilter: map.magFilter,
 		};
 
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );

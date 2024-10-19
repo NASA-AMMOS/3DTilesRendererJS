@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, LinearFilter } from 'three';
 import { BufferAttribute, MathUtils } from 'three';
 
 const _vec = new Vector3();
@@ -157,7 +157,7 @@ export class TileCompressionPlugin {
 					if ( value && value.isTexture && value.generateMipmaps ) {
 
 						value.generateMipmaps = false;
-						value.minFilter = value.LinearFilter;
+						value.minFilter = LinearFilter;
 
 					}
 
