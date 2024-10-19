@@ -7,19 +7,12 @@ const _batchIntersects = [];
 // Implementation of BatchedMesh that automatically expands
 export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
-	get instanceCount() {
-
-		return this._currentInstances;
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
 
 		this.expandPercent = 0.25;
 		this.maxInstanceExpansionSize = Infinity;
-		this._currentInstances = 0;
 
 		// set of available geometry ids that are no longer being used
 		this._freeGeometryIds = [];
@@ -137,14 +130,13 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// add an instance and automatically expand the number of instances if necessary
 	addInstance( geometryId ) {
 
-		if ( this.maxInstanceCount === this._currentInstances ) {
+		if ( this.maxInstanceCount === this.instanceCount ) {
 
 			const newCount = Math.ceil( this.maxInstanceCount * ( 1 + this.expandPercent ) );
 			this.setInstanceCount( Math.min( newCount, this.maxInstanceExpansionSize ) );
 
 		}
 
-		this._currentInstances ++;
 		return super.addInstance( geometryId );
 
 	}
@@ -152,15 +144,7 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// delete an instance, keeping note that the geometry id is now unused
 	deleteInstance( instanceId ) {
 
-		if ( this._drawInfo[ instanceId ].active === false ) {
-
-			// TODO: how is this happening?
-			return;
-
-		}
-
 		this._freeGeometryIds.push( this.getGeometryIdAt( instanceId ) );
-		this._currentInstances --;
 		return super.deleteInstance( instanceId );
 
 	}

@@ -51,10 +51,9 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 		if ( this._forceUpdate || vec1.distanceTo( vec2 ) > this.resetDistance ) {
 
 			// TODO: resize and re-instantiate the texture here if the size is different
-			const drawInfo = this._drawInfo;
 			const matricesArray = this._matricesTexture.image.data;
 			const modelViewArray = this._modelViewMatricesTexture.image.data;
-			for ( let i = 0; i < drawInfo.length; i ++ ) {
+			for ( let i = 0; i < this.instanceCount; i ++ ) {
 
 				matrix
 					.fromArray( matricesArray, i * 16 )
