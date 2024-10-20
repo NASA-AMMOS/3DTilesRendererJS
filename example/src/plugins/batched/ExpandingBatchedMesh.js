@@ -166,7 +166,19 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// delete an instance, keeping note that the geometry id is now unused
 	deleteInstance( instanceId ) {
 
-		this._freeGeometryIds.push( this.getGeometryIdAt( instanceId ) );
+		if ( this._instanceInfo[ instanceId ].active === false ) {
+
+			return;
+
+		}
+
+		const geometryId = this.getGeometryIdAt( instanceId );
+		if ( geometryId !== - 1 ) {
+
+			this._freeGeometryIds.push( geometryId );
+
+		}
+
 		return super.deleteInstance( instanceId );
 
 	}
