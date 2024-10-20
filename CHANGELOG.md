@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
+- R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
 
 ### Fixed
 - EnvironmentControls: Assign the current camera to the raycaster.
