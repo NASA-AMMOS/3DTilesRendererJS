@@ -25,7 +25,6 @@ function intersectTileScene( tile, raycaster, renderer, intersects ) {
 			Object.getPrototypeOf( c ).raycast.call( c, raycaster, intersects );
 
 		} );
-		_hitArray.sort( distanceSort );
 
 	} else {
 
@@ -43,6 +42,7 @@ function intersectTileScene( tile, raycaster, renderer, intersects ) {
 function intersectTileSceneFirstHist( tile, raycaster, renderer ) {
 
 	intersectTileScene( tile, raycaster, renderer, _hitArray );
+	_hitArray.sort( distanceSort );
 
 	const hit = _hitArray[ 0 ] || null;
 	_hitArray.length = 0;
