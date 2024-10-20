@@ -142,7 +142,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 // component for adding a TilesRenderer to the scene
 export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
-	const { url, children, ...options } = props;
+	const { url, group = {}, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
 
@@ -217,7 +217,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	useDeepOptions( tiles, options );
 
 	return <>
-		{ tiles ? <primitive object={ tiles.group }/> : null }
+		{ tiles ? <primitive object={ tiles.group } { ...group } /> : null }
 		<TilesRendererContext.Provider value={ tiles }>
 			<TileSetRoot>
 				{ children }
