@@ -29,7 +29,8 @@
     "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "changeset": "changeset"
   },
   "repository": {
     "type": "git",
@@ -44,6 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
+    "@changesets/cli": "^2.27.8",
     "@react-three/drei": "^9.114.3",
     "@types/eslint": "^7.28.1",
     "@types/three": "^0.166.0",
