@@ -131,11 +131,11 @@ export class BatchedTilesPlugin {
 					const texture = material.map;
 					if ( texture ) {
 
-						this.renderTextureToLayer( texture, instanceId );
+						this.assignTextureToLayer( texture, instanceId );
 
 					} else {
 
-						this.renderTextureToLayer( _whiteTex, instanceId );
+						this.assignTextureToLayer( _whiteTex, instanceId );
 
 					}
 
@@ -203,7 +203,7 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const { instanceCount, vertexCount, indexCount, tiles, renderer } = this;
 		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
@@ -227,6 +227,7 @@ export class BatchedTilesPlugin {
 
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
 		Object.assign( arrayTarget.texture, textureOptions );
+		renderer.initRenderTarget( arrayTarget );
 
 		// init the material
 		material.map = arrayTarget.texture;
@@ -238,7 +239,7 @@ export class BatchedTilesPlugin {
 	}
 
 	// render the given into the given layer
-	renderTextureToLayer( texture, layer ) {
+	assignTextureToLayer( texture, layer ) {
 
 		this.expandArrayTargetIfNeeded();
 
@@ -311,7 +312,6 @@ export class BatchedTilesPlugin {
 	}
 
 	dispose() {
-
 
 		const { arrayTarget, tiles, batchedMesh } = this;
 		if ( arrayTarget ) {
