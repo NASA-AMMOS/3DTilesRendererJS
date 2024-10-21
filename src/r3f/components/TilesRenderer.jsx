@@ -21,7 +21,6 @@ function TileSetRoot( { children } ) {
 
 		}
 
-
 	}, [ tiles ] );
 
 	return <group ref={ ref } matrixWorldAutoUpdate={ false } matrixAutoUpdate={ false }>{ children }</group>;
