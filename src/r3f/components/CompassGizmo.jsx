@@ -1,5 +1,5 @@
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
-import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Scene, Vector3 } from 'three';
 import { TilesRendererContext } from './TilesRenderer';
 
@@ -14,7 +14,7 @@ const _cart = {};
 // Renders the portal with an orthographic camera
 function RenderPortal( props ) {
 
-	const { defaultScene, defaultCamera, overrideRenderLoop = true } = props;
+	const { defaultScene, defaultCamera, overrideRenderLoop = true, renderPriority = 1 } = props;
 	const camera = useMemo( () => new OrthographicCamera(), [] );
 	const [ set, size, gl, scene ] = useThree( state => [ state.set, state.size, state.gl, state.scene ] );
 	useEffect( () => {
@@ -52,7 +52,7 @@ function RenderPortal( props ) {
 
 		gl.autoClear = currentAutoClear;
 
-	}, 1 );
+	}, renderPriority );
 
 }
 
@@ -85,15 +85,21 @@ function TriangleGeometry() {
 // renders a typical compass graphic with red north triangle, white south, and a tinted circular background
 function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
+	const [ lightTarget, setLightTarget ] = useState();
 	const groupRef = useRef();
+	useEffect( () => {
+
+		setLightTarget( groupRef.current );
+
+	}, [] );
 
 	return (
 		<group scale={ 0.5 } ref={ groupRef }>
 
 			{/* Lights */}
-			<ambientLight intensity={ 0.75 }/>
-			<directionalLight position={ [ 0, 2, 3 ] } intensity={ 1.5 } target={ groupRef.current } />
-			<directionalLight position={ [ 0, - 2, - 3 ] } intensity={ 1.5 } target={ groupRef.current } />
+			<ambientLight intensity={ 0.75 } />
+			<directionalLight position={ [ 0, 2, 3 ] } intensity={ 1.5 } target={ lightTarget } />
+			<directionalLight position={ [ 0, - 2, - 3 ] } intensity={ 1.5 } target={ lightTarget } />
 
 			{/* Background */}
 			<mesh>
@@ -117,7 +123,7 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
 }
 
-export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, ...rest } ) {
+export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, visible = true, ...rest } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );
 	const tiles = useContext( TilesRendererContext );
@@ -132,7 +138,7 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 		if ( tiles === null || groupRef.current === null ) {
 
-			return;
+			return null;
 
 		}
 
@@ -187,6 +193,13 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 	}
 
+	// remove the portal rendering if not present
+	if ( ! visible ) {
+
+		return null;
+
+	}
+
 	return (
 		createPortal(
 			<>
@@ -205,10 +218,11 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 					defaultCamera={ defaultCamera }
 					defaultScene={ defaultScene }
 					overrideRenderLoop={ overrideRenderLoop }
+					renderPriority={ 10 }
 				/>
 			</>,
 			scene,
-			{ events: { priority: 1 } },
+			{ events: { priority: 10 } },
 		)
 	);
 

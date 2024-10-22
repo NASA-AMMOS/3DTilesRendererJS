@@ -219,7 +219,7 @@ Any children passed into the class will replace the default red and white compas
 	{/* Specifies whether the compass will render in '2d' or '3d' */}
 	mode={ '3d' }
 
-	{/* The size of the compass in pixels*/}
+	{/* The size of the compass in pixels */}
 	scale={ 35 }
 
 	{/* The number pixels in margin to add relative to the bottom right of the screen */}
@@ -227,6 +227,9 @@ Any children passed into the class will replace the default red and white compas
 
 	{/* Whether to render the main scene */}
 	overrideRenderLoop={ true }
+
+	{/* Whether the gizmo is visible and rendering */}
+	visible={ true }
 
 	{/* Any remaining props including click events are passed through to the parent group */}
 	onClick={ () => console.log( 'compass clicked!' ) }
