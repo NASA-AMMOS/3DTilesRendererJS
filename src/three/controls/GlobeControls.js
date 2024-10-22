@@ -28,9 +28,6 @@ const _ray = new Ray();
 const _ellipsoid = new Ellipsoid();
 
 const _pointer = new Vector2();
-const _prevPointer = new Vector2();
-const _deltaPointer = new Vector2();
-
 const MIN_ELEVATION = 400;
 
 export class GlobeControls extends EnvironmentControls {
