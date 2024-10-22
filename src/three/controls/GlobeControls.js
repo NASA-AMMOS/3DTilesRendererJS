@@ -54,7 +54,6 @@ export class GlobeControls extends EnvironmentControls {
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
-		this.inertiaAxis = new Vector3();
 		this.dragQuaternion = new Quaternion();
 
 		this.allowNegativeNearPlanes = true;
@@ -297,7 +296,6 @@ export class GlobeControls extends EnvironmentControls {
 
 			const {
 				enableDamping,
-				inertiaDragMode,
 				tilesGroup,
 				dragQuaternion,
 				dragInertia,
