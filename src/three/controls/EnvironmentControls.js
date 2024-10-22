@@ -485,7 +485,7 @@ export class EnvironmentControls extends EventDispatcher {
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
 		domElement.addEventListener( 'pointermove', pointermoveCallback );
 		domElement.addEventListener( 'pointerup', pointerupCallback );
-		domElement.addEventListener( 'wheel', wheelCallback );
+		domElement.addEventListener( 'wheel', wheelCallback, { passive: false } );
 		domElement.addEventListener( 'pointerenter', pointerenterCallback );
 
 		this._detachCallback = () => {
