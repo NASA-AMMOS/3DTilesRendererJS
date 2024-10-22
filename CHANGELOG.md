@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Typescript definitions for TilesRenderer.
 - Case where the closest hit was not returned with "firstHitOnly" raycasting.
 - R3F TilesRenderer: Fix case where the tiles renderer context would not trigger an update when options changed.
+- UpdateOnChangePlugin: Fix case where tiles would not update correctly if plugin was added after cameras.
 
 ## [0.3.39] - 2024.10.15
 ### Added
