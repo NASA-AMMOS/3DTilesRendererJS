@@ -3,13 +3,18 @@ import { useContext, useEffect, useMemo, useRef } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Scene, Vector3 } from 'three';
 import { TilesRendererContext } from './TilesRenderer';
 
+// Based in part on @pmndrs/drei's Gizmo component
+
 const _vec = /*@__PURE__*/ new Vector3();
+const _axis = /*@__PURE__*/ new Vector3();
 const _matrix = /*@__PURE__*/ new Matrix4();
 const _enuMatrix = /*@__PURE__*/ new Matrix4();
 const _cart = {};
-function RenderCompass( props ) {
 
-	const { defaultScene, defaultCamera } = props;
+// Renders the portal with an orthographic camera
+function RenderPortal( props ) {
+
+	const { defaultScene, defaultCamera, overrideRenderLoop = true } = props;
 	const camera = useMemo( () => new OrthographicCamera(), [] );
 	const [ set, size, gl, scene ] = useThree( state => [ state.set, state.size, state.gl, state.scene ] );
 	useEffect( () => {
@@ -33,7 +38,11 @@ function RenderCompass( props ) {
 
 	useFrame( () => {
 
-		gl.render( defaultScene, defaultCamera );
+		if ( overrideRenderLoop ) {
+
+			gl.render( defaultScene, defaultCamera );
+
+		}
 
 		const currentAutoClear = gl.autoClear;
 		gl.autoClear = false;
@@ -47,7 +56,8 @@ function RenderCompass( props ) {
 
 }
 
-function TriangleGeometry( props ) {
+// generates an extruded box geometry
+function TriangleGeometry() {
 
 	const ref = useRef();
 	useEffect( () => {
@@ -72,11 +82,8 @@ function TriangleGeometry( props ) {
 
 }
 
-function CompassGraphic( {
-	northColor = 0xEF5350,
-	southColor = 0xFFFFFF,
-	mode = '3d',
-} ) {
+// renders a typical compass graphic with red north triangle, white south, and a tinted circular background
+function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
 	const groupRef = useRef();
 
@@ -110,7 +117,7 @@ function CompassGraphic( {
 
 }
 
-export function CompassGizmo( { children, overrideRenderLoop, margin = 10, scale = 35 } ) {
+export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35 } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );
 	const tiles = useContext( TilesRendererContext );
@@ -140,12 +147,40 @@ export function CompassGizmo( { children, overrideRenderLoop, margin = 10, scale
 			.getRotationMatrixFromAzElRoll( _cart.lat, _cart.lon, 0, 0, 0, _enuMatrix )
 			.premultiply( tiles.group.matrixWorld );
 
+		// get the camera orientation in the local ENU frame
 		_enuMatrix.invert();
 		_matrix.copy( defaultCamera.matrixWorld ).premultiply( _enuMatrix );
-		group.quaternion.setFromRotationMatrix( _matrix ).invert();
+
+		if ( mode.toLowerCase() === '3d' ) {
+
+			group.quaternion.setFromRotationMatrix( _matrix ).invert();
+
+		} else {
+
+			// get the projected facing direction of the camera
+			_vec.set( 0, 1, 0 ).transformDirection( _matrix ).normalize();
+			_vec.z = 0;
+			_vec.normalize();
+
+			if ( _vec.length() === 0 ) {
+
+				// if we're looking exactly top-down
+				group.quaternion.identity();
+
+			} else {
+
+				// compute the 2d looking direction
+				const angle = _axis.set( 0, 1, 0 ).angleTo( _vec );
+				_axis.cross( _vec ).normalize();
+				group.quaternion.setFromAxisAngle( _axis, - angle );
+
+			}
+
+		}
 
 	} );
 
+	// default to the compass graphic
 	if ( ! children ) {
 
 		children = <CompassGraphic />;
@@ -164,7 +199,7 @@ export function CompassGizmo( { children, overrideRenderLoop, margin = 10, scale
 						0,
 					] }
 				>{ children }</group>
-				<RenderCompass
+				<RenderPortal
 					defaultCamera={ defaultCamera }
 					defaultScene={ defaultScene }
 					overrideRenderLoop={ overrideRenderLoop }
