@@ -4,6 +4,7 @@ import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.jsx';
 import { useObjectDep } from '../utilities/useObjectDep.jsx';
+import { useForceUpdate } from '../utilities/useForceUpdate.jsx';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
@@ -42,9 +43,10 @@ export function EastNorthUpFrame( props ) {
 	} = props;
 	const ref = useRef();
 	const tiles = useContext( TilesRendererContext );
+	const ellipsoid = tiles && tiles.ellipsoid || null;
 	useEffect( () => {
 
-		if ( tiles === null ) {
+		if ( ellipsoid === null ) {
 
 			return;
 
@@ -53,13 +55,13 @@ export function EastNorthUpFrame( props ) {
 		const group = ref.current;
 		group.matrix.identity();
 
-		tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
-		tiles.ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
+		ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
+		ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
 		group.matrix.setPosition( _vec );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
 
-	}, [ tiles, lat, lon, height, az, el, roll ] );
+	}, [ ellipsoid, lat, lon, height, az, el, roll ] );
 
 	return <group ref={ ref }>{ children }</group>;
 
@@ -145,6 +147,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	const { url, group = {}, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
+	const [ forceUpdateIndex, forceUpdate ] = useForceUpdate();
 
 	// create the tile set
 	useEffect( () => {
@@ -216,9 +219,17 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// assign options recursively
 	useDeepOptions( tiles, options );
 
+	// because options modify tiles settings non-reactively we force an update and
+	// pass the update index into the tiles context to force children to update
+	useEffect( () => {
+
+		forceUpdate();
+
+	}, [ tiles, useObjectDep( options ) ] ); // eslint-disable-line
+
 	return <>
 		{ tiles ? <primitive object={ tiles.group } { ...group } /> : null }
-		<TilesRendererContext.Provider value={ tiles }>
+		<TilesRendererContext.Provider value={ tiles } key={ forceUpdateIndex }>
 			<TileSetRoot>
 				{ children }
 			</TileSetRoot>
