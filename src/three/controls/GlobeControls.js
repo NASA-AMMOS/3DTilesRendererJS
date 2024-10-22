@@ -56,7 +56,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		this.inertiaAxis = new Vector3();
 		this.dragQuaternion = new Quaternion();
-		this.inertiaDragMode = 0;
 
 		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
@@ -308,37 +307,29 @@ export class GlobeControls extends EnvironmentControls {
 			// apply inertia for movement
 			if ( enableDamping ) {
 
-				// drag mode 1 means we're near the globe
-				if ( inertiaDragMode === 1 ) {
+				// ensure our w component is non-one if the xyz values are
+				// non zero to ensure we can animate
+				if (
+					dragQuaternion.w === 1 && (
+						dragQuaternion.x !== 0 ||
+						dragQuaternion.y !== 0 ||
+						dragQuaternion.z !== 0
+					)
+				) {
 
-					// ensure our w component is non-one if the xyz values are
-					// non zero to ensure we can animate
-					if (
-						dragQuaternion.w === 1 && (
-							dragQuaternion.x !== 0 ||
-							dragQuaternion.y !== 0 ||
-							dragQuaternion.z !== 0
-						)
-					) {
-
-						dragQuaternion.w = Math.min( dragQuaternion.w, 1 - 1e-9 );
-
-					}
-
-					// construct the rotation matrix
-					_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-					_quaternion.identity().slerp( dragQuaternion, dragInertia.x * deltaTime );
-					makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-
-					// apply the rotation
-					camera.matrixWorld.premultiply( _rotMatrix );
-					camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-				} else if ( inertiaDragMode === - 1 ) {
-
-					this._applyZoomedOutRotation( dragInertia.x * deltaTime, dragInertia.y * deltaTime );
+					dragQuaternion.w = Math.min( dragQuaternion.w, 1 - 1e-9 );
 
 				}
+
+				console.log('INTERPOLATING')
+				// construct the rotation matrix
+				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+				_quaternion.identity().slerp( dragQuaternion, dragInertia.x * deltaTime );
+				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+
+				// apply the rotation
+				camera.matrixWorld.premultiply( _rotMatrix );
+				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			}
 
@@ -407,9 +398,6 @@ export class GlobeControls extends EnvironmentControls {
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-			// track inertia variables
-			this.inertiaDragMode = 1;
-
 			const { dragInertia, dragQuaternion } = this;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
@@ -426,32 +414,6 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		this._alignCameraUp( this.up );
-
-	}
-
-	_applyZoomedOutRotation( x, y ) {
-
-		const { rotationSpeed, tilesGroup, camera } = this;
-		const azimuth = - x * rotationSpeed;
-		const altitude = - y * rotationSpeed;
-		camera.updateMatrixWorld();
-
-		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
-
-		// apply the altitude and azimuth adjustment
-		_quaternion.setFromAxisAngle( _right, altitude );
-		camera.quaternion.premultiply( _quaternion );
-		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-		camera.matrixWorld.premultiply( _rotMatrix );
-
-		_quaternion.setFromAxisAngle( _up, azimuth );
-		camera.quaternion.premultiply( _quaternion );
-		makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-		camera.matrixWorld.premultiply( _rotMatrix );
-
-		camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 	}
 
