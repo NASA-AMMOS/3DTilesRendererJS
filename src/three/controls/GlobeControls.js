@@ -15,7 +15,6 @@ const _rotMatrix = new Matrix4();
 const _pos = new Vector3();
 const _vec = new Vector3();
 const _center = new Vector3();
-const _up = new Vector3();
 const _forward = new Vector3();
 const _right = new Vector3();
 const _targetRight = new Vector3();
@@ -319,7 +318,6 @@ export class GlobeControls extends EnvironmentControls {
 
 				}
 
-				console.log('INTERPOLATING')
 				// construct the rotation matrix
 				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
 				_quaternion.identity().slerp( dragQuaternion, dragInertia.x * deltaTime );
