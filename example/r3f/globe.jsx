@@ -81,7 +81,7 @@ function App() {
 				left: 0,
 				top: 0,
 			} }
-			color='red'
+			flat
 		>
 			<color attach="background" args={ [ 0x111111 ] } />
 
