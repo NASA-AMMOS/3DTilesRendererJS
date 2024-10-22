@@ -91,9 +91,9 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 		<group scale={ 0.5 } ref={ groupRef }>
 
 			{/* Lights */}
-			<ambientLight intensity={ 1.5 }/>
-			<directionalLight position={ [ 0, 2, 3 ] } target={ groupRef.current } />
-			<directionalLight position={ [ 0, - 2, - 3 ] } target={ groupRef.current } />
+			<ambientLight intensity={ 0.75 }/>
+			<directionalLight position={ [ 0, 2, 3 ] } intensity={ 1.5 } target={ groupRef.current } />
+			<directionalLight position={ [ 0, - 2, - 3 ] } intensity={ 1.5 } target={ groupRef.current } />
 
 			{/* Background */}
 			<mesh>
