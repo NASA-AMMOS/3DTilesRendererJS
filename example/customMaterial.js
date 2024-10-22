@@ -1,4 +1,4 @@
-import { TilesRenderer } from '../src/index.js';
+import { TilesRenderer } from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,

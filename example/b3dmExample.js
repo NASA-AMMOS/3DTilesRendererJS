@@ -1,4 +1,4 @@
-import { B3DMLoader } from '../src/index.js';
+import { B3DMLoader } from '3d-tiles-renderer';
 import {
 	Scene,
 	Group,

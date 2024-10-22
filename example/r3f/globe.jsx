@@ -2,10 +2,10 @@ import { StrictMode, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // TilesRenderer, controls and attribution imports
-import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, GlobeControls, EastNorthUpFrame } from '../../src/r3f/index.jsx';
+import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, GlobeControls, EastNorthUpFrame } from '3d-tiles-renderer/r3f';
 
 // Plugins
-import { GoogleCloudAuthPlugin } from '../../src/index.js';
+import { GoogleCloudAuthPlugin } from '3d-tiles-renderer';
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
 import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
 import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';

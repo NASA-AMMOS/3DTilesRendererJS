@@ -14,7 +14,7 @@ import {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
-} from '../src/index.js';
+} from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,

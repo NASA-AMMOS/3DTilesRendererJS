@@ -5,7 +5,7 @@ import {
 	GlobeControls,
 	TilesRenderer,
 	GoogleCloudAuthPlugin,
-} from '../src/index.js';
+} from '3d-tiles-renderer';
 import {
 	Scene,
 	WebGLRenderer,

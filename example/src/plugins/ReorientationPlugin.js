@@ -1,5 +1,5 @@
 import { Sphere, Vector3 } from 'three';
-import { OBJECT_FRAME } from '../../../src/index.js';
+import { OBJECT_FRAME } from '3d-tiles-renderer';
 
 const sphere = /* @__PURE__ */ new Sphere();
 const vec = /* @__PURE__ */ new Vector3();

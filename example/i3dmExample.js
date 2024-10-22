@@ -1,4 +1,4 @@
-import { I3DMLoader } from '../src/index.js';
+import { I3DMLoader } from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,

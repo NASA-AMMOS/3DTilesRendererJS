@@ -2,7 +2,7 @@ import { StrictMode, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport, MeshTransmissionMaterial } from '@react-three/drei';
-import { TilesPlugin, TilesRenderer, EnvironmentControls } from '../../src/r3f/index.jsx';
+import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
 import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';

@@ -1,4 +1,4 @@
-import { CesiumIonAuthPlugin, EnvironmentControls, TilesRenderer } from '../src/index.js';
+import { CesiumIonAuthPlugin, EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
 import {
 	Scene,
 	WebGLRenderer,

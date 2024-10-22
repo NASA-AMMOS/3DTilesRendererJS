@@ -1,4 +1,4 @@
-import { CMPTLoader } from '../src/index.js';
+import { CMPTLoader } from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,
