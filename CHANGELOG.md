@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
 - R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
+- R3F `<CompassGizmo>` copmonent.
 
 ### Fixed
 - EnvironmentControls: Assign the current camera to the raycaster.
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Case where the closest hit was not returned with "firstHitOnly" raycasting.
 - R3F TilesRenderer: Fix case where the tiles renderer context would not trigger an update when options changed.
 - UpdateOnChangePlugin: Fix case where tiles would not update correctly if plugin was added after cameras.
+- EnvironControls: Correctly mark "wheel" event as non-passive.
 
 ## [0.3.39] - 2024.10.15
 ### Added
