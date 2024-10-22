@@ -207,3 +207,28 @@ The `TilesAttributionOverlay` component must be embedded in a tile set and will 
   <TilesAttributionOverlay />
 </TilesRenderer>
 ```
+
+## CompassGizmo
+
+Adds a compass to the bottom right of the page that orients to "north" based on the camera position and orientation. Must be nested in a `TilesRenderer` component.
+
+Any children passed into the class will replace the default red and white compass design with +Y pointing north and +X pointing east. The graphic children should fit within a volume from - 0.5 to 0.5 along all axes.
+
+```jsx
+<CompassGizmo
+	{/* Specifies whether the compass will render in '2d' or '3d' */}
+	mode={ '3d' }
+
+	{/* The size of the compass in pixels*/}
+	scale={ 35 }
+
+	{/* The number pixels in margin to add relative to the bottom right of the screen */}
+	margin={ 10 }
+
+	{/* Whether to render the main scene */}
+	overrideRenderLoop={ true }
+
+	{/* Any remaining props including click events are passed through to the parent group */}
+	onClick={ () => console.log( 'compass clicked!' ) }
+/>
+```
