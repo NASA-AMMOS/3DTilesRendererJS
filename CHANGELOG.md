@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Assign the current camera to the raycaster.
 - Typescript definitions for TilesRenderer.
 - Case where the closest hit was not returned with "firstHitOnly" raycasting.
+- R3F TilesRenderer: Fix case where the tiles renderer context would not trigger an update when options changed.
 
 ## [0.3.39] - 2024.10.15
 ### Added
