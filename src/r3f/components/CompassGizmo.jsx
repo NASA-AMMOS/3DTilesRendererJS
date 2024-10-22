@@ -117,7 +117,7 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
 }
 
-export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35 } ) {
+export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, ...rest } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );
 	const tiles = useContext( TilesRendererContext );
@@ -198,6 +198,8 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 						- size.height / 2 + margin + scale / 2,
 						0,
 					] }
+
+					{ ...rest }
 				>{ children }</group>
 				<RenderPortal
 					defaultCamera={ defaultCamera }
