@@ -345,9 +345,14 @@ export class GlobeControls extends EnvironmentControls {
 
 			}
 
-		} else if ( this._dragMode === 1 || this._isNearControls() ) {
+		} else {
 
-			this._dragMode = 1;
+			// save the drag mode state so we can update the pivot mesh visuals in "update"
+			if ( this._dragMode === 0 ) {
+
+				this._dragMode = this._isNearControls() ? 1 : - 1;
+
+			}
 
 			const {
 				raycaster,
@@ -418,101 +423,6 @@ export class GlobeControls extends EnvironmentControls {
 
 				dragQuaternion.copy( _quaternion );
 				dragInertia.set( 1 / deltaTime, 0, 0 );
-
-			}
-
-		} else {
-
-			this._dragMode = - 1;
-
-			const {
-				pointerTracker,
-				rotationSpeed,
-				camera,
-				pivotMesh,
-				tilesGroup,
-				ellipsoid,
-				domElement,
-			} = this;
-
-			// get the delta movement with magic numbers scaled by the distance to the
-			// grabbed point so it feels okay
-			// TODO: it would be better to properly calculate angle based on drag distance
-			let scaleAmount;
-			if ( camera.isPerspectiveCamera ) {
-
-				// get pointer positions
-				pointerTracker.getCenterPoint( _pointer );
-				pointerTracker.getPreviousCenterPoint( _prevPointer );
-
-				// convert to [0, 1] coords
-				mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
-				mouseToCoords( _prevPointer.x, _prevPointer.y, domElement, _prevPointer );
-
-				// project to near plane and take delta
-				_vec.set( _pointer.x, _pointer.y, - 1 ).unproject( camera );
-				_pos.set( _prevPointer.x, _prevPointer.y, - 1 ).unproject( camera );
-				_vec.sub( _pos );
-
-				// find the drag vector at the distance of the ellipsoid
-				const radius = Math.max( ...ellipsoid.radius );
-				const distToSurface = this.getDistanceToCenter() - radius;
-				const scaledDragDist = _vec.distanceTo( _pos ) * distToSurface / camera.near;
-
-				// scale the rotation amount by the radius of the ellipsoid
-				scaleAmount = 7.5 * 1e-4 * scaledDragDist / radius;
-
-			} else {
-
-				scaleAmount = MathUtils.mapLinear(
-					camera.zoom,
-					this._getOrthographicTransitionZoom(),
-					this._getMinOrthographicZoom(),
-					0.001,
-					0.005,
-				);
-
-			}
-
-			pointerTracker.getCenterPoint( _pointer );
-			pointerTracker.getPreviousCenterPoint( _prevPointer );
-			_deltaPointer
-				.subVectors( _pointer, _prevPointer )
-				.multiplyScalar( scaleAmount );
-
-			const azimuth = - _deltaPointer.x * rotationSpeed;
-			const altitude = - _deltaPointer.y * rotationSpeed;
-
-			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-			_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
-			_up.set( 0, 1, 0 ).transformDirection( camera.matrixWorld );
-
-			// apply the altitude and azimuth adjustment
-			_quaternion.setFromAxisAngle( _right, altitude );
-			camera.quaternion.premultiply( _quaternion );
-			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-			camera.matrixWorld.premultiply( _rotMatrix );
-
-			_quaternion.setFromAxisAngle( _up, azimuth );
-			camera.quaternion.premultiply( _quaternion );
-			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
-			camera.matrixWorld.premultiply( _rotMatrix );
-
-			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-			pivotMesh.visible = false;
-
-			// update drag variables
-			this.inertiaDragMode = - 1;
-			_deltaPointer.multiplyScalar( 1 / deltaTime );
-
-			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
-
-				this.dragInertia.lerp( _deltaPointer, 0.5 );
-
-			} else {
-
-				this.dragInertia.copy( _deltaPointer );
 
 			}
 
