@@ -834,7 +834,7 @@ export class EnvironmentControls extends EventDispatcher {
 				} else {
 
 					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
+					scale = scale * Math.max( dist - minDistance, 0 ) * zoomSpeed * 0.0025;
 					scale = Math.min( scale, remainingDistance );
 
 				}
