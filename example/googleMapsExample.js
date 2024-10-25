@@ -203,6 +203,7 @@ function updateHash() {
 	// convert to DEG
 	orientationResult.azimuth *= MathUtils.RAD2DEG;
 	orientationResult.elevation *= MathUtils.RAD2DEG;
+	orientationResult.roll *= MathUtils.RAD2DEG;
 	cartographicResult.lat *= MathUtils.RAD2DEG;
 	cartographicResult.lon *= MathUtils.RAD2DEG;
 
@@ -213,6 +214,7 @@ function updateHash() {
 	params.set( 'height', cartographicResult.height.toFixed( 2 ) );
 	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
 	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
+	params.set( 'roll', orientationResult.roll.toFixed( 2 ) );
 	window.history.replaceState( undefined, undefined, `#${ params }` );
 
 }
@@ -241,11 +243,12 @@ function initFromHash() {
 		// get the az el fields for rotation if present
 		const az = parseFloat( params.get( 'az' ) );
 		const el = parseFloat( params.get( 'el' ) );
+		const roll = parseFloat( params.get( 'roll' ) ) || 0;
 
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
 			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
-			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
+			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, roll * MathUtils.DEG2RAD,
 			camera.matrixWorld, CAMERA_FRAME,
 		);
 
