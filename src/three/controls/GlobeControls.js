@@ -482,7 +482,10 @@ export class GlobeControls extends EnvironmentControls {
 			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
 			const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
 
-			camera.zoom = Math.max( this._getMinOrthographicZoom(), Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
+			const maxScaleFactor = minZoom / camera.zoom;
+			const clampedScaleFactor = Math.max( scaleFactor * zoomSpeed, Math.min( maxScaleFactor, 1 ) );
+
+			camera.zoom = Math.min( maxZoom, camera.zoom * clampedScaleFactor );
 			camera.updateProjectionMatrix();
 
 			this.zoomDelta = 0;
@@ -621,7 +624,7 @@ export class GlobeControls extends EnvironmentControls {
 		const orthoSize = Math.min( orthoHeight, orthoWidth );
 		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
 		const ellipsoidDiameter = 2 * ellipsoidRadius;
-		return 0.5 * orthoSize / ellipsoidDiameter;
+		return 0.7 * orthoSize / ellipsoidDiameter;
 
 	}
 
