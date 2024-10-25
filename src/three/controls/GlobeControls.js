@@ -164,11 +164,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		const {
-			camera,
-			tilesGroup,
-			pivotMesh,
-		} = this;
+		const { camera, pivotMesh } = this;
 
 		// if we're outside the transition threshold then we toggle some reorientation behavior
 		// when adjusting the up frame while moving the camera
@@ -189,23 +185,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		// fire basic controls update
 		super.update( deltaTime );
-
-		if ( camera.isPerspectiveCamera ) {
-
-			// clamp the camera distance
-			let distanceToCenter = this.getDistanceToCenter();
-			const maxDistance = this._getMaxPerspectiveDistance();
-			if ( distanceToCenter > maxDistance ) {
-
-				_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize().multiplyScalar( - 1 );
-				camera.position.setFromMatrixPosition( tilesGroup.matrixWorld ).addScaledVector( _vec, maxDistance );
-				camera.updateMatrixWorld();
-
-				distanceToCenter = maxDistance;
-
-			}
-
-		}
 
 		// update the camera planes and the ortho camera position
 		this.updateCameraClipPlanes( camera );
@@ -482,10 +461,11 @@ export class GlobeControls extends EnvironmentControls {
 			// the zoom speeds are comparable
 			const dist = this.getDistanceToCenter() - ellipsoid.radius.x;
 			const scale = zoomDelta * dist * zoomSpeed * 0.0025;
+			const clampedScale = Math.max( scale, Math.min( this.getDistanceToCenter() - maxDistance, 0 ) );
 
 			// zoom out directly from the globe center
 			this.getVectorToCenter( _vec ).normalize();
-			this.camera.position.addScaledVector( _vec, scale );
+			this.camera.position.addScaledVector( _vec, clampedScale );
 			this.camera.updateMatrixWorld();
 
 			this.zoomDelta = 0;
