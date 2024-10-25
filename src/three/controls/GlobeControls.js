@@ -270,7 +270,6 @@ export class GlobeControls extends EnvironmentControls {
 			camera.updateProjectionMatrix();
 			camera.updateMatrixWorld();
 
-
 		}
 
 	}
