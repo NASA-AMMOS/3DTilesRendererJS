@@ -48,12 +48,13 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	update() {
 
+		// update transforms
+		this.syncCameras();
+
+		// perform transition
 		const { perspectiveCamera, orthographicCamera, transitionCamera, camera } = this;
 		const clock = this._clock;
 		const delta = clock.getDelta() * 1e3;
-
-		// update transforms
-		this._syncCameras();
 
 		if ( this._alpha !== this._target ) {
 
@@ -91,7 +92,7 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
-	_syncCameras() {
+	syncCameras() {
 
 		const fromCamera = this._getFromCamera();
 		const { perspectiveCamera, orthographicCamera, transitionCamera, fixedPoint } = this;

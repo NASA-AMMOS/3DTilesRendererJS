@@ -55,7 +55,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		this.dragQuaternion = new Quaternion();
 
-		this.allowNegativeNearPlanes = true;
 		this.setTilesRenderer( tilesRenderer );
 
 	}
@@ -264,17 +263,12 @@ export class GlobeControls extends EnvironmentControls {
 			camera.far = distanceToCenter + 0.1;
 
 			// adjust the position of the ortho camera such that the near value is 0
-			if ( ! this.allowNegativeNearPlanes && camera.near < 0 ) {
-
-				camera.position.addScaledVector( _forward, camera.near );
-				camera.far -= camera.near;
-				camera.near = 0;
-
-			}
+			camera.position.addScaledVector( _forward, camera.near );
+			camera.far -= camera.near;
+			camera.near = 0;
 
 			camera.updateProjectionMatrix();
 			camera.updateMatrixWorld();
-
 
 		}
 
