@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Slightly modified the traversal algorithm to not require loaded content (and therefore for content to exist) in order to trigger child tiles to load.
+- GlobeControls: renamed "updateClipPlanes" to "adjustCamera".
+- CameraTransitionManager: added "autoSync" and "syncCameras" function.
 
 ### Fixed
 - EnvironmentControls: Assign the current camera to the raycaster.
