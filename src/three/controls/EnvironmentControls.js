@@ -708,6 +708,30 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	// updates the camera to position it based on the constraints of the controls
+	adjustCamera( camera ) {
+
+		const { adjustHeight, cameraRadius } = this;
+		if ( camera.isPerspectiveCamera ) {
+
+			// adjust the camera height
+			this.getUpDirection( camera.position, _localUp );
+			const hit = adjustHeight && this._getPointBelowCamera( camera.position, _localUp ) || null;
+			if ( hit ) {
+
+				const dist = hit.distance;
+				if ( dist < cameraRadius ) {
+
+					camera.position.addScaledVector( _localUp, cameraRadius - dist );
+
+				}
+
+			}
+
+		}
+
+	}
+
 	dispose() {
 
 		this.detach();

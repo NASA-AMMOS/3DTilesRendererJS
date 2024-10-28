@@ -191,32 +191,14 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	// Updates the passed camera near and far clip planes to encapsulate the
-	// ellipsoid from their current position.
-	updateCameraClipPlanes( camera ) {
+	// Updates the passed camera near and far clip planes to encapsulate the ellipsoid from the
+	// current position in addition to adjusting the height.
+	adjustCamera( camera ) {
 
-		const {
-			tilesGroup,
-			ellipsoid,
-			adjustHeight,
-			cameraRadius,
-		} = this;
+		super.adjustCamera( camera );
 
+		const { tilesGroup, ellipsoid } = this;
 		if ( camera.isPerspectiveCamera ) {
-
-			// adjust the camera height
-			this.getUpDirection( camera.position, _vec );
-			const hit = adjustHeight && this._getPointBelowCamera( camera.position, _vec ) || null;
-			if ( hit ) {
-
-				const dist = hit.distance;
-				if ( dist < cameraRadius ) {
-
-					camera.position.addScaledVector( _vec, cameraRadius - dist );
-
-				}
-
-			}
 
 			// adjust the clip planes
 			const distanceToCenter = _vec
