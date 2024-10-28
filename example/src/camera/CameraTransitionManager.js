@@ -237,8 +237,8 @@ export class CameraTransitionManager extends EventDispatcher {
 		const targetPos = _targetPos.lerpVectors( perspectiveCamera.position, _orthographicCamera.position, alpha );
 		targetPos.addScaledVector( _forward, Math.abs( _vec.subVectors( targetPos, fixedPoint ).dot( _forward ) ) - targetDistance );
 
-		const distToPersp = Math.abs( _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward ) );
-		const distToOrtho = Math.abs( _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward ) );
+		const distToPersp = _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward );
+		const distToOrtho = _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward );
 
 		const targetNearPlane = MathUtils.lerp( distToPersp + perspectiveCamera.near, distToOrtho + _orthographicCamera.near, alpha );
 		const targetFarPlane = MathUtils.lerp( distToPersp + perspectiveCamera.far, distToOrtho + _orthographicCamera.far, alpha );
