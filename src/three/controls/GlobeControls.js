@@ -198,10 +198,27 @@ export class GlobeControls extends EnvironmentControls {
 		const {
 			tilesGroup,
 			ellipsoid,
+			adjustHeight,
+			cameraRadius,
 		} = this;
 
 		if ( camera.isPerspectiveCamera ) {
 
+			// adjust the camera height
+			this.getUpDirection( camera.position, _vec );
+			const hit = adjustHeight && this._getPointBelowCamera( camera.position, _vec ) || null;
+			if ( hit ) {
+
+				const dist = hit.distance;
+				if ( dist < cameraRadius ) {
+
+					camera.position.addScaledVector( _vec, cameraRadius - dist );
+
+				}
+
+			}
+
+			// adjust the clip planes
 			const distanceToCenter = _vec
 				.setFromMatrixPosition( tilesGroup.matrixWorld )
 				.sub( camera.position ).length();

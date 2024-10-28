@@ -930,11 +930,11 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// returns the point below the camera
-	_getPointBelowCamera() {
+	_getPointBelowCamera( point = this.camera.position, up = this.up ) {
 
-		const { camera, raycaster, up } = this;
+		const { raycaster } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
+		raycaster.ray.origin.copy( point ).addScaledVector( up, 1e5 );
 		raycaster.near = 0;
 		raycaster.far = Infinity;
 
