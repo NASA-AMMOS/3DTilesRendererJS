@@ -340,6 +340,9 @@ export function markVisibleTiles( tile, renderer ) {
 	const emptyRootTile = tile.__depthFromRenderedParent === 0;
 	const allChildrenLoaded = tile.__allChildrenLoaded || emptyRootTile;
 
+	// TODO: decide if we should behave differently at root tiles
+	// const allChildrenLoaded = tile.__allChildrenLoaded;
+
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
