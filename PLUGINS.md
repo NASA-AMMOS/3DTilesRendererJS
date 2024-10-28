@@ -751,6 +751,14 @@ orthographicPositionalZoom = true : boolean
 Whether the orthographic camera position should be updated so be synchronized with the necessary perspective camera position so
 the orthographic near clip planes do not get into into unexpected configurations.
 
+### .autoSync
+
+```js
+autoSync = true : boolean
+```
+
+Whether to automatically call the "syncCameras" function when so cameras are implicitly positioned correctly for transitioning. Disable this if syncing will happen manually and small adjustments can be made.
+
 ### .constructor
 
 ```js
@@ -765,7 +773,15 @@ Constructor takes the two cameras to animate between.
 update() : void
 ```
 
-Synchronizes the two camera positions and performs the transition animation if active.
+Performs the transition animation if active.
+
+### .syncCameras
+
+```js
+syncCameras() : void
+```
+
+Synchronizes the two camera positions and views based on the focus point.
 
 ### .toggle
 
