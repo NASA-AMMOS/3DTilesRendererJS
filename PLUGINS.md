@@ -673,6 +673,14 @@ getPivotPoint( target : Vector3 ) : target
 
 Gets the last used interaction point.
 
+### .adjustCamera
+
+```js
+updateCameraClipPlanes( camera : Camera ) : void
+```
+
+Updates the clip planes and position of the given camera so the globe is encapsulated correctly and is positioned appropriately above the terrain. Used when working with the transition manager to make sure both cameras being transitioned are positioned properly.
+
 ## GlobeControls
 
 _extends [EnvironmentControls](#environmentcontrols)_
@@ -689,14 +697,6 @@ constructor(
 ```
 
 Takes the same items as `EnvironmentControls` in addition to the Google globe tiles renderer.
-
-### .updateCameraClipPlanes
-
-```js
-updateCameraClipPlanes( camera : Camera ) : void
-```
-
-Updates the clip planes (and position if orthographic) of the given camera so the globe is encapsulated correctly. Used when working with the transition manager to make sure both cameras being transitioned are positioned properly.
 
 ## CameraTransitionManager
 

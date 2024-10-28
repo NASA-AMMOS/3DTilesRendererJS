@@ -95,9 +95,9 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
-
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
+	transition.autoSync = false;
 
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
@@ -127,13 +127,12 @@ function init() {
 
 	gui.add( params, 'orthographic' ).onChange( v => {
 
-		// TODO: this updates the clip planes based on the current position of the camera which is
-		// synced by the transition manager. However the position and clip planes that would be applied
-		// by the globe controls when using the controls with the camera are different resulting in
-		// some clipping artifacts during transition that "pop" once finished.
 		controls.getPivotPoint( transition.fixedPoint );
-		controls.updateCameraClipPlanes( transition.perspectiveCamera );
-		controls.updateCameraClipPlanes( transition.orthographicCamera );
+
+		// sync the camera positions and then adjust the camera views
+		transition.syncCameras();
+		controls.adjustCamera( transition.perspectiveCamera );
+		controls.adjustCamera( transition.orthographicCamera );
 
 		transition.toggle();
 
