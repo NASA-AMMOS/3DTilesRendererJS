@@ -2,10 +2,8 @@ import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamer
 
 const _forward = new Vector3();
 const _vec = new Vector3();
-const _virtOrthoPos = new Vector3();
 const _orthographicCamera = new OrthographicCamera();
 const _targetPos = new Vector3();
-
 
 export class CameraTransitionManager extends EventDispatcher {
 
