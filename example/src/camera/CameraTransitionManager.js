@@ -3,6 +3,9 @@ import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamer
 const _forward = new Vector3();
 const _vec = new Vector3();
 const _virtOrthoPos = new Vector3();
+const _orthographicCamera = new OrthographicCamera();
+const _targetPos = new Vector3();
+
 
 export class CameraTransitionManager extends EventDispatcher {
 
@@ -205,59 +208,92 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	_updateTransitionCamera() {
 
+		// Perform transition interpolation between the orthographic and perspective camera
+		// alpha === 0 : perspective
+		// alpha === 1 : orthographic
+
 		const { perspectiveCamera, orthographicCamera, transitionCamera, fixedPoint } = this;
 		const alpha = this._alpha;
 
 		// get the forward vector
-		_forward.set( 0, 0, - 1 ).transformDirection( perspectiveCamera.matrixWorld ).normalize();
+		_forward.set( 0, 0, - 1 ).transformDirection( orthographicCamera.matrixWorld ).normalize();
+
+		_orthographicCamera.copy( orthographicCamera );
+		_orthographicCamera.position.addScaledVector( _forward, orthographicCamera.near );
+		orthographicCamera.far -= orthographicCamera.near;
+		orthographicCamera.near = 0;
 
 		// compute the projection height based on the perspective camera
+		_forward.set( 0, 0, - 1 ).transformDirection( perspectiveCamera.matrixWorld ).normalize();
 		const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, fixedPoint ).dot( _forward ) );
 		const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * distToPoint;
-
-		// Perform transition interpolation between the orthographic and perspective camera
-
-		// alpha === 0 : perspective
-		// alpha === 1 : orthographic
 
 		// calculate the target distance and fov to position the camera at
 		const targetFov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
 		const targetDistance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * targetFov * 0.5 );
+		const targetPos = _targetPos.lerpVectors( perspectiveCamera.position, _orthographicCamera.position, alpha );
+		targetPos.addScaledVector( _forward, targetDistance - Math.abs( _vec.subVectors( targetPos, fixedPoint ).dot( _forward ) ) );
 
-		// virtual orthographic position to support negative near plane
-		const virtOrthoNear = 0;
-		const virtOrthoFar = orthographicCamera.far - orthographicCamera.near;
-		_virtOrthoPos.copy( orthographicCamera.position ).addScaledVector( _forward, orthographicCamera.near );
+		const distToPersp = Math.abs( _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward ) );
+		const distToOrtho = Math.abs( _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward ) );
 
-		// calculate all distance to the focus point
-		const perspDistanceToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, fixedPoint ).dot( _forward ) );
-		const orthoDistanceToPoint = Math.abs( _vec.subVectors( _virtOrthoPos, fixedPoint ).dot( _forward ) );
-
-		// find the target near and far positions
-		const perspNearPlane = perspDistanceToPoint - perspectiveCamera.near;
-		const orthoNearPlane = orthoDistanceToPoint - virtOrthoNear;
-		const targetNearPlane = MathUtils.lerp( perspNearPlane, orthoNearPlane, alpha );
-
-		const perspFarPlane = perspDistanceToPoint - perspectiveCamera.far;
-		const orthoFarPlane = orthoDistanceToPoint - virtOrthoFar;
-		const targetFarPlane = MathUtils.lerp( perspFarPlane, orthoFarPlane, alpha );
-
-		// compute delta between planes so we can scale the minimum near plane value
-		// and avoid depth artifacts from floating point calculations
-		const finalNearPlane = targetDistance - targetNearPlane;
-		const finalFarPlane = targetDistance - targetFarPlane;
-		const planeDelta = finalFarPlane - finalNearPlane;
+		const targetNearPlane = MathUtils.lerp( distToPersp + perspectiveCamera.near, distToOrtho + _orthographicCamera.near, alpha );
+		const targetFarPlane = MathUtils.lerp( distToPersp + perspectiveCamera.far, distToOrtho + _orthographicCamera.far, alpha );
+		const planeDelta = targetFarPlane - targetNearPlane;
 
 		// update the camera state
 		transitionCamera.aspect = perspectiveCamera.aspect;
 		transitionCamera.fov = targetFov;
-		transitionCamera.near = Math.max( finalNearPlane, planeDelta * 1e-5 );
-		transitionCamera.far = finalFarPlane;
-		transitionCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, perspDistanceToPoint - targetDistance );
+		transitionCamera.near = Math.max( targetNearPlane, planeDelta * 1e-5 );
+		transitionCamera.far = targetFarPlane;
+		transitionCamera.position.copy( perspectiveCamera );
 		transitionCamera.rotation.copy( perspectiveCamera.rotation );
-
 		transitionCamera.updateProjectionMatrix();
 		transitionCamera.updateMatrixWorld();
+
+
+
+
+
+
+
+
+
+
+		// // virtual orthographic position to support negative near plane
+		// const virtOrthoNear = 0;
+		// const virtOrthoFar = orthographicCamera.far - orthographicCamera.near;
+		// _virtOrthoPos.copy( orthographicCamera.position ).addScaledVector( _forward, orthographicCamera.near );
+
+		// // calculate all distance to the focus point
+		// const perspDistanceToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, fixedPoint ).dot( _forward ) );
+		// const orthoDistanceToPoint = Math.abs( _vec.subVectors( _virtOrthoPos, fixedPoint ).dot( _forward ) );
+
+		// // find the target near and far positions
+		// const perspNearPlane = perspDistanceToPoint - perspectiveCamera.near;
+		// const orthoNearPlane = orthoDistanceToPoint - virtOrthoNear;
+		// const targetNearPlane = MathUtils.lerp( perspNearPlane, orthoNearPlane, alpha );
+
+		// const perspFarPlane = perspDistanceToPoint - perspectiveCamera.far;
+		// const orthoFarPlane = orthoDistanceToPoint - virtOrthoFar;
+		// const targetFarPlane = MathUtils.lerp( perspFarPlane, orthoFarPlane, alpha );
+
+		// // compute delta between planes so we can scale the minimum near plane value
+		// // and avoid depth artifacts from floating point calculations
+		// const finalNearPlane = targetDistance - targetNearPlane;
+		// const finalFarPlane = targetDistance - targetFarPlane;
+		// const planeDelta = finalFarPlane - finalNearPlane;
+
+		// // update the camera state
+		// transitionCamera.aspect = perspectiveCamera.aspect;
+		// transitionCamera.fov = targetFov;
+		// transitionCamera.near = Math.max( finalNearPlane, planeDelta * 1e-5 );
+		// transitionCamera.far = finalFarPlane;
+		// transitionCamera.position.copy( perspectiveCamera.position ).addScaledVector( _forward, perspDistanceToPoint - targetDistance );
+		// transitionCamera.rotation.copy( perspectiveCamera.rotation );
+
+		// transitionCamera.updateProjectionMatrix();
+		// transitionCamera.updateMatrixWorld();
 
 	}
 
