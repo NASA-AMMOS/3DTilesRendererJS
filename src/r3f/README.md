@@ -18,9 +18,10 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 import { TilesRenderer } from '3d-tiles-renderer/r3f';
 
 const TILESET_URL = /* your tile set url */;
+const cameraPosition = [ x, y, z ]; // Set the camera position so the tiles are visible
 export default function App() {
   return (
-    <Canvas>
+    <Canvas camera={ { position: cameraPosition } }>
       <TilesRenderer url={ TILESET_URL } />
     </Canvas>
   );
