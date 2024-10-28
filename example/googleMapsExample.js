@@ -95,7 +95,6 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
-
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
