@@ -372,7 +372,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenLoaded && loadedContent ) {
+	if ( tile.refine === 'REPLACE' && meetsSSE && ! allChildrenLoaded ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
