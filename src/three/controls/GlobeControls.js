@@ -187,7 +187,7 @@ export class GlobeControls extends EnvironmentControls {
 		super.update( deltaTime );
 
 		// update the camera planes and the ortho camera position
-		this.updateCameraClipPlanes( camera );
+		this.adjustCamera( camera );
 
 	}
 
