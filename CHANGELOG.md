@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
 - R3F `<CompassGizmo>` copmonent.
 
+### Changed
+- Slightly modified the traversal algorithm to not require loaded content (and therefore for content to exist) in order to trigger child tiles to load.
+
 ### Fixed
 - EnvironmentControls: Assign the current camera to the raycaster.
 - Typescript definitions for TilesRenderer.
