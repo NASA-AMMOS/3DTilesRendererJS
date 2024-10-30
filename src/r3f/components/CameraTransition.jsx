@@ -26,6 +26,8 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		return manager;
 
+		// only respect the camera initially so the default camera settings are automatically used
+
 	}, [] );
 
 	useEffect( () => {
@@ -124,9 +126,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 	// toggle
 	useEffect( () => {
 
-		const toOrtho = mode === 'orthographic';
-		const isOrtho = Boolean( manager.camera.isOrthographicCamera );
-		if ( toOrtho !== isOrtho ) {
+		if ( mode !== manager.mode ) {
 
 			if ( controls && controls instanceof EnvironmentControls ) {
 

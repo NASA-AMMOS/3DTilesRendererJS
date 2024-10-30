@@ -21,6 +21,12 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	get mode() {
+
+		return this._target === 0 ? 'perspective' : 'orthographic';
+
+	}
+
 	constructor( perspectiveCamera = new PerspectiveCamera(), orthographicCamera = new OrthographicCamera() ) {
 
 		super();

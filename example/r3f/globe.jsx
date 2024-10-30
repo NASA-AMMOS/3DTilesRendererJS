@@ -42,7 +42,6 @@ function Pointer() {
 		pointer.updateMatrixWorld();
 		vec2.setFromMatrixPosition( pointer.matrixWorld );
 
-		// TODO: clean up and clarify the math here
 		let scale;
 		if ( camera.isPerspectiveCamera ) {
 
