@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.40] - 2024.10.29
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
 - R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
-- R3F `<CompassGizmo>` copmonent.
+- R3F `<CompassGizmo>` component.
 
 ### Changed
 - Slightly modified the traversal algorithm to not require loaded content (and therefore for content to exist) in order to trigger child tiles to load.
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Case where the closest hit was not returned with "firstHitOnly" raycasting.
 - R3F TilesRenderer: Fix case where the tiles renderer context would not trigger an update when options changed.
 - UpdateOnChangePlugin: Fix case where tiles would not update correctly if plugin was added after cameras.
-- EnvirontControls: Correctly mark "wheel" event as non-passive.
+- EnvironmentControls: Correctly mark "wheel" event as non-passive.
 
 ## [0.3.39] - 2024.10.15
 ### Added
