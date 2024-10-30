@@ -734,6 +734,22 @@ readonly animation : boolean
 
 A flag indicating whether the transition is currently animating or not.
 
+### .mode
+
+```js
+mode : 'perspective' | 'orthographic
+```
+
+The current mode of the camera that is active or being transitioned to. Setting this field will immediately change the camera.
+
+### .duration
+
+```js
+durtion = 200 : Number
+```
+
+The length of time it takes to transition the camera in milliseconds.
+
 ### .camera
 
 ```js
