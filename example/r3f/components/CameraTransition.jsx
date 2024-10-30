@@ -16,12 +16,16 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		if ( camera.isOrthographicCamera ) {
 
 			manager.orthographicCamera.copy( camera );
+			manager.mode = 'orthographic';
 
 		} else {
 
 			manager.perspectiveCamera.copy( camera );
 
 		}
+
+		manager.syncCameras();
+		manager.mode = mode;
 
 		return manager;
 

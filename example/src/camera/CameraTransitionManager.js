@@ -27,6 +27,31 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	set mode( v ) {
+
+		if ( v === this.mode ) {
+
+			return;
+
+		}
+
+		const prevCamera = this.camera;
+		if ( v === 'perspective' ) {
+
+			this._target = 0;
+			this._alpha = 0;
+
+		} else {
+
+			this._target = 1;
+			this._alpha = 1;
+
+		}
+
+		this.dispatchEvent( { type: 'camera-change', camera: this.camera, prevCamera: prevCamera } );
+
+	}
+
 	constructor( perspectiveCamera = new PerspectiveCamera(), orthographicCamera = new OrthographicCamera() ) {
 
 		super();
