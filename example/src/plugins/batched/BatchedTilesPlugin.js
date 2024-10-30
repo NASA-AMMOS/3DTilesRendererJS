@@ -280,7 +280,7 @@ export class BatchedTilesPlugin {
 
 			// copy the contents
 			renderer.initRenderTarget( newArrayTarget );
-			renderer.copyTextureToTexture3D( arrayTarget.texture, newArrayTarget.texture );
+			renderer.copyTextureToTexture( arrayTarget.texture, newArrayTarget.texture );
 
 			// replace the old array target
 			arrayTarget.dispose();
