@@ -42,8 +42,19 @@ function Pointer() {
 		pointer.updateMatrixWorld();
 		vec2.setFromMatrixPosition( pointer.matrixWorld );
 
-		const distance = vec1.distanceTo( vec2 );
-		const scale = Math.max( 0.05 * distance, 25 );
+		// TODO: clean up and clarify the math here
+		let scale;
+		if ( camera.isPerspectiveCamera ) {
+
+			const distance = vec1.distanceTo( vec2 );
+			scale = Math.max( 0.05 * distance * Math.atan( camera.fov * MathUtils.DEG2RAD ), 25 );
+
+		} else {
+
+			scale = Math.max( ( camera.top - camera.bottom ) * 0.05 / camera.zoom, 25 );
+
+		}
+
 		pointer.scale.setScalar( scale );
 		pointer.position.z = scale * 0.5;
 
