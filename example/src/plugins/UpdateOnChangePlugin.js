@@ -40,6 +40,13 @@ export class UpdateOnChangePlugin {
 		tiles.addEventListener( 'add-camera', this._onCameraAdd );
 		tiles.addEventListener( 'delete-camera', this._onCameraDelete );
 
+		// register any already-present cameras
+		tiles.cameras.forEach( camera => {
+
+			this._onCameraAdd( { camera } );
+
+		} );
+
 	}
 
 	doTilesNeedUpdate() {

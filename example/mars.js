@@ -1,7 +1,7 @@
 import {
 	TilesRenderer,
 	DebugTilesPlugin,
-} from '../src/index.js';
+} from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,

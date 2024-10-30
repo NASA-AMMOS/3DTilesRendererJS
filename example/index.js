@@ -14,7 +14,7 @@ import {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
-} from '../src/index.js';
+} from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,
@@ -210,7 +210,7 @@ function init() {
 	controls.maxDistance = 5000;
 
 	// lights
-	const dirLight = new DirectionalLight( 0xffffff );
+	const dirLight = new DirectionalLight( 0xffffff, 4 );
 	dirLight.position.set( 1, 2, 3 );
 	scene.add( dirLight );
 

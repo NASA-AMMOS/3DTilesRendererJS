@@ -485,7 +485,7 @@ export class EnvironmentControls extends EventDispatcher {
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
 		domElement.addEventListener( 'pointermove', pointermoveCallback );
 		domElement.addEventListener( 'pointerup', pointerupCallback );
-		domElement.addEventListener( 'wheel', wheelCallback );
+		domElement.addEventListener( 'wheel', wheelCallback, { passive: false } );
 		domElement.addEventListener( 'pointerenter', pointerenterCallback );
 
 		this._detachCallback = () => {
@@ -708,6 +708,30 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	// updates the camera to position it based on the constraints of the controls
+	adjustCamera( camera ) {
+
+		const { adjustHeight, cameraRadius } = this;
+		if ( camera.isPerspectiveCamera ) {
+
+			// adjust the camera height
+			this.getUpDirection( camera.position, _localUp );
+			const hit = adjustHeight && this._getPointBelowCamera( camera.position, _localUp ) || null;
+			if ( hit ) {
+
+				const dist = hit.distance;
+				if ( dist < cameraRadius ) {
+
+					camera.position.addScaledVector( _localUp, cameraRadius - dist );
+
+				}
+
+			}
+
+		}
+
+	}
+
 	dispose() {
 
 		this.detach();
@@ -834,7 +858,7 @@ export class EnvironmentControls extends EventDispatcher {
 				} else {
 
 					const remainingDistance = Math.max( 0, dist - minDistance );
-					scale = scale * ( dist - minDistance ) * zoomSpeed * 0.0025;
+					scale = scale * Math.max( dist - minDistance, 0 ) * zoomSpeed * 0.0025;
 					scale = Math.min( scale, remainingDistance );
 
 				}
@@ -930,11 +954,11 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// returns the point below the camera
-	_getPointBelowCamera() {
+	_getPointBelowCamera( point = this.camera.position, up = this.up ) {
 
-		const { camera, raycaster, up } = this;
+		const { raycaster } = this;
 		raycaster.ray.direction.copy( up ).multiplyScalar( - 1 );
-		raycaster.ray.origin.copy( camera.position ).addScaledVector( up, 1e5 );
+		raycaster.ray.origin.copy( point ).addScaledVector( up, 1e5 );
 		raycaster.near = 0;
 		raycaster.far = Infinity;
 

@@ -1,4 +1,4 @@
-import { PNTSLoader } from '../src/index.js';
+import { PNTSLoader } from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,

@@ -1,4 +1,4 @@
-import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer, GoogleCloudAuthPlugin } from '../src/index.js';
+import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
 import {
 	Scene,
 	WebGLRenderer,
@@ -52,6 +52,7 @@ function reinstantiateTiles() {
 	// tiles.setLatLonToYUp( 43.8803 * MathUtils.DEG2RAD, - 103.4538 * MathUtils.DEG2RAD ); // Mt Rushmore
 	// tiles.setLatLonToYUp( 36.2679 * MathUtils.DEG2RAD, - 112.3535 * MathUtils.DEG2RAD ); // Grand Canyon
 	// tiles.setLatLonToYUp( - 22.951890 * MathUtils.DEG2RAD, - 43.210439 * MathUtils.DEG2RAD ); // Christ the Redeemer
+	// tiles.setLatLonToYUp( 34.9947 * MathUtils.DEG2RAD, 135.7847 * MathUtils.DEG2RAD ); // Kiyomizu-dera
 	tiles.setLatLonToYUp( 35.6586 * MathUtils.DEG2RAD, 139.7454 * MathUtils.DEG2RAD ); // Tokyo Tower
 
 	// Note the DRACO compression files need to be supplied via an explicit source.

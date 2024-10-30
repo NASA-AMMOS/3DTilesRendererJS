@@ -6,7 +6,7 @@ import {
 	Group,
 } from 'three';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
-import { EnvironmentControls, TilesRenderer } from '../src/index.js';
+import { EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 
@@ -16,7 +16,7 @@ let groundTiles, skyTiles, tilesParent, transition;
 const params = {
 
 	reinstantiateTiles,
-	fadeRootTiles: true,
+	fadeRootTiles: false,
 	useFade: true,
 	errorTarget: 12,
 	fadeDuration: 0.5,
@@ -51,6 +51,8 @@ function init() {
 	);
 	transition.camera.position.set( 20, 10, 20 );
 	transition.camera.lookAt( 0, 0, 0 );
+	transition.autoSync = false;
+
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
 		skyTiles.deleteCamera( prevCamera );
@@ -86,6 +88,11 @@ function init() {
 	cameraFolder.add( params, 'orthographic' ).onChange( v => {
 
 		transition.fixedPoint.copy( controls.pivotPoint );
+
+		// adjust the camera before the transition begins
+		transition.syncCameras();
+		controls.adjustCamera( transition.perspectiveCamera );
+		controls.adjustCamera( transition.orthographicCamera );
 		transition.toggle();
 
 	} );

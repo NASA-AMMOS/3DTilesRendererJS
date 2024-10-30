@@ -5,7 +5,7 @@ import {
 	GlobeControls,
 	TilesRenderer,
 	GoogleCloudAuthPlugin,
-} from '../src/index.js';
+} from '3d-tiles-renderer';
 import {
 	Scene,
 	WebGLRenderer,
@@ -107,9 +107,9 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 1, 160000000 ),
 	);
-
 	transition.perspectiveCamera.position.set( 4800000, 2570000, 14720000 );
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
+	transition.autoSync = false;
 
 	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
 
@@ -139,13 +139,12 @@ function init() {
 
 	gui.add( params, 'orthographic' ).onChange( v => {
 
-		// TODO: this updates the clip planes based on the current position of the camera which is
-		// synced by the transition manager. However the position and clip planes that would be applied
-		// by the globe controls when using the controls with the camera are different resulting in
-		// some clipping artifacts during transition that "pop" once finished.
 		controls.getPivotPoint( transition.fixedPoint );
-		controls.updateCameraClipPlanes( transition.perspectiveCamera );
-		controls.updateCameraClipPlanes( transition.orthographicCamera );
+
+		// sync the camera positions and then adjust the camera views
+		transition.syncCameras();
+		controls.adjustCamera( transition.perspectiveCamera );
+		controls.adjustCamera( transition.orthographicCamera );
 
 		transition.toggle();
 
@@ -221,6 +220,7 @@ function updateHash() {
 	// convert to DEG
 	orientationResult.azimuth *= MathUtils.RAD2DEG;
 	orientationResult.elevation *= MathUtils.RAD2DEG;
+	orientationResult.roll *= MathUtils.RAD2DEG;
 	cartographicResult.lat *= MathUtils.RAD2DEG;
 	cartographicResult.lon *= MathUtils.RAD2DEG;
 
@@ -231,6 +231,7 @@ function updateHash() {
 	urlParams.set( 'height', cartographicResult.height.toFixed( 2 ) );
 	urlParams.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
 	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
+	params.set( 'roll', orientationResult.roll.toFixed( 2 ) );
 
 	if ( params.batched ) {
 
@@ -271,11 +272,12 @@ function initFromHash() {
 		// get the az el fields for rotation if present
 		const az = parseFloat( urlParams.get( 'az' ) );
 		const el = parseFloat( urlParams.get( 'el' ) );
+		const roll = parseFloat( params.get( 'roll' ) ) || 0;
 
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
 			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
-			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, 0,
+			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, roll * MathUtils.DEG2RAD,
 			camera.matrixWorld, CAMERA_FRAME,
 		);
 

@@ -18,9 +18,10 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 import { TilesRenderer } from '3d-tiles-renderer/r3f';
 
 const TILESET_URL = /* your tile set url */;
+const cameraPosition = [ x, y, z ]; // Set the camera position so the tiles are visible
 export default function App() {
   return (
-    <Canvas>
+    <Canvas camera={ { position: cameraPosition } }>
       <TilesRenderer url={ TILESET_URL } />
     </Canvas>
   );
@@ -206,4 +207,32 @@ The `TilesAttributionOverlay` component must be embedded in a tile set and will 
 <TilesRenderer url={ url } { ...props }>
   <TilesAttributionOverlay />
 </TilesRenderer>
+```
+
+## CompassGizmo
+
+Adds a compass to the bottom right of the page that orients to "north" based on the camera position and orientation. Must be nested in a `TilesRenderer` component.
+
+Any children passed into the class will replace the default red and white compass design with +Y pointing north and +X pointing east. The graphic children should fit within a volume from - 0.5 to 0.5 along all axes.
+
+```jsx
+<CompassGizmo
+	{/* Specifies whether the compass will render in '2d' or '3d' */}
+	mode={ '3d' }
+
+	{/* The size of the compass in pixels */}
+	scale={ 35 }
+
+	{/* The number pixels in margin to add relative to the bottom right of the screen */}
+	margin={ 10 }
+
+	{/* Whether to render the main scene */}
+	overrideRenderLoop={ true }
+
+	{/* Whether the gizmo is visible and rendering */}
+	visible={ true }
+
+	{/* Any remaining props including click events are passed through to the parent group */}
+	onClick={ () => console.log( 'compass clicked!' ) }
+/>
 ```
