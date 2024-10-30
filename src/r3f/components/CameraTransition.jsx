@@ -5,31 +5,42 @@ import { CameraTransitionManager } from '../../../example/src/camera/CameraTrans
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
-	const { mode, onTransitionStart, onTransitionEnd } = props;
-	const [ set, invalidate, controls, camera ] = useThree( state => [ state.get, state.set, state.invalidate, state.camera ] );
-
-	// inherit the default camera
-	let { perspectiveCamera, orthographicCamera } = props;
-	if ( ! orthographicCamera && camera.isOrthographicCamera ) {
-
-		orthographicCamera = camera;
-
-	}
-
-	if ( ! perspectiveCamera && camera.isPerspectiveCamera ) {
-
-		perspectiveCamera = camera;
-
-	}
+	const { mode, onTransitionStart, onTransitionEnd, perspectiveCamera, orthographicCamera } = props;
+	const [ set, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
 	const manager = useMemo( () => {
 
 		const manager = new CameraTransitionManager();
 		manager.autoSync = false;
+
+		if ( camera.isOrthographicCamera ) {
+
+			manager.orthographicCamera.copy( camera );
+
+		} else {
+
+			manager.perspectiveCamera.copy( camera );
+
+		}
+
 		return manager;
 
 	}, [] );
+
+	useEffect( () => {
+
+		const { perspectiveCamera, orthographicCamera } = manager;
+		perspectiveCamera.aspect = size.width / size.height;
+		perspectiveCamera.updateProjectionMatrix();
+
+		orthographicCamera.left = size.width / - 2;
+		orthographicCamera.right = size.width / 2;
+		orthographicCamera.top = size.height / 2;
+		orthographicCamera.bottom = size.height / - 2;
+		perspectiveCamera.updateProjectionMatrix();
+
+	}, [ manager, size ] );
 
 	// assign ref
 	useEffect( () => {
@@ -55,11 +66,11 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		const cameraCallback = ( { camera } ) => {
 
-			set( { camera } );
+			set( () => ( { camera } ) );
 
 		};
 
-		set( { camera: manager.camera } );
+		set( () => ( { camera: manager.camera } ) );
 		manager.addEventListener( 'camera-change', cameraCallback );
 		return () => {
 
@@ -100,7 +111,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		manager.perspectiveCamera = perspectiveCamera || oldPerspectiveCamera;
 		manager.orthographicCamera = orthographicCamera || oldOrthographicCamera;
 
-		set( { camera: manager.camera } );
+		set( () => ( { camera: manager.camera } ) );
 
 		return () => {
 

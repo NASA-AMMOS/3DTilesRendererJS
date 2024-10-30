@@ -53,7 +53,7 @@ function init() {
 	transition.camera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
 
-	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
+	transition.addEventListener( 'camera-change', ( { camera, prevCamera } ) => {
 
 		skyTiles.deleteCamera( prevCamera );
 		groundTiles.deleteCamera( prevCamera );

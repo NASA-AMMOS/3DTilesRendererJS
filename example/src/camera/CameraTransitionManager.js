@@ -98,7 +98,7 @@ export class CameraTransitionManager extends EventDispatcher {
 
 			}
 
-			this.dispatchEvent( { type: 'camera-changed', camera: newCamera, prevCamera: prevCamera } );
+			this.dispatchEvent( { type: 'camera-change', camera: newCamera, prevCamera: prevCamera } );
 
 			if ( prevCamera === transitionCamera ) {
 
