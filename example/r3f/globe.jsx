@@ -71,7 +71,7 @@ function App() {
 	return (
 		<Canvas
 			camera={ {
-				position: [ 0, 4 * 1e7, 1e8 ],
+				position: [ 0, 0.5 * 1e7, 1.5 * 1e7 ],
 			} }
 			style={ {
 				width: '100%',
