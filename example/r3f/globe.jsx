@@ -9,6 +9,7 @@ import {
 	GlobeControls,
 	EastNorthUpFrame,
 	CompassGizmo,
+	CameraTransition,
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -64,10 +65,11 @@ function App() {
 			value: localStorage.getItem( 'google-token' ) || 'put-your-api-key-here',
 			onChange: ( value ) => localStorage.setItem( 'google-token', value ),
 			transient: false,
-		}
+		},
+		ortho: false,
 	};
 
-	const { apiToken } = useControls( levaParams );
+	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<Canvas
 			camera={ {
@@ -117,6 +119,8 @@ function App() {
 				backgroundBlurriness={ 0.9 }
 				environmentIntensity={ 1 }
 			/>
+
+			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
 		</Canvas>
 	);
 
