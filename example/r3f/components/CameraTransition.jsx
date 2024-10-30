@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { EnvironmentControls } from '../../three/controls/EnvironmentControls.js';
-import { CameraTransitionManager } from '../../../example/src/camera/CameraTransitionManager.js';
+import { CameraTransitionManager } from '../../src/camera/CameraTransitionManager.js';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
@@ -128,7 +127,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		if ( mode !== manager.mode ) {
 
-			if ( controls && controls instanceof EnvironmentControls ) {
+			if ( controls && controls.isEnvironmentControls ) {
 
 				controls.getPivotPoint( manager.fixedPoint );
 				manager.syncCameras();
