@@ -172,6 +172,6 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		}
 
-	} );
+	}, - 1 );
 
 } );
