@@ -31,13 +31,12 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 	useEffect( () => {
 
 		const { perspectiveCamera, orthographicCamera } = manager;
-		perspectiveCamera.aspect = size.width / size.height;
+		const aspect = size.width / size.height;
+		perspectiveCamera.aspect = aspect;
 		perspectiveCamera.updateProjectionMatrix();
 
-		orthographicCamera.left = size.width / - 2;
-		orthographicCamera.right = size.width / 2;
-		orthographicCamera.top = size.height / 2;
-		orthographicCamera.bottom = size.height / - 2;
+		orthographicCamera.left = - orthographicCamera.top * aspect;
+		orthographicCamera.right = - orthographicCamera.left;
 		perspectiveCamera.updateProjectionMatrix();
 
 	}, [ manager, size ] );
