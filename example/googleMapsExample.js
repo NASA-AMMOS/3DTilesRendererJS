@@ -99,7 +99,7 @@ function init() {
 	transition.perspectiveCamera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
 
-	transition.addEventListener( 'camera-changed', ( { camera, prevCamera } ) => {
+	transition.addEventListener( 'camera-change', ( { camera, prevCamera } ) => {
 
 		tiles.deleteCamera( prevCamera );
 		tiles.setCamera( camera );

@@ -79,6 +79,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 		super();
 
+		this.isEnvironmentControls = true;
+
 		this.domElement = null;
 		this.camera = null;
 		this.scene = null;

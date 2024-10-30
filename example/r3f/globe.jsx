@@ -10,6 +10,7 @@ import {
 	EastNorthUpFrame,
 	CompassGizmo,
 } from '3d-tiles-renderer/r3f';
+import { CameraTransition } from './components/CameraTransition.jsx';
 
 // Plugins
 import { GoogleCloudAuthPlugin } from '3d-tiles-renderer';
@@ -41,8 +42,18 @@ function Pointer() {
 		pointer.updateMatrixWorld();
 		vec2.setFromMatrixPosition( pointer.matrixWorld );
 
-		const distance = vec1.distanceTo( vec2 );
-		const scale = Math.max( 0.05 * distance, 25 );
+		let scale;
+		if ( camera.isPerspectiveCamera ) {
+
+			const distance = vec1.distanceTo( vec2 );
+			scale = Math.max( 0.05 * distance * Math.atan( camera.fov * MathUtils.DEG2RAD ), 25 );
+
+		} else {
+
+			scale = Math.max( ( camera.top - camera.bottom ) * 0.05 / camera.zoom, 25 );
+
+		}
+
 		pointer.scale.setScalar( scale );
 		pointer.position.z = scale * 0.5;
 
@@ -64,10 +75,11 @@ function App() {
 			value: localStorage.getItem( 'google-token' ) || 'put-your-api-key-here',
 			onChange: ( value ) => localStorage.setItem( 'google-token', value ),
 			transient: false,
-		}
+		},
+		ortho: false,
 	};
 
-	const { apiToken } = useControls( levaParams );
+	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<Canvas
 			camera={ {
@@ -117,6 +129,8 @@ function App() {
 				backgroundBlurriness={ 0.9 }
 				environmentIntensity={ 1 }
 			/>
+
+			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
 		</Canvas>
 	);
 

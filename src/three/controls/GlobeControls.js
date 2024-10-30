@@ -47,6 +47,9 @@ export class GlobeControls extends EnvironmentControls {
 
 		// store which mode the drag stats are in
 		super( scene, camera, domElement );
+
+		this.isGlobeControls = true;
+
 		this._dragMode = 0;
 		this._rotationMode = 0;
 		this.maxZoom = 0.01;

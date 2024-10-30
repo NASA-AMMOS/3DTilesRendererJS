@@ -1,15 +1,45 @@
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { BackSide, Matrix4, OrthographicCamera, Scene, Vector3 } from 'three';
+import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';
 import { TilesRendererContext } from './TilesRenderer';
+import { closestRayEllipsoidSurfacePointEstimate } from '../../three/controls/utils';
 
 // Based in part on @pmndrs/drei's Gizmo component
 
 const _vec = /*@__PURE__*/ new Vector3();
 const _axis = /*@__PURE__*/ new Vector3();
+const _pos = /*@__PURE__*/ new Vector3();
 const _matrix = /*@__PURE__*/ new Matrix4();
+const _invMatrix = /*@__PURE__*/ new Matrix4();
 const _enuMatrix = /*@__PURE__*/ new Matrix4();
+const _ray = /*@__PURE__*/ new Ray();
 const _cart = {};
+
+// Returns the "focus" point that the camera is facing based on the closest point to the ellipsoid.
+// Used for determining the compass orientation.
+function getCameraFocusPoint( camera, ellipsoid, tilesGroup, target ) {
+
+	_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+
+	// get ray in globe coordinate frame
+	_ray.origin.copy( camera.position );
+	_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+	_ray.applyMatrix4( _invMatrix );
+
+	// get the closest point to the ray on the globe in the global coordinate frame
+	closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
+	_pos.applyMatrix4( tilesGroup.matrixWorld );
+
+	// get ortho camera info
+	_axis.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+
+	// ensure we move the camera exactly along the forward vector to avoid shifting
+	// the camera in other directions due to floating point error
+	const dist = _pos.sub( camera.position ).dot( _axis );
+	target.copy( camera.position ).addScaledVector( _axis, dist );
+	return target;
+
+}
 
 // Renders the portal with an orthographic camera
 function RenderPortal( props ) {
@@ -147,8 +177,9 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 		// get the ENU frame in world space
 		_matrix.copy( tiles.group.matrixWorld ).invert();
-		_vec.setFromMatrixPosition( defaultCamera.matrixWorld ).applyMatrix4( _matrix );
-		ellipsoid.getPositionToCartographic( _vec, _cart );
+		getCameraFocusPoint( defaultCamera, ellipsoid, tiles.group, _pos ).applyMatrix4( _matrix );
+		ellipsoid.getPositionToCartographic( _pos, _cart );
+
 		ellipsoid
 			.getRotationMatrixFromAzElRoll( _cart.lat, _cart.lon, 0, 0, 0, _enuMatrix )
 			.premultiply( tiles.group.matrixWorld );

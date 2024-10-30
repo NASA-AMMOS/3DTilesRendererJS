@@ -21,6 +21,37 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	get mode() {
+
+		return this._target === 0 ? 'perspective' : 'orthographic';
+
+	}
+
+	set mode( v ) {
+
+		if ( v === this.mode ) {
+
+			return;
+
+		}
+
+		const prevCamera = this.camera;
+		if ( v === 'perspective' ) {
+
+			this._target = 0;
+			this._alpha = 0;
+
+		} else {
+
+			this._target = 1;
+			this._alpha = 1;
+
+		}
+
+		this.dispatchEvent( { type: 'camera-change', camera: this.camera, prevCamera: prevCamera } );
+
+	}
+
 	constructor( perspectiveCamera = new PerspectiveCamera(), orthographicCamera = new OrthographicCamera() ) {
 
 		super();
@@ -92,7 +123,19 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		if ( prevCamera !== newCamera ) {
 
-			this.dispatchEvent( { type: 'camera-changed', camera: newCamera, prevCamera: prevCamera } );
+			if ( newCamera === transitionCamera ) {
+
+				this.dispatchEvent( { type: 'transition-start' } );
+
+			}
+
+			this.dispatchEvent( { type: 'camera-change', camera: newCamera, prevCamera: prevCamera } );
+
+			if ( prevCamera === transitionCamera ) {
+
+				this.dispatchEvent( { type: 'transition-end' } );
+
+			}
 
 		}
 
