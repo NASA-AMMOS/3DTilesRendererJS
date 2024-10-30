@@ -231,7 +231,7 @@ function updateHash() {
 	urlParams.set( 'height', cartographicResult.height.toFixed( 2 ) );
 	urlParams.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
 	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
-	params.set( 'roll', orientationResult.roll.toFixed( 2 ) );
+	urlParams.set( 'roll', orientationResult.roll.toFixed( 2 ) );
 
 	if ( params.batched ) {
 
@@ -272,7 +272,7 @@ function initFromHash() {
 		// get the az el fields for rotation if present
 		const az = parseFloat( urlParams.get( 'az' ) );
 		const el = parseFloat( urlParams.get( 'el' ) );
-		const roll = parseFloat( params.get( 'roll' ) ) || 0;
+		const roll = parseFloat( urlParams.get( 'roll' ) ) || 0;
 
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
