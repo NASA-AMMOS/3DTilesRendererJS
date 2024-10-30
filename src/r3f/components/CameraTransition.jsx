@@ -6,12 +6,21 @@ import { CameraTransitionManager } from '../../../example/src/camera/CameraTrans
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
 	const { mode, onTransitionStart, onTransitionEnd } = props;
-	const [ set, invalidate, controls, camera ] = useThree( state => [ state.get, state.set, state.invalidate, camera ] );
+	const [ set, invalidate, controls, camera ] = useThree( state => [ state.get, state.set, state.invalidate, state.camera ] );
 
 	// inherit the default camera
 	let { perspectiveCamera, orthographicCamera } = props;
-	if ( ! orthographicCamera && camera.isOrthographicCamera ) orthographicCamera = camera;
-	if ( ! perspectiveCamera && camera.isPerspectiveCamera ) perspectiveCamera = camera;
+	if ( ! orthographicCamera && camera.isOrthographicCamera ) {
+
+		orthographicCamera = camera;
+
+	}
+
+	if ( ! perspectiveCamera && camera.isPerspectiveCamera ) {
+
+		perspectiveCamera = camera;
+
+	}
 
 	// create the manager
 	const manager = useMemo( () => {
@@ -102,11 +111,11 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 	}, [ perspectiveCamera, orthographicCamera, manager, set ] );
 
-	// triggle toggle
+	// toggle
 	useEffect( () => {
 
-		const toOrtho = mode === 'ortho';
-		const isOrtho = manager.camera.isOrthographicCamera;
+		const toOrtho = mode === 'orthographic';
+		const isOrtho = Boolean( manager.camera.isOrthographicCamera );
 		if ( toOrtho !== isOrtho ) {
 
 			if ( controls && controls instanceof EnvironmentControls ) {
