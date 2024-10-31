@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - R3F CameraTransition component to examples folder.
 
+### Change
+- Revert change that would cause the root tiles to "trickle" in over time if the root is empty and uses an "ADD" refinement. Tiles will now only render once a full set of child tiles can be rendered.
+
 ## [0.3.40] - 2024.10.29
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
