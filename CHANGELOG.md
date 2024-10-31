@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Added name field to "UpdateOnChangePlugin".
+- CameraTransitionManager: Adjust the calculation for the near plane distance to avoid clipping in some cases.
 
 ### Change
 - Revert change that would cause the root tiles to "trickle" in over time if the root is empty and uses an "ADD" refinement. Tiles will now only render once a full set of child tiles can be rendered.
