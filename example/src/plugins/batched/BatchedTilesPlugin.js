@@ -1,11 +1,9 @@
 import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
-import { ArrayTextureCopyMaterial } from './ArrayTextureCopyMaterial.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
 const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
-const _layerCopyQuad = new FullScreenQuad( new ArrayTextureCopyMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
 _whiteTex.needsUpdate = true;
 
@@ -133,11 +131,11 @@ export class BatchedTilesPlugin {
 					const texture = material.map;
 					if ( texture ) {
 
-						this.renderTextureToLayer( texture, instanceId );
+						this.assignTextureToLayer( texture, instanceId );
 
 					} else {
 
-						this.renderTextureToLayer( _whiteTex, instanceId );
+						this.assignTextureToLayer( _whiteTex, instanceId );
 
 					}
 
@@ -205,7 +203,7 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const { instanceCount, vertexCount, indexCount, tiles, renderer } = this;
 		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
@@ -215,7 +213,7 @@ export class BatchedTilesPlugin {
 
 		// init the array texture render target
 		const map = target.material.map;
-		const textureOptions = 			{
+		const textureOptions = {
 			colorSpace: map.colorSpace,
 			wrapS: map.wrapS,
 			wrapT: map.wrapT,
@@ -223,11 +221,12 @@ export class BatchedTilesPlugin {
 			// TODO: Generating mipmaps for the volume every time a new texture is added is extremely slow
 			// generateMipmaps: map.generateMipmaps,
 			// minFilter: map.minFilter,
-			// magFilter: map.magFilter,
+			magFilter: map.magFilter,
 		};
 
 		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
 		Object.assign( arrayTarget.texture, textureOptions );
+		renderer.initRenderTarget( arrayTarget );
 
 		// init the material
 		material.map = arrayTarget.texture;
@@ -239,7 +238,7 @@ export class BatchedTilesPlugin {
 	}
 
 	// render the given into the given layer
-	renderTextureToLayer( texture, layer ) {
+	assignTextureToLayer( texture, layer ) {
 
 		this.expandArrayTargetIfNeeded();
 
@@ -278,20 +277,9 @@ export class BatchedTilesPlugin {
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, targetDepth );
 			Object.assign( newArrayTarget.texture, textureOptions );
 
-			// render each old layer into the new texture target
-			const currentRenderTarget = renderer.getRenderTarget();
-			for ( let i = 0; i < arrayTarget.depth; i ++ ) {
-
-				_layerCopyQuad.material.map = arrayTarget.texture;
-				_layerCopyQuad.material.layer = i;
-				renderer.setRenderTarget( newArrayTarget, i );
-				_layerCopyQuad.render( renderer );
-
-			}
-
-			// reset the state
-			renderer.setRenderTarget( currentRenderTarget );
-			_layerCopyQuad.material.map = null;
+			// copy the contents
+			renderer.initRenderTarget( newArrayTarget );
+			renderer.copyTextureToTexture( arrayTarget.texture, newArrayTarget.texture );
 
 			// replace the old array target
 			arrayTarget.dispose();
@@ -324,23 +312,25 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		if ( this.arrayTarget ) {
+		const { arrayTarget, tiles, batchedMesh } = this;
+		if ( arrayTarget ) {
 
-			this.arrayTarget.dispose();
-
-		}
-
-		if ( this.batchedMesh ) {
-
-			this.batchedMesh.material.dispose();
-			this.batchedMesh.dispose();
-			this.batchedMesh.removeFromParent();
+			arrayTarget.dispose();
 
 		}
 
-		this.tiles.removeEventListener( 'load-model', this._onLoadModel );
-		this.tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
-		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
+		if ( batchedMesh ) {
+
+			batchedMesh.material.dispose();
+			batchedMesh.geometry.dispose();
+			batchedMesh.dispose();
+			batchedMesh.removeFromParent();
+
+		}
+
+		tiles.removeEventListener( 'load-model', this._onLoadModel );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 	}
 

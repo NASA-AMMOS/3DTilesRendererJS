@@ -16,7 +16,6 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 	}
 
-
 	setMatrixAt( ...args ) {
 
 		super.setMatrixAt( ...args );
@@ -59,11 +58,9 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 		if ( this._forceUpdate || vec1.distanceTo( vec2 ) > this.resetDistance ) {
 
-			// TODO: resize and re-instantiate the texture here if the size is different
-			const drawInfo = this._drawInfo;
 			const matricesArray = matricesTexture.image.data;
 			const modelViewArray = modelViewMatricesTexture.image.data;
-			for ( let i = 0; i < drawInfo.length; i ++ ) {
+			for ( let i = 0; i < this.maxInstanceCount; i ++ ) {
 
 				matrix
 					.fromArray( matricesArray, i * 16 )
@@ -100,6 +97,8 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 	}
 
 	dispose() {
+
+		super.dispose();
 
 		if ( this._modelViewMatricesTexture ) {
 

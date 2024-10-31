@@ -16,12 +16,12 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
+import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -35,8 +35,10 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	apiKey: apiKey,
+	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	errorTarget: 40,
 
-	'reload': reinstantiateTiles,
+	reload: reinstantiateTiles,
 
 };
 
@@ -59,7 +61,17 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new TilesFadePlugin() );
+
+	if ( params.useBatchedMesh ) {
+
+		tiles.registerPlugin( new BatchedTilesPlugin( { renderer } ) );
+
+	} else {
+
+		tiles.registerPlugin( new TilesFadePlugin() );
+
+	}
+
 	tiles.group.rotation.x = - Math.PI / 2;
 
 	// Note the DRACO compression files need to be supplied via an explicit source.
@@ -138,13 +150,19 @@ function init() {
 
 	} );
 
-	const mapsOptions = gui.addFolder( 'Google Tiles' );
+	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	mapsOptions.add( params, 'apiKey' );
+	mapsOptions.add( params, 'useBatchedMesh' ).listen();
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
+	exampleOptions.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
+
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
 
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
@@ -207,22 +225,34 @@ function updateHash() {
 	cartographicResult.lon *= MathUtils.RAD2DEG;
 
 	// update hash
-	const params = new URLSearchParams();
-	params.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
-	params.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
-	params.set( 'height', cartographicResult.height.toFixed( 2 ) );
-	params.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
-	params.set( 'el', orientationResult.elevation.toFixed( 2 ) );
-	params.set( 'roll', orientationResult.roll.toFixed( 2 ) );
-	window.history.replaceState( undefined, undefined, `#${ params }` );
+	const urlParams = new URLSearchParams();
+	urlParams.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
+	urlParams.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
+	urlParams.set( 'height', cartographicResult.height.toFixed( 2 ) );
+	urlParams.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
+	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
+	urlParams.set( 'roll', orientationResult.roll.toFixed( 2 ) );
+
+	if ( params.useBatchedMesh ) {
+
+		urlParams.set( 'batched', 1 );
+
+	}
+	window.history.replaceState( undefined, undefined, `#${ urlParams }` );
 
 }
 
 function initFromHash() {
 
 	const hash = window.location.hash.replace( /^#/, '' );
-	const params = new URLSearchParams( hash );
-	if ( ! params.has( 'lat' ) && ! params.has( 'lon' ) ) {
+	const urlParams = new URLSearchParams( hash );
+	if ( urlParams.has( 'batched' ) ) {
+
+		params.useBatchedMesh = Boolean( urlParams.get( 'batched' ) );
+
+	}
+
+	if ( ! urlParams.has( 'lat' ) && ! urlParams.has( 'lon' ) ) {
 
 		return;
 
@@ -233,16 +263,16 @@ function initFromHash() {
 
 	// get the position fields
 	const camera = transition.camera;
-	const lat = parseFloat( params.get( 'lat' ) );
-	const lon = parseFloat( params.get( 'lon' ) );
-	const height = parseFloat( params.get( 'height' ) ) || 1000;
+	const lat = parseFloat( urlParams.get( 'lat' ) );
+	const lon = parseFloat( urlParams.get( 'lon' ) );
+	const height = parseFloat( urlParams.get( 'height' ) ) || 1000;
 
-	if ( params.has( 'az' ) && params.has( 'el' ) ) {
+	if ( urlParams.has( 'az' ) && urlParams.has( 'el' ) ) {
 
 		// get the az el fields for rotation if present
-		const az = parseFloat( params.get( 'az' ) );
-		const el = parseFloat( params.get( 'el' ) );
-		const roll = parseFloat( params.get( 'roll' ) ) || 0;
+		const az = parseFloat( urlParams.get( 'az' ) );
+		const el = parseFloat( urlParams.get( 'el' ) );
+		const roll = parseFloat( urlParams.get( 'roll' ) ) || 0;
 
 		// extract the east-north-up frame into matrix world
 		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
@@ -287,6 +317,7 @@ function animate() {
 
 	// update tiles
 	camera.updateMatrixWorld();
+	tiles.errorTarget = params.errorTarget;
 	tiles.update();
 
 	renderer.render( scene, camera );
@@ -299,48 +330,23 @@ function animate() {
 function updateHtml() {
 
 	// render html text updates
-	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = '';
 
 	if ( params.enableCacheDisplay ) {
 
+		const lruCache = tiles.lruCache;
+		const cacheFullness = lruCache.cachedBytes / lruCache.maxBytesSize;
 		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
-
-		const geomSet = new Set();
-		tiles.traverse( tile => {
-
-			const scene = tile.cached.scene;
-			if ( scene ) {
-
-				scene.traverse( c => {
-
-					if ( c.geometry ) {
-
-						geomSet.add( c.geometry );
-
-					}
-
-				} );
-
-			}
-
-		} );
-
-		let count = 0;
-		geomSet.forEach( g => {
-
-			count += estimateBytesUsed( g );
-
-		} );
-		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
+		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( lruCache.cachedBytes / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
 
 	if ( params.enableRendererStats ) {
 
 		const memory = renderer.info.memory;
+		const render = renderer.info.render;
 		const programCount = renderer.info.programs.length;
-		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
+		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount } Draw Calls: ${ render.calls }`;
 
 	}
 

@@ -7,19 +7,12 @@ const _batchIntersects = [];
 // Implementation of BatchedMesh that automatically expands
 export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
-	get instanceCount() {
-
-		return this._currentInstances;
-
-	}
-
 	constructor( ...args ) {
 
 		super( ...args );
 
 		this.expandPercent = 0.25;
 		this.maxInstanceExpansionSize = Infinity;
-		this._currentInstances = 0;
 
 		// set of available geometry ids that are no longer being used
 		this._freeGeometryIds = [];
@@ -39,13 +32,13 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 		freeGeometryIds.forEach( ( id, i ) => {
 
 			// if indices are not needed then they default to - 1
-			const reservedRange = this._reservedRanges[ id ];
-			const { indexCount, vertexCount } = reservedRange;
-			if ( indexCount >= neededIndexCount && vertexCount >= neededVertexCount ) {
+			const geometryInfo = this.getGeometryRangeAt( id );
+			const { reservedIndexCount, reservedVertexCount } = geometryInfo;
+			if ( reservedIndexCount >= neededIndexCount && reservedVertexCount >= neededVertexCount ) {
 
 				// generate score that is a combination of how much unused space a geometry would have if used and pick the
 				// one with the least amount of unused space.
-				const score = ( neededIndexCount - indexCount ) + ( neededVertexCount - vertexCount );
+				const score = ( neededIndexCount - reservedIndexCount ) + ( neededVertexCount - reservedVertexCount );
 				if ( score < bestScore ) {
 
 					bestIndex = i;
@@ -90,12 +83,20 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 		} else {
 
-			try {
+			const needsMoreSpace = () => {
 
-				// try to add the geometry, catching the error if it cannot fit
-				resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
+				const vertexNeedsSpace = this.unusedVertexCount < reservedVertexRange;
+				const indexNeedsSpace = this.unusedIndexCount < reservedIndexRange;
+				return vertexNeedsSpace || indexNeedsSpace;
 
-			} catch {
+			};
+
+			const index = geometry.index;
+			const position = geometry.attributes.position;
+			reservedVertexRange = Math.max( reservedVertexRange, position.count );
+			reservedIndexRange = Math.max( reservedIndexRange, index ? index.count : 0 );
+
+			if ( needsMoreSpace() ) {
 
 				// shift all the unused geometries to try to make space
 				_freeGeometryIds.forEach( id => this.deleteGeometry( id ) );
@@ -103,30 +104,44 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 				this.optimize();
 
-				try {
-
-					// see if we can insert geometry now
-					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
-
-				} catch {
+				if ( needsMoreSpace() ) {
 
 					// lastly try to expand the batched mesh size so the new geometry fits
+
 					const batchedIndex = this.geometry.index;
 					const batchedPosition = this.geometry.attributes.position;
-					const index = geometry.index;
-					const position = geometry.attributes.position;
 
-					const addIndexCount = batchedIndex ? Math.ceil( expandPercent * batchedIndex.count ) : - 1;
-					const newIndexCount = batchedIndex ? Math.max( addIndexCount, reservedIndexRange, index.count ) + batchedIndex.count : - 1;
-					const addVertexCount = Math.ceil( expandPercent * batchedPosition.count );
-					const newVertexCount = Math.max( addVertexCount, reservedVertexRange, position.count ) + batchedPosition.count;
+					// compute the new geometry size to expand to accounting for the case where the geometry is not initialized
+					let newIndexCount, newVertexCount;
+					if ( batchedIndex ) {
+
+						const addIndexCount = Math.ceil( expandPercent * batchedIndex.count );
+						newIndexCount = Math.max( addIndexCount, reservedIndexRange, index.count ) + batchedIndex.count;
+
+					} else {
+
+						newIndexCount = Math.max( this.unusedIndexCount, reservedIndexRange );
+
+					}
+
+					if ( batchedPosition ) {
+
+						const addVertexCount = Math.ceil( expandPercent * batchedPosition.count );
+						newVertexCount = Math.max( addVertexCount, reservedVertexRange, position.count ) + batchedPosition.count;
+
+					} else {
+
+						newVertexCount = Math.max( this.unusedVertexCount, reservedVertexRange );
+
+					}
 
 					this.setGeometrySize( newVertexCount, newIndexCount );
-					resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 				}
 
 			}
+
+			resultId = super.addGeometry( geometry, reservedVertexRange, reservedIndexRange );
 
 		}
 
@@ -137,14 +152,13 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// add an instance and automatically expand the number of instances if necessary
 	addInstance( geometryId ) {
 
-		if ( this.maxInstanceCount === this._currentInstances ) {
+		if ( this.maxInstanceCount === this.instanceCount ) {
 
 			const newCount = Math.ceil( this.maxInstanceCount * ( 1 + this.expandPercent ) );
 			this.setInstanceCount( Math.min( newCount, this.maxInstanceExpansionSize ) );
 
 		}
 
-		this._currentInstances ++;
 		return super.addInstance( geometryId );
 
 	}
@@ -152,15 +166,13 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 	// delete an instance, keeping note that the geometry id is now unused
 	deleteInstance( instanceId ) {
 
-		if ( this._drawInfo[ instanceId ].active === false ) {
+		const geometryId = this.getGeometryIdAt( instanceId );
+		if ( geometryId !== - 1 ) {
 
-			// TODO: how is this happening?
-			return;
+			this._freeGeometryIds.push( geometryId );
 
 		}
 
-		this._freeGeometryIds.push( this.getGeometryIdAt( instanceId ) );
-		this._currentInstances --;
 		return super.deleteInstance( instanceId );
 
 	}
