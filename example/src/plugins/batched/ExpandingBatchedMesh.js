@@ -32,7 +32,7 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 		freeGeometryIds.forEach( ( id, i ) => {
 
 			// if indices are not needed then they default to - 1
-			const geometryInfo = this._geometryInfo[ id ];
+			const geometryInfo = this.getGeometryRangeAt( id );
 			const { reservedIndexCount, reservedVertexCount } = geometryInfo;
 			if ( reservedIndexCount >= neededIndexCount && reservedVertexCount >= neededVertexCount ) {
 
@@ -165,12 +165,6 @@ export class ExpandingBatchedMesh extends ModelViewBatchedMesh {
 
 	// delete an instance, keeping note that the geometry id is now unused
 	deleteInstance( instanceId ) {
-
-		if ( this._instanceInfo[ instanceId ].active === false ) {
-
-			return;
-
-		}
 
 		const geometryId = this.getGeometryIdAt( instanceId );
 		if ( geometryId !== - 1 ) {
