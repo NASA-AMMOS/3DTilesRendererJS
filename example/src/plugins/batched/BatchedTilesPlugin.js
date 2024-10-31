@@ -208,7 +208,6 @@ export class BatchedTilesPlugin {
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
 		batchedMesh.frustumCulled = false;
-		// batchedMesh.sortObjects = false;
 		tiles.group.add( batchedMesh );
 		batchedMesh.updateMatrixWorld();
 
