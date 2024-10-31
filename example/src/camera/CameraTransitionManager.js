@@ -285,7 +285,10 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		const targetNearPlane = MathUtils.lerp( distToPersp + perspectiveCamera.near, distToOrtho + _orthographicCamera.near, alpha );
 		const targetFarPlane = MathUtils.lerp( distToPersp + perspectiveCamera.far, distToOrtho + _orthographicCamera.far, alpha );
-		const planeDelta = targetFarPlane - targetNearPlane;
+		const planeDelta = Math.max( targetFarPlane, 0 ) - Math.max( targetNearPlane, 0 );
+
+		// NOTE: The "planeDelta * 1e-5" can wind up being larger than either of the camera near planes, resulting
+		// in some clipping during the transition phase.
 
 		// update the camera state
 		transitionCamera.aspect = perspectiveCamera.aspect;
