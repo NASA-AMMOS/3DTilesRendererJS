@@ -35,7 +35,7 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	apiKey: apiKey,
-	batched: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
 	errorTarget: 40,
 
 	reload: reinstantiateTiles,
@@ -62,7 +62,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 
-	if ( params.batched ) {
+	if ( params.useBatchedMesh ) {
 
 		tiles.registerPlugin( new BatchedTilesPlugin( { renderer } ) );
 
@@ -150,9 +150,9 @@ function init() {
 
 	} );
 
-	const mapsOptions = gui.addFolder( 'Google Tiles' );
+	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	mapsOptions.add( params, 'apiKey' );
-	mapsOptions.add( params, 'batched' ).listen();
+	mapsOptions.add( params, 'useBatchedMesh' ).listen();
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -233,7 +233,7 @@ function updateHash() {
 	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
 	urlParams.set( 'roll', orientationResult.roll.toFixed( 2 ) );
 
-	if ( params.batched ) {
+	if ( params.useBatchedMesh ) {
 
 		urlParams.set( 'batched', 1 );
 
@@ -248,7 +248,7 @@ function initFromHash() {
 	const urlParams = new URLSearchParams( hash );
 	if ( urlParams.has( 'batched' ) ) {
 
-		params.batched = Boolean( urlParams.get( 'batched' ) );
+		params.useBatchedMesh = Boolean( urlParams.get( 'batched' ) );
 
 	}
 
