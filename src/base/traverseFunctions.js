@@ -336,14 +336,13 @@ export function markVisibleTiles( tile, renderer ) {
 	const meetsSSE = tile.__error <= errorRequirement;
 	const childrenWereVisible = tile.__childrenWereVisible;
 
-	// we don't wait for all children tiles to load if this tile set has empty tiles at the root
-	const emptyRootTile = tile.__depthFromRenderedParent === 0;
-	const allChildrenLoaded = tile.__allChildrenLoaded || emptyRootTile;
-
-	// TODO: decide if we should behave differently at root tiles
-	// const allChildrenLoaded = tile.__allChildrenLoaded;
+	// NOTE: We can "trickle" root tiles in by enabling these lines.
+	// Don't wait for all children tiles to load if this tile set has empty tiles at the root
+	// const emptyRootTile = tile.__depthFromRenderedParent === 0;
+	// const allChildrenLoaded = tile.__allChildrenLoaded || emptyRootTile;
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
+	const allChildrenLoaded = tile.__allChildrenLoaded;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
 	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
 
