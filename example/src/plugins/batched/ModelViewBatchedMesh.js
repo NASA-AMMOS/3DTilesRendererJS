@@ -16,7 +16,6 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 	}
 
-
 	setMatrixAt( ...args ) {
 
 		super.setMatrixAt( ...args );
@@ -98,6 +97,8 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 	}
 
 	dispose() {
+
+		super.dispose();
 
 		if ( this._modelViewMatricesTexture ) {
 
