@@ -13,11 +13,13 @@ import {
 } from 'three';
 import {
 	EnvironmentControls,
+	TilesRenderer,
+} from '3d-tiles-renderer';
+import {
 	GLTFMeshFeaturesExtension,
 	GLTFStructuralMetadataExtension,
-	TilesRenderer,
 	CesiumIonAuthPlugin,
-} from '..';
+} from '3d-tiles-renderer/plugins';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';

@@ -2,8 +2,8 @@ import {
 	GlobeControls,
 	TilesRenderer,
 	LUNAR_ELLIPSOID,
-	CesiumIonAuthPlugin,
 } from '3d-tiles-renderer';
+import { CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,

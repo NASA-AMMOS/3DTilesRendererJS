@@ -1,5 +1,4 @@
-import { Vector3, LinearFilter } from 'three';
-import { BufferAttribute, MathUtils } from 'three';
+import { Vector3, LinearFilter, BufferAttribute, MathUtils } from 'three';
 
 const _vec = new Vector3();
 function compressAttribute( attribute, arrayType ) {

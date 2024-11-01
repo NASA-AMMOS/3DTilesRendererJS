@@ -1,6 +1,5 @@
-import { EllipsoidRegion } from '../math/EllipsoidRegion.js';
-import { Mesh, Vector3, MathUtils, BoxGeometry, BufferGeometry, EdgesGeometry, LineSegments } from 'three';
-import { BufferAttribute } from 'three';
+import { EllipsoidRegion } from '../../../three/math/EllipsoidRegion.js';
+import { Mesh, Vector3, MathUtils, BoxGeometry, BufferGeometry, EdgesGeometry, LineSegments, BufferAttribute } from 'three';
 
 const _norm = new Vector3();
 const _norm2 = new Vector3();

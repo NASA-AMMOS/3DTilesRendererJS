@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 // TilesRenderer, controls and attribution imports
 import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, EnvironmentControls } from '3d-tiles-renderer/r3f';
-import { CesiumIonAuthPlugin } from '3d-tiles-renderer';
+import { CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
 
 // Plugins
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';

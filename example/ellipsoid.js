@@ -1,4 +1,5 @@
-import { SphereHelper, EllipsoidRegionLineHelper, EllipsoidRegionHelper } from '3d-tiles-renderer';
+import { SphereHelper } from '../src/plugins/three/objects/SphereHelper.js';
+import { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from '../src/plugins/three/objects/EllipsoidRegionHelper.js';
 import {
 	Scene,
 	Group,

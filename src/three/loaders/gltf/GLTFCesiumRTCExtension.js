@@ -1,26 +1,11 @@
-export class GLTFCesiumRTCExtension {
+import { GLTFCesiumRTCExtension as GLTFCesiumRTCExtensionImpl } from '../../../plugins/index.js';
 
-	constructor() {
+export class GLTFCesiumRTCExtension extends GLTFCesiumRTCExtensionImpl {
 
-		this.name = 'CESIUM_RTC';
+	constructor( ...args ) {
 
-	}
-
-	afterRoot( res ) {
-
-		if ( res.parser.json.extensions && res.parser.json.extensions.CESIUM_RTC ) {
-
-			const { center } = res.parser.json.extensions.CESIUM_RTC;
-
-			if ( center ) {
-
-				res.scene.position.x += center[ 0 ];
-				res.scene.position.y += center[ 1 ];
-				res.scene.position.z += center[ 2 ];
-
-			}
-
-		}
+		super( ...args );
+		console.warn( 'GLTFCesiumRTCExtension: Plugins should now be imported from "3d-tiles-renderer/plugins" path.' );
 
 	}
 
