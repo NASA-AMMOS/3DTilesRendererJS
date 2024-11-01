@@ -1,6 +1,6 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
-import { SphereHelper } from '../objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from '../objects/EllipsoidRegionHelper.js';
+import { SphereHelper } from './objects/SphereHelper.js';
+import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );

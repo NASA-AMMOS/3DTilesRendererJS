@@ -9,8 +9,7 @@ export { GLTFCesiumRTCExtension } from './three/loaders/gltf/GLTFCesiumRTCExtens
 export { GLTFStructuralMetadataExtension } from './three/loaders/gltf/GLTFStructuralMetadataExtension.js';
 export { GLTFMeshFeaturesExtension } from './three/loaders/gltf/GLTFMeshFeaturesExtension.js';
 export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader.js';
-export { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from './three/objects/EllipsoidRegionHelper.js';
-export { SphereHelper } from './three/objects/SphereHelper.js';
+
 export * from './three/math/Ellipsoid.js';
 export * from './three/math/EllipsoidRegion.js';
 export * as GeoUtils from './three/math/GeoUtils.js';
