@@ -4,8 +4,8 @@ import {
 	GeoUtils,
 	GlobeControls,
 	TilesRenderer,
-	GoogleCloudAuthPlugin,
 } from '3d-tiles-renderer';
+import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,

@@ -1,7 +1,5 @@
 import {
 	TilesRenderer,
-	DebugTilesPlugin,
-	ImplicitTilingPlugin,
 	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
@@ -15,6 +13,10 @@ import {
 	CUSTOM_COLOR,
 	LOAD_ORDER,
 } from '3d-tiles-renderer';
+import {
+	DebugTilesPlugin,
+	ImplicitTilingPlugin,
+} from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	DirectionalLight,

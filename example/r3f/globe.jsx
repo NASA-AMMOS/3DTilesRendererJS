@@ -13,7 +13,7 @@ import {
 import { CameraTransition } from './components/CameraTransition.jsx';
 
 // Plugins
-import { GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
 import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
 import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';

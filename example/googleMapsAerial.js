@@ -1,4 +1,5 @@
-import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer } from '3d-tiles-renderer';
+import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
