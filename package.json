@@ -23,7 +23,8 @@
   ],
   "exports": {
     ".": "./src/index.js",
-    "./r3f": "./src/r3f/index.jsx"
+    "./r3f": "./src/r3f/index.jsx",
+    "./plugins": "./src/plugins/index.js"
   },
   "scripts": {
     "start": "vite --config ./vite.config.js",
