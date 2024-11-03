@@ -1,4 +1,4 @@
-import { ImplicitTilingPlugin as ImplicitTilingPluginImpl } from '../../plugins/index.js';
+import { ImplicitTilingPlugin as ImplicitTilingPluginImpl } from '3d-tiles-renderer/plugins';
 
 export class ImplicitTilingPlugin extends ImplicitTilingPluginImpl {
 

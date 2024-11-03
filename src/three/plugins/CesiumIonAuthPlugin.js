@@ -1,4 +1,4 @@
-import { CesiumIonAuthPlugin as CesiumIonAuthPluginImpl } from '../../plugins/index.js';
+import { CesiumIonAuthPlugin as CesiumIonAuthPluginImpl } from '3d-tiles-renderer/plugins';
 
 export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 

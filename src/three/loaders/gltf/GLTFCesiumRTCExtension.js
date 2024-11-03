@@ -1,4 +1,4 @@
-import { GLTFCesiumRTCExtension as GLTFCesiumRTCExtensionImpl } from '../../../plugins/index.js';
+import { GLTFCesiumRTCExtension as GLTFCesiumRTCExtensionImpl } from '3d-tiles-renderer/plugins';
 
 export class GLTFCesiumRTCExtension extends GLTFCesiumRTCExtensionImpl {
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, forwardRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
-import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
+import { TilesRenderer as TilesRendererImpl } from '3d-tiles-renderer';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.jsx';
 import { useObjectDep } from '../utilities/useObjectDep.jsx';
 import { useForceUpdate } from '../utilities/useForceUpdate.jsx';

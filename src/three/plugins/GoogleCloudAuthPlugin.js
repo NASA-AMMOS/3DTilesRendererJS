@@ -1,4 +1,4 @@
-import { GoogleCloudAuthPlugin as GoogleCloudAuthPluginImpl } from '../../plugins/index.js';
+import { GoogleCloudAuthPlugin as GoogleCloudAuthPluginImpl } from '3d-tiles-renderer/plugins';
 
 export class GoogleCloudAuthPlugin extends GoogleCloudAuthPluginImpl {
 

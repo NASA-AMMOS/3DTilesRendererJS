@@ -1,4 +1,4 @@
-import { DebugTilesPlugin as DebugTilesPluginImpl } from '../../plugins/three/DebugTilesPlugin.js';
+import { DebugTilesPlugin as DebugTilesPluginImpl } from '3d-tiles-renderer/plugins';
 
 export {
 	NONE,
@@ -12,7 +12,7 @@ export {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
-} from '../../plugins/three/DebugTilesPlugin.js';
+} from '3d-tiles-renderer/plugins';
 
 export class DebugTilesPlugin extends DebugTilesPluginImpl {
 
