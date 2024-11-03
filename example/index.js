@@ -1,6 +1,5 @@
 import {
 	TilesRenderer,
-	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -16,6 +15,7 @@ import {
 import {
 	DebugTilesPlugin,
 	ImplicitTilingPlugin,
+	GLTFCesiumRTCExtension,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
