@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Added
-- R3F CameraTransition component to examples folder.
+- R3F CameraTransition component to r3f export.
+- CameraTransitionManager to core.
 
 ### Fixed
 - Added name field to "UpdateOnChangePlugin".
