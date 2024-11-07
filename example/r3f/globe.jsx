@@ -9,8 +9,8 @@ import {
 	GlobeControls,
 	EastNorthUpFrame,
 	CompassGizmo,
+	CameraTransition,
 } from '3d-tiles-renderer/r3f';
-import { CameraTransition } from './components/CameraTransition.jsx';
 
 // Plugins
 import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';

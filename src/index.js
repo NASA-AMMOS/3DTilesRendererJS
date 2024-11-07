@@ -20,6 +20,7 @@ export * from './three/renderers/CesiumIonTilesRenderer.js';
 // three.js controls
 export { GlobeControls } from './three/controls/GlobeControls.js';
 export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
+export { CameraTransitionManager } from './three/controls/CameraTransitionManager.js';
 
 // three.js plugins
 export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin.js';

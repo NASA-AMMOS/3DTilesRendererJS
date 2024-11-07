@@ -3,6 +3,7 @@ import {
 	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
+	CameraTransitionManager,
 	TilesRenderer,
 } from '3d-tiles-renderer';
 import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
@@ -17,7 +18,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
 import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
