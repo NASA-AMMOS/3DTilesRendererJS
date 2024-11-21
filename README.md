@@ -170,12 +170,13 @@ scene.add( tilesRenderer2.group );
 
 ## Adding DRACO Decompression Support
 
-Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures. Note that GLTF decoding and PNTS decoding require separate decoders.
+Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
 
 ```js
 
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
+// Decompressing GLTF requires the GLTF branch of the draco decoder
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 
 const dracoLoader = new DRACOLoader();
@@ -193,6 +194,7 @@ Adding support for DRACO decompression within the PNTS files.
 
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
+// Decompressing point clouds should use the master branch of the draco decoder in place of the GLTF branch
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/' );
 
