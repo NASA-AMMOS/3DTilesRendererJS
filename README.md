@@ -409,6 +409,8 @@ downloadQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be set once [update](#update) is called for the first time._
 
+Max jobs defaults to `10`.
+
 ### .parseQueue
 
 ```js
@@ -416,6 +418,8 @@ parseQueue = new PriorityQueue : PriorityQueue
 ```
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
+
+Max jobs defaults to `1`.
 
 ### .group
 
