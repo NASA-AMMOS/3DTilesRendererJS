@@ -18,8 +18,8 @@ import {
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
 	TilesFadePlugin,
+	GLTFExtensionsPlugin,
 } from '3d-tiles-renderer/plugins';
-import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports

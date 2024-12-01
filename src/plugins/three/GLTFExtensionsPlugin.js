@@ -1,5 +1,7 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLTFStructuralMetadataExtension, GLTFMeshFeaturesExtension, GLTFCesiumRTCExtension } from '3d-tiles-renderer/plugins';
+import { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
+import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
+import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
 
 export class GLTFExtensionsPlugin {
 
