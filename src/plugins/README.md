@@ -406,8 +406,6 @@ hasLayer( name : string ) : boolean
 
 ## TileCompressionPlugin
 
-_available in the examples directory_
-
 Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
 
 ### .constructor
@@ -442,8 +440,6 @@ Available options are as follows:
 
 ## TilesFadePlugin
 
-_available in the examples directory_
-
 Plugin that overrides material shaders to fade tile geometry in and out as tile LODs change. Based on [this Cesium article](https://cesium.com/blog/2022/10/20/smoother-lod-transitions-in-cesium-for-unreal/) on the topic.
 
 The plugin will dispatch `fade-change`, `fade-start`, and `fade-end` events per tile on the TilesRenderer when the animation updates. These events should be used in addition to any others required when performing on-demand rendering.
@@ -473,8 +469,6 @@ fadeRootTiles = false : boolean
 Whether to fade the root tile objects in.
 
 ## GLTFExtensionsPlugin
-
-_available in the examples directory_
 
 Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
 
@@ -507,8 +501,6 @@ Available options are as follows:
 ```
 
 ## ReorientationPlugin
-
-_available in the examples directory_
 
 Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
 
