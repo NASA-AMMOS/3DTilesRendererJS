@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Changed
 - Increased default `downloadQueue` max jobs from 4 to 10.
+- Move TilesFadePlugin, TileCompressionPlugin, UpdateOnChangePlugin to `3d-tiles-renderer/plugins`.
 
 ## [0.3.41] - 2024.11.07
 ### Added
