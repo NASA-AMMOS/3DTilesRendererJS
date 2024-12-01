@@ -1,4 +1,6 @@
+import { MeshNormalMaterial } from 'three';
 import { Vector3, LinearFilter, BufferAttribute, MathUtils } from 'three';
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const _vec = new Vector3();
 function compressAttribute( attribute, arrayType ) {
@@ -167,7 +169,7 @@ export class TileCompressionPlugin {
 			// handle geometry attribute compression
 			if ( c.geometry ) {
 
-				const geometry = c.geometry;
+				let geometry = c.geometry;
 				const attributes = geometry.attributes;
 				if ( compressUvs ) {
 
@@ -181,7 +183,10 @@ export class TileCompressionPlugin {
 
 				if ( generateNormals && ! attributes.normals ) {
 
-					geometry.computeVertexNormals();
+					geometry = toCreasedNormals( geometry, 30 * MathUtils.DEG2RAD );
+					c.geometry = geometry;
+
+					c.material = new MeshNormalMaterial();
 
 				}
 

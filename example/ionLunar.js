@@ -3,16 +3,18 @@ import {
 	TilesRenderer,
 	LUNAR_ELLIPSOID,
 } from '3d-tiles-renderer';
-import { CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
+import {
+	CesiumIonAuthPlugin,
+	UpdateOnChangePlugin,
+	TileCompressionPlugin,
+	TilesFadePlugin,
+} from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
 } from 'three';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
-import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
 
 let controls, scene, camera, renderer, tiles;
 

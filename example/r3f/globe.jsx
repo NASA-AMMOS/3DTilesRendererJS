@@ -13,11 +13,13 @@ import {
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
-import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
+import {
+	GoogleCloudAuthPlugin,
+	UpdateOnChangePlugin,
+	TileCompressionPlugin,
+	TilesFadePlugin,
+} from '3d-tiles-renderer/plugins';
 import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
-import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
-import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';
-import { UpdateOnChangePlugin } from '../src/plugins/UpdateOnChangePlugin.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports

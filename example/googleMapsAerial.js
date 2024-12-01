@@ -1,5 +1,5 @@
 import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer } from '3d-tiles-renderer';
-import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
+import { GoogleCloudAuthPlugin, TilesFadePlugin, TileCompressionPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
@@ -11,8 +11,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 
 let camera, controls, scene, renderer, tiles;
 
