@@ -194,7 +194,7 @@ Plugins to register to the TilesRenderer instance to modify behavior.
 
 ```js
 const tiles = new TilesRenderer( url );
-tiles.registerPlugin( new TilesCompressionPlugin() );
+tiles.registerPlugin( new TileCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
@@ -404,7 +404,7 @@ unregisterLayer( name : string ) : void
 hasLayer( name : string ) : boolean
 ```
 
-## TilesCompressionPlugin
+## TileCompressionPlugin
 
 _available in the examples directory_
 

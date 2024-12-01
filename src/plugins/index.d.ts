@@ -2,7 +2,7 @@
 export { CesiumIonAuthPlugin } from './three/CesiumIonAuthPlugin';
 export { GoogleCloudAuthPlugin } from './three/GoogleCloudAuthPlugin';
 export { UpdateOnChangePlugin } from './three/UpdateOnChangePlugin';
-export { TilesCompressionPlugin } from './three/TilesCompressionPlugin';
+export { TileCompressionPlugin } from './three/TileCompressionPlugin';
 export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
 export * from './three/DebugTilesPlugin';
 
