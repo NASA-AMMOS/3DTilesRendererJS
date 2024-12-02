@@ -84,6 +84,7 @@ function App() {
 	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<Canvas
+			frameloop='demand'
 			camera={ {
 				position: [ 0, 0.5 * 1e7, 1.5 * 1e7 ],
 			} }
