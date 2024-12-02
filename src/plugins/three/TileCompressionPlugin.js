@@ -167,7 +167,7 @@ export class TileCompressionPlugin {
 			// handle geometry attribute compression
 			if ( c.geometry ) {
 
-				let geometry = c.geometry;
+				const geometry = c.geometry;
 				const attributes = geometry.attributes;
 				if ( compressUvs ) {
 
