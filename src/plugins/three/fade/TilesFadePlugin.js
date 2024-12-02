@@ -121,6 +121,7 @@ function onUpdateAfter() {
 	if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
 		tiles.dispatchEvent( { type: 'fade-change' } );
+		tiles.dispatchEvent( { type: 'force-rerender' } );
 
 	}
 
@@ -240,8 +241,20 @@ export class TilesFadePlugin {
 		tiles.group.add( fadeGroup );
 
 		const fadeManager = this._fadeManager;
-		fadeManager.onFadeSetStart = () => tiles.dispatchEvent( { type: 'fade-start' } );
-		fadeManager.onFadeSetComplete = () => tiles.dispatchEvent( { type: 'fade-end' } );
+		fadeManager.onFadeSetStart = () => {
+
+			tiles.dispatchEvent( { type: 'fade-start' } );
+			tiles.dispatchEvent( { type: 'force-rerender' } );
+
+		};
+
+		fadeManager.onFadeSetComplete = () => {
+
+			tiles.dispatchEvent( { type: 'fade-end' } );
+			tiles.dispatchEvent( { type: 'force-rerender' } );
+
+		};
+
 		fadeManager.onFadeComplete = onFadeComplete.bind( this );
 
 		this.tiles = tiles;
