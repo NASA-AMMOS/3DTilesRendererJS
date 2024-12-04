@@ -2,7 +2,7 @@ import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';
 import { TilesRendererContext } from './TilesRenderer';
-import { closestRayEllipsoidSurfacePointEstimate } from '../../three/controls/utils';
+import { closestRayEllipsoidSurfacePointEstimate } from '../../three/controls/utils.js';
 
 // Based in part on @pmndrs/drei's Gizmo component
 

@@ -1,4 +1,4 @@
-import { GLTFMeshFeaturesExtension as GLTFMeshFeaturesExtensionImpl } from '../../../plugins/index.js';
+import { GLTFMeshFeaturesExtension as GLTFMeshFeaturesExtensionImpl } from '3d-tiles-renderer/plugins';
 
 export class GLTFMeshFeaturesExtension extends GLTFMeshFeaturesExtensionImpl {
 
