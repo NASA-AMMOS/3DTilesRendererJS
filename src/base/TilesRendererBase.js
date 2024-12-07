@@ -115,7 +115,7 @@ export class TilesRendererBase {
 	constructor( url = null ) {
 
 		// state
-		this.rootTileSetTriggered = false;
+		this.rootLoadingState = UNLOADED;
 		this.rootTileSet = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
@@ -233,10 +233,12 @@ export class TilesRendererBase {
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
-		if ( ! this.rootTileSetTriggered ) {
+		if ( this.rootLoadingState === UNLOADED ) {
 
-			this.rootTileSetTriggered = true;
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() );
+			this.rootLoadingState = LOADING;
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
+				.then( () => this.rootLoadingState = LOADED )
+				.catch( () => this.rootLoadingState = FAILED );
 
 		}
 
@@ -278,6 +280,13 @@ export class TilesRendererBase {
 	}
 
 	resetFailedTiles() {
+
+		// reset the root tile if it's finished but never loaded
+		if ( this.rootLoadingState === FAILED ) {
+
+			this.rootLoadingState = UNLOADED;
+
+		}
 
 		const stats = this.stats;
 		if ( stats.failed === 0 ) {

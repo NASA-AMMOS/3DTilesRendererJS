@@ -59,6 +59,9 @@ export class GoogleCloudAuthPlugin {
 
 		}
 
+		// reset the tiles in case this plugin was removed and re-added
+		tiles.resetFailedTiles();
+
 		if ( tiles.rootURL == null ) {
 
 			tiles.rootURL = 'https://tile.googleapis.com/v1/3dtiles/root.json';

@@ -104,7 +104,7 @@ function App() {
 				3D Tiles renderer tile set
 				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
 			*/}
-			<TilesRenderer key={ apiToken } group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
+			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
 				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
