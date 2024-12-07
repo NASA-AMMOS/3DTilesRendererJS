@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.43] - 2024.12-07
 ### Fixed
 - TilesFadePlugin: Adjust "TilesFadePlugin" such that it causes are rerender for r3f.
 - EnvironmentControls: Fix orthographic camera zoom so it does not pop if too close to a surface.
