@@ -81,6 +81,10 @@ function App() {
 		ortho: false,
 	};
 
+	// TODO: the renderer is rerendering due to floating point issues
+	// - see if we should trigger an invalidate on tiles plugin add and params change
+	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
+
 	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<Canvas
