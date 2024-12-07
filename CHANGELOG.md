@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - TilesFadePlugin: Adjust "TilesFadePlugin" such that it causes are rerender for r3f.
 - EnvironmentControls: Fix orthographic camera zoom so it does not pop if too close to a surface.
+- CesiumIonAuthPlugin and GoogleCloudAuthPlugin: The plugins now automatically retry root tile if it hasn't been loaded upon add.
  
 ## [0.3.42] - 2024.12.02
 ### Changed
