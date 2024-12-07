@@ -383,8 +383,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				this.dispatchEvent( { type: 'load-content' } );
 
-			} )
-			.catch( () => {} );
+			} );
 
 	}
 
