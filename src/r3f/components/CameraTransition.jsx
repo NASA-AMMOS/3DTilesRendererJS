@@ -4,7 +4,7 @@ import { CameraTransitionManager } from '3d-tiles-renderer';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
-	const { mode, onTransitionStart, onTransitionEnd, perspectiveCamera, orthographicCamera } = props;
+	const { mode = 'perspective', onTransitionStart, onTransitionEnd, perspectiveCamera, orthographicCamera } = props;
 	const [ set, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
