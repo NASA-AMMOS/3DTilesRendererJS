@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>@react-three/fiber Cesium Ion</title>
+		<style>
+			html {
+				overflow: hidden;
+				font-family: Arial, Helvetica, sans-serif;
+				user-select: none;
+			}
+
+			#info {
+				position: absolute;
+				top: 0;
+				left: 0;
+				color: white;
+				width: 100%;
+				text-align: center;
+				padding: 5px;
+				pointer-events: none;
+				line-height: 1.5em;
+				z-index: 1;
+			}
+
+			#info a {
+				color: white;
+				pointer-events: all;
+			}
+		</style>
+		<script type="module" crossorigin src="../assets/ion-BYn61SG9.js"></script>
+		<link rel="modulepreload" crossorigin href="../assets/three.module-DpclfMcJ.js">
+		<link rel="modulepreload" crossorigin href="../assets/EnvironmentControls-C8X7oAWq.js">
+		<link rel="modulepreload" crossorigin href="../assets/Ellipsoid-Cnb0UTwk.js">
+		<link rel="modulepreload" crossorigin href="../assets/GlobeControls-BUn2ddB7.js">
+		<link rel="modulepreload" crossorigin href="../assets/readMagicBytes-Da5ueiou.js">
+		<link rel="modulepreload" crossorigin href="../assets/LoaderBase-CVSPpjX2.js">
+		<link rel="modulepreload" crossorigin href="../assets/GLTFLoader-DkJa3Jo5.js">
+		<link rel="modulepreload" crossorigin href="../assets/I3DMLoader-BlebwdUJ.js">
+		<link rel="modulepreload" crossorigin href="../assets/B3DMLoader-B2OeBq6-.js">
+		<link rel="modulepreload" crossorigin href="../assets/PNTSLoader-BMN5TswI.js">
+		<link rel="modulepreload" crossorigin href="../assets/CMPTLoader-nLXQ3OXQ.js">
+		<link rel="modulepreload" crossorigin href="../assets/GLTFExtensionLoader-TubLlshp.js">
+		<link rel="modulepreload" crossorigin href="../assets/EllipsoidRegion-D6hT1syi.js">
+		<link rel="modulepreload" crossorigin href="../assets/TilesRenderer-B1NhZ5io.js">
+		<link rel="modulepreload" crossorigin href="../assets/CameraControls-B-lu7wDH.js">
+		<link rel="modulepreload" crossorigin href="../assets/DRACOLoader-DJWREZh5.js">
+		<link rel="modulepreload" crossorigin href="../assets/Pass-inUSP30K.js">
+		<link rel="modulepreload" crossorigin href="../assets/GLTFMeshFeaturesExtension-D473cUUw.js">
+		<link rel="modulepreload" crossorigin href="../assets/leva.esm-CJKbaWS2.js">
+		<link rel="modulepreload" crossorigin href="../assets/GoogleCloudAuthPlugin-CWIx3JJD.js">
+		<link rel="modulepreload" crossorigin href="../assets/CesiumIonAuthPlugin-CVl4yipB.js">
+		<link rel="modulepreload" crossorigin href="../assets/UpdateOnChangePlugin-BFotcVNs.js">
+		<link rel="modulepreload" crossorigin href="../assets/GizmoViewport-v_t1OeQj.js">
+	</head>
+	<body>
+		<div id="info">
+			Example using <a href="https://ion.cesium.com/">Cesium Ion</a> & <a href="https://r3f.docs.pmnd.rs">@react-three/fiber</a>.
+			<br/>
+			Paste the evaluation token from the <a target="_blank" href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repository</a> or your own.
+		</div>
+		<div id="root"></div>
+	</body>
+</html>
