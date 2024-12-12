@@ -22,24 +22,24 @@ export interface TilesRendererEventMap {
 export class TilesRenderer extends TilesRendererBase implements EventDispatcher<TilesRendererEventMap> {
 
 	ellipsoid: Ellipsoid;
-	autoDisableRendererCulling : Boolean;
-	optimizeRaycast : Boolean;
+	autoDisableRendererCulling : boolean;
+	optimizeRaycast : boolean;
 
 	manager : LoadingManager;
 
 	group : TilesGroup;
 
-	getBoundingBox( box : Box3 ) : Boolean;
-	getOrientedBoundingBox( box : Box3, matrix : Matrix4 ) : Boolean;
-	getBoundingSphere( sphere: Sphere ) : Boolean;
+	getBoundingBox( box : Box3 ) : boolean;
+	getOrientedBoundingBox( box : Box3, matrix : Matrix4 ) : boolean;
+	getBoundingSphere( sphere: Sphere ) : boolean;
 
-	hasCamera( camera : Camera ) : Boolean;
-	setCamera( camera : Camera ) : Boolean;
-	deleteCamera( camera : Camera ) : Boolean;
+	hasCamera( camera : Camera ) : boolean;
+	setCamera( camera : Camera ) : boolean;
+	deleteCamera( camera : Camera ) : boolean;
 
-	setResolution( camera : Camera, x : Number, y : Number ) : Boolean;
-	setResolution( camera : Camera, resolution : Vector2 ) : Boolean;
-	setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : Boolean;
+	setResolution( camera : Camera, x : number, y : number ) : boolean;
+	setResolution( camera : Camera, resolution : Vector2 ) : boolean;
+	setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean;
 
 	forEachLoadedModel( callback : ( scene : Object3D, tile : Tile ) => void ) : void;
 
