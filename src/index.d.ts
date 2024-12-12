@@ -2,9 +2,9 @@
 export { DebugTilesRenderer } from './three/DebugTilesRenderer';
 export { TilesRenderer } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
-export { B3DMLoader } from './three/loaders/B3DMLoader';
-export { I3DMLoader } from './three/loaders/I3DMLoader';
-export { PNTSLoader } from './three/loaders/PNTSLoader';
+export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader';
+export { I3DMLoader, I3DMScene } from './three/loaders/I3DMLoader';
+export { PNTSLoader, PNTSScene } from './three/loaders/PNTSLoader';
 export { CMPTLoader } from './three/loaders/CMPTLoader';
 export { GLTFCesiumRTCExtension } from './three/loaders/gltf/GLTFCesiumRTCExtension';
 export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader';
@@ -37,3 +37,5 @@ export * from './base/constants';
 
 export { LRUCache } from './utilities/LRUCache';
 export { PriorityQueue } from './utilities/PriorityQueue';
+export { BatchTable } from './utilities/BatchTable';
+export { FeatureTable } from './utilities/FeatureTable';

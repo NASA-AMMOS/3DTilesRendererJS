@@ -1,9 +1,11 @@
 import { PNTSBaseResult, PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase';
+import { BatchTable } from '../../utilities/BatchTable';
 import { FeatureTable } from '../../utilities/FeatureTable';
 import { Points, LoadingManager } from 'three';
 
 interface PNTSScene extends Points {
 
+	batchTable : BatchTable
 	featureTable : FeatureTable;
 
 }
