@@ -1,4 +1,4 @@
-import { EllipsoidRegion } from '../../../three/math/EllipsoidRegion.js';
+import { EllipsoidRegion } from '3d-tiles-renderer';
 import { Mesh, Vector3, MathUtils, BoxGeometry, BufferGeometry, EdgesGeometry, LineSegments, BufferAttribute } from 'three';
 
 const _norm = new Vector3();
