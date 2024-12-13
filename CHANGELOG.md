@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 ### Fixed
-- CameraTransition Component: Allow for not passing in a "mode".
+- CameraTransition R3F Component: Allow for not passing in a "mode".
+- CameraTransition R3F Component: Allow for passing options arguments into the component.
+- CameraTransition R3F Component: Fix on demand rendering not working correctly.
+- Export new B3DM, I3DM, and PNTS types.
 
 ## [0.3.44] - 2024.12.07
 ### Fixed
