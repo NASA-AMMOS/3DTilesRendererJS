@@ -1,10 +1,11 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer';
+import { useDeepOptions } from '../utilities/useOptions';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
-	const { mode = 'perspective', onTransitionStart, onTransitionEnd, perspectiveCamera, orthographicCamera } = props;
+	const { mode = 'perspective', perspectiveCamera, orthographicCamera, ...options } = props;
 	const [ set, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
@@ -84,29 +85,6 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 	}, [ manager, set ] );
 
-	// register for events
-	useEffect( () => {
-
-		if ( onTransitionEnd ) {
-
-			manager.addEventListener( 'transition-end', onTransitionEnd );
-			return () => manager.removeEventListener( 'transition-end', onTransitionEnd );
-
-		}
-
-	}, [ onTransitionEnd, manager ] );
-
-	useEffect( () => {
-
-		if ( onTransitionStart ) {
-
-			manager.addEventListener( 'transition-start', onTransitionStart );
-			return () => manager.removeEventListener( 'transition-start', onTransitionStart );
-
-		}
-
-	}, [ onTransitionStart, manager ] );
-
 	// assign cameras
 	useEffect( () => {
 
@@ -155,6 +133,26 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		}
 
 	}, [ mode, manager, invalidate, controls ] );
+
+	// rerender the frame when the transition animates
+	useEffect( () => {
+
+		const callback = () => invalidate();
+		manager.addEventListener( 'transition-start', callback );
+		manager.addEventListener( 'change', callback );
+		manager.addEventListener( 'transition-end', callback );
+
+		return () => {
+
+			manager.removeEventListener( 'transition-start', callback );
+			manager.removeEventListener( 'change', callback );
+			manager.removeEventListener( 'transition-end', callback );
+
+		};
+
+	}, [ manager, invalidate ] );
+
+	useDeepOptions( manager, options );
 
 	// update animation
 	useFrame( () => {
