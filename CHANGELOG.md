@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.45] - 2024.12.13
 ### Fixed
 - CameraTransition R3F Component: Allow for not passing in a "mode".
 - CameraTransition R3F Component: Allow for passing options arguments into the component.
