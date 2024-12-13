@@ -139,13 +139,13 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		const callback = () => invalidate();
 		manager.addEventListener( 'transition-start', callback );
-		manager.addEventListener( 'transition-change', callback );
+		manager.addEventListener( 'change', callback );
 		manager.addEventListener( 'transition-end', callback );
 
 		return () => {
 
 			manager.removeEventListener( 'transition-start', callback );
-			manager.removeEventListener( 'transition-change', callback );
+			manager.removeEventListener( 'change', callback );
 			manager.removeEventListener( 'transition-end', callback );
 
 		};
