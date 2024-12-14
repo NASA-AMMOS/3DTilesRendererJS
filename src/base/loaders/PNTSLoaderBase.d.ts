@@ -3,7 +3,7 @@ import { FeatureTable } from '../../utilities/FeatureTable';
 
 export interface PNTSBaseResult {
 
-	version : String;
+	version : string;
 	featureTable: FeatureTable;
 	batchTable : BatchTable;
 

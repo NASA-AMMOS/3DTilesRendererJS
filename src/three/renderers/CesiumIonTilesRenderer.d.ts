@@ -3,12 +3,12 @@ import { DebugTilesRenderer } from '../DebugTilesRenderer';
 
 export class CesiumIonTilesRenderer extends TilesRenderer {
 
-	constructor( ionAssetId: String, ionAccessToken: String );
+	constructor( ionAssetId: string, ionAccessToken: string );
 
 }
 
 export class DebugCesiumIonTilesRenderer extends DebugTilesRenderer {
 
-	constructor( ionAssetId: String, ionAccessToken: String );
+	constructor( ionAssetId: string, ionAccessToken: string );
 
 }

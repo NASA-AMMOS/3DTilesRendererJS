@@ -3,18 +3,18 @@ import { Ellipsoid } from './Ellipsoid';
 
 export class EllipsoidRegion extends Ellipsoid {
 
-	latStart: Number;
-	latEnd: Number;
-	lonStart: Number;
-	lonEnd: Number;
-	heightStart: Number;
-	heightEnd: Number;
+	latStart: number;
+	latEnd: number;
+	lonStart: number;
+	lonEnd: number;
+	heightStart: number;
+	heightEnd: number;
 
 	constructor(
-		x: Number, y: Number, z: Number,
-		latStart: Number, latEnd: Number,
-		lonStart: Number, lonEnd: Number,
-		heightStart: Number, heightEnd: Number
+		x: number, y: number, z: number,
+		latStart: number, latEnd: number,
+		lonStart: number, lonEnd: number,
+		heightStart: number, heightEnd: number
 	);
 
 	getBoundingBox( box : Box3, matrix : Matrix4 );

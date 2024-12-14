@@ -1,9 +1,9 @@
 export class CesiumIonAuthPlugin {
 
 	constructor( options : {
-		apiToken: String,
-		assetId?: String | null,
-		autoRefreshToken?: Boolean
+		apiToken: string,
+		assetId?: string | null,
+		autoRefreshToken?: boolean
 	} );
 
 }

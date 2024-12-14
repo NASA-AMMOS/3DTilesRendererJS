@@ -3,12 +3,12 @@ import { TypedArray } from 'three';
 export class TileCompressionPlugin {
 
 	constructor( options: {
-		generateNormals: Boolean,
-		disableMipmaps: Boolean,
-		compressIndex: Boolean,
-		compressNormals: Boolean,
-		compressUvs: Boolean,
-		compressPosition: Boolean,
+		generateNormals: boolean,
+		disableMipmaps: boolean,
+		compressIndex: boolean,
+		compressNormals: boolean,
+		compressUvs: boolean,
+		compressPosition: boolean,
 
 		uvType: TypedArray,
 		normalType: TypedArray,

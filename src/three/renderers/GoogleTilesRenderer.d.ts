@@ -6,9 +6,9 @@ export class GoogleTilesRenderer extends TilesRenderer {
 
 	ellipsoid: Ellipsoid;
 
-	constructor( apiKey: String );
-	getCreditsString(): String;
-	setLatLonToYUp( lat: Number, lon: Number ): void;
+	constructor( apiKey: string );
+	getCreditsString(): string;
+	setLatLonToYUp( lat: number, lon: number ): void;
 
 }
 
@@ -16,9 +16,9 @@ export class DebugGoogleTilesRenderer extends DebugTilesRenderer {
 
 	ellipsoid: Ellipsoid;
 
-	constructor( apiKey: String );
-	getCreditsString(): String;
-	setLatLonToYUp( lat: Number, lon: Number ): void;
+	constructor( apiKey: string );
+	getCreditsString(): string;
+	setLatLonToYUp( lat: number, lon: number ): void;
 
 }
 
@@ -27,8 +27,8 @@ export class GooglePhotorealisticTilesRenderer extends TilesRenderer {
 	ellipsoid: Ellipsoid;
 
 	constructor( url?: string );
-	getCreditsString(): String;
-	setLatLonToYUp( lat: Number, lon: Number ): void;
+	getCreditsString(): string;
+	setLatLonToYUp( lat: number, lon: number ): void;
 
 }
 
@@ -37,7 +37,7 @@ export class DebugGooglePhotorealisticTilesRenderer extends DebugTilesRenderer {
 	ellipsoid: Ellipsoid;
 
 	constructor( url?: string );
-	getCreditsString(): String;
-	setLatLonToYUp( lat: Number, lon: Number ): void;
+	getCreditsString(): string;
+	setLatLonToYUp( lat: number, lon: number ): void;
 
 }

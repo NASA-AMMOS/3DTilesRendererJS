@@ -1,5 +1,5 @@
 export class GoogleCloudAuthPlugin {
 
-	constructor( options : { apiToken: String, autoRefreshToken?: Boolean } );
+	constructor( options : { apiToken: string, autoRefreshToken?: boolean } );
 
 }

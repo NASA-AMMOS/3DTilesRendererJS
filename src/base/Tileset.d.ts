@@ -32,7 +32,7 @@ export interface Tileset {
 	/**
 	 * The error, in meters, introduced if this tileset is not rendered. At runtime, the geometric error is used to compute screen space error (SSE), i.e., the error measured in pixels.
 	 */
-	geometricError: Number;
+	geometricError: number;
 
 	/**
 	 * The root tile.

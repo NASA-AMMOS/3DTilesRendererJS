@@ -2,11 +2,11 @@ export class GLTFExtensionsPlugin {
 
 	constructor( options: {
 		up: '+x' | '-x' | '+y' | '-y' | '+z' | '-z',
-		recenter: Boolean,
+		recenter: boolean,
 
-		lat: Number | null,
-		lon: Number | null,
-		height: Number,
+		lat: number | null,
+		lon: number | null,
+		height: number,
 	} );
 
 }
