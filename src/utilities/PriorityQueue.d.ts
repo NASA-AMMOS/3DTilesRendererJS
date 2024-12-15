@@ -1,8 +1,8 @@
 export class PriorityQueue {
 
-	maxJobs : Number;
-	autoUpdate : Boolean;
-	priorityCallback : ( itemA : any, itemB : any ) => Number;
+	maxJobs : number;
+	autoUpdate : boolean;
+	priorityCallback : ( itemA : any, itemB : any ) => number;
 
 	schedulingCallback : ( func : Function ) => void;
 

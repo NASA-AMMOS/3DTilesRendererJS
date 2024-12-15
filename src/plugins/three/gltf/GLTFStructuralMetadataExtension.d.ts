@@ -10,25 +10,25 @@ class StructuralMetadata {
 
 	textures: Array<Texture | null>;
 
-	getPropertyTableData( tableIndices: Array<Number>, ids: Array<Number>, target: Array = [] ): Array<any>;
-	getPropertyTableInfo( tableIndices: Array<Number> | null = null ): Array<{ name: String, className: string }>;
+	getPropertyTableData( tableIndices: Array<number>, ids: Array<number>, target: Array = [] ): Array<any>;
+	getPropertyTableInfo( tableIndices: Array<number> | null = null ): Array<{ name: string, className: string }>;
 
-	getPropertyTextureData( triangle: Number, barycoord: Vector3, target: Array = [] ): Array<any>;
-	getPropertyTextureDataAsync( triangle: Number, barycoord: Vector3, target: Array = [] ): Promise<Array<any>>;
+	getPropertyTextureData( triangle: number, barycoord: Vector3, target: Array = [] ): Array<any>;
+	getPropertyTextureDataAsync( triangle: number, barycoord: Vector3, target: Array = [] ): Promise<Array<any>>;
 	getPropertyTextureInfo(): Array<{
-		name: String,
+		name: string,
 		className: string,
 		properties: {
 			[key: string]: {
-				index: Number,
-				texCoord: Number,
-				channels: Array<Number>,
+				index: number,
+				texCoord: number,
+				channels: Array<number>,
 			}
 		}
 	}>;
 
-	getPropertyAttributeData( attributeIndex: Number, target: Array = [] ): Array<any>;
-	getPropertyAttributeInfo(): Array<{ name: String, className: string }>;
+	getPropertyAttributeData( attributeIndex: number, target: Array = [] ): Array<any>;
+	getPropertyAttributeInfo(): Array<{ name: string, className: string }>;
 
 	dispose(): void;
 

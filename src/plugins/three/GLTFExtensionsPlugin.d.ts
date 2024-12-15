@@ -5,14 +5,14 @@ import { GLTFLoaderPlugin, GLTFParser } from 'three/examples/jsm/loaders/GLTFLoa
 export class GLTFExtensionsPlugin {
 
 	constructor( options: {
-		metadata: Boolean,
-		rtc: Boolean,
+		metadata: boolean,
+		rtc: boolean,
 
 		plugins: Array<( parser: GLTFParser ) => GLTFLoaderPlugin>,
 
 		dracoLoader: DRACOLoader | null,
 		ktxLoader: KTX2Loader | null,
-		autoDispose: Boolean,
+		autoDispose: boolean,
 	} );
 
 }

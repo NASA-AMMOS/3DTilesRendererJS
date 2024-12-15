@@ -3,13 +3,13 @@ import { PriorityQueue } from '../utilities/PriorityQueue';
 
 export class TilesRendererBase {
 
-	readonly rootTileSet : Object | null;
-	readonly root : Object | null;
+	readonly rootTileSet : object | null;
+	readonly root : object | null;
 
-	errorTarget : Number;
-	errorThreshold : Number;
-	displayActiveTiles : Boolean;
-	maxDepth : Number;
+	errorTarget : number;
+	errorThreshold : number;
+	displayActiveTiles : boolean;
+	maxDepth : number;
 
 	fetchOptions : RequestInit;
 	preprocessURL : ( ( uri: string | URL ) => string ) | null;
@@ -18,16 +18,16 @@ export class TilesRendererBase {
 	parseQueue : PriorityQueue;
 	downloadQueue : PriorityQueue;
 
-	constructor( url?: String );
+	constructor( url?: string );
 	update() : void;
-	registerPlugin( plugin: Object ) : void;
-	unregisterPlugin( plugin: Object | String ) : Boolean;
-	getPluginByName( plugin: Object | String ) : Object;
+	registerPlugin( plugin: object ) : void;
+	unregisterPlugin( plugin: object | string ) : boolean;
+	getPluginByName( plugin: object | string ) : object;
 	traverse(
-		beforeCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null,
-		afterCb : ( ( tile : Object, parent : Object, depth : Number ) => Boolean ) | null
+		beforeCb : ( ( tile : object, parent : object, depth : number ) => boolean ) | null,
+		afterCb : ( ( tile : object, parent : object, depth : number ) => boolean ) | null
 	) : void;
-	getAttributions( target? : Array<{ type: String, value: any }> ) : Array<{ type: String, value: any }>;
+	getAttributions( target? : Array<{ type: string, value: any }> ) : Array<{ type: string, value: any }>;
 
 	dispose() : void;
 	resetFailedTiles() : void;

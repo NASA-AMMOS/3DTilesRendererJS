@@ -14,16 +14,16 @@ export const RANDOM_NODE_COLOR: ColorMode;
 export const CUSTOM_COLOR: ColorMode;
 export class DebugTilesPlugin {
 
-	displayBoxBounds : Boolean;
-	displaySphereBounds : Boolean;
-	displayRegionBounds : Boolean;
+	displayBoxBounds : boolean;
+	displaySphereBounds : boolean;
+	displayRegionBounds : boolean;
 	colorMode : ColorMode;
 
-	maxDebugDepth : Number;
-	maxDebugDistance : Number;
-	maxDebugError : Number;
+	maxDebugDepth : number;
+	maxDebugDistance : number;
+	maxDebugError : number;
 
-	getDebugColor : ( val: Number, target: Color ) => void;
+	getDebugColor : ( val: number, target: Color ) => void;
 	customColorCallback : ( val: Tile, target: Color ) => void;
 
 }
