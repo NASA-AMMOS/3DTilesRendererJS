@@ -323,6 +323,12 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // fired when a tiles visibility changes
 { type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
+
+// fired when tiles start loading
+{ type: 'tiles-load-start' }
+
+// fired when all tiles finish loading
+{ type: 'tiles-load-end' }
 ```
 
 ### .fetchOptions
