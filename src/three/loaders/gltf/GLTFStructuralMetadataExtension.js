@@ -1,4 +1,4 @@
-import { GLTFStructuralMetadataExtension as GLTFStructuralMetadataExtensionImpl } from '../../../plugins/index.js';
+import { GLTFStructuralMetadataExtension as GLTFStructuralMetadataExtensionImpl } from '3d-tiles-renderer/plugins';
 
 export class GLTFStructuralMetadataExtension extends GLTFStructuralMetadataExtensionImpl {
 
