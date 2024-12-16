@@ -41,6 +41,7 @@
 		"parser": "@typescript-eslint/parser",
 		"plugins": [ "@typescript-eslint" ],
 		"rules": {
+			"no-undef": "off",
 			"no-unused-vars": [ "error", { "args": "none" } ],
 			"indent": [ "error", "tab" ],
 			"no-dupe-class-members": "off",
