@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
+import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-export class GLTFMeshFeaturesExtension {
+export class GLTFMeshFeaturesExtension implements GLTFLoaderPlugin {
 
 	name: 'EXT_mesh_features';
 
