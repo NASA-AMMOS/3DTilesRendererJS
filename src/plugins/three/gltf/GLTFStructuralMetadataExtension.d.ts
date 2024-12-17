@@ -1,6 +1,7 @@
 import { Vector3, Texture } from 'three';
+import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-export class GLTFStructuralMetadataExtension {
+export class GLTFStructuralMetadataExtension implements GLTFLoaderPlugin {
 
 	name: 'EXT_structural_metadata';
 
