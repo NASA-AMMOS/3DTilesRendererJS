@@ -1,6 +1,6 @@
 // three.js
 export { DebugTilesRenderer } from './three/DebugTilesRenderer';
-export { TilesRenderer } from './three/TilesRenderer';
+export { TilesRenderer, TilesRendererPlugin } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
 export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader';
 export { I3DMLoader, I3DMScene } from './three/loaders/I3DMLoader';
@@ -24,7 +24,7 @@ export * from './three/plugins/DebugTilesPlugin';
 export { ImplicitTilingPlugin } from './base/plugins/ImplicitTilingPlugin';
 
 // common
-export { TilesRendererBase } from './base/TilesRendererBase';
+export { TilesRendererBase, TilesRendererBasePlugin } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
 export { TileBase } from './base/TileBase';
 export { Tileset } from './base/Tileset';
