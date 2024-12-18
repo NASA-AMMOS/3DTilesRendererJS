@@ -886,18 +886,29 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
+		const invoked = this.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, visible ) );
 		const scene = tile.cached.scene;
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 		if ( visible ) {
 
-			group.add( scene );
+			if ( ! invoked ) {
+
+				group.add( scene );
+				scene.updateMatrixWorld( true );
+
+			}
+
 			visibleTiles.add( tile );
-			scene.updateMatrixWorld( true );
 
 		} else {
 
-			group.remove( scene );
+			if ( ! invoked ) {
+
+				group.remove( scene );
+
+			}
+
 			visibleTiles.delete( tile );
 
 		}

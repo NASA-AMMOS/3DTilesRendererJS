@@ -43,6 +43,7 @@ export class BatchedTilesPlugin {
 		this.expandPercent = options.expandPercent;
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
+		this.disposeOriginalTiles = true;
 
 		// local variables
 		this.batchedMesh = null;
@@ -52,6 +53,12 @@ export class BatchedTilesPlugin {
 		this._onDisposeModel = null;
 		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
+
+	}
+
+	setTileVisible( tile, visible ) {
+
+		return true;
 
 	}
 
@@ -100,7 +107,7 @@ export class BatchedTilesPlugin {
 				if ( this.disposeOriginalTiles ) {
 
 					// TODO: ideally we could just set these to null
-					tile.cached.scene = new Group();
+					tile.cached.scene = null;
 					tile.cached.materials = [];
 					tile.cached.geometries = [];
 					tile.cached.textures = [];
