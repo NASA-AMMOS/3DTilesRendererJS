@@ -23,6 +23,7 @@ export class BatchedTilesPlugin {
 			indexCount: 2000,
 			expandPercent: 0.25,
 			maxInstanceCount: Infinity,
+			disposeOriginalTiles: true,
 
 			material: null,
 			renderer: null,
@@ -96,11 +97,15 @@ export class BatchedTilesPlugin {
 			const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 			if ( hasCorrectAttributes && canAddMeshes ) {
 
-				// TODO: ideally we could just set these to null
-				tile.cached.scene = new Group();
-				tile.cached.materials = [];
-				tile.cached.geometries = [];
-				tile.cached.textures = [];
+				if ( this.disposeOriginalTiles ) {
+
+					// TODO: ideally we could just set these to null
+					tile.cached.scene = new Group();
+					tile.cached.materials = [];
+					tile.cached.geometries = [];
+					tile.cached.textures = [];
+
+				}
 
 				scene.updateMatrixWorld();
 
