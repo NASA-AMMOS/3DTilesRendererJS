@@ -23,7 +23,7 @@ export class BatchedTilesPlugin {
 			indexCount: 2000,
 			expandPercent: 0.25,
 			maxInstanceCount: Infinity,
-			disposeOriginalTiles: true,
+			dynamicallyUnloadTiles: false,
 
 			material: null,
 			renderer: null,
@@ -43,7 +43,7 @@ export class BatchedTilesPlugin {
 		this.expandPercent = options.expandPercent;
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
-		this.disposeOriginalTiles = options.disposeOriginalTiles;
+		this.dynamicallyUnloadTiles = options.dynamicallyUnloadTiles;
 
 		// local variables
 		this.batchedMesh = null;
@@ -63,7 +63,7 @@ export class BatchedTilesPlugin {
 
 			this.addSceneToBatchedMesh( scene, tile );
 
-		} else if ( ! this.disposeOriginalTiles ) {
+		} else if ( this.dynamicallyUnloadTiles ) {
 
 			this.removeSceneFromBatchedMesh( scene, tile );
 
@@ -261,10 +261,8 @@ export class BatchedTilesPlugin {
 		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 		if ( hasCorrectAttributes && canAddMeshes ) {
 
-			if ( this.disposeOriginalTiles ) {
+			if ( ! this.dynamicallyUnloadTiles ) {
 
-				// TODO: ideally we could just set these to null
-				// TODO: check if this is adding unnecessary groups to the scene
 				tile.cached.scene = null;
 				tile.cached.materials = [];
 				tile.cached.geometries = [];
