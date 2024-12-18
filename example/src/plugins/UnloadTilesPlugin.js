@@ -14,16 +14,7 @@ export class UnloadTilesPlugin {
 
 	constructor( options = {} ) {
 
-		const {
-			unloadGeometry = true,
-			unloadTextures = true,
-			unloadMaterials = true,
-		} = options;
-
 		this.tiles = null;
-		this.unloadGeometry = unloadGeometry;
-		this.unloadMaterials = unloadMaterials;
-		this.unloadTextures = unloadTextures;
 		this.estimatedGpuBytes = 0;
 
 	}
@@ -46,22 +37,14 @@ export class UnloadTilesPlugin {
 						if ( c.material ) {
 
 							const material = c.material;
-							if ( this.unloadMaterials ) {
+							material.dispose();
 
-								material.dispose();
+							for ( const key in material ) {
 
-							}
+								const value = material[ key ];
+								if ( value && value.isTexture ) {
 
-							if ( this.unloadTextures ) {
-
-								for ( const key in material ) {
-
-									const value = material[ key ];
-									if ( value && value.isTexture ) {
-
-										value.dispose();
-
-									}
+									value.dispose();
 
 								}
 
@@ -69,7 +52,7 @@ export class UnloadTilesPlugin {
 
 						}
 
-						if ( c.geometry && this.unloadGeometry ) {
+						if ( c.geometry ) {
 
 							c.geometry.dispose();
 
@@ -82,7 +65,6 @@ export class UnloadTilesPlugin {
 			}
 
 		};
-
 
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
