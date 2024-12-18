@@ -890,6 +890,8 @@ export class TilesRenderer extends TilesRendererBase {
 		const scene = tile.cached.scene;
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
+
+		// TODO: move "visibleTiles" to TilesRendererBase
 		if ( visible ) {
 
 			if ( ! invoked ) {
