@@ -12,7 +12,7 @@ import { estimateBytesUsed } from '../../../src/three/utilities.js';
 //    - Raycasting needs to be smarter and raycast against non-uploaded geometry
 export class UnloadTilesPlugin {
 
-	constructor( options = {} ) {
+	constructor() {
 
 		this.tiles = null;
 		this.estimatedGpuBytes = 0;

@@ -576,3 +576,17 @@ Available options are as follows:
 	material: null,
 }
 ```
+
+## UnloadTilesPlugin
+
+_available in the examples directory_
+
+Plugin that unloads geometry, textures, and materials of any given tile when the visibility changes to non-visible to save GPU memory. The model still exists on the CPU until it is completely removed from the cache.
+
+### .estimatedGpuBytes
+
+```js
+estimatedGPUBytes : number
+```
+
+The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
