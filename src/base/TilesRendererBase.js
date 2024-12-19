@@ -166,7 +166,24 @@ export class TilesRendererBase {
 
 		}
 
-		this.plugins.push( plugin );
+		// insert the plugin based on the priority registered on the plugin
+		const plugins = this.plugins;
+		const priority = plugin.priority || 0;
+		let insertionPoint = 0;
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			insertionPoint = i;
+
+			const otherPriority = plugins[ i ].priority || 0;
+			if ( otherPriority > priority ) {
+
+				break;
+
+			}
+
+		}
+
+		plugin.splice( insertionPoint, 0, plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
 		if ( plugin.init ) {
 
