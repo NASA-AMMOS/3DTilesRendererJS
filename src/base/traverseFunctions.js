@@ -437,13 +437,13 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
-				renderer.setTileActive( tile, setActive );
+				this.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, setActive ) );
 
 			}
 
 			if ( tile.__wasSetVisible !== setVisible ) {
 
-				renderer.setTileVisible( tile, setVisible );
+				this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
 
 			}
 

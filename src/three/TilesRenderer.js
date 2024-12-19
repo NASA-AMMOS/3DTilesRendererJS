@@ -818,6 +818,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const parent = cached.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
+			// TODO: this should be handled some other way.
 			cached.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
@@ -886,7 +887,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const invoked = this.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, visible ) );
 		const scene = tile.cached.scene;
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
@@ -894,7 +894,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: move "visibleTiles" to TilesRendererBase
 		if ( visible ) {
 
-			if ( ! invoked ) {
+			if ( scene ) {
 
 				group.add( scene );
 				scene.updateMatrixWorld( true );
@@ -905,7 +905,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			if ( ! invoked ) {
+			if ( scene ) {
 
 				group.remove( scene );
 

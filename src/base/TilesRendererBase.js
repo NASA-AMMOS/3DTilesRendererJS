@@ -363,16 +363,17 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
 		if ( tile.__visible ) {
 
-			this.setTileVisible( tile, false );
+			this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 			tile.__visible = false;
 
 		}
 
 		if ( tile.__active ) {
 
-			this.setTileActive( tile, false );
+			this.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, false ) );
 			tile.__active = false;
 
 		}
