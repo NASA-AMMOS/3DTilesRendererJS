@@ -575,10 +575,9 @@ Available options are as follows:
 	// The material to use for the BatchedMesh. The material of the first tile rendered with be used if not set.
 	material: null,
 
-	// If true then tiles are loaded and unloaded as tiles are set to visible and not visible in order to reduce GPU memory usage.
-	// The original tile scene objects and textures are also not removed when this setting is enabled but can cause frame hiccups
-	// due to the frequent data transfer.
-	dynamicallyUnloadTiles: false
+	// If true then the original scene geometry is automatically discarded after adding the geometry to the batched mesh to save memory.
+	// This must be set to "false" if being used with plugins such as "UnloadTilesPlugin".
+	discardOriginalContent: true
 }
 ```
 
