@@ -14,6 +14,8 @@ export class UnloadTilesPlugin {
 
 	constructor() {
 
+		this.name = 'UNLOAD_TILES_PLUGIN';
+
 		this.tiles = null;
 		this.estimatedGpuBytes = 0;
 
@@ -23,7 +25,7 @@ export class UnloadTilesPlugin {
 
 		this.tiles = tiles;
 
-		this._onVisibilityChangeCallback = ( { scene, visible } ) => {
+		this._onVisibilityChangeCallback = ( { scene, visible, tile } ) => {
 
 			if ( scene ) {
 
@@ -32,33 +34,7 @@ export class UnloadTilesPlugin {
 
 				if ( ! visible ) {
 
-					scene.traverse( c => {
-
-						if ( c.material ) {
-
-							const material = c.material;
-							material.dispose();
-
-							for ( const key in material ) {
-
-								const value = material[ key ];
-								if ( value && value.isTexture ) {
-
-									value.dispose();
-
-								}
-
-							}
-
-						}
-
-						if ( c.geometry ) {
-
-							c.geometry.dispose();
-
-						}
-
-					} );
+					tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( tile, scene ) );
 
 				}
 
@@ -74,6 +50,42 @@ export class UnloadTilesPlugin {
 		} );
 
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
+
+	}
+
+	unloadTileFromGPU( scene, tile ) {
+
+		if ( scene ) {
+
+			scene.traverse( c => {
+
+				if ( c.material ) {
+
+					const material = c.material;
+					material.dispose();
+
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							value.dispose();
+
+						}
+
+					}
+
+				}
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+
+				}
+
+			} );
+
+		}
 
 	}
 

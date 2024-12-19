@@ -126,6 +126,9 @@ export class TileCompressionPlugin {
 			...options,
 		};
 
+		this.name = 'TILES_COMPRESSION_PLUGIN';
+		this.priority = - 100;
+
 	}
 
 	processTileModel( scene, tile ) {

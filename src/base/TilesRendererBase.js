@@ -183,7 +183,7 @@ export class TilesRendererBase {
 
 		}
 
-		plugin.splice( insertionPoint, 0, plugin );
+		plugins.splice( insertionPoint, 0, plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
 		if ( plugin.init ) {
 

@@ -23,7 +23,7 @@ export class BatchedTilesPlugin {
 			indexCount: 2000,
 			expandPercent: 0.25,
 			maxInstanceCount: Infinity,
-			dynamicallyUnloadTiles: false,
+			discardOriginalContent: true,
 
 			material: null,
 			renderer: null,
@@ -31,6 +31,7 @@ export class BatchedTilesPlugin {
 		};
 
 		this.name = 'BATCHED_MESH_PLUGIN';
+		this.priority = - 1;
 
 		// limit the amount of instances to the size of a 3d texture to avoid over flowing the
 		const gl = options.renderer.getContext();
@@ -43,7 +44,7 @@ export class BatchedTilesPlugin {
 		this.expandPercent = options.expandPercent;
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
-		this.dynamicallyUnloadTiles = options.dynamicallyUnloadTiles;
+		this.discardOriginalContent = options.discardOriginalContent;
 
 		// local variables
 		this.batchedMesh = null;
@@ -53,44 +54,6 @@ export class BatchedTilesPlugin {
 		this._onDisposeModel = null;
 		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
-
-	}
-
-	setTileVisible( tile, visible ) {
-
-		const scene = tile.cached.scene;
-		if ( visible ) {
-
-			this.addSceneToBatchedMesh( scene, tile );
-
-		} else if ( this.dynamicallyUnloadTiles ) {
-
-			this.removeSceneFromBatchedMesh( scene, tile );
-
-		}
-
-		if ( this._tileToInstanceId.has( tile ) ) {
-
-			const instanceIds = this._tileToInstanceId.get( tile );
-			instanceIds.forEach( instanceId => {
-
-				this.batchedMesh.setVisibleAt( instanceId, visible );
-
-			} );
-
-			// dispatch the event that is blocked otherwise
-			this.tiles.dispatchEvent( {
-				type: 'tile-visibility-change',
-				scene,
-				tile,
-				visible,
-			} );
-
-			return true;
-
-		}
-
-		return false;
 
 	}
 
@@ -149,6 +112,53 @@ export class BatchedTilesPlugin {
 
 		this.arrayTarget = arrayTarget;
 		this.batchedMesh = batchedMesh;
+
+	}
+
+	setTileVisible( tile, visible ) {
+
+		const scene = tile.cached.scene;
+		if ( visible ) {
+
+			this.addSceneToBatchedMesh( scene, tile );
+
+		}
+
+		if ( this._tileToInstanceId.has( tile ) ) {
+
+			const instanceIds = this._tileToInstanceId.get( tile );
+			instanceIds.forEach( instanceId => {
+
+				this.batchedMesh.setVisibleAt( instanceId, visible );
+
+			} );
+
+			// dispatch the event that is blocked otherwise
+			this.tiles.dispatchEvent( {
+				type: 'tile-visibility-change',
+				scene,
+				tile,
+				visible,
+			} );
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+	unloadTileFromGPU( scene, tile ) {
+
+		if ( ! this.discardOriginalContent && this._tileToInstanceId.has( tile ) ) {
+
+			this.removeSceneFromBatchedMesh( scene, tile );
+			return true;
+
+		}
+
+		return false;
 
 	}
 
@@ -269,7 +279,7 @@ export class BatchedTilesPlugin {
 		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 		if ( hasCorrectAttributes && canAddMeshes ) {
 
-			if ( ! this.dynamicallyUnloadTiles ) {
+			if ( this.discardOriginalContent ) {
 
 				tile.cached.scene = null;
 				tile.cached.materials = [];
