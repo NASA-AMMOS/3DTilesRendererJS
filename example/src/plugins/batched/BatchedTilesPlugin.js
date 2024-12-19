@@ -133,8 +133,20 @@ export class BatchedTilesPlugin {
 
 			} );
 
+			// TODO: this should be handled by the base tiles renderer
+			const tiles = this.tiles;
+			if ( visible ) {
+
+				tiles.visibleTiles.add( tile );
+
+			} else {
+
+				tiles.visibleTiles.delete( tile );
+
+			}
+
 			// dispatch the event that is blocked otherwise
-			this.tiles.dispatchEvent( {
+			tiles.dispatchEvent( {
 				type: 'tile-visibility-change',
 				scene,
 				tile,

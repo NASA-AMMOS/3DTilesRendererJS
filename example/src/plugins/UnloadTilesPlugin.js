@@ -34,7 +34,7 @@ export class UnloadTilesPlugin {
 
 				if ( ! visible ) {
 
-					tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( tile, scene ) );
+					tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( scene, tile ) );
 
 				}
 
