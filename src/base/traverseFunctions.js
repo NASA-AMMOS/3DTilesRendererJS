@@ -437,7 +437,7 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
-				renderer.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, setActive ) );
+				this.setTileActive( tile, setActive );
 
 			}
 

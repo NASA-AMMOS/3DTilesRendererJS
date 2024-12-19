@@ -390,7 +390,7 @@ export class TilesRendererBase {
 
 		if ( tile.__active ) {
 
-			this.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, false ) );
+			this.setTileActive( tile, false );
 			tile.__active = false;
 
 		}
