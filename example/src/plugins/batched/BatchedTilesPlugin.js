@@ -78,6 +78,14 @@ export class BatchedTilesPlugin {
 
 			} );
 
+			// dispatch the event that is blocked otherwise
+			this.tiles.dispatchEvent( {
+				type: 'tile-visibility-change',
+				scene,
+				tile,
+				visible,
+			} );
+
 			return true;
 
 		}
