@@ -166,7 +166,24 @@ export class TilesRendererBase {
 
 		}
 
-		this.plugins.push( plugin );
+		// insert the plugin based on the priority registered on the plugin
+		const plugins = this.plugins;
+		const priority = plugin.priority || 0;
+		let insertionPoint = 0;
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			insertionPoint = i;
+
+			const otherPriority = plugins[ i ].priority || 0;
+			if ( otherPriority > priority ) {
+
+				break;
+
+			}
+
+		}
+
+		plugins.splice( insertionPoint, 0, plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
 		if ( plugin.init ) {
 
@@ -363,9 +380,10 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
 		if ( tile.__visible ) {
 
-			this.setTileVisible( tile, false );
+			this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 			tile.__visible = false;
 
 		}
