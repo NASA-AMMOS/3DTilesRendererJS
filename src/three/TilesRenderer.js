@@ -818,6 +818,7 @@ export class TilesRenderer extends TilesRendererBase {
 			const parent = cached.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
+			// TODO: this should be handled some other way.
 			cached.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
@@ -889,15 +890,27 @@ export class TilesRenderer extends TilesRendererBase {
 		const scene = tile.cached.scene;
 		const visibleTiles = this.visibleTiles;
 		const group = this.group;
+
+		// TODO: move "visibleTiles" to TilesRendererBase
 		if ( visible ) {
 
-			group.add( scene );
+			if ( scene ) {
+
+				group.add( scene );
+				scene.updateMatrixWorld( true );
+
+			}
+
 			visibleTiles.add( tile );
-			scene.updateMatrixWorld( true );
 
 		} else {
 
-			group.remove( scene );
+			if ( scene ) {
+
+				group.remove( scene );
+
+			}
+
 			visibleTiles.delete( tile );
 
 		}

@@ -574,5 +574,23 @@ Available options are as follows:
 
 	// The material to use for the BatchedMesh. The material of the first tile rendered with be used if not set.
 	material: null,
+
+	// If true then the original scene geometry is automatically discarded after adding the geometry to the batched mesh to save memory.
+	// This must be set to "false" if being used with plugins such as "UnloadTilesPlugin".
+	discardOriginalContent: true
 }
 ```
+
+## UnloadTilesPlugin
+
+_available in the examples directory_
+
+Plugin that unloads geometry, textures, and materials of any given tile when the visibility changes to non-visible to save GPU memory. The model still exists on the CPU until it is completely removed from the cache.
+
+### .estimatedGpuBytes
+
+```js
+estimatedGPUBytes : number
+```
+
+The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
