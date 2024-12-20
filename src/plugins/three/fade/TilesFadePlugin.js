@@ -256,9 +256,6 @@ export class TilesFadePlugin {
 
 	init( tiles ) {
 
-		tiles.lruCache.minSize = 0;
-		tiles.lruCache.minBytesSize = 0;
-
 		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => {
 
@@ -321,7 +318,6 @@ export class TilesFadePlugin {
 			return true;
 
 		}
-
 
 		// cancel the visibility change trigger because we're fading and will call this after
 		// fade completes.
