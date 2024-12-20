@@ -491,9 +491,10 @@ Available options are as follows:
 	// A list of other extensions to include in the loader. All elements are passed to the "GLTFLoader.register" function.
 	plugins: [],
 
-	// DRACOLoader and KTX2Loader instances to add to the loader.
+	// DRACOLoader, KTX2Loader, and MeshoptDecoder instances to add to the loader.
 	dracoLoader: null,
 	ktxLoader: null,
+	meshoptDecoder: null,
 
 	// Whether to automatically dispose of the DRACO and KTX Loaders when the plugin is disposed.
 	autoDispose: true,

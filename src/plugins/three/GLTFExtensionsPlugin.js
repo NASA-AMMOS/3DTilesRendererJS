@@ -15,6 +15,7 @@ export class GLTFExtensionsPlugin {
 
 			dracoLoader: null,
 			ktxLoader: null,
+			meshoptDecoder: null,
 			autoDispose: true,
 			...options,
 		};
@@ -27,6 +28,7 @@ export class GLTFExtensionsPlugin {
 
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
+		this.meshoptDecoder = options.meshoptDecoder;
 		this._gltfRegex = /\.(gltf|glb)$/g;
 		this._dracoRegex = /\.drc$/g;
 		this._loader = null;
@@ -46,6 +48,12 @@ export class GLTFExtensionsPlugin {
 		if ( this.ktxLoader ) {
 
 			loader.setKTX2Loader( this.ktxLoader );
+
+		}
+
+		if ( this.meshoptDecoder ) {
+
+			loader.setMeshoptDecoder( this.meshoptDecoder );
 
 		}
 
