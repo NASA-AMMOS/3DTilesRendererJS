@@ -14,9 +14,17 @@ function onTileVisibilityChange( scene, tile, visible ) {
 	// it's possible we disable them when adjusting visibility based on frustum
 	scene.visible = true;
 
+	const fadeManager = this._fadeManager;
+	if ( fadeManager.isFadingOut( scene ) ) {
+
+		this._fadingOutCount --;
+
+	}
+
 	if ( ! visible ) {
 
-		this._fadeManager.fadeOut( scene );
+		this._fadingOutCount ++;
+		fadeManager.fadeOut( scene );
 
 	} else {
 
@@ -64,6 +72,8 @@ function onFadeComplete( object, visible ) {
 
 		const tile = this._tileMap.get( object );
 		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+
+		this._fadingOutCount --;
 
 	}
 
@@ -146,7 +156,7 @@ function onUpdateAfter() {
 
 	}
 
-	if ( this.maximumFadeOutTiles < this._fadeManager.getFadingOutTileCount() ) {
+	if ( this.maximumFadeOutTiles < this._fadingOutCount ) {
 
 		// determine whether all the rendering cameras are moving
 		// quickly so we can adjust how tiles fade accordingly
@@ -236,6 +246,7 @@ export class TilesFadePlugin {
 		this._fadeManager = new FadeManager();
 		this._prevCameraTransforms = null;
 		this._tileMap = null;
+		this._fadingOutCount = 0;
 
 		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
 		this.fadeRootTiles = options.fadeRootTiles;

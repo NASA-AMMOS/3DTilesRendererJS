@@ -306,23 +306,6 @@ export class FadeManager {
 
 	}
 
-	getFadingOutTileCount() {
-
-		let tot = 0;
-		this._fadeState.forEach( ( state ) => {
-
-			if ( state.fadeOutTarget === 1 ) {
-
-				tot ++;
-
-			}
-
-		} );
-
-		return tot;
-
-	}
-
 	// Tick the fade timer for each actively fading object
 	update() {
 
