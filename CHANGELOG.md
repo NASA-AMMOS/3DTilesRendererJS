@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Types: Convert types of use non-wrapper types.
 - Types: Adjust GLTF Plugin classes to extend appropriate type.
+- BatchedMeshPlugin: Prevent empty groups from being added for each tile when using BatchedMeshPlugin
+
+### Added
+- Added "priority" field to plugins to ensure correct execution order. `TilesCompression` and `BatchedMesh` plugin will always run first.
+- Added `UnloadTilesPlugin`.
+- Plugins: Add support for "setTileVisible" plugin callbacks.
+- Add names to some plugins that were missing them.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
