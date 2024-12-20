@@ -8,6 +8,8 @@ const _fromQuat = new Quaternion();
 const _toQuat = new Quaternion();
 const _scale = new Vector3();
 
+const _blockedTiles = new Set();
+
 function onTileVisibilityChange( scene, tile, visible ) {
 
 	// ensure the tiles are marked as visible on visibility toggle since
@@ -20,6 +22,8 @@ function onTileVisibilityChange( scene, tile, visible ) {
 		this._fadeManager.fadeOut( scene );
 
 	} else {
+
+		this.tiles.group.add( scene );
 
 		// if this is a root renderable tile and this is the first time rendering in
 		// then pop it in
@@ -59,12 +63,16 @@ function onDisposeModel( scene ) {
 
 }
 
-function onFadeComplete( object ) {
+function onFadeComplete( object, visible ) {
 
-	// when the fade finishes ensure we dispose the tile and remove it from the fade group
+	window.TILES = this.tiles;
+
 	if ( object.parent === this._fadeGroup ) {
 
+		const tile = this._tileMap.get( object );
 		this._fadeGroup.remove( object );
+
+		// this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 
 	}
 
@@ -213,9 +221,9 @@ export class TilesFadePlugin {
 
 		options = {
 
-			maximumFadeOutTiles: 50,
+			maximumFadeOutTiles: Infinity,
 			fadeRootTiles: false,
-			fadeDuration: 250,
+			fadeDuration: 1000,
 			...options,
 
 		};
@@ -277,7 +285,6 @@ export class TilesFadePlugin {
 
 		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
 		this._onDisposeModel = e => onDisposeModel.call( this, e.scene );
-		this._onTileVisibilityChange = e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible );
 		this._onAddCamera = e => onAddCamera.call( this, e.camera );
 		this._onDeleteCamera = e => onDeleteCamera.call( this, e.camera );
 		this._onUpdateBefore = () => onUpdateBefore.call( this );
@@ -285,11 +292,37 @@ export class TilesFadePlugin {
 
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 		tiles.addEventListener( 'add-camera', this._onAddCamera );
 		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.addEventListener( 'update-before', this._onUpdateBefore );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+
+	}
+
+	setTileVisible( tile, visible ) {
+
+		const scene = tile.cached.scene;
+		const wasFading = this._fadeManager.isFading( scene );
+		onTileVisibilityChange.call( this, scene, tile, visible );
+
+		return false;
+
+		const isFading = this._fadeManager.isFading( scene );
+		if ( ! visible && isFading ) {
+
+			// cancel the visibility change trigger because we're fading and
+			// will call this after fade completes.
+			return true;
+
+		}
+
+		if ( visible && wasFading ) {
+
+			return true;
+
+		}
+
+		return false;
 
 	}
 
@@ -298,7 +331,6 @@ export class TilesFadePlugin {
 		const tiles = this.tiles;
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 		tiles.removeEventListener( 'add-camera', this._onAddCamera );
 		tiles.removeEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.removeEventListener( 'update-before', this._onUpdateBefore );

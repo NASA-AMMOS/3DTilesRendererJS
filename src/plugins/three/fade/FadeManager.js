@@ -186,6 +186,8 @@ export class FadeManager {
 		const fadeState = this._fadeState;
 		if ( ! fadeState.has( object ) ) return;
 
+		const visible = fadeState.get( object ).fadeOutTarget === 0;
+
 		fadeState.delete( object );
 		object.traverse( child => {
 
@@ -204,7 +206,7 @@ export class FadeManager {
 
 		if ( this.onFadeComplete ) {
 
-			this.onFadeComplete( object );
+			this.onFadeComplete( object, visible );
 
 		}
 
@@ -288,6 +290,29 @@ export class FadeManager {
 			}
 
 		}
+
+	}
+
+	isFading( object ) {
+
+		return this._fadeState.has( object );
+
+	}
+
+	getFadingOutTileCount() {
+
+		let tot = 0;
+		this._fadeState.forEach( ( state ) => {
+
+			if ( state.fadeOutTarget === 1 ) {
+
+				tot ++;
+
+			}
+
+		} );
+
+		return tot;
 
 	}
 
