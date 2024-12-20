@@ -85,6 +85,7 @@ export class UnloadTilesPlugin {
 			// update lruCache in "update" in case the callback values change
 			lruCache.unloadPriorityCallback = tiles.lruCache.unloadPriorityCallback;
 			lruCache.computeMemoryUsageCallback = tiles.lruCache.computeMemoryUsageCallback;
+			lruCache.minSize = Infinity;
 			lruCache.maxSize = Infinity;
 			lruCache.maxBytesSize = Infinity;
 
