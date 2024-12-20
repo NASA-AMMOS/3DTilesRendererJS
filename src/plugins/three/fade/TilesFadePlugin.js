@@ -70,6 +70,7 @@ function onFadeComplete( object, visible ) {
 
 	if ( ! visible ) {
 
+		// now that the tile is hidden we can run the built-in setTileVisible function for the tile
 		const tile = this._tileMap.get( object );
 		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 
