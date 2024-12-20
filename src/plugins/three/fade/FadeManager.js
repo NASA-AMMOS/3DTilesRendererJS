@@ -299,6 +299,13 @@ export class FadeManager {
 
 	}
 
+	isFadingOut( object ) {
+
+		const state = this._fadeState.get( object );
+		return state && state.fadeOutTarget === 1;
+
+	}
+
 	getFadingOutTileCount() {
 
 		let tot = 0;

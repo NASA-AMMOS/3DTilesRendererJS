@@ -8,8 +8,6 @@ const _fromQuat = new Quaternion();
 const _toQuat = new Quaternion();
 const _scale = new Vector3();
 
-const _blockedTiles = new Set();
-
 function onTileVisibilityChange( scene, tile, visible ) {
 
 	// ensure the tiles are marked as visible on visibility toggle since
@@ -65,14 +63,12 @@ function onDisposeModel( scene ) {
 
 function onFadeComplete( object, visible ) {
 
-	window.TILES = this.tiles;
-
-	if ( object.parent === this._fadeGroup ) {
+	if ( ! visible ) {
 
 		const tile = this._tileMap.get( object );
 		this._fadeGroup.remove( object );
 
-		// this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 
 	}
 
@@ -139,7 +135,18 @@ function onUpdateAfter() {
 
 		tiles.visibleTiles.forEach( t => {
 
-			t.cached.scene.visible = t.__inFrustum;
+			// if a tile is fading out then it may not be traversed and thus will not have
+			// the frustum flag set correctly.
+			const scene = t.cached.scene;
+			if ( fadeManager.isFadingOut( scene ) ) {
+
+				scene.visible = true;
+
+			} else {
+
+				scene.visible = t.__inFrustum;
+
+			}
 
 		} );
 
@@ -229,6 +236,7 @@ export class TilesFadePlugin {
 		};
 
 		this.name = 'FADE_TILES_PLUGIN';
+		this.priority = - 1;
 
 		this.tiles = null;
 		this._fadeManager = new FadeManager();
@@ -243,6 +251,9 @@ export class TilesFadePlugin {
 	}
 
 	init( tiles ) {
+
+		tiles.lruCache.minSize = 0;
+		tiles.lruCache.minBytesSize = 0;
 
 		const fadeGroup = new Group();
 		fadeGroup.name = 'TilesFadeGroup';
@@ -305,18 +316,18 @@ export class TilesFadePlugin {
 		const wasFading = this._fadeManager.isFading( scene );
 		onTileVisibilityChange.call( this, scene, tile, visible );
 
-		return false;
+		// if a tile was already fading then it's already marked as visible and in the scene
+		if ( wasFading ) {
 
-		const isFading = this._fadeManager.isFading( scene );
-		if ( ! visible && isFading ) {
-
-			// cancel the visibility change trigger because we're fading and
-			// will call this after fade completes.
 			return true;
 
 		}
 
-		if ( visible && wasFading ) {
+
+		// cancel the visibility change trigger because we're fading and will call this after
+		// fade completes.
+		const isFading = this._fadeManager.isFading( scene );
+		if ( ! visible && isFading ) {
 
 			return true;
 
@@ -329,6 +340,9 @@ export class TilesFadePlugin {
 	dispose() {
 
 		const tiles = this.tiles;
+
+		this._fadeManager.completeAllFades();
+
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.removeEventListener( 'add-camera', this._onAddCamera );
