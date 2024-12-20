@@ -443,7 +443,7 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetVisible !== setVisible ) {
 
-				renderer.setTileVisible( tile, setVisible );
+				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
 
 			}
 
