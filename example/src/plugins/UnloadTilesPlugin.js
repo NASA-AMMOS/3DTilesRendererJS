@@ -69,7 +69,7 @@ export class UnloadTilesPlugin {
 		const unloadCallback = tile => {
 
 			const scene = tile.cached.scene;
-			const visible = tiles.visibleTiles.get( tile );
+			const visible = tiles.visibleTiles.has( tile );
 
 			if ( ! visible ) {
 
@@ -88,6 +88,8 @@ export class UnloadTilesPlugin {
 			lruCache.minSize = Infinity;
 			lruCache.maxSize = Infinity;
 			lruCache.maxBytesSize = Infinity;
+			lruCache.unloadPercent = 1;
+			lruCache.autoMarkUnused = false;
 
 		};
 
@@ -96,7 +98,7 @@ export class UnloadTilesPlugin {
 			if ( visible ) {
 
 				lruCache.add( tile, unloadCallback );
-				lruCache.markUnused( tile );
+				lruCache.markUsed( tile );
 				deferCallbacks.cancel( tile );
 
 			} else {

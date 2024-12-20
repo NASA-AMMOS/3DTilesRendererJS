@@ -40,6 +40,7 @@ class LRUCache {
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 		this.unloadPercent = 0.05;
+		this.autoMarkUnused = true;
 
 		// "itemSet" doubles as both the list of the full set of items currently
 		// stored in the cache (keys) as well as a map to the time the item was last
@@ -380,7 +381,7 @@ class LRUCache {
 
 	}
 
-	scheduleUnload( markUnused = true ) {
+	scheduleUnload() {
 
 		if ( ! this.scheduled ) {
 
@@ -390,7 +391,7 @@ class LRUCache {
 				this.scheduled = false;
 				this.unloadUnusedContent();
 
-				if ( markUnused ) {
+				if ( this.autoMarkUnused ) {
 
 					this.markUnusedQueued = true;
 
