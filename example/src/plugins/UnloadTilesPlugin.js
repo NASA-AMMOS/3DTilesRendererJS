@@ -1,19 +1,56 @@
-import { estimateBytesUsed } from '../../../src/three/utilities.js';
+import { LRUCache } from '3d-tiles-renderer';
 
 // Plugin that disposes tiles on unload to remove them from the GPU, saving memory
 
 // TODO:
 // - abstract the "tile visible" callback so fade tiles can call it when tiles are _actually_ marked as non-visible
-// - add a memory unload function to the tiles renderer that can be called and reacted to by any plugin including BatchedMesh,
-// though this may prevent different options. Something like a subfunction that "disposeTile" calls without full disposal.
 export class UnloadTilesPlugin {
 
-	constructor() {
+	set delay( v ) {
+
+		this.deferCallbacks.delay = v;
+
+	}
+
+	get delay() {
+
+		return this.deferCallbacks.delay;
+
+	}
+
+	set bytesTarget( v ) {
+
+		this.lruCache.minBytesSize = v;
+
+	}
+
+	get bytesTarget() {
+
+		return this.lruCache.minBytesSize;
+
+	}
+
+	get estimatedGpuBytes() {
+
+		return this.lruCache.cachedBytes;
+
+	}
+
+	constructor( options ) {
+
+		const {
+			delay = 0,
+			bytesTarget = 0,
+		} = options;
 
 		this.name = 'UNLOAD_TILES_PLUGIN';
 
 		this.tiles = null;
-		this.estimatedGpuBytes = 0;
+		this.lruCache = new LRUCache();
+		this.deferCallbacks = new DeferCallbackManager();
+
+		this.delay = delay;
+		this.bytesTarget = bytesTarget;
 
 	}
 
@@ -21,18 +58,51 @@ export class UnloadTilesPlugin {
 
 		this.tiles = tiles;
 
-		this._onVisibilityChangeCallback = ( { scene, visible, tile } ) => {
+		const { lruCache, deferCallbacks } = this;
+		deferCallbacks.callback = tile => {
 
-			if ( scene ) {
+			lruCache.markUnused( tile );
+			lruCache.scheduleUnload( false );
 
-				const size = estimateBytesUsed( scene );
-				this.estimatedGpuBytes += visible ? size : - size;
+		};
 
-				if ( ! visible ) {
+		const unloadCallback = tile => {
 
-					tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( scene, tile ) );
+			const scene = tile.cached.scene;
+			const visible = tiles.visibleTiles.has( tile );
 
-				}
+			if ( ! visible ) {
+
+				tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( scene, tile ) );
+
+			}
+
+		};
+
+		this._onUpdateBefore = () => {
+
+			// update lruCache in "update" in case the callback values change
+			lruCache.unloadPriorityCallback = tiles.lruCache.unloadPriorityCallback;
+			lruCache.computeMemoryUsageCallback = tiles.lruCache.computeMemoryUsageCallback;
+			lruCache.minSize = Infinity;
+			lruCache.maxSize = Infinity;
+			lruCache.maxBytesSize = Infinity;
+			lruCache.unloadPercent = 1;
+			lruCache.autoMarkUnused = false;
+
+		};
+
+		this._onVisibilityChangeCallback = ( { tile, visible } ) => {
+
+			if ( visible ) {
+
+				lruCache.add( tile, unloadCallback );
+				lruCache.markUsed( tile );
+				deferCallbacks.cancel( tile );
+
+			} else {
+
+				deferCallbacks.run( tile );
 
 			}
 
@@ -46,6 +116,7 @@ export class UnloadTilesPlugin {
 		} );
 
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
+		tiles.addEventListener( 'update-before', this._onUpdateBefore );
 
 	}
 
@@ -88,7 +159,64 @@ export class UnloadTilesPlugin {
 	dispose() {
 
 		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
-		this.estimatedGpuBytes = 0;
+		this.tiles.removeEventListener( 'update-before', this._onUpdateBefore );
+		this.deferCallbacks.cancelAll();
+
+	}
+
+}
+
+// Manager for running callbacks after a certain amount of time
+class DeferCallbackManager {
+
+	constructor( callback = () => {} ) {
+
+		this.map = new Map();
+		this.callback = callback;
+		this.delay = 0;
+
+	}
+
+	run( tile ) {
+
+		const { map, delay } = this;
+		if ( map.has( tile ) ) {
+
+			throw new Error( 'DeferCallbackManager: Callback already initialized.' );
+
+		}
+
+		if ( delay === 0 ) {
+
+			this.callback( tile );
+
+		} else {
+
+			map.set( tile, setTimeout( () => this.callback( tile ), delay ) );
+
+		}
+
+	}
+
+	cancel( tile ) {
+
+		const { map } = this;
+		if ( map.has( tile ) ) {
+
+			clearTimeout( map.get( tile ) );
+			map.delete( tile );
+
+		}
+
+	}
+
+	cancelAll() {
+
+		this.map.forEach( ( value, tile ) => {
+
+			this.cancel( tile );
+
+		} );
 
 	}
 

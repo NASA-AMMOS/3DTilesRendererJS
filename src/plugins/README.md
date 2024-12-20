@@ -594,3 +594,22 @@ estimatedGPUBytes : number
 ```
 
 The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// The amount of time to wait in milliseconds before unloading tile content from the GPU. This option can be
+	// used to account for cases where the user is moving the camera and tiles are coming in and out of frame.
+	delay: 0,
+
+	// The amount of bytes to unload to.
+	bytesTarget: 0,
+}
+```

@@ -40,6 +40,7 @@ class LRUCache {
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
 		this.unloadPercent = 0.05;
+		this.autoMarkUnused = true;
 
 		// "itemSet" doubles as both the list of the full set of items currently
 		// stored in the cache (keys) as well as a map to the time the item was last
@@ -111,6 +112,12 @@ class LRUCache {
 		bytesMap.set( item, bytes );
 
 		return true;
+
+	}
+
+	has( item ) {
+
+		return this.itemSet.has( item );
 
 	}
 
@@ -199,6 +206,17 @@ class LRUCache {
 
 			itemSet.set( item, Date.now() );
 			usedSet.add( item );
+
+		}
+
+	}
+
+	markUnused( item ) {
+
+		const usedSet = this.usedSet;
+		if ( usedSet.has( item ) ) {
+
+			usedSet.delete( item );
 
 		}
 
@@ -372,7 +390,12 @@ class LRUCache {
 
 				this.scheduled = false;
 				this.unloadUnusedContent();
-				this.markUnusedQueued = true;
+
+				if ( this.autoMarkUnused ) {
+
+					this.markUnusedQueued = true;
+
+				}
 
 			} );
 
