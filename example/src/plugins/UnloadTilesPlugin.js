@@ -77,7 +77,6 @@ export class UnloadTilesPlugin {
 
 			}
 
-
 		};
 
 		this._onUpdateBefore = () => {
