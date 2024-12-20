@@ -818,7 +818,8 @@ export class TilesRenderer extends TilesRendererBase {
 			const parent = cached.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
-			// TODO: this should be handled some other way.
+			// TODO: these are being discarded here to remove the image bitmaps -
+			// can this be handled in another way? Or more generically?
 			cached.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
