@@ -36,7 +36,7 @@ export class UnloadTilesPlugin {
 
 	}
 
-	constructor( options ) {
+	constructor( options = {} ) {
 
 		const {
 			delay = 0,

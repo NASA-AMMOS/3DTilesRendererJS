@@ -24,6 +24,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
+import { UnloadTilesPlugin } from './src/plugins/UnloadTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -63,6 +64,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new UnloadTilesPlugin() );
 
 	if ( params.useBatchedMesh ) {
 

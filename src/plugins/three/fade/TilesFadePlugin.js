@@ -1,4 +1,4 @@
-import { Group, Matrix4, Vector3, Quaternion } from 'three';
+import { Matrix4, Vector3, Quaternion } from 'three';
 import { FadeManager } from './FadeManager.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
