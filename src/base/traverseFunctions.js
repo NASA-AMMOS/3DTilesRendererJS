@@ -437,7 +437,7 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
-				this.setTileActive( tile, setActive );
+				renderer.setTileActive( tile, setActive );
 
 			}
 
