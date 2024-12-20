@@ -60,6 +60,8 @@ export class DebugTilesPlugin {
 		this.name = 'DEBUG_TILES_PLUGIN';
 		this.tiles = null;
 
+		this._enabled = true;
+
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
 		this.boxGroup = null;
@@ -81,6 +83,36 @@ export class DebugTilesPlugin {
 			target.setRGB( value, value, value );
 
 		};
+
+	}
+
+	get enabled() {
+
+		return this._enabled;
+
+	}
+
+	set enabled( v ) {
+
+		if ( v !== this._enabled ) {
+
+			this._enabled = v;
+
+			if ( this._enabled ) {
+
+				if ( this.tiles ) {
+
+					this.init( this.tiles );
+
+				}
+
+			} else {
+
+				this.dispose();
+
+			}
+
+		}
 
 	}
 
@@ -142,6 +174,8 @@ export class DebugTilesPlugin {
 		tiles.addEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.addEventListener( 'update-after', this._onUpdateAfterCB );
 		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
+
+		this._initExtremes();
 
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
@@ -215,11 +249,19 @@ export class DebugTilesPlugin {
 
 	_initExtremes() {
 
+		if ( ! ( this.tiles && this.tiles.root ) ) {
+
+			return;
+
+		}
+
 		// initialize the extreme values of the hierarchy
 		let maxDepth = - 1;
 		let maxError = - 1;
 
-		traverseSet( this.tiles.root, null, ( tile, parent, depth ) => {
+		// Note that we are not using this.tiles.traverse()
+		// as we don't want to pay the cost of preprocessing tiles.
+		traverseSet( this.tiles.root, null, ( tile, _, depth ) => {
 
 			maxDepth = Math.max( maxDepth, depth );
 			maxError = Math.max( maxError, tile.geometricError );
@@ -649,25 +691,30 @@ export class DebugTilesPlugin {
 	dispose() {
 
 		const tiles = this.tiles;
-		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
-		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
-		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
-		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
 
-		// reset all materials
-		this.colorMode = NONE;
-		this._onUpdateAfter();
+		if ( tiles ) {
 
-		// dispose of all helper objects
-		tiles.traverse( tile => {
+			tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
+			tiles.removeEventListener( 'load-model', this._onLoadModelCB );
+			tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
+			tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
 
-			this._onDisposeModel( tile );
+			// reset all materials
+			this.colorMode = NONE;
+			this._onUpdateAfter();
 
-		} );
+			// dispose of all helper objects
+			tiles.traverse( tile => {
 
-		this.boxGroup.removeFromParent();
-		this.sphereGroup.removeFromParent();
-		this.regionGroup.removeFromParent();
+				this._onDisposeModel( tile );
+
+			} );
+
+		}
+
+		this.boxGroup?.removeFromParent();
+		this.sphereGroup?.removeFromParent();
+		this.regionGroup?.removeFromParent();
 
 	}
 
