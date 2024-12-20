@@ -79,7 +79,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.activeTiles = new Set();
 		this.visibleTiles = new Set();
 		this.optimizeRaycast = true;
-		this._eventDispatcher = new EventDispatcher();
 		this._upRotationMatrix = new Matrix4();
 
 		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
@@ -106,6 +105,9 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		this.manager = manager;
 
+		// saved for event dispatcher functions
+		this._listeners = {};
+
 		if ( REVISION_LESS_165 ) {
 
 			// Setting up the override raycasting function to be used by
@@ -127,25 +129,25 @@ export class TilesRenderer extends TilesRendererBase {
 
 	addEventListener( ...args ) {
 
-		this._eventDispatcher.addEventListener( ...args );
+		EventDispatcher.prototype.addEventListener.call( this, ...args );
 
 	}
 
 	hasEventListener( ...args ) {
 
-		this._eventDispatcher.hasEventListener( ...args );
+		EventDispatcher.prototype.hasEventListener.call( this, ...args );
 
 	}
 
 	removeEventListener( ...args ) {
 
-		this._eventDispatcher.removeEventListener( ...args );
+		EventDispatcher.prototype.removeEventListener.call( this, ...args );
 
 	}
 
 	dispatchEvent( ...args ) {
 
-		this._eventDispatcher.dispatchEvent( ...args );
+		EventDispatcher.prototype.dispatchEvent.call( this, ...args );
 
 	}
 
