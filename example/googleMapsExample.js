@@ -11,6 +11,7 @@ import {
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
+	UnloadTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -63,6 +64,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new UnloadTilesPlugin() );
 
 	if ( params.useBatchedMesh ) {
 

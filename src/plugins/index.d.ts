@@ -5,6 +5,7 @@ export { UpdateOnChangePlugin } from './three/UpdateOnChangePlugin';
 export { TileCompressionPlugin } from './three/TileCompressionPlugin';
 export { GLTFExtensionsPlugin } from './three/GLTFExtensionsPlugin';
 export { ReorientationPlugin } from './three/ReorientationPlugin';
+export { UnloadTilesPlugin } from './three/UnloadTilesPlugin';
 export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
 export * from './three/DebugTilesPlugin';
 

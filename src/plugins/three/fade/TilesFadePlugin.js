@@ -1,4 +1,4 @@
-import { Group, Matrix4, Vector3, Quaternion } from 'three';
+import { Matrix4, Vector3, Quaternion } from 'three';
 import { FadeManager } from './FadeManager.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
@@ -14,10 +14,17 @@ function onTileVisibilityChange( scene, tile, visible ) {
 	// it's possible we disable them when adjusting visibility based on frustum
 	scene.visible = true;
 
+	const fadeManager = this._fadeManager;
+	if ( fadeManager.isFadingOut( scene ) ) {
+
+		this._fadingOutCount --;
+
+	}
+
 	if ( ! visible ) {
 
-		this._fadeGroup.add( scene );
-		this._fadeManager.fadeOut( scene );
+		this._fadingOutCount ++;
+		fadeManager.fadeOut( scene );
 
 	} else {
 
@@ -59,12 +66,15 @@ function onDisposeModel( scene ) {
 
 }
 
-function onFadeComplete( object ) {
+function onFadeComplete( object, visible ) {
 
-	// when the fade finishes ensure we dispose the tile and remove it from the fade group
-	if ( object.parent === this._fadeGroup ) {
+	if ( ! visible ) {
 
-		this._fadeGroup.remove( object );
+		// now that the tile is hidden we can run the built-in setTileVisible function for the tile
+		const tile = this._tileMap.get( object );
+		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+
+		this._fadingOutCount --;
 
 	}
 
@@ -101,7 +111,6 @@ function onUpdateBefore() {
 function onUpdateAfter() {
 
 	const fadeManager = this._fadeManager;
-	const fadeGroup = this._fadeGroup;
 	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
 	const tiles = this.tiles;
@@ -131,13 +140,24 @@ function onUpdateAfter() {
 
 		tiles.visibleTiles.forEach( t => {
 
-			t.cached.scene.visible = t.__inFrustum;
+			// if a tile is fading out then it may not be traversed and thus will not have
+			// the frustum flag set correctly.
+			const scene = t.cached.scene;
+			if ( fadeManager.isFadingOut( scene ) ) {
+
+				scene.visible = true;
+
+			} else {
+
+				scene.visible = t.__inFrustum;
+
+			}
 
 		} );
 
 	}
 
-	if ( this.maximumFadeOutTiles < fadeGroup.children.length ) {
+	if ( this.maximumFadeOutTiles < this._fadingOutCount ) {
 
 		// determine whether all the rendering cameras are moving
 		// quickly so we can adjust how tiles fade accordingly
@@ -221,12 +241,13 @@ export class TilesFadePlugin {
 		};
 
 		this.name = 'FADE_TILES_PLUGIN';
+		this.priority = - 1;
 
 		this.tiles = null;
 		this._fadeManager = new FadeManager();
 		this._prevCameraTransforms = null;
-		this._fadeGroup = null;
 		this._tileMap = null;
+		this._fadingOutCount = 0;
 
 		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
 		this.fadeRootTiles = options.fadeRootTiles;
@@ -235,10 +256,6 @@ export class TilesFadePlugin {
 	}
 
 	init( tiles ) {
-
-		const fadeGroup = new Group();
-		fadeGroup.name = 'TilesFadeGroup';
-		tiles.group.add( fadeGroup );
 
 		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => {
@@ -259,7 +276,6 @@ export class TilesFadePlugin {
 
 		this.tiles = tiles;
 		this._fadeManager = fadeManager;
-		this._fadeGroup = fadeGroup;
 		this._tileMap = new Map();
 		this._prevCameraTransforms = new Map();
 
@@ -277,7 +293,6 @@ export class TilesFadePlugin {
 
 		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
 		this._onDisposeModel = e => onDisposeModel.call( this, e.scene );
-		this._onTileVisibilityChange = e => onTileVisibilityChange.call( this, e.scene, e.tile, e.visible );
 		this._onAddCamera = e => onAddCamera.call( this, e.camera );
 		this._onDeleteCamera = e => onDeleteCamera.call( this, e.camera );
 		this._onUpdateBefore = () => onUpdateBefore.call( this );
@@ -285,7 +300,6 @@ export class TilesFadePlugin {
 
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 		tiles.addEventListener( 'add-camera', this._onAddCamera );
 		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.addEventListener( 'update-before', this._onUpdateBefore );
@@ -293,12 +307,40 @@ export class TilesFadePlugin {
 
 	}
 
+	setTileVisible( tile, visible ) {
+
+		const scene = tile.cached.scene;
+		const wasFading = this._fadeManager.isFading( scene );
+		onTileVisibilityChange.call( this, scene, tile, visible );
+
+		// if a tile was already fading then it's already marked as visible and in the scene
+		if ( wasFading ) {
+
+			return true;
+
+		}
+
+		// cancel the visibility change trigger because we're fading and will call this after
+		// fade completes.
+		const isFading = this._fadeManager.isFading( scene );
+		if ( ! visible && isFading ) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
 	dispose() {
 
 		const tiles = this.tiles;
+
+		this._fadeManager.completeAllFades();
+
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 		tiles.removeEventListener( 'add-camera', this._onAddCamera );
 		tiles.removeEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
@@ -310,8 +352,6 @@ export class TilesFadePlugin {
 			scene.visible = true;
 
 		} );
-
-		this._fadeGroup.removeFromParent();
 
 	}
 
