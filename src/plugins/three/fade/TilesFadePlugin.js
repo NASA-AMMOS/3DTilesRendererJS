@@ -16,12 +16,9 @@ function onTileVisibilityChange( scene, tile, visible ) {
 
 	if ( ! visible ) {
 
-		this._fadeGroup.add( scene );
 		this._fadeManager.fadeOut( scene );
 
 	} else {
-
-		this.tiles.group.add( scene );
 
 		// if this is a root renderable tile and this is the first time rendering in
 		// then pop it in
@@ -66,8 +63,6 @@ function onFadeComplete( object, visible ) {
 	if ( ! visible ) {
 
 		const tile = this._tileMap.get( object );
-		this._fadeGroup.remove( object );
-
 		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 
 	}
@@ -105,7 +100,6 @@ function onUpdateBefore() {
 function onUpdateAfter() {
 
 	const fadeManager = this._fadeManager;
-	const fadeGroup = this._fadeGroup;
 	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
 	const tiles = this.tiles;
@@ -152,7 +146,7 @@ function onUpdateAfter() {
 
 	}
 
-	if ( this.maximumFadeOutTiles < fadeGroup.children.length ) {
+	if ( this.maximumFadeOutTiles < this._fadeManager.getFadingOutTileCount() ) {
 
 		// determine whether all the rendering cameras are moving
 		// quickly so we can adjust how tiles fade accordingly
@@ -228,9 +222,9 @@ export class TilesFadePlugin {
 
 		options = {
 
-			maximumFadeOutTiles: Infinity,
+			maximumFadeOutTiles: 50,
 			fadeRootTiles: false,
-			fadeDuration: 1000,
+			fadeDuration: 250,
 			...options,
 
 		};
@@ -241,7 +235,6 @@ export class TilesFadePlugin {
 		this.tiles = null;
 		this._fadeManager = new FadeManager();
 		this._prevCameraTransforms = null;
-		this._fadeGroup = null;
 		this._tileMap = null;
 
 		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
@@ -254,10 +247,6 @@ export class TilesFadePlugin {
 
 		tiles.lruCache.minSize = 0;
 		tiles.lruCache.minBytesSize = 0;
-
-		const fadeGroup = new Group();
-		fadeGroup.name = 'TilesFadeGroup';
-		tiles.group.add( fadeGroup );
 
 		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => {
@@ -278,7 +267,6 @@ export class TilesFadePlugin {
 
 		this.tiles = tiles;
 		this._fadeManager = fadeManager;
-		this._fadeGroup = fadeGroup;
 		this._tileMap = new Map();
 		this._prevCameraTransforms = new Map();
 
@@ -356,8 +344,6 @@ export class TilesFadePlugin {
 			scene.visible = true;
 
 		} );
-
-		this._fadeGroup.removeFromParent();
 
 	}
 
