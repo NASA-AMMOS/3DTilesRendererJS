@@ -539,6 +539,37 @@ transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
 
 Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
+## UnloadTilesPlugin
+
+Plugin that unloads geometry, textures, and materials of any given tile when the visibility changes to non-visible to save GPU memory. The model still exists on the CPU until it is completely removed from the cache.
+
+### .estimatedGpuBytes
+
+```js
+estimatedGPUBytes : number
+```
+
+The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// The amount of time to wait in milliseconds before unloading tile content from the GPU. This option can be
+	// used to account for cases where the user is moving the camera and tiles are coming in and out of frame.
+	delay: 0,
+
+	// The amount of bytes to unload to.
+	bytesTarget: 0,
+}
+```
+
 ## BatchedTilesPlugin
 
 _available in the examples directory_
@@ -579,38 +610,5 @@ Available options are as follows:
 	// If true then the original scene geometry is automatically discarded after adding the geometry to the batched mesh to save memory.
 	// This must be set to "false" if being used with plugins such as "UnloadTilesPlugin".
 	discardOriginalContent: true
-}
-```
-
-## UnloadTilesPlugin
-
-_available in the examples directory_
-
-Plugin that unloads geometry, textures, and materials of any given tile when the visibility changes to non-visible to save GPU memory. The model still exists on the CPU until it is completely removed from the cache.
-
-### .estimatedGpuBytes
-
-```js
-estimatedGPUBytes : number
-```
-
-The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
-
-### .constructor
-
-```js
-constructor( options : Object )
-```
-
-Available options are as follows:
-
-```js
-{
-	// The amount of time to wait in milliseconds before unloading tile content from the GPU. This option can be
-	// used to account for cases where the user is moving the camera and tiles are coming in and out of frame.
-	delay: 0,
-
-	// The amount of bytes to unload to.
-	bytesTarget: 0,
 }
 ```
