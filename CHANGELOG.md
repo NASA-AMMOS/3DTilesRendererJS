@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added `UnloadTilesPlugin`.
 - Plugins: Add support for "setTileVisible" plugin callbacks.
 - Add names to some plugins that were missing them.
+- GLTFExtensionsPlugin: Add support for MeshoptDecoder.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
