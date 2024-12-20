@@ -1,6 +1,7 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { traverseSet } from '../../base/traverseFunctions.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -216,15 +217,11 @@ export class DebugTilesPlugin {
 
 		// initialize the extreme values of the hierarchy
 		let maxDepth = - 1;
-		this.tiles.traverse( tile => {
-
-			maxDepth = Math.max( maxDepth, tile.__depth );
-
-		} );
-
 		let maxError = - 1;
-		this.tiles.traverse( tile => {
 
+		traverseSet( this.tiles.root, null, ( tile, parent, depth ) => {
+
+			maxDepth = Math.max( maxDepth, depth );
 			maxError = Math.max( maxError, tile.geometricError );
 
 		} );
