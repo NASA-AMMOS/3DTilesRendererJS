@@ -120,6 +120,7 @@ export class BatchedTilesPlugin {
 		const scene = tile.cached.scene;
 		if ( visible ) {
 
+			// Add tile set to the batched mesh if it hasn't been added already
 			this.addSceneToBatchedMesh( scene, tile );
 
 		}
