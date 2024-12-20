@@ -11,6 +11,7 @@ import {
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
+	UnloadTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -24,7 +25,6 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
-import { UnloadTilesPlugin } from './src/plugins/UnloadTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
