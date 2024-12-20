@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - BatchedMeshPlugin: Prevent empty groups from being added for each tile when using BatchedMeshPlugin.
 - TilesRenderer: Fixed event targets not being set to the tiles renderer.
 
+### Changed
+- TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
+- TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
+
 ### Added
 - Added "priority" field to plugins to ensure correct execution order. `TilesCompression` and `BatchedMesh` plugin will always run first.
 - Added `UnloadTilesPlugin`.
