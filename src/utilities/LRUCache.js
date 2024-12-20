@@ -114,6 +114,12 @@ class LRUCache {
 
 	}
 
+	has( item ) {
+
+		return this.itemSet.has( item );
+
+	}
+
 	remove( item ) {
 
 		const usedSet = this.usedSet;
@@ -199,6 +205,17 @@ class LRUCache {
 
 			itemSet.set( item, Date.now() );
 			usedSet.add( item );
+
+		}
+
+	}
+
+	markUnused( item ) {
+
+		const usedSet = this.usedSet;
+		if ( usedSet.has( item ) ) {
+
+			usedSet.delete( item );
 
 		}
 
@@ -363,7 +380,7 @@ class LRUCache {
 
 	}
 
-	scheduleUnload() {
+	scheduleUnload( markUnused = true ) {
 
 		if ( ! this.scheduled ) {
 
@@ -372,7 +389,12 @@ class LRUCache {
 
 				this.scheduled = false;
 				this.unloadUnusedContent();
-				this.markUnusedQueued = true;
+
+				if ( markUnused ) {
+
+					this.markUnusedQueued = true;
+
+				}
 
 			} );
 
