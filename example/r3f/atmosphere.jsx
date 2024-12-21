@@ -26,33 +26,21 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useControls } from 'leva';
 import { MathUtils } from 'three';
 
+// Postprocessing
+import { EffectComposer, SMAA, ToneMapping } from '@react-three/postprocessing';
+import { EffectMaterial, ToneMappingMode } from 'postprocessing';
 
-
-
-
-import { SMAA, ToneMapping } from '@react-three/postprocessing';
-import {
-	EffectMaterial,
-	ToneMappingMode,
-} from 'postprocessing';
-
+// Atmosphere
 import {
 	AerialPerspective,
 	Atmosphere,
 	Sky,
 	Stars,
 } from '@takram/three-atmosphere/r3f';
-import { Geodetic, PointOfView, radians } from '@takram/three-geospatial';
-import {
-	Depth,
-	Dithering,
-	LensFlare,
-	Normal
-} from '@takram/three-geospatial-effects/r3f';
-
-import { EffectComposer } from '@react-three/postprocessing';
+import { Dithering, LensFlare, } from '@takram/three-geospatial-effects/r3f';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
+// Plugin to generate creased normals for the tiles
 class TileCreasedNormalsPlugin {
 
 	processTileModel( scene ) {
@@ -70,12 +58,6 @@ class TileCreasedNormalsPlugin {
 	}
 
 }
-
-
-
-
-
-
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 function App() {
