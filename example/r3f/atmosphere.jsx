@@ -129,8 +129,6 @@ function App() {
 			<Atmosphere
 				ref={ atmosphereRef }
 				textures='https://takram-design-engineering.github.io/three-geospatial/atmosphere'
-				correctAltitude={ true }
-				photometric={ true }
 			>
 				{/* Background */}
 				<Sky />
@@ -138,14 +136,7 @@ function App() {
 
 				{/* Atmosphere effects */}
 				<EffectComposer ref={ composerRef } multisampling={ 0 } enableNormalPass>
-					<AerialPerspective
-						sunIrradiance={ true }
-						skyIrradiance={ true }
-						transmittance={ true }
-						inscatter={ true }
-						correctGeometricError={ true }
-						irradianceScale={ 2 / Math.PI }
-					/>
+					<AerialPerspective sunIrradiance skyIrradiance irradianceScale={ 2 / Math.PI } />
 					<LensFlare />
 					<ToneMapping mode={ ToneMappingMode.AGX } />
 					<SMAA />
