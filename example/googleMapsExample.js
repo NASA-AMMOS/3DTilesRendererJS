@@ -74,7 +74,11 @@ function reinstantiateTiles() {
 
 	if ( params.useBatchedMesh ) {
 
-		tiles.registerPlugin( new BatchedTilesPlugin( { renderer } ) );
+		tiles.registerPlugin( new BatchedTilesPlugin( {
+			renderer,
+			discardOriginalContent: false,
+			instanceCount: 250,
+		} ) );
 
 	} else {
 
