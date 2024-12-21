@@ -111,7 +111,7 @@ Setting up a 3D Tile Set using a custom material.
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
-tilesRenderer.onLoadModel = function ( scene ) {
+tilesRenderer.addEventListener( 'load-model', ( { scene } ) => {
 
 	// create a custom material for the tile
 	scene.traverse( c => {
@@ -127,7 +127,7 @@ tilesRenderer.onLoadModel = function ( scene ) {
 
 };
 
-tilesRenderer.onDisposeModel = function ( scene ) {
+tilesRenderer.addEventListener( 'dispose-model', ( { scene } ) => {
 
 	// dispose of any manually created materials
 	scene.traverse( c => {
@@ -170,8 +170,7 @@ scene.add( tilesRenderer2.group );
 
 ## Adding DRACO Decompression Support
 
-Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
-There are different builds of the draco decoder, pick the appropriate one depending on your model type. [More info](https://github.com/mrdoob/three.js/tree/dev/examples/jsm/libs/draco)
+Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures. Alternatively the [GLTFExtensionsPlugin](./src/plugins/README.md#gltfextensionsplugin) can be used to simplify the setup.
 
 ```js
 
@@ -189,7 +188,7 @@ loader.setDRACOLoader( dracoLoader );
 tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
 ```
 
-Adding support for DRACO decompression within the PNTS files.
+Adding support for DRACO decompression within the PNTS files requires a different draco decoder. See more info [here](https://github.com/mrdoob/three.js/tree/dev/examples/jsm/libs/draco).
 
 ```js
 
