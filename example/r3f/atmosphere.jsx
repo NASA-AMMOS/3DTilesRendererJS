@@ -36,7 +36,6 @@ import {
 	ToneMappingMode,
 } from 'postprocessing';
 
-import { TileCreasedNormalsPlugin } from '@takram/three-3d-tiles-support';
 import {
 	AerialPerspective,
 	Atmosphere,
@@ -52,11 +51,25 @@ import {
 } from '@takram/three-geospatial-effects/r3f';
 
 import { EffectComposer } from '@react-three/postprocessing';
-// import {
-// 	useLocalDateControls,
-// } from '../helpers/useLocalDateControls';
+import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
+class TileCreasedNormalsPlugin {
 
+	processTileModel( scene ) {
+
+		scene.traverse( c => {
+
+			if ( c.geometry ) {
+
+				c.geometry = toCreasedNormals( c.geometry, MathUtils.degToRad( 30 ) );
+
+			}
+
+		} );
+
+	}
+
+}
 
 
 
@@ -81,6 +94,9 @@ function App() {
 	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
 
 	const camera = useThree( ( { camera } ) => camera );
+	const gl = useThree( ( { gl } ) => gl );
+	gl.toneMappingExposure = 10;
+
 	const atmosphereRef = useRef( null );
 	const composerRef = useRef( null );
 	useFrame( () => {
@@ -104,17 +120,18 @@ function App() {
 
 	} );
 
+	window.CAMERA = camera;
+
 	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<>
-			<color attach="background" args={ [ 0x111111 ] } />
-
-			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
+			<TilesRenderer>
 				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
 				<TilesPlugin plugin={ TilesFadePlugin } />
+				<TilesPlugin plugin={ TileCreasedNormalsPlugin } />
 
 				{/* Controls */}
 				<GlobeControls enableDamping={ true } />
@@ -123,7 +140,7 @@ function App() {
 				<TilesAttributionOverlay />
 
 				{/* Add compass gizmo */}
-				<CompassGizmo />
+				<CompassGizmo overrideRenderLoop={ false } />
 			</TilesRenderer>
 
 			{/* Atmosphere set up */}
@@ -138,7 +155,7 @@ function App() {
 				<Stars data='https://takram-design-engineering.github.io/three-geospatial/atmosphere/stars.bin' />
 
 				{/* Atmosphere effects */}
-				<EffectComposer ref={ composerRef } multisampling={ 0 }>
+				<EffectComposer ref={ composerRef } multisampling={ 0 } enableNormalPass>
 					<AerialPerspective
 						sunIrradiance={ true }
 						skyIrradiance={ true }
@@ -164,7 +181,8 @@ createRoot( document.getElementById( 'root' ) ).render(
 		<Canvas
 			frameloop='demand'
 			camera={ {
-				position: [ 0, 0.5 * 1e7, 1.5 * 1e7 ],
+				position: [ 0, 1.5 * 1e7, 0 ],
+				rotation: [ - Math.PI / 2, 0, Math.PI ],
 			} }
 			style={ {
 				width: '100%',
