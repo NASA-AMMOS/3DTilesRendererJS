@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
 - TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
+- TileCompressionPlugin: Change the defaults to not automatically compress normals, uvs to avoid artifacts.
 
 ### Added
 - Added "priority" field to plugins to ensure correct execution order. `TilesCompression` and `BatchedMesh` plugin will always run first.
