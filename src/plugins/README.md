@@ -406,7 +406,7 @@ hasLayer( name : string ) : boolean
 
 ## TileCompressionPlugin
 
-Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
+Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. While geometry attribute compression is disabled by default, the default target attribute size when enabled is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
 
 ### .constructor
 
