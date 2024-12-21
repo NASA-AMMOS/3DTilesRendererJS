@@ -1,5 +1,5 @@
 import { EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
-import { CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
+import { CesiumIonAuthPlugin, GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
@@ -10,7 +10,6 @@ import {
 	DataTexture,
 	EquirectangularReflectionMapping
 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
@@ -46,16 +45,12 @@ function rotationBetweenDirections( dir1, dir2 ) {
 function setupTiles() {
 
 	tiles.fetchOptions.mode = 'cors';
+	tiles.registerPlugin( new GLTFExtensionsPlugin( {
+		// Note the DRACO compression files need to be supplied via an explicit source.
+		// We use unpkg here but in practice should be provided by the application.
+		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+	} ) );
 
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const loader = new GLTFLoader( tiles.manager );
-	loader.setDRACOLoader( dracoLoader );
-
-	tiles.manager.addHandler( /\.gltf$/, loader );
 	scene.add( tiles.group );
 
 }
