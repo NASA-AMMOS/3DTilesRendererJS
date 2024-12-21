@@ -6,7 +6,7 @@ import { useDeepOptions } from '../utilities/useOptions';
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
 	const { mode = 'perspective', perspectiveCamera, orthographicCamera, ...options } = props;
-	const [ set, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.invalidate, state.controls, state.camera, state.size ] );
+	const [ set, get, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.get, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
 	const manager = useMemo( () => {
@@ -161,6 +161,25 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		if ( controls ) {
 
 			controls.enabled = ! manager.animating;
+
+		}
+
+		// ensure the orthographic camera size is resized correctly if the user is not
+		// providing their own camera.
+		const { camera, size } = get();
+		if ( ! orthographicCamera && camera === manager.orthographicCamera ) {
+
+			const aspect = size.width / size.height;
+			const camera = manager.orthographicCamera;
+			if ( aspect !== camera.right ) {
+
+				camera.bottom = - 1;
+				camera.top = 1;
+				camera.left = - aspect;
+				camera.right = aspect;
+				camera.updateProjectionMatrix();
+
+			}
 
 		}
 
