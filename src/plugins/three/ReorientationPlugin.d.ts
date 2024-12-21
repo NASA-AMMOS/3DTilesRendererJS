@@ -1,4 +1,4 @@
-export class GLTFExtensionsPlugin {
+export class ReorientationPlugin {
 
 	constructor( options: {
 		up: '+x' | '-x' | '+y' | '-y' | '+z' | '-z',
