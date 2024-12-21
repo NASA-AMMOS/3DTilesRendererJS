@@ -1,10 +1,15 @@
 import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager, Sphere } from 'three';
 import { Tile } from '../base/Tile';
-import { TilesRendererBase } from '../base/TilesRendererBase';
+import { TilesRendererBase, TilesRendererBasePlugin } from '../base/TilesRendererBase';
 import { TilesGroup } from './TilesGroup';
 import { Ellipsoid } from './math/Ellipsoid';
 
-export class TilesRenderer extends TilesRendererBase {
+export interface TilesRendererPlugin extends TilesRendererBasePlugin {
+	processTileModel?: ( scene: Object3D, tile: Tile ) => Promise<void>;
+	doTilesNeedUpdate?: () => boolean;
+}
+
+export class TilesRenderer extends TilesRendererBase<TilesRendererPlugin> {
 
 	ellipsoid: Ellipsoid;
 	autoDisableRendererCulling : boolean;
