@@ -427,8 +427,8 @@ Available options are as follows:
 
 	// Whether to compress and quantize attributes.
 	compressIndex: true,
-	compressNormals: true,
-	compressUvs: true,
+	compressNormals: false,
+	compressUvs: false,
 	compressPosition: false,
 
 	// The TypedArray type to use when compressing attributes.
