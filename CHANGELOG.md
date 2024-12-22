@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
 - TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
 - TileCompressionPlugin: Change the defaults to not automatically compress normals, uvs to avoid artifacts.
+- GlobeControls: Orthographic "near" margin around the globe has been increased from 10% to 25% of the large ellipsoid radius value.
 
 ### Added
 - Added "priority" field to plugins to ensure correct execution order. `TilesCompression` and `BatchedMesh` plugin will always run first.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add names to some plugins that were missing them.
 - GLTFExtensionsPlugin: Add support for MeshoptDecoder.
 - TilesRenderer: Add types for events.
+- GlobeControls: Added `nearMargin` and `farMargin` percentages for controlling camera distances.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
