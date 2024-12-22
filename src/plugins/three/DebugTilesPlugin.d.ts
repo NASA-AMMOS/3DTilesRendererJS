@@ -14,6 +14,8 @@ export const RANDOM_NODE_COLOR: ColorMode;
 export const CUSTOM_COLOR: ColorMode;
 export class DebugTilesPlugin {
 
+	enabled: boolean;
+
 	displayBoxBounds : boolean;
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;

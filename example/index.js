@@ -71,6 +71,7 @@ const params = {
 	resolutionScale: 1.0,
 
 	up: hashUrl ? '+Z' : '+Y',
+	enableDebug: true,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
@@ -271,6 +272,7 @@ function init() {
 	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
+	debug.add( params, 'enableDebug' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
@@ -485,6 +487,7 @@ function animate() {
 
 	// update plugin
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
+	plugin.enabled = params.enableDebug;
 	plugin.displayBoxBounds = params.displayBoxBounds;
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
