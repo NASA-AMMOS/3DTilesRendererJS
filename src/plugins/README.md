@@ -206,6 +206,14 @@ Plugin that adds support for 3d tiles [implicit tiling](https://github.com/Cesiu
 
 Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
 
+### .enabled
+
+```js
+enabled = true : boolean
+```
+
+If true then the debug logic is enabled, which can affect performance. It's recommended to disable or remove the plugin when not in use.
+
 ### .colorMode
 
 ```js
