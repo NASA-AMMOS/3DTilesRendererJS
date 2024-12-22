@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Plugins: Add support for "setTileVisible" plugin callbacks.
 - Add names to some plugins that were missing them.
 - GLTFExtensionsPlugin: Add support for MeshoptDecoder.
+- TilesRenderer: Add types for events.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
