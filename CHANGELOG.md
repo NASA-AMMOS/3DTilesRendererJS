@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GLTFExtensionsPlugin: Add support for MeshoptDecoder.
 - TilesRenderer: Add types for events.
 - GlobeControls: Added `nearMargin` and `farMargin` percentages for controlling camera distances.
+- DebugTilesPlugin: `enabled` field to DebugTilesPlugin to enable / disable the debug features.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
