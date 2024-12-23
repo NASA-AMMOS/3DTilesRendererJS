@@ -698,6 +698,7 @@ export class DebugTilesPlugin {
 			tiles.removeEventListener( 'load-model', this._onLoadModelCB );
 			tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
 			tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
+			tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
 
 			// reset all materials
 			this.colorMode = NONE;
