@@ -1,12 +1,13 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
-import { traverseSet } from '../../base/traverseFunctions.js';
+import { traverseAncestors, traverseSet } from '../../base/traverseFunctions.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
 const LOAD_TIME = Symbol( 'LOAD_TIME' );
+const PARENT_BOUND_REF_COUNT = Symbol( 'PARENT_BOUND_REF_COUNT' );
 
 const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
@@ -46,6 +47,7 @@ export class DebugTilesPlugin {
 	constructor( options ) {
 
 		options = {
+			displayParentBounds: false,
 			displayBoxBounds: false,
 			displaySphereBounds: false,
 			displayRegionBounds: false,
@@ -69,6 +71,7 @@ export class DebugTilesPlugin {
 		this.regionGroup = null;
 
 		// options
+		this._displayParentBounds = options.displayParentBounds;
 		this.displayBoxBounds = options.displayBoxBounds;
 		this.displaySphereBounds = options.displaySphereBounds;
 		this.displayRegionBounds = options.displayRegionBounds;
@@ -109,6 +112,47 @@ export class DebugTilesPlugin {
 			} else {
 
 				this.dispose();
+
+			}
+
+		}
+
+	}
+
+	get displayParentBounds() {
+
+		return this._displayParentBounds;
+
+	}
+
+	set displayParentBounds( v ) {
+
+		if ( this._displayParentBounds !== v ) {
+
+			this._displayParentBounds = v;
+
+			if ( ! v ) {
+
+				// Reset all ref counts
+				traverseSet( this.tiles.root, null, tile => {
+
+					tile[ PARENT_BOUND_REF_COUNT ] = null;
+					this._onTileVisibilityChange( tile, tile.__visible );
+
+				} );
+
+			} else {
+
+				// Initialize ref count for existing tiles
+				this.tiles.traverse( tile => {
+
+					if ( tile.__visible ) {
+
+						this._onTileVisibilityChange( tile, true );
+
+					}
+
+				} );
 
 			}
 
@@ -520,64 +564,41 @@ export class DebugTilesPlugin {
 
 	_onTileVisibilityChange( tile, visible ) {
 
-		const cached = tile.cached;
-		const sphereGroup = this.sphereGroup;
-		const boxGroup = this.boxGroup;
-		const regionGroup = this.regionGroup;
-		const boxHelperGroup = cached.boxHelperGroup;
-		const sphereHelper = cached.sphereHelper;
-		const regionHelper = cached.regionHelper;
+		if ( this.displayParentBounds ) {
 
-		if ( ! visible ) {
+			traverseAncestors( tile, current => {
 
-			if ( boxHelperGroup ) {
+				if ( current[ PARENT_BOUND_REF_COUNT ] == null ) {
 
-				boxGroup.remove( boxHelperGroup );
+					current[ PARENT_BOUND_REF_COUNT ] = 0;
 
-			}
+				}
 
-			if ( sphereHelper ) {
+				if ( visible ) {
 
-				sphereGroup.remove( sphereHelper );
+					current[ PARENT_BOUND_REF_COUNT ] ++;
 
-			}
+				} else if ( current[ PARENT_BOUND_REF_COUNT ] > 0 ) {
 
-			if ( regionHelper ) {
+					current[ PARENT_BOUND_REF_COUNT ] --;
 
-				regionGroup.remove( regionHelper );
+				}
 
-			}
+				const tileVisible = ( current === tile && visible ) || ( this.displayParentBounds && current[ PARENT_BOUND_REF_COUNT ] > 0 );
+
+				this._updateBoundHelper( current, tileVisible );
+
+			} );
 
 		} else {
 
-			if ( boxHelperGroup ) {
-
-				boxGroup.add( boxHelperGroup );
-				boxHelperGroup.updateMatrixWorld( true );
-
-			}
-
-			if ( sphereHelper ) {
-
-				sphereGroup.add( sphereHelper );
-				sphereHelper.updateMatrixWorld( true );
-
-			}
-
-			if ( regionHelper ) {
-
-				regionGroup.add( regionHelper );
-				regionHelper.updateMatrixWorld( true );
-
-			}
+			this._updateBoundHelper( tile, visible );
 
 		}
 
 	}
 
-	_onLoadModel( scene, tile ) {
-
-		tile[ LOAD_TIME ] = performance.now();
+	_createBoundHelper( tile ) {
 
 		const tiles = this.tiles;
 		const cached = tile.cached;
@@ -647,6 +668,111 @@ export class DebugTilesPlugin {
 			}
 
 		}
+
+	}
+
+	_updateHelperMaterial( tile, material ) {
+
+		if ( tile.__visible || ! this.displayParentBounds ) {
+
+			material.opacity = 1;
+
+		} else {
+
+			material.opacity = 0.2;
+
+		}
+
+		const transparent = material.transparent;
+		material.transparent = material.opacity < 1;
+		if ( material.transparent !== transparent ) {
+
+			material.needsUpdate = true;
+
+		}
+
+	}
+
+	_updateBoundHelper( tile, visible ) {
+
+		const cached = tile.cached;
+
+		if ( ! cached ) {
+
+			return;
+
+		}
+
+		const sphereGroup = this.sphereGroup;
+		const boxGroup = this.boxGroup;
+		const regionGroup = this.regionGroup;
+
+		if ( visible && ( cached.boxHelperGroup == null && cached.sphereHelper == null && cached.regionHelper == null ) ) {
+
+			this._createBoundHelper( tile );
+
+		}
+
+		const boxHelperGroup = cached.boxHelperGroup;
+		const sphereHelper = cached.sphereHelper;
+		const regionHelper = cached.regionHelper;
+
+		if ( ! visible ) {
+
+			if ( boxHelperGroup ) {
+
+				boxGroup.remove( boxHelperGroup );
+
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.remove( sphereHelper );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.remove( regionHelper );
+
+			}
+
+		} else {
+
+			if ( boxHelperGroup ) {
+
+				boxGroup.add( boxHelperGroup );
+				boxHelperGroup.updateMatrixWorld( true );
+
+				this._updateHelperMaterial( tile, boxHelperGroup.children[ 0 ].material );
+
+			}
+
+			if ( sphereHelper ) {
+
+				sphereGroup.add( sphereHelper );
+				sphereHelper.updateMatrixWorld( true );
+
+				this._updateHelperMaterial( tile, sphereHelper.material );
+
+			}
+
+			if ( regionHelper ) {
+
+				regionGroup.add( regionHelper );
+				regionHelper.updateMatrixWorld( true );
+
+				this._updateHelperMaterial( tile, regionHelper.material );
+
+			}
+
+		}
+
+	}
+
+	_onLoadModel( scene, tile ) {
+
+		tile[ LOAD_TIME ] = performance.now();
 
 		// Cache the original materials
 		scene.traverse( c => {
