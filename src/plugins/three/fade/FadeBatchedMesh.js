@@ -47,4 +47,11 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 	}
 
+	dispose() {
+
+		super.dispose();
+		this.fadeTexture.dispose();
+
+	}
+
 }

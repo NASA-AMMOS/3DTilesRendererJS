@@ -1,6 +1,7 @@
 import { Matrix4, Vector3, Quaternion } from 'three';
 import { FadeManager } from './FadeManager.js';
 import { FadeMaterialManager } from './FadeMaterialManager.js';
+import { FadeBatchedMesh } from './FadeBatchedMesh.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
 const _fromPos = new Vector3();
@@ -10,15 +11,6 @@ const _toQuat = new Quaternion();
 const _scale = new Vector3();
 
 function onTileVisibilityChange( tile, visible ) {
-
-	// ensure the tiles are marked as visible on visibility toggle since
-	// it's possible we disable them when adjusting visibility based on frustum
-	const scene = tile.cached.scene;
-	if ( scene ) {
-
-		scene.visible = true; // TODO
-
-	}
 
 	const fadeManager = this._fadeManager;
 	if ( fadeManager.isFadingOut( tile ) ) {
@@ -75,6 +67,13 @@ function onFadeComplete( tile, visible ) {
 
 	// mark the fade as finished
 	this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
+
+	this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
+
+		batchedMesh.setVisibleAt( id, false );
+		plugin.batchedMesh.setVisibleAt( id, visible );
+
+	} );
 
 	if ( ! visible ) {
 
@@ -224,6 +223,17 @@ function onUpdateAfter() {
 		lruCache.markUsed( tile );
 		fadeMaterialManager.setFade( tile.cached.scene, fadeIn, fadeOut );
 
+		const isFading = fadeIn !== 0 && fadeIn !== 1 || fadeOut !== 0 && fadeIn !== 1;
+		this.forEachBatchIds( tile, ( id, batchedMesh ) => {
+
+			if ( isFading ) {
+
+				batchedMesh.fadeTexture.setValueAt( id, fadeIn, fadeOut );
+
+			}
+
+		} );
+
 	} );
 
 }
@@ -260,13 +270,13 @@ export class TilesFadePlugin {
 		};
 
 		this.name = 'FADE_TILES_PLUGIN';
-		this.priority = - 1;
+		this.priority = - 2;
 
 		this.tiles = null;
+		this.batchedMesh = null;
 		this._fadeManager = new FadeManager();
 		this._fadeMaterialManager = new FadeMaterialManager();
 		this._prevCameraTransforms = null;
-		this._tileMap = null; // TODO
 		this._fadingOutCount = 0;
 
 		this.maximumFadeOutTiles = options.maximumFadeOutTiles;
@@ -296,7 +306,6 @@ export class TilesFadePlugin {
 
 		this.tiles = tiles;
 		this._fadeManager = fadeManager;
-		this._tileMap = new Map();
 		this._prevCameraTransforms = new Map();
 
 		tiles.cameras.forEach( camera => {
@@ -317,6 +326,25 @@ export class TilesFadePlugin {
 		this._onDeleteCamera = e => onDeleteCamera.call( this, e.camera );
 		this._onUpdateBefore = () => onUpdateBefore.call( this );
 		this._onUpdateAfter = () => onUpdateAfter.call( this );
+		this._onTileVisibilityChange = ( { tile, visible } ) => {
+
+			// ensure the tiles are marked as visible on visibility toggle since
+			// it's possible we disable them when adjusting visibility based on frustum
+			const scene = tile.cached.scene;
+			if ( scene ) {
+
+				scene.visible = true; // TODO
+
+			}
+
+			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
+
+				batchedMesh.setVisibleAt( id, visible );
+				plugin.batchedMesh.setVisibleAt( id, false );
+
+			} );
+
+		};
 
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
@@ -324,6 +352,45 @@ export class TilesFadePlugin {
 		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.addEventListener( 'update-before', this._onUpdateBefore );
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
+
+	}
+
+	initBatchedMesh() {
+
+		const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' );
+		const otherBatchedMesh = batchedPlugin.batchedMesh;
+
+		if ( batchedPlugin && batchedPlugin.batchedMesh ) {
+
+			if ( this.batchedMesh === null ) {
+
+				this._onBatchedMeshDispose = () => {
+
+					this.batchedMesh.dispose();
+					this.batchedMesh.removeFromParent();
+					otherBatchedMesh.removeEventListener( 'dispose', this._onBatchedMeshDispose );
+
+				};
+
+				const material = otherBatchedMesh.material.clone();
+				material.onBeforeCompile = otherBatchedMesh.material.onBeforeCompile;
+
+				this.batchedMesh = new FadeBatchedMesh( otherBatchedMesh, material );
+				this.tiles.group.add( this.batchedMesh );
+
+			}
+
+		} else {
+
+			if ( this.batchedMesh !== null ) {
+
+				this._onBatchedMeshDispose();
+				this._onBatchedMeshDispose = null;
+
+			}
+
+		}
 
 	}
 
@@ -358,12 +425,19 @@ export class TilesFadePlugin {
 
 		this._fadeManager.completeAllFades();
 
+		if ( this.batchedMesh !== null ) {
+
+			this._onBatchedMeshDispose();
+
+		}
+
 		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 		tiles.removeEventListener( 'add-camera', this._onAddCamera );
 		tiles.removeEventListener( 'delete-camera', this._onDeleteCamera );
 		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			this._fadeManager.deleteObject( tile );
@@ -374,6 +448,28 @@ export class TilesFadePlugin {
 			}
 
 		} );
+
+	}
+
+	forEachBatchIds( tile, cb ) {
+
+		this.initBatchedMesh();
+
+		if ( this.batchedMesh ) {
+
+			const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' );
+			const instanceIds = batchedPlugin._tileToInstanceId.get( tile );
+			if ( instanceIds ) {
+
+				instanceIds.forEach( id => {
+
+					cb( id, this.batchedMesh, batchedPlugin );
+
+				} );
+
+			}
+
+		}
 
 	}
 

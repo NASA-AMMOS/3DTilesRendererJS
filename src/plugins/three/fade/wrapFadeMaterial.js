@@ -13,7 +13,11 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 	material.onBeforeCompile = shader => {
 
-		previousOnBeforeCompile( shader );
+		if ( previousOnBeforeCompile ) {
+
+			previousOnBeforeCompile( shader );
+
+		}
 
 		shader.uniforms = {
 			...shader.uniforms,
