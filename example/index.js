@@ -72,6 +72,7 @@ const params = {
 
 	up: hashUrl ? '+Z' : '+Y',
 	enableDebug: true,
+	displayParentBounds: false,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
@@ -273,6 +274,7 @@ function init() {
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'enableDebug' );
+	debug.add( params, 'displayParentBounds' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
@@ -489,6 +491,7 @@ function animate() {
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
 	plugin.enabled = params.enableDebug;
 	plugin.displayBoxBounds = params.displayBoxBounds;
+	plugin.displayParentBounds = params.displayParentBounds;
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );
