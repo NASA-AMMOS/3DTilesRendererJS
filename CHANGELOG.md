@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Add types for events.
 - GlobeControls: Added `nearMargin` and `farMargin` percentages for controlling camera distances.
 - DebugTilesPlugin: `enabled` field to DebugTilesPlugin to enable / disable the debug features.
+- DebugTilesPlugin: Added support for `displayParentBounds`.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
