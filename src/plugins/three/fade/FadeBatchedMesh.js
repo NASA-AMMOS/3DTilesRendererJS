@@ -1,6 +1,7 @@
 import { PassThroughBatchedMesh } from './PassThroughBatchedMesh.js';
 import { InstanceDataTexture } from './InstanceDataTexture.js';
 import { FloatType, RGFormat } from 'three';
+import { wrapFadeMaterial } from './wrapFadeMaterial.js';
 
 export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
@@ -10,6 +11,10 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 		this.fadeTexture = null;
 		this._initFadeTexture();
+
+		const material = this.material;
+		wrapFadeMaterial( material, material.onBeforeCompile );
+		material.needsUpdate = true;
 
 	}
 

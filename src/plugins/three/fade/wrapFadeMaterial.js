@@ -1,4 +1,4 @@
-export function wrapFadeMaterial( material ) {
+export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
 		fadeIn: { value: 0 },
@@ -7,10 +7,13 @@ export function wrapFadeMaterial( material ) {
 	};
 
 	material.defines = {
+		...( material.defines || {} ),
 		FEATURE_FADE: 0,
 	};
 
 	material.onBeforeCompile = shader => {
+
+		previousOnBeforeCompile( shader );
 
 		shader.uniforms = {
 			...shader.uniforms,
