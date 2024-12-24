@@ -12,7 +12,6 @@ import {
 	Euler,
 	LoadingManager,
 	EventDispatcher,
-	REVISION,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -25,7 +24,6 @@ const _mat = new Matrix4();
 const _euler = new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
-const REVISION_LESS_165 = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -107,23 +105,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// saved for event dispatcher functions
 		this._listeners = {};
-
-		if ( REVISION_LESS_165 ) {
-
-			// Setting up the override raycasting function to be used by
-			// 3D objects created by this renderer
-			const tilesRenderer = this;
-			this._overridenRaycast = function ( raycaster, intersects ) {
-
-				if ( ! tilesRenderer.optimizeRaycast ) {
-
-					Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
-
-				}
-
-			};
-
-		}
 
 	}
 
@@ -739,17 +720,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
-
-		if ( REVISION_LESS_165 ) {
-
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
-
-				c.raycast = this._overridenRaycast;
-
-			} );
-
-		}
 
 		const materials = [];
 		const geometry = [];
