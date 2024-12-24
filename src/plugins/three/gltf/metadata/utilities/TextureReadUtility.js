@@ -1,11 +1,7 @@
-import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, Vector4, ShaderMaterial, REVISION, CustomBlending, ZeroFactor, OneFactor } from 'three';
+import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, ShaderMaterial, CustomBlending, ZeroFactor, OneFactor } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
-const REVISION_GEQ_165 = parseInt( REVISION ) >= 165;
-const REVISION_GEQ_166 = parseInt( REVISION ) >= 166;
 const _box = /* @__PURE__ */ new Box2();
-const _currentScissor = /* @__PURE__ */ new Vector4();
-const _pos = /* @__PURE__ */ new Vector2();
 
 // Utility for reading sets of individual pixel values from textures
 export const TextureReadUtility = new ( class {
@@ -64,15 +60,7 @@ export const TextureReadUtility = new ( class {
 	readDataAsync( buffer ) {
 
 		const { _renderer, _target } = this;
-		if ( REVISION_GEQ_165 ) {
-
-			return _renderer.readRenderTargetPixelsAsync( _target, 0, 0, buffer.length / 4, 1, buffer );
-
-		} else {
-
-			return Promise.resolve().then( () => this.readData( buffer ) );
-
-		}
+		return _renderer.readRenderTargetPixelsAsync( _target, 0, 0, buffer.length / 4, 1, buffer );
 
 	}
 
@@ -88,66 +76,15 @@ export const TextureReadUtility = new ( class {
 	// takes the texture, pixel to read from, and pixel to render in to
 	renderPixelToTarget( texture, pixel, dstPixel ) {
 
-		const { _quad, _renderer, _target, _texTarget } = this;
+		const { _renderer, _target } = this;
 
-		if ( REVISION_GEQ_166 ) {
-
-			// copies the pixel directly to the target buffer
-			_box.min.copy( pixel );
-			_box.max.copy( pixel );
-			_box.max.x += 1;
-			_box.max.y += 1;
-			_renderer.initRenderTarget( _target );
-			_renderer.copyTextureToTexture( texture, _target.texture, _box, dstPixel, 0 );
-
-		} else {
-
-			// save state
-			const currentAutoClear = _renderer.autoClear;
-			const currentTarget = _renderer.getRenderTarget();
-			const currentScissorTest = _renderer.getScissorTest();
-			_renderer.getScissor( _currentScissor );
-
-			// initialize the render target
-			_texTarget.setSize( texture.image.width, texture.image.height );
-			_renderer.setRenderTarget( _texTarget );
-
-			// render the data
-			_pos.set( 0, 0 );
-			if ( REVISION_GEQ_165 ) {
-
-				_renderer.copyTextureToTexture( texture, _texTarget.texture, null, _pos );
-
-			} else {
-
-				_renderer.copyTextureToTexture( _pos, texture, _texTarget.texture );
-
-			}
-
-			_quad.material.uniforms.map.value = _texTarget.texture;
-			_quad.material.uniforms.pixel.value.copy( pixel );
-
-			// if we set the render target after setting scissor state it is reset
-			_renderer.setRenderTarget( _target );
-
-			// init state
-			_renderer.setScissorTest( true );
-			_renderer.setScissor( dstPixel.x, dstPixel.y, 1, 1 );
-			_renderer.autoClear = false;
-
-			// render
-			_quad.render( _renderer );
-
-			// reset state
-			_renderer.setScissorTest( currentScissorTest );
-			_renderer.setScissor( _currentScissor );
-			_renderer.setRenderTarget( currentTarget );
-			_renderer.autoClear = currentAutoClear;
-
-			// remove the memory
-			_texTarget.dispose();
-
-		}
+		// copies the pixel directly to the target buffer
+		_box.min.copy( pixel );
+		_box.max.copy( pixel );
+		_box.max.x += 1;
+		_box.max.y += 1;
+		_renderer.initRenderTarget( _target );
+		_renderer.copyTextureToTexture( texture, _target.texture, _box, dstPixel, 0 );
 
 	}
 
