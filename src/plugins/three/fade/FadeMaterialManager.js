@@ -1,3 +1,5 @@
+import { wrapFadeMaterial } from './wrapFadeMaterial.js';
+
 export class FadeMaterialManager {
 
 	constructor() {
@@ -93,76 +95,7 @@ export class FadeMaterialManager {
 
 		}
 
-		const params = {
-			fadeIn: { value: 0 },
-			fadeOut: { value: 0 },
-		};
-
-		material.defines = {
-			FEATURE_FADE: 0,
-		};
-
-		material.onBeforeCompile = shader => {
-
-			shader.uniforms = {
-				...shader.uniforms,
-				...params,
-			};
-
-			shader.fragmentShader = shader.fragmentShader
-				.replace( /void main\(/, value => /* glsl */`
-					#if FEATURE_FADE
-
-					// adapted from https://www.shadertoy.com/view/Mlt3z8
-					float bayerDither2x2( vec2 v ) {
-
-						return mod( 3.0 * v.y + 2.0 * v.x, 4.0 );
-
-					}
-
-					float bayerDither4x4( vec2 v ) {
-
-						vec2 P1 = mod( v, 2.0 );
-						vec2 P2 = floor( 0.5 * mod( v, 4.0 ) );
-						return 4.0 * bayerDither2x2( P1 ) + bayerDither2x2( P2 );
-
-					}
-
-					uniform float fadeIn;
-					uniform float fadeOut;
-					#endif
-
-					${ value }
-				` )
-				.replace( /#include <dithering_fragment>/, value => /* glsl */`
-
-					${ value }
-
-					#if FEATURE_FADE
-
-					float bayerValue = bayerDither4x4( floor( mod( gl_FragCoord.xy, 4.0 ) ) );
-					float bayerBins = 16.0;
-					float dither = ( 0.5 + bayerValue ) / bayerBins;
-					if ( dither >= fadeIn ) {
-
-						discard;
-
-					}
-
-					if ( dither < fadeOut ) {
-
-						discard;
-
-					}
-
-					#endif
-
-				` );
-
-
-		};
-
-		fadeParams.set( material, params );
+		fadeParams.set( material, wrapFadeMaterial( material ) );
 
 	}
 
