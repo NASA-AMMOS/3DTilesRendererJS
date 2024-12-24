@@ -73,16 +73,6 @@ export class Ellipsoid {
 
 	}
 
-	getNorthernTangent( lat, lon, target, westTarget = _vec3 ) {
-
-		console.log( 'Ellipsoid: getNorthernTangent has been deprecated. Use getEastNorthUpAxes instead.' );
-
-		this.getEastNorthUpAxes( lat, lon, westTarget, target, _vecZ );
-		westTarget.multiplyScalar( - 1 );
-		return target;
-
-	}
-
 	// azimuth: measured off of true north, increasing towards "east"
 	// elevation: measured off of the horizon, increasing towards sky
 	// roll: rotation around northern axis
