@@ -1,16 +1,5 @@
 import {
 	TilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR,
-	LOAD_ORDER,
 } from '3d-tiles-renderer';
 import {
 	DebugTilesPlugin,
@@ -278,21 +267,7 @@ function init() {
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
-	debug.add( params, 'colorMode', {
-
-		NONE,
-		SCREEN_ERROR,
-		GEOMETRIC_ERROR,
-		DISTANCE,
-		DEPTH,
-		RELATIVE_DEPTH,
-		IS_LEAF,
-		RANDOM_COLOR,
-		RANDOM_NODE_COLOR,
-		CUSTOM_COLOR,
-		LOAD_ORDER,
-
-	} );
+	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
 	debug.open();
 
 	const exampleOptions = gui.addFolder( 'Example Options' );

@@ -30,19 +30,39 @@ export function getIndexedRandomColor( index ) {
 }
 
 // color modes
-export const NONE = 0;
-export const SCREEN_ERROR = 1;
-export const GEOMETRIC_ERROR = 2;
-export const DISTANCE = 3;
-export const DEPTH = 4;
-export const RELATIVE_DEPTH = 5;
-export const IS_LEAF = 6;
-export const RANDOM_COLOR = 7;
-export const RANDOM_NODE_COLOR = 8;
-export const CUSTOM_COLOR = 9;
-export const LOAD_ORDER = 10;
+const NONE = 0;
+const SCREEN_ERROR = 1;
+const GEOMETRIC_ERROR = 2;
+const DISTANCE = 3;
+const DEPTH = 4;
+const RELATIVE_DEPTH = 5;
+const IS_LEAF = 6;
+const RANDOM_COLOR = 7;
+const RANDOM_NODE_COLOR = 8;
+const CUSTOM_COLOR = 9;
+const LOAD_ORDER = 10;
+
+const ColorModes = Object.freeze( {
+	NONE,
+	SCREEN_ERROR,
+	GEOMETRIC_ERROR,
+	DISTANCE,
+	DEPTH,
+	RELATIVE_DEPTH,
+	IS_LEAF,
+	RANDOM_COLOR,
+	RANDOM_NODE_COLOR,
+	CUSTOM_COLOR,
+	LOAD_ORDER,
+} );
 
 export class DebugTilesPlugin {
+
+	static get ColorModes() {
+
+		return ColorModes;
+
+	}
 
 	constructor( options ) {
 
