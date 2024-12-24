@@ -472,7 +472,7 @@ export class TilesRendererBase {
 		if ( parentTile === null ) {
 
 			tile.__depth = 0;
-			tile.__depthFromRenderedParent = 0;
+			tile.__depthFromRenderedParent = ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || 'REPLACE';
 
 		} else {
