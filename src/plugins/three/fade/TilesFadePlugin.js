@@ -358,10 +358,8 @@ export class TilesFadePlugin {
 
 	initBatchedMesh() {
 
-		const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' );
-		const otherBatchedMesh = batchedPlugin.batchedMesh;
-
-		if ( batchedPlugin && batchedPlugin.batchedMesh ) {
+		const otherBatchedMesh = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' )?.batchedMesh;
+		if ( otherBatchedMesh ) {
 
 			if ( this.batchedMesh === null ) {
 
