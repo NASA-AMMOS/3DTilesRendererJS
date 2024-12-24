@@ -19,14 +19,6 @@ export { GlobeControls } from './three/controls/GlobeControls.js';
 export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
 export { CameraTransitionManager } from './three/controls/CameraTransitionManager.js';
 
-// three.js plugins
-export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin.js';
-export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin.js';
-export * from './three/plugins/DebugTilesPlugin.js';
-
-// common plugins
-export { ImplicitTilingPlugin } from './base/plugins/ImplicitTilingPlugin.js';
-
 // common
 export { TilesRendererBase } from './base/TilesRendererBase.js';
 export { LoaderBase } from './base/loaders/LoaderBase.js';
