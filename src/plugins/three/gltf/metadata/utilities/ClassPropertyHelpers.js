@@ -2,10 +2,10 @@ import {
 	Vector2,
 	Vector3,
 	Vector4,
+	Matrix2,
 	Matrix3,
 	Matrix4,
 } from 'three';
-import { Matrix2 } from '../math/Matrix2.js';
 
 // returns the field in the object with a resolved default
 export function getField( object, key, def ) {

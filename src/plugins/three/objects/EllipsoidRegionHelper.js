@@ -45,7 +45,7 @@ function toGroupGeometry( geometry ) {
 
 }
 
-function getRegionGeometry( ellipsoidRegion ) {
+function getRegionGeometry( ellipsoidRegion, { computeNormals = false } = {} ) {
 
 	// retrieve the relevant fields
 	const {
@@ -81,8 +81,12 @@ function getRegionGeometry( ellipsoidRegion ) {
 
 	}
 
-	// compute the vertex normals so we can get the edge normals
-	geometry.computeVertexNormals();
+	if ( computeNormals ) {
+
+		// compute the vertex normals so we can get the edge normals
+		geometry.computeVertexNormals();
+
+	}
 
 	// compute the top and bottom cap normals
 	for ( let i = 0, l = refPosition.count; i < l; i ++ ) {
@@ -159,7 +163,7 @@ export class EllipsoidRegionHelper extends Mesh {
 		this.geometry.dispose();
 
 		// retrieve the relevant fields
-		const geometry = getRegionGeometry( this.ellipsoidRegion );
+		const geometry = getRegionGeometry( this.ellipsoidRegion, { computeNormals: true } );
 		const { lonStart, lonEnd } = this;
 
 		// exclude the side tris if the region wraps around

@@ -1,4 +1,4 @@
-import { WebGLArrayRenderTarget, MeshBasicMaterial, Group, DataTexture, REVISION } from 'three';
+import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
@@ -23,6 +23,7 @@ export class BatchedTilesPlugin {
 			indexCount: 2000,
 			expandPercent: 0.25,
 			maxInstanceCount: Infinity,
+			discardOriginalContent: true,
 
 			material: null,
 			renderer: null,
@@ -30,6 +31,7 @@ export class BatchedTilesPlugin {
 		};
 
 		this.name = 'BATCHED_MESH_PLUGIN';
+		this.priority = - 1;
 
 		// limit the amount of instances to the size of a 3d texture to avoid over flowing the
 		const gl = options.renderer.getContext();
@@ -42,6 +44,7 @@ export class BatchedTilesPlugin {
 		this.expandPercent = options.expandPercent;
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
+		this.discardOriginalContent = options.discardOriginalContent;
 
 		// local variables
 		this.batchedMesh = null;
@@ -56,139 +59,14 @@ export class BatchedTilesPlugin {
 
 	init( tiles ) {
 
-		this._onLoadModel = ( { scene, tile } ) => {
+		this._onDisposeModel = ( { scene, tile } ) => {
 
-			// find the meshes in the scene
-			const meshes = [];
-			scene.traverse( c => {
-
-				if ( c.isMesh ) {
-
-					meshes.push( c );
-
-				}
-
-			} );
-
-			// don't add the geometry if it doesn't have the right attributes
-			let hasCorrectAttributes = true;
-			meshes.forEach( mesh => {
-
-				if ( this.batchedMesh && hasCorrectAttributes ) {
-
-					const attrs = mesh.geometry.attributes;
-					const batchedAttrs = this.batchedMesh.geometry.attributes;
-					for ( const key in batchedAttrs ) {
-
-						if ( ! ( key in attrs ) ) {
-
-							hasCorrectAttributes = false;
-							return;
-
-						}
-
-					}
-
-				}
-
-			} );
-
-			const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
-			if ( hasCorrectAttributes && canAddMeshes ) {
-
-				// TODO: ideally we could just set these to null
-				tile.cached.scene = new Group();
-				tile.cached.materials = [];
-				tile.cached.geometries = [];
-				tile.cached.textures = [];
-
-				scene.updateMatrixWorld();
-
-				const instanceIds = [];
-				meshes.forEach( mesh => {
-
-					this.initBatchedMesh( mesh );
-
-					const { geometry, material } = mesh;
-					const { batchedMesh, expandPercent } = this;
-
-					// assign expandPercent in case it has changed
-					batchedMesh.expandPercent = expandPercent;
-
-					const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
-					const instanceId = batchedMesh.addInstance( geometryId );
-					instanceIds.push( instanceId );
-					batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
-					batchedMesh.setVisibleAt( instanceId, false );
-					if ( ! isColorWhite( material.color ) ) {
-
-						material.color.setHSL( Math.random(), 0.5, 0.5 );
-						batchedMesh.setColorAt( instanceId, material.color );
-
-					}
-
-					// render the material
-					const texture = material.map;
-					if ( texture ) {
-
-						this.assignTextureToLayer( texture, instanceId );
-
-					} else {
-
-						this.assignTextureToLayer( _whiteTex, instanceId );
-
-					}
-
-				} );
-
-				this._tileToInstanceId.set( tile, instanceIds );
-
-			}
-
-		};
-
-		this._onDisposeModel = ( { tile } ) => {
-
-			if ( this._tileToInstanceId.has( tile ) ) {
-
-				const instanceIds = this._tileToInstanceId.get( tile );
-				this._tileToInstanceId.delete( tile );
-				instanceIds.forEach( instanceId => {
-
-					this.batchedMesh.deleteInstance( instanceId );
-
-				} );
-
-			}
-
-		};
-
-		this._onVisibilityChange = ( { tile, visible } ) => {
-
-			if ( this._tileToInstanceId.has( tile ) ) {
-
-				const instanceIds = this._tileToInstanceId.get( tile );
-				instanceIds.forEach( instanceId => {
-
-					this.batchedMesh.setVisibleAt( instanceId, visible );
-
-				} );
-
-			}
+			this.removeSceneFromBatchedMesh( scene, tile );
 
 		};
 
 		// register events
-		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChange );
-
-		// prepare all already loaded geometry
-		tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			this._onLoadModel( { scene, tile } );
-
-		} );
 		this.tiles = tiles;
 
 	}
@@ -237,6 +115,66 @@ export class BatchedTilesPlugin {
 
 	}
 
+	setTileVisible( tile, visible ) {
+
+		const scene = tile.cached.scene;
+		if ( visible ) {
+
+			// Add tile set to the batched mesh if it hasn't been added already
+			this.addSceneToBatchedMesh( scene, tile );
+
+		}
+
+		if ( this._tileToInstanceId.has( tile ) ) {
+
+			const instanceIds = this._tileToInstanceId.get( tile );
+			instanceIds.forEach( instanceId => {
+
+				this.batchedMesh.setVisibleAt( instanceId, visible );
+
+			} );
+
+			// TODO: this should be handled by the base tiles renderer
+			const tiles = this.tiles;
+			if ( visible ) {
+
+				tiles.visibleTiles.add( tile );
+
+			} else {
+
+				tiles.visibleTiles.delete( tile );
+
+			}
+
+			// dispatch the event that is blocked otherwise
+			tiles.dispatchEvent( {
+				type: 'tile-visibility-change',
+				scene,
+				tile,
+				visible,
+			} );
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+	unloadTileFromGPU( scene, tile ) {
+
+		if ( ! this.discardOriginalContent && this._tileToInstanceId.has( tile ) ) {
+
+			this.removeSceneFromBatchedMesh( scene, tile );
+			return true;
+
+		}
+
+		return false;
+
+	}
+
 	// render the given into the given layer
 	assignTextureToLayer( texture, layer ) {
 
@@ -249,6 +187,8 @@ export class BatchedTilesPlugin {
 		renderer.setRenderTarget( this.arrayTarget, layer );
 		_textureRenderQuad.material.map = texture;
 		_textureRenderQuad.render( renderer );
+
+		// TODO: perform a copy if the texture is already the appropriate size
 
 		// reset state
 		renderer.setRenderTarget( currentRenderTarget );
@@ -285,6 +225,122 @@ export class BatchedTilesPlugin {
 			arrayTarget.dispose();
 			batchedMesh.material.map = newArrayTarget.texture;
 			this.arrayTarget = newArrayTarget;
+
+		}
+
+	}
+
+	removeSceneFromBatchedMesh( scene, tile ) {
+
+		if ( this._tileToInstanceId.has( tile ) ) {
+
+			const instanceIds = this._tileToInstanceId.get( tile );
+			this._tileToInstanceId.delete( tile );
+			instanceIds.forEach( instanceId => {
+
+				this.batchedMesh.deleteInstance( instanceId );
+
+			} );
+
+		}
+
+	}
+
+	addSceneToBatchedMesh( scene, tile ) {
+
+		if ( this._tileToInstanceId.has( tile ) ) {
+
+			return;
+
+		}
+
+		// find the meshes in the scene
+		const meshes = [];
+		scene.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				meshes.push( c );
+
+			}
+
+		} );
+
+		// don't add the geometry if it doesn't have the right attributes
+		let hasCorrectAttributes = true;
+		meshes.forEach( mesh => {
+
+			if ( this.batchedMesh && hasCorrectAttributes ) {
+
+				const attrs = mesh.geometry.attributes;
+				const batchedAttrs = this.batchedMesh.geometry.attributes;
+				for ( const key in batchedAttrs ) {
+
+					if ( ! ( key in attrs ) ) {
+
+						hasCorrectAttributes = false;
+						return;
+
+					}
+
+				}
+
+			}
+
+		} );
+
+		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
+		if ( hasCorrectAttributes && canAddMeshes ) {
+
+			if ( this.discardOriginalContent ) {
+
+				tile.cached.scene = null;
+				tile.cached.materials = [];
+				tile.cached.geometries = [];
+				tile.cached.textures = [];
+
+			}
+
+			scene.updateMatrixWorld();
+
+			const instanceIds = [];
+			meshes.forEach( mesh => {
+
+				this.initBatchedMesh( mesh );
+
+				const { geometry, material } = mesh;
+				const { batchedMesh, expandPercent } = this;
+
+				// assign expandPercent in case it has changed
+				batchedMesh.expandPercent = expandPercent;
+
+				const geometryId = batchedMesh.addGeometry( geometry, this.vertexCount, this.indexCount );
+				const instanceId = batchedMesh.addInstance( geometryId );
+				instanceIds.push( instanceId );
+				batchedMesh.setMatrixAt( instanceId, mesh.matrixWorld );
+				batchedMesh.setVisibleAt( instanceId, false );
+				if ( ! isColorWhite( material.color ) ) {
+
+					material.color.setHSL( Math.random(), 0.5, 0.5 );
+					batchedMesh.setColorAt( instanceId, material.color );
+
+				}
+
+				// render the material
+				const texture = material.map;
+				if ( texture ) {
+
+					this.assignTextureToLayer( texture, instanceId );
+
+				} else {
+
+					this.assignTextureToLayer( _whiteTex, instanceId );
+
+				}
+
+			} );
+
+			this._tileToInstanceId.set( tile, instanceIds );
 
 		}
 
@@ -328,9 +384,7 @@ export class BatchedTilesPlugin {
 
 		}
 
-		tiles.removeEventListener( 'load-model', this._onLoadModel );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChange );
 
 	}
 

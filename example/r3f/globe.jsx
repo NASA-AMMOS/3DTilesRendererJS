@@ -9,15 +9,18 @@ import {
 	GlobeControls,
 	EastNorthUpFrame,
 	CompassGizmo,
+	CameraTransition,
 } from '3d-tiles-renderer/r3f';
-import { CameraTransition } from './components/CameraTransition.jsx';
 
 // Plugins
-import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
-import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
-import { TilesFadePlugin } from '../src/plugins/fade/TilesFadePlugin.js';
-import { TileCompressionPlugin } from '../src/plugins/TileCompressionPlugin.js';
-import { UpdateOnChangePlugin } from '../src/plugins/UpdateOnChangePlugin.js';
+import {
+	GoogleCloudAuthPlugin,
+	UpdateOnChangePlugin,
+	TileCompressionPlugin,
+	TilesFadePlugin,
+	GLTFExtensionsPlugin,
+	UnloadTilesPlugin,
+} from '3d-tiles-renderer/plugins';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
@@ -79,9 +82,14 @@ function App() {
 		ortho: false,
 	};
 
+	// TODO: the renderer is rerendering due to floating point issues
+	// - see if we should trigger an invalidate on tiles plugin add and params change
+	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
+
 	const { apiToken, ortho } = useControls( levaParams );
 	return (
 		<Canvas
+			frameloop='demand'
 			camera={ {
 				position: [ 0, 0.5 * 1e7, 1.5 * 1e7 ],
 			} }
@@ -97,15 +105,12 @@ function App() {
 		>
 			<color attach="background" args={ [ 0x111111 ] } />
 
-			{/*
-				3D Tiles renderer tile set
-				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
-			*/}
-			<TilesRenderer key={ apiToken } group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
+			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
 				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
+				<TilesPlugin plugin={ UnloadTilesPlugin } />
 				<TilesPlugin plugin={ TilesFadePlugin } />
 
 				{/* Controls */}

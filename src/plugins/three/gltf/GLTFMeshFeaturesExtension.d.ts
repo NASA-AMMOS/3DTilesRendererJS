@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
+import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-export class GLTFMeshFeaturesExtension {
+export class GLTFMeshFeaturesExtension implements GLTFLoaderPlugin {
 
 	name: 'EXT_mesh_features';
 
@@ -8,9 +9,9 @@ export class GLTFMeshFeaturesExtension {
 
 export class MeshFeatures {
 
-	getFeatures( triangle: Number, barycoord: Vector3 ): Array<Number>;
-	getFeaturesAsync( triangle: Number, barycoord: Vector3 ): Promise<Array<Number>>;
-	getFeaturesInfo(): Array<{ label: String, propertyTable: Number, nullFeatureId: Number | null }>;
+	getFeatures( triangle: number, barycoord: Vector3 ): Array<number>;
+	getFeaturesAsync( triangle: number, barycoord: Vector3 ): Promise<Array<number>>;
+	getFeaturesInfo(): Array<{ label: string, propertyTable: number, nullFeatureId: number | null }>;
 	dispose(): void;
 
 }

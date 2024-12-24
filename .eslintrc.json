@@ -41,9 +41,11 @@
 		"parser": "@typescript-eslint/parser",
 		"plugins": [ "@typescript-eslint" ],
 		"rules": {
+			"no-undef": "off",
 			"no-unused-vars": [ "error", { "args": "none" } ],
 			"indent": [ "error", "tab" ],
-			"no-dupe-class-members": "off"
+			"no-dupe-class-members": "off",
+			"@typescript-eslint/no-wrapper-object-types": "error"
 		}
 	}, {
 		"files": [ "*.jsx" ],

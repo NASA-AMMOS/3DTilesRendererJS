@@ -53,6 +53,8 @@ export class GlobeControls extends EnvironmentControls {
 		this._dragMode = 0;
 		this._rotationMode = 0;
 		this.maxZoom = 0.01;
+		this.nearMargin = 0.25;
+		this.farMargin = 0;
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
@@ -200,7 +202,8 @@ export class GlobeControls extends EnvironmentControls {
 
 		super.adjustCamera( camera );
 
-		const { tilesGroup, ellipsoid } = this;
+		const { tilesGroup, ellipsoid, nearMargin, farMargin } = this;
+		const maxRadius = Math.max( ...ellipsoid.radius );
 		if ( camera.isPerspectiveCamera ) {
 
 			// adjust the clip planes
@@ -211,11 +214,10 @@ export class GlobeControls extends EnvironmentControls {
 			// update the projection matrix
 			// interpolate from the 25% radius margin around the globe down to the surface
 			// so we can avoid z fighting when near value is too far at a high altitude
-			const largestDistance = Math.max( ...ellipsoid.radius );
-			const margin = 0.25 * largestDistance;
-			const alpha = MathUtils.clamp( ( distanceToCenter - largestDistance ) / margin, 0, 1 );
+			const margin = nearMargin * maxRadius;
+			const alpha = MathUtils.clamp( ( distanceToCenter - maxRadius ) / margin, 0, 1 );
 			const minNear = MathUtils.lerp( 1, 1000, alpha );
-			camera.near = Math.max( minNear, distanceToCenter - largestDistance - margin );
+			camera.near = Math.max( minNear, distanceToCenter - maxRadius - margin );
 
 			// update the far plane to the horizon distance
 			const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
@@ -228,7 +230,7 @@ export class GlobeControls extends EnvironmentControls {
 			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
 
 			// extend the horizon distance by 2.5 to handle cases where geometry extends above the horizon
-			camera.far = horizonDistance * 2.5 + 0.1;
+			camera.far = horizonDistance * 2.5 + 0.1 + maxRadius * farMargin;
 			camera.updateProjectionMatrix();
 
 		} else {
@@ -240,8 +242,8 @@ export class GlobeControls extends EnvironmentControls {
 			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
 
 			const distanceToCenter = - _vec.z;
-			camera.near = distanceToCenter - Math.max( ...ellipsoid.radius ) * 1.1;
-			camera.far = distanceToCenter + 0.1;
+			camera.near = distanceToCenter - maxRadius * ( 1 + nearMargin );
+			camera.far = distanceToCenter + 0.1 + maxRadius * farMargin;
 
 			// adjust the position of the ortho camera such that the near value is 0
 			camera.position.addScaledVector( _forward, camera.near );

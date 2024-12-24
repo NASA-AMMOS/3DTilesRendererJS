@@ -75,7 +75,9 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	toggle() {
 
+		// reset the clock for cases where we're not calling "update" every frame
 		this._target = this._target === 1 ? 0 : 1;
+		this._clock.getDelta();
 
 	}
 

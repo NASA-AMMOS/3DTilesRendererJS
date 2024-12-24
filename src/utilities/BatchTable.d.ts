@@ -1,24 +1,24 @@
 export class BatchTable {
 
-	count : Number;
+	count : number;
 
 	constructor(
 		buffer : ArrayBuffer,
-		count : Number,
-		start : Number,
-		headerLength : Number,
-		binLength : Number
+		count : number,
+		start : number,
+		headerLength : number,
+		binLength : number
 	);
 
-	getKeys() : Array< String >;
+	getKeys() : Array< string >;
 
 	getDataFromId(
-		id: Number,
-		target?: Object
-	) : Object;
+		id: number,
+		target?: object
+	) : object;
 
 	getPropertyArray(
-		key: String,
-	) : Number | String | ArrayBufferView;
+		key: string,
+	) : number | string | ArrayBufferView;
 
 }

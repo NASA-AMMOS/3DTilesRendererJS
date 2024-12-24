@@ -1,8 +1,8 @@
 export class LRUCache {
 
-	maxSize : Number;
-	minSize : Number;
-	unloadPercent : Number;
-	unloadPriorityCallback : ( item : any ) => Number;
+	maxSize : number;
+	minSize : number;
+	unloadPercent : number;
+	unloadPriorityCallback : ( item : any ) => number;
 
 }

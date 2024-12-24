@@ -3,7 +3,7 @@ import { FeatureTable } from '../../utilities/FeatureTable';
 
 export interface I3DMBaseResult {
 
-	version : String;
+	version : string;
 	featureTable: FeatureTable;
 	batchTable : BatchTable;
 	glbBytes : Uint8Array;

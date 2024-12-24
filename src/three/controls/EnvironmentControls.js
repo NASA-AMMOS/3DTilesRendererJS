@@ -809,17 +809,39 @@ export class EnvironmentControls extends EventDispatcher {
 			this._updateZoomDirection();
 
 			// zoom straight into the globe if we haven't hit anything
-			if ( this.zoomPointSet || this._updateZoomPoint() ) {
+			const zoomIntoPoint = this.zoomPointSet || this._updateZoomPoint();
 
-				// get the mouse position before zoom
-				_mouseBefore.unproject( camera );
+			// get the mouse position before zoom
+			_mouseBefore.unproject( camera );
 
-				// zoom the camera
-				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			// zoom the camera
+			const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
+			let scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
+			scaleFactor *= zoomSpeed;
 
-				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
-				camera.updateProjectionMatrix();
+			if ( scaleFactor > 1 ) {
+
+				if ( maxZoom < camera.zoom * scaleFactor ) {
+
+					scaleFactor = 1;
+
+				}
+
+			} else {
+
+				if ( minZoom > camera.zoom * scaleFactor ) {
+
+					scaleFactor = 1;
+
+				}
+
+			}
+
+			camera.zoom *= scaleFactor;
+			camera.updateProjectionMatrix();
+
+			// adjust the surface point to be in the same position if the globe is hovered over
+			if ( zoomIntoPoint ) {
 
 				// get the mouse position after zoom
 				mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
@@ -829,14 +851,10 @@ export class EnvironmentControls extends EventDispatcher {
 				camera.position.sub( _mouseAfter ).add( _mouseBefore );
 				camera.updateMatrixWorld();
 
-			} else {
-
-				const normalizedDelta = Math.pow( 0.95, Math.abs( scale * 0.05 ) );
-				const scaleFactor = scale > 0 ? 1 / Math.abs( normalizedDelta ) : normalizedDelta;
-				camera.zoom = Math.max( minZoom, Math.min( maxZoom, camera.zoom * scaleFactor * zoomSpeed ) );
-				camera.updateProjectionMatrix();
-
 			}
+
+			// TODO: the user can currently zoom into the sky and hide the globe.
+			// Consider forcing the camera to zoom into the closest horizon point
 
 		} else {
 

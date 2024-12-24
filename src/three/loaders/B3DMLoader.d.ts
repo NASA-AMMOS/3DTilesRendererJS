@@ -20,7 +20,7 @@ export interface B3DMResult extends GLTF, B3DMBaseResult {
 export class B3DMLoader {
 
 	constructor( manager : LoadingManager );
-	load( url : String ) : Promise< B3DMResult >;
+	load( url : string ) : Promise< B3DMResult >;
 	parse( buffer : ArrayBuffer ) : Promise < B3DMResult >;
 
 }

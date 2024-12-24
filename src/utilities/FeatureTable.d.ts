@@ -1,6 +1,6 @@
 interface FeatureTableHeader {
 
-	extensions?: Object;
+	extensions?: object;
 	extras?: any;
 
 }
@@ -11,20 +11,20 @@ export class FeatureTable {
 
 	constructor(
 		buffer : ArrayBuffer,
-		start : Number,
-		headerLength : Number,
-		binLength : Number
+		start : number,
+		headerLength : number,
+		binLength : number
 	);
 
-	getKeys() : Array< String >;
+	getKeys() : Array< string >;
 
 	getData(
-		key : String,
-		count : Number,
-		defaultComponentType? : String | null,
-		defaultType? : String | null
-	) : Number | String | ArrayBufferView;
+		key : string,
+		count : number,
+		defaultComponentType? : string | null,
+		defaultType? : string | null
+	) : number | string | ArrayBufferView;
 
-	getBuffer( byteOffset : Number, byteLength : Number ) : ArrayBuffer;
+	getBuffer( byteOffset : number, byteLength : number ) : ArrayBuffer;
 
 }

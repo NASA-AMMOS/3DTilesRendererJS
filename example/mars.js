@@ -1,4 +1,4 @@
-import { TilesRenderer } from '3d-tiles-renderer';
+import { TilesRenderer, EnvironmentControls } from '3d-tiles-renderer';
 import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -9,7 +9,6 @@ import {
 	Group,
 	FogExp2,
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer;
@@ -42,15 +41,12 @@ function init() {
 
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 	camera.position.set( 20, 10, 20 );
+	camera.lookAt( 0, 0, 0 );
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
-	controls.minDistance = 1;
-	controls.maxDistance = 2000;
-	controls.maxPolarAngle = Math.PI / 2;
-	controls.baseSpeed = 0.1;
-	controls.fastSpeed = 0.2;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.minZoomDistance = 2;
+	controls.cameraRadius = 1;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -107,6 +103,7 @@ function render() {
 
 	requestAnimationFrame( render );
 
+	controls.update();
 	camera.updateMatrixWorld();
 
 	groundTiles.errorTarget = params.errorTarget;

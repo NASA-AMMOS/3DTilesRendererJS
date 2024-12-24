@@ -4,6 +4,6 @@ export function swapToGeoFrame( target : Vector3 ) : Vector3;
 
 export function swapToThreeFrame( target : Vector3 ) : Vector3;
 
-export function sphericalPhiToLatitude( phi : Number ) : Number;
+export function sphericalPhiToLatitude( phi : number ) : number;
 
-export function latitudeToSphericalPhi( latitude : Number ) : Number;
+export function latitudeToSphericalPhi( latitude : number ) : number;

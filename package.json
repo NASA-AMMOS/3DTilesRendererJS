@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.3.40",
+  "version": "0.3.46",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -30,7 +30,7 @@
     "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "tsc --project tsconfig.test.json && jest"
   },
   "repository": {
     "type": "git",
@@ -66,11 +66,18 @@
     "vite": "^5.3.1"
   },
   "peerDependencies": {
-    "three": ">=0.123.0"
+    "three": ">=0.166.0"
   },
   "optionalDependencies": {
     "@react-three/fiber": "^8.17.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
+  },
+  "dependencies": {
+    "@react-three/postprocessing": "^2.16.3",
+    "@takram/three-atmosphere": "^0.5.0",
+    "@takram/three-geospatial": "^0.0.1-alpha.4",
+    "@takram/three-geospatial-effects": "^0.0.1-alpha.4",
+    "postprocessing": "^6.36.4"
   }
 }

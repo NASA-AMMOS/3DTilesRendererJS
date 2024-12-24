@@ -1,5 +1,7 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLTFStructuralMetadataExtension, GLTFMeshFeaturesExtension, GLTFCesiumRTCExtension } from '3d-tiles-renderer/plugins';
+import { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
+import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
+import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
 
 export class GLTFExtensionsPlugin {
 
@@ -13,6 +15,7 @@ export class GLTFExtensionsPlugin {
 
 			dracoLoader: null,
 			ktxLoader: null,
+			meshoptDecoder: null,
 			autoDispose: true,
 			...options,
 		};
@@ -25,6 +28,7 @@ export class GLTFExtensionsPlugin {
 
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
+		this.meshoptDecoder = options.meshoptDecoder;
 		this._gltfRegex = /\.(gltf|glb)$/g;
 		this._dracoRegex = /\.drc$/g;
 		this._loader = null;
@@ -44,6 +48,12 @@ export class GLTFExtensionsPlugin {
 		if ( this.ktxLoader ) {
 
 			loader.setKTX2Loader( this.ktxLoader );
+
+		}
+
+		if ( this.meshoptDecoder ) {
+
+			loader.setMeshoptDecoder( this.meshoptDecoder );
 
 		}
 

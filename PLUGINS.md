@@ -102,6 +102,26 @@ Updates the clip planes and position of the given camera so the globe is encapsu
 
 _extends [EnvironmentControls](#environmentcontrols)_
 
+### .nearMargin
+
+```js
+nearMargin = 0.25 : number
+```
+
+The margin around the globe to include when positioning the camera near plane as a percentage of the max radius of the tile set ellipsoid. Useful for ensuring visualizations and other models are visible around the globe.
+
+Default is 25%.
+
+### farMargin
+
+```js
+farMargin = 0 : number
+```
+
+The margin around the globe to include when positioning the camera far plane as a percentage of the max radius of the tile set ellipsoid. Useful for ensuring visualizations and other models are visible around the globe.
+
+Default is 0%.
+
 ### .constructor
 
 ```js

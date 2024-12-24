@@ -1,14 +1,14 @@
 interface TileInfo {
 
-	type : String;
+	type : string;
 	buffer : Uint8Array;
-	version : String;
+	version : string;
 
 }
 
 export interface CMPTBaseResult {
 
-	version : String;
+	version : string;
 	tiles : Array< TileInfo >;
 
 }
@@ -16,7 +16,7 @@ export interface CMPTBaseResult {
 export class CMPTLoaderBase {
 
 	workingPath : string;
-	load( url : String ) : Promise< CMPTBaseResult >;
+	load( url : string ) : Promise< CMPTBaseResult >;
 	parse( buffer : ArrayBuffer ) : CMPTBaseResult;
 
 }

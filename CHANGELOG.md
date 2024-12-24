@@ -4,9 +4,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.3.46] - 2024.12.24
+### Fixed
+- Types: Convert types of use non-wrapper types.
+- Types: Adjust GLTF Plugin classes to extend appropriate type.
+- BatchedMeshPlugin: Prevent empty groups from being added for each tile when using BatchedMeshPlugin.
+- TilesRenderer: Fixed event targets not being set to the tiles renderer.
+
+### Changed
+- TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
+- TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
+- TileCompressionPlugin: Change the defaults to not automatically compress normals, uvs to avoid artifacts.
+- GlobeControls: Orthographic "near" margin around the globe has been increased from 10% to 25% of the large ellipsoid radius value.
+
 ### Added
-- R3F CameraTransition component to examples folder.
+- Added "priority" field to plugins to ensure correct execution order. `TilesCompression` and `BatchedMesh` plugin will always run first.
+- Added `UnloadTilesPlugin`.
+- Plugins: Add support for "setTileVisible" plugin callbacks.
+- Add names to some plugins that were missing them.
+- GLTFExtensionsPlugin: Add support for MeshoptDecoder.
+- TilesRenderer: Add types for events.
+- GlobeControls: Added `nearMargin` and `farMargin` percentages for controlling camera distances.
+- DebugTilesPlugin: `enabled` field to DebugTilesPlugin to enable / disable the debug features.
+- DebugTilesPlugin: Added support for `displayParentBounds`.
+
+## [0.3.45] - 2024.12.13
+### Fixed
+- CameraTransition R3F Component: Allow for not passing in a "mode".
+- CameraTransition R3F Component: Allow for passing options arguments into the component.
+- CameraTransition R3F Component: Fix on demand rendering not working correctly.
+- Export new B3DM, I3DM, and PNTS types.
+
+## [0.3.44] - 2024.12.07
+### Fixed
+- TilesRenderer: Root tile load state not getting set correctly.
+
+## [0.3.43] - 2024.12.07
+### Fixed
+- TilesFadePlugin: Adjust "TilesFadePlugin" such that it causes are rerender for r3f.
+- EnvironmentControls: Fix orthographic camera zoom so it does not pop if too close to a surface.
+- CesiumIonAuthPlugin and GoogleCloudAuthPlugin: The plugins now automatically retry root tile if it hasn't been loaded upon add.
+
+## [0.3.42] - 2024.12.02
+### Changed
+- Increased default `downloadQueue` max jobs from 4 to 10.
+- Move TilesFadePlugin, TileCompressionPlugin, UpdateOnChangePlugin to `3d-tiles-renderer/plugins`.
+- Move ReorientationPlugin, GLTFExtensionsPlugin to `3d-tiles-renderer/plugins`.
+
+## [0.3.41] - 2024.11.07
+### Added
+- R3F CameraTransition component to r3f export.
+- CameraTransitionManager to core.
 
 ### Fixed
 - Added name field to "UpdateOnChangePlugin".

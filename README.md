@@ -111,7 +111,7 @@ Setting up a 3D Tile Set using a custom material.
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
-tilesRenderer.onLoadModel = function ( scene ) {
+tilesRenderer.addEventListener( 'load-model', ( { scene } ) => {
 
 	// create a custom material for the tile
 	scene.traverse( c => {
@@ -127,7 +127,7 @@ tilesRenderer.onLoadModel = function ( scene ) {
 
 };
 
-tilesRenderer.onDisposeModel = function ( scene ) {
+tilesRenderer.addEventListener( 'dispose-model', ( { scene } ) => {
 
 	// dispose of any manually created materials
 	scene.traverse( c => {
@@ -170,12 +170,13 @@ scene.add( tilesRenderer2.group );
 
 ## Adding DRACO Decompression Support
 
-Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures.
+Adding support for DRACO decompression within the GLTF files that are transported in B3DM and I3DM formats. The same approach can be used to add support for KTX2 and DDS textures. Alternatively the [GLTFExtensionsPlugin](./src/plugins/README.md#gltfextensionsplugin) can be used to simplify the setup.
 
 ```js
 
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
+// Decompressing GLTF requires the GLTF branch of the draco decoder
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 
 const dracoLoader = new DRACOLoader();
@@ -187,18 +188,18 @@ loader.setDRACOLoader( dracoLoader );
 tilesRenderer.manager.addHandler( /\.(gltf|glb)$/g, loader );
 ```
 
-Adding support for DRACO decompression within the PNTS files.
+Adding support for DRACO decompression within the PNTS files requires a different draco decoder. See more info [here](https://github.com/mrdoob/three.js/tree/dev/examples/jsm/libs/draco).
 
 ```js
 
 // Note the DRACO compression files need to be supplied via an explicit source.
 // We use unpkg here but in practice should be provided by the application.
+// Decompressing point clouds should use the master branch of the draco decoder in place of the GLTF branch
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/gltf/' );
-
+dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.123.0/examples/js/libs/draco/' );
 
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.manager.addHandler( /\.drc$/g, loader );
+tilesRenderer.manager.addHandler( /\.drc$/g, dracoLoader );
 ```
 
 
@@ -321,6 +322,12 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // fired when a tiles visibility changes
 { type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
+
+// fired when tiles start loading
+{ type: 'tiles-load-start' }
+
+// fired when all tiles finish loading
+{ type: 'tiles-load-end' }
 ```
 
 ### .fetchOptions
@@ -409,6 +416,8 @@ downloadQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be set once [update](#update) is called for the first time._
 
+Max jobs defaults to `10`.
+
 ### .parseQueue
 
 ```js
@@ -416,6 +425,8 @@ parseQueue = new PriorityQueue : PriorityQueue
 ```
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
+
+Max jobs defaults to `1`.
 
 ### .group
 

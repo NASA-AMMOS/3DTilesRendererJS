@@ -1,6 +1,5 @@
 import {
 	TilesRenderer,
-	GLTFCesiumRTCExtension,
 	NONE,
 	SCREEN_ERROR,
 	GEOMETRIC_ERROR,
@@ -16,6 +15,7 @@ import {
 import {
 	DebugTilesPlugin,
 	ImplicitTilingPlugin,
+	GLTFExtensionsPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -37,7 +37,6 @@ import {
 } from 'three';
 import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -72,6 +71,8 @@ const params = {
 	resolutionScale: 1.0,
 
 	up: hashUrl ? '+Z' : '+Y',
+	enableDebug: true,
+	displayParentBounds: false,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
@@ -96,10 +97,6 @@ function reinstantiateTiles() {
 
 	}
 
-	tiles = new TilesRenderer( url );
-	tiles.registerPlugin( new DebugTilesPlugin() );
-	tiles.registerPlugin( new ImplicitTilingPlugin() );
-
 	// Note the DRACO compression files need to be supplied via an explicit source.
 	// We use unpkg here but in practice should be provided by the application.
 	const dracoLoader = new DRACOLoader();
@@ -109,13 +106,16 @@ function reinstantiateTiles() {
 	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
 	ktx2loader.detectSupport( renderer );
 
-	const loader = new GLTFLoader( tiles.manager );
-	loader.setDRACOLoader( dracoLoader );
-	loader.setKTX2Loader( ktx2loader );
-	loader.register( () => new GLTFCesiumRTCExtension() );
+	tiles = new TilesRenderer( url );
+	tiles.registerPlugin( new DebugTilesPlugin() );
+	tiles.registerPlugin( new ImplicitTilingPlugin() );
+	tiles.registerPlugin( new GLTFExtensionsPlugin( {
+		rtc: true,
+		dracoLoader: dracoLoader,
+		ktxLoader: ktx2loader,
+	} ) );
 
 	tiles.fetchOptions.mode = 'cors';
-	tiles.manager.addHandler( /\.gltf$/, loader );
 	geospatialRotationParent.add( tiles.group );
 
 	// Used with CUSTOM_COLOR
@@ -273,6 +273,8 @@ function init() {
 	tileOptions.open();
 
 	const debug = gui.addFolder( 'Debug Options' );
+	debug.add( params, 'enableDebug' );
+	debug.add( params, 'displayParentBounds' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
@@ -487,7 +489,9 @@ function animate() {
 
 	// update plugin
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
+	plugin.enabled = params.enableDebug;
 	plugin.displayBoxBounds = params.displayBoxBounds;
+	plugin.displayParentBounds = params.displayParentBounds;
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );

@@ -194,7 +194,7 @@ Plugins to register to the TilesRenderer instance to modify behavior.
 
 ```js
 const tiles = new TilesRenderer( url );
-tiles.registerPlugin( new TilesCompressionPlugin() );
+tiles.registerPlugin( new TileCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
@@ -205,6 +205,14 @@ Plugin that adds support for 3d tiles [implicit tiling](https://github.com/Cesiu
 ## DebugTilesPlugin
 
 Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
+
+### .enabled
+
+```js
+enabled = true : boolean
+```
+
+If true then the debug logic is enabled, which can affect performance. It's recommended to disable or remove the plugin when not in use.
 
 ### .colorMode
 
@@ -262,7 +270,7 @@ The callback used if `debugColor` is set to `CUSTOM_COLOR`. Value defaults to `n
 ### .displayBoxBounds
 
 ```js
-displayBoxBounds = false : Boolean
+displayBoxBounds = false : boolean
 ```
 
 Display wireframe bounding boxes from the tiles `boundingVolume.box` (or derived from the region bounds) for every visible tile.
@@ -270,7 +278,7 @@ Display wireframe bounding boxes from the tiles `boundingVolume.box` (or derived
 ### .displaySphereBounds
 
 ```js
-displaySphereBounds = false : Boolean
+displaySphereBounds = false : boolean
 ```
 
 Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or derived from the bounding box / region bounds) for every visible tile.
@@ -278,10 +286,18 @@ Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or deri
 ### .displayRegionBounds
 
 ```js
-displayRegionBounds = false : Boolean
+displayRegionBounds = false : boolean
 ```
 
 Display wireframe bounding rgions from the tiles `boundingVolume.region` for every visible tile if it exists.
+
+### .displayParentBounds
+
+```js
+displayParentBounds = false : boolean
+```
+
+If true then all the parent bounds of the current leaf tiles will be displayed.
 
 ### .maxDebugDepth
 
@@ -404,11 +420,9 @@ unregisterLayer( name : string ) : void
 hasLayer( name : string ) : boolean
 ```
 
-## TilesCompressionPlugin
+## TileCompressionPlugin
 
-_available in the examples directory_
-
-Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. The default compression is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
+Plugin that processes geometry buffer attributes into smaller data types on load and disables texture mipmaps to save memory. While geometry attribute compression is disabled by default, the default target attribute size when enabled is fairly aggressive and may cause artifacts. Can reduce geometry memory footprint by more than half and texture memory by around a third.
 
 ### .constructor
 
@@ -429,8 +443,8 @@ Available options are as follows:
 
 	// Whether to compress and quantize attributes.
 	compressIndex: true,
-	compressNormals: true,
-	compressUvs: true,
+	compressNormals: false,
+	compressUvs: false,
 	compressPosition: false,
 
 	// The TypedArray type to use when compressing attributes.
@@ -441,8 +455,6 @@ Available options are as follows:
 ```
 
 ## TilesFadePlugin
-
-_available in the examples directory_
 
 Plugin that overrides material shaders to fade tile geometry in and out as tile LODs change. Based on [this Cesium article](https://cesium.com/blog/2022/10/20/smoother-lod-transitions-in-cesium-for-unreal/) on the topic.
 
@@ -474,8 +486,6 @@ Whether to fade the root tile objects in.
 
 ## GLTFExtensionsPlugin
 
-_available in the examples directory_
-
 Plugin for automatically adding common extensions and loaders for 3d tiles to the GLTFLoader used for parsing tile geometry. Additionally, a DRACOLoader is added, as well, to support loading compressed point cloud files.
 
 ### .constructor
@@ -497,9 +507,10 @@ Available options are as follows:
 	// A list of other extensions to include in the loader. All elements are passed to the "GLTFLoader.register" function.
 	plugins: [],
 
-	// DRACOLoader and KTX2Loader instances to add to the loader.
+	// DRACOLoader, KTX2Loader, and MeshoptDecoder instances to add to the loader.
 	dracoLoader: null,
 	ktxLoader: null,
+	meshoptDecoder: null,
 
 	// Whether to automatically dispose of the DRACO and KTX Loaders when the plugin is disposed.
 	autoDispose: true,
@@ -507,8 +518,6 @@ Available options are as follows:
 ```
 
 ## ReorientationPlugin
-
-_available in the examples directory_
 
 Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
 
@@ -546,6 +555,37 @@ transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
 
 Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
+## UnloadTilesPlugin
+
+Plugin that unloads geometry, textures, and materials of any given tile when the visibility changes to non-visible to save GPU memory. The model still exists on the CPU until it is completely removed from the cache.
+
+### .estimatedGpuBytes
+
+```js
+estimatedGPUBytes : number
+```
+
+The number of bytes that are actually uploaded to the GPU for rendering compared to `lruCache.cachedBytes` which reports the amount of texture and geometry buffer bytes actually downloaded.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// The amount of time to wait in milliseconds before unloading tile content from the GPU. This option can be
+	// used to account for cases where the user is moving the camera and tiles are coming in and out of frame.
+	delay: 0,
+
+	// The amount of bytes to unload to.
+	bytesTarget: 0,
+}
+```
+
 ## BatchedTilesPlugin
 
 _available in the examples directory_
@@ -582,5 +622,9 @@ Available options are as follows:
 
 	// The material to use for the BatchedMesh. The material of the first tile rendered with be used if not set.
 	material: null,
+
+	// If true then the original scene geometry is automatically discarded after adding the geometry to the batched mesh to save memory.
+	// This must be set to "false" if being used with plugins such as "UnloadTilesPlugin".
+	discardOriginalContent: true
 }
 ```

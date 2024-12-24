@@ -5,7 +5,6 @@ const _spherical = new Spherical();
 const _norm = new Vector3();
 const _vec = new Vector3();
 const _vec2 = new Vector3();
-const _vec3 = new Vector3();
 const _matrix = new Matrix4();
 const _matrix2 = new Matrix4();
 const _sphere = new Sphere();
@@ -70,16 +69,6 @@ export class Ellipsoid {
 		this.getCartographicToNormal( lat, lon, vecUp );		// up
 		vecEast.set( - point.y, point.x, 0 ).normalize();		// east
 		vecNorth.crossVectors( vecUp, vecEast ).normalize();	// north
-
-	}
-
-	getNorthernTangent( lat, lon, target, westTarget = _vec3 ) {
-
-		console.log( 'Ellipsoid: getNorthernTangent has been deprecated. Use getEastNorthUpAxes instead.' );
-
-		this.getEastNorthUpAxes( lat, lon, westTarget, target, _vecZ );
-		westTarget.multiplyScalar( - 1 );
-		return target;
 
 	}
 

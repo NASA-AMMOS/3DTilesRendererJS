@@ -115,7 +115,7 @@ export class TilesRendererBase {
 	constructor( url = null ) {
 
 		// state
-		this.rootTileSetTriggered = false;
+		this.rootLoadingState = UNLOADED;
 		this.rootTileSet = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
@@ -128,7 +128,7 @@ export class TilesRendererBase {
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
-		downloadQueue.maxJobs = 4;
+		downloadQueue.maxJobs = 10;
 		downloadQueue.priorityCallback = priorityCallback;
 
 		const parseQueue = new PriorityQueue();
@@ -166,7 +166,24 @@ export class TilesRendererBase {
 
 		}
 
-		this.plugins.push( plugin );
+		// insert the plugin based on the priority registered on the plugin
+		const plugins = this.plugins;
+		const priority = plugin.priority || 0;
+		let insertionPoint = 0;
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			insertionPoint = i;
+
+			const otherPriority = plugins[ i ].priority || 0;
+			if ( otherPriority > priority ) {
+
+				break;
+
+			}
+
+		}
+
+		plugins.splice( insertionPoint, 0, plugin );
 		plugin[ PLUGIN_REGISTERED ] = true;
 		if ( plugin.init ) {
 
@@ -233,10 +250,12 @@ export class TilesRendererBase {
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
-		if ( ! this.rootTileSetTriggered ) {
+		if ( this.rootLoadingState === UNLOADED ) {
 
-			this.rootTileSetTriggered = true;
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() );
+			this.rootLoadingState = LOADING;
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
+				.then( () => this.rootLoadingState = LOADED )
+				.catch( () => this.rootLoadingState = FAILED );
 
 		}
 
@@ -278,6 +297,13 @@ export class TilesRendererBase {
 	}
 
 	resetFailedTiles() {
+
+		// reset the root tile if it's finished but never loaded
+		if ( this.rootLoadingState === FAILED ) {
+
+			this.rootLoadingState = UNLOADED;
+
+		}
 
 		const stats = this.stats;
 		if ( stats.failed === 0 ) {
@@ -354,9 +380,10 @@ export class TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
 		if ( tile.__visible ) {
 
-			this.setTileVisible( tile, false );
+			this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
 			tile.__visible = false;
 
 		}

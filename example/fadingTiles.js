@@ -5,10 +5,9 @@ import {
 	OrthographicCamera,
 	Group,
 } from 'three';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
-import { EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
+import { TilesFadePlugin } from '3d-tiles-renderer/plugins';
+import { EnvironmentControls, TilesRenderer, CameraTransitionManager } from '3d-tiles-renderer';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
 
 let controls, scene, renderer;
 let groundTiles, skyTiles, tilesParent, transition;

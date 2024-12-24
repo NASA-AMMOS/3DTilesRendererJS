@@ -3,12 +3,9 @@ import { createRoot } from 'react-dom/client';
 
 // TilesRenderer, controls and attribution imports
 import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, EnvironmentControls } from '3d-tiles-renderer/r3f';
-import { CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
+import { CesiumIonAuthPlugin, UpdateOnChangePlugin, GLTFExtensionsPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
 
 // Plugins
-import { GLTFExtensionsPlugin } from '../src/plugins/GLTFExtensionsPlugin.js';
-import { ReorientationPlugin } from '../src/plugins/ReorientationPlugin.js';
-import { UpdateOnChangePlugin } from '../src/plugins/UpdateOnChangePlugin.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports

@@ -29,6 +29,9 @@ export class CesiumIonAuthPlugin {
 		this.tiles = tiles;
 		this.endpointURL = tiles.rootURL;
 
+		// reset the tiles in case this plugin was removed and re-added
+		tiles.resetFailedTiles();
+
 	}
 
 	loadRootTileSet() {

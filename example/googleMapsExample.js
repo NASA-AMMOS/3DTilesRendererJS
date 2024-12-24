@@ -3,9 +3,17 @@ import {
 	CAMERA_FRAME,
 	GeoUtils,
 	GlobeControls,
+	CameraTransitionManager,
 	TilesRenderer,
 } from '3d-tiles-renderer';
-import { GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
+import {
+	GoogleCloudAuthPlugin,
+	TilesFadePlugin,
+	UpdateOnChangePlugin,
+	TileCompressionPlugin,
+	UnloadTilesPlugin,
+	GLTFExtensionsPlugin,
+} from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
@@ -13,14 +21,9 @@ import {
 	MathUtils,
 	OrthographicCamera,
 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { CameraTransitionManager } from './src/camera/CameraTransitionManager.js';
-import { TileCompressionPlugin } from './src/plugins/TileCompressionPlugin.js';
-import { UpdateOnChangePlugin } from './src/plugins/UpdateOnChangePlugin.js';
-import { TilesFadePlugin } from './src/plugins/fade/TilesFadePlugin.js';
 import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
@@ -61,10 +64,21 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new UnloadTilesPlugin() );
+	tiles.registerPlugin( new GLTFExtensionsPlugin( {
+		// Note the DRACO compression files need to be supplied via an explicit source.
+		// We use unpkg here but in practice should be provided by the application.
+		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+	} ) );
+
 
 	if ( params.useBatchedMesh ) {
 
-		tiles.registerPlugin( new BatchedTilesPlugin( { renderer } ) );
+		tiles.registerPlugin( new BatchedTilesPlugin( {
+			renderer,
+			discardOriginalContent: false,
+			instanceCount: 250,
+		} ) );
 
 	} else {
 
@@ -73,16 +87,6 @@ function reinstantiateTiles() {
 	}
 
 	tiles.group.rotation.x = - Math.PI / 2;
-
-	// Note the DRACO compression files need to be supplied via an explicit source.
-	// We use unpkg here but in practice should be provided by the application.
-	const dracoLoader = new DRACOLoader();
-	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
-
-	const loader = new GLTFLoader( tiles.manager );
-	loader.setDRACOLoader( dracoLoader );
-
-	tiles.manager.addHandler( /\.gltf$/, loader );
 	scene.add( tiles.group );
 
 	tiles.setResolutionFromRenderer( transition.camera, renderer );

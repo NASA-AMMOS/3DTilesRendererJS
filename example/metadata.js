@@ -16,12 +16,10 @@ import {
 	TilesRenderer,
 } from '3d-tiles-renderer';
 import {
-	GLTFMeshFeaturesExtension,
-	GLTFStructuralMetadataExtension,
 	CesiumIonAuthPlugin,
+	GLTFExtensionsPlugin,
 } from '3d-tiles-renderer/plugins';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 // FEATURE_IDs
@@ -178,14 +176,10 @@ function reinstantiateTiles() {
 	// create tile set
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.accessToken, assetId: params.assetId } ) );
+	tiles.registerPlugin( new GLTFExtensionsPlugin( { metadata: true } ) );
+
 	tiles.setCamera( camera );
 	rotationContainer.add( tiles.group );
-
-	// set up gltf loader to support mesh features and structural metadata
-	const loader = new GLTFLoader( tiles.manager );
-	loader.register( () => new GLTFMeshFeaturesExtension() );
-	loader.register( () => new GLTFStructuralMetadataExtension() );
-	tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 
 	// set up the materials for highlighting features
 	tiles.addEventListener( 'load-model', ( { scene } ) => {

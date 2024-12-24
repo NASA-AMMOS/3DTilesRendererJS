@@ -153,6 +153,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 		const tiles = new TilesRendererImpl( url );
 		tiles.addEventListener( 'load-content', () => invalidate() );
+		tiles.addEventListener( 'force-rerender', () => invalidate() );
 		setTiles( tiles );
 
 		return () => {

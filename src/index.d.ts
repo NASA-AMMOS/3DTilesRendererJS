@@ -1,10 +1,9 @@
 // three.js
-export { DebugTilesRenderer } from './three/DebugTilesRenderer';
 export { TilesRenderer } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
-export { B3DMLoader } from './three/loaders/B3DMLoader';
-export { I3DMLoader } from './three/loaders/I3DMLoader';
-export { PNTSLoader } from './three/loaders/PNTSLoader';
+export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader';
+export { I3DMLoader, I3DMScene } from './three/loaders/I3DMLoader';
+export { PNTSLoader, PNTSScene } from './three/loaders/PNTSLoader';
 export { CMPTLoader } from './three/loaders/CMPTLoader';
 export { GLTFCesiumRTCExtension } from './three/loaders/gltf/GLTFCesiumRTCExtension';
 export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader';
@@ -12,16 +11,6 @@ export { Ellipsoid } from './three/math/Ellipsoid';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 export * as GeoUtils from './three/math/GeoUtils';
 export * from './three/math/GeoConstants';
-export * from './three/renderers/GoogleTilesRenderer';
-export * from './three/renderers/CesiumIonTilesRenderer';
-
-// three.js plugins
-export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin';
-export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin';
-export * from './three/plugins/DebugTilesPlugin';
-
-// common plugins
-export { ImplicitTilingPlugin } from './base/plugins/ImplicitTilingPlugin';
 
 // common
 export { TilesRendererBase } from './base/TilesRendererBase';
@@ -37,3 +26,5 @@ export * from './base/constants';
 
 export { LRUCache } from './utilities/LRUCache';
 export { PriorityQueue } from './utilities/PriorityQueue';
+export { BatchTable } from './utilities/BatchTable';
+export { FeatureTable } from './utilities/FeatureTable';

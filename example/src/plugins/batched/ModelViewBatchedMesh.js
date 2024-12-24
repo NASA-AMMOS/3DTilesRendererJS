@@ -25,14 +25,16 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 	onBeforeRender( renderer, scene, camera, geometry, material, group ) {
 
+		// ensure matrices are complete and up to date
 		super.onBeforeRender( renderer, scene, camera, geometry, material, group );
 
+		// retrieve camera before and after camera positions
 		vec1.setFromMatrixPosition( camera.matrixWorld );
 		vec2.setFromMatrixPosition( this._lastCameraPos );
 
+		// initialize the model-view matrix texture if needed
 		const matricesTexture = this._matricesTexture;
 		let modelViewMatricesTexture = this._modelViewMatricesTexture;
-
 		if (
 			! modelViewMatricesTexture ||
 			modelViewMatricesTexture.image.width !== matricesTexture.image.width ||
@@ -55,9 +57,10 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 		}
 
-
+		// check if we need to update the model view matrices
 		if ( this._forceUpdate || vec1.distanceTo( vec2 ) > this.resetDistance ) {
 
+			// transform each objects matrix into local camera frame to avoid precision issues
 			const matricesArray = matricesTexture.image.data;
 			const modelViewArray = modelViewMatricesTexture.image.data;
 			for ( let i = 0; i < this.maxInstanceCount; i ++ ) {
@@ -76,6 +79,8 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 
 		}
 
+		// save handles, and transform the matrix world into the camera frame used to position the mesh instances
+		// to offset the position shift.
 		this._matricesTextureHandle = this._matricesTexture;
 		this._matricesTexture = this._modelViewMatricesTexture;
 		this.matrixWorld.copy( this._lastCameraPos );
