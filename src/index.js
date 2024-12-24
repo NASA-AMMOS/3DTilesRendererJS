@@ -1,5 +1,4 @@
 // three.js
-export { DebugTilesRenderer } from './three/DebugTilesRenderer.js';
 export { TilesRenderer } from './three/TilesRenderer.js';
 export { B3DMLoader } from './three/loaders/B3DMLoader.js';
 export { PNTSLoader } from './three/loaders/PNTSLoader.js';
@@ -14,8 +13,6 @@ export * from './three/math/Ellipsoid.js';
 export * from './three/math/EllipsoidRegion.js';
 export * as GeoUtils from './three/math/GeoUtils.js';
 export * from './three/math/GeoConstants.js';
-export * from './three/renderers/GoogleTilesRenderer.js';
-export * from './three/renderers/CesiumIonTilesRenderer.js';
 
 // three.js controls
 export { GlobeControls } from './three/controls/GlobeControls.js';

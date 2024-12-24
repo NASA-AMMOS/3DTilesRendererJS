@@ -133,20 +133,6 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
-	getBounds( ...args ) {
-
-		console.warn( 'TilesRenderer: getBounds has been renamed to getBoundingBox.' );
-		return this.getBoundingBox( ...args );
-
-	}
-
-	getOrientedBounds( ...args ) {
-
-		console.warn( 'TilesRenderer: getOrientedBounds has been renamed to getOrientedBoundingBox.' );
-		return this.getOrientedBoundingBox( ...args );
-
-	}
-
 	getBoundingBox( target ) {
 
 		if ( ! this.root ) {
@@ -996,41 +982,3 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 }
-
-
-[
-	[ 'onLoadTileSet', 'load-tile-set' ],
-	[ 'onLoadModel', 'load-model' ],
-	[ 'onDisposeModel', 'dispose-model' ],
-	[ 'onTileVisibilityChange', 'tile-visibility-change' ],
-].forEach( ( [ methodName, eventName ] ) => {
-
-	const cachedName = Symbol( methodName );
-	Object.defineProperty(
-		TilesRenderer.prototype,
-		methodName,
-		{
-			get() {
-
-				return this[ cachedName ] || null;
-
-			},
-
-			set( cb ) {
-
-				console.warn( `TilesRenderer: "${ methodName }" has been deprecated in favor of the "${ eventName }" event.` );
-
-				if ( this[ cachedName ] ) {
-
-					this.removeEventListener( eventName, this[ cachedName ] );
-
-				}
-
-				this[ cachedName ] = cb;
-				this.addEventListener( eventName, cb );
-
-			}
-		}
-	);
-
-} );
