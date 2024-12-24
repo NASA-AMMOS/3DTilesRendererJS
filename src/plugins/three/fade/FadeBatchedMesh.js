@@ -1,6 +1,6 @@
 import { PassThroughBatchedMesh } from './PassThroughBatchedMesh.js';
 import { InstanceDataTexture } from './InstanceDataTexture.js';
-import { FloatType, RGFormat } from 'three';
+import { RGFormat, UnsignedByteType } from 'three';
 import { wrapFadeMaterial } from './wrapFadeMaterial.js';
 
 export class FadeBatchedMesh extends PassThroughBatchedMesh {
@@ -40,7 +40,7 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 			// 4 floats per RGBA pixel initialized to white
 			const fadeArray = new Uint8Array( size * size * 2 );
-			const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, FloatType );
+			const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, UnsignedByteType );
 
 			if ( oldFadeTexture ) {
 
