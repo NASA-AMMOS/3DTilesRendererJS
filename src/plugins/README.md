@@ -270,7 +270,7 @@ The callback used if `debugColor` is set to `CUSTOM_COLOR`. Value defaults to `n
 ### .displayBoxBounds
 
 ```js
-displayBoxBounds = false : Boolean
+displayBoxBounds = false : boolean
 ```
 
 Display wireframe bounding boxes from the tiles `boundingVolume.box` (or derived from the region bounds) for every visible tile.
@@ -278,7 +278,7 @@ Display wireframe bounding boxes from the tiles `boundingVolume.box` (or derived
 ### .displaySphereBounds
 
 ```js
-displaySphereBounds = false : Boolean
+displaySphereBounds = false : boolean
 ```
 
 Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or derived from the bounding box / region bounds) for every visible tile.
@@ -286,10 +286,18 @@ Display wireframe bounding boxes from the tiles `boundingVolume.sphere` (or deri
 ### .displayRegionBounds
 
 ```js
-displayRegionBounds = false : Boolean
+displayRegionBounds = false : boolean
 ```
 
 Display wireframe bounding rgions from the tiles `boundingVolume.region` for every visible tile if it exists.
+
+### .displayParentBounds
+
+```js
+displayParentBounds = false : boolean
+```
+
+If true then all the parent bounds of the current leaf tiles will be displayed.
 
 ### .maxDebugDepth
 
