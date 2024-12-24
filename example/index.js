@@ -31,6 +31,7 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+const NONE = 0;
 const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
@@ -47,7 +48,7 @@ let statsContainer, stats;
 const params = {
 
 	enableUpdate: true,
-	raycast: NONE,
+	raycast: DebugTilesPlugin.ColorModes.NONE,
 	optimizeRaycast: true,
 	enableCacheDisplay: false,
 	enableRendererStats: false,
