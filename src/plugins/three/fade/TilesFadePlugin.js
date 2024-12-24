@@ -147,27 +147,22 @@ function onUpdateAfter() {
 
 			// TODO
 			const scene = t.cached.scene;
-			if ( ! scene ) {
-
-				return;
-
-			}
 
 			// if a tile is fading out then it may not be traversed and thus will not have
 			// the frustum flag set correctly.
-			if ( fadeManager.isFadingOut( t ) ) {
+			const isFadingOut = fadeManager.isFadingOut( t );
+			if ( scene ) {
 
-				scene.visible = true;
-
-			} else {
-
-				if ( scene ) {
-
-					scene.visible = t.__inFrustum;
-
-				}
+				scene.visible = isFadingOut || t.__inFrustum;
 
 			}
+
+			this.forEachBatchIds( ( id, batchedMesh, plugin ) => {
+
+				batchedMesh.setVisibleAt( id, isFadingOut || t.__inFrustum );
+				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
+
+			} );
 
 		} );
 
