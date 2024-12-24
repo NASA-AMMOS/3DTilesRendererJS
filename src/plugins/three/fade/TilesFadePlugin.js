@@ -1,5 +1,6 @@
 import { Matrix4, Vector3, Quaternion } from 'three';
 import { FadeManager } from './FadeManager.js';
+import { FadeMaterialManager } from './FadeMaterialManager.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
 const _fromPos = new Vector3();
@@ -59,15 +60,21 @@ function onTileVisibilityChange( tile, visible ) {
 
 function onLoadModel( scene, tile ) {
 
+	this._fadeMaterialManager.prepareScene( scene );
+
 }
 
 function onDisposeModel( scene, tile ) {
 
 	this._fadeManager.deleteObject( tile );
+	this._fadeMaterialManager.deleteScene( scene );
 
 }
 
 function onFadeComplete( tile, visible ) {
+
+	// mark the fade as finished
+	this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
 
 	if ( ! visible ) {
 
@@ -111,6 +118,7 @@ function onUpdateBefore() {
 function onUpdateAfter() {
 
 	const fadeManager = this._fadeManager;
+	const fadeMaterialManager = this._fadeMaterialManager;
 	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
 	const tiles = this.tiles;
@@ -210,10 +218,11 @@ function onUpdateAfter() {
 
 	} );
 
-	// prevent faded tiles from being unloaded
-	fadeManager.forEachObject( tile => {
+	fadeManager.forEachObject( ( tile, { fadeIn, fadeOut } ) => {
 
+		// prevent faded tiles from being unloaded
 		lruCache.markUsed( tile );
+		fadeMaterialManager.setFade( tile.cached.scene, fadeIn, fadeOut );
 
 	} );
 
@@ -255,6 +264,7 @@ export class TilesFadePlugin {
 
 		this.tiles = null;
 		this._fadeManager = new FadeManager();
+		this._fadeMaterialManager = new FadeMaterialManager();
 		this._prevCameraTransforms = null;
 		this._tileMap = null; // TODO
 		this._fadingOutCount = 0;

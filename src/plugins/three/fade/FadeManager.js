@@ -96,9 +96,9 @@ export class FadeManager {
 
 	forEachObject( cb ) {
 
-		this._fadeState.forEach( ( info, scene ) => {
+		this._fadeState.forEach( ( info, object ) => {
 
-			cb( scene );
+			cb( object, info );
 
 		} );
 
