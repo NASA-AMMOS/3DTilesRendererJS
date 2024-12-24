@@ -5,7 +5,6 @@ const _spherical = new Spherical();
 const _norm = new Vector3();
 const _vec = new Vector3();
 const _vec2 = new Vector3();
-const _vec3 = new Vector3();
 const _matrix = new Matrix4();
 const _matrix2 = new Matrix4();
 const _sphere = new Sphere();
