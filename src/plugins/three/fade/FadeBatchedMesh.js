@@ -26,7 +26,7 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 	setFadeAt( index, fadeIn, fadeOut ) {
 
 		this._initFadeTexture();
-		this.fadeTexture.setValueAt( index, fadeIn, fadeOut );
+		this.fadeTexture.setValueAt( index, fadeIn * 255, fadeOut * 255 );
 
 	}
 
@@ -39,7 +39,7 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 		if ( ! this.fadeTexture || this.fadeTexture.image.data.length !== size * size * 2 ) {
 
 			// 4 floats per RGBA pixel initialized to white
-			const fadeArray = new Float32Array( size * size * 2 );
+			const fadeArray = new Uint8Array( size * size * 2 );
 			const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, FloatType );
 
 			if ( oldFadeTexture ) {
