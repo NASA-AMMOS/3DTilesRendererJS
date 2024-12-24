@@ -10,7 +10,6 @@ export class PassThroughBatchedMesh {
 		this.visible = true;
 		this.parent = null;
 		this._instanceInfo = [];
-		this._availableInstanceIds = [];
 		this._visibilityChanged = true;
 
 		const proxyTarget = new Proxy( this, {

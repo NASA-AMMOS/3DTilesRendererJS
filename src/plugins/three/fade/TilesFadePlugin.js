@@ -39,7 +39,6 @@ function onTileVisibilityChange( tile, visible ) {
 
 			tile[ HAS_POPPED_IN ] = true;
 
-
 		} else {
 
 			this._fadeManager.fadeIn( tile );
@@ -223,18 +222,24 @@ function onUpdateAfter() {
 		lruCache.markUsed( tile );
 		fadeMaterialManager.setFade( tile.cached.scene, fadeIn, fadeOut );
 
-		const isFading = fadeIn !== 0 && fadeIn !== 1 || fadeOut !== 0 && fadeIn !== 1;
-		this.forEachBatchIds( tile, ( id, batchedMesh ) => {
+		const isFading = fadeManager.isFading( tile );
+		this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
-			if ( isFading ) {
-
-				batchedMesh.fadeTexture.setValueAt( id, fadeIn, fadeOut );
-
-			}
+			batchedMesh.setFadeAt( id, fadeIn, fadeOut );
+			batchedMesh.setVisibleAt( id, isFading );
+			plugin.batchedMesh.setVisibleAt( id, ! isFading );
 
 		} );
 
 	} );
+
+	if ( this.batchedMesh ) {
+
+		const material = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' ).batchedMesh.material;
+		this.batchedMesh.material.map = material.map;
+		this.batchedMesh.material.needsUpdate = true;
+
+	}
 
 }
 
@@ -339,7 +344,8 @@ export class TilesFadePlugin {
 
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, visible );
+				batchedMesh.setFadeAt( id, 0, 0 );
+				batchedMesh.setVisibleAt( id, true );
 				plugin.batchedMesh.setVisibleAt( id, false );
 
 			} );

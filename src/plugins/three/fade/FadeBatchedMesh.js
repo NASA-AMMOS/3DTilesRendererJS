@@ -9,15 +9,24 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 		super( ...args );
 
-		this.fadeTexture = null;
-		this._initFadeTexture();
-
 		const material = this.material;
 		const params = wrapFadeMaterial( material, material.onBeforeCompile );
-		params.fadeTexture.value = this.fadeTexture;
 		material.defines.FEATURE_FADE = 1;
 		material.defines.USE_BATCHING_FRAG = 1;
 		material.needsUpdate = true;
+
+		this.fadeTexture = null;
+		this._fadeParams = params;
+
+		this._initFadeTexture();
+
+
+	}
+
+	setFadeAt( index, fadeIn, fadeOut ) {
+
+		this._initFadeTexture();
+		this.fadeTexture.setValueAt( index, fadeIn, fadeOut );
 
 	}
 
@@ -26,33 +35,32 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 		let size = Math.sqrt( this._maxInstanceCount );
 		size = Math.ceil( size );
 
-		// 4 floats per RGBA pixel initialized to white
-		const fadeArray = new Float32Array( size * size * 2 ).fill( 1 );
-		const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, FloatType );
-
-		this.fadeTexture = fadeTexture;
-
-	}
-
-	setInstanceCount( ...args ) {
-
-		super.setInstanceCount( ...args );
-
-		// update texture data for instance sampling
 		const oldFadeTexture = this.fadeTexture;
-		oldFadeTexture.dispose();
-		this._initFadeTexture();
+		if ( ! this.fadeTexture || this.fadeTexture.image.data.length !== size * size * 2 ) {
 
-		const src = oldFadeTexture.image.data;
-		const dst = this.fadeTexture.image.data;
-		const len = Math.min( src.length, dst.length );
-		dst.set( new src.constructor( src.buffer, 0, len ) );
+			// 4 floats per RGBA pixel initialized to white
+			const fadeArray = new Float32Array( size * size * 2 );
+			const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, FloatType );
+
+			if ( oldFadeTexture ) {
+
+				const src = oldFadeTexture.image.data;
+				const dst = this.fadeTexture.image.data;
+				const len = Math.min( src.length, dst.length );
+				dst.set( new src.constructor( src.buffer, 0, len ) );
+
+			}
+
+			this.fadeTexture = fadeTexture;
+			this._fadeParams.fadeTexture.value = fadeTexture;
+			fadeTexture.needsUpdate = true;
+
+		}
 
 	}
 
 	dispose() {
 
-		super.dispose();
 		this.fadeTexture.dispose();
 
 	}
