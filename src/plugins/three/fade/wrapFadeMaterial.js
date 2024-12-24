@@ -26,9 +26,9 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 		shader.vertexShader = shader.vertexShader
 			.replace(
-				/void\s+main()\s+{/,
+				/void\s+main\(\)\s+{/,
 				value => /* glsl */`
-					#ifdef USE_BATCHING
+					#ifdef USE_BATCHING_FRAG
 
 					varying float vBatchId;
 
@@ -36,10 +36,10 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 					${ value }
 
-						#ifdef USE_BATCHING
+						#ifdef USE_BATCHING_FRAG
 
 						// add 0.5 to the value to avoid floating error that may cause flickering
-						vBatchId = batchId + 0.5;
+						vBatchId = getIndirectIndex( gl_DrawID ) + 0.5;
 
 						#endif
 				`
@@ -64,7 +64,7 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 				}
 
-				#ifdef USE_BATCHING
+				#ifdef USE_BATCHING_FRAG
 
 				uniform sampler2D fadeTexture;
 				varying float vBatchId;
@@ -95,7 +95,7 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 				#if FEATURE_FADE
 
-				#ifdef USE_BATCHING
+				#ifdef USE_BATCHING_FRAG
 
 				vec2 fadeValues = getFadeValues( vBatchId );
 				float fadeIn = fadeValues.r;

@@ -13,7 +13,10 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 		this._initFadeTexture();
 
 		const material = this.material;
-		wrapFadeMaterial( material, material.onBeforeCompile );
+		const params = wrapFadeMaterial( material, material.onBeforeCompile );
+		params.fadeTexture.value = this.fadeTexture;
+		material.defines.FEATURE_FADE = 1;
+		material.defines.USE_BATCHING_FRAG = 1;
 		material.needsUpdate = true;
 
 	}
@@ -24,7 +27,7 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 		size = Math.ceil( size );
 
 		// 4 floats per RGBA pixel initialized to white
-		const fadeArray = new Float32Array( size * size * 4 ).fill( 1 );
+		const fadeArray = new Float32Array( size * size * 2 ).fill( 1 );
 		const fadeTexture = new InstanceDataTexture( fadeArray, size, size, RGFormat, FloatType );
 
 		this.fadeTexture = fadeTexture;

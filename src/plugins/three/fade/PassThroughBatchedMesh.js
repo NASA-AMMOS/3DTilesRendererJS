@@ -13,8 +13,6 @@ export class PassThroughBatchedMesh {
 		this._availableInstanceIds = [];
 		this._visibilityChanged = true;
 
-		material.color.set( 0xff0000 );
-
 		const proxyTarget = new Proxy( this, {
 
 			get( target, key ) {
