@@ -9,26 +9,10 @@ export class FadeManager {
 		this.fadeCount = 0;
 		this._lastTick = - 1;
 		this._fadeState = new Map();
-		this._fadeParams = new WeakMap();
 		this.onFadeComplete = null;
 		this.onFadeStart = null;
 		this.onFadeSetComplete = null;
 		this.onFadeSetStart = null;
-
-	}
-
-	// initialize materials in the object
-	prepareObject( object ) {
-
-		object.traverse( child => {
-
-			if ( child.material ) {
-
-				this.prepareMaterial( child.material );
-
-			}
-
-		} );
 
 	}
 
@@ -42,103 +26,6 @@ export class FadeManager {
 		}
 
 		this.completeFade( object );
-
-		const fadeParams = this._fadeParams;
-		object.traverse( child => {
-
-			const material = child.material;
-			if ( material ) {
-
-				fadeParams.delete( material );
-				material.onBeforeCompile = () => {};
-				material.needsUpdate = true;
-
-			}
-
-		} );
-
-	}
-
-	// initialize the material
-	prepareMaterial( material ) {
-
-		const fadeParams = this._fadeParams;
-		if ( fadeParams.has( material ) ) {
-
-			return;
-
-		}
-
-		const params = {
-			fadeIn: { value: 0 },
-			fadeOut: { value: 0 },
-		};
-
-		material.defines = {
-			FEATURE_FADE: 0,
-		};
-
-		material.onBeforeCompile = shader => {
-
-			shader.uniforms = {
-				...shader.uniforms,
-				...params,
-			};
-
-			shader.fragmentShader = shader.fragmentShader
-				.replace( /void main\(/, value => /* glsl */`
-					#if FEATURE_FADE
-
-					// adapted from https://www.shadertoy.com/view/Mlt3z8
-					float bayerDither2x2( vec2 v ) {
-
-						return mod( 3.0 * v.y + 2.0 * v.x, 4.0 );
-
-					}
-
-					float bayerDither4x4( vec2 v ) {
-
-						vec2 P1 = mod( v, 2.0 );
-						vec2 P2 = floor( 0.5 * mod( v, 4.0 ) );
-						return 4.0 * bayerDither2x2( P1 ) + bayerDither2x2( P2 );
-
-					}
-
-					uniform float fadeIn;
-					uniform float fadeOut;
-					#endif
-
-					${ value }
-				` )
-				.replace( /#include <dithering_fragment>/, value => /* glsl */`
-
-					${ value }
-
-					#if FEATURE_FADE
-
-					float bayerValue = bayerDither4x4( floor( mod( gl_FragCoord.xy, 4.0 ) ) );
-					float bayerBins = 16.0;
-					float dither = ( 0.5 + bayerValue ) / bayerBins;
-					if ( dither >= fadeIn ) {
-
-						discard;
-
-					}
-
-					if ( dither < fadeOut ) {
-
-						discard;
-
-					}
-
-					#endif
-
-				` );
-
-
-		};
-
-		fadeParams.set( material, params );
 
 	}
 
@@ -162,20 +49,6 @@ export class FadeManager {
 
 		fadeState.set( object, state );
 
-		const fadeParams = this._fadeParams;
-		object.traverse( child => {
-
-			const material = child.material;
-			if ( material && fadeParams.has( material ) ) {
-
-				const params = fadeParams.get( material );
-				params.fadeIn.value = 0;
-				params.fadeOut.value = 0;
-
-			}
-
-		} );
-
 		return true;
 
 	}
@@ -184,22 +57,15 @@ export class FadeManager {
 	completeFade( object ) {
 
 		const fadeState = this._fadeState;
-		if ( ! fadeState.has( object ) ) return;
+		if ( ! fadeState.has( object ) ) {
+
+			return;
+
+		}
 
 		const visible = fadeState.get( object ).fadeOutTarget === 0;
 
 		fadeState.delete( object );
-		object.traverse( child => {
-
-			const material = child.material;
-			if ( material && material.defines.FEATURE_FADE !== 0 ) {
-
-				material.defines.FEATURE_FADE = 0;
-				material.needsUpdate = true;
-
-			}
-
-		} );
 
 		// fire events
 		this.fadeCount --;
@@ -230,7 +96,11 @@ export class FadeManager {
 
 	forEachObject( cb ) {
 
-		this._fadeState.forEach( ( info, scene ) => cb( scene ) );
+		this._fadeState.forEach( ( info, scene ) => {
+
+			cb( scene );
+
+		} );
 
 	}
 
@@ -321,7 +191,6 @@ export class FadeManager {
 		this._lastTick = time;
 
 		const fadeState = this._fadeState;
-		const fadeParams = this._fadeParams;
 		fadeState.forEach( ( state, object ) => {
 
 			// tick the fade values
@@ -343,28 +212,6 @@ export class FadeManager {
 
 			state.fadeIn = fadeIn;
 			state.fadeOut = fadeOut;
-
-			// update the material fields
-			const defineValue = Number( fadeOut !== fadeOutTarget || fadeIn !== fadeInTarget );
-			object.traverse( child => {
-
-				const material = child.material;
-				if ( material && fadeParams.has( material ) ) {
-
-					const uniforms = fadeParams.get( material );
-					uniforms.fadeIn.value = fadeIn;
-					uniforms.fadeOut.value = fadeOut;
-
-					if ( defineValue !== material.defines.FEATURE_FADE ) {
-
-						material.defines.FEATURE_FADE = defineValue;
-						material.needsUpdate = true;
-
-					}
-
-				}
-
-			} );
 
 			// Check if the fade in and fade out animations are complete
 			const fadeOutComplete = fadeOut === 1 || fadeOut === 0;
