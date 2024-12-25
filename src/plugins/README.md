@@ -588,8 +588,6 @@ Available options are as follows:
 
 ## BatchedTilesPlugin
 
-_available in the examples directory_
-
 Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture.
 
 > [!WARNING]

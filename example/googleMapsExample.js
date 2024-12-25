@@ -13,6 +13,7 @@ import {
 	TileCompressionPlugin,
 	UnloadTilesPlugin,
 	GLTFExtensionsPlugin,
+	BatchedTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -24,7 +25,6 @@ import {
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { BatchedTilesPlugin } from './src/plugins/batched/BatchedTilesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -354,20 +354,19 @@ function updateHtml() {
 		if ( batchPlugin ) {
 
 			let tot = 0;
-			let totFade = 0;
-			batchPlugin.batchedMesh._instanceInfo.forEach( info => {
+			batchPlugin.batchedMesh?._instanceInfo.forEach( info => {
 
 				if ( info.visible && info.active ) tot ++;
 
 			} );
 
-			fadePlugin.batchedMesh._instanceInfo.forEach( info => {
+			fadePlugin.batchedMesh?._instanceInfo.forEach( info => {
 
-				if ( info.visible && info.active ) totFade ++;
+				if ( info.visible && info.active ) tot ++;
 
 			} );
 
-			str += ', Batched: ' + tot + ', Fade Batched: ' + totFade;
+			str += ', Batched: ' + tot;
 
 		}
 
