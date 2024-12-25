@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Minimum three.js version is now r166
 - Remove deprecated functions.
+- Moved "BatchedTilesPlugin" to the "plugins" subpackage.
+- Add support for BatchedTilesPlugin to FadeTilesPlugin.
 
 ## [0.3.46] - 2024.12.24
 ### Fixed
