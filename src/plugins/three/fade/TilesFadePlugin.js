@@ -305,14 +305,11 @@ export class TilesFadePlugin {
 
 		};
 
-		this.tiles = tiles;
-		this._fadeManager = fadeManager;
-		this._prevCameraTransforms = new Map();
-
 		// initialize the state based on what's already present
+		const prevCameraTransforms = new Map();
 		tiles.cameras.forEach( camera => {
 
-			this._prevCameraTransforms.set( camera, new Matrix4() );
+			prevCameraTransforms.set( camera, new Matrix4() );
 
 		} );
 
@@ -321,6 +318,10 @@ export class TilesFadePlugin {
 			this._onLoadModel( { scene } );
 
 		} );
+
+		this.tiles = tiles;
+		this._fadeManager = fadeManager;
+		this._prevCameraTransforms = prevCameraTransforms;
 
 	}
 
