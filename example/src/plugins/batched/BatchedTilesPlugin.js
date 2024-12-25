@@ -30,7 +30,7 @@ export class BatchedTilesPlugin {
 			...options
 		};
 
-		this.name = 'BATCHED_MESH_PLUGIN';
+		this.name = 'BATCHED_TILES_PLUGIN';
 		this.priority = - 1;
 
 		// limit the amount of instances to the size of a 3d texture to avoid over flowing the

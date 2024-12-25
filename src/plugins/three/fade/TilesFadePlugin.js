@@ -143,7 +143,7 @@ function onUpdateAfter() {
 
 	if ( this.batchedMesh ) {
 
-		const material = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' ).batchedMesh.material;
+		const material = this.tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' ).batchedMesh.material;
 		this.batchedMesh.material.map = material.map;
 		this.batchedMesh.material.needsUpdate = true;
 
@@ -328,7 +328,7 @@ export class TilesFadePlugin {
 	// initializes the batched mesh if it needs to be, dispose if it it's no longer needed
 	initBatchedMesh() {
 
-		const otherBatchedMesh = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' )?.batchedMesh;
+		const otherBatchedMesh = this.tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' )?.batchedMesh;
 		if ( otherBatchedMesh ) {
 
 			if ( this.batchedMesh === null ) {
@@ -464,7 +464,7 @@ export class TilesFadePlugin {
 
 		if ( this.batchedMesh ) {
 
-			const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' );
+			const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' );
 			const instanceIds = batchedPlugin.getTileBatchIds( tile );
 			if ( instanceIds ) {
 
