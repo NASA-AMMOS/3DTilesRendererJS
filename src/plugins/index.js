@@ -7,6 +7,7 @@ export { GLTFExtensionsPlugin } from './three/GLTFExtensionsPlugin.js';
 export { ReorientationPlugin } from './three/ReorientationPlugin.js';
 export { UnloadTilesPlugin } from './three/UnloadTilesPlugin.js';
 export { TilesFadePlugin } from './three/fade/TilesFadePlugin.js';
+export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin.js';
 export * from './three/DebugTilesPlugin.js';
 
 // common plugins
