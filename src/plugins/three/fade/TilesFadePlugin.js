@@ -32,15 +32,14 @@ function onUpdateAfter() {
 	const fadeMaterialManager = this._fadeMaterialManager;
 	const displayActiveTiles = this._displayActiveTiles;
 	const fadingBefore = this._fadingBefore;
-	const tiles = this.tiles;
 	const prevCameraTransforms = this._prevCameraTransforms;
-	const lruCache = tiles.lruCache;
-	const cameras = tiles.cameras;
+	const { tiles, maximumFadeOutTiles, batchedMesh } = this;
+	const { lruCache, cameras } = tiles;
 
-	// reset state
+	// reset the active tiles flag
 	tiles.displayActiveTiles = displayActiveTiles;
 
-	// update fades
+	// update fade step
 	fadeManager.update();
 
 	// fire an event
@@ -58,21 +57,18 @@ function onUpdateAfter() {
 
 		tiles.visibleTiles.forEach( t => {
 
-			// TODO
-			const scene = t.cached.scene;
-
 			// if a tile is fading out then it may not be traversed and thus will not have
 			// the frustum flag set correctly.
-			const isFadingOut = fadeManager.isFadingOut( t );
+			const scene = t.cached.scene;
 			if ( scene ) {
 
-				scene.visible = isFadingOut || t.__inFrustum;
+				scene.visible = t.__inFrustum;
 
 			}
 
 			this.forEachBatchIds( ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, isFadingOut || t.__inFrustum );
+				batchedMesh.setVisibleAt( id, t.__inFrustum );
 				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
 
 			} );
@@ -81,7 +77,7 @@ function onUpdateAfter() {
 
 	}
 
-	if ( this.maximumFadeOutTiles < this._fadingOutCount ) {
+	if ( maximumFadeOutTiles < this._fadingOutCount ) {
 
 		// determine whether all the rendering cameras are moving
 		// quickly so we can adjust how tiles fade accordingly
@@ -124,12 +120,25 @@ function onUpdateAfter() {
 
 	} );
 
+	// update the fade state for each tile
 	fadeManager.forEachObject( ( tile, { fadeIn, fadeOut } ) => {
 
 		// prevent faded tiles from being unloaded
+		const scene = tile.cached.scene;
+		const isFadingOut = fadeManager.isFadingOut( tile );
 		lruCache.markUsed( tile );
-		fadeMaterialManager.setFade( tile.cached.scene, fadeIn, fadeOut );
+		if ( scene ) {
 
+			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );
+			if ( isFadingOut ) {
+
+				scene.visible = true;
+
+			}
+
+		}
+
+		// fade the tiles and toggle the visibility appropriately
 		const isFading = fadeManager.isFading( tile );
 		this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
@@ -141,11 +150,11 @@ function onUpdateAfter() {
 
 	} );
 
-	if ( this.batchedMesh ) {
+	// update the batched mesh fields
+	if ( batchedMesh ) {
 
-		const material = this.tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' ).batchedMesh.material;
-		this.batchedMesh.material.map = material.map;
-		this.batchedMesh.material.needsUpdate = true;
+		const material = tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' ).batchedMesh.material;
+		batchedMesh.material.map = material.map;
 
 	}
 
