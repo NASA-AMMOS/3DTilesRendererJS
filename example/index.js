@@ -1,16 +1,5 @@
 import {
 	TilesRenderer,
-	NONE,
-	SCREEN_ERROR,
-	GEOMETRIC_ERROR,
-	DISTANCE,
-	DEPTH,
-	RELATIVE_DEPTH,
-	IS_LEAF,
-	RANDOM_COLOR,
-	RANDOM_NODE_COLOR,
-	CUSTOM_COLOR,
-	LOAD_ORDER,
 } from '3d-tiles-renderer';
 import {
 	DebugTilesPlugin,
@@ -42,6 +31,7 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
+const NONE = 0;
 const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
@@ -58,7 +48,7 @@ let statsContainer, stats;
 const params = {
 
 	enableUpdate: true,
-	raycast: NONE,
+	raycast: DebugTilesPlugin.ColorModes.NONE,
 	optimizeRaycast: true,
 	enableCacheDisplay: false,
 	enableRendererStats: false,
@@ -72,6 +62,7 @@ const params = {
 
 	up: hashUrl ? '+Z' : '+Y',
 	enableDebug: true,
+	displayParentBounds: false,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
@@ -273,24 +264,11 @@ function init() {
 
 	const debug = gui.addFolder( 'Debug Options' );
 	debug.add( params, 'enableDebug' );
+	debug.add( params, 'displayParentBounds' );
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
-	debug.add( params, 'colorMode', {
-
-		NONE,
-		SCREEN_ERROR,
-		GEOMETRIC_ERROR,
-		DISTANCE,
-		DEPTH,
-		RELATIVE_DEPTH,
-		IS_LEAF,
-		RANDOM_COLOR,
-		RANDOM_NODE_COLOR,
-		CUSTOM_COLOR,
-		LOAD_ORDER,
-
-	} );
+	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
 	debug.open();
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -489,6 +467,7 @@ function animate() {
 	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
 	plugin.enabled = params.enableDebug;
 	plugin.displayBoxBounds = params.displayBoxBounds;
+	plugin.displayParentBounds = params.displayParentBounds;
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );

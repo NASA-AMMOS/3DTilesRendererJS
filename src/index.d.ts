@@ -1,5 +1,4 @@
 // three.js
-export { DebugTilesRenderer } from './three/DebugTilesRenderer';
 export { TilesRenderer } from './three/TilesRenderer';
 export { TilesGroup } from './three/TilesGroup';
 export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader';
@@ -12,16 +11,6 @@ export { Ellipsoid } from './three/math/Ellipsoid';
 export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 export * as GeoUtils from './three/math/GeoUtils';
 export * from './three/math/GeoConstants';
-export * from './three/renderers/GoogleTilesRenderer';
-export * from './three/renderers/CesiumIonTilesRenderer';
-
-// three.js plugins
-export { CesiumIonAuthPlugin } from './three/plugins/CesiumIonAuthPlugin';
-export { GoogleCloudAuthPlugin } from './three/plugins/GoogleCloudAuthPlugin';
-export * from './three/plugins/DebugTilesPlugin';
-
-// common plugins
-export { ImplicitTilingPlugin } from './base/plugins/ImplicitTilingPlugin';
 
 // common
 export { TilesRendererBase } from './base/TilesRendererBase';

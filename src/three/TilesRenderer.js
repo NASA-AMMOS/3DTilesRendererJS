@@ -12,7 +12,6 @@ import {
 	Euler,
 	LoadingManager,
 	EventDispatcher,
-	REVISION,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -25,7 +24,6 @@ const _mat = new Matrix4();
 const _euler = new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
-const REVISION_LESS_165 = parseInt( REVISION ) < 165;
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempMat2 = new Matrix4();
@@ -108,23 +106,6 @@ export class TilesRenderer extends TilesRendererBase {
 		// saved for event dispatcher functions
 		this._listeners = {};
 
-		if ( REVISION_LESS_165 ) {
-
-			// Setting up the override raycasting function to be used by
-			// 3D objects created by this renderer
-			const tilesRenderer = this;
-			this._overridenRaycast = function ( raycaster, intersects ) {
-
-				if ( ! tilesRenderer.optimizeRaycast ) {
-
-					Object.getPrototypeOf( this ).raycast.call( this, raycaster, intersects );
-
-				}
-
-			};
-
-		}
-
 	}
 
 	addEventListener( ...args ) {
@@ -152,20 +133,6 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
-	getBounds( ...args ) {
-
-		console.warn( 'TilesRenderer: getBounds has been renamed to getBoundingBox.' );
-		return this.getBoundingBox( ...args );
-
-	}
-
-	getOrientedBounds( ...args ) {
-
-		console.warn( 'TilesRenderer: getOrientedBounds has been renamed to getOrientedBoundingBox.' );
-		return this.getOrientedBoundingBox( ...args );
-
-	}
-
 	getBoundingBox( target ) {
 
 		if ( ! this.root ) {
@@ -740,17 +707,6 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
-		if ( REVISION_LESS_165 ) {
-
-			// We handle raycasting in a custom way so remove it from here
-			scene.traverse( c => {
-
-				c.raycast = this._overridenRaycast;
-
-			} );
-
-		}
-
 		const materials = [];
 		const geometry = [];
 		const textures = [];
@@ -1026,41 +982,3 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 }
-
-
-[
-	[ 'onLoadTileSet', 'load-tile-set' ],
-	[ 'onLoadModel', 'load-model' ],
-	[ 'onDisposeModel', 'dispose-model' ],
-	[ 'onTileVisibilityChange', 'tile-visibility-change' ],
-].forEach( ( [ methodName, eventName ] ) => {
-
-	const cachedName = Symbol( methodName );
-	Object.defineProperty(
-		TilesRenderer.prototype,
-		methodName,
-		{
-			get() {
-
-				return this[ cachedName ] || null;
-
-			},
-
-			set( cb ) {
-
-				console.warn( `TilesRenderer: "${ methodName }" has been deprecated in favor of the "${ eventName }" event.` );
-
-				if ( this[ cachedName ] ) {
-
-					this.removeEventListener( eventName, this[ cachedName ] );
-
-				}
-
-				this[ cachedName ] = cb;
-				this.addEventListener( eventName, cb );
-
-			}
-		}
-	);
-
-} );

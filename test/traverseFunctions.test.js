@@ -1,4 +1,4 @@
-import { traverseSet } from '../src/base/traverseFunctions.js';
+import { traverseAncestors, traverseSet } from '../src/base/traverseFunctions.js';
 
 describe( 'traverseSet', () => {
 
@@ -95,6 +95,33 @@ describe( 'traverseSet', () => {
 
 		expect( visited ).toHaveLength( 7 );
 		expect( visited ).toEqual( [ 'root', 'a', 'd', 'e', 'f', 'b', 'c' ] );
+
+	} );
+
+} );
+
+describe( 'traverseAncestors', () => {
+
+	function makeTile( name, parent = undefined ) {
+
+		return { name, parent };
+
+	}
+
+	it( 'visit all ancestry chain', () => {
+
+		const root = makeTile( 'root' );
+
+		const lod1 = makeTile( '1', root );
+		const lod2 = makeTile( '2', lod1 );
+		const lod3 = makeTile( '3', lod2 );
+		const lod4 = makeTile( '4', lod3 );
+
+		const visited = [];
+
+		traverseAncestors( lod4, tile => visited.push( tile.name ) );
+
+		expect( visited ).toEqual( [ '4', '3', '2', '1', 'root' ] );
 
 	} );
 

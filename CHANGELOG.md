@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.4.0] - Unreleased
+### Changed
+- Minimum three.js version is now r166
+- Remove deprecated functions.
+
+## [0.3.46] - 2024.12.24
 ### Fixed
 - Types: Convert types of use non-wrapper types.
 - Types: Adjust GLTF Plugin classes to extend appropriate type.
@@ -26,6 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Add types for events.
 - GlobeControls: Added `nearMargin` and `farMargin` percentages for controlling camera distances.
 - DebugTilesPlugin: `enabled` field to DebugTilesPlugin to enable / disable the debug features.
+- DebugTilesPlugin: Added support for `displayParentBounds`.
 
 ## [0.3.45] - 2024.12.13
 ### Fixed
