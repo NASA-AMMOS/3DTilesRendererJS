@@ -2,6 +2,7 @@ import { PassThroughBatchedMesh } from './PassThroughBatchedMesh.js';
 import { RGFormat, UnsignedByteType, DataTexture } from 'three';
 import { wrapFadeMaterial } from './wrapFadeMaterial.js';
 
+// BatchedMesh instance that can fade materials
 export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 	constructor( ...args ) {
@@ -68,7 +69,11 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 	// dispose the fade texture. Super cannot be used here due to proxy
 	dispose() {
 
-		this.fadeTexture.dispose();
+		if ( this.fadeTexture ) {
+
+			this.fadeTexture.dispose();
+
+		}
 
 	}
 
