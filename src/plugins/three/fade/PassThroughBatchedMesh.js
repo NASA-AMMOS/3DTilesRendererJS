@@ -1,17 +1,22 @@
 import { MeshBasicMaterial } from 'three';
 
-// NOTE this will not automatically delete instances on geometry delete.
+// A hacky version of BatchedMesh that passes through functions and geometry and other fields from the underlying
+// BatchedMesh. Calls to "this" or "super" will not work in subfunctions.
 export class PassThroughBatchedMesh {
 
 	constructor( other, material = new MeshBasicMaterial() ) {
 
+		// the other batched mesh
 		this.other = other;
+
+		// guarded fields
 		this.material = material;
 		this.visible = true;
 		this.parent = null;
 		this._instanceInfo = [];
 		this._visibilityChanged = true;
 
+		// the proxy instance tht pass through arguments to the underlying mesh
 		const proxyTarget = new Proxy( this, {
 
 			get( target, key ) {
@@ -22,6 +27,7 @@ export class PassThroughBatchedMesh {
 
 				} else {
 
+					// sync instances on function call and call functions on "this" instance
 					const value = other[ key ];
 					if ( value instanceof Function ) {
 
@@ -58,7 +64,6 @@ export class PassThroughBatchedMesh {
 
 			},
 
-
 			deleteProperty( target, key ) {
 
 				if ( key in target ) {
@@ -73,20 +78,10 @@ export class PassThroughBatchedMesh {
 
 			},
 
-			// ownKeys() {
-
-			// },
-
-			// has(target, key) {
-
-			// },
-
-			// defineProperty(target, key, descriptor) {
-			// },
-
-			// getOwnPropertyDescriptor(target, key) {
-			// },
-
+			// ownKeys() {},
+			// has(target, key) {},
+			// defineProperty(target, key, descriptor) {},
+			// getOwnPropertyDescriptor(target, key) {},
 
 		} );
 

@@ -1,5 +1,6 @@
 import { wrapFadeMaterial } from './wrapFadeMaterial.js';
 
+// Class for managing and updating extended fade parameters
 export class FadeMaterialManager {
 
 	constructor() {
@@ -18,6 +19,7 @@ export class FadeMaterialManager {
 
 		}
 
+		// traverse the scene and update the fade parameters of all materials
 		const fadeParams = this._fadeParams;
 		scene.traverse( child => {
 
@@ -69,6 +71,7 @@ export class FadeMaterialManager {
 
 		}
 
+		// revert the materials
 		const fadeParams = this._fadeParams;
 		scene.traverse( child => {
 

@@ -1,3 +1,5 @@
+// Adjusts the provided material to support fading in and out using a bayer pattern. Providing a "previous"
+// before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
@@ -64,8 +66,10 @@ export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
 
 				}
 
+				// the USE_BATCHING define is not available in fragment shaders
 				#ifdef USE_BATCHING_FRAG
 
+				// functions for reading the fade state of a given batch id
 				uniform sampler2D fadeTexture;
 				varying float vBatchId;
 				vec2 getFadeValues( const in float i ) {
