@@ -65,6 +65,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
@@ -79,10 +80,6 @@ function reinstantiateTiles() {
 			discardOriginalContent: false,
 			instanceCount: 250,
 		} ) );
-
-	} else {
-
-		tiles.registerPlugin( new TilesFadePlugin() );
 
 	}
 
