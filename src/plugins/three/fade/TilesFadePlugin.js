@@ -66,9 +66,10 @@ function onUpdateAfter() {
 
 			}
 
-			this.forEachBatchIds( ( id, batchedMesh, plugin ) => {
+			const isFadingOut = fadeManager.isFadingOut( t );
+			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, t.__inFrustum );
+				batchedMesh.setVisibleAt( id, isFadingOut && t.__inFrustum );
 				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
 
 			} );
@@ -139,12 +140,11 @@ function onUpdateAfter() {
 		}
 
 		// fade the tiles and toggle the visibility appropriately
-		const isFading = fadeManager.isFading( tile );
 		this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
 			batchedMesh.setFadeAt( id, fadeIn, fadeOut );
-			batchedMesh.setVisibleAt( id, isFading );
-			plugin.batchedMesh.setVisibleAt( id, ! isFading );
+			batchedMesh.setVisibleAt( id, true );
+			plugin.batchedMesh.setVisibleAt( id, false );
 
 		} );
 
@@ -250,7 +250,7 @@ export class TilesFadePlugin {
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
 				batchedMesh.setFadeAt( id, 0, 0 );
-				batchedMesh.setVisibleAt( id, true );
+				batchedMesh.setVisibleAt( id, false );
 				plugin.batchedMesh.setVisibleAt( id, false );
 
 			} );

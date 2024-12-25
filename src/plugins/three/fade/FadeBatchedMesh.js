@@ -69,7 +69,11 @@ export class FadeBatchedMesh extends PassThroughBatchedMesh {
 	// dispose the fade texture. Super cannot be used here due to proxy
 	dispose() {
 
-		this.fadeTexture.dispose();
+		if ( this.fadeTexture ) {
+
+			this.fadeTexture.dispose();
+
+		}
 
 	}
 
