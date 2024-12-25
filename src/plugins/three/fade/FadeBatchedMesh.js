@@ -2,6 +2,7 @@ import { PassThroughBatchedMesh } from './PassThroughBatchedMesh.js';
 import { RGFormat, UnsignedByteType, DataTexture } from 'three';
 import { wrapFadeMaterial } from './wrapFadeMaterial.js';
 
+// BatchedMesh instance that can fade materials
 export class FadeBatchedMesh extends PassThroughBatchedMesh {
 
 	constructor( ...args ) {
