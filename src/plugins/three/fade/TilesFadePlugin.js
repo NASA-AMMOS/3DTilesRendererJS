@@ -66,10 +66,9 @@ function onUpdateAfter() {
 
 			}
 
-			const isFadingOut = fadeManager.isFadingOut( t );
 			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, isFadingOut && t.__inFrustum );
+				batchedMesh.setVisibleAt( id, t.__inFrustum );
 				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
 
 			} );
