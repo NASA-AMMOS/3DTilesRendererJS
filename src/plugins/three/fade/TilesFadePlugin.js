@@ -10,45 +10,6 @@ const _fromQuat = new Quaternion();
 const _toQuat = new Quaternion();
 const _scale = new Vector3();
 
-function onTileVisibilityChange( tile, visible ) {
-
-	const fadeManager = this._fadeManager;
-	if ( fadeManager.isFadingOut( tile ) ) {
-
-		this._fadingOutCount --;
-
-	}
-
-	if ( ! visible ) {
-
-		this._fadingOutCount ++;
-		fadeManager.fadeOut( tile );
-
-	} else {
-
-		// if this is a root renderable tile and this is the first time rendering in
-		// then pop it in
-		const isRootRenderableTile = tile.__depthFromRenderedParent === 1;
-		if ( isRootRenderableTile ) {
-
-			if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {
-
-				this._fadeManager.fadeIn( tile );
-
-			}
-
-			tile[ HAS_POPPED_IN ] = true;
-
-		} else {
-
-			this._fadeManager.fadeIn( tile );
-
-		}
-
-	}
-
-}
-
 function onFadeComplete( tile, visible ) {
 
 	// mark the fade as finished
@@ -265,33 +226,38 @@ export class TilesFadePlugin {
 		// event callback initialization
 		this._onLoadModel = ( { scene } )=> {
 
+			// initialize all the scene materials to fade
 			this._fadeMaterialManager.prepareScene( scene );
 
 		};
 		this._onDisposeModel = ( { tile, scene } ) => {
 
+			// delete the fade info from the managers on disposal of model
 			this._fadeManager.deleteObject( tile );
 			this._fadeMaterialManager.deleteScene( scene );
 
 		};
 		this._onAddCamera = ( { camera } ) => {
 
+			// track the camera transform
 			this._prevCameraTransforms.set( camera, new Matrix4() );
 
 		};
 		this._onDeleteCamera = ( { camera } )=> {
 
+			// remove the camera transform
 			this._prevCameraTransforms.delete( camera );
 
 		};
 		this._onTileVisibilityChange = ( { tile, visible } ) => {
 
-			// ensure the tiles are marked as visible on visibility toggle since
-			// it's possible we disable them when adjusting visibility based on frustum
+			// this function gets fired _after_ all set visible callbacks including the batched meshes
+
+			// revert the scene and fade to the initial state when toggling
 			const scene = tile.cached.scene;
 			if ( scene ) {
 
-				scene.visible = true; // TODO
+				scene.visible = true;
 
 			}
 
@@ -313,7 +279,7 @@ export class TilesFadePlugin {
 
 			onUpdateAfter.call( this );
 
-		}
+		};
 
 		tiles.addEventListener( 'load-model', this._onLoadModel );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
@@ -323,6 +289,7 @@ export class TilesFadePlugin {
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
+		// initialize fade manager
 		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => {
 
@@ -344,6 +311,7 @@ export class TilesFadePlugin {
 		this._fadeManager = fadeManager;
 		this._prevCameraTransforms = new Map();
 
+		// initialize the state based on what's already present
 		tiles.cameras.forEach( camera => {
 
 			this._prevCameraTransforms.set( camera, new Matrix4() );
@@ -358,6 +326,7 @@ export class TilesFadePlugin {
 
 	}
 
+	// initializes the batched mesh if it needs to be, dispose if it it's no longer needed
 	initBatchedMesh() {
 
 		const otherBatchedMesh = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' )?.batchedMesh;
@@ -369,6 +338,7 @@ export class TilesFadePlugin {
 
 					this.batchedMesh.dispose();
 					this.batchedMesh.removeFromParent();
+					this.batchedMesh = null;
 					otherBatchedMesh.removeEventListener( 'dispose', this._onBatchedMeshDispose );
 
 				};
@@ -394,10 +364,47 @@ export class TilesFadePlugin {
 
 	}
 
+	// callback for fading to prevent tiles from being removed until the fade effect has completed
 	setTileVisible( tile, visible ) {
 
-		const wasFading = this._fadeManager.isFading( tile );
-		onTileVisibilityChange.call( this, tile, visible );
+		const fadeManager = this._fadeManager;
+
+		// track the fade state
+		const wasFading = fadeManager.isFading( tile );
+		if ( fadeManager.isFadingOut( tile ) ) {
+
+			this._fadingOutCount --;
+
+		}
+
+		// trigger any necessary fades
+		if ( ! visible ) {
+
+			this._fadingOutCount ++;
+			fadeManager.fadeOut( tile );
+
+		} else {
+
+			// if this is a root renderable tile and this is the first time rendering in
+			// then pop it in
+			const isRootRenderableTile = tile.__depthFromRenderedParent === 1;
+			if ( isRootRenderableTile ) {
+
+				if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {
+
+					this._fadeManager.fadeIn( tile );
+
+				}
+
+				tile[ HAS_POPPED_IN ] = true;
+
+			} else {
+
+				this._fadeManager.fadeIn( tile );
+
+			}
+
+		}
 
 		// if a tile was already fading then it's already marked as visible and in the scene
 		if ( wasFading ) {
@@ -451,6 +458,7 @@ export class TilesFadePlugin {
 
 	}
 
+	// helper for iterating over the batch ids for a given tile
 	forEachBatchIds( tile, cb ) {
 
 		this.initBatchedMesh();
@@ -458,7 +466,7 @@ export class TilesFadePlugin {
 		if ( this.batchedMesh ) {
 
 			const batchedPlugin = this.tiles.getPluginByName( 'BATCHED_MESH_PLUGIN' );
-			const instanceIds = batchedPlugin._tileToInstanceId.get( tile );
+			const instanceIds = batchedPlugin.getTileBatchIds( tile );
 			if ( instanceIds ) {
 
 				instanceIds.forEach( id => {

@@ -388,4 +388,10 @@ export class BatchedTilesPlugin {
 
 	}
 
+	getTileBatchIds( tile ) {
+
+		return this._tileToInstanceId.get( tile );
+
+	}
+
 }
