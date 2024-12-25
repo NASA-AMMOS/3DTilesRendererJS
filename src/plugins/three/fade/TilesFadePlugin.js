@@ -10,29 +10,6 @@ const _fromQuat = new Quaternion();
 const _toQuat = new Quaternion();
 const _scale = new Vector3();
 
-function onFadeComplete( tile, visible ) {
-
-	// mark the fade as finished
-	this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
-
-	this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
-
-		batchedMesh.setVisibleAt( id, false );
-		plugin.batchedMesh.setVisibleAt( id, visible );
-
-	} );
-
-	if ( ! visible ) {
-
-		// now that the tile is hidden we can run the built-in setTileVisible function for the tile
-		this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
-
-		this._fadingOutCount --;
-
-	}
-
-}
-
 function onUpdateBefore() {
 
 	const fadeManager = this._fadeManager;
@@ -305,7 +282,28 @@ export class TilesFadePlugin {
 
 		};
 
-		fadeManager.onFadeComplete = onFadeComplete.bind( this );
+		fadeManager.onFadeComplete = ( tile, visible ) => {
+
+			// mark the fade as finished and reset the fade parameters
+			this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
+
+			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
+
+				batchedMesh.setFadeAt( id, 0, 0 );
+				batchedMesh.setVisibleAt( id, false );
+				plugin.batchedMesh.setVisibleAt( id, visible );
+
+			} );
+
+			if ( ! visible ) {
+
+				// now that the tile is hidden we can run the built-in setTileVisible function for the tile
+				tiles.invokeOnePlugin( plugin => plugin !== this && plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
+				this._fadingOutCount --;
+
+			}
+
+		};
 
 		this.tiles = tiles;
 		this._fadeManager = fadeManager;
