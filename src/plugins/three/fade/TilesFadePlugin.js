@@ -49,19 +49,6 @@ function onTileVisibilityChange( tile, visible ) {
 
 }
 
-function onLoadModel( scene, tile ) {
-
-	this._fadeMaterialManager.prepareScene( scene );
-
-}
-
-function onDisposeModel( scene, tile ) {
-
-	this._fadeManager.deleteObject( tile );
-	this._fadeMaterialManager.deleteScene( scene );
-
-}
-
 function onFadeComplete( tile, visible ) {
 
 	// mark the fade as finished
@@ -82,18 +69,6 @@ function onFadeComplete( tile, visible ) {
 		this._fadingOutCount --;
 
 	}
-
-}
-
-function onAddCamera( camera ) {
-
-	this._prevCameraTransforms.set( camera, new Matrix4() );
-
-}
-
-function onDeleteCamera( camera ) {
-
-	this._prevCameraTransforms.delete( camera );
 
 }
 
@@ -287,6 +262,67 @@ export class TilesFadePlugin {
 
 	init( tiles ) {
 
+		// event callback initialization
+		this._onLoadModel = ( { scene } )=> {
+
+			this._fadeMaterialManager.prepareScene( scene );
+
+		};
+		this._onDisposeModel = ( { tile, scene } ) => {
+
+			this._fadeManager.deleteObject( tile );
+			this._fadeMaterialManager.deleteScene( scene );
+
+		};
+		this._onAddCamera = ( { camera } ) => {
+
+			this._prevCameraTransforms.set( camera, new Matrix4() );
+
+		};
+		this._onDeleteCamera = ( { camera } )=> {
+
+			this._prevCameraTransforms.delete( camera );
+
+		};
+		this._onTileVisibilityChange = ( { tile, visible } ) => {
+
+			// ensure the tiles are marked as visible on visibility toggle since
+			// it's possible we disable them when adjusting visibility based on frustum
+			const scene = tile.cached.scene;
+			if ( scene ) {
+
+				scene.visible = true; // TODO
+
+			}
+
+			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
+
+				batchedMesh.setFadeAt( id, 0, 0 );
+				batchedMesh.setVisibleAt( id, true );
+				plugin.batchedMesh.setVisibleAt( id, false );
+
+			} );
+
+		};
+		this._onUpdateBefore = () => {
+
+			onUpdateBefore.call( this );
+
+		};
+		this._onUpdateAfter = () => {
+
+			onUpdateAfter.call( this );
+
+		}
+
+		tiles.addEventListener( 'load-model', this._onLoadModel );
+		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
+		tiles.addEventListener( 'add-camera', this._onAddCamera );
+		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
+		tiles.addEventListener( 'update-before', this._onUpdateBefore );
+		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
+
 		const fadeManager = this._fadeManager;
 		fadeManager.onFadeSetStart = () => {
 
@@ -316,44 +352,9 @@ export class TilesFadePlugin {
 
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			onLoadModel.call( this, scene, tile );
+			this._onLoadModel( { scene } );
 
 		} );
-
-		this._onLoadModel = e => onLoadModel.call( this, e.scene, e.tile );
-		this._onDisposeModel = e => onDisposeModel.call( this, e.scene, e.tile );
-		this._onAddCamera = e => onAddCamera.call( this, e.camera );
-		this._onDeleteCamera = e => onDeleteCamera.call( this, e.camera );
-		this._onUpdateBefore = () => onUpdateBefore.call( this );
-		this._onUpdateAfter = () => onUpdateAfter.call( this );
-		this._onTileVisibilityChange = ( { tile, visible } ) => {
-
-			// ensure the tiles are marked as visible on visibility toggle since
-			// it's possible we disable them when adjusting visibility based on frustum
-			const scene = tile.cached.scene;
-			if ( scene ) {
-
-				scene.visible = true; // TODO
-
-			}
-
-			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
-
-				batchedMesh.setFadeAt( id, 0, 0 );
-				batchedMesh.setVisibleAt( id, true );
-				plugin.batchedMesh.setVisibleAt( id, false );
-
-			} );
-
-		};
-
-		tiles.addEventListener( 'load-model', this._onLoadModel );
-		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
-		tiles.addEventListener( 'add-camera', this._onAddCamera );
-		tiles.addEventListener( 'delete-camera', this._onDeleteCamera );
-		tiles.addEventListener( 'update-before', this._onUpdateBefore );
-		tiles.addEventListener( 'update-after', this._onUpdateAfter );
-		tiles.addEventListener( 'tile-visibility-change', this._onTileVisibilityChange );
 
 	}
 
