@@ -97,8 +97,7 @@ export class UnloadTilesPlugin {
 			if ( visible ) {
 
 				lruCache.add( tile, unloadCallback );
-				lruCache.markUsed( tile );
-				tiles.usedSet.add( tile );
+				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 
 			} else {

@@ -126,8 +126,7 @@ function onUpdateAfter() {
 		// prevent faded tiles from being unloaded
 		const scene = tile.cached.scene;
 		const isFadingOut = fadeManager.isFadingOut( tile );
-		lruCache.markUsed( tile );
-		tiles.usedSet.add( tile );
+		tiles.markTileUsed( tile );
 		if ( scene ) {
 
 			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );

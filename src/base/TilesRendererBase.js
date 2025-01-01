@@ -246,6 +246,13 @@ export class TilesRendererBase {
 
 	}
 
+	markTileUsed( tile ) {
+
+		this.usedSet.add( tile );
+		this.lruCache.add( tile );
+
+	}
+
 	// Public API
 	update() {
 
