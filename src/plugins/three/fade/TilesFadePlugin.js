@@ -34,7 +34,7 @@ function onUpdateAfter() {
 	const fadingBefore = this._fadingBefore;
 	const prevCameraTransforms = this._prevCameraTransforms;
 	const { tiles, maximumFadeOutTiles, batchedMesh } = this;
-	const { lruCache, cameras } = tiles;
+	const { cameras } = tiles;
 
 	// reset the active tiles flag
 	tiles.displayActiveTiles = displayActiveTiles;
@@ -126,7 +126,7 @@ function onUpdateAfter() {
 		// prevent faded tiles from being unloaded
 		const scene = tile.cached.scene;
 		const isFadingOut = fadeManager.isFadingOut( tile );
-		lruCache.markUsed( tile );
+		tiles.markTileUsed( tile );
 		if ( scene ) {
 
 			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );

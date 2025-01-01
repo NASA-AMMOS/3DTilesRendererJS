@@ -135,6 +135,7 @@ export class TilesRendererBase {
 		parseQueue.maxJobs = 1;
 		parseQueue.priorityCallback = priorityCallback;
 
+		this.usedSet = new Set();
 		this.lruCache = lruCache;
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
@@ -245,11 +246,17 @@ export class TilesRendererBase {
 
 	}
 
+	markTileUsed( tile ) {
+
+		this.usedSet.add( tile );
+		this.lruCache.add( tile );
+
+	}
+
 	// Public API
 	update() {
 
-		const stats = this.stats;
-		const lruCache = this.lruCache;
+		const { lruCache, usedSet, stats, root } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -264,19 +271,20 @@ export class TilesRendererBase {
 
 		}
 
-		if ( ! this.root ) {
+		if ( ! root ) {
 
 			return;
 
 		}
-
-		const root = this.root;
 
 		stats.inFrustum = 0;
 		stats.used = 0;
 		stats.active = 0;
 		stats.visible = 0;
 		this.frameCount ++;
+
+		usedSet.forEach( tile => lruCache.markUnused( tile ) );
+		usedSet.clear();
 
 		markUsedTiles( root, this );
 		markUsedSetLeaves( root, this );

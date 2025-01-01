@@ -337,7 +337,7 @@ export class TilesRenderer extends TilesRendererBase {
 			.then( () => {
 
 				// cache the gltf tile set rotation matrix
-				const { asset, extensions } = this.rootTileSet;
+				const { asset, extensions = {} } = this.rootTileSet;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
 
