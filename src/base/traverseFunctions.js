@@ -103,6 +103,7 @@ function markUsed( tile, renderer ) {
 
 	tile.__used = true;
 	renderer.lruCache.markUsed( tile );
+	renderer.usedSet.add( tile );
 	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {

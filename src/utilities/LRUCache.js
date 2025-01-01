@@ -213,12 +213,7 @@ class LRUCache {
 
 	markUnused( item ) {
 
-		const usedSet = this.usedSet;
-		if ( usedSet.has( item ) ) {
-
-			usedSet.delete( item );
-
-		}
+		this.usedSet.delete( item );
 
 	}
 
