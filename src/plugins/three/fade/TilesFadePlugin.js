@@ -127,6 +127,7 @@ function onUpdateAfter() {
 		const scene = tile.cached.scene;
 		const isFadingOut = fadeManager.isFadingOut( tile );
 		lruCache.markUsed( tile );
+		tiles.usedSet.add( tile );
 		if ( scene ) {
 
 			fadeMaterialManager.setFade( scene, fadeIn, fadeOut );

@@ -98,6 +98,7 @@ export class UnloadTilesPlugin {
 
 				lruCache.add( tile, unloadCallback );
 				lruCache.markUsed( tile );
+				tiles.usedSet.add( tile );
 				deferCallbacks.cancel( tile );
 
 			} else {

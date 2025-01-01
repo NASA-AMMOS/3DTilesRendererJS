@@ -49,7 +49,6 @@ class LRUCache {
 		this.itemList = [];
 		this.usedSet = new Set();
 		this.callbacks = new Map();
-		this.markUnusedQueued = false;
 		this.unloadingHandle = - 1;
 		this.cachedBytes = 0;
 		this.bytesMap = new Map();
@@ -77,12 +76,6 @@ class LRUCache {
 	}
 
 	add( item, removeCb ) {
-
-		if ( this.markUnusedQueued ) {
-
-			this.markAllUnused();
-
-		}
 
 		const itemSet = this.itemSet;
 		if ( itemSet.has( item ) ) {
@@ -194,12 +187,6 @@ class LRUCache {
 
 	markUsed( item ) {
 
-		if ( this.markUnusedQueued ) {
-
-			this.markAllUnused();
-
-		}
-
 		const itemSet = this.itemSet;
 		const usedSet = this.usedSet;
 		if ( itemSet.has( item ) && ! usedSet.has( item ) ) {
@@ -220,7 +207,6 @@ class LRUCache {
 	markAllUnused() {
 
 		this.usedSet.clear();
-		this.markUnusedQueued = false;
 		if ( this.unloadingHandle !== - 1 ) {
 
 			cancelAnimationFrame( this.unloadingHandle );
@@ -385,12 +371,6 @@ class LRUCache {
 
 				this.scheduled = false;
 				this.unloadUnusedContent();
-
-				if ( this.autoMarkUnused ) {
-
-					this.markUnusedQueued = true;
-
-				}
 
 			} );
 
