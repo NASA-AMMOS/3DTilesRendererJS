@@ -207,12 +207,6 @@ class LRUCache {
 	markAllUnused() {
 
 		this.usedSet.clear();
-		if ( this.unloadingHandle !== - 1 ) {
-
-			cancelAnimationFrame( this.unloadingHandle );
-			this.unloadingHandle = - 1;
-
-		}
 
 	}
 
@@ -363,6 +357,8 @@ class LRUCache {
 	}
 
 	scheduleUnload() {
+
+		cancelAnimationFrame( this.unloadingHandle );
 
 		if ( ! this.scheduled ) {
 
