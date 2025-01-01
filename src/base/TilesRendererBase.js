@@ -255,7 +255,12 @@ export class TilesRendererBase {
 			this.rootLoadingState = LOADING;
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
 				.then( () => this.rootLoadingState = LOADED )
-				.catch( () => this.rootLoadingState = FAILED );
+				.catch( err => {
+
+					this.rootLoadingState = FAILED;
+					console.error( err );
+
+				} );
 
 		}
 

@@ -2,4 +2,6 @@ import { WGS84_RADIUS, WGS84_HEIGHT, LUNAR_RADIUS, LUNAR_HEIGHT } from '../../ba
 import { Ellipsoid } from './Ellipsoid.js';
 
 export const WGS84_ELLIPSOID = new Ellipsoid( WGS84_RADIUS, WGS84_RADIUS, WGS84_HEIGHT );
+WGS84_ELLIPSOID.name = 'WGS84 Earth';
+
 export const LUNAR_ELLIPSOID = new Ellipsoid( LUNAR_RADIUS, LUNAR_RADIUS, LUNAR_HEIGHT );

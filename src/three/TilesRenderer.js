@@ -337,7 +337,8 @@ export class TilesRenderer extends TilesRendererBase {
 			.then( () => {
 
 				// cache the gltf tile set rotation matrix
-				const upAxis = this.rootTileSet.asset && this.rootTileSet.asset.gltfUpAxis || 'y';
+				const { asset, extensions } = this.rootTileSet;
+				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
 
 					case 'x':
@@ -347,6 +348,24 @@ export class TilesRenderer extends TilesRendererBase {
 					case 'y':
 						this._upRotationMatrix.makeRotationAxis( X_AXIS, Math.PI / 2 );
 						break;
+
+				}
+
+				// update the ellipsoid based on the extension
+				if ( '3DTILES_ellipsoid' in extensions ) {
+
+					const ext = extensions[ '3DTILES_ellipsoid' ];
+					const { ellipsoid } = this;
+					ellipsoid.name = ext.body;
+					if ( ext.radii ) {
+
+						ellipsoid.radius.set( ...ext.radii );
+
+					} else {
+
+						ellipsoid.radius.set( 1, 1, 1 );
+
+					}
 
 				}
 
