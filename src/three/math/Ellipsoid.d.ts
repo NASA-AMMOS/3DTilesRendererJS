@@ -8,6 +8,7 @@ export const OBJECT_FRAME: Frames;
 export class Ellipsoid {
 
 	radius: Vector3;
+	name: string;
 
 	constructor( x: number, y: number, z: number );
 	getCartographicToPosition( lat: number, lon: number, height: number, target: Vector3 ): Vector3;

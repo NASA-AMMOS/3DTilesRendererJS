@@ -28,6 +28,7 @@ export class Ellipsoid {
 
 	constructor( x = 1, y = 1, z = 1 ) {
 
+		this.name = '';
 		this.radius = new Vector3( x, y, z );
 
 	}
