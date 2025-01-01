@@ -251,7 +251,7 @@ export class TilesRendererBase {
 		// save the tile in a separate "used set" so we can mark it as unused
 		// before the next tile set traversal
 		this.usedSet.add( tile );
-		this.lruCache.add( tile );
+		this.lruCache.markUnused( tile );
 
 	}
 

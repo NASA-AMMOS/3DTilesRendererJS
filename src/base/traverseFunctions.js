@@ -102,7 +102,7 @@ function markUsed( tile, renderer ) {
 	}
 
 	tile.__used = true;
-	tile.markTileUsed( tile );
+	renderer.markTileUsed( tile );
 	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {
