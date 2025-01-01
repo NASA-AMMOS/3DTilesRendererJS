@@ -1,7 +1,6 @@
 import {
 	GlobeControls,
 	TilesRenderer,
-	LUNAR_ELLIPSOID,
 } from '3d-tiles-renderer';
 import {
 	CesiumIonAuthPlugin,
@@ -42,7 +41,6 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'ionApiKey', params.apiKey );
 
 	tiles = new TilesRenderer();
-	tiles.ellipsoid.copy( LUNAR_ELLIPSOID );
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
