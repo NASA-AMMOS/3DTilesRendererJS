@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PNTSLoader: Add support for normals, quantized normals.
 - TilesRenderer: Support for 3DTILES_ELLIPSOID extension.
 
+### Fixed
+- TilesRenderer update no longer implicitly marks all tiles owned by other tiles renderers as unused. All tiles renderers sharing an LRUCache no longer must have their "update" functions called on the same frame.
+
 ## [0.4.0] - 2024.12.25
 ### Changed
 - Minimum three.js version is now r166
