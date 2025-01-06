@@ -573,6 +573,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	async parseTile( buffer, tile, extension, uri ) {
 
+		// dispatch an event indicating that this model has started loading
+		this.dispatchEvent( {
+			type: 'load-model-start',
+			tile,
+		} );
+
 		const cached = tile.cached;
 		cached._loadIndex ++;
 

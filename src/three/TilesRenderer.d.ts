@@ -12,6 +12,7 @@ export interface TilesRendererEventMap {
 	'tiles-load-start': {};
 	'tiles-load-end': {};
 	'load-content': {};
+	'load-model-start': { tile: Tile };
 	'load-model': { scene: Object3D; tile: Tile };
 	'dispose-model': { scene: Object3D; tile: Tile };
 	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
