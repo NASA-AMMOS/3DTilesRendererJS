@@ -1,8 +1,8 @@
 export class UnloadTilesPlugin {
 
-	constructor( options: {
-		delay: number,
-		bytesTarget: number,
+	constructor( options?: {
+		delay?: number,
+		bytesTarget?: number,
 	} );
 
 }
