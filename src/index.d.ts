@@ -12,6 +12,11 @@ export { EllipsoidRegion } from './three/math/EllipsoidRegion';
 export * as GeoUtils from './three/math/GeoUtils';
 export * from './three/math/GeoConstants';
 
+// three.js controls
+export { GlobeControls } from './three/controls/GlobeControls';
+export { EnvironmentControls } from './three/controls/EnvironmentControls';
+export { CameraTransitionManager } from './three/controls/CameraTransitionManager';
+
 // common
 export { TilesRendererBase } from './base/TilesRendererBase';
 export { Tile } from './base/Tile';
