@@ -1,9 +1,9 @@
 export class TilesFadePlugin {
 
-	constructor( options: {
-		maximumFadeOutTiles: number,
-		fadeRootTiles: boolean,
-		fadeDuration: number,
+	constructor( options?: {
+		maximumFadeOutTiles?: number,
+		fadeRootTiles?: boolean,
+		fadeDuration?: number,
 	} );
 
 }
