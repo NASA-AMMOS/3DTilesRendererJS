@@ -17,7 +17,7 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, camera, renderer, tiles;
 
-const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
+const apiKey = localStorage.getItem( 'ionApiKey' ) ?? import.meta.env.VITE_ION_KEY ?? 'put-your-api-key-here';
 const params = {
 
 	apiKey: apiKey,
@@ -82,6 +82,7 @@ function init() {
 	gui.width = 300;
 	gui.add( params, 'apiKey' );
 	gui.add( params, 'reload' );
+	gui.close();
 
 }
 
