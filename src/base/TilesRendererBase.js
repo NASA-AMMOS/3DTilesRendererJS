@@ -140,6 +140,7 @@ export class TilesRendererBase {
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
 		this.stats = {
+			inCache: 0,
 			parsing: 0,
 			downloading: 0,
 			failed: 0,
@@ -655,6 +656,7 @@ export class TilesRendererBase {
 			}
 
 			// Decrement stats
+			stats.inCache --;
 			if ( t.__loadingState === LOADING ) {
 
 				stats.downloading --;
@@ -687,6 +689,7 @@ export class TilesRendererBase {
 		const controller = new AbortController();
 		const signal = controller.signal;
 
+		stats.inCache ++;
 		stats.downloading ++;
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
