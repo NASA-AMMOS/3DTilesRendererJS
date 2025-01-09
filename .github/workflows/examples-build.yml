@@ -29,8 +29,6 @@ jobs:
     - run: echo "KEY ${{ env.VITE_ION_KEY }}"
     - run: echo "SECRET ${{ secrets.VITE_ION_KEY }}"
     - run: npm run build-examples
-      env:
-        VITE_ION_KEY: ${{ secrets.VITE_ION_KEY }}
 
     - name: Commit Examples
       uses: EndBug/add-and-commit@v7
