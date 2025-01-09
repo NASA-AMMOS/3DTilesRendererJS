@@ -749,7 +749,7 @@ export class TilesRendererBase {
 
 					} else {
 
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri ) );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri, signal ) );
 
 					}
 

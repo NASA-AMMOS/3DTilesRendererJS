@@ -546,7 +546,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		tile.cached = {
 
-			_loadIndex: 0,
 			transform,
 			transformInverse,
 
@@ -571,18 +570,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	async parseTile( buffer, tile, extension, uri ) {
+	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
 		const cached = tile.cached;
-		cached._loadIndex ++;
-
 		const uriSplits = uri.split( /[\\/]/g );
 		uriSplits.pop();
 		const workingPath = uriSplits.join( '/' );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
-		const loadIndex = cached._loadIndex;
 		let promise = null;
 
 		const cachedTransform = cached.transform;
@@ -697,7 +693,7 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 
 		// exit early if a new request has already started
-		if ( cached._loadIndex !== loadIndex ) {
+		if ( abortSignal.aborted ) {
 
 			return;
 
@@ -858,8 +854,6 @@ export class TilesRenderer extends TilesRendererBase {
 			cached.metadata = null;
 
 		}
-
-		cached._loadIndex ++;
 
 	}
 
