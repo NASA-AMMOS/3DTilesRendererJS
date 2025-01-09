@@ -646,7 +646,22 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new GLTFExtensionLoader( manager );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-				promise = loader.parse( buffer );
+				promise = loader.parse( buffer ).then( result => {
+
+					// apply the local up-axis correction rotation
+					// GLTFLoader seems to never set a transformation on the root scene object so
+					// any transformations applied to it can be assumed to be applied after load
+					// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
+					// rotation fix which is why "multiply" happens here.
+					const { scene } = result;
+					scene.updateMatrix();
+					scene.matrix
+						.multiply( upRotationMatrix )
+						.decompose( scene.position, scene.quaternion, scene.scale );
+
+					return result;
+
+				} );
 				break;
 
 			}
@@ -701,18 +716,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
-
-		// apply the local up-axis correction rotation
-		// GLTFLoader seems to never set a transformation on the root scene object so
-		// any transformations applied to it can be assumed to be applied after load
-		// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
-		// rotation fix which is why "multiply" happens here.
-		if ( fileType === 'glb' || fileType === 'gltf' ) {
-
-			scene.matrix.multiply( upRotationMatrix );
-
-		}
-
 		scene.matrix.premultiply( cachedTransform );
 		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 		scene.traverse( c => {
