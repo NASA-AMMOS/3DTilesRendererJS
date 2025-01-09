@@ -26,7 +26,7 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: echo "TEST"
-    - run: echo "KEY $VITE_ION_KEY"
+    - run: echo "KEY ${{ env.VITE_ION_KEY }}"
     - run: echo "SECRET ${{ secrets.VITE_ION_KEY }}"
     - run: npm run build-examples
       env:
