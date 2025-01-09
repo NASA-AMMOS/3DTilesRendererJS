@@ -480,7 +480,6 @@ export class TilesRendererBase {
 		tile.__active = false;
 
 		tile.__loadingState = UNLOADED;
-		tile.__loadIndex = 0;
 
 		tile.__loadAbort = null;
 
@@ -666,7 +665,6 @@ export class TilesRendererBase {
 			}
 
 			t.__loadingState = UNLOADED;
-			t.__loadIndex ++;
 
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
@@ -680,10 +678,7 @@ export class TilesRendererBase {
 
 		}
 
-		// Track a new load index so we avoid the condition where this load is stopped and
-		// another begins soon after so we don't parse twice.
-		tile.__loadIndex ++;
-		const loadIndex = tile.__loadIndex;
+		// track an abort controller and pass-through the below conditions if aborted
 		const controller = new AbortController();
 		const signal = controller.signal;
 
