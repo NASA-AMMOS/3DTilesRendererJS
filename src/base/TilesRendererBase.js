@@ -694,7 +694,7 @@ export class TilesRendererBase {
 		// queue the download and parse
 		return downloadQueue.add( tile, downloadTile => {
 
-			if ( downloadTile.__loadIndex !== loadIndex ) {
+			if ( signal.aborted ) {
 
 				return Promise.resolve();
 
@@ -705,7 +705,7 @@ export class TilesRendererBase {
 		} )
 			.then( res => {
 
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -725,7 +725,7 @@ export class TilesRendererBase {
 			.then( content => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -739,7 +739,7 @@ export class TilesRendererBase {
 				return parseQueue.add( tile, parseTile => {
 
 					// if it has been unloaded then the tile has been disposed
-					if ( parseTile.__loadIndex !== loadIndex ) {
+					if ( signal.aborted ) {
 
 						return Promise.resolve();
 
@@ -764,7 +764,7 @@ export class TilesRendererBase {
 			.then( () => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -797,7 +797,7 @@ export class TilesRendererBase {
 			.catch( e => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
