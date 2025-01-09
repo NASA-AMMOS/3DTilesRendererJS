@@ -482,8 +482,6 @@ export class TilesRendererBase {
 
 		tile.__loadingState = UNLOADED;
 
-		tile.__loadAbort = null;
-
 		if ( parentTile === null ) {
 
 			tile.__depth = 0;
@@ -632,13 +630,16 @@ export class TilesRendererBase {
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const extension = getUrlExtension( uri );
+
+		// track an abort controller and pass-through the below conditions if aborted
+		const controller = new AbortController();
+		const signal = controller.signal;
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
 			if ( t.__loadingState === LOADING ) {
 
-				t.__loadAbort.abort();
-				t.__loadAbort = null;
+				controller.abort();
 
 			} else if ( isExternalTileSet ) {
 
@@ -680,13 +681,8 @@ export class TilesRendererBase {
 
 		}
 
-		// track an abort controller and pass-through the below conditions if aborted
-		const controller = new AbortController();
-		const signal = controller.signal;
-
 		stats.inCache ++;
 		stats.downloading ++;
-		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
 
 		// queue the download and parse
@@ -731,7 +727,6 @@ export class TilesRendererBase {
 
 				stats.downloading --;
 				stats.parsing ++;
-				tile.__loadAbort = null;
 				tile.__loadingState = PARSING;
 
 				return parseQueue.add( tile, parseTile => {
