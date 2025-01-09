@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PNTSLoader: Add support for normals, quantized normals.
 - TilesRenderer: Support for 3DTILES_ELLIPSOID extension.
 - Types: Added types for CameraTransitionManager, GlobeControls, EnvironmentControls.
+- "inCache" field in TilesRenderer.stats object representing number of tiles in the lru cache for that renderer.
 
 ### Fixed
 - TilesRenderer update no longer implicitly marks all tiles owned by other tiles renderers as unused. All tiles renderers sharing an LRUCache no longer must have their "update" functions called on the same frame.
 - Types: Fixed types for all plugins options to be appropriately marked as "optional".
+
+### Changed
+- Remove "loadIndex" fields for cancelling redundant loads in favor of an abort signal.
 
 ## [0.4.0] - 2024.12.25
 ### Changed
