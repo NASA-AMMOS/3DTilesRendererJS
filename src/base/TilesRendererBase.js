@@ -691,45 +691,6 @@ export class TilesRendererBase {
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
 
-		const errorCallback = e => {
-
-			// if it has been unloaded then the tile has been disposed
-			if ( tile.__loadIndex !== loadIndex ) {
-
-				return;
-
-			}
-
-			if ( e.name !== 'AbortError' ) {
-
-				parseQueue.remove( tile );
-				downloadQueue.remove( tile );
-
-				if ( tile.__loadingState === PARSING ) {
-
-					stats.parsing --;
-
-				} else if ( tile.__loadingState === LOADING ) {
-
-					stats.downloading --;
-
-				}
-
-				stats.failed ++;
-
-				console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
-				console.error( e );
-				tile.__loadingState = FAILED;
-				lruCache.setLoaded( tile, true );
-
-			} else {
-
-				lruCache.remove( tile );
-
-			}
-
-		};
-
 		// queue the download and parse
 		return downloadQueue.add( tile, downloadTile => {
 
@@ -833,7 +794,44 @@ export class TilesRendererBase {
 				}
 
 			} )
-			.catch( errorCallback );
+			.catch( e => {
+
+				// if it has been unloaded then the tile has been disposed
+				if ( tile.__loadIndex !== loadIndex ) {
+
+					return;
+
+				}
+
+				if ( e.name !== 'AbortError' ) {
+
+					parseQueue.remove( tile );
+					downloadQueue.remove( tile );
+
+					if ( tile.__loadingState === PARSING ) {
+
+						stats.parsing --;
+
+					} else if ( tile.__loadingState === LOADING ) {
+
+						stats.downloading --;
+
+					}
+
+					stats.failed ++;
+
+					console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
+					console.error( e );
+					tile.__loadingState = FAILED;
+					lruCache.setLoaded( tile, true );
+
+				} else {
+
+					lruCache.remove( tile );
+
+				}
+
+			} );
 
 	}
 
