@@ -47,7 +47,7 @@ function init() {
 
 	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setClearColor( 0x151c1f );
+	renderer.setClearColor( 0x131619 );
 	document.body.appendChild( renderer.domElement );
 
 	// scene
