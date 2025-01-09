@@ -481,7 +481,6 @@ export class TilesRendererBase {
 		tile.__active = false;
 
 		tile.__loadingState = UNLOADED;
-		tile.__loadIndex = 0;
 
 		tile.__loadAbort = null;
 
@@ -668,7 +667,6 @@ export class TilesRendererBase {
 			}
 
 			t.__loadingState = UNLOADED;
-			t.__loadIndex ++;
 
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
@@ -682,10 +680,7 @@ export class TilesRendererBase {
 
 		}
 
-		// Track a new load index so we avoid the condition where this load is stopped and
-		// another begins soon after so we don't parse twice.
-		tile.__loadIndex ++;
-		const loadIndex = tile.__loadIndex;
+		// track an abort controller and pass-through the below conditions if aborted
 		const controller = new AbortController();
 		const signal = controller.signal;
 
@@ -694,49 +689,10 @@ export class TilesRendererBase {
 		tile.__loadAbort = controller;
 		tile.__loadingState = LOADING;
 
-		const errorCallback = e => {
-
-			// if it has been unloaded then the tile has been disposed
-			if ( tile.__loadIndex !== loadIndex ) {
-
-				return;
-
-			}
-
-			if ( e.name !== 'AbortError' ) {
-
-				parseQueue.remove( tile );
-				downloadQueue.remove( tile );
-
-				if ( tile.__loadingState === PARSING ) {
-
-					stats.parsing --;
-
-				} else if ( tile.__loadingState === LOADING ) {
-
-					stats.downloading --;
-
-				}
-
-				stats.failed ++;
-
-				console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
-				console.error( e );
-				tile.__loadingState = FAILED;
-				lruCache.setLoaded( tile, true );
-
-			} else {
-
-				lruCache.remove( tile );
-
-			}
-
-		};
-
 		// queue the download and parse
 		return downloadQueue.add( tile, downloadTile => {
 
-			if ( downloadTile.__loadIndex !== loadIndex ) {
+			if ( signal.aborted ) {
 
 				return Promise.resolve();
 
@@ -747,7 +703,7 @@ export class TilesRendererBase {
 		} )
 			.then( res => {
 
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -767,7 +723,7 @@ export class TilesRendererBase {
 			.then( content => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -781,7 +737,7 @@ export class TilesRendererBase {
 				return parseQueue.add( tile, parseTile => {
 
 					// if it has been unloaded then the tile has been disposed
-					if ( parseTile.__loadIndex !== loadIndex ) {
+					if ( signal.aborted ) {
 
 						return Promise.resolve();
 
@@ -796,7 +752,7 @@ export class TilesRendererBase {
 
 					} else {
 
-						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri ) );
+						return this.invokeOnePlugin( plugin => plugin.parseTile && plugin.parseTile( content, parseTile, extension, uri, signal ) );
 
 					}
 
@@ -806,7 +762,7 @@ export class TilesRendererBase {
 			.then( () => {
 
 				// if it has been unloaded then the tile has been disposed
-				if ( tile.__loadIndex !== loadIndex ) {
+				if ( signal.aborted ) {
 
 					return;
 
@@ -836,7 +792,44 @@ export class TilesRendererBase {
 				}
 
 			} )
-			.catch( errorCallback );
+			.catch( e => {
+
+				// if it has been unloaded then the tile has been disposed
+				if ( signal.aborted ) {
+
+					return;
+
+				}
+
+				if ( e.name !== 'AbortError' ) {
+
+					parseQueue.remove( tile );
+					downloadQueue.remove( tile );
+
+					if ( tile.__loadingState === PARSING ) {
+
+						stats.parsing --;
+
+					} else if ( tile.__loadingState === LOADING ) {
+
+						stats.downloading --;
+
+					}
+
+					stats.failed ++;
+
+					console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
+					console.error( e );
+					tile.__loadingState = FAILED;
+					lruCache.setLoaded( tile, true );
+
+				} else {
+
+					lruCache.remove( tile );
+
+				}
+
+			} );
 
 	}
 
