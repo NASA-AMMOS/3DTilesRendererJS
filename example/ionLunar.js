@@ -25,6 +25,8 @@ const params = {
 
 };
 
+window.ENV = import.meta.env;
+
 init();
 animate();
 
