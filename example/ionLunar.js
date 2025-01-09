@@ -13,17 +13,8 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 } from 'three';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, camera, renderer, tiles;
-
-const apiKey = localStorage.getItem( 'ionApiKey' ) ?? 'put-your-api-key-here';
-const params = {
-
-	apiKey: apiKey,
-	reload: reinstantiateTiles,
-
-};
 
 init();
 animate();
@@ -38,10 +29,8 @@ function reinstantiateTiles() {
 
 	}
 
-	localStorage.setItem( 'ionApiKey', params.apiKey );
-
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.apiKey, assetId: '2684829', autoRefreshToken: true } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2684829', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
@@ -76,12 +65,6 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-
-	// GUI
-	const gui = new GUI();
-	gui.width = 300;
-	gui.add( params, 'apiKey' );
-	gui.add( params, 'reload' );
 
 }
 
