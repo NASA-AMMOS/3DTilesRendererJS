@@ -192,20 +192,6 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 			}
 
-			[
-				'BATCH_LENGTH',
-			].forEach( ( feature ) => {
-
-				if ( feature in featureTable.header ) {
-
-					console.warn(
-						`PNTSLoader: Unsupported FeatureTable feature "${feature}" detected.`
-					);
-
-				}
-
-			} );
-
 			const object = new Points( geometry, material );
 			object.position.copy( translationOffset );
 			result.scene = object;
