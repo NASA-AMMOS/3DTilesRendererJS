@@ -24,7 +24,7 @@ On Debian or Ubuntu, run `sudo apt install build-essential`.
 - Once that has successfully completed, make sure all tests pass by running `npm test`. If any tests failed, you'll see red output indicating the number of failures. This may indicate a problem with your setup
 - If you want to check the library's performance on different systems or after making changes, run `npm run benchmark`
 
-**Running Demos with Cesium Ion Tokens Locally**
+### Running Demos with Cesium Ion Tokens Locally
 
 To run demos that require Cesium Ion tokens locally (including any demo requiring lunar or Google Photorealistic Tiles) an `.env` file must be created with a personal [Cesium Ion](https://ion.cesium.com/) key.
 Create a `.env` file in the root directory of the repository like so with your personal key between the braces:
