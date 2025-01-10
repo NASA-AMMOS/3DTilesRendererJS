@@ -707,13 +707,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		// exit early if a new request has already started
-		if ( abortSignal.aborted ) {
-
-			return;
-
-		}
-
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
 		scene.matrix.premultiply( cachedTransform );
@@ -725,6 +718,7 @@ export class TilesRenderer extends TilesRendererBase {
 		} );
 		updateFrustumCulled( scene, ! this.autoDisableRendererCulling );
 
+		// collect all original geometries, materials, etc to be disposed of later
 		const materials = [];
 		const geometry = [];
 		const textures = [];
@@ -755,6 +749,30 @@ export class TilesRenderer extends TilesRendererBase {
 			}
 
 		} );
+
+		// exit early if a new request has already started
+		if ( abortSignal.aborted ) {
+
+			// dispose of any image bitmaps that have been opened.
+			// TODO: share this code with the "disposeTile" code below, possibly allow for the tiles
+			// renderer base to trigger a disposal of unneeded data
+			for ( let i = 0, l = textures.length; i < l; i ++ ) {
+
+				const texture = textures[ i ];
+
+				if ( texture.image instanceof ImageBitmap ) {
+
+					texture.image.close();
+
+				}
+
+				texture.dispose();
+
+			}
+
+			return;
+
+		}
 
 		cached.materials = materials;
 		cached.geometry = geometry;
