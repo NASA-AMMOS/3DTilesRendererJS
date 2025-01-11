@@ -99,19 +99,6 @@ export class TilesRendererBase {
 
 	}
 
-	set preprocessURL( v ) {
-
-		console.warn( 'TilesRendererBase: The "preprocessURL" callback has been deprecated. Use a plugin, instead.' );
-		this._preprocessURL = v;
-
-	}
-
-	get preprocessURL() {
-
-		return this._preprocessURL;
-
-	}
-
 	constructor( url = null ) {
 
 		// state
@@ -121,8 +108,6 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 		this.plugins = [];
 		this.queuedTiles = [];
-
-		this._preprocessURL = null;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
