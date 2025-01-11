@@ -108,6 +108,7 @@ export class TilesRendererBase {
 		this.fetchOptions = {};
 		this.plugins = [];
 		this.queuedTiles = [];
+		this.cachedSinceReset = new Set();
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -125,6 +126,7 @@ export class TilesRendererBase {
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
 		this.stats = {
+			inCacheSinceReset: 0,
 			inCache: 0,
 			parsing: 0,
 			downloading: 0,
@@ -642,6 +644,13 @@ export class TilesRendererBase {
 
 			// Decrement stats
 			stats.inCache --;
+			if ( this.cachedSinceReset.has( tile ) ) {
+
+				this.cachedSinceReset.delete( tile );
+				stats.inCacheSinceReset --;
+
+			}
+
 			if ( t.__loadingState === LOADING ) {
 
 				stats.downloading --;
@@ -666,6 +675,8 @@ export class TilesRendererBase {
 
 		}
 
+		this.cachedSinceReset.add( tile );
+		stats.inCacheSinceReset ++;
 		stats.inCache ++;
 		stats.downloading ++;
 		tile.__loadingState = LOADING;
@@ -806,6 +817,16 @@ export class TilesRendererBase {
 				} else {
 
 					lruCache.remove( tile );
+
+				}
+
+			} )
+			.finally( () => {
+
+				if ( stats.parsing === 0 && stats.downloading === 0 ) {
+
+					this.cachedSinceReset.clear();
+					stats.inCacheSinceReset = 0;
 
 				}
 
