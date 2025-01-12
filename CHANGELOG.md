@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Remove "loadIndex" fields for cancelling redundant loads in favor of an abort signal.
+- Removed gltf extension exports from core. Use the plugins export, instead.
+- TilesRenderer: `CESIUM_RTC` glTF extension is no longer automatically supported. Use the `GLTFExtensionsPlugin`, instead.
 
 ## [0.4.0] - 2024.12.25
 ### Changed
