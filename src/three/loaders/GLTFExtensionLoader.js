@@ -1,7 +1,6 @@
 import { DefaultLoadingManager } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { LoaderBase } from '../../base/loaders/LoaderBase.js';
-import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
 
 export class GLTFExtensionLoader extends LoaderBase {
 
@@ -23,8 +22,6 @@ export class GLTFExtensionLoader extends LoaderBase {
 			if ( ! loader ) {
 
 				loader = new GLTFLoader( manager );
-
-				loader.register( () => new GLTFCesiumRTCExtension() );
 
 			}
 
