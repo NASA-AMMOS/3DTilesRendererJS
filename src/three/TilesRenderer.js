@@ -3,7 +3,6 @@ import { B3DMLoader } from './loaders/B3DMLoader.js';
 import { PNTSLoader } from './loaders/PNTSLoader.js';
 import { I3DMLoader } from './loaders/I3DMLoader.js';
 import { CMPTLoader } from './loaders/CMPTLoader.js';
-import { GLTFExtensionLoader } from './loaders/GLTFExtensionLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -19,6 +18,7 @@ import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
 import { WGS84_ELLIPSOID } from './math/GeoConstants.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const _mat = new Matrix4();
 const _euler = new Euler();
@@ -643,10 +643,25 @@ export class TilesRenderer extends TilesRendererBase {
 			case 'gltf':
 			case 'glb': {
 
-				const loader = new GLTFExtensionLoader( manager );
-				loader.workingPath = workingPath;
-				loader.fetchOptions = fetchOptions;
-				promise = loader.parse( buffer ).then( result => {
+				const loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' ) || new GLTFLoader( manager );
+				loader.setWithCredentials( fetchOptions.credentials === 'include' );
+				loader.setRequestHeader( fetchOptions.headers || {} );
+				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
+
+					loader.setCrossOrigin( 'use-credentials' );
+
+				}
+
+				// assume any pre-registered loader has paths configured as the user desires, but if we're making
+				// a new loader, use the working path during parse to support relative uris on other hosts
+				let resourcePath = loader.resourcePath || loader.path || workingPath;
+				if ( ! /[\\/]$/.test( resourcePath ) && resourcePath.length ) {
+
+					resourcePath += '/';
+
+				}
+
+				promise = loader.parseAsync( buffer, resourcePath ).then( result => {
 
 					// apply the local up-axis correction rotation
 					// GLTFLoader seems to never set a transformation on the root scene object so

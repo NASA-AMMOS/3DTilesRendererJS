@@ -4,7 +4,6 @@ export { B3DMLoader } from './three/loaders/B3DMLoader.js';
 export { PNTSLoader } from './three/loaders/PNTSLoader.js';
 export { I3DMLoader } from './three/loaders/I3DMLoader.js';
 export { CMPTLoader } from './three/loaders/CMPTLoader.js';
-export { GLTFExtensionLoader } from './three/loaders/GLTFExtensionLoader.js';
 
 export * from './three/math/Ellipsoid.js';
 export * from './three/math/EllipsoidRegion.js';
