@@ -644,12 +644,12 @@ export class TilesRenderer extends TilesRendererBase {
 			case 'glb': {
 
 				const loader = manager.getHandler( 'path.gltf' ) || manager.getHandler( 'path.glb' ) || new GLTFLoader( manager );
-				loader.setWithCredentials( fetchOptions.credentials === 'include' );	
+				loader.setWithCredentials( fetchOptions.credentials === 'include' );
 				loader.setRequestHeader( fetchOptions.headers || {} );
 				if ( fetchOptions.credentials === 'include' && fetchOptions.mode === 'cors' ) {
 
 					loader.setCrossOrigin( 'use-credentials' );
-	
+
 				}
 
 				// assume any pre-registered loader has paths configured as the user desires, but if we're making
