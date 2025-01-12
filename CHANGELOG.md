@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - TilesRenderer update no longer implicitly marks all tiles owned by other tiles renderers as unused. All tiles renderers sharing an LRUCache no longer must have their "update" functions called on the same frame.
 - Types: Fixed types for all plugins options to be appropriately marked as "optional".
-- Case where ImageBitmap data may not have been disposed in rare cases.
+- Case where ImageBitmap data may not have been disposed in rare situations.
 
 ### Changed
 - Remove "loadIndex" fields for cancelling redundant loads in favor of an abort signal.
