@@ -11,6 +11,8 @@ export class TilesRendererBase {
 	displayActiveTiles : boolean;
 	maxDepth : number;
 
+	loadProgress: number;
+
 	fetchOptions : RequestInit;
 	preprocessURL : ( ( uri: string | URL ) => string ) | null;
 
