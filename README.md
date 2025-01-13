@@ -392,14 +392,6 @@ If true then the `raycast` functions of the loaded tile objects are overriden to
 
 If you would like to manage raycasting against tiles yourself this behavior can be disabled if needed by setting `optizeRaycast` to false.
 
-### .preprocessURL
-
-```js
-preprocessURL = null : ( uri : string | URL ) => string | URL;
-```
-
-Function to preprocess the url for each individual tile geometry or child tile set to be loaded. If null then the url is used directly.
-
 ### .lruCache
 
 ```js
@@ -445,6 +437,14 @@ manager : LoadingManager
 ```
 
 The manager used when loading tile geometry.
+
+### .loadProgress
+
+```js
+readOnly loadProgress : Number
+```
+
+Returns the total load progress between `[0, 1]`. Progress is measured since the last set of loading tiles completed.
 
 ### .constructor
 
