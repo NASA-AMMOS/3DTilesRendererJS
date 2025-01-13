@@ -87,7 +87,7 @@ export class TilesRendererBase {
 
 	}
 
-	get loadPercent() {
+	get loadProgress() {
 
 		const stats = this.stats;
 		const loading = stats.downloading + stats.parsing;
