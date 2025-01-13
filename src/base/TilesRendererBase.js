@@ -87,15 +87,12 @@ export class TilesRendererBase {
 
 	}
 
-	set loadSiblings( v ) {
+	get loadPercent() {
 
-		console.warn( 'TilesRenderer: "loadSiblings" option has been removed.' );
-
-	}
-
-	set stopAtEmptyTiles( v ) {
-
-		console.warn( 'TilesRenderer: "stopAtEmptyTiles" option has been removed.' );
+		const stats = this.stats;
+		const loading = stats.downloading + stats.parsing;
+		const total = stats.inCacheSinceLoad;
+		return total === 0 ? 1.0 : 1.0 - loading / total;
 
 	}
 
