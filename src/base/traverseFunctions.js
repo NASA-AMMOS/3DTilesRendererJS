@@ -13,6 +13,17 @@ function isUsedThisFrame( tile, frameCount ) {
 
 }
 
+// Lazily generate error
+function generateError( tile, renderer ) {
+
+	if ( tile.__error === Infinity ) {
+
+		renderer.calculateError( tile );
+
+	}
+
+}
+
 // Resets the frame frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
@@ -31,7 +42,6 @@ function resetFrameState( tile, renderer ) {
 
 		// update tile frustum and error state
 		tile.__inFrustum = renderer.tileInView( tile );
-		renderer.calculateError( tile );
 
 	}
 
@@ -117,6 +127,7 @@ function markUsed( tile, renderer ) {
 function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further
+	generateError( tile, renderer );
 	if ( tile.__error <= renderer.errorTarget ) {
 
 		return false;
@@ -328,6 +339,8 @@ export function markVisibleTiles( tile, renderer ) {
 		return;
 
 	}
+
+	generateError( tile, renderer );
 
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	const lruCache = renderer.lruCache;
