@@ -621,11 +621,10 @@ export class TilesRendererBase {
 		const addedSuccessfully = lruCache.add( tile, t => {
 
 			// Stop the load if it's started
-			if ( t.__loadingState === LOADING ) {
+			controller.abort();
 
-				controller.abort();
-
-			} else if ( isExternalTileSet ) {
+			// Clear out all tile content
+			if ( isExternalTileSet ) {
 
 				t.children.length = 0;
 
