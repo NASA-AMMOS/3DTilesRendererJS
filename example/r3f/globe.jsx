@@ -14,7 +14,7 @@ import {
 
 // Plugins
 import {
-	GoogleCloudAuthPlugin,
+	CesiumIonAuthPlugin,
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
 	TilesFadePlugin,
@@ -74,11 +74,6 @@ function Pointer() {
 function App() {
 
 	const levaParams = {
-		apiToken: {
-			value: localStorage.getItem( 'google-token' ) || 'put-your-api-key-here',
-			onChange: ( value ) => localStorage.setItem( 'google-token', value ),
-			transient: false,
-		},
 		ortho: false,
 	};
 
@@ -86,7 +81,7 @@ function App() {
 	// - see if we should trigger an invalidate on tiles plugin add and params change
 	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
 
-	const { apiToken, ortho } = useControls( levaParams );
+	const { ortho } = useControls( levaParams );
 	return (
 		<Canvas
 			frameloop='demand'
@@ -106,7 +101,7 @@ function App() {
 			<color attach="background" args={ [ 0x111111 ] } />
 
 			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
-				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />

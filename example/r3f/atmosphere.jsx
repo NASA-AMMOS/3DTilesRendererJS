@@ -13,7 +13,7 @@ import {
 
 // Plugins
 import {
-	GoogleCloudAuthPlugin,
+	CesiumIonAuthPlugin,
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
 	TilesFadePlugin,
@@ -64,11 +64,6 @@ const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/d
 function App() {
 
 	const levaParams = {
-		apiToken: {
-			value: localStorage.getItem( 'google-token' ) || 'put-your-api-key-here',
-			onChange: ( value ) => localStorage.setItem( 'google-token', value ),
-			transient: false,
-		},
 		ortho: false,
 	};
 
@@ -103,13 +98,11 @@ function App() {
 
 	} );
 
-	window.CAMERA = camera;
-
-	const { apiToken, ortho } = useControls( levaParams );
+	const { ortho } = useControls( levaParams );
 	return (
 		<>
 			<TilesRenderer>
-				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken } } />
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
