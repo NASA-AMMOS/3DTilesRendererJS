@@ -7,13 +7,13 @@ import {
 	TilesRenderer,
 } from '3d-tiles-renderer';
 import {
-	GoogleCloudAuthPlugin,
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
 	TileCompressionPlugin,
 	UnloadTilesPlugin,
 	GLTFExtensionsPlugin,
 	BatchedTilesPlugin,
+	CesiumIonAuthPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -29,15 +29,12 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
 
-const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
-
 const params = {
 
 	orthographic: false,
 
 	enableCacheDisplay: false,
 	enableRendererStats: false,
-	apiKey: apiKey,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
 	errorTarget: 40,
 
@@ -58,10 +55,8 @@ function reinstantiateTiles() {
 
 	}
 
-	localStorage.setItem( 'googleApiKey', params.apiKey );
-
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey, autoRefreshToken: true } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
@@ -152,7 +147,6 @@ function init() {
 	} );
 
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
-	mapsOptions.add( params, 'apiKey' );
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
 	mapsOptions.add( params, 'reload' );
 

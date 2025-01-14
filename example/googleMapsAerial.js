@@ -1,5 +1,5 @@
 import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer } from '3d-tiles-renderer';
-import { GoogleCloudAuthPlugin, TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
@@ -8,7 +8,6 @@ import {
 	MathUtils,
 } from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 let camera, controls, scene, renderer, tiles;
@@ -16,21 +15,10 @@ let camera, controls, scene, renderer, tiles;
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 
-const apiKey = localStorage.getItem( 'googleApiKey' ) ?? 'put-your-api-key-here';
-
-const params = {
-
-	'apiKey': apiKey,
-	'reload': reinstantiateTiles,
-
-};
-
 init();
 animate();
 
 function reinstantiateTiles() {
-
-	localStorage.setItem( 'googleApiKey', params.apiKey );
 
 	if ( tiles ) {
 
@@ -41,7 +29,7 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: params.apiKey } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
@@ -95,13 +83,6 @@ function init() {
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 	window.addEventListener( 'hashchange', initFromHash );
-
-	// GUI
-	const gui = new GUI();
-	gui.width = 300;
-	gui.add( params, 'apiKey' );
-	gui.add( params, 'reload' );
-	gui.open();
 
 	// run hash functions
 	initFromHash();
