@@ -18,26 +18,21 @@ const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/d
 function App() {
 
 	const levaParams = {
-		apiToken: {
-			value: localStorage.getItem( 'ion-token' ) || 'put-your-api-key-here',
-			onChange: ( value ) => localStorage.setItem( 'ion-token', value ),
-			transient: false,
-		},
 		assetId: {
-			value: '40866',
+			value: '1415196',
 			options: {
 				'Aerometrex - San Francisco': '1415196',
 				'Aerometrex - Denver': '354307',
 				'New York City 3D Buildings': '75343',
 				'Melbourne Photogrammetry': '69380',
-				'Cesium HQ': '40866',
+				// 'Cesium HQ': '40866',
 				'Melbourne Point Cloud': '43978',
 				'Montreal Point Cloud': '28945',
 			},
 		},
 	};
 
-	const { apiToken, assetId } = useControls( levaParams );
+	const { assetId } = useControls( levaParams );
 	return (
 		<Canvas
 			frameloop='demand'
@@ -59,8 +54,8 @@ function App() {
 				3D Tiles renderer tile set
 				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
 			*/}
-			<TilesRenderer key={ assetId + apiToken }>
-				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken, assetId } } />
+			<TilesRenderer key={ assetId }>
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ ReorientationPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
