@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.4.1] - 2025.01.14
 ### Added
 - PNTSLoader: Add support for normals, quantized normals.
 - TilesRenderer: Support for 3DTILES_ELLIPSOID extension.
 - Types: Added types for CameraTransitionManager, GlobeControls, EnvironmentControls.
 - "inCache" field in TilesRenderer.stats object representing number of tiles in the lru cache for that renderer.
+- TilesRenderer: added "loadProgress" field.
 
 ### Fixed
 - TilesRenderer update no longer implicitly marks all tiles owned by other tiles renderers as unused. All tiles renderers sharing an LRUCache no longer must have their "update" functions called on the same frame.
