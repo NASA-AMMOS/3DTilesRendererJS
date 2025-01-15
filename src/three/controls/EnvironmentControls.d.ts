@@ -11,8 +11,22 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 
 	readonly isEnvironmentControls: true;
 
-	get enabled(): boolean;
-	set enabled( v: boolean );
+	enabled: boolean;
+	cameraRadius: number;
+	rotationSpeed: number;
+	minAltitude: number;
+	maxAltitude: number;
+	minDistance: number;
+	maxDistance: number;
+	minZoom: number;
+	maxZoom: number;
+	zoomSpeed: number;
+	adjustHeight: boolean;
+	enableDamping: boolean;
+	dampingFactor: number;
+	useFallbackPlane: boolean;
+
+	pivotPoint: Vector3;
 
 	constructor(
 		scene?: Object3D,

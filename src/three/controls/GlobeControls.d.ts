@@ -6,6 +6,9 @@ export class GlobeControls extends EnvironmentControls {
 
 	readonly isGlobeControls: true;
 
+	nearMargin: number;
+	farMargin: number;
+
 	get ellipsoid(): Ellipsoid;
 	get tilesGroup(): Group;
 
