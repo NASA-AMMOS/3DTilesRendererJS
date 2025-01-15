@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Updated types for EnvironmentControls and GlobeControls.
+
 ## [0.4.2] - 2025.01.14
 ### Fixed
 - Case where an evicted tile could still continue to parse, causing an incorrect "loadProgress" value.
