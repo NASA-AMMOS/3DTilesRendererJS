@@ -31,7 +31,7 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 
 		container.style.pointerEvents = 'none';
 		container.style.position = 'absolute';
-		document.body.appendChild( container );
+		gl.domElement.parentNode.appendChild( container );
 
 		return () => {
 

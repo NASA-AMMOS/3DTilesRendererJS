@@ -3,7 +3,7 @@ import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
 // Overlay for displaying tile data set attributions
-export function TilesAttributionOverlay( { children, style, ...rest } ) {
+export function TilesAttributionOverlay( { children, style, generateAttributions, ...rest } ) {
 
 	const tiles = useContext( TilesRendererContext );
 	const [ attributions, setAttributions ] = useState( [] );
@@ -46,33 +46,6 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 
 	}, [ tiles ] );
 
-	// generate elements for each type of attribution
-	const output = [];
-	attributions.forEach( ( att, i ) => {
-
-		let element = null;
-		if ( att.type === 'string' ) {
-
-			element = <div key={ i }>{ att.value }</div>;
-
-		} else if ( att.type === 'html' ) {
-
-			element = <div key={ i } dangerouslySetInnerHTML={ { __html: att.value } } style={ { pointerEvents: 'all' } }/>;
-
-		} else if ( att.type === 'image' ) {
-
-			element = <div key={ i }><img src={ att.value } /></div>;
-
-		}
-
-		if ( element ) {
-
-			output.push( element );
-
-		}
-
-	} );
-
 	// Generate CSS for modifying child elements implicit to the html attributions
 	const classId = useMemo( () => 'class_' + window.crypto.randomUUID(), [] );
 	const styles = useMemo( () => `
@@ -86,6 +59,49 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 			margin: 5px 0;
 		}
 	`, [ classId ] );
+
+	let output;
+	if ( generateAttributions ) {
+
+		output = generateAttributions( attributions, classId );
+
+	} else {
+
+		// generate elements for each type of attribution
+		const elements = [];
+		attributions.forEach( ( att, i ) => {
+
+			let element = null;
+			if ( att.type === 'string' ) {
+
+				element = <div key={ i }>{ att.value }</div>;
+
+			} else if ( att.type === 'html' ) {
+
+				element = <div key={ i } dangerouslySetInnerHTML={ { __html: att.value } } style={ { pointerEvents: 'all' } }/>;
+
+			} else if ( att.type === 'image' ) {
+
+				element = <div key={ i }><img src={ att.value } /></div>;
+
+			}
+
+			if ( element ) {
+
+				elements.push( element );
+
+			}
+
+		} );
+
+		output = (
+			<>
+				<style>{ styles }</style>
+				{ elements }
+			</>
+		);
+
+	}
 
 	return (
 		<CanvasDOMOverlay
@@ -101,7 +117,6 @@ export function TilesAttributionOverlay( { children, style, ...rest } ) {
 			} }
 			{ ...rest }
 		>
-			<style>{ styles }</style>
 			{ children }
 			{ output }
 		</CanvasDOMOverlay>

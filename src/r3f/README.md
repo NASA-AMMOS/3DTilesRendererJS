@@ -205,7 +205,16 @@ The `TilesAttributionOverlay` component must be embedded in a tile set and will 
 
 ```jsx
 <TilesRenderer url={ url } { ...props }>
-  <TilesAttributionOverlay />
+  <TilesAttributionOverlay
+
+    { /*
+      Callback function for generating attribution elements from credit info.
+      Takes the list of attributions and a unique "id" assigned to the overlay dom element.
+    */ }
+    generateAttributions={ null }
+
+    { /* remaining properties are assigned to the root overlay element */ }
+  />
 </TilesRenderer>
 ```
 
