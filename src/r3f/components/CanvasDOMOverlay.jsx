@@ -10,37 +10,24 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 	const container = useMemo( () => document.createElement( 'div' ), [] );
 	const root = useMemo( () => createRoot( container ), [ container ] );
 
-	// watch for canvas resize
-	const observer = useMemo( () => {
-
-		const observer = new ResizeObserver( ( [ { contentRect } ] ) => {
-
-			container.style.top = `${ contentRect.top }px`;
-			container.style.left = `${ contentRect.left }px`;
-			container.style.width = `${ contentRect.width }px`;
-			container.style.height = `${ contentRect.height }px`;
-
-		} );
-		observer.observe( gl.domElement );
-		return observer;
-
-	}, [ gl, container ] );
-
 	// position the container
 	useEffect( () => {
 
 		container.style.pointerEvents = 'none';
 		container.style.position = 'absolute';
+		container.style.width = '100%';
+		container.style.height = '100%';
+		container.style.left = 0;
+		container.style.top = 0;
 		gl.domElement.parentNode.appendChild( container );
 
 		return () => {
 
 			container.remove();
-			observer.disconnect();
 
 		};
 
-	}, [ observer, container ] );
+	}, [ container ] );
 
 	// render the children into the container
 	root.render(
