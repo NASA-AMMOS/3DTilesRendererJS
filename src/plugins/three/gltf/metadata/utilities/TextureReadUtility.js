@@ -4,7 +4,7 @@ import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 const _box = /* @__PURE__ */ new Box2();
 
 // Utility for reading sets of individual pixel values from textures
-export const TextureReadUtility = new ( class {
+class _TextureReadUtility {
 
 	constructor() {
 
@@ -85,6 +85,34 @@ export const TextureReadUtility = new ( class {
 		_box.max.y += 1;
 		_renderer.initRenderTarget( _target );
 		_renderer.copyTextureToTexture( texture, _target.texture, _box, dstPixel, 0 );
+
+	}
+
+}
+
+// Create a wrapper class to defer instantiation of the WebGLRenderer until it's needed
+// See NASA-AMMOS/3DTilesRendererJS#905
+export const TextureReadUtility = /* @__PURE__ */ new ( class {
+
+	constructor() {
+
+		let reader = null;
+		Object
+			.getOwnPropertyNames( _TextureReadUtility.prototype )
+			.forEach( key => {
+
+				if ( key !== 'constructor' ) {
+
+					this[ key ] = ( ...args ) => {
+
+						reader = reader || new _TextureReadUtility();
+						return reader[ key ]( ...args );
+
+					};
+
+				}
+
+			} );
 
 	}
 
