@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - Updated types for EnvironmentControls and GlobeControls.
+- TilesAttributionOverlay: Added "generateAttributions" callback for generating child elements.
+
+### Fixed
+- CanvasDOMOverlay is now correctly positioned at the same spot as the canvas.
 
 ## [0.4.2] - 2025.01.14
 ### Fixed
