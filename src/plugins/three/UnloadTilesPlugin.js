@@ -110,7 +110,7 @@ export class UnloadTilesPlugin {
 
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			const visible = tiles.visibleSet.has( tile );
+			const visible = tiles.visibleTiles.has( tile );
 			this._onVisibilityChangeCallback( { scene, visible } );
 
 		} );
