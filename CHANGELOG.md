@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - CanvasDOMOverlay is now correctly positioned at the same spot as the canvas.
+- UnloadTilesPlugin: Fixed incorrect reference to `visibleSet` rather than `visibleTiles`.
 
 ## [0.4.2] - 2025.01.14
 ### Fixed
