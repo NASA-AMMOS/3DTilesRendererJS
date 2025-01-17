@@ -51,7 +51,7 @@ function setValueAtPath( object, path, value ) {
 }
 
 // Recursively assigns a set of options to an object, interpreting dashes as periods
-export function useDeepOptions( target, options ) {
+export function useDeepOptions( target, options, shallow = false ) {
 
 	// assign options recursively
 	useEffect( () => {
@@ -71,7 +71,7 @@ export function useDeepOptions( target, options ) {
 
 			} else {
 
-				const path = getPath( key );
+				const path = shallow ? [ key ] : getPath( key );
 				previousState[ key ] = getValueAtPath( target, path );
 				setValueAtPath( target, path, options[ key ] );
 
@@ -93,7 +93,7 @@ export function useDeepOptions( target, options ) {
 
 			for ( const key in options ) {
 
-				const path = getPath( key );
+				const path = shallow ? [ key ] : getPath( key );
 				setValueAtPath( target, path, options[ key ] );
 
 			}
@@ -107,37 +107,6 @@ export function useDeepOptions( target, options ) {
 // Assigns a set of options to an object shallowly, interpreting dashes as periods
 export function useShallowOptions( instance, options ) {
 
-	// assigns any provided options to the plugin
-	useEffect( () => {
-
-		if ( instance === null ) {
-
-			return;
-
-		}
-
-		const previousState = {};
-		for ( const key in options ) {
-
-			if ( key in instance ) {
-
-				previousState[ key ] = instance[ key ];
-				instance[ key ] = options[ key ];
-
-			}
-
-		}
-
-		return () => {
-
-			for ( const key in previousState ) {
-
-				instance[ key ] = previousState[ key ];
-
-			}
-
-		};
-
-	}, [ instance, useObjectDep( options ) ] ); // eslint-disable-line
+	useDeepOptions( instance, options, true );
 
 }
