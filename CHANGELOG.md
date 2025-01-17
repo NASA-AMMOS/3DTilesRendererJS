@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated types for EnvironmentControls and GlobeControls.
 - TilesAttributionOverlay: Added "generateAttributions" callback for generating child elements.
 
+### Changed
+- Moved "visibleTiles" and "activeTiles" sets to the TilesRendererBase class.
+
 ### Fixed
 - CanvasDOMOverlay is now correctly positioned at the same spot as the canvas.
 - UnloadTilesPlugin: Fixed incorrect reference to `visibleSet` rather than `visibleTiles`.
+- R3F EnvironmentControls, GlobeControls: Add support for "ref", event props.
 
 ## [0.4.2] - 2025.01.14
 ### Fixed
