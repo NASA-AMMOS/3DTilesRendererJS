@@ -119,14 +119,14 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 } );
 
-export function EnvironmentControls( props ) {
+export const EnvironmentControls = forwardRef( function EnvironmentControls( props, ref ) {
 
-	return <ControlsBaseComponent { ...props } controlsConstructor={ EnvironmentControlsImpl } />;
+	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ EnvironmentControlsImpl } />;
 
-}
+} );
 
-export function GlobeControls( props ) {
+export const GlobeControls = forwardRef( function GlobeControls( props, ref ) {
 
-	return <ControlsBaseComponent { ...props } controlsConstructor={ GlobeControlsImpl } />;
+	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ GlobeControlsImpl } />;
 
-}
+} );
