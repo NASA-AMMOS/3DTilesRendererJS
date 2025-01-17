@@ -74,8 +74,6 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
-		this.activeTiles = new Set();
-		this.visibleTiles = new Set();
 		this.optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
 
@@ -896,10 +894,8 @@ export class TilesRenderer extends TilesRendererBase {
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.cached.scene;
-		const visibleTiles = this.visibleTiles;
 		const group = this.group;
 
-		// TODO: move "visibleTiles" to TilesRendererBase
 		if ( visible ) {
 
 			if ( scene ) {
@@ -909,8 +905,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			visibleTiles.add( tile );
-
 		} else {
 
 			if ( scene ) {
@@ -919,9 +913,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			visibleTiles.delete( tile );
-
 		}
+
+		super.setTileVisible( tile, visible );
 
 		this.dispatchEvent( {
 			type: 'tile-visibility-change',
@@ -929,21 +923,6 @@ export class TilesRenderer extends TilesRendererBase {
 			tile,
 			visible,
 		} );
-
-	}
-
-	setTileActive( tile, active ) {
-
-		const activeTiles = this.activeTiles;
-		if ( active ) {
-
-			activeTiles.add( tile );
-
-		} else {
-
-			activeTiles.delete( tile );
-
-		}
 
 	}
 
