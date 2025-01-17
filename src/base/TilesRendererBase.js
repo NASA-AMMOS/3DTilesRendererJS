@@ -118,6 +118,8 @@ export class TilesRendererBase {
 		parseQueue.maxJobs = 1;
 		parseQueue.priorityCallback = priorityCallback;
 
+		this.visibleTiles = new Set();
+		this.activeTiles = new Set();
 		this.usedSet = new Set();
 		this.lruCache = lruCache;
 		this.downloadQueue = downloadQueue;
@@ -494,11 +496,15 @@ export class TilesRendererBase {
 
 	}
 
-	setTileActive( tile, state ) {
+	setTileActive( tile, active ) {
+
+		active ? this.activeTiles.add( tile ) : this.activeTiles.delete( tile );
 
 	}
 
-	setTileVisible( tile, state ) {
+	setTileVisible( tile, visible ) {
+
+		visible ? this.visibleTiles.add( tile ) : this.visibleTiles.delete( tile );
 
 	}
 
