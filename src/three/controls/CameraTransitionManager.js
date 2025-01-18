@@ -1,4 +1,4 @@
-import { Clock, EventDispatcher, MathUtils, Matrix4, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
 const _forward = new Vector3();
 const _vec = new Vector3();
@@ -288,7 +288,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		// calculate the target distance and fov to position the camera at
 		const targetFov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
 		const targetDistance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * targetFov * 0.5 );
-		
+
 		// calculate the offset from the fixed point
 		const orthoOffset = _orthoOffset.copy( _orthographicCamera.position ).sub( fixedPoint ).applyQuaternion( _quat.copy( _orthographicCamera.quaternion ).invert() );
 		const perspOffset = _perspOffset.copy( perspectiveCamera.position ).sub( fixedPoint ).applyQuaternion( _quat.copy( perspectiveCamera.quaternion ).invert() );
