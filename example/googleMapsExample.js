@@ -137,28 +137,33 @@ function init() {
 
 		controls.getPivotPoint( transition.fixedPoint );
 
-		// sync the camera positions and then adjust the camera views
-		transition.syncCameras();
+		// don't update the cameras if they are already being animated
+		if ( ! transition.animating ) {
 
-		// If transitioning to ortho view then use a top-down perspective
-		if ( v ) {
+			// sync the camera positions and then adjust the camera views
+			transition.syncCameras();
 
-			const invMat = tiles.group.matrixWorld.clone().invert();
-			const p = transition.fixedPoint.clone().applyMatrix4( invMat );
+			// If transitioning to ortho view then use a top-down perspective
+			if ( v ) {
 
-			const { lat, lon } = tiles.ellipsoid.getPositionToCartographic( p, {} );
-			const { orthographicCamera } = transition;
-			tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, orthographicCamera.matrixWorld );
-			orthographicCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
-			orthographicCamera.matrixWorld.decompose( orthographicCamera.position, orthographicCamera.quaternion, orthographicCamera.scale );
+				const invMat = tiles.group.matrixWorld.clone().invert();
+				const p = transition.fixedPoint.clone().applyMatrix4( invMat );
 
-			tiles.ellipsoid.getCartographicToPosition( lat, lon, 1000, orthographicCamera.position ).applyMatrix4( tiles.group.matrixWorld );
-			orthographicCamera.updateMatrixWorld();
+				const { lat, lon } = tiles.ellipsoid.getPositionToCartographic( p, {} );
+				const { orthographicCamera } = transition;
+				tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, orthographicCamera.matrixWorld );
+				orthographicCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
+				orthographicCamera.matrixWorld.decompose( orthographicCamera.position, orthographicCamera.quaternion, orthographicCamera.scale );
+
+				tiles.ellipsoid.getCartographicToPosition( lat, lon, 1000, orthographicCamera.position ).applyMatrix4( tiles.group.matrixWorld );
+				orthographicCamera.updateMatrixWorld();
+
+			}
+
+			controls.adjustCamera( transition.perspectiveCamera );
+			controls.adjustCamera( transition.orthographicCamera );
 
 		}
-
-		controls.adjustCamera( transition.perspectiveCamera );
-		controls.adjustCamera( transition.orthographicCamera );
 
 		transition.toggle();
 

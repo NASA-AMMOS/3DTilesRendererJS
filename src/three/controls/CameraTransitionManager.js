@@ -7,6 +7,7 @@ const _targetPos = new Vector3();
 const _targetOffset = new Vector3();
 const _perspOffset = new Vector3();
 const _orthoOffset = new Vector3();
+const _quat = new Quaternion();
 const _targetQuat = new Quaternion();
 
 export class CameraTransitionManager extends EventDispatcher {
@@ -294,17 +295,16 @@ export class CameraTransitionManager extends EventDispatcher {
 		targetPos.addScaledVector( _forward, Math.abs( _vec.subVectors( targetPos, fixedPoint ).dot( _forward ) ) - targetDistance );
 
 		// calculate the offset from the fixed point
-		const orthoOffset = _orthoOffset.copy( _orthographicCamera.position ).sub( fixedPoint ).applyQuaternion( _orthographicCamera.quaternion.clone().invert() );
-		const perspOffset = _perspOffset.copy( perspectiveCamera.position ).sub( fixedPoint ).applyQuaternion( perspectiveCamera.quaternion.clone().invert() );
+		const orthoOffset = _orthoOffset.copy( _orthographicCamera.position ).sub( fixedPoint ).applyQuaternion( _quat.copy( _orthographicCamera.quaternion ).invert() );
+		const perspOffset = _perspOffset.copy( perspectiveCamera.position ).sub( fixedPoint ).applyQuaternion( _quat.copy( perspectiveCamera.quaternion ).invert() );
 		const targetOffset = _targetOffset.lerpVectors( perspOffset, orthoOffset, alpha );
 		targetOffset.z -= Math.abs( targetOffset.z ) - targetDistance;
-		targetOffset.applyQuaternion( targetQuat );
 
-		// TODO: fix this to not use "targetPos"
+		// calculate distances to the target point so the offset can be accounted for in near plane calculations
+		const distToPersp = - ( perspOffset.z - targetOffset.z );
+		const distToOrtho = - ( orthoOffset.z - targetOffset.z );
+
 		// calculate the near and far plane positions
-		const distToPersp = _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward );
-		const distToOrtho = _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward );
-
 		const targetNearPlane = MathUtils.lerp( distToPersp + perspectiveCamera.near, distToOrtho + _orthographicCamera.near, alpha );
 		const targetFarPlane = MathUtils.lerp( distToPersp + perspectiveCamera.far, distToOrtho + _orthographicCamera.far, alpha );
 		const planeDelta = Math.max( targetFarPlane, 0 ) - Math.max( targetNearPlane, 0 );
@@ -317,7 +317,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		transitionCamera.fov = targetFov;
 		transitionCamera.near = Math.max( targetNearPlane, planeDelta * 1e-5 );
 		transitionCamera.far = targetFarPlane;
-		transitionCamera.position.copy( targetOffset ).add( fixedPoint );
+		transitionCamera.position.copy( targetOffset ).applyQuaternion( targetQuat ).add( fixedPoint );
 		transitionCamera.quaternion.copy( targetQuat );
 		transitionCamera.updateProjectionMatrix();
 		transitionCamera.updateMatrixWorld();
