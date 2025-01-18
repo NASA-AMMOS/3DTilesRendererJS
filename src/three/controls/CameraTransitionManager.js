@@ -1,9 +1,13 @@
-import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
+import { Clock, EventDispatcher, MathUtils, Matrix4, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
 const _forward = new Vector3();
 const _vec = new Vector3();
 const _orthographicCamera = new OrthographicCamera();
 const _targetPos = new Vector3();
+const _targetOffset = new Vector3();
+const _perspOffset = new Vector3();
+const _orthoOffset = new Vector3();
+const _targetQuat = new Quaternion();
 
 export class CameraTransitionManager extends EventDispatcher {
 
@@ -276,12 +280,30 @@ export class CameraTransitionManager extends EventDispatcher {
 		const distToPoint = Math.abs( _vec.subVectors( perspectiveCamera.position, fixedPoint ).dot( _forward ) );
 		const projectionHeight = 2 * Math.tan( MathUtils.DEG2RAD * perspectiveCamera.fov * 0.5 ) * distToPoint;
 
+		// calculate the orientation to transition to
+		const targetQuat = _targetQuat.slerpQuaternions( perspectiveCamera.quaternion, _orthographicCamera.quaternion, alpha );
+
 		// calculate the target distance and fov to position the camera at
 		const targetFov = MathUtils.lerp( perspectiveCamera.fov, 1, alpha );
 		const targetDistance = projectionHeight * 0.5 / Math.tan( MathUtils.DEG2RAD * targetFov * 0.5 );
 		const targetPos = _targetPos.lerpVectors( perspectiveCamera.position, _orthographicCamera.position, alpha );
+		
+		// shift the camera back by the appropriate amount to emulate the camera pullback effect
 		targetPos.addScaledVector( _forward, Math.abs( _vec.subVectors( targetPos, fixedPoint ).dot( _forward ) ) - targetDistance );
 
+		// calculate the offset from the fixed point
+		const orthoOffset = _orthoOffset.copy( _orthographicCamera.position ).sub( fixedPoint ).applyQuaternion( _orthographicCamera.quaternion.clone().invert() );
+		const perspOffset = _perspOffset.copy( perspectiveCamera.position ).sub( fixedPoint ).applyQuaternion( perspectiveCamera.quaternion.clone().invert() );
+		const targetOffset = _targetOffset.lerpVectors( perspOffset, orthoOffset, alpha );
+		targetOffset.z -= Math.abs( targetOffset.z ) - targetDistance;
+		targetOffset.applyQuaternion( perspectiveCamera.quaternion );
+
+		// TODO: rotate the offset vector correctly
+
+
+
+
+		// calculate the near and far plane positions
 		const distToPersp = _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward );
 		const distToOrtho = _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward );
 
@@ -297,8 +319,8 @@ export class CameraTransitionManager extends EventDispatcher {
 		transitionCamera.fov = targetFov;
 		transitionCamera.near = Math.max( targetNearPlane, planeDelta * 1e-5 );
 		transitionCamera.far = targetFarPlane;
-		transitionCamera.position.copy( targetPos );
-		transitionCamera.rotation.copy( perspectiveCamera.rotation );
+		transitionCamera.position.copy( targetOffset ).add( fixedPoint );
+		transitionCamera.quaternion.copy( targetQuat );
 		transitionCamera.updateProjectionMatrix();
 		transitionCamera.updateMatrixWorld();
 
