@@ -137,6 +137,15 @@ export class Ellipsoid {
 
 	}
 
+	getFrame( lat, lon, az, el, roll, height, target, frame = ENU_FRAME ) {
+
+		this.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame );
+		this.getCartographicToPosition( lat, lon, height, _pos );
+		target.setPosition( _pos );
+		return target;
+
+	}
+
 	getCartographicToPosition( lat, lon, height, target ) {
 
 		// From Cesium function Ellipsoid.cartographicToCartesian

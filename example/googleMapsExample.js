@@ -151,11 +151,9 @@ function init() {
 
 				const { lat, lon } = tiles.ellipsoid.getPositionToCartographic( p, {} );
 				const { orthographicCamera } = transition;
-				tiles.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, orthographicCamera.matrixWorld );
+				tiles.ellipsoid.getFrame( lat, lon, 0, 0, 0, 1000, orthographicCamera.matrixWorld );
 				orthographicCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
 				orthographicCamera.matrixWorld.decompose( orthographicCamera.position, orthographicCamera.quaternion, orthographicCamera.scale );
-
-				tiles.ellipsoid.getCartographicToPosition( lat, lon, 1000, orthographicCamera.position ).applyMatrix4( tiles.group.matrixWorld );
 				orthographicCamera.updateMatrixWorld();
 
 			}

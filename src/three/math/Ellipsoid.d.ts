@@ -26,6 +26,11 @@ export class Ellipsoid {
 		target: Matrix4, frame: Frames,
 	): Matrix4;
 
+	getFrame(
+		lat: number, lon: number, az: number, el: number, roll: number, height: number,
+		target: Matrix4, frame: Frames,
+	): Matrix4;
+
 	getEastNorthUpFrame( lat: number, lon: number, target: Matrix4 ): Matrix4;
 	getEastNorthUpAxes( lat: number, lon: number, vecEast: Vector3, vecNorth: Vector3, vecUp: Vector3, point?: Vector3 );
 
