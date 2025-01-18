@@ -83,6 +83,8 @@ export class CameraTransitionManager extends EventDispatcher {
 		this._target = this._target === 1 ? 0 : 1;
 		this._clock.getDelta();
 
+		this.dispatchEvent( { type: 'toggle' } );
+
 	}
 
 	update() {
@@ -296,13 +298,9 @@ export class CameraTransitionManager extends EventDispatcher {
 		const perspOffset = _perspOffset.copy( perspectiveCamera.position ).sub( fixedPoint ).applyQuaternion( perspectiveCamera.quaternion.clone().invert() );
 		const targetOffset = _targetOffset.lerpVectors( perspOffset, orthoOffset, alpha );
 		targetOffset.z -= Math.abs( targetOffset.z ) - targetDistance;
-		targetOffset.applyQuaternion( perspectiveCamera.quaternion );
+		targetOffset.applyQuaternion( targetQuat );
 
-		// TODO: rotate the offset vector correctly
-
-
-
-
+		// TODO: fix this to not use "targetPos"
 		// calculate the near and far plane positions
 		const distToPersp = _vec.subVectors( perspectiveCamera.position, targetPos ).dot( _forward );
 		const distToOrtho = _vec.subVectors( _orthographicCamera.position, targetPos ).dot( _forward );
