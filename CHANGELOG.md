@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Updated types for EnvironmentControls and GlobeControls.
 - TilesAttributionOverlay: Added "generateAttributions" callback for generating child elements.
+- CameraTransitionManager: Added "toggle" event.
+- CameraTransitionManager: Added support for rotation interpolation.
+- Ellipsoid: Added "getFrame" function.
 
 ### Changed
 - Moved "visibleTiles" and "activeTiles" sets to the TilesRendererBase class.
