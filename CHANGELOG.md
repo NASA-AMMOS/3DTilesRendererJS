@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Moved "visibleTiles" and "activeTiles" sets to the TilesRendererBase class.
+- EnvironmentControls: `getPivotPoint` function now defaults to the nearest raycast point if the last interacted point is offscreen.
 
 ### Fixed
 - CanvasDOMOverlay is now correctly positioned at the same spot as the canvas.
