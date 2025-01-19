@@ -521,29 +521,52 @@ export class EnvironmentControls extends EventDispatcher {
 	// returns the active / last used pivot point for the scene
 	getPivotPoint( target ) {
 
+		let result = null;
+	
+		// get the last interacted point as the focus
 		if ( this._lastUsedState === ZOOM ) {
 
 			if ( this._zoomPointWasSet ) {
 
-				target.copy( this.zoomPoint );
-				return target;
-
-			} else {
-
-				return null;
+				result = target.copy( this.zoomPoint );
 
 			}
 
 		} else if ( this._lastUsedState === ROTATE || this._lastUsedState === DRAG ) {
 
-			target.copy( this.pivotPoint );
-			return target;
-
-		} else {
-
-			return null;
+			result = target.copy( this.pivotPoint );
 
 		}
+
+		// If the last used point is outside the camera view then skip it
+		const { camera, raycaster } = this;
+		if ( result !== null ) {
+
+			_vec.copy( result ).project( camera );
+			if ( _vec.x < - 1 || _vec.x > 1 || _vec.y < - 1 || _vec.y > 1 ) {
+
+				result = null;
+
+			}
+
+		}
+
+		// default to the raycast hit if we have not result or the hit is closer to the camera
+		// set a ray in the local ellipsoid frame
+		setRaycasterFromCamera( raycaster, { x: 0, y: 0 }, camera );
+
+		const hit = this._raycast( raycaster );
+		if ( hit ) {
+
+			if ( result === null || hit.distance < result.distanceTo( raycaster.ray.origin ) ) {
+
+				result = target.copy( hit.point );
+
+			}
+
+		}
+
+		return result;
 
 	}
 
