@@ -522,7 +522,7 @@ export class EnvironmentControls extends EventDispatcher {
 	getPivotPoint( target ) {
 
 		let result = null;
-	
+
 		// get the last interacted point as the focus
 		if ( this._lastUsedState === ZOOM ) {
 
