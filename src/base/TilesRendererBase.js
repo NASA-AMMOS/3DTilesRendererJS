@@ -368,6 +368,12 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
+	dispatchEvent( e ) {
+
+		// event to be overriden for dispatching via an event system
+
+	}
+
 	fetchData( url, options ) {
 
 		return fetch( url, options );
@@ -595,6 +601,12 @@ export class TilesRendererBase {
 			console.error( err );
 			this.rootTileSet = null;
 
+			this.dispatchEvent( {
+				type: 'load-error',
+				tile: null,
+				uri: processedUrl,
+			} );
+
 		} );
 
 		return pr;
@@ -815,6 +827,12 @@ export class TilesRendererBase {
 					console.error( e );
 					tile.__loadingState = FAILED;
 					lruCache.setLoaded( tile, true );
+
+					this.dispatchEvent( {
+						type: 'load-error',
+						tile,
+						uri,
+					} );
 
 				} else {
 
