@@ -68,10 +68,6 @@ function App() {
 		ortho: false,
 	};
 
-	// TODO: the renderer is rerendering due to floating point issues
-	// - see if we should trigger an invalidate on tiles plugin add and params change
-	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
-
 	const { ortho } = useControls( levaParams );
 	return (
 		<>
@@ -93,7 +89,7 @@ function App() {
 				{/* Add compass gizmo */}
 				<CompassGizmo overrideRenderLoop={ false } />
 
-				<AtmosphereWrapper />
+				<GlobeTilesAtmosphere />
 			</TilesRenderer>
 
 			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
@@ -102,7 +98,7 @@ function App() {
 
 }
 
-function AtmosphereWrapper() {
+function GlobeTilesAtmosphere() {
 
 	const tiles = useContext( TilesRendererContext );
 	const camera = useThree( ( { camera } ) => camera );
@@ -114,6 +110,7 @@ function AtmosphereWrapper() {
 	const matrix = new Matrix4();
 	useFrame( () => {
 
+		// assign the orientation
 		const atmosphere = atmosphereRef.current;
 		if ( atmosphere != null && tiles ) {
 
@@ -125,6 +122,7 @@ function AtmosphereWrapper() {
 
 		}
 
+		// update the camera settings for the atmosphere
 		const composer = composerRef.current;
 		if ( composer != null ) {
 

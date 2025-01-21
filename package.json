@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@react-three/postprocessing": "^2.16.3",
-    "@takram/three-atmosphere": "^0.5.0",
+    "@takram/three-atmosphere": "^0.6.0",
     "@takram/three-geospatial": "^0.0.1-alpha.4",
     "@takram/three-geospatial-effects": "^0.0.1-alpha.4",
     "postprocessing": "^6.36.4"
