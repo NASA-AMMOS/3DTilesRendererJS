@@ -596,14 +596,15 @@ export class TilesRendererBase {
 
 			} );
 
-		pr.catch( err => {
+		pr.catch( error => {
 
-			console.error( err );
+			console.error( error );
 			this.rootTileSet = null;
 
 			this.dispatchEvent( {
 				type: 'load-error',
 				tile: null,
+				error,
 				uri: processedUrl,
 			} );
 
@@ -797,7 +798,7 @@ export class TilesRendererBase {
 				}
 
 			} )
-			.catch( e => {
+			.catch( error => {
 
 				// if it has been unloaded then the tile has been disposed
 				if ( signal.aborted ) {
@@ -806,7 +807,7 @@ export class TilesRendererBase {
 
 				}
 
-				if ( e.name !== 'AbortError' ) {
+				if ( error.name !== 'AbortError' ) {
 
 					parseQueue.remove( tile );
 					downloadQueue.remove( tile );
@@ -824,13 +825,14 @@ export class TilesRendererBase {
 					stats.failed ++;
 
 					console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
-					console.error( e );
+					console.error( error );
 					tile.__loadingState = FAILED;
 					lruCache.setLoaded( tile, true );
 
 					this.dispatchEvent( {
 						type: 'load-error',
 						tile,
+						error,
 						uri,
 					} );
 
