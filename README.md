@@ -328,6 +328,9 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // fired when all tiles finish loading
 { type: 'tiles-load-end' }
+
+// fired when a tile content or the root tile set fails to load
+{ type: 'load-error', tile: Object | null, error: Error, url: string | URL }
 ```
 
 ### .fetchOptions
