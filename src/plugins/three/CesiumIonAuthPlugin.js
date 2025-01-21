@@ -166,6 +166,19 @@ export class CesiumIonAuthPlugin {
 
 				} );
 
+			// dispatch an error if we fail to refresh the token
+			this._tokenRefreshPromise
+				.catch( error => {
+
+					this.tiles.dispatchEvent( {
+						type: 'load-error',
+						tile: null,
+						error,
+						url,
+					} );
+
+				} );
+
 		}
 
 		return this._tokenRefreshPromise;

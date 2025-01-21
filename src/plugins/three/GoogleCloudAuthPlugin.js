@@ -191,6 +191,20 @@ export class GoogleCloudAuthPlugin {
 
 				} );
 
+			// dispatch an error if we fail to refresh the token
+			this._tokenRefreshPromise
+				.catch( error => {
+
+					this.tiles.dispatchEvent( {
+						type: 'load-error',
+						tile: null,
+						error,
+						rootURL,
+					} );
+
+				} );
+
+
 		}
 
 		return this._tokenRefreshPromise;
