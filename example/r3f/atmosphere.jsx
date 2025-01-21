@@ -41,6 +41,7 @@ import {
 } from '@takram/three-atmosphere/r3f';
 import { Dithering, LensFlare, } from '@takram/three-geospatial-effects/r3f';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { TilesLoadingBar } from './components/TilesLoadingBar.jsx';
 
 // Plugin to generate creased normals for the tiles
 class TileCreasedNormalsPlugin {
@@ -89,6 +90,7 @@ function App() {
 				{/* Add compass gizmo */}
 				<CompassGizmo overrideRenderLoop={ false } />
 
+				<TilesLoadingBar />
 				<GlobeTilesAtmosphere />
 			</TilesRenderer>
 

@@ -1,9 +1,9 @@
-import { useMemo, useEffect, StrictMode } from 'react';
+import { useMemo, useEffect, StrictMode, forwardRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useThree } from '@react-three/fiber';
 
 // Utility class for overlaying dom elements on top of the canvas
-export function CanvasDOMOverlay( { children, ...rest } ) {
+export const CanvasDOMOverlay = forwardRef( function CanvasDOMOverlay( { children, ...rest }, ref ) {
 
 	// create the dom element and react root
 	const [ gl ] = useThree( state => [ state.gl ] );
@@ -27,15 +27,15 @@ export function CanvasDOMOverlay( { children, ...rest } ) {
 
 		};
 
-	}, [ container ] );
+	}, [ container, gl.domElement.parentNode ] );
 
 	// render the children into the container
 	root.render(
 		<StrictMode>
-			<div { ...rest }>
+			<div { ...rest } ref={ ref }>
 				{ children }
 			</div>
 		</StrictMode>
 	);
 
-}
+} );

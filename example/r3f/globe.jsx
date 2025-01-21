@@ -28,6 +28,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
 import { useControls } from 'leva';
 import { MathUtils, Vector3 } from 'three';
+import { TilesLoadingBar } from './components/TilesLoadingBar.jsx';
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 const vec1 = new Vector3();
@@ -121,6 +122,8 @@ function App() {
 
 				{/* Add compass gizmo */}
 				<CompassGizmo />
+
+				<TilesLoadingBar />
 			</TilesRenderer>
 
 			{/* other r3f staging */}
