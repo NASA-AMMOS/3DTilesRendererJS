@@ -1,4 +1,4 @@
-import { StrictMode, useRef } from 'react';
+import { StrictMode, useContext, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // TilesRenderer, controls and attribution imports
@@ -9,6 +9,7 @@ import {
 	GlobeControls,
 	CompassGizmo,
 	CameraTransition,
+	TilesRendererContext,
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -25,7 +26,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 // R3F, DREI and LEVA imports
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useControls } from 'leva';
-import { MathUtils } from 'three';
+import { MathUtils, Matrix4 } from 'three';
 
 // Postprocessing
 import { EffectComposer, SMAA, ToneMapping } from '@react-three/postprocessing';
@@ -71,15 +72,58 @@ function App() {
 	// - see if we should trigger an invalidate on tiles plugin add and params change
 	// - see if we need to trigger a force update on plugin add for the UpdateOnChange plugin
 
+	const { ortho } = useControls( levaParams );
+	return (
+		<>
+			<TilesRenderer ref={ tiles => window.TILES = tiles }>
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
+				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
+				<TilesPlugin plugin={ TileCompressionPlugin } />
+				<TilesPlugin plugin={ UpdateOnChangePlugin } />
+				<TilesPlugin plugin={ UnloadTilesPlugin } />
+				<TilesPlugin plugin={ TilesFadePlugin } />
+				<TilesPlugin plugin={ TileCreasedNormalsPlugin } />
+
+				{/* Controls */}
+				<GlobeControls enableDamping={ true } />
+
+				{/* Attributions */}
+				<TilesAttributionOverlay />
+
+				{/* Add compass gizmo */}
+				<CompassGizmo overrideRenderLoop={ false } />
+
+				<AtmosphereWrapper />
+			</TilesRenderer>
+
+			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
+		</>
+	);
+
+}
+
+function AtmosphereWrapper() {
+
+	const tiles = useContext( TilesRendererContext );
 	const camera = useThree( ( { camera } ) => camera );
 	const gl = useThree( ( { gl } ) => gl );
 	gl.toneMappingExposure = 10;
 
 	const atmosphereRef = useRef( null );
 	const composerRef = useRef( null );
+	const matrix = new Matrix4();
 	useFrame( () => {
 
-		atmosphereRef.current?.updateByDate( Date.now() );
+		const atmosphere = atmosphereRef.current;
+		if ( atmosphere != null && tiles ) {
+
+			matrix.copy( tiles.group.matrixWorld ).setPosition( 0, 0, 0 );
+
+			atmosphere.updateByDate( Date.now() );
+			atmosphere.ellipsoidMatrix.copy( matrix );
+			atmosphere.ellipsoidCenter.setFromMatrixPosition( tiles.group.matrixWorld ).applyMatrix4( matrix.invert() );
+
+		}
 
 		const composer = composerRef.current;
 		if ( composer != null ) {
@@ -98,28 +142,8 @@ function App() {
 
 	} );
 
-	const { ortho } = useControls( levaParams );
 	return (
 		<>
-			<TilesRenderer>
-				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
-				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
-				<TilesPlugin plugin={ TileCompressionPlugin } />
-				<TilesPlugin plugin={ UpdateOnChangePlugin } />
-				<TilesPlugin plugin={ UnloadTilesPlugin } />
-				<TilesPlugin plugin={ TilesFadePlugin } />
-				<TilesPlugin plugin={ TileCreasedNormalsPlugin } />
-
-				{/* Controls */}
-				<GlobeControls enableDamping={ true } />
-
-				{/* Attributions */}
-				<TilesAttributionOverlay />
-
-				{/* Add compass gizmo */}
-				<CompassGizmo overrideRenderLoop={ false } />
-			</TilesRenderer>
-
 			{/* Atmosphere set up */}
 			<Atmosphere
 				ref={ atmosphereRef }
@@ -138,7 +162,6 @@ function App() {
 					<Dithering />
 				</EffectComposer>
 			</Atmosphere>
-			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
 		</>
 	);
 
