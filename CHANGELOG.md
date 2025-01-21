@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - `load-error` events when model, tile set, and API token requests fail to fetch or parse.
+- CanvasDOMOverlay: Add support for "ref".
 
 ## [0.4.3] - 2025.01.19
 ### Added
