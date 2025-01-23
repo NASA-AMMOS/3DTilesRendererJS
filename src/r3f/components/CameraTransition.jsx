@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer';
-import { useDeepOptions } from '../utilities/useOptions.jsx';
+import { useDeepOptions } from '../../node_modules/3d-tiles-renderer/src/r3f/utilities/useOptions';// ../utilities/useOptions';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
@@ -12,6 +12,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		orthographicCamera,
 		...options
 	} = props;
+	
 	const [ set, get, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.get, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
@@ -117,15 +118,17 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 			// calculate the camera being toggled to. Because "toggle" has not yet been
 			// called this will select the camera that is being transitioned to.
-			const targetCamera = mode === 'orthographic' ? manager.perspectiveCamera : manager.orthographicCamera;
+			const targetCamera = mode === 'orthographic' ? manager.orthographicCamera : manager.perspectiveCamera;
 			if ( controls && controls.isEnvironmentControls ) {
-
-				controls.getPivotPoint( manager.fixedPoint );
-				manager.syncCameras();
 
 				if ( onBeforeToggle ) {
 
 					onBeforeToggle( manager, targetCamera );
+
+				} else {
+
+					controls.getPivotPoint( manager.fixedPoint );
+					manager.syncCameras();
 
 				}
 
@@ -134,16 +137,18 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 			} else {
 
-				manager.fixedPoint
-					.set( 0, 0, - 1 )
-					.transformDirection( manager.camera.matrixWorld )
-					.multiplyScalar( 50 )
-					.add( manager.camera.position );
-				manager.syncCameras();
-
 				if ( onBeforeToggle ) {
 
 					onBeforeToggle( manager, targetCamera );
+
+				} else {
+
+					manager.fixedPoint
+						.set( 0, 0, - 1 )
+						.transformDirection( manager.camera.matrixWorld )
+						.multiplyScalar( 50 )
+						.add( manager.camera.position );
+					manager.syncCameras();
 
 				}
 
