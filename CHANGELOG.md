@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CanvasDOMOverlay: Add support for "ref".
 
 ### Fixed
-- Improved the behavior of `loadProgress` so it "bounces" less during loading (other than cases with external tile sets).
+- Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tile sets).
 
 ## [0.4.3] - 2025.01.19
 ### Added
