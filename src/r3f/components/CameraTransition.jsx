@@ -10,7 +10,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		onBeforeToggle,
 		perspectiveCamera,
 		orthographicCamera,
-		...options,
+		...options
 	} = props;
 	const [ set, get, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.get, state.invalidate, state.controls, state.camera, state.size ] );
 
