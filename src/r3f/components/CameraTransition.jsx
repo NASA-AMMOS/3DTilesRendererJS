@@ -1,11 +1,17 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer';
-import { useDeepOptions } from '../utilities/useOptions';
+import { useDeepOptions } from '../utilities/useOptions.jsx';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
-	const { mode = 'perspective', perspectiveCamera, orthographicCamera, ...options } = props;
+	const {
+		mode = 'perspective',
+		onBeforeToggle,
+		perspectiveCamera,
+		orthographicCamera,
+		...options,
+	} = props;
 	const [ set, get, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.get, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
@@ -109,10 +115,20 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		if ( mode !== manager.mode ) {
 
+			// calculate the camera being toggled to. Because "toggle" has not yet been
+			// called this will select the camera that is being transitioned to.
+			const targetCamera = mode === 'orthographic' ? manager.perspectiveCamera : manager.orthographicCamera;
 			if ( controls && controls.isEnvironmentControls ) {
 
 				controls.getPivotPoint( manager.fixedPoint );
 				manager.syncCameras();
+
+				if ( onBeforeToggle ) {
+
+					onBeforeToggle( manager, targetCamera );
+
+				}
+
 				controls.adjustCamera( manager.perspectiveCamera );
 				controls.adjustCamera( manager.orthographicCamera );
 
@@ -124,6 +140,12 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 					.multiplyScalar( 50 )
 					.add( manager.camera.position );
 				manager.syncCameras();
+
+				if ( onBeforeToggle ) {
+
+					onBeforeToggle( manager, targetCamera );
+
+				}
 
 			}
 
