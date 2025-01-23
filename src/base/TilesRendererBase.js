@@ -696,6 +696,13 @@ export class TilesRendererBase {
 
 		}
 
+		// check if this is the beginning of a new set of tiles to load and dispatch and event
+		if ( stats.parsing === 0 && stats.downloading === 0 ) {
+
+			this.dispatchEvent( { type: 'tiles-load-start' } );
+
+		}
+
 		this.cachedSinceLoadComplete.add( tile );
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
@@ -803,6 +810,17 @@ export class TilesRendererBase {
 
 				}
 
+				// dispatch an event indicating that this model has completed
+				if ( tile.cached.scene ) {
+
+					this.dispatchEvent( {
+						type: 'load-model',
+						scene: tile.cached.scene,
+						tile,
+					} );
+
+				}
+
 			} )
 			.catch( error => {
 
@@ -855,6 +873,8 @@ export class TilesRendererBase {
 
 					this.cachedSinceLoadComplete.clear();
 					stats.inCacheSinceLoad = 0;
+
+					this.dispatchEvent( { type: 'tiles-load-end' } );
 
 				}
 

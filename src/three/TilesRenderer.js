@@ -82,9 +82,6 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
 
-		// flag indicating whether tiles are actively loading so events can be fired
-		this._loadingTiles = false;
-
 		const manager = new LoadingManager();
 		manager.setURLModifier( url => {
 
@@ -686,15 +683,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// check if this is the beginning of a new set of tiles to load and dispatch and event
-		const stats = this.stats;
-		if ( this._loadingTiles === false && stats.parsing + stats.downloading > 0 ) {
-
-			this.dispatchEvent( { type: 'tiles-load-start' } );
-			this._loadingTiles = true;
-
-		}
-
 		// wait for the tile to load
 		const result = await promise;
 
@@ -793,21 +781,6 @@ export class TilesRenderer extends TilesRendererBase {
 		cached.scene = scene;
 		cached.metadata = metadata;
 		cached.bytesUsed = estimateBytesUsed( scene );
-
-		// dispatch an event indicating that this model has completed
-		this.dispatchEvent( {
-			type: 'load-model',
-			scene,
-			tile,
-		} );
-
-		// dispatch an "end" event if all tiles have finished loading
-		if ( this._loadingTiles === true && stats.parsing + stats.downloading === 1 ) {
-
-			this.dispatchEvent( { type: 'tiles-load-end' } );
-			this._loadingTiles = false;
-
-		}
 
 	}
 
