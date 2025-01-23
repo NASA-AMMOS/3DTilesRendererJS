@@ -12,7 +12,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 		orthographicCamera,
 		...options
 	} = props;
-	
+
 	const [ set, get, invalidate, controls, camera, size ] = useThree( state => [ state.set, state.get, state.invalidate, state.controls, state.camera, state.size ] );
 
 	// create the manager
@@ -119,38 +119,26 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 			// calculate the camera being toggled to. Because "toggle" has not yet been
 			// called this will select the camera that is being transitioned to.
 			const targetCamera = mode === 'orthographic' ? manager.orthographicCamera : manager.perspectiveCamera;
-			if ( controls && controls.isEnvironmentControls ) {
+			if ( onBeforeToggle ) {
 
-				if ( onBeforeToggle ) {
+				onBeforeToggle( manager, targetCamera );
 
-					onBeforeToggle( manager, targetCamera );
+			} else if ( controls && controls.isEnvironmentControls ) {
 
-				} else {
-
-					controls.getPivotPoint( manager.fixedPoint );
-					manager.syncCameras();
-
-				}
+				controls.getPivotPoint( manager.fixedPoint );
+				manager.syncCameras();
 
 				controls.adjustCamera( manager.perspectiveCamera );
 				controls.adjustCamera( manager.orthographicCamera );
 
 			} else {
 
-				if ( onBeforeToggle ) {
-
-					onBeforeToggle( manager, targetCamera );
-
-				} else {
-
-					manager.fixedPoint
-						.set( 0, 0, - 1 )
-						.transformDirection( manager.camera.matrixWorld )
-						.multiplyScalar( 50 )
-						.add( manager.camera.position );
-					manager.syncCameras();
-
-				}
+				manager.fixedPoint
+					.set( 0, 0, - 1 )
+					.transformDirection( manager.camera.matrixWorld )
+					.multiplyScalar( 50 )
+					.add( manager.camera.position );
+				manager.syncCameras();
 
 			}
 
