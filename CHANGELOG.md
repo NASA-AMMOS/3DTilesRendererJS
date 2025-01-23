@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tile sets).
+- Moved the dispatch location of "load-model", "tiles-load-start", and "tiles-load-end" so the behavior is more consistent.
 
 ## [0.4.3] - 2025.01.19
 ### Added
