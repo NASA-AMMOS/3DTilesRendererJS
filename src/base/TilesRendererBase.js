@@ -811,11 +811,15 @@ export class TilesRendererBase {
 				}
 
 				// dispatch an event indicating that this model has completed
-				this.dispatchEvent( {
-					type: 'load-model',
-					scene: tile.cached.scene,
-					tile,
-				} );
+				if ( tile.cached.scene ) {
+
+					this.dispatchEvent( {
+						type: 'load-model',
+						scene: tile.cached.scene,
+						tile,
+					} );
+
+				}
 
 			} )
 			.catch( error => {
