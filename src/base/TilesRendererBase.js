@@ -229,6 +229,12 @@ export class TilesRendererBase {
 
 	queueTileForDownload( tile ) {
 
+		if ( tile.__loadingState !== UNLOADED ) {
+
+			return;
+
+		}
+
 		this.queuedTiles.push( tile );
 
 	}

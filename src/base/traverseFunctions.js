@@ -1,4 +1,4 @@
-import { LOADED, FAILED } from './constants.js';
+import { LOADED, FAILED, UNLOADED } from './constants.js';
 
 function isDownloadFinished( value ) {
 
@@ -63,30 +63,23 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
-	// Try to load any external tile set children if the external tile set has loaded.
-	const doTraverse =
-		isUsedThisFrame( tile, renderer.frameCount ) &&
-		! tile.__hasRenderableContent && (
-			! tile.__hasContent ||
-			isDownloadFinished( tile.__loadingState )
-		);
+	// exit the recursion if the tile hasn't been used this frame
+	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
 
-	if ( doTraverse ) {
+		// queue this tile
+		if ( tile.__hasContent && tile.__loadingState === UNLOADED && ! renderer.lruCache.isFull() ) {
 
-		const children = tile.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			// don't increment depth to rendered parent here because we should treat
-			// the next layer of rendered children as just a single depth away for the
-			// sake of sorting.
-			const child = children[ i ];
-			recursivelyLoadNextRenderableTiles( child, renderer );
+			renderer.queueTileForDownload( tile );
 
 		}
 
-	} else if ( isUsedThisFrame( tile, renderer.frameCount ) && ! renderer.lruCache.isFull() ) {
+		// queue any used child tiles
+		const children = tile.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		renderer.queueTileForDownload( tile );
+			recursivelyLoadNextRenderableTiles( children[ i ], renderer );
+
+		}
 
 	}
 
