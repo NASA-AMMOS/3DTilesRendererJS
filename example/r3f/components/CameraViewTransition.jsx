@@ -74,20 +74,27 @@ export const CameraViewTransition = forwardRef( function CameraViewTransition( p
 
 			} else {
 
-				// tilt the perspective down slightly
-				let angle = downVector.angleTo( raycaster.ray.direction );
-				angle = Math.max( 65 * MathUtils.DEG2RAD - angle, 0 );
+				// TODO: expose _isNearControls in a better way
+				// don't tilt the camera if we're outside the "near controls" behavior so we
+				// don't rotate the camera while out in space
+				if ( ! controls.isGlobeControls || controls._isNearControls() ) {
 
-				axis.set( 1, 0, 0 ).transformDirection( targetCamera.matrixWorld );
-				quat.setFromAxisAngle( axis, angle ).normalize();
+					// tilt the perspective down slightly
+					let angle = downVector.angleTo( raycaster.ray.direction );
+					angle = Math.max( 65 * MathUtils.DEG2RAD - angle, 0 );
 
-				makeRotateAroundPoint( manager.fixedPoint, quat, matrix );
-				targetCamera.matrixWorld.premultiply( matrix );
-				targetCamera.matrixWorld.decompose(
-					targetCamera.position,
-					targetCamera.quaternion,
-					targetCamera.scale,
-				);
+					axis.set( 1, 0, 0 ).transformDirection( targetCamera.matrixWorld );
+					quat.setFromAxisAngle( axis, angle ).normalize();
+
+					makeRotateAroundPoint( manager.fixedPoint, quat, matrix );
+					targetCamera.matrixWorld.premultiply( matrix );
+					targetCamera.matrixWorld.decompose(
+						targetCamera.position,
+						targetCamera.quaternion,
+						targetCamera.scale,
+					);
+
+				}
 
 			}
 
@@ -95,7 +102,6 @@ export const CameraViewTransition = forwardRef( function CameraViewTransition( p
 
 		controls.adjustCamera( manager.perspectiveCamera );
 		controls.adjustCamera( manager.orthographicCamera );
-
 
 	}, [ tiles, controls, scene ] );
 
