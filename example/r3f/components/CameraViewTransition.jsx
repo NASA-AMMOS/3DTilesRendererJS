@@ -105,10 +105,6 @@ export const CameraViewTransition = forwardRef( function CameraViewTransition( p
 
 	}, [ tiles, controls, scene ] );
 
-	return <CameraTransition
-		{ ...props }
-		ref={ ref }
-		onBeforeToggle={ onBeforeToggleCallback }
-	/>;
+	return <CameraTransition { ...props } ref={ ref } onBeforeToggle={ onBeforeToggleCallback } />;
 
 } );
