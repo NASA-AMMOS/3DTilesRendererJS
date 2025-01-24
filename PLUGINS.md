@@ -212,6 +212,14 @@ autoSync = true : boolean
 
 Whether to automatically call the "syncCameras" function when so cameras are implicitly positioned correctly for transitioning. Disable this if syncing will happen manually and small adjustments can be made.
 
+### .easeFunction
+
+```js
+easeFunction = x => x : ( alpha: number ) => number
+```
+
+Function for defining the transition curve between cameras.
+
 ### .constructor
 
 ```js

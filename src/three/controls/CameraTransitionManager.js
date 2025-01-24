@@ -70,6 +70,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.fixedPoint = new Vector3();
 		this.duration = 200;
 		this.autoSync = true;
+		this.easeFunction = x => x;
 
 		this._target = 0;
 		this._alpha = 0;
@@ -87,7 +88,7 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
-	update() {
+	update( deltaTime = Math.min( this._clock.getDelta(), 64 / 1000 ) ) {
 
 		// update transforms
 		if ( this.autoSync ) {
@@ -98,8 +99,7 @@ export class CameraTransitionManager extends EventDispatcher {
 
 		// perform transition
 		const { perspectiveCamera, orthographicCamera, transitionCamera, camera } = this;
-		const clock = this._clock;
-		const delta = clock.getDelta() * 1e3;
+		const delta = deltaTime * 1e3;
 
 		if ( this._alpha !== this._target ) {
 
@@ -267,7 +267,7 @@ export class CameraTransitionManager extends EventDispatcher {
 		// alpha === 1 : orthographic
 
 		const { perspectiveCamera, orthographicCamera, transitionCamera, fixedPoint } = this;
-		const alpha = this._alpha;
+		const alpha = this.easeFunction( this._alpha );
 
 		// get the forward vector
 		_forward.set( 0, 0, - 1 ).transformDirection( orthographicCamera.matrixWorld ).normalize();

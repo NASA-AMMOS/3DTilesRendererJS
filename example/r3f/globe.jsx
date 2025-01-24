@@ -9,7 +9,6 @@ import {
 	GlobeControls,
 	EastNorthUpFrame,
 	CompassGizmo,
-	CameraTransition,
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -19,7 +18,6 @@ import {
 	TileCompressionPlugin,
 	TilesFadePlugin,
 	GLTFExtensionsPlugin,
-	UnloadTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
@@ -29,6 +27,7 @@ import { Environment } from '@react-three/drei';
 import { useControls } from 'leva';
 import { MathUtils, Vector3 } from 'three';
 import { TilesLoadingBar } from './components/TilesLoadingBar.jsx';
+import { CameraViewTransition } from './components/CameraViewTransition.jsx';
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 const vec1 = new Vector3();
@@ -106,11 +105,11 @@ function App() {
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
-				<TilesPlugin plugin={ UnloadTilesPlugin } />
 				<TilesPlugin plugin={ TilesFadePlugin } />
 
 				{/* Controls */}
 				<GlobeControls enableDamping={ true } />
+				<CameraViewTransition mode={ ortho ? 'orthographic' : 'perspective' } />
 
 				{/* Attributions */}
 				<TilesAttributionOverlay />
@@ -132,8 +131,6 @@ function App() {
 				backgroundBlurriness={ 0.9 }
 				environmentIntensity={ 1 }
 			/>
-
-			<CameraTransition mode={ ortho ? 'orthographic' : 'perspective' }/>
 		</Canvas>
 	);
 
