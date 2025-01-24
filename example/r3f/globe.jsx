@@ -9,7 +9,6 @@ import {
 	GlobeControls,
 	EastNorthUpFrame,
 	CompassGizmo,
-	CameraTransition,
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -19,7 +18,6 @@ import {
 	TileCompressionPlugin,
 	TilesFadePlugin,
 	GLTFExtensionsPlugin,
-	UnloadTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
@@ -107,7 +105,6 @@ function App() {
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
-				<TilesPlugin plugin={ UnloadTilesPlugin } />
 				<TilesPlugin plugin={ TilesFadePlugin } />
 
 				{/* Controls */}
