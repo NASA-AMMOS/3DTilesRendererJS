@@ -231,10 +231,11 @@ Constructor takes the two cameras to animate between.
 ### .update
 
 ```js
-update() : void
+update( deltaTime = null : number ) : void
 ```
 
-Performs the transition animation if active.
+Performs the transition animation if active. Takes a delta time value in seconds to normalize inertia and damping speeds. Defaults to the time between call to the function.
+
 
 ### .syncCameras
 
