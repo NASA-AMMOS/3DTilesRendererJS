@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `load-error` events when model, tile set, and API token requests fail to fetch or parse.
 - CanvasDOMOverlay: Add support for "ref".
+- CameraTransitionManager: Add `easeFunction` setting.
+- CameraTransitionManager: Add option to pass delta time to the update function.
 
 ### Fixed
 - Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tile sets).
