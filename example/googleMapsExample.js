@@ -32,7 +32,6 @@ let statsContainer, stats;
 const params = {
 
 	orthographic: false,
-	topDownOrtho: false,
 
 	enableCacheDisplay: false,
 	enableRendererStats: false,
@@ -143,22 +142,6 @@ function init() {
 
 			// sync the camera positions and then adjust the camera views
 			transition.syncCameras();
-
-			// If transitioning to ortho view then use a top-down perspective
-			if ( v && params.topDownOrtho ) {
-
-				const invMat = tiles.group.matrixWorld.clone().invert();
-				const p = transition.fixedPoint.clone().applyMatrix4( invMat );
-
-				const { lat, lon } = tiles.ellipsoid.getPositionToCartographic( p, {} );
-				const { orthographicCamera } = transition;
-				tiles.ellipsoid.getFrame( lat, lon, 0, 0, 0, 1000, orthographicCamera.matrixWorld );
-				orthographicCamera.matrixWorld.premultiply( tiles.group.matrixWorld );
-				orthographicCamera.matrixWorld.decompose( orthographicCamera.position, orthographicCamera.quaternion, orthographicCamera.scale );
-				orthographicCamera.updateMatrixWorld();
-
-			}
-
 			controls.adjustCamera( transition.perspectiveCamera );
 			controls.adjustCamera( transition.orthographicCamera );
 
@@ -167,8 +150,6 @@ function init() {
 		transition.toggle();
 
 	} );
-	gui.add( params, 'topDownOrtho' );
-
 
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
