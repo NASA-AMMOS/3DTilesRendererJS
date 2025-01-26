@@ -254,13 +254,33 @@ export class TilesRendererBase {
 		const { lruCache, usedSet, stats, root } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
+			// transform the url
+			let processedUrl = this.rootURL;
+			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+
 			this.rootLoadingState = LOADING;
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
-				.then( () => this.rootLoadingState = LOADED )
-				.catch( err => {
+				.then( root => {
+
+					this.rootLoadingState = LOADED;
+
+					this.preprocessTileSet( root, processedUrl );
+					this.rootTileSet = root;
+
+				} )
+				.catch( error => {
 
 					this.rootLoadingState = FAILED;
-					console.error( err );
+					console.error( error );
+					this.rootTileSet = null;
+
+					this.dispatchEvent( {
+						type: 'load-error',
+						tile: null,
+						error,
+						uri: processedUrl,
+					} );
+
 
 				} );
 
@@ -573,15 +593,11 @@ export class TilesRendererBase {
 
 	}
 
-	loadRootTileSet() {
-
-		// transform the url
-		let processedUrl = this.rootURL;
-		this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+	loadRootTileSet( url ) {
 
 		// load the tile set root
-		const pr = this
-			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( processedUrl, this.fetchOptions ) )
+		return this
+			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.fetchOptions ) )
 			.then( res => {
 
 				if ( res.ok ) {
@@ -590,33 +606,11 @@ export class TilesRendererBase {
 
 				} else {
 
-					throw new Error( `TilesRenderer: Failed to load tileset "${ processedUrl }" with status ${ res.status } : ${ res.statusText }` );
+					throw new Error( `TilesRenderer: Failed to load tileset "${ url }" with status ${ res.status } : ${ res.statusText }` );
 
 				}
 
-			} )
-			.then( json => {
-
-				this.preprocessTileSet( json, processedUrl );
-				this.rootTileSet = json;
-
 			} );
-
-		pr.catch( error => {
-
-			console.error( error );
-			this.rootTileSet = null;
-
-			this.dispatchEvent( {
-				type: 'load-error',
-				tile: null,
-				error,
-				uri: processedUrl,
-			} );
-
-		} );
-
-		return pr;
 
 	}
 
