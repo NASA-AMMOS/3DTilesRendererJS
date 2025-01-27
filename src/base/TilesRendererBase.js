@@ -406,7 +406,7 @@ export class TilesRendererBase {
 
 	}
 
-	parseTile( buffer, tile, extension, abortSignal ) {
+	parseTile( buffer, tile, extension, uri, abortSignal ) {
 
 		return null;
 

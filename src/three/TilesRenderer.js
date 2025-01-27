@@ -676,10 +676,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			default:
-				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
-				promise = Promise.resolve( null );
+			default: {
+
+				promise = this.invokeAllPlugins( plugin => plugin.parseToMesh && plugin.parseToMesh( buffer, tile, extension, uri, abortSignal ) );
+
+				if ( promise === null ) {
+
+					console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
+					promise = Promise.resolve( null );
+
+				}
 				break;
+
+			}
 
 		}
 
