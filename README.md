@@ -43,6 +43,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Tile LoD Fade Transition](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/fadingTiles.html)
 
+[Deep Zoom Image Format Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/deepZoom.html)
+
 **Debug Pages**
 
 [B3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/b3dmExample.html)
