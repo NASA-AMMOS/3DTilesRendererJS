@@ -5,9 +5,8 @@ import {
 	OrthographicCamera,
 } from 'three';
 import { EnvironmentControls, TilesRenderer, CameraTransitionManager } from '3d-tiles-renderer';
+import { DeepZoomImagePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { DeepZoomImagesPlugin } from '../src/plugins/three/DeepZoomImagesPlugin';
-import { TilesFadePlugin } from '../src/plugins';
 
 let controls, scene, renderer;
 let tiles, transition;
@@ -55,7 +54,7 @@ function init() {
 
 	// tiles
 	tiles = new TilesRenderer( 'https://openseadragon.github.io/example-images/duomo/duomo.dzi' );
-	tiles.registerPlugin( new DeepZoomImagesPlugin( { center: true } ) );
+	tiles.registerPlugin( new DeepZoomImagePlugin( { center: true } ) );
 	tiles.fetchOptions.mode = 'cors';
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;

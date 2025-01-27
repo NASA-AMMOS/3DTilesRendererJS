@@ -10,6 +10,9 @@ export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
 export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin';
 export * from './three/DebugTilesPlugin';
 
+// other formats
+export { DeepZoomImagePlugin } from './three/DeepZoomImagePlugin';
+
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin';
 

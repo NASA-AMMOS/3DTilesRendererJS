@@ -1,6 +1,6 @@
 import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
 
-export class DeepZoomImagesPlugin {
+export class DeepZoomImagePlugin {
 
 	constructor( options = {} ) {
 
