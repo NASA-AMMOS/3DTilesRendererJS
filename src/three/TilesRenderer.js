@@ -329,10 +329,10 @@ export class TilesRenderer extends TilesRendererBase {
 	loadRootTileSet( ...args ) {
 
 		return super.loadRootTileSet( ...args )
-			.then( () => {
+			.then( root => {
 
 				// cache the gltf tile set rotation matrix
-				const { asset, extensions = {} } = this.rootTileSet;
+				const { asset, extensions = {} } = root;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
 
@@ -365,6 +365,8 @@ export class TilesRenderer extends TilesRendererBase {
 				}
 
 				this.dispatchEvent( { type: 'load-content' } );
+
+				return root;
 
 			} );
 
@@ -676,15 +678,22 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			default:
-				console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
-				promise = Promise.resolve( null );
+			default: {
+
+				promise = this.invokeOnePlugin( plugin => plugin.parseToMesh && plugin.parseToMesh( buffer, tile, extension, uri, abortSignal ) );
 				break;
+
+			}
 
 		}
 
 		// wait for the tile to load
 		const result = await promise;
+		if ( result === null ) {
+
+			throw new Error( `TilesRenderer: Content type "${ fileType }" not supported.` );
+
+		}
 
 		// get the scene data
 		let scene;
@@ -924,7 +933,6 @@ export class TilesRenderer extends TilesRendererBase {
 				const distance = boundingVolume.distanceToPoint( info.position );
 				const sseDenominator = info.sseDenominator;
 				error = tile.geometricError / ( distance * sseDenominator );
-
 				minDistance = Math.min( minDistance, distance );
 
 			}
