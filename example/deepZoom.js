@@ -5,7 +5,7 @@ import {
 	OrthographicCamera,
 	Group,
 } from 'three';
-import { TilesFadePlugin } from '3d-tiles-renderer/plugins';
+import { TileCompressionPlugin, DebugTilesPlugin } from '3d-tiles-renderer/plugins';
 import { EnvironmentControls, TilesRenderer, CameraTransitionManager } from '3d-tiles-renderer';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { DeepZoomImagesPlugin } from '../src/plugins/three/DeepZoomImagesPlugin';
@@ -45,18 +45,19 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.25, 4000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 ),
 	);
-	transition.camera.position.set( 20, 10, 20 );
+	transition.camera.position.set( 2, 4, 2 );
 	transition.camera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
 
 	// controls
 	controls = new EnvironmentControls( scene, transition.camera, renderer.domElement );
 	controls.minZoomDistance = 2;
-	controls.cameraRadius = 1;
+	controls.minDistance = 0;
+	controls.cameraRadius = 0;
 
 	// tiles parent group
 	tilesParent = new Group();
-	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
+	tilesParent.rotation.set( - Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
 	// init tiles
@@ -102,6 +103,8 @@ function reinstantiateTiles() {
 	// tiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	tiles = new TilesRenderer( 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi' );
 	tiles.registerPlugin( new DeepZoomImagesPlugin() );
+	tiles.registerPlugin( new TileCompressionPlugin() );
+	tiles.registerPlugin( new DebugTilesPlugin( { displayBoxBounds: true } ) );
 	tiles.fetchOptions.mode = 'cors';
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;

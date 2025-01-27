@@ -99,8 +99,8 @@ export class DeepZoomImagesPlugin {
 					// TODO: we need to scale the these tiles based on the level so the scale of the image
 					// is overall the same
 
-					const levelWidth = Math.ceil( Math.pow( width, - ( levels - level ) ) );
-					const levelHeight = Math.ceil( Math.pow( height, - ( levels - level ) ) );
+					const levelWidth = Math.ceil( width * Math.pow( 2, - ( levels - level ) ) );
+					const levelHeight = Math.ceil( height * Math.pow( 2, - ( levels - level ) ) );
 
 					let tileX = tileSize * x - overlap;
 					let tileY = tileSize * y - overlap;
@@ -142,17 +142,25 @@ export class DeepZoomImagesPlugin {
 
 					}
 
+					const centerX = tileX - offsetX + tileWidth / 2;
+					const centerY = tileY - offsetY + tileHeight / 2;
+
+					const ratioX = width / levelWidth;
+					const ratioY = height / levelHeight;
+
+					// TODO: make sure the geometric error is calculated correctly
+
 					// Generate the root node
 					const node = {
 						boundingVolume: {
 							box: [
-								tileX - offsetX + tileWidth / 2, tileY - offsetY + tileHeight / 2, 0,
-								tileWidth / 2, 0.0, 0.0,
-								0.0, tileHeight / 2, 0.0,
+								ratioX * pixelSize * centerX, ratioY * pixelSize * centerY, 0,
+								ratioX * pixelSize * tileWidth / 2, 0.0, 0.0,
+								0.0, ratioY * pixelSize * tileHeight / 2, 0.0,
 								0.0, 0.0, 0.0,
 							].map( n => n * pixelSize ),
 						},
-						geometricError: Math.max( width / levelWidth, height / levelHeight ) - 1,
+						geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
 						refine: 'REPLACE',
 						content: {
 							uri: `${ stem }_files/${ level }/${ x }_${ y }.${ format }`,
