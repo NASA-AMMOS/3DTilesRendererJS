@@ -681,13 +681,6 @@ export class TilesRenderer extends TilesRendererBase {
 			default: {
 
 				promise = this.invokeOnePlugin( plugin => plugin.parseToMesh && plugin.parseToMesh( buffer, tile, extension, uri, abortSignal ) );
-
-				if ( promise === null ) {
-
-					console.warn( `TilesRenderer: Content type "${ fileType }" not supported.` );
-					promise = Promise.resolve( null );
-
-				}
 				break;
 
 			}
@@ -696,6 +689,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// wait for the tile to load
 		const result = await promise;
+		if ( result === null ) {
+
+			throw new Error( `TilesRenderer: Content type "${ fileType }" not supported.` );
+
+		}
 
 		// get the scene data
 		let scene;
@@ -935,7 +933,6 @@ export class TilesRenderer extends TilesRendererBase {
 				const distance = boundingVolume.distanceToPoint( info.position );
 				const sseDenominator = info.sseDenominator;
 				error = tile.geometricError / ( distance * sseDenominator );
-
 				minDistance = Math.min( minDistance, distance );
 
 			}

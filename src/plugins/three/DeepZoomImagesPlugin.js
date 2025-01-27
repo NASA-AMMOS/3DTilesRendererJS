@@ -1,4 +1,4 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry, Texture } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
 
 export class DeepZoomImagesPlugin {
 
@@ -6,7 +6,7 @@ export class DeepZoomImagesPlugin {
 
 		const {
 			pixelSize = 0.01,
-			centered = false,
+			center = false,
 		} = options;
 
 		this.name = 'DZI_TILES_PLUGIN';
@@ -14,7 +14,7 @@ export class DeepZoomImagesPlugin {
 		this.tiles = null;
 
 		this.pixelSize = pixelSize;
-		this.centered = centered;
+		this.center = center;
 
 	}
 
@@ -31,17 +31,19 @@ export class DeepZoomImagesPlugin {
 		const imageBitmap = await createImageBitmap( blob, {
 			premultiplyAlpha: 'none',
 			colorSpaceConversion: 'none',
+			imageOrientation: 'flipY',
 		} );
 		const texture = new Texture( imageBitmap );
+		texture.generateMipmaps = false;
+		texture.colorSpace = SRGBColorSpace;
 		texture.needsUpdate = true;
 
 		// Construct mesh
 		const mesh = new Mesh( new PlaneGeometry(), new MeshBasicMaterial( { map: texture } ) );
-		const [
-			x, y, z,	// center
-			sx,,,		// x vector
-			, sy,,		// y vector
-		] = tile.boundingVolume.box;
+		const boundingBox = tile.boundingVolume.box;
+		const [ x, y, z ] = boundingBox;
+		const sx = boundingBox[ 3 ];
+		const sy = boundingBox[ 7 ];
 
 		mesh.position.set( x, y, z );
 		mesh.scale.set( 2 * sx, 2 * sy, 1 );
@@ -52,7 +54,7 @@ export class DeepZoomImagesPlugin {
 
 	loadRootTileSet( url ) {
 
-		const { pixelSize, centered, tiles } = this;
+		const { pixelSize, center, tiles } = this;
 
 		return tiles
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.fetchOptions ) )
@@ -78,9 +80,9 @@ export class DeepZoomImagesPlugin {
 				const height = parseInt( size.getAttribute( 'Height' ) );
 				const levels = Math.ceil( Math.log2( Math.max( width, height ) ) );
 
-				// offset for the image so it's centered
-				const offsetX = centered ? width / 2 : 0;
-				const offsetY = centered ? height / 2 : 0;
+				// offset for the image so it's center
+				const offsetX = center ? pixelSize * - width / 2 : 0;
+				const offsetY = center ? pixelSize * - height / 2 : 0;
 
 				const [ stem ] = url.split( /\.[^.]+$/g );
 
@@ -96,11 +98,9 @@ export class DeepZoomImagesPlugin {
 
 				function expand( level, x, y ) {
 
-					// TODO: we need to scale the these tiles based on the level so the scale of the image
-					// is overall the same
-
-					const levelWidth = Math.ceil( width * Math.pow( 2, - ( levels - level ) ) );
-					const levelHeight = Math.ceil( height * Math.pow( 2, - ( levels - level ) ) );
+					const levelFactor = 2 ** - ( levels - level );
+					const levelWidth = Math.ceil( width * levelFactor );
+					const levelHeight = Math.ceil( height * levelFactor );
 
 					let tileX = tileSize * x - overlap;
 					let tileY = tileSize * y - overlap;
@@ -142,26 +142,31 @@ export class DeepZoomImagesPlugin {
 
 					}
 
-					const centerX = tileX - offsetX + tileWidth / 2;
-					const centerY = tileY - offsetY + tileHeight / 2;
+					// the center of the tile
+					const centerX = tileX + tileWidth / 2;
+					const centerY = tileY + tileHeight / 2;
 
+					// the pixel ratio of the image
 					const ratioX = width / levelWidth;
 					const ratioY = height / levelHeight;
 
-					// TODO: make sure the geometric error is calculated correctly
-
 					// Generate the root node
 					const node = {
+						refine: 'REPLACE',
+						geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
 						boundingVolume: {
+							// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
+							// is also enabled on the image bitmap texture generation above.
 							box: [
-								ratioX * pixelSize * centerX, ratioY * pixelSize * centerY, 0,
+								// center
+								ratioX * pixelSize * centerX + offsetX, - ratioY * pixelSize * centerY - offsetY, 0,
+
+								// x, y, z half vectors
 								ratioX * pixelSize * tileWidth / 2, 0.0, 0.0,
 								0.0, ratioY * pixelSize * tileHeight / 2, 0.0,
-								0.0, 0.0, 0.0,
-							].map( n => n * pixelSize ),
+								0.0, 0.0, 0,
+							],
 						},
-						geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
-						refine: 'REPLACE',
 						content: {
 							uri: `${ stem }_files/${ level }/${ x }_${ y }.${ format }`,
 						},
