@@ -24,13 +24,11 @@ export class DeepZoomImagesPlugin {
 
 	}
 
-	parseToMesh( buffer, tile, extension, uri, abortSignal ) {
-
-		// TODO: need a function to insert before loaders via parseGeometry _or_ consider adding via loading manager?
+	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
 		// Construct texture
 		const blob = new Blob( [ buffer ] );
-		const imageBitmap = createImageBitmap( blob, {
+		const imageBitmap = await createImageBitmap( blob, {
 			premultiplyAlpha: 'none',
 			colorSpaceConversion: 'none',
 		} );
@@ -43,11 +41,10 @@ export class DeepZoomImagesPlugin {
 			x, y, z,	// center
 			sx,,,		// x vector
 			, sy,,		// y vector
-			,, sz,		// z vector
 		] = tile.boundingVolume.box;
 
 		mesh.position.set( x, y, z );
-		mesh.scale.set( 2 * sx, 2 * sy, 2 * sz );
+		mesh.scale.set( 2 * sx, 2 * sy, 1 );
 
 		return mesh;
 
@@ -85,7 +82,8 @@ export class DeepZoomImagesPlugin {
 				const offsetX = centered ? width / 2 : 0;
 				const offsetY = centered ? height / 2 : 0;
 
-				const [ stem ] = url.split( /\..+$/g );
+				const [ stem ] = url.split( /\.[^.]+$/g );
+
 				const tileset = {
 					asset: {
 						version: '1.1'
@@ -97,6 +95,9 @@ export class DeepZoomImagesPlugin {
 				return tileset;
 
 				function expand( level, x, y ) {
+
+					// TODO: we need to scale the these tiles based on the level so the scale of the image
+					// is overall the same
 
 					const levelWidth = Math.ceil( Math.pow( width, - ( levels - level ) ) );
 					const levelHeight = Math.ceil( Math.pow( height, - ( levels - level ) ) );
@@ -154,7 +155,7 @@ export class DeepZoomImagesPlugin {
 						geometricError: Math.max( width / levelWidth, height / levelHeight ) - 1,
 						refine: 'REPLACE',
 						content: {
-							uri: `${ stem }/${ level }/${ x }_${ y }.${ format }`,
+							uri: `${ stem }_files/${ level }/${ x }_${ y }.${ format }`,
 						},
 						children: [],
 					};

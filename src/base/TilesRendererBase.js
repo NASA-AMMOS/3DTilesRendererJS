@@ -259,7 +259,7 @@ export class TilesRendererBase {
 			this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 			this.rootLoadingState = LOADING;
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
+			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet( processedUrl ) )
 				.then( root => {
 
 					this.rootLoadingState = LOADED;
