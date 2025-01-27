@@ -626,3 +626,26 @@ Available options are as follows:
 	discardOriginalContent: true
 }
 ```
+
+## DeepZoomImagePlugin
+
+Plugin to add support for the [DeepZoomImage format](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN). Only a single embedded "Image" is supported. The DeepZoomImage xml file should be passed in as the TilesRenderer url.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// Whether to shift the DZI tiles so the image is centered at the origin rather than
+	// at the top left corner
+	center: false,
+
+	// The scale of a pixel in the image
+	pixelSize: 0.01,
+}
+```
