@@ -391,6 +391,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 							const previousDist = pointerTracker.getPreviousTouchPointerDistance();
 							this.zoomDelta += pointerDist - previousDist;
+							this.pivotMesh.visible = false;
 
 						} else if ( this.state === ROTATE ) {
 
