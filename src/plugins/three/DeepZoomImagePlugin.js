@@ -56,6 +56,10 @@ export class DeepZoomImagePlugin {
 
 		const { pixelSize, center, tiles } = this;
 
+		// If implementing DeepZoom with limitations like a fixed orthographic camera perspective then
+		// the target tile level can be immediately "jumped" to for the entire image and in-view tiles
+		// can be immediately queried without any hierarchy traversal. Due the flexibility of camera
+		// type, rotation, and per-tile error calculation we generate a hierarchy. 
 		return tiles
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.fetchOptions ) )
 			.then( res => res.text() )
