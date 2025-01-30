@@ -52,14 +52,18 @@ export class DeepZoomImagePlugin {
 
 	}
 
-	loadRootTileSet( url ) {
+	loadRootTileSet() {
 
 		const { pixelSize, center, tiles } = this;
+
+		// transform the url
+		let url = tiles.rootURL;
+		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 
 		// If implementing DeepZoom with limitations like a fixed orthographic camera perspective then
 		// the target tile level can be immediately "jumped" to for the entire image and in-view tiles
 		// can be immediately queried without any hierarchy traversal. Due the flexibility of camera
-		// type, rotation, and per-tile error calculation we generate a hierarchy. 
+		// type, rotation, and per-tile error calculation we generate a hierarchy.
 		return tiles
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.fetchOptions ) )
 			.then( res => res.text() )
@@ -98,6 +102,7 @@ export class DeepZoomImagePlugin {
 					root: expand( 0, 0, 0 ),
 				};
 
+				tiles.preprocessTileSet( tileset, url );
 				return tileset;
 
 				function expand( level, x, y ) {
