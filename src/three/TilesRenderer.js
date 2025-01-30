@@ -329,10 +329,10 @@ export class TilesRenderer extends TilesRendererBase {
 	loadRootTileSet( ...args ) {
 
 		return super.loadRootTileSet( ...args )
-			.then( () => {
+			.then( root => {
 
 				// cache the gltf tile set rotation matrix
-				const { asset, extensions = {} } = this.rootTileSet;
+				const { asset, extensions = {} } = root;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
 
@@ -365,6 +365,8 @@ export class TilesRenderer extends TilesRendererBase {
 				}
 
 				this.dispatchEvent( { type: 'load-content' } );
+
+				return root;
 
 			} );
 
