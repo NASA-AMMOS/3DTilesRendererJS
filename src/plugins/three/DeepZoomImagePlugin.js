@@ -56,6 +56,8 @@ export class DeepZoomImagePlugin {
 
 		const { pixelSize, center, tiles } = this;
 
+		// TODO: it would be nice if we didn't have to transform the root url and preprocess the tile set here
+
 		// transform the url
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
