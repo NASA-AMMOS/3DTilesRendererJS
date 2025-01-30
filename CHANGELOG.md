@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- DeepZoomImage plugin support.
+
+### Fixed
+- EnvironmentControls: Fixed circle mesh not hiding when zooming on mobile.
+
 ## [0.4.4] - 2025.01.24
 ### Added
 - `load-error` events when model, tile set, and API token requests fail to fetch or parse.
