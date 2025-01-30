@@ -257,10 +257,18 @@ export class TilesRendererBase {
 			this.rootLoadingState = LOADING;
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
 				.then( () => this.rootLoadingState = LOADED )
-				.catch( err => {
+				.catch( error => {
 
 					this.rootLoadingState = FAILED;
-					console.error( err );
+					console.error( error );
+
+					this.rootTileSet = null;
+					this.dispatchEvent( {
+						type: 'load-error',
+						tile: null,
+						error,
+						// uri: processedUrl,
+					} );
 
 				} );
 
@@ -601,20 +609,6 @@ export class TilesRendererBase {
 				this.rootTileSet = json;
 
 			} );
-
-		pr.catch( error => {
-
-			console.error( error );
-			this.rootTileSet = null;
-
-			this.dispatchEvent( {
-				type: 'load-error',
-				tile: null,
-				error,
-				uri: processedUrl,
-			} );
-
-		} );
 
 		return pr;
 
