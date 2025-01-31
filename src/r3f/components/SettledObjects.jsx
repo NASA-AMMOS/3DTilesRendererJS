@@ -1,15 +1,16 @@
-import { createContext, forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
+import { cloneElement, createContext, forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
 import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
 import { TilesRendererContext } from './TilesRenderer.js';
 import { QueryManager } from '../utilities/QueryManager.js';
 import { useDeepOptions } from '../utilities/useOptions.js';
+import { Ray } from 'three';
 
 const QueryManagerContext = createContext( null );
 
 export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	const {
-		component = group,
+		component = <group />,
 		duration = 0,
 		easeFunction = x => x,
 		lat = null,
@@ -46,7 +47,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	}, [ lat, lon, rayorigin, raydirection, queries ] );
 
-	return <component { ...rest } ref={ useMultipleRefs( objectRef, ref ) } />;
+	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ) } );
 
 } );
 
