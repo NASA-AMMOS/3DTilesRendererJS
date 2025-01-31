@@ -15,7 +15,8 @@ function traverse( root, callback ) {
 	} );
 
 }
-class SceneObserver extends EventDispatcher {
+
+export class SceneObserver extends EventDispatcher {
 
 	constructor() {
 

@@ -13,6 +13,8 @@ export class QueryManager extends EventDispatcher {
 
 	constructor() {
 
+		super();
+
 		// settings
 		this.autoRun = true;
 
@@ -50,9 +52,9 @@ export class QueryManager extends EventDispatcher {
 
 				}
 
-			}
+			};
 
-		} ) ();
+		} )();
 
 		this.observer.addEventListener( 'childadded', queueAll );
 		this.observer.addEventListener( 'childremoved', queueAll );
@@ -70,7 +72,7 @@ export class QueryManager extends EventDispatcher {
 	_runJobs() {
 
 		const { queued, duration } = this;
-		let start = performance.now();
+		const start = performance.now();
 		for ( const item in queued ) {
 
 			if ( queued.size === 0 || performance.now() - start > duration ) {
