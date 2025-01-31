@@ -1,3 +1,8 @@
+import { createContext, forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
+import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
+import { TilesRendererContext } from './TilesRenderer.js';
+import { QueryManager } from '../utilities/QueryManager.js';
+import { useDeepOptions } from '../utilities/useOptions.js';
 
 const QueryManagerContext = createContext( null );
 
@@ -39,7 +44,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		}
 
-	}, [ lat, lon, rayorigin, raydirection ] );
+	}, [ lat, lon, rayorigin, raydirection, queries ] );
 
 	return <component { ...rest } ref={ useMultipleRefs( objectRef, ref ) } />;
 
@@ -54,7 +59,7 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 	} = props;
 
 	const tiles = useContext( TilesRendererContext );
-	const queries = useMemo( () => new QueryManager() );
+	const queries = useMemo( () => new QueryManager(), [] );
 
 	useDeepOptions( queries, rest );
 
@@ -76,11 +81,7 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	}, [ queries, tiles ] );
 
-	useEffect( () => {
-
-		useMultipleRefs( ref )( queries );
-
-	}, [ queries, ref ] );
+	useMultipleRefs( ref )( queries );
 
 	return (
 		<QueryManagerContext.Provider value={ queries }>
