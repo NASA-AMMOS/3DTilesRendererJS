@@ -13,8 +13,6 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	const {
 		component = <group />,
-		duration = 0,
-		easeFunction = x => x,
 		lat = null,
 		lon = null,
 		rayorigin = null,
@@ -23,14 +21,11 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 	} = props;
 
 	const objectRef = useRef( null );
+	const tiles = useContext( TilesRendererContext );
 	const queries = useContext( QueryManagerContext );
-	const startPos = useMemo( () => new Vector3(), [] );
-	const targetPos = useMemo( () => new Vector3(), [] );
-	const timing = useMemo( () => ( { value: 0 } ), [] );
 
 	useEffect( () => {
 
-		timing.value = performance.now();
 		if ( lat !== null && lon !== null ) {
 
 			const matrix = new Matrix4();
@@ -38,10 +33,8 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 				if ( hit !== null && objectRef.current !== null ) {
 
-					startPos.copy( objectRef.current.position );
-					targetPos.copy( hit.point );
-
-					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME );
+					objectRef.current.position.copy( hit.point );
+					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 					objectRef.current.quaternion.setFromRotationMatrix( matrix );
 
 				}
@@ -59,9 +52,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 				if ( hit !== null && objectRef.current !== null ) {
 
-					startPos.copy( objectRef.current.position );
-					targetPos.copy( hit.point );
-
+					objectRef.current.position.copy( hit.point );
 					objectRef.current.quaternion.identity();
 
 				}
@@ -72,16 +63,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		}
 
-	}, [ lat, lon, rayorigin, raydirection, queries, startPos, targetPos, timing ] );
-
-	useFrame( () => {
-
-		let alpha = duration === 0 ? 1 : Math.max( ( performance.now() - timing.value ) / duration, 1 );
-		alpha = easeFunction( alpha );
-
-		objectRef.current.position.lerpVectors( startPos, targetPos, alpha );
-
-	} );
+	}, [ lat, lon, rayorigin, raydirection, queries, tiles ] );
 
 	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ), raycast: () => false } );
 

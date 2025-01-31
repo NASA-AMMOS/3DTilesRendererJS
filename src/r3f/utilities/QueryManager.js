@@ -121,7 +121,7 @@ export class QueryManager extends EventDispatcher {
 
 			const { lat, lon } = item;
 			const ray = _raycaster.ray;
-			ellipsoid.getCartographicToPosition( lat, lon, 1e3, ray.origin ).applyMatrix4( frame );
+			ellipsoid.getCartographicToPosition( lat, lon, 1e4, ray.origin ).applyMatrix4( frame );
 			ellipsoid.getCartographicToNormal( lat, lon, ray.direction ).transformDirection( frame ).multiplyScalar( - 1 );
 
 		}
