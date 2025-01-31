@@ -5,9 +5,8 @@ import {
 	EventDispatcher,
 } from 'three';
 import { SceneObserver } from './SceneObserver.js';
-import { Ellipsoid } from '../../src/three/math/Ellipsoid.js';
+import { Ellipsoid } from '../../three/math/Ellipsoid.js';
 
-const _ray = /* @__PURE__ */ new Ray();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 export class QueryManager extends EventDispatcher {
 
@@ -73,11 +72,11 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, duration } = this;
 		const start = performance.now();
-		for ( const item in queued ) {
+		for ( const item of queued ) {
 
 			if ( queued.size === 0 || performance.now() - start > duration ) {
 
-				return;
+				break;
 
 			}
 
@@ -114,20 +113,19 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, ellipsoid, frame } = this;
 
-		let ray;
 		if ( item.ray ) {
 
-			ray = item.ray;
+			_raycaster.ray.copy( item.ray );
 
 		} else {
 
 			const { lat, lon } = item;
-			ellipsoid.getCartographicToPosition( lat, lon, 1e3, _ray.origin ).applyMatrix4( frame );
-			ellipsoid.getCartographicToNormal( lat, lon, _ray.direction ).transformDirection( frame );
+			const ray = _raycaster.ray;
+			ellipsoid.getCartographicToPosition( lat, lon, 1e3, ray.origin ).applyMatrix4( frame );
+			ellipsoid.getCartographicToNormal( lat, lon, ray.direction ).transformDirection( frame ).multiplyScalar( - 1 );
 
 		}
 
-		_raycaster.ray.copy( ray );
 		item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
 		queued.delete( item );
 
@@ -153,6 +151,24 @@ export class QueryManager extends EventDispatcher {
 		observer.dispose();
 		objects.forEach( o => observer.observe( o ) );
 		this.objects = objects;
+		this._scheduleRun();
+
+	}
+
+	setEllipsoidFromTilesRenderer( tilesRenderer ) {
+
+		const { observer, ellipsoid, frame, objects } = this;
+		if (
+			! ellipsoid.radius.equals( tilesRenderer.ellipsoid.radius ) ||
+			! frame.equals( tilesRenderer.group.matrixWorld )
+		) {
+
+			ellipsoid.copy( tilesRenderer.ellipsoid );
+			frame.copy( tilesRenderer.group.matrixWorld );
+			objects.forEach( o => observer.observe( o ) );
+			this._scheduleRun();
+
+		}
 
 	}
 
@@ -166,6 +182,7 @@ export class QueryManager extends EventDispatcher {
 		};
 
 		this.queryMap.set( index, item );
+		this._enqueue( item );
 		return index;
 
 	}
@@ -179,6 +196,7 @@ export class QueryManager extends EventDispatcher {
 		};
 
 		this.queryMap.set( index, item );
+		this._enqueue( item );
 		return index;
 
 	}

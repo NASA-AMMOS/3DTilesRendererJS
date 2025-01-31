@@ -1,11 +1,11 @@
 import { cloneElement, createContext, forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
 import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
-import { TilesRendererContext } from './TilesRenderer.js';
+import { TilesRendererContext } from './TilesRenderer.jsx';
 import { QueryManager } from '../utilities/QueryManager.js';
-import { useDeepOptions } from '../utilities/useOptions.js';
+import { useDeepOptions } from '../utilities/useOptions.jsx';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 import { Matrix4, Ray, Vector3 } from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 const QueryManagerContext = createContext( null );
 
@@ -36,11 +36,15 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 			const matrix = new Matrix4();
 			const index = queries.registerLatLonQuery( lat, lon, hit => {
 
-				startPos.copy( objectRef.current.position );
-				targetPos.copy( hit.point );
+				if ( hit !== null && objectRef.current !== null ) {
 
-				queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME );
-				objectRef.current.quaternion.setFromRotationMatrix( matrix );
+					startPos.copy( objectRef.current.position );
+					targetPos.copy( hit.point );
+
+					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME );
+					objectRef.current.quaternion.setFromRotationMatrix( matrix );
+
+				}
 
 			} );
 
@@ -51,12 +55,16 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 			const ray = new Ray();
 			ray.origin.copy( rayorigin );
 			ray.direction.copy( raydirection );
-			const index = queries.registerLatLonQuery( ray, hit => {
+			const index = queries.registerRayQuery( ray, hit => {
 
-				startPos.copy( objectRef.current.position );
-				targetPos.copy( hit.point );
+				if ( hit !== null && objectRef.current !== null ) {
 
-				objectRef.current.quaternion.identity();
+					startPos.copy( objectRef.current.position );
+					targetPos.copy( hit.point );
+
+					objectRef.current.quaternion.identity();
+
+				}
 
 			} );
 
@@ -75,14 +83,15 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	} );
 
-	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ) } );
+	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ), raycast: () => false } );
 
 } );
 
 export const SettledObjects = forwardRef( function SettledObjects( props, ref ) {
 
+	const threeScene = useThree( ( { scene } ) => scene );
 	const {
-		scene,
+		scene = threeScene,
 		children,
 		...rest
 	} = props;
@@ -94,7 +103,7 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	useEffect( () => {
 
-		queries.setScene( ...scene );
+		queries.setScene( ...( Array.isArray( scene ) ? scene : [ scene ] ) );
 
 	}, [ queries, scene ] );
 
