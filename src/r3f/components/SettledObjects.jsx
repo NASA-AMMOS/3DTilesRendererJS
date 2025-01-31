@@ -4,8 +4,8 @@ import { TilesRendererContext } from './TilesRenderer.jsx';
 import { QueryManager } from '../utilities/QueryManager.js';
 import { useDeepOptions } from '../utilities/useOptions.jsx';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
-import { Matrix4, Ray, Vector3 } from 'three';
-import { useFrame, useThree } from '@react-three/fiber';
+import { Matrix4, Ray } from 'three';
+import { useThree } from '@react-three/fiber';
 
 const QueryManagerContext = createContext( null );
 
@@ -23,6 +23,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 	const objectRef = useRef( null );
 	const tiles = useContext( TilesRendererContext );
 	const queries = useContext( QueryManagerContext );
+	const invalidate = useThree( ( { invalidate } ) => invalidate );
 
 	useEffect( () => {
 
@@ -36,6 +37,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 					objectRef.current.position.copy( hit.point );
 					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 					objectRef.current.quaternion.setFromRotationMatrix( matrix );
+					invalidate();
 
 				}
 
@@ -54,6 +56,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 					objectRef.current.position.copy( hit.point );
 					objectRef.current.quaternion.identity();
+					invalidate();
 
 				}
 
@@ -63,7 +66,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		}
 
-	}, [ lat, lon, rayorigin, raydirection, queries, tiles ] );
+	}, [ lat, lon, rayorigin, raydirection, queries, tiles, invalidate ] );
 
 	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ), raycast: () => false } );
 
