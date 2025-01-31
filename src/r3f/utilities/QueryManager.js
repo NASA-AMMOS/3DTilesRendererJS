@@ -82,8 +82,7 @@ export class QueryManager extends EventDispatcher {
 			}
 
 			queued.delete( item );
-			_raycaster.ray.copy( info.ray );
-			item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
+			this._updateQuery( item );
 
 		}
 
@@ -111,15 +110,37 @@ export class QueryManager extends EventDispatcher {
 
 	}
 
+	_updateQuery( item ) {
+
+		const { queued, ellipsoid, frame } = this;
+
+		let ray;
+		if ( item.ray ) {
+
+			ray = item.ray;
+
+		} else {
+
+			const { lat, lon } = item;
+			ellipsoid.getCartographicToPosition( lat, lon, 1e3, _ray.origin ).applyMatrix4( frame );
+			ellipsoid.getCartographicToNormal( lat, lon, _ray.direction ).transformDirection( frame );
+
+		}
+
+		_raycaster.ray.copy( ray );
+		item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
+		queued.delete( item );
+
+
+	}
+
 	runIfNeeded( index ) {
 
 		const { queued } = this;
 		const item = this.queryMap.get( index );
 		if ( queued.has( item ) ) {
 
-			_raycaster.ray.copy( info.ray );
-			item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
-			queued.delete( item );
+			this._updateQuery( item );
 
 		}
 
@@ -151,10 +172,14 @@ export class QueryManager extends EventDispatcher {
 
 	registerLatLonQuery( lat, lon, callback ) {
 
-		const { ellipsoid, frame } = this;
-		ellipsoid.getCartographicToPosition( lat, lon, 1e3, _ray.origin ).applyMatrix4( frame );
-		ellipsoid.getCartographicToNormal( lat, lon, _ray.direction ).transformDirection( frame );
-		return this.registerRayQuery( _ray, callback );
+		const index = this.index ++;
+		const item = {
+			lat, lon,
+			callback,
+		};
+
+		this.queryMap.set( index, item );
+		return index;
 
 	}
 
