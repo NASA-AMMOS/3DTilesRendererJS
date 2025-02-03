@@ -5,7 +5,7 @@ import { QueryManager } from '../utilities/QueryManager.js';
 import { useDeepOptions } from '../utilities/useOptions.jsx';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 import { Matrix4, Ray } from 'three';
-import { useThree } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 const QueryManagerContext = createContext( null );
 
@@ -83,6 +83,7 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	const tiles = useContext( TilesRendererContext );
 	const queries = useMemo( () => new QueryManager(), [] );
+	const camera = useThree( ( { camera } ) => camera );
 
 	useDeepOptions( queries, rest );
 
@@ -94,15 +95,19 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	useEffect( () => {
 
+		queries.addCamera( camera );
+
+	}, [ queries, camera ] );
+
+	useFrame( () => {
+
 		if ( tiles ) {
 
-			// TODO: we need to react to matrix update
-			queries.ellipsoid.copy( tiles.ellipsoid );
-			queries.frame.copy( tiles.group.matrixWorld );
+			queries.setEllipsoidFromTilesRenderer( tiles );
 
 		}
 
-	}, [ queries, tiles ] );
+	} );
 
 	useMultipleRefs( ref )( queries );
 
