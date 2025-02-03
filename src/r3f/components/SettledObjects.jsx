@@ -4,15 +4,17 @@ import { TilesRendererContext } from './TilesRenderer.jsx';
 import { QueryManager } from '../utilities/QueryManager.js';
 import { useDeepOptions } from '../utilities/useOptions.jsx';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
-import { Matrix4, Ray } from 'three';
+import { Matrix4, Ray, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 
 const QueryManagerContext = createContext( null );
 
+// Object that updates its "settled" state
 export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	const {
 		component = <group />,
+		interpolationFactor = 0.025,
 		lat = null,
 		lon = null,
 		rayorigin = null,
@@ -24,6 +26,9 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 	const tiles = useContext( TilesRendererContext );
 	const queries = useContext( QueryManagerContext );
 	const invalidate = useThree( ( { invalidate } ) => invalidate );
+	const target = useMemo( () => new Vector3(), [] );
+	const isInitialized = useMemo( () => ( { value: false } ), [] );
+	const isTargetSet = useMemo( () => ( { value: false } ), [] );
 
 	useEffect( () => {
 
@@ -32,9 +37,11 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 			const matrix = new Matrix4();
 			const index = queries.registerLatLonQuery( lat, lon, hit => {
 
-				if ( hit !== null && objectRef.current !== null ) {
+				if ( tiles && hit !== null && objectRef.current !== null ) {
 
-					objectRef.current.position.copy( hit.point );
+					target.copy( hit.point );
+					isTargetSet.value = true;
+
 					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 					objectRef.current.quaternion.setFromRotationMatrix( matrix );
 					invalidate();
@@ -54,7 +61,9 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 				if ( hit !== null && objectRef.current !== null ) {
 
-					objectRef.current.position.copy( hit.point );
+					target.copy( hit.point );
+					isTargetSet.value = true;
+
 					objectRef.current.quaternion.identity();
 					invalidate();
 
@@ -66,7 +75,42 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		}
 
-	}, [ lat, lon, rayorigin, raydirection, queries, tiles, invalidate ] );
+	}, [ lat, lon, rayorigin, raydirection, queries, tiles, invalidate, target, isTargetSet ] );
+
+	// interpolate the point position
+	useFrame( ( state, delta ) => {
+
+		if ( objectRef.current && isTargetSet.value ) {
+
+			if ( isInitialized.value === false ) {
+
+				isInitialized.value = true;
+				objectRef.current.position.copy( target );
+
+			} else {
+
+				// framerate independent lerp by Freya Holmer
+				const factor = 1 - 2 ** ( - delta / interpolationFactor );
+				if ( objectRef.current.position.distanceToSquared( target ) > 1e-6 ) {
+
+					objectRef.current.position.lerp(
+						target, interpolationFactor === 0 ? 1 : factor
+					);
+
+					invalidate();
+
+				} else {
+
+					objectRef.current.position.copy( target );
+
+				}
+
+			}
+
+		}
+
+
+	} );
 
 	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ), raycast: () => false } );
 
