@@ -4,6 +4,7 @@ import { EnvironmentControls as EnvironmentControlsImpl } from '../../three/cont
 import { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls.js';
 import { useShallowOptions } from '../utilities/useOptions.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
@@ -31,23 +32,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	}, [ controlsConstructor ] );
 
 	// assign / call the reference
-	useEffect( () => {
-
-		if ( ref ) {
-
-			if ( ref instanceof Function ) {
-
-				ref( controls );
-
-			} else {
-
-				ref.current = controls;
-
-			}
-
-		}
-
-	}, [ controls, ref ] );
+	useApplyRefs( controls, ref );
 
 	// fire invalidate callbacks
 	useEffect( () => {

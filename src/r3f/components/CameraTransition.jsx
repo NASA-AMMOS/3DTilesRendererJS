@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer';
 import { useDeepOptions } from '../utilities/useOptions.js';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
@@ -55,23 +56,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 	}, [ manager, size ] );
 
 	// assign ref
-	useEffect( () => {
-
-		if ( ref ) {
-
-			if ( ref instanceof Function ) {
-
-				ref( manager );
-
-			} else {
-
-				ref.current = manager;
-
-			}
-
-		}
-
-	}, [ manager, ref ] );
+	useApplyRefs( manager, ref );
 
 	// set the camera
 	useEffect( () => {

@@ -5,6 +5,7 @@ import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useForceUpdate } from '../utilities/useForceUpdate.js';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
@@ -102,23 +103,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	useShallowOptions( instance, options );
 
 	// assign ref
-	useEffect( () => {
-
-		if ( ref ) {
-
-			if ( ref instanceof Function ) {
-
-				ref( instance );
-
-			} else {
-
-				ref.current = instance;
-
-			}
-
-		}
-
-	}, [ instance, ref ] );
+	useApplyRefs( instance, ref );
 
 	// register the instance
 	useEffect( () => {
@@ -198,23 +183,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	}, [ tiles, camera ] );
 
 	// assign ref
-	useEffect( () => {
-
-		if ( ref ) {
-
-			if ( ref instanceof Function ) {
-
-				ref( tiles );
-
-			} else {
-
-				ref.current = tiles;
-
-			}
-
-		}
-
-	}, [ tiles, ref ] );
+	useApplyRefs( tiles, ref );
 
 	// assign options recursively
 	useDeepOptions( tiles, options );
