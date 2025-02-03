@@ -762,7 +762,9 @@ export class DebugTilesPlugin {
 			if ( boxHelperGroup ) {
 
 				boxGroup.add( boxHelperGroup );
+				boxGroup.updateMatrixWorld( true );
 				boxHelperGroup.updateMatrixWorld( true );
+				boxHelperGroup.children[ 0 ].updateMatrix();
 
 				this._updateHelperMaterial( tile, boxHelperGroup.children[ 0 ].material );
 
@@ -771,6 +773,7 @@ export class DebugTilesPlugin {
 			if ( sphereHelper ) {
 
 				sphereGroup.add( sphereHelper );
+				sphereGroup.updateMatrixWorld( true );
 				sphereHelper.updateMatrixWorld( true );
 
 				this._updateHelperMaterial( tile, sphereHelper.material );
@@ -780,7 +783,9 @@ export class DebugTilesPlugin {
 			if ( regionHelper ) {
 
 				regionGroup.add( regionHelper );
+				regionGroup.updateMatrixWorld( true );
 				regionHelper.updateMatrixWorld( true );
+				regionHelper.updateMatrix();
 
 				this._updateHelperMaterial( tile, regionHelper.material );
 
