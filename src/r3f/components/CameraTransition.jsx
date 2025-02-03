@@ -147,7 +147,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		}
 
-	}, [ mode, manager, invalidate, controls ] );
+	}, [ mode, manager, invalidate, controls, onBeforeToggle ] );
 
 	// rerender the frame when the transition animates
 	useEffect( () => {
