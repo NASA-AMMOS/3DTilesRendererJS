@@ -6,6 +6,7 @@ import { useDeepOptions } from '../utilities/useOptions.js';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 import { Matrix4, Ray, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 const QueryManagerContext = createContext( null );
 
@@ -160,7 +161,8 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	} );
 
-	useMultipleRefs( ref )( queries );
+	// assign ref
+	useApplyRefs( queries, ref );
 
 	return (
 		<QueryManagerContext.Provider value={ queries }>
