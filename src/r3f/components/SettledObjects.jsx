@@ -164,7 +164,9 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 
 	return (
 		<QueryManagerContext.Provider value={ queries }>
-			{ children }
+			<group matrixAutoUpdate={ false } matrixWorldAutoUpdate={ false }>
+				{ children }
+			</group>
 		</QueryManagerContext.Provider>
 	);
 
