@@ -8,6 +8,8 @@ import {
 	TilesAttributionOverlay,
 	GlobeControls,
 	CompassGizmo,
+	SettledObject,
+	SettledObjects
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -27,7 +29,6 @@ import { useControls } from 'leva';
 import { MathUtils, Vector3 } from 'three';
 import { TilesLoadingBar } from './components/TilesLoadingBar.jsx';
 import { CameraViewTransition } from './components/CameraViewTransition.jsx';
-import { SettledObject, SettledObjects } from '../../src/r3f/components/SettledObjects.jsx';
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 const vec1 = new Vector3();
