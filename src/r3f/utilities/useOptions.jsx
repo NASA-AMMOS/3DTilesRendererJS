@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useObjectDep } from './useObjectDep.jsx';
+import { useObjectDep } from './useObjectDep.js';
 
 // return true if the given key is for registering an event
 function isEventName( key ) {
