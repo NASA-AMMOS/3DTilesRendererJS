@@ -283,7 +283,7 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, queryMap } = this;
 		const item = queryMap.get( index );
-		if ( item.queued ) {
+		if ( item && item.queued ) {
 
 			item.queued = false;
 			queued.splice( queued.indexOf( item ), 1 );

@@ -82,6 +82,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		if ( objectRef.current && isTargetSet.value ) {
 
+			// jump the point to the target if it's being set for the first time
 			if ( isInitialized.value === false ) {
 
 				isInitialized.value = true;
@@ -130,6 +131,12 @@ export const SettledObjects = forwardRef( function SettledObjects( props, ref ) 
 	const camera = useThree( ( { camera } ) => camera );
 
 	useDeepOptions( queries, rest );
+
+	useEffect( () => {
+
+		return () => queries.dispose();
+
+	}, [ queries ] );
 
 	useEffect( () => {
 
