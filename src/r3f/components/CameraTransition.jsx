@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '3d-tiles-renderer';
-import { useDeepOptions } from '../utilities/useOptions.jsx';
+import { useDeepOptions } from '../utilities/useOptions.js';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
