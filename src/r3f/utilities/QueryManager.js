@@ -86,6 +86,7 @@ export class QueryManager extends EventDispatcher {
 		const { queued, cameras, duration } = this;
 		const start = performance.now();
 
+		// Iterate over all cameras
 		cameras.forEach( camera => {
 
 			_line0.start.setFromMatrixPosition( camera.matrixWorld );
@@ -96,10 +97,12 @@ export class QueryManager extends EventDispatcher {
 				const info = queued[ i ];
 				const { ray } = info;
 
+				// find the distance between camera ray and projection ray
 				_line1.start.copy( ray.origin );
 				ray.at( 1, _line1.end );
 				closestPointLineToLine( _line0, _line1, _params );
 
+				// save the values for sorting
 				if ( _params.x < 0 ) {
 
 					info.distance = 1e10 - _params.x;
@@ -114,12 +117,14 @@ export class QueryManager extends EventDispatcher {
 
 		} );
 
+		// sort the items if necessary
 		if ( cameras.length !== 0 ) {
 
 			queued.sort( ( a, b ) => b.distance - a.distance );
 
 		}
 
+		// update all the positions
 		while ( queued.length !== 0 && performance.now() - start < duration ) {
 
 			const item = queued.pop();
@@ -159,6 +164,7 @@ export class QueryManager extends EventDispatcher {
 
 	}
 
+	// add and remove cameras used for sorting
 	addCamera( camera ) {
 
 		const { queryMap, cameras } = this;
@@ -174,6 +180,7 @@ export class QueryManager extends EventDispatcher {
 
 	}
 
+	// run the given item index if possible
 	runIfNeeded( index ) {
 
 		const { queryMap, queued } = this;
@@ -199,6 +206,7 @@ export class QueryManager extends EventDispatcher {
 
 	}
 
+	// update the ellipsoid and frame based on a tiles renderer, updating the item rays only if necessary
 	setEllipsoidFromTilesRenderer( tilesRenderer ) {
 
 		const { queryMap, ellipsoid, frame } = this;
@@ -209,6 +217,8 @@ export class QueryManager extends EventDispatcher {
 
 			ellipsoid.copy( tilesRenderer.ellipsoid );
 			frame.copy( tilesRenderer.group.matrixWorld );
+
+			// update the query rays for any item specified via lat / lon
 			queryMap.forEach( o => {
 
 				if ( 'lat' in o ) {
@@ -285,7 +295,7 @@ export class QueryManager extends EventDispatcher {
 	dispose() {
 
 		this.queryMap.clear();
-		this.queued.length = 0
+		this.queued.length = 0;
 		this.objects.length = 0;
 		this.observer.dispose();
 
@@ -340,7 +350,7 @@ const closestPointLineToLine = ( function () {
 
 		}
 
-		d2 = ( d0232 + d * d3210 ) / d3232;
+		d2 = ( d0232 + d * d3210 ) / d3232; // eslint-disable-line
 
 		result.x = d;
 		result.y = d2;
