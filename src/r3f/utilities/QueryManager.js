@@ -21,7 +21,7 @@ export class QueryManager extends EventDispatcher {
 		this.index = 0;
 
 		// jobs
-		this.queued = new Set();
+		this.queued = [];
 		this.scheduled = false;
 		this.duration = 1;
 
@@ -64,8 +64,13 @@ export class QueryManager extends EventDispatcher {
 	// job runner
 	_enqueue( info ) {
 
-		this.queued.add( info );
-		this._scheduleRun();
+		if ( ! info.queued ) {
+
+			this.queued.push( info );
+			info.queued = true;
+			this._scheduleRun();
+
+		}
 
 	}
 
@@ -73,20 +78,15 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, duration } = this;
 		const start = performance.now();
-		for ( const item of queued ) {
+		while ( queued.length !== 0 && performance.now() - start < duration ) {
 
-			if ( queued.size === 0 || performance.now() - start > duration ) {
-
-				break;
-
-			}
-
-			queued.delete( item );
+			const item = queued.pop();
+			item.queued = false;
 			this._updateQuery( item );
 
 		}
 
-		if ( queued.size !== 0 ) {
+		if ( queued.length !== 0 ) {
 
 			this._scheduleRun();
 
@@ -112,7 +112,7 @@ export class QueryManager extends EventDispatcher {
 
 	_updateQuery( item ) {
 
-		const { queued, ellipsoid, frame } = this;
+		const { ellipsoid, frame } = this;
 
 		if ( item.ray ) {
 
@@ -128,8 +128,6 @@ export class QueryManager extends EventDispatcher {
 		}
 
 		item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
-		queued.delete( item );
-
 
 	}
 
@@ -150,11 +148,13 @@ export class QueryManager extends EventDispatcher {
 
 	runIfNeeded( index ) {
 
-		const { queued } = this;
-		const item = this.queryMap.get( index );
-		if ( queued.has( item ) ) {
+		const { queryMap, queued } = this;
+		const item = queryMap.get( index );
+		if ( item.queued ) {
 
 			this._updateQuery( item );
+			item.queued = false;
+			queued.splice( queued.indexOf( item ), 1 );
 
 		}
 
@@ -194,6 +194,7 @@ export class QueryManager extends EventDispatcher {
 		const item = {
 			ray: ray.clone(),
 			callback,
+			queued: false,
 		};
 
 		this.queryMap.set( index, item );
@@ -208,6 +209,7 @@ export class QueryManager extends EventDispatcher {
 		const item = {
 			lat, lon,
 			callback,
+			queued: false,
 		};
 
 		this.queryMap.set( index, item );
@@ -220,7 +222,12 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, queryMap } = this;
 		const item = queryMap.get( index );
-		queued.delete( item );
+		if ( item.queued ) {
+
+			item.queued = false;
+			queued.splice( queued.indexOf( item ), 1 );
+
+		}
 
 	}
 
@@ -228,7 +235,7 @@ export class QueryManager extends EventDispatcher {
 	dispose() {
 
 		this.queryMap.clear();
-		this.queued.clear();
+		this.queued.length = 0
 		this.objects.length = 0;
 		this.observer.dispose();
 
