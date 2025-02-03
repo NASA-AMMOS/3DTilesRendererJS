@@ -1,5 +1,4 @@
 import {
-	Ray,
 	Raycaster,
 	Matrix4,
 	EventDispatcher,
@@ -32,6 +31,9 @@ export class QueryManager extends EventDispatcher {
 		this.ellipsoid = new Ellipsoid();
 		this.frame = new Matrix4();
 
+		// cameras for sorting
+		this.cameras = new Set();
+
 		// register to mark items as dirty
 		const queueAll = ( () => {
 
@@ -44,7 +46,6 @@ export class QueryManager extends EventDispatcher {
 					queueMicrotask( () => {
 
 						this.queryMap.forEach( q => this._enqueue( q ) );
-
 						queued = false;
 
 					} );
@@ -132,6 +133,21 @@ export class QueryManager extends EventDispatcher {
 
 	}
 
+	addCamera( camera ) {
+
+		const { queryMap, cameras } = this;
+		cameras.add( camera );
+		queryMap.forEach( o => this._enqueue( o ) );
+
+	}
+
+	deleteCamera( camera ) {
+
+		const { cameras } = this;
+		cameras.delete( camera );
+
+	}
+
 	runIfNeeded( index ) {
 
 		const { queued } = this;
@@ -157,7 +173,7 @@ export class QueryManager extends EventDispatcher {
 
 	setEllipsoidFromTilesRenderer( tilesRenderer ) {
 
-		const { observer, ellipsoid, frame, objects } = this;
+		const { queryMap, ellipsoid, frame } = this;
 		if (
 			! ellipsoid.radius.equals( tilesRenderer.ellipsoid.radius ) ||
 			! frame.equals( tilesRenderer.group.matrixWorld )
@@ -165,8 +181,7 @@ export class QueryManager extends EventDispatcher {
 
 			ellipsoid.copy( tilesRenderer.ellipsoid );
 			frame.copy( tilesRenderer.group.matrixWorld );
-			objects.forEach( o => observer.observe( o ) );
-			this._scheduleRun();
+			queryMap.forEach( o => this._enqueue( o ) );
 
 		}
 
