@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - DeepZoomImage plugin support.
+- R3F: "SettledObject" and "SettledObjects" components.
 
 ### Fixed
 - EnvironmentControls: Fixed circle mesh not hiding when zooming on mobile.
