@@ -451,6 +451,14 @@ readOnly loadProgress : Number
 
 Returns the total load progress between `[0, 1]`. Progress is measured since the last set of loading tiles completed.
 
+### .ellipsoid
+
+```js
+readonly ellipsoid : Ellipsoid
+```
+
+A definition on the ellipsoid used for the tile set. Defaults to the WGS84 ellipsoid and is modified if the `3DTILES_ELLIPSOID` plugin is present.
+
 ### .constructor
 
 ```js
