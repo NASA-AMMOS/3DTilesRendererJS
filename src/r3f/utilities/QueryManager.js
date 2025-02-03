@@ -52,7 +52,7 @@ export class QueryManager extends EventDispatcher {
 					queued = true;
 					queueMicrotask( () => {
 
-						this.queryMap.forEach( q => this._enqueue( q ) );
+						this.queryMap.forEach( item => this._enqueue( item ) );
 						queued = false;
 
 					} );
@@ -160,6 +160,7 @@ export class QueryManager extends EventDispatcher {
 	_updateQuery( item ) {
 
 		_raycaster.ray.copy( item.ray );
+		_raycaster.far = 'lat' in item ? 1e4 + Math.max( ...this.ellipsoid.radius ) : Infinity;
 		item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
 
 	}
