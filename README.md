@@ -457,7 +457,7 @@ Returns the total load progress between `[0, 1]`. Progress is measured since the
 readonly ellipsoid : Ellipsoid
 ```
 
-A definition on the ellipsoid used for the tile set. Defaults to the WGS84 ellipsoid and is modified if the `3DTILES_ELLIPSOID` plugin is present.
+A definition on the ellipsoid used for the tile set. Defaults to the WGS84 ellipsoid and is modified if the `3DTILES_ELLIPSOID` plugin is present. Specified in the local frame of [TilesRenderer.group](#group).
 
 ### .constructor
 
