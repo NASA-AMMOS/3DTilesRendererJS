@@ -30,7 +30,7 @@ export const AnimatedSettledObject = forwardRef( function AnimatedSettledObject(
 
 	const queryCallback = useCallback( hit => {
 
-		if ( tiles === null || hit === null || objectRef.value === null ) {
+		if ( tiles === null || hit === null || objectRef.current === null ) {
 
 			return;
 

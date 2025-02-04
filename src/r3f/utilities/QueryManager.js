@@ -281,6 +281,8 @@ export class QueryManager extends EventDispatcher {
 
 		const { queued, queryMap } = this;
 		const item = queryMap.get( index );
+		queryMap.delete( index );
+
 		if ( item && item.queued ) {
 
 			item.queued = false;
