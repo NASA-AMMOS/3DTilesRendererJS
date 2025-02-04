@@ -14,6 +14,7 @@ const _raycaster = /* @__PURE__ */ new Raycaster();
 const _line0 = /* @__PURE__ */ new Line3();
 const _line1 = /* @__PURE__ */ new Line3();
 const _params = /* @__PURE__ */ new Vector2();
+const _direction = /* @__PURE__ */ new Vector3();
 export class QueryManager extends EventDispatcher {
 
 	constructor() {
@@ -89,8 +90,10 @@ export class QueryManager extends EventDispatcher {
 		// Iterate over all cameras
 		cameras.forEach( camera => {
 
+			_direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+
 			_line0.start.setFromMatrixPosition( camera.matrixWorld );
-			_line0.end.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).add( _line0.start );
+			_line0.end.addVectors( _direction, _line0.start );
 
 			for ( let i = 0, l = queued.length; i < l; i ++ ) {
 
@@ -103,15 +106,10 @@ export class QueryManager extends EventDispatcher {
 				closestPointLineToLine( _line0, _line1, _params );
 
 				// save the values for sorting
-				if ( _params.x < 0 ) {
-
-					info.distance = 1e10 - _params.x;
-
-				} else {
-
-					info.distance = _params.x;
-
-				}
+				// prioritize displaying points that are from rays pointing in the same direction as
+				// the camera.
+				// TODO: might be better to rely on the previous hit point for an update to determine update order
+				info.distance = _params.x * ( 1.0 - Math.abs( _direction.dot( ray.direction ) ) );
 
 			}
 

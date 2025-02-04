@@ -81,6 +81,12 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 	// interpolate the point position
 	useFrame( ( state, delta ) => {
 
+		if ( objectRef.current ) {
+
+			objectRef.current.visible = isInitialized.value;
+
+		}
+
 		if ( objectRef.current && isTargetSet.value ) {
 
 			// jump the point to the target if it's being set for the first time
