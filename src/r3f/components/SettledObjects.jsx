@@ -137,38 +137,22 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 	useEffect( () => {
 
-		if ( lat !== null && lon !== null ) {
+		const callback = hit => {
 
-			const index = queries.registerLatLonQuery( lat, lon, hit => {
+			if ( onQueryUpdate ) {
 
-				if ( onQueryUpdate ) {
+				onQueryUpdate( hit );
 
-					onQueryUpdate( hit );
+			} else if ( tiles && hit !== null && objectRef.current !== null ) {
 
-				} else if ( tiles && hit !== null && objectRef.current !== null ) {
+				if ( lat !== null && lon !== null ) {
 
 					objectRef.current.position.copy( hit.point );
 					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 					objectRef.current.quaternion.setFromRotationMatrix( _matrix );
 					invalidate();
 
-				}
-
-			} );
-
-			return () => queries.unregisterQuery( index );
-
-		} else if ( rayorigin !== null && raydirection !== null ) {
-
-			_ray.origin.copy( rayorigin );
-			_ray.direction.copy( raydirection );
-			const index = queries.registerRayQuery( _ray, hit => {
-
-				if ( onQueryUpdate ) {
-
-					onQueryUpdate( hit );
-
-				} else if ( hit !== null && objectRef.current !== null ) {
+				} else if ( rayorigin !== null && raydirection !== null ) {
 
 					objectRef.current.position.copy( hit.point );
 					objectRef.current.quaternion.identity();
@@ -176,8 +160,20 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 				}
 
-			} );
+			}
 
+		};
+
+		if ( lat !== null && lon !== null ) {
+
+			const index = queries.registerLatLonQuery( lat, lon, callback );
+			return () => queries.unregisterQuery( index );
+
+		} else if ( rayorigin !== null && raydirection !== null ) {
+
+			_ray.origin.copy( rayorigin );
+			_ray.direction.copy( raydirection );
+			const index = queries.registerRayQuery( _ray, callback );
 			return () => queries.unregisterQuery( index );
 
 		}
