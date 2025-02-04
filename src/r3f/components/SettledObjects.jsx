@@ -1,4 +1,4 @@
-import { cloneElement, createContext, forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
+import { cloneElement, createContext, forwardRef, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { QueryManager } from '../utilities/QueryManager.js';
@@ -9,74 +9,60 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 const QueryManagerContext = createContext( null );
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _ray = /* @__PURE__ */ new Ray();
 
-// Object that updates its "settled" state
-export const SettledObject = forwardRef( function SettledObject( props, ref ) {
+export const AnimatedSettledObject = forwardRef( function AnimatedSettledObject( props, ref ) {
 
 	const {
-		component = <group />,
 		interpolationFactor = 0.025,
-		lat = null,
-		lon = null,
-		rayorigin = null,
-		raydirection = null,
+		onQueryUpdate = null,
 		...rest
 	} = props;
 
-	const objectRef = useRef( null );
 	const tiles = useContext( TilesRendererContext );
 	const queries = useContext( QueryManagerContext );
 	const invalidate = useThree( ( { invalidate } ) => invalidate );
 	const target = useMemo( () => new Vector3(), [] );
 	const isInitialized = useMemo( () => ( { value: false } ), [] );
 	const isTargetSet = useMemo( () => ( { value: false } ), [] );
+	const objectRef = useRef( null );
 
-	useEffect( () => {
+	const queryCallback = useCallback( hit => {
 
-		if ( lat !== null && lon !== null ) {
+		if ( tiles === null || hit === null || objectRef.value === null ) {
 
-			const matrix = new Matrix4();
-			const index = queries.registerLatLonQuery( lat, lon, hit => {
-
-				if ( tiles && hit !== null && objectRef.current !== null ) {
-
-					target.copy( hit.point );
-					isTargetSet.value = true;
-
-					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
-					objectRef.current.quaternion.setFromRotationMatrix( matrix );
-					invalidate();
-
-				}
-
-			} );
-
-			return () => queries.unregisterQuery( index );
-
-		} else if ( rayorigin !== null && raydirection !== null ) {
-
-			const ray = new Ray();
-			ray.origin.copy( rayorigin );
-			ray.direction.copy( raydirection );
-			const index = queries.registerRayQuery( ray, hit => {
-
-				if ( hit !== null && objectRef.current !== null ) {
-
-					target.copy( hit.point );
-					isTargetSet.value = true;
-
-					objectRef.current.quaternion.identity();
-					invalidate();
-
-				}
-
-			} );
-
-			return () => queries.unregisterQuery( index );
+			return;
 
 		}
 
-	}, [ lat, lon, rayorigin, raydirection, queries, tiles, invalidate, target, isTargetSet ] );
+		const { lat, lon, rayorigin, raydirection } = rest;
+		if ( lat !== null && lon !== null ) {
+
+			target.copy( hit.point );
+			isTargetSet.value = true;
+
+			queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
+			objectRef.current.quaternion.setFromRotationMatrix( _matrix );
+			invalidate();
+
+		} else if ( rayorigin !== null && raydirection !== null ) {
+
+			target.copy( hit.point );
+			isTargetSet.value = true;
+
+			objectRef.current.quaternion.identity();
+			invalidate();
+
+		}
+
+		if ( onQueryUpdate ) {
+
+			onQueryUpdate( hit );
+
+		}
+
+	}, [ invalidate, isTargetSet, queries.ellipsoid, rest, target, tiles, onQueryUpdate ] );
 
 	// interpolate the point position
 	useFrame( ( state, delta ) => {
@@ -117,8 +103,86 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 		}
 
-
 	} );
+
+	return (
+		<SettledObject
+			ref={ useMultipleRefs( objectRef, ref ) }
+			onQueryUpdate={ queryCallback }
+			{ ...rest }
+		/>
+	);
+
+} );
+
+// Object that updates its "settled" state
+export const SettledObject = forwardRef( function SettledObject( props, ref ) {
+
+	const {
+		component = <group />,
+		lat = null,
+		lon = null,
+		rayorigin = null,
+		raydirection = null,
+		onQueryUpdate = null,
+
+		...rest
+	} = props;
+
+	const objectRef = useRef( null );
+	const tiles = useContext( TilesRendererContext );
+	const queries = useContext( QueryManagerContext );
+	const invalidate = useThree( ( { invalidate } ) => invalidate );
+	const target = useMemo( () => new Vector3(), [] );
+
+	useEffect( () => {
+
+		if ( lat !== null && lon !== null ) {
+
+			const index = queries.registerLatLonQuery( lat, lon, hit => {
+
+				if ( onQueryUpdate ) {
+
+					onQueryUpdate( hit );
+
+				} else if ( tiles && hit !== null && objectRef.current !== null ) {
+
+					objectRef.current.position.copy( hit.point );
+					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
+					objectRef.current.quaternion.setFromRotationMatrix( _matrix );
+					invalidate();
+
+				}
+
+			} );
+
+			return () => queries.unregisterQuery( index );
+
+		} else if ( rayorigin !== null && raydirection !== null ) {
+
+			_ray.origin.copy( rayorigin );
+			_ray.direction.copy( raydirection );
+			const index = queries.registerRayQuery( _ray, hit => {
+
+				if ( onQueryUpdate ) {
+
+					onQueryUpdate( hit );
+
+				} else if ( hit !== null && objectRef.current !== null ) {
+
+					objectRef.current.position.copy( hit.point );
+					objectRef.current.quaternion.identity();
+					invalidate();
+
+				}
+
+			} );
+
+			return () => queries.unregisterQuery( index );
+
+		}
+
+	}, [ lat, lon, rayorigin, raydirection, queries, tiles, invalidate, target, onQueryUpdate ] );
 
 	return cloneElement( component, { ...rest, ref: useMultipleRefs( objectRef, ref ), raycast: () => false } );
 

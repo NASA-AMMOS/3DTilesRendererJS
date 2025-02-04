@@ -8,8 +8,8 @@ import {
 	TilesAttributionOverlay,
 	GlobeControls,
 	CompassGizmo,
-	SettledObject,
-	SettledObjects
+	SettledObjects,
+	AnimatedSettledObject,
 } from '3d-tiles-renderer/r3f';
 
 // Plugins
@@ -61,7 +61,7 @@ function Pin( props ) {
 	} );
 
 	return (
-		<SettledObject ref={ ref } { ...props }>
+		<AnimatedSettledObject ref={ ref } { ...props }>
 			<mesh position-y={ 1.25 } scale={ 0.5 }>
 				<sphereGeometry />
 				<meshStandardMaterial color={ 0xf44336 } emissive={ 0xf44336 } emissiveIntensity={ 0.25 } />
@@ -70,7 +70,7 @@ function Pin( props ) {
 				<cylinderGeometry />
 				<meshStandardMaterial color={ 0xf44336 } emissive={ 0xf44336 } emissiveIntensity={ 0.25 } />
 			</mesh>
-		</SettledObject>
+		</AnimatedSettledObject>
 	);
 
 }
