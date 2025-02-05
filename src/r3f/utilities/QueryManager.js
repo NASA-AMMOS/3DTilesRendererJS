@@ -100,16 +100,23 @@ export class QueryManager extends EventDispatcher {
 				const info = queued[ i ];
 				const { ray } = info;
 
-				// find the distance between camera ray and projection ray
-				_line1.start.copy( ray.origin );
-				ray.at( 1, _line1.end );
-				closestPointLineToLine( _line0, _line1, _params );
-
 				// save the values for sorting
-				// prioritize displaying points that are from rays pointing in the same direction as
-				// the camera.
-				// TODO: might be better to rely on the previous hit point for an update to determine update order
-				info.distance = _params.x * ( 1.0 - Math.abs( _direction.dot( ray.direction ) ) );
+				if ( info.point === null ) {
+
+					// prioritize displaying points that are from rays pointing in the same direction as
+					// the camera. Find the distance between camera ray and projection ray:
+					_line1.start.copy( ray.origin );
+					ray.at( 1, _line1.end );
+					closestPointLineToLine( _line0, _line1, _params );
+
+					info.distance = _params.x * ( 1.0 - Math.abs( _direction.dot( ray.direction ) ) );
+
+				} else {
+
+					// calculate the distance to the last hit point
+					info.distance = _line1.start.subVectors( info.point, _line0.start ).dot( _direction );
+
+				}
 
 			}
 
@@ -118,7 +125,23 @@ export class QueryManager extends EventDispatcher {
 		// sort the items if necessary
 		if ( cameras.length !== 0 ) {
 
-			queued.sort( ( a, b ) => b.distance - a.distance );
+			queued.sort( ( a, b ) => {
+
+				if ( ( a.point === null ) !== ( b.point === null ) ) {
+
+					return a.point === null ? 1 : - 1;
+
+				} else if ( ( a.distance < 0 ) !== ( b.distance < 0 ) ) {
+
+					return a.distance < 0 ? - 1 : 1;
+
+				} else {
+
+					return b.distance - a.distance;
+
+				}
+
+			} );
 
 		}
 
@@ -159,7 +182,24 @@ export class QueryManager extends EventDispatcher {
 
 		_raycaster.ray.copy( item.ray );
 		_raycaster.far = 'lat' in item ? 1e4 + Math.max( ...this.ellipsoid.radius ) : Infinity;
-		item.callback( _raycaster.intersectObjects( this.objects )[ 0 ] || null );
+
+		// save the last hit point for sorting
+		const hit = _raycaster.intersectObjects( this.objects )[ 0 ] || null;
+		if ( hit !== null ) {
+
+			if ( item.point === null ) {
+
+				item.point = hit.point.clone();
+
+			} else {
+
+				item.point.copy( hit.point );
+
+			}
+
+		}
+
+		item.callback( hit );
 
 	}
 
@@ -246,6 +286,7 @@ export class QueryManager extends EventDispatcher {
 			callback,
 			queued: false,
 			distance: - 1,
+			point: null,
 		};
 
 		this.queryMap.set( index, item );
@@ -269,6 +310,7 @@ export class QueryManager extends EventDispatcher {
 			callback,
 			queued: false,
 			distance: - 1,
+			point: null,
 		};
 
 		this.queryMap.set( index, item );
