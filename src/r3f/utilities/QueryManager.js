@@ -15,6 +15,7 @@ const _line0 = /* @__PURE__ */ new Line3();
 const _line1 = /* @__PURE__ */ new Line3();
 const _params = /* @__PURE__ */ new Vector2();
 const _direction = /* @__PURE__ */ new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
 export class QueryManager extends EventDispatcher {
 
 	constructor() {
@@ -88,8 +89,9 @@ export class QueryManager extends EventDispatcher {
 		const start = performance.now();
 
 		// Iterate over all cameras
-		cameras.forEach( camera => {
+		cameras.forEach( ( camera, c ) => {
 
+			_matrix.copy( camera.matrixWorldInverse ).premultiply( camera.projectionMatrix );
 			_direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 
 			_line0.start.setFromMatrixPosition( camera.matrixWorld );
@@ -101,6 +103,8 @@ export class QueryManager extends EventDispatcher {
 				const { ray } = info;
 
 				// save the values for sorting
+				let distance;
+				let inFrustum;
 				if ( info.point === null ) {
 
 					// prioritize displaying points that are from rays pointing in the same direction as
@@ -110,11 +114,37 @@ export class QueryManager extends EventDispatcher {
 					closestPointLineToLine( _line0, _line1, _params );
 
 					info.distance = _params.x * ( 1.0 - Math.abs( _direction.dot( ray.direction ) ) );
+					info.inFrustum = true;
 
 				} else {
 
-					// calculate the distance to the last hit point
-					info.distance = _line1.start.subVectors( info.point, _line0.start ).dot( _direction );
+					// if the point is within the frustum then prioritize it
+					const p = _line1.start;
+					p.copy( info.point ).applyMatrix4( _matrix );
+					if ( p.x > - 1 && p.x < 1 && p.y > - 1 && p.y < 1 && p.z > - 1 && p.z < 1 ) {
+
+						// calculate the distance to the last hit point
+						info.distance = p.subVectors( info.point, _line0.start ).dot( _direction );
+						info.inFrustum = true;
+
+					} else {
+
+						info.distance = 0;
+						info.inFrustum = false;
+
+					}
+
+				}
+
+				if ( c === 0 ) {
+
+					info.distance = distance;
+					info.inFrustum = inFrustum;
+
+				} else {
+
+					info.inFrustum = info.inFrustum || inFrustum;
+					info.distance = Math.min( info.distance, distance );
 
 				}
 
@@ -130,6 +160,10 @@ export class QueryManager extends EventDispatcher {
 				if ( ( a.point === null ) !== ( b.point === null ) ) {
 
 					return a.point === null ? 1 : - 1;
+
+				} else if ( a.inFrustum !== b.inFrustum ) {
+
+					return a.inFrustum ? 1 : - 1;
 
 				} else if ( ( a.distance < 0 ) !== ( b.distance < 0 ) ) {
 
