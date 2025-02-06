@@ -121,7 +121,7 @@ export class XYZTilesPlugin {
 			geometricError2: pixelSize * ( ( ( maxZoom + 1 ) / ( depth + 1 ) ) - 1 ),
 			geometricError: pixelSize * ( ( fullSize / depthSize ) - 1 ),
 			boundingVolume: {
-				// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
+				// XYZ operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
 				// is also enabled on the image bitmap texture generation above.
 				box: [
 					// center
