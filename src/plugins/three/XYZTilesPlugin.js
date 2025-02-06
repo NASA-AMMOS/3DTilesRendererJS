@@ -1,3 +1,4 @@
+import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
 
 // TODO: reuse functionality between DZI and this plugin
 export class XYZTilesPlugin {
@@ -5,8 +6,7 @@ export class XYZTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-			minZoom = 0,
-			maxZoom = 19,
+			maxZoom = 3,
 			pixelSize = 0.01,
 			center = false,
 		} = options;
@@ -15,7 +15,6 @@ export class XYZTilesPlugin {
 		this.priority = - 10;
 		this.tiles = null;
 
-		this.minZoom = minZoom;
 		this.maxZoom = maxZoom;
 		this.pixelSize = pixelSize,
 		this.center = center;
@@ -28,9 +27,38 @@ export class XYZTilesPlugin {
 
 	}
 
-	loadRootTileSet() {
+	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
-		const { center, tiles, minZoom, maxZoom, pixelSize } = this;
+		// Construct texture
+		const blob = new Blob( [ buffer ] );
+		const imageBitmap = await createImageBitmap( blob, {
+			premultiplyAlpha: 'none',
+			colorSpaceConversion: 'none',
+			imageOrientation: 'flipY',
+		} );
+		const texture = new Texture( imageBitmap );
+		texture.generateMipmaps = false;
+		texture.colorSpace = SRGBColorSpace;
+		texture.needsUpdate = true;
+
+		// Construct mesh
+		const mesh = new Mesh( new PlaneGeometry(), new MeshBasicMaterial( { map: texture } ) );
+		const boundingBox = tile.boundingVolume.box;
+		const [ x, y, z ] = boundingBox;
+		const sx = boundingBox[ 3 ];
+		const sy = boundingBox[ 7 ];
+
+		mesh.position.set( x, y, z );
+		mesh.scale.set( 2 * sx, 2 * sy, 1 );
+
+		return mesh;
+
+	}
+
+
+	async loadRootTileSet() {
+
+		const { center, tiles, maxZoom, pixelSize } = this;
 
 		// transform the url
 		let url = tiles.rootURL;
@@ -65,15 +93,12 @@ export class XYZTilesPlugin {
 						0.0, 0.0, 0,
 					],
 				},
+				content: {
+					uri: url.replace( '{z}', depth ).replace( '{x}', x ).replace( '{y}', y ),
+				},
 				children: [],
 
 			};
-
-			if ( depth >= minZoom ) {
-
-				node.content = { uri: url.replace( '{z}', depth ).replace( '{x}', x ).replace( '{y}', y ) };
-
-			}
 
 			if ( depth < maxZoom ) {
 
@@ -88,6 +113,8 @@ export class XYZTilesPlugin {
 				}
 
 			}
+
+			return node;
 
 		}
 
