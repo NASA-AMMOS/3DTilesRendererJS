@@ -6,8 +6,9 @@ export class XYZTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-			maxZoom = 3,
-			pixelSize = 0.01,
+			maxZoom = 19,
+			pixelSize = 0.00001,
+			tileDimension = 256,
 			center = false,
 		} = options;
 
@@ -15,9 +16,12 @@ export class XYZTilesPlugin {
 		this.priority = - 10;
 		this.tiles = null;
 
+		this.tileDimension = tileDimension;
 		this.maxZoom = maxZoom;
 		this.pixelSize = pixelSize,
 		this.center = center;
+
+		this._url = null;
 
 	}
 
@@ -42,7 +46,7 @@ export class XYZTilesPlugin {
 		texture.needsUpdate = true;
 
 		// Construct mesh
-		const mesh = new Mesh( new PlaneGeometry(), new MeshBasicMaterial( { map: texture } ) );
+		const mesh = new Mesh( new PlaneGeometry(), new MeshBasicMaterial( { map: texture, side: 2 } ) );
 		const boundingBox = tile.boundingVolume.box;
 		const [ x, y, z ] = boundingBox;
 		const sx = boundingBox[ 3 ];
@@ -55,68 +59,92 @@ export class XYZTilesPlugin {
 
 	}
 
-
 	async loadRootTileSet() {
 
-		const { center, tiles, maxZoom, pixelSize } = this;
+		const { tiles } = this;
 
 		// transform the url
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 
-		const TILE_DIM = 256;
-		const centerOffset = center ? pixelSize * - maxZoom * TILE_DIM / 2 : 0;
-		const fullSize = TILE_DIM * ( 2 ** maxZoom );
+		this._url = url;
+		const tileset = {
+			asset: {
+				version: '1.1'
+			},
+			geometricError: 1e5,
+			root: this.expandNode( 0, 0, 0 ),
+		};
 
-		return expand( 0, 0, 0 );
+		tiles.preprocessTileSet( tileset, url );
 
-		function expand( depth, x, y ) {
+		return tileset;
 
-			const tileSize = fullSize * ( 2 ** - ( maxZoom - depth ) );
-			const ratio = fullSize / tileSize;
-			const centerX = tileSize * x + TILE_DIM / 2;
-			const centerY = tileSize * y + TILE_DIM / 2;
+	}
 
-			const node = {
-				refine: 'REPLACE',
-				geometricError: pixelSize * ( ( ( maxZoom + 1 ) / ( depth + 1 ) ) - 1 ),
-				boundingVolume: {
-					// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
-					// is also enabled on the image bitmap texture generation above.
-					box: [
-						// center
-						ratio * pixelSize * centerX + centerOffset, ratio * - pixelSize * centerY - centerOffset, 0,
+	// TODO: this expansion can be very slow at lower depths
+	preprocessNode( tile, dir, parentTile ) {
 
-						// x, y, z half vectors
-						pixelSize * tileSize / 2, 0.0, 0.0,
-						0.0, pixelSize * tileSize / 2, 0.0,
-						0.0, 0.0, 0,
-					],
-				},
-				content: {
-					uri: url.replace( '{z}', depth ).replace( '{x}', x ).replace( '{y}', y ),
-				},
-				children: [],
+		const { maxZoom } = this;
+		const depth = tile.__z;
+		const x = tile.__x;
+		const y = tile.__y;
+		if ( depth < maxZoom ) {
 
-			};
+			for ( let cx = 0; cx < 2; cx ++ ) {
 
-			if ( depth < maxZoom ) {
+				for ( let cy = 0; cy < 2; cy ++ ) {
 
-				for ( let cx = 0; cx < 2; cx ++ ) {
-
-					for ( let cy = 0; cy < 2; cy ++ ) {
-
-						node.children.push( expand( depth + 1, 2 * x + cx, 2 * y + cy ) );
-
-					}
+					tile.children.push( this.expandNode( depth + 1, 2 * x + cx, 2 * y + cy ) );
 
 				}
 
 			}
 
-			return node;
-
 		}
+
+	}
+
+	expandNode( depth, x, y ) {
+
+		const { center, maxZoom, pixelSize, tileDimension, _url: url } = this;
+
+		const fullSize = tileDimension * ( 2 ** maxZoom );
+		const centerOffset = center ? pixelSize * - fullSize / 2 : 0;
+		const depthSize = fullSize * ( 2 ** - ( maxZoom - depth ) );
+		const ratio = fullSize / depthSize;
+		const centerX = tileDimension * x + tileDimension / 2;
+		const centerY = tileDimension * y + tileDimension / 2;
+
+		const node = {
+			refine: 'REPLACE',
+			geometricError2: pixelSize * ( ( ( maxZoom + 1 ) / ( depth + 1 ) ) - 1 ),
+			geometricError: pixelSize * ( ( fullSize / depthSize ) - 1 ),
+			boundingVolume: {
+				// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
+				// is also enabled on the image bitmap texture generation above.
+				box: [
+					// center
+					ratio * pixelSize * centerX + centerOffset, ratio * - pixelSize * centerY - centerOffset, 0,
+
+					// x, y, z half vectors
+					ratio * pixelSize * tileDimension / 2, 0.0, 0.0,
+					0.0, ratio * pixelSize * tileDimension / 2, 0.0,
+					0.0, 0.0, 0,
+				],
+			},
+			content: {
+				uri: url.replace( '{z}', depth ).replace( '{x}', x ).replace( '{y}', y ),
+			},
+			children: [],
+
+			__x: x,
+			__y: y,
+			__z: depth,
+
+		};
+
+		return node;
 
 	}
 
