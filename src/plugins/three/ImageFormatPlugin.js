@@ -17,12 +17,16 @@ class ImageFormatPlugin {
 		this.priority = - 10;
 		this.tiles = null;
 
+		// tile dimensions in pixels
 		this.tileWidth = null;
 		this.tileHeight = null;
+
+		// full image dimensions in pixels
 		this.width = null;
 		this.height = null;
 		this.levels = null;
-		this.maxZoom = Infinity;
+
+		// amount of pixel overlap between tiles
 		this.overlap = 0;
 		this.pixelSize = pixelSize;
 		this.center = center;
@@ -39,12 +43,11 @@ class ImageFormatPlugin {
 	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
 		// Construct texture
-		const { flipY } = this;
 		const blob = new Blob( [ buffer ] );
 		const imageBitmap = await createImageBitmap( blob, {
 			premultiplyAlpha: 'none',
 			colorSpaceConversion: 'none',
-			imageOrientation: flipY ? 'flipY' : 'from-image',
+			imageOrientation: 'flipY',
 		} );
 		const texture = new Texture( imageBitmap );
 		texture.generateMipmaps = false;
@@ -174,8 +177,8 @@ class ImageFormatPlugin {
 		const ratioY = height / levelHeight;
 		const flipFactor = flipY ? - 1 : 1;
 
-		// Generate the root node
 		return {
+		// Generate the node
 			refine: 'REPLACE',
 			geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
 			boundingVolume: {
@@ -253,6 +256,119 @@ export class XYZTilesPlugin extends ImageFormatPlugin {
 
 }
 
+// TODO
+// - fix 3827
+// - fix bing maps
+// - fix sentinal-2 data set
+
+// Support for TMS tiles
+// https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
+export class TMSTilesPlugin extends ImageFormatPlugin {
+
+	constructor( ...args ) {
+
+		super( ...args );
+
+		this.name = 'TMS_TILES_PLUGIN';
+		this.flipY = false;
+		this.url = null;
+		this.extension = null;
+
+	}
+
+	loadRootTileSet() {
+
+		const url = new URL( 'tilemapresource.xml', this.tiles.rootURL ).toString();
+		return this.tiles
+			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
+			.then( res => res.text() )
+			.then( text => {
+
+				// TODO: "unitsPerPixel" may not be necessary
+				const xml = new DOMParser().parseFromString( text, 'text/xml' );
+				const boundingBox = xml.querySelector( 'BoundingBox' );
+				const origin = xml.querySelector( 'Origin' );
+				const tileFormat = xml.querySelector( 'TileFormat' );
+				const tileSets = xml.querySelector( 'TileSets' );
+				const tileSetList = [ ...tileSets.querySelectorAll( 'TileSet' ) ]
+					.map( ts => ( {
+						href: parseInt( ts.getAttribute( 'href' ) ),
+						unitsPerPixel: parseFloat( ts.getAttribute( 'units-per-pixel' ) ),
+						order: parseInt( ts.getAttribute( 'order' ) ),
+					} ) )
+					.sort( ( a, b ) => {
+
+						return a.order - b.order;
+
+					} );
+
+				// the extents of the tile set in lat / lon
+				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
+				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
+				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
+				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
+				const width = maxX - minX;
+				const height = maxY - minY;
+
+				// origin in lat / lon
+				const x = parseFloat( origin.getAttribute( 'x' ) );
+				const y = parseFloat( origin.getAttribute( 'y' ) );
+
+				// image dimensions in pixels
+				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
+				const tileHeight = parseInt( tileFormat.getAttribute( 'height' ) );
+				const extension = tileFormat.getAttribute( 'extension' );
+
+				const profile = tileSets.getAttribute( 'profile' );
+				const srs = xml.querySelector( 'SRS' ).textContent;
+
+				// if ( srs !== 'EPSG:3857' ) {
+
+				// 	// EPSG:4326
+				// 	throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
+
+				// }
+
+				// if ( profile !== 'mercator' && profile !== 'global-mercator' ) {
+
+				// 	// 'geodetic', 'global-geodetic'
+				// 	throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
+
+				// }
+
+				// TODO: need to account for these values (origin and min values) when generating ellipsoid
+				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
+				// used for overlays.
+				this.originX = x;
+				this.originY = y;
+				this.minX = minX;
+				this.minY = minY;
+
+				const levels = 1; //tileSetList.length - 1;
+				this.extension = extension;
+				this.width = tileWidth * ( 2 ** levels );
+				this.height = tileHeight * ( 2 ** levels );
+				this.tileWidth = tileWidth;
+				this.tileHeight = tileHeight;
+				this.levels = levels;
+				this.url = this.tiles.rootURL;
+				this.tileSets = tileSetList;
+
+				return this.getTileset( url );
+
+			} );
+
+	}
+
+	getUrl( level, x, y ) {
+
+		const { url, extension, tileSets } = this;
+		return new URL( `${ tileSets[ level ].href }/${ x }/${ y }.${ extension }`, url ).toString();
+
+	}
+
+}
+
 // Support for Deep Zoom Image format
 // https://openseadragon.github.io/
 // https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)
@@ -288,7 +404,7 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 		// can be immediately queried without any hierarchy traversal. Due the flexibility of camera
 		// type, rotation, and per-tile error calculation we generate a hierarchy.
 		return tiles
-			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.fetchOptions ) )
+			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
 			.then( res => res.text() )
 			.then( text => {
 
