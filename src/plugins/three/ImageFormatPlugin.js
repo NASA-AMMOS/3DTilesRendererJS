@@ -458,7 +458,7 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	getUrl( level, x, y ) {
 
 		const { url, extension, tileSets } = this;
-		return new URL( `${ parseInt( tileSets[ level ].href ) + 3 }/${ x }/${ y }.${ extension }`, url ).toString();
+		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
 
 	}
 
