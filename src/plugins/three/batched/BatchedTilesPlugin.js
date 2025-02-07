@@ -214,6 +214,8 @@ export class BatchedTilesPlugin {
 				magFilter: arrayTarget.texture.magFilter,
 			};
 
+			console.log( arrayTarget.width, arrayTarget.height );
+
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, targetDepth );
 			Object.assign( newArrayTarget.texture, textureOptions );
 

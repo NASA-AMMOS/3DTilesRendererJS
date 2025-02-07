@@ -11,7 +11,7 @@ export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin';
 export * from './three/DebugTilesPlugin';
 
 // other formats
-export { DeepZoomImagePlugin } from './three/DeepZoomImagePlugin';
+export * from './three/ImageFormatPlugin';
 
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin';
