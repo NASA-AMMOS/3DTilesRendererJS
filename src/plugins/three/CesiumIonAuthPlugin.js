@@ -34,12 +34,16 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	loadRootTileSet( ...args ) {
+	loadRootTileSet() {
 
 		// ensure we have an up-to-date token and root url, then trigger the internal
 		// root tile set load function
 		return this._refreshToken()
-			.then( () => this.tiles.loadRootTileSet( this.tiles.rootURL ) );
+			.then( () => {
+
+				return this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.loadRootTileSet && plugin.loadRootTileSet() );
+
+			} );
 
 	}
 
