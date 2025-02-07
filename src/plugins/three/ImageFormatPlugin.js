@@ -1,4 +1,5 @@
 import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -261,9 +262,30 @@ class ImageFormatPlugin {
 
 }
 
+class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
+
+	constructor( options = {} ) {
+
+		const {
+			shape = 'planar',
+			...rest
+		} = options;
+
+		super( rest );
+
+		this.shape = shape;
+		this.minLat = - Math.PI / 2;
+		this.maxLat = Math.PI / 2;
+		this.minLon = - Math.PI;
+		this.maxLon = Math.PI;
+
+	}
+
+}
+
 // Support for XYZ / Slippy tile systems
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-export class XYZTilesPlugin extends ImageFormatPlugin {
+export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	constructor( options = {} ) {
 
@@ -311,11 +333,10 @@ export class XYZTilesPlugin extends ImageFormatPlugin {
 // TODO
 // - fix 3827
 // - fix bing maps
-// - fix sentinal-2 data set
 
 // Support for TMS tiles
 // https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
-export class TMSTilesPlugin extends ImageFormatPlugin {
+export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	constructor( ...args ) {
 
@@ -336,9 +357,8 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
-				// TODO: "unitsPerPixel" may not be necessary
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				// const boundingBox = xml.querySelector( 'BoundingBox' );
+				const boundingBox = xml.querySelector( 'BoundingBox' );
 				// const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
 				const tileSets = xml.querySelector( 'TileSets' );
@@ -357,13 +377,13 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 				// TODO: need to account for these values (origin and min values) when generating ellipsoid
 				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
 				// used for overlays.
+				// TODO: the origin can be outside the box bounds and result in negative values for tiles. The tile coordinates
+				// may need to account for this origin positioning - ie they may not start at 0, 0?
 				// the extents of the tile set in lat / lon
-				// const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				// const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				// const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				// const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
-				// const width = maxX - minX;
-				// const height = maxY - minY;
+				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
+				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
+				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
+				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
 
 				// origin in lat / lon
 				// const x = parseFloat( origin.getAttribute( 'x' ) );
@@ -375,30 +395,40 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 				const extension = tileFormat.getAttribute( 'extension' );
 
 				const profile = tileSets.getAttribute( 'profile' );
-				// const srs = xml.querySelector( 'SRS' ).textContent;
+				const srs = xml.querySelector( 'SRS' ).textContent;
 
-				// if ( srs !== 'EPSG:3857' ) {
+				const ellipsoid = this.tiles.ellipsoid;
+				switch ( srs ) {
 
-				// 	// EPSG:4326
-				// 	throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
+					// web-mercator spherical projection
+					case 'EPSG:3857':
+						ellipsoid.radius.setScalar( WGS84_ELLIPSOID.radius.x );
+						break;
+					case 'EPSG:4326':
+						ellipsoid.copy( WGS84_ELLIPSOID );
+						break;
+					default:
+						throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
 
-				// }
-
-				// if ( profile !== 'mercator' && profile !== 'global-mercator' ) {
-
-				// 	// 'geodetic', 'global-geodetic'
-				// 	throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
-
-				// }
+				}
 
 				// TODO: global-geodetic seems to require two horizontal root tiles. Is hardcoding the right way?
 				let widthMultiplier = 1;
-				// let heightMultiplier = 1;
+				let heightMultiplier = 1;
 				switch ( profile ) {
 
+					case 'geodetic':
 					case 'global-geodetic':
 						widthMultiplier = 2;
+						heightMultiplier = 1;
 						break;
+					case 'mercator':
+					case 'global-mercator':
+						break;
+					case 'local':
+					case 'none':
+					default:
+						throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
 
 				}
 
@@ -406,12 +436,18 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 				const maxLevel = levels - 1;
 				this.extension = extension;
 				this.width = widthMultiplier * tileWidth * ( 2 ** maxLevel );
-				this.height = tileHeight * ( 2 ** maxLevel );
+				this.height = heightMultiplier * tileHeight * ( 2 ** maxLevel );
 				this.tileWidth = tileWidth;
 				this.tileHeight = tileHeight;
 				this.levels = levels;
 				this.url = this.tiles.rootURL;
 				this.tileSets = tileSetList;
+
+				// ellipsoid projection data
+				this.minLat = minY;
+				this.maxLat = maxY;
+				this.minLon = minX;
+				this.maxLon = maxX;
 
 				return this.getTileset( url );
 
@@ -422,7 +458,7 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 	getUrl( level, x, y ) {
 
 		const { url, extension, tileSets } = this;
-		return new URL( `${ tileSets[ level ].href }/${ x }/${ y }.${ extension }`, url ).toString();
+		return new URL( `${ parseInt( tileSets[ level ].href ) + 3 }/${ x }/${ y }.${ extension }`, url ).toString();
 
 	}
 
