@@ -108,8 +108,54 @@ class ImageFormatPlugin {
 				version: '1.1'
 			},
 			geometricError: 1e5,
-			root: this.expand( 0, 0, 0 ),
+			root: {
+				refine: 'REPLACE',
+				geometricError: 1e5,
+				boundingVolume: {},
+				children: [],
+			}
 		};
+
+		const { maxLevel, width, height, tileWidth, tileHeight } = this;
+		const levelFactor = 2 ** - maxLevel;
+		const tilesX = Math.ceil( levelFactor * width / tileWidth );
+		const tilesY = Math.ceil( levelFactor * height / tileHeight );
+
+		// generate all children for the root and construct a merged bounding box
+		let minX = Infinity;
+		let maxX = - Infinity;
+		let minY = Infinity;
+		let maxY = - Infinity;
+		for ( let x = 0; x < tilesX; x ++ ) {
+
+			for ( let y = 0; y < tilesY; y ++ ) {
+
+				const child = this.expand( 0, x, y );
+				tileset.root.children.push( child );
+
+				const { box } = child.boundingVolume;
+				const [ cx, cy ] = box;
+				const hx = box[ 4 ];
+				const hy = box[ 8 ];
+
+				minX = Math.min( minX, cx - hx );
+				maxX = Math.max( maxX, cx + hx );
+
+				minY = Math.min( minY, cy - hy );
+				maxY = Math.max( maxY, cy + hy );
+
+			}
+
+		}
+
+		const bw = maxX - minX;
+		const bh = maxY - minY;
+		tileset.root.boundingVolume.box = [
+			minX + bw / 2, minY + bh / 2, 0,
+			bw / 2, 0, 0,
+			0, bh / 2, 0,
+			0, 0, 0,
+		];
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
@@ -292,8 +338,8 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 
 				// TODO: "unitsPerPixel" may not be necessary
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				const boundingBox = xml.querySelector( 'BoundingBox' );
-				const origin = xml.querySelector( 'Origin' );
+				// const boundingBox = xml.querySelector( 'BoundingBox' );
+				// const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
 				const tileSets = xml.querySelector( 'TileSets' );
 				const tileSetList = [ ...tileSets.querySelectorAll( 'TileSet' ) ]
@@ -308,17 +354,20 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 
 					} );
 
+				// TODO: need to account for these values (origin and min values) when generating ellipsoid
+				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
+				// used for overlays.
 				// the extents of the tile set in lat / lon
-				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
-				const width = maxX - minX;
-				const height = maxY - minY;
+				// const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
+				// const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
+				// const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
+				// const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
+				// const width = maxX - minX;
+				// const height = maxY - minY;
 
 				// origin in lat / lon
-				const x = parseFloat( origin.getAttribute( 'x' ) );
-				const y = parseFloat( origin.getAttribute( 'y' ) );
+				// const x = parseFloat( origin.getAttribute( 'x' ) );
+				// const y = parseFloat( origin.getAttribute( 'y' ) );
 
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
@@ -326,7 +375,7 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 				const extension = tileFormat.getAttribute( 'extension' );
 
 				const profile = tileSets.getAttribute( 'profile' );
-				const srs = xml.querySelector( 'SRS' ).textContent;
+				// const srs = xml.querySelector( 'SRS' ).textContent;
 
 				// if ( srs !== 'EPSG:3857' ) {
 
@@ -342,18 +391,21 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 
 				// }
 
-				// TODO: need to account for these values (origin and min values) when generating ellipsoid
-				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
-				// used for overlays.
-				this.originX = x;
-				this.originY = y;
-				this.minX = minX;
-				this.minY = minY;
+				// TODO: global-geodetic seems to require two horizontal root tiles. Is hardcoding the right way?
+				let widthMultiplier = 1;
+				// let heightMultiplier = 1;
+				switch ( profile ) {
+
+					case 'global-geodetic':
+						widthMultiplier = 2;
+						break;
+
+				}
 
 				const levels = tileSetList.length;
 				const maxLevel = levels - 1;
 				this.extension = extension;
-				this.width = tileWidth * ( 2 ** maxLevel );
+				this.width = widthMultiplier * tileWidth * ( 2 ** maxLevel );
 				this.height = tileHeight * ( 2 ** maxLevel );
 				this.tileWidth = tileWidth;
 				this.tileHeight = tileHeight;
