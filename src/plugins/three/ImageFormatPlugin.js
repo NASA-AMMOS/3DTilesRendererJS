@@ -7,6 +7,12 @@ const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 // Base class for supporting tiled images with a consistent size / resolution per tile
 class ImageFormatPlugin {
 
+	get maxLevel() {
+
+		return this.levels - 1;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -69,12 +75,12 @@ class ImageFormatPlugin {
 	preprocessNode( tile, dir, parentTile ) {
 
 		// generate children
-		const { levels } = this;
+		const { maxLevel } = this;
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		if ( level < levels ) {
+		if ( level < maxLevel ) {
 
 			for ( let cx = 0; cx < 2; cx ++ ) {
 
@@ -118,13 +124,13 @@ class ImageFormatPlugin {
 
 	expand( level, x, y ) {
 
-		const { levels, width, height, overlap, pixelSize, center, tileWidth, tileHeight, flipY } = this;
+		const { maxLevel, width, height, overlap, pixelSize, center, tileWidth, tileHeight, flipY } = this;
 
 		// offset for the image so it's center
 		const offsetX = center ? pixelSize * - width / 2 : 0;
 		const offsetY = center ? pixelSize * - height / 2 : 0;
 
-		const levelFactor = 2 ** - ( levels - level );
+		const levelFactor = 2 ** - ( maxLevel - level );
 		const levelWidth = Math.ceil( width * levelFactor );
 		const levelHeight = Math.ceil( height * levelFactor );
 
@@ -216,7 +222,7 @@ export class XYZTilesPlugin extends ImageFormatPlugin {
 	constructor( options = {} ) {
 
 		const {
-			levels = 19,
+			levels = 20,
 			tileDimension = 256,
 			pixelSize = 1e-5,
 			...rest
@@ -236,12 +242,12 @@ export class XYZTilesPlugin extends ImageFormatPlugin {
 	async loadRootTileSet() {
 
 		// transform the url
-		const { tiles, tileWidth, tileHeight, levels } = this;
+		const { tiles, tileWidth, tileHeight, maxLevel } = this;
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 
-		this.width = tileWidth * ( 2 ** levels );
-		this.height = tileHeight * ( 2 ** levels );
+		this.width = tileWidth * ( 2 ** maxLevel );
+		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
 
 		return this.getTileset( url );
@@ -344,10 +350,11 @@ export class TMSTilesPlugin extends ImageFormatPlugin {
 				this.minX = minX;
 				this.minY = minY;
 
-				const levels = 1; //tileSetList.length - 1;
+				const levels = tileSetList.length;
+				const maxLevel = levels - 1;
 				this.extension = extension;
-				this.width = tileWidth * ( 2 ** levels );
-				this.height = tileHeight * ( 2 ** levels );
+				this.width = tileWidth * ( 2 ** maxLevel );
+				this.height = tileHeight * ( 2 ** maxLevel );
 				this.tileWidth = tileWidth;
 				this.tileHeight = tileHeight;
 				this.levels = levels;
@@ -427,7 +434,7 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 				this.format = image.getAttribute( 'Format' );
 				this.width = parseInt( size.getAttribute( 'Width' ) );
 				this.height = parseInt( size.getAttribute( 'Height' ) );
-				this.levels = Math.ceil( Math.log2( Math.max( this.width, this.height ) ) );
+				this.levels = Math.ceil( Math.log2( Math.max( this.width, this.height ) ) ) + 1;
 				this.stem = url.split( /\.[^.]+$/g )[ 0 ];
 
 				return this.getTileset( url );
