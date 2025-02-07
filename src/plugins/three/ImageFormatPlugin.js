@@ -135,8 +135,8 @@ class ImageFormatPlugin {
 
 				const { box } = child.boundingVolume;
 				const [ cx, cy ] = box;
-				const hx = box[ 4 ];
-				const hy = box[ 8 ];
+				const hx = box[ 3 ];
+				const hy = box[ 7 ];
 
 				minX = Math.min( minX, cx - hx );
 				maxX = Math.max( maxX, cx + hx );
@@ -243,7 +243,7 @@ class ImageFormatPlugin {
 					// x, y, z half vectors
 					ratioX * pixelSize * tileWidthOverlap / 2, 0.0, 0.0,
 					0.0, ratioY * pixelSize * tileHeightOverlap / 2, 0.0,
-					0.0, 0.0, 0,
+					0.0, 0.0, 0.0,
 				],
 			},
 			content: {
