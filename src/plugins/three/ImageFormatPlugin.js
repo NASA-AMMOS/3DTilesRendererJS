@@ -62,10 +62,19 @@ class ImageFormatPlugin {
 		texture.needsUpdate = true;
 
 		// Construct mesh
+		let sx = 1, sy = 1;
+		let x = 0, y = 0, z = 0;
+
+		// TODO: is there a more clean way to handle this?
 		const boundingBox = tile.boundingVolume.box;
-		const [ x, y, z ] = boundingBox;
-		const sx = boundingBox[ 3 ];
-		const sy = boundingBox[ 7 ];
+		if ( boundingBox ) {
+
+			[ x, y, z ] = boundingBox;
+			sx = boundingBox[ 3 ];
+			sy = boundingBox[ 7 ];
+
+		}
+
 		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture } ) );
 		mesh.position.set( x, y, z );
 
@@ -293,7 +302,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				const lat = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
 				const lon = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
 				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
-				ellipsoid.getCartographicToNormal( lat, lon, 0, vNorm );
+				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
 
 				position.setXYZ( i, ...vPos );
 				normal.setXYZ( i, ...vNorm );
@@ -362,8 +371,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				const minHeight = Math.tan( minLat );
 				const maxHeight = Math.tan( maxLat );
-				const northRatio = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, minHeight, maxHeight );
-				const southRatio = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, minHeight, maxHeight );
+				const southRatio = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, minHeight, maxHeight );
+				const northRatio = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, minHeight, maxHeight );
 
 				const north = Math.atan( northRatio );
 				const south = Math.atan( southRatio );
