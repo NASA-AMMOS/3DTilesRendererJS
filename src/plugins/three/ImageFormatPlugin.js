@@ -1,4 +1,4 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
@@ -262,6 +262,8 @@ class ImageFormatPlugin {
 
 }
 
+// TODO: we shouldn't modify the ellipsoid of the tileset. We should deproject using the appropriately
+// ellipsoid and map it to the ellipsoid provided by the tiles renderer.
 class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	constructor( options = {} ) {
@@ -274,10 +276,71 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		super( rest );
 
 		this.shape = shape;
+		this.projection = 'geodetic';
 		this.minLat = - Math.PI / 2;
 		this.maxLat = Math.PI / 2;
 		this.minLon = - Math.PI;
 		this.maxLon = Math.PI;
+
+	}
+
+	getTileset( ...args ) {
+
+		const { shape, minLat, maxLat, minLon, maxLon } = this;
+		const tileset = this.getTileset( ...args );
+		if ( shape === 'ellipsoid' ) {
+
+			// TODO: confirm these lat / lon position are correct - ie positive / negative value mapping
+			tileset.root.boundingVolume.region = [
+				minLon, minLat, maxLon, maxLat,
+				0, 0, // min / max height
+			];
+
+			delete tileset.root.boundingVolume.box;
+
+		}
+
+	}
+
+	expand( ...args ) {
+
+		const { shape, projection, tiles, minLat, maxLat, minLon, maxLon } = this;
+		const node = super.expand( ...args );
+		if ( shape === 'ellipsoid' ) {
+
+			const rootBox = tiles.root.boundingVolume.box;
+			const tileBox = node.boundingVolume.box;
+			const rootMinX = rootBox[ 0 ] - rootBox[ 3 ];
+			const rootMaxX = rootBox[ 0 ] + rootBox[ 3 ];
+			const rootMinY = rootBox[ 1 ] - rootBox[ 7 ];
+			const rootMaxY = rootBox[ 1 ] + rootBox[ 7 ];
+			const tileMinX = tileBox[ 0 ] - tileBox[ 3 ];
+			const tileMaxX = tileBox[ 0 ] + tileBox[ 3 ];
+			const tileMinY = tileBox[ 1 ] - tileBox[ 7 ];
+			const tileMaxY = tileBox[ 1 ] + tileBox[ 7 ];
+
+			// TODO: we need to handle the geodetic WGS84 projection here
+			if ( projection === 'mercator' ) {
+
+				const minHeight = Math.tan( minLat );
+				const maxHeight = Math.tan( maxLat );
+				const northRatio = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, minHeight, maxHeight );
+				const southRatio = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, minHeight, maxHeight );
+
+				const north = Math.atan( northRatio );
+				const south = Math.atan( southRatio );
+				const east = MathUtils.mapLinear( tileMinX, rootMinX, rootMaxX, minLon, maxLon );
+				const west = MathUtils.mapLinear( tileMaxX, rootMinX, rootMaxX, minLon, maxLon );
+				node.boundingVolume.region = [
+					west, south, east, north,
+					0, 0, // min / max height
+				];
+
+				delete node.boundingVolume.box;
+
+			}
+
+		}
 
 	}
 
@@ -317,6 +380,8 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.width = tileWidth * ( 2 ** maxLevel );
 		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
+		this.projection = 'mercator';
+		tiles.ellipsoid.radius.setScalar( WGS84_ELLIPSOID.radius.x );
 
 		return this.getTileset( url );
 
