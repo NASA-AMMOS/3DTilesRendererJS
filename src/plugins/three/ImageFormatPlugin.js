@@ -1,4 +1,4 @@
-import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, Sphere, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
@@ -38,8 +38,6 @@ class ImageFormatPlugin {
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.flipY = false;
-
-		this.root = null;
 
 	}
 
@@ -119,52 +117,32 @@ class ImageFormatPlugin {
 			}
 		};
 
-		const { maxLevel, width, height, tileWidth, tileHeight } = this;
+		const { maxLevel, width, height, tileWidth, tileHeight, center, pixelSize } = this;
 		const levelFactor = 2 ** - maxLevel;
 		const tilesX = Math.ceil( levelFactor * width / tileWidth );
 		const tilesY = Math.ceil( levelFactor * height / tileHeight );
 
-		// generate all children for the root and construct a merged bounding box
-		let minX = Infinity;
-		let maxX = - Infinity;
-		let minY = Infinity;
-		let maxY = - Infinity;
+		// generate all children for the root
 		for ( let x = 0; x < tilesX; x ++ ) {
 
 			for ( let y = 0; y < tilesY; y ++ ) {
 
-				const child = this.expand( 0, x, y );
-				tileset.root.children.push( child );
-
-				const { box } = child.boundingVolume;
-				if ( box ) {
-
-					const [ cx, cy ] = box;
-					const hx = box[ 3 ];
-					const hy = box[ 7 ];
-
-					minX = Math.min( minX, cx - hx );
-					maxX = Math.max( maxX, cx + hx );
-
-					minY = Math.min( minY, cy - hy );
-					maxY = Math.max( maxY, cy + hy );
-
-				}
+				tileset.root.children.push( this.expand( 0, x, y ) );
 
 			}
 
 		}
 
-		const bw = maxX - minX;
-		const bh = maxY - minY;
+		// construct the full bounding box
+		const minX = center ? - width / 2 : 0;
+		const minY = center ? - height / 2 : 0;
 		tileset.root.boundingVolume.box = [
-			minX + bw / 2, minY + bh / 2, 0,
-			bw / 2, 0, 0,
-			0, bh / 2, 0,
+			pixelSize * ( minX + width / 2 ), pixelSize * ( minY + height / 2 ), 0,
+			pixelSize * width / 2, 0, 0,
+			0, pixelSize * height / 2, 0,
 			0, 0, 0,
 		];
 
-		this.root = tileset.root;
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
 
@@ -332,16 +310,19 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	getTileset( ...args ) {
 
+		// TODO: this shouldn't be needed
 		const { shape, minLat, maxLat, minLon, maxLon } = this;
 		const tileset = super.getTileset( ...args );
 		if ( shape === 'ellipsoid' ) {
 
 			// TODO: confirm these lat / lon position are correct - ie positive / negative value mapping
 			tileset.root.boundingVolume.region = [
+
 				minLon, minLat, maxLon, maxLat,
 				0, 0, // min / max height
 			];
 
+			tileset.root.boundingVolume._box = tileset.root.boundingVolume.box;
 			delete tileset.root.boundingVolume.box;
 
 		}
@@ -354,10 +335,18 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super.preprocessNode( node, rest );
 
-		const { shape, projection, tiles, minLat, maxLat, minLon, maxLon, root } = this;
+		const { shape, projection, minLat, maxLat, minLon, maxLon, center, width, height, pixelSize } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const rootBox = root.boundingVolume.box;
+			const minX = center ? - width / 2 : 0;
+			const minY = center ? - height / 2 : 0;
+			const rootBox = [
+				pixelSize * ( minX + width / 2 ), pixelSize * ( minY + height / 2 ), 0,
+				pixelSize * width / 2, 0, 0,
+				0, pixelSize * height / 2, 0,
+				0, 0, 0,
+			];
+
 			const tileBox = node.boundingVolume.box;
 			const rootMinX = rootBox[ 0 ] - rootBox[ 3 ];
 			const rootMaxX = rootBox[ 0 ] + rootBox[ 3 ];
@@ -378,8 +367,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				const north = Math.atan( northRatio );
 				const south = Math.atan( southRatio );
-				const east = MathUtils.mapLinear( tileMinX, rootMinX, rootMaxX, minLon, maxLon );
-				const west = MathUtils.mapLinear( tileMaxX, rootMinX, rootMaxX, minLon, maxLon );
+				const west = MathUtils.mapLinear( tileMinX, rootMinX, rootMaxX, minLon, maxLon );
+				const east = MathUtils.mapLinear( tileMaxX, rootMinX, rootMaxX, minLon, maxLon );
 				node.boundingVolume.region = [
 					west, south, east, north,
 					0, 0, // min / max height
