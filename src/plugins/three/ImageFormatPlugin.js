@@ -1,4 +1,4 @@
-import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
@@ -38,6 +38,8 @@ class ImageFormatPlugin {
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.flipY = false;
+
+		this.root = null;
 
 	}
 
@@ -135,15 +137,19 @@ class ImageFormatPlugin {
 				tileset.root.children.push( child );
 
 				const { box } = child.boundingVolume;
-				const [ cx, cy ] = box;
-				const hx = box[ 3 ];
-				const hy = box[ 7 ];
+				if ( box ) {
 
-				minX = Math.min( minX, cx - hx );
-				maxX = Math.max( maxX, cx + hx );
+					const [ cx, cy ] = box;
+					const hx = box[ 3 ];
+					const hy = box[ 7 ];
 
-				minY = Math.min( minY, cy - hy );
-				maxY = Math.max( maxY, cy + hy );
+					minX = Math.min( minX, cx - hx );
+					maxX = Math.max( maxX, cx + hx );
+
+					minY = Math.min( minY, cy - hy );
+					maxY = Math.max( maxY, cy + hy );
+
+				}
 
 			}
 
@@ -158,6 +164,7 @@ class ImageFormatPlugin {
 			0, 0, 0,
 		];
 
+		this.root = tileset.root;
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
 
@@ -284,10 +291,49 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
+	async parseToMesh( buffer, tile, ...args ) {
+
+		const { shape, tiles } = this;
+		const mesh = await super.parseToMesh( buffer, tile, ...args );
+		if ( shape === 'ellipsoid' ) {
+
+			const ellipsoid = tiles.ellipsoid;
+			const geometry = new PlaneGeometry( 1, 1, 50, 50 );
+			const vPos = new Vector3();
+			const vNorm = new Vector3();
+			const vUv = new Vector2();
+
+			const [ west, south, east, north ] = tile.boundingVolume.region;
+			const { position, normal, uv } = geometry.attributes;
+			const vertCount = position.count;
+			for ( let i = 0; i < vertCount; i ++ ) {
+
+				vPos.fromBufferAttribute( position, i );
+				vNorm.fromBufferAttribute( normal, i );
+				vUv.fromBufferAttribute( uv, i );
+
+				const lat = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
+				const lon = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
+				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
+				ellipsoid.getCartographicToNormal( lat, lon, 0, vNorm );
+
+				position.setXYZ( i, ...vPos );
+				normal.setXYZ( i, ...vNorm );
+
+			}
+
+			mesh.geometry = geometry;
+
+		}
+
+		return mesh;
+
+	}
+
 	getTileset( ...args ) {
 
 		const { shape, minLat, maxLat, minLon, maxLon } = this;
-		const tileset = this.getTileset( ...args );
+		const tileset = super.getTileset( ...args );
 		if ( shape === 'ellipsoid' ) {
 
 			// TODO: confirm these lat / lon position are correct - ie positive / negative value mapping
@@ -300,15 +346,18 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		}
 
+		return tileset;
+
 	}
 
-	expand( ...args ) {
+	preprocessNode( node, ...rest ) {
 
-		const { shape, projection, tiles, minLat, maxLat, minLon, maxLon } = this;
-		const node = super.expand( ...args );
+		super.preprocessNode( node, rest );
+
+		const { shape, projection, tiles, minLat, maxLat, minLon, maxLon, root } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const rootBox = tiles.root.boundingVolume.box;
+			const rootBox = root.boundingVolume.box;
 			const tileBox = node.boundingVolume.box;
 			const rootMinX = rootBox[ 0 ] - rootBox[ 3 ];
 			const rootMaxX = rootBox[ 0 ] + rootBox[ 3 ];
@@ -341,6 +390,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			}
 
 		}
+
+		return node;
 
 	}
 
