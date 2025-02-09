@@ -285,7 +285,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		if ( shape === 'ellipsoid' ) {
 
 			const ellipsoid = tiles.ellipsoid;
-			const geometry = new PlaneGeometry( 1, 1, 50, 50 );
+			const geometry = new PlaneGeometry( 1, 1, 50, 25 );
 			const vPos = new Vector3();
 			const vNorm = new Vector3();
 			const vUv = new Vector2();
@@ -343,21 +343,23 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const tileMinY = tileBox[ 1 ] - tileBox[ 7 ];
 			const tileMaxY = tileBox[ 1 ] + tileBox[ 7 ];
 
-			// TODO: we need to handle the geodetic WGS84 projection here
 			if ( projection === 'mercator' ) {
 
-				const minHeight = Math.tan( minLat );
-				const maxHeight = Math.tan( maxLat );
-				const southRatio = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, minHeight, maxHeight );
-				const northRatio = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, minHeight, maxHeight );
+				// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
+				// TODO: support partial lat ranges here
+				// TODO: compute same lat / lon in mesh
+				const minImageY = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, - 1, 1 );
+				const maxImageY = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, - 1, 1 );
 
-				const north = Math.atan( northRatio );
-				const south = Math.atan( southRatio );
+				const south = 2 * Math.atan( Math.exp( minImageY * Math.PI ) ) - Math.PI / 2;
+				const north = 2 * Math.atan( Math.exp( maxImageY * Math.PI ) ) - Math.PI / 2;
+
 				const west = MathUtils.mapLinear( tileMinX, rootMinX, rootMaxX, minLon, maxLon );
 				const east = MathUtils.mapLinear( tileMaxX, rootMinX, rootMaxX, minLon, maxLon );
+
 				node.boundingVolume.region = [
 					west, south, east, north,
-					0, 0, // min / max height
+					- 1, 1 // min / max height
 				];
 
 				delete node.boundingVolume.box;
@@ -488,15 +490,10 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				const profile = tileSets.getAttribute( 'profile' );
 				const srs = xml.querySelector( 'SRS' ).textContent;
 
-				const ellipsoid = this.tiles.ellipsoid;
 				switch ( srs ) {
 
-					// web-mercator spherical projection
-					case 'EPSG:3857':
-						ellipsoid.radius.setScalar( WGS84_ELLIPSOID.radius.x );
-						break;
-					case 'EPSG:4326':
-						ellipsoid.copy( WGS84_ELLIPSOID );
+					case 'EPSG:3857': // web-mercator spherical projection
+					case 'EPSG:4326': // equirect projection
 						break;
 					default:
 						throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
