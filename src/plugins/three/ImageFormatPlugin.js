@@ -299,8 +299,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				vNorm.fromBufferAttribute( normal, i );
 				vUv.fromBufferAttribute( uv, i );
 
-				const lat = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
-				const lon = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
+				const lat = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
+				const lon = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
 				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
 				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
 
@@ -314,29 +314,6 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		}
 
 		return mesh;
-
-	}
-
-	getTileset( ...args ) {
-
-		// TODO: this shouldn't be needed
-		const { shape, minLat, maxLat, minLon, maxLon } = this;
-		const tileset = super.getTileset( ...args );
-		if ( shape === 'ellipsoid' ) {
-
-			// TODO: confirm these lat / lon position are correct - ie positive / negative value mapping
-			tileset.root.boundingVolume.region = [
-
-				minLon, minLat, maxLon, maxLat,
-				0, 0, // min / max height
-			];
-
-			tileset.root.boundingVolume._box = tileset.root.boundingVolume.box;
-			delete tileset.root.boundingVolume.box;
-
-		}
-
-		return tileset;
 
 	}
 
