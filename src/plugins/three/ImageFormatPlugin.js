@@ -1,9 +1,10 @@
-import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, Sphere, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+const UV_BOUNDS = Symbol( 'UV_BOUNDS' );
 
 // Base class for supporting tiled images with a consistent size / resolution per tile
 class ImageFormatPlugin {
@@ -250,6 +251,10 @@ class ImageFormatPlugin {
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
+			[ UV_BOUNDS ]: [
+				tileX / levelWidth, tileY / levelHeight,
+				( tileX + tileWidthOverlap ) / levelWidth, ( tileY + tileHeightOverlap ) / levelHeight,
+			],
 		};
 
 	}
@@ -290,6 +295,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const vNorm = new Vector3();
 			const vUv = new Vector2();
 
+			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
@@ -304,8 +310,13 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
 				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
 
+				// TODO: why is v scaled 1 to 0 here?
+				const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
+				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 1, 0 );
+
 				position.setXYZ( i, ...vPos );
 				normal.setXYZ( i, ...vNorm );
+				uv.setXY( i, u, v );
 
 			}
 
@@ -321,23 +332,10 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super.preprocessNode( node, rest );
 
-		const { shape, projection, minLat, maxLat, minLon, maxLon, center, width, height, pixelSize } = this;
+		const { shape, projection } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const minX = center ? - width / 2 : 0;
-			const minY = center ? - height / 2 : 0;
-			const rootBox = [
-				pixelSize * ( minX + width / 2 ), pixelSize * ( minY + height / 2 ), 0,
-				pixelSize * width / 2, 0, 0,
-				0, pixelSize * height / 2, 0,
-				0, 0, 0,
-			];
-
 			const tileBox = node.boundingVolume.box;
-			const rootMinX = rootBox[ 0 ] - rootBox[ 3 ];
-			const rootMaxX = rootBox[ 0 ] + rootBox[ 3 ];
-			const rootMinY = rootBox[ 1 ] - rootBox[ 7 ];
-			const rootMaxY = rootBox[ 1 ] + rootBox[ 7 ];
 			const tileMinX = tileBox[ 0 ] - tileBox[ 3 ];
 			const tileMaxX = tileBox[ 0 ] + tileBox[ 3 ];
 			const tileMinY = tileBox[ 1 ] - tileBox[ 7 ];
@@ -345,22 +343,17 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			if ( projection === 'mercator' ) {
 
-				// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-				// TODO: support partial lat ranges here
-				// TODO: compute same lat / lon in mesh
-				const minImageY = MathUtils.mapLinear( tileMinY, rootMinY, rootMaxY, - 1, 1 );
-				const maxImageY = MathUtils.mapLinear( tileMaxY, rootMinY, rootMaxY, - 1, 1 );
-
-				const south = 2 * Math.atan( Math.exp( minImageY * Math.PI ) ) - Math.PI / 2;
-				const north = 2 * Math.atan( Math.exp( maxImageY * Math.PI ) ) - Math.PI / 2;
-
-				const west = MathUtils.mapLinear( tileMinX, rootMinX, rootMaxX, minLon, maxLon );
-				const east = MathUtils.mapLinear( tileMaxX, rootMinX, rootMaxX, minLon, maxLon );
+				const south = this.mercatorToLatitude( tileMinY );
+				const north = this.mercatorToLatitude( tileMaxY );
+				const west = this.mercatorToLongitude( tileMinX );
+				const east = this.mercatorToLongitude( tileMaxX );
 
 				node.boundingVolume.region = [
 					west, south, east, north,
 					- 1, 1 // min / max height
 				];
+
+				// TODO: update geometric error
 
 				delete node.boundingVolume.box;
 
@@ -369,6 +362,49 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		}
 
 		return node;
+
+	}
+
+	latitudeToMercator( lat ) {
+
+		// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
+		const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
+		return ( 1 / 2 ) - ( 1 * mercatorN / ( 2 * Math.PI ) );
+
+	}
+
+	longitudeToMercator( lon ) {
+
+		return ( lon + Math.PI ) / ( 2 * Math.PI );
+
+	}
+
+	// Note: these take world units, should take [0, 1] image values
+	mercatorToLatitude( value ) {
+
+		// TODO: support partial lat ranges here
+		const { minLat, maxLat, center, height, pixelSize } = this;
+
+		const minY = center ? - height / 2 : 0;
+		const centerY = pixelSize * ( minY + height / 2 );
+		const extentsY = pixelSize * height / 2;
+		const rootMinY = centerY - extentsY;
+		const rootMaxY = centerY + extentsY;
+		const ratio = MathUtils.mapLinear( value, rootMinY, rootMaxY, - 1, 1 );
+		return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
+
+	}
+
+	mercatorToLongitude( value ) {
+
+		const { minLon, maxLon, center, width, pixelSize } = this;
+
+		const minX = center ? - width / 2 : 0;
+		const centerX = pixelSize * ( minX + width / 2 );
+		const extentsX = pixelSize * width / 2;
+		const rootMinX = centerX - extentsX;
+		const rootMaxX = centerX + extentsX;
+		return MathUtils.mapLinear( value, rootMinX, rootMaxX, minLon, maxLon );
 
 	}
 
