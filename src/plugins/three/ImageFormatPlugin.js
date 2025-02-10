@@ -153,6 +153,11 @@ class ImageFormatPlugin {
 			0, 0, 0,
 		];
 
+		tileset.root[ UV_BOUNDS ] = [
+			minX / width, minY / height,
+			( minX + width ) / width, ( minY + height ) / height,
+		];
+
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
 
@@ -328,14 +333,14 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
-	preprocessNode( node, ...rest ) {
+	preprocessNode( tile, ...rest ) {
 
-		super.preprocessNode( node, rest );
+		super.preprocessNode( tile, rest );
 
 		const { shape, projection } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const tileBox = node.boundingVolume.box;
+			const tileBox = tile.boundingVolume.box;
 			const tileMinX = tileBox[ 0 ] - tileBox[ 3 ];
 			const tileMaxX = tileBox[ 0 ] + tileBox[ 3 ];
 			const tileMinY = tileBox[ 1 ] - tileBox[ 7 ];
@@ -347,21 +352,48 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				const north = this.mercatorToLatitude( tileMaxY );
 				const west = this.mercatorToLongitude( tileMinX );
 				const east = this.mercatorToLongitude( tileMaxX );
+				const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
 
-				node.boundingVolume.region = [
+				tile.boundingVolume.region = [
 					west, south, east, north,
 					- 1, 1 // min / max height
 				];
 
 				// TODO: update geometric error
 
-				delete node.boundingVolume.box;
+				let testLat = Math.min( Math.abs( south ), Math.abs( north ) );
+				if ( ( south > 0 ) !== ( north > 0 ) ) {
+
+					testLat = 0;
+
+				}
+
+				// one pixel width in uv space
+				const uw = ( maxU - minU ) / this.tileWidth;
+				const vw = ( maxV - minV ) / this.tileHeight;
+
+				const testMercatorLat = this.latitudeToMercator( testLat );
+				const [ latDeriv, lonDeriv ] = this.getMercatorToCartographicDerivative( tileMinX, testMercatorLat );
+				const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( testLat, east );
+
+				// TODO: this needs to account for the difference from high level tile to highest detail
+				const error = Math.max( uw * xDeriv * lonDeriv, vw * yDeriv * latDeriv );
+				tile.geometricError = error;
+
+				// TODO: this shouldn't be needed
+				if ( tile.__depth === 0 ) {
+
+					tile.geometricError = 1e5;
+
+				}
+
+				delete tile.boundingVolume.box;
 
 			}
 
 		}
 
-		return node;
+		return tile;
 
 	}
 
@@ -405,6 +437,58 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		const rootMinX = centerX - extentsX;
 		const rootMaxX = centerX + extentsX;
 		return MathUtils.mapLinear( value, rootMinX, rootMaxX, minLon, maxLon );
+
+	}
+
+	getMercatorToCartographicDerivative( x, y ) {
+
+		const EPS = 1e-3;
+		let xp = x - EPS;
+		let yp = y - EPS;
+		if ( xp < 0 ) {
+
+			xp = x + EPS;
+
+		}
+
+		if ( yp < 0 ) {
+
+			yp = y + EPS;
+
+		}
+
+		return [
+			Math.abs( this.mercatorToLatitude( y ) - this.mercatorToLatitude( yp ) ) / EPS,
+			Math.abs( this.mercatorToLongitude( x ) - this.mercatorToLongitude( xp ) ) / EPS,
+		];
+
+	}
+
+	getCartographicToMeterDerivative( lat, lon ) {
+
+		const { tiles } = this;
+		const { ellipsoid } = tiles;
+
+		const EPS = 1e-4;
+		const lonp = lon + EPS;
+		let latp = lat + EPS;
+		if ( Math.abs( latp ) > Math.PI / 2 ) {
+
+			latp = latp - EPS;
+
+		}
+
+		const v0 = new Vector3();
+		const v1 = new Vector3();
+		ellipsoid.getCartographicToPosition( lat, lon, 0, v0 );
+
+		ellipsoid.getCartographicToPosition( latp, lon, 0, v1 );
+		const dy = v0.distanceTo( v1 ) / EPS;
+
+		ellipsoid.getCartographicToPosition( lat, lonp, 0, v1 );
+		const dx = v0.distanceTo( v1 ) / EPS;
+
+		return [ dx, dy ];
 
 	}
 
