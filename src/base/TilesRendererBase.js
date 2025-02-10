@@ -214,13 +214,18 @@ export class TilesRendererBase {
 
 	}
 
-	traverse( beforecb, aftercb ) {
+	traverse( beforecb, aftercb, ensureFullyProcessed = true ) {
 
 		if ( ! this.root ) return;
 
 		traverseSet( this.root, ( tile, ...args ) => {
 
-			this.ensureChildrenArePreprocessed( tile );
+			if ( ensureFullyProcessed ) {
+
+				this.ensureChildrenArePreprocessed( tile );
+
+			}
+
 			return beforecb ? beforecb( tile, ...args ) : false;
 
 		}, aftercb );
@@ -341,7 +346,7 @@ export class TilesRendererBase {
 
 			}
 
-		} );
+		}, null, false );
 
 		stats.failed = 0;
 
@@ -366,7 +371,7 @@ export class TilesRendererBase {
 			toRemove.push( t );
 			return false;
 
-		} );
+		}, null, false );
 		for ( let i = 0, l = toRemove.length; i < l; i ++ ) {
 
 			lruCache.remove( toRemove[ i ] );
