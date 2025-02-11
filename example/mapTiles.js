@@ -12,7 +12,7 @@ let tiles, camera;
 
 const params = {
 
-	errorTarget: 1,
+	errorTarget: window.devicePixelRatio,
 	planar: false,
 
 };
@@ -45,7 +45,7 @@ function init() {
 	// gui initialization
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
-	gui.add( params, 'errorTarget', 0, 100 );
+	gui.add( params, 'errorTarget', 1, 40 );
 
 	gui.open();
 
@@ -113,8 +113,6 @@ function initTiles() {
 
 		// init tiles
 		tiles.group.rotation.x = - Math.PI / 2;
-		tiles.maxDepth = 2;
-		tiles.errorTarget = 0;
 
 		// create the controls
 		controls = new GlobeControls( scene, camera, renderer.domElement );
