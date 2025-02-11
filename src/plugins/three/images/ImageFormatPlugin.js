@@ -1,11 +1,12 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
 
-const TILE_X = Symbol( 'TILE_X' );
-const TILE_Y = Symbol( 'TILE_Y' );
-const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+export const TILE_X = Symbol( 'TILE_X' );
+export const TILE_Y = Symbol( 'TILE_Y' );
+export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+export const UV_BOUNDS = Symbol( 'UV_BOUNDS' );
 
 // Base class for supporting tiled images with a consistent size / resolution per tile
-class ImageFormatPlugin {
+export class ImageFormatPlugin {
 
 	get maxLevel() {
 
@@ -61,10 +62,18 @@ class ImageFormatPlugin {
 		texture.needsUpdate = true;
 
 		// Construct mesh
+		let sx = 1, sy = 1;
+		let x = 0, y = 0, z = 0;
+
 		const boundingBox = tile.boundingVolume.box;
-		const [ x, y, z ] = boundingBox;
-		const sx = boundingBox[ 3 ];
-		const sy = boundingBox[ 7 ];
+		if ( boundingBox ) {
+
+			[ x, y, z ] = boundingBox;
+			sx = boundingBox[ 3 ];
+			sy = boundingBox[ 7 ];
+
+		}
+
 		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture } ) );
 		mesh.position.set( x, y, z );
 
@@ -116,46 +125,33 @@ class ImageFormatPlugin {
 			}
 		};
 
-		const { maxLevel, width, height, tileWidth, tileHeight } = this;
+		const { maxLevel, width, height, tileWidth, tileHeight, center, pixelSize } = this;
 		const levelFactor = 2 ** - maxLevel;
 		const tilesX = Math.ceil( levelFactor * width / tileWidth );
 		const tilesY = Math.ceil( levelFactor * height / tileHeight );
 
-		// generate all children for the root and construct a merged bounding box
-		let minX = Infinity;
-		let maxX = - Infinity;
-		let minY = Infinity;
-		let maxY = - Infinity;
+		// generate all children for the root
 		for ( let x = 0; x < tilesX; x ++ ) {
 
 			for ( let y = 0; y < tilesY; y ++ ) {
 
-				const child = this.expand( 0, x, y );
-				tileset.root.children.push( child );
-
-				const { box } = child.boundingVolume;
-				const [ cx, cy ] = box;
-				const hx = box[ 3 ];
-				const hy = box[ 7 ];
-
-				minX = Math.min( minX, cx - hx );
-				maxX = Math.max( maxX, cx + hx );
-
-				minY = Math.min( minY, cy - hy );
-				maxY = Math.max( maxY, cy + hy );
+				tileset.root.children.push( this.expand( 0, x, y ) );
 
 			}
 
 		}
 
-		const bw = maxX - minX;
-		const bh = maxY - minY;
+		// construct the full bounding box
+		const minX = center ? - width / 2 : 0;
+		const minY = center ? - height / 2 : 0;
 		tileset.root.boundingVolume.box = [
-			minX + bw / 2, minY + bh / 2, 0,
-			bw / 2, 0, 0,
-			0, bh / 2, 0,
+			pixelSize * ( minX + width / 2 ), pixelSize * ( minY + height / 2 ), 0,
+			pixelSize * width / 2, 0, 0,
+			0, pixelSize * height / 2, 0,
 			0, 0, 0,
 		];
+
+		tileset.root[ UV_BOUNDS ] = [ 0, 0, 1, 1 ];
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
@@ -222,15 +218,24 @@ class ImageFormatPlugin {
 
 		// the center of the tile
 		const centerX = tileX + tileWidthOverlap / 2;
-		const centerY = tileY + tileHeightOverlap / 2;
+		let centerY = tileY + tileHeightOverlap / 2;
+		if ( flipY ) {
+
+			centerY = levelHeight - centerY;
+
+		}
 
 		// the pixel ratio of the image
 		const ratioX = width / levelWidth;
 		const ratioY = height / levelHeight;
-		const flipFactor = flipY ? - 1 : 1;
 
-		return {
+		const boxX = ratioX * pixelSize * centerX;
+		const boxY = ratioY * pixelSize * centerY;
+		const extentsX = ratioX * pixelSize * tileWidthOverlap / 2;
+		const extentsY = ratioY * pixelSize * tileHeightOverlap / 2;
+
 		// Generate the node
+		return {
 			refine: 'REPLACE',
 			geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
 			boundingVolume: {
@@ -238,11 +243,11 @@ class ImageFormatPlugin {
 				// is also enabled on the image bitmap texture generation above.
 				box: [
 					// center
-					ratioX * pixelSize * centerX + offsetX, flipFactor * ( ratioY * pixelSize * centerY + offsetY ), 0,
+					boxX + offsetX, boxY + offsetY, 0,
 
 					// x, y, z half vectors
-					ratioX * pixelSize * tileWidthOverlap / 2, 0.0, 0.0,
-					0.0, ratioY * pixelSize * tileHeightOverlap / 2, 0.0,
+					extentsX, 0.0, 0.0,
+					0.0, extentsY, 0.0,
 					0.0, 0.0, 0.0,
 				],
 			},
@@ -255,174 +260,13 @@ class ImageFormatPlugin {
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
+			[ UV_BOUNDS ]: [
+				MathUtils.mapLinear( boxX - extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY - extentsY, 0, pixelSize * height, 0, 1 ),
+				MathUtils.mapLinear( boxX + extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY + extentsY, 0, pixelSize * height, 0, 1 ),
+			],
 		};
-
-	}
-
-}
-
-// Support for XYZ / Slippy tile systems
-// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-export class XYZTilesPlugin extends ImageFormatPlugin {
-
-	constructor( options = {} ) {
-
-		const {
-			levels = 20,
-			tileDimension = 256,
-			pixelSize = 1e-5,
-			...rest
-		} = options;
-
-		super( { pixelSize, ...rest } );
-
-		this.name = 'XYZ_TILES_PLUGIN';
-		this.tileWidth = tileDimension;
-		this.tileHeight = tileDimension;
-		this.levels = levels;
-		this.url = null;
-		this.flipY = true;
-
-	}
-
-	async loadRootTileSet() {
-
-		// transform the url
-		const { tiles, tileWidth, tileHeight, maxLevel } = this;
-		let url = tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-
-		this.width = tileWidth * ( 2 ** maxLevel );
-		this.height = tileHeight * ( 2 ** maxLevel );
-		this.url = url;
-
-		return this.getTileset( url );
-
-	}
-
-	getUrl( level, x, y ) {
-
-		return this.url.replace( '{z}', level ).replace( '{x}', x ).replace( '{y}', y );
-
-	}
-
-}
-
-// TODO
-// - fix 3827
-// - fix bing maps
-// - fix sentinal-2 data set
-
-// Support for TMS tiles
-// https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
-export class TMSTilesPlugin extends ImageFormatPlugin {
-
-	constructor( ...args ) {
-
-		super( ...args );
-
-		this.name = 'TMS_TILES_PLUGIN';
-		this.flipY = false;
-		this.url = null;
-		this.extension = null;
-
-	}
-
-	loadRootTileSet() {
-
-		const url = new URL( 'tilemapresource.xml', this.tiles.rootURL ).toString();
-		return this.tiles
-			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
-			.then( res => res.text() )
-			.then( text => {
-
-				// TODO: "unitsPerPixel" may not be necessary
-				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				// const boundingBox = xml.querySelector( 'BoundingBox' );
-				// const origin = xml.querySelector( 'Origin' );
-				const tileFormat = xml.querySelector( 'TileFormat' );
-				const tileSets = xml.querySelector( 'TileSets' );
-				const tileSetList = [ ...tileSets.querySelectorAll( 'TileSet' ) ]
-					.map( ts => ( {
-						href: parseInt( ts.getAttribute( 'href' ) ),
-						unitsPerPixel: parseFloat( ts.getAttribute( 'units-per-pixel' ) ),
-						order: parseInt( ts.getAttribute( 'order' ) ),
-					} ) )
-					.sort( ( a, b ) => {
-
-						return a.order - b.order;
-
-					} );
-
-				// TODO: need to account for these values (origin and min values) when generating ellipsoid
-				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
-				// used for overlays.
-				// the extents of the tile set in lat / lon
-				// const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				// const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				// const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				// const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
-				// const width = maxX - minX;
-				// const height = maxY - minY;
-
-				// origin in lat / lon
-				// const x = parseFloat( origin.getAttribute( 'x' ) );
-				// const y = parseFloat( origin.getAttribute( 'y' ) );
-
-				// image dimensions in pixels
-				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
-				const tileHeight = parseInt( tileFormat.getAttribute( 'height' ) );
-				const extension = tileFormat.getAttribute( 'extension' );
-
-				const profile = tileSets.getAttribute( 'profile' );
-				// const srs = xml.querySelector( 'SRS' ).textContent;
-
-				// if ( srs !== 'EPSG:3857' ) {
-
-				// 	// EPSG:4326
-				// 	throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
-
-				// }
-
-				// if ( profile !== 'mercator' && profile !== 'global-mercator' ) {
-
-				// 	// 'geodetic', 'global-geodetic'
-				// 	throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
-
-				// }
-
-				// TODO: global-geodetic seems to require two horizontal root tiles. Is hardcoding the right way?
-				let widthMultiplier = 1;
-				// let heightMultiplier = 1;
-				switch ( profile ) {
-
-					case 'global-geodetic':
-						widthMultiplier = 2;
-						break;
-
-				}
-
-				const levels = tileSetList.length;
-				const maxLevel = levels - 1;
-				this.extension = extension;
-				this.width = widthMultiplier * tileWidth * ( 2 ** maxLevel );
-				this.height = tileHeight * ( 2 ** maxLevel );
-				this.tileWidth = tileWidth;
-				this.tileHeight = tileHeight;
-				this.levels = levels;
-				this.url = this.tiles.rootURL;
-				this.tileSets = tileSetList;
-
-				return this.getTileset( url );
-
-			} );
-
-	}
-
-	getUrl( level, x, y ) {
-
-		const { url, extension, tileSets } = this;
-		return new URL( `${ tileSets[ level ].href }/${ x }/${ y }.${ extension }`, url ).toString();
 
 	}
 

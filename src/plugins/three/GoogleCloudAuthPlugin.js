@@ -27,6 +27,8 @@ export class GoogleCloudAuthPlugin {
 	constructor( { apiToken, autoRefreshToken = false, logoUrl = null, useRecommendedSettings = true } ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
+		this.priority = - Infinity;
+
 		this.apiToken = apiToken;
 		this.autoRefreshToken = autoRefreshToken;
 		this.useRecommendedSettings = useRecommendedSettings;

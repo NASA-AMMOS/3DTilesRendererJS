@@ -198,14 +198,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.traverse( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.cached && tile.cached.scene;
 			if ( scene ) {
 
 				callback( scene, tile );
 
 			}
 
-		} );
+		}, null, false );
 
 	}
 
@@ -987,6 +987,13 @@ export class TilesRenderer extends TilesRendererBase {
 			);
 
 		group.updateMatrixWorld( true );
+
+	}
+
+	dispose() {
+
+		super.dispose();
+		this.group.removeFromParent();
 
 	}
 

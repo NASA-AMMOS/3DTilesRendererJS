@@ -11,7 +11,8 @@ export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin.js';
 export * from './three/DebugTilesPlugin.js';
 
 // other formats
-export * from './three/ImageFormatPlugin.js';
+export * from './three/images/ImageFormatPlugin.js';
+export * from './three/images/EllipsoidProjectionTilesPlugin.js';
 
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin.js';
