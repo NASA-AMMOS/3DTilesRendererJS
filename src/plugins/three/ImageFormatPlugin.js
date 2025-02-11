@@ -153,10 +153,7 @@ class ImageFormatPlugin {
 			0, 0, 0,
 		];
 
-		tileset.root[ UV_BOUNDS ] = [
-			minX / width, minY / height,
-			( minX + width ) / width, ( minY + height ) / height,
-		];
+		tileset.root[ UV_BOUNDS ] = [ 0, 0, 1, 1 ];
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
@@ -223,15 +220,24 @@ class ImageFormatPlugin {
 
 		// the center of the tile
 		const centerX = tileX + tileWidthOverlap / 2;
-		const centerY = tileY + tileHeightOverlap / 2;
+		let centerY = tileY + tileHeightOverlap / 2;
+		if ( flipY ) {
+
+			centerY = levelHeight - centerY;
+
+		}
 
 		// the pixel ratio of the image
 		const ratioX = width / levelWidth;
 		const ratioY = height / levelHeight;
-		const flipFactor = flipY ? - 1 : 1;
 
-		return {
+		const boxX = ratioX * pixelSize * centerX + offsetX;
+		const boxY = ratioY * pixelSize * centerY + offsetY;
+		const extentsX = ratioX * pixelSize * tileWidthOverlap / 2;
+		const extentsY = ratioY * pixelSize * tileHeightOverlap / 2;
+
 		// Generate the node
+		return {
 			refine: 'REPLACE',
 			geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
 			boundingVolume: {
@@ -239,11 +245,11 @@ class ImageFormatPlugin {
 				// is also enabled on the image bitmap texture generation above.
 				box: [
 					// center
-					ratioX * pixelSize * centerX + offsetX, flipFactor * ( ratioY * pixelSize * centerY + offsetY ), 0,
+					boxX, boxY, 0,
 
 					// x, y, z half vectors
-					ratioX * pixelSize * tileWidthOverlap / 2, 0.0, 0.0,
-					0.0, ratioY * pixelSize * tileHeightOverlap / 2, 0.0,
+					extentsX, 0.0, 0.0,
+					0.0, extentsY, 0.0,
 					0.0, 0.0, 0.0,
 				],
 			},
@@ -257,8 +263,10 @@ class ImageFormatPlugin {
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
 			[ UV_BOUNDS ]: [
-				tileX / levelWidth, tileY / levelHeight,
-				( tileX + tileWidthOverlap ) / levelWidth, ( tileY + tileHeightOverlap ) / levelHeight,
+				MathUtils.mapLinear( boxX - offsetX - extentsX, 0, width, 0, 1 ),
+				MathUtils.mapLinear( boxY - offsetY - extentsY, 0, height, 0, 1 ),
+				MathUtils.mapLinear( boxX - offsetX + extentsX, 0, width, 0, 1 ),
+				MathUtils.mapLinear( boxY - offsetY + extentsY, 0, height, 0, 1 ),
 			],
 		};
 
@@ -340,19 +348,13 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		const { shape, projection } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const tileBox = tile.boundingVolume.box;
-			const tileMinX = tileBox[ 0 ] - tileBox[ 3 ];
-			const tileMaxX = tileBox[ 0 ] + tileBox[ 3 ];
-			const tileMinY = tileBox[ 1 ] - tileBox[ 7 ];
-			const tileMaxY = tileBox[ 1 ] + tileBox[ 7 ];
-
+			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
 			if ( projection === 'mercator' ) {
 
-				const south = this.mercatorToLatitude( tileMinY );
-				const north = this.mercatorToLatitude( tileMaxY );
-				const west = this.mercatorToLongitude( tileMinX );
-				const east = this.mercatorToLongitude( tileMaxX );
-				const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
+				const south = this.mercatorToLatitude( minV );
+				const north = this.mercatorToLatitude( maxV );
+				const west = this.mercatorToLongitude( minU );
+				const east = this.mercatorToLongitude( maxU );
 
 				tile.boundingVolume.region = [
 					west, south, east, north,
@@ -411,38 +413,25 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
-	// Note: these take world units, should take [0, 1] image values
 	mercatorToLatitude( value ) {
 
 		// TODO: support partial lat ranges here
-		const { minLat, maxLat, center, height, pixelSize } = this;
-
-		const minY = center ? - height / 2 : 0;
-		const centerY = pixelSize * ( minY + height / 2 );
-		const extentsY = pixelSize * height / 2;
-		const rootMinY = centerY - extentsY;
-		const rootMaxY = centerY + extentsY;
-		const ratio = MathUtils.mapLinear( value, rootMinY, rootMaxY, - 1, 1 );
+		const { minLat, maxLat } = this;
+		const ratio = MathUtils.mapLinear( value, 0, 1, - 1, 1 );
 		return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
 
 	}
 
 	mercatorToLongitude( value ) {
 
-		const { minLon, maxLon, center, width, pixelSize } = this;
-
-		const minX = center ? - width / 2 : 0;
-		const centerX = pixelSize * ( minX + width / 2 );
-		const extentsX = pixelSize * width / 2;
-		const rootMinX = centerX - extentsX;
-		const rootMaxX = centerX + extentsX;
-		return MathUtils.mapLinear( value, rootMinX, rootMaxX, minLon, maxLon );
+		const { minLon, maxLon } = this;
+		return MathUtils.mapLinear( value, 0, 1, minLon, maxLon );
 
 	}
 
 	getMercatorToCartographicDerivative( x, y ) {
 
-		const EPS = 1e-3;
+		const EPS = 1e-5;
 		let xp = x - EPS;
 		let yp = y - EPS;
 		if ( xp < 0 ) {
@@ -469,7 +458,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		const { tiles } = this;
 		const { ellipsoid } = tiles;
 
-		const EPS = 1e-4;
+		const EPS = 1e-5;
 		const lonp = lon + EPS;
 		let latp = lat + EPS;
 		if ( Math.abs( latp ) > Math.PI / 2 ) {
