@@ -119,8 +119,11 @@ export class ImageFormatPlugin {
 
 		}
 
-		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture } ) );
-		mesh.position.set( x, y, z );
+		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
+		// when using batched mesh rendering.
+		const mesh = new Mesh( new PlaneGeometry(), new MeshBasicMaterial( { map: texture } ) );
+		mesh.geometry.scale( 2 * sx, 2 * sy, 1 );
+		mesh.geometry.translate( x, y, z );
 
 		return mesh;
 
