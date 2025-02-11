@@ -7,6 +7,7 @@ export class XYZTilesPlugin {
 		levels?: number,
 		tileDimension?: number,
 		projection?: 'ellipsoid' | 'planar',
+		useRecommendedSettings?: boolean,
 	} );
 
 }
@@ -17,6 +18,7 @@ export class TMSTilesPlugin {
 		center?: boolean,
 		pixelSize?: number,
 		projection?: 'ellipsoid' | 'planar',
+		useRecommendedSettings?: boolean,
 	} );
 
 }

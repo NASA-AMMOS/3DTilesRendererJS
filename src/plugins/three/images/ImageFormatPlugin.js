@@ -20,6 +20,7 @@ export class ImageFormatPlugin {
 		const {
 			pixelSize = 0.01,
 			center = false,
+			useRecommendedSettings = true,
 		} = options;
 
 		this.priority = - 10;
@@ -40,6 +41,7 @@ export class ImageFormatPlugin {
 		this.overlap = 0;
 		this.pixelSize = pixelSize;
 		this.center = center;
+		this.useRecommendedSettings = useRecommendedSettings;
 		this.flipY = false;
 
 	}
@@ -49,6 +51,13 @@ export class ImageFormatPlugin {
 		const processQueue = new PriorityQueue();
 		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
 		processQueue.maxJobs = 20;
+
+		if ( this.useRecommendedSettings ) {
+
+			tiles.errorTarget = window.devicePixelRatio;
+			// TODO: apply skip settings here, as well, for faster loading
+
+		}
 
 		this.processCallback = tile => {
 
