@@ -1,6 +1,5 @@
 import { ImageFormatPlugin, UV_BOUNDS } from './ImageFormatPlugin.js';
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
-import { WGS84_ELLIPSOID } from '../../../three/math/GeoConstants.js';
 
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
@@ -307,7 +306,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
 		this.projection = 'mercator';
-		tiles.ellipsoid.radius.setScalar( WGS84_ELLIPSOID.radius.x );
 
 		return this.getTileset( url );
 
