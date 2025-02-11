@@ -72,7 +72,7 @@ function App() {
 	const { ortho } = useControls( levaParams );
 	return (
 		<>
-			<TilesRenderer ref={ tiles => window.TILES = tiles }>
+			<TilesRenderer>
 				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />

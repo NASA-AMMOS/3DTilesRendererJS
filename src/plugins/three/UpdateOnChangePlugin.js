@@ -78,7 +78,7 @@ export class UpdateOnChangePlugin {
 
 		const tiles = this.tiles;
 		tiles.removeEventListener( 'camera-resolution-change', this._needsUpdateCallback );
-		tiles.removeEventListener( 'content-load', this._needsUpdateCallback );
+		tiles.removeEventListener( 'load-content', this._needsUpdateCallback );
 		tiles.removeEventListener( 'camera-add', this._onCameraAdd );
 		tiles.removeEventListener( 'camera-delete', this._onCameraDelete );
 

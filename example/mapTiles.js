@@ -4,7 +4,7 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, XYZTilesPlugin, } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, XYZTilesPlugin, } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
@@ -45,7 +45,11 @@ function init() {
 	// gui initialization
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
-	gui.add( params, 'errorTarget', 1, 40 );
+	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
+
+		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+
+	} );
 
 	gui.open();
 
@@ -68,6 +72,7 @@ function initTiles() {
 	// tiles
 	tiles = new TilesRenderer( 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' );
 	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new XYZTilesPlugin( {
 		center: true,
 		shape: params.planar ? 'planar' : 'ellipsoid',
@@ -115,9 +120,6 @@ function initTiles() {
 		controls.camera.quaternion.identity();
 
 	}
-
-	window.CONTROLS = controls;
-	window.TILES = tiles;
 
 }
 

@@ -44,6 +44,8 @@ export class ImageFormatPlugin {
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.flipY = false;
 
+		this._tilesNeedUpdate = true;
+
 	}
 
 	init( tiles ) {
@@ -78,6 +80,8 @@ export class ImageFormatPlugin {
 				}
 
 			}
+
+			this._tilesNeedUpdate = true;
 
 			return Promise.resolve();
 
@@ -292,6 +296,19 @@ export class ImageFormatPlugin {
 				MathUtils.mapLinear( boxY + extentsY, 0, pixelSize * height, 0, 1 ),
 			],
 		};
+
+	}
+
+	doTilesNeedUpdate() {
+
+		if ( this._tilesNeedUpdate ) {
+
+			this._tilesNeedUpdate = false;
+			return true;
+
+		}
+
+		return false;
 
 	}
 
