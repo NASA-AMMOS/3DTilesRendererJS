@@ -5,6 +5,7 @@
  */
 export function getUrlExtension( url ) {
 
+	url = url.replace( /\?.*/, '' );
 	const dotIndex = url.lastIndexOf( '.' );
 	const extension = url.substring( dotIndex + 1 );
 	return extension;

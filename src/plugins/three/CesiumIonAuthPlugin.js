@@ -5,6 +5,8 @@ export class CesiumIonAuthPlugin {
 	constructor( { apiToken, assetId = null, autoRefreshToken = false } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
+		this.priority = - Infinity;
+
 		this.apiToken = apiToken;
 		this.assetId = assetId;
 		this.autoRefreshToken = autoRefreshToken;
