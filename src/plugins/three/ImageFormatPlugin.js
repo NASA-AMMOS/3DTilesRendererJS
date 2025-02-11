@@ -263,10 +263,10 @@ class ImageFormatPlugin {
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
 			[ UV_BOUNDS ]: [
-				MathUtils.mapLinear( boxX - offsetX - extentsX, 0, width, 0, 1 ),
-				MathUtils.mapLinear( boxY - offsetY - extentsY, 0, height, 0, 1 ),
-				MathUtils.mapLinear( boxX - offsetX + extentsX, 0, width, 0, 1 ),
-				MathUtils.mapLinear( boxY - offsetY + extentsY, 0, height, 0, 1 ),
+				MathUtils.mapLinear( boxX - offsetX - extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY - offsetY - extentsY, 0, pixelSize * height, 0, 1 ),
+				MathUtils.mapLinear( boxX - offsetX + extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY - offsetY + extentsY, 0, pixelSize * height, 0, 1 ),
 			],
 		};
 
