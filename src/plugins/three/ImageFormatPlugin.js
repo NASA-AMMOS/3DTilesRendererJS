@@ -323,9 +323,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
 				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
 
-				// TODO: why is v scaled 1 to 0 here?
 				const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
-				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 1, 0 );
+				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
 
 				position.setXYZ( i, ...vPos );
 				normal.setXYZ( i, ...vNorm );
@@ -371,21 +370,24 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				}
 
 				// one pixel width in uv space
-				const uw = ( maxU - minU ) / this.tileWidth;
-				const vw = ( maxV - minV ) / this.tileHeight;
+				const tileUWidth = ( maxU - minU ) / this.tileWidth;
+				const tileVWidth = ( maxV - minV ) / this.tileHeight;
+				const rootUWidth = 1 / this.width;
+				const rootVWidth = 1 / this.height;
 
-				const testMercatorLat = this.latitudeToMercator( testLat );
-				const [ latDeriv, lonDeriv ] = this.getMercatorToCartographicDerivative( tileMinX, testMercatorLat );
+				const testMercatorY = this.latitudeToMercator( testLat );
+				const [ latDeriv, lonDeriv ] = this.getMercatorToCartographicDerivative( minU, testMercatorY );
 				const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( testLat, east );
 
-				// TODO: this needs to account for the difference from high level tile to highest detail
-				const error = Math.max( uw * xDeriv * lonDeriv, vw * yDeriv * latDeriv );
-				tile.geometricError = error;
+				const tilePixelWidth = Math.max( tileUWidth * lonDeriv * xDeriv, tileVWidth * latDeriv * yDeriv );
+				const rootPixelWidth = Math.max( rootUWidth * lonDeriv * xDeriv, rootVWidth * latDeriv * yDeriv );
+
+				tile.geometricError = tilePixelWidth - rootPixelWidth;
 
 				// TODO: this shouldn't be needed
 				if ( tile.__depth === 0 ) {
 
-					tile.geometricError = 1e5;
+					tile.geometricError = 1e50;
 
 				}
 
@@ -403,7 +405,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
 		const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
-		return ( 1 / 2 ) - ( 1 * mercatorN / ( 2 * Math.PI ) );
+		return ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
 
 	}
 
