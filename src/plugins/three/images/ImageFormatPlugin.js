@@ -65,7 +65,6 @@ export class ImageFormatPlugin {
 		let sx = 1, sy = 1;
 		let x = 0, y = 0, z = 0;
 
-		// TODO: is there a more clean way to handle this?
 		const boundingBox = tile.boundingVolume.box;
 		if ( boundingBox ) {
 
