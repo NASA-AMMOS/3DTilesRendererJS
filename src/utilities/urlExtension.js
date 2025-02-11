@@ -13,6 +13,12 @@ export function getUrlExtension( url ) {
 
 	url = url.replace( /\?.*/, '' );
 	const dotIndex = url.lastIndexOf( '.' );
+	if ( dotIndex === - 1 ) {
+
+		return null;
+
+	}
+
 	const extension = url.substring( dotIndex + 1 );
 	return extension || null;
 
