@@ -479,7 +479,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 	mercatorToLatitude( value ) {
 
 		// TODO: support partial lat ranges here
-		const { minLat, maxLat } = this;
+		// const { minLat, maxLat } = this;
 		const ratio = MathUtils.mapLinear( value, 0, 1, - 1, 1 );
 		return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
 
@@ -643,10 +643,10 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				// TODO: the origin can be outside the box bounds and result in negative values for tiles. The tile coordinates
 				// may need to account for this origin positioning - ie they may not start at 0, 0?
 				// the extents of the tile set in lat / lon
-				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
+				// const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
+				// const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
+				// const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
+				// const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
 
 				// origin in lat / lon
 				// const x = parseFloat( origin.getAttribute( 'x' ) );
