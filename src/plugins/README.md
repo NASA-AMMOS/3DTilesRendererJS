@@ -623,7 +623,11 @@ Available options are as follows:
 
 	// If true then the original scene geometry is automatically discarded after adding the geometry to the batched mesh to save memory.
 	// This must be set to "false" if being used with plugins such as "UnloadTilesPlugin".
-	discardOriginalContent: true
+	discardOriginalContent: true,
+
+	// The value to use for the x and y dimensions of the array texture. If set to null then the array texture is sized based on
+	// the first texture encountered. 
+	textureSize: null,
 }
 ```
 

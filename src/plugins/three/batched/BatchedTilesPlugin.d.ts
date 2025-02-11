@@ -9,6 +9,7 @@ export class BatchedTilesPlugin {
 		expandPercent: number,
 		maxInstanceCount: number,
 		discardOriginalContent: boolean,
+		textureSize: number | null,
 
 		material: Material | null,
 		renderer: WebGLRenderer | null,

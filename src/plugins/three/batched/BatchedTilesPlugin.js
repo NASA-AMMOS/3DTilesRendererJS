@@ -24,6 +24,7 @@ export class BatchedTilesPlugin {
 			expandPercent: 0.25,
 			maxInstanceCount: Infinity,
 			discardOriginalContent: true,
+			textureSize: null,
 
 			material: null,
 			renderer: null,
@@ -45,6 +46,7 @@ export class BatchedTilesPlugin {
 		this.maxInstanceCount = Math.min( options.maxInstanceCount, gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 		this.renderer = options.renderer;
 		this.discardOriginalContent = options.discardOriginalContent;
+		this.textureSize = options.textureSize;
 
 		// local variables
 		this.batchedMesh = null;
@@ -81,7 +83,7 @@ export class BatchedTilesPlugin {
 		}
 
 		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles, renderer } = this;
+		const { instanceCount, vertexCount, indexCount, tiles, renderer, textureSize } = this;
 		const material = this.material ? this.material : new target.material.constructor();
 		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
 		batchedMesh.name = 'BatchTilesPlugin';
@@ -102,7 +104,7 @@ export class BatchedTilesPlugin {
 			magFilter: map.magFilter,
 		};
 
-		const arrayTarget = new WebGLArrayRenderTarget( map.image.width, map.image.height, instanceCount );
+		const arrayTarget = new WebGLArrayRenderTarget( textureSize || map.image.width, textureSize || map.image.height, instanceCount );
 		Object.assign( arrayTarget.texture, textureOptions );
 		renderer.initRenderTarget( arrayTarget );
 
