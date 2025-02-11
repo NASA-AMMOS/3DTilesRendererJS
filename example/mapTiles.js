@@ -73,13 +73,7 @@ function initTiles() {
 		center: true,
 		shape: params.planar ? 'planar' : 'ellipsoid',
 	} ) );
-	// tiles.registerPlugin( new TMSTilesPlugin( { center: true } ) );
-	// tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '3954', autoRefreshToken: true } ) );
-	// tiles.registerPlugin( new DebugTilesPlugin( { displayRegionBounds: true, displayParentBounds: false } ) );
 
-
-
-	// 3812
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
 	tiles.setCamera( camera );
