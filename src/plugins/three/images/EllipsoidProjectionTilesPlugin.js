@@ -14,6 +14,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		const {
 			shape = 'planar',
+			endCaps = true,
 			...rest
 		} = options;
 
@@ -21,6 +22,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		this.shape = shape;
 		this.projection = 'geodetic';
+		this.endCaps = endCaps;
 
 		// TODO: are these necessary?
 		this.minLat = - Math.PI / 2;
@@ -87,7 +89,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super.preprocessNode( tile, rest );
 
-		const { shape, projection, tileWidth, tileHeight, width, height } = this;
+		const { shape, projection, tileWidth, tileHeight, width, height, endCaps } = this;
 		if ( shape === 'ellipsoid' ) {
 
 			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
@@ -106,6 +108,24 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				north = this.mercatorToLatitude( maxV );
 				west = this.mercatorToLongitude( minU );
 				east = this.mercatorToLongitude( maxU );
+
+				// TODO: need to make sure this is actually at the edge of the full mercator
+				// extent rather than a sub view.
+				if ( endCaps ) {
+
+					if ( maxV === 1 ) {
+
+						north = Math.PI / 2;
+
+					}
+
+					if ( minV === 0 ) {
+
+						south = - Math.PI / 2;
+
+					}
+
+				}
 
 			} else {
 

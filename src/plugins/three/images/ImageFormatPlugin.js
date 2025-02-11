@@ -229,8 +229,8 @@ export class ImageFormatPlugin {
 		const ratioX = width / levelWidth;
 		const ratioY = height / levelHeight;
 
-		const boxX = ratioX * pixelSize * centerX + offsetX;
-		const boxY = ratioY * pixelSize * centerY + offsetY;
+		const boxX = ratioX * pixelSize * centerX;
+		const boxY = ratioY * pixelSize * centerY;
 		const extentsX = ratioX * pixelSize * tileWidthOverlap / 2;
 		const extentsY = ratioY * pixelSize * tileHeightOverlap / 2;
 
@@ -243,7 +243,7 @@ export class ImageFormatPlugin {
 				// is also enabled on the image bitmap texture generation above.
 				box: [
 					// center
-					boxX, boxY, 0,
+					boxX + offsetX, boxY + offsetY, 0,
 
 					// x, y, z half vectors
 					extentsX, 0.0, 0.0,
@@ -261,10 +261,10 @@ export class ImageFormatPlugin {
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
 			[ UV_BOUNDS ]: [
-				MathUtils.mapLinear( boxX - offsetX - extentsX, 0, pixelSize * width, 0, 1 ),
-				MathUtils.mapLinear( boxY - offsetY - extentsY, 0, pixelSize * height, 0, 1 ),
-				MathUtils.mapLinear( boxX - offsetX + extentsX, 0, pixelSize * width, 0, 1 ),
-				MathUtils.mapLinear( boxY - offsetY + extentsY, 0, pixelSize * height, 0, 1 ),
+				MathUtils.mapLinear( boxX - extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY - extentsY, 0, pixelSize * height, 0, 1 ),
+				MathUtils.mapLinear( boxX + extentsX, 0, pixelSize * width, 0, 1 ),
+				MathUtils.mapLinear( boxY + extentsY, 0, pixelSize * height, 0, 1 ),
 			],
 		};
 
