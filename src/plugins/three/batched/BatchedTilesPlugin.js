@@ -294,15 +294,6 @@ export class BatchedTilesPlugin {
 		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 		if ( hasCorrectAttributes && canAddMeshes ) {
 
-			if ( this.discardOriginalContent ) {
-
-				tile.cached.scene = null;
-				tile.cached.materials = [];
-				tile.cached.geometries = [];
-				tile.cached.textures = [];
-
-			}
-
 			scene.updateMatrixWorld();
 
 			const instanceIds = [];
@@ -343,6 +334,27 @@ export class BatchedTilesPlugin {
 			} );
 
 			this._tileToInstanceId.set( tile, instanceIds );
+
+			// discard all data if the option is set
+			// TODO: this would be best done in a more general way
+			if ( this.discardOriginalContent ) {
+
+				tile.cached.textures.forEach( tex => {
+
+					if ( tex.image instanceof ImageBitmap ) {
+
+						tex.image.close();
+
+					}
+
+				} );
+
+				tile.cached.scene = null;
+				tile.cached.materials = [];
+				tile.cached.geometries = [];
+				tile.cached.textures = [];
+
+			}
 
 		}
 
