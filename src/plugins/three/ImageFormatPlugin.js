@@ -281,8 +281,6 @@ class ImageFormatPlugin {
 
 }
 
-// TODO: we shouldn't modify the ellipsoid of the tileset. We should deproject using the appropriately
-// ellipsoid and map it to the ellipsoid provided by the tiles renderer.
 class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	constructor( options = {} ) {
@@ -296,6 +294,8 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		this.shape = shape;
 		this.projection = 'geodetic';
+
+		// TODO: are these necessary?
 		this.minLat = - Math.PI / 2;
 		this.maxLat = Math.PI / 2;
 		this.minLon = - Math.PI;
@@ -305,7 +305,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	async parseToMesh( buffer, tile, ...args ) {
 
-		const { shape, tiles } = this;
+		const { shape, projection, tiles } = this;
 		const mesh = await super.parseToMesh( buffer, tile, ...args );
 		if ( shape === 'ellipsoid' ) {
 
@@ -318,27 +318,52 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const vertCount = position.count;
 
 			tile.cached.boundingVolume.getSphere( _sphere );
-			for ( let i = 0; i < vertCount; i ++ ) {
+			if ( projection === 'mercator' ) {
 
-				_pos.fromBufferAttribute( position, i );
-				_norm.fromBufferAttribute( normal, i );
-				_uv.fromBufferAttribute( uv, i );
+				for ( let i = 0; i < vertCount; i ++ ) {
 
-				const lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
-				const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
-				ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
-				ellipsoid.getCartographicToNormal( lat, lon, _norm );
+					_pos.fromBufferAttribute( position, i );
+					_norm.fromBufferAttribute( normal, i );
+					_uv.fromBufferAttribute( uv, i );
 
-				const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
-				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
-				position.setXYZ( i, ..._pos );
-				normal.setXYZ( i, ..._norm );
-				uv.setXY( i, u, v );
+					const lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
+					const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
+					ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+					ellipsoid.getCartographicToNormal( lat, lon, _norm );
+
+					const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
+					const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
+					position.setXYZ( i, ..._pos );
+					normal.setXYZ( i, ..._norm );
+					uv.setXY( i, u, v );
+
+				}
+
+				mesh.geometry = geometry;
+				mesh.position.copy( _sphere.center );
+
+			} else if ( projection === 'geodetic' ) {
+
+				for ( let i = 0; i < vertCount; i ++ ) {
+
+					_pos.fromBufferAttribute( position, i );
+					_norm.fromBufferAttribute( normal, i );
+					_uv.fromBufferAttribute( uv, i );
+
+					const lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
+					const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
+					ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+					ellipsoid.getCartographicToNormal( lat, lon, _norm );
+
+					position.setXYZ( i, ..._pos );
+					normal.setXYZ( i, ..._norm );
+
+				}
+
+				mesh.geometry = geometry;
+				mesh.position.copy( _sphere.center );
 
 			}
-
-			mesh.geometry = geometry;
-			mesh.position.copy( _sphere.center );
 
 		}
 
@@ -350,10 +375,17 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super.preprocessNode( tile, rest );
 
-		const { shape, projection } = this;
+		const { shape, projection, tileWidth, tileHeight, width, height } = this;
 		if ( shape === 'ellipsoid' ) {
 
 			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
+
+			// one pixel width in uv space
+			const tileUWidth = ( maxU - minU ) / tileWidth;
+			const tileVWidth = ( maxV - minV ) / tileHeight;
+			const rootUWidth = 1 / width;
+			const rootVWidth = 1 / height;
+
 			if ( projection === 'mercator' ) {
 
 				const south = this.mercatorToLatitude( minV );
@@ -366,38 +398,61 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 					- 1, 1 // min / max height
 				];
 
-				// TODO: update geometric error
-
-				let testLat = Math.min( Math.abs( south ), Math.abs( north ) );
+				// TODO: clean this up
+				let midLat = Math.min( Math.abs( south ), Math.abs( north ) );
 				if ( ( south > 0 ) !== ( north > 0 ) ) {
 
-					testLat = 0;
+					midLat = 0;
 
 				}
 
-				// one pixel width in uv space
-				const tileUWidth = ( maxU - minU ) / this.tileWidth;
-				const tileVWidth = ( maxV - minV ) / this.tileHeight;
-				const rootUWidth = 1 / this.width;
-				const rootVWidth = 1 / this.height;
-
-				const testMercatorY = this.latitudeToMercator( testLat );
+				const testMercatorY = this.latitudeToMercator( midLat );
 				const [ latDeriv, lonDeriv ] = this.getMercatorToCartographicDerivative( minU, testMercatorY );
-				const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( testLat, east );
+				const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( midLat, east );
 
 				const tilePixelWidth = Math.max( tileUWidth * lonDeriv * xDeriv, tileVWidth * latDeriv * yDeriv );
 				const rootPixelWidth = Math.max( rootUWidth * lonDeriv * xDeriv, rootVWidth * latDeriv * yDeriv );
 
 				tile.geometricError = tilePixelWidth - rootPixelWidth;
 
-				// TODO: this shouldn't be needed
-				if ( tile.__depth === 0 ) {
+				delete tile.boundingVolume.box;
 
-					tile.geometricError = 1e50;
+			} else if ( projection === 'geodetic' ) {
+
+				const { minLat, maxLat, minLon, maxLon } = this;
+				const south = MathUtils.lerp( minLat, maxLat, minV );
+				const north = MathUtils.lerp( minLat, maxLat, maxV );
+				const west = MathUtils.lerp( minLon, maxLon, minU );
+				const east = MathUtils.lerp( minLon, maxLon, maxU );
+
+				let midLat = Math.min( Math.abs( south ), Math.abs( north ) );
+				if ( ( south > 0 ) !== ( north > 0 ) ) {
+
+					midLat = 0;
 
 				}
 
+				const [ latScale, lonScale ] = [ Math.PI, 2 * Math.PI ];
+				const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( midLat, east );
+
+				const tilePixelWidth = Math.max( tileUWidth * lonScale * xDeriv, tileVWidth * latScale * yDeriv );
+				const rootPixelWidth = Math.max( rootUWidth * lonScale * xDeriv, rootVWidth * latScale * yDeriv );
+
+				tile.geometricError = tilePixelWidth - rootPixelWidth;
+
+				tile.boundingVolume.region = [
+					west, south, east, north,
+					- 1, 1 // min / max height
+				];
+
 				delete tile.boundingVolume.box;
+
+			}
+
+			// TODO: this shouldn't be needed
+			if ( tile.__depth === 0 ) {
+
+				tile.geometricError = 1e50;
 
 			}
 
@@ -624,9 +679,11 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 					case 'global-geodetic':
 						widthMultiplier = 2;
 						heightMultiplier = 1;
+						this.projection = 'geodetic';
 						break;
 					case 'mercator':
 					case 'global-mercator':
+						this.projection = 'mercator';
 						break;
 					case 'local':
 					case 'none':
@@ -647,10 +704,10 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				this.tileSets = tileSetList;
 
 				// ellipsoid projection data
-				this.minLat = minY;
-				this.maxLat = maxY;
-				this.minLon = minX;
-				this.maxLon = maxX;
+				// this.minLat = minY;
+				// this.maxLat = maxY;
+				// this.minLon = minX;
+				// this.maxLon = maxX;
 
 				return this.getTileset( url );
 
