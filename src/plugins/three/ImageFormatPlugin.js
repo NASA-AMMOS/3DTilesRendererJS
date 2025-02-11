@@ -1,4 +1,4 @@
-import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
+import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, Sphere, SRGBColorSpace, Texture, Vector2, Vector3 } from 'three';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants';
 
 const TILE_X = Symbol( 'TILE_X' );
@@ -312,6 +312,9 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
+
+			const sphere = new Sphere();
+			tile.cached.boundingVolume.getSphere( sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
 				vPos.fromBufferAttribute( position, i );
@@ -320,12 +323,11 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				const lat = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
 				const lon = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
-				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos );
+				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos ).sub( sphere.center );
 				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
 
 				const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
 				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
-
 				position.setXYZ( i, ...vPos );
 				normal.setXYZ( i, ...vNorm );
 				uv.setXY( i, u, v );
@@ -333,6 +335,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			}
 
 			mesh.geometry = geometry;
+			mesh.position.copy( sphere.center );
 
 		}
 
