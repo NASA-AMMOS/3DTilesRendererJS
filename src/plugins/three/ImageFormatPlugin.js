@@ -6,6 +6,13 @@ const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 const UV_BOUNDS = Symbol( 'UV_BOUNDS' );
 
+const _pos = /* @__PURE__ */ new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _uv = /* @__PURE__ */ new Vector2();
+const _sphere = /* @__PURE__ */ new Sphere();
+const _v0 = /* @__PURE__ */ new Vector3();
+const _v1 = /* @__PURE__ */ new Vector3();
+
 // Base class for supporting tiled images with a consistent size / resolution per tile
 class ImageFormatPlugin {
 
@@ -304,38 +311,34 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			const ellipsoid = tiles.ellipsoid;
 			const geometry = new PlaneGeometry( 1, 1, 50, 25 );
-			const vPos = new Vector3();
-			const vNorm = new Vector3();
-			const vUv = new Vector2();
 
 			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
 
-			const sphere = new Sphere();
-			tile.cached.boundingVolume.getSphere( sphere );
+			tile.cached.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
-				vPos.fromBufferAttribute( position, i );
-				vNorm.fromBufferAttribute( normal, i );
-				vUv.fromBufferAttribute( uv, i );
+				_pos.fromBufferAttribute( position, i );
+				_norm.fromBufferAttribute( normal, i );
+				_uv.fromBufferAttribute( uv, i );
 
-				const lat = MathUtils.mapLinear( vUv.y, 0, 1, south, north );
-				const lon = MathUtils.mapLinear( vUv.x, 0, 1, west, east );
-				ellipsoid.getCartographicToPosition( lat, lon, 0, vPos ).sub( sphere.center );
-				ellipsoid.getCartographicToNormal( lat, lon, vNorm );
+				const lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
+				const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
+				ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
+				ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 				const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
 				const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
-				position.setXYZ( i, ...vPos );
-				normal.setXYZ( i, ...vNorm );
+				position.setXYZ( i, ..._pos );
+				normal.setXYZ( i, ..._norm );
 				uv.setXY( i, u, v );
 
 			}
 
 			mesh.geometry = geometry;
-			mesh.position.copy( sphere.center );
+			mesh.position.copy( _sphere.center );
 
 		}
 
@@ -472,15 +475,13 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		}
 
-		const v0 = new Vector3();
-		const v1 = new Vector3();
-		ellipsoid.getCartographicToPosition( lat, lon, 0, v0 );
+		ellipsoid.getCartographicToPosition( lat, lon, 0, _v0 );
 
-		ellipsoid.getCartographicToPosition( latp, lon, 0, v1 );
-		const dy = v0.distanceTo( v1 ) / EPS;
+		ellipsoid.getCartographicToPosition( latp, lon, 0, _v1 );
+		const dy = _v0.distanceTo( _v1 ) / EPS;
 
-		ellipsoid.getCartographicToPosition( lat, lonp, 0, v1 );
-		const dx = v0.distanceTo( v1 ) / EPS;
+		ellipsoid.getCartographicToPosition( lat, lonp, 0, _v1 );
+		const dx = _v0.distanceTo( _v1 ) / EPS;
 
 		return [ dx, dy ];
 
