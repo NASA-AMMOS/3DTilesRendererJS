@@ -45,15 +45,7 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Deep Zoom Image Format Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/deepZoom.html)
 
-**Debug Pages**
-
-[B3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/b3dmExample.html)
-
-[I3DM Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/i3dmExample.html)
-
-[PNTS Loading](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/pntsExample.html)
-
-[Ellipsoid Region Bounds](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ellipsoid.html)
+[TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
 
 **React Three Fiber**
 
