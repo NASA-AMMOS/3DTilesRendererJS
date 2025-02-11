@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - XYZ tiles plugin support.
 - Add ability to display TMS, XYZ tiles as an ellipsoid or plane.
 - R3F: "SettledObject" and "SettledObjects" components.
+- BatchedTilesPlugin: Add "textureSize" option.
 
 ### Fixed
 - EnvironmentControls: Fixed circle mesh not hiding when zooming on mobile.
