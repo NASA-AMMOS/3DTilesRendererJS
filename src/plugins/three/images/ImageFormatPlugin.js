@@ -1,4 +1,5 @@
 import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -23,6 +24,8 @@ export class ImageFormatPlugin {
 
 		this.priority = - 10;
 		this.tiles = null;
+		this.processQueue = null;
+		this.processCallback = null;
 
 		// tile dimensions in pixels
 		this.tileWidth = null;
@@ -43,6 +46,35 @@ export class ImageFormatPlugin {
 
 	init( tiles ) {
 
+		const processQueue = new PriorityQueue();
+		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
+		processQueue.maxJobs = 20;
+
+		this.processCallback = tile => {
+
+			const level = tile[ TILE_LEVEL ];
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+			for ( let cx = 0; cx < 2; cx ++ ) {
+
+				for ( let cy = 0; cy < 2; cy ++ ) {
+
+					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy );
+					if ( child ) {
+
+						tile.children.push( child );
+
+					}
+
+				}
+
+			}
+
+			return Promise.resolve();
+
+		};
+
+		this.processQueue = processQueue;
 		this.tiles = tiles;
 
 	}
@@ -86,25 +118,9 @@ export class ImageFormatPlugin {
 		// generate children
 		const { maxLevel } = this;
 		const level = tile[ TILE_LEVEL ];
-		const x = tile[ TILE_X ];
-		const y = tile[ TILE_Y ];
-
 		if ( level < maxLevel ) {
 
-			for ( let cx = 0; cx < 2; cx ++ ) {
-
-				for ( let cy = 0; cy < 2; cy ++ ) {
-
-					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy );
-					if ( child ) {
-
-						tile.children.push( child );
-
-					}
-
-				}
-
-			}
+			this.processQueue.add( tile, this.processCallback );
 
 		}
 
