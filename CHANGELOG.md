@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DeepZoomImage plugin support.
 - TMS tiles plugin support.
 - XYZ tiles plugin support.
+- Add ability to display TMS, XYZ tiles as an ellipsoid or plane.
 - R3F: "SettledObject" and "SettledObjects" components.
 
 ### Fixed
