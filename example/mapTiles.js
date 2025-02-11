@@ -118,6 +118,7 @@ function initTiles() {
 		controls.enableDamping = true;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 		controls.camera.quaternion.identity();
+		controls.minDistance = 150;
 
 	}
 
