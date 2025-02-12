@@ -14,12 +14,38 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 		this._lastCameraPos = new Matrix4();
 		this._forceUpdate = true;
 
+		this._matrices = [];
+
 	}
 
-	setMatrixAt( ...args ) {
+	setMatrixAt( instanceId, matrix ) {
 
-		super.setMatrixAt( ...args );
+		super.setMatrixAt( instanceId, matrix );
 		this._forceUpdate = true;
+
+		// save the matrices in their original float64 format to avoid
+		// precision errors when multiplying later
+		const matrices = this._matrices;
+		while ( matrices.length <= instanceId ) {
+
+			matrices.push( new Matrix4() );
+
+		}
+
+		matrices[ instanceId ].copy( matrix );
+
+	}
+
+	setInstanceCount( ...args ) {
+
+		super.setInstanceCount( ...args );
+
+		const matrices = this._matrices;
+		while ( matrices.length > this.instanceCount ) {
+
+			matrices.pop();
+
+		}
 
 	}
 
@@ -61,12 +87,22 @@ export class ModelViewBatchedMesh extends BatchedMesh {
 		if ( this._forceUpdate || vec1.distanceTo( vec2 ) > this.resetDistance ) {
 
 			// transform each objects matrix into local camera frame to avoid precision issues
-			const matricesArray = matricesTexture.image.data;
+			const matrices = this._matrices;
 			const modelViewArray = modelViewMatricesTexture.image.data;
 			for ( let i = 0; i < this.maxInstanceCount; i ++ ) {
 
+				const instanceMatrix = matrices[ i ];
+				if ( instanceMatrix ) {
+
+					matrix.copy( instanceMatrix );
+
+				} else {
+
+					matrix.identity();
+
+				}
+
 				matrix
-					.fromArray( matricesArray, i * 16 )
 					.premultiply( this.matrixWorld )
 					.premultiply( camera.matrixWorldInverse )
 					.toArray( modelViewArray, i * 16 );
