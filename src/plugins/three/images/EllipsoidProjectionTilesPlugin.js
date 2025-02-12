@@ -46,7 +46,7 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 
 			// new geometry
-			const geometry = new PlaneGeometry( 1, 1, 50, 25 );
+			const geometry = new PlaneGeometry( 1, 1, 30, 15 );
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
 
