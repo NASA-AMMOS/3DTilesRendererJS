@@ -157,14 +157,13 @@ export class TilesRendererBase {
 		// insert the plugin based on the priority registered on the plugin
 		const plugins = this.plugins;
 		const priority = plugin.priority || 0;
-		let insertionPoint = 0;
+		let insertionPoint = plugins.length;
 		for ( let i = 0; i < plugins.length; i ++ ) {
-
-			insertionPoint = i;
 
 			const otherPriority = plugins[ i ].priority || 0;
 			if ( otherPriority > priority ) {
 
+				insertionPoint = i;
 				break;
 
 			}
