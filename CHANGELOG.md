@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fixed circle mesh not hiding when zooming on mobile.
 - BatchedTilesPlugin: Fix case where image bitmaps would not be disposed of correctly when discarding data.
 - BatchedTilesPlugin: Fix small 32-bit floating point math precision problems causing small offsets for globe tiles.
+- Plugins: Fix case where a plugin was not inserted based on priority correctly.
 
 ## [0.4.4] - 2025.01.24
 ### Added
