@@ -71,7 +71,7 @@ function initTiles() {
 
 	// tiles
 	tiles = new TilesRenderer( 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' );
-	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new XYZTilesPlugin( {
 		center: true,
@@ -80,6 +80,7 @@ function initTiles() {
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
+	tiles.parseQueue.maxJobs = 3;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
