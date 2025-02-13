@@ -139,6 +139,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this._upInitialized = false;
 		this._lastUsedState = NONE;
 		this._zoomPointWasSet = false;
+		this._lastDragDistance = Infinity;
 
 		// always update the zoom target point in case the tiles are changing
 		this._tilesOnChangeCallback = () => this.zoomPointSet = false;
@@ -672,6 +673,13 @@ export class EnvironmentControls extends EventDispatcher {
 			this._updatePosition( deltaTime );
 			this._updateRotation( deltaTime );
 
+			if ( state === DRAG ) {
+
+				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+				this._lastDragDistance = _vec.copy( this.pivotPoint ).sub( camera.position ).dot( _forward );
+
+			}
+
 			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
 				this.dispatchEvent( _changeEvent );
@@ -786,10 +794,24 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-		dragInertia.multiplyScalar( factor );
-		if ( dragInertia.lengthSq() < POS_MOMENTUM_THRESHOLD || ! enableDamping ) {
+		if ( dragInertia.lengthSq() > 0 ) {
 
-			dragInertia.set( 0, 0, 0 );
+			const { camera, cameraRadius, minDistance } = this;
+			const dist = Math.max( camera.near, cameraRadius, minDistance, this._lastDragDistance );
+			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			_delta.set( 1 / 1e2, 1 / 1e2, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+
+			_vec.multiplyScalar( dist / _vec.z ).applyMatrix4( camera.matrixWorld );
+			_delta.multiplyScalar( dist / _delta.z ).applyMatrix4( camera.matrixWorld );
+
+			const threshold = _vec.distanceToSquared( _delta );
+
+			dragInertia.multiplyScalar( factor );
+			if ( dragInertia.lengthSq() < threshold || ! enableDamping ) {
+
+				dragInertia.set( 0, 0, 0 );
+
+			}
 
 		}
 
