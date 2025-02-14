@@ -301,6 +301,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 					this.pivotPoint.copy( hit.point );
 					this.pivotMesh.position.copy( hit.point );
+					this.pivotMesh.visible = false;
 					this.pivotMesh.updateMatrixWorld();
 					this.scene.add( this.pivotMesh );
 
