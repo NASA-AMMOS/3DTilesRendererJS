@@ -59,6 +59,8 @@ export class GlobeControls extends EnvironmentControls {
 		this.reorientOnDrag = false;
 
 		this.dragQuaternion = new Quaternion();
+		this.globeInertia = new Quaternion();
+		this.globeInertiaFactor = 0;
 
 		this.setTilesRenderer( tilesRenderer );
 
@@ -266,47 +268,94 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	_updatePosition( deltaTime ) {
+	_updateInertia( deltaTime ) {
 
-		if ( this.state !== DRAG ) {
+		super._updateInertia( deltaTime );
 
-			const {
-				enableDamping,
-				tilesGroup,
-				dragQuaternion,
-				dragInertia,
-				camera,
-			} = this;
+		const {
+			globeInertia,
+			pivotPoint,
+			enableDamping,
+			dampingFactor,
+			camera,
+			cameraRadius,
+			minDistance,
+			inertiaTargetDistance,
+			tilesGroup,
+		} = this;
 
-			// apply inertia for movement
-			if ( enableDamping ) {
+		const factor = Math.pow( 2, - deltaTime / dampingFactor );
+		const stableDistance = Math.max( camera.near, cameraRadius, minDistance, inertiaTargetDistance );
+		const resolution = 2 * 1e1;
+		const pixelWidth = 2 / resolution;
 
-				// ensure our w component is non-one if the xyz values are
-				// non zero to ensure we can animate
-				if (
-					dragQuaternion.w === 1 && (
-						dragQuaternion.x !== 0 ||
-						dragQuaternion.y !== 0 ||
-						dragQuaternion.z !== 0
-					)
-				) {
+		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
 
-					dragQuaternion.w = Math.min( dragQuaternion.w, 1 - 1e-9 );
+		if ( this.globeInertiaFactor !== 0 ) {
 
-				}
+			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
+			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			_pos.set( pixelWidth, pixelWidth, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
 
-				// construct the rotation matrix
-				_center.setFromMatrixPosition( tilesGroup.matrixWorld );
-				_quaternion.identity().slerp( dragQuaternion, dragInertia.x * deltaTime );
-				makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+			// project points into world space
+			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
+			_pos.multiplyScalar( stableDistance / _pos.z ).applyMatrix4( camera.matrixWorld );
 
-				// apply the rotation
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+			// get implied angle
+			_vec.sub( _center ).normalize();
+			_pos.sub( _center ).normalize();
+
+			// TODO: is delta time needed here?
+			this.globeInertiaFactor *= factor;
+			const threshold = _vec.angleTo( _pos ) / deltaTime;
+			const globeAngle = 2 * Math.acos( globeInertia.w ) * this.globeInertiaFactor;
+			if ( globeAngle < threshold || ! enableDamping ) {
+
+				this.globeInertiaFactor = 0;
+				globeInertia.identity();
 
 			}
 
-		} else {
+		}
+
+		if ( this.globeInertiaFactor !== 0 ) {
+
+			// ensure our w component is non-one if the xyz values are
+			// non zero to ensure we can animate
+			if (
+				globeInertia.w === 1 && (
+					globeInertia.x !== 0 ||
+					globeInertia.y !== 0 ||
+					globeInertia.z !== 0
+				)
+			) {
+
+				globeInertia.w = Math.min( globeInertia.w, 1 - 1e-9 );
+
+			}
+
+			// construct the rotation matrix
+			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+			_quaternion.identity().slerp( globeInertia, this.globeInertiaFactor * deltaTime );
+			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
+
+			// apply the rotation
+			camera.matrixWorld.premultiply( _rotMatrix );
+			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
+
+		}
+
+	}
+
+	_inertiaNeedsUpdate() {
+
+		return super._inertiaNeedsUpdate() || this.globeInertiaFactor !== 0;
+
+	}
+
+	_updatePosition( deltaTime ) {
+
+		if ( this.state === DRAG ) {
 
 			// save the drag mode state so we can update the pivot mesh visuals in "update"
 			if ( this._dragMode === 0 ) {
@@ -374,13 +423,19 @@ export class GlobeControls extends EnvironmentControls {
 			const { dragInertia, dragQuaternion } = this;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-				dragQuaternion.slerp( _quaternion, 0.5 );
+				dragQuaternion.identity().slerp( _quaternion, 0.5 );
 				dragInertia.set( 1 / deltaTime, 0, 0 );
+
+				this.globeInertia.slerp( _quaternion, 0.5 );
+				this.globeInertiaFactor = 1 / deltaTime;
 
 			} else {
 
 				dragQuaternion.copy( _quaternion );
 				dragInertia.set( 1 / deltaTime, 0, 0 );
+
+				this.globeInertia.copy( _quaternion );
+				this.globeInertiaFactor = 1 / deltaTime;
 
 			}
 

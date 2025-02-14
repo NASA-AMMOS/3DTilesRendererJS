@@ -21,7 +21,6 @@ export const WAITING = 4;
 
 const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
-const ROT_MOMENTUM_THRESHOLD = 1e-4;
 
 const _rotMatrix = /* @__PURE__ */ new Matrix4();
 const _delta = /* @__PURE__ */ new Vector3();
@@ -660,6 +659,7 @@ export class EnvironmentControls extends EventDispatcher {
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
+			// TODO: move this condition to the _updateZoom function?
 			const zoomDelta = this.zoomDelta;
 			if ( state === ZOOM || zoomDelta !== 0 ) {
 
@@ -678,7 +678,12 @@ export class EnvironmentControls extends EventDispatcher {
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 				this.inertiaTargetDistance = _vec.copy( this.pivotPoint ).sub( camera.position ).dot( _forward );
 
+			} else if ( state === NONE ) {
+
+				this._updateInertia( deltaTime );
+
 			}
+
 
 			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
@@ -687,12 +692,6 @@ export class EnvironmentControls extends EventDispatcher {
 			}
 
 			this.needsUpdate = false;
-
-		}
-
-		if ( inertiaNeedsUpdate ) {
-
-			this._updateInertiaDamping( deltaTime );
 
 		}
 
@@ -773,12 +772,12 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// private
-	_updateInertiaDamping( deltaTime ) {
+	_updateInertia( deltaTime ) {
 
 		// update the damping of momentum variables
 		const {
 			rotationInertia,
-			rotationInertiaPivot,
+			pivotPoint,
 			dragInertia,
 			enableDamping,
 			dampingFactor,
@@ -794,7 +793,7 @@ export class EnvironmentControls extends EventDispatcher {
 		const resolution = 2 * 1e3;
 		const pixelWidth = 2 / resolution;
 
-		// scale the residual motion
+		// scale the residual rotation motion
 		if ( rotationInertia.lengthSq() > 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
@@ -806,13 +805,13 @@ export class EnvironmentControls extends EventDispatcher {
 			_delta.multiplyScalar( stableDistance / _delta.z ).applyMatrix4( camera.matrixWorld );
 
 			// get implied angle
-			_vec.sub( rotationInertiaPivot ).normalize();
-			_delta.sub( rotationInertiaPivot ).normalize();
+			_vec.sub( pivotPoint ).normalize();
+			_delta.sub( pivotPoint ).normalize();
 
-			// const thresholdAngle = _vec.angleTo( _delta );
-
+			// calculate the rotation threshold
+			const threshold = _vec.angleTo( _delta ) / deltaTime;
 			rotationInertia.multiplyScalar( factor );
-			if ( rotationInertia.lengthSq() < ROT_MOMENTUM_THRESHOLD || ! enableDamping ) {
+			if ( rotationInertia.lengthSq() < threshold ** 2 || ! enableDamping ) {
 
 				rotationInertia.set( 0, 0 );
 
@@ -820,6 +819,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		// scale the residual translation motion
 		if ( dragInertia.lengthSq() > 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
@@ -832,7 +832,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// calculate movement threshold
 			const threshold = _vec.distanceToSquared( _delta ) / deltaTime;
-
 			dragInertia.multiplyScalar( factor );
 			if ( dragInertia.lengthSq() < threshold || ! enableDamping ) {
 
@@ -842,21 +841,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
-	}
-
-	_applyInertia( deltaTime ) {
-
-		const {
-			rotationInertiaPivot,
-			rotationInertia,
-			dragInertia,
-			camera,
-		} = this;
-
-
+		// apply the inertia changes
 		if ( rotationInertia.lengthSq() > 0 ) {
 
-			this._applyRotation( rotationInertia.x * deltaTime, rotationInertia.y * deltaTime, rotationInertiaPivot );
+			this._applyRotation( rotationInertia.x * deltaTime, rotationInertia.y * deltaTime, pivotPoint );
 
 		}
 
@@ -1103,7 +1091,6 @@ export class EnvironmentControls extends EventDispatcher {
 			domElement,
 			state,
 			dragInertia,
-			enableDamping,
 		} = this;
 
 		if ( state === DRAG ) {
@@ -1176,11 +1163,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-		} else if ( enableDamping ) {
-
-			camera.position.addScaledVector( dragInertia, deltaTime );
-			camera.updateMatrixWorld();
-
 		}
 
 	}
@@ -1193,7 +1175,6 @@ export class EnvironmentControls extends EventDispatcher {
 			domElement,
 			state,
 			rotationInertia,
-			enableDamping,
 		} = this;
 
 		if ( state === ROTATE ) {
@@ -1216,10 +1197,6 @@ export class EnvironmentControls extends EventDispatcher {
 				rotationInertia.copy( _deltaPointer );
 
 			}
-
-		} else if ( enableDamping ) {
-
-			this._applyRotation( rotationInertia.x * deltaTime, rotationInertia.y * deltaTime, pivotPoint );
 
 		}
 
