@@ -286,7 +286,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		const factor = Math.pow( 2, - deltaTime / dampingFactor );
 		const stableDistance = Math.max( camera.near, cameraRadius, minDistance, inertiaTargetDistance );
-		const resolution = 2 * 1e1;
+		const resolution = 2 * 1e3;
 		const pixelWidth = 2 / resolution;
 
 		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
