@@ -33,6 +33,17 @@ canvas {
 	pointer-events: all;
 }
 
-.light #info, info a {
+#credits {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	color: white;
+	font-size: 12px;
+	opacity: 0.5;
+	padding: 5px;
+	line-height: 1.25em;
+}
+
+.light #info, .light #info a, .light #credits {
 	color: #234;
 }
