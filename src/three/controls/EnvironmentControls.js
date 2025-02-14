@@ -659,17 +659,9 @@ export class EnvironmentControls extends EventDispatcher {
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
-			// TODO: move this condition to the _updateZoom function?
 			const zoomDelta = this.zoomDelta;
-			if ( state === ZOOM || zoomDelta !== 0 ) {
 
-				this._updateZoom();
-
-				this.rotationInertia.set( 0, 0 );
-				this.dragInertia.set( 0, 0, 0 );
-
-			}
-
+			this._updateZoom();
 			this._updatePosition( deltaTime );
 			this._updateRotation( deltaTime );
 
@@ -683,7 +675,6 @@ export class EnvironmentControls extends EventDispatcher {
 				this._updateInertia( deltaTime );
 
 			}
-
 
 			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
 
@@ -877,17 +868,22 @@ export class EnvironmentControls extends EventDispatcher {
 			minZoom,
 			maxZoom,
 			zoomSpeed,
+			state,
 		} = this;
 
 		let scale = this.zoomDelta;
 		this.zoomDelta = 0;
 
 		// get the latest hover / touch point
-		if ( ! pointerTracker.getLatestPoint( _pointer ) ) {
+		if ( ! pointerTracker.getLatestPoint( _pointer ) || ( scale === 0 && state !== ZOOM ) ) {
 
 			return;
 
 		}
+
+		// reset momentum
+		this.rotationInertia.set( 0, 0 );
+		this.dragInertia.set( 0, 0, 0 );
 
 		if ( camera.isOrthographicCamera ) {
 
@@ -938,9 +934,6 @@ export class EnvironmentControls extends EventDispatcher {
 				camera.updateMatrixWorld();
 
 			}
-
-			// TODO: the user can currently zoom into the sky and hide the globe.
-			// Consider forcing the camera to zoom into the closest horizon point
 
 		} else {
 

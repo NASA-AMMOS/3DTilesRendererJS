@@ -6,7 +6,7 @@ import {
 	MathUtils,
 	Ray,
 } from 'three';
-import { DRAG, EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
@@ -456,7 +456,19 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, maxZoom } = this;
+		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, maxZoom, state } = this;
+
+		if ( state !== ZOOM && zoomDelta === 0 ) {
+
+			return;
+
+		}
+
+		// reset momentum
+		this.rotationInertia.set( 0, 0 );
+		this.dragInertia.set( 0, 0, 0 );
+		this.globeInertia.identity();
+		this.globeInertiaFactor = 0;
 
 		// used to scale the tilt transitions based on zoom intensity
 		const deltaAlpha = MathUtils.clamp( MathUtils.mapLinear( Math.abs( zoomDelta ), 0, 20, 0, 1 ), 0, 1 );
