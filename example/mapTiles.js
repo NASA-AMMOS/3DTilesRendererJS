@@ -97,7 +97,6 @@ function initTiles() {
 		controls.minDistance = 0.01;
 		controls.maxDistance = 5000;
 		controls.cameraRadius = 0;
-		controls.enableDamping = true;
 		controls.fallbackPlane.normal.set( 0, 0, 1 );
 		controls.up.set( 0, 0, 1 );
 		controls.camera.position.set( 0, 0, 2000 );

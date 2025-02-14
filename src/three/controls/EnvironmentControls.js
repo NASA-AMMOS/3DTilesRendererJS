@@ -778,18 +778,27 @@ export class EnvironmentControls extends EventDispatcher {
 			inertiaTargetDistance,
 		} = this;
 
+		if ( ! this.enableDamping ) {
+
+			dragInertia.set( 0, 0, 0 );
+			rotationInertia.set( 0, 0, 0 );
+			return;
+
+		}
+
 		// Based on Freya Holmer's frame-rate independent lerp function
 		const factor = Math.pow( 2, - deltaTime / dampingFactor );
 		const stableDistance = Math.max( camera.near, cameraRadius, minDistance, inertiaTargetDistance );
 		const resolution = 2 * 1e3;
 		const pixelWidth = 2 / resolution;
+		const pixelThreshold = 0.25 * pixelWidth;
 
 		// scale the residual rotation motion
 		if ( rotationInertia.lengthSq() > 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
 			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_delta.set( pixelWidth, pixelWidth, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			_delta.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
 
 			// project points into world space
 			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
@@ -815,16 +824,16 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
 			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_delta.set( pixelWidth, pixelWidth, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			_delta.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
 
 			// project points into world space
 			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
 			_delta.multiplyScalar( stableDistance / _delta.z ).applyMatrix4( camera.matrixWorld );
 
 			// calculate movement threshold
-			const threshold = _vec.distanceToSquared( _delta ) / deltaTime;
+			const threshold = _vec.distanceTo( _delta ) / deltaTime;
 			dragInertia.multiplyScalar( factor );
-			if ( dragInertia.lengthSq() < threshold || ! enableDamping ) {
+			if ( dragInertia.lengthSq() < threshold ** 2 || ! enableDamping ) {
 
 				dragInertia.set( 0, 0, 0 );
 

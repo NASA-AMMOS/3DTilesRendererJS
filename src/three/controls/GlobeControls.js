@@ -282,10 +282,19 @@ export class GlobeControls extends EnvironmentControls {
 			tilesGroup,
 		} = this;
 
+		if ( ! this.enableDamping ) {
+
+			this.globeInertiaFactor = 0;
+			this.globeInertia.identity();
+			return;
+
+		}
+
 		const factor = Math.pow( 2, - deltaTime / dampingFactor );
 		const stableDistance = Math.max( camera.near, cameraRadius, minDistance, inertiaTargetDistance );
 		const resolution = 2 * 1e3;
 		const pixelWidth = 2 / resolution;
+		const pixelThreshold = 0.25 * pixelWidth;
 
 		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
 
@@ -293,7 +302,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
 			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_pos.set( pixelWidth, pixelWidth, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			_pos.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
 
 			// project points into world space
 			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
