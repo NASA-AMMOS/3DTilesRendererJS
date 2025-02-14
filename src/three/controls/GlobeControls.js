@@ -58,7 +58,6 @@ export class GlobeControls extends EnvironmentControls {
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
 
-		this.dragQuaternion = new Quaternion();
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
 
@@ -418,19 +417,12 @@ export class GlobeControls extends EnvironmentControls {
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
-			const { dragInertia, dragQuaternion } = this;
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
-
-				dragQuaternion.identity().slerp( _quaternion, 0.5 );
-				dragInertia.set( 1 / deltaTime, 0, 0 );
 
 				this.globeInertia.slerp( _quaternion, 0.5 );
 				this.globeInertiaFactor = 1 / deltaTime;
 
 			} else {
-
-				dragQuaternion.copy( _quaternion );
-				dragInertia.set( 1 / deltaTime, 0, 0 );
 
 				this.globeInertia.copy( _quaternion );
 				this.globeInertiaFactor = 1 / deltaTime;
