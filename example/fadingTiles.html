@@ -5,45 +5,9 @@
 		<meta charset="utf-8"/>
 
 		<title>Dither Fade Tiles</title>
-
-		<style>
-			* {
-				margin: 0;
-				padding: 0;
-			}
-
-			html {
-				overflow: hidden;
-				font-family: Arial, Helvetica, sans-serif;
-				user-select: none;
-			}
-
-			canvas {
-				image-rendering: pixelated;
-				outline: none;
-			}
-
-			#info {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				text-align: center;
-				padding: 5px;
-				pointer-events: none;
-				line-height: 1.5em;
-			}
-
-			#info, #info a {
-				color: #234;
-			}
-
-			#info a {
-				pointer-events: all;
-			}
-        </style>
+		<link rel="stylesheet" href="./styles.css">
     </head>
-    <body>
+    <body class="light">
 		<div id="info">
 			Demonstration of tiles using a dither fade to change, smoothing out the transition.
 		</div>
