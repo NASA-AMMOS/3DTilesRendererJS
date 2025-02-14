@@ -274,7 +274,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		const {
 			globeInertia,
-			pivotPoint,
 			enableDamping,
 			dampingFactor,
 			camera,
@@ -305,7 +304,6 @@ export class GlobeControls extends EnvironmentControls {
 			_vec.sub( _center ).normalize();
 			_pos.sub( _center ).normalize();
 
-			// TODO: is delta time needed here?
 			this.globeInertiaFactor *= factor;
 			const threshold = _vec.angleTo( _pos ) / deltaTime;
 			const globeAngle = 2 * Math.acos( globeInertia.w ) * this.globeInertiaFactor;
