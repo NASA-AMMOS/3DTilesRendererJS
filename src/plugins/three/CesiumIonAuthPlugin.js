@@ -17,6 +17,7 @@ export class CesiumIonAuthPlugin {
 		this._tileSetVersion = - 1;
 		this._tokenRefreshPromise = null;
 		this._attributions = [];
+		this._disposed = false;
 
 	}
 
@@ -119,6 +120,12 @@ export class CesiumIonAuthPlugin {
 			this._tokenRefreshPromise = fetch( url, options )
 				.then( res => {
 
+					if ( this._disposed ) {
+
+						return null;
+
+					}
+
 					if ( ! res.ok ) {
 
 						throw new Error( `CesiumIonAuthPlugin: Failed to load data with error code ${ res.status }` );
@@ -129,6 +136,12 @@ export class CesiumIonAuthPlugin {
 
 				} )
 				.then( json => {
+
+					if ( this._disposed ) {
+
+						return null;
+
+					}
 
 					const tiles = this.tiles;
 					if ( 'externalType' in json ) {
@@ -188,6 +201,12 @@ export class CesiumIonAuthPlugin {
 		}
 
 		return this._tokenRefreshPromise;
+
+	}
+
+	dispose() {
+
+		this._disposed = true;
 
 	}
 
