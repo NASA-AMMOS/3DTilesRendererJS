@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - CesiumIonAuthPlugin: Fix the plugin not being disposed of properly.
 - EnvironmentControls: Fix missing pivot mesh ring when rotating the camera.
+- Fix GLTF Metadata plugin not returning matrix values correctly.
 
 ## [0.4.5] - 2025.02.14
 ### Added
