@@ -246,6 +246,9 @@ export class EnvironmentControls extends EventDispatcher {
 				up,
 				pivotMesh,
 				pointerTracker,
+				scene,
+				pivotPoint,
+				enabled,
 			} = this;
 
 			// init the pointer
@@ -299,21 +302,21 @@ export class EnvironmentControls extends EventDispatcher {
 
 					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
 
-					this.pivotPoint.copy( hit.point );
-					this.pivotMesh.position.copy( hit.point );
-					this.pivotMesh.visible = false;
-					this.pivotMesh.updateMatrixWorld();
-					this.scene.add( this.pivotMesh );
+					pivotPoint.copy( hit.point );
+					pivotMesh.position.copy( hit.point );
+					pivotMesh.visible = pointerTracker.isPointerTouch() ? false : enabled;
+					pivotMesh.updateMatrixWorld();
+					scene.add( pivotMesh );
 
 				} else if ( pointerTracker.isLeftClicked() ) {
 
 					// if the clicked point is coming from below the plane then don't perform the drag
 					this.setState( DRAG );
-					this.pivotPoint.copy( hit.point );
+					pivotPoint.copy( hit.point );
 
-					this.pivotMesh.position.copy( hit.point );
-					this.pivotMesh.updateMatrixWorld();
-					this.scene.add( this.pivotMesh );
+					pivotMesh.position.copy( hit.point );
+					pivotMesh.updateMatrixWorld();
+					scene.add( pivotMesh );
 
 				}
 
@@ -325,6 +328,11 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointermoveCallback = e => {
 
 			e.preventDefault();
+
+			const {
+				pivotMesh,
+				enabled,
+			} = this;
 
 			// whenever the pointer moves we need to re-derive the zoom direction and point
 			this.zoomDirectionSet = false;
@@ -392,11 +400,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 							const previousDist = pointerTracker.getPreviousTouchPointerDistance();
 							this.zoomDelta += pointerDist - previousDist;
-							this.pivotMesh.visible = false;
+							pivotMesh.visible = false;
 
 						} else if ( this.state === ROTATE ) {
 
-							this.pivotMesh.visible = this.enabled;
+							pivotMesh.visible = enabled;
 
 						}
 
