@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Fixed
 - CesiumIonAuthPlugin: Fix the plugin not being disposed of properly.
+- EnvironmentControls: Fix missing pivot mesh ring when rotating the camera.
 
 ## [0.4.5] - 2025.02.14
 ### Added
