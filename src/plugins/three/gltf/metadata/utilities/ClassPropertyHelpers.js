@@ -38,7 +38,7 @@ export function isVectorType( type ) {
 // check if the class property type is a matrix type
 export function isMatrixType( type ) {
 
-	return /^MATRIX/.test( type );
+	return /^MAT/.test( type );
 
 }
 
