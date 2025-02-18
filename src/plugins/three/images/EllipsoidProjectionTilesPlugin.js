@@ -46,20 +46,57 @@ class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 
 			// new geometry
-			const geometry = new PlaneGeometry( 1, 1, 30, 15 );
+			// default to a minimum number of vertices per degree on each axis
+			const MAX_LON_VERTS = 30;
+			const MAX_LAT_VERTS = 15;
+			const latVerts = Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 );
+			const lonVerts = Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 );
+			const yVerts = Math.max( MAX_LAT_VERTS, latVerts );
+			const xVerts = Math.max( MAX_LON_VERTS, lonVerts );
+			const geometry = new PlaneGeometry(
+				1, 1,
+				xVerts,
+				yVerts,
+			);
+
+			// adjust the geometry to position it at the region
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
-
-			// adjust the geometry to position it at the regino
 			tile.cached.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
+				// TODO: If we're at a mercator north / south boundary we should position an edge so that
+				// it sits exactly at the right point.
 				_pos.fromBufferAttribute( position, i );
 				_norm.fromBufferAttribute( normal, i );
 				_uv.fromBufferAttribute( uv, i );
 
-				const lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
 				const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
+				let lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
+				if ( projection === 'mercator' && _uv.y !== 0 && _uv.y !== 1 ) {
+
+					// ensure we have an edge loop positioned at the mercator limit
+					// to avoid UV distortion as much as possible at low LoDs
+					const latLimit = this.mercatorToLatitude( 1 );
+					const vStep = 1 / yVerts;
+
+					const prevLat = MathUtils.mapLinear( _uv.y - vStep, 0, 1, south, north );
+					const nextLat = MathUtils.mapLinear( _uv.y + vStep, 0, 1, south, north );
+
+					if ( lat > latLimit && prevLat < latLimit ) {
+
+						lat = latLimit;
+
+					}
+
+					if ( lat < - latLimit && nextLat > - latLimit ) {
+
+						lat = - latLimit;
+
+					}
+
+				}
+
 				ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 				ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
