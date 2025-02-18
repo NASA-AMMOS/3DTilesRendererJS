@@ -81,7 +81,7 @@ function CesiumIonTilesRenderer( { children, apiToken, assetId, ...rest } ) {
 
 ## TilesRenderer
 
-Wrapper for the three.js `TilesRenderer` class. Listening for events are specified with a camel-case property prefixed with `on`, such as `onModelLoad`, and all other properties are specified as individual properties with dashes being used to indicate nested properties. For example, `lruCache-minSize` is used to set `lruCache.minSize`.
+Wrapper for the three.js `TilesRenderer` class. Listening for events are specified with a camel-case property prefixed with `on`, such as `onLoadModel`, and all other properties are specified as individual properties with dashes being used to indicate nested properties. For example, `lruCache-minSize` is used to set `lruCache.minSize`.
 
 ```jsx
 <TilesRenderer
@@ -104,8 +104,8 @@ Wrapper for the three.js `TilesRenderer` class. Listening for events are specifi
   lruCache-maxBytesSize={ 0.5 * 1e6 }
 
   // event registration
-  onTileSetLoad={ onTileSetLoadCallback }
-  onModelLoad={ onModelLoadCallback }
+  onLoadTileSet={ onLoadTileSetCallback }
+  onLoadModel={ onLoadModelCallback }
 />
 ```
 
