@@ -5,28 +5,24 @@
  */
 export function getUrlExtension( url ) {
 
-	let parsedUrl;
-	try {
+	if ( ! url ) {
 
-		parsedUrl = new URL( url, 'http://fakehost.com/' );
-
-	} catch ( _ ) {
-
-		// Ignore invalid URLs
 		return null;
 
 	}
 
-	const filename = parsedUrl.pathname.split( '/' ).pop();
-	const dotIndex = filename.lastIndexOf( '.' );
-	if ( dotIndex === - 1 || dotIndex === filename.length - 1 ) {
+	const filename = url
+		.replace( /[a-z]+:\/\/[^/]+/i, '' ) 	// remove origin
+		.replace( /\?.*$/i, '' ) 				// remove query
+		.replace( /.*\//g, '' ); 				// remove path
 
-		// Has no extension or has trailing . character
+	const lastPeriod = filename.lastIndexOf( '.' );
+	if ( lastPeriod === - 1 ) {
+
 		return null;
 
 	}
 
-	const extension = filename.substring( dotIndex + 1 );
-	return extension;
+	return filename.substring( lastPeriod + 1 ) || null;
 
 }

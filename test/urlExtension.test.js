@@ -6,6 +6,7 @@ describe( 'getUrlExtension', () => {
 		'https://nasa.gov/foo/bar.baz/tileset.json',
 		'https://nasa.gov/foo/bar.baz/tileset.json?foo=bar',
 		'https://nasa.gov/foo/bar.baz/tileset.json?a.b=c.d',
+		'https://nasa.gov/foo/bar.baz/tileset.json?a.b=query/path/to/file',
 		'https://nasa.gov/foo/bar.baz/tileset.json?a.b=c.d#e.f',
 		'https://nasa.gov/tileset.json',
 		'https://nasa.gov//tileset.json',
