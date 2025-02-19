@@ -310,22 +310,6 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	preprocessTileSet( json, url, tile ) {
-
-		super.preprocessTileSet( json, url, tile );
-
-		queueMicrotask( () => {
-
-			this.dispatchEvent( {
-				type: 'load-tile-set',
-				tileSet: json,
-				url,
-			} );
-
-		} );
-
-	}
-
 	loadRootTileSet( ...args ) {
 
 		return super.loadRootTileSet( ...args )

@@ -264,6 +264,10 @@ export class TilesRendererBase {
 
 					this.rootLoadingState = LOADED;
 					this.rootTileSet = root;
+					this.dispatchEvent( {
+						type: 'load-tile-set',
+						tileSet: root,
+					} );
 
 				} )
 				.catch( error => {
@@ -276,7 +280,6 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile: null,
 						error,
-						// uri: processedUrl,
 					} );
 
 				} );
