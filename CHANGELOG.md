@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fix missing pivot mesh ring when rotating the camera.
 - Fix GLTF Metadata plugin not returning matrix values correctly.
 - TMS, XYZ Plugins: Fix case where texture would be distorted due to incorrect vertex placement when using mercator projection.
+- Case where TilesRenderer.root was not initialized before the "load-tile-set" event was fired.
 
 ## [0.4.5] - 2025.02.14
 ### Added
