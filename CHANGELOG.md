@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TMS, XYZ Plugins: Fix case where texture would be distorted due to incorrect vertex placement when using mercator projection.
 - Case where TilesRenderer.root was not initialized before the "load-tile-set" event was fired.
 - R3F TilesRenderer: Update the tile set when a tile set is loaded.
+- ImageFormatPlugins: Fix plugin so it does not preclude updates incorrectly.
+- R3F TilesRenderer: Prevent reinstantiation of all child plugins, objects on options change.
 
 ## [0.4.5] - 2025.02.14
 ### Added
