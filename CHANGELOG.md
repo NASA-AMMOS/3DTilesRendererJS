@@ -5,12 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- R3F TilesRenderer: Add "enabled" field
+
 ### Fixed
 - CesiumIonAuthPlugin: Fix the plugin not being disposed of properly.
 - EnvironmentControls: Fix missing pivot mesh ring when rotating the camera.
 - Fix GLTF Metadata plugin not returning matrix values correctly.
 - TMS, XYZ Plugins: Fix case where texture would be distorted due to incorrect vertex placement when using mercator projection.
 - Case where TilesRenderer.root was not initialized before the "load-tile-set" event was fired.
+- R3F TilesRenderer: Update the tile set when a tile set is loaded.
 
 ## [0.4.5] - 2025.02.14
 ### Added
