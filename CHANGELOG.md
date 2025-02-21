@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - R3F TilesRenderer: Update the tile set when a tile set is loaded.
 - ImageFormatPlugins: Fix plugin so it does not preclude updates incorrectly.
 - R3F TilesRenderer: Prevent reinstantiation of all child plugins, objects on options change.
-- R3F EastNorthUpFrame: Automatically update based on ellipsoid updates
+- R3F EastNorthUpFrame: Automatically update based on ellipsoid updates.
+- EnvironmentControls: Use a zoom approach that is (hopefully) more normalized across platforms.
 
 ## [0.4.5] - 2025.02.14
 ### Added
