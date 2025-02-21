@@ -87,6 +87,9 @@ Wrapper for the three.js `TilesRenderer` class. Listening for events are specifi
 <TilesRenderer
   url={ tilesetUrl }
 
+	// if false then "update" is not called
+	enabled={ true }
+
 	// pass properties to apply to the tile set root object
 	group={ {
 		position: [ 0, 10, 0 ],

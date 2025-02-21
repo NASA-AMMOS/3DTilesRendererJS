@@ -128,7 +128,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 // component for adding a TilesRenderer to the scene
 export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
-	const { url, group = {}, children, ...options } = props;
+	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ tiles, setTiles ] = useState( null );
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
 	const [ forceUpdateIndex, forceUpdate ] = useForceUpdate();
@@ -152,7 +152,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// update the resolution for the camera
 	useFrame( () => {
 
-		if ( tiles === null ) {
+		if ( tiles === null || ! enabled ) {
 
 			return;
 
