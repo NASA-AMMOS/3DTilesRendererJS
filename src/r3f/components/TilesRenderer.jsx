@@ -1,10 +1,9 @@
-import { createContext, useContext, useState, useEffect, useRef, forwardRef, useMemo } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
-import { useForceUpdate } from '../utilities/useForceUpdate.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 // context for accessing the tile set
@@ -129,26 +128,27 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
-	const [ tiles, setTiles ] = useState( null );
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
-	const [ forceUpdateIndex, forceUpdate ] = useForceUpdate();
+
+	const tiles = useMemo( () => {
+
+		return new TilesRendererImpl( url );
+
+	}, [ url ] );
 
 	// create the tile set
 	useEffect( () => {
 
-		const tiles = new TilesRendererImpl( url );
 		tiles.addEventListener( 'load-tile-set', () => invalidate() );
 		tiles.addEventListener( 'load-content', () => invalidate() );
 		tiles.addEventListener( 'force-rerender', () => invalidate() );
-		setTiles( tiles );
-
 		return () => {
 
 			tiles.dispose();
 
 		};
 
-	}, [ url, invalidate ] );
+	}, [ tiles, invalidate ] );
 
 	// update the resolution for the camera
 	useFrame( () => {
@@ -189,17 +189,9 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// assign options recursively
 	useDeepOptions( tiles, options );
 
-	// because options modify tiles settings non-reactively we force an update and
-	// pass the update index into the tiles context to force children to update
-	useEffect( () => {
-
-		forceUpdate();
-
-	}, [ tiles, useObjectDep( options ) ] ); // eslint-disable-line
-
 	return <>
-		{ tiles ? <primitive object={ tiles.group } { ...group } /> : null }
-		<TilesRendererContext.Provider value={ tiles } key={ forceUpdateIndex }>
+		<primitive object={ tiles.group } { ...group } />
+		<TilesRendererContext.Provider value={ tiles }>
 			<TileSetRoot>
 				{ children }
 			</TileSetRoot>

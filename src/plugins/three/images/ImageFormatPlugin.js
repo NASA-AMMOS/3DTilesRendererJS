@@ -310,7 +310,7 @@ export class ImageFormatPlugin {
 
 		}
 
-		return false;
+		return null;
 
 	}
 
