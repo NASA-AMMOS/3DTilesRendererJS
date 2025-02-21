@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, forwardRef, useMemo } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
@@ -139,18 +139,11 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// create the tile set
 	useEffect( () => {
 
-		tiles.addEventListener( 'load-tile-set', () => {
-
-			console.log('LOADED')
-			invalidate();
-
-		} );
+		tiles.addEventListener( 'load-tile-set', () => invalidate() );
 		tiles.addEventListener( 'load-content', () => invalidate() );
 		tiles.addEventListener( 'force-rerender', () => invalidate() );
-
-		window.TILES = tiles;
 		return () => {
-
+			
 			tiles.dispose();
 
 		};
@@ -197,7 +190,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	useDeepOptions( tiles, options );
 
 	return <>
-		{ tiles ? <primitive object={ tiles.group } { ...group } /> : null }
+		<primitive object={ tiles.group } { ...group } />
 		<TilesRendererContext.Provider value={ tiles }>
 			<TileSetRoot>
 				{ children }
