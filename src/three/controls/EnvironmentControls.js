@@ -454,10 +454,10 @@ export class EnvironmentControls extends EventDispatcher {
 			switch ( e.deltaMode ) {
 
 				case 2: // Pages
-					delta = e.deltaY * 100;
+					delta = e.deltaY * 800;
 					break;
 				case 1: // Lines
-					delta = e.deltaY * 16;
+					delta = e.deltaY * 40;
 					break;
 				case 0: // Pixels
 					delta = e.deltaY;
@@ -467,8 +467,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// use LOG to scale the scroll delta and hopefully normalize them across platforms
 			const deltaSign = Math.sign( delta );
-			const normalizedDelta = Math.log( Math.abs( delta ) + 1 );
-			this.zoomDelta -= 3 * deltaSign * normalizedDelta;
+			const normalizedDelta = Math.abs( delta );
+			this.zoomDelta -= 0.25 * deltaSign * normalizedDelta;
 			this.needsUpdate = true;
 
 			this._lastUsedState = ZOOM;
