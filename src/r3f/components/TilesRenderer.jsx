@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback } from 'react';
-import { useThree, useFrame, invalidate } from '@react-three/fiber';
-import { Vector3 } from 'three';
+import { useThree, useFrame } from '@react-three/fiber';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
@@ -28,7 +27,6 @@ function TileSetRoot( { children } ) {
 
 }
 
-const _vec = /* @__PURE__ */ new Vector3();
 export function EastNorthUpFrame( props ) {
 
 	const {
