@@ -184,6 +184,7 @@ export class ImageFormatPlugin {
 
 		tileset.root[ UV_BOUNDS ] = [ 0, 0, 1, 1 ];
 
+		this._tilesNeedUpdate = true;
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 		return tileset;
 
