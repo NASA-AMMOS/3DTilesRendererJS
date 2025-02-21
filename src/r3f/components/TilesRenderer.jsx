@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
+import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback } from 'react';
+import { useThree, useFrame, invalidate } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
@@ -42,8 +42,14 @@ export function EastNorthUpFrame( props ) {
 	} = props;
 	const ref = useRef();
 	const tiles = useContext( TilesRendererContext );
-	const ellipsoid = tiles && tiles.ellipsoid || null;
-	useEffect( () => {
+	const invalidate = useThree( state => state.invalidate );
+	const updateCallback = useCallback( () => {
+
+		// hide the group if the tiles aren't loaded yet
+		const ellipsoid = tiles && tiles.ellipsoid || null;
+		const group = ref.current;
+		group.matrix.identity();
+		group.visible = Boolean( tiles && tiles.root );
 
 		if ( ellipsoid === null ) {
 
@@ -51,16 +57,29 @@ export function EastNorthUpFrame( props ) {
 
 		}
 
-		const group = ref.current;
-		group.matrix.identity();
-
-		ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, group.matrix );
-		ellipsoid.getCartographicToPosition( lat, lon, height, _vec );
-		group.matrix.setPosition( _vec );
+		ellipsoid.getFrame( lat, lon, az, el, roll, height, group.matrix );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
+		invalidate();
 
-	}, [ ellipsoid, lat, lon, height, az, el, roll ] );
+	}, [ invalidate, tiles, lat, lon, height, az, el, roll ] );
+
+	useEffect( () => {
+
+		updateCallback();
+
+	}, [ updateCallback ] );
+
+	useEffect( () => {
+
+		tiles.addEventListener( 'load-tile-set', updateCallback );
+		return () => {
+
+			tiles.removeEventListener( 'load-tile-set', updateCallback );
+
+		};
+
+	}, [ tiles, updateCallback ] );
 
 	return <group ref={ ref }>{ children }</group>;
 
