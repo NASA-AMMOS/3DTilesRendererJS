@@ -749,4 +749,36 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	_raycast( raycaster ) {
+
+		const result = super._raycast( raycaster );
+		if ( result === null ) {
+
+			// if there was no hit then fallback to intersecting the ellipsoid.
+			const { ellipsoid, tilesGroup } = this;
+			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
+			_ray.copy( raycaster.ray ).applyMatrix4( _invMatrix );
+
+			const point = ellipsoid.intersectRay( _ray, _vec );
+			if ( point !== null ) {
+
+				return {
+					point: point.clone().applyMatrix4( tilesGroup.matrixWorld ),
+				};
+
+			} else {
+
+				return null;
+
+			}
+
+
+		} else {
+
+			return result;
+
+		}
+
+	}
+
 }
