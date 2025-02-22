@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
+
 ## [0.4.6] - 2025.02.21
 ### Added
 - R3F TilesRenderer: Add "enabled" field
