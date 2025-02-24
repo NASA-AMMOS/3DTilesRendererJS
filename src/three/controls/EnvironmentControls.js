@@ -811,14 +811,14 @@ export class EnvironmentControls extends EventDispatcher {
 			// projected into world space
 			setRaycasterFromCamera( _ray, _vec.set( 0, 0, - 1 ), camera );
 			_ray.applyMatrix4( camera.matrixWorldInverse );
-			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
-			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _vec );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _vec );
 			_vec.applyMatrix4( camera.matrixWorld );
 
 			setRaycasterFromCamera( _ray, _delta.set( pixelThreshold, pixelThreshold, - 1 ), camera );
 			_ray.applyMatrix4( camera.matrixWorldInverse );
-			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
-			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _delta );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _delta );
 			_delta.applyMatrix4( camera.matrixWorld );
 
 			// get implied angle
@@ -843,14 +843,14 @@ export class EnvironmentControls extends EventDispatcher {
 			// projected into world space
 			setRaycasterFromCamera( _ray, _vec.set( 0, 0, - 1 ), camera );
 			_ray.applyMatrix4( camera.matrixWorldInverse );
-			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
-			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _vec );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _vec );
 			_vec.applyMatrix4( camera.matrixWorld );
 
 			setRaycasterFromCamera( _ray, _delta.set( pixelThreshold, pixelThreshold, - 1 ), camera );
 			_ray.applyMatrix4( camera.matrixWorldInverse );
-			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
-			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _delta );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _delta );
 			_delta.applyMatrix4( camera.matrixWorld );
 
 			// calculate movement threshold
