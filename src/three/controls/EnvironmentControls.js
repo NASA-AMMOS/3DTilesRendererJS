@@ -8,6 +8,7 @@ import {
 	EventDispatcher,
 	MathUtils,
 	Clock,
+	Ray,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
@@ -34,6 +35,7 @@ const _localUp = /* @__PURE__ */ new Vector3();
 const _mouseBefore = /* @__PURE__ */ new Vector3();
 const _mouseAfter = /* @__PURE__ */ new Vector3();
 const _identityQuat = /* @__PURE__ */ new Quaternion();
+const _ray = /* @__PURE__ */ new Ray();
 
 const _zoomPointPointer = /* @__PURE__ */ new Vector2();
 const _pointer = /* @__PURE__ */ new Vector2();
@@ -806,12 +808,18 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( rotationInertia.lengthSq() > 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
-			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_delta.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			// projected into world space
+			setRaycasterFromCamera( _ray, _vec.set( 0, 0, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _vec );
+			_vec.applyMatrix4( camera.matrixWorld );
 
-			// project points into world space
-			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
-			_delta.multiplyScalar( stableDistance / _delta.z ).applyMatrix4( camera.matrixWorld );
+			setRaycasterFromCamera( _ray, _delta.set( pixelThreshold, pixelThreshold, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _delta );
+			_delta.applyMatrix4( camera.matrixWorld );
 
 			// get implied angle
 			_vec.sub( pivotPoint ).normalize();
@@ -832,12 +840,18 @@ export class EnvironmentControls extends EventDispatcher {
 		if ( dragInertia.lengthSq() > 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
-			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_delta.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			// projected into world space
+			setRaycasterFromCamera( _ray, _vec.set( 0, 0, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _vec );
+			_vec.applyMatrix4( camera.matrixWorld );
 
-			// project points into world space
-			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
-			_delta.multiplyScalar( stableDistance / _delta.z ).applyMatrix4( camera.matrixWorld );
+			setRaycasterFromCamera( _ray, _delta.set( pixelThreshold, pixelThreshold, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.multiplyScalar( stableDistance / _ray.direction.z );
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( 1, _delta );
+			_delta.applyMatrix4( camera.matrixWorld );
 
 			// calculate movement threshold
 			const threshold = _vec.distanceTo( _delta ) / deltaTime;
