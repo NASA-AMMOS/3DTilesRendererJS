@@ -301,12 +301,18 @@ export class GlobeControls extends EnvironmentControls {
 		if ( this.globeInertiaFactor !== 0 ) {
 
 			// calculate two screen points at 1 pixel apart in our notional resolution so we can stop when the delta is ~ 1 pixel
-			_vec.set( 0, 0, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
-			_pos.set( pixelThreshold, pixelThreshold, - 1 ).applyMatrix4( camera.projectionMatrixInverse );
+			// projected into world space
+			setRaycasterFromCamera( _ray, _vec.set( 0, 0, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _vec );
+			_vec.applyMatrix4( camera.matrixWorld );
 
-			// project points into world space
-			_vec.multiplyScalar( stableDistance / _vec.z ).applyMatrix4( camera.matrixWorld );
-			_pos.multiplyScalar( stableDistance / _pos.z ).applyMatrix4( camera.matrixWorld );
+			setRaycasterFromCamera( _ray, _pos.set( pixelThreshold, pixelThreshold, - 1 ), camera );
+			_ray.applyMatrix4( camera.matrixWorldInverse );
+			_ray.direction.normalize();
+			_ray.recast( - _ray.direction.dot( _ray.origin ) ).at( stableDistance / _ray.direction.z, _pos );
+			_pos.applyMatrix4( camera.matrixWorld );
 
 			// get implied angle
 			_vec.sub( _center ).normalize();
