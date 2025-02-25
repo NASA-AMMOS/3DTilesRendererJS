@@ -357,9 +357,9 @@ export class TilesRendererBase {
 	dispose() {
 
 		// dispose of all the plugins
-		this.invokeAllPlugins( plugin => {
+		this.plugins.forEach( plugin => {
 
-			plugin !== this && plugin.dispose && plugin.dispose();
+			this.unregisterPlugin( plugin );
 
 		} );
 
