@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
+- EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 
 ## [0.4.6] - 2025.02.21
 ### Added
