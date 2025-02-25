@@ -1,10 +1,10 @@
+import { EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
 import {
-	TilesRenderer,
-} from '3d-tiles-renderer';
-import {
+	CesiumIonAuthPlugin,
+	GLTFExtensionsPlugin,
 	DebugTilesPlugin,
 	ImplicitTilingPlugin,
-	GLTFExtensionsPlugin,
+	RegionTilesLoadingPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -12,7 +12,6 @@ import {
 	AmbientLight,
 	WebGLRenderer,
 	PerspectiveCamera,
-	CameraHelper,
 	Box3,
 	Raycaster,
 	Vector2,
@@ -21,10 +20,10 @@ import {
 	MeshBasicMaterial,
 	Group,
 	TorusGeometry,
-	OrthographicCamera,
 	Sphere,
+	Vector3,
+	Quaternion,
 } from 'three';
-import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
@@ -36,23 +35,26 @@ const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
 const hashUrl = window.location.hash.replace( /^#/, '' );
-let camera, controls, scene, renderer, tiles, cameraHelper;
-let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
-let secondRenderer, secondCameraHelper, secondControls, secondCamera;
-let orthoCamera, orthoCameraHelper;
-let box, sphere;
+let camera, controls, scene, renderer, tiles;
+let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent, geospatialRotationParent;
-let statsContainer, stats;
+let statsContainer, stats, regionTilesLoadingPlugin;
+
+
+const apiKey =
+	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyY2RiZTA3Ny03MGFlLTQzNzgtOWJmZi05YmNjMWMxNTQ5MjYiLCJpZCI6NzYzMTIsImlhdCI6MTYzOTM4MTc0N30.xJmr6nruHniCNAC1OBIp2sJs5DhIAZpXlXOiYBlasO4';
 
 const params = {
 
+	ionAssetId: '69380',
+	ionAccessToken: apiKey,
 	enableUpdate: true,
-	raycast: DebugTilesPlugin.ColorModes.NONE,
+	raycast: 0,
+	showOnlyTilesInRegion: false,
 	optimizeRaycast: true,
 	enableCacheDisplay: false,
 	enableRendererStats: false,
-	orthographic: false,
 
 	errorTarget: 6,
 	errorThreshold: 60,
@@ -66,9 +68,6 @@ const params = {
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
-	colorMode: 0,
-	showThirdPerson: false,
-	showSecondView: false,
 	reload: reinstantiateTiles,
 
 };
@@ -77,8 +76,6 @@ init();
 animate();
 
 function reinstantiateTiles() {
-
-	const url = hashUrl || '../data/tileset.json';
 
 	if ( tiles ) {
 
@@ -96,7 +93,19 @@ function reinstantiateTiles() {
 	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
 	ktx2loader.detectSupport( renderer );
 
-	tiles = new TilesRenderer( url );
+	tiles = new TilesRenderer( );
+	tiles.registerPlugin(
+		new CesiumIonAuthPlugin( {
+			apiToken: params.ionAccessToken,
+			assetId: params.ionAssetId,
+		} )
+	);
+	tiles.maxByteSize = 536870912 * 2;
+	tiles.maxSize = 10000;
+	tiles.autoDisableRendererCulling = false;
+	tiles.loadSiblings = true;
+	regionTilesLoadingPlugin = new RegionTilesLoadingPlugin();
+	tiles.registerPlugin( regionTilesLoadingPlugin );
 	tiles.registerPlugin( new DebugTilesPlugin() );
 	tiles.registerPlugin( new ImplicitTilingPlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
@@ -125,6 +134,44 @@ function reinstantiateTiles() {
 
 	};
 
+	tiles.addEventListener( 'load-tile-set', () => {
+
+		// because ion examples typically are positioned on the planet surface we can orient
+		// it such that up is Y+ and center the model
+		const sphere = new Sphere();
+		tiles.getBoundingSphere( sphere );
+
+		const position = sphere.center.clone();
+		const distanceToEllipsoidCenter = position.length();
+
+		const surfaceDirection = position.normalize();
+		const up = new Vector3( 0, 1, 0 );
+		const rotationToNorthPole = rotationBetweenDirections( surfaceDirection, up );
+
+		tiles.group.quaternion.x = rotationToNorthPole.x;
+		tiles.group.quaternion.y = rotationToNorthPole.y;
+		tiles.group.quaternion.z = rotationToNorthPole.z;
+		tiles.group.quaternion.w = rotationToNorthPole.w;
+
+		tiles.group.position.y = - distanceToEllipsoidCenter;
+
+	}
+	);
+
+}
+
+function rotationBetweenDirections( dir1, dir2 ) {
+
+	const rotation = new Quaternion();
+	const a = new Vector3().crossVectors( dir1, dir2 );
+	rotation.x = a.x;
+	rotation.y = a.y;
+	rotation.z = a.z;
+	rotation.w = 1 + dir1.clone().dot( dir2 );
+	rotation.normalize();
+
+	return rotation;
+
 }
 
 function init() {
@@ -140,66 +187,21 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
-	camera.position.set( 400, 400, 400 );
-	cameraHelper = new CameraHelper( camera );
-	scene.add( cameraHelper );
-
-	orthoCamera = new OrthographicCamera();
-	orthoCameraHelper = new CameraHelper( orthoCamera );
-	scene.add( orthoCameraHelper );
-
-	// secondary camera view
-	secondCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	secondCamera.position.set( 400, 400, - 400 );
-	secondCamera.lookAt( 0, 0, 0 );
-
-	secondRenderer = new WebGLRenderer( { antialias: true } );
-	secondRenderer.setPixelRatio( window.devicePixelRatio );
-	secondRenderer.setSize( window.innerWidth, window.innerHeight );
-	secondRenderer.setClearColor( 0x151c1f );
-
-	document.body.appendChild( secondRenderer.domElement );
-	secondRenderer.domElement.style.position = 'absolute';
-	secondRenderer.domElement.style.right = '0';
-	secondRenderer.domElement.style.top = '0';
-	secondRenderer.domElement.style.outline = '#0f1416 solid 2px';
-	secondRenderer.domElement.tabIndex = 1;
-
-	secondControls = new FlyOrbitControls( secondCamera, secondRenderer.domElement );
-	secondControls.screenSpacePanning = false;
-	secondControls.minDistance = 1;
-	secondControls.maxDistance = 5000;
-
-	secondCameraHelper = new CameraHelper( secondCamera );
-	scene.add( secondCameraHelper );
-
-	// Third person camera view
-	thirdPersonCamera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
-	thirdPersonCamera.position.set( 50, 40, 40 );
-	thirdPersonCamera.lookAt( 0, 0, 0 );
-
-	thirdPersonRenderer = new WebGLRenderer( { antialias: true } );
-	thirdPersonRenderer.setPixelRatio( window.devicePixelRatio );
-	thirdPersonRenderer.setSize( window.innerWidth, window.innerHeight );
-	thirdPersonRenderer.setClearColor( 0x0f1416 );
-
-	document.body.appendChild( thirdPersonRenderer.domElement );
-	thirdPersonRenderer.domElement.style.position = 'fixed';
-	thirdPersonRenderer.domElement.style.left = '5px';
-	thirdPersonRenderer.domElement.style.bottom = '5px';
-	thirdPersonRenderer.domElement.tabIndex = 1;
-
-	thirdPersonControls = new FlyOrbitControls( thirdPersonCamera, thirdPersonRenderer.domElement );
-	thirdPersonControls.screenSpacePanning = false;
-	thirdPersonControls.minDistance = 1;
-	thirdPersonControls.maxDistance = 5000;
+	camera = new PerspectiveCamera(
+		60,
+		window.innerWidth / window.innerHeight,
+		1,
+		100000
+	);
+	camera.position.set( 100, 100, - 100 );
+	camera.lookAt( 0, 0, 0 );
+	scene.add( camera );
 
 	// controls
-	controls = new FlyOrbitControls( camera, renderer.domElement );
-	controls.screenSpacePanning = false;
+	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls.adjustHeight = false;
 	controls.minDistance = 1;
-	controls.maxDistance = 5000;
+	controls.maxAltitude = Math.PI;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff, 4 );
@@ -210,7 +212,6 @@ function init() {
 	scene.add( ambLight );
 
 	box = new Box3();
-	sphere = new Sphere();
 
 	offsetParent = new Group();
 	scene.add( offsetParent );
@@ -244,11 +245,6 @@ function init() {
 	renderer.domElement.addEventListener( 'pointerup', onPointerUp, false );
 	renderer.domElement.addEventListener( 'pointerleave', onPointerLeave, false );
 
-	secondRenderer.domElement.addEventListener( 'pointermove', onPointerMove, false );
-	secondRenderer.domElement.addEventListener( 'pointerdown', onPointerDown, false );
-	secondRenderer.domElement.addEventListener( 'pointerup', onPointerUp, false );
-	secondRenderer.domElement.addEventListener( 'pointerleave', onPointerLeave, false );
-
 
 	// GUI
 	const gui = new GUI();
@@ -268,14 +264,10 @@ function init() {
 	debug.add( params, 'displayBoxBounds' );
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
-	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
 	debug.open();
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
 	exampleOptions.add( params, 'resolutionScale' ).min( 0.01 ).max( 2.0 ).step( 0.01 ).onChange( onWindowResize );
-	exampleOptions.add( params, 'orthographic' );
-	exampleOptions.add( params, 'showThirdPerson' );
-	exampleOptions.add( params, 'showSecondView' ).onChange( onWindowResize );
 	exampleOptions.add( params, 'enableUpdate' ).onChange( v => {
 
 		tiles.parseQueue.autoUpdate = v;
@@ -290,6 +282,7 @@ function init() {
 
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
+	exampleOptions.add( params, 'showOnlyTilesInRegion', );
 	exampleOptions.add( params, 'optimizeRaycast', );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
@@ -319,34 +312,10 @@ function init() {
 
 function onWindowResize() {
 
-	thirdPersonCamera.aspect = window.innerWidth / window.innerHeight;
-	thirdPersonCamera.updateProjectionMatrix();
-	thirdPersonRenderer.setSize( Math.floor( window.innerWidth / 3 ), Math.floor( window.innerHeight / 3 ) );
-
-	if ( params.showSecondView ) {
-
-		camera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-		renderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
-
-		secondCamera.aspect = 0.5 * window.innerWidth / window.innerHeight;
-		secondRenderer.setSize( 0.5 * window.innerWidth, window.innerHeight );
-		secondRenderer.domElement.style.display = 'block';
-
-	} else {
-
-		camera.aspect = window.innerWidth / window.innerHeight;
-		renderer.setSize( window.innerWidth, window.innerHeight );
-
-		secondRenderer.domElement.style.display = 'none';
-
-	}
+	camera.aspect = window.innerWidth / window.innerHeight;
+	renderer.setSize( window.innerWidth, window.innerHeight );
 	camera.updateProjectionMatrix();
 	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
-
-	secondCamera.updateProjectionMatrix();
-	secondRenderer.setPixelRatio( window.devicePixelRatio );
-
-	updateOrthoCamera();
 
 }
 
@@ -387,15 +356,7 @@ function onPointerUp( e ) {
 
 	}
 
-	if ( lastHoveredElement === secondRenderer.domElement ) {
-
-		raycaster.setFromCamera( mouse, secondCamera );
-
-	} else {
-
-		raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
-
-	}
+	raycaster.setFromCamera( mouse, camera );
 
 	raycaster.firstHitOnly = true;
 	const results = raycaster.intersectObject( tiles.group, true );
@@ -430,28 +391,6 @@ function onPointerUp( e ) {
 
 }
 
-function updateOrthoCamera() {
-
-	orthoCamera.position.copy( camera.position );
-	orthoCamera.rotation.copy( camera.rotation );
-
-	const scale = camera.position.distanceTo( controls.target ) / 2.0;
-	let aspect = window.innerWidth / window.innerHeight;
-	if ( params.showSecondView ) {
-
-		aspect *= 0.5;
-
-	}
-	orthoCamera.left = - aspect * scale;
-	orthoCamera.right = aspect * scale;
-	orthoCamera.bottom = - scale;
-	orthoCamera.top = scale;
-	orthoCamera.near = camera.near;
-	orthoCamera.far = camera.far;
-	orthoCamera.updateProjectionMatrix();
-
-}
-
 function animate() {
 
 	requestAnimationFrame( animate );
@@ -470,32 +409,12 @@ function animate() {
 	plugin.displayParentBounds = params.displayParentBounds;
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
-	plugin.colorMode = parseFloat( params.colorMode );
 
-	if ( params.orthographic ) {
 
-		tiles.deleteCamera( camera );
-		tiles.setCamera( orthoCamera );
-		tiles.setResolutionFromRenderer( orthoCamera, renderer );
+	controls.update();
 
-	} else {
-
-		tiles.deleteCamera( orthoCamera );
-		tiles.setCamera( camera );
-		tiles.setResolutionFromRenderer( camera, renderer );
-
-	}
-
-	if ( params.showSecondView ) {
-
-		tiles.setCamera( secondCamera );
-		tiles.setResolutionFromRenderer( secondCamera, secondRenderer );
-
-	} else {
-
-		tiles.deleteCamera( secondCamera );
-
-	}
+	tiles.setCamera( camera );
+	tiles.setResolutionFromRenderer( camera, renderer );
 
 	if ( tiles.root && tiles.root.boundingVolume.region ) {
 
@@ -520,34 +439,28 @@ function animate() {
 
 	offsetParent.updateMatrixWorld( false );
 
-	// update tiles center
-	if ( tiles.getBoundingBox( box ) ) {
-
-		box.getCenter( tiles.group.position );
-		tiles.group.position.multiplyScalar( - 1 );
-
-	} else if ( tiles.getBoundingSphere( sphere ) ) {
-
-		tiles.group.position.copy( sphere.center );
-		tiles.group.position.multiplyScalar( - 1 );
-
-	}
-
 	if ( parseFloat( params.raycast ) !== NONE && lastHoveredElement !== null ) {
 
-		if ( lastHoveredElement === renderer.domElement ) {
-
-			raycaster.setFromCamera( mouse, params.orthographic ? orthoCamera : camera );
-
-		} else {
-
-			raycaster.setFromCamera( mouse, secondCamera );
-
-		}
+		raycaster.setFromCamera( mouse, camera );
 
 		raycaster.firstHitOnly = parseFloat( params.raycast ) === FIRST_HIT_ONLY;
 
 		const results = raycaster.intersectObject( tiles.group, true );
+
+		if ( regionTilesLoadingPlugin ) {
+
+			regionTilesLoadingPlugin.clearRegions();
+
+
+			if ( params.raycast ) {
+
+				regionTilesLoadingPlugin.setOnlyLoadTilesInRegions( params.showOnlyTilesInRegion );
+				regionTilesLoadingPlugin.addLoadRegion( { shape: raycaster.ray, errorTarget: 0 } );
+
+			}
+
+		}
+
 		if ( results.length ) {
 
 			const closestHit = results[ 0 ];
@@ -581,13 +494,19 @@ function animate() {
 
 	}
 
+
+	if ( ! params.raycast ) {
+
+		regionTilesLoadingPlugin.setOnlyLoadTilesInRegions( false );
+		regionTilesLoadingPlugin.clearRegions();
+
+	}
+
 	// update tiles
 	window.tiles = tiles;
 	if ( params.enableUpdate ) {
 
-		secondCamera.updateMatrixWorld();
 		camera.updateMatrixWorld();
-		orthoCamera.updateMatrixWorld();
 		tiles.update();
 
 	}
@@ -599,57 +518,12 @@ function animate() {
 
 function render() {
 
-	updateOrthoCamera();
-
-	cameraHelper.visible = false;
-	orthoCameraHelper.visible = false;
-	secondCameraHelper.visible = false;
-
 	// render primary view
-	if ( params.orthographic ) {
 
-		const dist = orthoCamera.position.distanceTo( rayIntersect.position );
-		rayIntersect.scale.setScalar( dist / 150 );
+	const dist = camera.position.distanceTo( rayIntersect.position );
+	rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
 
-	} else {
-
-		const dist = camera.position.distanceTo( rayIntersect.position );
-		rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
-
-	}
-	renderer.render( scene, params.orthographic ? orthoCamera : camera );
-
-	// render secondary view
-	if ( params.showSecondView ) {
-
-		const dist = secondCamera.position.distanceTo( rayIntersect.position );
-		rayIntersect.scale.setScalar( dist * secondCamera.fov / 6000 );
-		secondRenderer.render( scene, secondCamera );
-
-	}
-
-	// render third person view
-	thirdPersonRenderer.domElement.style.visibility = params.showThirdPerson ? 'visible' : 'hidden';
-	if ( params.showThirdPerson ) {
-
-		cameraHelper.update();
-		cameraHelper.visible = ! params.orthographic;
-
-		orthoCameraHelper.update();
-		orthoCameraHelper.visible = params.orthographic;
-
-		if ( params.showSecondView ) {
-
-			secondCameraHelper.update();
-			secondCameraHelper.visible = true;
-
-		}
-
-		const dist = thirdPersonCamera.position.distanceTo( rayIntersect.position );
-		rayIntersect.scale.setScalar( dist * thirdPersonCamera.fov / 6000 );
-		thirdPersonRenderer.render( scene, thirdPersonCamera );
-
-	}
+	renderer.render( scene, camera );
 
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
 	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
