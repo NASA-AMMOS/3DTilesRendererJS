@@ -113,21 +113,26 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.pivotPoint = new Vector3();
 
+		// used for zoom
 		this.zoomDirectionSet = false;
 		this.zoomPointSet = false;
 		this.zoomDirection = new Vector3();
 		this.zoomPoint = new Vector3();
 		this.zoomDelta = 0;
 
+		// fields used for inertia
 		this.rotationInertiaPivot = new Vector3();
 		this.rotationInertia = new Vector2();
 		this.dragInertia = new Vector3();
-		this.inertiaTargetDistance = Infinity;
+		this.inertiaTargetDistance = Infinity; 		// track the distance from the camera that we want to use to calculate the inertia end threshold
+		this.inertiaStableFrames = 0; 				// the number of frames that the camera has not moved while the user is interacting
 
+		// circular pivot mesh
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
 		this.pivotMesh.scale.setScalar( 0.25 );
 
+		// raycaster
 		this.raycaster = new Raycaster();
 		this.raycaster.firstHitOnly = true;
 
@@ -628,6 +633,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.pivotMesh.visible = this.enabled;
 		this.dragInertia.set( 0, 0, 0 );
 		this.rotationInertia.set( 0, 0 );
+		this.inertiaStableFrames = 0;
 		this.state = state;
 
 		if ( state !== NONE && state !== WAITING ) {
@@ -789,7 +795,7 @@ export class EnvironmentControls extends EventDispatcher {
 			inertiaTargetDistance,
 		} = this;
 
-		if ( ! this.enableDamping ) {
+		if ( ! this.enableDamping || this.inertiaStableFrames > 1 ) {
 
 			dragInertia.set( 0, 0, 0 );
 			rotationInertia.set( 0, 0, 0 );
@@ -1178,11 +1184,12 @@ export class EnvironmentControls extends EventDispatcher {
 				_delta.multiplyScalar( 1 / deltaTime );
 				if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-					dragInertia.lerp( _delta, 0.5 );
+					this.inertiaStableFrames ++;
 
 				} else {
 
 					dragInertia.copy( _delta );
+					this.inertiaStableFrames = 0;
 
 				}
 
@@ -1215,11 +1222,12 @@ export class EnvironmentControls extends EventDispatcher {
 			_deltaPointer.multiplyScalar( 1 / deltaTime );
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-				rotationInertia.lerp( _deltaPointer, 0.5 );
+				this.inertiaStableFrames ++;
 
 			} else {
 
 				rotationInertia.copy( _deltaPointer );
+				this.inertiaStableFrames = 0;
 
 			}
 
