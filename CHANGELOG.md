@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix case where the environment and globe controls can have residual inertia after stopping the mouse.
 - Image Format Plugins: Fix case where tiles may not cause update on first load resulting in no tiles rendered.
 
+### Changed
+- Deprecated "TilesRenderer.errorThreshold".
+
 ## [0.4.6] - 2025.02.21
 ### Added
 - R3F TilesRenderer: Add "enabled" field
