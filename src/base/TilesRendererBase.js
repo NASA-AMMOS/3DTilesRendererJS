@@ -96,6 +96,19 @@ export class TilesRendererBase {
 
 	}
 
+	get errorThreshold() {
+
+		return this._errorThreshold;
+
+	}
+
+	set errorThreshold( v ) {
+
+		console.warn( 'TilesRenderer: "errorThreshold" has been deprecated.' );
+		this._errorThreshold = v;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -139,7 +152,7 @@ export class TilesRendererBase {
 
 		// options
 		this.errorTarget = 6.0;
-		this.errorThreshold = Infinity;
+		this._errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 
