@@ -4,6 +4,7 @@ import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
+import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants.js';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
@@ -36,6 +37,7 @@ export function EastNorthUpFrame( props ) {
 		az = 0,
 		el = 0,
 		roll = 0,
+		ellipsoid = WGS84_ELLIPSOID.clone(),
 		children,
 	} = props;
 	const ref = useRef();
@@ -44,23 +46,24 @@ export function EastNorthUpFrame( props ) {
 	const updateCallback = useCallback( () => {
 
 		// hide the group if the tiles aren't loaded yet
-		const ellipsoid = tiles && tiles.ellipsoid || null;
+		const localEllipsoid = tiles && tiles.ellipsoid || ellipsoid || null;
 		const group = ref.current;
 		group.matrix.identity();
-		group.visible = Boolean( tiles && tiles.root );
+		group.visible = Boolean( tiles && tiles.root || ellipsoid );
 
-		if ( ellipsoid === null ) {
+		if ( localEllipsoid === null ) {
 
 			return;
 
 		}
 
-		ellipsoid.getFrame( lat, lon, az, el, roll, height, group.matrix );
+		localEllipsoid.getFrame( lat, lon, az, el, roll, height, group.matrix );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
 		invalidate();
 
-	}, [ invalidate, tiles, lat, lon, height, az, el, roll ] );
+	}, [ invalidate, tiles, lat, lon, height, az, el, roll, ellipsoid, useObjectDep( ellipsoid.radius ) ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
 
 	useEffect( () => {
 
@@ -69,6 +72,12 @@ export function EastNorthUpFrame( props ) {
 	}, [ updateCallback ] );
 
 	useEffect( () => {
+
+		if ( tiles === null ) {
+
+			return;
+
+		}
 
 		tiles.addEventListener( 'load-tile-set', updateCallback );
 		return () => {
