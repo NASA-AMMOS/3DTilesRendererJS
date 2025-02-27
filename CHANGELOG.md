@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fix case where the environment and globe controls can have residual inertia after stopping the mouse.
+- Image Format Plugins: Fix case where tiles may not cause update on first load resulting in no tiles rendered.
 
 ## [0.4.6] - 2025.02.21
 ### Added
