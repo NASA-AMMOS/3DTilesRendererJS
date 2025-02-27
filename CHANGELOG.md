@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 - R3F EastNorthUpFrame: Add support for passing the ellipsoid in directly.
 
+### Fixed
+- Fix case where the environment and globe controls can have residual inertia after stopping the mouse.
+
 ## [0.4.6] - 2025.02.21
 ### Added
 - R3F TilesRenderer: Add "enabled" field
