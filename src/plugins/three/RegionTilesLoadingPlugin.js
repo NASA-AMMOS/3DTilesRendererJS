@@ -27,10 +27,6 @@ export class RegionTilesLoadingPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
-		this.__oldTileInView = this.tiles.tileInView.bind( this.tiles );
-		this.__oldCalculateError = this.tiles.calculateError.bind( this.tiles );
-		this.tiles.tileInView = this._doesIntersectTile.bind( this );
-		this.tiles.calculateError = this._calculateError.bind( this );
 		this._onlyLoadTilesInRegions = false;
 
 	}
@@ -74,7 +70,7 @@ export class RegionTilesLoadingPlugin {
 	}
 
 
-	_doesIntersectTile( tile ) {
+	tileInView( tile ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
 
@@ -211,24 +207,18 @@ export class RegionTilesLoadingPlugin {
 
 		}
 
-		if ( ! tile.__inRegion && ( ! this._onlyLoadTilesInRegions || this.__regionsArraySorted.length === 0 ) && this.__oldTileInView( tile ) ) {
-
-			return true;
-
-		}
-
 		return false;
 
 	}
 
-	_calculateError( tile ) {
-
-		this.__oldCalculateError( tile );
-
+	calculateError( tile ) {
 
 		if ( tile.__inRegion ) {
 
-			tile.__error += Math.max( this.tiles.errorTarget - tile.__regionErrorTarget, 0 );
+			const { tiles } = this;
+			return tile.geometricError - tile.__regionErrorTarget + tiles.errorTarget + 100;
+
+			// tile.__error += Math.max( this.tiles.errorTarget - tile.__regionErrorTarget, 0 );
 
 		}
 
