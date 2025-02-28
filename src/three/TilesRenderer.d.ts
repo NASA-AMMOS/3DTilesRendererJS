@@ -41,6 +41,8 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	setResolution( camera : Camera, resolution : Vector2 ) : boolean;
 	setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean;
 
+	setLatLonToYUp( lat: number, lon: number ) : void;
+
 	forEachLoadedModel( callback : ( scene : Object3D, tile : Tile ) => void ) : void;
 
 	/**
