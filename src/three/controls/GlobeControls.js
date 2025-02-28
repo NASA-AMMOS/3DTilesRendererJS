@@ -282,7 +282,7 @@ export class GlobeControls extends EnvironmentControls {
 			tilesGroup,
 		} = this;
 
-		if ( ! this.enableDamping ) {
+		if ( ! this.enableDamping || this.inertiaStableFrames > 1 ) {
 
 			this.globeInertiaFactor = 0;
 			this.globeInertia.identity();
@@ -434,13 +434,13 @@ export class GlobeControls extends EnvironmentControls {
 
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-				this.globeInertia.slerp( _quaternion, 0.5 );
-				this.globeInertiaFactor = 1 / deltaTime;
+				this.inertiaStableFrames ++;
 
 			} else {
 
 				this.globeInertia.copy( _quaternion );
 				this.globeInertiaFactor = 1 / deltaTime;
+				this.inertiaStableFrames = 0;
 
 			}
 
