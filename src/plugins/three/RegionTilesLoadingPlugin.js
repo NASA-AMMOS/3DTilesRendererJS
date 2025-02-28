@@ -207,24 +207,20 @@ export class RegionTilesLoadingPlugin {
 
 		}
 
-		if ( ! tile.__inRegion && ( ! this._onlyLoadTilesInRegions || this.__regionsArraySorted.length === 0 ) ) {
-
-			return true;
-
-		}
-
 		return false;
 
 	}
 
-	_calculateError( tile ) {
+	calculateError( tile ) {
 
+		if ( tile.__inRegion ) {
 
-		// if ( tile.__inRegion ) {
+			const { tiles } = this;
+			return tile.geometricError - tile.__regionErrorTarget + tiles.errorTarget + 100;
 
-		// 	tile.__error += Math.max( this.tiles.errorTarget - tile.__regionErrorTarget, 0 );
+			// tile.__error += Math.max( this.tiles.errorTarget - tile.__regionErrorTarget, 0 );
 
-		// }
+		}
 
 	}
 

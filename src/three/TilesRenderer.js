@@ -929,7 +929,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( plugin !== this && plugin.calculateError ) {
 
-				maxError = Math.max( maxError, plugin.calculateError( tile ) );
+				maxError = Math.max( maxError, plugin.calculateError( tile ) || 0 );
 
 			}
 
