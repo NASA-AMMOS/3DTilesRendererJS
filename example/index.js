@@ -47,7 +47,7 @@ const apiKey =
 
 const params = {
 
-	ionAssetId: '69380',
+	ionAssetId: '354307',
 	ionAccessToken: apiKey,
 	enableUpdate: true,
 	raycast: 0,
@@ -57,7 +57,6 @@ const params = {
 	enableRendererStats: false,
 
 	errorTarget: 6,
-	errorThreshold: 60,
 	maxDepth: 15,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
@@ -100,10 +99,17 @@ function reinstantiateTiles() {
 			assetId: params.ionAssetId,
 		} )
 	);
-	tiles.maxByteSize = 536870912 * 2;
-	tiles.maxSize = 10000;
-	tiles.autoDisableRendererCulling = false;
-	tiles.loadSiblings = true;
+
+	tiles.setCamera( camera );
+	tiles.setResolutionFromRenderer( camera, renderer );
+
+	tiles.lruCache.minSize = 6000;
+	tiles.lruCache.maxSize = 8000;
+	tiles.lruCache.minBytesSize = 6 * 2 ** 30;
+	tiles.lruCache.maxBytesSize = 8 * 2 ** 30;
+	tiles.lruCache.unloadPercent = 0.2;
+	tiles.lruCache.autoMarkUnused = true;
+
 	regionTilesLoadingPlugin = new RegionTilesLoadingPlugin();
 	tiles.registerPlugin( regionTilesLoadingPlugin );
 	tiles.registerPlugin( new DebugTilesPlugin() );
@@ -155,8 +161,7 @@ function reinstantiateTiles() {
 
 		tiles.group.position.y = - distanceToEllipsoidCenter;
 
-	}
-	);
+	} );
 
 }
 
@@ -253,7 +258,6 @@ function init() {
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'displayActiveTiles' );
 	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
-	tileOptions.add( params, 'errorThreshold' ).min( 0 ).max( 1000 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
@@ -397,7 +401,6 @@ function animate() {
 
 	// update options
 	tiles.errorTarget = params.errorTarget;
-	tiles.errorThreshold = params.errorThreshold;
 	tiles.optimizeRaycast = params.optimizeRaycast;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
@@ -412,9 +415,6 @@ function animate() {
 
 
 	controls.update();
-
-	tiles.setCamera( camera );
-	tiles.setResolutionFromRenderer( camera, renderer );
 
 	if ( tiles.root && tiles.root.boundingVolume.region ) {
 
