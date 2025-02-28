@@ -925,12 +925,35 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin !== this && plugin.calculateError ) {
+
+				maxError = Math.max( maxError, plugin.calculateError( tile ) );
+
+			}
+
+		} );
+
 		tile.__distanceFromCamera = minDistance;
 		tile.__error = maxError;
 
 	}
 
 	tileInView( tile ) {
+
+		let inView = false;
+		this.invokeAllPlugins( plugin => {
+
+			inView = inView || plugin !== this && plugin.tileInView && plugin.tileInView( tile );
+
+		} );
+
+		if ( inView ) {
+
+			return true;
+
+		}
 
 		const cached = tile.cached;
 		const boundingVolume = cached.boundingVolume;
