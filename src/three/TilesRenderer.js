@@ -956,6 +956,8 @@ export class TilesRenderer extends TilesRendererBase {
 	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
 	setLatLonToYUp( lat, lon ) {
 
+		console.warn( 'TilesRenderer: setLatLonToYUp is deprecated. Use the ReorientationPlugin, instead.' );
+
 		const { ellipsoid, group } = this;
 
 		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
