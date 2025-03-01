@@ -2,9 +2,8 @@ import { Sphere, Ray, Frustum, Matrix4 } from 'three';
 import { EllipsoidRegion } from '../../three/math/EllipsoidRegion';
 import { OBB } from '../../three/math/OBB';
 
-let _regionId = 0;
-const _matInv = new Matrix4().identity();
 const _mat = new Matrix4().identity();
+const _matInv = new Matrix4().identity();
 const _ray = new Ray();
 const _obb = new OBB();
 const _frustum = new Frustum();
@@ -17,8 +16,7 @@ export class RegionTilesLoadingPlugin {
 
 
 		this.name = 'REGION_TILES_LOADING_PLUGIN';
-		this.__regions = {};
-		this.__regionsArraySorted = [];
+		this.__regionsSorted = [];
 		this.__oldTileInView = null;
 		this.__oldCalculateError = null;
 
@@ -27,45 +25,40 @@ export class RegionTilesLoadingPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
-		this._onlyLoadTilesInRegions = false;
 
 	}
 
-	setOnlyLoadTilesInRegions( value ) {
+	addRegion( region ) {
 
-		this._onlyLoadTilesInRegions = value;
+		if ( this.__regionsSorted.indexOf( region ) === - 1 ) {
 
-	}
+			const index = this.__regionsSorted.findIndex( r => r.errorTarget > region.errorTarget );
+			this.__regionsSorted.splice( index, 0, region );
 
-	addLoadRegion( region ) {
-
-		const id = _regionId ++;
-		this.__regions[ id ] = {
-
-			id,
-			shape: region.shape,
-			errorTarget: region.errorTarget
-
-		};
-
-		this.__regionsArraySorted.push( this.__regions[ id ] );
-		this.__regionsArraySorted.sort( ( a, b ) => a.errorTarget - b.errorTarget );
-
-		return id;
+		}
 
 	}
 
-	removeRegionById( id ) {
+	removeRegion( region ) {
 
-		delete this.__regions[ id ];
-		this.__regionsArraySorted = this.__regionsArraySorted.filter( region => region.id !== id );
+		const index = this.__regionsSorted.indexOf( region );
+		if ( index !== - 1 ) {
+
+			this.__regionsSorted.splice( index, 1 );
+
+		}
+
+	}
+
+	hasRegion( region ) {
+
+		return this.__regionsSorted.indexOf( region ) !== - 1;
 
 	}
 
 	clearRegions() {
 
-		this.__regions = {};
-		this.__regionsArraySorted = [];
+		this.__regionsSorted = [];
 
 	}
 
@@ -74,7 +67,7 @@ export class RegionTilesLoadingPlugin {
 
 		const boundingVolume = tile.cached.boundingVolume;
 
-		if ( this.__regionsArraySorted.length > 0 && ! _mat.equals( this.tiles.group.matrixWorld ) ) {
+		if ( this.__regionsSorted.length > 0 && ! _mat.equals( this.tiles.group.matrixWorld ) ) {
 
 			_mat.copy( this.tiles.group.matrixWorld );
 			_matInv.copy( this.tiles.group.matrixWorld ).invert();
@@ -84,7 +77,7 @@ export class RegionTilesLoadingPlugin {
 		tile.__inRegion = false;
 		tile.__regionErrorTarget = Infinity;
 
-		for ( const region of this.__regionsArraySorted ) {
+		for ( const region of this.__regionsSorted ) {
 
 			const shape = region.shape;
 
@@ -216,9 +209,7 @@ export class RegionTilesLoadingPlugin {
 		if ( tile.__inRegion ) {
 
 			const { tiles } = this;
-			return tile.geometricError - tile.__regionErrorTarget + tiles.errorTarget + 100;
-
-			// tile.__error += Math.max( this.tiles.errorTarget - tile.__regionErrorTarget, 0 );
+			return tile.geometricError - tile.__regionErrorTarget + tiles.errorTarget;
 
 		}
 
@@ -226,10 +217,7 @@ export class RegionTilesLoadingPlugin {
 
 	dispose() {
 
-		this.__regions = {};
-		this.__regionsArraySorted = [];
-		this.tiles.tileInView = this.__oldTileInView;
-		this.tiles.calculateError = this.__oldCalculateError;
+		this.__regionsSorted = [];
 
 	}
 

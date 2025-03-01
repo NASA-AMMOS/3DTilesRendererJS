@@ -40,6 +40,7 @@ let box;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent, geospatialRotationParent;
 let statsContainer, stats, regionTilesLoadingPlugin;
+const region = { shape: null, errorTarget: 0 };
 
 
 const apiKey =
@@ -47,16 +48,15 @@ const apiKey =
 
 const params = {
 
-	ionAssetId: '354307',
+	ionAssetId: '69380',
 	ionAccessToken: apiKey,
 	enableUpdate: true,
 	raycast: 0,
-	showOnlyTilesInRegion: false,
 	optimizeRaycast: true,
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 
-	errorTarget: 6,
+	errorTarget: 32,
 	maxDepth: 15,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
@@ -111,6 +111,7 @@ function reinstantiateTiles() {
 	tiles.lruCache.autoMarkUnused = true;
 
 	regionTilesLoadingPlugin = new RegionTilesLoadingPlugin();
+	regionTilesLoadingPlugin.addRegion( region );
 	tiles.registerPlugin( regionTilesLoadingPlugin );
 	tiles.registerPlugin( new DebugTilesPlugin() );
 	tiles.registerPlugin( new ImplicitTilingPlugin() );
@@ -257,7 +258,7 @@ function init() {
 
 	const tileOptions = gui.addFolder( 'Tiles Options' );
 	tileOptions.add( params, 'displayActiveTiles' );
-	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 50 );
+	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 100 );
 	tileOptions.add( params, 'maxDepth' ).min( 1 ).max( 100 );
 	tileOptions.add( params, 'up', [ '+Y', '+Z', '-Z' ] );
 	tileOptions.open();
@@ -286,7 +287,6 @@ function init() {
 
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
-	exampleOptions.add( params, 'showOnlyTilesInRegion', );
 	exampleOptions.add( params, 'optimizeRaycast', );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
@@ -449,13 +449,13 @@ function animate() {
 
 		if ( regionTilesLoadingPlugin ) {
 
-			regionTilesLoadingPlugin.clearRegions();
+			if ( regionTilesLoadingPlugin.hasRegion( region ) ) {
 
+				region.shape = raycaster.ray;
 
-			if ( params.raycast ) {
+			} else {
 
-				regionTilesLoadingPlugin.setOnlyLoadTilesInRegions( params.showOnlyTilesInRegion );
-				regionTilesLoadingPlugin.addLoadRegion( { shape: raycaster.ray, errorTarget: 0 } );
+				regionTilesLoadingPlugin.addRegion( region );
 
 			}
 
@@ -495,10 +495,9 @@ function animate() {
 	}
 
 
-	if ( ! params.raycast ) {
+	if ( parseFloat( params.raycast ) === NONE ) {
 
-		regionTilesLoadingPlugin.setOnlyLoadTilesInRegions( false );
-		regionTilesLoadingPlugin.clearRegions();
+		regionTilesLoadingPlugin.removeRegion( region );
 
 	}
 
