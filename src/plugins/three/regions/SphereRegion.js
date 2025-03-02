@@ -10,7 +10,7 @@ export class SphereRegion {
 
 	}
 
-	intersectsTile( boundingVolume, tile ) {
+	intersectsTile( boundingVolume ) {
 
 		const obb = boundingVolume.obb || boundingVolume.regionObb;
 		const sphere = boundingVolume.sphere;
@@ -36,9 +36,9 @@ export class SphereRegion {
 
 	}
 
-	calculateError( tile, errorTarget ) {
+	calculateError( tile, tilesRenderer ) {
 
-		return tile.geometricError - this.errorTarget + errorTarget;
+		return tile.geometricError - this.errorTarget + tilesRenderer.errorTarget;
 
 	}
 
