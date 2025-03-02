@@ -425,7 +425,7 @@ group : Group
 
 The container group for the 3d tiles. Add this to the three.js scene in order to render it.
 
-When raycasting a higher performance traversal approach is used (see [optimizeRaycast](#optimizeRaycast)).
+When raycasting a higher performance traversal approach is used (see [optimizeRaycast](#optimizeRaycast)). The group also includes an additional `matrixWorldInverse` field for transforming objects into the local tile set frame.
 
 ### .manager
 
