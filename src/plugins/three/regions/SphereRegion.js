@@ -1,28 +1,22 @@
 import { Frustum, Sphere } from 'three';
 
 const _frustum = new Frustum();
-const _sphereLocal = new Sphere();
-
 export class SphereRegion {
 
 	constructor( sphere = new Sphere(), errorTarget = 10 ) {
 
-		this.sphere = sphere;
+		this.sphere = sphere.clone();
 		this.errorTarget = errorTarget;
 
 	}
 
-	intersectsTile( boundingVolume, tile, matrixWorldInverse ) {
+	intersectsTile( boundingVolume, tile ) {
 
-		_sphereLocal.copy( this.sphere ).applyMatrix4( matrixWorldInverse );
 		const obb = boundingVolume.obb || boundingVolume.regionObb;
 		const sphere = boundingVolume.sphere;
+		if ( sphere && sphere.intersectsSphere( sphere ) ) {
 
-
-		let intersects = false;
-		if ( sphere && sphere.intersectsSphere( _sphereLocal ) ) {
-
-			intersects = true;
+			return true;
 
 		}
 
@@ -30,20 +24,15 @@ export class SphereRegion {
 
 			_frustum.set( ...obb.planes );
 
-			if ( _frustum.intersectsSphere( _sphereLocal ) ) {
+			if ( _frustum.intersectsSphere( sphere ) ) {
 
-				intersects = true;
+				return true;
 
 			}
 
 		}
 
-		if ( intersects ) {
-
-			tile.__inRegion = true;
-
-		}
-		return intersects;
+		return false;
 
 	}
 

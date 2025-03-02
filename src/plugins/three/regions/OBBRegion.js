@@ -2,32 +2,21 @@ import { OBB } from '../../../three/math/OBB.js';
 import { ExtendedFrustum } from '../../../three/math/ExtendedFrustum.js';
 
 const _frustum = new ExtendedFrustum();
-const _obbLocal = new OBB();
-
 export class OBBRegion {
 
 	constructor( obb = new OBB(), errorTarget = 10 ) {
 
-		this.obb = obb;
+		this.obb = obb.clone();
 		this.errorTarget = errorTarget;
 
 	}
 
-	intersectsTile( boundingVolume, tile, matrixWorldInverse ) {
+	intersectsTile( boundingVolume, tile ) {
 
-		_obbLocal.box.copy( this.obb.box );
-		_obbLocal.transform.copy( this.obb.transform ).premultiply( matrixWorldInverse );
-		_obbLocal.updatePlanes();
-		_frustum.set( ..._obbLocal.planes );
+		_frustum.set( ...this.obb.planes );
 		_frustum.calculateFrustumPoints();
 
-		const intersect = boundingVolume.intersectsFrustum( _frustum );
-		if ( intersect ) {
-
-			tile.__inRegion = intersect;
-
-		}
-		return intersect;
+		return boundingVolume.intersectsFrustum( _frustum );
 
 	}
 
