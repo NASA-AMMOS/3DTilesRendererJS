@@ -66,6 +66,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	get optimizeRaycast() {
+
+		return this._optimizeRaycast;
+
+	}
+
+	set optimizeRaycast( v ) {
+
+		console.warn( 'TilesRenderer: The "optimizeRaycast" option has been deprecated.' );
+		this._optimizeRaycast = v;
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
@@ -74,7 +87,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
-		this.optimizeRaycast = true;
+		this._optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
 
 		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;

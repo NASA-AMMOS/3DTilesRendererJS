@@ -104,7 +104,7 @@ export class TilesRendererBase {
 
 	set errorThreshold( v ) {
 
-		console.warn( 'TilesRenderer: "errorThreshold" has been deprecated.' );
+		console.warn( 'TilesRenderer: The "errorThreshold" option has been deprecated.' );
 		this._errorThreshold = v;
 
 	}
