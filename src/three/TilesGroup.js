@@ -12,6 +12,7 @@ export class TilesGroup extends Group {
 		this.isTilesGroup = true;
 		this.name = 'TilesRenderer.TilesGroup';
 		this.tilesRenderer = tilesRenderer;
+		this.matrixWorldInverse = new Matrix4();
 
 	}
 
@@ -73,6 +74,7 @@ export class TilesGroup extends Group {
 			if ( isDifferent ) {
 
 				this.matrixWorld.copy( tempMat );
+				this.matrixWorldInverse.copy( tempMat ).invert();
 
 				// update children
 				// the children will not have to change unless the parent group has updated
