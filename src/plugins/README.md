@@ -694,7 +694,8 @@ For more control, you can define a custom region by providing functions to deter
 
 #### Usage Example
 
-```const tiles = new TilesRenderer( url );
+```js
+const tiles = new TilesRenderer( url );
 const loadRegionPlugin = new LoadRegionPlugin();
 tiles.registerPlugin( loadRegionPlugin );
 
