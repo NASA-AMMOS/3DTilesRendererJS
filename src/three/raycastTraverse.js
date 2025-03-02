@@ -1,7 +1,6 @@
-import { Matrix4, Ray, Vector3 } from 'three';
+import { Ray, Vector3 } from 'three';
 
 // In three.js r165 and higher raycast traversal can be ended early
-const _mat = new Matrix4();
 const _localRay = new Ray();
 const _vec = new Vector3();
 const _hitArray = [];
@@ -45,8 +44,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	if ( localRay === null ) {
 
 		localRay = _localRay;
-		_mat.copy( group.matrixWorld ).invert();
-		localRay.copy( raycaster.ray ).applyMatrix4( _mat );
+		localRay.copy( raycaster.ray ).applyMatrix4( group.matrixWorldInverse );
 
 	}
 
@@ -136,8 +134,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	if ( localRay === null ) {
 
 		localRay = _localRay;
-		_mat.copy( group.matrixWorld ).invert();
-		localRay.copy( raycaster.ray ).applyMatrix4( _mat );
+		localRay.copy( raycaster.ray ).applyMatrix4( group.matrixWorldInverse );
 
 	}
 
