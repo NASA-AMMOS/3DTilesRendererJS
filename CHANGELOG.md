@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Deprecated "TilesRenderer.setLatLonToYUp" function.
 - Deprecated "TilesRenderer.errorThreshold" option.
 - Deprecated "TilesRenderer.optimizeRaycast" option.
+- Use "TilesRenderer.group.matrixWorldInverse" across src files to reduce matrix invert operations.
 
 ## [0.4.6] - 2025.02.21
 ### Added
