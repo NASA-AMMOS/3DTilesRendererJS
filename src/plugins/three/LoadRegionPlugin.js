@@ -1,14 +1,11 @@
-import { Matrix4 } from 'three';
-
-const _mat = new Matrix4().identity();
-const _matInv = new Matrix4().identity();
-
 export class LoadRegionPlugin {
 
 	constructor() {
 
-		this.name = 'REGION_TILES_LOADING_PLUGIN';
+		this.name = 'LOAD_REGION_PLUGIN';
 		this.regions = [];
+		this.tileErrors = new WeakMap();
+		this.tiles = null;
 
 	}
 
@@ -51,51 +48,38 @@ export class LoadRegionPlugin {
 
 	}
 
-
 	tileInView( tile ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
+		const { regions, tileErrors, tiles } = this;
 
-		if ( this.regions.length > 0 && ! _mat.equals( this.tiles.group.matrixWorld ) ) {
+		let visible = false;
+		let error = Infinity;
+		for ( const region of regions ) {
 
-			_mat.copy( this.tiles.group.matrixWorld );
-			_matInv.copy( this.tiles.group.matrixWorld ).invert();
-
-		}
-
-		tile.__inRegion = false;
-		tile.__regionCustomCalculateErrorFunctions = [];
-
-		for ( const region of this.regions ) {
-
-			const intersects = region.intersectsTile.bind( region )( boundingVolume, tile, _matInv );
+			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			if ( intersects ) {
 
-				tile.__inRegion = true;
-				tile.__regionCustomCalculateErrorFunctions.push( region.calculateError.bind( region ) );
+				visible = true;
+				error = Math.min( region.calculateError( tile, tiles ) );
 
 			}
 
 		}
 
-		return false;
+		if ( visible ) {
+
+			tileErrors.set( tile, error );
+
+		}
+
+		return visible;
 
 	}
 
 	calculateError( tile ) {
 
-		if ( tile.__inRegion ) {
-
-			let maxError = - Infinity;
-
-			for ( const fn of tile.__regionCustomCalculateErrorFunctions ) {
-
-				maxError = Math.max( maxError, fn( tile, this.tiles.errorTarget ) );
-
-			}
-			return maxError;
-
-		}
+		return this.tileErrors.has( tile ) ? this.tileErrors.get( tile ) : null;
 
 	}
 
