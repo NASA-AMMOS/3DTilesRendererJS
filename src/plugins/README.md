@@ -667,19 +667,7 @@ Plugin to enhances the TilesRenderer by enabling selective loading of tiles base
 addRegion( region: Object )
 ```
 
-You can define a world-space region using a built-in Ray, Sphere, or Oriented Bounding Box (OBB):
-
-```js
-{
-	// A predefined shape (Ray, Sphere, or OBB) that defines the region
-	shape: Ray | Sphere | OBB,
-
-	// The error target controls the level of detail (LOD) of tiles in this region.
-	errorTarget: number,
-}
-```
-
-For more control, you can define a custom region by providing functions to determine Intersection logic and Error Calculation
+You can define a custom region by providing functions to determine Intersection logic and Error Calculation
 
 ```js
 {
@@ -692,30 +680,49 @@ For more control, you can define a custom region by providing functions to deter
 }
 ```
 
+Serval predefined regions including Sphere/Oriented Bounding Box (OBB) or Ray are avaliable
+```js
+import { RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
+import { Ray, Sphere } from 'three'
+
+// Create a Ray-based region with a target error of 5
+const rayRegion = new RayRegion(new Ray(), 5);
+// Create a Sphere-based region with a target error of 5
+const sphereRegion = new SphereRegion(new Sphere(), 5)
+// Create a OBB-based region with a target error of 5
+const obbRegion = new OBBRegion(new OBB(), 5)
+```
+
 #### Usage Example
 
 ```js
-const tiles = new TilesRenderer( url );
+import { RayRegion, LoadRegionPlugin } from '3d-tiles-renderer/plugins'
+
+const tiles = new TilesRenderer(url);
+
+// Initialize and register the plugin
 const loadRegionPlugin = new LoadRegionPlugin();
-tiles.registerPlugin( loadRegionPlugin );
+tiles.registerPlugin(loadRegionPlugin);
 
-// Define a spherical region
-const sphere = new Sphere( new Vector3(0, 0, 0), 50 );
+// Define a custom region with an intersection function and error calculation function
 loadRegionPlugin.addRegion({
-    shape: sphere,
-    errorTarget: 5,
-});
-
-// Define a custom region with an intersection function
-loadRegionPlugin.addRegion({
+    // Function to check if the tile's bounding volume intersects this region
     intersectsTile: (boundingVolume, tile, invWorldMatrix) => {
         // Custom logic to check intersection
         return true;
     },
-    calculateError: (tile) => {
-        // Custom logic for error calculation
-        return tile.geometricError - tile.regionErrorTarget + tiles.errorTarget;
+	// Custom logic for error calculation. The second parameter is the error target of the tile set (tiles.errorTarget).
+    calculateError: (tile, errorTarget) => {
+        return tile.geometricError - tile.regionErrorTarget + errorTarget;
     },
-    errorTarget: 10,
 });
+
+// Example: Adding a Ray-based region with a target error of 6
+const rayRegion = new RayRegion(new Ray(), 6);
+
+// Adjust the region
+rayRegion.ray.origin = new Vector(1, 2, 3);
+
+// Add the ray region to the plugin
+loadRegionPlugin.addRegion(rayRegion);
 ```

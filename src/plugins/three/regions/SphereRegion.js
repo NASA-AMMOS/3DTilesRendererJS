@@ -5,22 +5,24 @@ const _sphereLocal = new Sphere();
 
 export class SphereRegion {
 
-	constructor( sphere ) {
+	constructor( sphere = new Sphere(), errorTarget = 10 ) {
 
 		this.sphere = sphere;
+		this.errorTarget = errorTarget;
 
 	}
 
-	intersectsTile( boundingVolume, matrixWorldInverse ) {
+	intersectsTile( boundingVolume, tile, matrixWorldInverse ) {
 
 		_sphereLocal.copy( this.sphere ).applyMatrix4( matrixWorldInverse );
 		const obb = boundingVolume.obb || boundingVolume.regionObb;
 		const sphere = boundingVolume.sphere;
 
 
+		let intersects = false;
 		if ( sphere && sphere.intersectsSphere( _sphereLocal ) ) {
 
-			return true;
+			intersects = true;
 
 		}
 
@@ -30,11 +32,24 @@ export class SphereRegion {
 
 			if ( _frustum.intersectsSphere( _sphereLocal ) ) {
 
-				return true;
+				intersects = true;
 
 			}
 
 		}
+
+		if ( intersects ) {
+
+			tile.__inRegion = true;
+
+		}
+		return intersects;
+
+	}
+
+	calculateError( tile, errorTarget ) {
+
+		return tile.geometricError - this.errorTarget + errorTarget;
 
 	}
 

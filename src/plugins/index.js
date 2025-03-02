@@ -15,6 +15,11 @@ export * from './three/DebugTilesPlugin.js';
 export * from './three/images/ImageFormatPlugin.js';
 export * from './three/images/EllipsoidProjectionTilesPlugin.js';
 
+// regions
+export * from './three/regions/RayRegion.js';
+export * from './three/regions/OBBRegion.js';
+export * from './three/regions/SphereRegion.js';
+
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin.js';
 
