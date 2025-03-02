@@ -26,7 +26,6 @@ const _euler = new Euler();
 // In three.js r165 and higher raycast traversal can be ended early
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
-const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
 const tempVector2 = new Vector2();
 
@@ -66,6 +65,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	get optimizeRaycast() {
+
+		return this._optimizeRaycast;
+
+	}
+
+	set optimizeRaycast( v ) {
+
+		console.warn( 'TilesRenderer: The "optimizeRaycast" option has been deprecated.' );
+		this._optimizeRaycast = v;
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
@@ -74,7 +86,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
-		this.optimizeRaycast = true;
+		this._optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
 
 		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
@@ -417,9 +429,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// extract scale of group container
-		tempMat2.copy( group.matrixWorld ).invert();
-
-		tempVector.setFromMatrixScale( tempMat2 );
+		tempVector.setFromMatrixScale( group.matrixWorldInverse );
 		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
 			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
@@ -473,7 +483,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );
 			position.applyMatrix4( camera.matrixWorld );
-			position.applyMatrix4( tempMat2 );
+			position.applyMatrix4( group.matrixWorldInverse );
 
 		}
 
@@ -978,6 +988,8 @@ export class TilesRenderer extends TilesRendererBase {
 	// TODO: deprecate this function and provide a plugin to help with this
 	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
 	setLatLonToYUp( lat, lon ) {
+
+		console.warn( 'TilesRenderer: setLatLonToYUp is deprecated. Use the ReorientationPlugin, instead.' );
 
 		const { ellipsoid, group } = this;
 

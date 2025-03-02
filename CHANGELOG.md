@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
 - EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 - R3F EastNorthUpFrame: Add support for passing the ellipsoid in directly.
+- TilesRenderer.group: Added "matrixWorldInverse" field.
 
 ### Fixed
 - Fix case where the environment and globe controls can have residual inertia after stopping the mouse.
 - Image Format Plugins: Fix case where tiles may not cause update on first load resulting in no tiles rendered.
 
 ### Changed
-- Deprecated "TilesRenderer.errorThreshold".
+- Deprecated "TilesRenderer.setLatLonToYUp" function.
+- Deprecated "TilesRenderer.errorThreshold" option.
+- Deprecated "TilesRenderer.optimizeRaycast" option.
+- Use "TilesRenderer.group.matrixWorldInverse" across src files to reduce matrix invert operations.
 
 ## [0.4.6] - 2025.02.21
 ### Added
