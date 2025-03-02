@@ -1,4 +1,4 @@
-import { Frustum, Matrix4, Vector3 } from 'three';
+import { CoordinateSystem, Frustum, Matrix4, Vector3 } from 'three';
 
 
 export class ExtendedFrustum extends Frustum {
@@ -7,7 +7,7 @@ export class ExtendedFrustum extends Frustum {
 
 	constructor()
 
-	setFromProjectionMatrix( m: Matrix4, coordinateSystem?: any ): void;
+	setFromProjectionMatrix( m: Matrix4, coordinateSystem?: CoordinateSystem ): this;
 	calculateFrustumPoints(): void;
 
 }

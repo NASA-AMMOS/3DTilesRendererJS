@@ -35,6 +35,7 @@ class ExtendedFrustum extends Frustum {
 
 		super.setFromProjectionMatrix( m, coordinateSystem );
 		this.calculateFrustumPoints();
+		return this;
 
 	}
 
