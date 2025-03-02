@@ -8,16 +8,12 @@ export { ReorientationPlugin } from './three/ReorientationPlugin';
 export { UnloadTilesPlugin } from './three/UnloadTilesPlugin';
 export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
 export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin';
+export * from './three/fade/LoadRegionPlugin';
 export * from './three/DebugTilesPlugin';
 
 // other formats
 export * from './three/images/ImageFormatPlugin';
 export * from './three/images/EllipsoidProjectionTilesPlugin';
-
-// regions
-export * from './three/regions/OBBRegion';
-export * from './three/regions/SphereRegion';
-export * from './three/regions/RayRegion';
 
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin';
