@@ -1,4 +1,4 @@
-import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
+import { Matrix4, Box3, Vector3, Plane, Ray, Frustum } from 'three';
 
 export class OBB {
 
