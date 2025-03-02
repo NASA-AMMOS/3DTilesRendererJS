@@ -1,7 +1,6 @@
-import { Frustum, Ray, Sphere } from 'three';
+import { Ray, Sphere } from 'three';
 import { OBB } from '../../three/math/OBB.js';
 
-const _frustum = new Frustum();
 export class LoadRegionPlugin {
 
 	constructor() {
@@ -125,27 +124,7 @@ export class SphereRegion extends BaseRegion {
 
 	intersectsTile( boundingVolume ) {
 
-		const obb = boundingVolume.obb || boundingVolume.regionObb;
-		const sphere = boundingVolume.sphere;
-		if ( sphere && sphere.intersectsSphere( sphere ) ) {
-
-			return true;
-
-		}
-
-		if ( obb ) {
-
-			_frustum.set( ...obb.planes );
-
-			if ( _frustum.intersectsSphere( sphere ) ) {
-
-				return true;
-
-			}
-
-		}
-
-		return false;
+		return boundingVolume.intersectsSphere( this.sphere );
 
 	}
 
@@ -179,10 +158,7 @@ export class OBBRegion extends BaseRegion {
 
 	intersectsTile( boundingVolume, tile ) {
 
-		_frustum.set( ...this.obb.planes );
-		_frustum.calculateFrustumPoints();
-
-		return boundingVolume.intersectsFrustum( _frustum );
+		return boundingVolume.intersectsOBB( this.obb );
 
 	}
 

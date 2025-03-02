@@ -135,6 +135,46 @@ export class TileBoundingVolume {
 
 	}
 
+	intersectsSphere( otherSphere ) {
+
+		const obb = this.obb || this.regionObb;
+		const sphere = this.sphere;
+		if ( sphere && ! sphere.intersectsSphere( otherSphere ) ) {
+
+			return false;
+
+		}
+
+		if ( obb && ! obb.intersectsSphere( otherSphere ) ) {
+
+			return false;
+
+		}
+
+		return Boolean( sphere || obb );
+
+	}
+
+	intersectsOBB( otherObb ) {
+
+		const obb = this.obb || this.regionObb;
+		const sphere = this.sphere;
+		if ( sphere && ! otherObb.intersectsSphere( sphere ) ) {
+
+			return false;
+
+		}
+
+		if ( obb && ! obb.intersectsOBB( otherObb ) ) {
+
+			return false;
+
+		}
+
+		return Boolean( sphere || obb );
+
+	}
+
 	getOBB( targetBox, targetMatrix ) {
 
 		const obb = this.obb || this.regionObb;
