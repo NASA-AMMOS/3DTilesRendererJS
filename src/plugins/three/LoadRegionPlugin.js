@@ -65,14 +65,14 @@ export class LoadRegionPlugin {
 		const { regions, tileErrors, tiles } = this;
 
 		let visible = false;
-		let error = Infinity;
+		let maxError = - Infinity;
 		for ( const region of regions ) {
 
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			if ( intersects ) {
 
 				visible = true;
-				error = Math.min( region.calculateError( tile, tiles ) );
+				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
 
 			}
 
@@ -80,7 +80,7 @@ export class LoadRegionPlugin {
 
 		if ( visible ) {
 
-			tileErrors.set( tile, error );
+			tileErrors.set( tile, maxError );
 
 		}
 
@@ -148,7 +148,7 @@ export class RayRegion extends BaseRegion {
 
 	}
 
-	intersectsTile( boundingVolume, tile ) {
+	intersectsTile( boundingVolume ) {
 
 		return boundingVolume.intersectsRay( this.ray );
 
@@ -162,10 +162,11 @@ export class OBBRegion extends BaseRegion {
 
 		super( errorTarget );
 		this.obb = obb.clone();
+		this.obb.update();
 
 	}
 
-	intersectsTile( boundingVolume, tile ) {
+	intersectsTile( boundingVolume ) {
 
 		return boundingVolume.intersectsOBB( this.obb );
 

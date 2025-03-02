@@ -1,4 +1,5 @@
-import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
+import { Matrix4, Box3, Vector3, Plane, Ray, Sphere } from 'three';
+import { ExtendedFrustum } from './ExtendedFrustum';
 
 export class OBB {
 
@@ -10,6 +11,7 @@ export class OBB {
 
 	constructor( box: Box3, transform: Matrix4 )
 
+	clone(): OBB;
 	clampPoint( point: Vector3, result: Vector3 ): Vector3;
 	distanceToPoint( point: Vector3 ): number;
 	containsPoint( point: Vector3 ): boolean;
@@ -17,6 +19,8 @@ export class OBB {
 	intersectRay( ray: Ray, target: Vector3 ): Vector3 | null;
 	update(): void;
 	updatePlanes(): void;
-	intersectsFrustum( frustum: Frustum ): boolean;
+	intersectsFrustum( frustum: ExtendedFrustum ): boolean;
+	intersectsOBB( obb: OBB ): boolean;
+	intersectsSphere( sphere: Sphere ): boolean;
 
 }

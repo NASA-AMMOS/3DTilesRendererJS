@@ -47,6 +47,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
 
+[Dynamic Tile Loading within Custom Regions](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
+
 **React Three Fiber**
 
 See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
