@@ -1,3 +1,7 @@
+import { Frustum, Ray, Sphere } from 'three';
+import { OBB } from '../../three/math/OBB.js';
+
+const _frustum = new Frustum();
 export class LoadRegionPlugin {
 
 	constructor() {
@@ -86,6 +90,99 @@ export class LoadRegionPlugin {
 	dispose() {
 
 		this.regions = [];
+
+	}
+
+}
+
+// Definitions of predefined regions
+class BaseRegion {
+
+	constructor( errorTarget = 10 ) {
+
+		this.errorTarget = errorTarget;
+
+	}
+
+	intersectsTile() {}
+
+	calculateError( tile, tilesRenderer ) {
+
+		return tile.geometricError - this.errorTarget + tilesRenderer.errorTarget;
+
+	}
+
+}
+
+export class SphereRegion extends BaseRegion {
+
+	constructor( errorTarget = 10, sphere = new Sphere() ) {
+
+		super( errorTarget );
+		this.sphere = sphere.clone();
+
+	}
+
+	intersectsTile( boundingVolume ) {
+
+		const obb = boundingVolume.obb || boundingVolume.regionObb;
+		const sphere = boundingVolume.sphere;
+		if ( sphere && sphere.intersectsSphere( sphere ) ) {
+
+			return true;
+
+		}
+
+		if ( obb ) {
+
+			_frustum.set( ...obb.planes );
+
+			if ( _frustum.intersectsSphere( sphere ) ) {
+
+				return true;
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+}
+
+export class RayRegion extends BaseRegion {
+
+	constructor( errorTarget = 10, ray = new Ray() ) {
+
+		super( errorTarget );
+		this.ray = ray.clone();
+
+	}
+
+	intersectsTile( boundingVolume, tile ) {
+
+		return boundingVolume.intersectsRay( this.ray );
+
+	}
+
+}
+
+export class OBBRegion extends BaseRegion {
+
+	constructor( errorTarget = 10, obb = new OBB() ) {
+
+		super( errorTarget );
+		this.obb = obb.clone();
+
+	}
+
+	intersectsTile( boundingVolume, tile ) {
+
+		_frustum.set( ...this.obb.planes );
+		_frustum.calculateFrustumPoints();
+
+		return boundingVolume.intersectsFrustum( _frustum );
 
 	}
 
