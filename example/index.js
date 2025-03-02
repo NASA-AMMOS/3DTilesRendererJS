@@ -4,7 +4,7 @@ import {
 	GLTFExtensionsPlugin,
 	DebugTilesPlugin,
 	ImplicitTilingPlugin,
-	RegionTilesLoadingPlugin,
+	LoadRegionPlugin,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -23,12 +23,14 @@ import {
 	Sphere,
 	Vector3,
 	Quaternion,
+	Matrix4,
 } from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { OBB } from '../src';
 
 const NONE = 0;
 const ALL_HITS = 1;
@@ -110,7 +112,7 @@ function reinstantiateTiles() {
 	tiles.lruCache.unloadPercent = 0.2;
 	tiles.lruCache.autoMarkUnused = true;
 
-	regionTilesLoadingPlugin = new RegionTilesLoadingPlugin();
+	regionTilesLoadingPlugin = new LoadRegionPlugin();
 	regionTilesLoadingPlugin.addRegion( region );
 	tiles.registerPlugin( regionTilesLoadingPlugin );
 	tiles.registerPlugin( new DebugTilesPlugin() );

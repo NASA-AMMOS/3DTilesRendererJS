@@ -626,7 +626,7 @@ Available options are as follows:
 	discardOriginalContent: true,
 
 	// The value to use for the x and y dimensions of the array texture. If set to null then the array texture is sized based on
-	// the first texture encountered. 
+	// the first texture encountered.
 	textureSize: null,
 }
 ```
@@ -655,4 +655,66 @@ Available options are as follows:
 	// If true then the TilesRenderer error target is set to the "devicePixelRatio".
 	useRecommendedSettings: true,
 }
+```
+
+## LoadRegionPlugin
+
+Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions.
+
+### .addRegion
+
+```js
+addRegion( region: Object )
+```
+
+You can define a world-space region using a built-in Ray, Sphere, or Oriented Bounding Box (OBB):
+
+```js
+{
+	// A predefined shape (Ray, Sphere, or OBB) that defines the region
+	shape: Ray | Sphere | OBB,
+
+	// The error target controls the level of detail (LOD) of tiles in this region.
+	errorTarget: number,
+}
+```
+
+For more control, you can define a custom region by providing functions to determine Intersection logic and Error Calculation
+
+```js
+{
+	// Custom function that determines whether a tile's bounding volume intersects this region.
+	// The "matrixWorldInverse" transforms world-space coordinates to the local tile set space.
+	intersectsTile: (boundingVolume: TileBoundingVolume, tile: Tile, matrixWorldInverse: Matrix4) => boolean,
+
+	// Custom function to calculate the error target dynamically for tiles in this region.
+	calculateError: (tile: Tile) => number,
+}
+```
+
+#### Usage Example
+
+```const tiles = new TilesRenderer( url );
+const loadRegionPlugin = new LoadRegionPlugin();
+tiles.registerPlugin( loadRegionPlugin );
+
+// Define a spherical region
+const sphere = new Sphere( new Vector3(0, 0, 0), 50 );
+loadRegionPlugin.addRegion({
+    shape: sphere,
+    errorTarget: 5,
+});
+
+// Define a custom region with an intersection function
+loadRegionPlugin.addRegion({
+    intersectsTile: (boundingVolume, tile, invWorldMatrix) => {
+        // Custom logic to check intersection
+        return true;
+    },
+    calculateError: (tile) => {
+        // Custom logic for error calculation
+        return tile.geometricError - tile.regionErrorTarget + tiles.errorTarget;
+    },
+    errorTarget: 10,
+});
 ```

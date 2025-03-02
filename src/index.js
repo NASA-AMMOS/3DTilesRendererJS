@@ -9,6 +9,7 @@ export * from './three/math/Ellipsoid.js';
 export * from './three/math/EllipsoidRegion.js';
 export * as GeoUtils from './three/math/GeoUtils.js';
 export * from './three/math/GeoConstants.js';
+export { OBB } from './three/math/OBB.js';
 
 // three.js controls
 export { GlobeControls } from './three/controls/GlobeControls.js';

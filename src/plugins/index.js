@@ -1,7 +1,7 @@
 // three.js plugins
 export { CesiumIonAuthPlugin } from './three/CesiumIonAuthPlugin.js';
 export { GoogleCloudAuthPlugin } from './three/GoogleCloudAuthPlugin.js';
-export { RegionTilesLoadingPlugin } from './three/RegionTilesLoadingPlugin.js';
+export { LoadRegionPlugin } from './three/LoadRegionPlugin.js';
 export { UpdateOnChangePlugin } from './three/UpdateOnChangePlugin.js';
 export { TileCompressionPlugin } from './three/TileCompressionPlugin.js';
 export { GLTFExtensionsPlugin } from './three/GLTFExtensionsPlugin.js';
