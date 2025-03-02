@@ -7,7 +7,7 @@ export class LoadRegionPlugin {
 
 		this.name = 'LOAD_REGION_PLUGIN';
 		this.regions = [];
-		this.tileErrors = new WeakMap();
+		this.tileErrors = new Map();
 		this.tiles = null;
 
 	}
@@ -15,6 +15,14 @@ export class LoadRegionPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		this._updateAfterCallback = () => {
+
+			this.tileErrors.clear();
+
+		};
+
+		tiles.addEventListener( 'update-after', this._updateAfterCallback );
 
 	}
 
@@ -89,6 +97,7 @@ export class LoadRegionPlugin {
 	dispose() {
 
 		this.regions = [];
+		this.tiles.removeEventListener( 'update-after', this._updateAfterCallback );
 
 	}
 
