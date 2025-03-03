@@ -192,7 +192,7 @@ function animate() {
 	// update the regions
 	if ( params.region === 'SPHERE' ) {
 
-		sphereMesh.position.set( Math.sin( time ) * 30, 0, Math.cos( time ) * 30);
+		sphereMesh.position.set( Math.sin( time ) * 20, 0, Math.cos( time ) * 20 );
 		sphereMesh.scale.setScalar( sphereRegion.sphere.radius );
 
 		sphereRegion.errorTarget = params.regionErrorTarget;
