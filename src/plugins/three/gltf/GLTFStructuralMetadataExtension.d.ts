@@ -7,15 +7,15 @@ export class GLTFStructuralMetadataExtension implements GLTFLoaderPlugin {
 
 }
 
-declare class StructuralMetadata {
+export class StructuralMetadata {
 
 	textures: Array<Texture | null>;
 
-	getPropertyTableData( tableIndices: Array<number>, ids: Array<number>, target: Array = [] ): Array<any>;
-	getPropertyTableInfo( tableIndices: Array<number> | null = null ): Array<{ name: string, className: string }>;
+	getPropertyTableData( tableIndices: Array<number>, ids: Array<number>, target: Array<Texture | null> ): Array<any>;
+	getPropertyTableInfo( tableIndices: Array<number> | null ): Array<{ name: string, className: string }>;
 
-	getPropertyTextureData( triangle: number, barycoord: Vector3, target: Array = [] ): Array<any>;
-	getPropertyTextureDataAsync( triangle: number, barycoord: Vector3, target: Array = [] ): Promise<Array<any>>;
+	getPropertyTextureData( triangle: number, barycoord: Vector3, target: Array<Texture | null> ): Array<any>;
+	getPropertyTextureDataAsync( triangle: number, barycoord: Vector3, target: Array<Texture | null> ): Promise<Array<any>>;
 	getPropertyTextureInfo(): Array<{
 		name: string,
 		className: string,
@@ -28,23 +28,9 @@ declare class StructuralMetadata {
 		}
 	}>;
 
-	getPropertyAttributeData( attributeIndex: number, target: Array = [] ): Array<any>;
+	getPropertyAttributeData( attributeIndex: number, target: Array<Texture | null> ): Array<any>;
 	getPropertyAttributeInfo(): Array<{ name: string, className: string }>;
 
 	dispose(): void;
-
-}
-
-declare module 'three' {
-
-	export interface Object3D {
-
-		userData: {
-
-			structuralMetadata?: StructuralMetadata;
-
-		}
-
-	}
 
 }
