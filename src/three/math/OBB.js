@@ -1,11 +1,9 @@
 import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
-import { ExtendedFrustum } from './ExtendedFrustum.js';
 
 const _worldMin = new Vector3();
 const _worldMax = new Vector3();
 const _norm = new Vector3();
 const _ray = new Ray();
-const _frustum = new ExtendedFrustum();
 
 export class OBB {
 
@@ -143,18 +141,40 @@ export class OBB {
 
 	}
 
-	// based on three.js' Box3 "intersects frustum" function
+	intersectsSphere( sphere ) {
+
+		this.clampPoint( sphere.center, _norm );
+		return _norm.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
+
+	}
+
 	intersectsFrustum( frustum ) {
 
-		const { points } = this;
-		const { planes } = frustum;
+		return this._intersectsPlaneShape( frustum.planes, frustum.points );
+
+	}
+
+	intersectsOBB( obb ) {
+
+		return this._intersectsPlaneShape( obb.planes, obb.points );
+
+	}
+
+	// takes a series of 6 planes that define and enclosed shape and the 8 points that lie at the corners
+	// of that shape to determine whether the OBB is intersected with.
+	_intersectsPlaneShape( otherPlanes, otherPoints ) {
+
+		const thisPoints = this.points;
+		const thisPlanes = this.planes;
+
+		// based on three.js' Box3 "intersects frustum" function
 		for ( let i = 0; i < 6; i ++ ) {
 
-			const plane = planes[ i ];
+			const plane = otherPlanes[ i ];
 			let maxDistance = - Infinity;
 			for ( let j = 0; j < 8; j ++ ) {
 
-				const v = points[ j ];
+				const v = thisPoints[ j ];
 				const dist = plane.distanceToPoint( v );
 				maxDistance = maxDistance < dist ? dist : maxDistance;
 
@@ -169,13 +189,14 @@ export class OBB {
 		}
 
 		// do the opposite check using the obb planes to avoid false positives
+		// this check is not performed by three.js' AABB logic but helps prevent a lot incorrect intersection reports
 		for ( let i = 0; i < 6; i ++ ) {
 
-			const plane = this.planes[ i ];
+			const plane = thisPlanes[ i ];
 			let maxDistance = - Infinity;
 			for ( let j = 0; j < 8; j ++ ) {
 
-				const v = frustum.points[ j ];
+				const v = otherPoints[ j ];
 				const dist = plane.distanceToPoint( v );
 				maxDistance = maxDistance < dist ? dist : maxDistance;
 
@@ -190,22 +211,6 @@ export class OBB {
 		}
 
 		return true;
-
-	}
-
-	intersectsSphere( sphere ) {
-
-		this.clampPoint( sphere.center, _norm );
-		return _norm.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
-
-	}
-
-	intersectsOBB( obb ) {
-
-		// TODO: simplify to remove use of frustum
-		_frustum.set( ...obb.planes );
-		_frustum.calculateFrustumPoints();
-		return this.intersectsFrustum( _frustum );
 
 	}
 
