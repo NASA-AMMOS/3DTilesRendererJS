@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- TilesRenderer: No longer logs a warning if no cameras are present and a custom plugin supports tile error.
+
 ## [0.4.7] - 2025.03.03
 ### Added
 - GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
