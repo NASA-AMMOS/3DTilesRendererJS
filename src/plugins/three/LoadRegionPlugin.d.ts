@@ -4,7 +4,7 @@ import { TilesRenderer } from '../../three/TilesRenderer';
 import { OBB } from '../../three/math/OBB';
 import { Sphere, Ray } from 'three';
 
-class Region {
+declare class Region {
 
 	errorTarget: number;
 	intersectsTile( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): boolean

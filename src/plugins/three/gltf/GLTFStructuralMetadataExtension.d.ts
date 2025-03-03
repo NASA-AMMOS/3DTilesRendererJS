@@ -7,7 +7,7 @@ export class GLTFStructuralMetadataExtension implements GLTFLoaderPlugin {
 
 }
 
-class StructuralMetadata {
+declare class StructuralMetadata {
 
 	textures: Array<Texture | null>;
 
