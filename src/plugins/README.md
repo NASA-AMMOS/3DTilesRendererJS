@@ -626,7 +626,7 @@ Available options are as follows:
 	discardOriginalContent: true,
 
 	// The value to use for the x and y dimensions of the array texture. If set to null then the array texture is sized based on
-	// the first texture encountered. 
+	// the first texture encountered.
 	textureSize: null,
 }
 ```
@@ -655,4 +655,85 @@ Available options are as follows:
 	// If true then the TilesRenderer error target is set to the "devicePixelRatio".
 	useRecommendedSettings: true,
 }
+```
+
+## LoadRegionPlugin
+
+Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions.
+
+### .addRegion
+
+```js
+addRegion( region: Object )
+```
+
+You can define a custom region by providing functions to determine Intersection logic and Error Calculation
+
+```js
+{
+	// Custom function that determines whether a tile's bounding volume intersects this region.
+	intersectsTile: ( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ) => boolean,
+
+	// Custom function to calculate the error target dynamically for tiles in this region.
+	calculateError: ( tile: Tile, tilesRenderer: TilesRenderer ) => number,
+}
+```
+
+Serval predefined regions including Sphere/Oriented Bounding Box (OBB) or Ray are available including regions for a Sphere, OBB, and Ray.
+
+Regions take shapes in the local tile set coordinate frame:
+
+```js
+import { RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
+import { Ray, Sphere } from 'three'
+
+// Create a Ray-based region with a target error of 5
+const rayRegion = new RayRegion( new Ray(), 5 );
+
+// Create a Sphere-based region with a target error of 5
+const sphereRegion = new SphereRegion( new Sphere(), 5 );
+
+// Create a OBB-based region with a target error of 5
+const obbRegion = new OBBRegion( new OBB(), 5 );
+```
+
+#### Usage Example
+
+```js
+import { RayRegion, LoadRegionPlugin } from '3d-tiles-renderer/plugins'
+
+const tiles = new TilesRenderer( url );
+
+// Initialize and register the plugin
+const loadRegionPlugin = new LoadRegionPlugin();
+tiles.registerPlugin( loadRegionPlugin );
+
+// Define a custom region with an intersection function and error calculation function
+loadRegionPlugin.addRegion( {
+
+    // Function to check if the tile's bounding volume intersects this region
+    intersectsTile: ( boundingVolume, tile, tilesRenderer ) => {
+
+		// Custom logic to check intersection
+        return true;
+
+	},
+
+	// Custom logic for error calculation. The second parameter is the error target of the tile set (tiles.errorTarget).
+    calculateError: ( tile, tilesRenderer ) => {
+
+		return tile.geometricError - tile.regionErrorTarget + errorTarget;
+
+	},
+
+} );
+
+// Example: Adding a Ray-based region with a target error of 6
+const rayRegion = new RayRegion( new Ray(), 6 );
+
+// Adjust the region
+rayRegion.ray.origin = new Vector( 1, 2, 3 );
+
+// Add the ray region to the plugin
+loadRegionPlugin.addRegion( rayRegion );
 ```

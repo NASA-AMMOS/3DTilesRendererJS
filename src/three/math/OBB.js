@@ -1,9 +1,11 @@
 import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
+import { ExtendedFrustum } from './ExtendedFrustum.js';
 
 const _worldMin = new Vector3();
 const _worldMax = new Vector3();
 const _norm = new Vector3();
 const _ray = new Ray();
+const _frustum = new ExtendedFrustum();
 
 export class OBB {
 
@@ -14,6 +16,21 @@ export class OBB {
 		this.inverseTransform = new Matrix4();
 		this.points = new Array( 8 ).fill().map( () => new Vector3() );
 		this.planes = new Array( 6 ).fill().map( () => new Plane() );
+
+	}
+
+	copy( source ) {
+
+		this.box.copy( source.box );
+		this.transform.copy( source.transform );
+		this.update();
+		return this;
+
+	}
+
+	clone() {
+
+		return new this.constructor().copy( this );
 
 	}
 
@@ -173,6 +190,22 @@ export class OBB {
 		}
 
 		return true;
+
+	}
+
+	intersectsSphere( sphere ) {
+
+		this.clampPoint( sphere.center, _norm );
+		return _norm.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
+
+	}
+
+	intersectsOBB( obb ) {
+
+		// TODO: simplify to remove use of frustum
+		_frustum.set( ...obb.planes );
+		_frustum.calculateFrustumPoints();
+		return this.intersectsFrustum( _frustum );
 
 	}
 
