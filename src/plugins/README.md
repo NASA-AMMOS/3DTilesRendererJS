@@ -666,9 +666,9 @@ import { LoadRegionPlugin, RayRegion, SphereRegion, OBBRegion, OBB } from '3d-ti
 import { Ray, Sphere } from 'three'
 
 // Create a Ray-based region with a target error of 5
-const rayRegion = new RayRegion( 5, new Ray() );
-const sphereRegion = new SphereRegion( 5, new Sphere() );
-const obbRegion = new OBBRegion( 5, new OBB() );
+const rayRegion = new RayRegion( 5, new Ray( /* ... */ ) );
+const sphereRegion = new SphereRegion( 5, new Sphere( /* ... */ ) );
+const obbRegion = new OBBRegion( 5, new OBB( /* ... */ ) );
 
 // Register the regions to load
 const plugin = new LoadRegionPlugin();
@@ -703,7 +703,7 @@ You can define a custom region by providing functions to determine Intersection 
 ### .removeRegion
 
 ```js
-addRegion( region: Region ): void
+removeRegion( region: Region ): void
 ```
 
 Removes the specified region.
