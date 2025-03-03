@@ -1,4 +1,4 @@
-import { EnvironmentControls, TilesRenderer, OBB } from '3d-tiles-renderer';
+import { EnvironmentControls, TilesRenderer } from '3d-tiles-renderer';
 import {
 	DebugTilesPlugin,
 	LoadRegionPlugin,
@@ -10,89 +10,32 @@ import {
 	Scene,
 	WebGLRenderer,
 	PerspectiveCamera,
-	Raycaster,
-	Vector2,
 	Mesh,
-	CylinderGeometry,
-	MeshStandardMaterial,
-	Group,
-	Ray,
 	Vector3,
 	SphereGeometry,
 	BoxGeometry,
-	Sphere,
-	DoubleSide,
-	AmbientLight,
+	Clock,
+	Line,
 } from 'three';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles;
-let raycaster, mouse, rayIntersect;
-let statsContainer, stats, regionTilesLoadingPlugin;
-const rayRegion = new RayRegion( 0, new Ray() );
-const sphereRegion = new SphereRegion( 0, new Sphere() );
-sphereRegion.sphere.radius = 30;
-const obbRegion = new OBBRegion( 0, new OBB() );
-obbRegion.obb.box.min = new Vector3( - 50, - 50, - 5 );
-obbRegion.obb.box.max = new Vector3( 50, 50, 5 );
-const LoadRayRegion = 1;
-const LoadSphereRegion = 2;
-const LoadOBBRegion = 3;
-const NONE = 0;
-
-const rayIntersectMat = new MeshStandardMaterial( { color: 0xffffff, side: DoubleSide, emissive: 0xffffff } );
-rayIntersectMat.transparent = true;
-rayIntersectMat.opacity = 1;
-const sphereIntersectMat = rayIntersectMat.clone();
-sphereIntersectMat.opacity = 0.3;
-const boxIntersectMat = rayIntersectMat.clone();
-boxIntersectMat.opacity = 0.3;
-
+let rayRegion, sphereRegion, boxRegion;
+let sphereMesh, rayMesh, boxMesh;
+let clock, time = 0;
 
 const params = {
 
-	enableUpdate: true,
-	loadRegion: 0,
-	enableCacheDisplay: true,
-	enableRendererStats: true,
-	errorTarget: 1000,
-	displayBoxBounds: true,
-	reload: reinstantiateTiles,
+	animate: true,
+	region: 'SPHERE',
+	regionErrorTarget: 0.1,
+	regionOnly: true,
+	displayBoxBounds: false,
 
 };
 
 init();
 animate();
-
-function reinstantiateTiles() {
-
-	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
-
-	if ( tiles ) {
-
-		scene.remove( tiles.group );
-		tiles.dispose();
-
-	}
-
-	tiles = new TilesRenderer( url );
-	tiles.registerPlugin( new DebugTilesPlugin() );
-
-	tiles.fetchOptions.mode = 'cors';
-
-
-
-	tiles.setCamera( camera );
-	tiles.setResolutionFromRenderer( camera, renderer );
-
-	regionTilesLoadingPlugin = new LoadRegionPlugin();
-	tiles.registerPlugin( regionTilesLoadingPlugin );
-
-	scene.add( tiles.group );
-
-}
 
 function init() {
 
@@ -107,6 +50,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 	renderer.domElement.tabIndex = 1;
 
+	// update the camera
 	camera = new PerspectiveCamera(
 		60,
 		window.innerWidth / window.innerHeight,
@@ -117,77 +61,75 @@ function init() {
 	camera.lookAt( 0, 0, 0 );
 	scene.add( camera );
 
+	// clock
+	clock = new Clock();
 
-	const ambLight = new AmbientLight( 0xffffff, 1 );
-	scene.add( ambLight );
+	// init tiles
+	tiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
+	tiles.registerPlugin( new DebugTilesPlugin() );
+	tiles.registerPlugin( new LoadRegionPlugin() );
+	tiles.group.rotation.x = Math.PI / 2;
+	scene.add( tiles.group );
 
 	// controls
-	controls = new EnvironmentControls( scene, camera, renderer.domElement );
+	controls = new EnvironmentControls( tiles.group, camera, renderer.domElement );
 	controls.adjustHeight = false;
 	controls.minDistance = 1;
 	controls.maxAltitude = Math.PI;
+	controls.enableDamping = true;
 
-	// Raycasting init
-	raycaster = new Raycaster();
-	mouse = new Vector2();
+	// initialize regions
+	rayRegion = new RayRegion();
+	sphereRegion = new SphereRegion();
+	sphereRegion.sphere.radius = 15;
+	boxRegion = new OBBRegion();
+	boxRegion.obb.box.min = new Vector3( - 50, - 50, - 5 );
+	boxRegion.obb.box.max = new Vector3( 50, 50, 5 );
 
-	rayIntersect = new Group();
+	// initialize region meshes
+	sphereMesh = new Mesh( new SphereGeometry() );
+	sphereMesh.material.transparent = true;
+	sphereMesh.material.opacity = 0.25;
 
-	const rayMesh = new Mesh( new CylinderGeometry( 1, 1, 1000 ), rayIntersectMat );
-	rayMesh.rotation.y = Math.PI / 2;
-	rayMesh.position.y += 500;
-	const sphereMesh = new Mesh( new SphereGeometry( 30, 32, 32 ), sphereIntersectMat );
-	const boxMesh = new Mesh( new BoxGeometry( 100, 100, 10 ), boxIntersectMat );
-	rayIntersect.add( rayMesh );
-	rayIntersect.add( boxMesh );
-	rayIntersect.add( sphereMesh );
-	scene.add( rayIntersect );
-	rayIntersect.visible = false;
+	boxMesh = new Mesh( new BoxGeometry() );
+	boxMesh.material.transparent = true;
+	boxMesh.material.opacity = 0.25;
 
-	reinstantiateTiles();
+	rayMesh = new Line();
+	rayMesh.geometry.setFromPoints( [ new Vector3(), new Vector3( 0, - 1000, 0 ) ] );
+	rayMesh.material.opacity = 0.5;
+	rayMesh.material.transparent = true;
 
+	// update the region to display
+	updateRegion( params.region );
+
+	// update camera parameters
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-	renderer.domElement.addEventListener( 'pointermove', onPointerMove, false );
-
 
 	// GUI
 	const gui = new GUI();
 	gui.width = 300;
+	gui.add( params, 'region', [ 'SPHERE', 'BOX', 'RAY' ] ).onChange( updateRegion );
+	gui.add( params, 'regionErrorTarget' ).min( 0 ).max( 1 );
+	gui.add( params, 'animate' );
+	gui.add( params, 'regionOnly' ).onChange( v => {
 
-	const tileOptions = gui.addFolder( 'Tiles Options' );
-	tileOptions.add( params, 'errorTarget' ).min( 0 ).max( 1000 );
-	tileOptions.open();
+		if ( ! v ) {
 
-	const debug = gui.addFolder( 'Debug Options' );
-	debug.add( params, 'enableCacheDisplay' );
-	debug.add( params, 'enableRendererStats' );
-	debug.add( params, 'displayBoxBounds' );
-	debug.open();
+			tiles.setCamera( camera );
+			onWindowResize();
 
-	const exampleOptions = gui.addFolder( 'Example Options' );
-	exampleOptions.add( params, 'loadRegion', { NONE, LoadRayRegion, LoadSphereRegion, LoadOBBRegion } );
-	exampleOptions.open();
+		} else {
 
-	gui.add( params, 'reload' );
+			tiles.deleteCamera( camera );
+
+		}
+
+	} );
+	gui.add( params, 'displayBoxBounds' );
+
 	gui.open();
-
-	statsContainer = document.createElement( 'div' );
-	statsContainer.style.position = 'absolute';
-	statsContainer.style.top = 0;
-	statsContainer.style.left = 0;
-	statsContainer.style.color = 'white';
-	statsContainer.style.width = '100%';
-	statsContainer.style.textAlign = 'center';
-	statsContainer.style.padding = '5px';
-	statsContainer.style.pointerEvents = 'none';
-	statsContainer.style.lineHeight = '1.5em';
-	document.body.appendChild( statsContainer );
-
-	// Stats
-	stats = new Stats();
-	stats.showPanel( 0 );
-	document.body.appendChild( stats.dom );
 
 }
 
@@ -197,16 +139,32 @@ function onWindowResize() {
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	camera.updateProjectionMatrix();
 	renderer.setPixelRatio( window.devicePixelRatio * 1 );
+	tiles.setResolutionFromRenderer( camera, renderer );
 
 }
 
-function onPointerMove( e ) {
+function updateRegion( region ) {
 
-	const bounds = this.getBoundingClientRect();
-	mouse.x = e.clientX - bounds.x;
-	mouse.y = e.clientY - bounds.y;
-	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
-	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
+	const plugin = tiles.getPluginByName( 'LOAD_REGION_PLUGIN' );
+	plugin.clearRegions();
+	scene.remove( rayMesh, sphereMesh, boxMesh );
+
+	if ( region === 'SPHERE' ) {
+
+		plugin.addRegion( sphereRegion );
+		scene.add( sphereMesh );
+
+	} else if ( region === 'RAY' ) {
+
+		plugin.addRegion( rayRegion );
+		scene.add( rayMesh );
+
+	} else if ( region === 'BOX' ) {
+
+		plugin.addRegion( boxRegion );
+		scene.add( boxMesh );
+
+	}
 
 }
 
@@ -215,185 +173,65 @@ function animate() {
 
 	requestAnimationFrame( animate );
 
-	// update options
-	tiles.errorTarget = params.errorTarget;
+	// update time step
+	if ( params.animate ) {
 
-	// update plugin
-	const plugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
-	plugin.enabled = true;
-	plugin.displayBoxBounds = params.displayBoxBounds;
-
-
-	controls.update();
-
-	if ( params.loadRegion && regionTilesLoadingPlugin ) {
-
-		raycaster.setFromCamera( mouse, camera );
-
-		raycaster.firstHitOnly = true;
-
-		const results = raycaster.intersectObject( tiles.group, true );
-
-		if ( results.length ) {
-
-			const closestHit = results[ 0 ];
-			const point = closestHit.point;
-			rayIntersect.position.copy( point );
-
-			// If the display bounds are visible they get intersected
-			if ( closestHit.face ) {
-
-				rayIntersectMat.visible = false;
-				sphereIntersectMat.visible = false;
-				boxIntersectMat.visible = false;
-				if ( params.loadRegion === LoadRayRegion ) {
-
-					rayIntersectMat.visible = true;
-
-					if ( regionTilesLoadingPlugin.hasRegion( rayRegion ) ) {
-
-						rayRegion.ray.origin.copy( point );
-						rayRegion.ray.direction.set( 0, 1, 0 );
-
-					} else {
-
-						regionTilesLoadingPlugin.addRegion( rayRegion );
-
-					}
-
-					regionTilesLoadingPlugin.removeRegion( sphereRegion );
-					regionTilesLoadingPlugin.removeRegion( obbRegion );
-
-				} else if ( params.loadRegion === LoadSphereRegion ) {
-
-					sphereIntersectMat.visible = true;
-
-					if ( regionTilesLoadingPlugin.hasRegion( sphereRegion ) ) {
-
-						sphereRegion.sphere.center.copy( point );
-
-					} else {
-
-						regionTilesLoadingPlugin.addRegion( sphereRegion );
-
-					}
-
-					regionTilesLoadingPlugin.removeRegion( rayRegion );
-					regionTilesLoadingPlugin.removeRegion( obbRegion );
-
-				} else if ( params.loadRegion === LoadOBBRegion ) {
-
-					boxIntersectMat.visible = true;
-
-					if ( regionTilesLoadingPlugin.hasRegion( obbRegion ) ) {
-
-						obbRegion.obb.transform.makeTranslation( point.x, point.y, point.z );
-						obbRegion.obb.update();
-
-					} else {
-
-						regionTilesLoadingPlugin.addRegion( obbRegion );
-
-					}
-
-					regionTilesLoadingPlugin.removeRegion( rayRegion );
-					regionTilesLoadingPlugin.removeRegion( sphereRegion );
-
-				}
-
-
-
-			}
-
-			rayIntersect.visible = true;
-
-		} else {
-
-			rayIntersect.visible = false;
-
-		}
+		time += clock.getDelta();
 
 	} else {
 
-		rayIntersect.visible = false;
+		clock.getDelta();
 
 	}
 
+	// update debug plugin
+	const debugPlugin = tiles.getPluginByName( 'DEBUG_TILES_PLUGIN' );
+	debugPlugin.enabled = params.displayBoxBounds;
+	debugPlugin.displayBoxBounds = params.displayBoxBounds;
 
-	if ( ! params.loadRegion ) {
+	// update the regions
+	if ( params.region === 'SPHERE' ) {
 
-		regionTilesLoadingPlugin.removeRegion( rayRegion );
-		regionTilesLoadingPlugin.removeRegion( sphereRegion );
-		regionTilesLoadingPlugin.removeRegion( obbRegion );
+		sphereMesh.position.set( Math.sin( time ) * 30, 0, Math.cos( time ) * 30);
+		sphereMesh.scale.setScalar( sphereRegion.sphere.radius );
+
+		sphereRegion.errorTarget = params.regionErrorTarget;
+		sphereRegion.sphere.center
+			.copy( sphereMesh.position )
+			.applyMatrix4( tiles.group.matrixWorldInverse );
+
+	} else if ( params.region === 'RAY' ) {
+
+		rayMesh.position.set( Math.sin( time * 2 ) * 20, 50, Math.cos( time * 2 ) * 20 );
+
+		rayRegion.errorTarget = params.regionErrorTarget;
+		rayRegion.ray.direction
+			.set( 0, - 1, 0 )
+			.transformDirection( tiles.group.matrixWorldInverse );
+		rayRegion.ray.origin
+			.copy( rayMesh.position )
+			.applyMatrix4( tiles.group.matrixWorldInverse );
+
+	} else if ( params.region === 'BOX' ) {
+
+		boxMesh.scale.set( 50, 10, 50 );
+		boxMesh.rotation.y = time;
+		boxMesh.updateMatrixWorld();
+		boxMesh.geometry.computeBoundingBox();
+
+		boxRegion.errorTarget = params.regionErrorTarget;
+		boxRegion.obb.box.copy( boxMesh.geometry.boundingBox );
+		boxRegion.obb.transform.copy( boxMesh.matrixWorld ).premultiply( tiles.group.matrixWorldInverse );
+		boxRegion.obb.update();
 
 	}
 
 	// update tiles
-	window.tiles = tiles;
+	controls.update();
 	camera.updateMatrixWorld();
 	tiles.update();
 
-	render();
-	stats.update();
-
-}
-
-function render() {
-
-	// render primary view
-
-	// const dist = camera.position.distanceTo( rayIntersect.position );
-	rayIntersect.scale.setScalar( 1 );
-
+	// render
 	renderer.render( scene, camera );
-
-	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
-	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
-
-	if ( params.enableCacheDisplay ) {
-
-		const geomSet = new Set();
-		tiles.traverse( tile => {
-
-			const scene = tile.cached.scene;
-			if ( scene ) {
-
-				scene.traverse( c => {
-
-					if ( c.geometry ) {
-
-						geomSet.add( c.geometry );
-
-					}
-
-				} );
-
-			}
-
-		} );
-
-		let count = 0;
-		geomSet.forEach( g => {
-
-			count += BufferGeometryUtils.estimateBytesUsed( g );
-
-		} );
-		str += `<br/>Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( count / 1000 / 1000 ).toFixed( 2 ) }mb`;
-
-	}
-
-	if ( params.enableRendererStats ) {
-
-		const memory = renderer.info.memory;
-		const programCount = renderer.info.programs.length;
-		str += `<br/>Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount }`;
-
-	}
-
-	if ( statsContainer.innerHTML !== str ) {
-
-		statsContainer.innerHTML = str;
-
-	}
 
 }

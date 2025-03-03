@@ -401,8 +401,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( cameras.length === 0 ) {
 
-			console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
-			return;
+			let found = false;
+			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateError && plugin.tileInView ) );
+			if ( found === false ) {
+
+				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
+				return;
+
+			}
 
 		}
 
