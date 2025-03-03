@@ -703,7 +703,7 @@ You can define a custom region by providing functions to determine Intersection 
 ### .removeRegion
 
 ```js
-addRegion( region: Region ): void
+removeRegion( region: Region ): void
 ```
 
 Removes the specified region.
