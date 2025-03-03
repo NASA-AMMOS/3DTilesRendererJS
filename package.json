@@ -74,10 +74,12 @@
     "react-dom": "^18.3.1"
   },
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.3",
     "@react-three/postprocessing": "^2.16.3",
     "@takram/three-atmosphere": "^0.6.0",
     "@takram/three-geospatial": "^0.0.1-alpha.4",
     "@takram/three-geospatial-effects": "^0.0.1-alpha.4",
+    "pbf": "^4.0.1",
     "postprocessing": "^6.36.4"
   }
 }
