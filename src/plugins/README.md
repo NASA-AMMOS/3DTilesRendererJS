@@ -659,12 +659,33 @@ Available options are as follows:
 
 ## LoadRegionPlugin
 
-Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions.
+Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions or volumes up to a specified geometric error target. Regions take shapes in the local tile set coordinate frame:
+
+```js
+import { LoadRegionPlugin, RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
+import { Ray, Sphere } from 'three'
+
+// Create a Ray-based region with a target error of 5
+const rayRegion = new RayRegion( 5, new Ray() );
+const sphereRegion = new SphereRegion( 5, new Sphere() );
+const obbRegion = new OBBRegion( 5, new OBB() );
+
+// Register the regions to load
+const plugin = new LoadRegionPlugin();
+plugin.addRegion( rayRegion );
+plugin.addRegion( sphereRegion );
+plugin.addRegion( obbRegion );
+
+// Register the plugin
+tiles.registerPlugin( plugin );
+```
+
+Custom regions can also be specified - see the structure definition in `addRegion`.
 
 ### .addRegion
 
 ```js
-addRegion( region: Object )
+addRegion( region: Region ): void
 ```
 
 You can define a custom region by providing functions to determine Intersection logic and Error Calculation
@@ -679,61 +700,26 @@ You can define a custom region by providing functions to determine Intersection 
 }
 ```
 
-Serval predefined regions including Sphere/Oriented Bounding Box (OBB) or Ray are available including regions for a Sphere, OBB, and Ray.
-
-Regions take shapes in the local tile set coordinate frame:
+### .removeRegion
 
 ```js
-import { RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
-import { Ray, Sphere } from 'three'
-
-// Create a Ray-based region with a target error of 5
-const rayRegion = new RayRegion( new Ray(), 5 );
-
-// Create a Sphere-based region with a target error of 5
-const sphereRegion = new SphereRegion( new Sphere(), 5 );
-
-// Create a OBB-based region with a target error of 5
-const obbRegion = new OBBRegion( new OBB(), 5 );
+addRegion( region: Region ): void
 ```
 
-#### Usage Example
+Removes the specified region.
+
+### .hasRegion
 
 ```js
-import { RayRegion, LoadRegionPlugin } from '3d-tiles-renderer/plugins'
-
-const tiles = new TilesRenderer( url );
-
-// Initialize and register the plugin
-const loadRegionPlugin = new LoadRegionPlugin();
-tiles.registerPlugin( loadRegionPlugin );
-
-// Define a custom region with an intersection function and error calculation function
-loadRegionPlugin.addRegion( {
-
-    // Function to check if the tile's bounding volume intersects this region
-    intersectsTile: ( boundingVolume, tile, tilesRenderer ) => {
-
-		// Custom logic to check intersection
-        return true;
-
-	},
-
-	// Custom logic for error calculation. The second parameter is the error target of the tile set (tiles.errorTarget).
-    calculateError: ( tile, tilesRenderer ) => {
-
-		return tile.geometricError - tile.regionErrorTarget + errorTarget;
-
-	},
-
-} );
-
-// Example: Adding a Ray-based region with a target error of 6
-const rayRegion = new RayRegion( new Ray(), 6 );
-
-// Adjust the region
-rayRegion.ray.origin = new Vector( 1, 2, 3 );
-
-// Add the ray region to the plugin
-loadRegionPlugin.addRegion( rayRegion );
+hasRegion( region: Region ): boolean
 ```
+
+Returns whether the region is already registered.
+
+### .clearRegions
+
+```js
+clearRegions(): void
+```
+
+Remove all regions.
