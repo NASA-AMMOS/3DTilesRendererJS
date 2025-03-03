@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 - R3F EastNorthUpFrame: Add support for passing the ellipsoid in directly.
 - TilesRenderer.group: Added "matrixWorldInverse" field.
+- Add "LoadRegionPlugin".
 
 ### Fixed
 - Fix case where the environment and globe controls can have residual inertia after stopping the mouse.
