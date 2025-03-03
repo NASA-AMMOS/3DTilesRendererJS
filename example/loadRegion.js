@@ -73,9 +73,6 @@ function init() {
 
 	// controls
 	controls = new EnvironmentControls( tiles.group, camera, renderer.domElement );
-	controls.adjustHeight = false;
-	controls.minDistance = 1;
-	controls.maxAltitude = Math.PI;
 	controls.enableDamping = true;
 
 	// initialize regions
