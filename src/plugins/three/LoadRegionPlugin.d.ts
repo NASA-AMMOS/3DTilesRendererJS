@@ -1,10 +1,10 @@
-import { TileBoundingVolume } from '../../../three/math/TileBoundingVolume';
-import { Tile } from '../../../base/Tile';
-import { TilesRenderer } from '../../../three/TilesRenderer';
+import { TileBoundingVolume } from '../../three/math/TileBoundingVolume';
+import { Tile } from '../../base/Tile';
+import { TilesRenderer } from '../../three/TilesRenderer';
 import { OBB } from '../../three/math/OBB';
 import { Sphere, Ray } from 'three';
 
-interface Region {
+class Region {
 
 	errorTarget: number;
 	intersectsTile( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): boolean
@@ -12,7 +12,7 @@ interface Region {
 
 }
 
-export class ReorientationPlugin {
+export class LoadRegionPlugin {
 
 	addRegion( region: Region ): void;
 	removeRegion( region: Region ): void;
@@ -28,14 +28,14 @@ export class OBBRegion extends Region {
 
 }
 
-export class RayRegion extends Regin {
+export class RayRegion extends Region {
 
 	ray: Ray;
 	constructor( errorTarget?: number, ray?: Ray );
 
 }
 
-export class SphereRegion {
+export class SphereRegion extends Region {
 
 	sphere: Sphere;
 	constructor( errorTarget?: number, sphere?: Sphere );
