@@ -186,14 +186,14 @@ export class OBB {
 
 	intersectsSphere( sphere ) {
 
-		_frustum.set( ...this.planes );
-		_frustum.calculateFrustumPoints();
-		return _frustum.intersectsSphere( sphere );
+		this.clampPoint( sphere.center, _norm );
+		return _norm.distanceToSquared( sphere.center ) <= ( sphere.radius * sphere.radius );
 
 	}
 
 	intersectsOBB( obb ) {
 
+		// TODO: simplify to remove use of frustum
 		_frustum.set( ...obb.planes );
 		_frustum.calculateFrustumPoints();
 		return this.intersectsFrustum( _frustum );
