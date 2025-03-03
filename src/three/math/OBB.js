@@ -19,9 +19,18 @@ export class OBB {
 
 	}
 
+	copy( source ) {
+
+		this.box.copy( source.box );
+		this.transform.copy( source.transform );
+		this.update();
+		return this;
+
+	}
+
 	clone() {
 
-		return new OBB( this.box, this.transform );
+		return new this.constructor().copy( this );
 
 	}
 

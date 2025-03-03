@@ -11,6 +11,7 @@ export class OBB {
 
 	constructor( box: Box3, transform: Matrix4 )
 
+	copy(): this;
 	clone(): OBB;
 	clampPoint( point: Vector3, result: Vector3 ): Vector3;
 	distanceToPoint( point: Vector3 ): number;
