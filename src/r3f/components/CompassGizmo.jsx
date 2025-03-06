@@ -161,6 +161,19 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 	}, [] );
 
+	let marginX, marginY;
+	if ( Array.isArray( margin ) ) {
+
+		marginX = margin[ 0 ];
+		marginY = margin[ 1 ];
+
+	} else {
+
+		marginX = margin;
+		marginY = margin;
+
+	}
+
 	useFrame( () => {
 
 		if ( tiles === null || groupRef.current === null ) {
@@ -234,8 +247,8 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 					ref={ groupRef }
 					scale={ scale }
 					position={ [
-						size.width / 2 - margin - scale / 2,
-						- size.height / 2 + margin + scale / 2,
+						size.width / 2 - marginX - scale / 2,
+						- size.height / 2 + marginY + scale / 2,
 						0,
 					] }
 
