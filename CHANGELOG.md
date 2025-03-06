@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: No longer logs a warning if no cameras are present and a custom plugin supports tile error.
 - Type definition errors.
 
+### Added
+- Support for X & Y margin for CompassGizmo.
+
 ## [0.4.7] - 2025.03.03
 ### Added
 - GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
