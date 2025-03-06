@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
 import { useDeepOptions, useShallowOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
@@ -40,14 +41,19 @@ export function EastNorthUpFrame( props ) {
 		ellipsoid = WGS84_ELLIPSOID.clone(),
 		children,
 	} = props;
-	const ref = useRef();
 	const tiles = useContext( TilesRendererContext );
 	const invalidate = useThree( state => state.invalidate );
+	const [ group, setGroup ] = useState( null );
 	const updateCallback = useCallback( () => {
+
+		if ( group === null ) {
+
+			return;
+
+		}
 
 		// hide the group if the tiles aren't loaded yet
 		const localEllipsoid = tiles && tiles.ellipsoid || ellipsoid || null;
-		const group = ref.current;
 		group.matrix.identity();
 		group.visible = Boolean( tiles && tiles.root || ellipsoid );
 
@@ -62,8 +68,48 @@ export function EastNorthUpFrame( props ) {
 		group.updateMatrixWorld();
 		invalidate();
 
-	}, [ invalidate, tiles, lat, lon, height, az, el, roll, ellipsoid, useObjectDep( ellipsoid.radius ) ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ invalidate, tiles, lat, lon, height, az, el, roll, ellipsoid, group, useObjectDep( ellipsoid.radius ) ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// adjust the matrix world update logic if a tile set is present so that we can position the frame
+	// correctly regardless of the parent.
+	useEffect( () => {
+
+		if ( tiles !== null && group !== null ) {
+
+			group.updateMatrixWorld = function ( force ) {
+
+				if ( this.matrixAutoUpdate ) {
+
+					this.updateMatrix();
+
+				}
+
+				if ( this.matrixWorldNeedsUpdate || force ) {
+
+					this.matrixWorld.multiplyMatrices( tiles.group.matrixWorld, this.matrix );
+					force = true;
+
+				}
+
+				const children = this.children;
+				for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+					const child = children[ i ];
+					child.updateMatrixWorld( force );
+
+				}
+
+			};
+
+			return () => {
+
+				group.updateMatrixWorld = Object3D.prototype.updateMatrixWorld;
+
+			};
+
+		}
+
+	}, [ tiles, group ] );
 
 	useEffect( () => {
 
@@ -71,6 +117,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ updateCallback ] );
 
+	// update the position when a tile set is loaded since it may modify the ellipsoid
 	useEffect( () => {
 
 		if ( tiles === null ) {
@@ -88,7 +135,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ tiles, updateCallback ] );
 
-	return <group ref={ ref }>{ children }</group>;
+	return <group ref={ setGroup }>{ children }</group>;
 
 }
 
