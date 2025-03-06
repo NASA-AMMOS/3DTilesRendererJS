@@ -17,6 +17,13 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	get alpha() {
+
+		// the transition alpha towards the target camera
+		return this._target === 0 ? 1 - this._alpha : this._alpha;
+
+	}
+
 	get camera() {
 
 		if ( this._alpha === 0 ) return this.perspectiveCamera;
@@ -107,7 +114,7 @@ export class CameraTransitionManager extends EventDispatcher {
 			const step = direction * delta / this.duration;
 			this._alpha = MathUtils.clamp( this._alpha + step, 0, 1 );
 
-			this.dispatchEvent( { type: 'change' } );
+			this.dispatchEvent( { type: 'change', alpha: this.alpha } );
 
 		}
 
