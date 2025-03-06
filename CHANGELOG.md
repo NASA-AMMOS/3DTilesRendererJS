@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Type definition errors.
 
 ### Added
-- Support for X & Y margin for CompassGizmo.
+- R3F CompassGizmo: Support for X & Y margin for CompassGizmo.
+- CameraTransitionManager: Expose "alpha" via the change event and class member.
 
 ## [0.4.7] - 2025.03.03
 ### Added
