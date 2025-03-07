@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: No longer logs a warning if no cameras are present and a custom plugin supports tile error.
 - Type definition errors.
 - R3F EastNorthUpFrame: frame will be positioned correctly regardless of parent.
+- TilesRenderer: Fixed screen space error being calculated incorrectly with multiple cameras.
 
 ### Added
 - R3F CompassGizmo: Support for X & Y margin for CompassGizmo.
