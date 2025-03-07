@@ -1,6 +1,6 @@
 import { LOADED, FAILED, UNLOADED } from './constants.js';
 
-const visTarget = {
+const viewErrorTarget = {
 	inView: false,
 	error: Infinity,
 	distance: Infinity,
@@ -36,10 +36,10 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenLoaded = false;
 
 		// update tile frustum and error state
-		renderer.calculateTileViewError( tile, visTarget );
-		tile.__inFrustum = visTarget.inView;
-		tile.__error = visTarget.error;
-		tile.__distanceFromCamera = visTarget.distance;
+		renderer.calculateTileViewError( tile, viewErrorTarget );
+		tile.__inFrustum = viewErrorTarget.inView;
+		tile.__error = viewErrorTarget.error;
+		tile.__distanceFromCamera = viewErrorTarget.distance;
 
 	}
 

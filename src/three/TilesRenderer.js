@@ -28,7 +28,7 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempVector = new Vector3();
 const tempVector2 = new Vector2();
-const visTarget = {
+const viewErrorTarget = {
 	inView: false,
 	error: Infinity,
 };
@@ -966,15 +966,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( plugin !== this && plugin.calculateTileViewError ) {
 
-				plugin.calculateTileViewError( tile, visTarget );
-				if ( visTarget.inView ) {
+				plugin.calculateTileViewError( tile, viewErrorTarget );
+				if ( viewErrorTarget.inView ) {
 
 					inView = true;
-					inViewError = Math.max( inViewError, visTarget.error );
+					inViewError = Math.max( inViewError, viewErrorTarget.error );
 
 				}
 
-				maxError = Math.max( maxError, visTarget.error );
+				maxError = Math.max( maxError, viewErrorTarget.error );
 
 			}
 
