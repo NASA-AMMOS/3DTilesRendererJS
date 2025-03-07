@@ -50,7 +50,7 @@ export class LoadRegionPlugin {
 
 	}
 
-	getTileVisibility( tile, target ) {
+	calculateTileViewError( tile, target ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
 		const { regions, tiles } = this;

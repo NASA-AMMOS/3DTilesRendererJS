@@ -36,7 +36,7 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenLoaded = false;
 
 		// update tile frustum and error state
-		renderer.getTileVisibility( tile, visTarget );
+		renderer.calculateTileViewError( tile, visTarget );
 		tile.__inFrustum = visTarget.inView;
 		tile.__error = visTarget.error;
 		tile.__distanceFromCamera = visTarget.distance;

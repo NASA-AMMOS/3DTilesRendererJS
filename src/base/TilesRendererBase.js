@@ -552,7 +552,7 @@ export class TilesRendererBase {
 
 	}
 
-	getTileVisibility( tile, target ) {
+	calculateTileViewError( tile, target ) {
 
 		// retrieve whether the tile is visible, screen space error, and distance to camera
 		// set "inView", "error", "distance"

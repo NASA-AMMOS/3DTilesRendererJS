@@ -406,7 +406,7 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( cameras.length === 0 ) {
 
 			let found = false;
-			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.getTileVisibility ) );
+			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
 			if ( found === false ) {
 
 				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
@@ -912,7 +912,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	getTileVisibility( tile, target ) {
+	calculateTileViewError( tile, target ) {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
@@ -964,9 +964,9 @@ export class TilesRenderer extends TilesRendererBase {
 		// check the plugin visibility
 		this.invokeAllPlugins( plugin => {
 
-			if ( plugin !== this && plugin.getTileVisibility ) {
+			if ( plugin !== this && plugin.calculateTileViewError ) {
 
-				plugin.getTileVisibility( tile, visTarget );
+				plugin.calculateTileViewError( tile, visTarget );
 				if ( visTarget.inView ) {
 
 					inView = true;
