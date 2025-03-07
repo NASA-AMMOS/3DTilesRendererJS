@@ -493,7 +493,6 @@ export class TilesRendererBase {
 
 		}
 
-		// Expected to be set during calculateError()
 		tile.__distanceFromCamera = Infinity;
 		tile.__error = Infinity;
 
@@ -553,15 +552,10 @@ export class TilesRendererBase {
 
 	}
 
-	calculateError( tile ) {
+	getTileVisibility( tile, target ) {
 
-		return 0;
-
-	}
-
-	tileInView( tile ) {
-
-		return true;
+		// retrieve whether the tile is visible, screen space error, and distance to camera
+		// set "inView", "error", "distance"
 
 	}
 
