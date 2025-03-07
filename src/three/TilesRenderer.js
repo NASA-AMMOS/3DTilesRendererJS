@@ -29,7 +29,7 @@ const tempMat = new Matrix4();
 const tempVector = new Vector3();
 const tempVector2 = new Vector2();
 const visTarget = {
-	inFrustum: false,
+	inView: false,
 	error: Infinity,
 };
 
