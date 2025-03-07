@@ -28,6 +28,10 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
 const tempVector = new Vector3();
 const tempVector2 = new Vector2();
+const viewErrorTarget = {
+	inView: false,
+	error: Infinity,
+};
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -402,7 +406,7 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( cameras.length === 0 ) {
 
 			let found = false;
-			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateError && plugin.tileInView ) );
+			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
 			if ( found === false ) {
 
 				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
@@ -908,86 +912,88 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	calculateError( tile ) {
+	calculateTileViewError( tile, target ) {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
 		const boundingVolume = cached.boundingVolume;
 
+		let inView = false;
+		let inViewError = - Infinity;
+		let inViewDistance = Infinity;
 		let maxError = - Infinity;
 		let minDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
-			// transform camera position into local frame of the tile bounding box
+			// calculate the camera error
 			const info = cameraInfo[ i ];
 			let error;
+			let distance;
 			if ( info.isOrthographic ) {
 
 				const pixelSize = info.pixelSize;
 				error = tile.geometricError / pixelSize;
+				distance = Infinity;
 
 			} else {
 
-				const distance = boundingVolume.distanceToPoint( info.position );
 				const sseDenominator = info.sseDenominator;
+				distance = boundingVolume.distanceToPoint( info.position );
 				error = tile.geometricError / ( distance * sseDenominator );
-				minDistance = Math.min( minDistance, distance );
 
 			}
-
-			maxError = Math.max( maxError, error );
-
-		}
-
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin !== this && plugin.calculateError ) {
-
-				maxError = Math.max( maxError, plugin.calculateError( tile ) || 0 );
-
-			}
-
-		} );
-
-		tile.__distanceFromCamera = minDistance;
-		tile.__error = maxError;
-
-	}
-
-	tileInView( tile ) {
-
-		let inView = false;
-		this.invokeAllPlugins( plugin => {
-
-			inView = inView || plugin !== this && plugin.tileInView && plugin.tileInView( tile );
-
-		} );
-
-		if ( inView ) {
-
-			return true;
-
-		}
-
-		const cached = tile.cached;
-		const boundingVolume = cached.boundingVolume;
-		const cameraInfo = this.cameraInfo;
-		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
 			// Track which camera frustums this tile is in so we can use it
 			// to ignore the error calculations for cameras that can't see it
 			const frustum = cameraInfo[ i ].frustum;
 			if ( boundingVolume.intersectsFrustum( frustum ) ) {
 
-				return true;
+				inView = true;
+				inViewError = Math.max( inViewError, error );
+				inViewDistance = Math.min( inViewDistance, distance );
 
 			}
 
+			maxError = Math.max( maxError, error );
+			minDistance = Math.min( minDistance, distance );
+
 		}
 
-		return false;
+		// check the plugin visibility
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin !== this && plugin.calculateTileViewError ) {
+
+				plugin.calculateTileViewError( tile, viewErrorTarget );
+				if ( viewErrorTarget.inView ) {
+
+					inView = true;
+					inViewError = Math.max( inViewError, viewErrorTarget.error );
+
+				}
+
+				maxError = Math.max( maxError, viewErrorTarget.error );
+
+			}
+
+		} );
+
+		// If the tiles are out of view then use the global distance and error calculated
+		if ( inView ) {
+
+			target.inView = true;
+			target.error = inViewError;
+			target.distanceToCamera = inViewDistance;
+
+		} else {
+
+			target.inView = false;
+			target.error = maxError;
+			target.distanceToCamera = minDistance;
+
+		}
 
 	}
 

@@ -7,7 +7,6 @@ export class LoadRegionPlugin {
 
 		this.name = 'LOAD_REGION_PLUGIN';
 		this.regions = [];
-		this.tileErrors = new Map();
 		this.tiles = null;
 
 	}
@@ -15,14 +14,6 @@ export class LoadRegionPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
-
-		this._updateAfterCallback = () => {
-
-			this.tileErrors.clear();
-
-		};
-
-		tiles.addEventListener( 'update-after', this._updateAfterCallback );
 
 	}
 
@@ -59,10 +50,10 @@ export class LoadRegionPlugin {
 
 	}
 
-	tileInView( tile ) {
+	calculateTileViewError( tile, target ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
-		const { regions, tileErrors, tiles } = this;
+		const { regions, tiles } = this;
 
 		let visible = false;
 		let maxError = - Infinity;
@@ -78,26 +69,14 @@ export class LoadRegionPlugin {
 
 		}
 
-		if ( visible ) {
-
-			tileErrors.set( tile, maxError );
-
-		}
-
-		return visible;
-
-	}
-
-	calculateError( tile ) {
-
-		return this.tileErrors.has( tile ) ? this.tileErrors.get( tile ) : null;
+		target.inView = visible;
+		target.error = maxError;
 
 	}
 
 	dispose() {
 
 		this.regions = [];
-		this.tiles.removeEventListener( 'update-after', this._updateAfterCallback );
 
 	}
 
