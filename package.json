@@ -46,6 +46,10 @@
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
     "@react-three/drei": "^9.114.3",
+    "@react-three/postprocessing": "^2.16.3",
+    "@takram/three-atmosphere": "^0.6.0",
+    "@takram/three-geospatial": "^0.0.1-alpha.4",
+    "@takram/three-geospatial-effects": "^0.0.1-alpha.4",
     "@types/eslint": "^7.28.1",
     "@types/three": "^0.166.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
@@ -61,6 +65,7 @@
     "jest": "^27.1.1",
     "jest-cli": "^27.1.1",
     "leva": "^0.9.35",
+    "postprocessing": "^6.36.4",
     "three": "^0.170.0",
     "typescript": "^5.1.3",
     "vite": "^5.3.1"
@@ -72,12 +77,5 @@
     "@react-three/fiber": "^8.17.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
-  },
-  "dependencies": {
-    "@react-three/postprocessing": "^2.16.3",
-    "@takram/three-atmosphere": "^0.6.0",
-    "@takram/three-geospatial": "^0.0.1-alpha.4",
-    "@takram/three-geospatial-effects": "^0.0.1-alpha.4",
-    "postprocessing": "^6.36.4"
   }
 }
