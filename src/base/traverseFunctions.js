@@ -1,5 +1,11 @@
 import { LOADED, FAILED, UNLOADED } from './constants.js';
 
+const viewErrorTarget = {
+	inView: false,
+	error: Infinity,
+	distance: Infinity,
+};
+
 function isDownloadFinished( value ) {
 
 	return value === LOADED || value === FAILED;
@@ -30,8 +36,10 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenLoaded = false;
 
 		// update tile frustum and error state
-		tile.__inFrustum = renderer.tileInView( tile );
-		renderer.calculateError( tile );
+		renderer.calculateTileViewError( tile, viewErrorTarget );
+		tile.__inFrustum = viewErrorTarget.inView;
+		tile.__error = viewErrorTarget.error;
+		tile.__distanceFromCamera = viewErrorTarget.distance;
 
 	}
 

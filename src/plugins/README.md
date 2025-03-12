@@ -626,7 +626,7 @@ Available options are as follows:
 	discardOriginalContent: true,
 
 	// The value to use for the x and y dimensions of the array texture. If set to null then the array texture is sized based on
-	// the first texture encountered. 
+	// the first texture encountered.
 	textureSize: null,
 }
 ```
@@ -656,3 +656,70 @@ Available options are as follows:
 	useRecommendedSettings: true,
 }
 ```
+
+## LoadRegionPlugin
+
+Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions or volumes up to a specified geometric error target. Regions take shapes in the local tile set coordinate frame:
+
+```js
+import { LoadRegionPlugin, RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
+import { Ray, Sphere } from 'three'
+
+// Create a Ray-based region with a target error of 5
+const rayRegion = new RayRegion( 5, new Ray( /* ... */ ) );
+const sphereRegion = new SphereRegion( 5, new Sphere( /* ... */ ) );
+const obbRegion = new OBBRegion( 5, new OBB( /* ... */ ) );
+
+// Register the regions to load
+const plugin = new LoadRegionPlugin();
+plugin.addRegion( rayRegion );
+plugin.addRegion( sphereRegion );
+plugin.addRegion( obbRegion );
+
+// Register the plugin
+tiles.registerPlugin( plugin );
+```
+
+Custom regions can also be specified - see the structure definition in `addRegion`.
+
+### .addRegion
+
+```js
+addRegion( region: Region ): void
+```
+
+You can define a custom region by providing functions to determine Intersection logic and Error Calculation
+
+```js
+{
+	// Custom function that determines whether a tile's bounding volume intersects this region.
+	intersectsTile: ( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ) => boolean,
+
+	// Custom function to calculate the error target dynamically for tiles in this region.
+	calculateError: ( tile: Tile, tilesRenderer: TilesRenderer ) => number,
+}
+```
+
+### .removeRegion
+
+```js
+removeRegion( region: Region ): void
+```
+
+Removes the specified region.
+
+### .hasRegion
+
+```js
+hasRegion( region: Region ): boolean
+```
+
+Returns whether the region is already registered.
+
+### .clearRegions
+
+```js
+clearRegions(): void
+```
+
+Remove all regions.

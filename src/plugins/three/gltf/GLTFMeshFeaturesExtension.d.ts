@@ -15,17 +15,3 @@ export class MeshFeatures {
 	dispose(): void;
 
 }
-
-declare module 'three' {
-
-	export interface Object3D {
-
-		userData: {
-
-			meshFeatures?: MeshFeatures;
-
-		}
-
-	}
-
-}

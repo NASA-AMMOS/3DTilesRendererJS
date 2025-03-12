@@ -47,6 +47,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
 
+[Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
+
 **React Three Fiber**
 
 See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
@@ -379,16 +381,6 @@ autoDisableRendererCulling = true : Boolean
 
 If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
-### .optimizeRaycast
-
-```js
-optimizeRaycast = true : Boolean
-```
-
-If true then the `raycast` functions of the loaded tile objects are overriden to disable raycasting and the `TilesRenderer.group` raycast function is used to perform a raycast over all visible tiles. This enables an optimized traversal for raycasting against tiles. If `raycaster.firstHitOnly = true` then as well as a more optimal traversal of tiles the raycast will end early as soon as the closest intersction is found.
-
-If you would like to manage raycasting against tiles yourself this behavior can be disabled if needed by setting `optizeRaycast` to false.
-
 ### .lruCache
 
 ```js
@@ -423,9 +415,7 @@ Max jobs defaults to `1`.
 group : Group
 ```
 
-The container group for the 3d tiles. Add this to the three.js scene in order to render it.
-
-When raycasting a higher performance traversal approach is used (see [optimizeRaycast](#optimizeRaycast)).
+The container group for the 3d tiles. Add this to the three.js scene in order to render it. The group includes an additional `matrixWorldInverse` field for transforming objects into the local tile set frame.
 
 ### .manager
 

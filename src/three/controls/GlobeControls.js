@@ -85,12 +85,11 @@ export class GlobeControls extends EnvironmentControls {
 
 		// get camera values
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
 
 		// set a ray in the local ellipsoid frame
 		_ray.origin.copy( camera.position );
 		_ray.direction.copy( _forward );
-		_ray.applyMatrix4( _invMatrix );
+		_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 		// get the estimated closest point
 		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
@@ -133,8 +132,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		// get the "up" direction based on the wgs84 ellipsoid
 		const { tilesGroup, ellipsoid } = this;
-		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-		_vec.copy( point ).applyMatrix4( _invMatrix );
+		_vec.copy( point ).applyMatrix4( tilesGroup.matrixWorldInverse );
 
 		ellipsoid.getPositionToNormal( _vec, target );
 		target.transformDirection( tilesGroup.matrixWorld );
@@ -148,8 +146,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			this._getVirtualOrthoCameraPosition( _vec );
 
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-			_vec.applyMatrix4( _invMatrix );
+			_vec.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 			ellipsoid.getPositionToNormal( _vec, target );
 			target.transformDirection( tilesGroup.matrixWorld );
@@ -221,8 +218,7 @@ export class GlobeControls extends EnvironmentControls {
 			camera.near = Math.max( minNear, distanceToCenter - maxRadius - margin );
 
 			// update the far plane to the horizon distance
-			const invMatrix = _invMatrix.copy( tilesGroup.matrixWorld ).invert();
-			_pos.copy( camera.position ).applyMatrix4( invMatrix );
+			_pos.copy( camera.position ).applyMatrix4( tilesGroup.matrixWorldInverse );
 			ellipsoid.getPositionToCartographic( _pos, _latLon );
 
 			// use a minimum elevation for computing the horizon distance to avoid the far clip
@@ -282,7 +278,7 @@ export class GlobeControls extends EnvironmentControls {
 			tilesGroup,
 		} = this;
 
-		if ( ! this.enableDamping ) {
+		if ( ! this.enableDamping || this.inertiaStableFrames > 1 ) {
 
 			this.globeInertiaFactor = 0;
 			this.globeInertia.identity();
@@ -395,12 +391,11 @@ export class GlobeControls extends EnvironmentControls {
 			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// transform to ellipsoid frame
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-			raycaster.ray.applyMatrix4( _invMatrix );
+			raycaster.ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 			// construct an ellipsoid that matches a sphere with the radius of the globe so
 			// the drag position matches where the initial click was
-			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( _invMatrix ).length();
+			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( tilesGroup.matrixWorldInverse ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
 			// find the hit point and use the closest point on the horizon if we miss
@@ -434,13 +429,13 @@ export class GlobeControls extends EnvironmentControls {
 
 			if ( pointerTracker.getMoveDistance() / deltaTime < 2 * window.devicePixelRatio ) {
 
-				this.globeInertia.slerp( _quaternion, 0.5 );
-				this.globeInertiaFactor = 1 / deltaTime;
+				this.inertiaStableFrames ++;
 
 			} else {
 
 				this.globeInertia.copy( _quaternion );
 				this.globeInertiaFactor = 1 / deltaTime;
+				this.inertiaStableFrames = 0;
 
 			}
 
@@ -716,12 +711,10 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-
 		// get ray in globe coordinate frame
 		_ray.origin.copy( camera.position );
 		_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_ray.applyMatrix4( _invMatrix );
+		_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 		// get the closest point to the ray on the globe in the global coordinate frame
 		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
@@ -762,8 +755,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// if there was no hit then fallback to intersecting the ellipsoid.
 			const { ellipsoid, tilesGroup } = this;
-			_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-			_ray.copy( raycaster.ray ).applyMatrix4( _invMatrix );
+			_ray.copy( raycaster.ray ).applyMatrix4( tilesGroup.matrixWorldInverse );
 
 			const point = ellipsoid.intersectRay( _ray, _vec );
 			if ( point !== null ) {

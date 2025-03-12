@@ -10,7 +10,6 @@ const _vec = /*@__PURE__*/ new Vector3();
 const _axis = /*@__PURE__*/ new Vector3();
 const _pos = /*@__PURE__*/ new Vector3();
 const _matrix = /*@__PURE__*/ new Matrix4();
-const _invMatrix = /*@__PURE__*/ new Matrix4();
 const _enuMatrix = /*@__PURE__*/ new Matrix4();
 const _ray = /*@__PURE__*/ new Ray();
 const _cart = {};
@@ -19,12 +18,10 @@ const _cart = {};
 // Used for determining the compass orientation.
 function getCameraFocusPoint( camera, ellipsoid, tilesGroup, target ) {
 
-	_invMatrix.copy( tilesGroup.matrixWorld ).invert();
-
 	// get ray in globe coordinate frame
 	_ray.origin.copy( camera.position );
 	_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-	_ray.applyMatrix4( _invMatrix );
+	_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 	// get the closest point to the ray on the globe in the global coordinate frame
 	closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
@@ -164,6 +161,19 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 	}, [] );
 
+	let marginX, marginY;
+	if ( Array.isArray( margin ) ) {
+
+		marginX = margin[ 0 ];
+		marginY = margin[ 1 ];
+
+	} else {
+
+		marginX = margin;
+		marginY = margin;
+
+	}
+
 	useFrame( () => {
 
 		if ( tiles === null || groupRef.current === null ) {
@@ -176,8 +186,7 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 		const group = groupRef.current;
 
 		// get the ENU frame in world space
-		_matrix.copy( tiles.group.matrixWorld ).invert();
-		getCameraFocusPoint( defaultCamera, ellipsoid, tiles.group, _pos ).applyMatrix4( _matrix );
+		getCameraFocusPoint( defaultCamera, ellipsoid, tiles.group, _pos ).applyMatrix4( tiles.group.matrixWorldInverse );
 		ellipsoid.getPositionToCartographic( _pos, _cart );
 
 		ellipsoid
@@ -238,8 +247,8 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 					ref={ groupRef }
 					scale={ scale }
 					position={ [
-						size.width / 2 - margin - scale / 2,
-						- size.height / 2 + margin + scale / 2,
+						size.width / 2 - marginX - scale / 2,
+						- size.height / 2 + marginY + scale / 2,
 						0,
 					] }
 

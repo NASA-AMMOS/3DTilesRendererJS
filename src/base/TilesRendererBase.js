@@ -96,6 +96,19 @@ export class TilesRendererBase {
 
 	}
 
+	get errorThreshold() {
+
+		return this._errorThreshold;
+
+	}
+
+	set errorThreshold( v ) {
+
+		console.warn( 'TilesRenderer: The "errorThreshold" option has been deprecated.' );
+		this._errorThreshold = v;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -139,7 +152,7 @@ export class TilesRendererBase {
 
 		// options
 		this.errorTarget = 6.0;
-		this.errorThreshold = Infinity;
+		this._errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 
@@ -480,7 +493,6 @@ export class TilesRendererBase {
 
 		}
 
-		// Expected to be set during calculateError()
 		tile.__distanceFromCamera = Infinity;
 		tile.__error = Infinity;
 
@@ -540,15 +552,10 @@ export class TilesRendererBase {
 
 	}
 
-	calculateError( tile ) {
+	calculateTileViewError( tile, target ) {
 
-		return 0;
-
-	}
-
-	tileInView( tile ) {
-
-		return true;
+		// retrieve whether the tile is visible, screen space error, and distance to camera
+		// set "inView", "error", "distance"
 
 	}
 

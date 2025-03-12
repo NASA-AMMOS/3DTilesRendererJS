@@ -26,9 +26,12 @@ const _euler = new Euler();
 // In three.js r165 and higher raycast traversal can be ended early
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = new Matrix4();
-const tempMat2 = new Matrix4();
 const tempVector = new Vector3();
 const tempVector2 = new Vector2();
+const viewErrorTarget = {
+	inView: false,
+	error: Infinity,
+};
 
 const X_AXIS = new Vector3( 1, 0, 0 );
 const Y_AXIS = new Vector3( 0, 1, 0 );
@@ -66,6 +69,19 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	get optimizeRaycast() {
+
+		return this._optimizeRaycast;
+
+	}
+
+	set optimizeRaycast( v ) {
+
+		console.warn( 'TilesRenderer: The "optimizeRaycast" option has been deprecated.' );
+		this._optimizeRaycast = v;
+
+	}
+
 	constructor( ...args ) {
 
 		super( ...args );
@@ -74,7 +90,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
-		this.optimizeRaycast = true;
+		this._optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
 
 		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
@@ -389,8 +405,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( cameras.length === 0 ) {
 
-			console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
-			return;
+			let found = false;
+			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
+			if ( found === false ) {
+
+				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
+				return;
+
+			}
 
 		}
 
@@ -417,9 +439,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// extract scale of group container
-		tempMat2.copy( group.matrixWorld ).invert();
-
-		tempVector.setFromMatrixScale( tempMat2 );
+		tempVector.setFromMatrixScale( group.matrixWorldInverse );
 		if ( Math.abs( Math.max( tempVector.x - tempVector.y, tempVector.x - tempVector.z ) ) > 1e-6 ) {
 
 			console.warn( 'ThreeTilesRenderer : Non uniform scale used for tile which may cause issues when calculating screen space error.' );
@@ -473,7 +493,7 @@ export class TilesRenderer extends TilesRendererBase {
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );
 			position.applyMatrix4( camera.matrixWorld );
-			position.applyMatrix4( tempMat2 );
+			position.applyMatrix4( group.matrixWorldInverse );
 
 		}
 
@@ -892,69 +912,96 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	calculateError( tile ) {
+	calculateTileViewError( tile, target ) {
 
 		const cached = tile.cached;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
 		const boundingVolume = cached.boundingVolume;
 
+		let inView = false;
+		let inViewError = - Infinity;
+		let inViewDistance = Infinity;
 		let maxError = - Infinity;
 		let minDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
-			// transform camera position into local frame of the tile bounding box
+			// calculate the camera error
 			const info = cameraInfo[ i ];
 			let error;
+			let distance;
 			if ( info.isOrthographic ) {
 
 				const pixelSize = info.pixelSize;
 				error = tile.geometricError / pixelSize;
+				distance = Infinity;
 
 			} else {
 
-				const distance = boundingVolume.distanceToPoint( info.position );
 				const sseDenominator = info.sseDenominator;
+				distance = boundingVolume.distanceToPoint( info.position );
 				error = tile.geometricError / ( distance * sseDenominator );
-				minDistance = Math.min( minDistance, distance );
 
 			}
-
-			maxError = Math.max( maxError, error );
-
-		}
-
-		tile.__distanceFromCamera = minDistance;
-		tile.__error = maxError;
-
-	}
-
-	tileInView( tile ) {
-
-		const cached = tile.cached;
-		const boundingVolume = cached.boundingVolume;
-		const cameraInfo = this.cameraInfo;
-		for ( let i = 0, l = cameraInfo.length; i < l; i ++ ) {
 
 			// Track which camera frustums this tile is in so we can use it
 			// to ignore the error calculations for cameras that can't see it
 			const frustum = cameraInfo[ i ].frustum;
 			if ( boundingVolume.intersectsFrustum( frustum ) ) {
 
-				return true;
+				inView = true;
+				inViewError = Math.max( inViewError, error );
+				inViewDistance = Math.min( inViewDistance, distance );
 
 			}
 
+			maxError = Math.max( maxError, error );
+			minDistance = Math.min( minDistance, distance );
+
 		}
 
-		return false;
+		// check the plugin visibility
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin !== this && plugin.calculateTileViewError ) {
+
+				plugin.calculateTileViewError( tile, viewErrorTarget );
+				if ( viewErrorTarget.inView ) {
+
+					inView = true;
+					inViewError = Math.max( inViewError, viewErrorTarget.error );
+
+				}
+
+				maxError = Math.max( maxError, viewErrorTarget.error );
+
+			}
+
+		} );
+
+		// If the tiles are out of view then use the global distance and error calculated
+		if ( inView ) {
+
+			target.inView = true;
+			target.error = inViewError;
+			target.distanceToCamera = inViewDistance;
+
+		} else {
+
+			target.inView = false;
+			target.error = maxError;
+			target.distanceToCamera = minDistance;
+
+		}
 
 	}
 
 	// TODO: deprecate this function and provide a plugin to help with this
 	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
 	setLatLonToYUp( lat, lon ) {
+
+		console.warn( 'TilesRenderer: setLatLonToYUp is deprecated. Use the ReorientationPlugin, instead.' );
 
 		const { ellipsoid, group } = this;
 
