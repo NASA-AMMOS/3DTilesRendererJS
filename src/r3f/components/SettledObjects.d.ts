@@ -2,16 +2,6 @@ import { ReactNode } from 'react';
 import { Vector3, Ray } from 'three';
 import { Camera } from '@react-three/fiber';
 
-interface AnimatedSettledObjectProps {
-    interpolationFactor?: number;
-    onQueryUpdate?: (hit: any) => void;
-    lat?: number | null;
-    lon?: number | null;
-    rayorigin?: Vector3 | null;
-    raydirection?: Vector3 | null;
-    [key: string]: any;
-}
-
 interface SettledObjectProps {
     component?: ReactNode;
     lat?: number | null;
@@ -20,6 +10,10 @@ interface SettledObjectProps {
     raydirection?: Vector3 | null;
     onQueryUpdate?: (hit: any) => void;
     [key: string]: any;
+}
+
+interface AnimatedSettledObjectProps extends SettledObjectProps {
+    interpolationFactor?: number;
 }
 
 interface SettledObjectsProps {
@@ -41,13 +35,13 @@ interface QueryManagerContextType {
 export const QueryManagerContext: React.Context<QueryManagerContextType | null>;
 
 export const AnimatedSettledObject: React.ForwardRefExoticComponent<
-    AnimatedSettledObjectProps & React.RefAttributes<any>
+    AnimatedSettledObjectProps & React.RefAttributes<AnimatedSettledObjectProps>
 >;
 
 export const SettledObject: React.ForwardRefExoticComponent<
-    SettledObjectProps & React.RefAttributes<any>
+    SettledObjectProps & React.RefAttributes<SettledObjectProps>
 >;
 
 export const SettledObjects: React.ForwardRefExoticComponent<
-    SettledObjectsProps & React.RefAttributes<any>
+    SettledObjectsProps & React.RefAttributes<SettledObjectsProps>
 >;

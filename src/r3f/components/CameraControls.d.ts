@@ -1,21 +1,28 @@
-import type { FC, Ref } from 'react';
-import type { Camera, Object3D } from 'three';
-import type { EnvironmentControls as EnvironmentControlsImpl } from '../../three/controls/EnvironmentControls';
-import type { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls';
-import type { TilesRenderer } from './TilesRenderer';
+import type { FC, Ref, ForwardRefExoticComponent, RefAttributes } from "react";
+import type { Camera, Object3D } from "three";
+import type { EnvironmentControls as EnvironmentControlsImpl } from "../../three/controls/EnvironmentControls";
+import type { GlobeControls as GlobeControlsImpl } from "../../three/controls/GlobeControls";
+import type { TilesRenderer } from "./TilesRenderer";
 
-export interface ControlsBaseProps {
-    domElement?: HTMLCanvasElement | null;
-    scene?: Object3D | null;
-    camera?: Camera | null;
-    tilesRenderer?: TilesRenderer | null;
-    [key: string]: any; // Allow subproperty flexibility if necessary
+interface ControlsBaseProps {
+	domElement?: HTMLCanvasElement | null;
+	scene?: Object3D | null;
+	camera?: Camera | null;
+	tilesRenderer?: typeof TilesRenderer | null;
 }
 
-export type EnvironmentControls = FC<
-    ControlsBaseProps & { ref?: Ref<EnvironmentControlsImpl> }
+type EnvironmentControlsProps = Partial<
+	InstanceType<typeof EnvironmentControlsImpl>
+> &
+	ControlsBaseProps;
+
+type GlobeControlsProps = Partial<InstanceType<typeof GlobeControlsImpl>> &
+	ControlsBaseProps;
+
+export declare const EnvironmentControls: ForwardRefExoticComponent<
+	EnvironmentControlsProps & RefAttributes<EnvironmentControlsImpl>
 >;
 
-export type GlobeControls = FC<
-    ControlsBaseProps & { ref?: Ref<GlobeControlsImpl> }
+export declare const GlobeControls: ForwardRefExoticComponent<
+	GlobeControlsProps & RefAttributes<GlobeControlsImpl>
 >;
