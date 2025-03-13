@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Type definition errors.
 - R3F EastNorthUpFrame: frame will be positioned correctly regardless of parent.
 - TilesRenderer: Fixed screen space error being calculated incorrectly with multiple cameras.
+- EnvironmentControls: Fixed shift key not working as expected.
 
 ### Added
 - R3F CompassGizmo: Support for X & Y margin for CompassGizmo.
