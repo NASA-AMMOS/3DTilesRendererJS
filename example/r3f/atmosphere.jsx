@@ -147,7 +147,7 @@ function GlobeTilesAtmosphere() {
 			{/* Atmosphere set up */}
 			<Atmosphere
 				ref={ atmosphereRef }
-				textures='https://takram-design-engineering.github.io/three-geospatial/atmosphere'
+				textures='https://media.githubusercontent.com/media/takram-design-engineering/three-geospatial/9627216cc50057994c98a2118f3c4a23765d43b9/packages/atmosphere/assets'
 			>
 				{/* Background */}
 				<Sky />
