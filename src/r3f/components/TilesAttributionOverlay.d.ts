@@ -1,6 +1,6 @@
-import { CanvasDOMOverlayProps } from "3d-tiles-renderer/r3f";
-import { ReactNode } from "react";
-import { CSSProperties } from "react";
+import type { CanvasDOMOverlayProps } from "3d-tiles-renderer/r3f";
+import type { ReactNode, ForwardRefExoticComponent, RefAttributes } from "react";
+import type { CSSProperties } from "react";
 
 export type Attribution = {
     type: 'string' | 'html' | 'image';
@@ -12,4 +12,6 @@ export interface TilesAttributionOverlayProps extends CanvasDOMOverlayProps {
     generateAttributions?: ((attributions: Attribution[], classId: string) => ReactNode) | null;
 }
 
-export type TilesAttributionOverlay = FC<TilesAttributionOverlayProps>;
+export declare const TilesAttributionOverlay: ForwardRefExoticComponent<
+    TilesAttributionOverlayProps & RefAttributes<HTMLDivElement>
+>;

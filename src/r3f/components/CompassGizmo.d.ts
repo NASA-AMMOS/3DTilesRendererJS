@@ -1,13 +1,13 @@
-import { ReactNode, Ref } from 'react';
-import { Group, Scene, OrthographicCamera } from 'three';
+import type { ReactNode, Ref, ForwardRefExoticComponent, RefAttributes } from 'react';
+import type { Group, Scene, OrthographicCamera } from 'three';
 
 export interface CompassGizmoProps {
     children?: ReactNode;
-    overrideRenderLoop?: boolean;
     mode?: '3d' | '2d';
-    margin?: number;
-    scale?: number;
     visible?: boolean;
+    scale?: number;
+    margin?: number | [number, number];
+    overrideRenderLoop?: boolean;
 }
 
 export interface RenderPortalProps {
@@ -26,9 +26,18 @@ export interface CompassGraphicProps {
     southColor?: number;
 }
 
-declare function RenderPortal(props: RenderPortalProps): ReactNode;
-declare function TriangleGeometry(props: TriangleGeometryProps): ReactNode;
-declare function CompassGraphic(props: CompassGraphicProps): ReactNode;
-declare function CompassGizmo(props: CompassGizmoProps): ReactNode;
+export declare const RenderPortal: ForwardRefExoticComponent<
+    RenderPortalProps & RefAttributes<OrthographicCamera>
+>;
 
-export { RenderPortal, TriangleGeometry, CompassGraphic, CompassGizmo };
+export declare const TriangleGeometry: ForwardRefExoticComponent<
+    TriangleGeometryProps & RefAttributes<Group>
+>;
+
+export declare const CompassGraphic: ForwardRefExoticComponent<
+    CompassGraphicProps & RefAttributes<Group>
+>;
+
+export declare const CompassGizmo: ForwardRefExoticComponent<
+    CompassGizmoProps & RefAttributes<Group>
+>;

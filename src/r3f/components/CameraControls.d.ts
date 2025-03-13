@@ -4,25 +4,18 @@ import type { EnvironmentControls as EnvironmentControlsImpl } from '../../three
 import type { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls';
 import type { TilesRenderer } from './TilesRenderer';
 
-export interface ControlsBaseComponentProps {
-    controlsConstructor: new () => any;
+export interface ControlsBaseProps {
     domElement?: HTMLCanvasElement | null;
     scene?: Object3D | null;
     camera?: Camera | null;
     tilesRenderer?: TilesRenderer | null;
+    [key: string]: any; // Allow subproperty flexibility if necessary
 }
 
-export interface EnvironmentControlsProps
-    extends Omit<ControlsBaseComponentProps, 'controlsConstructor'> { }
-
-export interface GlobeControlsProps
-    extends Omit<ControlsBaseComponentProps, 'controlsConstructor'> { }
-
-// Export the controls as type aliases (React Functional Components)
 export type EnvironmentControls = FC<
-    EnvironmentControlsProps & { ref?: Ref<EnvironmentControlsImpl> }
+    ControlsBaseProps & { ref?: Ref<EnvironmentControlsImpl> }
 >;
 
 export type GlobeControls = FC<
-    GlobeControlsProps & { ref?: Ref<GlobeControlsImpl> }
+    ControlsBaseProps & { ref?: Ref<GlobeControlsImpl> }
 >;

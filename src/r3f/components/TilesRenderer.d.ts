@@ -1,18 +1,10 @@
-import type {
-    TilesGroup,
-    TilesRenderer as TilesRendererImpl
-} from "../../index";
-import type {
-    ReactNode,
-    Context,
-    FC,
-    RefAttributes,
-    JSX
-} from 'react';
+import type { TilesGroup, TilesRenderer as TilesRendererImpl } from "../../index";
+import type { ReactNode, Context, ForwardRefExoticComponent, RefAttributes, JSX } from 'react';
+import type { Camera, WebGLRenderer } from 'three';
 
-export type TilesRendererContext = Context<TilesRendererImpl | null>;
+export declare const TilesRendererContext: Context<TilesRendererImpl | null>;
 
-export interface EastNorthUpFrameProps {
+interface EastNorthUpFrameProps {
     lat?: number;
     lon?: number;
     height?: number;
@@ -22,19 +14,22 @@ export interface EastNorthUpFrameProps {
     children?: ReactNode;
 }
 
-export type EastNorthUpFrame = FC<EastNorthUpFrameProps>;
+export declare const EastNorthUpFrame: ForwardRefExoticComponent<
+    EastNorthUpFrameProps & RefAttributes<any>
+>;
 
-export type TilesPluginProps<
+interface TilesPluginProps<
     Plugin extends new (...args: any[]) => any,
     Params extends {} = ConstructorParameters<Plugin>[0] extends {}
     ? ConstructorParameters<Plugin>[0]
     : {}
-> = Partial<Params> & {
+> {
     plugin: Plugin;
     args?: Params | [Params];
-};
+    [key: string]: any;
+}
 
-export type TilesPlugin = <
+export declare const TilesPlugin: <
     Plugin extends new (...args: any[]) => any,
     Params extends {} = ConstructorParameters<Plugin>[0] extends {}
     ? ConstructorParameters<Plugin>[0]
@@ -43,12 +38,22 @@ export type TilesPlugin = <
     props: TilesPluginProps<Plugin, Params> & RefAttributes<Plugin>
 ) => JSX.Element;
 
-export interface TilesRendererProps extends Partial<TilesRendererImpl> {
+export interface TilesRendererProps extends Partial<TilesRendererImpl>, DashedProperties<TilesRendererImpl> {
     url?: string;
     group?: TilesGroup;
+    enabled?: boolean;
+    autoDisableRendererCulling?: boolean;
+    cameras?: Camera[];
+    setCamera?: (camera: Camera) => boolean;
+    deleteCamera?: (camera: Camera) => boolean;
+    setResolutionFromRenderer?: (camera: Camera, renderer: WebGLRenderer) => boolean;
+    dispose?: () => void;
+    onLoadTileSet?: () => void;
+    onLoadContent?: () => void;
+    onTileVisibilityChange?: (tile: any, visible: boolean) => void;
     children?: ReactNode;
 }
 
-export type TilesRenderer = FC<
+export declare const TilesRenderer: ForwardRefExoticComponent<
     TilesRendererProps & RefAttributes<TilesRendererImpl>
 >;
