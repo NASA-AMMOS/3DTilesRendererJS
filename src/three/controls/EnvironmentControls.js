@@ -214,31 +214,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this.pointerTracker.domElement = domElement;
 		domElement.style.touchAction = 'none';
 
-		let shiftClicked = false;
-
 		const contextMenuCallback = e => {
 
 			e.preventDefault();
-
-		};
-
-		const keydownCallback = e => {
-
-			if ( e.key === 'Shift' ) {
-
-				shiftClicked = true;
-
-			}
-
-		};
-
-		const keyupCallback = e => {
-
-			if ( e.key === 'Shift' ) {
-
-				shiftClicked = false;
-
-			}
 
 		};
 
@@ -304,7 +282,7 @@ export class EnvironmentControls extends EventDispatcher {
 				if (
 					pointerTracker.getPointerCount() === 2 ||
 					pointerTracker.isRightClicked() ||
-					pointerTracker.isLeftClicked() && shiftClicked
+					pointerTracker.isLeftClicked() && e.shiftKey
 				) {
 
 					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
@@ -487,8 +465,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			const { pointerTracker } = this;
 
-			shiftClicked = false;
-
 			if ( e.buttons !== pointerTracker.getPointerButtons() ) {
 
 				pointerTracker.deletePointer( e );
@@ -499,8 +475,6 @@ export class EnvironmentControls extends EventDispatcher {
 		};
 
 		domElement.addEventListener( 'contextmenu', contextMenuCallback );
-		domElement.addEventListener( 'keydown', keydownCallback );
-		domElement.addEventListener( 'keyup', keyupCallback );
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
 		domElement.addEventListener( 'pointermove', pointermoveCallback );
 		domElement.addEventListener( 'pointerup', pointerupCallback );
@@ -510,8 +484,6 @@ export class EnvironmentControls extends EventDispatcher {
 		this._detachCallback = () => {
 
 			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
-			domElement.removeEventListener( 'keydown', keydownCallback );
-			domElement.removeEventListener( 'keyup', keyupCallback );
 			domElement.removeEventListener( 'pointerdown', pointerdownCallback );
 			domElement.removeEventListener( 'pointermove', pointermoveCallback );
 			domElement.removeEventListener( 'pointerup', pointerupCallback );
