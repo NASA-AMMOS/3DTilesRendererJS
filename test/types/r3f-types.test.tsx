@@ -5,6 +5,9 @@ import { DeepZoomImagePlugin } from "../../src/plugins";
 import { Camera } from "three";
 import React from "react";
 
+const tileSet =
+	"https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json";
+
 describe("CameraControls Typing", () => {
 	test("EnvironmentControls accepts valid props", () => {
 		render(
@@ -22,9 +25,11 @@ describe("TilesRenderer Typing", () => {
 	test("TilesRenderer accepts correct props", () => {
 		render(
 			<TilesRenderer
-				url="https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json"
+				url={tileSet}
 				enabled
-				cameras={[new Camera()]}
+				onAddCamera={() => {
+					console.log("onAddCamera");
+				}}
 			/>,
 		);
 	});
@@ -34,19 +39,9 @@ describe("TilesRenderer Typing", () => {
 	});
 
 	test("DashedProperties allows kebab-case props", () => {
-		render(
-			<TilesRenderer
-				url="https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json"
-				lruCache-minBytesSize={0.25 * 1e6}
-			/>,
-		);
+		render(<TilesRenderer url={tileSet} lruCache-minBytesSize={0.25 * 1e6} />);
 	});
 	test("DashedProperties rejects invalid props", () => {
-		render(
-			<TilesRenderer
-				url="https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json"
-				foo={"bar"}
-			/>,
-		);
+		render(<TilesRenderer url={tileSet} foo={"bar"} />);
 	});
 });

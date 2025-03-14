@@ -2,6 +2,7 @@ import type {
 	TilesGroup,
 	TilesRenderer as TilesRendererImpl,
 } from "../../index";
+import type { TilesRendererEventMap } from "../../three/TilesRenderer";
 import type {
 	ReactNode,
 	Context,
@@ -27,50 +28,42 @@ export declare const EastNorthUpFrame: ForwardRefExoticComponent<
 	EastNorthUpFrameProps & RefAttributes<any>
 >;
 
-type DashedProperties<T> = {
-	[K in keyof T as K extends string
-		? `${string}-${K}`
-		: never]?: T[K] extends object ? DashedProperties<T[K]> : T[K];
-};
-
 interface TilesPluginProps<
 	Plugin extends new (...args: any[]) => void,
-	Params extends {} = ConstructorParameters<Plugin>[0] extends {}
-		? ConstructorParameters<Plugin>[0]
-		: {},
+	Params extends any[] = ConstructorParameters<Plugin>,
 > {
 	plugin: Plugin;
-	args?: Params | [Params];
-	[key: string]: DashedProperties<Params> | any;
+	args?: Params;
+	[key: string]: Params | Plugin | any;
 }
 
 export declare const TilesPlugin: <
 	Plugin extends new (...args: any[]) => void,
-	Params extends {} = ConstructorParameters<Plugin>[0] extends {}
-		? ConstructorParameters<Plugin>[0]
-		: {},
+	Params extends any[] = ConstructorParameters<Plugin>,
 >(
 	props: TilesPluginProps<Plugin, Params> & RefAttributes<Plugin>,
 ) => JSX.Element;
 
+// dynamically mapping keys of TilesRendererEventMap to onCamelCased
+type CamelCase<S extends string> = S extends `${infer T}-${infer U}`
+	? `${T}${Capitalize<CamelCase<U>>}`
+	: S;
+
+type EventHandler<K extends keyof TilesRendererEventMap> = (
+	event: TilesRendererEventMap[K],
+) => void;
+
+type TilesRendererEventMapForR3f = {
+	[K in keyof TilesRendererEventMap as `on${Capitalize<CamelCase<K>>}`]?: EventHandler<K>;
+};
+
 interface TilesRendererProps
 	extends Partial<TilesRendererImpl>,
-		DashedProperties<TilesRendererImpl> {
+		TilesRendererEventMapForR3f {
 	url?: string;
-	group?: TilesGroup;
 	enabled?: boolean;
-	autoDisableRendererCulling?: boolean;
 	cameras?: Camera[];
-	setCamera?: (camera: Camera) => boolean;
-	deleteCamera?: (camera: Camera) => boolean;
-	setResolutionFromRenderer?: (
-		camera: Camera,
-		renderer: WebGLRenderer,
-	) => boolean;
 	dispose?: () => void;
-	onLoadTileSet?: () => void;
-	onLoadContent?: () => void;
-	onTileVisibilityChange?: (tile: any, visible: boolean) => void;
 	children?: ReactNode;
 }
 

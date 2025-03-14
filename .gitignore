@@ -62,3 +62,7 @@ typings/
 
 example/local-data
 example/dev-bundle
+
+
+.DS_STORE
+pnpm-lock.yaml
