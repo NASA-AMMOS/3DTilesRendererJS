@@ -145,9 +145,7 @@ function GlobeTilesAtmosphere() {
 	return (
 		<>
 			{/* Atmosphere set up */}
-			<Atmosphere
-				ref={ atmosphereRef }
-			>
+			<Atmosphere ref={ atmosphereRef }>
 				{/* Background */}
 				<Sky />
 				<Stars />
