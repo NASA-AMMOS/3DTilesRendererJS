@@ -147,11 +147,10 @@ function GlobeTilesAtmosphere() {
 			{/* Atmosphere set up */}
 			<Atmosphere
 				ref={ atmosphereRef }
-				textures='https://media.githubusercontent.com/media/takram-design-engineering/three-geospatial/9627216cc50057994c98a2118f3c4a23765d43b9/packages/atmosphere/assets'
 			>
 				{/* Background */}
 				<Sky />
-				<Stars data='https://takram-design-engineering.github.io/three-geospatial/atmosphere/stars.bin' />
+				<Stars />
 
 				{/* Atmosphere effects */}
 				<EffectComposer ref={ composerRef } multisampling={ 0 } enableNormalPass>
