@@ -277,6 +277,7 @@ export class TilesRendererBase {
 
 					this.rootLoadingState = LOADED;
 					this.rootTileSet = root;
+					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
 						type: 'load-tile-set',
 						tileSet: root,
@@ -826,6 +827,7 @@ export class TilesRendererBase {
 				// dispatch an event indicating that this model has completed
 				if ( tile.cached.scene ) {
 
+					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
 						type: 'load-model',
 						scene: tile.cached.scene,

@@ -364,8 +364,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 				}
 
-				this.dispatchEvent( { type: 'load-content' } );
-
 				return root;
 
 			} );
@@ -561,13 +559,6 @@ export class TilesRenderer extends TilesRendererBase {
 			textures: null,
 
 		};
-
-	}
-
-	async requestTileContents( ...args ) {
-
-		await super.requestTileContents( ...args );
-		this.dispatchEvent( { type: 'load-content' } );
 
 	}
 
