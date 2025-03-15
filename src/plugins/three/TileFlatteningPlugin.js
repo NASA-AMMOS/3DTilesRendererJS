@@ -96,7 +96,10 @@ export class TileFlatteningPlugin {
 		shapes.forEach( ( { shape, matrix, direction } ) => {
 
 			// TODO: check tile intersection with shape
-			shape.matrixWorld.copy( matrix ).premultiply( tiles.group.matrixWorld );
+			// TODO: must perform this in a 2d projected way
+			// prepare the shape and ray
+			shape.matrix.copy( obb.matrix ).premultiply( tiles.group.matrixWorld );
+			shape.matrixWorld.copy( shape.matrix );
 			ray.direction.copy( direction );
 
 			// iterate over every geometry
