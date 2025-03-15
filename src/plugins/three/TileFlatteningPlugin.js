@@ -1,8 +1,11 @@
-import { Vector3 } from 'three';
+import { Matrix4, Raycaster, Vector3 } from 'three';
 
 // Limitations:
 // - No support for BatchedTilesPlugin
 // - Sharing geometry between models may result in incorrect flattening
+
+const _invMatrix = /* @__PURE__ */ new Matrix4();
+const _raycaster = /* @__PURE__ */ new Raycaster();
 export class TileFlatteningPlugin {
 
 	constructor() {
@@ -36,9 +39,9 @@ export class TileFlatteningPlugin {
 
 	}
 
+	// update tile flattening state if it has not been made visible, yet
 	setTileActive( tile, active ) {
 
-		// update tiles if not visible yet
 		if ( active && ! this.positionsUpdated.has( tile ) ) {
 
 			this._updateTile( tile );
@@ -49,12 +52,13 @@ export class TileFlatteningPlugin {
 
 	_updateTile( tile ) {
 
-		const { positionsUpdated, positionsMap, shapes } = this;
+		const { positionsUpdated, positionsMap, shapes, tiles } = this;
 		positionsUpdated.add( tile );
 
 		const scene = tile.cached.scene;
 		if ( ! positionsMap.has( tile ) ) {
 
+			// save the geometry positions for resetting after
 			const geomMap = new Map();
 			positionsMap.set( tile, geomMap );
 			scene.traverse( c => {
@@ -69,6 +73,7 @@ export class TileFlatteningPlugin {
 
 		} else {
 
+			// reset the geometry state before re-flattening tiles
 			const geomMap = positionsMap.get( tile );
 			scene.traverse( c => {
 
@@ -86,18 +91,37 @@ export class TileFlatteningPlugin {
 			} );
 
 		}
+
+		const ray = _raycaster.ray;
 		shapes.forEach( ( { shape, matrix, direction } ) => {
 
 			// TODO: check tile intersection with shape
+			shape.matrixWorld.copy( matrix ).premultiply( tiles.group.matrixWorld );
+			ray.direction.copy( direction );
 
+			// iterate over every geometry
 			scene.traverse( c => {
-
-				// TODO
-				// iterate over every vertex and update the flattening
 
 				if ( c.geometry ) {
 
-					c.geometry.attributes.position.needsUpdate = true;
+					const { position } = c.geometry.attributes;
+					position.needsUpdate = true;
+					_invMatrix.copy( c.matrixWorld ).invert();
+
+					// iterate over every vertex position
+					for ( let i = 0, l = position.count; i < l; i ++ ) {
+
+						ray.origin.fromBufferAttribute( position, i ).applyMatrix4( c.matrixWorld );
+
+						const hit = _raycaster.intersectObject( shape )[ 0 ];
+						if ( hit ) {
+
+							hit.point.applyMatrix4( _invMatrix );
+							position.setXYZ( i, ...hit.point );
+
+						}
+
+					}
 
 				}
 
@@ -118,6 +142,7 @@ export class TileFlatteningPlugin {
 
 	}
 
+	// API for updating and shapes to flatten the vertices
 	addShape( mesh, direction = new Vector3( 0, - 1, 0 ) ) {
 
 		this.needsUpdate = true;
@@ -148,6 +173,7 @@ export class TileFlatteningPlugin {
 
 	}
 
+	// reset the vertex positions and remove the update callback
 	dispose() {
 
 		this.tiles.removeEventListener( 'before-update', this._updateBeforeCallback );
