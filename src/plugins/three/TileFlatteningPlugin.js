@@ -23,7 +23,7 @@ export class TileFlatteningPlugin {
 		this.tiles = tiles;
 		this.needsUpdate = true;
 
-		tiles.addEventListener( 'update-before', () => {
+		this._updateBeforeCallback = () => {
 
 			if ( this.needsUpdate ) {
 
@@ -31,7 +31,8 @@ export class TileFlatteningPlugin {
 
 			}
 
-		} );
+		};
+		tiles.addEventListener( 'update-before', this._updateBeforeCallback );
 
 	}
 
@@ -149,8 +150,18 @@ export class TileFlatteningPlugin {
 
 	dispose() {
 
-		// TODO: reset all the geometry positions
-		// TODO: remove event listener
+		this.tiles.removeEventListener( 'before-update', this._updateBeforeCallback );
+		this.positionsMap.forEach( geomMap => {
+
+			geomMap.forEach( ( geometry, buffer ) => {
+
+				const { position } = geometry.attributes;
+				position.array.set( buffer );
+				position.needsUpdate = true;
+
+			} );
+
+		} );
 
 	}
 
