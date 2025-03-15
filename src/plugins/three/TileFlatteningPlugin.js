@@ -1,5 +1,8 @@
 import { Vector3 } from 'three';
 
+// Limitations:
+// - No support for BatchedTilesPlugin
+// - Sharing geometry between models may result in incorrect flattening
 export class TileFlatteningPlugin {
 
 	constructor() {
@@ -18,6 +21,7 @@ export class TileFlatteningPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+		this.needsUpdate = true;
 
 		tiles.addEventListener( 'update-before', () => {
 
@@ -44,17 +48,72 @@ export class TileFlatteningPlugin {
 
 	_updateTile( tile ) {
 
-		this.positionsUpdated.add( tile );
+		const { positionsUpdated, positionsMap, shapes } = this;
+		positionsUpdated.add( tile );
 
-		// TODO: iterate over every vertex and update the flattening
+		const scene = tile.cached.scene;
+		if ( ! positionsMap.has( tile ) ) {
+
+			const geomMap = new Map();
+			positionsMap.set( tile, geomMap );
+			scene.traverse( c => {
+
+				if ( c.geometry ) {
+
+					geomMap.set( c.geometry, c.geometry.attributes.position.array.clone() );
+
+				}
+
+			} );
+
+		} else {
+
+			const geomMap = positionsMap.get( tile );
+			scene.traverse( c => {
+
+				if ( c.geometry ) {
+
+					const buffer = geomMap.get( c.geometry );
+					if ( buffer ) {
+
+						c.geometry.attributes.position.array.set( buffer );
+
+					}
+
+				}
+
+			} );
+
+		}
+		shapes.forEach( ( { shape, matrix, direction } ) => {
+
+			// TODO: check tile intersection with shape
+
+			scene.traverse( c => {
+
+				// TODO
+				// iterate over every vertex and update the flattening
+
+				if ( c.geometry ) {
+
+					c.geometry.attributes.position.needsUpdate = true;
+
+				}
+
+			} );
+
+		} );
 
 	}
 
 	_updateTiles() {
 
 		this.positionsUpdated.clear();
+		this.tiles.activeTiles.forEach( tile => {
 
-		// TODO: iterate over every tile and update the flattening
+			this._updateTile( tile );
+
+		} );
 
 	}
 
