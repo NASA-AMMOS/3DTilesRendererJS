@@ -1,14 +1,43 @@
-import { Box3, Matrix4, Raycaster, Sphere, Vector3 } from 'three';
-import { OBB } from '../../three/math/OBB';
+import { Matrix4, Raycaster, Sphere, Vector3 } from 'three';
+import { OBB } from '../../three/math/OBB.js';
 
 // Limitations:
 // - No support for BatchedTilesPlugin when resetting or modifying geometry
 // - Sharing geometry between models may result in incorrect flattening
 
 const _sphere = /* @__PURE__ */ new Sphere();
-const _box = /* @__PURE__ */ new Box3();
+const _obb = /* @__PURE__ */ new OBB();
+const _vec = /* @__PURE__ */ new Vector3();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
+
+function calculateCirclePoint( object, direction, target ) {
+
+	if ( object instanceof OBB ) {
+
+		_obb.copy( object );
+
+	} else {
+
+		// construct obb
+		object.matrix.identity();
+		object.matrixWorld.identity();
+		_obb.box.setFromObject( object, true );
+
+		object.updateMatrix();
+		_obb.matrix.copy( object.matrix );
+
+	}
+
+	// get sphere
+	_obb.box.getBoundingSphere( _sphere ).applyMatrix4( _obb.matrix );
+
+	// get projected point
+	target.copy( _sphere.center ).addScaledVector( direction, - direction.dot( _sphere.center ) );
+	return _sphere.radius;
+
+}
+
 export class TileFlatteningPlugin {
 
 	constructor() {
@@ -34,6 +63,7 @@ export class TileFlatteningPlugin {
 			if ( this.needsUpdate ) {
 
 				this._updateTiles();
+				this.needsUpdate = false;
 
 			}
 
@@ -96,18 +126,32 @@ export class TileFlatteningPlugin {
 		}
 
 		const ray = _raycaster.ray;
-		shapes.forEach( ( { shape, obb, direction } ) => {
+		shapes.forEach( ( {
+			shape,
+			direction,
+			matrix,
+			circleCenter,
+			circleRadius,
+		} ) => {
 
-			// TODO: check tile intersection with shape
-			// TODO: must perform this in a 2d projected way (circles are easiest)
-			if ( ! tile.cached.boundingVolume.intersectOBB( obb ) ) {
+			// TODO: if we save the sphere of the original mesh we can check the height to limit the tiles checked
+			// TODO: we should use the tile bounding volume sphere if present
+
+			// calculate the bounding circle for the tile
+			const { boundingVolume } = tile.cached;
+			const tileCircleCenter = _vec;
+			const tileCircleRadius = calculateCirclePoint( boundingVolume.obb || boundingVolume.regionObb, direction, tileCircleCenter );
+
+			// check if we intersect
+			const r2 = ( circleRadius + tileCircleRadius ) ** 2;
+			if ( tileCircleCenter.distanceToSquared( circleCenter ) > r2 ) {
 
 				return;
 
 			}
 
 			// prepare the shape and ray
-			shape.matrix.copy( obb.matrix ).premultiply( tiles.group.matrixWorld );
+			shape.matrix.copy( matrix ).premultiply( tiles.group.matrixWorld );
 			shape.matrixWorld.copy( shape.matrix );
 			ray.direction.copy( direction );
 
@@ -146,11 +190,7 @@ export class TileFlatteningPlugin {
 	_updateTiles() {
 
 		this.positionsUpdated.clear();
-		this.tiles.activeTiles.forEach( tile => {
-
-			this._updateTile( tile );
-
-		} );
+		this.tiles.activeTiles.forEach( tile => this._updateTile( tile ) );
 
 	}
 
@@ -159,21 +199,16 @@ export class TileFlatteningPlugin {
 
 		this.needsUpdate = true;
 
-		// TODO: generate frame to generate projected bounds in to
-
-		const obb = new OBB();
-
-		mesh.matrix.identity();
-		mesh.matrixWorld.identity();
-		obb.box.setFromObject( mesh, true );
-
 		mesh.updateMatrix();
-		obb.matrix.copy( mesh.matrix );
 
+		const circleCenter = new Vector3();
+		const circleRadius = calculateCirclePoint( mesh, direction, circleCenter );
 		this.shapes.set( mesh, {
 			shape: mesh,
 			direction: direction.clone(),
-			obb: obb,
+			matrix: mesh.matrix.clone(),
+			circleCenter: circleCenter,
+			circleRadius: circleRadius,
 		} );
 
 	}
@@ -182,14 +217,11 @@ export class TileFlatteningPlugin {
 
 		this.needsUpdate = true;
 
-		const info = this.shapes.get( mesh );
-
-		mesh.matrix.identity();
-		mesh.matrixWorld.identity();
-		info.obb.box.setFromObject( mesh, true );
-
 		mesh.updateMatrix();
-		info.obb.matrix.copy( mesh.matrix );
+
+		const info = this.shapes.get( mesh );
+		info.matrix.copy( mesh.matrix );
+		info.circleRadius = calculateCirclePoint( mesh, info.direction, info.circleCenter );
 
 	}
 
