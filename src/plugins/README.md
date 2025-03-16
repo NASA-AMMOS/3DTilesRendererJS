@@ -758,7 +758,7 @@ Notifies the plugin that the given shape (geometry, position) has been changed a
 deleteShape( shape: Object3D ): void
 ```
 
-Deletes the given shape and regenerates teh tile flattening.
+Deletes the given shape and regenerates the tile flattening.
 
 ### clearShapes
 
