@@ -1,4 +1,4 @@
-import { Matrix4, Raycaster, Sphere, Vector3 } from 'three';
+import { DoubleSide, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
 import { OBB } from '../../three/math/OBB.js';
 
 // Limitations:
@@ -11,6 +11,7 @@ const _vec = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
+const _doubleSidedMaterial = /* @__PURE__ */ new MeshBasicMaterial( { side: DoubleSide } );
 
 function calculateCirclePoint( object, direction, target ) {
 
@@ -227,6 +228,17 @@ export class TileFlatteningPlugin {
 
 		const circleCenter = new Vector3();
 		const circleRadius = calculateCirclePoint( mesh, direction, circleCenter );
+		const shape = mesh.clone();
+		shape.traverse( c => {
+
+			if ( c.material ) {
+
+				c.material = _doubleSidedMaterial;
+
+			}
+
+		} );
+
 		this.shapes.set( mesh, {
 			shape: mesh,
 			direction: direction.clone(),
@@ -252,6 +264,16 @@ export class TileFlatteningPlugin {
 		const info = this.shapes.get( mesh );
 		info.matrix.copy( mesh.matrix );
 		info.circleRadius = calculateCirclePoint( mesh, info.direction, info.circleCenter );
+		info.shape = mesh.clone();
+		info.shape.traverse( c => {
+
+			if ( c.material ) {
+
+				c.material = _doubleSidedMaterial;
+
+			}
+
+		} );
 
 	}
 
