@@ -8,6 +8,7 @@ import { OBB } from '../../three/math/OBB.js';
 const _sphere = /* @__PURE__ */ new Sphere();
 const _obb = /* @__PURE__ */ new OBB();
 const _vec = /* @__PURE__ */ new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 
@@ -25,12 +26,12 @@ function calculateCirclePoint( object, direction, target ) {
 		_obb.box.setFromObject( object, true );
 
 		object.updateMatrix();
-		_obb.matrix.copy( object.matrix );
+		_obb.transform.copy( object.matrix );
 
 	}
 
 	// get sphere
-	_obb.box.getBoundingSphere( _sphere ).applyMatrix4( _obb.matrix );
+	_obb.box.getBoundingSphere( _sphere ).applyMatrix4( _obb.transform );
 
 	// get projected point
 	target.copy( _sphere.center ).addScaledVector( direction, - direction.dot( _sphere.center ) );
@@ -98,7 +99,7 @@ export class TileFlatteningPlugin {
 
 				if ( c.geometry ) {
 
-					geomMap.set( c.geometry, c.geometry.attributes.position.array.clone() );
+					geomMap.set( c.geometry, c.geometry.attributes.position.array.slice() );
 
 				}
 
@@ -116,6 +117,7 @@ export class TileFlatteningPlugin {
 					if ( buffer ) {
 
 						c.geometry.attributes.position.array.set( buffer );
+						c.geometry.attributes.position.needsUpdate = true;
 
 					}
 
@@ -151,9 +153,11 @@ export class TileFlatteningPlugin {
 			}
 
 			// prepare the shape and ray
-			shape.matrix.copy( matrix ).premultiply( tiles.group.matrixWorld );
+			shape.matrix.copy( matrix );
 			shape.matrixWorld.copy( shape.matrix );
 			ray.direction.copy( direction );
+
+			scene.updateMatrixWorld( true );
 
 			// iterate over every geometry
 			scene.traverse( c => {
@@ -162,12 +166,20 @@ export class TileFlatteningPlugin {
 
 					const { position } = c.geometry.attributes;
 					position.needsUpdate = true;
-					_invMatrix.copy( c.matrixWorld ).invert();
+
+					_matrix.copy( c.matrixWorld );
+					if ( scene.parent !== null ) {
+
+						_matrix.premultiply( tiles.group.matrixWorldInverse );
+
+					}
+
+					_invMatrix.copy( _matrix ).invert();
 
 					// iterate over every vertex position
 					for ( let i = 0, l = position.count; i < l; i ++ ) {
 
-						ray.origin.fromBufferAttribute( position, i ).applyMatrix4( c.matrixWorld );
+						ray.origin.fromBufferAttribute( position, i ).applyMatrix4( _matrix );
 
 						const hit = _raycaster.intersectObject( shape )[ 0 ];
 						if ( hit ) {
@@ -195,7 +207,19 @@ export class TileFlatteningPlugin {
 	}
 
 	// API for updating and shapes to flatten the vertices
+	hasShape( mesh ) {
+
+		return this.shapes.has( mesh );
+
+	}
+
 	addShape( mesh, direction = new Vector3( 0, - 1, 0 ) ) {
+
+		if ( this.hasShape( mesh ) ) {
+
+			throw new Error( 'TileFlatteningPlugin: Shape is already used.' );
+
+		}
 
 		this.needsUpdate = true;
 
@@ -215,6 +239,12 @@ export class TileFlatteningPlugin {
 
 	updateShape( mesh ) {
 
+		if ( ! this.hasShape( mesh ) ) {
+
+			throw new Error( 'TileFlatteningPlugin: Shape is not present.' );
+
+		}
+
 		this.needsUpdate = true;
 
 		mesh.updateMatrix();
@@ -228,8 +258,20 @@ export class TileFlatteningPlugin {
 	deleteShape( mesh ) {
 
 		this.needsUpdate = true;
-
 		return this.shapes.delete( mesh );
+
+	}
+
+	clearShapes() {
+
+		if ( this.shapes.size === 0 ) {
+
+			return;
+
+		}
+
+		this.needsUpdate = true;
+		this.shapes.clear();
 
 	}
 
