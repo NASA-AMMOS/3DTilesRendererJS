@@ -1,9 +1,12 @@
-import { Matrix4, Raycaster, Vector3 } from 'three';
+import { Box3, Matrix4, Raycaster, Sphere, Vector3 } from 'three';
+import { OBB } from '../../three/math/OBB';
 
 // Limitations:
-// - No support for BatchedTilesPlugin
+// - No support for BatchedTilesPlugin when resetting or modifying geometry
 // - Sharing geometry between models may result in incorrect flattening
 
+const _sphere = /* @__PURE__ */ new Sphere();
+const _box = /* @__PURE__ */ new Box3();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 export class TileFlatteningPlugin {
@@ -93,10 +96,16 @@ export class TileFlatteningPlugin {
 		}
 
 		const ray = _raycaster.ray;
-		shapes.forEach( ( { shape, matrix, direction } ) => {
+		shapes.forEach( ( { shape, obb, direction } ) => {
 
 			// TODO: check tile intersection with shape
-			// TODO: must perform this in a 2d projected way
+			// TODO: must perform this in a 2d projected way (circles are easiest)
+			if ( ! tile.cached.boundingVolume.intersectOBB( obb ) ) {
+
+				return;
+
+			}
+
 			// prepare the shape and ray
 			shape.matrix.copy( obb.matrix ).premultiply( tiles.group.matrixWorld );
 			shape.matrixWorld.copy( shape.matrix );
@@ -150,11 +159,21 @@ export class TileFlatteningPlugin {
 
 		this.needsUpdate = true;
 
+		// TODO: generate frame to generate projected bounds in to
+
+		const obb = new OBB();
+
+		mesh.matrix.identity();
+		mesh.matrixWorld.identity();
+		obb.box.setFromObject( mesh, true );
+
 		mesh.updateMatrix();
+		obb.matrix.copy( mesh.matrix );
+
 		this.shapes.set( mesh, {
 			shape: mesh,
 			direction: direction.clone(),
-			matrix: mesh.matrix.clone(),
+			obb: obb,
 		} );
 
 	}
@@ -163,8 +182,14 @@ export class TileFlatteningPlugin {
 
 		this.needsUpdate = true;
 
+		const info = this.shapes.get( mesh );
+
+		mesh.matrix.identity();
+		mesh.matrixWorld.identity();
+		info.obb.box.setFromObject( mesh, true );
+
 		mesh.updateMatrix();
-		this.shapes.get( mesh ).matrix.copy( mesh.matrix );
+		info.obb.matrix.copy( mesh.matrix );
 
 	}
 
