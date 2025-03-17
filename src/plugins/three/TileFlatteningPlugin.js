@@ -29,7 +29,7 @@ function calculateSphere( object, target ) {
 
 		// construct obb
 		_obb.box.setFromObject( clone, true );
-		_obb.box.getSize( _vec );		
+		_obb.box.getSize( _vec );
 		_obb.transform.copy( object.matrix );
 
 	}
