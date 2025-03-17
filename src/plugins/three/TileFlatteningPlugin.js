@@ -21,12 +21,15 @@ function calculateSphere( object, target ) {
 
 	} else {
 
-		// construct obb
-		object.matrix.identity();
-		object.matrixWorld.identity();
-		_obb.box.setFromObject( object, true );
+		// clone the object so we can calculate the root bounding box
+		const clone = object.clone();
+		clone.position.set( 0, 0, 0 );
+		clone.quaternion.identity();
+		clone.scale.setScalar( 1 );
 
-		object.updateMatrix();
+		// construct obb
+		_obb.box.setFromObject( clone, true );
+		_obb.box.getSize( _vec );		
 		_obb.transform.copy( object.matrix );
 
 	}
