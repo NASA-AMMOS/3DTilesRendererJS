@@ -13,9 +13,9 @@ const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _doubleSidedMaterial = /* @__PURE__ */ new MeshBasicMaterial( { side: DoubleSide } );
 
-function calculateCirclePoint( object, direction, target ) {
+function calculateSphere( object, target ) {
 
-	if ( object instanceof OBB ) {
+	if ( object.transform ) {
 
 		_obb.copy( object );
 
@@ -32,11 +32,9 @@ function calculateCirclePoint( object, direction, target ) {
 	}
 
 	// get sphere
-	_obb.box.getBoundingSphere( _sphere ).applyMatrix4( _obb.transform );
+	_obb.box.getBoundingSphere( target ).applyMatrix4( _obb.transform );
 
-	// get projected point
-	target.copy( _sphere.center ).addScaledVector( direction, - direction.dot( _sphere.center ) );
-	return _sphere.radius;
+	return target;
 
 }
 
@@ -133,21 +131,20 @@ export class TileFlatteningPlugin {
 			shape,
 			direction,
 			matrix,
-			circleCenter,
-			circleRadius,
+			sphere,
 		} ) => {
 
 			// TODO: if we save the sphere of the original mesh we can check the height to limit the tiles checked
 			// TODO: we should use the tile bounding volume sphere if present
 
-			// calculate the bounding circle for the tile
+			// calculate the project distance between circles
 			const { boundingVolume } = tile.cached;
-			const tileCircleCenter = _vec;
-			const tileCircleRadius = calculateCirclePoint( boundingVolume.obb || boundingVolume.regionObb, direction, tileCircleCenter );
+			calculateSphere( boundingVolume.obb || boundingVolume.regionObb, _sphere );
+			_vec.subVectors( _sphere.center, sphere.center );
+			_vec.addScaledVector( direction, - direction.dot( _vec ) );
 
-			// check if we intersect
-			const r2 = ( circleRadius + tileCircleRadius ) ** 2;
-			if ( tileCircleCenter.distanceToSquared( circleCenter ) > r2 ) {
+			const r2 = ( _sphere.radius+ sphere.radius ) ** 2;
+			if ( _vec.lengthSq() > r2 ) {
 
 				return;
 
@@ -226,8 +223,7 @@ export class TileFlatteningPlugin {
 
 		mesh.updateMatrix();
 
-		const circleCenter = new Vector3();
-		const circleRadius = calculateCirclePoint( mesh, direction, circleCenter );
+		const sphere = calculateSphere( mesh, new Sphere() );
 		const shape = mesh.clone();
 		shape.traverse( c => {
 
@@ -243,8 +239,7 @@ export class TileFlatteningPlugin {
 			shape: mesh,
 			direction: direction.clone(),
 			matrix: mesh.matrix.clone(),
-			circleCenter: circleCenter,
-			circleRadius: circleRadius,
+			sphere: sphere,
 		} );
 
 	}
@@ -263,7 +258,7 @@ export class TileFlatteningPlugin {
 
 		const info = this.shapes.get( mesh );
 		info.matrix.copy( mesh.matrix );
-		info.circleRadius = calculateCirclePoint( mesh, info.direction, info.circleCenter );
+		calculateSphere( mesh, info.sphere );
 		info.shape = mesh.clone();
 		info.shape.traverse( c => {
 
