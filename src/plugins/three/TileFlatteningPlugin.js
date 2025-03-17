@@ -71,7 +71,16 @@ export class TileFlatteningPlugin {
 			}
 
 		};
+
+		this._disposeModelCallback = tile => {
+
+			this.positionsMap.delete( tile );
+			this.positionsUpdated.delete( tile );
+
+		};
+
 		tiles.addEventListener( 'update-before', this._updateBeforeCallback );
+		tiles.addEventListener( 'dispose-model', this._disposeModelCallback );
 
 	}
 
@@ -299,6 +308,8 @@ export class TileFlatteningPlugin {
 	dispose() {
 
 		this.tiles.removeEventListener( 'before-update', this._updateBeforeCallback );
+		this.tiles.removeEventListener( 'dispose-model', this._disposeModelCallback );
+
 		this.positionsMap.forEach( geomMap => {
 
 			geomMap.forEach( ( geometry, buffer ) => {
