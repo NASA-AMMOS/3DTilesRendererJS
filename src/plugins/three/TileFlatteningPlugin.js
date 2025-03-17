@@ -155,7 +155,7 @@ export class TileFlatteningPlugin {
 			_vec.subVectors( _sphere.center, sphere.center );
 			_vec.addScaledVector( direction, - direction.dot( _vec ) );
 
-			const r2 = ( _sphere.radius+ sphere.radius ) ** 2;
+			const r2 = ( _sphere.radius + sphere.radius ) ** 2;
 			if ( _vec.lengthSq() > r2 ) {
 
 				return;
