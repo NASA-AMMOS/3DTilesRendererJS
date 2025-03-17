@@ -62,7 +62,6 @@ interface TilesRendererProps
 		TilesRendererEventMapForR3f {
 	url?: string;
 	enabled?: boolean;
-	cameras?: Camera[];
 	dispose?: () => void;
 	children?: ReactNode;
 }
