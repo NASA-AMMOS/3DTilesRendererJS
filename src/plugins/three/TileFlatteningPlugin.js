@@ -15,7 +15,7 @@ const _doubleSidedMaterial = /* @__PURE__ */ new MeshBasicMaterial( { side: Doub
 
 function calculateSphere( object, target ) {
 
-	if ( object.transform ) {
+	if ( object instanceof OBB ) {
 
 		_obb.copy( object );
 
