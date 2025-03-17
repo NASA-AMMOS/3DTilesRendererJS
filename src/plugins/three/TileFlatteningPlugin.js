@@ -207,6 +207,8 @@ export class TileFlatteningPlugin {
 
 		} );
 
+		this.tiles.dispatchEvent( { type: 'force-rerender' } );
+
 	}
 
 	_updateTiles() {
