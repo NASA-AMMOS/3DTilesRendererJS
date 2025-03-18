@@ -1,16 +1,14 @@
 import type {
-	TilesGroup,
 	TilesRenderer as TilesRendererImpl,
-} from "../../index";
-import type { TilesRendererEventMap } from "../../three/TilesRenderer";
+} from '../../index';
+import type { TilesRendererEventMap } from '../../three/TilesRenderer';
 import type {
 	ReactNode,
 	Context,
 	ForwardRefExoticComponent,
 	RefAttributes,
 	JSX,
-} from "react";
-import type { Camera, WebGLRenderer } from "three";
+} from 'react';
 
 export declare const TilesRendererContext: Context<TilesRendererImpl | null>;
 
@@ -29,7 +27,7 @@ export declare const EastNorthUpFrame: ForwardRefExoticComponent<
 >;
 
 interface TilesPluginProps<
-	Plugin extends new (...args: any[]) => void,
+	Plugin extends new ( ...args: any[] ) => void,
 	Params extends any[] = ConstructorParameters<Plugin>,
 > {
 	plugin: Plugin;
@@ -38,7 +36,7 @@ interface TilesPluginProps<
 }
 
 export declare const TilesPlugin: <
-	Plugin extends new (...args: any[]) => void,
+	Plugin extends new ( ...args: any[] ) => void,
 	Params extends any[] = ConstructorParameters<Plugin>,
 >(
 	props: TilesPluginProps<Plugin, Params> & RefAttributes<Plugin>,
@@ -59,7 +57,7 @@ type TilesRendererEventMapForR3f = {
 
 interface TilesRendererProps
 	extends Partial<TilesRendererImpl>,
-		TilesRendererEventMapForR3f {
+	TilesRendererEventMapForR3f {
 	url?: string;
 	enabled?: boolean;
 	dispose?: () => void;

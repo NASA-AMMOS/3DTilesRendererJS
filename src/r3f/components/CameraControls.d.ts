@@ -1,8 +1,8 @@
-import type { FC, Ref, ForwardRefExoticComponent, RefAttributes } from "react";
-import type { Camera, Object3D } from "three";
-import type { EnvironmentControls as EnvironmentControlsImpl } from "../../three/controls/EnvironmentControls";
-import type { GlobeControls as GlobeControlsImpl } from "../../three/controls/GlobeControls";
-import type { TilesRenderer } from "./TilesRenderer";
+import type { ForwardRefExoticComponent, RefAttributes } from 'react';
+import type { Camera, Object3D } from 'three';
+import type { EnvironmentControls as EnvironmentControlsImpl } from '../../three/controls/EnvironmentControls';
+import type { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls';
+import type { TilesRenderer } from './TilesRenderer';
 
 interface ControlsBaseProps {
 	domElement?: HTMLCanvasElement | null;

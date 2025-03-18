@@ -8,7 +8,7 @@ interface SettledObjectProps {
     lon?: number | null;
     rayorigin?: Vector3 | null;
     raydirection?: Vector3 | null;
-    onQueryUpdate?: (hit: any) => void;
+    onQueryUpdate?: ( hit: any ) => void;
     [key: string]: any;
 }
 
@@ -23,12 +23,12 @@ interface SettledObjectsProps {
 }
 
 interface QueryManagerContextType {
-    registerLatLonQuery(lat: number, lon: number, callback: Function): number;
-    unregisterQuery(index: number): void;
-    registerRayQuery(ray: Ray, callback: Function): number;
-    setScene(scene: any[]): void;
-    addCamera(camera: Camera): void;
-    setEllipsoidFromTilesRenderer(tiles: any): void;
+    registerLatLonQuery( lat: number, lon: number, callback: Function ): number;
+    unregisterQuery( index: number ): void;
+    registerRayQuery( ray: Ray, callback: Function ): number;
+    setScene( scene: any[] ): void;
+    addCamera( camera: Camera ): void;
+    setEllipsoidFromTilesRenderer( tiles: any ): void;
     dispose(): void;
 }
 

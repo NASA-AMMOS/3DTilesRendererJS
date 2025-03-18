@@ -3,7 +3,7 @@ import { CameraTransitionManager } from '3d-tiles-renderer';
 
 interface CameraTransitionProps {
     mode?: 'perspective' | 'orthographic';
-    onBeforeToggle?: (manager: CameraTransitionManager, targetCamera: Camera) => void;
+    onBeforeToggle?: ( manager: CameraTransitionManager, targetCamera: Camera ) => void;
     perspectiveCamera?: Camera;
     orthographicCamera?: Camera;
 }
