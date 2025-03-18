@@ -72,7 +72,7 @@ export class TileFlatteningPlugin {
 
 		};
 
-		this._disposeModelCallback = tile => {
+		this._disposeModelCallback = ( { tile } ) => {
 
 			this.positionsMap.delete( tile );
 			this.positionsUpdated.delete( tile );
@@ -165,7 +165,7 @@ export class TileFlatteningPlugin {
 			// prepare the shape and ray
 			shape.matrix.copy( matrix );
 			shape.matrixWorld.copy( shape.matrix );
-			ray.direction.copy( direction );
+			ray.direction.copy( direction ).multiplyScalar( - 1 );
 
 			scene.updateMatrixWorld( true );
 
@@ -189,7 +189,11 @@ export class TileFlatteningPlugin {
 					// iterate over every vertex position
 					for ( let i = 0, l = position.count; i < l; i ++ ) {
 
-						ray.origin.fromBufferAttribute( position, i ).applyMatrix4( _matrix );
+						ray.origin
+							.fromBufferAttribute( position, i )
+							.applyMatrix4( _matrix )
+							.addScaledVector( direction, 1e5 );
+						_raycaster.far = 1e5;
 
 						const hit = _raycaster.intersectObject( shape )[ 0 ];
 						if ( hit ) {
