@@ -61,6 +61,7 @@
     "babel-jest": "^29.5.0",
     "cesium": "^1.97.0",
     "concurrently": "^6.2.1",
+    "eslint": "^8.57.1",
     "eslint-config-mdcs": "^5.0.0",
     "eslint-plugin-jest": "^28.6.0",
     "eslint-plugin-react": "^7.37.1",
