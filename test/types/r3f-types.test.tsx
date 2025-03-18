@@ -2,7 +2,6 @@ import { render } from '@testing-library/react';
 import { EnvironmentControls, GlobeControls } from '../../src/r3f';
 import { TilesRenderer, TilesPlugin } from '../../src/r3f';
 import { DeepZoomImagePlugin } from '../../src/plugins';
-import { Camera } from 'three';
 import React from 'react';
 
 const tileSet =
