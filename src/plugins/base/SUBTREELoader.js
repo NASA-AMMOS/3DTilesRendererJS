@@ -297,13 +297,14 @@ export class SUBTREELoader extends LoaderBase {
 		for ( let i = 0; i < bufferHeaders.length; i ++ ) {
 
 			const bufferHeader = bufferHeaders[ i ];
-			if ( bufferHeader.isActive ) {
+			//  TODO load external buffer (when isExternal == true)
+			if ( ! bufferHeader.isActive || bufferHeader.isExternal ) {
 
-				bufferResults.push( internalBuffer );
+				bufferResults.push( undefined );
 
 			} else {
 
-				bufferResults.push( undefined );
+				bufferResults.push( internalBuffer );
 
 			}
 
@@ -339,7 +340,7 @@ export class SUBTREELoader extends LoaderBase {
 		for ( let i = 0; i < bufferViewHeaders.length; i ++ ) {
 
 			const bufferViewHeader = bufferViewHeaders[ i ];
-			if ( ! bufferViewHeader.isActive ) {
+			if ( ! bufferViewHeader.isActive || bufferViewHeader.isExternal ) {
 
 				continue;
 
@@ -381,6 +382,7 @@ export class SUBTREELoader extends LoaderBase {
 
 			const bufferHeader = bufferHeaders[ i ];
 			bufferHeader.isActive = false;
+			bufferHeader.isExternal = !! bufferHeader.uri;
 
 		}
 		return bufferHeaders;
@@ -417,6 +419,7 @@ export class SUBTREELoader extends LoaderBase {
 			const bufferViewHeader = bufferViewHeaders[ i ];
 			bufferViewHeader.bufferHeader = bufferHeaders[ bufferViewHeader.buffer ];
 			bufferViewHeader.isActive = false;
+			bufferViewHeader.isExternal = bufferViewHeader.bufferHeader.isExternal;
 
 		}
 		return bufferViewHeaders;
