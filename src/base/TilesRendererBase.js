@@ -825,9 +825,9 @@ export class TilesRendererBase {
 				}
 
 				// dispatch an event indicating that this model has completed
+				this.dispatchEvent( { type: 'load-content' } );
 				if ( tile.cached.scene ) {
 
-					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
 						type: 'load-model',
 						scene: tile.cached.scene,
