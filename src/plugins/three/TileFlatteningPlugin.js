@@ -142,7 +142,6 @@ export class TileFlatteningPlugin {
 		shapes.forEach( ( {
 			shape,
 			direction,
-			matrix,
 			sphere,
 		} ) => {
 
@@ -163,8 +162,6 @@ export class TileFlatteningPlugin {
 			}
 
 			// prepare the shape and ray
-			shape.matrix.copy( matrix );
-			shape.matrixWorld.copy( shape.matrix );
 			ray.direction.copy( direction ).multiplyScalar( - 1 );
 
 			scene.updateMatrixWorld( true );
@@ -243,6 +240,7 @@ export class TileFlatteningPlugin {
 
 		const sphere = calculateSphere( mesh, new Sphere() );
 		const shape = mesh.clone();
+		shape.matrixWorld.copy( shape.matrix );
 		shape.traverse( c => {
 
 			if ( c.material ) {
@@ -254,9 +252,8 @@ export class TileFlatteningPlugin {
 		} );
 
 		this.shapes.set( mesh, {
-			shape: mesh,
+			shape: shape,
 			direction: direction.clone(),
-			matrix: mesh.matrix.clone(),
 			sphere: sphere,
 		} );
 
@@ -275,7 +272,6 @@ export class TileFlatteningPlugin {
 		mesh.updateMatrix();
 
 		const info = this.shapes.get( mesh );
-		info.matrix.copy( mesh.matrix );
 		calculateSphere( mesh, info.sphere );
 		info.shape = mesh.clone();
 		info.shape.traverse( c => {
