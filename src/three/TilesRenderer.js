@@ -11,6 +11,7 @@ import {
 	Euler,
 	LoadingManager,
 	EventDispatcher,
+	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -661,10 +662,15 @@ export class TilesRenderer extends TilesRendererBase {
 					// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 					// rotation fix which is why "multiply" happens here.
 					const { scene } = result;
-					scene.updateMatrix();
-					scene.matrix
-						.multiply( upRotationMatrix )
-						.decompose( scene.position, scene.quaternion, scene.scale );
+
+					if ( scene ) {
+
+						scene.updateMatrix();
+						scene.matrix
+							.multiply( upRotationMatrix )
+							.decompose( scene.position, scene.quaternion, scene.scale );
+
+					}
 
 					return result;
 
@@ -711,6 +717,19 @@ export class TilesRenderer extends TilesRendererBase {
 			return plugin.processTileModel && plugin.processTileModel( scene, tile );
 
 		} );
+
+		if ( scene === null || scene === undefined ) {
+
+			cached.materials = [];
+			cached.geometry = [];
+			cached.textures = [];
+			cached.scene = new Group();
+			cached.metadata = null;
+			cached.bytesUsed = 0;
+
+			return;
+
+		}
 
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
