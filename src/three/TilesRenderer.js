@@ -656,12 +656,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 				promise = loader.parseAsync( buffer, resourcePath ).then( result => {
 
+					// glTF files are not guaranteed to include a scene object
+					result.scene = result.scene || new Group();
+
 					// apply the local up-axis correction rotation
 					// GLTFLoader seems to never set a transformation on the root scene object so
 					// any transformations applied to it can be assumed to be applied after load
 					// (such as applying RTC_CENTER) meaning they should happen _after_ the z-up
 					// rotation fix which is why "multiply" happens here.
-					result.scene = result.scene || new Group();
 					const { scene } = result;
 					scene.updateMatrix();
 					scene.matrix
