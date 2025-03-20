@@ -126,6 +126,9 @@ export class GLTFStructuralMetadataExtension {
 
 				// check if this object has extension references and use a child-specific version of the extension
 				const { meshes, primitives } = parser.associations.get( child );
+				if ( !meshes || !primitives ) {
+					return;
+				}
 				const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
 				if ( primitive && primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
 
