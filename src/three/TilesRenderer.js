@@ -663,7 +663,6 @@ export class TilesRenderer extends TilesRendererBase {
 					// rotation fix which is why "multiply" happens here.
 					result.scene = result.scene || new Group();
 					const { scene } = result;
-
 					scene.updateMatrix();
 					scene.matrix
 						.multiply( upRotationMatrix )
