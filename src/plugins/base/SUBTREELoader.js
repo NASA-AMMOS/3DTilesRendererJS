@@ -272,29 +272,31 @@ export class SUBTREELoader extends LoaderBase {
 			// If the buffer is not active, resolve with undefined.
 			if ( ! bufferHeader.isActive ) {
 
-				promises.push( Promise.resolve( undefined ) );
+				promises.push( Promise.resolve( ) );
 
 			} else if ( bufferHeader.isExternal ) {
 
-				// Load external buffer via its URI. Adjust URI.
-				promises.push(
-					fetch( this.parseImplicitURIBuffer( this.tile, this.rootTile.implicitTiling.subtrees.uri, bufferHeader.uri ) )
-						.then( response => {
-
-							if ( ! response.ok ) {
-
-								throw new Error( `Failed to load external buffer from ${bufferHeader.uri}` );
-
-							}
-							return response.arrayBuffer();
-
-						} )
-						.then( arrayBuffer => {
-
-							return new Uint8Array( arrayBuffer );
-
-						} )
+				// Get the absolute URI of the external buffer.
+				const url = this.parseImplicitURIBuffer(
+					this.tile,
+					this.rootTile.implicitTiling.subtrees.uri,
+					bufferHeader.uri
 				);
+
+				const fetchPromise = fetch( url )
+					.then( response => {
+
+						if ( ! response.ok ) {
+
+							throw new Error( `SUBTREELoader: Failed to load external buffer from ${ bufferHeader.uri } with error code ${ response.status }.` );
+
+						}
+						return response.arrayBuffer();
+
+					} )
+					.then( arrayBuffer => new Uint8Array( arrayBuffer ) );
+
+				promises.push( fetchPromise );
 
 			} else {
 
