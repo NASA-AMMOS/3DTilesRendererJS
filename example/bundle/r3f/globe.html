@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>@react-three/fiber Cesium Ion</title>
+		<style>
+			html {
+				overflow: hidden;
+				font-family: Arial, Helvetica, sans-serif;
+				user-select: none;
+			}
+
+			#info {
+				position: absolute;
+				top: 0;
+				left: 0;
+				color: white;
+				width: 100%;
+				text-align: center;
+				padding: 5px;
+				pointer-events: none;
+				line-height: 1.5em;
+				z-index: 1;
+			}
+
+			#info a {
+				color: white;
+				pointer-events: all;
+			}
+		</style>
+		<script type="module" crossorigin src="../assets/globe-CjWO2m_o.js"></script>
+		<link rel="modulepreload" crossorigin href="../assets/three.module-CEr3zSA1.js">
+		<link rel="modulepreload" crossorigin href="../assets/EnvironmentControls-BPE1xmLZ.js">
+		<link rel="modulepreload" crossorigin href="../assets/Ellipsoid-JXfiGSrA.js">
+		<link rel="modulepreload" crossorigin href="../assets/GlobeControls-CTcdCieA.js">
+		<link rel="modulepreload" crossorigin href="../assets/readMagicBytes-CUUeQGnc.js">
+		<link rel="modulepreload" crossorigin href="../assets/GLTFLoader-DeBHqINw.js">
+		<link rel="modulepreload" crossorigin href="../assets/I3DMLoader-DHzPRT87.js">
+		<link rel="modulepreload" crossorigin href="../assets/B3DMLoader-pZqNaU-i.js">
+		<link rel="modulepreload" crossorigin href="../assets/PNTSLoader-CUDp96Y2.js">
+		<link rel="modulepreload" crossorigin href="../assets/CMPTLoader-Ctm9qczh.js">
+		<link rel="modulepreload" crossorigin href="../assets/EllipsoidRegion-B5PDymKi.js">
+		<link rel="modulepreload" crossorigin href="../assets/TilesRenderer-DF2Mx7EV.js">
+		<link rel="modulepreload" crossorigin href="../assets/extends-Dmt_cVZc.js">
+		<link rel="modulepreload" crossorigin href="../assets/DRACOLoader-BKhDcgny.js">
+		<link rel="modulepreload" crossorigin href="../assets/leva.esm-DyFHsmOG.js">
+		<link rel="modulepreload" crossorigin href="../assets/CameraTransitionManager-CCqIliSN.js">
+		<link rel="modulepreload" crossorigin href="../assets/TilesLoadingBar-uM5zohg7.js">
+		<link rel="modulepreload" crossorigin href="../assets/CameraViewTransition-BvU1GKPQ.js">
+		<link rel="modulepreload" crossorigin href="../assets/CesiumIonAuthPlugin-hKbJ7HuH.js">
+		<link rel="modulepreload" crossorigin href="../assets/GLTFExtensionsPlugin-DdFev7w1.js">
+		<link rel="modulepreload" crossorigin href="../assets/TileCompressionPlugin-B_gnVhN5.js">
+		<link rel="modulepreload" crossorigin href="../assets/UpdateOnChangePlugin-JN2y-qdF.js">
+		<link rel="modulepreload" crossorigin href="../assets/TilesFadePlugin-B9NpM29W.js">
+		<link rel="modulepreload" crossorigin href="../assets/Environment-Bq7czSds.js">
+	</head>
+	<body>
+		<div id="info">
+			Example using <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Google Photorealistic Tiles</a>, <a href="https://ion.cesium.com/">Cesium Ion</a>, & <a href="https://r3f.docs.pmnd.rs">@react-three/fiber</a>.
+			<br/>
+			Google Cloud or Cesium Ion API Token required.
+		</div>
+		<div id="root"></div>
+	</body>
+</html>
