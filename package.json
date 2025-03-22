@@ -29,7 +29,7 @@
   "scripts": {
     "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
-    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.js\" \"example/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
     "test": "tsc --project tsconfig.test.json && jest"
   },
   "repository": {
@@ -50,7 +50,10 @@
     "@takram/three-atmosphere": "^0.10.3",
     "@takram/three-geospatial": "^0.1.0",
     "@takram/three-geospatial-effects": "^0.1.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.2.0",
     "@types/eslint": "^7.28.1",
+    "@types/jest": "^29.5.14",
     "@types/three": "^0.166.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
@@ -58,6 +61,7 @@
     "babel-jest": "^29.5.0",
     "cesium": "^1.97.0",
     "concurrently": "^6.2.1",
+    "eslint": "^8.57.1",
     "eslint-config-mdcs": "^5.0.0",
     "eslint-plugin-jest": "^28.6.0",
     "eslint-plugin-react": "^7.37.1",
