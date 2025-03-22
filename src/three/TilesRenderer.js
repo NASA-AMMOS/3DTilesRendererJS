@@ -11,6 +11,7 @@ import {
 	Euler,
 	LoadingManager,
 	EventDispatcher,
+	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
@@ -654,6 +655,9 @@ export class TilesRenderer extends TilesRendererBase {
 				}
 
 				promise = loader.parseAsync( buffer, resourcePath ).then( result => {
+
+					// glTF files are not guaranteed to include a scene object
+					result.scene = result.scene || new Group();
 
 					// apply the local up-axis correction rotation
 					// GLTFLoader seems to never set a transformation on the root scene object so
