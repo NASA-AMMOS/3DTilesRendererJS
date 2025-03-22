@@ -2,6 +2,9 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"noEmit": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"jsx": "react"
 	},
 	"include": [
 		"test/types/"
