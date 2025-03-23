@@ -12,7 +12,8 @@ function forEachPrimitiveExtension( scene, parser, callback ) {
 
 			// check if this object has extension references
 			const { meshes, primitives } = parser.associations.get( c );
-			const primitive = parser.json.meshes[ meshes ].primitives[ primitives ];
+
+			const primitive = parser.json.meshes[ meshes ]?.primitives[ primitives ];
 
 			if ( primitive && primitive.extensions && primitive.extensions[ EXT_NAME ] ) {
 
