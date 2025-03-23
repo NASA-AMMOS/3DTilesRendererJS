@@ -1,4 +1,4 @@
-import type { CanvasDOMOverlayProps } from '3d-tiles-renderer/r3f';
+import type { CanvasDOMOverlayProps } from './CanvasDOMOverlay';
 import type { ReactNode, ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { CSSProperties } from 'react';
 
