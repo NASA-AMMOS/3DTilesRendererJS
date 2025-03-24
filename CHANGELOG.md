@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fixed shift key not working as expected.
 - Fixed error caused by loading a glTF file with no scenes.
 - GLTF Metadata Extensions: Fix case where an error would be thrown when non-mesh nodes are present.
+- Fixed case where tile sets with implicit tiling would not be loaded correctly if an external availability buffer was used.
 
 ### Added
 - R3F CompassGizmo: Support for X & Y margin for CompassGizmo.
