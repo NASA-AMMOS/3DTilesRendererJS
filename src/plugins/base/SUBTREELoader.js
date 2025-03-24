@@ -845,7 +845,6 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {Object} tile - The tile object that contains properties:
 	 *   - __level: the subdivision level,
 	 *   - __x, __y, __z: the tile coordinates,
-	 *   - __basePath: the base path for the external resources.
 	 * @param {string} uri - The URI template string with placeholders for the tile (e.g., `{level}`, `{x}`, `{y}`, `{z}`).
 	 * @param {string} bufUri - The buffer file name to append (e.g., "0_1.bin").
 	 * @returns {string} The full external buffer URI.
