@@ -71,6 +71,7 @@ export class SUBTREELoader extends LoaderBase {
 		super();
 		this.tile = tile;
 		this.rootTile = tile.__implicitRoot;	// The implicit root tile
+		this.workingPath = null;
 
 	}
 
@@ -851,17 +852,17 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	parseImplicitURIBuffer( tile, uri, bufUri ) {
 
-		// Generate the base URI by replacing placeholders
+		// Generate the base tile URI by replacing placeholders
 		const subUri = this.parseImplicitURI( tile, uri );
 
 		// Create a URL object relative to the tile's base path
-		const url = new URL( subUri, tile.__basePath + '/' );
+		const url = new URL( subUri, this.workingPath + '/' );
 
 		// Remove the last path segment
 		url.pathname = url.pathname.substring( 0, url.pathname.lastIndexOf( '/' ) );
 
 		// Construct the final URL with the buffer URI appended
-		return new URL( url.pathname + '/' + bufUri, tile.__basePath + '/' ).toString();
+		return new URL( url.pathname + '/' + bufUri, this.workingPath + '/' ).toString();
 
 
 	}
