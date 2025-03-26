@@ -41,6 +41,12 @@ class PriorityQueue {
 
 	}
 
+	has( item ) {
+
+		return this.callbacks.has( item );
+
+	}
+
 	add( item, callback ) {
 
 		return new Promise( ( resolve, reject ) => {

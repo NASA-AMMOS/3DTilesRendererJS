@@ -131,6 +131,11 @@ export class TilesRendererBase {
 		parseQueue.maxJobs = 1;
 		parseQueue.priorityCallback = priorityCallback;
 
+		const processQueue = new PriorityQueue();
+		processQueue.maxJobs = 30;
+		processQueue.priorityCallback = priorityCallback;
+		this.processQueue = processQueue;
+
 		this.visibleTiles = new Set();
 		this.activeTiles = new Set();
 		this.usedSet = new Set();
@@ -476,6 +481,33 @@ export class TilesRendererBase {
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
+		Object.defineProperty( tile, '__isReady', {
+
+			get() {
+
+				return tile.__childrenProcessed === tile.children.length;
+
+			}
+
+		} );
+		tile.__childrenProcessed = 0;
+
+		if ( tile.parent ) {
+
+			tile.parent.__childrenProcessed ++;
+			if ( tile.parent.__childrenProcessed === tile.parent.children.length ) {
+
+
+
+			} else {
+
+
+				console.log('FAILED', tile.parent.__childrenProcessed, tile.parent.children.length )
+				window.PAR = tile.parent
+
+			}
+
+		}
 
 		if ( tile.content?.uri ) {
 
@@ -566,13 +598,17 @@ export class TilesRendererBase {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
-			if ( '__depth' in child ) {
+			if ( '__depth' in child || this.processQueue.has( child ) ) {
 
 				break;
 
 			}
 
-			this.preprocessNode( child, tile.__basePath, tile );
+			this.processQueue.add( child, async child => {
+
+				this.preprocessNode( child, tile.__basePath, tile );
+
+			} );
 
 		}
 
@@ -666,6 +702,7 @@ export class TilesRendererBase {
 			if ( isExternalTileSet ) {
 
 				t.children.length = 0;
+				t.__childrenProcessed = 0;
 
 			} else {
 
