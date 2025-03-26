@@ -131,10 +131,10 @@ export class TilesRendererBase {
 		parseQueue.maxJobs = 1;
 		parseQueue.priorityCallback = priorityCallback;
 
-		const processQueue = new PriorityQueue();
-		processQueue.maxJobs = 25;
-		processQueue.priorityCallback = priorityCallback;
-		this.processQueue = processQueue;
+		const processNodeQueue = new PriorityQueue();
+		processNodeQueue.maxJobs = 25;
+		processNodeQueue.priorityCallback = priorityCallback;
+		processNodeQueue.log = true;
 
 		this.visibleTiles = new Set();
 		this.activeTiles = new Set();
@@ -142,6 +142,7 @@ export class TilesRendererBase {
 		this.lruCache = lruCache;
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
+		this.processNodeQueue = processNodeQueue;
 		this.stats = {
 			inCacheSinceLoad: 0,
 			inCache: 0,
@@ -587,13 +588,13 @@ export class TilesRendererBase {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
-			if ( '__depth' in child || this.processQueue.has( child ) ) {
+			if ( '__depth' in child || this.processNodeQueue.has( child ) ) {
 
 				break;
 
 			}
 
-			this.processQueue.add( child, child => {
+			this.processNodeQueue.add( child, child => {
 
 				this.preprocessNode( child, tile.__basePath, tile );
 
