@@ -132,7 +132,7 @@ export class TilesRendererBase {
 		parseQueue.priorityCallback = priorityCallback;
 
 		const processQueue = new PriorityQueue();
-		processQueue.maxJobs = 30;
+		processQueue.maxJobs = 100;
 		processQueue.priorityCallback = priorityCallback;
 		this.processQueue = processQueue;
 

@@ -53,7 +53,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
-	if ( ! tile.__hasRenderableContent ) {
+	if ( ! tile.__hasRenderableContent && tile.__isReady ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -81,11 +81,15 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 		}
 
-		// queue any used child tiles
-		const children = tile.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+		if ( tile.__isReady ) {
 
-			recursivelyLoadNextRenderableTiles( children[ i ], renderer );
+			// queue any used child tiles
+			const children = tile.children;
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+				recursivelyLoadNextRenderableTiles( children[ i ], renderer );
+
+			}
 
 		}
 
@@ -126,6 +130,12 @@ function canTraverse( tile, renderer ) {
 
 	// Early out if we've reached the maximum allowed depth.
 	if ( renderer.maxDepth > 0 && tile.__depth + 1 >= renderer.maxDepth ) {
+
+		return false;
+
+	}
+
+	if ( ! tile.__isReady ) {
 
 		return false;
 
