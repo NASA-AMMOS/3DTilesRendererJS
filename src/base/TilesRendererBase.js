@@ -132,7 +132,7 @@ export class TilesRendererBase {
 		parseQueue.priorityCallback = priorityCallback;
 
 		const processQueue = new PriorityQueue();
-		processQueue.maxJobs = 100;
+		processQueue.maxJobs = 25;
 		processQueue.priorityCallback = priorityCallback;
 		this.processQueue = processQueue;
 
@@ -593,7 +593,7 @@ export class TilesRendererBase {
 
 			}
 
-			this.processQueue.add( child, async child => {
+			this.processQueue.add( child, child => {
 
 				this.preprocessNode( child, tile.__basePath, tile );
 
