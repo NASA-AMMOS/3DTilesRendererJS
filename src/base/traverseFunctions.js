@@ -59,6 +59,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
+	// don't traverse if the children have not been processed, yet
 	if ( ! tile.__hasRenderableContent && areChildrenProcessed( tile ) ) {
 
 		const children = tile.children;
@@ -80,7 +81,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 	// exit the recursion if the tile hasn't been used this frame
 	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
 
-		// queue this tile
+		// queue this tile to download content
 		if ( tile.__hasContent && tile.__loadingState === UNLOADED && ! renderer.lruCache.isFull() ) {
 
 			renderer.queueTileForDownload( tile );
@@ -141,6 +142,7 @@ function canTraverse( tile, renderer ) {
 
 	}
 
+	// Early out if the children haven't been processed, yet
 	if ( ! areChildrenProcessed( tile ) ) {
 
 		return false;

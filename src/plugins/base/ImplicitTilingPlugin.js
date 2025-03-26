@@ -75,7 +75,9 @@ export class ImplicitTilingPlugin {
 
 		if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
+			// TODO: ideally the plugin doesn't need to know about children being processed
 			tile.children.length = 0;
+			tile.__childrenProcessed = 0;
 
 		}
 
