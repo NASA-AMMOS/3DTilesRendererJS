@@ -495,17 +495,6 @@ export class TilesRendererBase {
 		if ( tile.parent ) {
 
 			tile.parent.__childrenProcessed ++;
-			if ( tile.parent.__childrenProcessed === tile.parent.children.length ) {
-
-
-
-			} else {
-
-
-				console.log('FAILED', tile.parent.__childrenProcessed, tile.parent.children.length )
-				window.PAR = tile.parent
-
-			}
 
 		}
 
