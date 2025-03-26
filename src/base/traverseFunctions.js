@@ -19,6 +19,12 @@ function isUsedThisFrame( tile, frameCount ) {
 
 }
 
+function areChildrenProcessed( tile ) {
+
+	return tile.__childrenProcessed === tile.children.length;
+
+}
+
 // Resets the frame frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
@@ -53,7 +59,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer );
 
-	if ( ! tile.__hasRenderableContent && tile.__isReady ) {
+	if ( ! tile.__hasRenderableContent && areChildrenProcessed( tile ) ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -81,7 +87,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 
 		}
 
-		if ( tile.__isReady ) {
+		if ( areChildrenProcessed( tile ) ) {
 
 			// queue any used child tiles
 			const children = tile.children;
@@ -135,7 +141,7 @@ function canTraverse( tile, renderer ) {
 
 	}
 
-	if ( ! tile.__isReady ) {
+	if ( ! areChildrenProcessed( tile ) ) {
 
 		return false;
 

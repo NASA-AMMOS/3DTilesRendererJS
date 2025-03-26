@@ -482,22 +482,6 @@ export class TilesRendererBase {
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
-		Object.defineProperty( tile, '__isReady', {
-
-			get() {
-
-				return tile.__childrenProcessed === tile.children.length;
-
-			}
-
-		} );
-		tile.__childrenProcessed = 0;
-
-		if ( tile.parent ) {
-
-			tile.parent.__childrenProcessed ++;
-
-		}
 
 		if ( tile.content?.uri ) {
 
@@ -513,6 +497,15 @@ export class TilesRendererBase {
 			tile.__hasContent = false;
 			tile.__hasUnrenderableContent = false;
 			tile.__hasRenderableContent = false;
+
+		}
+
+		// tracker for determining if all the children have been asynchronously
+		// processed and are ready to be traversed
+		tile.__childrenProcessed = 0;
+		if ( parentTile ) {
+
+			parentTile.__childrenProcessed ++;
 
 		}
 
