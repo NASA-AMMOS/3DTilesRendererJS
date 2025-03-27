@@ -2,6 +2,10 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"noEmit": true,
+		"target": "esnext",
+		"module": "commonjs",
+		"esModuleInterop": true,
+		"jsx": "react-jsx"
 	},
 	"include": [
 		"test/types/"

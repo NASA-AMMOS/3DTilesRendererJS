@@ -1,3 +1,13 @@
 {
-	"testPathIgnorePatterns": ["types"]
+	"transformIgnorePatterns": [
+		"/node_modules/"
+],
+"testPathIgnorePatterns": [
+		"/node_modules/"
+],
+	"preset": "ts-jest",
+	"testEnvironment": "node",
+	"transform": {
+		"^.+\\.js$": "babel-jest"
+	}
 }
