@@ -240,7 +240,7 @@ export class TilesRendererBase {
 
 			if ( ensureFullyProcessed ) {
 
-				this.ensureChildrenArePreprocessed( tile );
+				this.ensureChildrenArePreprocessed( tile, true );
 
 			}
 
@@ -575,23 +575,37 @@ export class TilesRendererBase {
 
 	}
 
-	ensureChildrenArePreprocessed( tile ) {
+	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
-			if ( '__depth' in child || this.processNodeQueue.has( child ) ) {
+			if ( '__depth' in child ) {
 
+				// the child has already been processed
 				break;
 
-			}
+			} else if ( immediate ) {
 
-			this.processNodeQueue.add( child, child => {
-
+				// process the node immediately and make sure we don't double process it
+				this.processNodeQueue.remove( child );
 				this.preprocessNode( child, tile.__basePath, tile );
 
-			} );
+			} else {
+
+				// queue the node for processing if it hasn't been already
+				if ( ! this.processNodeQueue.has( child ) ) {
+
+					this.processNodeQueue.add( child, child => {
+
+						this.preprocessNode( child, tile.__basePath, tile );
+
+					} );
+
+				}
+
+			}
 
 		}
 
