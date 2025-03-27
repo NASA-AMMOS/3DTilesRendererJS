@@ -158,6 +158,7 @@ tilesRenderer2.setResolutionFromRenderer( camera, renderer );
 tilesRenderer2.lruCache = tilesRenderer.lruCache;
 tilesRenderer2.downloadQueue = tilesRenderer.downloadQueue;
 tilesRenderer2.parseQueue = tilesRenderer.parseQueue;
+tilesRenderer2.processNodeQueue = tilesRenderer.processNodeQueue;
 
 // add them to the scene
 scene.add( tilesRenderer.group );
@@ -397,7 +398,7 @@ downloadQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be set once [update](#update) is called for the first time._
 
-Max jobs defaults to `10`.
+Queue for downloading tile content. Max jobs defaults to `10`.
 
 ### .parseQueue
 
@@ -407,7 +408,17 @@ parseQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
 
-Max jobs defaults to `1`.
+Queue for parsing downloaded tile content. Max jobs defaults to `1`.
+
+### .processNodeQueue
+
+```js
+processNodeQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+Queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
 
 ### .group
 

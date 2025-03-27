@@ -131,12 +131,18 @@ export class TilesRendererBase {
 		parseQueue.maxJobs = 1;
 		parseQueue.priorityCallback = priorityCallback;
 
+		const processNodeQueue = new PriorityQueue();
+		processNodeQueue.maxJobs = 25;
+		processNodeQueue.priorityCallback = priorityCallback;
+		processNodeQueue.log = true;
+
 		this.visibleTiles = new Set();
 		this.activeTiles = new Set();
 		this.usedSet = new Set();
 		this.lruCache = lruCache;
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
+		this.processNodeQueue = processNodeQueue;
 		this.stats = {
 			inCacheSinceLoad: 0,
 			inCache: 0,
@@ -494,6 +500,15 @@ export class TilesRendererBase {
 
 		}
 
+		// tracker for determining if all the children have been asynchronously
+		// processed and are ready to be traversed
+		tile.__childrenProcessed = 0;
+		if ( parentTile ) {
+
+			parentTile.__childrenProcessed ++;
+
+		}
+
 		tile.__distanceFromCamera = Infinity;
 		tile.__error = Infinity;
 
@@ -566,13 +581,17 @@ export class TilesRendererBase {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
-			if ( '__depth' in child ) {
+			if ( '__depth' in child || this.processNodeQueue.has( child ) ) {
 
 				break;
 
 			}
 
-			this.preprocessNode( child, tile.__basePath, tile );
+			this.processNodeQueue.add( child, child => {
+
+				this.preprocessNode( child, tile.__basePath, tile );
+
+			} );
 
 		}
 
@@ -666,6 +685,7 @@ export class TilesRendererBase {
 			if ( isExternalTileSet ) {
 
 				t.children.length = 0;
+				t.__childrenProcessed = 0;
 
 			} else {
 
