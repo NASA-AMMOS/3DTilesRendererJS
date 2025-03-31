@@ -9,7 +9,7 @@ assignees: ''
 
 **Describe the bug**
 
-A clear and concise description of what the bug is. Before submitting, please remove unnecessary sections.
+A clear and concise description of what the bug is. Ignoring the bug template will result in the issue being closed.
 
 **To Reproduce**
 
@@ -26,7 +26,7 @@ Steps to reproduce the behavior:
 
 ***Live example***
 
--
+Provide live demonstration of the bug with sample data.
 
 **Expected behavior**
 
