@@ -8,7 +8,7 @@ class PropertyAttributeClassProperty extends ClassProperty {
 
 		super( enums, classProperty, attributeProperty );
 
-		this.attribute = attributeProperty.attribute;
+		this.attribute = attributeProperty?.attribute;
 
 	}
 
