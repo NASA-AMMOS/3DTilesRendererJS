@@ -7,9 +7,11 @@ assignees: ''
 
 ---
 
+<!-- Ignoring this template may result in your bug report getting deleted -->
+
 **Describe the bug**
 
-A clear and concise description of what the bug is. Ignoring the bug template will result in the issue being closed.
+A clear and concise description of what the bug is.
 
 **To Reproduce**
 
