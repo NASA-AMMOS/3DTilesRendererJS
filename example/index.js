@@ -49,7 +49,6 @@ const params = {
 
 	enableUpdate: true,
 	raycast: DebugTilesPlugin.ColorModes.NONE,
-	optimizeRaycast: true,
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	orthographic: false,
@@ -288,7 +287,6 @@ function init() {
 
 	} );
 	exampleOptions.add( params, 'raycast', { NONE, ALL_HITS, FIRST_HIT_ONLY } );
-	exampleOptions.add( params, 'optimizeRaycast', );
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
 	exampleOptions.open();
@@ -456,7 +454,6 @@ function animate() {
 
 	// update options
 	tiles.errorTarget = params.errorTarget;
-	tiles.optimizeRaycast = params.optimizeRaycast;
 	tiles.displayActiveTiles = params.displayActiveTiles;
 	tiles.maxDepth = params.maxDepth;
 

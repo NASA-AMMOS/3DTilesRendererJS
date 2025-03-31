@@ -7,9 +7,11 @@ assignees: ''
 
 ---
 
+<!-- Ignoring this template may result in your bug report getting deleted -->
+
 **Describe the bug**
 
-A clear and concise description of what the bug is. Before submitting, please remove unnecessary sections.
+A clear and concise description of what the bug is.
 
 **To Reproduce**
 
@@ -26,7 +28,7 @@ Steps to reproduce the behavior:
 
 ***Live example***
 
--
+Provide live demonstration of the bug with sample data.
 
 **Expected behavior**
 

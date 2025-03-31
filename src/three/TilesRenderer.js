@@ -380,7 +380,15 @@ export class TilesRenderer extends TilesRendererBase {
 			if ( plugin.doTilesNeedUpdate ) {
 
 				const res = plugin.doTilesNeedUpdate();
-				needsUpdate = needsUpdate === null ? res : needsUpdate || res;
+				if ( needsUpdate === null ) {
+
+					needsUpdate = res;
+
+				} else {
+
+					needsUpdate = Boolean( needsUpdate || res );
+
+				}
 
 			}
 

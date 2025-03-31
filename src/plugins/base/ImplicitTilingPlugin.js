@@ -41,13 +41,13 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	parseTile( buffer, parseTile, extension ) {
+	parseTile( buffer, tile, extension ) {
 
 		if ( /^subtree$/i.test( extension ) ) {
 
-			const loader = new SUBTREELoader( parseTile );
-			loader.parse( buffer );
-			return Promise.resolve();
+			const loader = new SUBTREELoader( tile );
+			loader.workingPath = tile.__basePath;
+			return loader.parse( buffer );
 
 		}
 
@@ -75,7 +75,9 @@ export class ImplicitTilingPlugin {
 
 		if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
+			// TODO: ideally the plugin doesn't need to know about children being processed
 			tile.children.length = 0;
+			tile.__childrenProcessed = 0;
 
 		}
 
