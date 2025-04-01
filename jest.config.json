@@ -1,11 +1,11 @@
 {
 	"transformIgnorePatterns": [
 		"/node_modules/"
-],
-"testPathIgnorePatterns": [
+	],
+	"testPathIgnorePatterns": [
 		"/node_modules/",
 		"types"
-],
+	],
 	"preset": "ts-jest",
 	"testEnvironment": "node",
 	"transform": {
