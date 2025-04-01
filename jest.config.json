@@ -3,7 +3,8 @@
 		"/node_modules/"
 ],
 "testPathIgnorePatterns": [
-		"/node_modules/"
+		"/node_modules/",
+		"types"
 ],
 	"preset": "ts-jest",
 	"testEnvironment": "node",
