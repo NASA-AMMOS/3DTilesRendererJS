@@ -1,15 +1,16 @@
 import { Camera, Object3D } from 'three';
 import { Tile, TilesRenderer } from '../../src';
+import { expect, test } from '@jest/globals';
 
-function addCamera( event: { camera: Camera } ) {}
-function deleteCamera( event: { camera: Camera } ) {}
-function emptyEvent( event: { } ) {}
-function loadTileset( event: { tileSet: object, url: string } ) {}
-function loadModel( event: { scene: Object3D; tile: Tile } ) {}
-function disposeModel( event: { scene: Object3D; tile: Tile; } ) {}
-function tileVisibilityChange( event: { scene: Object3D; tile: Tile; visible: boolean } ) {}
+function addCamera( event: { camera: Camera } ) { }
+function deleteCamera( event: { camera: Camera } ) { }
+function emptyEvent( event: {} ) { }
+function loadTileset( event: { tileSet: object, url: string } ) { }
+function loadModel( event: { scene: Object3D; tile: Tile } ) { }
+function disposeModel( event: { scene: Object3D; tile: Tile; } ) { }
+function tileVisibilityChange( event: { scene: Object3D; tile: Tile; visible: boolean } ) { }
 
-function whatever( event: unknown ) {}
+function whatever( event: unknown ) { }
 
 // This function is not meant to be executed, but just here to
 // guarantee that the exported types match what is expected.
@@ -35,3 +36,15 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'my-unknown-event', whatever );
 
 }
+
+test( 'TilesRenderer should not throw', () => {
+
+	const renderer = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
+
+	expect( () => {
+
+		typecheck( renderer );
+
+	} ).not.toThrow();
+
+} );
