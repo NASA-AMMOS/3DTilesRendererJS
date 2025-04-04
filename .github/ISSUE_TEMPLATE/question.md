@@ -13,7 +13,7 @@ assignees: ''
 
 
 <!--
-Please iclude sufficient detail on what's confusing, not working, or unexpected behavior including code with what you tried and screenshots if relevant.
+Please iclude sufficient detail on what's confusing, not working, or unexpected behavior including code with what you tried, screenshots, data sets, and live example.
 
 Also consider asking at the three.js forum: https://discourse.threejs.org/
 -->
