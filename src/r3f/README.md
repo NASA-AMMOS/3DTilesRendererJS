@@ -34,7 +34,7 @@ Basic set up for Google Photorealistic tiles, Globe controls, and an overlay for
 
 ```jsx
 import { TilesRenderer, TilesPlugin, GlobeControls, TilesAttributionOverlay } from '3d-tiles-renderer/r3f';
-import { DebugTilesPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+import { DebugTilesPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
 
 export default function App() {
   return (
@@ -56,7 +56,7 @@ Simplified wrappers for using the TilesRenderer with Cesium Ion and Google Cloud
 
 ```jsx
 import { TilesRenderer, TilesPlugin } from '3d-tiles-renderer/r3f';
-import { CesiumIonAuthPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer';
+import { CesiumIonAuthPlugin, GoogleCloudAuthPlugin } from '3d-tiles-renderer/plugins';
 
 function GoogleTilesRenderer( { children, apiToken, ...rest } ) {
   return (
