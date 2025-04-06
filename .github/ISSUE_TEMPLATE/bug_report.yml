@@ -34,7 +34,7 @@ body:
     attributes:
       label: Live example
       value: |
-        Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
+        Link to jsfiddle (https://jsfiddle.net/) or codesandbox (https://codesandbox.io/) demonstrating the bug.
     validations:
       required: true
   - type: textarea
