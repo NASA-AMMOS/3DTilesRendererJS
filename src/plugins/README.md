@@ -755,7 +755,7 @@ Notifies the plugin that the given shape (geometry, position) has been changed a
 ### deleteShape
 
 ```js
-deleteShape( shape: Object3D ): void
+deleteShape( shape: Object3D ): boolean
 ```
 
 Deletes the given shape and regenerates the tile flattening.
