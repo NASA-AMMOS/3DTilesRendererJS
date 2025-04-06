@@ -40,8 +40,8 @@ body:
   - type: textarea
     id: screenshots
     attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem (drag and drop the image).
+      label: Screenshots & Tile Set
+      description: Provide screenshots of the render problem or logged error and the tile set data that's causing the problem if applicable. 
     validations:
       required: false
   - type: input
