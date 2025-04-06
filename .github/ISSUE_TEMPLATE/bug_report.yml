@@ -23,6 +23,7 @@ body:
     id: code
     attributes:
       label: Code
+      description: Code snippent including critical library settings related to the bug and reproduction.
       value: |
         ```js
         // code goes here
