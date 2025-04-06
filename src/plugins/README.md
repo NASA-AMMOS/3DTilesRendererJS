@@ -723,3 +723,47 @@ clearRegions(): void
 ```
 
 Remove all regions.
+
+## TileFlatteningPlugin
+
+A plugin that takes a shape as a mesh and direction along which to "flatten" vertices to the surface of the shape. Useful for shifting tile geometry to make room for new assets. Not compatible with other plugins that modify geometry such as `BatchedTilesPlugin`.
+
+### hasShape
+
+```js
+hasShape( shape: Object3D ): boolean
+```
+
+Returns whether the given object has been passed in as a shape.
+
+### addShape
+
+```js
+addShape( shape: Object3D, direction: Vector3 ): void
+```
+
+Adds the given object as a shape to flatten to in addition to the direction to flatten.
+
+### updateShape
+
+```js
+updateShape( shape: Object3D ): void
+```
+
+Notifies the plugin that the given shape (geometry, position) has been changed and "tile flattening" needs to be regenerated.
+
+### deleteShape
+
+```js
+deleteShape( shape: Object3D ): void
+```
+
+Deletes the given shape and regenerates the tile flattening.
+
+### clearShapes
+
+```js
+clearShapes(): void
+```
+
+Deletes all shapes and resets the tiles.
