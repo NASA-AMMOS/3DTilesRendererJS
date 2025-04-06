@@ -33,8 +33,8 @@ body:
     id: example
     attributes:
       label: Live example
-      value: |
-        Link to jsfiddle (https://jsfiddle.net/) or codesandbox (https://codesandbox.io/) demonstrating the bug.
+      description: Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
+      value: <!-- insert link to the reproduction -->
     validations:
       required: true
   - type: textarea
