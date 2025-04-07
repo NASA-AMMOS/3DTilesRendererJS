@@ -15,7 +15,7 @@ class PropertyTableClassProperty extends ClassProperty {
 
 		super( enums, classProperty, tableProperty );
 
-		this.values = tableProperty?.values;
+		this.values = tableProperty?.values ?? null;
 		this.valueLength = typeToComponentCount( this.type );
 		this.arrayOffsets = getField( tableProperty, 'arrayOffsets', null );
 		this.stringOffsets = getField( tableProperty, 'stringOffsets', null );
