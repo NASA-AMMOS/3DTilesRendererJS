@@ -588,7 +588,7 @@ Available options are as follows:
 
 ## BatchedTilesPlugin
 
-Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture. Renderer field is compulsory.
+Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture. Note that the `renderer` field is required.
 
 > [!WARNING]
 > All tile geometry rendered with BatchedMesh will use the same material and only a single material "map" is supported. Only tiles geometry containing a single mesh are supported. Not compatible with other plugins that modify mesh materials or rely on other bespoke mesh data (eg TilesFadePlugin, DebugTilesPlugin, GLTF Metadata extensions).
@@ -604,7 +604,7 @@ Available options are as follows:
 
 ```js
 {
-	// WebGLRenderer used for generating a WebGLArrayRenderTarget
+	// WebGLRenderer used for generating a WebGLArrayRenderTarget - required.
 	renderer,
 
 	// The initial number of instances to use for rendering
