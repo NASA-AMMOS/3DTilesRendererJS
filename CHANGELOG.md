@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.4.8] - 2025.04.07
 ### Fixed
 - TilesRenderer: No longer logs a warning if no cameras are present and a custom plugin supports tile error.
 - Type definition errors.
