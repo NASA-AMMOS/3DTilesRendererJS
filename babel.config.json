@@ -11,12 +11,16 @@
 
 					"node": "current"
 
-				}
-
+				},
+				"modules": "auto"
 			}
 
-		]
-
+		],
+		"@babel/preset-react",
+		"@babel/preset-typescript",
+		"@babel/preset-modules"
+	],
+	"ignore": [
+		"/node_modules/"
 	]
-
 }

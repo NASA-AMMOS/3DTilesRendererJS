@@ -150,7 +150,10 @@ export class CesiumIonAuthPlugin {
 						tiles.rootURL = json.options.url;
 
 						// if the tile set is "external" then assume it's a google API tile set
-						tiles.registerPlugin( new GoogleCloudAuthPlugin( { apiToken: url.searchParams.get( 'key' ) } ) );
+						tiles.registerPlugin( new GoogleCloudAuthPlugin( {
+							apiToken: url.searchParams.get( 'key' ),
+							autoRefreshToken: this.autoRefreshToken,
+						} ) );
 
 					} else {
 

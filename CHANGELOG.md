@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.4.8] - 2025.04.07
 ### Fixed
 - TilesRenderer: No longer logs a warning if no cameras are present and a custom plugin supports tile error.
 - Type definition errors.
@@ -13,11 +13,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fixed shift key not working as expected.
 - Fixed error caused by loading a glTF file with no scenes.
 - GLTF Metadata Extensions: Fix case where an error would be thrown when non-mesh nodes are present.
+- Fixed case where tile sets with implicit tiling would not be loaded correctly if an external availability buffer was used.
+- Asynchronously process child tiles to avoid processing stalls.
+- CesiumIonPlugin: Forward "autoRefreshToken" value to GoogleCloudAuthPlugin.
 
 ### Added
 - R3F CompassGizmo: Support for X & Y margin for CompassGizmo.
 - CameraTransitionManager: Expose "alpha" via the change event and class member.
 - Export "TilesRendererEventMap" typescript type.
+- Add support for R3F types.
+- Add "TileFlatteningPlugin".
 
 ## [0.4.7] - 2025.03.03
 ### Added

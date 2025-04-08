@@ -34,11 +34,16 @@ function intersectTileSceneFirstHist( tile, raycaster, renderer ) {
 
 }
 
+function isTileInitialized( tile ) {
+
+	return '__used' in tile;
+
+}
+
 // Returns the closest hit when traversing the tree
 export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = null ) {
 
 	const { group, activeTiles } = renderer;
-	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -54,7 +59,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const child = children[ i ];
-		if ( ! child.__used ) {
+		if ( ! isTileInitialized( child ) || ! child.__used ) {
 
 			continue;
 
@@ -126,9 +131,16 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 
 export function raycastTraverse( renderer, tile, raycaster, intersects, localRay = null ) {
 
+	// if the tile has not been asynchronously initialized then there's no point in
+	// traversing the tiles to check intersections.
+	if ( ! isTileInitialized( tile ) ) {
+
+		return;
+
+	}
+
 	const { group, activeTiles } = renderer;
 	const { boundingVolume } = tile.cached;
-	renderer.ensureChildrenArePreprocessed( tile );
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -138,12 +150,14 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 
 	}
 
+	// exit early if the tile isn't used or the bounding volume is not intersected
 	if ( ! tile.__used || ! boundingVolume.intersectsRay( localRay ) ) {
 
 		return;
 
 	}
 
+	// only intersect the tile geometry if it's active
 	if ( activeTiles.has( tile ) ) {
 
 		intersectTileScene( tile, raycaster, renderer, intersects );

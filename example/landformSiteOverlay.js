@@ -88,6 +88,7 @@ function init() {
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;
+	let processNodeQueue = null;
 	const layerFunction = async tileUrl => {
 
 		const url = tileUrl.replace( '/tilesets/', '/textures/SMG/' ).replace( /\.[0-9a-z]+$/i, '.png' );
@@ -154,10 +155,12 @@ function init() {
 			lruCache = lruCache || tiles.lruCache;
 			parseQueue = parseQueue || tiles.parseQueue;
 			downloadQueue = downloadQueue || tiles.downloadQueue;
+			processNodeQueue = processNodeQueue || tiles.processNodeQueue;
 
 			tiles.lruCache = lruCache;
 			tiles.downloadQueue = downloadQueue;
 			tiles.parseQueue = parseQueue;
+			tiles.processNodeQueue = processNodeQueue;
 			tiles.setCamera( camera );
 
 			// update the scene

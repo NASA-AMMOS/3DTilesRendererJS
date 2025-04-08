@@ -588,7 +588,7 @@ Available options are as follows:
 
 ## BatchedTilesPlugin
 
-Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture.
+Plugin that uses three.js' BatchedMesh to limit the number of draw calls required and improve performance. The BatchedMesh geometry and instance size are automatically resized and optimized as new geometry is added and removed. The max number of instances to generate is limited by the max size of a 3d texture. Note that the `renderer` field is required.
 
 > [!WARNING]
 > All tile geometry rendered with BatchedMesh will use the same material and only a single material "map" is supported. Only tiles geometry containing a single mesh are supported. Not compatible with other plugins that modify mesh materials or rely on other bespoke mesh data (eg TilesFadePlugin, DebugTilesPlugin, GLTF Metadata extensions).
@@ -604,7 +604,7 @@ Available options are as follows:
 
 ```js
 {
-	// WebGLRenderer used for generating a WebGLArrayRenderTarget
+	// WebGLRenderer used for generating a WebGLArrayRenderTarget - required.
 	renderer,
 
 	// The initial number of instances to use for rendering
@@ -723,3 +723,47 @@ clearRegions(): void
 ```
 
 Remove all regions.
+
+## TileFlatteningPlugin
+
+A plugin that takes a shape as a mesh and direction along which to "flatten" vertices to the surface of the shape. Useful for shifting tile geometry to make room for new assets. Not compatible with other plugins that modify geometry such as `BatchedTilesPlugin`.
+
+### hasShape
+
+```js
+hasShape( shape: Object3D ): boolean
+```
+
+Returns whether the given object has been passed in as a shape.
+
+### addShape
+
+```js
+addShape( shape: Object3D, direction: Vector3 ): void
+```
+
+Adds the given object as a shape to flatten to in addition to the direction to flatten.
+
+### updateShape
+
+```js
+updateShape( shape: Object3D ): void
+```
+
+Notifies the plugin that the given shape (geometry, position) has been changed and "tile flattening" needs to be regenerated.
+
+### deleteShape
+
+```js
+deleteShape( shape: Object3D ): boolean
+```
+
+Deletes the given shape and regenerates the tile flattening.
+
+### clearShapes
+
+```js
+clearShapes(): void
+```
+
+Deletes all shapes and resets the tiles.

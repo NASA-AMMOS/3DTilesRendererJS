@@ -158,6 +158,7 @@ tilesRenderer2.setResolutionFromRenderer( camera, renderer );
 tilesRenderer2.lruCache = tilesRenderer.lruCache;
 tilesRenderer2.downloadQueue = tilesRenderer.downloadQueue;
 tilesRenderer2.parseQueue = tilesRenderer.parseQueue;
+tilesRenderer2.processNodeQueue = tilesRenderer.processNodeQueue;
 
 // add them to the scene
 scene.add( tilesRenderer.group );
@@ -345,16 +346,6 @@ errorTarget = 6 : Number
 
 The target screenspace error in pixels to target when updating the geometry. Tiles will not render if they have below this level of screenspace error. See the ["geometric error" section in the 3d tiles specification](https://github.com/CesiumGS/3d-tiles/tree/master/specification#geometric-error) for more information.
 
-### .errorThreshold
-
-```js
-errorThreshold = Infinity : Number
-```
-
-Value used to compute the threshold `errorTarget * errorThreshold` above which tiles will not load or render. This is used to enable traversal to skip loading and rendering parent tiles far from the cameras current screenspace error requirement. If `errorThreshold` is set to `Infinity` then all parent tiles will be loaded and rendered. If it's set to `0` then no parent tiles will render and only the tiles that are being rendered will be loaded.
-
-Note that if the camera position zooms in or out dramatically setting this to a value other than `Infinity` could result in tiles flickering if the renderer updates to display tiles that were previously outside the error threshold. As such this setting is best suited for when camera movement is limited smaller movement scales such as real world movement speeds.
-
 ### .maxDepth
 
 ```js
@@ -397,7 +388,7 @@ downloadQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be set once [update](#update) is called for the first time._
 
-Max jobs defaults to `10`.
+Queue for downloading tile content. Max jobs defaults to `10`.
 
 ### .parseQueue
 
@@ -407,7 +398,17 @@ parseQueue = new PriorityQueue : PriorityQueue
 
 _NOTE: This cannot be modified once [update](#update) is called for the first time._
 
-Max jobs defaults to `1`.
+Queue for parsing downloaded tile content. Max jobs defaults to `1`.
+
+### .processNodeQueue
+
+```js
+processNodeQueue = new PriorityQueue : PriorityQueue
+```
+
+_NOTE: This cannot be set once [update](#update) is called for the first time._
+
+Queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
 
 ### .group
 
@@ -612,28 +613,6 @@ schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 ```
 
 A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
-
-## GooglePhotorealisticTilesRenderer
-
-_extends [TilesRenderer](#TilesRenderer)_
-
-Variant of the TilesRenderer designed to easily support [Google's Photorealistic 3D Tiles API](https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles). Handles adding api key to all requests, reading tile credits, and initializes tile set traversal options to reasonable defaults for the globe.
-
-### constructor
-
-```js
-constructor( apiKey: String )
-```
-
-Takes the Google Photorealistic Tiles API Key.
-
-### .setLatLonToYUp
-
-```js
-setLatLonToYUp( lat: Number, lon: Number ): void;
-```
-
-Rotates and positions the local transformation of the tile group object so the surface of the globe ellipsoid at the specified latitude and longitude faces Y+, X+ points north, and Z+ points east and is centered at 0, 0, 0.
 
 ## LRUCache
 

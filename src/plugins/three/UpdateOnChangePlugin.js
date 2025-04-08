@@ -74,6 +74,13 @@ export class UpdateOnChangePlugin {
 
 	}
 
+	preprocessNode() {
+
+		// trigger a new update when nodes are processed because hte process happens asynchronously
+		this.needsUpdate = true;
+
+	}
+
 	dispose() {
 
 		const tiles = this.tiles;

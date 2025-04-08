@@ -26,8 +26,8 @@ class PriorityQueue {
 
 		this._runjobs = () => {
 
-			this.tryRunJobs();
 			this.scheduled = false;
+			this.tryRunJobs();
 
 		};
 
@@ -41,16 +41,25 @@ class PriorityQueue {
 
 	}
 
+	has( item ) {
+
+		return this.callbacks.has( item );
+
+	}
+
 	add( item, callback ) {
 
 		return new Promise( ( resolve, reject ) => {
 
-			const prCallback = ( ...args ) => callback( ...args ).then( resolve ).catch( reject );
 			const items = this.items;
 			const callbacks = this.callbacks;
 
 			items.push( item );
-			callbacks.set( item, prCallback );
+			callbacks.set( item, {
+				callback,
+				resolve,
+				reject,
+			} );
 
 			if ( this.autoUpdate ) {
 
@@ -84,39 +93,55 @@ class PriorityQueue {
 		const items = this.items;
 		const callbacks = this.callbacks;
 		const maxJobs = this.maxJobs;
-		let currJobs = this.currJobs;
-		while ( maxJobs > currJobs && items.length > 0 ) {
+		let iterated = 0;
 
-			currJobs ++;
+		const completedCallback = () => {
+
+			this.currJobs --;
+
+			if ( this.autoUpdate ) {
+
+				this.scheduleJobRun();
+
+			}
+
+		};
+
+		while ( maxJobs > this.currJobs && items.length > 0 && iterated < maxJobs ) {
+
+			this.currJobs ++;
+			iterated ++;
 			const item = items.pop();
-			const callback = callbacks.get( item );
+			const { callback, resolve, reject } = callbacks.get( item );
 			callbacks.delete( item );
-			callback( item )
-				.then( () => {
 
-					this.currJobs --;
+			let result;
+			try {
 
-					if ( this.autoUpdate ) {
+				result = callback( item );
 
-						this.scheduleJobRun();
+			} catch ( err ) {
 
-					}
+				reject( err );
+				completedCallback();
 
-				} )
-				.catch( () => {
+			}
 
-					this.currJobs --;
+			if ( result instanceof Promise ) {
 
-					if ( this.autoUpdate ) {
+				result
+					.then( resolve )
+					.catch( reject )
+					.finally( completedCallback );
 
-						this.scheduleJobRun();
+			} else {
 
-					}
+				resolve( result );
+				completedCallback();
 
-				} );
+			}
 
 		}
-		this.currJobs = currJobs;
 
 	}
 
