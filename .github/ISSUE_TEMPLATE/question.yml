@@ -1,5 +1,6 @@
 name: Question
 description: Ask a question about how to use the library.
+labels: ["question"]
 body:
   - type: textarea
     id: question
