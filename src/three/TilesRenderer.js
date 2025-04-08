@@ -970,7 +970,8 @@ export class TilesRenderer extends TilesRendererBase {
 			if ( plugin !== this && plugin.calculateTileViewError ) {
 
 				plugin.calculateTileViewError( tile, viewErrorTarget );
-				if ( viewErrorTarget.inView || viewErrorTarget.inView === false) {
+				// allow false to pass
+				if ( viewErrorTarget.inView || viewErrorTarget.inView === false ) {
 
 					inView = viewErrorTarget.inView;
 					inViewError = Math.max( inViewError, viewErrorTarget.error );
