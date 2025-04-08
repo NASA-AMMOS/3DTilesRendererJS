@@ -81,6 +81,9 @@ export class QuantizedMeshPlugin {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
+			geometricError: 1e5,
+			boundingVolume: {},
+			children: []
 		};
 
 	}
