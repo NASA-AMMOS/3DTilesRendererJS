@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.9] - Unreleased
 ### Fixed
 - Structural Metadata: Fixed case where accessor properties do not match the class definition.
+- Fix type definitions for LRUCache.
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
