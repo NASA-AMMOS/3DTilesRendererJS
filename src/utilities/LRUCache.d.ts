@@ -1,4 +1,5 @@
 export class LRUCache {
+
 	minSize: number;
 	maxSize: number;
 	minBytesSize: number;
@@ -6,5 +7,6 @@ export class LRUCache {
 	unloadPercent: number;
 	autoMarkUnused: boolean;
 
-	unloadPriorityCallback: (item: any) => number;
+	unloadPriorityCallback: ( item: any ) => number;
+
 }
