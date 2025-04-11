@@ -5,23 +5,9 @@
         <meta charset="utf-8"/>
 
         <title>3D Tiles Renderer Metadata Example</title>
+
+		<link rel="stylesheet" href="./styles.css">
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-            }
-
-            html {
-                overflow: hidden;
-                font-family: Arial, Helvetica, sans-serif;
-                user-select: none;
-            }
-
-            canvas {
-                image-rendering: pixelated;
-                outline: none;
-            }
-
 			#container {
 				position: absolute;
 				left: 0;
@@ -33,7 +19,7 @@
 				font-size: 12px;
 			}
 
-			#info, #meshFeatures, #structuralMetadata {
+			#cesium-info, #meshFeatures, #structuralMetadata {
 
 				display: inline-block;
 				background-color: rgba( 0, 0, 0, 0.5 );
@@ -44,14 +30,14 @@
 
 			}
 
-			#info, #info a {
+			#cesium-info, #cesium-info a {
 
 				white-space: initial;
 				color: white;
 
 			}
 
-			#info a {
+			#cesium-info a {
 
 				pointer-events: all;
 
@@ -67,14 +53,21 @@
     </head>
     <body>
 		<div id="container">
-			<div><div id="info">
+			<div><div id="cesium-info">
 				Demonstration of displaying glTF Mesh Features and
 				<br/>
 				Structural Metadata properties on mouse-over.
 				<br/>
-				See <a href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repo</a> for demo API key.</div></div>
+				See <a href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repo</a> for demo API key.
+			</div></div>
 			<div><div id="meshFeatures"></div></div>
 			<div><div id="structuralMetadata"></div></div>
+		</div>
+
+		<div id="footer">
+			<div id="logos">
+				<img src="./logos/cesiumion.png" />
+			</div>
 		</div>
         <script src="./metadata.js" type="module"></script>
     </body>
