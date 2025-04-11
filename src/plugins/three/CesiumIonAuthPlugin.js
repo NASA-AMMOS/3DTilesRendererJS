@@ -1,4 +1,5 @@
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
+import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
 export class CesiumIonAuthPlugin {
 
@@ -156,6 +157,17 @@ export class CesiumIonAuthPlugin {
 						} ) );
 
 					} else {
+
+						// IMAGERY
+						// GLTF
+						// CZML
+						// KML
+						// GEOJSON
+						if ( json.type === 'TERRAIN' ) {
+
+							tiles.registerPlugin( new QuantizedMeshPlugin() );
+
+						}
 
 						tiles.rootURL = json.url;
 						tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
