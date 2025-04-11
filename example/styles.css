@@ -33,15 +33,36 @@ canvas {
 	pointer-events: all;
 }
 
-#credits {
+#footer {
 	position: absolute;
 	bottom: 0;
-	left: 0;
+	width: 100%;
+	display: flex;
+	padding: 5px;
+	box-sizing: border-box;
+}
+
+#credits {
+	flex: 1;
 	color: white;
 	font-size: 12px;
 	opacity: 0.5;
 	padding: 5px;
 	line-height: 1.25em;
+	overflow: hidden;
+    white-space: pre;
+    text-overflow: ellipsis;
+	padding-right: 25px;
+}
+
+#logos {
+	margin-top: auto;
+	flex-grow: 0;
+}
+
+#logos img {
+	height: 22px;
+	margin-right: 5px;
 }
 
 .light #info, .light #info a, .light #credits {
