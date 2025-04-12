@@ -5,6 +5,7 @@ const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
+// Checks if the given tile is available
 function isAvailable( layer, level, x, y ) {
 
 	const {
@@ -105,14 +106,15 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
-window.LAYER = json
+				window.LAYER = json;
+
 				if ( json.extensions.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
 
 				}
 
-				return {
+				const tileset = {
 					asset: {
 						version: '1.1'
 					},
@@ -121,9 +123,23 @@ window.LAYER = json
 						refine: 'REPLACE',
 						geometricError: 1e5,
 						boundingVolume: {},
-						children: [ this.expand( 0, 0, 0 ) ],
-					}
+						children: [],
+					},
 				};
+
+				const xTiles = json.projection === 'EPSG:4326' ? 2 : 1;
+				for ( let x = 0; x < xTiles; x ++ ) {
+
+					const child = this.expand( 0, x, 0 );
+					if ( child ) {
+
+						tileset.root.children.push( child );
+
+					}
+
+				}
+
+				return tileset;
 
 			} );
 
@@ -179,6 +195,7 @@ window.LAYER = json
 		// TODO: adjust the bounding box / region? Is it too late?
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
 		const result = loader.parse( buffer );
+
 
 		return result;
 

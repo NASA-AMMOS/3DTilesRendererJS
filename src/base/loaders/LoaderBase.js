@@ -7,10 +7,10 @@ export class LoaderBase {
 
 	}
 
-	load( url ) {
+	load( ...args ) {
 
 		console.warn( 'Loader: "load" function has been deprecated in favor of "loadAsync".' );
-		return this.loadAsync( url );
+		return this.loadAsync( ...args );
 
 	}
 

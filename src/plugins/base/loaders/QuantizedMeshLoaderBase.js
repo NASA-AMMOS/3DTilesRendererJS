@@ -160,7 +160,7 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 		};
 
 		// parse extensions
-		const extensions = [];
+		const extensions = {};
 		while ( pointer < view.byteLength ) {
 
 			const extensionId = readByte();
@@ -170,10 +170,10 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 				// oct encoded normals
 				const xy = readBuffer( vertexCount * 2, Uint8Array );
-				extensions.push( {
+				extensions[ 'octvertexnormals' ] = {
 					extensionId,
 					xy,
-				} );
+				};
 
 			} else if ( extensionId === 2 ) {
 
@@ -189,10 +189,10 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 				}
 
-				extensions.push( {
+				extensions[ 'watermask' ] = {
 					extensionId,
 					mask,
-				} );
+				};
 
 			} else if ( extensionId === 4 ) {
 
@@ -207,10 +207,10 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 				}
 
-				extensions.push( {
+				extensions[ 'metadata' ] = {
 					extensionId,
 					json: JSON.parse( str ),
-				} );
+				};
 
 			}
 
