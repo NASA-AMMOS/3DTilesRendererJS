@@ -44,7 +44,7 @@ export class ImageFormatPlugin {
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.flipY = false;
 
-		this._tilesNeedUpdate = true;
+		this.needsUpdate = true;
 
 	}
 
@@ -81,7 +81,7 @@ export class ImageFormatPlugin {
 
 			}
 
-			this._tilesNeedUpdate = true;
+			this.needsUpdate = true;
 
 			return Promise.resolve();
 
@@ -110,6 +110,7 @@ export class ImageFormatPlugin {
 		let sx = 1, sy = 1;
 		let x = 0, y = 0, z = 0;
 
+		// TODO: This won't be effecting the cached version of the box?
 		const boundingBox = tile.boundingVolume.box;
 		if ( boundingBox ) {
 
@@ -138,7 +139,7 @@ export class ImageFormatPlugin {
 			// marking the tiles as needing an update here prevents cases where we need to process children but there's a frame delay
 			// meaning we may miss our chance on the next loop to perform an update if the "UpdateOnChange" plugin is being used.
 			this.processQueue.add( tile, this.processCallback );
-			this._tilesNeedUpdate = true;
+			this.needsUpdate = true;
 
 		}
 
@@ -306,9 +307,9 @@ export class ImageFormatPlugin {
 
 	doTilesNeedUpdate() {
 
-		if ( this._tilesNeedUpdate ) {
+		if ( this.needsUpdate ) {
 
-			this._tilesNeedUpdate = false;
+			this.needsUpdate = false;
 			return true;
 
 		}

@@ -9,22 +9,31 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		super();
 		this.manager = manager;
 		this.ellipsoid = new Ellipsoid();
+		this.skirtLength = 10;
+		this.manifold = false;
 
 	}
 
 	parse( buffer ) {
 
-		const result = super.parse( buffer );
+		const {
+			header,
+			indices,
+			vertexData,
+			edgeIndices,
+			extensions,
+		} = super.parse( buffer );
 
 		const geometry = new BufferGeometry();
 		const material = new MeshBasicMaterial();
+
 
 		// TODO: construct geometry with skirts
 
 		// TODO: construct and apply extensions
 
 		const mesh = new Mesh( geometry, material );
-		mesh.position.set( ...result.center );
+		mesh.position.set( ...header.center );
 
 		return mesh;
 
