@@ -12,7 +12,7 @@ export * from './three/LoadRegionPlugin';
 export * from './three/DebugTilesPlugin';
 
 // other formats
-export * from './three/images/ImageFormatPlugin';
+export * from './three/images/DeepZoomImagePlugin';
 export * from './three/images/EllipsoidProjectionTilesPlugin';
 
 // common plugins
