@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, ByteType, DataTexture, DefaultLoadingManager, MathUtils, Mesh, MeshBasicMaterial, MeshStandardMaterial, RedFormat, TorusGeometry, Triangle, Vector3, } from 'three';
+import { BufferAttribute, BufferGeometry, ByteType, DataTexture, DefaultLoadingManager, MathUtils, Mesh, MeshStandardMaterial, RedFormat, Triangle, Vector3 } from 'three';
 import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderBase.js';
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
 
@@ -15,14 +15,25 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		this.skirtLength = 10;
 		this.solid = false;
 
+		// set the range of the tile
+		this.minLat = - Math.PI / 2;
+		this.maxLat = Math.PI / 2;
+		this.minLon = - Math.PI;
+		this.maxLon = Math.PI;
+
 	}
 
-	parse( buffer, options ) {
+	parse( buffer ) {
 
 		const {
 			ellipsoid,
 			solid,
 			skirtLength,
+
+			minLat,
+			maxLat,
+			minLon,
+			maxLon,
 		} = this;
 
 		const {
@@ -32,13 +43,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			edgeIndices,
 			extensions,
 		} = super.parse( buffer );
-
-		const {
-			minLat = - Math.PI / 2,
-			maxLat = Math.PI / 2,
-			minLon = - Math.PI,
-			maxLon = Math.PI,
-		} = options;
 
 		const geometry = new BufferGeometry();
 		const material = new MeshStandardMaterial();
