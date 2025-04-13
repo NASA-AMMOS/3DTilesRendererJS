@@ -57,7 +57,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const normals = [];
 
 		// construct terrain
-		const MAX_UINT16 = 2 ** 16 - 1;
+		const MAX_VALUE = 32767;
 		for ( let i = 0; i < vertexCount; i ++ ) {
 
 			readUVHeight( i, _uvh );
@@ -246,9 +246,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		function readUVHeight( index, target ) {
 
-			target.x = vertexData.u[ index ] / MAX_UINT16;
-			target.y = vertexData.v[ index ] / MAX_UINT16;
-			target.z = ( vertexData.height[ index ] / MAX_UINT16 ) - skirtLength;
+			target.x = vertexData.u[ index ] / MAX_VALUE;
+			target.y = vertexData.v[ index ] / MAX_VALUE;
+			target.z = ( vertexData.height[ index ] / MAX_VALUE ) - skirtLength;
 			return target;
 
 		}
