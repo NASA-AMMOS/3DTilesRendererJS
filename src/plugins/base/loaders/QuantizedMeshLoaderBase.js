@@ -170,9 +170,20 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 				// oct encoded normals
 				const xy = readBuffer( vertexCount * 2, Uint8Array );
+				const normals = new Float32Array( vertexCount * 3 );
+				for ( let i = 0; i < vertexCount; i ++ ) {
+
+					const x = xy[ 2 * i + 0 ] / 255;
+					const y = xy[ 2 * i + 1 ] / 255;
+					normals[ 3 * i + 0 ] = x;
+					normals[ 3 * i + 1 ] = y;
+					normals[ 3 * i + 2 ] = 1.0 - ( Math.abs( x ) + Math.abs( y ) );
+
+				}
+
 				extensions[ 'octvertexnormals' ] = {
 					extensionId,
-					xy,
+					normals,
 				};
 
 			} else if ( extensionId === 2 ) {
