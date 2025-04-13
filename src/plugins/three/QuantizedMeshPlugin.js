@@ -160,6 +160,7 @@ export class QuantizedMeshPlugin {
 		const north = MathUtils.DEG2RAD * bounds[ 3 ];
 
 
+
 		// TODO: how to calculate tile screen space error
 		return {
 			[ TILE_LEVEL ]: level,
@@ -192,8 +193,15 @@ export class QuantizedMeshPlugin {
 
 	parseToMesh( buffer, tile, ...args ) {
 
+		const [ west, south, east, north ] = tile.boundingVolume.region;
+
 		// TODO: adjust the bounding box / region? Is it too late?
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
+		loader.minLat = south;
+		loader.maxLat = north;
+		loader.minLon = west;
+		loader.maxLat = east;
+
 		const result = loader.parse( buffer );
 
 

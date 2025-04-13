@@ -232,7 +232,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		// read metadata
+		// set metadata
+		mesh.userData.minHeight = header.minHeight;
+		mesh.userData.maxHeight = header.maxHeight;
 		if ( 'metadata' in extensions ) {
 
 			mesh.userData.metadata = extensions[ 'metadata' ].json;
