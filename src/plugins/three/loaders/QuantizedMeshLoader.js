@@ -202,9 +202,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		// shift the positions by the center of the tile
 		for ( let i = 0, l = positions.length; i < l; i += 3 ) {
 
-			positions[ i + 0 ] -= header.center.x;
-			positions[ i + 1 ] -= header.center.y;
-			positions[ i + 2 ] -= header.center.z;
+			positions[ i + 0 ] -= header.center[ 0 ];
+			positions[ i + 1 ] -= header.center[ 1 ];
+			positions[ i + 2 ] -= header.center[ 2 ];
 
 		}
 

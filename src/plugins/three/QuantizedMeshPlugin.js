@@ -9,15 +9,15 @@ const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 function isAvailable( layer, level, x, y ) {
 
 	const {
-		minZoom,
-		maxZoom,
-		availability,
+		minzoom,
+		maxzoom,
+		available,
 	} = layer;
 
-	if ( level >= minZoom && level <= maxZoom && level < availability.length ) {
+	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
 
 		// TODO: consider a binary search
-		const availableSet = availability[ level ];
+		const availableSet = available[ level ];
 		for ( let i = 0, l = availableSet.length; i < l; i ++ ) {
 
 			const { startX, startY, endX, endY } = availableSet[ i ];
@@ -59,6 +59,10 @@ export class QuantizedMeshPlugin {
 			const level = tile[ TILE_LEVEL ];
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
+
+			const [ west, south, east, north, minHeight, maxHeight ] = tile;
+			const xStep = ( east - west ) / 2;
+			const yStep = ( north - south ) / 2;
 			for ( let cx = 0; cx < 2; cx ++ ) {
 
 				for ( let cy = 0; cy < 2; cy ++ ) {
@@ -66,6 +70,13 @@ export class QuantizedMeshPlugin {
 					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy );
 					if ( child ) {
 
+						child.boundingVolume.region = [
+							west + xStep * cx,
+							south + yStep * cy,
+							west + xStep * cx + xStep,
+							south + yStep * cy + yStep,
+							minHeight, maxHeight,
+						];
 						tile.children.push( child );
 
 					}
@@ -106,13 +117,18 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
-				window.LAYER = json;
 
 				if ( json.extensions.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
 
 				}
+
+				const { bounds } = json;
+				const west = MathUtils.DEG2RAD * bounds[ 0 ];
+				const south = MathUtils.DEG2RAD * bounds[ 1 ];
+				const east = MathUtils.DEG2RAD * bounds[ 2 ];
+				const north = MathUtils.DEG2RAD * bounds[ 3 ];
 
 				const tileset = {
 					asset: {
@@ -122,7 +138,12 @@ export class QuantizedMeshPlugin {
 					root: {
 						refine: 'REPLACE',
 						geometricError: 1e5,
-						boundingVolume: {},
+						boundingVolume: {
+							region: [
+								west, south, east, north,
+								- 1000, 1000,
+							],
+						},
 						children: [],
 					},
 				};
@@ -130,14 +151,25 @@ export class QuantizedMeshPlugin {
 				const xTiles = json.projection === 'EPSG:4326' ? 2 : 1;
 				for ( let x = 0; x < xTiles; x ++ ) {
 
-					const child = this.expand( 0, x, 0 );
+					const child = this.expand( 0, x, 0, tileset.root );
 					if ( child ) {
 
 						tileset.root.children.push( child );
 
+						const w = east - west;
+						const step = w / xTiles;
+						child.boundingVolume.region = [
+							west + step * x, south, west + step * x + step, north,
+							- 1000, 1000,
+						];
+
 					}
 
 				}
+
+				let baseUrl = tiles.rootURL;
+				tiles.invokeAllPlugins( plugin => baseUrl = plugin.preprocessURL ? plugin.preprocessURL( baseUrl, null ) : baseUrl );
+				this.tiles.preprocessTileSet( tileset, baseUrl );
 
 				return tileset;
 
@@ -153,25 +185,24 @@ export class QuantizedMeshPlugin {
 
 		}
 
-		const { bounds } = this.layer;
-		const west = MathUtils.DEG2RAD * bounds[ 0 ];
-		const south = MathUtils.DEG2RAD * bounds[ 1 ];
-		const east = MathUtils.DEG2RAD * bounds[ 2 ];
-		const north = MathUtils.DEG2RAD * bounds[ 3 ];
-
-
+		const url = this.layer.tiles[ 0 ]
+			.replace( /{\s*z\s*}/g, level )
+			.replace( /{\s*x\s*}/g, x )
+			.replace( /{\s*y\s*}/g, y )
+			.replace( /{\s*version\s*}/g, 1 );
 
 		// TODO: how to calculate tile screen space error
+		// TODO: we can make a guess at how much detail the lowest LoD has relative to the highest tile
+		// TODO: geometric error is present in the loaded tile metadata as well
 		return {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
+			refine: 'REPLACE',
 			geometricError: 1e5,
-			boundingVolume: {
-				region: [
-					west, south, east, north,
-					- 1000, 1000,
-				],
+			boundingVolume: {},
+			content: {
+				uri: url,
 			},
 			children: []
 		};
@@ -191,19 +222,20 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	parseToMesh( buffer, tile, ...args ) {
+	parseToMesh( buffer, tile ) {
 
 		const [ west, south, east, north ] = tile.boundingVolume.region;
-
-		// TODO: adjust the bounding box / region? Is it too late?
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
 		loader.minLat = south;
 		loader.maxLat = north;
 		loader.minLon = west;
 		loader.maxLat = east;
+		loader.ellipsoid.copy( this.tiles.ellipsoid );
 
 		const result = loader.parse( buffer );
+		console.log('GOT')
 
+		// TODO: adjust the bounding box / region? Is it too late?
 
 		return result;
 
