@@ -40,10 +40,12 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			maxLon = Math.PI,
 		} = options;
 
-		const includeNormals = 'octvertexnormals' in extensions;
 		const geometry = new BufferGeometry();
 		const material = new MeshStandardMaterial();
+		const mesh = new Mesh( geometry, material );
+		mesh.position.set( ...header.center );
 
+		const includeNormals = 'octvertexnormals' in extensions;
 		const vertexCount = vertexData.u.length;
 		const positions = [];
 		const uvs = [];
@@ -111,7 +113,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		// TODO: construct skirts
+		// construct skirts
 		if ( skirtLength > 0 ) {
 
 			const {
@@ -165,25 +167,25 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			// add the normals
 			if ( includeNormals ) {
 
-				for ( let i = 0, l = westIndices.length * 2; i ++ ) {
+				for ( let i = 0, l = westIndices.length * 2; i < l; i ++ ) {
 
 					normals.push( ...westStrip.normal );
 
 				}
 
-				for ( let i = 0, l = eastIndices.length * 2; i ++ ) {
+				for ( let i = 0, l = eastIndices.length * 2; i < l; i ++ ) {
 
 					normals.push( ...eastStrip.normal );
 
 				}
 
-				for ( let i = 0, l = southIndices.length * 2; i ++ ) {
+				for ( let i = 0, l = southIndices.length * 2; i < l; i ++ ) {
 
 					normals.push( ...southStrip.normal );
 
 				}
 
-				for ( let i = 0, l = northIndices.length * 2; i ++ ) {
+				for ( let i = 0, l = northIndices.length * 2; i < l; i ++ ) {
 
 					normals.push( ...northStrip.normal );
 
@@ -193,9 +195,16 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		// TODO: shift the positions by the center of the tile ahead of time
+		// shift the positions by the center of the tile
+		for ( let i = 0, l = positions.length; i < l; i += 3 ) {
 
-		// generate geometry and data
+			positions[ i + 0 ] -= header.center.x;
+			positions[ i + 1 ] -= header.center.y;
+			positions[ i + 2 ] -= header.center.z;
+
+		}
+
+		// generate geometry and mesh
 		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( positions ), 3, false ) );
 		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( uvs ), 2, false ) );
 		if ( includeNormals ) {
@@ -203,9 +212,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( normals ), 2, false ) );
 
 		}
-
-		const mesh = new Mesh( geometry, material );
-		mesh.position.set( ...header.center );
 
 		// generate the water texture
 		if ( 'watermask' in extensions ) {
