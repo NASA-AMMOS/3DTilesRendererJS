@@ -181,13 +181,26 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 				// oct encoded normals
 				const xy = readBuffer( vertexCount * 2, Uint8Array );
 				const normals = new Float32Array( vertexCount * 3 );
+
+				// https://github.com/CesiumGS/cesium/blob/baaabaa49058067c855ad050be73a9cdfe9b6ac7/packages/engine/Source/Core/AttributeCompression.js#L119-L140
 				for ( let i = 0; i < vertexCount; i ++ ) {
 
-					const x = xy[ 2 * i + 0 ] / 255;
-					const y = xy[ 2 * i + 1 ] / 255;
-					normals[ 3 * i + 0 ] = x;
-					normals[ 3 * i + 1 ] = y;
-					normals[ 3 * i + 2 ] = 1.0 - ( Math.abs( x ) + Math.abs( y ) );
+					let x = ( xy[ 2 * i + 0 ] / 255 ) * 2 - 1;
+					let y = ( xy[ 2 * i + 1 ] / 255 ) * 2 - 1;
+					const z = 1.0 - ( Math.abs( x ) + Math.abs( y ) );
+
+					if ( z < 0.0 ) {
+
+						const oldVX = x;
+						x = ( 1.0 - Math.abs( y ) ) * signNotZero( oldVX );
+						y = ( 1.0 - Math.abs( oldVX ) ) * signNotZero( y );
+
+					}
+
+					const len = Math.sqrt( x * x + y * y + z * z );
+					normals[ 3 * i + 0 ] = x / len;
+					normals[ 3 * i + 1 ] = y / len;
+					normals[ 3 * i + 2 ] = z / len;
 
 				}
 
@@ -246,5 +259,11 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 		};
 
 	}
+
+}
+
+function signNotZero( v ) {
+
+	return v < 0.0 ? - 1.0 : 1.0;
 
 }
