@@ -135,15 +135,12 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
-				console.log( json )
 
 				if ( json.extensions.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
 
 				}
-
-				// TODO: generate geometric error based on the max depth (availability array depth)
 
 				const { bounds } = json;
 				const west = MathUtils.DEG2RAD * bounds[ 0 ];
@@ -276,10 +273,9 @@ export class QuantizedMeshPlugin {
 		const result = loader.parse( buffer );
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
-		// TODO: the debug tile bounding volume will be out of date here, now
 		const { minHeight, maxHeight, metadata } = result.userData;
-		tile.boundingVolume.region[ 5 ] = minHeight;
-		tile.boundingVolume.region[ 6 ] = maxHeight;
+		tile.boundingVolume.region[ 4 ] = minHeight;
+		tile.boundingVolume.region[ 5 ] = maxHeight;
 		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
 
 		// use the geometric error value if it's present

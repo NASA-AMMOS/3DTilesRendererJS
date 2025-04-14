@@ -6,15 +6,16 @@ import {
 	DefaultLoadingManager,
 	MathUtils,
 	Mesh,
-	MeshNormalMaterial,
 	MeshStandardMaterial,
+	// MeshNormalMaterial,
+	// MeshStandardMaterial,
 	RedFormat,
 	Triangle,
 	Vector3,
 } from 'three';
 import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderBase.js';
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
-import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
+// import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
 const _tri = new Triangle();
 const _uvh = new Vector3();
@@ -59,7 +60,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		} = super.parse( buffer );
 
 		const geometry = new BufferGeometry();
-		const material = new MeshNormalMaterial( { flatShading: true, side: 0 } );
+		const material = new MeshStandardMaterial();
 		const mesh = new Mesh( geometry, material );
 		mesh.position.set( ...header.center );
 
