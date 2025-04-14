@@ -209,7 +209,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		}
 
 		// generate geometry and mesh
-		geometry.setIndex( indexArr )
+		geometry.setIndex( indexArr );
 		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( positions ), 3, false ) );
 		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( uvs ), 2, false ) );
 		if ( includeNormals ) {

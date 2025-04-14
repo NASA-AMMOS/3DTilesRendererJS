@@ -229,7 +229,7 @@ export class QuantizedMeshPlugin {
 		loader.minLat = south;
 		loader.maxLat = north;
 		loader.minLon = west;
-		loader.maxLat = east;
+		loader.maxLon = east;
 		loader.ellipsoid.copy( this.tiles.ellipsoid );
 
 		const result = loader.parse( buffer );
