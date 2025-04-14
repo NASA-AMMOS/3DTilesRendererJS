@@ -5,6 +5,8 @@ const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
+const INITIAL_HEIGHT_RANGE = 1e4;
+
 // Checks if the given tile is available
 function isAvailable( layer, level, x, y ) {
 
@@ -141,7 +143,7 @@ export class QuantizedMeshPlugin {
 						boundingVolume: {
 							region: [
 								west, south, east, north,
-								- 1000, 1000,
+								- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
 							],
 						},
 						children: [],
@@ -160,7 +162,7 @@ export class QuantizedMeshPlugin {
 						const step = w / xTiles;
 						child.boundingVolume.region = [
 							west + step * x, south, west + step * x + step, north,
-							- 1000, 1000,
+							- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
 						];
 
 					}
@@ -224,18 +226,24 @@ export class QuantizedMeshPlugin {
 
 	parseToMesh( buffer, tile ) {
 
+		const ellipsoid = this.tiles.ellipsoid;
 		const [ west, south, east, north ] = tile.boundingVolume.region;
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
 		loader.minLat = south;
 		loader.maxLat = north;
 		loader.minLon = west;
 		loader.maxLon = east;
-		loader.ellipsoid.copy( this.tiles.ellipsoid );
+		loader.ellipsoid.copy( ellipsoid );
 
+		// parse the tile data
 		const result = loader.parse( buffer );
-		console.log('GOT')
 
-		// TODO: adjust the bounding box / region? Is it too late?
+		// adjust the bounding region to be more accurate based on the contents of the terrain file
+		// TODO: the debug tile bounding volume will be out of date here, now
+		const { minHeight, maxHeight } = result.userData;
+		tile.boundingVolume.region[ 5 ] = minHeight;
+		tile.boundingVolume.region[ 6 ] = maxHeight;
+		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
 
 		return result;
 
