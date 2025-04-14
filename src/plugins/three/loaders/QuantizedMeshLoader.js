@@ -88,6 +88,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		// create a lower cap
 		if ( solid ) {
 
+			const indexOffset = positions.length / 3;
 			for ( let i = 0; i < vertexCount; i ++ ) {
 
 				readUVHeight( i, _uvh );
@@ -100,7 +101,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			for ( let i = indices.length - 1; i >= 0; i -- ) {
 
-				indexArr.push( indices[ i ] );
+				indexArr.push( indices[ i ] + indexOffset );
 
 			}
 
@@ -127,69 +128,75 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 				northIndices,
 			} = edgeIndices;
 
-			// construct the strip information
-			const startIndex = positions.length / 3;
-			const westStrip = constructEdgeStrip( westIndices );
-			const eastStrip = constructEdgeStrip( eastIndices );
-			const southStrip = constructEdgeStrip( southIndices );
-			const northStrip = constructEdgeStrip( northIndices );
-
-			// add all the vertex attributes
-			uvs.concat( westStrip.uv, eastStrip.uv, southStrip.uv, northStrip.uv );
-			positions.concat( westStrip.position, eastStrip.position, southStrip.position, northStrip.position );
-
 			// construct the indices
 			let offset;
-			offset = startIndex;
-			for ( let i = 0, l = westIndices.length; i < l; i ++ ) {
 
-				positions.push( westStrip.indices[ i ] + offset );
+			// west
+			const westStrip = constructEdgeStrip( westIndices );
+			offset = positions.length / 3;
+			uvs.push( ...westStrip.uv );
+			positions.push( ...westStrip.position );
+			for ( let i = 0, l = westStrip.indices.length; i < l; i ++ ) {
 
-			}
-
-			offset += westIndices.length;
-			for ( let i = 0, l = eastIndices.length; i < l; i ++ ) {
-
-				positions.push( eastStrip.indices[ i ] + offset );
+				indexArr.push( westStrip.indices[ i ] + offset );
 
 			}
 
-			offset += eastIndices.length;
-			for ( let i = 0, l = southIndices.length; i < l; i ++ ) {
+			// east
+			const eastStrip = constructEdgeStrip( eastIndices );
+			offset = positions.length / 3;
+			uvs.push( ...eastStrip.uv );
+			positions.push( ...eastStrip.position );
+			for ( let i = 0, l = eastStrip.indices.length; i < l; i ++ ) {
 
-				positions.push( southStrip.indices[ i ] + offset );
+				indexArr.push( eastStrip.indices[ i ] + offset );
 
 			}
 
-			offset += southIndices.length;
-			for ( let i = 0, l = northIndices.length; i < l; i ++ ) {
+			// south
+			const southStrip = constructEdgeStrip( southIndices );
+			offset = positions.length / 3;
+			uvs.push( ...southStrip.uv );
+			positions.push( ...southStrip.position );
+			for ( let i = 0, l = southStrip.indices.length; i < l; i ++ ) {
 
-				positions.push( northStrip.indices[ i ] + offset );
+				indexArr.push( southStrip.indices[ i ] + offset );
+
+			}
+
+			// north
+			const northStrip = constructEdgeStrip( northIndices );
+			offset = positions.length / 3;
+			uvs.push( ...northStrip.uv );
+			positions.push( ...northStrip.position );
+			for ( let i = 0, l = northStrip.indices.length; i < l; i ++ ) {
+
+				indexArr.push( northStrip.indices[ i ] + offset );
 
 			}
 
 			// add the normals
 			if ( includeNormals ) {
 
-				for ( let i = 0, l = westIndices.length * 2; i < l; i ++ ) {
+				for ( let i = 0, l = westStrip.position.length / 3; i < l; i ++ ) {
 
 					normals.push( ...westStrip.normal );
 
 				}
 
-				for ( let i = 0, l = eastIndices.length * 2; i < l; i ++ ) {
+				for ( let i = 0, l = eastStrip.position.length / 3; i < l; i ++ ) {
 
 					normals.push( ...eastStrip.normal );
 
 				}
 
-				for ( let i = 0, l = southIndices.length * 2; i < l; i ++ ) {
+				for ( let i = 0, l = southStrip.position.length / 3; i < l; i ++ ) {
 
 					normals.push( ...southStrip.normal );
 
 				}
 
-				for ( let i = 0, l = northIndices.length * 2; i < l; i ++ ) {
+				for ( let i = 0, l = northStrip.position.length / 3; i < l; i ++ ) {
 
 					normals.push( ...northStrip.normal );
 
@@ -273,9 +280,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const botUvs = [];
 			const botPos = [];
 			const sideIndices = [];
-			for ( let i = 0, l = indices; i < l; i ++ ) {
+			for ( let i = 0, l = indices.length; i < l; i ++ ) {
 
-				readUVHeight( i, _uvh );
+				readUVHeight( indices[ i ], _uvh );
 				topUvs.push( _uvh.x, _uvh.y );
 				botUvs.push( _uvh.x, _uvh.y );
 
@@ -287,7 +294,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
-			const triCount = ( indices.length - 1 ) * 2;
+			const triCount = ( indices.length - 1 );
 			for ( let i = 0; i < triCount; i ++ ) {
 
 				const t0 = i;
@@ -307,8 +314,8 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			_tri.getNormal( normal );
 
 			return {
-				uv: [ ...topUvs, botUvs ],
-				position: [ ...topPos, botPos ],
+				uv: [ ...topUvs, ...botUvs ],
+				position: [ ...topPos, ...botPos ],
 				indices: sideIndices,
 				normal: normal,
 			};

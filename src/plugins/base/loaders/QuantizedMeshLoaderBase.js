@@ -139,18 +139,28 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 		}
 
+		const vSort = ( a, b ) => vertexData.v[ b ] - vertexData.v[ a ];
+		const vSortReverse = ( a, b ) => - vSort( a, b );
+
+		const uSort = ( a, b ) => vertexData.u[ a ] - vertexData.u[ b ];
+		const uSortReverse = ( a, b ) => - uSort( a, b );
+
 		// get edge indices
 		const westVertexCount = readInt();
 		const westIndices = readBuffer( westVertexCount, bufferType );
+		westIndices.sort( vSort );
 
 		const southVertexCount = readInt();
 		const southIndices = readBuffer( southVertexCount, bufferType );
+		southIndices.sort( uSort );
 
 		const eastVertexCount = readInt();
 		const eastIndices = readBuffer( eastVertexCount, bufferType );
+		eastIndices.sort( vSortReverse );
 
 		const northVertexCount = readInt();
 		const northIndices = readBuffer( northVertexCount, bufferType );
+		northIndices.sort( uSortReverse );
 
 		const edgeIndices = {
 			westIndices,

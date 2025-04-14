@@ -155,10 +155,10 @@ export class QuantizedMeshPlugin {
 					asset: {
 						version: '1.1'
 					},
-					geometricError: 1e5,
+					geometricError: Infinity,
 					root: {
 						refine: 'REPLACE',
-						geometricError: 1e5,
+						geometricError: Infinity,
 						boundingVolume: {
 							region: [
 								west, south, east, north,
