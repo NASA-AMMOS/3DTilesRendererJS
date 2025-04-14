@@ -194,6 +194,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			}
 
+			// TODO: is this correct?
+
 			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( midLat, east );
 			const tilePixelWidth = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );

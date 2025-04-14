@@ -214,7 +214,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( uvs ), 2, false ) );
 		if ( includeNormals ) {
 
-			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( normals ), 2, false ) );
+			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( normals ), 3, false ) );
 
 		}
 
@@ -236,6 +236,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		// set metadata
 		mesh.userData.minHeight = header.minHeight;
 		mesh.userData.maxHeight = header.maxHeight;
+
 		if ( 'metadata' in extensions ) {
 
 			mesh.userData.metadata = extensions[ 'metadata' ].json;
@@ -248,7 +249,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			target.x = vertexData.u[ index ] / MAX_VALUE;
 			target.y = vertexData.v[ index ] / MAX_VALUE;
-			target.z = ( vertexData.height[ index ] / MAX_VALUE ) - skirtLength;
+			target.z = vertexData.height[ index ] / MAX_VALUE;
 			return target;
 
 		}
@@ -258,6 +259,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const height = MathUtils.lerp( header.minHeight, header.maxHeight, h );
 			const lon = MathUtils.lerp( minLon, maxLon, u );
 			const lat = MathUtils.lerp( minLat, maxLat, v );
+
 			ellipsoid.getCartographicToPosition( lat, lon, height, target );
 
 			return target;

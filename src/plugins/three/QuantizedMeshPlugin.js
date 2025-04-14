@@ -1,11 +1,15 @@
-import { MathUtils } from 'three';
+import { MathUtils, Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
+import { PriorityQueue } from '../../utilities/PriorityQueue.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
 const INITIAL_HEIGHT_RANGE = 1e4;
+const TILE_RESOLUTION = 256;
+
+const _vec = new Vector3();
 
 // Checks if the given tile is available
 function isAvailable( layer, level, x, y ) {
@@ -39,12 +43,19 @@ function isAvailable( layer, level, x, y ) {
 
 export class QuantizedMeshPlugin {
 
+	get maxLevel() {
+
+		return this.layer.available.length;
+
+	}
+
 	constructor() {
 
 		this.name = 'QUANTIZED_MESH_PLUGIN';
 
 		this.tiles = null;
 		this.layer = null;
+		this.processQueue = null;
 		this.needsUpdate = true;
 
 	}
@@ -52,6 +63,11 @@ export class QuantizedMeshPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		const processQueue = new PriorityQueue();
+		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
+		processQueue.maxJobs = 20;
+		this.processQueue = processQueue;
 
 		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
 		tiles.fetchOptions.header.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
@@ -62,23 +78,23 @@ export class QuantizedMeshPlugin {
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
 
-			const [ west, south, east, north, minHeight, maxHeight ] = tile;
+			const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
 			const xStep = ( east - west ) / 2;
 			const yStep = ( north - south ) / 2;
 			for ( let cx = 0; cx < 2; cx ++ ) {
 
 				for ( let cy = 0; cy < 2; cy ++ ) {
 
-					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy );
+					const region = [
+						west + xStep * cx,
+						south + yStep * cy,
+						west + xStep * cx + xStep,
+						south + yStep * cy + yStep,
+						minHeight, maxHeight,
+					];
+					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy, region );
 					if ( child ) {
 
-						child.boundingVolume.region = [
-							west + xStep * cx,
-							south + yStep * cy,
-							west + xStep * cx + xStep,
-							south + yStep * cy + yStep,
-							minHeight, maxHeight,
-						];
 						tile.children.push( child );
 
 					}
@@ -119,12 +135,15 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
+				console.log( json )
 
 				if ( json.extensions.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
 
 				}
+
+				// TODO: generate geometric error based on the max depth (availability array depth)
 
 				const { bounds } = json;
 				const west = MathUtils.DEG2RAD * bounds[ 0 ];
@@ -153,17 +172,15 @@ export class QuantizedMeshPlugin {
 				const xTiles = json.projection === 'EPSG:4326' ? 2 : 1;
 				for ( let x = 0; x < xTiles; x ++ ) {
 
-					const child = this.expand( 0, x, 0, tileset.root );
+					const step = ( east - west ) / xTiles;
+					const region = [
+						west + step * x, south, west + step * x + step, north,
+						- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
+					];
+					const child = this.expand( 0, x, 0, region );
 					if ( child ) {
 
 						tileset.root.children.push( child );
-
-						const w = east - west;
-						const step = w / xTiles;
-						child.boundingVolume.region = [
-							west + step * x, south, west + step * x + step, north,
-							- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
-						];
 
 					}
 
@@ -179,7 +196,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	expand( level, x, y ) {
+	expand( level, x, y, region ) {
 
 		if ( ! isAvailable( this.layer, level, x, y ) ) {
 
@@ -195,14 +212,34 @@ export class QuantizedMeshPlugin {
 
 		// TODO: how to calculate tile screen space error
 		// TODO: we can make a guess at how much detail the lowest LoD has relative to the highest tile
-		// TODO: geometric error is present in the loaded tile metadata as well
+
+		const { tiles, layer } = this;
+		const ellipsoid = tiles.ellipsoid;
+		const [ , south, , north, , maxHeight ] = region;
+		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
+
+		ellipsoid.getCartographicToPosition( midLat, 0, maxHeight, _vec );
+		_vec.z = 0;
+
+		const maxDepth = layer.available.length;
+		const maxDepthTileSpan = 1 / ( 2 ** maxDepth );
+		const thisDepthTileSpan = 1 / ( 2 ** level );
+		const totalCircumference = 2 * Math.PI * _vec.length();
+
+		const maxDepthCircSpan = maxDepthTileSpan * totalCircumference / TILE_RESOLUTION;
+		const thisDepthCircSpan = thisDepthTileSpan * totalCircumference / TILE_RESOLUTION;
+
+		// TODO: the error seems to be twice what it is as reported in the tiles themselves
+		// tiles are also often significantly less than 256 in resolution
 		return {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			refine: 'REPLACE',
-			geometricError: 1e5,
-			boundingVolume: {},
+			geometricError: thisDepthCircSpan - maxDepthCircSpan,
+			boundingVolume: {
+				region: region,
+			},
 			content: {
 				uri: url,
 			},
@@ -240,10 +277,18 @@ export class QuantizedMeshPlugin {
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
 		// TODO: the debug tile bounding volume will be out of date here, now
-		const { minHeight, maxHeight } = result.userData;
+		const { minHeight, maxHeight, metadata } = result.userData;
 		tile.boundingVolume.region[ 5 ] = minHeight;
 		tile.boundingVolume.region[ 6 ] = maxHeight;
 		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
+
+		// use the geometric error value if it's present
+		if ( metadata && 'geometricerror' in metadata ) {
+
+			tile.geometricError = metadata.geometricerror;
+
+
+		}
 
 		return result;
 
