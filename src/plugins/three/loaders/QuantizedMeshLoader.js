@@ -1,6 +1,20 @@
-import { BufferAttribute, BufferGeometry, ByteType, DataTexture, DefaultLoadingManager, MathUtils, Mesh, MeshStandardMaterial, RedFormat, Triangle, Vector3 } from 'three';
+import {
+	BufferAttribute,
+	BufferGeometry,
+	ByteType,
+	DataTexture,
+	DefaultLoadingManager,
+	MathUtils,
+	Mesh,
+	MeshNormalMaterial,
+	MeshStandardMaterial,
+	RedFormat,
+	Triangle,
+	Vector3,
+} from 'three';
 import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderBase.js';
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
+import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
 const _tri = new Triangle();
 const _uvh = new Vector3();
@@ -12,7 +26,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		super();
 		this.manager = manager;
 		this.ellipsoid = new Ellipsoid();
-		this.skirtLength = 10;
+		this.skirtLength = 1000;
 		this.solid = false;
 
 		// set the range of the tile
@@ -45,7 +59,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		} = super.parse( buffer );
 
 		const geometry = new BufferGeometry();
-		const material = new MeshStandardMaterial();
+		const material = new MeshNormalMaterial( { flatShading: true, side: 0 } );
 		const mesh = new Mesh( geometry, material );
 		mesh.position.set( ...header.center );
 
@@ -92,7 +106,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			for ( let i = 0; i < vertexCount; i ++ ) {
 
 				readUVHeight( i, _uvh );
-				readPosition( _uvh.x, _uvh.y, _uvh.z - skirtLength, _pos );
+				readPosition( _uvh.x, _uvh.y, _uvh.z, _pos, - skirtLength );
 
 				uvs.push( _uvh.x, _uvh.y );
 				positions.push( ..._pos );
@@ -244,6 +258,11 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		mesh.userData.minHeight = header.minHeight;
 		mesh.userData.maxHeight = header.maxHeight;
 
+		// const helper = new VertexNormalsHelper( mesh, 1000000 );
+		// helper.matrixWorld.identity();
+		// helper.matrixWorldAutoUpdate = false;
+		// mesh.add( helper )
+
 		if ( 'metadata' in extensions ) {
 
 			mesh.userData.metadata = extensions[ 'metadata' ].json;
@@ -261,13 +280,13 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		function readPosition( u, v, h, target ) {
+		function readPosition( u, v, h, target, heightOffset = 0 ) {
 
 			const height = MathUtils.lerp( header.minHeight, header.maxHeight, h );
 			const lon = MathUtils.lerp( minLon, maxLon, u );
 			const lat = MathUtils.lerp( minLat, maxLat, v );
 
-			ellipsoid.getCartographicToPosition( lat, lon, height, target );
+			ellipsoid.getCartographicToPosition( lat, lon, height + heightOffset, target );
 
 			return target;
 
@@ -289,7 +308,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 				readPosition( _uvh.x, _uvh.y, _uvh.z, _pos );
 				topPos.push( ..._pos );
 
-				readPosition( _uvh.x, _uvh.y, _uvh.z - skirtLength, _pos );
+				readPosition( _uvh.x, _uvh.y, _uvh.z, _pos, - skirtLength );
 				botPos.push( ..._pos );
 
 			}
