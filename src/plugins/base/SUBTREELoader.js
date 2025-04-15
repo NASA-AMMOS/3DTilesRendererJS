@@ -284,7 +284,7 @@ export class SUBTREELoader extends LoaderBase {
 					bufferHeader.uri
 				);
 
-				const fetchPromise = fetch( url )
+				const fetchPromise = fetch( url, this.fetchOptions )
 					.then( response => {
 
 						if ( ! response.ok ) {
