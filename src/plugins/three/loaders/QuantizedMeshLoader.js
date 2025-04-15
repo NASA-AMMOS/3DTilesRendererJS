@@ -28,7 +28,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		this.manager = manager;
 		this.ellipsoid = new Ellipsoid();
 		this.skirtLength = 1000;
-		this.solid = false;
+		this.solid = true;
 
 		// set the range of the tile
 		this.minLat = - Math.PI / 2;
@@ -72,7 +72,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const normals = [];
 
 		// construct terrain
-		const MAX_VALUE = 32767;
 		for ( let i = 0; i < vertexCount; i ++ ) {
 
 			readUVHeight( i, _uvh );
@@ -231,7 +230,8 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		}
 
 		// generate geometry and mesh
-		geometry.setIndex( indexArr );
+		const indexBuffer = positions.length / 3 > 65535 ? new Uint32Array( indexArr ) : new Uint16Array( indexArr );
+		geometry.setIndex( new BufferAttribute( indexBuffer, 1, false ) );
 		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( positions ), 3, false ) );
 		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( uvs ), 2, false ) );
 		if ( includeNormals ) {
@@ -244,6 +244,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		if ( 'watermask' in extensions ) {
 
 			// invert the mask data
+			// TODO: this inversion step can be a bit slow
 			const mask = extensions[ 'watermask' ].mask;
 			for ( let i = 0, l = mask.length; i < l; i ++ ) {
 
@@ -274,9 +275,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		function readUVHeight( index, target ) {
 
-			target.x = vertexData.u[ index ] / MAX_VALUE;
-			target.y = vertexData.v[ index ] / MAX_VALUE;
-			target.z = vertexData.height[ index ] / MAX_VALUE;
+			target.x = vertexData.u[ index ];
+			target.y = vertexData.v[ index ];
+			target.z = vertexData.height[ index ];
 			return target;
 
 		}

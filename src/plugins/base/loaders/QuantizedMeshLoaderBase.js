@@ -73,7 +73,6 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 		};
 
-
 		// extract header
 		const header = {
 			center: [ readFloat64(), readFloat64(), readFloat64() ],
@@ -86,25 +85,28 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 		// extract vertex data
 		const vertexCount = readInt();
-		const vertexData = {
-			u: readBuffer( vertexCount, Uint16Array ).slice(),
-			v: readBuffer( vertexCount, Uint16Array ).slice(),
-			height: readBuffer( vertexCount, Uint16Array ).slice(),
-		};
+		const uBuffer = readBuffer( vertexCount, Uint16Array );
+		const vBuffer = readBuffer( vertexCount, Uint16Array );
+		const hBuffer = readBuffer( vertexCount, Uint16Array );
+
+		const uResult = new Float32Array( vertexCount );
+		const vResult = new Float32Array( vertexCount );
+		const hResult = new Float32Array( vertexCount );
 
 		// decode vertex data
 		let u = 0;
 		let v = 0;
-		let height = 0;
+		let h = 0;
+		const MAX_VALUE = 32767;
 		for ( let i = 0; i < vertexCount; ++ i ) {
 
-			u += zigZagDecode( vertexData.u[ i ] );
-			v += zigZagDecode( vertexData.v[ i ] );
-			height += zigZagDecode( vertexData.height[ i ] );
+			u += zigZagDecode( uBuffer[ i ] );
+			v += zigZagDecode( vBuffer[ i ] );
+			h += zigZagDecode( hBuffer[ i ] );
 
-			vertexData.u[ i ] = u;
-			vertexData.v[ i ] = v;
-			vertexData.height[ i ] = height;
+			uResult[ i ] = u / MAX_VALUE;
+			vResult[ i ] = v / MAX_VALUE;
+			hResult[ i ] = h / MAX_VALUE;
 
 		}
 
@@ -139,10 +141,11 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 		}
 
-		const vSort = ( a, b ) => vertexData.v[ b ] - vertexData.v[ a ];
+		// sort functions for the edges since they are not pre-sorted
+		const vSort = ( a, b ) => vResult[ b ] - vResult[ a ];
 		const vSortReverse = ( a, b ) => - vSort( a, b );
 
-		const uSort = ( a, b ) => vertexData.u[ a ] - vertexData.u[ b ];
+		const uSort = ( a, b ) => uResult[ a ] - uResult[ b ];
 		const uSortReverse = ( a, b ) => - uSort( a, b );
 
 		// get edge indices
@@ -232,18 +235,11 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 
 				// metadata
 				const jsonLength = readInt();
-				const json = readBuffer( jsonLength, Uint8Array );
-
-				let str = '';
-				for ( let i = 0; i < jsonLength; i ++ ) {
-
-					str += String.fromCharCode( json[ i ] );
-
-				}
-
+				const jsonBuffer = readBuffer( jsonLength, Uint8Array );
+				const json = new TextDecoder().decode( jsonBuffer );
 				extensions[ 'metadata' ] = {
 					extensionId,
-					json: JSON.parse( str ),
+					json: JSON.parse( json ),
 				};
 
 			}
@@ -253,7 +249,11 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 		return {
 			header,
 			indices,
-			vertexData,
+			vertexData: {
+				u: uResult,
+				v: vResult,
+				height: hResult,
+			},
 			edgeIndices,
 			extensions,
 		};
