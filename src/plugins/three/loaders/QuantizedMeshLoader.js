@@ -1,21 +1,20 @@
 import {
 	BufferAttribute,
 	BufferGeometry,
-	ByteType,
 	DataTexture,
 	DefaultLoadingManager,
+	LinearFilter,
+	LinearMipMapLinearFilter,
 	MathUtils,
 	Mesh,
 	MeshStandardMaterial,
-	// MeshNormalMaterial,
-	// MeshStandardMaterial,
-	RedFormat,
+	RGBAFormat,
 	Triangle,
+	UnsignedByteType,
 	Vector3,
 } from 'three';
 import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderBase.js';
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
-// import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
 const _norm = /* @__PURE__ */ new Vector3();
 const _tri = /* @__PURE__ */ new Triangle();
@@ -230,24 +229,31 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			// invert the mask data
 			// TODO: this inversion step can be a bit slow
 			const mask = extensions[ 'watermask' ].mask;
+			const maskBuffer = new Uint8Array( 256 * 256 * 4 );
 			for ( let i = 0, l = mask.length; i < l; i ++ ) {
 
-				mask[ i ] = mask[ i ] === 255 ? 0 : 255;
+				const v = mask[ i ] === 255 ? 0 : 255;
+				maskBuffer[ 4 * i + 0 ] = v;
+				maskBuffer[ 4 * i + 1 ] = v;
+				maskBuffer[ 4 * i + 2 ] = v;
+				maskBuffer[ 4 * i + 3 ] = v;
 
 			}
 
-			material.roughnessMap = new DataTexture( mask, 256, 256, RedFormat, ByteType );
+			// TODO: use the Luminance Format here
+			const map = new DataTexture( maskBuffer, 256, 256, RGBAFormat, UnsignedByteType );
+			map.flipY = true;
+			map.minFilter = LinearMipMapLinearFilter;
+			map.magFilter = LinearFilter;
+			map.needsUpdate = true;
+
+			material.roughnessMap = map;
 
 		}
 
 		// set metadata
 		mesh.userData.minHeight = header.minHeight;
 		mesh.userData.maxHeight = header.maxHeight;
-
-		// const helper = new VertexNormalsHelper( mesh, 1000000 );
-		// helper.matrixWorld.identity();
-		// helper.matrixWorldAutoUpdate = false;
-		// mesh.add( helper )
 
 		if ( 'metadata' in extensions ) {
 

@@ -6,10 +6,10 @@ const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
-const INITIAL_HEIGHT_RANGE = 1e4;
-const TILE_RESOLUTION = 256;
-
-const _vec = new Vector3();
+// We don't know the height ranges for the tile set on load so assume a large range and
+// adjust it once the tiles have actually loaded based on the min and max height
+const INITIAL_HEIGHT_RANGE = 1e5;
+const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
 function isAvailable( layer, level, x, y ) {
@@ -49,29 +49,35 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	constructor() {
+	constructor( { useRecommendedSettings = true } ) {
 
 		this.name = 'QUANTIZED_MESH_PLUGIN';
 
 		this.tiles = null;
 		this.layer = null;
 		this.processQueue = null;
+		this.useRecommendedSettings = useRecommendedSettings;
 		this.needsUpdate = true;
 
 	}
 
 	init( tiles ) {
 
-		this.tiles = tiles;
-
 		const processQueue = new PriorityQueue();
 		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
 		processQueue.maxJobs = 20;
-		this.processQueue = processQueue;
 
 		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
 		tiles.fetchOptions.header.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
 
+		if ( this.useRecommendedSettings ) {
+
+			tiles.errorTarget = 2;
+
+		}
+
+		this.tiles = tiles;
+		this.processQueue = processQueue;
 		this.processCallback = tile => {
 
 			const level = tile[ TILE_LEVEL ];
@@ -207,10 +213,7 @@ export class QuantizedMeshPlugin {
 			.replace( /{\s*y\s*}/g, y )
 			.replace( /{\s*version\s*}/g, 1 );
 
-		// TODO: how to calculate tile screen space error
-		// TODO: we can make a guess at how much detail the lowest LoD has relative to the highest tile
-
-		const { tiles, layer } = this;
+		const { tiles } = this;
 		const ellipsoid = tiles.ellipsoid;
 		const [ , south, , north, , maxHeight ] = region;
 		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
@@ -218,22 +221,19 @@ export class QuantizedMeshPlugin {
 		ellipsoid.getCartographicToPosition( midLat, 0, maxHeight, _vec );
 		_vec.z = 0;
 
-		const maxDepth = layer.available.length;
-		const maxDepthTileSpan = 1 / ( 2 ** maxDepth );
-		const thisDepthTileSpan = 1 / ( 2 ** level );
-		const totalCircumference = 2 * Math.PI * _vec.length();
+		// https://github.com/CesiumGS/cesium/blob/53889cbed2a91d38e0fae4b6f2dcf6783632fc92/packages/engine/Source/Scene/QuadtreeTileProvider.js#L24-L31
+		// Implicit quantized mesh tile error halves with every layer
+		const xTiles = this.layer.projection === 'EPSG:4326' ? 2 : 1;
+		const maxRadius = Math.max( ...ellipsoid.radius );
+		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * xTiles );
+		const geometricError = rootGeometricError / ( 2 ** level );
 
-		const maxDepthCircSpan = maxDepthTileSpan * totalCircumference / TILE_RESOLUTION;
-		const thisDepthCircSpan = thisDepthTileSpan * totalCircumference / TILE_RESOLUTION;
-
-		// TODO: the error seems to be twice what it is as reported in the tiles themselves
-		// tiles are also often significantly less than 256 in resolution
 		return {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			refine: 'REPLACE',
-			geometricError: thisDepthCircSpan - maxDepthCircSpan,
+			geometricError: geometricError,
 			boundingVolume: {
 				region: region,
 			},

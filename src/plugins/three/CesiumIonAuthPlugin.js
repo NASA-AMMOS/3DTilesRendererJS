@@ -1,9 +1,10 @@
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
+import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
 export class CesiumIonAuthPlugin {
 
-	constructor( { apiToken, assetId = null, autoRefreshToken = false } ) {
+	constructor( { apiToken, assetId = null, autoRefreshToken = false, useRecommendedSettings = true } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.priority = - Infinity;
@@ -11,6 +12,7 @@ export class CesiumIonAuthPlugin {
 		this.apiToken = apiToken;
 		this.assetId = assetId;
 		this.autoRefreshToken = autoRefreshToken;
+		this.useRecommendedSettings = useRecommendedSettings;
 		this.tiles = null;
 		this.endpointURL = null;
 
@@ -154,18 +156,29 @@ export class CesiumIonAuthPlugin {
 						tiles.registerPlugin( new GoogleCloudAuthPlugin( {
 							apiToken: url.searchParams.get( 'key' ),
 							autoRefreshToken: this.autoRefreshToken,
+							useRecommendedSettings: this.useRecommendedSettings,
 						} ) );
 
 					} else {
 
-						// IMAGERY
 						// GLTF
 						// CZML
 						// KML
 						// GEOJSON
+						// TODO: Should we automatically add these? Or add a callback for defining them?
+						// How can a user add custom options in these cases?
 						if ( json.type === 'TERRAIN' ) {
 
-							tiles.registerPlugin( new QuantizedMeshPlugin() );
+							tiles.registerPlugin( new QuantizedMeshPlugin( {
+								useRecommendedSettings: this.useRecommendedSettings,
+							} ) );
+
+						} else if ( json.type === 'IMAGERY' ) {
+
+							tiles.registerPlugin( new TMSTilesPlugin( {
+								useRecommendedSettings: this.useRecommendedSettings,
+								shape: 'ellipsoid',
+							} ) );
 
 						}
 
