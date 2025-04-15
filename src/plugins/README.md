@@ -657,6 +657,34 @@ Available options are as follows:
 }
 ```
 
+## QuantizedMeshPlugin
+
+Plugin for adding support to load and display [quantized mesh](https://github.com/CesiumGS/quantized-mesh) tile sets.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// If true then the TilesRenderer error target is set to 2 so an expected amount of tile detail is rendered.
+	useRecommendedSettings: true,
+
+	// The length of the skirts to generate for each tile. No skirts are generated if set to 0.
+	skirtLength: 1000,
+
+	// If true then the normals on the edge of the tile are replicated on skirt vertices. Otherwise the skits have flat edges.
+	smoothSkirtNormals: true,
+
+	// Whether to generate the tiles as a solid form with bottom faces.
+	solid: false,
+}
+```
+
 ## LoadRegionPlugin
 
 Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions or volumes up to a specified geometric error target. Regions take shapes in the local tile set coordinate frame:

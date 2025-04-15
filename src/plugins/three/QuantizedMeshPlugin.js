@@ -49,7 +49,12 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	constructor( { useRecommendedSettings = true } ) {
+	constructor( {
+		useRecommendedSettings = true,
+		skirtLength = 1000,
+		smoothSkirtNormals = true,
+		solid = false,
+	} ) {
 
 		this.name = 'QUANTIZED_MESH_PLUGIN';
 
@@ -57,6 +62,9 @@ export class QuantizedMeshPlugin {
 		this.layer = null;
 		this.processQueue = null;
 		this.useRecommendedSettings = useRecommendedSettings;
+		this.skirtLength = skirtLength;
+		this.smoothSkirtNormals = smoothSkirtNormals;
+		this.solid = solid;
 		this.needsUpdate = true;
 
 	}
@@ -268,6 +276,10 @@ export class QuantizedMeshPlugin {
 		loader.minLon = west;
 		loader.maxLon = east;
 		loader.ellipsoid.copy( ellipsoid );
+
+		loader.solid = this.solid;
+		loader.smoothSkirtNormals = this.smoothSkirtNormals;
+		loader.skirtLength = this.skirtLength;
 
 		// parse the tile data
 		const result = loader.parse( buffer );

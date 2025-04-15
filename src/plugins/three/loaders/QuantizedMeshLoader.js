@@ -29,7 +29,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		this.ellipsoid = new Ellipsoid();
 		this.skirtLength = 1000;
 		this.smoothSkirtNormals = true;
-		this.solid = true;
+		this.solid = false;
 
 		// set the range of the tile
 		this.minLat = - Math.PI / 2;
