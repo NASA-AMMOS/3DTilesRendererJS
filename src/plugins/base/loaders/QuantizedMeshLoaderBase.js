@@ -215,20 +215,12 @@ export class QuantizedMeshLoaderBase extends LoaderBase {
 			} else if ( extensionId === 2 ) {
 
 				// water mask
-				let mask;
-				if ( extensionLength === 1 ) {
-
-					mask = new Uint8Array( 256 * 256 ).fill( readByte() );
-
-				} else {
-
-					mask = readBuffer( 256 * 256, Uint8Array );
-
-				}
-
+				const size = extensionLength === 1 ? 1 : 256;
+				const mask = readBuffer( size * size, Uint8Array );
 				extensions[ 'watermask' ] = {
 					extensionId,
 					mask,
+					size,
 				};
 
 			} else if ( extensionId === 4 ) {

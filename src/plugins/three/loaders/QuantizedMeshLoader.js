@@ -8,7 +8,7 @@ import {
 	MathUtils,
 	Mesh,
 	MeshStandardMaterial,
-	RGBAFormat,
+	RGFormat,
 	Triangle,
 	UnsignedByteType,
 	Vector3,
@@ -228,20 +228,19 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			// invert the mask data
 			// TODO: this inversion step can be a bit slow
-			const mask = extensions[ 'watermask' ].mask;
-			const maskBuffer = new Uint8Array( 256 * 256 * 4 );
+			const { mask, size } = extensions[ 'watermask' ];
+			const maskBuffer = new Uint8Array( 2 * size * size );
 			for ( let i = 0, l = mask.length; i < l; i ++ ) {
 
 				const v = mask[ i ] === 255 ? 0 : 255;
-				maskBuffer[ 4 * i + 0 ] = v;
-				maskBuffer[ 4 * i + 1 ] = v;
-				maskBuffer[ 4 * i + 2 ] = v;
-				maskBuffer[ 4 * i + 3 ] = v;
+				maskBuffer[ 2 * i + 0 ] = v;
+				maskBuffer[ 2 * i + 1 ] = v;
 
 			}
 
-			// TODO: use the Luminance Format here
-			const map = new DataTexture( maskBuffer, 256, 256, RGBAFormat, UnsignedByteType );
+			// TODO: Luminance format is not supported - eventually node materials will
+			// make it possible to map the texture to the appropriate buffer input.
+			const map = new DataTexture( maskBuffer, size, size, RGFormat, UnsignedByteType );
 			map.flipY = true;
 			map.minFilter = LinearMipMapLinearFilter;
 			map.magFilter = LinearFilter;
