@@ -17,9 +17,10 @@ import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderB
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
 // import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 
-const _tri = new Triangle();
-const _uvh = new Vector3();
-const _pos = new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _tri = /* @__PURE__ */ new Triangle();
+const _uvh = /* @__PURE__ */ new Vector3();
+const _pos = /* @__PURE__ */ new Vector3();
 export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -28,6 +29,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		this.manager = manager;
 		this.ellipsoid = new Ellipsoid();
 		this.skirtLength = 1000;
+		this.smoothSkirtNormals = true;
 		this.solid = true;
 
 		// set the range of the tile
@@ -44,6 +46,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			ellipsoid,
 			solid,
 			skirtLength,
+			smoothSkirtNormals,
 
 			minLat,
 			maxLat,
@@ -149,7 +152,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const westStrip = constructEdgeStrip( westIndices );
 			offset = positions.length / 3;
 			uvs.push( ...westStrip.uv );
-			positions.push( ...westStrip.position );
+			positions.push( ...westStrip.positions );
 			for ( let i = 0, l = westStrip.indices.length; i < l; i ++ ) {
 
 				indexArr.push( westStrip.indices[ i ] + offset );
@@ -160,7 +163,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const eastStrip = constructEdgeStrip( eastIndices );
 			offset = positions.length / 3;
 			uvs.push( ...eastStrip.uv );
-			positions.push( ...eastStrip.position );
+			positions.push( ...eastStrip.positions );
 			for ( let i = 0, l = eastStrip.indices.length; i < l; i ++ ) {
 
 				indexArr.push( eastStrip.indices[ i ] + offset );
@@ -171,7 +174,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const southStrip = constructEdgeStrip( southIndices );
 			offset = positions.length / 3;
 			uvs.push( ...southStrip.uv );
-			positions.push( ...southStrip.position );
+			positions.push( ...southStrip.positions );
 			for ( let i = 0, l = southStrip.indices.length; i < l; i ++ ) {
 
 				indexArr.push( southStrip.indices[ i ] + offset );
@@ -182,7 +185,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const northStrip = constructEdgeStrip( northIndices );
 			offset = positions.length / 3;
 			uvs.push( ...northStrip.uv );
-			positions.push( ...northStrip.position );
+			positions.push( ...northStrip.positions );
 			for ( let i = 0, l = northStrip.indices.length; i < l; i ++ ) {
 
 				indexArr.push( northStrip.indices[ i ] + offset );
@@ -192,29 +195,10 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			// add the normals
 			if ( includeNormals ) {
 
-				for ( let i = 0, l = westStrip.position.length / 3; i < l; i ++ ) {
-
-					normals.push( ...westStrip.normal );
-
-				}
-
-				for ( let i = 0, l = eastStrip.position.length / 3; i < l; i ++ ) {
-
-					normals.push( ...eastStrip.normal );
-
-				}
-
-				for ( let i = 0, l = southStrip.position.length / 3; i < l; i ++ ) {
-
-					normals.push( ...southStrip.normal );
-
-				}
-
-				for ( let i = 0, l = northStrip.position.length / 3; i < l; i ++ ) {
-
-					normals.push( ...northStrip.normal );
-
-				}
+				normals.push( ...westStrip.normals );
+				normals.push( ...eastStrip.normals );
+				normals.push( ...southStrip.normals );
+				normals.push( ...northStrip.normals );
 
 			}
 
@@ -328,17 +312,58 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
-			const normal = new Vector3();
-			_tri.a.fromArray( topPos, 0 );
-			_tri.b.fromArray( botPos, 0 );
-			_tri.c.fromArray( topPos, 3 );
-			_tri.getNormal( normal );
+			let normals = null;
+			if ( includeNormals ) {
+
+				const total = ( topPos.length + botPos.length ) / 3;
+
+				if ( smoothSkirtNormals ) {
+
+					normals = new Array( total * 3 );
+
+					const extNormals = extensions[ 'octvertexnormals' ].normals;
+					const botOffset = normals.length / 2;
+					for ( let i = 0, l = total / 2; i < l; i ++ ) {
+
+						const index = indices[ i ];
+						const i3 = 3 * i;
+						const nx = extNormals[ 3 * index + 0 ];
+						const ny = extNormals[ 3 * index + 1 ];
+						const nz = extNormals[ 3 * index + 2 ];
+
+						normals[ i3 + 0 ] = nx;
+						normals[ i3 + 1 ] = ny;
+						normals[ i3 + 2 ] = nz;
+
+						normals[ botOffset + i3 + 0 ] = nx;
+						normals[ botOffset + i3 + 1 ] = ny;
+						normals[ botOffset + i3 + 2 ] = nz;
+
+					}
+
+				} else {
+
+					normals = [];
+					_tri.a.fromArray( topPos, 0 );
+					_tri.b.fromArray( botPos, 0 );
+					_tri.c.fromArray( topPos, 3 );
+					_tri.getNormal( _norm );
+
+					for ( let i = 0; i < total; i ++ ) {
+
+						normals.push( ..._norm );
+
+					}
+
+				}
+
+			}
 
 			return {
 				uv: [ ...topUvs, ...botUvs ],
-				position: [ ...topPos, ...botPos ],
+				positions: [ ...topPos, ...botPos ],
 				indices: sideIndices,
-				normal: normal,
+				normals,
 			};
 
 		}
