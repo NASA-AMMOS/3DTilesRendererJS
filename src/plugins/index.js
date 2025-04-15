@@ -12,8 +12,8 @@ export * from './three/LoadRegionPlugin.js';
 export * from './three/DebugTilesPlugin.js';
 
 // other formats
-export * from './three/images/ImageFormatPlugin.js';
-export * from './three/images/EllipsoidProjectionTilesPlugin.js';
+export * from './three/images/DeepZoomImagePlugin.js';
+export * from './three/images/EPSGTilesPlugin.js';
 
 // common plugins
 export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin.js';
