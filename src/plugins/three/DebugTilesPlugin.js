@@ -759,6 +759,7 @@ export class DebugTilesPlugin {
 
 		} else {
 
+			// TODO: consider updating the volumes based on the bounding regions here in case they've been changed
 			if ( boxHelperGroup ) {
 
 				boxGroup.add( boxHelperGroup );

@@ -273,6 +273,8 @@ export class QuantizedMeshPlugin {
 		const result = loader.parse( buffer );
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
+		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
+		// region bounding volume will have the correct dimensions.
 		const { minHeight, maxHeight, metadata } = result.userData;
 		tile.boundingVolume.region[ 4 ] = minHeight;
 		tile.boundingVolume.region[ 5 ] = maxHeight;
