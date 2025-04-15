@@ -47,7 +47,7 @@ export class ImplicitTilingPlugin {
 
 			const loader = new SUBTREELoader( tile );
 			loader.workingPath = tile.__basePath;
-			loader.fetchOptions = this.tiles.fetchOptions
+			loader.fetchOptions = this.tiles.fetchOptions;
 			return loader.parse( buffer );
 
 		}
