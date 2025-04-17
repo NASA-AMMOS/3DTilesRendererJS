@@ -57,6 +57,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
 		this.reorientOnDrag = false;
+		this.adjustCameraAutomatically = true;
 
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
@@ -189,8 +190,10 @@ export class GlobeControls extends EnvironmentControls {
 		// fire basic controls update
 		super.update( deltaTime );
 
-		// update the camera planes and the ortho camera position
-		this.adjustCamera( camera );
+		if (this.adjustCameraAutomatically) {
+			// update the camera planes and the ortho camera position
+			this.adjustCamera( camera );
+		}
 
 	}
 
