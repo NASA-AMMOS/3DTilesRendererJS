@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - QuantizedMeshPlugin: A plugin for loading quantized mesh files.
+- TilesFlatteningPlugin: Added a threshold option to `addShape`.
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
