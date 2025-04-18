@@ -767,10 +767,10 @@ Returns whether the given object has been passed in as a shape.
 ### addShape
 
 ```js
-addShape( shape: Object3D, direction: Vector3 ): void
+addShape( shape: Object3D, direction: Vector3 = ( 0, - 1, 0 ), threshold: number = Infinity ): void
 ```
 
-Adds the given object as a shape to flatten to in addition to the direction to flatten.
+Adds the given object as a shape to flatten to in addition to the direction to flatten. The `threshold` field is the distance threshold under which vertices will be flattened. `Infinity` will always flatten while `0` will never flatten.
 
 ### updateShape
 

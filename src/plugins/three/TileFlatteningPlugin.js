@@ -12,6 +12,7 @@ const _matrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _doubleSidedMaterial = /* @__PURE__ */ new MeshBasicMaterial( { side: DoubleSide } );
+const RAYCAST_DISTANCE = 1e5;
 
 function calculateSphere( object, target ) {
 
@@ -143,6 +144,7 @@ export class TileFlatteningPlugin {
 			shape,
 			direction,
 			sphere,
+			threshold,
 		} ) => {
 
 			// TODO: if we save the sphere of the original mesh we can check the height to limit the tiles checked
@@ -189,11 +191,11 @@ export class TileFlatteningPlugin {
 						ray.origin
 							.fromBufferAttribute( position, i )
 							.applyMatrix4( _matrix )
-							.addScaledVector( direction, 1e5 );
-						_raycaster.far = 1e5;
+							.addScaledVector( direction, RAYCAST_DISTANCE );
+						_raycaster.far = RAYCAST_DISTANCE;
 
 						const hit = _raycaster.intersectObject( shape )[ 0 ];
-						if ( hit ) {
+						if ( hit && RAYCAST_DISTANCE - hit.distance < threshold ) {
 
 							hit.point.applyMatrix4( _invMatrix );
 							position.setXYZ( i, ...hit.point );
@@ -226,7 +228,7 @@ export class TileFlatteningPlugin {
 
 	}
 
-	addShape( mesh, direction = new Vector3( 0, - 1, 0 ) ) {
+	addShape( mesh, direction = new Vector3( 0, - 1, 0 ), threshold = Infinity ) {
 
 		if ( this.hasShape( mesh ) ) {
 
@@ -255,6 +257,7 @@ export class TileFlatteningPlugin {
 			shape: shape,
 			direction: direction.clone(),
 			sphere: sphere,
+			threshold: threshold,
 		} );
 
 	}
