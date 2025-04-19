@@ -2,6 +2,130 @@
 
 import { Color, Matrix4, Vector2, Vector3 } from 'three';
 
+const ELLIPSOID_FUNC = /* glsl */`
+
+	vec3 getPositionToSurfacePoint( vec3 radius, vec3 pos ) {
+
+		float EPSILON12 = 1e-12;
+		float CENTER_EPS = 0.1;
+
+		// From Cesium function Ellipsoid.scaleToGeodeticSurface
+		// https://github.com/CesiumGS/cesium/blob/d11b746e5809ac115fcff65b7b0c6bdfe81dcf1c/packages/engine/Source/Core/scaleToGeodeticSurface.js#L25
+		vec3 invRadiusSq = 1.0 / pow( radius, vec3( 2.0 ) );
+		vec3 pos2 = pos * pos * invRadiusSq;
+
+		// Compute the squared ellipsoid norm.
+		float squaredNorm = pos2.x + pos2.y + pos2.z;
+		float ratio = sqrt( 1.0 / squaredNorm );
+
+		// As an initial approximation, assume that the radial intersection is the projection point.
+		vec3 intersection = pos * ratio;
+		if ( squaredNorm < CENTER_EPS ) {
+
+			return ratio > EPSILON12 ? vec3( 0.0 ) : intersection;
+
+		}
+
+		// Use the gradient at the intersection point in place of the true unit normal.
+		// The difference in magnitude will be absorbed in the multiplier.
+		vec3 gradient = intersection * invRadiusSq * 2.0;
+
+		// Compute the initial guess at the normal vector multiplier, lambda.
+		float lambda = ( 1.0 - ratio ) * length( pos ) / ( 0.5 * length( gradient ) );
+		float correction = 0.0;
+
+		float func, denominator;
+		float xMultiplier, yMultiplier, zMultiplier;
+		float xMultiplier2, yMultiplier2, zMultiplier2;
+		float xMultiplier3, yMultiplier3, zMultiplier3;
+
+		do {
+
+			lambda -= correction;
+
+			xMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSq.x );
+			yMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSq.y );
+			zMultiplier = 1.0 / ( 1.0 + lambda * invRadiusSq.z );
+
+			xMultiplier2 = xMultiplier * xMultiplier;
+			yMultiplier2 = yMultiplier * yMultiplier;
+			zMultiplier2 = zMultiplier * zMultiplier;
+
+			xMultiplier3 = xMultiplier2 * xMultiplier;
+			yMultiplier3 = yMultiplier2 * yMultiplier;
+			zMultiplier3 = zMultiplier2 * zMultiplier;
+
+			func = pos2.x * xMultiplier2 + pos2.y * yMultiplier2 + pos2.z * zMultiplier2 - 1.0;
+
+			// "denominator" here refers to the use of this expression in the velocity and acceleration
+			// computations in the sections to follow.
+			denominator =
+				pos2.x * xMultiplier3 * invRadiusSq.x +
+				pos2.y * yMultiplier3 * invRadiusSq.y +
+				pos2.z * zMultiplier3 * invRadiusSq.z;
+
+			float derivative = - 2.0 * denominator;
+			correction = func / derivative;
+
+		} while ( abs( func ) > EPSILON12 );
+
+		return vec3(
+			pos.x * xMultiplier,
+			pos.y * yMultiplier,
+			pos.z * zMultiplier
+		);
+
+	}
+
+	vec3 getPositionToNormal( vec3 radius, vec3 pos ) {
+
+		vec3 radius2 = pow( radius, vec3( 2.0 ) );
+		return normalize( pos / radius2 );
+
+	}
+
+	vec3 getPositionToCartographic( vec3 radius, vec3 pos ) {
+
+		// From Cesium function Ellipsoid.cartesianToCartographic
+		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
+		vec3 surfacePoint = getPositionToSurfacePoint( radius, pos );
+		vec3 surfaceNormal = getPositionToNormal( radius, pos );
+
+		vec3 heightDelta = pos - surfacePoint;
+		return vec3(
+			atan( surfaceNormal.y, surfaceNormal.x ),
+			asin( surfaceNormal.z ),
+			sign( dot( heightDelta, pos ) ) * length( heightDelta )
+		);
+
+	}
+
+`;
+
+const MATH_FUNC = /* glsl */`
+float log10( float v ) {
+
+	return log( v ) / log( 10.0 );
+
+}
+
+float fwidth2( float v ) {
+
+	float vdy = dFdy( v );
+	float vdx = dFdx( v );
+	return length( vec2( vdy, vdx ) );
+
+}
+
+vec3 fwidth2( vec3 v ) {
+
+	vec3 vdy = dFdy( v );
+	vec3 vdx = dFdx( v );
+	return sqrt( vdy * vdy + vdx * vdx );
+
+}
+`;
+
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
@@ -66,11 +190,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				uniform mat4 projectionMatrix;
 
-				float log10( float v ) {
+				${ MATH_FUNC }
 
-					return log( v ) / log( 10.0 );
-
-				}
+				${ ELLIPSOID_FUNC }
 
 				vec3 calculateTopoLines( vec3 value, vec3 delta, vec3 topoStep ) {
 
@@ -98,22 +220,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 						lineIndex.y == 0.0 ? 0.5 : 1.0,
 						lineIndex.z == 0.0 ? 0.5 : 1.0
 					) * fadedTopo;
-
-				}
-
-				float fwidth2( float v ) {
-
-					float vdy = dFdy( v );
-					float vdx = dFdx( v );
-					return length( vec2( vdy, vdx ) );
-
-				}
-
-				vec3 fwidth2( vec3 v ) {
-
-					vec3 vdy = dFdy( v );
-					vec3 vdx = dFdx( v );
-					return sqrt( vdy * vdy + vdx * vdx );
 
 				}
 
@@ -145,11 +251,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 						// TODO: calculate height relative to surface
 						// TODO: calculate carto lines
+						pos = getPositionToCartographic( ellipsoid, localPos );
 
 					#else
 
-						pos = localPos;
-						pos.xz *= 0.1;
+						pos = vec3( localPos.xz * 0.1, localPos.y );
 
 					#endif
 
@@ -158,21 +264,21 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					float topoStep = pow( 10.0, ceil( topoBoundary ) );
 
 					// calculate the step for the narrow and thick lines, limiting the minimum stride
-					vec3 step0 = max( vec3( cartoLimits.x, topoLimits.x, cartoLimits.x ), vec3( topoStep ) );
-					vec3 step1 = max( vec3( cartoLimits.x, topoLimits.x, cartoLimits.x ), vec3( topoStep * 10.0 ) );
+					vec3 step0 = max( vec3( cartoLimits.xx, topoLimits.x ), vec3( topoStep ) );
+					vec3 step1 = max( vec3( cartoLimits.xx, topoLimits.x ), vec3( topoStep * 10.0 ) );
 
 					// calculate the topo line value
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0 );
 					vec3 topo1 = calculateTopoLines( pos, posDelta, step1 );
 
 					// limit the the max stride
-					vec3 mult0 = vec3( step1.x > cartoLimits.y, step1.y > topoLimits.y, step1.z > cartoLimits.y );
-					vec3 mult1 = vec3( step1.x > cartoLimits.y, step1.y > topoLimits.y, step1.z > cartoLimits.y );
+					vec3 mult0 = vec3( step0.x < cartoLimits.y, step0.y < cartoLimits.y, step0.z < topoLimits.y );
+					vec3 mult1 = vec3( step1.x < cartoLimits.y, step1.y < cartoLimits.y, step1.z < topoLimits.y );
 
 					// blend the small and large topo lines
-					vec3 topo = mix( topo1, topo0, topoAlpha );
+					vec3 topo = mix( mult1 * topo1, mult0 * topo0, topoAlpha );
 
-					diffuseColor.rgb = vec3( topo.y * topoOpacity );
+					diffuseColor.rgb = vec3( topo.z * topoOpacity );
 
 				}
 
