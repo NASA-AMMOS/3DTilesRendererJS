@@ -1,4 +1,4 @@
-import { wrapTopoLineMaterial } from "./TopoLineMaterialMixin";
+import { wrapTopoLineMaterial } from './TopoLineMaterialMixin.js';
 
 export class TopoLinesPlugin {
 

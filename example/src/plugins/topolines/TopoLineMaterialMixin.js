@@ -10,7 +10,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 		frame: { value: new Matrix4() },
 
 		topoLineColor: { value: new Color() },
-		topoOpacity: { value: 1.0 },
+		topoOpacity: { value: 0.5 },
 		topoLimits: { value: new Vector2( 0, 1e10 ) },
 
 		cartoLineColor: { value: new Color() },
@@ -78,7 +78,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					lineIndex = step( lineIndex, topoStep * 0.5 );
 
 					// calculate the topography lines
-					float thickness = lineIndex == 0.0 ? 1.0 : 2.0;
+					float thickness = lineIndex == 0.0 ? 1.0 : 1.5;
 					float stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
 					float topo = smoothstep( yPosDelta * 0.5, yPosDelta * - 0.5, stride - yPosDelta * thickness );
 
@@ -134,7 +134,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// TODO: tune this - perhaps a different scaling mechanism is needed rather than log so
 					// the distances align more as anticipated
 					float topoBoundary = ( - 2.0 + 0.75 * log10( 0.25 * screenChange ) );
-					float topoAlpha = smoothstep( 1.0, 0.7, mod( topoBoundary, 1.0 ) );
+					float topoAlpha = smoothstep( 1.0, 0.5, mod( topoBoundary, 1.0 ) );
 
 					float topoStep = pow( 10.0, ceil( topoBoundary ) );
 					float topo0 = calculateTopoLines( wPosition.y, yPosDelta, topoStep );
