@@ -58,9 +58,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				uniform vec3 topoLineColor;
 				uniform float topoOpacity;
+				uniform vec2 topoLimits;
 
 				uniform vec3 cartoLineColor;
 				uniform float cartoOpacity;
+				uniform vec2 cartoLimits;
 
 				uniform mat4 projectionMatrix;
 
@@ -70,24 +72,32 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				}
 
-				float calculateTopoLines( float value, float yPosDelta, float topoStep ) {
+				vec3 calculateTopoLines( vec3 value, vec3 delta, vec3 topoStep ) {
 
-					float halfTopoStep = topoStep * 0.5;
-					float lineIndex = mod( value, topoStep * 10.0 );
+					vec3 halfTopoStep = topoStep * 0.5;
+					vec3 lineIndex = mod( value, topoStep * 10.0 );
 					lineIndex = abs( lineIndex );
 					lineIndex = step( lineIndex, topoStep * 0.5 );
 
 					// calculate the topography lines
-					float thickness = lineIndex == 0.0 ? 1.0 : 1.5;
-					float stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
-					float topo = smoothstep( yPosDelta * 0.5, yPosDelta * - 0.5, stride - yPosDelta * thickness );
+					vec3 thickness = vec3(
+						lineIndex.x == 0.0 ? 1.0 : 1.5,
+						lineIndex.y == 0.0 ? 1.0 : 1.5,
+						lineIndex.z == 0.0 ? 1.0 : 1.5
+					);
+					vec3 stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
+					vec3 topo = smoothstep( delta * 0.5, delta * - 0.5, stride - delta * thickness );
 
 					// handle steep surfaces that cover multiple bands
-					float subPixelColor = yPosDelta / topoStep;
-					float subPixelAlpha = smoothstep( 0.4 * topoStep, 0.5 * topoStep, yPosDelta );
-					float fadedTopo = mix( topo, topoStep / yPosDelta * 0.2, subPixelAlpha );
+					vec3 subPixelColor = delta / topoStep;
+					vec3 subPixelAlpha = smoothstep( 0.4 * topoStep, 0.5 * topoStep, delta );
+					vec3 fadedTopo = mix( topo, topoStep / delta * 0.2, subPixelAlpha );
 
-					return lineIndex == 0.0 ? 0.5 * fadedTopo : fadedTopo;
+					return vec3(
+						lineIndex.x == 0.0 ? 0.5 : 1.0,
+						lineIndex.y == 0.0 ? 0.5 : 1.0,
+						lineIndex.z == 0.0 ? 0.5 : 1.0
+					) * fadedTopo;
 
 				}
 
@@ -96,6 +106,14 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					float vdy = dFdy( v );
 					float vdx = dFdx( v );
 					return length( vec2( vdy, vdx ) );
+
+				}
+
+				vec3 fwidth2( vec3 v ) {
+
+					vec3 vdy = dFdy( v );
+					vec3 vdx = dFdx( v );
+					return sqrt( vdy * vdy + vdx * vdx );
 
 				}
 
@@ -115,67 +133,46 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec4 p1 = projectionMatrix * vec4( 0, 1.0, distanceFromCamera, 1 );
 					float screenChange = 1.0 / distance( ( p0 / p1.w ).xyz, ( p1 / p1.w ).xyz );
 
-					// get the height value to use for topo lines
-					float height;
-					#if USE_ELLIPSOID
-
-						// TODO: calculate height relative to surface
-
-					#else
-
-						height = localPos.y;
-
-					#endif
-
-					// get the change in y
-					float yPosDelta = max( fwidth2( wPosition.y ), 1e-7 );
-
-					// calculate the topography step for this pixel
+					// calculate the transition boundary for this pixel
 					// TODO: tune this - perhaps a different scaling mechanism is needed rather than log so
 					// the distances align more as anticipated
 					float topoBoundary = ( - 2.0 + 0.75 * log10( 0.25 * screenChange ) );
 					float topoAlpha = smoothstep( 1.0, 0.5, mod( topoBoundary, 1.0 ) );
 
-					float topoStep = pow( 10.0, ceil( topoBoundary ) );
-					float topo0 = calculateTopoLines( wPosition.y, yPosDelta, topoStep );
-					float topo1 = calculateTopoLines( wPosition.y, yPosDelta, topoStep * 10.0 );
-					float topo = mix( topo1, topo0, topoAlpha );
-					diffuseColor.rgb = mix( diffuseColor.rgb, topoLineColor, topo * topoOpacity );
-
+					// get the height value to use for topo lines
 					vec3 pos;
 					#if USE_ELLIPSOID
 
+						// TODO: calculate height relative to surface
 						// TODO: calculate carto lines
 
 					#else
 
 						pos = localPos;
+						pos.xz *= 0.1;
 
 					#endif
 
-					pos.xz *= 0.1;
-					{
+					// calculate the lines on each axis
+					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
+					float topoStep = pow( 10.0, ceil( topoBoundary ) );
 
-						float xPosDelta = max( fwidth2( pos.x ), 1e-7 );
-						float topoStep = pow( 10.0, ceil( topoBoundary ) );
-						float topo0 = calculateTopoLines( pos.x, xPosDelta, topoStep );
-						float topo1 = calculateTopoLines( pos.x, xPosDelta, topoStep * 10.0 );
-						float topo = mix( topo1, topo0, topoAlpha );
-						diffuseColor.rgb = mix( diffuseColor.rgb, topoLineColor, topo * cartoOpacity );
+					// calculate the step for the narrow and thick lines, limiting the minimum stride
+					vec3 step0 = max( vec3( cartoLimits.x, topoLimits.x, cartoLimits.x ), vec3( topoStep ) );
+					vec3 step1 = max( vec3( cartoLimits.x, topoLimits.x, cartoLimits.x ), vec3( topoStep * 10.0 ) );
 
-					}
+					// calculate the topo line value
+					vec3 topo0 = calculateTopoLines( pos, posDelta, step0 );
+					vec3 topo1 = calculateTopoLines( pos, posDelta, step1 );
 
-					{
+					// limit the the max stride
+					vec3 mult0 = vec3( step1.x > cartoLimits.y, step1.y > topoLimits.y, step1.z > cartoLimits.y );
+					vec3 mult1 = vec3( step1.x > cartoLimits.y, step1.y > topoLimits.y, step1.z > cartoLimits.y );
 
-						float xPosDelta = max( fwidth2( pos.z ), 1e-7 );
-						float topoStep = pow( 10.0, ceil( topoBoundary ) );
-						float topo0 = calculateTopoLines( pos.z, xPosDelta, topoStep );
-						float topo1 = calculateTopoLines( pos.z, xPosDelta, topoStep * 10.0 );
-						float topo = mix( topo1, topo0, topoAlpha );
-						diffuseColor.rgb = mix( diffuseColor.rgb, topoLineColor, topo * cartoOpacity );
+					// blend the small and large topo lines
+					vec3 topo = mix( topo1, topo0, topoAlpha );
 
-					}
-					// TODO: calculate 2d projection lines
+					diffuseColor.rgb = vec3( topo.y * topoOpacity );
 
 				}
 
