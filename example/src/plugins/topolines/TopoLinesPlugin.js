@@ -16,7 +16,9 @@ export class TopoLinesPlugin {
 
 				if ( c.material ) {
 
-					wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
+					const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
+					params.ellipsoid.value.copy( tiles.ellipsoid.radius );
+					params.frame.value.copy( tiles.group.matrixWorld );
 
 				}
 

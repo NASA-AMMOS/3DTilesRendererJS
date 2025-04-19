@@ -39,7 +39,8 @@ const ELLIPSOID_FUNC = /* glsl */`
 		float xMultiplier2, yMultiplier2, zMultiplier2;
 		float xMultiplier3, yMultiplier3, zMultiplier3;
 
-		do {
+		for ( int i = 0; i < 2; i ++ ) {
+		// do {
 
 			lambda -= correction;
 
@@ -67,7 +68,8 @@ const ELLIPSOID_FUNC = /* glsl */`
 			float derivative = - 2.0 * denominator;
 			correction = func / derivative;
 
-		} while ( abs( func ) > EPSILON12 );
+		// } while ( abs( func ) > EPSILON12 );
+		}
 
 		return vec3(
 			pos.x * xMultiplier,
@@ -147,7 +149,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 	material.defines = {
 		...( material.defines || {} ),
-		USE_ELLIPSOID: 0,
+		USE_ELLIPSOID: 1, //Number( params.ellipsoid.value.length() > 0 ),
 		USE_TOPOLINES: 1,
 		USE_CARTOLINES: 1,
 	};
@@ -252,6 +254,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 						// TODO: calculate height relative to surface
 						// TODO: calculate carto lines
 						pos = getPositionToCartographic( ellipsoid, localPos );
+						pos.xy *= 180.0 / PI;
+						// pos.xy += 180.0;
+						// pos.xy *= 10.0;
+						pos.xy *= 100.0;
+						// diffuseColor.rgb = vec3(pos.z * 0.0001, 0, 0);
 
 					#else
 
@@ -278,7 +285,8 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// blend the small and large topo lines
 					vec3 topo = mix( mult1 * topo1, mult0 * topo0, topoAlpha );
 
-					diffuseColor.rgb = vec3( topo.z * topoOpacity );
+					// diffuseColor.rgb = vec3( topo.y * topoOpacity );
+					diffuseColor.rgb = mix( diffuseColor.rgb, topoLineColor, topo.y * topoOpacity );
 
 				}
 
