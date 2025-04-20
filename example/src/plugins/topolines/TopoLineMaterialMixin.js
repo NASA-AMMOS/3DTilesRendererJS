@@ -171,11 +171,17 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				${ ELLIPSOID_FUNC }
 
-				#if USE_TOPO_ELLIPSOID
+				#if USE_TOPO_ELLIPSOID && USE_TOPO_LINES
 
 					uniform vec3 ellipsoid;
 					uniform mat4 frame;
 					varying vec3 vCarto;
+
+				#endif
+
+				#if USE_TOPO_LINES
+
+					varying vec4 vScreenUv;
 
 				#endif
 
@@ -186,12 +192,20 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				${ value }
 
-				#if USE_TOPO_ELLIPSOID
+				#if USE_TOPO_ELLIPSOID && USE_TOPO_LINES
 				{
 
 					mat4 invFrame = inverse( frame );
 					vec3 localPos = ( invFrame * vec4( wPosition, 1 ) ).xyz;
 					vCarto = getPositionToCartographic( ellipsoid, localPos );
+
+				}
+				#endif
+
+				#if USE_TOPO_LINES
+				{
+
+					vScreenUv = gl_Position;
 
 				}
 				#endif
@@ -203,28 +217,34 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 			.fragmentShader
 			.replace( /void main\(/, value => /* glsl */`
 
-				#if USE_TOPO_ELLIPSOID
+				#if USE_TOPO_ELLIPSOID && USE_TOPO_LINES
 
 					uniform vec3 ellipsoid;
 					varying vec3 vCarto;
 
 				#endif
 
-				uniform mat4 frame;
+				#if USE_TOPO_LINES
 
-				uniform vec3 topoColor;
-				uniform float topoOpacity;
-				uniform vec2 topoLimits;
+					uniform mat4 frame;
 
-				uniform vec3 cartoColor;
-				uniform float cartoOpacity;
-				uniform vec2 cartoLimits;
+					uniform vec3 topoColor;
+					uniform float topoOpacity;
+					uniform vec2 topoLimits;
 
-				uniform mat4 projectionMatrix;
+					uniform vec3 cartoColor;
+					uniform float cartoOpacity;
+					uniform vec2 cartoLimits;
 
-				${ MATH_FUNC }
+					uniform mat4 projectionMatrix;
 
-				${ ELLIPSOID_FUNC }
+					varying vec4 vScreenUv;
+
+					${ MATH_FUNC }
+
+					${ ELLIPSOID_FUNC }
+
+				#endif
 
 				vec3 calculateTopoLines( vec3 value, vec3 delta, vec3 topoStep ) {
 
@@ -234,10 +254,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					lineIndex = step( lineIndex, topoStep * 0.5 );
 
 					// calculate the topography lines
+					// TODO: validate that these thresholds are being used correctly
 					vec3 thickness = vec3(
-						lineIndex.x == 0.0 ? 1.0 : 1.5,
-						lineIndex.y == 0.0 ? 1.0 : 1.5,
-						lineIndex.z == 0.0 ? 1.0 : 1.5
+						lineIndex.x == 0.0 ? 1.5 : 2.0,
+						lineIndex.y == 0.0 ? 1.5 : 2.0,
+						lineIndex.z == 0.0 ? 1.5 : 2.0
 					);
 					vec3 stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
 					vec3 topo = smoothstep( delta * 0.5, delta * - 0.5, stride - delta * thickness );
@@ -264,27 +285,33 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 				{
 
-					mat4 invFrame = inverse( frame );
-					vec3 localPos = ( invFrame * vec4( wPosition, 1 ) ).xyz;
+					// screen info
+					vec2 screenUv = vScreenUv.xy / vScreenUv.w;
+					vec2 resolution = 1.0 / vec2( dFdx( screenUv.x ), dFdy( screenUv.y ) );
 
-					// TODO: account for this at a pixel level if possible
+					// calculate projected screen points
 					float distanceFromCamera = ( viewMatrix * vec4( wPosition, 1.0 ) ).z;
 					vec4 p0 = projectionMatrix * vec4( 0, 0, distanceFromCamera, 1 );
-					vec4 p1 = projectionMatrix * vec4( 0, 1.0, distanceFromCamera, 1 );
-					float screenChange = 1.0 / distance( ( p0 / p1.w ).xyz, ( p1 / p1.w ).xyz );
+					vec4 p1 = projectionMatrix * vec4( 1.0, 1.0, distanceFromCamera, 1 );
+
+					// amount of pixel change per meter in screen space
+					vec2 screenDelta = ( p1 / p1.w ).xy - ( p0 / p0.w ).xy;
+					vec2 pixelDelta = 0.5 * screenDelta * resolution;
+					float pixelChange = max( pixelDelta.x, pixelDelta.y );
+					float scalarChange = 500.0 / pixelChange;
 
 					// calculate the transition boundary for this pixel
 					// TODO: tune this - perhaps a different scaling mechanism is needed rather than log so
-					// the distances align more as anticipated
-					float topoBoundary = ( - 2.0 + 0.75 * log10( 0.25 * screenChange ) );
+					// the distances align more as anticipated. Ideally we would be able to target a certain
+					// amount of pixel change per pixel for the boundaries
+					float topoBoundary = ( - 2.0 + 0.75 * log10( 0.25 * scalarChange ) );
 					float topoAlpha = smoothstep( 1.0, 0.5, mod( topoBoundary, 1.0 ) );
 
 					// get the height value to use for topo lines
 					vec3 pos;
 					#if USE_TOPO_ELLIPSOID
 
-
-						// pos = getPositionToCartographic( ellipsoid, localPos );
+						// pos = getPositionToCartographic( ellipsoid, localPosition );
 						pos = vCarto;
 						pos.xy *= 180.0 / PI;
 						pos.x += 180.0;
@@ -292,7 +319,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					#else
 
-						pos = vec3( localPos.xy * 0.1, localPos.z );
+						mat4 invFrame = inverse( frame );
+						vec3 localPosition = ( invFrame * vec4( wPosition, 1 ) ).xyz;
+						pos = vec3( localPosition.xy * 0.1, localPosition.z );
 
 					#endif
 
