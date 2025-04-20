@@ -165,11 +165,51 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 			...params,
 		};
 
+		shader.vertexShader = shader
+			.vertexShader
+			.replace( /void main\(/, value => /* glsl */`
+
+				${ ELLIPSOID_FUNC }
+
+				#if USE_TOPO_ELLIPSOID
+
+					uniform vec3 ellipsoid;
+					uniform mat4 frame;
+					varying vec3 vCarto;
+
+				#endif
+
+				${ value }
+
+			` )
+			.replace( /wPosition[^\n]+;/, value => /* glsl */`
+
+				${ value }
+
+				#if USE_TOPO_ELLIPSOID
+				{
+
+					mat4 invFrame = inverse( frame );
+					vec3 localPos = ( invFrame * vec4( wPosition, 1 ) ).xyz;
+					vCarto = getPositionToCartographic( ellipsoid, localPos );
+
+				}
+				#endif
+
+			` );
+
+
 		shader.fragmentShader = shader
 			.fragmentShader
 			.replace( /void main\(/, value => /* glsl */`
 
-				uniform vec3 ellipsoid;
+				#if USE_TOPO_ELLIPSOID
+
+					uniform vec3 ellipsoid;
+					varying vec3 vCarto;
+
+				#endif
+
 				uniform mat4 frame;
 
 				uniform vec3 topoColor;
@@ -244,13 +284,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					#if USE_TOPO_ELLIPSOID
 
 
-						pos = getPositionToCartographic( ellipsoid, localPos );
+						// pos = getPositionToCartographic( ellipsoid, localPos );
+						pos = vCarto;
 						pos.xy *= 180.0 / PI;
 						pos.x += 180.0;
-						// pos.xy *= 10.0;
 						pos.xy *= 1000.0;
-						// pos.x += 1e-1;
-						// diffuseColor.rgb = vec3(pos.z * 0.0001, 0, 0);
 
 					#else
 
@@ -279,7 +317,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					// blend with th base color
 					diffuseColor.rgb = mix( diffuseColor.rgb, cartoColor, max( topo.x * cartoOpacity, topo.y * cartoOpacity ) );
-					diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.z * topoOpacity * 0.0 );
+					diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.z * topoOpacity );
 
 				}
 				#endif
