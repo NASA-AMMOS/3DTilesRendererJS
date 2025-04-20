@@ -150,12 +150,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 		USE_TOPO_LINES: 1,
 	};
 
-	// material.customProgramCacheKey = () => {
-
-	// 	return JSON.stringify( material.defines );
-
-	// };
-
 	material.onBeforeCompile = shader => {
 
 		addWorldPosition( shader );
@@ -247,14 +241,15 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					// get the height value to use for topo lines
 					vec3 pos;
-					#if USE_ELLIPSOID
+					#if USE_TOPO_ELLIPSOID
 
 
 						pos = getPositionToCartographic( ellipsoid, localPos );
 						pos.xy *= 180.0 / PI;
-						// pos.xy += 180.0;
+						pos.x += 180.0;
 						// pos.xy *= 10.0;
-						pos.xy *= 100.0;
+						pos.xy *= 1000.0;
+						// pos.x += 1e-1;
 						// diffuseColor.rgb = vec3(pos.z * 0.0001, 0, 0);
 
 					#else
@@ -282,9 +277,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// blend the small and large topo lines
 					vec3 topo = mix( mult1 * topo1, mult0 * topo0, topoAlpha );
 
-					// diffuseColor.rgb = vec3( topo.y * topoOpacity );
-					// diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.y * topoOpacity );
-					diffuseColor.rgb = vec3( topo.z * topoOpacity );
+					// blend with th base color
+					diffuseColor.rgb = mix( diffuseColor.rgb, cartoColor, max( topo.x * cartoOpacity, topo.y * cartoOpacity ) );
+					diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.z * topoOpacity * 0.0 );
 
 				}
 				#endif

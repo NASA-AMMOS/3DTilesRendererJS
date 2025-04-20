@@ -44,7 +44,7 @@ export class TopoLinesPlugin {
 
 					if ( c.material ) {
 
-						c.material.defines.USE_ELLIPSOID = Number( v === 'ellipsoid' );
+						c.material.defines.USE_TOPO_ELLIPSOID = Number( v === 'ellipsoid' );
 						c.material.needsUpdate = true;
 
 					}
@@ -68,7 +68,7 @@ export class TopoLinesPlugin {
 
 			cartoColor = new Color( 0xffffff ),
 			cartoOpacity = 0.5,
-			cartoLimits = new Vector2( 0, 1e10 ),
+			cartoLimits = new Vector2( 0, 1e3 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_CONSTRUCTOR';
@@ -108,7 +108,7 @@ export class TopoLinesPlugin {
 					params.cartoOpacity = this.cartoOpacityUniform;
 					params.cartoLimits.value = this.cartoLimits;
 
-					c.material.defines.USE_ELLIPSOID = Number( this.projection === 'ellipsoid' );
+					c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
 					c.material.needsUpdate = true;
 
 				}
