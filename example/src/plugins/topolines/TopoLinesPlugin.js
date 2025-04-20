@@ -11,7 +11,12 @@ export class TopoLinesPlugin {
 
 	set topoOpacity( v ) {
 
-		this.topoOpacityUniform.value = v;
+		if ( this.topoOpacityUniform.value !== v ) {
+
+			this.topoOpacityUniform.value = v;
+			this.updateDefines();
+
+		}
 
 	}
 
@@ -23,7 +28,12 @@ export class TopoLinesPlugin {
 
 	set cartoOpacity( v ) {
 
-		this.cartoOpacityUniform.value = v;
+		if ( this.cartoOpacityUniform.value !== v ) {
+
+			this.cartoOpacityUniform.value = v;
+			this.updateDefines();
+
+		}
 
 	}
 
@@ -38,20 +48,7 @@ export class TopoLinesPlugin {
 		if ( v !== this._projection ) {
 
 			this._projection = v;
-			this.tiles.forEachLoadedModel( scene => {
-
-				scene.traverse( c => {
-
-					if ( c.material ) {
-
-						c.material.defines.USE_TOPO_ELLIPSOID = Number( v === 'ellipsoid' );
-						c.material.needsUpdate = true;
-
-					}
-
-				} );
-
-			} );
+			this.updateDefines();
 
 		}
 
@@ -68,7 +65,7 @@ export class TopoLinesPlugin {
 
 			cartoColor = new Color( 0xffffff ),
 			cartoOpacity = 0.5,
-			cartoLimits = new Vector2( 0, 1e3 ),
+			cartoLimits = new Vector2( 0, 1e10 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_CONSTRUCTOR';
@@ -90,7 +87,7 @@ export class TopoLinesPlugin {
 
 		this.tiles = tiles;
 
-		tiles.addEventListener( 'load-model', ( { scene } ) => {
+		this._loadModelCallback = ( { scene } ) => {
 
 			scene.traverse( c => {
 
@@ -115,7 +112,52 @@ export class TopoLinesPlugin {
 
 			} );
 
+		};
+
+		tiles.addEventListener( 'load-model', this._loadModelCallback );
+
+	}
+
+	updateDefines() {
+
+		const USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
+		const USE_TOPO_LINES = Number( ! ! ( this.topoOpacity + this.cartoOpacity ) );
+		this.tiles.forEachLoadedModel( scene => {
+
+			scene.traverse( c => {
+
+				if ( c.material ) {
+
+					const { defines } = c.material.defines;
+					if ( defines.USE_TOPO_ELLIPSOID !== USE_TOPO_ELLIPSOID ) {
+
+						defines.USE_TOPO_ELLIPSOID = USE_TOPO_ELLIPSOID;
+						c.material.needsUpdate = true;
+
+					}
+
+					if ( defines.USE_TOPO_LINES !== USE_TOPO_LINES ) {
+
+						defines.USE_TOPO_LINES = USE_TOPO_LINES;
+						c.material.needsUpdate = true;
+
+					}
+
+				}
+
+			} );
+
 		} );
+
+	}
+
+	dispose() {
+
+		this.cartoOpacity = 0;
+		this.topoOpacity = 0;
+
+		this.tiles.removeEventListener( 'load-model', this._loadModelCallback );
+		this.updateDefines();
 
 	}
 
