@@ -135,30 +135,26 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 		ellipsoid: { value: new Vector3() },
 		frame: { value: new Matrix4() },
 
-		topoLineColor: { value: new Color() },
+		topoColor: { value: new Color() },
 		topoOpacity: { value: 0.5 },
 		topoLimits: { value: new Vector2( 0, 1e10 ) },
 
-		cartoLineColor: { value: new Color() },
+		cartoColor: { value: new Color() },
 		cartoOpacity: { value: 0.5 },
 		cartoLimits: { value: new Vector2( 0, 1e10 ) },
-
 	};
-
-	material.version = 300;
 
 	material.defines = {
 		...( material.defines || {} ),
-		USE_ELLIPSOID: 1, //Number( params.ellipsoid.value.length() > 0 ),
-		USE_TOPOLINES: 1,
-		USE_CARTOLINES: 1,
+		USE_TOPO_ELLIPSOID: 0,
+		USE_TOPO_LINES: 1,
 	};
 
-	material.customProgramCacheKey = () => {
+	// material.customProgramCacheKey = () => {
 
-		return Number( ! ! params.ellipsoid ) + '_' + JSON.stringify( material.defines );
+	// 	return JSON.stringify( material.defines );
 
-	};
+	// };
 
 	material.onBeforeCompile = shader => {
 
@@ -182,11 +178,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				uniform vec3 ellipsoid;
 				uniform mat4 frame;
 
-				uniform vec3 topoLineColor;
+				uniform vec3 topoColor;
 				uniform float topoOpacity;
 				uniform vec2 topoLimits;
 
-				uniform vec3 cartoLineColor;
+				uniform vec3 cartoColor;
 				uniform float cartoOpacity;
 				uniform vec2 cartoLimits;
 
@@ -230,6 +226,8 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 			.replace( /#include <color_fragment>/, value => /* glsl */`
 
 				${ value }
+
+				#if USE_TOPO_LINES
 				{
 
 					mat4 invFrame = inverse( frame );
@@ -251,8 +249,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 pos;
 					#if USE_ELLIPSOID
 
-						// TODO: calculate height relative to surface
-						// TODO: calculate carto lines
+
 						pos = getPositionToCartographic( ellipsoid, localPos );
 						pos.xy *= 180.0 / PI;
 						// pos.xy += 180.0;
@@ -262,7 +259,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					#else
 
-						pos = vec3( localPos.xz * 0.1, localPos.y );
+						pos = vec3( localPos.xy * 0.1, localPos.z );
 
 					#endif
 
@@ -286,9 +283,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 topo = mix( mult1 * topo1, mult0 * topo0, topoAlpha );
 
 					// diffuseColor.rgb = vec3( topo.y * topoOpacity );
-					diffuseColor.rgb = mix( diffuseColor.rgb, topoLineColor, topo.y * topoOpacity );
+					// diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.y * topoOpacity );
+					diffuseColor.rgb = vec3( topo.z * topoOpacity );
 
 				}
+				#endif
 
 			` );
 
