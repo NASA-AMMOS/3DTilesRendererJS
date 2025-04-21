@@ -86,27 +86,27 @@ const ELLIPSOID_FUNC = /* glsl */`
 `;
 
 const MATH_FUNC = /* glsl */`
-float log10( float v ) {
+	float log10( float v ) {
 
-	return log( v ) / log( 10.0 );
+		return log( v ) / log( 10.0 );
 
-}
+	}
 
-float fwidth2( float v ) {
+	float fwidth2( float v ) {
 
-	float vdy = dFdy( v );
-	float vdx = dFdx( v );
-	return length( vec2( vdy, vdx ) );
+		float vdy = dFdy( v );
+		float vdx = dFdx( v );
+		return length( vec2( vdy, vdx ) );
 
-}
+	}
 
-vec3 fwidth2( vec3 v ) {
+	vec3 fwidth2( vec3 v ) {
 
-	vec3 vdy = dFdy( v );
-	vec3 vdx = dFdx( v );
-	return sqrt( vdy * vdy + vdx * vdx );
+		vec3 vdy = dFdy( v );
+		vec3 vdx = dFdx( v );
+		return sqrt( vdy * vdy + vdx * vdx );
 
-}
+	}
 `;
 
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
