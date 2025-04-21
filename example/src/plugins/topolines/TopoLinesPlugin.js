@@ -1,5 +1,5 @@
 import { Color, Vector2 } from 'three';
-import { wrapTopoLineMaterial } from './TopoLineMaterialMixin.js';
+import { wrapTopoLineMaterial } from './wrapTopoLineMaterial.js';
 
 export class TopoLinesPlugin {
 
@@ -63,7 +63,7 @@ export class TopoLinesPlugin {
 
 			topoColor = 		new Color( 0xffffff ),
 			topoOpacity = 		0.5,
-			topoLimit = 		isPlanar ? new Vector2( 0.1, 1 ) : new Vector2( 1, 1e10 ),
+			topoLimit = 		isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
 			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
 
 			cartoColor = 		new Color( 0xffffff ),
