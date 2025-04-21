@@ -137,11 +137,14 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 		topoColor: { value: new Color() },
 		topoOpacity: { value: 0.5 },
-		topoLimits: { value: new Vector2( 0, 1e10 ) },
+		topoLimit: { value: new Vector2( 0, 1e10 ) },
+		topoFadeLimit: { value: new Vector2( 0, 1e10 ) },
 
 		cartoColor: { value: new Color() },
 		cartoOpacity: { value: 0.5 },
-		cartoLimits: { value: new Vector2( 0, 1e10 ) },
+		cartoLimit: { value: new Vector2( 0, 1e10 ) },
+		cartoFadeLimit: { value: new Vector2( 0, 1e10 ) },
+
 	};
 
 	material.defines = {
@@ -230,11 +233,13 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					uniform vec3 topoColor;
 					uniform float topoOpacity;
-					uniform vec2 topoLimits;
+					uniform vec2 topoLimit;
+					uniform vec2 topoFadeLimit;
 
 					uniform vec3 cartoColor;
 					uniform float cartoOpacity;
-					uniform vec2 cartoLimits;
+					uniform vec2 cartoLimit;
+					uniform vec2 cartoFadeLimit;
 
 					uniform mat4 projectionMatrix;
 
@@ -330,20 +335,27 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// calculate the lines on each axis
 					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
 
+					// TODO: we want to fade these out still?
+					// TODO: fix this
 					// calculate the step for the narrow and thick lines, limiting the minimum stride
-					vec3 step0 = max( vec3( cartoLimits.xx, topoLimits.x ), vec3( topoStep ) );
-					vec3 step1 = max( vec3( cartoLimits.xx, topoLimits.x ), vec3( topoStep * 10.0 ) );
+					vec3 step0 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep ) );
+					// step0 = min( vec3( cartoLimit.yy, topoLimit.y ), step0 );
+
+					vec3 step1 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep * 10.0 ) );
+					// step1 = min( vec3( cartoLimit.yy, topoLimit.y ), step1 );
 
 					// calculate the topo line value
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0 );
 					vec3 topo1 = calculateTopoLines( pos, posDelta, step1 );
 
-					// limit the the max stride
-					vec3 mult0 = vec3( step0.x < cartoLimits.y, step0.y < cartoLimits.y, step0.z < topoLimits.y );
-					vec3 mult1 = vec3( step1.x < cartoLimits.y, step1.y < cartoLimits.y, step1.z < topoLimits.y );
+					// calculate the point to fade out the topographic lines based on the unclamped step
+					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
+					vec3 minFadeLimit = vec3( cartoFadeLimit.xx, topoFadeLimit.x );
+					vec3 maxFadeLimitAlpha = 1.0 - smoothstep( maxFadeLimit * 0.75, maxFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
+					vec3 minFadeLimitAlpha = smoothstep( minFadeLimit * 0.75, minFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 
 					// blend the small and large topo lines
-					vec3 topo = mix( mult1 * topo1, mult0 * topo0, topoAlpha );
+					vec3 topo = mix( topo1, topo0, topoAlpha ) * maxFadeLimitAlpha * minFadeLimitAlpha;
 
 					// blend with th base color
 					diffuseColor.rgb = mix( diffuseColor.rgb, cartoColor, max( topo.x * cartoOpacity, topo.y * cartoOpacity ) );

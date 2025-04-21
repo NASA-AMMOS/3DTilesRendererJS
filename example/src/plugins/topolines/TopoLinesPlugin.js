@@ -61,11 +61,13 @@ export class TopoLinesPlugin {
 
 			topoColor = new Color( 0xffffff ),
 			topoOpacity = 0.5,
-			topoLimits = new Vector2( 0, 1e10 ),
+			topoLimit = new Vector2( 0.1, 1e10 ),
+			topoFadeLimit = new Vector2( 1, 1000 ),
 
 			cartoColor = new Color( 0xffffff ),
-			cartoOpacity = 0.5,
-			cartoLimits = new Vector2( 0, 1e10 ),
+			cartoOpacity = 0.0,
+			cartoLimit = new Vector2( 0.1, 1e10 ),
+			cartoFadeLimit = new Vector2( 0.1, 1e10 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_CONSTRUCTOR';
@@ -73,11 +75,13 @@ export class TopoLinesPlugin {
 
 		this.topoColor = new Color().set( topoColor );
 		this.topoOpacityUniform = { value: topoOpacity };
-		this.topoLimits = new Vector2( ...topoLimits );
+		this.topoLimit = new Vector2( ...topoLimit );
+		this.topoFadeLimit = new Vector2( ...topoFadeLimit );
 
 		this.cartoColor = new Color().set( cartoColor );
 		this.cartoOpacityUniform = { value: cartoOpacity };
-		this.cartoLimits = new Vector2( ...cartoLimits );
+		this.cartoLimit = new Vector2( ...cartoLimit );
+		this.cartoFadeLimit = new Vector2( ...cartoFadeLimit );
 
 		this._projection = projection;
 
@@ -99,11 +103,13 @@ export class TopoLinesPlugin {
 
 					params.topoColor.value = this.topoColor;
 					params.topoOpacity = this.topoOpacityUniform;
-					params.topoLimits.value = this.topoLimits;
+					params.topoLimit.value = this.topoLimit;
+					params.topoFadeLimit.value = this.topoFadeLimit;
 
 					params.cartoColor.value = this.cartoColor;
 					params.cartoOpacity = this.cartoOpacityUniform;
-					params.cartoLimits.value = this.cartoLimits;
+					params.cartoLimit.value = this.cartoLimit;
+					params.cartoFadeLimit.value = this.cartoFadeLimit;
 
 					c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
 					c.material.needsUpdate = true;
