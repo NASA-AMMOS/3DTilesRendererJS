@@ -56,21 +56,23 @@ export class TopoLinesPlugin {
 
 	constructor( options = {} ) {
 
+		const isPlanar = 'projection' in options ? options.projection === 'planar' : true;
+
 		const {
 			projection = 'planar',
 
-			topoColor = new Color( 0xffffff ),
-			topoOpacity = 0.5,
-			topoLimit = new Vector2( 0.1, 1e10 ),
-			topoFadeLimit = new Vector2( 1, 1000 ),
+			topoColor = 		new Color( 0xffffff ),
+			topoOpacity = 		0.5,
+			topoLimit = 		isPlanar ? new Vector2( 0.1, 1 ) : new Vector2( 1, 1e10 ),
+			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
 
-			cartoColor = new Color( 0xffffff ),
-			cartoOpacity = 0.0,
-			cartoLimit = new Vector2( 0.1, 1e10 ),
-			cartoFadeLimit = new Vector2( 0.1, 1e10 ),
+			cartoColor = 		new Color( 0xffffff ),
+			cartoOpacity = 		isPlanar ? 0 : 0.5,
+			cartoLimit = 		new Vector2( 0.1, 1e10 ),
+			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1e4, 1e10 ),
 		} = options;
 
-		this.name = 'TOPO_LINES_CONSTRUCTOR';
+		this.name = 'TOPO_LINES_PLUGIN';
 		this.tiles = null;
 
 		this.topoColor = new Color().set( topoColor );
