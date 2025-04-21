@@ -40,7 +40,6 @@ const ELLIPSOID_FUNC = /* glsl */`
 		float xMultiplier3, yMultiplier3, zMultiplier3;
 
 		for ( int i = 0; i < 2; i ++ ) {
-		// do {
 
 			lambda -= correction;
 
@@ -68,7 +67,6 @@ const ELLIPSOID_FUNC = /* glsl */`
 			float derivative = - 2.0 * denominator;
 			correction = func / derivative;
 
-		// } while ( abs( func ) > EPSILON12 );
 		}
 
 		return vec3(
@@ -85,23 +83,6 @@ const ELLIPSOID_FUNC = /* glsl */`
 		return normalize( pos / radius2 );
 
 	}
-
-	vec3 getPositionToCartographic( vec3 radius, vec3 pos ) {
-
-		// From Cesium function Ellipsoid.cartesianToCartographic
-		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
-		vec3 surfacePoint = getPositionToSurfacePoint( radius, pos );
-		vec3 surfaceNormal = getPositionToNormal( radius, pos );
-
-		vec3 heightDelta = pos - surfacePoint;
-		return vec3(
-			atan( surfaceNormal.y, surfaceNormal.x ),
-			asin( surfaceNormal.z ),
-			sign( dot( heightDelta, pos ) ) * length( heightDelta )
-		);
-
-	}
-
 `;
 
 const MATH_FUNC = /* glsl */`
@@ -178,7 +159,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					uniform vec3 ellipsoid;
 					uniform mat4 frame;
-					varying vec4 vCarto;
+					varying vec4 vCartographic;
 
 				#endif
 
@@ -200,10 +181,16 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					mat4 invFrame = inverse( frame );
 					vec3 localPosition = ( invFrame * vec4( wPosition, 1 ) ).xyz;
-					vec3 cartographic = getPositionToCartographic( ellipsoid, localPosition );
 
-					vCarto.xyz = getPositionToNormal( ellipsoid, localPosition );
-					vCarto.w = cartographic.z;
+					// From Cesium function Ellipsoid.cartesianToCartographic
+					// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/Core/Ellipsoid.js#L463
+					vec3 surfacePoint = getPositionToSurfacePoint( ellipsoid, localPosition );
+					vec3 surfaceNormal = getPositionToNormal( ellipsoid, localPosition );
+					vec3 heightDelta = localPosition - surfacePoint;
+					float height = sign( dot( heightDelta, localPosition ) ) * length( heightDelta );
+
+					vCartographic.xyz = surfaceNormal;
+					vCartographic.w = height;
 
 				}
 				#endif
@@ -226,7 +213,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_ELLIPSOID && USE_TOPO_LINES
 
 					uniform vec3 ellipsoid;
-					varying vec4 vCarto;
+					varying vec4 vCartographic;
 
 				#endif
 
@@ -252,22 +239,22 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				#endif
 
-				vec3 calculateTopoLines( vec3 value, vec3 delta, vec3 topoStep ) {
+				vec3 calculateTopoLines( vec3 value, vec3 delta, vec3 topoStep, vec2 thickness, vec3 emphasisStride ) {
 
 					vec3 halfTopoStep = topoStep * 0.5;
-					vec3 lineIndex = mod( value, topoStep * 10.0 );
+					vec3 lineIndex = mod( value, topoStep * emphasisStride );
 					lineIndex = abs( lineIndex );
 					lineIndex = step( lineIndex, topoStep * 0.5 );
 
 					// calculate the topography lines
 					// TODO: validate that these thresholds are being used correctly
-					vec3 thickness = vec3(
-						lineIndex.x == 0.0 ? 1.0 : 2.0,
-						lineIndex.y == 0.0 ? 1.0 : 2.0,
-						lineIndex.z == 0.0 ? 1.0 : 2.0
+					vec3 topoThickness = vec3(
+						lineIndex.x == 0.0 ? thickness[ 0 ] : thickness[ 1 ],
+						lineIndex.y == 0.0 ? thickness[ 0 ] : thickness[ 1 ],
+						lineIndex.z == 0.0 ? thickness[ 0 ] : thickness[ 1 ]
 					);
 					vec3 stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
-					vec3 topo = smoothstep( delta * 0.5, delta * - 0.5, stride - delta * thickness );
+					vec3 topo = smoothstep( delta * 0.5, delta * - 0.5, stride - delta * topoThickness );
 
 					// handle steep surfaces that cover multiple bands
 					vec3 subPixelColor = delta / topoStep;
@@ -319,12 +306,10 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 pos;
 					#if USE_TOPO_ELLIPSOID
 
-						// pos = vCarto;
-
-						vec3 surfaceNormal = vCarto.xyz;
+						vec3 surfaceNormal = vCartographic.xyz;
 						pos.x = atan( surfaceNormal.y, surfaceNormal.x );
 						pos.y = asin( surfaceNormal.z );
-						pos.z = vCarto.w;
+						pos.z = vCartographic.w;
 
 						pos.xy *= 180.0 / PI;
 						pos.x += 180.0;
@@ -348,9 +333,46 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 step1 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep * 10.0 ) );
 					step1 = min( vec3( cartoLimit.yy, topoLimit.y ), step1 );
 
+					// thickness and emphasis of lines
+					vec2 thickness0 = vec2( 1.0, 2.0 );
+					vec2 thickness1 = vec2( 1.0, 2.0 );
+					vec3 emphasisStride0 = vec3( 10.0 );
+					vec3 emphasisStride1 = vec3( 10.0 );
+					#if USE_TOPO_ELLIPSOID
+
+						// If our stride is at the root level then adjust the lines and emphasis so it
+						// lies on the quadrant axes
+						if ( step0.x > 1e4 ) {
+
+							thickness0 = vec2( 2.0 );
+							step0.x = 90.0 * 1000.0;
+
+						}
+
+						if ( step0.x > 1e3 ) {
+
+							emphasisStride0.x = 9.0;
+
+						}
+
+						if ( step1.x > 1e4 ) {
+
+							thickness1 = vec2( 2.0 );
+							step1.x = 90.0 * 1000.0;
+
+						}
+
+						if ( step1.x > 1e3 ) {
+
+							emphasisStride1.x = 9.0;
+
+						}
+
+					#endif
+
 					// calculate the topo line value
-					vec3 topo0 = calculateTopoLines( pos, posDelta, step0 );
-					vec3 topo1 = calculateTopoLines( pos, posDelta, step1 );
+					vec3 topo0 = calculateTopoLines( pos, posDelta, step0, thickness0, emphasisStride0 );
+					vec3 topo1 = calculateTopoLines( pos, posDelta, step1, thickness1, emphasisStride1 );
 
 					// calculate the point to fade out the topographic lines based on the unclamped step
 					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
@@ -361,7 +383,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// blend the small and large topo lines
 					vec3 topo = mix( topo1, topo0, topoAlpha ) * maxFadeLimitAlpha * minFadeLimitAlpha;
 
-					// blend with th base color
+					// blend with the base color
 					diffuseColor.rgb = mix( diffuseColor.rgb, cartoColor, max( topo.x * cartoOpacity, topo.y * cartoOpacity ) );
 					diffuseColor.rgb = mix( diffuseColor.rgb, topoColor, topo.z * topoOpacity );
 
