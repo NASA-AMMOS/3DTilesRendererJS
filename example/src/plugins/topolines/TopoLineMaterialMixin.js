@@ -178,7 +178,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					uniform vec3 ellipsoid;
 					uniform mat4 frame;
-					varying vec3 vCarto;
+					varying vec4 vCarto;
 
 				#endif
 
@@ -199,8 +199,11 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				{
 
 					mat4 invFrame = inverse( frame );
-					vec3 localPos = ( invFrame * vec4( wPosition, 1 ) ).xyz;
-					vCarto = getPositionToCartographic( ellipsoid, localPos );
+					vec3 localPosition = ( invFrame * vec4( wPosition, 1 ) ).xyz;
+					vec3 cartographic = getPositionToCartographic( ellipsoid, localPosition );
+
+					vCarto.xyz = getPositionToNormal( ellipsoid, localPosition );
+					vCarto.w = cartographic.z;
 
 				}
 				#endif
@@ -223,7 +226,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_ELLIPSOID && USE_TOPO_LINES
 
 					uniform vec3 ellipsoid;
-					varying vec3 vCarto;
+					varying vec4 vCarto;
 
 				#endif
 
@@ -246,8 +249,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					varying vec4 vScreenUv;
 
 					${ MATH_FUNC }
-
-					${ ELLIPSOID_FUNC }
 
 				#endif
 
@@ -318,8 +319,13 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 pos;
 					#if USE_TOPO_ELLIPSOID
 
-						// pos = getPositionToCartographic( ellipsoid, localPosition );
-						pos = vCarto;
+						// pos = vCarto;
+
+						vec3 surfaceNormal = vCarto.xyz;
+						pos.x = atan( surfaceNormal.y, surfaceNormal.x );
+						pos.y = asin( surfaceNormal.z );
+						pos.z = vCarto.w;
+
 						pos.xy *= 180.0 / PI;
 						pos.x += 180.0;
 						pos.xy *= 1000.0;
@@ -335,14 +341,12 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// calculate the lines on each axis
 					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
 
-					// TODO: we want to fade these out still?
-					// TODO: fix this
 					// calculate the step for the narrow and thick lines, limiting the minimum stride
 					vec3 step0 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep ) );
-					// step0 = min( vec3( cartoLimit.yy, topoLimit.y ), step0 );
+					step0 = min( vec3( cartoLimit.yy, topoLimit.y ), step0 );
 
 					vec3 step1 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep * 10.0 ) );
-					// step1 = min( vec3( cartoLimit.yy, topoLimit.y ), step1 );
+					step1 = min( vec3( cartoLimit.yy, topoLimit.y ), step1 );
 
 					// calculate the topo line value
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0 );
