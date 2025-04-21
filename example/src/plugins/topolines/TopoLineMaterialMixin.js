@@ -256,9 +256,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// calculate the topography lines
 					// TODO: validate that these thresholds are being used correctly
 					vec3 thickness = vec3(
-						lineIndex.x == 0.0 ? 1.5 : 2.0,
-						lineIndex.y == 0.0 ? 1.5 : 2.0,
-						lineIndex.z == 0.0 ? 1.5 : 2.0
+						lineIndex.x == 0.0 ? 1.0 : 2.0,
+						lineIndex.y == 0.0 ? 1.0 : 2.0,
+						lineIndex.z == 0.0 ? 1.0 : 2.0
 					);
 					vec3 stride = 2.0 * abs( mod( value + halfTopoStep, topoStep ) - halfTopoStep );
 					vec3 topo = smoothstep( delta * 0.5, delta * - 0.5, stride - delta * thickness );
@@ -285,6 +285,8 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 				{
 
+					float targetPixelsPerStep = 2.0;
+
 					// screen info
 					vec2 screenUv = vScreenUv.xy / vScreenUv.w;
 					vec2 resolution = 1.0 / vec2( dFdx( screenUv.x ), dFdy( screenUv.y ) );
@@ -295,17 +297,17 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec4 p1 = projectionMatrix * vec4( 1.0, 1.0, distanceFromCamera, 1 );
 
 					// amount of pixel change per meter in screen space
-					vec2 screenDelta = ( p1 / p1.w ).xy - ( p0 / p0.w ).xy;
-					vec2 pixelDelta = 0.5 * screenDelta * resolution;
+					vec2 clipSpaceDelta = ( p1 / p1.w ).xy - ( p0 / p0.w ).xy;
+					vec2 pixelDelta = abs( ( 10.0 / targetPixelsPerStep ) * clipSpaceDelta * resolution );
 					float pixelChange = max( pixelDelta.x, pixelDelta.y );
-					float scalarChange = 500.0 / pixelChange;
 
-					// calculate the transition boundary for this pixel
-					// TODO: tune this - perhaps a different scaling mechanism is needed rather than log so
-					// the distances align more as anticipated. Ideally we would be able to target a certain
-					// amount of pixel change per pixel for the boundaries
-					float topoBoundary = ( - 2.0 + 0.75 * log10( 0.25 * scalarChange ) );
-					float topoAlpha = smoothstep( 1.0, 0.5, mod( topoBoundary, 1.0 ) );
+					// amount of meter change per pixel
+					float meterPerPixel = 1.0 / pixelChange;
+
+					// calculate the nearest power of 10 that the meters
+					float nearestPow10 = 2.0 + log10( meterPerPixel );
+					float topoAlpha = smoothstep( 1.0, 0.5, mod( nearestPow10, 1.0 ) );
+					float topoStep = pow( 10.0, floor( nearestPow10 ) );
 
 					// get the height value to use for topo lines
 					vec3 pos;
@@ -327,7 +329,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					// calculate the lines on each axis
 					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
-					float topoStep = pow( 10.0, ceil( topoBoundary ) );
 
 					// calculate the step for the narrow and thick lines, limiting the minimum stride
 					vec3 step0 = max( vec3( cartoLimits.xx, topoLimits.x ), vec3( topoStep ) );
