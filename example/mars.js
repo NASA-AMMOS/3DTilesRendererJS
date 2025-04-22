@@ -10,6 +10,7 @@ import {
 	FogExp2,
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { TopoLinesPlugin } from './src/plugins/topolines/TopoLinesPlugin.js';
 
 let camera, controls, scene, renderer;
 let groundTiles, skyTiles;
@@ -18,6 +19,7 @@ const params = {
 
 	errorTarget: 12,
 	displayBoxBounds: false,
+	displayTopoLines: false,
 	fog: false,
 
 };
@@ -47,6 +49,7 @@ function init() {
 	controls = new EnvironmentControls( scene, camera, renderer.domElement );
 	controls.minZoomDistance = 2;
 	controls.cameraRadius = 1;
+	controls.enableDamping = true;
 
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff );
@@ -62,6 +65,7 @@ function init() {
 
 	groundTiles = new TilesRenderer( 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json' );
 	groundTiles.registerPlugin( new DebugTilesPlugin() );
+	groundTiles.registerPlugin( new TopoLinesPlugin() );
 	groundTiles.fetchOptions.mode = 'cors';
 	groundTiles.lruCache.minSize = 900;
 	groundTiles.lruCache.maxSize = 1300;
@@ -85,6 +89,7 @@ function init() {
 	} );
 
 	gui.add( params, 'displayBoxBounds' );
+	gui.add( params, 'displayTopoLines' );
 	gui.add( params, 'errorTarget', 0, 100 );
 	gui.open();
 
@@ -109,6 +114,8 @@ function render() {
 	groundTiles.errorTarget = params.errorTarget;
 	groundTiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = params.displayBoxBounds;
 	skyTiles.getPluginByName( 'DEBUG_TILES_PLUGIN' ).displayBoxBounds = params.displayBoxBounds;
+
+	groundTiles.getPluginByName( 'TOPO_LINES_PLUGIN' ).topoOpacity = params.displayTopoLines ? 0.5 : 0;
 
 	groundTiles.setCamera( camera );
 	groundTiles.setResolutionFromRenderer( camera, renderer );
