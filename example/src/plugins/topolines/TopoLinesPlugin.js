@@ -136,7 +136,7 @@ export class TopoLinesPlugin {
 
 				if ( c.material ) {
 
-					const { defines } = c.material.defines;
+					const { defines } = c.material;
 					if ( defines.USE_TOPO_ELLIPSOID !== USE_TOPO_ELLIPSOID ) {
 
 						defines.USE_TOPO_ELLIPSOID = USE_TOPO_ELLIPSOID;
