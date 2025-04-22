@@ -126,6 +126,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 		cartoLimit: { value: new Vector2( 0, 1e10 ) },
 		cartoFadeLimit: { value: new Vector2( 0, 1e10 ) },
 
+		thickness: { value: 1.0 },
 	};
 
 	material.defines = {
@@ -220,6 +221,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 
 					uniform mat4 frame;
+					uniform float thickness;
 
 					uniform vec3 topoColor;
 					uniform float topoOpacity;
@@ -369,6 +371,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 						}
 
 					#endif
+
+					thickness0 *= thickness;
+					thickness1 *= thickness;
 
 					// calculate the topo line value
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0, thickness0, emphasisStride0 );

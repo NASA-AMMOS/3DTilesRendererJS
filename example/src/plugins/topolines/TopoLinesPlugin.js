@@ -54,12 +54,26 @@ export class TopoLinesPlugin {
 
 	}
 
+	get thickness() {
+
+		return this.thicknessUniform.value;
+
+	}
+
+	set thickness( v ) {
+
+		this.thicknessUniform.value = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		const isPlanar = 'projection' in options ? options.projection === 'planar' : true;
 
 		const {
 			projection = 'planar',
+
+			thickness = 		window.devicePixelRatio,
 
 			topoColor = 		new Color( 0xffffff ),
 			topoOpacity = 		0.5,
@@ -74,6 +88,8 @@ export class TopoLinesPlugin {
 
 		this.name = 'TOPO_LINES_PLUGIN';
 		this.tiles = null;
+
+		this.thicknessUniform = { value: thickness };
 
 		this.topoColor = new Color().set( topoColor );
 		this.topoOpacityUniform = { value: topoOpacity };
@@ -102,6 +118,8 @@ export class TopoLinesPlugin {
 					const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
 					params.ellipsoid.value = tiles.ellipsoid.radius;
 					params.frame.value = tiles.group.matrixWorld;
+
+					params.thickness = this.thicknessUniform;
 
 					params.topoColor.value = this.topoColor;
 					params.topoOpacity = this.topoOpacityUniform;
