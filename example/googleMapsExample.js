@@ -25,6 +25,7 @@ import {
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { TopoLinesPlugin } from './src/plugins/topolines/TopoLinesPlugin.js';
 
 let controls, scene, renderer, tiles, transition;
 let statsContainer, stats;
@@ -36,6 +37,7 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	displayTopoLines: false,
 	errorTarget: 40,
 
 	reload: reinstantiateTiles,
@@ -61,6 +63,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
@@ -156,6 +159,7 @@ function init() {
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
+	exampleOptions.add( params, 'displayTopoLines' ).listen();
 	exampleOptions.add( params, 'enableCacheDisplay' );
 	exampleOptions.add( params, 'enableRendererStats' );
 	exampleOptions.add( params, 'errorTarget', 5, 100, 1 ).onChange( () => {
@@ -314,6 +318,10 @@ function animate() {
 	const camera = transition.camera;
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
+
+	const plugin = tiles.getPluginByName( 'TOPO_LINES_PLUGIN' );
+	plugin.topoOpacity = params.displayTopoLines ? 0.5 : 0;
+	plugin.cartoOpacity = params.displayTopoLines ? 0.5 : 0;
 
 	// update tiles
 	camera.updateMatrixWorld();
