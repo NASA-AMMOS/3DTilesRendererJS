@@ -6,9 +6,12 @@ import {
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
 import { TilesFadePlugin, UpdateOnChangePlugin, XYZTilesPlugin, } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { asyncScheduler, fromEvent, merge, Subject, takeUntil, throttleTime } from 'rxjs';
 
 let controls, scene, renderer;
 let tiles, camera;
+const resize$ = new Subject();
+const unsubscribe$ = new Subject();
 
 const params = {
 
@@ -115,12 +118,42 @@ function initTiles() {
 		// create the controls
 		controls = new GlobeControls( scene, camera, renderer.domElement );
 		controls.setTilesRenderer( tiles );
-		controls.enableDamping = true;
+		controls.enableDamping = false;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 		controls.camera.quaternion.identity();
 		controls.minDistance = 150;
 
 	}
+
+	unsubscribe$.next();
+
+	// listen to events to call render() on change
+	merge(
+		fromEvent( controls, 'change' ),
+		fromEvent( controls, 'end' ),
+		fromEvent( tiles, 'load-content' ),
+		fromEvent( tiles, 'force-rerender' ),
+		resize$,
+	)
+		.pipe(
+			takeUntil( unsubscribe$ ),
+			// throttle to maximum of 50 FPS
+			throttleTime( 20, asyncScheduler, { leading: false, trailing: true } ),
+		)
+		.subscribe( () => {
+
+			render();
+
+		} );
+
+	// workaround for initial loading
+	fromEvent( tiles, 'load-tile-set' )
+		.pipe( takeUntil( unsubscribe$ ) )
+		.subscribe( () => {
+
+			render();
+
+		} );
 
 }
 
@@ -132,11 +165,11 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
+	resize$.next();
+
 }
 
 function render() {
-
-	requestAnimationFrame( render );
 
 	controls.update();
 	camera.updateMatrixWorld();
