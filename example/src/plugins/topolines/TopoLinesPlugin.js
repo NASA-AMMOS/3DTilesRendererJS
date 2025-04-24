@@ -75,11 +75,15 @@ export class TopoLinesPlugin {
 
 			thickness = 		window.devicePixelRatio,
 
+			// options for topographic lines
+			// "topoLimit" refers to the min and max distances between each topo line
+			// "topoFadeLimit" refers to the fade in and out point of the topo lines as a whole
 			topoColor = 		new Color( 0xffffff ),
 			topoOpacity = 		0.5,
 			topoLimit = 		isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
 			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
 
+			// options for cartesian and cartographic lines when in planar and ellipsoid mode respectively
 			cartoColor = 		new Color( 0xffffff ),
 			cartoOpacity = 		isPlanar ? 0 : 0.5,
 			cartoLimit = 		new Vector2( 0.1, 1e10 ),
