@@ -8,6 +8,7 @@ export { ReorientationPlugin } from './three/ReorientationPlugin';
 export { UnloadTilesPlugin } from './three/UnloadTilesPlugin';
 export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
 export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin';
+export { TileFlatteningPlugin } from './three/TileFlatteningPlugin';
 export * from './three/LoadRegionPlugin';
 export * from './three/DebugTilesPlugin';
 

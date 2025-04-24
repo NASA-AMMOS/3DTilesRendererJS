@@ -1,6 +1,6 @@
-import { Mesh } from 'three';
+import { Mesh, Vector3 } from 'three';
 
-export class TileFatteningPlugin {
+export class TileFlatteningPlugin {
 
 	hasShape( mesh: Mesh ): boolean;
 	addShape( mesh: Mesh, direction: Vector3, threshold: number ): void;
