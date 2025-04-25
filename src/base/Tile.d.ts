@@ -1,4 +1,4 @@
-import { TileBase } from './TileBase';
+import { TileBase } from './TileBase.js';
 
 /**
  * Documented 3d-tile state managed by the TilesRenderer* / used/usable in priority / traverseFunctions!

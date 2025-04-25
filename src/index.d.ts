@@ -1,34 +1,34 @@
 // three.js
-export { TilesRenderer, TilesRendererEventMap } from './three/TilesRenderer';
-export { TilesGroup } from './three/TilesGroup';
-export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader';
-export { I3DMLoader, I3DMScene } from './three/loaders/I3DMLoader';
-export { PNTSLoader, PNTSScene } from './three/loaders/PNTSLoader';
-export { CMPTLoader } from './three/loaders/CMPTLoader';
-export { Ellipsoid } from './three/math/Ellipsoid';
-export { EllipsoidRegion } from './three/math/EllipsoidRegion';
-export * as GeoUtils from './three/math/GeoUtils';
-export * from './three/math/GeoConstants';
-export * from './three/math/OBB';
+export { TilesRenderer, TilesRendererEventMap } from './three/TilesRenderer.js';
+export { TilesGroup } from './three/TilesGroup.js';
+export { B3DMLoader, B3DMScene } from './three/loaders/B3DMLoader.js';
+export { I3DMLoader, I3DMScene } from './three/loaders/I3DMLoader.js';
+export { PNTSLoader, PNTSScene } from './three/loaders/PNTSLoader.js';
+export { CMPTLoader } from './three/loaders/CMPTLoader.js';
+export { Ellipsoid } from './three/math/Ellipsoid.js';
+export { EllipsoidRegion } from './three/math/EllipsoidRegion.js';
+export * as GeoUtils from './three/math/GeoUtils.js';
+export * from './three/math/GeoConstants.js';
+export * from './three/math/OBB.js';
 
 // three.js controls
-export { GlobeControls } from './three/controls/GlobeControls';
-export { EnvironmentControls } from './three/controls/EnvironmentControls';
-export { CameraTransitionManager } from './three/controls/CameraTransitionManager';
+export { GlobeControls } from './three/controls/GlobeControls.js';
+export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
+export { CameraTransitionManager } from './three/controls/CameraTransitionManager.js';
 
 // common
-export { TilesRendererBase } from './base/TilesRendererBase';
-export { Tile } from './base/Tile';
-export { TileBase } from './base/TileBase';
-export { Tileset } from './base/Tileset';
-export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase';
-export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase';
-export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase';
-export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase';
-export { LoaderBase } from './base/loaders/LoaderBase';
-export * from './base/constants';
+export { TilesRendererBase } from './base/TilesRendererBase.js';
+export { Tile } from './base/Tile.js';
+export { TileBase } from './base/TileBase.js';
+export { Tileset } from './base/Tileset.js';
+export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase.js';
+export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase.js';
+export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase.js';
+export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase.js';
+export { LoaderBase } from './base/loaders/LoaderBase.js';
+export * from './base/constants.js';
 
-export { LRUCache } from './utilities/LRUCache';
-export { PriorityQueue } from './utilities/PriorityQueue';
-export { BatchTable } from './utilities/BatchTable';
-export { FeatureTable } from './utilities/FeatureTable';
+export { LRUCache } from './utilities/LRUCache.js';
+export { PriorityQueue } from './utilities/PriorityQueue.js';
+export { BatchTable } from './utilities/BatchTable.js';
+export { FeatureTable } from './utilities/FeatureTable.js';

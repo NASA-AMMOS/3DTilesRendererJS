@@ -1,5 +1,5 @@
-import { LRUCache } from '../utilities/LRUCache';
-import { PriorityQueue } from '../utilities/PriorityQueue';
+import { LRUCache } from '../utilities/LRUCache.js';
+import { PriorityQueue } from '../utilities/PriorityQueue.js';
 
 export class TilesRendererBase {
 

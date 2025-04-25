@@ -1,5 +1,5 @@
-import { BatchTable } from '../../utilities/BatchTable';
-import { FeatureTable } from '../../utilities/FeatureTable';
+import { BatchTable } from '../../utilities/BatchTable.js';
+import { FeatureTable } from '../../utilities/FeatureTable.js';
 
 export interface B3DMBaseResult {
 

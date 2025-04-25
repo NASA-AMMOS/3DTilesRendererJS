@@ -1,6 +1,6 @@
 import { Group, Vector3 } from 'three';
-import { Ellipsoid } from '../math/Ellipsoid';
-import { EnvironmentControls } from './EnvironmentControls';
+import { Ellipsoid } from '../math/Ellipsoid.js';
+import { EnvironmentControls } from './EnvironmentControls.js';
 
 export class GlobeControls extends EnvironmentControls {
 
