@@ -17,7 +17,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		heightStart: number, heightEnd: number
 	);
 
-	getBoundingBox( box : Box3, matrix : Matrix4 );
-	getBoundingSphere( sphere : Sphere );
+	getBoundingBox( box : Box3, matrix : Matrix4 ): void;
+	getBoundingSphere( sphere : Sphere ): void;
 
 }
