@@ -87,7 +87,7 @@ export class TopoLinesPlugin {
 			cartoColor = 		new Color( 0xffffff ),
 			cartoOpacity = 		isPlanar ? 0 : 0.5,
 			cartoLimit = 		new Vector2( 0.1, 1e10 ),
-			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1e4, 1e10 ),
+			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1.5 * 1e4, 1e6 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_PLUGIN';
