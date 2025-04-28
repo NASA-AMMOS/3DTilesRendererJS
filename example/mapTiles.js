@@ -12,7 +12,7 @@ let tiles, camera;
 
 const params = {
 
-	errorTarget: window.devicePixelRatio,
+	errorTarget: 1,
 	planar: false,
 
 };
