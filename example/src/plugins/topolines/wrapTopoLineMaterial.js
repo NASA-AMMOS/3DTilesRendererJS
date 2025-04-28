@@ -270,7 +270,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 				{
 
-					float targetPixelsPerStep = pixelRatio;
+					float targetPixelsPerStep = pixelRatio * 2.0;
 
 					// calculate projected screen points
 					float distanceFromCamera = ( viewMatrix * vec4( wPosition, 1.0 ) ).z;
