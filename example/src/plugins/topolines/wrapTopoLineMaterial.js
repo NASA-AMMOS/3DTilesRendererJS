@@ -113,6 +113,9 @@ const MATH_FUNC = /* glsl */`
 export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
+		resolution: { value: new Vector2() },
+		pixelRatio: { value: 1 },
+
 		ellipsoid: { value: new Vector3() },
 		frame: { value: new Matrix4() },
 
@@ -164,12 +167,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				#endif
 
-				#if USE_TOPO_LINES
-
-					varying vec4 vScreenUv;
-
-				#endif
-
 				${ value }
 
 			` )
@@ -196,14 +193,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				}
 				#endif
 
-				#if USE_TOPO_LINES
-				{
-
-					vScreenUv = gl_Position;
-
-				}
-				#endif
-
 			` );
 
 
@@ -220,6 +209,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 				#if USE_TOPO_LINES
 
+					uniform vec2 resolution;
+					uniform float pixelRatio;
+
 					uniform mat4 frame;
 					uniform float thickness;
 
@@ -234,8 +226,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					uniform vec2 cartoFadeLimit;
 
 					uniform mat4 projectionMatrix;
-
-					varying vec4 vScreenUv;
 
 					${ MATH_FUNC }
 
@@ -280,11 +270,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 				{
 
-					float targetPixelsPerStep = 2.0;
-
-					// screen info
-					vec2 screenUv = vScreenUv.xy / vScreenUv.w;
-					vec2 resolution = 1.0 / vec2( dFdx( screenUv.x ), dFdy( screenUv.y ) );
+					float targetPixelsPerStep = pixelRatio;
 
 					// calculate projected screen points
 					float distanceFromCamera = ( viewMatrix * vec4( wPosition, 1.0 ) ).z;
@@ -372,8 +358,8 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					#endif
 
-					thickness0 *= thickness;
-					thickness1 *= thickness;
+					thickness0 *= thickness * pixelRatio;
+					thickness1 *= thickness * pixelRatio;
 
 					// calculate the topo line value
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0, thickness0, emphasisStride0 );

@@ -1,5 +1,23 @@
-import { Color, Vector2 } from 'three';
+import { Color, Mesh, Vector2 } from 'three';
 import { wrapTopoLineMaterial } from './wrapTopoLineMaterial.js';
+
+class ResolutionSampler extends Mesh {
+
+	constructor() {
+
+		super();
+
+	}
+
+	dispose() {
+
+		this.removeFromParent();
+		this.material.dispose();
+		this.geometry.dispose();
+
+	}
+
+}
 
 export class TopoLinesPlugin {
 
@@ -73,7 +91,7 @@ export class TopoLinesPlugin {
 		const {
 			projection = 'planar',
 
-			thickness = 		window.devicePixelRatio,
+			thickness = 		1,
 
 			// options for topographic lines
 			// "topoLimit" refers to the min and max distances between each topo line
@@ -106,6 +124,10 @@ export class TopoLinesPlugin {
 		this.cartoFadeLimit = new Vector2( ...cartoFadeLimit );
 
 		this._projection = projection;
+		this._pixelRatioUniform = { value: 1 };
+		this._resolution = new Vector2();
+
+		this._resolutionSampleObject = null;
 
 	}
 
@@ -135,6 +157,9 @@ export class TopoLinesPlugin {
 					params.cartoLimit.value = this.cartoLimit;
 					params.cartoFadeLimit.value = this.cartoFadeLimit;
 
+					params.resolution.value = this._resolution;
+					params.pixelRatio = this._pixelRatioUniform;
+
 					c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
 					c.material.needsUpdate = true;
 
@@ -145,6 +170,28 @@ export class TopoLinesPlugin {
 		};
 
 		tiles.addEventListener( 'load-model', this._loadModelCallback );
+
+		// Create an empty
+		const resolutionSampleObject = new ResolutionSampler();
+		resolutionSampleObject.frustumCulled = false;
+		resolutionSampleObject.onBeforeRender = renderer => {
+
+			const renderTarget = renderer.getRenderTarget();
+			if ( renderTarget ) {
+
+				renderTarget.getSize( this._resolution );
+				this._pixelRatioUniform.value = 1;
+
+			} else {
+
+				renderer.getDrawingBufferSize( this._resolution );
+				this._pixelRatioUniform.value = renderer.getPixelRatio();
+
+			}
+
+		};
+		tiles.group.add( resolutionSampleObject );
+		this._resolutionSampleObject = resolutionSampleObject;
 
 	}
 
@@ -188,6 +235,8 @@ export class TopoLinesPlugin {
 
 		this.tiles.removeEventListener( 'load-model', this._loadModelCallback );
 		this.updateDefines();
+
+		this._resolutionSampleObject.dispose();
 
 	}
 
