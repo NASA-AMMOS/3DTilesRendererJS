@@ -112,7 +112,7 @@ The margin around the globe to include when positioning the camera near plane as
 
 Default is 25%.
 
-### farMargin
+### .farMargin
 
 ```js
 farMargin = 0 : number
