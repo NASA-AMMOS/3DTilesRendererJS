@@ -1,8 +1,8 @@
-import { B3DMBaseResult } from '../../base/loaders/B3DMLoaderBase';
-import { BatchTable } from '../../utilities/BatchTable';
-import { FeatureTable } from '../../utilities/FeatureTable';
+import { B3DMBaseResult } from '../../base/loaders/B3DMLoaderBase.js';
+import { BatchTable } from '../../utilities/BatchTable.js';
+import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { LoadingManager, Group } from 'three';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 interface B3DMScene extends Group {
 

@@ -1,6 +1,6 @@
-import { PNTSBaseResult, PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase';
-import { BatchTable } from '../../utilities/BatchTable';
-import { FeatureTable } from '../../utilities/FeatureTable';
+import { PNTSBaseResult, PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase.js';
+import { BatchTable } from '../../utilities/BatchTable.js';
+import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { Points, LoadingManager } from 'three';
 
 interface PNTSScene extends Points {

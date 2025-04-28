@@ -1,4 +1,4 @@
-import { EnvironmentControls } from '../../../src/r3f';
+import { EnvironmentControls } from '../../../src/r3f/index.js';
 import React from 'react';
 
 // EnvironmentControls taking valid props, not expect ts error.

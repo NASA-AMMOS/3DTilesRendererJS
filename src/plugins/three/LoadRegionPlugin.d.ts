@@ -1,7 +1,7 @@
-import { TileBoundingVolume } from '../../three/math/TileBoundingVolume';
-import { Tile } from '../../base/Tile';
-import { TilesRenderer } from '../../three/TilesRenderer';
-import { OBB } from '../../three/math/OBB';
+import { TileBoundingVolume } from '../../three/math/TileBoundingVolume.js';
+import { Tile } from '../../base/Tile.js';
+import { TilesRenderer } from '../../three/TilesRenderer.js';
+import { OBB } from '../../three/math/OBB.js';
 import { Sphere, Ray } from 'three';
 
 declare class Region {

@@ -1,5 +1,5 @@
 import { Matrix4, Box3, Vector3, Plane, Ray, Sphere } from 'three';
-import { ExtendedFrustum } from './ExtendedFrustum';
+import { ExtendedFrustum } from './ExtendedFrustum.js';
 
 export class OBB {
 

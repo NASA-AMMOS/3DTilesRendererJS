@@ -1,4 +1,4 @@
-import { TileBase } from './TileBase';
+import { TileBase } from './TileBase.js';
 
 /**
  * A 3d-tiles tileset.

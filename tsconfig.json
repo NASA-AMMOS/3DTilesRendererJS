@@ -4,7 +4,7 @@
             "dom",
             "es2015"
         ],
-        "moduleResolution": "node",
+        "module": "node16",
         "types": [],
         "strict": true
     },

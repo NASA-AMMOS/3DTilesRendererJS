@@ -1,5 +1,5 @@
 import { Box3, Sphere, Matrix4 } from 'three';
-import { Ellipsoid } from './Ellipsoid';
+import { Ellipsoid } from './Ellipsoid.js';
 
 export class EllipsoidRegion extends Ellipsoid {
 

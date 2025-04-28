@@ -1,4 +1,4 @@
-import type { CanvasDOMOverlayProps } from './CanvasDOMOverlay';
+import type { CanvasDOMOverlayProps } from './CanvasDOMOverlay.jsx';
 import type { ReactNode, ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { CSSProperties } from 'react';
 

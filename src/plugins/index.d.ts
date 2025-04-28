@@ -1,25 +1,25 @@
 // three.js plugins
-export { CesiumIonAuthPlugin } from './three/CesiumIonAuthPlugin';
-export { GoogleCloudAuthPlugin } from './three/GoogleCloudAuthPlugin';
-export { UpdateOnChangePlugin } from './three/UpdateOnChangePlugin';
-export { TileCompressionPlugin } from './three/TileCompressionPlugin';
-export { GLTFExtensionsPlugin } from './three/GLTFExtensionsPlugin';
-export { ReorientationPlugin } from './three/ReorientationPlugin';
-export { UnloadTilesPlugin } from './three/UnloadTilesPlugin';
-export { TilesFadePlugin } from './three/fade/TilesFadePlugin';
-export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin';
-export { TileFlatteningPlugin } from './three/TileFlatteningPlugin';
-export * from './three/LoadRegionPlugin';
-export * from './three/DebugTilesPlugin';
+export { CesiumIonAuthPlugin } from './three/CesiumIonAuthPlugin.js';
+export { GoogleCloudAuthPlugin } from './three/GoogleCloudAuthPlugin.js';
+export { UpdateOnChangePlugin } from './three/UpdateOnChangePlugin.js';
+export { TileCompressionPlugin } from './three/TileCompressionPlugin.js';
+export { GLTFExtensionsPlugin } from './three/GLTFExtensionsPlugin.js';
+export { ReorientationPlugin } from './three/ReorientationPlugin.js';
+export { UnloadTilesPlugin } from './three/UnloadTilesPlugin.js';
+export { TilesFadePlugin } from './three/fade/TilesFadePlugin.js';
+export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin.js';
+export { TileFlatteningPlugin } from './three/TileFlatteningPlugin.js';
+export * from './three/LoadRegionPlugin.js';
+export * from './three/DebugTilesPlugin.js';
 
 // other formats
-export * from './three/images/DeepZoomImagePlugin';
-export * from './three/images/EPSGTilesPlugin';
+export * from './three/images/DeepZoomImagePlugin.js';
+export * from './three/images/EPSGTilesPlugin.js';
 
 // common plugins
-export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin';
+export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin.js';
 
 // gltf extensions
-export { GLTFCesiumRTCExtension } from './three/gltf/GLTFCesiumRTCExtension';
-export { GLTFStructuralMetadataExtension } from './three/gltf/GLTFStructuralMetadataExtension';
-export { GLTFMeshFeaturesExtension } from './three/gltf/GLTFMeshFeaturesExtension';
+export { GLTFCesiumRTCExtension } from './three/gltf/GLTFCesiumRTCExtension.js';
+export { GLTFStructuralMetadataExtension } from './three/gltf/GLTFStructuralMetadataExtension.js';
+export { GLTFMeshFeaturesExtension } from './three/gltf/GLTFMeshFeaturesExtension.js';

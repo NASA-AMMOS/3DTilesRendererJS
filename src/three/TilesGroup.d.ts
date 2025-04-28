@@ -1,5 +1,5 @@
 import { Group, Matrix4 } from 'three';
-import { TilesRenderer } from './TilesRenderer';
+import { TilesRenderer } from './TilesRenderer.js';
 
 export class TilesGroup extends Group {
 
