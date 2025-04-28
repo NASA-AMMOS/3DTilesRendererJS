@@ -17,7 +17,7 @@ let groundTiles, skyTiles;
 
 const params = {
 
-	errorTarget: 12,
+	errorTarget: 6,
 	displayBoxBounds: false,
 	displayTopoLines: false,
 	fog: false,
