@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Implicit Subtree files being loaded with incorrect headers.
 - Ambiguous typing.
 - Correctly export `TilesFlatteningPlugin`.
+- Types: Added file extensions to enable support for older node versions.
 
 ### Added
 - QuantizedMeshPlugin: A plugin for loading quantized mesh files.
