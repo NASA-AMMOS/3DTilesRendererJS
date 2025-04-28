@@ -531,7 +531,7 @@ Sets the resolution being rendered to for the given camera. Returns `false` if t
 setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean
 ```
 
-Sets the resolution being rendered to for the given camera via renderer which accounts for canvas size and current pixel ratio. Returns `false` if the camera is not being tracked.
+Sets the resolution being rendered to for the given camera via renderer which accounts for canvas size. The pixel ratio is ignored to help normalize the amount of data loaded and performance across devices. Returns `false` if the camera is not being tracked.
 
 ### .forEachLoadedModel
 

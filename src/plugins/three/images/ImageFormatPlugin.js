@@ -56,7 +56,7 @@ export class ImageFormatPlugin {
 
 		if ( this.useRecommendedSettings ) {
 
-			tiles.errorTarget = window.devicePixelRatio;
+			tiles.errorTarget = 1;
 			// TODO: apply skip traversal settings here once supported, as well, for faster loading
 
 		}
