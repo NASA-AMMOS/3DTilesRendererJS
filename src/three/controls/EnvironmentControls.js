@@ -101,6 +101,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this.enableDamping = false;
 		this.dampingFactor = 0.15;
 
+		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
+		this.useFallbackPlane = true;
+
 		// settings for GlobeControls
 		this.reorientOnDrag = true;
 		this.scaleZoomOrientationAtEdges = false;
@@ -138,9 +141,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.up = new Vector3( 0, 1, 0 );
 		this.clock = new Clock();
-
-		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
-		this.useFallbackPlane = true;
 
 		this._detachCallback = null;
 		this._upInitialized = false;
