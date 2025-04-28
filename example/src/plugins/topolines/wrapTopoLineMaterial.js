@@ -368,7 +368,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					// calculate the point to fade out the topographic lines based on the unclamped step
 					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
 					vec3 minFadeLimit = vec3( cartoFadeLimit.xx, topoFadeLimit.x );
-					vec3 maxFadeLimitAlpha = 1.0 - smoothstep( maxFadeLimit * 0.75, maxFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
+					float FADE_SIZE = 0.25;
+					float FADE_SIZE_HALF = FADE_SIZE * 0.5;
+					vec3 maxFadeLimitAlpha = 1.0 - smoothstep( maxFadeLimit * ( 1.0 - FADE_SIZE_HALF ), maxFadeLimit * ( 1.0 + FADE_SIZE_HALF ), vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 					vec3 minFadeLimitAlpha = smoothstep( minFadeLimit * 0.75, minFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 
 					// blend the small and large topo lines
