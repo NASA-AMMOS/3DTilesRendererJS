@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ambiguous typing.
 - Correctly export `TilesFlatteningPlugin`.
 - Types: Added file extensions to enable support for older node versions.
+- TilesRenderer: Removed implicit use of "devicePixelRatio" when setting camera resolution to ensure more consistent error target calculations across devices.
 
 ### Added
 - QuantizedMeshPlugin: A plugin for loading quantized mesh files.
