@@ -10,15 +10,15 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 let controls, scene, renderer;
 let tiles, camera;
 
-// throttled render callback to maximum of 50 FPS
-const render$ = throttle( render, 20 );
-
 const params = {
 
 	errorTarget: window.devicePixelRatio,
 	planar: false,
 
 };
+
+// debounced render function
+const debounceRender = debounce( render );
 
 init();
 render();
@@ -126,14 +126,12 @@ function initTiles() {
 	}
 
 	// listen to events to call render() on change
-	controls.addEventListener( 'change', render$ );
-	controls.addEventListener( 'end', render$ );
-	tiles.addEventListener( 'load-model', render$ );
-	tiles.addEventListener( 'force-rerender', render$ );
+	controls.addEventListener( 'change', debounceRender );
+	controls.addEventListener( 'end', debounceRender );
+	tiles.addEventListener( 'load-model', debounceRender );
+	tiles.addEventListener( 'force-rerender', debounceRender );
+	tiles.addEventListener( 'load-tile-set', debounceRender );
 
-	// workaround for initial loading
-	tiles.addEventListener( 'load-tile-set', render );
-	
 	render();
 
 }
@@ -146,7 +144,7 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	render$();
+	debounceRender();
 
 }
 
@@ -164,52 +162,20 @@ function render() {
 
 }
 
-function throttle(
-	callback,
-	delay,
-	leading = false,
-	trailing = true,
-) {
+function debounce( callback ) {
 
-	let timeout;
-	let previous = 0;
-
-	const later = () => {
-
-		previous = leading === false ? 0 : new Date().getTime();
-		timeout = undefined;
-		callback();
-
-	};
-
+	let scheduled = false;
 	return () => {
 
-		const now = new Date().getTime();
+		if ( ! scheduled ) {
 
-		if ( ! previous && leading === false ) {
+			scheduled = true;
+			requestAnimationFrame( () => {
 
-			previous = now;
+				scheduled = false;
+				callback();
 
-		}
-
-		const remaining = delay - ( now - previous );
-
-		if ( remaining <= 0 || remaining > delay ) {
-
-			if ( timeout ) {
-
-				clearTimeout( timeout );
-				timeout = undefined;
-
-			}
-
-			previous = now;
-
-			callback();
-
-		} else if ( ! timeout && trailing !== false ) {
-
-			timeout = window.setTimeout( later, remaining );
+			} );
 
 		}
 
