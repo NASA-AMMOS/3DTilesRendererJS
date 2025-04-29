@@ -1,5 +1,17 @@
-import { Color, Mesh, Vector2 } from 'three';
+import { Color, MathUtils, Matrix4, Mesh, Vector2, Vector3, Vector4 } from 'three';
 import { wrapTopoLineMaterial } from './wrapTopoLineMaterial.js';
+
+const _vec = /* @__PURE__ */ new Vector3();
+const _vec2 = /* @__PURE__ */ new Vector2();
+const _pos = /* @__PURE__ */ new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _surfacePoint = /* @__PURE__ */ new Vector3();
+const _p0 = /* @__PURE__ */ new Vector3();
+const _p1 = /* @__PURE__ */ new Vector3();
+const _invFrame = /* @__PURE__ */ new Matrix4();
+const _viewMatrix = /* @__PURE__ */ new Matrix4();
+const _step0 = /* @__PURE__ */ new Vector3();
+const _step1 = /* @__PURE__ */ new Vector3();
 
 class ResolutionSampler extends Mesh {
 
@@ -125,9 +137,118 @@ export class TopoLinesPlugin {
 
 		this._projection = projection;
 		this._pixelRatioUniform = { value: 1 };
-		this._resolution = new Vector2();
+		this._resolution = new Vector2( 1, 1 );
 
 		this._resolutionSampleObject = null;
+
+	}
+
+	// function for calculating the positioning of topographic lines at a given world position
+	computeTopographicLineInfo( camera, worldPos, target = {} ) {
+
+		// initialize the target
+		target.alpha = 0;
+		target.value = 0;
+		target.fade = 0;
+		target.emphasisStride = 0;
+
+		target.min = target.min || {
+			step: 0,
+			stepInPixels: 0,
+		};
+
+		target.max = target.max || {
+			step: 0,
+			stepInPixels: 0,
+		};
+
+		// retrieve local variables
+		const { cartoLimit, cartoFadeLimit, topoLimit, topoFadeLimit } = this;
+		const pixelRatio = this._pixelRatioUniform.value;
+		const resolution = this._resolution;
+		const projection = this._projection;
+		const invFrame = _invFrame.copy( this.tiles.group.matrixWorld ).invert();
+		const viewMatrix = _viewMatrix.copy( camera.matrixWorld ).invert();
+
+		// port of calculation of topographic line stride
+		const targetPixelsPerStep = pixelRatio * 2.0;
+
+		// calculate projected screen points
+		const distanceFromCamera = _vec.copy( worldPos ).applyMatrix4( viewMatrix ).z;
+		const p0 = _p0.set( 0, 0, distanceFromCamera ).applyMatrix4( camera.projectionMatrix );
+		const p1 = _p1.set( 1, 1, distanceFromCamera ).applyMatrix4( camera.projectionMatrix );
+
+		// amount of pixel change per meter in screen space
+		const pixelDelta = _vec2.subVectors( p1, p0 ).multiply( resolution ).multiplyScalar( 10.0 / targetPixelsPerStep );
+		const pixelChange = Math.max( Math.abs( pixelDelta.x ), Math.abs( pixelDelta.y ) );
+
+		// amount of meter change per pixel
+		const meterPerPixel = 1.0 / pixelChange;
+
+		// calculate the nearest power of 10 that the meters
+		const nearestPow10 = 2.0 + Math.log10( meterPerPixel );
+		const topoAlpha = MathUtils.smoothstep( 0.75, 0.5, nearestPow10 % 1 );
+		const topoStep = Math.pow( 10.0, Math.floor( nearestPow10 ) );
+
+		if ( projection === 'ellipsoid' ) {
+
+			_pos.copy( worldPos ).applyMatrix4( invFrame );
+
+			const ellipsoid = this.tiles.ellipsoid;
+			ellipsoid.getPositionToSurfacePoint( _pos, _surfacePoint );
+			ellipsoid.getPositionToNormal( _pos, _norm );
+
+			const height = _pos.distanceTo( _surfacePoint );
+
+			_pos.x = Math.atan( _norm.y, _norm.x );
+			_pos.y = Math.asin( _norm.z );
+			_pos.z = height;
+
+			_pos.x = _pos.x * MathUtils.RAD2DEG;
+			_pos.y = _pos.x * MathUtils.RAD2DEG;
+
+			_pos.x += 180;
+
+			_pos.x *= 1000.0;
+			_pos.y *= 1000.0;
+
+		} else {
+
+			_pos.copy( worldPos ).applyMatrix4( invFrame );
+			_pos.x *= 0.1;
+			_pos.y *= 0.1;
+
+		}
+
+		_step0.x = MathUtils.clamp( topoStep, cartoLimit.x, cartoLimit.y );
+		_step0.y = MathUtils.clamp( topoStep, cartoLimit.x, cartoLimit.y );
+		_step0.z = MathUtils.clamp( topoStep, topoLimit.x, topoLimit.y );
+
+		_step1.x = MathUtils.clamp( topoStep * 10.0, cartoLimit.x, cartoLimit.y );
+		_step1.y = MathUtils.clamp( topoStep * 10.0, cartoLimit.x, cartoLimit.y );
+		_step1.z = MathUtils.clamp( topoStep * 10.0, topoLimit.x, topoLimit.y );
+
+		const FADE_SIZE = 0.25;
+		const FADE_SIZE_HALF = FADE_SIZE * 0.5;
+		// const maxFadeLimitAlphaCarto = 1.0 - MathUtils.smoothstep( cartoFadeLimit.y * ( 1.0 - FADE_SIZE_HALF ), cartoFadeLimit.y * ( 1.0 + FADE_SIZE_HALF ), Math.pow( 10.0, nearestPow10 + 1.0 ) );
+		// const minFadeLimitAlphaCarto = MathUtils.smoothstep( cartoFadeLimit.x * 0.75, cartoFadeLimit.x * 1.25, Math.pow( 10.0, nearestPow10 + 1.0 ) );
+		const maxFadeLimitAlphaTopo = 1.0 - MathUtils.smoothstep( topoFadeLimit.y * ( 1.0 - FADE_SIZE_HALF ), topoFadeLimit.y * ( 1.0 + FADE_SIZE_HALF ), Math.pow( 10.0, nearestPow10 + 1.0 ) );
+		const minFadeLimitAlphaTopo = MathUtils.smoothstep( cartoFadeLimit.y * 0.75, cartoFadeLimit.y * 1.25, Math.pow( 10.0, nearestPow10 + 1.0 ) );
+
+		// TODO: pixel step seems large
+
+		// result
+		target.alpha = topoAlpha;
+		target.fade = maxFadeLimitAlphaTopo * minFadeLimitAlphaTopo;
+		target.value = _pos.z;
+		target.emphasisStride = 10;
+
+		target.min.step = _step0.z;
+		target.min.stepInPixels = _step0.z / meterPerPixel;
+		target.max.step = _step1.z;
+		target.max.stepInPixels = _step1.z / meterPerPixel;
+
+		return target;
 
 	}
 

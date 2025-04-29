@@ -287,7 +287,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 					// calculate the nearest power of 10 that the meters
 					float nearestPow10 = 2.0 + log10( meterPerPixel );
-					float topoAlpha = smoothstep( 1.0, 0.5, mod( nearestPow10, 1.0 ) );
+					float topoAlpha = smoothstep( 0.75, 0.5, mod( nearestPow10, 1.0 ) );
 					float topoStep = pow( 10.0, floor( nearestPow10 ) );
 
 					// get the height value to use for topo lines
@@ -366,10 +366,10 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec3 topo1 = calculateTopoLines( pos, posDelta, step1, thickness1, emphasisStride1 );
 
 					// calculate the point to fade out the topographic lines based on the unclamped step
-					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
-					vec3 minFadeLimit = vec3( cartoFadeLimit.xx, topoFadeLimit.x );
 					float FADE_SIZE = 0.25;
 					float FADE_SIZE_HALF = FADE_SIZE * 0.5;
+					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
+					vec3 minFadeLimit = vec3( cartoFadeLimit.xx, topoFadeLimit.x );
 					vec3 maxFadeLimitAlpha = 1.0 - smoothstep( maxFadeLimit * ( 1.0 - FADE_SIZE_HALF ), maxFadeLimit * ( 1.0 + FADE_SIZE_HALF ), vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 					vec3 minFadeLimitAlpha = smoothstep( minFadeLimit * 0.75, minFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 
