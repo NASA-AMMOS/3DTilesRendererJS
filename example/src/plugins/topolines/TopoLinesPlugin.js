@@ -170,6 +170,9 @@ export class TopoLinesPlugin {
 		const invFrame = _invFrame.copy( this.tiles.group.matrixWorld ).invert();
 		const viewMatrix = _viewMatrix.copy( camera.matrixWorld ).invert();
 
+		const FADE_SIZE = 0.25;
+		const FADE_SIZE_HALF = FADE_SIZE * 0.5;
+
 		// port of calculation of topographic line stride
 		const targetPixelsPerStep = pixelRatio * 2.0;
 
@@ -179,15 +182,16 @@ export class TopoLinesPlugin {
 		const p1 = _p1.set( 1, 1, distanceFromCamera ).applyMatrix4( camera.projectionMatrix );
 
 		// amount of pixel change per meter in screen space
-		const pixelDelta = _vec2.subVectors( p1, p0 ).multiply( resolution ).multiplyScalar( 10.0 / targetPixelsPerStep );
-		const pixelChange = Math.max( Math.abs( pixelDelta.x ), Math.abs( pixelDelta.y ) );
+		const pixelDelta = _vec2.subVectors( p1, p0 ).multiply( resolution );
 
 		// amount of meter change per pixel
-		const meterPerPixel = 1.0 / pixelChange;
+		const pixelsPerMeter = Math.max( Math.abs( pixelDelta.x ), Math.abs( pixelDelta.y ) );
+		const metersPerPixel = 1.0 / pixelsPerMeter;
 
 		// calculate the nearest power of 10 that the meters
-		const nearestPow10 = 2.0 + Math.log10( meterPerPixel );
-		const topoAlpha = MathUtils.smoothstep( 0.75, 0.5, nearestPow10 % 1 );
+		// TODO: this pixel size target / topo step calculation is too much of an estimation
+		const nearestPow10 = 2.0 + Math.log10( targetPixelsPerStep * metersPerPixel / 10.0 );
+		const topoAlpha = MathUtils.smoothstep( 0.5 + FADE_SIZE, 0.5, nearestPow10 % 1 );
 		const topoStep = Math.pow( 10.0, Math.floor( nearestPow10 ) );
 
 		if ( projection === 'ellipsoid' ) {
@@ -228,14 +232,10 @@ export class TopoLinesPlugin {
 		_step1.y = MathUtils.clamp( topoStep * 10.0, cartoLimit.x, cartoLimit.y );
 		_step1.z = MathUtils.clamp( topoStep * 10.0, topoLimit.x, topoLimit.y );
 
-		const FADE_SIZE = 0.25;
-		const FADE_SIZE_HALF = FADE_SIZE * 0.5;
 		// const maxFadeLimitAlphaCarto = 1.0 - MathUtils.smoothstep( cartoFadeLimit.y * ( 1.0 - FADE_SIZE_HALF ), cartoFadeLimit.y * ( 1.0 + FADE_SIZE_HALF ), Math.pow( 10.0, nearestPow10 + 1.0 ) );
 		// const minFadeLimitAlphaCarto = MathUtils.smoothstep( cartoFadeLimit.x * 0.75, cartoFadeLimit.x * 1.25, Math.pow( 10.0, nearestPow10 + 1.0 ) );
 		const maxFadeLimitAlphaTopo = 1.0 - MathUtils.smoothstep( topoFadeLimit.y * ( 1.0 - FADE_SIZE_HALF ), topoFadeLimit.y * ( 1.0 + FADE_SIZE_HALF ), Math.pow( 10.0, nearestPow10 + 1.0 ) );
-		const minFadeLimitAlphaTopo = MathUtils.smoothstep( cartoFadeLimit.y * 0.75, cartoFadeLimit.y * 1.25, Math.pow( 10.0, nearestPow10 + 1.0 ) );
-
-		// TODO: pixel step seems large
+		const minFadeLimitAlphaTopo = MathUtils.smoothstep( cartoFadeLimit.y * ( 1.0 - FADE_SIZE_HALF ), cartoFadeLimit.y * ( 1.0 + FADE_SIZE_HALF ), Math.pow( 10.0, nearestPow10 + 1.0 ) );
 
 		// result
 		target.alpha = topoAlpha;
@@ -244,9 +244,9 @@ export class TopoLinesPlugin {
 		target.emphasisStride = 10;
 
 		target.min.step = _step0.z;
-		target.min.stepInPixels = _step0.z / meterPerPixel;
+		target.min.stepInPixels = _step0.z * pixelsPerMeter;
 		target.max.step = _step1.z;
-		target.max.stepInPixels = _step1.z / meterPerPixel;
+		target.max.stepInPixels = _step1.z * pixelsPerMeter;
 
 		return target;
 
