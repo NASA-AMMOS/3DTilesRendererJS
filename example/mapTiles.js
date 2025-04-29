@@ -6,12 +6,12 @@ import {
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
 import { TilesFadePlugin, UpdateOnChangePlugin, XYZTilesPlugin, } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { asyncScheduler, fromEvent, merge, Subject, takeUntil, throttleTime } from 'rxjs';
 
 let controls, scene, renderer;
 let tiles, camera;
-const render$ = new Subject();
-const unsubscribe$ = new Subject();
+
+// throttled render callback to maximum of 50 FPS
+const render$ = throttle( render, 20 );
 
 const params = {
 
@@ -44,13 +44,6 @@ function init() {
 	// events
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-
-	render$
-		.pipe(
-			// throttle to maximum of 50 FPS
-			throttleTime( 20, asyncScheduler, { leading: false, trailing: true } ),
-		)
-		.subscribe( render );
 
 	// gui initialization
 	const gui = new GUI();
@@ -132,30 +125,16 @@ function initTiles() {
 
 	}
 
-	unsubscribe$.next();
-
 	// listen to events to call render() on change
-	merge(
-		fromEvent( controls, 'change' ),
-		fromEvent( controls, 'end' ),
-		fromEvent( tiles, 'load-content' ),
-		fromEvent( tiles, 'force-rerender' ),
-	)
-		.pipe( takeUntil( unsubscribe$ ) )
-		.subscribe( () => {
-
-			render$.next();
-
-		} );
+	controls.addEventListener( 'change', render$ );
+	controls.addEventListener( 'end', render$ );
+	tiles.addEventListener( 'load-model', render$ );
+	tiles.addEventListener( 'force-rerender', render$ );
 
 	// workaround for initial loading
-	fromEvent( tiles, 'load-tile-set' )
-		.pipe( takeUntil( unsubscribe$ ) )
-		.subscribe( () => {
-
-			render();
-
-		} );
+	tiles.addEventListener( 'load-tile-set', render );
+	
+	render();
 
 }
 
@@ -167,7 +146,7 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	render$.next();
+	render$();
 
 }
 
@@ -182,5 +161,58 @@ function render() {
 	tiles.update();
 
 	renderer.render( scene, camera );
+
+}
+
+function throttle(
+	callback,
+	delay,
+	leading = false,
+	trailing = true,
+) {
+
+	let timeout;
+	let previous = 0;
+
+	const later = () => {
+
+		previous = leading === false ? 0 : new Date().getTime();
+		timeout = undefined;
+		callback();
+
+	};
+
+	return () => {
+
+		const now = new Date().getTime();
+
+		if ( ! previous && leading === false ) {
+
+			previous = now;
+
+		}
+
+		const remaining = delay - ( now - previous );
+
+		if ( remaining <= 0 || remaining > delay ) {
+
+			if ( timeout ) {
+
+				clearTimeout( timeout );
+				timeout = undefined;
+
+			}
+
+			previous = now;
+
+			callback();
+
+		} else if ( ! timeout && trailing !== false ) {
+
+			timeout = window.setTimeout( later, remaining );
+
+		}
+
+	};
 
 }
