@@ -352,7 +352,7 @@ This plugin changes below values to be more efficient for the photorealistic til
 ```js
 tiles.parseQueue.maxJobs = 10;
 tiles.downloadQueue.maxJobs = 30;
-tiles.errorTarget = 40;
+tiles.errorTarget = 20;
 ```
 
 ## CesiumIonAuthPlugin
