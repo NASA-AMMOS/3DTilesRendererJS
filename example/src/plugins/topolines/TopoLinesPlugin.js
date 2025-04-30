@@ -33,6 +33,12 @@ class ResolutionSampler extends Mesh {
 
 export class TopoLinesPlugin {
 
+	get resolution() {
+
+		return this._resolution;
+
+	}
+
 	get topoOpacity() {
 
 		return this.topoOpacityUniform.value;

@@ -9,7 +9,7 @@ function calculatePixelWidth( camera, resolution, distance ) {
 	const v0 = new Vector3( 0, 0, - distance ).applyMatrix4( camera.projectionMatrix );
 	const v1 = new Vector3( WIDTH, 0, - distance ).applyMatrix4( camera.projectionMatrix );
 
-	const pixelsPerMeter = ( Math.abs( v0.x - v1.x ) * resolution.width * 0.5 * devicePixelRatio ) / WIDTH;
+	const pixelsPerMeter = ( Math.abs( v0.x - v1.x ) * resolution.width * 0.5 ) / WIDTH;
 	return 1 / pixelsPerMeter;
 
 }
@@ -18,7 +18,7 @@ function formatNumber( v ) {
 
 	if ( v === null ) {
 
-		return '—';
+		return '--';
 
 	}
 
@@ -84,7 +84,6 @@ export function TopoLineScale() {
 				camera,
 				scene,
 				raycaster,
-				size,
 			} = get();
 
 			raycaster.setFromCamera( pointer, camera );
@@ -94,7 +93,7 @@ export function TopoLineScale() {
 
 				const info = plugin.computeTopographicLineInfo( camera, hit.point );
 				info.width = {
-					metersPerPixel: calculatePixelWidth( camera, size, hit.distance ),
+					metersPerPixel: calculatePixelWidth( camera, plugin.resolution, hit.distance ),
 				};
 				setInfo( info );
 
@@ -141,7 +140,7 @@ export function TopoLineScale() {
 						style={ {
 							minHeight: i === 9 ? '1px' : '1px',
 							opacity: i === 9 ? 1 : 0.5,
-							width: i === 9 ? '25px' : '15px',
+							width: i === 9 ? '15px' : '10px',
 							background: 'white',
 							marginTop: stepInPixels,
 						} }
@@ -215,11 +214,11 @@ export function TopoLineScale() {
 	return <CanvasDOMOverlay>
 		<div style={ {
 			padding: '5px',
-			width: '75px',
+			width: '70px',
 			height: '90px',
 			position: 'absolute',
-			right: 10,
-			bottom: 200,
+			left: 5,
+			bottom: 5,
 			background: 'rgb( 0, 0, 0, 0.35 )',
 			borderRadius: 3,
 			color: 'white',
