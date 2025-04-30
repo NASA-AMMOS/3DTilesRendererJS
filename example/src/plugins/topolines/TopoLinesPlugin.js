@@ -302,7 +302,8 @@ export class TopoLinesPlugin {
 			const renderTarget = renderer.getRenderTarget();
 			if ( renderTarget ) {
 
-				renderTarget.getSize( this._resolution );
+				this._resolution.width = renderTarget.width;
+				this._resolution.height = renderTarget.height;
 				this._pixelRatioUniform.value = 1;
 
 			} else {
