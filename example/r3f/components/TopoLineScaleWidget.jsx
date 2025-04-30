@@ -70,7 +70,7 @@ function getDisplayValue( value ) {
 
 }
 
-export function TopoLineScale() {
+export function TopoLineScaleWidget() {
 
 	const get = useThree( ( { get } ) => get );
 	const [ info, setInfo ] = useState( null );
