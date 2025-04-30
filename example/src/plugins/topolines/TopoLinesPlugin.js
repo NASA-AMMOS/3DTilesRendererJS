@@ -174,7 +174,7 @@ export class TopoLinesPlugin {
 		const FADE_SIZE_HALF = FADE_SIZE * 0.5;
 
 		// port of calculation of topographic line stride
-		const targetPixelsPerStep = pixelRatio * 2.0;
+		const targetPixelsPerStep = pixelRatio * 1.75;
 
 		// calculate projected screen points
 		const distanceFromCamera = _vec.copy( worldPos ).applyMatrix4( viewMatrix ).z;
@@ -182,17 +182,19 @@ export class TopoLinesPlugin {
 		const p1 = _p1.set( 1, 1, distanceFromCamera ).applyMatrix4( camera.projectionMatrix );
 
 		// amount of pixel change per meter in screen space
-		const pixelDelta = _vec2.subVectors( p1, p0 ).multiply( resolution );
+		// multiple by 0.5 since the NDC value range is between [-1, 1]
+		const pixelDelta = _vec2.subVectors( p1, p0 ).multiply( resolution ).multiplyScalar( 0.5 );
 
 		// amount of meter change per pixel
 		const pixelsPerMeter = Math.max( Math.abs( pixelDelta.x ), Math.abs( pixelDelta.y ) );
 		const metersPerPixel = 1.0 / pixelsPerMeter;
+		const targetMeters = targetPixelsPerStep * metersPerPixel;
 
 		// calculate the nearest power of 10 that the meters
 		// TODO: this pixel size target / topo step calculation is too much of an estimation
-		const nearestPow10 = 2.0 + Math.log10( targetPixelsPerStep * metersPerPixel / 10.0 );
-		const topoAlpha = MathUtils.smoothstep( 0.5 + FADE_SIZE, 0.5, nearestPow10 % 1 );
-		const topoStep = Math.pow( 10.0, Math.floor( nearestPow10 ) );
+		const nearestPow10 = Math.log10( targetMeters );
+		const topoAlpha = MathUtils.smoothstep( 1.0, 1.0 - FADE_SIZE, nearestPow10 % 1 );
+		const topoStep = Math.pow( 10.0, Math.ceil( nearestPow10 ) );
 
 		if ( projection === 'ellipsoid' ) {
 
