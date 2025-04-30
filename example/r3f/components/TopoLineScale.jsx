@@ -57,6 +57,7 @@ function getDisplayValue( value ) {
 			exp = - 6;
 			break;
 
+		// TODO: handle this more gracefully. Just fallback to the closest supported units if necessary?
 		default:
 			throw new Error();
 
@@ -108,7 +109,7 @@ export function TopoLineScale() {
 	}, - 100 );
 
 	let elevationValue = null;
-	let stepInPixels = 1000;
+	let stepInPixels = 5;
 	let stepInMeters = null;
 	let metersPerPixel = null;
 	if ( info ) {
@@ -214,12 +215,12 @@ export function TopoLineScale() {
 	return <CanvasDOMOverlay>
 		<div style={ {
 			padding: '5px',
-			width: '70px',
+			width: '65px',
 			height: '90px',
 			position: 'absolute',
 			left: 5,
 			bottom: 5,
-			background: 'rgb( 0, 0, 0, 0.35 )',
+			background: 'rgb( 0, 0, 0, 0.2 )',
 			borderRadius: 3,
 			color: 'white',
 			display: 'flex',
@@ -236,7 +237,7 @@ export function TopoLineScale() {
 				<div style={ {
 					flexGrow: 1,
 				} }>{ formatNumber( elevationValue ) }</div>
-				<div>elev</div>
+				<div>el</div>
 			</div>
 
 			{ widthMeasure }
