@@ -1,4 +1,4 @@
-import { Color, MathUtils, Matrix4, Mesh, Vector2, Vector3, Vector4 } from 'three';
+import { Color, MathUtils, Matrix4, Mesh, Vector2, Vector3 } from 'three';
 import { wrapTopoLineMaterial } from './wrapTopoLineMaterial.js';
 
 const _vec = /* @__PURE__ */ new Vector3();
