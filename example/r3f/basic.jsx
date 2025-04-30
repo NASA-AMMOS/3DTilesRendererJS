@@ -4,6 +4,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport, MeshTransmissionMaterial } from '@react-three/drei';
 import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
 import { TilesFadePlugin } from '3d-tiles-renderer/plugins';
+import { TopoLinesPlugin } from '../src/plugins/topolines/TopoLinesPlugin.js';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
@@ -46,6 +47,7 @@ function App() {
 			<group rotation-x={ Math.PI / 2 }>
 				<TilesRenderer url={ tilesetUrl }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
+					<TilesPlugin plugin={ TopoLinesPlugin } />
 
 					{/* add mesh to local frame of the tile set*/}
 					<RotatingMesh position={ [ 0, - 4, - 4 ] } scale={ 2 } />
