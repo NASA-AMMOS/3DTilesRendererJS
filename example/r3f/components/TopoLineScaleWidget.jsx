@@ -1,19 +1,24 @@
 import { CanvasDOMOverlay, TilesRendererContext } from '3d-tiles-renderer/r3f';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useContext, useState } from 'react';
-import { Vector3 } from 'three';
+import { useContext, useEffect, useState } from 'react';
+import { Vector3, MathUtils } from 'three';
 
+const _v0 = /* @__PURE__ */new Vector3();
+const _v1 = /* @__PURE__ */new Vector3();
 function calculatePixelWidth( camera, resolution, distance ) {
 
-	const WIDTH = 0.01;
-	const v0 = new Vector3( 0, 0, - distance ).applyMatrix4( camera.projectionMatrix );
-	const v1 = new Vector3( WIDTH, 0, - distance ).applyMatrix4( camera.projectionMatrix );
+	// calculate two projected points at the given distance into NDC
+	const X_DELTA = 0.01;
+	const v0 = _v0.set( 0, 0, - distance ).applyMatrix4( camera.projectionMatrix );
+	const v1 = _v1.set( X_DELTA, 0, - distance ).applyMatrix4( camera.projectionMatrix );
 
-	const pixelsPerMeter = ( Math.abs( v0.x - v1.x ) * resolution.width * 0.5 ) / WIDTH;
+	// calculate how many pixels per meter
+	const pixelsPerMeter = ( Math.abs( v0.x - v1.x ) * resolution.width * 0.5 ) / X_DELTA;
 	return 1 / pixelsPerMeter;
 
 }
 
+// format a number to be human readable with units
 function formatNumber( v ) {
 
 	if ( v === null ) {
@@ -28,15 +33,16 @@ function formatNumber( v ) {
 
 }
 
+// returns a unit and adjusted value for display
 function getDisplayValue( value ) {
 
 	const pow = Math.ceil( Math.log10( Math.abs( value ) ) );
 	let unit = 'm';
 	let exp = 0;
 
-	switch ( pow ) {
+	switch ( MathUtils.clamp( pow, - 6, 2 ) ) {
 
-		case 5: case 4: case 3: case 2:
+		case 2:
 			unit = 'km';
 			exp = 3;
 			break;
@@ -52,12 +58,11 @@ function getDisplayValue( value ) {
 			unit = 'mm';
 			exp = - 3;
 			break;
-		case - 6: case - 7: case - 8:
+		case - 6:
 			unit = 'μM';
 			exp = - 6;
 			break;
 
-		// TODO: handle this more gracefully. Just fallback to the closest supported units if necessary?
 		default:
 			throw new Error();
 
@@ -73,56 +78,94 @@ function getDisplayValue( value ) {
 export function TopoLineScaleWidget() {
 
 	const get = useThree( ( { get } ) => get );
+	const gl = useThree( ( { gl } ) => gl );
 	const [ info, setInfo ] = useState( null );
 	const tiles = useContext( TilesRendererContext );
-	useFrame( () => {
+	const element = gl.domElement;
 
-		const plugin = tiles && tiles.getPluginByName( 'TOPO_LINES_PLUGIN' );
-		if ( plugin ) {
+	// add callback for mouse movement
+	useEffect( () => {
 
-			const {
-				pointer,
-				camera,
-				scene,
-				raycaster,
-			} = get();
+		const callback = () => {
 
-			raycaster.setFromCamera( pointer, camera );
+			// get the topo plugin
+			const plugin = tiles && tiles.getPluginByName( 'TOPO_LINES_PLUGIN' );
+			if ( plugin ) {
 
-			const hit = raycaster.intersectObject( scene )[ 0 ];
-			if ( hit ) {
+				const { pointer, camera, scene, raycaster } = get();
 
-				const info = plugin.computeTopographicLineInfo( camera, hit.point );
-				info.width = {
-					metersPerPixel: calculatePixelWidth( camera, plugin.resolution, hit.distance ),
-				};
-				setInfo( info );
+				// get the hovered point
+				raycaster.setFromCamera( pointer, camera );
+				const hit = raycaster.intersectObject( scene )[ 0 ];
 
-			} else {
+				if ( hit ) {
 
-				setInfo( null );
+					// retrieve the topo line & elevation info
+					const elevation = plugin.computeTopographicLineInfo( camera, hit.point );
+					const length = { metersPerPixel: calculatePixelWidth( camera, plugin.resolution, hit.distance ) };
+					setInfo( {
+						elevation,
+						length,
+					} );
+
+				} else {
+
+					setInfo( null );
+
+				}
 
 			}
 
-		}
+		};
 
-	}, - 100 );
+		element.addEventListener( 'pointermove', callback );
 
+		return () => {
+
+			element.removeEventListener( 'pointermove', callback );
+
+		};
+
+	}, [ get, element, tiles ] );
+
+	// extract the needed values
 	let elevationValue = null;
 	let stepInPixels = 5;
 	let stepInMeters = null;
-	let metersPerPixel = null;
+	let finalWidth = 0;
+	let adjustedMeters = null;
 	if ( info ) {
 
-		const stepInfo = info.alpha < 0.25 ? info.max : info.min;
-		elevationValue = info.value;
+		// elevation info
+		const stepInfo = info.elevation.alpha < 0.25 ? info.elevation.max : info.elevation.min;
+		elevationValue = info.elevation.value;
 		stepInPixels = stepInfo.stepInPixels;
 		stepInMeters = stepInfo.step;
-		metersPerPixel = info.width.metersPerPixel;
+
+		// length info
+		const MAX_PIXEL_WIDTH = 50;
+		const metersPerPixel = info.length.metersPerPixel;
+		const targetMeters = MAX_PIXEL_WIDTH * metersPerPixel;
+		adjustedMeters = 10 ** Math.floor( Math.log10( targetMeters ) );
+		finalWidth = adjustedMeters / metersPerPixel;
+		if ( finalWidth * 5 < MAX_PIXEL_WIDTH ) {
+
+			adjustedMeters *= 5;
+			finalWidth *= 5;
+
+		}
+
+		if ( finalWidth * 2.5 < MAX_PIXEL_WIDTH ) {
+
+			adjustedMeters *= 2.5;
+			finalWidth *= 2.5;
+
+		}
 
 	}
 
-	const ticks = <div style={ {
+	// construct the ticks for the topo lines
+	const tickElement = <div style={ {
 		flexGrow: 1,
 		display: 'flex',
 		flexDirection: 'column',
@@ -150,7 +193,8 @@ export function TopoLineScaleWidget() {
 				} )
 		}</div>;
 
-	const tickMeasure = <div style={ {
+	// construct the element for displaying the tick measurements
+	const tickMeasureElement = <div style={ {
 		display: 'flex',
 		overflow: 'hidden',
 		flexGrow: 1,
@@ -164,36 +208,12 @@ export function TopoLineScaleWidget() {
 			<div>{ formatNumber( stepInMeters ) }</div>
 			<div>{ formatNumber( stepInMeters * 10.0 || null ) }</div>
 		</div>
-		{ ticks }
+		{ tickElement }
 	</div>;
 
-	let finalWidth = 0;
-	let adjustedMeters = null;
-	if ( metersPerPixel !== null ) {
-
-		const MAX_PIXEL_WIDTH = 50;
-		const targetMeters = MAX_PIXEL_WIDTH * metersPerPixel;
-		adjustedMeters = 10 ** Math.floor( Math.log10( targetMeters ) );
-		finalWidth = adjustedMeters / metersPerPixel;
-		if ( finalWidth * 5 < MAX_PIXEL_WIDTH ) {
-
-			adjustedMeters *= 5;
-			finalWidth *= 5;
-
-		}
-
-		if ( finalWidth * 2.5 < MAX_PIXEL_WIDTH ) {
-
-			adjustedMeters *= 2.5;
-			finalWidth *= 2.5;
-
-		}
-
-	}
-
-	const widthMeasure = <div style= { {
+	// construct the element for pixel width display
+	const widthMeasureElement = <div style= { {
 		marginTop: '10px',
-
 	} }>
 		<div style={ {
 			display: 'flex',
@@ -212,6 +232,17 @@ export function TopoLineScaleWidget() {
 		} }></div>
 	</div>;
 
+	// construct the elevation display element
+	const elevationElement = <div style={ {
+		display: 'flex',
+		marginTop: '10px',
+	} }>
+		<div style={ {
+			flexGrow: 1,
+		} }>{ formatNumber( elevationValue ) }</div>
+		<div>el</div>
+	</div>;
+
 	return <CanvasDOMOverlay>
 		<div style={ {
 			padding: '5px',
@@ -228,19 +259,11 @@ export function TopoLineScaleWidget() {
 			fontSize: '12px',
 		} }>
 
-			{ tickMeasure }
+			{ tickMeasureElement }
 
-			<div style={ {
-				display: 'flex',
-				marginTop: '10px',
-			} }>
-				<div style={ {
-					flexGrow: 1,
-				} }>{ formatNumber( elevationValue ) }</div>
-				<div>el</div>
-			</div>
+			{ elevationElement }
 
-			{ widthMeasure }
+			{ widthMeasureElement }
 		</div>
 	</CanvasDOMOverlay>;
 
