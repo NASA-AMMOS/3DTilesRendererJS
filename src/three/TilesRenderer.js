@@ -300,9 +300,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setResolutionFromRenderer( camera, renderer ) {
 
-		renderer
-			.getSize( tempVector2 )
-			.multiplyScalar( renderer.getPixelRatio() );
+		renderer.getSize( tempVector2 );
 
 		return this.setResolution( camera, tempVector2.x, tempVector2.y );
 

@@ -38,7 +38,7 @@ const params = {
 	enableRendererStats: false,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
 	displayTopoLines: false,
-	errorTarget: 40,
+	errorTarget: 20,
 
 	reload: reinstantiateTiles,
 

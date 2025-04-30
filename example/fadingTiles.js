@@ -17,7 +17,7 @@ const params = {
 	reinstantiateTiles,
 	fadeRootTiles: false,
 	useFade: true,
-	errorTarget: 12,
+	errorTarget: 6,
 	fadeDuration: 0.5,
 	renderScale: 1,
 	fadingGroundTiles: '0 tiles',

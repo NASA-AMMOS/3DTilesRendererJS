@@ -216,11 +216,25 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const contextMenuCallback = e => {
 
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
+
+				return;
+
+			}
+
 			e.preventDefault();
 
 		};
 
 		const pointerdownCallback = e => {
+
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
+
+				return;
+
+			}
 
 			e.preventDefault();
 
@@ -311,6 +325,13 @@ export class EnvironmentControls extends EventDispatcher {
 
 		let _pointerMoveQueued = false;
 		const pointermoveCallback = e => {
+
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
+
+				return;
+
+			}
 
 			e.preventDefault();
 
@@ -406,8 +427,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const pointerupCallback = e => {
 
-			const { pointerTracker } = this;
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
 
+				return;
+
+			}
+
+			const { pointerTracker } = this;
 			pointerTracker.deletePointer( e );
 
 			if (
@@ -425,6 +452,13 @@ export class EnvironmentControls extends EventDispatcher {
 		};
 
 		const wheelCallback = e => {
+
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
+
+				return;
+
+			}
 
 			e.preventDefault();
 
@@ -463,8 +497,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const pointerenterCallback = e => {
 
-			const { pointerTracker } = this;
+			// exit early if the controls are disabled
+			if ( ! this.enabled ) {
 
+				return;
+
+			}
+
+			const { pointerTracker } = this;
 			if ( e.buttons !== pointerTracker.getPointerButtons() ) {
 
 				pointerTracker.deletePointer( e );
