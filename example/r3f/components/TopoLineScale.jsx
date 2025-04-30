@@ -1,6 +1,32 @@
 import { CanvasDOMOverlay, TilesRendererContext } from '3d-tiles-renderer/r3f';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useContext, useState } from 'react';
+import { Vector3 } from 'three';
+
+function calculatePixelWidth( camera, resolution, distance ) {
+
+	const WIDTH = 0.01;
+	const v0 = new Vector3( 0, 0, - distance ).applyMatrix4( camera.projectionMatrix );
+	const v1 = new Vector3( WIDTH, 0, - distance ).applyMatrix4( camera.projectionMatrix );
+
+	const pixelsPerMeter = ( Math.abs( v0.x - v1.x ) * resolution.width * 0.5 * devicePixelRatio ) / WIDTH;
+	return 1 / pixelsPerMeter;
+
+}
+
+function formatNumber( v ) {
+
+	if ( v === null ) {
+
+		return '—';
+
+	}
+
+	const info = getDisplayValue( v );
+	const display = parseFloat( info.value.toFixed( 2 ) ).toString().replace( /^-/, '- ' );
+	return `${ display }${ info.unit }`;
+
+}
 
 function getDisplayValue( value ) {
 
@@ -58,6 +84,7 @@ export function TopoLineScale() {
 				camera,
 				scene,
 				raycaster,
+				size,
 			} = get();
 
 			raycaster.setFromCamera( pointer, camera );
@@ -66,6 +93,9 @@ export function TopoLineScale() {
 			if ( hit ) {
 
 				const info = plugin.computeTopographicLineInfo( camera, hit.point );
+				info.width = {
+					metersPerPixel: calculatePixelWidth( camera, size, hit.distance ),
+				};
 				setInfo( info );
 
 			} else {
@@ -76,31 +106,141 @@ export function TopoLineScale() {
 
 		}
 
-	} );
+	}, - 100 );
 
-	if ( info === null ) {
+	let elevationValue = null;
+	let stepInPixels = 1000;
+	let stepInMeters = null;
+	let metersPerPixel = null;
+	if ( info ) {
 
-		return null;
+		const stepInfo = info.alpha < 0.25 ? info.max : info.min;
+		elevationValue = info.value;
+		stepInPixels = stepInfo.stepInPixels;
+		stepInMeters = stepInfo.step;
+		metersPerPixel = info.width.metersPerPixel;
 
 	}
 
-	const data = getDisplayValue( info.value );
-	console.log( data )
+	const ticks = <div style={ {
+		flexGrow: 1,
+		display: 'flex',
+		flexDirection: 'column',
+		overflow: 'hidden',
+		alignItems: 'end',
+		justifyContent: 'end',
+		paddingBottom: '0.5em',
+	} }>
+		{
+			new Array( 10 )
+				.fill()
+				.map( ( e, i ) => {
+
+					return <div
+						key={ i }
+						style={ {
+							minHeight: i === 9 ? '1px' : '1px',
+							opacity: i === 9 ? 1 : 0.5,
+							width: i === 9 ? '25px' : '15px',
+							background: 'white',
+							marginTop: stepInPixels,
+						} }
+					/>;
+
+				} )
+		}</div>;
+
+	const tickMeasure = <div style={ {
+		display: 'flex',
+		overflow: 'hidden',
+		flexGrow: 1,
+	} }>
+		<div style={ {
+			display: 'flex',
+			flexDirection: 'column',
+			flexGrow: 1,
+			justifyContent: 'end',
+		} }>
+			<div>{ formatNumber( stepInMeters ) }</div>
+			<div>{ formatNumber( stepInMeters * 10.0 || null ) }</div>
+		</div>
+		{ ticks }
+	</div>;
+
+	let finalWidth = 0;
+	let adjustedMeters = null;
+	if ( metersPerPixel !== null ) {
+
+		const MAX_PIXEL_WIDTH = 50;
+		const targetMeters = MAX_PIXEL_WIDTH * metersPerPixel;
+		adjustedMeters = 10 ** Math.floor( Math.log10( targetMeters ) );
+		finalWidth = adjustedMeters / metersPerPixel;
+		if ( finalWidth * 5 < MAX_PIXEL_WIDTH ) {
+
+			adjustedMeters *= 5;
+			finalWidth *= 5;
+
+		}
+
+		if ( finalWidth * 2.5 < MAX_PIXEL_WIDTH ) {
+
+			adjustedMeters *= 2.5;
+			finalWidth *= 2.5;
+
+		}
+
+	}
+
+	const widthMeasure = <div style= { {
+		marginTop: '10px',
+
+	} }>
+		<div style={ {
+			display: 'flex',
+		} }>
+			<div style={ {
+				flexGrow: 1,
+			} }>{ formatNumber( adjustedMeters ) }</div>
+			<div>len</div>
+		</div>
+		<div style={ {
+			height: '2px',
+			borderTop: '1px solid white',
+			borderLeft: '1px solid white',
+			borderRight: '1px solid white',
+			width: finalWidth === 0 ? '100%' : `${ finalWidth }px`,
+		} }></div>
+	</div>;
 
 	return <CanvasDOMOverlay>
 		<div style={ {
-			width: '100px',
-			height: '200px',
+			padding: '5px',
+			width: '75px',
+			height: '90px',
 			position: 'absolute',
 			right: 10,
 			bottom: 200,
-			background: 'rgb( 0, 0, 0, 0.25 )',
-			color: 'white'
+			background: 'rgb( 0, 0, 0, 0.35 )',
+			borderRadius: 3,
+			color: 'white',
+			display: 'flex',
+			flexDirection: 'column',
+			fontSize: '12px',
 		} }>
-			{ info.min.step }m
 
-			<br/>
-			{ data.value.toFixed( 2 ) }{ data.unit }
+			{ tickMeasure }
+
+			<div style={ {
+				display: 'flex',
+				marginTop: '10px',
+			} }>
+				<div style={ {
+					flexGrow: 1,
+				} }>{ formatNumber( elevationValue ) }</div>
+				<div>elev</div>
+			</div>
+
+			{ widthMeasure }
 		</div>
 	</CanvasDOMOverlay>;
 

@@ -193,7 +193,7 @@ export class TopoLinesPlugin {
 		// calculate the nearest power of 10 that the meters
 		// TODO: this pixel size target / topo step calculation is too much of an estimation
 		const nearestPow10 = Math.log10( targetMeters );
-		const topoAlpha = MathUtils.smoothstep( 1.0, 1.0 - FADE_SIZE, nearestPow10 % 1 );
+		const topoAlpha = 1.0 - MathUtils.smoothstep( 1.0 - Math.abs( nearestPow10 % 1 ), 1.0 - FADE_SIZE, 1.0 );
 		const topoStep = Math.pow( 10.0, Math.ceil( nearestPow10 ) );
 
 		if ( projection === 'ellipsoid' ) {
