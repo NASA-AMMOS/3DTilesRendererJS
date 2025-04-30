@@ -270,7 +270,9 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				#if USE_TOPO_LINES
 				{
 
-					float targetPixelsPerStep = pixelRatio * 2.0;
+					float FADE_SIZE = 0.25;
+					float FADE_SIZE_HALF = FADE_SIZE * 0.5;
+					float targetPixelsPerStep = pixelRatio * 1.75;
 
 					// calculate projected screen points
 					float distanceFromCamera = ( viewMatrix * vec4( wPosition, 1.0 ) ).z;
@@ -278,17 +280,19 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec4 p1 = projectionMatrix * vec4( 1.0, 1.0, distanceFromCamera, 1 );
 
 					// amount of pixel change per meter in screen space
-					vec2 clipSpaceDelta = ( p1 / p1.w ).xy - ( p0 / p0.w ).xy;
-					vec2 pixelDelta = abs( ( 10.0 / targetPixelsPerStep ) * clipSpaceDelta * resolution );
-					float pixelChange = max( pixelDelta.x, pixelDelta.y );
+					// multiple by 0.5 since the NDC value range is between [-1, 1]
+					vec2 clipSpaceDelta = 0.5 * ( ( p1 / p1.w ).xy - ( p0 / p0.w ).xy );
+					vec2 pixelDelta = abs( clipSpaceDelta * resolution );
 
 					// amount of meter change per pixel
-					float meterPerPixel = 1.0 / pixelChange;
+					float pixelsPerMeter = max( pixelDelta.x, pixelDelta.y );
+					float metersPerPixel = 1.0 / pixelsPerMeter;
+					float targetMeters = targetPixelsPerStep * metersPerPixel;
 
 					// calculate the nearest power of 10 that the meters
-					float nearestPow10 = 2.0 + log10( meterPerPixel );
-					float topoAlpha = smoothstep( 1.0, 0.5, mod( nearestPow10, 1.0 ) );
-					float topoStep = pow( 10.0, floor( nearestPow10 ) );
+					float nearestPow10 = log10( targetMeters );
+					float topoAlpha = smoothstep( 1.0, 1.0 - FADE_SIZE, mod( nearestPow10, 1.0 ) );
+					float topoStep = pow( 10.0, ceil( nearestPow10 ) );
 
 					// get the height value to use for topo lines
 					vec3 pos;
@@ -310,9 +314,6 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 						pos = vec3( localPosition.xy * 0.1, localPosition.z );
 
 					#endif
-
-					// calculate the lines on each axis
-					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
 
 					// calculate the step for the narrow and thick lines, limiting the minimum stride
 					vec3 step0 = max( vec3( cartoLimit.xx, topoLimit.x ), vec3( topoStep ) );
@@ -362,16 +363,15 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					thickness1 *= thickness * pixelRatio;
 
 					// calculate the topo line value
+					vec3 posDelta = max( fwidth2( pos ), 1e-7 );
 					vec3 topo0 = calculateTopoLines( pos, posDelta, step0, thickness0, emphasisStride0 );
 					vec3 topo1 = calculateTopoLines( pos, posDelta, step1, thickness1, emphasisStride1 );
 
 					// calculate the point to fade out the topographic lines based on the unclamped step
 					vec3 maxFadeLimit = vec3( cartoFadeLimit.yy, topoFadeLimit.y );
 					vec3 minFadeLimit = vec3( cartoFadeLimit.xx, topoFadeLimit.x );
-					float FADE_SIZE = 0.25;
-					float FADE_SIZE_HALF = FADE_SIZE * 0.5;
 					vec3 maxFadeLimitAlpha = 1.0 - smoothstep( maxFadeLimit * ( 1.0 - FADE_SIZE_HALF ), maxFadeLimit * ( 1.0 + FADE_SIZE_HALF ), vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
-					vec3 minFadeLimitAlpha = smoothstep( minFadeLimit * 0.75, minFadeLimit * 1.25, vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
+					vec3 minFadeLimitAlpha = smoothstep( minFadeLimit * ( 1.0 - FADE_SIZE_HALF ), minFadeLimit * ( 1.0 + FADE_SIZE_HALF ), vec3( pow( 10.0, nearestPow10 + 1.0 ) ) );
 
 					// blend the small and large topo lines
 					vec3 topo = mix( topo1, topo0, topoAlpha ) * maxFadeLimitAlpha * minFadeLimitAlpha;
