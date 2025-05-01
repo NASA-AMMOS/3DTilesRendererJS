@@ -39,7 +39,7 @@ function App() {
 			</group>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 0.1 } cameraRadius={ 0.1 } />
+			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
 
 		</Canvas>
 	);
