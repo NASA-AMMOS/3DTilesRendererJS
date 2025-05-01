@@ -1,5 +1,5 @@
 import { CanvasDOMOverlay, TilesRendererContext } from '3d-tiles-renderer/r3f';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 import { useContext, useEffect, useState } from 'react';
 import { Vector3, MathUtils } from 'three';
 
