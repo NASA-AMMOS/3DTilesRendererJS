@@ -29,8 +29,8 @@ function App() {
 			{/* 3D Tiles renderer tileset */}
 			<group rotation-x={ Math.PI / 2 }>
 				<TilesRenderer url={ tilesetUrl }>
-					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
-					<TilesPlugin plugin={ TopoLinesPlugin } />
+					<TilesPlugin plugin={ TilesFadePlugin } />
+					<TilesPlugin plugin={ TopoLinesPlugin } args={ { topoLimit: [ 0.01, 1e10 ] } } />
 
 					{/* Widget for displaying topo lines */}
 					<TopoLineScaleWidget />
@@ -39,7 +39,7 @@ function App() {
 			</group>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } maxDistance={ 50 } />
+			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 0.1 } cameraRadius={ 0.1 } />
 
 		</Canvas>
 	);
