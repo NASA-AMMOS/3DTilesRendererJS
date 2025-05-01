@@ -249,7 +249,6 @@ export class TopoLinesPlugin {
 		target.alpha = topoAlpha;
 		target.fade = maxFadeLimitAlphaTopo * minFadeLimitAlphaTopo;
 		target.value = _pos.z;
-		target.emphasisStride = 10;
 
 		target.min.step = _step0.z;
 		target.min.stepInPixels = _step0.z * pixelsPerMeter;

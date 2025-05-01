@@ -119,10 +119,12 @@ export function TopoLineScaleWidget() {
 		};
 
 		element.addEventListener( 'pointermove', callback );
+		element.addEventListener( 'wheel', callback );
 
 		return () => {
 
 			element.removeEventListener( 'pointermove', callback );
+			element.removeEventListener( 'wheel', callback );
 
 		};
 
