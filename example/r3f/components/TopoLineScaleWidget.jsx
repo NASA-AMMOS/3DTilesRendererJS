@@ -138,15 +138,18 @@ export function TopoLineScaleWidget() {
 	let adjustedMeters = null;
 	if ( info ) {
 
+		// pixels are specified in drawing buffer size while css units account for dpr
+		const dpr = window.devicePixelRatio;
+
 		// elevation info
 		const stepInfo = info.elevation.alpha < 0.25 ? info.elevation.max : info.elevation.min;
 		elevationValue = info.elevation.value;
-		stepInPixels = stepInfo.stepInPixels;
+		stepInPixels = stepInfo.stepInPixels / dpr;
 		stepInMeters = stepInfo.step;
 
 		// length info
 		const MAX_PIXEL_WIDTH = 50;
-		const metersPerPixel = info.length.metersPerPixel;
+		const metersPerPixel = info.length.metersPerPixel * dpr;
 		const targetMeters = MAX_PIXEL_WIDTH * metersPerPixel;
 		adjustedMeters = 10 ** Math.floor( Math.log10( targetMeters ) );
 		finalWidth = adjustedMeters / metersPerPixel;
