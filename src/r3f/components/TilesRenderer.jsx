@@ -214,7 +214,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 		tiles.addEventListener( 'load-tile-set', () => invalidate() );
 		tiles.addEventListener( 'load-content', () => invalidate() );
-		tiles.addEventListener( 'force-rerender', () => invalidate() );
+		tiles.addEventListener( 'needs-render', () => invalidate() );
 		return () => {
 
 			tiles.dispose();

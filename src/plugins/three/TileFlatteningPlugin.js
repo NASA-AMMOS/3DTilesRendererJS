@@ -210,7 +210,7 @@ export class TileFlatteningPlugin {
 
 		} );
 
-		this.tiles.dispatchEvent( { type: 'force-rerender' } );
+		this.tiles.dispatchEvent( { type: 'needs-render' } );
 
 	}
 
