@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - QuantizedMeshPlugin: A plugin for loading quantized mesh files.
 - TilesFlatteningPlugin: Added a threshold option to `addShape`.
 - TilesRenderer: Added "needs-update" event.
+- R3F TilesPlugin: Added support for deep field property assignment.
 
 ### Changed
 - Internal "force-rerender" function renamed to "needs-render".
