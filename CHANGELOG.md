@@ -14,10 +14,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Types: Added file extensions to enable support for older node versions.
 - TilesRenderer: Removed implicit use of "devicePixelRatio" when setting camera resolution to ensure more consistent error target calculations across devices.
 - EnvironmentControls: Adjust event listeners to exit early if controls are disabled.
+- R3F TilesRenderer Component: Fixed case where tiles would not load when using on demand rendering without moving the camera (via needs-update event).
 
 ### Added
 - QuantizedMeshPlugin: A plugin for loading quantized mesh files.
 - TilesFlatteningPlugin: Added a threshold option to `addShape`.
+- TilesRenderer: Added "needs-update" event.
+
+### Changed
+- Internal "force-rerender" function renamed to "needs-render".
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
