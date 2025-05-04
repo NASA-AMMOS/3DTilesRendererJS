@@ -128,9 +128,8 @@ function initTiles() {
 	// listen to events to call render() on change
 	controls.addEventListener( 'change', debounceRender );
 	controls.addEventListener( 'end', debounceRender );
-	tiles.addEventListener( 'load-model', debounceRender );
-	tiles.addEventListener( 'force-rerender', debounceRender );
-	tiles.addEventListener( 'load-tile-set', debounceRender );
+	tiles.addEventListener( 'needs-render', debounceRender );
+	tiles.addEventListener( 'needs-update', debounceRender );
 
 	render();
 
