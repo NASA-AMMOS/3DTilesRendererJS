@@ -17,6 +17,9 @@ const params = {
 
 };
 
+// debounced render function
+const debounceRender = debounce( render );
+
 init();
 render();
 
@@ -122,6 +125,14 @@ function initTiles() {
 
 	}
 
+	// listen to events to call render() on change
+	controls.addEventListener( 'change', debounceRender );
+	controls.addEventListener( 'end', debounceRender );
+	tiles.addEventListener( 'needs-render', debounceRender );
+	tiles.addEventListener( 'needs-update', debounceRender );
+
+	render();
+
 }
 
 function onWindowResize() {
@@ -132,11 +143,11 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
+	debounceRender();
+
 }
 
 function render() {
-
-	requestAnimationFrame( render );
 
 	controls.update();
 	camera.updateMatrixWorld();
@@ -147,5 +158,26 @@ function render() {
 	tiles.update();
 
 	renderer.render( scene, camera );
+
+}
+
+function debounce( callback ) {
+
+	let scheduled = false;
+	return () => {
+
+		if ( ! scheduled ) {
+
+			scheduled = true;
+			requestAnimationFrame( () => {
+
+				scheduled = false;
+				callback();
+
+			} );
+
+		}
+
+	};
 
 }
