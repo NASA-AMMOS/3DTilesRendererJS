@@ -47,7 +47,7 @@ function onUpdateAfter() {
 	if ( fadingBefore !== 0 && fadingAfter !== 0 ) {
 
 		tiles.dispatchEvent( { type: 'fade-change' } );
-		tiles.dispatchEvent( { type: 'force-rerender' } );
+		tiles.dispatchEvent( { type: 'needs-render' } );
 
 	}
 
@@ -279,14 +279,14 @@ export class TilesFadePlugin {
 		fadeManager.onFadeSetStart = () => {
 
 			tiles.dispatchEvent( { type: 'fade-start' } );
-			tiles.dispatchEvent( { type: 'force-rerender' } );
+			tiles.dispatchEvent( { type: 'needs-render' } );
 
 		};
 
 		fadeManager.onFadeSetComplete = () => {
 
 			tiles.dispatchEvent( { type: 'fade-end' } );
-			tiles.dispatchEvent( { type: 'force-rerender' } );
+			tiles.dispatchEvent( { type: 'needs-render' } );
 
 		};
 

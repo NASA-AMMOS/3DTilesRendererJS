@@ -308,25 +308,33 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 ### events
 
 ```js
-// fired when a new root or child tile set is loaded
+// Fired when a new root or child tile set is loaded.
 { type: 'load-tile-set', tileSet: Object, url: String }
 
-// fired when a tile model is loaded
+// Fired when a tile model is loaded.
 { type: 'load-model', scene: THREE.Group, tile: Object }
 
-// fired when a tile model is disposed
+// Fired when the content of a model is loaded. Fired along side the
+// above two events.
+{ type: 'load-content', tileSet: Object, url: String }
+
+// Fired when a tile model is disposed.
 { type: 'dispose-model', scene: THREE.Group, tile: Object }
 
-// fired when a tiles visibility changes
+// Fired when the tile set hierarchy is ready for "update to be called
+// again due to new content having loaded or asynchronous processing finished.
+{ type: 'needs-update', tileSet: Object, url: String }
+
+// Fired when a tiles visibility changes.
 { type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
 
-// fired when tiles start loading
+// Fired when tiles start loading.
 { type: 'tiles-load-start' }
 
-// fired when all tiles finish loading
+// Fired when all tiles finish loading.
 { type: 'tiles-load-end' }
 
-// fired when a tile content or the root tile set fails to load
+// Fired when a tile content or the root tile set fails to load.
 { type: 'load-error', tile: Object | null, error: Error, url: string | URL }
 ```
 

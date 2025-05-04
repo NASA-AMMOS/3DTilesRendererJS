@@ -212,9 +212,8 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// create the tile set
 	useEffect( () => {
 
-		tiles.addEventListener( 'load-tile-set', () => invalidate() );
-		tiles.addEventListener( 'load-content', () => invalidate() );
-		tiles.addEventListener( 'force-rerender', () => invalidate() );
+		tiles.addEventListener( 'needs-render', () => invalidate() );
+		tiles.addEventListener( 'needs-update', () => invalidate() );
 		return () => {
 
 			tiles.dispose();

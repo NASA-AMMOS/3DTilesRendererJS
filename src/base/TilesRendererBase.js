@@ -3,6 +3,7 @@ import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
+import { debounce } from '../utilities/debounce.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
@@ -156,6 +157,13 @@ export class TilesRendererBase {
 		};
 		this.frameCount = 0;
 
+		// callbacks
+		this._dispatchNeedsUpdateEvent = debounce( () => {
+
+			this.dispatchEvent( { type: 'needs-update' } );
+
+		} );
+
 		// options
 		this.errorTarget = 16.0;
 		this._errorThreshold = Infinity;
@@ -283,6 +291,7 @@ export class TilesRendererBase {
 
 					this.rootLoadingState = LOADED;
 					this.rootTileSet = root;
+					this.dispatchEvent( { type: 'needs-update' } );
 					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
 						type: 'load-tile-set',
@@ -600,6 +609,7 @@ export class TilesRendererBase {
 					this.processNodeQueue.add( child, child => {
 
 						this.preprocessNode( child, tile.__basePath, tile );
+						this._dispatchNeedsUpdateEvent();
 
 					} );
 
@@ -858,7 +868,9 @@ export class TilesRendererBase {
 
 				}
 
-				// dispatch an event indicating that this model has completed
+				// dispatch an event indicating that this model has completed and that a new
+				// call to "update" is needed.
+				this.dispatchEvent( { type: 'needs-update' } );
 				this.dispatchEvent( { type: 'load-content' } );
 				if ( tile.cached.scene ) {
 
