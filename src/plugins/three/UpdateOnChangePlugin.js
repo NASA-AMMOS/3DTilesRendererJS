@@ -35,11 +35,10 @@ export class UpdateOnChangePlugin {
 
 		};
 
-		tiles.addEventListener( 'camera-resolution-change', this._needsUpdateCallback );
-		tiles.addEventListener( 'load-content', this._needsUpdateCallback );
 		tiles.addEventListener( 'needs-update', this._needsUpdateCallback );
 		tiles.addEventListener( 'add-camera', this._onCameraAdd );
 		tiles.addEventListener( 'delete-camera', this._onCameraDelete );
+		tiles.addEventListener( 'camera-resolution-change', this._needsUpdateCallback );
 
 		// register any already-present cameras
 		tiles.cameras.forEach( camera => {
