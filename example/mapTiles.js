@@ -17,8 +17,8 @@ const params = {
 
 };
 
-// debounced render function
-const debounceRender = debounce( render );
+// throttled render function
+const scheduleRender = throttle( render );
 
 init();
 render();
@@ -126,10 +126,10 @@ function initTiles() {
 	}
 
 	// listen to events to call render() on change
-	controls.addEventListener( 'change', debounceRender );
-	controls.addEventListener( 'end', debounceRender );
-	tiles.addEventListener( 'needs-render', debounceRender );
-	tiles.addEventListener( 'needs-update', debounceRender );
+	controls.addEventListener( 'change', scheduleRender );
+	controls.addEventListener( 'end', scheduleRender );
+	tiles.addEventListener( 'needs-render', scheduleRender );
+	tiles.addEventListener( 'needs-update', scheduleRender );
 
 	render();
 
@@ -143,7 +143,7 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	debounceRender();
+	scheduleRender();
 
 }
 
@@ -161,7 +161,7 @@ function render() {
 
 }
 
-function debounce( callback ) {
+function throttle( callback ) {
 
 	let scheduled = false;
 	return () => {

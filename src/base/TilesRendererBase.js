@@ -3,7 +3,7 @@ import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
-import { debounce } from '../utilities/debounce.js';
+import { throttle } from '../utilities/throttle.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
@@ -158,7 +158,7 @@ export class TilesRendererBase {
 		this.frameCount = 0;
 
 		// callbacks
-		this._dispatchNeedsUpdateEvent = debounce( () => {
+		this._dispatchNeedsUpdateEvent = throttle( () => {
 
 			this.dispatchEvent( { type: 'needs-update' } );
 
