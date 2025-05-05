@@ -46,11 +46,11 @@ function getDisplayValue( value ) {
 			unit = 'km';
 			exp = 3;
 			break;
-		case 1: case 0:
+		case 1: case 0: case - 1:
 			unit = 'm';
 			exp = 0;
 			break;
-		case - 1: case - 2:
+		case - 2:
 			unit = 'cm';
 			exp = - 2;
 			break;
@@ -79,6 +79,7 @@ export function TopoLineScaleWidget() {
 
 	const get = useThree( ( { get } ) => get );
 	const gl = useThree( ( { gl } ) => gl );
+	const pointer = useThree( ( { pointer } ) => pointer );
 	const [ info, setInfo ] = useState( null );
 	const tiles = useContext( TilesRendererContext );
 	const element = gl.domElement;
@@ -248,11 +249,27 @@ export function TopoLineScaleWidget() {
 		<div>el</div>
 	</div>;
 
+	const mouseEl = <div style={ {
+		position: 'absolute',
+		left: `${ ( pointer.x * 0.5 + 0.5 ) * 100 }%`,
+		top: `${ 100 - ( pointer.y * 0.5 + 0.5 ) * 100 }%`,
+		color: 'white',
+		fontSize: '12px',
+		pointerEvents: 'none',
+		textShadow: '0px 0px 4px rgba( 0, 0, 0, 0.5 )',
+	} }>
+		<div style={ {
+			transform: 'translateX( -50% ) translateY( -125% )'
+		} }>{ elevationValue ? formatNumber( elevationValue ) : '' }</div>
+	</div>;
+
 	return <CanvasDOMOverlay>
+		{ mouseEl }
+
 		<div style={ {
 			padding: '5px',
 			width: '65px',
-			height: '90px',
+			height: '80px',
 			position: 'absolute',
 			left: 5,
 			bottom: 5,
