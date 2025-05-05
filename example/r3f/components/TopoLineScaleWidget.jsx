@@ -75,7 +75,7 @@ function getDisplayValue( value ) {
 
 }
 
-export function TopoLineScaleWidget() {
+export function TopoLineScaleWidget( { invert } ) {
 
 	const get = useThree( ( { get } ) => get );
 	const gl = useThree( ( { gl } ) => gl );
@@ -104,6 +104,13 @@ export function TopoLineScaleWidget() {
 					// retrieve the topo line & elevation info
 					const elevation = plugin.computeTopographicLineInfo( camera, hit.point );
 					const length = { metersPerPixel: calculatePixelWidth( camera, plugin.resolution, hit.distance ) };
+
+					if ( invert ) {
+
+						elevation.value *= - 1;
+
+					}
+
 					setInfo( {
 						elevation,
 						length,
@@ -129,7 +136,7 @@ export function TopoLineScaleWidget() {
 
 		};
 
-	}, [ get, element, tiles ] );
+	}, [ get, element, tiles, invert ] );
 
 	// extract the needed values
 	let elevationValue = null;

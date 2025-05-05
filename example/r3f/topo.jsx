@@ -33,7 +33,7 @@ function App() {
 					<TilesPlugin plugin={ TopoLinesPlugin } args={ { topoLimit: [ 0.01, 1e10 ] } } />
 
 					{/* Widget for displaying topo lines */}
-					<TopoLineScaleWidget />
+					<TopoLineScaleWidget invert />
 
 				</TilesRenderer>
 			</group>
