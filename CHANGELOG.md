@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Internal "force-rerender" function renamed to "needs-render".
+- TilesRenderer: Move check for cameras after update traversal to enable loading the root tile set file without a camera defined.
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
