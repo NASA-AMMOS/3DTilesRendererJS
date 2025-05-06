@@ -120,6 +120,7 @@ export class TilesRendererBase {
 		this.plugins = [];
 		this.queuedTiles = [];
 		this.cachedSinceLoadComplete = new Set();
+		this.isLoading = false;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -334,6 +335,18 @@ export class TilesRendererBase {
 		markUsedSetLeaves( root, this );
 		markVisibleTiles( root, this );
 		toggleTiles( root, this );
+
+		const activeCount = this.stats.downloading + this.stats.parsing + this.processNodeQueue.items.length;
+		if ( activeCount === 0 && this.isLoading ) {
+
+			this.cachedSinceLoadComplete.clear();
+			stats.inCacheSinceLoad = 0;
+
+			this.dispatchEvent( { type: 'tiles-load-end' } );
+			this.isLoading = false;
+
+		}
+
 
 		// TODO: This will only sort for one tile set. We may want to store this queue on the
 		// LRUCache so multiple tile sets can use it at once
@@ -610,7 +623,6 @@ export class TilesRendererBase {
 
 						this.preprocessNode( child, tile.__basePath, tile );
 						this._dispatchNeedsUpdateEvent();
-						this._tryDispatchLoadEnd();
 
 					} );
 
@@ -756,8 +768,9 @@ export class TilesRendererBase {
 		}
 
 		// check if this is the beginning of a new set of tiles to load and dispatch and event
-		if ( stats.parsing === 0 && stats.downloading === 0 ) {
+		if ( ! this.isLoading ) {
 
+			this.isLoading = true;
 			this.dispatchEvent( { type: 'tiles-load-start' } );
 
 		}
@@ -929,28 +942,7 @@ export class TilesRendererBase {
 
 				}
 
-			} )
-			.finally( () => {
-
-				this._tryDispatchLoadEnd();
-
 			} );
-
-	}
-
-	_tryDispatchLoadEnd() {
-
-		const { processNodeQueue, stats } = this;
-		if ( stats.parsing === 0 && stats.downloading === 0 && processNodeQueue.items.length === 0 ) {
-
-			this.cachedSinceLoadComplete.clear();
-			stats.inCacheSinceLoad = 0;
-
-			// TODO: how is it that stats downloading and the list is out of sync?
-			this.dispatchEvent( { type: 'tiles-load-end' } );
-			console.log('END')
-
-		}
 
 	}
 
