@@ -610,6 +610,7 @@ export class TilesRendererBase {
 
 						this.preprocessNode( child, tile.__basePath, tile );
 						this._dispatchNeedsUpdateEvent();
+						this._tryDispatchLoadEnd();
 
 					} );
 
@@ -824,6 +825,7 @@ export class TilesRendererBase {
 
 						this.preprocessTileSet( content, uri, tile );
 						tile.children.push( content.root );
+						this.ensureChildrenArePreprocessed( content.root );
 						isExternalTileSet = true;
 						return Promise.resolve();
 
@@ -930,16 +932,25 @@ export class TilesRendererBase {
 			} )
 			.finally( () => {
 
-				if ( stats.parsing === 0 && stats.downloading === 0 ) {
-
-					this.cachedSinceLoadComplete.clear();
-					stats.inCacheSinceLoad = 0;
-
-					this.dispatchEvent( { type: 'tiles-load-end' } );
-
-				}
+				this._tryDispatchLoadEnd();
 
 			} );
+
+	}
+
+	_tryDispatchLoadEnd() {
+
+		const { processNodeQueue, stats } = this;
+		if ( stats.parsing === 0 && stats.downloading === 0 && processNodeQueue.items.length === 0 ) {
+
+			this.cachedSinceLoadComplete.clear();
+			stats.inCacheSinceLoad = 0;
+
+			// TODO: how is it that stats downloading and the list is out of sync?
+			this.dispatchEvent( { type: 'tiles-load-end' } );
+			console.log('END')
+
+		}
 
 	}
 
