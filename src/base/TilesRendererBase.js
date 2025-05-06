@@ -838,7 +838,6 @@ export class TilesRendererBase {
 
 						this.preprocessTileSet( content, uri, tile );
 						tile.children.push( content.root );
-						this.ensureChildrenArePreprocessed( content.root );
 						isExternalTileSet = true;
 						return Promise.resolve();
 
