@@ -756,6 +756,9 @@ Remove all regions.
 
 A plugin that takes a shape as a mesh and direction along which to "flatten" vertices to the surface of the shape. Useful for shifting tile geometry to make room for new assets. Not compatible with other plugins that modify geometry such as `BatchedTilesPlugin`.
 
+> [!NOTE]
+> All shapes and directions must be specified in the local coordinate from the tile set.
+
 ### hasShape
 
 ```js
