@@ -283,7 +283,7 @@ export class TilesRendererBase {
 	// Public API
 	update() {
 
-		const { lruCache, usedSet, stats, root } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -336,18 +336,6 @@ export class TilesRendererBase {
 		markVisibleTiles( root, this );
 		toggleTiles( root, this );
 
-		const activeCount = this.stats.downloading + this.stats.parsing + this.processNodeQueue.items.length;
-		if ( activeCount === 0 && this.isLoading ) {
-
-			this.cachedSinceLoadComplete.clear();
-			stats.inCacheSinceLoad = 0;
-
-			this.dispatchEvent( { type: 'tiles-load-end' } );
-			this.isLoading = false;
-
-		}
-
-
 		// TODO: This will only sort for one tile set. We may want to store this queue on the
 		// LRUCache so multiple tile sets can use it at once
 		// start the downloads of the tiles as needed
@@ -363,6 +351,18 @@ export class TilesRendererBase {
 
 		// start the downloads
 		lruCache.scheduleUnload();
+
+		// if all tasks have finished and we've been marked as actively loading then fire the completion event
+		const runningTasks = downloadQueue.running || parseQueue.running || processNodeQueue.running;
+		if ( runningTasks === false && this.isLoading === true ) {
+
+			this.cachedSinceLoadComplete.clear();
+			stats.inCacheSinceLoad = 0;
+
+			this.dispatchEvent( { type: 'tiles-load-end' } );
+			this.isLoading = false;
+
+		}
 
 	}
 
