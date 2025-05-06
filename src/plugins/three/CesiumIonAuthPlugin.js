@@ -165,15 +165,13 @@ export class CesiumIonAuthPlugin {
 						// CZML
 						// KML
 						// GEOJSON
-						// TODO: Should we automatically add these? Or add a callback for defining them?
-						// How can a user add custom options in these cases?
-						if ( json.type === 'TERRAIN' ) {
+						if ( json.type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
 
 							tiles.registerPlugin( new QuantizedMeshPlugin( {
 								useRecommendedSettings: this.useRecommendedSettings,
 							} ) );
 
-						} else if ( json.type === 'IMAGERY' ) {
+						} else if ( json.type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
 
 							tiles.registerPlugin( new TMSTilesPlugin( {
 								useRecommendedSettings: this.useRecommendedSettings,
