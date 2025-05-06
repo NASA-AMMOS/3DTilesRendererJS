@@ -408,19 +408,6 @@ export class TilesRenderer extends TilesRendererBase {
 		const cameraMap = this.cameraMap;
 		const cameraInfo = this.cameraInfo;
 
-		if ( cameras.length === 0 ) {
-
-			let found = false;
-			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
-			if ( found === false ) {
-
-				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
-				return;
-
-			}
-
-		}
-
 		// automatically scale the array of cameraInfo to match the cameras
 		while ( cameraInfo.length > cameras.length ) {
 
@@ -505,6 +492,19 @@ export class TilesRenderer extends TilesRendererBase {
 		super.update();
 
 		this.dispatchEvent( { type: 'update-after' } );
+
+		// check for cameras _after_ base update so we can enable pre-loading the root tile set
+		if ( cameras.length === 0 && this.root ) {
+
+			let found = false;
+			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
+			if ( found === false ) {
+
+				console.warn( 'TilesRenderer: no cameras defined. Cannot update 3d tiles.' );
+
+			}
+
+		}
 
 	}
 
