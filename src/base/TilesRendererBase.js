@@ -90,9 +90,9 @@ export class TilesRendererBase {
 
 	get loadProgress() {
 
-		const stats = this.stats;
+		const { stats, isLoading } = this;
 		const loading = stats.downloading + stats.parsing;
-		const total = stats.inCacheSinceLoad;
+		const total = stats.inCacheSinceLoad + ( isLoading ? 1 : 0 );
 		return total === 0 ? 1.0 : 1.0 - loading / total;
 
 	}
