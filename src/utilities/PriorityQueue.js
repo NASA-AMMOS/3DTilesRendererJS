@@ -1,5 +1,12 @@
 class PriorityQueue {
 
+	// returns whether tasks are queued or actively running
+	get running() {
+
+		return this.items.length !== 0 || this.currJobs !== 0;
+
+	}
+
 	constructor() {
 
 		// options

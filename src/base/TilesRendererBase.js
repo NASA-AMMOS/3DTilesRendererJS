@@ -90,9 +90,9 @@ export class TilesRendererBase {
 
 	get loadProgress() {
 
-		const stats = this.stats;
+		const { stats, isLoading } = this;
 		const loading = stats.downloading + stats.parsing;
-		const total = stats.inCacheSinceLoad;
+		const total = stats.inCacheSinceLoad + ( isLoading ? 1 : 0 );
 		return total === 0 ? 1.0 : 1.0 - loading / total;
 
 	}
@@ -120,6 +120,7 @@ export class TilesRendererBase {
 		this.plugins = [];
 		this.queuedTiles = [];
 		this.cachedSinceLoadComplete = new Set();
+		this.isLoading = false;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
@@ -282,7 +283,7 @@ export class TilesRendererBase {
 	// Public API
 	update() {
 
-		const { lruCache, usedSet, stats, root } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -350,6 +351,18 @@ export class TilesRendererBase {
 
 		// start the downloads
 		lruCache.scheduleUnload();
+
+		// if all tasks have finished and we've been marked as actively loading then fire the completion event
+		const runningTasks = downloadQueue.running || parseQueue.running || processNodeQueue.running;
+		if ( runningTasks === false && this.isLoading === true ) {
+
+			this.cachedSinceLoadComplete.clear();
+			stats.inCacheSinceLoad = 0;
+
+			this.dispatchEvent( { type: 'tiles-load-end' } );
+			this.isLoading = false;
+
+		}
 
 	}
 
@@ -755,8 +768,9 @@ export class TilesRendererBase {
 		}
 
 		// check if this is the beginning of a new set of tiles to load and dispatch and event
-		if ( stats.parsing === 0 && stats.downloading === 0 ) {
+		if ( ! this.isLoading ) {
 
+			this.isLoading = true;
 			this.dispatchEvent( { type: 'tiles-load-start' } );
 
 		}
@@ -924,18 +938,6 @@ export class TilesRendererBase {
 				} else {
 
 					lruCache.remove( tile );
-
-				}
-
-			} )
-			.finally( () => {
-
-				if ( stats.parsing === 0 && stats.downloading === 0 ) {
-
-					this.cachedSinceLoadComplete.clear();
-					stats.inCacheSinceLoad = 0;
-
-					this.dispatchEvent( { type: 'tiles-load-end' } );
 
 				}
 
