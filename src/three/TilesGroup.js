@@ -91,4 +91,16 @@ export class TilesGroup extends Group {
 
 	}
 
+	updateWorldMatrix( updateParents, updateChildren ) {
+
+		if ( this.parent && updateParents ) {
+
+			this.parent.updateWorldMatrix( updateParents, false );
+
+		}
+
+		this.updateMatrixWorld( true );
+
+	}
+
 }
