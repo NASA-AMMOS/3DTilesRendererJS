@@ -91,4 +91,17 @@ export class TilesGroup extends Group {
 
 	}
 
+	updateWorldMatrix( updateParents, updateChildren ) {
+
+		if ( this.parent && updateParents ) {
+
+			this.parent.updateWorldMatrix( updateParents, false );
+
+		}
+
+		// run the normal update function to ensure children and inverse matrices are in sync
+		this.updateMatrixWorld( true );
+
+	}
+
 }
