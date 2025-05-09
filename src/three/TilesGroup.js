@@ -99,6 +99,7 @@ export class TilesGroup extends Group {
 
 		}
 
+		// run the normal update function to ensure children and inverse matrices are in sync
 		this.updateMatrixWorld( true );
 
 	}
