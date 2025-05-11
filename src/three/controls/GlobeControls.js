@@ -5,6 +5,7 @@ import {
 	Vector3,
 	MathUtils,
 	Ray,
+	Group,
 } from 'three';
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
@@ -31,15 +32,9 @@ const MIN_ELEVATION = 400;
 
 export class GlobeControls extends EnvironmentControls {
 
-	get ellipsoid() {
-
-		return this.tilesRenderer ? this.tilesRenderer.ellipsoid : null;
-
-	}
-
 	get tilesGroup() {
 
-		return this.tilesRenderer ? this.tilesRenderer.group : null;
+		return this.ellipsoidFrame;
 
 	}
 
@@ -61,7 +56,21 @@ export class GlobeControls extends EnvironmentControls {
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
 
+		this.ellipsoid = new Ellipsoid();
+		this.ellipsoidFrame = new Group();
+
 		this.setTilesRenderer( tilesRenderer );
+
+	}
+
+	setTilesRenderer( tilesRenderer ) {
+
+		super.setTilesRenderer( tilesRenderer );
+		if ( tilesRenderer !== null ) {
+
+			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.tilesGroup );
+
+		}
 
 	}
 
@@ -76,6 +85,13 @@ export class GlobeControls extends EnvironmentControls {
 			super.setScene( scene );
 
 		}
+
+	}
+
+	setEllipsoid( ellipsoid, ellipsoidFrame ) {
+
+		this.ellipsoid = ellipsoid || new Ellipsoid();
+		this.ellipsoidFrame = ellipsoidFrame || new Group();
 
 	}
 
