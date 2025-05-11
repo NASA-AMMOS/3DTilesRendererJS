@@ -1,3 +1,5 @@
+import { LoaderBase } from './LoaderBase.js';
+
 interface TileInfo {
 
 	type : string;
@@ -13,10 +15,7 @@ export interface CMPTBaseResult {
 
 }
 
-export class CMPTLoaderBase {
-
-	workingPath : string;
-	load( url : string ) : Promise< CMPTBaseResult >;
-	parse( buffer : ArrayBuffer ) : CMPTBaseResult;
+export class CMPTLoaderBase<Result = CMPTBaseResult, ParseResult = Result>
+	extends LoaderBase<Result, ParseResult> {
 
 }

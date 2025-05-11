@@ -1,4 +1,4 @@
-import { I3DMBaseResult } from '../../base/loaders/I3DMLoaderBase.js';
+import { I3DMBaseResult, I3DMLoaderBase } from '../../base/loaders/I3DMLoaderBase.js';
 import { BatchTable } from '../../utilities/BatchTable.js';
 import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -17,10 +17,9 @@ export interface I3DMResult extends GLTF, I3DMBaseResult {
 
 }
 
-export class I3DMLoader {
+export class I3DMLoader<Result extends I3DMResult = I3DMResult, ParseResult = Promise<Result>>
+	extends I3DMLoaderBase<Result, ParseResult> {
 
 	constructor( manager : LoadingManager );
-	load( url : string ) : Promise< I3DMResult >;
-	parse( buffer : ArrayBuffer ) : Promise< I3DMResult >;
 
 }
