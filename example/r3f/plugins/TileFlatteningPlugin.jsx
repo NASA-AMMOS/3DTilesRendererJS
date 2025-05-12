@@ -12,10 +12,19 @@ export function TileFlatteningShape( props ) {
 
 	const {
 		children,
-		debug = false,
-		relativeToEllipsoid = false,
+
+		// if true then the child geometry is rendered
+		visible = false,
+
+		// the "threshold" option for "addShape"
 		threshold = Infinity,
+
+		// the "direction" option for "addShape"
 		direction = null,
+
+		// if true then a projection direction is derived from the shape position
+		// relative to the tile set ellipsoid if "direction" is not present
+		relativeToEllipsoid = false,
 	} = props;
 
 	const [ group, setGroup ] = useState( null );
@@ -70,7 +79,7 @@ export function TileFlatteningShape( props ) {
 
 	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold ] );
 
-	return <group ref={ setGroup } visible={ debug } raycast={ () => false }>{ children }</group>;
+	return <group ref={ setGroup } visible={ visible } raycast={ () => false }>{ children }</group>;
 
 }
 
