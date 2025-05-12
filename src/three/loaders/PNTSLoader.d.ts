@@ -16,10 +16,9 @@ export interface PNTSResult extends PNTSBaseResult {
 
 }
 
-export class PNTSLoader extends PNTSLoaderBase {
+export class PNTSLoader<Result extends PNTSResult = PNTSResult, ParseResult = Promise<Result>>
+	extends PNTSLoaderBase<Result, ParseResult> {
 
 	constructor( manager : LoadingManager );
-	load( url : string ) : Promise< PNTSResult >;
-	parse( buffer : ArrayBuffer ) : Promise< PNTSResult >;
 
 }

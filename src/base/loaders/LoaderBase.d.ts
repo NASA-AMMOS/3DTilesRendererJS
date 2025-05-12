@@ -1,10 +1,10 @@
-export class LoaderBase {
+export class LoaderBase<Result = any, ParseResult = Promise< Result >> {
 
 	fetchOptions: any;
 	workingPath: string;
-	load( url: string ): Promise< any >;
+	load( url: string ): Promise< Result >;
 	resolveExternalURL( url: string ): string;
 	workingPathForURL( url: string ): string
-	parse( buffer: ArrayBuffer ): Promise< any >;
+	parse( buffer: ArrayBuffer ): ParseResult;
 
 }
