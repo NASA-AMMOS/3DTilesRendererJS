@@ -60,6 +60,12 @@ export function TileFlatteningShape( props ) {
 		// add a shape to the plugin
 		plugin.addShape( relativeGroup, _direction, threshold );
 
+		return () => {
+
+			plugin.deleteShape( relativeGroup );
+
+		};
+
 	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold ] );
 
 	return <group ref={ setGroup } visible={ debug } raycast={ () => false }>{ children }</group>;
