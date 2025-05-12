@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.10] - Unreleased
 ### Fixed
 - Fixed calls to `updateWorldMatrix` causing the matrixWorldInverse field to become out of sync.
+- Loader type definitions now extend "LoaderBase".
 
 ## [0.4.9] - 2025.05.07
 ### Fixed
