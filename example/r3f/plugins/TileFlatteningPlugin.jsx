@@ -29,6 +29,17 @@ export function TileFlatteningShape( props ) {
 
 		}
 
+		// ensure world transforms are up to date
+		tiles.group.updateMatrixWorld();
+		group.updateMatrixWorld( true );
+
+		// transform the shape into the local frame of the tile set
+		const relativeGroup = group.clone();
+		relativeGroup
+			.matrixWorld
+			.premultiply( tiles.group.matrixWorldInverse )
+			.decompose( relativeGroup.position, relativeGroup.quaternion, relativeGroup.scale );
+
 		// Calculate the direction to flatten on
 		const _direction = new Vector3();
 		if ( direction ) {
@@ -38,7 +49,7 @@ export function TileFlatteningShape( props ) {
 		} else if ( relativeToEllipsoid ) {
 
 			const box = new Box3();
-			box.setFromObject( group );
+			box.setFromObject( relativeGroup );
 			box.getCenter( _direction );
 			tiles.ellipsoid.getPositionToNormal( _direction, _direction ).multiplyScalar( - 1 );
 
@@ -47,15 +58,6 @@ export function TileFlatteningShape( props ) {
 			_direction.set( 0, 0, 1 );
 
 		}
-
-		group.updateMatrixWorld( true );
-
-		// transform the shape into the local frame of the tile set
-		const relativeGroup = group.clone();
-		relativeGroup
-			.matrixWorld
-			.premultiply( tiles.group.matrixWorldInverse )
-			.decompose( relativeGroup.position, relativeGroup.quaternion, relativeGroup.scale );
 
 		// add a shape to the plugin
 		plugin.addShape( relativeGroup, _direction, threshold );
