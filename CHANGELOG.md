@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fixed calls to `updateWorldMatrix` causing the matrixWorldInverse field to become out of sync.
 - Loader type definitions now extend "LoaderBase".
+- Export QuantizedMeshPlugin from plugins.
 
 ### Added
 - Ability to resolve to any file in "./src"
