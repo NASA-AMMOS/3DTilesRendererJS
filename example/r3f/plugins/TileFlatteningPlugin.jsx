@@ -3,6 +3,9 @@ import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-
 import { TileFlatteningPlugin as TilesFlatteningPluginImpl } from '3d-tiles-renderer/plugins';
 import { Box3, Vector3 } from 'three';
 
+// NOTE: The flattening shape will not automatically update when child transforms are adjusted so in order
+// to force a remount of the component the use should modify a "key" property when it needs to change.
+
 // Helper class for adding a flattening shape to the scene
 export function TileFlatteningShape( props ) {
 
