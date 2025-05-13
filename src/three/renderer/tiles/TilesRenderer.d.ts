@@ -24,6 +24,7 @@ export interface TilesRendererEventMap {
 export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase implements EventDispatcher<TEventMap> {
 
 	ellipsoid: Ellipsoid;
+	cameras: Camera[];
 	autoDisableRendererCulling : boolean;
 	optimizeRaycast : boolean;
 
