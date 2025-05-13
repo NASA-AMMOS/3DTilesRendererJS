@@ -196,7 +196,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	}, [ instance, tiles ] );
 
-	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>
+	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
 } );
 
