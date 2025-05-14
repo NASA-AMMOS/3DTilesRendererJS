@@ -19,7 +19,6 @@ export class LoadRegionPlugin {
 	removeRegion( region: BaseRegion ): void;
 	hasRegion( region: BaseRegion ): void;
 	clearRegions(): void;
-	dispose(): void;
 
 }
 
