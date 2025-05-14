@@ -20,7 +20,7 @@ function isAvailable( layer, level, x, y ) {
 		available,
 	} = layer;
 
-	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
+	if ( level >= ( minzoom ?? 0 ) && level <= ( maxzoom ?? Infinity ) && level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -150,7 +150,7 @@ export class QuantizedMeshPlugin {
 
 				this.layer = json;
 
-				if ( json.extensions.length > 0 ) {
+				if ( json.extensions?.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
 
