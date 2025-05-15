@@ -15,12 +15,12 @@ const _vec = /* @__PURE__ */ new Vector3();
 function isAvailable( layer, level, x, y ) {
 
 	const {
-		minzoom,
-		maxzoom,
+		minzoom = 0,
+		maxzoom = Infinity,
 		available,
 	} = layer;
 
-	if ( level >= ( minzoom ?? 0 ) && level <= ( maxzoom ?? Infinity ) && level < available.length ) {
+	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -149,14 +149,18 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
+				const {
+					bounds,
+					projection = 'EPSG:4326',
+					extensions = []
+				} = json;
 
-				if ( json.extensions?.length > 0 ) {
+				if ( extensions.length > 0 ) {
 
-					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
+					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
 
 				}
 
-				const { bounds } = json;
 				const west = MathUtils.DEG2RAD * bounds[ 0 ];
 				const south = MathUtils.DEG2RAD * bounds[ 1 ];
 				const east = MathUtils.DEG2RAD * bounds[ 2 ];
@@ -180,7 +184,7 @@ export class QuantizedMeshPlugin {
 					},
 				};
 
-				const xTiles = json.projection === 'EPSG:4326' ? 2 : 1;
+				const xTiles = projection === 'EPSG:4326' ? 2 : 1;
 				for ( let x = 0; x < xTiles; x ++ ) {
 
 					const step = ( east - west ) / xTiles;
