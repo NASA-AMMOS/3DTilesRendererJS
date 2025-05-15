@@ -40,6 +40,4 @@ export class DebugTilesPlugin {
 	getDebugColor : ( val: number, target: Color ) => void;
 	customColorCallback : ( val: Tile, target: Color ) => void;
 
-	dispose(): void;
-
 }
