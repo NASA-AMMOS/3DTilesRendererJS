@@ -65,6 +65,7 @@ export class QuantizedMeshPlugin {
 		this.skirtLength = skirtLength;
 		this.smoothSkirtNormals = smoothSkirtNormals;
 		this.solid = solid;
+		this.attribution = null;
 		this.needsUpdate = true;
 
 	}
@@ -152,8 +153,19 @@ export class QuantizedMeshPlugin {
 				const {
 					bounds,
 					projection = 'EPSG:4326',
-					extensions = []
+					extensions = [],
+					attribution = '',
 				} = json;
+
+				if ( attribution ) {
+
+					this.attribution = {
+						value: attribution,
+						type: 'string',
+						collapsible: true,
+					};
+
+				}
 
 				if ( extensions.length > 0 ) {
 
@@ -305,6 +317,16 @@ export class QuantizedMeshPlugin {
 		}
 
 		return result;
+
+	}
+
+	getAttributions( target ) {
+
+		if ( this.attribution ) {
+
+			target.push( this.attribution );
+
+		}
 
 	}
 
