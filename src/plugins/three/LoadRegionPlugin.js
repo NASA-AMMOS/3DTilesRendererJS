@@ -83,7 +83,7 @@ export class LoadRegionPlugin {
 }
 
 // Definitions of predefined regions
-class BaseRegion {
+export class BaseRegion {
 
 	constructor( errorTarget = 10 ) {
 

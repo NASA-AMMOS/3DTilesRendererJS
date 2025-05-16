@@ -4,8 +4,9 @@ import { TilesRenderer } from '../../three/TilesRenderer.js';
 import { OBB } from '../../three/math/OBB.js';
 import { Sphere, Ray } from 'three';
 
-declare class Region {
+declare class BaseRegion {
 
+	constructor( errorTarget?: number );
 	errorTarget: number;
 	intersectsTile( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): boolean
 	calculateError( tile: Tile, tilesRenderer: TilesRenderer ): number
@@ -14,28 +15,28 @@ declare class Region {
 
 export class LoadRegionPlugin {
 
-	addRegion( region: Region ): void;
-	removeRegion( region: Region ): void;
-	hasRegion( region: Region ): void;
+	addRegion( region: BaseRegion ): void;
+	removeRegion( region: BaseRegion ): void;
+	hasRegion( region: BaseRegion ): void;
 	clearRegions(): void;
 
 }
 
-export class OBBRegion extends Region {
+export class OBBRegion extends BaseRegion {
 
 	obb: OBB;
 	constructor( errorTarget?: number, obb?: OBB );
 
 }
 
-export class RayRegion extends Region {
+export class RayRegion extends BaseRegion {
 
 	ray: Ray;
 	constructor( errorTarget?: number, ray?: Ray );
 
 }
 
-export class SphereRegion extends Region {
+export class SphereRegion extends BaseRegion {
 
 	sphere: Sphere;
 	constructor( errorTarget?: number, sphere?: Sphere );
