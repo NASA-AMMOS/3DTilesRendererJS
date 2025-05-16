@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Loader type definitions now extend "LoaderBase".
 - Export QuantizedMeshPlugin from plugins.
 - Moved "optionalDependencies" to "peerDependencies" with an optional flag to avoid quirks with the optional dependencies field.
-- Make QuantizedMeshPlugin more robust.
+- Make QuantizedMeshPlugin more robust to missing fields in layer.json.
 
 ### Added
-- Ability to resolve to any file in "./src"
+- Ability to resolve to any file in "./src".
+- QuantizedMesh: Add support for ttributions.
 
 ## [0.4.9] - 2025.05.07
 ### Fixed
