@@ -1,4 +1,4 @@
-import { Camera, Clock, EventDispatcher, Object3D, Plane, Raycaster, Vector3 } from 'three';
+import { Camera, EventDispatcher, Object3D, Plane, Vector3 } from 'three';
 import { TilesRenderer } from '../TilesRenderer.js';
 
 export interface EnvironmentControlsEventMap {
@@ -11,10 +11,10 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 
 	readonly isEnvironmentControls: true;
 
-	domElement: HTMLElement;
-	camera: Camera;
-	scene: Object3D;
-	tilesRenderer: TilesRenderer;
+	readonly domElement: HTMLElement;
+	readonly camera: Camera;
+	readonly scene: Object3D;
+	readonly tilesRenderer: TilesRenderer;
 
 	// settings
 	enabled: boolean;
@@ -34,15 +34,7 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 
 	fallbackPlane: Plane;
 	up: Vector3;
-	clock: Clock;
 	pivotPoint: Vector3;
-
-	// settings for GlobeControls
-	reorientOnDrag: boolean;
-	scaleZoomOrientationAtEdges: boolean;
-
-	// raycaster
-	raycaster: Raycaster;
 
 	constructor(
 		scene?: Object3D,
