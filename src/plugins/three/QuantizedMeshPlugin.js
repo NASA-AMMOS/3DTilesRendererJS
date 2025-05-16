@@ -49,12 +49,14 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	constructor( {
-		useRecommendedSettings = true,
-		skirtLength = 1000,
-		smoothSkirtNormals = true,
-		solid = false,
-	} ) {
+	constructor( options = {} ) {
+
+		const {
+			useRecommendedSettings = true,
+			skirtLength = 1000,
+			smoothSkirtNormals = true,
+			solid = false,
+		} = options;
 
 		this.name = 'QUANTIZED_MESH_PLUGIN';
 
