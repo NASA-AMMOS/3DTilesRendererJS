@@ -228,7 +228,7 @@ export class TileFlatteningPlugin {
 
 	}
 
-	addShape( mesh, direction = new Vector3( 0, - 1, 0 ), threshold = Infinity ) {
+	addShape( mesh, direction = new Vector3( 0, 0, - 1 ), threshold = Infinity ) {
 
 		if ( this.hasShape( mesh ) ) {
 
