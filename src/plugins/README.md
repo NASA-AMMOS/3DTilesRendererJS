@@ -801,8 +801,9 @@ Deletes all shapes and resets the tiles.
 
 ## TopoLinesPlugin
 
-Plugin for rendering topographic contour lines on the tile set.
+_available in the examples directory_
 
+Plugin for rendering topographic contour lines on the tile set.
 
 ### .constructor
 
