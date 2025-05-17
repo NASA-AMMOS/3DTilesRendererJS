@@ -798,3 +798,40 @@ clearShapes(): void
 ```
 
 Deletes all shapes and resets the tiles.
+
+## TopoLinesPlugin
+
+Plugin for rendering topographic contour lines on the tile set.
+
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// whether the data set is 'planar' or 'ellipsoid'
+	projection = 'planar',
+
+	// the thickness of the topo lines
+	thickness = 1,
+
+	// options for topographic lines
+	// "topoLimit" refers to the min and max distances between each topo line
+	// "topoFadeLimit" refers to the fade in and out point of the topo lines as a whole
+	topoColor = new Color( 0xffffff ),
+	topoOpacity = 0.5,
+	topoLimit = isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
+	topoFadeLimit = isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
+
+	// options for cartesian and cartographic lines when in planar and ellipsoid mode respectively
+	cartoColor = new Color( 0xffffff ),
+	cartoOpacity = isPlanar ? 0 : 0.5,
+	cartoLimit = new Vector2( 0.1, 1e10 ),
+	cartoFadeLimit = isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1.5 * 1e4, 1e6 ),
+}
+```
