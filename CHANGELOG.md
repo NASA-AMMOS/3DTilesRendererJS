@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export QuantizedMeshPlugin from plugins.
 - Moved "optionalDependencies" to "peerDependencies" with an optional flag to avoid quirks with the optional dependencies field.
 - Make QuantizedMeshPlugin more robust to missing fields in layer.json.
+- TileFlatteningPlugin: Fixed disposal throwing an error.
 
 ### Added
 - Ability to resolve to any file in "./src".
