@@ -317,7 +317,7 @@ export class TileFlatteningPlugin {
 
 		this.positionsMap.forEach( geomMap => {
 
-			geomMap.forEach( ( geometry, buffer ) => {
+			geomMap.forEach( ( buffer, geometry ) => {
 
 				const { position } = geometry.attributes;
 				position.array.set( buffer );
