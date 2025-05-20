@@ -40,7 +40,7 @@ export const CameraTransition = forwardRef( function CameraTransition( props, re
 
 		// only respect the camera initially so the default camera settings are automatically used
 
-	}, [] );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect( () => {
 
