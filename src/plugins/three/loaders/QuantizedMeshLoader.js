@@ -72,6 +72,8 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const uvs = [];
 		const indexArr = [];
 		const normals = [];
+		let groupOffset = 0;
+		let materialIndex = 0;
 
 		// construct terrain
 		for ( let i = 0; i < vertexCount; i ++ ) {
@@ -100,6 +102,11 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			}
 
 		}
+
+		// add material group
+		geometry.addGroup( groupOffset, indices.length, materialIndex );
+		groupOffset += indices.length;
+		materialIndex ++;
 
 		// create a lower cap
 		if ( solid ) {
@@ -131,6 +138,12 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 				}
 
 			}
+
+
+			// add material group
+			geometry.addGroup( groupOffset, indices.length, materialIndex );
+			groupOffset += indices.length;
+			materialIndex ++;
 
 		}
 
@@ -200,6 +213,11 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 				normals.push( ...northStrip.normals );
 
 			}
+
+			// add material group
+			geometry.addGroup( groupOffset, indices.length, materialIndex );
+			groupOffset += indices.length;
+			materialIndex ++;
 
 		}
 
