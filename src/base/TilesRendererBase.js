@@ -297,6 +297,7 @@ export class TilesRendererBase {
 					this.dispatchEvent( {
 						type: 'load-tile-set',
 						tileSet: root,
+						url: this.rootURL,
 					} );
 
 				} )
