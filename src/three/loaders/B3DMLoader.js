@@ -55,7 +55,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 				const { batchTable, featureTable } = b3dm;
 				const { scene } = model;
 
-				const rtcCenter = featureTable.getData( 'RTC_CENTER' );
+				const rtcCenter = featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' );
 				if ( rtcCenter ) {
 
 					scene.position.x += rtcCenter[ 0 ];
