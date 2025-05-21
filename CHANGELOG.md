@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Moved "optionalDependencies" to "peerDependencies" with an optional flag to avoid quirks with the optional dependencies field.
 - Make QuantizedMeshPlugin more robust to missing fields in layer.json.
 - TileFlatteningPlugin: Fixed disposal throwing an error.
+- Change `load-error` event field from `uri` to `url` as documented.
+- Fixed type definitions for some events.
 
 ### Added
 - Ability to resolve to any file in "./src".
-- QuantizedMesh: Add support for ttributions.
+- QuantizedMesh: Add support for attributions.
 
 ## [0.4.9] - 2025.05.07
 ### Fixed
