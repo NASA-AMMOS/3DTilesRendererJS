@@ -17,6 +17,8 @@ export interface TilesRendererEventMap {
 	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
 	'update-before': {};
 	'update-after': {};
+	'needs-update': {};
+	'load-error': { tile: Tile | null, error: Error, url: string | URL };
 }
 
 export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase implements EventDispatcher<TEventMap> {

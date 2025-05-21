@@ -201,7 +201,7 @@ export class GoogleCloudAuthPlugin {
 						type: 'load-error',
 						tile: null,
 						error,
-						rootURL,
+						url: rootURL,
 					} );
 
 				} );

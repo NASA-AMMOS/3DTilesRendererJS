@@ -310,6 +310,7 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile: null,
 						error,
+						url: this.rootURL,
 					} );
 
 				} );
@@ -932,7 +933,7 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile,
 						error,
-						uri,
+						url: uri,
 					} );
 
 				} else {

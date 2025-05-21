@@ -9,6 +9,7 @@ function loadTileset( event: { tileSet: object, url: string } ) { }
 function loadModel( event: { scene: Object3D; tile: Tile } ) { }
 function disposeModel( event: { scene: Object3D; tile: Tile; } ) { }
 function tileVisibilityChange( event: { scene: Object3D; tile: Tile; visible: boolean } ) { }
+function loadError( event: { tile: Tile | null, error: Error, url: string | URL } ) { }
 
 function whatever( event: unknown ) { }
 
@@ -30,6 +31,8 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'tile-visibility-change', tileVisibilityChange );
 	renderer.addEventListener( 'update-before', emptyEvent );
 	renderer.addEventListener( 'update-after', emptyEvent );
+	renderer.addEventListener( 'needs-update', emptyEvent );
+	renderer.addEventListener( 'load-error', loadError );
 
 	// Check that we are still able to call an event type that is not
 	// known by the TilesRenderer itself.

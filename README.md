@@ -316,17 +316,17 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // Fired when the content of a model is loaded. Fired along side the
 // above two events.
-{ type: 'load-content', tileSet: Object, url: String }
+{ type: 'load-content' }
 
 // Fired when a tile model is disposed.
 { type: 'dispose-model', scene: THREE.Group, tile: Object }
 
 // Fired when the tile set hierarchy is ready for "update to be called
 // again due to new content having loaded or asynchronous processing finished.
-{ type: 'needs-update', tileSet: Object, url: String }
+{ type: 'needs-update' }
 
 // Fired when a tiles visibility changes.
-{ type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
+{ type: 'tile-visibility-change', scene: THREE.Group, tile: Object, visible: boolean }
 
 // Fired when tiles start loading.
 { type: 'tiles-load-start' }
@@ -336,6 +336,15 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // Fired when a tile content or the root tile set fails to load.
 { type: 'load-error', tile: Object | null, error: Error, url: string | URL }
+
+// Fired when a camera is added to be accounted for when traversing the tile set.
+{ type: 'add-camera', camera: Camera }
+
+// Fired when a camera is removed from being accounted for when traversing the tile set.
+{ type: 'delete-camera', camera: Camera }
+
+// Fired when the resolution being rendered to is changed for any tracked camera.
+{ type: 'camera-resolution-change' }
 ```
 
 ### .fetchOptions
