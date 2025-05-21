@@ -84,7 +84,7 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
-						const RTC_CENTER = featureTable.getData( 'RTC_CENTER' );
+						const RTC_CENTER = featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' );
 						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
 
 						[
