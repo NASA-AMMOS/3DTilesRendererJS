@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TileFlatteningPlugin: Fixed disposal throwing an error.
 - Change `load-error` event field from `uri` to `url` as documented.
 - Fixed type definitions for some events.
+- B3DM, I3DM, PNTS Loaders: Fixed case where RTC_CENTER feature would not be parsed correctly.
 
 ### Added
 - Ability to resolve to any file in "./src".
