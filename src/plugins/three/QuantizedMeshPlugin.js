@@ -5,6 +5,7 @@ import { PriorityQueue } from '../../utilities/PriorityQueue.js';
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
 
 // We don't know the height ranges for the tile set on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
@@ -12,15 +13,9 @@ const INITIAL_HEIGHT_RANGE = 1e5;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
-function isAvailable( layer, level, x, y ) {
+function isAvailable( available, level, x, y ) {
 
-	const {
-		minzoom = 0,
-		maxzoom = Infinity,
-		available,
-	} = layer;
-
-	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
+	if ( level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -45,7 +40,15 @@ export class QuantizedMeshPlugin {
 
 	get maxLevel() {
 
-		return this.layer.available.length;
+		const { available = null, maxzoom = null } = this.layer;
+		return maxzoom === null ? available.length : maxzoom;
+
+	}
+
+	get metadataAvailability() {
+
+		const { metadataAvailability = - 1 } = this.layer;
+		return metadataAvailability;
 
 	}
 
@@ -74,6 +77,7 @@ export class QuantizedMeshPlugin {
 
 	init( tiles ) {
 
+		// TODO: can we remove this priority queue?
 		const processQueue = new PriorityQueue();
 		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
 		processQueue.maxJobs = 20;
@@ -87,6 +91,7 @@ export class QuantizedMeshPlugin {
 
 		}
 
+		// TODO: can we move this function elsewhere?
 		this.tiles = tiles;
 		this.processQueue = processQueue;
 		this.processCallback = tile => {
@@ -94,6 +99,7 @@ export class QuantizedMeshPlugin {
 			const level = tile[ TILE_LEVEL ];
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
+			const available = tile[ TILE_AVAILABLE ];
 
 			const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
 			const xStep = ( east - west ) / 2;
@@ -109,7 +115,7 @@ export class QuantizedMeshPlugin {
 						south + yStep * cy + yStep,
 						minHeight, maxHeight,
 					];
-					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy, region );
+					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy, region, available );
 					if ( child ) {
 
 						tile.children.push( child );
@@ -129,7 +135,9 @@ export class QuantizedMeshPlugin {
 		// generate children
 		const { maxLevel } = this;
 		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel ) {
+		const hasMetadata = this.hasMetadata( tile );
+
+		if ( level < maxLevel && ! hasMetadata ) {
 
 			// marking the tiles as needing an update here prevents cases where we need to process children but there's a frame delay
 			// meaning we may miss our chance on the next loop to perform an update if the "UpdateOnChange" plugin is being used.
@@ -157,6 +165,7 @@ export class QuantizedMeshPlugin {
 					projection = 'EPSG:4326',
 					extensions = [],
 					attribution = '',
+					available = null,
 				} = json;
 
 				if ( attribution ) {
@@ -195,6 +204,9 @@ export class QuantizedMeshPlugin {
 							],
 						},
 						children: [],
+
+						[ TILE_AVAILABLE ]: available,
+						[ TILE_LEVEL ]: - 1,
 					},
 				};
 
@@ -206,7 +218,7 @@ export class QuantizedMeshPlugin {
 						west + step * x, south, west + step * x + step, north,
 						- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
 					];
-					const child = this.expand( 0, x, 0, region );
+					const child = this.expand( 0, x, 0, region, available );
 					if ( child ) {
 
 						tileset.root.children.push( child );
@@ -225,9 +237,9 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	expand( level, x, y, region ) {
+	expand( level, x, y, region, available ) {
 
-		if ( ! isAvailable( this.layer, level, x, y ) ) {
+		if ( ! isAvailable( available, level, x, y ) ) {
 
 			return null;
 
@@ -254,10 +266,11 @@ export class QuantizedMeshPlugin {
 		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * xTiles );
 		const geometricError = rootGeometricError / ( 2 ** level );
 
-		return {
+		const tile = {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
+			[ TILE_AVAILABLE ]: null,
 			refine: 'REPLACE',
 			geometricError: geometricError,
 			boundingVolume: {
@@ -268,6 +281,15 @@ export class QuantizedMeshPlugin {
 			},
 			children: []
 		};
+
+		// if we're relying on tile metadata availability then skip storing the tile metadata
+		if ( ! this.hasMetadata( tile ) ) {
+
+			tile[ TILE_AVAILABLE ] = available;
+
+		}
+
+		return tile;
 
 	}
 
@@ -311,10 +333,32 @@ export class QuantizedMeshPlugin {
 		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
 
 		// use the geometric error value if it's present
-		if ( metadata && 'geometricerror' in metadata ) {
+		if ( metadata ) {
 
-			tile.geometricError = metadata.geometricerror;
+			if ( 'geometricerror' in metadata ) {
 
+				tile.geometricError = metadata.geometricerror;
+
+			}
+
+			if ( this.hasMetadata( tile ) && 'available' in metadata ) {
+
+				// add an offset to account for the current and previous layers
+				tile[ TILE_AVAILABLE ] = [
+					...new Array( tile[ TILE_LEVEL ] + 1 ).fill( null ),
+					...metadata.available,
+				];
+
+				// if the tile hasn't been expanded yet and isn't in the queue to do so then
+				// mark it for expansion again
+				if ( tile.children.length === 0 && ! this.processQueue.has( tile ) ) {
+
+					this.processQueue.add( tile, this.processCallback );
+					this.needsUpdate = true;
+
+				}
+
+			}
 
 		}
 
@@ -329,6 +373,14 @@ export class QuantizedMeshPlugin {
 			target.push( this.attribution );
 
 		}
+
+	}
+
+	hasMetadata( tile ) {
+
+		const level = tile[ TILE_LEVEL ];
+		const { metadataAvailability, maxLevel } = this;
+		return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
 
 	}
 
