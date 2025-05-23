@@ -72,6 +72,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
+	// Plugin function
 	init( tiles ) {
 
 		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
@@ -191,6 +192,80 @@ export class QuantizedMeshPlugin {
 
 	}
 
+	parseToMesh( buffer, tile ) {
+
+		const ellipsoid = this.tiles.ellipsoid;
+		const [ west, south, east, north ] = tile.boundingVolume.region;
+		const loader = new QuantizedMeshLoader( this.tiles.manager );
+		loader.minLat = south;
+		loader.maxLat = north;
+		loader.minLon = west;
+		loader.maxLon = east;
+		loader.ellipsoid.copy( ellipsoid );
+
+		loader.solid = this.solid;
+		loader.smoothSkirtNormals = this.smoothSkirtNormals;
+		loader.skirtLength = this.skirtLength;
+
+		// parse the tile data
+		const result = loader.parse( buffer );
+
+		// adjust the bounding region to be more accurate based on the contents of the terrain file
+		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
+		// region bounding volume will have the correct dimensions.
+		const { minHeight, maxHeight, metadata } = result.userData;
+		tile.boundingVolume.region[ 4 ] = minHeight;
+		tile.boundingVolume.region[ 5 ] = maxHeight;
+		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
+
+		// use the geometric error value if it's present
+		if ( metadata ) {
+
+			if ( 'geometricerror' in metadata ) {
+
+				tile.geometricError = metadata.geometricerror;
+
+			}
+
+			// if the tile hasn't been expanded yet and isn't in the queue to do so then
+			// mark it for expansion again
+			if ( this.hasMetadata( tile ) && 'available' in metadata && tile.children.length === 0 ) {
+
+				// add an offset to account for the current and previous layers
+				tile[ TILE_AVAILABLE ] = [
+					...new Array( tile[ TILE_LEVEL ] + 1 ).fill( null ),
+					...metadata.available,
+				];
+
+				this.expandChildren( tile );
+
+			}
+
+		}
+
+		return result;
+
+	}
+
+	getAttributions( target ) {
+
+		if ( this.attribution ) {
+
+			target.push( this.attribution );
+
+		}
+
+	}
+
+	// Local functions
+	hasMetadata( tile ) {
+
+		const level = tile[ TILE_LEVEL ];
+		const { metadataAvailability, maxLevel } = this;
+		return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
+
+	}
+
 	createChild( level, x, y, region, available ) {
 
 		if ( ! isAvailable( available, level, x, y ) ) {
@@ -278,79 +353,6 @@ export class QuantizedMeshPlugin {
 			}
 
 		}
-
-	}
-
-	parseToMesh( buffer, tile ) {
-
-		const ellipsoid = this.tiles.ellipsoid;
-		const [ west, south, east, north ] = tile.boundingVolume.region;
-		const loader = new QuantizedMeshLoader( this.tiles.manager );
-		loader.minLat = south;
-		loader.maxLat = north;
-		loader.minLon = west;
-		loader.maxLon = east;
-		loader.ellipsoid.copy( ellipsoid );
-
-		loader.solid = this.solid;
-		loader.smoothSkirtNormals = this.smoothSkirtNormals;
-		loader.skirtLength = this.skirtLength;
-
-		// parse the tile data
-		const result = loader.parse( buffer );
-
-		// adjust the bounding region to be more accurate based on the contents of the terrain file
-		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
-		// region bounding volume will have the correct dimensions.
-		const { minHeight, maxHeight, metadata } = result.userData;
-		tile.boundingVolume.region[ 4 ] = minHeight;
-		tile.boundingVolume.region[ 5 ] = maxHeight;
-		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
-
-		// use the geometric error value if it's present
-		if ( metadata ) {
-
-			if ( 'geometricerror' in metadata ) {
-
-				tile.geometricError = metadata.geometricerror;
-
-			}
-
-			// if the tile hasn't been expanded yet and isn't in the queue to do so then
-			// mark it for expansion again
-			if ( this.hasMetadata( tile ) && 'available' in metadata && tile.children.length === 0 ) {
-
-				// add an offset to account for the current and previous layers
-				tile[ TILE_AVAILABLE ] = [
-					...new Array( tile[ TILE_LEVEL ] + 1 ).fill( null ),
-					...metadata.available,
-				];
-
-				this.expandChildren( tile );
-
-			}
-
-		}
-
-		return result;
-
-	}
-
-	getAttributions( target ) {
-
-		if ( this.attribution ) {
-
-			target.push( this.attribution );
-
-		}
-
-	}
-
-	hasMetadata( tile ) {
-
-		const level = tile[ TILE_LEVEL ];
-		const { metadataAvailability, maxLevel } = this;
-		return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
 
 	}
 

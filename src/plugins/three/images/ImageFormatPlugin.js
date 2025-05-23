@@ -1,5 +1,4 @@
 import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
-import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -45,6 +44,7 @@ export class ImageFormatPlugin {
 
 	}
 
+	// Plugin functions
 	init( tiles ) {
 
 		if ( this.useRecommendedSettings ) {
@@ -107,6 +107,7 @@ export class ImageFormatPlugin {
 
 	}
 
+	// Local functions
 	getTileset( baseUrl ) {
 
 		const tileset = {
