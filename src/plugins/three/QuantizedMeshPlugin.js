@@ -12,15 +12,9 @@ const INITIAL_HEIGHT_RANGE = 1e5;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
-function isAvailable( layer, level, x, y ) {
+function isAvailable( available, level, x, y ) {
 
-	const {
-		minzoom = 0,
-		maxzoom = Infinity,
-		available,
-	} = layer;
-
-	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
+	if ( level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -227,7 +221,7 @@ export class QuantizedMeshPlugin {
 
 	expand( level, x, y, region ) {
 
-		if ( ! isAvailable( this.layer, level, x, y ) ) {
+		if ( ! isAvailable( this.layer.available, level, x, y ) ) {
 
 			return null;
 
