@@ -393,4 +393,154 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 	}
 
+	// generates a child mesh in the given quadrant using the same settings as the loader
+	clipToQuadrant( mesh, left, top ) {
+
+		const triPool = new TrianglePool();
+		const tri = new Triangle();
+
+		let nextIndex = 0;
+		const vertToNewIndexMap = {};
+		const newPos = [];
+		const newNorm = [];
+		const newUvs = [];
+		const newInd = [];
+
+		const {
+			position,
+			normal,
+			uv,
+		} = mesh.geometry.attributes;
+		const index = mesh.geometry.index;
+
+		const trisToClip = [];
+		for ( let i = 0; i < index.count / 3; i ++ ) {
+
+			const i0 = index.getX( i * 3 + 0 );
+			const i1 = index.getX( i * 3 + 0 );
+			const i2 = index.getX( i * 3 + 0 );
+			tri.setFromAttributeAndIndices( uv, i0, i1, i2 );
+
+			const minX = Math.min( tri.a.x, tri.b.x, tri.c.x );
+			const maxX = Math.max( tri.a.x, tri.b.x, tri.c.x );
+
+			const minY = Math.min( tri.a.y, tri.b.y, tri.c.y );
+			const maxY = Math.max( tri.a.y, tri.b.y, tri.c.y );
+
+			const crossesX = ( minX < 0.5 ) !== ( maxX < 0.5 );
+			const crossesY = ( minY < 0.5 ) !== ( maxY < 0.5 );
+
+			if ( crossesX || crossesY ) {
+
+				// TODO: clip triangles here
+				trisToClip.push( i );
+
+			} else if ( ( minX < 0.5 ) === left && ( minY < 0.5 ) === top ) {
+
+				pushVertexByIndex( i0 );
+				pushVertexByIndex( i1 );
+				pushVertexByIndex( i2 );
+
+			}
+
+		}
+
+		// new geometry
+		const geometry = new BufferGeometry();
+		const indexBuffer = newPos.length / 3 > 65535 ? new Uint32Array( newInd ) : new Uint16Array( newInd );
+		geometry.setIndex( new BufferAttribute( indexBuffer, 1, false ) );
+		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( newPos ), 3, false ) );
+		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( newUvs ), 2, false ) );
+		if ( normal ) {
+
+			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( newNorm ), 3, false ) );
+
+		}
+
+		// new mesh
+		const result = new Mesh( geometry, mesh.material.clone() );
+		result.position.copy( mesh.position );
+		result.quaternion.copy( mesh.quaternion );
+		result.scale.copy( mesh.scale );
+		result.userData.minHeight = mesh.userData.minHeight;
+		result.userData.maxHeight = mesh.userData.maxHeight;
+
+		return result;
+
+		function hashVertex( v, edge = false ) {
+
+			const scalar = 1e5;
+			const additive = 0.5;
+			const x = ~ ~ ( x * scalar + additive );
+			const y = ~ ~ ( y * scalar + additive );
+			const z = ~ ~ ( z * scalar + additive );
+			return `${ x }_${ y }_${ z }_${ Number( edge ) }`;
+
+		}
+
+		function pushVertexByIndex( i ) {
+
+			if ( ! ( i in vertToNewIndexMap ) ) {
+
+				vertToNewIndexMap[ i ] = nextIndex;
+				nextIndex ++;
+
+				// TODO: remap the uvs
+				newPos.push( position[ 3 * i + 0 ], position[ 3 * i + 1 ], position[ 3 * i + 2 ] );
+				newUvs.push( uv[ 3 * i + 0 ], uv[ 3 * i + 1 ], uv[ 3 * i + 2 ] );
+
+				if ( normal ) {
+
+					newNorm.push( normal[ 3 * i + 0 ], normal[ 3 * i + 1 ], normal[ 3 * i + 2 ] );
+
+				}
+
+			}
+
+			newInd.push( vertToNewIndexMap[ i ] );
+
+		}
+
+	}
+
+}
+
+class TrianglePool {
+
+	constructor() {
+
+		this.created = [];
+		this.available = [];
+
+	}
+
+	get() {
+
+		if ( this.available.length > 0 ) {
+
+			return this.available.pop();
+
+		} else {
+
+			const tri = new Triangle();
+			this.created.push( tri );
+			return tri;
+
+		}
+
+	}
+
+	release( tri ) {
+
+		this.available.push( tri );
+
+	}
+
+	reset() {
+
+		this.available.length = 0;
+		this.available.push( ...this.created );
+
+	}
+
 }
