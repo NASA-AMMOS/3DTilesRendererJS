@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - QuantizedMeshPlugin: Add support for attributions.
 - QuantizedMeshPlugin: Add support for "metadataAvailability".
 
+### Changed
+- QuantizedMeshPlugin, Image Plugins: Remove internal, custom queue for generating children in favor of TilesRenderer's new process queue.
+
 ## [0.4.9] - 2025.05.07
 ### Fixed
 - Structural Metadata: Fixed case where accessor properties do not match the class definition.
