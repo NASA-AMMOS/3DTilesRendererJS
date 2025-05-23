@@ -35,21 +35,44 @@ function isAvailable( available, level, x, y ) {
 
 }
 
+// Calculates the max level that can be loaded.
+function getMaxLevel( layer ) {
+
+	const { available = null, maxzoom = null } = layer;
+	return maxzoom === null ? available.length : maxzoom;
+
+}
+
+// Calculates whether metadata availability is present - returns -1 if not.
+function getMetadataAvailability( layer ) {
+
+	const { metadataAvailability = - 1 } = layer;
+	return metadataAvailability;
+
+}
+
+// Calculates whether the given tile should have metadata availability
+function getTileHasMetadata( tile, layer ) {
+
+	const level = tile[ TILE_LEVEL ];
+	const metadataAvailability = getMetadataAvailability( layer );
+	const maxLevel = getMaxLevel( layer );
+	return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
+
+}
+
+// Constructs the url for the given tile content
+function getContentUrl( x, y, level, version, layer ) {
+
+	return layer.tiles[ 0 ]
+		.replace( /{\s*z\s*}/g, level )
+		.replace( /{\s*x\s*}/g, x )
+		.replace( /{\s*y\s*}/g, y )
+		.replace( /{\s*version\s*}/g, version );
+
+}
+
 export class QuantizedMeshPlugin {
-
-	get maxLevel() {
-
-		const { available = null, maxzoom = null } = this.layer;
-		return maxzoom === null ? available.length : maxzoom;
-
-	}
-
-	get metadataAvailability() {
-
-		const { metadataAvailability = - 1 } = this.layer;
-		return metadataAvailability;
-
-	}
 
 	constructor( options = {} ) {
 
@@ -91,10 +114,9 @@ export class QuantizedMeshPlugin {
 	preprocessNode( tile, dir, parentTile ) {
 
 		// generate children
-		const { maxLevel } = this;
 		const level = tile[ TILE_LEVEL ];
-		const hasMetadata = this.hasMetadata( tile );
-
+		const maxLevel = getMaxLevel( this.layer );
+		const hasMetadata = getTileHasMetadata( tile, this.layer );
 		if ( level < maxLevel && ! hasMetadata ) {
 
 			this.expandChildren( tile );
@@ -229,7 +251,8 @@ export class QuantizedMeshPlugin {
 
 			// if the tile hasn't been expanded yet and isn't in the queue to do so then
 			// mark it for expansion again
-			if ( this.hasMetadata( tile ) && 'available' in metadata && tile.children.length === 0 ) {
+			const hasMetadata = getTileHasMetadata( tile, this.layer );
+			if ( hasMetadata && 'available' in metadata && tile.children.length === 0 ) {
 
 				// add an offset to account for the current and previous layers
 				tile[ TILE_AVAILABLE ] = [
@@ -274,13 +297,8 @@ export class QuantizedMeshPlugin {
 
 		}
 
-		const url = this.layer.tiles[ 0 ]
-			.replace( /{\s*z\s*}/g, level )
-			.replace( /{\s*x\s*}/g, x )
-			.replace( /{\s*y\s*}/g, y )
-			.replace( /{\s*version\s*}/g, 1 );
-
-		const { tiles } = this;
+		const { tiles, layer } = this;
+		const url = getContentUrl( x, y, level, 1, layer );
 		const ellipsoid = tiles.ellipsoid;
 		const [ , south, , north, , maxHeight ] = region;
 		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
@@ -290,16 +308,16 @@ export class QuantizedMeshPlugin {
 
 		// https://github.com/CesiumGS/cesium/blob/53889cbed2a91d38e0fae4b6f2dcf6783632fc92/packages/engine/Source/Scene/QuadtreeTileProvider.js#L24-L31
 		// Implicit quantized mesh tile error halves with every layer
-		const xTiles = this.layer.projection === 'EPSG:4326' ? 2 : 1;
+		const xTiles = layer.projection === 'EPSG:4326' ? 2 : 1;
 		const maxRadius = Math.max( ...ellipsoid.radius );
 		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * xTiles );
 		const geometricError = rootGeometricError / ( 2 ** level );
 
 		const tile = {
+			[ TILE_AVAILABLE ]: null,
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
-			[ TILE_AVAILABLE ]: null,
 			refine: 'REPLACE',
 			geometricError: geometricError,
 			boundingVolume: {
@@ -312,7 +330,7 @@ export class QuantizedMeshPlugin {
 		};
 
 		// if we're relying on tile metadata availability then skip storing the tile metadata
-		if ( ! this.hasMetadata( tile ) ) {
+		if ( ! getTileHasMetadata( tile, layer ) ) {
 
 			tile[ TILE_AVAILABLE ] = available;
 
