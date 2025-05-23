@@ -69,7 +69,6 @@ export class QuantizedMeshPlugin {
 		this.smoothSkirtNormals = smoothSkirtNormals;
 		this.solid = solid;
 		this.attribution = null;
-		this.needsUpdate = true;
 
 	}
 
@@ -279,19 +278,6 @@ export class QuantizedMeshPlugin {
 			}
 
 		}
-
-	}
-
-	doTilesNeedUpdate() {
-
-		if ( this.needsUpdate ) {
-
-			this.needsUpdate = false;
-			return true;
-
-		}
-
-		return null;
 
 	}
 
