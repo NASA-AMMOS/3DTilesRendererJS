@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Ability to resolve to any file in "./src".
-- QuantizedMesh: Add support for attributions.
+- QuantizedMeshPlugin: Add support for attributions.
+- QuantizedMeshPlugin: Add support for "metadataAvailability".
 
 ## [0.4.9] - 2025.05.07
 ### Fixed
