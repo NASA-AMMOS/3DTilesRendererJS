@@ -416,6 +416,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const trisToClip = [];
 		for ( let i = 0; i < index.count / 3; i ++ ) {
 
+			// TODO: use while loop to iterate
 			const i0 = index.getX( i * 3 + 0 );
 			const i1 = index.getX( i * 3 + 0 );
 			const i2 = index.getX( i * 3 + 0 );
@@ -509,37 +510,29 @@ class TrianglePool {
 
 	constructor() {
 
-		this.created = [];
-		this.available = [];
+		this.pool = [];
+		this.index = 0;
 
 	}
 
 	get() {
 
-		if ( this.available.length > 0 ) {
-
-			return this.available.pop();
-
-		} else {
+		if ( this.index >= this.pool.length ) {
 
 			const tri = new Triangle();
-			this.created.push( tri );
-			return tri;
+			this.pool.push( tri );
 
 		}
 
-	}
-
-	release( tri ) {
-
-		this.available.push( tri );
+		const res = this.pool[ this.index ];
+		this.index ++;
+		return res;
 
 	}
 
 	reset() {
 
-		this.available.length = 0;
-		this.available.push( ...this.created );
+		this.index = 0;
 
 	}
 
