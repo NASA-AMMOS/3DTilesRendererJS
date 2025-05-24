@@ -396,7 +396,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 	// generates a child mesh in the given quadrant using the same settings as the loader
 	clipToQuadrant( mesh, left, bottom ) {
 
+		const SPLIT_VALUE = 0.5;
 		const triPool = new TrianglePool();
+		const vertNames = [ 'a', 'b', 'c' ];
 
 		let nextIndex = 0;
 		const vertToNewIndexMap = {};
@@ -414,6 +416,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		// iterate over each group separately to retain the group information
 		const geometry = new BufferGeometry();
+		const edgeIndices = [];
 		sourceGeometry.groups.forEach( ( { materialIndex }, groupIndex ) => {
 
 			const newStart = newIndex.length;
@@ -439,12 +442,59 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 				}
 
 				// save the geometry
+				const { minLat, maxLat, minLon, maxLon, ellipsoid } = this;
 				for ( let t = 0, l = yResult.length; t < l; t ++ ) {
 
+					// TODO: shift the clipped edge vertices by the
 					const tri = yResult[ t ];
-					pushVertex( tri.position.a, tri.uv.a, tri.normal.a, isSkirt );
-					pushVertex( tri.position.b, tri.uv.b, tri.normal.b, isSkirt );
-					pushVertex( tri.position.c, tri.uv.c, tri.normal.c, isSkirt );
+					vertNames.forEach( n => {
+
+						const uv = tri.uv[ n ];
+						if ( uv.x !== SPLIT_VALUE && uv.y !== SPLIT_VALUE ) {
+
+							return;
+
+						}
+
+						const point = tri.position[ n ];
+						const lat = MathUtils.lerp( minLat, maxLat, uv.y );
+						const lon = MathUtils.lerp( minLon, maxLon, uv.x );
+						const cart = {};
+
+						point.add( mesh.position );
+						ellipsoid.getPositionToCartographic( point, cart );
+						ellipsoid.getCartographicToPosition( lat, lon, cart.height, point );
+						point.sub( mesh.position );
+
+					} );
+
+
+					const indices = [
+						pushVertex( tri.position.a, tri.uv.a, tri.normal.a, isSkirt ),
+						pushVertex( tri.position.b, tri.uv.b, tri.normal.b, isSkirt ),
+						pushVertex( tri.position.c, tri.uv.c, tri.normal.c, isSkirt ),
+					];
+
+					if ( this.skirtLength !== 0 ) {
+
+						for ( let e = 0; e < 3; e ++ ) {
+
+							const ne = ( e + 1 ) % 3;
+							const v = tri.uv[ vertNames[ e ] ];
+							const nv = tri.uv[ vertNames[ ne ] ];
+
+							if (
+								v.x === SPLIT_VALUE && nv.x === SPLIT_VALUE ||
+								v.y === SPLIT_VALUE && nv.y === SPLIT_VALUE
+							) {
+
+								edgeIndices.push( indices[ ne ], indices[ e ] );
+
+							}
+
+						}
+
+					}
 
 				}
 
@@ -481,22 +531,21 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		mesh.position.setScalar( 0 );
 		mesh.material.opacity = 0.5;
 		mesh.material.transparent = true;
+		mesh.material.depthWrite = false;
 
 		return result;
 
 		function splitTriangle( tri, axis, negativeSide, target ) {
 
 			// TODO: clean up, add scratch variables, optimize
-			const SPLIT_VALUE = 0.5;
 			const edgeIndices = [];
 			const edges = [];
 			const lerpValues = [];
-			const arr = [ 'a', 'b', 'c' ];
 
 			for ( let i = 0; i < 3; i ++ ) {
 
-				const v = arr[ i ];
-				const nv = arr[ ( i + 1 ) % 3 ];
+				const v = vertNames[ i ];
+				const nv = vertNames[ ( i + 1 ) % 3 ];
 
 				const p = tri.uv[ v ];
 				const np = tri.uv[ nv ];
@@ -542,34 +591,42 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 					tri0.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
 					tri0.copyVertex( tri, edges[ 0 ][ 1 ], 'b' );
 					tri0.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
+					tri0.uv.a[ axis ] = SPLIT_VALUE;
+					tri0.uv.c[ axis ] = SPLIT_VALUE;
 
 					tri1.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
 					tri1.copyVertex( tri, edges[ 1 ][ 1 ], 'b' );
 					tri1.copyVertex( tri, edges[ 0 ][ 0 ], 'c' );
+					tri1.uv.a[ axis ] = SPLIT_VALUE;
 
 					tri2.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
 					tri2.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'b' );
 					tri2.copyVertex( tri, edges[ 1 ][ 1 ], 'c' );
+					tri2.uv.a[ axis ] = SPLIT_VALUE;
+					tri2.uv.b[ axis ] = SPLIT_VALUE;
 
 				} else {
 
 					tri0.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
 					tri0.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'b' );
 					tri0.copyVertex( tri, edges[ 0 ][ 0 ], 'c' );
+					tri0.uv.a[ axis ] = SPLIT_VALUE;
+					tri0.uv.b[ axis ] = SPLIT_VALUE;
 
 					tri1.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
 					tri1.copyVertex( tri, edges[ 0 ][ 1 ], 'b' );
 					tri1.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
-
+					tri1.uv.a[ axis ] = SPLIT_VALUE;
+					tri1.uv.c[ axis ] = SPLIT_VALUE;
 
 					tri2.copyVertex( tri, edges[ 0 ][ 1 ], 'a' );
 					tri2.copyVertex( tri, edges[ 1 ][ 0 ], 'b' );
 					tri2.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
+					tri2.uv.c[ axis ] = SPLIT_VALUE;
 
 				}
 
 				let minBound;
-
 				minBound = Math.min( tri0.uv.a[ axis ], tri0.uv.b[ axis ], tri0.uv.c[ axis ] );
 				if ( ( minBound < SPLIT_VALUE ) === negativeSide ) {
 
@@ -625,7 +682,9 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
-			newIndex.push( vertToNewIndexMap[ hash ] );
+			const index = vertToNewIndexMap[ hash ];
+			newIndex.push( index );
+			return index;
 
 		}
 
