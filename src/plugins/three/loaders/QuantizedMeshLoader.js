@@ -293,7 +293,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			const height = MathUtils.lerp( header.minHeight, header.maxHeight, h );
 			const lon = MathUtils.lerp( minLon, maxLon, u );
-			const lat = MathUtils.lerp( minLat, maxLat, v );
+			const lat = MathUtils.lerp( minLat - 0.000, maxLat - 0.0000, v );
 
 			ellipsoid.getCartographicToPosition( lat, lon, height + heightOffset, target );
 
@@ -396,28 +396,47 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 	// generates a child mesh in the given quadrant using the same settings as the loader
 	clipToQuadrant( mesh, left, bottom ) {
 
+		// scratch vectors
+		const _uv0 = new Vector3();
+		const _uv1 = new Vector3();
+
+		const _pos0 = new Vector3();
+		const _pos1 = new Vector3();
+		const _pos2 = new Vector3();
+		const _pos3 = new Vector3();
+
+		const _temp = new Vector3();
+		const _temp2 = new Vector3();
+		const _cart = {};
+
+		// helper variables
 		const SPLIT_VALUE = 0.5;
 		const triPool = new TrianglePool();
 		const vertNames = [ 'a', 'b', 'c' ];
+		const { ellipsoid, skirtLength, solid } = this;
 
-		let nextIndex = 0;
-		const vertToNewIndexMap = {};
-		const newPosition = [];
-		const newNormal = [];
-		const newUv = [];
-		const newIndex = [];
-
-		const xUvOffset = left ? 0 : - 0.5;
-		const yUvOffset = bottom ? 0 : - 0.5;
-
+		// source geometry
 		const sourceGeometry = mesh.geometry;
 		const normal = sourceGeometry.attributes.normal;
 		const index = sourceGeometry.index;
+
+		// geometry data
+		let nextIndex = 0;
+		const vertToNewIndexMap = {};
+		const newPosition = [];
+		const newNormal = normal ? [] : null;
+		const newUv = [];
+		const newIndex = [];
+
+		// uv offsets
+		const xUvOffset = left ? 0 : - 0.5;
+		const yUvOffset = bottom ? 0 : - 0.5;
 
 		// iterate over each group separately to retain the group information
 		const geometry = new BufferGeometry();
 		const capGroup = sourceGeometry.groups[ 0 ];
 
+		// construct the cap geometry
 		let newStart = newIndex.length;
 		let materialIndex = 0;
 		for ( let i = capGroup.start / 3; i < ( capGroup.start + capGroup.count ) / 3; i ++ ) {
@@ -444,7 +463,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			const { minLat, maxLat, minLon, maxLon, ellipsoid } = this;
 			for ( let t = 0, l = yResult.length; t < l; t ++ ) {
 
-				// TODO: shift the clipped edge vertices by the
 				const tri = yResult[ t ];
 				vertNames.forEach( n => {
 
@@ -458,11 +476,10 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 					const point = tri.position[ n ];
 					const lat = MathUtils.lerp( minLat, maxLat, uv.y );
 					const lon = MathUtils.lerp( minLon, maxLon, uv.x );
-					const cart = {};
 
 					point.add( mesh.position );
-					ellipsoid.getPositionToCartographic( point, cart );
-					ellipsoid.getCartographicToPosition( lat, lon, cart.height, point );
+					ellipsoid.getPositionToCartographic( point, _cart );
+					ellipsoid.getCartographicToPosition( lat, lon, _cart.height, point );
 					point.sub( mesh.position );
 
 				} );
@@ -480,27 +497,22 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
 		materialIndex ++;
 
+		// construct bottom cap
 		const capTriangles = newIndex.length / 3;
-		if ( this.solid ) {
+		if ( solid ) {
 
-			const _pos = new Vector3();
-			const _uv = new Vector3();
-			const _norm = new Vector3();
-			const _temp = new Vector3();
-			const { ellipsoid, skirtLength } = this;
 			newStart = newIndex.length;
 			for ( let i = capTriangles * 3 - 1; i >= 0; i -- ) {
 
 				const index = newIndex[ i ];
-				_temp.fromArray( newPosition, index * 3 );
-				_temp.add( mesh.position );
+				_temp.fromArray( newPosition, index * 3 ).add( mesh.position );
 				ellipsoid.getPositionToNormal( _temp, _temp );
 
-				_pos.fromArray( newPosition, index * 3 ).addScaledVector( _temp, - skirtLength );
-				_uv.fromArray( newUv, index * 2 );
-				_norm.fromArray( newNormal, index * 3 );
+				_pos0.fromArray( newPosition, index * 3 ).addScaledVector( _temp, - skirtLength );
+				_uv0.fromArray( newUv, index * 2 );
+				_temp.fromArray( newNormal, index * 3 );
 
-				pushVertex( _pos, _uv, _norm, false );
+				pushVertex( _pos0, _uv0, _temp, false );
 
 			}
 
@@ -509,17 +521,11 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		if ( this.skirtLength !== 0 ) {
+		// construct the skirt
+		if ( skirtLength > 0 ) {
 
-			const _pos0 = new Vector3();
-			const _uv0 = new Vector3();
-
-			const _pos1 = new Vector3();
-			const _uv1 = new Vector3();
-
-			const _temp = new Vector3();
-			const { ellipsoid, skirtLength } = this;
-
+			// TODO: this seems to have some problematic cases at the root tiles near the poles
+			newStart = newIndex.length;
 			for ( let i = 0; i < capTriangles; i ++ ) {
 
 				const triOffset = 3 * i;
@@ -532,19 +538,20 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 					_uv0.fromArray( newUv, i0 * 2 );
 					_uv1.fromArray( newUv, i1 * 2 );
 
+					// find the vertices that lie on the edge
 					if (
-						_uv0.x === _uv1.x && ( _uv0.x === 0 || _uv0.x === SPLIT_VALUE || _uv0.x === 1.0 ) ||
-						_uv0.y === _uv1.y && ( _uv0.y === 0 || _uv0.y === SPLIT_VALUE || _uv0.y === 1.0 )
+						( _uv1.x === 0 || _uv1.x === SPLIT_VALUE || _uv1.x === 1.0 ) && ( _uv0.x === 0 || _uv0.x === SPLIT_VALUE || _uv0.x === 1.0 ) ||
+						( _uv1.y === 0 || _uv1.y === SPLIT_VALUE || _uv1.y === 1.0 ) && ( _uv0.y === 0 || _uv0.y === SPLIT_VALUE || _uv0.y === 1.0 )
 					) {
 
 						_pos0.fromArray( newPosition, i0 * 3 );
 						_pos1.fromArray( newPosition, i1 * 3 );
 
-						const u0 = _pos0.clone();
-						const u1 = _pos1.clone();
+						const u0 = _pos0;
+						const u1 = _pos1;
 
-						const b0 = _pos0.clone();
-						const b1 = _pos1.clone();
+						const b0 = _pos2.copy( _pos0 );
+						const b1 = _pos3.copy( _pos1 );
 
 						_temp.copy( b0 ).add( mesh.position );
 						ellipsoid.getPositionToNormal( _temp, _temp );
@@ -554,13 +561,16 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 						ellipsoid.getPositionToNormal( _temp, _temp );
 						b1.addScaledVector( _temp, - skirtLength );
 
-						pushVertex( u1, _uv1, _uv1, true );
-						pushVertex( u0, _uv0, _uv0, true );
-						pushVertex( b0, _uv0, _uv0, true );
+						_temp.subVectors( u0, u1 );
+						_temp2.subVectors( u0, b0 ).cross( _temp ).normalize();
 
-						pushVertex( u1, _uv1, _uv1, true );
-						pushVertex( b0, _uv0, _uv0, true );
-						pushVertex( b1, _uv1, _uv1, true );
+						pushVertex( u1, _uv1, _temp2, true );
+						pushVertex( u0, _uv0, _temp2, true );
+						pushVertex( b0, _uv0, _temp2, true );
+
+						pushVertex( u1, _uv1, _temp2, true );
+						pushVertex( b0, _uv0, _temp2, true );
+						pushVertex( b1, _uv1, _temp2, true );
 
 					}
 
@@ -568,8 +578,12 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
+			geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
+			materialIndex ++;
+
 		}
 
+		// offset the uvs
 		for ( let i = 0, l = newUv.length; i < l; i += 2 ) {
 
 			newUv[ i ] = ( newUv[ i ] + xUvOffset ) * 2.0;
@@ -595,12 +609,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		result.scale.copy( mesh.scale );
 		result.userData.minHeight = mesh.userData.minHeight;
 		result.userData.maxHeight = mesh.userData.maxHeight;
-
-		result.add( mesh );
-		mesh.position.setScalar( 0 );
-		mesh.material.opacity = 0.1;
-		mesh.material.transparent = true;
-		mesh.material.depthWrite = false;
 
 		return result;
 
@@ -721,26 +729,31 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
-		function hashVertex( x, y, z, skirt = false ) {
+		function hashVertex( x, y, z ) {
 
 			const scalar = 1e5;
 			const additive = 0.5;
 			const hx = ~ ~ ( x * scalar + additive );
 			const hy = ~ ~ ( y * scalar + additive );
 			const hz = ~ ~ ( z * scalar + additive );
-			return `${ hx }_${ hy }_${ hz }_${ Number( skirt ) }`;
+			return `${ hx }_${ hy }_${ hz }`;
 
 		}
 
-		function pushVertex( pos, uv, norm, skirt = false ) {
+		function pushVertex( pos, uv, norm ) {
 
-			const hash = hashVertex( pos.x, pos.y, pos.z, skirt );
+			let hash = hashVertex( pos.x, pos.y, pos.z );
+			if ( newNormal ) {
+
+				hash += `_${ hashVertex( norm.x, norm.y, norm.z ) }`;
+
+			}
+
 			if ( ! ( hash in vertToNewIndexMap ) ) {
 
 				vertToNewIndexMap[ hash ] = nextIndex;
 				nextIndex ++;
 
-				// TODO: remap the uvs
 				newPosition.push( pos.x, pos.y, pos.z );
 				newUv.push( uv.x, uv.y );
 				if ( newNormal ) {
