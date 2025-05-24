@@ -729,6 +729,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
+		// hash the vertex for index generation
 		function hashVertex( x, y, z ) {
 
 			const scalar = 1e5;
@@ -740,6 +741,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		}
 
+		// add the vertex to the geometry
 		function pushVertex( pos, uv, norm ) {
 
 			let hash = hashVertex( pos.x, pos.y, pos.z );
@@ -774,6 +776,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 }
 
+// Pool of reusable triangles
 class TrianglePool {
 
 	constructor() {
@@ -806,6 +809,7 @@ class TrianglePool {
 
 }
 
+// Set of triangle definitions for quantized mesh attributes
 class AttributeTriangle {
 
 	constructor() {
