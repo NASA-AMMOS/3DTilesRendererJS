@@ -1,5 +1,4 @@
 import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
-import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -25,7 +24,6 @@ export class ImageFormatPlugin {
 
 		this.priority = - 10;
 		this.tiles = null;
-		this.processQueue = null;
 		this.processCallback = null;
 
 		// tile dimensions in pixels
@@ -44,15 +42,10 @@ export class ImageFormatPlugin {
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.flipY = false;
 
-		this.needsUpdate = true;
-
 	}
 
+	// Plugin functions
 	init( tiles ) {
-
-		const processQueue = new PriorityQueue();
-		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
-		processQueue.maxJobs = 20;
 
 		if ( this.useRecommendedSettings ) {
 
@@ -61,33 +54,6 @@ export class ImageFormatPlugin {
 
 		}
 
-		this.processCallback = tile => {
-
-			const level = tile[ TILE_LEVEL ];
-			const x = tile[ TILE_X ];
-			const y = tile[ TILE_Y ];
-			for ( let cx = 0; cx < 2; cx ++ ) {
-
-				for ( let cy = 0; cy < 2; cy ++ ) {
-
-					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy );
-					if ( child ) {
-
-						tile.children.push( child );
-
-					}
-
-				}
-
-			}
-
-			this.needsUpdate = true;
-
-			return Promise.resolve();
-
-		};
-
-		this.processQueue = processQueue;
 		this.tiles = tiles;
 
 	}
@@ -135,15 +101,13 @@ export class ImageFormatPlugin {
 		const level = tile[ TILE_LEVEL ];
 		if ( level < maxLevel ) {
 
-			// marking the tiles as needing an update here prevents cases where we need to process children but there's a frame delay
-			// meaning we may miss our chance on the next loop to perform an update if the "UpdateOnChange" plugin is being used.
-			this.processQueue.add( tile, this.processCallback );
-			this.needsUpdate = true;
+			this.expandChildren( tile );
 
 		}
 
 	}
 
+	// Local functions
 	getTileset( baseUrl ) {
 
 		const tileset = {
@@ -169,7 +133,7 @@ export class ImageFormatPlugin {
 
 			for ( let y = 0; y < tilesY; y ++ ) {
 
-				tileset.root.children.push( this.expand( 0, x, y ) );
+				tileset.root.children.push( this.createChild( 0, x, y ) );
 
 			}
 
@@ -198,7 +162,7 @@ export class ImageFormatPlugin {
 
 	}
 
-	expand( level, x, y ) {
+	createChild( level, x, y ) {
 
 		const { maxLevel, width, height, overlap, pixelSize, center, tileWidth, tileHeight, flipY } = this;
 
@@ -304,16 +268,25 @@ export class ImageFormatPlugin {
 
 	}
 
-	doTilesNeedUpdate() {
+	expandChildren( tile ) {
 
-		if ( this.needsUpdate ) {
+		const level = tile[ TILE_LEVEL ];
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		for ( let cx = 0; cx < 2; cx ++ ) {
 
-			this.needsUpdate = false;
-			return true;
+			for ( let cy = 0; cy < 2; cy ++ ) {
+
+				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy );
+				if ( child ) {
+
+					tile.children.push( child );
+
+				}
+
+			}
 
 		}
-
-		return null;
 
 	}
 
