@@ -417,11 +417,12 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		// iterate over each group separately to retain the group information
 		const geometry = new BufferGeometry();
 		const edgeIndices = [];
-		sourceGeometry.groups.forEach( ( { materialIndex }, groupIndex ) => {
+		const skirtIndex = sourceGeometry.groups.length - 1;
+		sourceGeometry.groups.forEach( ( { materialIndex, start, count }, groupIndex ) => {
 
 			const newStart = newIndex.length;
-			const isSkirt = groupIndex === 2;
-			for ( let i = 0; i < index.count / 3; i ++ ) {
+			const isSkirt = groupIndex === skirtIndex;
+			for ( let i = start / 3; i < ( start + count ) / 3; i ++ ) {
 
 				const i0 = index.getX( i * 3 + 0 );
 				const i1 = index.getX( i * 3 + 1 );
@@ -468,14 +469,13 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 					} );
 
-
 					const indices = [
 						pushVertex( tri.position.a, tri.uv.a, tri.normal.a, isSkirt ),
 						pushVertex( tri.position.b, tri.uv.b, tri.normal.b, isSkirt ),
 						pushVertex( tri.position.c, tri.uv.c, tri.normal.c, isSkirt ),
 					];
 
-					if ( this.skirtLength !== 0 ) {
+					if ( this.skirtLength !== 0 && groupIndex === 0 ) {
 
 						for ( let e = 0; e < 3; e ++ ) {
 
@@ -488,7 +488,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 								v.y === SPLIT_VALUE && nv.y === SPLIT_VALUE
 							) {
 
-								edgeIndices.push( indices[ ne ], indices[ e ] );
+								edgeIndices.push( indices[ e ], indices[ ne ] );
 
 							}
 
@@ -502,7 +502,75 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
-			// TODO: need to add the additional skirts to the final group
+			// Construct the skirt
+			// TODO: optimize / cleanup
+			if ( isSkirt ) {
+
+				for ( let i = 0; i < edgeIndices.length; i += 2 ) {
+
+					const index = edgeIndices[ i ];
+					const nindex = edgeIndices[ i + 1 ];
+
+					const norm = new Vector3();
+					const uv0 = new Vector3();
+					const pos0 = new Vector3();
+					const uv1 = new Vector3();
+					const pos1 = new Vector3();
+
+					uv0.fromArray( newUv, index * 2 );
+					uv1.fromArray( newUv, nindex * 2 );
+					pos0.fromArray( newPosition, index * 3 );
+					pos1.fromArray( newPosition, nindex * 3 );
+
+					pushVertex( pos1, uv1, uv1, true );
+					pushVertex( pos0, uv0, uv0, true );
+
+					pos0.add( mesh.position );
+					this.ellipsoid.getPositionToNormal( pos0, norm );
+					pos0.addScaledVector( norm, - this.skirtLength );
+					pos0.sub( mesh.position );
+
+					pushVertex( pos0, uv0, uv0, true );
+
+				}
+
+				for ( let i = 0; i < edgeIndices.length; i += 2 ) {
+
+					const index = edgeIndices[ i ];
+					const nindex = edgeIndices[ i + 1 ];
+
+					const norm = new Vector3();
+					const uv0 = new Vector3();
+					const pos0 = new Vector3();
+					const uv1 = new Vector3();
+					const pos1 = new Vector3();
+
+					uv0.fromArray( newUv, index * 2 );
+					uv1.fromArray( newUv, nindex * 2 );
+					pos0.fromArray( newPosition, index * 3 );
+					pos1.fromArray( newPosition, nindex * 3 );
+
+					pushVertex( pos1, uv1, uv1, true );
+
+					pos0.add( mesh.position );
+					this.ellipsoid.getPositionToNormal( pos0, norm );
+					pos0.addScaledVector( norm, - this.skirtLength );
+					pos0.sub( mesh.position );
+
+					pushVertex( pos0, uv0, uv0, true );
+
+					pos1.add( mesh.position );
+					this.ellipsoid.getPositionToNormal( pos1, norm );
+					pos1.addScaledVector( norm, - this.skirtLength );
+					pos1.sub( mesh.position );
+
+					pushVertex( pos1, uv1, uv1, true );
+
+
+				}
+
+			}
+
 			geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
 
 		} );
@@ -529,7 +597,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		result.add( mesh );
 		mesh.position.setScalar( 0 );
-		mesh.material.opacity = 0.5;
+		mesh.material.opacity = 0.1;
 		mesh.material.transparent = true;
 		mesh.material.depthWrite = false;
 
