@@ -416,164 +416,166 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		// iterate over each group separately to retain the group information
 		const geometry = new BufferGeometry();
-		const edgeIndices = [];
-		const skirtIndex = sourceGeometry.groups.length - 1;
-		sourceGeometry.groups.forEach( ( { materialIndex, start, count }, groupIndex ) => {
+		const capGroup = sourceGeometry.groups[ 0 ];
 
-			const newStart = newIndex.length;
-			const isSkirt = groupIndex === skirtIndex;
-			for ( let i = start / 3; i < ( start + count ) / 3; i ++ ) {
+		let newStart = newIndex.length;
+		let materialIndex = 0;
+		for ( let i = capGroup.start / 3; i < ( capGroup.start + capGroup.count ) / 3; i ++ ) {
 
-				const i0 = index.getX( i * 3 + 0 );
-				const i1 = index.getX( i * 3 + 1 );
-				const i2 = index.getX( i * 3 + 2 );
-				const tri = triPool.get();
-				tri.setFromAttributeAndIndices( sourceGeometry, i0, i1, i2 );
+			const i0 = index.getX( i * 3 + 0 );
+			const i1 = index.getX( i * 3 + 1 );
+			const i2 = index.getX( i * 3 + 2 );
+			const tri = triPool.get();
+			tri.setFromAttributeAndIndices( sourceGeometry, i0, i1, i2 );
 
-				// split the triangle by the first axis
-				const xResult = [];
-				splitTriangle( tri, 'x', left, xResult );
+			// split the triangle by the first axis
+			const xResult = [];
+			splitTriangle( tri, 'x', left, xResult );
 
-				// split the triangles by the second axis
-				const yResult = [];
-				for ( let t = 0, l = xResult.length; t < l; t ++ ) {
+			// split the triangles by the second axis
+			const yResult = [];
+			for ( let t = 0, l = xResult.length; t < l; t ++ ) {
 
-					splitTriangle( xResult[ t ], 'y', bottom, yResult );
+				splitTriangle( xResult[ t ], 'y', bottom, yResult );
 
-				}
+			}
 
-				// save the geometry
-				const { minLat, maxLat, minLon, maxLon, ellipsoid } = this;
-				for ( let t = 0, l = yResult.length; t < l; t ++ ) {
+			// save the geometry
+			const { minLat, maxLat, minLon, maxLon, ellipsoid } = this;
+			for ( let t = 0, l = yResult.length; t < l; t ++ ) {
 
-					// TODO: shift the clipped edge vertices by the
-					const tri = yResult[ t ];
-					vertNames.forEach( n => {
+				// TODO: shift the clipped edge vertices by the
+				const tri = yResult[ t ];
+				vertNames.forEach( n => {
 
-						const uv = tri.uv[ n ];
-						if ( uv.x !== SPLIT_VALUE && uv.y !== SPLIT_VALUE ) {
+					const uv = tri.uv[ n ];
+					if ( uv.x !== SPLIT_VALUE && uv.y !== SPLIT_VALUE ) {
 
-							return;
+						return;
 
-						}
+					}
 
-						const point = tri.position[ n ];
-						const lat = MathUtils.lerp( minLat, maxLat, uv.y );
-						const lon = MathUtils.lerp( minLon, maxLon, uv.x );
-						const cart = {};
+					const point = tri.position[ n ];
+					const lat = MathUtils.lerp( minLat, maxLat, uv.y );
+					const lon = MathUtils.lerp( minLon, maxLon, uv.x );
+					const cart = {};
 
-						point.add( mesh.position );
-						ellipsoid.getPositionToCartographic( point, cart );
-						ellipsoid.getCartographicToPosition( lat, lon, cart.height, point );
-						point.sub( mesh.position );
+					point.add( mesh.position );
+					ellipsoid.getPositionToCartographic( point, cart );
+					ellipsoid.getCartographicToPosition( lat, lon, cart.height, point );
+					point.sub( mesh.position );
 
-					} );
+				} );
 
-					const indices = [
-						pushVertex( tri.position.a, tri.uv.a, tri.normal.a, isSkirt ),
-						pushVertex( tri.position.b, tri.uv.b, tri.normal.b, isSkirt ),
-						pushVertex( tri.position.c, tri.uv.c, tri.normal.c, isSkirt ),
-					];
+				pushVertex( tri.position.a, tri.uv.a, tri.normal.a, false );
+				pushVertex( tri.position.b, tri.uv.b, tri.normal.b, false );
+				pushVertex( tri.position.c, tri.uv.c, tri.normal.c, false );
 
-					if ( this.skirtLength !== 0 && groupIndex === 0 ) {
+			}
 
-						for ( let e = 0; e < 3; e ++ ) {
+			triPool.reset();
 
-							const ne = ( e + 1 ) % 3;
-							const v = tri.uv[ vertNames[ e ] ];
-							const nv = tri.uv[ vertNames[ ne ] ];
+		}
 
-							if (
-								v.x === SPLIT_VALUE && nv.x === SPLIT_VALUE ||
-								v.y === SPLIT_VALUE && nv.y === SPLIT_VALUE
-							) {
+		geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
+		materialIndex ++;
 
-								edgeIndices.push( indices[ e ], indices[ ne ] );
+		const capTriangles = newIndex.length / 3;
+		if ( this.solid ) {
 
-							}
+			const _pos = new Vector3();
+			const _uv = new Vector3();
+			const _norm = new Vector3();
+			const _temp = new Vector3();
+			const { ellipsoid, skirtLength } = this;
+			newStart = newIndex.length;
+			for ( let i = capTriangles * 3 - 1; i >= 0; i -- ) {
 
-						}
+				const index = newIndex[ i ];
+				_temp.fromArray( newPosition, index * 3 );
+				_temp.add( mesh.position );
+				ellipsoid.getPositionToNormal( _temp, _temp );
+
+				_pos.fromArray( newPosition, index * 3 ).addScaledVector( _temp, - skirtLength );
+				_uv.fromArray( newUv, index * 2 );
+				_norm.fromArray( newNormal, index * 3 );
+
+				pushVertex( _pos, _uv, _norm, false );
+
+			}
+
+			geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
+			materialIndex ++;
+
+		}
+
+		if ( this.skirtLength !== 0 ) {
+
+			const _pos0 = new Vector3();
+			const _uv0 = new Vector3();
+
+			const _pos1 = new Vector3();
+			const _uv1 = new Vector3();
+
+			const _temp = new Vector3();
+			const { ellipsoid, skirtLength } = this;
+
+			for ( let i = 0; i < capTriangles; i ++ ) {
+
+				const triOffset = 3 * i;
+				for ( let e = 0; e < 3; e ++ ) {
+
+					const ne = ( e + 1 ) % 3;
+					const i0 = newIndex[ triOffset + e ];
+					const i1 = newIndex[ triOffset + ne ];
+
+					_uv0.fromArray( newUv, i0 * 2 );
+					_uv1.fromArray( newUv, i1 * 2 );
+
+					if (
+						_uv0.x === _uv1.x && ( _uv0.x === 0 || _uv0.x === SPLIT_VALUE || _uv0.x === 1.0 ) ||
+						_uv0.y === _uv1.y && ( _uv0.y === 0 || _uv0.y === SPLIT_VALUE || _uv0.y === 1.0 )
+					) {
+
+						_pos0.fromArray( newPosition, i0 * 3 );
+						_pos1.fromArray( newPosition, i1 * 3 );
+
+						const u0 = _pos0.clone();
+						const u1 = _pos1.clone();
+
+						const b0 = _pos0.clone();
+						const b1 = _pos1.clone();
+
+						_temp.copy( b0 ).add( mesh.position );
+						ellipsoid.getPositionToNormal( _temp, _temp );
+						b0.addScaledVector( _temp, - skirtLength );
+
+						_temp.copy( b1 ).add( mesh.position );
+						ellipsoid.getPositionToNormal( _temp, _temp );
+						b1.addScaledVector( _temp, - skirtLength );
+
+						pushVertex( u1, _uv1, _uv1, true );
+						pushVertex( u0, _uv0, _uv0, true );
+						pushVertex( b0, _uv0, _uv0, true );
+
+						pushVertex( u1, _uv1, _uv1, true );
+						pushVertex( b0, _uv0, _uv0, true );
+						pushVertex( b1, _uv1, _uv1, true );
 
 					}
 
 				}
 
-				triPool.reset();
-
 			}
 
-			// Construct the skirt
-			// TODO: optimize / cleanup
-			if ( isSkirt ) {
+		}
 
-				for ( let i = 0; i < edgeIndices.length; i += 2 ) {
+		for ( let i = 0, l = newUv.length; i < l; i += 2 ) {
 
-					const index = edgeIndices[ i ];
-					const nindex = edgeIndices[ i + 1 ];
+			newUv[ i ] = ( newUv[ i ] + xUvOffset ) * 2.0;
+			newUv[ i + 1 ] = ( newUv[ i + 1 ] + yUvOffset ) * 2.0;
 
-					const norm = new Vector3();
-					const uv0 = new Vector3();
-					const pos0 = new Vector3();
-					const uv1 = new Vector3();
-					const pos1 = new Vector3();
-
-					uv0.fromArray( newUv, index * 2 );
-					uv1.fromArray( newUv, nindex * 2 );
-					pos0.fromArray( newPosition, index * 3 );
-					pos1.fromArray( newPosition, nindex * 3 );
-
-					pushVertex( pos1, uv1, uv1, true );
-					pushVertex( pos0, uv0, uv0, true );
-
-					pos0.add( mesh.position );
-					this.ellipsoid.getPositionToNormal( pos0, norm );
-					pos0.addScaledVector( norm, - this.skirtLength );
-					pos0.sub( mesh.position );
-
-					pushVertex( pos0, uv0, uv0, true );
-
-				}
-
-				for ( let i = 0; i < edgeIndices.length; i += 2 ) {
-
-					const index = edgeIndices[ i ];
-					const nindex = edgeIndices[ i + 1 ];
-
-					const norm = new Vector3();
-					const uv0 = new Vector3();
-					const pos0 = new Vector3();
-					const uv1 = new Vector3();
-					const pos1 = new Vector3();
-
-					uv0.fromArray( newUv, index * 2 );
-					uv1.fromArray( newUv, nindex * 2 );
-					pos0.fromArray( newPosition, index * 3 );
-					pos1.fromArray( newPosition, nindex * 3 );
-
-					pushVertex( pos1, uv1, uv1, true );
-
-					pos0.add( mesh.position );
-					this.ellipsoid.getPositionToNormal( pos0, norm );
-					pos0.addScaledVector( norm, - this.skirtLength );
-					pos0.sub( mesh.position );
-
-					pushVertex( pos0, uv0, uv0, true );
-
-					pos1.add( mesh.position );
-					this.ellipsoid.getPositionToNormal( pos1, norm );
-					pos1.addScaledVector( norm, - this.skirtLength );
-					pos1.sub( mesh.position );
-
-					pushVertex( pos1, uv1, uv1, true );
-
-
-				}
-
-			}
-
-			geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
-
-		} );
+		}
 
 		// new geometry
 		const indexBuffer = newPosition.length / 3 > 65535 ? new Uint32Array( newIndex ) : new Uint16Array( newIndex );
@@ -593,7 +595,6 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		result.scale.copy( mesh.scale );
 		result.userData.minHeight = mesh.userData.minHeight;
 		result.userData.maxHeight = mesh.userData.maxHeight;
-
 
 		result.add( mesh );
 		mesh.position.setScalar( 0 );
@@ -741,7 +742,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 				// TODO: remap the uvs
 				newPosition.push( pos.x, pos.y, pos.z );
-				newUv.push( ( xUvOffset + uv.x ) * 2.0, ( yUvOffset + uv.y ) * 2.0 );
+				newUv.push( uv.x, uv.y );
 				if ( newNormal ) {
 
 					newNormal.push( norm.x, norm.y, norm.z );
