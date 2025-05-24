@@ -12,7 +12,7 @@ const INITIAL_HEIGHT_RANGE = 1e5;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
-function isAvailable( available, level, x, y ) {
+function isTileAvailable( available, level, x, y ) {
 
 	if ( level < available.length ) {
 
@@ -138,7 +138,6 @@ export class QuantizedMeshPlugin {
 
 				this.layer = json;
 				const {
-					bounds,
 					projection = 'EPSG:4326',
 					extensions = [],
 					attribution = '',
@@ -161,10 +160,10 @@ export class QuantizedMeshPlugin {
 
 				}
 
-				const west = MathUtils.DEG2RAD * bounds[ 0 ];
-				const south = MathUtils.DEG2RAD * bounds[ 1 ];
-				const east = MathUtils.DEG2RAD * bounds[ 2 ];
-				const north = MathUtils.DEG2RAD * bounds[ 3 ];
+				const west = - 180 * MathUtils.DEG2RAD;
+				const south = - 90 * MathUtils.DEG2RAD;
+				const east = 180 * MathUtils.DEG2RAD;
+				const north = 90 * MathUtils.DEG2RAD;
 
 				const tileset = {
 					asset: {
@@ -283,13 +282,8 @@ export class QuantizedMeshPlugin {
 	// Local functions
 	createChild( level, x, y, region, available ) {
 
-		if ( ! isAvailable( available, level, x, y ) ) {
-
-			return null;
-
-		}
-
 		const { tiles, layer } = this;
+		const isAvailable = available === null || isTileAvailable( available, level, x, y );
 		const url = getContentUrl( x, y, level, 1, layer );
 		const ellipsoid = tiles.ellipsoid;
 		const [ , south, , north, , maxHeight ] = region;
@@ -315,9 +309,7 @@ export class QuantizedMeshPlugin {
 			boundingVolume: {
 				region: region,
 			},
-			content: {
-				uri: url,
-			},
+			content: isAvailable ? { uri: url } : null,
 			children: []
 		};
 
