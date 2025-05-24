@@ -394,67 +394,77 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 	}
 
 	// generates a child mesh in the given quadrant using the same settings as the loader
-	clipToQuadrant( mesh, left, top ) {
+	clipToQuadrant( mesh, left, bottom ) {
 
 		const triPool = new TrianglePool();
-		const tri = new Triangle();
 
 		let nextIndex = 0;
 		const vertToNewIndexMap = {};
-		const newPos = [];
-		const newNorm = [];
-		const newUvs = [];
-		const newInd = [];
+		const newPosition = [];
+		const newNormal = [];
+		const newUv = [];
+		const newIndex = [];
 
-		const {
-			position,
-			normal,
-			uv,
-		} = mesh.geometry.attributes;
-		const index = mesh.geometry.index;
+		const xUvOffset = left ? 0 : - 0.5;
+		const yUvOffset = bottom ? 0 : - 0.5;
 
-		const trisToClip = [];
-		for ( let i = 0; i < index.count / 3; i ++ ) {
+		const sourceGeometry = mesh.geometry;
+		const normal = sourceGeometry.attributes.normal;
+		const index = sourceGeometry.index;
 
-			// TODO: use while loop to iterate
-			const i0 = index.getX( i * 3 + 0 );
-			const i1 = index.getX( i * 3 + 0 );
-			const i2 = index.getX( i * 3 + 0 );
-			tri.setFromAttributeAndIndices( uv, i0, i1, i2 );
+		// iterate over each group separately to retain the group information
+		const geometry = new BufferGeometry();
+		sourceGeometry.groups.forEach( ( { materialIndex }, groupIndex ) => {
 
-			const minX = Math.min( tri.a.x, tri.b.x, tri.c.x );
-			const maxX = Math.max( tri.a.x, tri.b.x, tri.c.x );
+			const newStart = newIndex.length;
+			const isSkirt = groupIndex === 2;
+			for ( let i = 0; i < index.count / 3; i ++ ) {
 
-			const minY = Math.min( tri.a.y, tri.b.y, tri.c.y );
-			const maxY = Math.max( tri.a.y, tri.b.y, tri.c.y );
+				const i0 = index.getX( i * 3 + 0 );
+				const i1 = index.getX( i * 3 + 1 );
+				const i2 = index.getX( i * 3 + 2 );
+				const tri = triPool.get();
+				tri.setFromAttributeAndIndices( sourceGeometry, i0, i1, i2 );
 
-			const crossesX = ( minX < 0.5 ) !== ( maxX < 0.5 );
-			const crossesY = ( minY < 0.5 ) !== ( maxY < 0.5 );
+				// split the triangle by the first axis
+				const xResult = [];
+				splitTriangle( tri, 'x', left, xResult );
 
-			if ( crossesX || crossesY ) {
+				// split the triangles by the second axis
+				const yResult = [];
+				for ( let t = 0, l = xResult.length; t < l; t ++ ) {
 
-				// TODO: clip triangles here
-				trisToClip.push( i );
+					splitTriangle( xResult[ t ], 'y', bottom, yResult );
 
-			} else if ( ( minX < 0.5 ) === left && ( minY < 0.5 ) === top ) {
+				}
 
-				pushVertexByIndex( i0 );
-				pushVertexByIndex( i1 );
-				pushVertexByIndex( i2 );
+				// save the geometry
+				for ( let t = 0, l = yResult.length; t < l; t ++ ) {
+
+					const tri = yResult[ t ];
+					pushVertex( tri.position.a, tri.uv.a, tri.normal.a, isSkirt );
+					pushVertex( tri.position.b, tri.uv.b, tri.normal.b, isSkirt );
+					pushVertex( tri.position.c, tri.uv.c, tri.normal.c, isSkirt );
+
+				}
+
+				triPool.reset();
 
 			}
 
-		}
+			// TODO: need to add the additional skirts to the final group
+			geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
+
+		} );
 
 		// new geometry
-		const geometry = new BufferGeometry();
-		const indexBuffer = newPos.length / 3 > 65535 ? new Uint32Array( newInd ) : new Uint16Array( newInd );
+		const indexBuffer = newPosition.length / 3 > 65535 ? new Uint32Array( newIndex ) : new Uint16Array( newIndex );
 		geometry.setIndex( new BufferAttribute( indexBuffer, 1, false ) );
-		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( newPos ), 3, false ) );
-		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( newUvs ), 2, false ) );
+		geometry.setAttribute( 'position', new BufferAttribute( new Float32Array( newPosition ), 3, false ) );
+		geometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( newUv ), 2, false ) );
 		if ( normal ) {
 
-			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( newNorm ), 3, false ) );
+			geometry.setAttribute( 'normal', new BufferAttribute( new Float32Array( newNormal ), 3, false ) );
 
 		}
 
@@ -466,39 +476,156 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		result.userData.minHeight = mesh.userData.minHeight;
 		result.userData.maxHeight = mesh.userData.maxHeight;
 
+
+		result.add( mesh );
+		mesh.position.setScalar( 0 );
+		mesh.material.opacity = 0.5;
+		mesh.material.transparent = true;
+
 		return result;
 
-		function hashVertex( v, edge = false ) {
+		function splitTriangle( tri, axis, negativeSide, target ) {
 
-			const scalar = 1e5;
-			const additive = 0.5;
-			const x = ~ ~ ( x * scalar + additive );
-			const y = ~ ~ ( y * scalar + additive );
-			const z = ~ ~ ( z * scalar + additive );
-			return `${ x }_${ y }_${ z }_${ Number( edge ) }`;
+			// TODO: clean up, add scratch variables, optimize
+			const SPLIT_VALUE = 0.5;
+			const edgeIndices = [];
+			const edges = [];
+			const lerpValues = [];
+			const arr = [ 'a', 'b', 'c' ];
 
-		}
+			for ( let i = 0; i < 3; i ++ ) {
 
-		function pushVertexByIndex( i ) {
+				const v = arr[ i ];
+				const nv = arr[ ( i + 1 ) % 3 ];
 
-			if ( ! ( i in vertToNewIndexMap ) ) {
+				const p = tri.uv[ v ];
+				const np = tri.uv[ nv ];
 
-				vertToNewIndexMap[ i ] = nextIndex;
-				nextIndex ++;
+				const pValue = p[ axis ];
+				const npValue = np[ axis ];
 
-				// TODO: remap the uvs
-				newPos.push( position[ 3 * i + 0 ], position[ 3 * i + 1 ], position[ 3 * i + 2 ] );
-				newUvs.push( uv[ 3 * i + 0 ], uv[ 3 * i + 1 ], uv[ 3 * i + 2 ] );
+				// if the uv values span across the halfway divide
+				if ( ( pValue < SPLIT_VALUE ) !== ( npValue < SPLIT_VALUE ) || pValue === SPLIT_VALUE ) {
 
-				if ( normal ) {
-
-					newNorm.push( normal[ 3 * i + 0 ], normal[ 3 * i + 1 ], normal[ 3 * i + 2 ] );
+					edgeIndices.push( i );
+					edges.push( [ v, nv ] );
+					lerpValues.push( MathUtils.mapLinear( SPLIT_VALUE, pValue, npValue, 0, 1 ) );
 
 				}
 
 			}
 
-			newInd.push( vertToNewIndexMap[ i ] );
+			if ( edgeIndices.length === 0 ) {
+
+				const minBound = Math.min(
+					tri.uv.a[ axis ],
+					tri.uv.b[ axis ],
+					tri.uv.c[ axis ],
+				);
+
+				if ( ( minBound < SPLIT_VALUE ) === negativeSide ) {
+
+					target.push( tri );
+
+				}
+
+			} else {
+
+				// TODO: how can we determine which triangles actually need to be added here ahead of time
+				const tri0 = triPool.get();
+				const tri1 = triPool.get();
+				const tri2 = triPool.get();
+
+				const sequential = ( ( edgeIndices[ 0 ] + 1 ) % 3 ) === edgeIndices[ 1 ];
+				if ( sequential ) {
+
+					tri0.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
+					tri0.copyVertex( tri, edges[ 0 ][ 1 ], 'b' );
+					tri0.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
+
+					tri1.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
+					tri1.copyVertex( tri, edges[ 1 ][ 1 ], 'b' );
+					tri1.copyVertex( tri, edges[ 0 ][ 0 ], 'c' );
+
+					tri2.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
+					tri2.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'b' );
+					tri2.copyVertex( tri, edges[ 1 ][ 1 ], 'c' );
+
+				} else {
+
+					tri0.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
+					tri0.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'b' );
+					tri0.copyVertex( tri, edges[ 0 ][ 0 ], 'c' );
+
+					tri1.lerpVertex( tri, edges[ 0 ][ 0 ], edges[ 0 ][ 1 ], lerpValues[ 0 ], 'a' );
+					tri1.copyVertex( tri, edges[ 0 ][ 1 ], 'b' );
+					tri1.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
+
+
+					tri2.copyVertex( tri, edges[ 0 ][ 1 ], 'a' );
+					tri2.copyVertex( tri, edges[ 1 ][ 0 ], 'b' );
+					tri2.lerpVertex( tri, edges[ 1 ][ 0 ], edges[ 1 ][ 1 ], lerpValues[ 1 ], 'c' );
+
+				}
+
+				let minBound;
+
+				minBound = Math.min( tri0.uv.a[ axis ], tri0.uv.b[ axis ], tri0.uv.c[ axis ] );
+				if ( ( minBound < SPLIT_VALUE ) === negativeSide ) {
+
+					target.push( tri0 );
+
+				}
+
+				minBound = Math.min( tri1.uv.a[ axis ], tri1.uv.b[ axis ], tri1.uv.c[ axis ] );
+				if ( ( minBound < SPLIT_VALUE ) === negativeSide ) {
+
+					target.push( tri1 );
+
+				}
+
+				minBound = Math.min( tri2.uv.a[ axis ], tri2.uv.b[ axis ], tri2.uv.c[ axis ] );
+				if ( ( minBound < SPLIT_VALUE ) === negativeSide ) {
+
+					target.push( tri2 );
+
+				}
+
+			}
+
+		}
+
+		function hashVertex( x, y, z, skirt = false ) {
+
+			const scalar = 1e5;
+			const additive = 0.5;
+			const hx = ~ ~ ( x * scalar + additive );
+			const hy = ~ ~ ( y * scalar + additive );
+			const hz = ~ ~ ( z * scalar + additive );
+			return `${ hx }_${ hy }_${ hz }_${ Number( skirt ) }`;
+
+		}
+
+		function pushVertex( pos, uv, norm, skirt = false ) {
+
+			const hash = hashVertex( pos.x, pos.y, pos.z, skirt );
+			if ( ! ( hash in vertToNewIndexMap ) ) {
+
+				vertToNewIndexMap[ hash ] = nextIndex;
+				nextIndex ++;
+
+				// TODO: remap the uvs
+				newPosition.push( pos.x, pos.y, pos.z );
+				newUv.push( ( xUvOffset + uv.x ) * 2.0, ( yUvOffset + uv.y ) * 2.0 );
+				if ( newNormal ) {
+
+					newNormal.push( norm.x, norm.y, norm.z );
+
+				}
+
+			}
+
+			newIndex.push( vertToNewIndexMap[ hash ] );
 
 		}
 
@@ -519,7 +646,7 @@ class TrianglePool {
 
 		if ( this.index >= this.pool.length ) {
 
-			const tri = new Triangle();
+			const tri = new AttributeTriangle();
 			this.pool.push( tri );
 
 		}
@@ -533,6 +660,46 @@ class TrianglePool {
 	reset() {
 
 		this.index = 0;
+
+	}
+
+}
+
+class AttributeTriangle {
+
+	constructor() {
+
+		this.position = new Triangle();
+		this.uv = new Triangle();
+		this.normal = new Triangle();
+
+	}
+
+	setFromAttributeAndIndices( geometry, i0, i1, i2 ) {
+
+		this.position.setFromAttributeAndIndices( geometry.attributes.position, i0, i1, i2 );
+		this.uv.setFromAttributeAndIndices( geometry.attributes.uv, i0, i1, i2 );
+		if ( geometry.attributes.normal ) {
+
+			this.normal.setFromAttributeAndIndices( geometry.attributes.normal, i0, i1, i2 );
+
+		}
+
+	}
+
+	lerpVertex( other, e0, e1, alpha, targetVertex ) {
+
+		this.position[ targetVertex ].lerpVectors( other.position[ e0 ], other.position[ e1 ], alpha );
+		this.uv[ targetVertex ].lerpVectors( other.uv[ e0 ], other.uv[ e1 ], alpha );
+		this.normal[ targetVertex ].lerpVectors( other.normal[ e0 ], other.normal[ e1 ], alpha );
+
+	}
+
+	copyVertex( other, fromVertex, targetVertex ) {
+
+		this.position[ targetVertex ].copy( other.position[ fromVertex ] );
+		this.uv[ targetVertex ].copy( other.uv[ fromVertex ] );
+		this.normal[ targetVertex ].copy( other.normal[ fromVertex ] );
 
 	}
 
