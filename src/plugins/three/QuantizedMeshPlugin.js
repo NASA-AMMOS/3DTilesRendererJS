@@ -281,14 +281,6 @@ export class QuantizedMeshPlugin {
 	}
 
 	// Local functions
-	hasMetadata( tile ) {
-
-		const level = tile[ TILE_LEVEL ];
-		const { metadataAvailability, maxLevel } = this;
-		return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
-
-	}
-
 	createChild( level, x, y, region, available ) {
 
 		if ( ! isAvailable( available, level, x, y ) ) {
@@ -369,6 +361,19 @@ export class QuantizedMeshPlugin {
 				}
 
 			}
+
+		}
+
+	}
+
+	disposeTile( tile ) {
+
+		// dispose of the generated children past the metadata layer to avoid accumulating too much
+		if ( getTileHasMetadata( tile, this.layer ) ) {
+
+			tile.children.length = 0;
+			tile.__childrenProcessed = 0;
+			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
