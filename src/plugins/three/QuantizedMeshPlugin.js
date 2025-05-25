@@ -226,6 +226,9 @@ export class QuantizedMeshPlugin {
 		let result;
 		if ( /PARENT_SPLIT/.test( uri ) ) {
 
+			// TODO: this is causing problems because the child tile will load
+			// first (because there's no data) and we're left waiting for the parent
+			// tile which may not parse because the queue is full (eg from this parse call)
 			while ( ! tile.parent.cached.scene && ! abortSignal.aborted ) {
 
 				await new Promise( resolve => requestAnimationFrame( resolve ) );
@@ -238,6 +241,7 @@ export class QuantizedMeshPlugin {
 
 			}
 
+			// split the parent tile
 			const searchParams = new URL( uri ).searchParams;
 			const left = searchParams.get( 'left' ) === 'true';
 			const bottom = searchParams.get( 'bottom' ) === 'true';
@@ -409,7 +413,12 @@ export class QuantizedMeshPlugin {
 
 			return {
 				ok: true,
-				arrayBuffer: () => Promise.resolve( new ArrayBuffer( 10 ) ),
+				arrayBuffer: () => {
+
+					// TODO: this should not have to provide anything
+					Promise.resolve( new ArrayBuffer( 10 ) );
+
+				},
 			};
 
 		}
