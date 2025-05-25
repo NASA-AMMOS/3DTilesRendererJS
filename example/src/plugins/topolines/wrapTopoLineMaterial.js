@@ -135,7 +135,7 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 	material.defines = {
 		...( material.defines || {} ),
 		USE_TOPO_ELLIPSOID: 0,
-		USE_TOPO_LINES: 1,
+		USE_TOPO_LINES: 0,
 	};
 
 	material.onBeforeCompile = shader => {
