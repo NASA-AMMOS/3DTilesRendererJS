@@ -293,7 +293,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			const height = MathUtils.lerp( header.minHeight, header.maxHeight, h );
 			const lon = MathUtils.lerp( minLon, maxLon, u );
-			const lat = MathUtils.lerp( minLat - 0.000, maxLat - 0.0000, v );
+			const lat = MathUtils.lerp( minLat, maxLat, v );
 
 			ellipsoid.getCartographicToPosition( lat, lon, height + heightOffset, target );
 

@@ -1,5 +1,11 @@
 export function readMagicBytes( bufferOrDataView ) {
 
+	if ( bufferOrDataView === null || bufferOrDataView.byteLength < 4 ) {
+
+		return '';
+
+	}
+
 	let view;
 	if ( bufferOrDataView instanceof DataView ) {
 

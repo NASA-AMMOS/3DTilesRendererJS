@@ -111,19 +111,21 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	preprocessNode( tile, dir, parentTile ) {
+	// NOTE: we expand children only once the mesh data is loaded to ensure the mesh
+	// data is ready for clipping
+	// preprocessNode( tile, dir, parentTile ) {
 
-		// generate children
-		const level = tile[ TILE_LEVEL ];
-		const maxLevel = getMaxLevel( this.layer );
-		const hasMetadata = getTileHasMetadata( tile, this.layer );
-		if ( level >= 0 && level < maxLevel && ! hasMetadata ) {
+	// 	// generate children
+	// 	const level = tile[ TILE_LEVEL ];
+	// 	const maxLevel = getMaxLevel( this.layer );
+	// 	const hasMetadata = getTileHasMetadata( tile, this.layer );
+	// 	if ( level >= 0 && level < maxLevel && ! hasMetadata ) {
 
-			this.expandChildren( tile );
+	// 		this.expandChildren( tile );
 
-		}
+	// 	}
 
-	}
+	// }
 
 	loadRootTileSet() {
 
@@ -213,7 +215,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
+	async parseToMesh( buffer, tile, extension, uri ) {
 
 		const ellipsoid = this.tiles.ellipsoid;
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
@@ -224,22 +226,7 @@ export class QuantizedMeshPlugin {
 		loader.skirtLength = this.skirtLength === null ? tile.geometricError : this.skirtLength;
 
 		let result;
-		if ( /PARENT_SPLIT/.test( uri ) ) {
-
-			// TODO: this is causing problems because the child tile will load
-			// first (because there's no data) and we're left waiting for the parent
-			// tile which may not parse because the queue is full (eg from this parse call)
-			while ( ! tile.parent.cached.scene && ! abortSignal.aborted ) {
-
-				await new Promise( resolve => requestAnimationFrame( resolve ) );
-
-			}
-
-			if ( abortSignal.aborted ) {
-
-				return null;
-
-			}
+		if ( extension === 'custom_split' ) {
 
 			// split the parent tile
 			const searchParams = new URL( uri ).searchParams;
@@ -294,11 +281,15 @@ export class QuantizedMeshPlugin {
 					...metadata.available,
 				];
 
-				this.expandChildren( tile );
-
 			}
 
 		}
+
+		// NOTE: we expand children only once the parent mesh data is loaded to ensure the mesh
+		// data is ready for clipping. It's possible that this child data gets to the parse stage
+		// first, otherwise, while the parent is still downloading.
+		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		this.expandChildren( tile );
 
 		return result;
 
@@ -394,7 +385,7 @@ export class QuantizedMeshPlugin {
 				} else {
 
 					tile.children.push( child );
-					child.content = { uri: `PARENT_SPLIT?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.content = { uri: `tile.custom_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
@@ -412,16 +403,11 @@ export class QuantizedMeshPlugin {
 
 	fetchData( uri, options ) {
 
-		if ( /PARENT_SPLIT/.test( uri ) ) {
+		if ( /custom_split/.test( uri ) ) {
 
 			return {
 				ok: true,
-				arrayBuffer: () => {
-
-					// TODO: this should not have to provide anything
-					return Promise.resolve( new ArrayBuffer( 10 ) );
-
-				},
+				arrayBuffer: async () => null,
 			};
 
 		}
@@ -438,6 +424,9 @@ export class QuantizedMeshPlugin {
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
+
+		tile.children.length = 0;
+		tile.__childrenProcessed = 0;
 
 	}
 
