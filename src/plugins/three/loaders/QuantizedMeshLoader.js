@@ -641,7 +641,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 			}
 
-			if ( edgeIndices.length === 0 ) {
+			if ( edgeIndices.length !== 2 ) {
 
 				const minBound = Math.min(
 					tri.uv.a[ axis ],
@@ -655,7 +655,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 				}
 
-			} else {
+			} else if ( edgeIndices.length === 2 ) {
 
 				// TODO: how can we determine which triangles actually need to be added here ahead of time
 				const tri0 = triPool.get();

@@ -117,7 +117,7 @@ export class QuantizedMeshPlugin {
 		const level = tile[ TILE_LEVEL ];
 		const maxLevel = getMaxLevel( this.layer );
 		const hasMetadata = getTileHasMetadata( tile, this.layer );
-		if ( level < maxLevel && ! hasMetadata ) {
+		if ( level >= 0 && level < maxLevel && ! hasMetadata ) {
 
 			this.expandChildren( tile );
 
@@ -334,6 +334,8 @@ export class QuantizedMeshPlugin {
 		const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
 		const xStep = ( east - west ) / 2;
 		const yStep = ( north - south ) / 2;
+
+		let hasChildren = false;
 		for ( let cx = 0; cx < 2; cx ++ ) {
 
 			for ( let cy = 0; cy < 2; cy ++ ) {
@@ -346,9 +348,21 @@ export class QuantizedMeshPlugin {
 					minHeight, maxHeight,
 				];
 				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, region, available );
-				if ( child ) {
+				if ( child.content !== null ) {
 
 					tile.children.push( child );
+					hasChildren = true;
+
+				} else {
+
+					// tile.children.push( child );
+					// child.content = { uri: 'CUSTOM_EXPANSION' };
+					// child._EXPAND = {
+					// 	uri: {
+					// 		bottom: cy === 0,
+					// 		left: cx === 0,
+					// 	},
+					// };
 
 				}
 
@@ -356,6 +370,13 @@ export class QuantizedMeshPlugin {
 
 		}
 
+		if ( ! hasChildren ) {
+
+			tile.children.length = 0;
+
+		}
+
+	}
 	}
 
 	disposeTile( tile ) {
