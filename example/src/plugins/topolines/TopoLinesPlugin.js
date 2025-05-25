@@ -117,13 +117,13 @@ export class TopoLinesPlugin {
 			topoColor = 		new Color( 0xffffff ),
 			topoOpacity = 		0.5,
 			topoLimit = 		isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
-			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
+			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 4.25 * 1e3 ),
 
 			// options for cartesian and cartographic lines when in planar and ellipsoid mode respectively
 			cartoColor = 		new Color( 0xffffff ),
 			cartoOpacity = 		isPlanar ? 0 : 0.5,
 			cartoLimit = 		new Vector2( 0.1, 1e10 ),
-			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1.5 * 1e4, 1e6 ),
+			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 4.5 * 1e3, 1e6 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_PLUGIN';
@@ -324,11 +324,11 @@ export class TopoLinesPlugin {
 
 	}
 
-	updateDefines() {
+	updateDefines( scene = null ) {
 
 		const USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
 		const USE_TOPO_LINES = Number( ! ! ( this.topoOpacity + this.cartoOpacity ) );
-		this.tiles.forEachLoadedModel( scene => {
+		const update = scene => {
 
 			scene.traverse( c => {
 
@@ -353,7 +353,17 @@ export class TopoLinesPlugin {
 
 			} );
 
-		} );
+		};
+
+		if ( scene !== null ) {
+
+			update( scene );
+
+		} else {
+
+			this.tiles.forEachLoadedModel( update );
+
+		}
 
 	}
 
