@@ -57,7 +57,8 @@ function getTileHasMetadata( tile, layer ) {
 	const level = tile[ TILE_LEVEL ];
 	const metadataAvailability = getMetadataAvailability( layer );
 	const maxLevel = getMaxLevel( layer );
-	return level < maxLevel && metadataAvailability !== null && ( level % metadataAvailability ) === 0;
+
+	return level < maxLevel && metadataAvailability !== - 1 && ( level % metadataAvailability ) === 0;
 
 }
 
@@ -130,7 +131,9 @@ export class QuantizedMeshPlugin {
 	loadRootTileSet() {
 
 		const { tiles } = this;
-		let url = new URL( 'layer.json', tiles.rootURL );
+
+		// initialize href to resolve the root in case it's specified as a relative url
+		let url = new URL( 'layer.json', new URL( tiles.rootURL, location.href ) );
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 
 		return tiles
