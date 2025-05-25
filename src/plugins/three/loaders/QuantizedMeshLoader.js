@@ -413,7 +413,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const SPLIT_VALUE = 0.5;
 		const triPool = new TrianglePool();
 		const vertNames = [ 'a', 'b', 'c' ];
-		const { ellipsoid, skirtLength, solid } = this;
+		const { ellipsoid, skirtLength, solid, smoothSkirtNormals } = this;
 
 		// source geometry
 		const sourceGeometry = mesh.geometry;
