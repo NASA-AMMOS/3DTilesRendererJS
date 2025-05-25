@@ -561,15 +561,25 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 						ellipsoid.getPositionToNormal( _temp, _temp );
 						b1.addScaledVector( _temp, - skirtLength );
 
-						_temp.subVectors( u0, u1 );
-						_temp2.subVectors( u0, b0 ).cross( _temp ).normalize();
+						if ( smoothSkirtNormals && newNormal ) {
+
+							_temp.fromArray( newNormal, i0 * 3 );
+							_temp2.fromArray( newNormal, i1 * 3 );
+
+						} else {
+
+							_temp.subVectors( u0, u1 );
+							_temp2.subVectors( u0, b0 ).cross( _temp ).normalize();
+							_temp.copy( _temp2 );
+
+						}
 
 						pushVertex( u1, _uv1, _temp2, true );
-						pushVertex( u0, _uv0, _temp2, true );
-						pushVertex( b0, _uv0, _temp2, true );
+						pushVertex( u0, _uv0, _temp, true );
+						pushVertex( b0, _uv0, _temp, true );
 
 						pushVertex( u1, _uv1, _temp2, true );
-						pushVertex( b0, _uv0, _temp2, true );
+						pushVertex( b0, _uv0, _temp, true );
 						pushVertex( b1, _uv1, _temp2, true );
 
 					}
