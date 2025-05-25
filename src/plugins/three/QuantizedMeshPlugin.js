@@ -78,7 +78,7 @@ export class QuantizedMeshPlugin {
 
 		const {
 			useRecommendedSettings = true,
-			skirtLength = 1000,
+			skirtLength = null,
 			smoothSkirtNormals = true,
 			solid = false,
 		} = options;
@@ -221,7 +221,7 @@ export class QuantizedMeshPlugin {
 
 		loader.solid = this.solid;
 		loader.smoothSkirtNormals = this.smoothSkirtNormals;
-		loader.skirtLength = this.skirtLength;
+		loader.skirtLength = this.skirtLength === null ? tile.geometricError : this.skirtLength;
 
 		let result;
 		if ( /PARENT_SPLIT/.test( uri ) ) {
@@ -248,7 +248,6 @@ export class QuantizedMeshPlugin {
 			loader.minLon = west;
 			loader.maxLon = east;
 			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
-			result.material.color.set( 0xff0000 );
 
 		} else {
 
