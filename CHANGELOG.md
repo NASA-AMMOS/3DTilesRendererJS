@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ability to resolve to any file in "./src".
 - QuantizedMeshPlugin: Add support for attributions.
 - QuantizedMeshPlugin: Add support for "metadataAvailability".
+- QuantizedMeshPlugin: Add support for auto-filling child tiles from parent data when not present.
 
 ### Changed
 - QuantizedMeshPlugin, Image Plugins: Remove internal, custom queue for generating children in favor of TilesRenderer's new process queue.
