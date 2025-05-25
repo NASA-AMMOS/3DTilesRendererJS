@@ -8,11 +8,11 @@ const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
 
 // We don't know the height ranges for the tile set on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
-const INITIAL_HEIGHT_RANGE = 1e5;
+const INITIAL_HEIGHT_RANGE = 1e4;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
-function isAvailable( available, level, x, y ) {
+function isTileAvailable( available, level, x, y ) {
 
 	if ( level < available.length ) {
 
@@ -78,7 +78,7 @@ export class QuantizedMeshPlugin {
 
 		const {
 			useRecommendedSettings = true,
-			skirtLength = 1000,
+			skirtLength = null,
 			smoothSkirtNormals = true,
 			solid = false,
 		} = options;
@@ -111,19 +111,21 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	preprocessNode( tile, dir, parentTile ) {
+	// NOTE: we expand children only once the mesh data is loaded to ensure the mesh
+	// data is ready for clipping
+	// preprocessNode( tile, dir, parentTile ) {
 
-		// generate children
-		const level = tile[ TILE_LEVEL ];
-		const maxLevel = getMaxLevel( this.layer );
-		const hasMetadata = getTileHasMetadata( tile, this.layer );
-		if ( level < maxLevel && ! hasMetadata ) {
+	// 	// generate children
+	// 	const level = tile[ TILE_LEVEL ];
+	// 	const maxLevel = getMaxLevel( this.layer );
+	// 	const hasMetadata = getTileHasMetadata( tile, this.layer );
+	// 	if ( level >= 0 && level < maxLevel && ! hasMetadata ) {
 
-			this.expandChildren( tile );
+	// 		this.expandChildren( tile );
 
-		}
+	// 	}
 
-	}
+	// }
 
 	loadRootTileSet() {
 
@@ -138,7 +140,6 @@ export class QuantizedMeshPlugin {
 
 				this.layer = json;
 				const {
-					bounds,
 					projection = 'EPSG:4326',
 					extensions = [],
 					attribution = '',
@@ -161,10 +162,10 @@ export class QuantizedMeshPlugin {
 
 				}
 
-				const west = MathUtils.DEG2RAD * bounds[ 0 ];
-				const south = MathUtils.DEG2RAD * bounds[ 1 ];
-				const east = MathUtils.DEG2RAD * bounds[ 2 ];
-				const north = MathUtils.DEG2RAD * bounds[ 3 ];
+				const west = - 180 * MathUtils.DEG2RAD;
+				const south = - 90 * MathUtils.DEG2RAD;
+				const east = 180 * MathUtils.DEG2RAD;
+				const north = 90 * MathUtils.DEG2RAD;
 
 				const tileset = {
 					asset: {
@@ -214,23 +215,43 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	parseToMesh( buffer, tile ) {
+	async parseToMesh( buffer, tile, extension, uri ) {
 
 		const ellipsoid = this.tiles.ellipsoid;
-		const [ west, south, east, north ] = tile.boundingVolume.region;
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
-		loader.minLat = south;
-		loader.maxLat = north;
-		loader.minLon = west;
-		loader.maxLon = east;
 		loader.ellipsoid.copy( ellipsoid );
 
 		loader.solid = this.solid;
 		loader.smoothSkirtNormals = this.smoothSkirtNormals;
-		loader.skirtLength = this.skirtLength;
+		loader.skirtLength = this.skirtLength === null ? tile.geometricError : this.skirtLength;
 
-		// parse the tile data
-		const result = loader.parse( buffer );
+		let result;
+		if ( extension === 'custom_split' ) {
+
+			// split the parent tile
+			const searchParams = new URL( uri ).searchParams;
+			const left = searchParams.get( 'left' ) === 'true';
+			const bottom = searchParams.get( 'bottom' ) === 'true';
+
+			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
+			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
+
+		} else {
+
+			const [ west, south, east, north ] = tile.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
+
+			// parse the tile data
+			result = loader.parse( buffer );
+
+		}
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
 		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
@@ -260,11 +281,15 @@ export class QuantizedMeshPlugin {
 					...metadata.available,
 				];
 
-				this.expandChildren( tile );
-
 			}
 
 		}
+
+		// NOTE: we expand children only once the parent mesh data is loaded to ensure the mesh
+		// data is ready for clipping. It's possible that this child data gets to the parse stage
+		// first, otherwise, while the parent is still downloading.
+		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		this.expandChildren( tile );
 
 		return result;
 
@@ -283,13 +308,8 @@ export class QuantizedMeshPlugin {
 	// Local functions
 	createChild( level, x, y, region, available ) {
 
-		if ( ! isAvailable( available, level, x, y ) ) {
-
-			return null;
-
-		}
-
 		const { tiles, layer } = this;
+		const isAvailable = available === null || isTileAvailable( available, level, x, y );
 		const url = getContentUrl( x, y, level, 1, layer );
 		const ellipsoid = tiles.ellipsoid;
 		const [ , south, , north, , maxHeight ] = region;
@@ -315,9 +335,7 @@ export class QuantizedMeshPlugin {
 			boundingVolume: {
 				region: region,
 			},
-			content: {
-				uri: url,
-			},
+			content: isAvailable ? { uri: url } : null,
 			children: []
 		};
 
@@ -334,6 +352,9 @@ export class QuantizedMeshPlugin {
 
 	expandChildren( tile ) {
 
+		tile.children.length = 0;
+		tile.__childrenProcessed = 0;
+
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
@@ -342,6 +363,8 @@ export class QuantizedMeshPlugin {
 		const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
 		const xStep = ( east - west ) / 2;
 		const yStep = ( north - south ) / 2;
+
+		let hasChildren = false;
 		for ( let cx = 0; cx < 2; cx ++ ) {
 
 			for ( let cy = 0; cy < 2; cy ++ ) {
@@ -354,13 +377,38 @@ export class QuantizedMeshPlugin {
 					minHeight, maxHeight,
 				];
 				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, region, available );
-				if ( child ) {
+				if ( child.content !== null ) {
 
 					tile.children.push( child );
+					hasChildren = true;
+
+				} else {
+
+					tile.children.push( child );
+					child.content = { uri: `tile.custom_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
 			}
+
+		}
+
+		if ( ! hasChildren ) {
+
+			tile.children.length = 0;
+
+		}
+
+	}
+
+	fetchData( uri, options ) {
+
+		if ( /custom_split/.test( uri ) ) {
+
+			return {
+				ok: true,
+				arrayBuffer: async () => null,
+			};
 
 		}
 
@@ -376,6 +424,9 @@ export class QuantizedMeshPlugin {
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
+
+		tile.children.length = 0;
+		tile.__childrenProcessed = 0;
 
 	}
 
