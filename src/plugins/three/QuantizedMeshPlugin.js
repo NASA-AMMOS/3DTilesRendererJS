@@ -8,7 +8,7 @@ const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
 
 // We don't know the height ranges for the tile set on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
-const INITIAL_HEIGHT_RANGE = 1e5;
+const INITIAL_HEIGHT_RANGE = 1e4;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
@@ -361,6 +361,9 @@ export class QuantizedMeshPlugin {
 
 	expandChildren( tile ) {
 
+		tile.children.length = 0;
+		tile.__childrenProcessed = 0;
+
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
@@ -416,7 +419,7 @@ export class QuantizedMeshPlugin {
 				arrayBuffer: () => {
 
 					// TODO: this should not have to provide anything
-					Promise.resolve( new ArrayBuffer( 10 ) );
+					return Promise.resolve( new ArrayBuffer( 10 ) );
 
 				},
 			};
