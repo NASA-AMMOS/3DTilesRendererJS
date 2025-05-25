@@ -540,8 +540,8 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 					// find the vertices that lie on the edge
 					if (
-						( _uv1.x === 0 || _uv1.x === SPLIT_VALUE || _uv1.x === 1.0 ) && ( _uv0.x === 0 || _uv0.x === SPLIT_VALUE || _uv0.x === 1.0 ) ||
-						( _uv1.y === 0 || _uv1.y === SPLIT_VALUE || _uv1.y === 1.0 ) && ( _uv0.y === 0 || _uv0.y === SPLIT_VALUE || _uv0.y === 1.0 )
+						_uv0.x === _uv1.x && ( _uv0.x === 0 || _uv0.x === SPLIT_VALUE || _uv0.x === 1.0 ) ||
+						_uv0.y === _uv1.y && ( _uv0.y === 0 || _uv0.y === SPLIT_VALUE || _uv0.y === 1.0 )
 					) {
 
 						_pos0.fromArray( newPosition, i0 * 3 );
