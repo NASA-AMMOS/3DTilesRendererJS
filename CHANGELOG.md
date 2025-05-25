@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - QuantizedMeshPlugin: Add support for attributions.
 - QuantizedMeshPlugin: Add support for "metadataAvailability".
 - QuantizedMeshPlugin: Add support for auto-filling child tiles from parent data when not present.
+- QuantizedMeshPlugin: Add support for auto-calculating skirth length.
 
 ### Changed
 - QuantizedMeshPlugin, Image Plugins: Remove internal, custom queue for generating children in favor of TilesRenderer's new process queue.
