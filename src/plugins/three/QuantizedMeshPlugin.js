@@ -213,23 +213,55 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	parseToMesh( buffer, tile ) {
+	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
 		const ellipsoid = this.tiles.ellipsoid;
-		const [ west, south, east, north ] = tile.boundingVolume.region;
 		const loader = new QuantizedMeshLoader( this.tiles.manager );
-		loader.minLat = south;
-		loader.maxLat = north;
-		loader.minLon = west;
-		loader.maxLon = east;
 		loader.ellipsoid.copy( ellipsoid );
 
 		loader.solid = this.solid;
 		loader.smoothSkirtNormals = this.smoothSkirtNormals;
 		loader.skirtLength = this.skirtLength;
 
-		// parse the tile data
-		const result = loader.parse( buffer );
+		let result;
+		if ( /PARENT_SPLIT/.test( uri ) ) {
+
+			while ( ! tile.parent.cached.scene && ! abortSignal.aborted ) {
+
+				await new Promise( resolve => requestAnimationFrame( resolve ) );
+
+			}
+
+			if ( abortSignal.aborted ) {
+
+				return null;
+
+			}
+
+			const searchParams = new URL( uri ).searchParams;
+			const left = searchParams.get( 'left' ) === 'true';
+			const bottom = searchParams.get( 'bottom' ) === 'true';
+
+			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
+			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
+			result.material.color.set( 0xff0000 );
+
+		} else {
+
+			const [ west, south, east, north ] = tile.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
+
+			// parse the tile data
+			result = loader.parse( buffer );
+
+		}
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
 		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
@@ -355,14 +387,8 @@ export class QuantizedMeshPlugin {
 
 				} else {
 
-					// tile.children.push( child );
-					// child.content = { uri: 'CUSTOM_EXPANSION' };
-					// child._EXPAND = {
-					// 	uri: {
-					// 		bottom: cy === 0,
-					// 		left: cx === 0,
-					// 	},
-					// };
+					tile.children.push( child );
+					child.content = { uri: `PARENT_SPLIT?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
@@ -377,6 +403,18 @@ export class QuantizedMeshPlugin {
 		}
 
 	}
+
+	fetchData( uri, options ) {
+
+		if ( /PARENT_SPLIT/.test( uri ) ) {
+
+			return {
+				ok: true,
+				arrayBuffer: () => Promise.resolve( new ArrayBuffer( 10 ) ),
+			};
+
+		}
+
 	}
 
 	disposeTile( tile ) {
