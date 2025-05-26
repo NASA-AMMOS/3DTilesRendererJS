@@ -295,6 +295,8 @@ export class TopoLinesPlugin {
 
 			} );
 
+			this.updateDefines( scene );
+
 		};
 
 		tiles.addEventListener( 'load-model', this._loadModelCallback );
