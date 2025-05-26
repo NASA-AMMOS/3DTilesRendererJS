@@ -65,12 +65,16 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 
 				// Assign tiling properties
 				const { tiling } = this;
-				tiling.levels = Math.ceil( Math.log2( Math.max( width, height ) ) ) + 1;
+				const levels = Math.ceil( Math.log2( Math.max( width, height ) ) ) + 1;
+				tiling.generateLevels( levels, 1, 1, {
+					tilePixelWidth: tileSize,
+					tilePixelHeight: tileSize,
+					pixelWidth: width,
+					pixelHeight: height,
+				} );
+
+				// TODO
 				tiling.setBounds( 0, 0, width, height );
-				tiling.pixelWidth = width;
-				tiling.pixelHeight = height;
-				tiling.tilePixelWidth = tileSize;
-				tiling.tilePixelHeight = tileSize;
 
 				return this.getTileset( url );
 

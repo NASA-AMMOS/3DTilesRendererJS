@@ -6,31 +6,6 @@ import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
-	get tileDimension() {
-
-		return this.tiling.tilePixelWidth;
-
-	}
-
-	set tileDimension( value ) {
-
-		this.tiling.tilePixelWidth = value;
-		this.tiling.tilePixelHeight = value;
-
-	}
-
-	get levels() {
-
-		return this.tiling.levels;
-
-	}
-
-	set levels( value ) {
-
-		this.tiling.levels = value;
-
-	}
-
 	constructor( options = {} ) {
 
 		const {
@@ -53,15 +28,16 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	async loadRootTileSet() {
 
 		// transform the url
-		const { tiles, tiling, projection } = this;
-		const { tilePixelWidth, tilePixelHeight, levels } = tiling;
-
-		// initialize tiling & projection scheme
-		const maxLevel = levels - 1;
-		tiling.pixelWidth = tilePixelWidth * ( 2 ** maxLevel );
-		tiling.pixelHeight = tilePixelHeight * ( 2 ** maxLevel );
+		const { tiles, tiling, projection, tileDimension, levels } = this;
 
 		projection.setScheme( 'EPSG:3857' );
+		tiling.generateLevels( levels, 1, 1, {
+			tilePixelWidth: tileDimension,
+			tilePixelHeight: tileDimension,
+		} );
+
+		window.TILING = tiling;
+		window.TILES = this.tiles;
 
 		// initialize url
 		let url = tiles.rootURL;
@@ -101,6 +77,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
 			.then( res => res.text() )
 			.then( text => {
+
+				console.log(text)
 
 				const { projection, tiling } = this;
 
@@ -161,6 +139,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
 
+				console.log( tiling.minTileX, tiling.minTileY )
+
 				return this.getTileset( url );
 
 			} );
@@ -200,6 +180,8 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
+				console.log( text )
+
 				const { projection, tiling } = this;
 
 				// elements
@@ -228,16 +210,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 								format: res.getAttribute( 'format' ),
 								template: res.getAttribute( 'template' ),
 							} ) );
-
-						// const wgs84 = layer.getElementsByTagName( 'ows:WGS84BoundingBox' )[ 0 ];
-						// const lowerBound = wgs84.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
-						// const upperBound = wgs84.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
-						// const bounds = [
-						// 	...lowerBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
-						// 	...upperBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
-						// ];
-
-						// TODO: flat bounding box?
 
 						return {
 							identifier,

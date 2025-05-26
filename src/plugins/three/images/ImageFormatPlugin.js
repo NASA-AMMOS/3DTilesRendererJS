@@ -9,18 +9,6 @@ export const UV_BOUNDS = Symbol( 'UV_BOUNDS' );
 // Base class for supporting tiled images with a consistent size / resolution per tile
 export class ImageFormatPlugin {
 
-	get maxLevel() {
-
-		return this.levels - 1;
-
-	}
-
-	get levels() {
-
-		return this.tiling.levels;
-
-	}
-
 	constructor( options = {} ) {
 
 		const {
@@ -98,7 +86,7 @@ export class ImageFormatPlugin {
 
 		// generate children
 		const { tiling } = this;
-		const maxLevel = tiling.levels - 1;
+		const maxLevel = tiling.maxLevel;
 		const level = tile[ TILE_LEVEL ];
 		if ( level < maxLevel ) {
 
@@ -125,7 +113,7 @@ export class ImageFormatPlugin {
 		};
 
 		const { center, pixelSize, tiling } = this;
-		const { pixelHeight, pixelWidth, tileCountX, tileCountY } = tiling;
+		const { pixelHeight, pixelWidth, tileCountX, tileCountY } = tiling.getLevel( tiling.minLevel );
 
 		// generate all children for the root
 		for ( let x = 0; x < tileCountX; x ++ ) {
@@ -151,6 +139,8 @@ export class ImageFormatPlugin {
 		tileset.root[ UV_BOUNDS ] = [ 0, 0, 1, 1 ];
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
+
+		console.log( tileset.root.children[ 0 ].geometricError )
 		return tileset;
 
 	}
@@ -164,7 +154,7 @@ export class ImageFormatPlugin {
 	createChild( level, x, y ) {
 
 		const { overlap, pixelSize, center, flipY, tiling } = this;
-		const { pixelWidth, pixelHeight } = tiling;
+		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		if ( ! tiling.getTileExists( x, y, level ) ) {
 
@@ -173,8 +163,7 @@ export class ImageFormatPlugin {
 		}
 
 		// the scale ration of the image at this level
-		const levelWidth = tiling.getPixelWidthAtLevel( level );
-		const levelHeight = tiling.getPixelHeightAtLevel( level );
+		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
 		const geometricError = pixelSize * ( Math.max( pixelWidth / levelWidth, pixelHeight / levelHeight ) - 1 );
 
 		// get the normalize span of this tile relative to the image
