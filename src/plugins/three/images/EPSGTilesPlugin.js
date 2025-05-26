@@ -176,3 +176,131 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	}
 
 }
+
+// Support for WMTS tiles
+// https://www.ogc.org/standards/wmts/
+export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
+
+	constructor( ...args ) {
+
+		super( ...args );
+
+		this.name = 'WMTS_TILES_PLUGIN';
+		this.flipY = false;
+		this.url = null;
+		this.extension = null;
+
+	}
+
+	loadRootTileSet() {
+
+		const url = new URL( 'WMTSCapabilities.xml', this.tiles.rootURL ).toString();
+		return this.tiles
+			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
+			.then( res => res.text() )
+			.then( text => {
+
+
+				const { projection, tiling } = this;
+
+				// elements
+				const xml = new DOMParser().parseFromString( text, 'text/xml' );
+				const contents = xml.querySelector( 'Contents' );
+
+				const layers = [ ...contents.querySelectorAll( 'Layer' ) ]
+					.map( layer => {
+
+						const links = [ ...layer.querySelectorAll( 'TileMatrixSet' ) ].map( tms => tms.textContent );
+						const formats = [ ...layer.querySelectorAll( 'Format' ) ].map( f => f.textContent );
+						// const wgs84 = layer.getElementsByTagName( 'ows:WGS84BoundingBox' )[ 0 ];
+						// const lowerBound = wgs84.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
+						// const upperBound = wgs84.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
+						// const bounds = [
+						// 	...lowerBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
+						// 	...upperBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
+						// ];
+
+						// TODO: flat bounding box?
+
+						return {
+							links,
+							formats,
+						};
+
+					} );
+
+				const matrixSets = [ ...contents.childNodes ]
+					.filter( node => {
+
+						return node.nodeName === 'TileMatrixSet';
+
+					} )
+					.map( matrixSet => {
+
+						const identifier = matrixSet.getElementsByTagName( 'ows:Identifier' )[ 0 ];
+						const supportedCrs = matrixSet.getElementsByTagName( 'ows:SupportedCRS' )[ 0 ];
+						const boundingBox = matrixSet.getElementsByTagName( 'ows:BoundingBox' )[ 0 ];
+						const lowerBound = boundingBox.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
+						const upperBound = boundingBox.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
+						const bounds = [
+							...lowerBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
+							...upperBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
+						];
+
+						const levels = [ ...matrixSet.querySelectorAll( 'TileMatrix' ) ]
+							.map( ms => {
+
+								return {
+									identifier: ms.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent,
+									tileWidth: parseInt( ms.querySelector( 'TileWidth' ).textContent ),
+									tileHeight: parseInt( ms.querySelector( 'TileHeight' ).textContent ),
+									matrixWidth: parseInt( ms.querySelector( 'MatrixWidth' ).textContent ),
+									matrixHeight: parseInt( ms.querySelector( 'MatrixHeight' ).textContent ),
+								};
+
+							} );
+
+						// TODO: flat bounding box?
+						return {
+							name: identifier.textContent,
+							supportedCrs: supportedCrs.textContent.replace( /.+?EPSG::/, 'EPSG:' ),
+							levels,
+							bounds,
+						};
+
+					} );
+
+
+				const layer = layers[ 0 ];
+
+				this.format = layer.formats[ 0 ].replace( /.+\//, '' );
+
+				const matrixSet = matrixSets[ 0 ];
+				const levels = matrixSet.levels.length;
+				const maxLevel = levels - 1;
+				const { tileWidth, tileHeight } = matrixSet.levels[ 0 ];
+
+				projection.setScheme( matrixSet.supportedCrs );
+
+				tiling.levels = matrixSet.levels.length;
+				tiling.tileCountX = projection.tileCountX;
+				tiling.tileCountY = projection.tileCountY;
+				tiling.pixelWidth = projection.tileCountX * tileWidth * ( 2 ** maxLevel );
+				tiling.pixelHeight = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
+				tiling.tilePixelWidth = tileWidth;
+				tiling.tilePixelHeight = tileHeight;
+				tiling.setOrigin( 0, 0 );
+				tiling.setBounds( ...matrixSet.bounds );
+
+			} );
+
+	}
+
+	getUrl( level, x, y ) {
+
+		const { url, extension, tileSets } = this;
+		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
+
+	}
+
+}
