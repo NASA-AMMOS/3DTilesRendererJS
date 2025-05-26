@@ -3,6 +3,9 @@ import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
 import { ProjectionScheme } from './utils/ProjectionScheme.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 
+const MAX_LON_VERTS = 30;
+const MAX_LAT_VERTS = 15;
+
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _uv = /* @__PURE__ */ new Vector2();
@@ -20,18 +23,11 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super( rest );
 
-		this.shape = shape;
 		this.projection = new ProjectionScheme();
 
+		// options
+		this.shape = shape;
 		this.endCaps = endCaps;
-
-		// TODO: are these necessary? No
-		// TODO: Remove these and rely on tiling bounds - but bounds only represent the
-		// area where relevant data is and does not otherwise impact the tiling scheme.
-		this.minLat = - Math.PI / 2;
-		this.maxLat = Math.PI / 2;
-		this.minLon = - Math.PI;
-		this.maxLon = Math.PI;
 
 	}
 
@@ -50,17 +46,11 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			// new geometry
 			// default to a minimum number of vertices per degree on each axis
-			const MAX_LON_VERTS = 30;
-			const MAX_LAT_VERTS = 15;
 			const latVerts = Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 );
 			const lonVerts = Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 );
 			const yVerts = Math.max( MAX_LAT_VERTS, latVerts );
 			const xVerts = Math.max( MAX_LON_VERTS, lonVerts );
-			const geometry = new PlaneGeometry(
-				1, 1,
-				xVerts,
-				yVerts,
-			);
+			const geometry = new PlaneGeometry( 1, 1, xVerts, yVerts );
 
 			// adjust the geometry to position it at the region
 			const { position, normal, uv } = geometry.attributes;
@@ -68,8 +58,6 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			tile.cached.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
-				// TODO: If we're at a mercator north / south boundary we should position an edge so that
-				// it sits exactly at the right point.
 				_pos.fromBufferAttribute( position, i );
 				_norm.fromBufferAttribute( normal, i );
 				_uv.fromBufferAttribute( uv, i );
@@ -85,7 +73,6 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 					const prevLat = MathUtils.mapLinear( _uv.y - vStep, 0, 1, south, north );
 					const nextLat = MathUtils.mapLinear( _uv.y + vStep, 0, 1, south, north );
-
 					if ( lat > latLimit && prevLat < latLimit ) {
 
 						lat = latLimit;
@@ -103,16 +90,12 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 				ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
+				// update the geometry
+				const u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, 0, 1 );
+				const v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, 0, 1 );
+				uv.setXY( i, u, v );
 				position.setXYZ( i, ..._pos );
 				normal.setXYZ( i, ..._norm );
-
-				if ( projection.isMercator ) {
-
-					const u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, 0, 1 );
-					const v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, 0, 1 );
-					uv.setXY( i, u, v );
-
-				}
 
 			}
 
@@ -142,39 +125,26 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const rootVWidth = 1 / pixelHeight;
 
 			// calculate the region ranges
-			let south, north, west, east;
-			if ( projection.isMercator ) {
+			const west = projection.convertProjectionToLongitude( minU );
+			const east = projection.convertProjectionToLongitude( maxU );
+			let south = projection.convertProjectionToLatitude( minV );
+			let north = projection.convertProjectionToLatitude( maxV );
 
-				south = projection.convertProjectionToLatitude( minV );
-				north = projection.convertProjectionToLatitude( maxV );
-				west = projection.convertProjectionToLongitude( minU );
-				east = projection.convertProjectionToLongitude( maxU );
+			// TODO: need to make sure this is actually at the edge of the full mercator
+			// extent rather than a sub view.
+			if ( endCaps ) {
 
-				// TODO: need to make sure this is actually at the edge of the full mercator
-				// extent rather than a sub view.
-				if ( endCaps ) {
+				if ( maxV === 1 ) {
 
-					if ( maxV === 1 ) {
-
-						north = Math.PI / 2;
-
-					}
-
-					if ( minV === 0 ) {
-
-						south = - Math.PI / 2;
-
-					}
+					north = Math.PI / 2;
 
 				}
 
-			} else {
+				if ( minV === 0 ) {
 
-				const { minLat, maxLat, minLon, maxLon } = this;
-				south = MathUtils.lerp( minLat, maxLat, minV );
-				north = MathUtils.lerp( minLat, maxLat, maxV );
-				west = MathUtils.lerp( minLon, maxLon, minU );
-				east = MathUtils.lerp( minLon, maxLon, maxU );
+					south = - Math.PI / 2;
+
+				}
 
 			}
 
@@ -184,20 +154,12 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			];
 
 			// calculate the changes in lat / lon at the given point
+			// find the most bowed point of the latitude range since the amount that latitude changes is
+			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			let latFactor, lonFactor;
-			if ( projection.isMercator ) {
-
-				const mercatorY = projection.convertLatitudeToProjection( midLat );
-				lonFactor = projection.getLongitudeDerivativeAtValue( minU );
-				latFactor = projection.getLatitudeDerivativeAtValue( mercatorY );
-
-			} else {
-
-				latFactor = Math.PI;
-				lonFactor = 2 * Math.PI;
-
-			}
+			const midV = projection.convertLatitudeToProjection( midLat );
+			const lonFactor = projection.getLongitudeDerivativeAtValue( minU );
+			const latFactor = projection.getLatitudeDerivativeAtValue( midV );
 
 			// TODO: is this correct?
 

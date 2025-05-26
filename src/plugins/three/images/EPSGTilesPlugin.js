@@ -145,12 +145,15 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				// assign settings
 				this.extension = extension;
+				this.url = this.tiles.rootURL;
 				this.tileSets = tileSetList;
 
 				// initialize tiling and projection schemes
 				projection.setScheme( srs );
 
 				tiling.levels = levels;
+				tiling.tileCountX = projection.tileCountX;
+				tiling.tileCountY = projection.tileCountY;
 				tiling.pixelWidth = projection.tileCountX * tileWidth * ( 2 ** maxLevel );
 				tiling.pixelHeight = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
 				tiling.tilePixelWidth = tileWidth;

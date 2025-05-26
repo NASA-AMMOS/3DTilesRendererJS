@@ -56,7 +56,7 @@ export class ProjectionScheme {
 
 		} else {
 
-			return Math.mapLinear( v, 0, 1, - Math.PI / 2, Math.PI / 2 );
+			return MathUtils.mapLinear( v, 0, 1, - Math.PI / 2, Math.PI / 2 );
 
 		}
 
@@ -78,7 +78,7 @@ export class ProjectionScheme {
 
 		} else {
 
-			return Math.mapLinear( lat, - Math.PI / 2, Math.PI / 2, 0, 1 );
+			return MathUtils.mapLinear( lat, - Math.PI / 2, Math.PI / 2, 0, 1 );
 
 		}
 
