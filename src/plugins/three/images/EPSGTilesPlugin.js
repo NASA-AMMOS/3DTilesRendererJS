@@ -91,7 +91,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.name = 'TMS_TILES_PLUGIN';
 		this.flipY = false;
 		this.url = null;
-		this.extension = null;
 
 	}
 
@@ -186,9 +185,10 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( ...args );
 
 		this.name = 'WMTS_TILES_PLUGIN';
-		this.flipY = false;
+		this.flipY = true;
 		this.url = null;
 		this.extension = null;
+		this.matrixSet = null;
 
 	}
 
@@ -200,18 +200,35 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
-
 				const { projection, tiling } = this;
 
 				// elements
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
 				const contents = xml.querySelector( 'Contents' );
-
 				const layers = [ ...contents.querySelectorAll( 'Layer' ) ]
 					.map( layer => {
 
+						const identifier = layer.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent;
 						const links = [ ...layer.querySelectorAll( 'TileMatrixSet' ) ].map( tms => tms.textContent );
 						const formats = [ ...layer.querySelectorAll( 'Format' ) ].map( f => f.textContent );
+						const styles = [ ...layer.querySelectorAll( 'Style' ) ]
+							.sort( ( a, b ) => {
+
+								return a.getAttribute( 'isDefault' ) === 'true' ? 1 : 0;
+
+							} )
+							.map( el => {
+
+								return el.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent;
+
+							} );
+
+						const resourceUrls = [ ...layer.querySelectorAll( 'ResourceURL' ) ]
+							.map( res => ( {
+								format: res.getAttribute( 'format' ),
+								template: res.getAttribute( 'template' ),
+							} ) );
+
 						// const wgs84 = layer.getElementsByTagName( 'ows:WGS84BoundingBox' )[ 0 ];
 						// const lowerBound = wgs84.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
 						// const upperBound = wgs84.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
@@ -223,8 +240,11 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 						// TODO: flat bounding box?
 
 						return {
+							identifier,
 							links,
 							formats,
+							styles,
+							resourceUrls,
 						};
 
 					} );
@@ -240,6 +260,8 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 						const identifier = matrixSet.getElementsByTagName( 'ows:Identifier' )[ 0 ];
 						const supportedCrs = matrixSet.getElementsByTagName( 'ows:SupportedCRS' )[ 0 ];
 						const boundingBox = matrixSet.getElementsByTagName( 'ows:BoundingBox' )[ 0 ];
+
+						// TODO: is this bounding box in meters? pixels?
 						const lowerBound = boundingBox.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
 						const upperBound = boundingBox.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
 						const bounds = [
@@ -272,9 +294,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				// NOTE: only the first layer and matrix set are loaded
 				const layer = layers[ 0 ];
-
-				this.format = layer.formats[ 0 ].replace( /.+\//, '' );
-
 				const matrixSet = matrixSets[ 0 ];
 				const levels = matrixSet.levels.length;
 				const maxLevel = levels - 1;
@@ -289,8 +308,14 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				tiling.pixelHeight = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
 				tiling.tilePixelWidth = tileWidth;
 				tiling.tilePixelHeight = tileHeight;
-				tiling.setOrigin( 0, 0 );
+				tiling.setOrigin( matrixSet.bounds[ 0 ], matrixSet.bounds[ 1 ] );
 				tiling.setBounds( ...matrixSet.bounds );
+
+				const resourceUrl = layer.resourceUrls[ 0 ];
+				this.url = decodeURI( new URL( resourceUrl.template, this.tiles.rootURL ).toString() );
+				this.matrixSet = matrixSet.levels;
+
+				return this.getTileset( url );
 
 			} );
 
@@ -298,8 +323,11 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	getUrl( level, x, y ) {
 
-		const { url, extension, tileSets } = this;
-		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
+		const { url, matrixSet } = this;
+		return url
+			.replace( '{TileMatrix}', matrixSet[ level ].identifier )
+			.replace( '{TileCol}', x )
+			.replace( '{TileRow}', y );
 
 	}
 
