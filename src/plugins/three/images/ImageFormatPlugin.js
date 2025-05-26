@@ -199,7 +199,6 @@ export class ImageFormatPlugin {
 		centerY *= pixelHeight * pixelSize;
 		extentsY *= pixelHeight * pixelSize;
 
-
 		// Generate the node
 		return {
 			refine: 'REPLACE',

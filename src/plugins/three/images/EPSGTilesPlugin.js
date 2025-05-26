@@ -29,7 +29,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 		this.tiling.levels = value;
 
-
 	}
 
 	constructor( options = {} ) {
@@ -106,12 +105,15 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				const { projection, tiling } = this;
 
+				// elements
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
 				const boundingBox = xml.querySelector( 'BoundingBox' );
 				const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
-				const tileSets = xml.querySelector( 'TileSets' );
-				const tileSetList = [ ...tileSets.querySelectorAll( 'TileSet' ) ]
+				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
+
+				// tile set definitions
+				const tileSetList = [ ...tileSets ]
 					.map( ts => ( {
 						href: parseInt( ts.getAttribute( 'href' ) ),
 						unitsPerPixel: parseFloat( ts.getAttribute( 'units-per-pixel' ) ),
@@ -123,8 +125,7 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 					} );
 
-				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
-				// used for overlays.
+				// bounding box
 				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
 				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
 				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
