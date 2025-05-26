@@ -6,6 +6,32 @@ import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
+	get tileDimension() {
+
+		return this.tiling.tilePixelWidth;
+
+	}
+
+	set tileDimension( value ) {
+
+		this.tiling.tilePixelWidth = value;
+		this.tiling.tilePixelHeight = value;
+
+	}
+
+	get levels() {
+
+		return this.tiling.levels;
+
+	}
+
+	set levels( value ) {
+
+		this.tiling.levels = value;
+
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -18,8 +44,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( { pixelSize, ...rest } );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.tileWidth = tileDimension;
-		this.tileHeight = tileDimension;
+		this.tileDimension = tileDimension;
 		this.levels = levels;
 		this.url = null;
 		this.flipY = true;
@@ -29,14 +54,20 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	async loadRootTileSet() {
 
 		// transform the url
-		const { tiles, tileWidth, tileHeight, maxLevel } = this;
+		const { tiles, tiling, projection } = this;
+		const { tilePixelWidth, tilePixelHeight, levels } = tiling;
+
+		// initialize tiling & projection scheme
+		const maxLevel = levels - 1;
+		tiling.pixelWidth = tilePixelWidth * ( 2 ** maxLevel );
+		tiling.pixelHeight = tilePixelHeight * ( 2 ** maxLevel );
+
+		projection.setScheme( 'EPSG:3857' );
+
+		// initialize url
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-
-		this.width = tileWidth * ( 2 ** maxLevel );
-		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
-		this.projection.setScheme( 'EPSG:3857' );
 
 		return this.getTileset( url );
 
