@@ -140,7 +140,6 @@ export class ImageFormatPlugin {
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 
-		console.log( tileset.root.children[ 0 ].geometricError )
 		return tileset;
 
 	}

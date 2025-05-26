@@ -36,9 +36,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			tilePixelHeight: tileDimension,
 		} );
 
-		window.TILING = tiling;
-		window.TILES = this.tiles;
-
 		// initialize url
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
@@ -77,8 +74,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
 			.then( res => res.text() )
 			.then( text => {
-
-				console.log(text)
 
 				const { projection, tiling } = this;
 
@@ -139,8 +134,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
 
-				console.log( tiling.minTileX, tiling.minTileY )
-
 				return this.getTileset( url );
 
 			} );
@@ -179,8 +172,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
 			.then( res => res.text() )
 			.then( text => {
-
-				console.log( text )
 
 				const { projection, tiling } = this;
 

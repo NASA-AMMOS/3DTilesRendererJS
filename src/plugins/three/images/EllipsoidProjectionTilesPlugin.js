@@ -1,4 +1,4 @@
-import { ImageFormatPlugin, UV_BOUNDS } from './ImageFormatPlugin.js';
+import { ImageFormatPlugin, TILE_LEVEL, UV_BOUNDS } from './ImageFormatPlugin.js';
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
 import { ProjectionScheme } from './utils/ProjectionScheme.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
@@ -115,8 +115,10 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		const { shape, projection, endCaps, tiling } = this;
 		if ( shape === 'ellipsoid' ) {
 
+			const level = tile[ TILE_LEVEL ] || 0;
 			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
-			const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight } = tiling;
+			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
+			const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 			// one pixel width in uv space
 			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
