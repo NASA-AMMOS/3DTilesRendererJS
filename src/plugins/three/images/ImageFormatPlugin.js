@@ -1,4 +1,5 @@
-import { MathUtils, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
+import { TilingScheme } from './utils/TilingScheme.js';
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -14,6 +15,12 @@ export class ImageFormatPlugin {
 
 	}
 
+	get levels() {
+
+		return this.tiling.levels;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -24,19 +31,12 @@ export class ImageFormatPlugin {
 
 		this.priority = - 10;
 		this.tiles = null;
-		this.processCallback = null;
-
-		// tile dimensions in pixels
-		this.tileWidth = null;
-		this.tileHeight = null;
-
-		// full image dimensions in pixels
-		this.width = null;
-		this.height = null;
-		this.levels = null;
 
 		// amount of pixel overlap between tiles
+		this.tiling = new TilingScheme();
 		this.overlap = 0;
+
+		// options
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
@@ -97,7 +97,8 @@ export class ImageFormatPlugin {
 	preprocessNode( tile, dir, parentTile ) {
 
 		// generate children
-		const { maxLevel } = this;
+		const { tiling } = this;
+		const maxLevel = tiling.levels - 1;
 		const level = tile[ TILE_LEVEL ];
 		if ( level < maxLevel ) {
 
@@ -123,15 +124,13 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		const { maxLevel, width, height, tileWidth, tileHeight, center, pixelSize } = this;
-		const levelFactor = 2 ** - maxLevel;
-		const tilesX = Math.ceil( levelFactor * width / tileWidth );
-		const tilesY = Math.ceil( levelFactor * height / tileHeight );
+		const { center, pixelSize, tiling } = this;
+		const { pixelHeight, pixelWidth, tileCountX, tileCountY } = tiling;
 
 		// generate all children for the root
-		for ( let x = 0; x < tilesX; x ++ ) {
+		for ( let x = 0; x < tileCountX; x ++ ) {
 
-			for ( let y = 0; y < tilesY; y ++ ) {
+			for ( let y = 0; y < tileCountY; y ++ ) {
 
 				tileset.root.children.push( this.createChild( 0, x, y ) );
 
@@ -140,12 +139,12 @@ export class ImageFormatPlugin {
 		}
 
 		// construct the full bounding box
-		const minX = center ? - width / 2 : 0;
-		const minY = center ? - height / 2 : 0;
+		const minX = center ? - pixelWidth / 2 : 0;
+		const minY = center ? - pixelHeight / 2 : 0;
 		tileset.root.boundingVolume.box = [
-			pixelSize * ( minX + width / 2 ), pixelSize * ( minY + height / 2 ), 0,
-			pixelSize * width / 2, 0, 0,
-			0, pixelSize * height / 2, 0,
+			pixelSize * ( minX + pixelWidth / 2 ), pixelSize * ( minY + pixelHeight / 2 ), 0,
+			pixelSize * pixelWidth / 2, 0, 0,
+			0, pixelSize * pixelHeight / 2, 0,
 			0, 0, 0,
 		];
 
@@ -164,84 +163,53 @@ export class ImageFormatPlugin {
 
 	createChild( level, x, y ) {
 
-		const { maxLevel, width, height, overlap, pixelSize, center, tileWidth, tileHeight, flipY } = this;
+		const { overlap, pixelSize, center, flipY, tiling } = this;
+		const { pixelWidth, pixelHeight } = tiling;
 
-		// offset for the image so it's center
-		const offsetX = center ? pixelSize * - width / 2 : 0;
-		const offsetY = center ? pixelSize * - height / 2 : 0;
-
-		const levelFactor = 2 ** - ( maxLevel - level );
-		const levelWidth = Math.ceil( width * levelFactor );
-		const levelHeight = Math.ceil( height * levelFactor );
-
-		let tileX = tileWidth * x - overlap;
-		let tileY = tileHeight * y - overlap;
-		let tileWidthOverlap = tileWidth + overlap * 2;
-		let tileHeightOverlap = tileHeight + overlap * 2;
-
-		// adjust the starting position of the tile to the edge of the image
-		if ( tileX < 0 ) {
-
-			tileWidthOverlap += tileX;
-			tileX = 0;
-
-		}
-
-		if ( tileY < 0 ) {
-
-			tileHeightOverlap += tileY;
-			tileY = 0;
-
-		}
-
-		// clamp the dimensions to the edge of the image
-		if ( tileX + tileWidthOverlap > levelWidth ) {
-
-			tileWidthOverlap -= tileX + tileWidthOverlap - levelWidth;
-
-		}
-
-		if ( tileY + tileHeightOverlap > levelHeight ) {
-
-			tileHeightOverlap -= tileY + tileHeightOverlap - levelHeight;
-
-		}
-
-		// If this section doesn't cover an image then discard it
-		if ( tileHeightOverlap <= 0 || tileWidthOverlap <= 0 ) {
+		if ( ! tiling.getTileExists( x, y, level ) ) {
 
 			return null;
 
 		}
 
-		// the center of the tile
-		const centerX = tileX + tileWidthOverlap / 2;
-		let centerY = tileY + tileHeightOverlap / 2;
-		if ( flipY ) {
+		// the scale ration of the image at this level
+		const levelWidth = tiling.getPixelWidthAtLevel( level );
+		const levelHeight = tiling.getPixelHeightAtLevel( level );
+		const geometricError = pixelSize * ( Math.max( pixelWidth / levelWidth, pixelHeight / levelHeight ) - 1 );
 
-			centerY = levelHeight - centerY;
+		// get the normalize span of this tile relative to the image
+		const span = tiling.getNormalizedTileSpan( x, y, level, overlap, flipY );
+
+		// calculate the world space bounds position from the range
+		const [ minX, minY, maxX, maxY ] = span;
+		let extentsX = ( maxX - minX ) / 2;
+		let extentsY = ( maxY - minY ) / 2;
+		let centerX = minX + extentsX;
+		let centerY = minY + extentsY;
+		if ( center ) {
+
+			centerX -= 0.5;
+			centerY -= 0.5;
 
 		}
 
-		// the pixel ratio of the image
-		const ratioX = width / levelWidth;
-		const ratioY = height / levelHeight;
+		centerX *= pixelWidth * pixelSize;
+		extentsX *= pixelWidth * pixelSize;
 
-		const boxX = ratioX * pixelSize * centerX;
-		const boxY = ratioY * pixelSize * centerY;
-		const extentsX = ratioX * pixelSize * tileWidthOverlap / 2;
-		const extentsY = ratioY * pixelSize * tileHeightOverlap / 2;
+		centerY *= pixelHeight * pixelSize;
+		extentsY *= pixelHeight * pixelSize;
+
 
 		// Generate the node
 		return {
 			refine: 'REPLACE',
-			geometricError: pixelSize * ( Math.max( width / levelWidth, height / levelHeight ) - 1 ),
+			geometricError: geometricError,
 			boundingVolume: {
 				// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
 				// is also enabled on the image bitmap texture generation above.
 				box: [
 					// center
-					boxX + offsetX, boxY + offsetY, 0,
+					centerX, centerY, 0,
 
 					// x, y, z half vectors
 					extentsX, 0.0, 0.0,
@@ -258,12 +226,7 @@ export class ImageFormatPlugin {
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
-			[ UV_BOUNDS ]: [
-				MathUtils.mapLinear( boxX - extentsX, 0, pixelSize * width, 0, 1 ),
-				MathUtils.mapLinear( boxY - extentsY, 0, pixelSize * height, 0, 1 ),
-				MathUtils.mapLinear( boxX + extentsX, 0, pixelSize * width, 0, 1 ),
-				MathUtils.mapLinear( boxY + extentsY, 0, pixelSize * height, 0, 1 ),
-			],
+			[ UV_BOUNDS ]: span,
 		};
 
 	}
