@@ -270,7 +270,7 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 					} );
 
-
+				// NOTE: only the first layer and matrix set are loaded
 				const layer = layers[ 0 ];
 
 				this.format = layer.formats[ 0 ].replace( /.+\//, '' );
