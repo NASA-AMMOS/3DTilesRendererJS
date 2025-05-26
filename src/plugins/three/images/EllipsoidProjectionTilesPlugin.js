@@ -1,12 +1,12 @@
 import { ImageFormatPlugin, UV_BOUNDS } from './ImageFormatPlugin.js';
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
+import { ProjectionScheme } from './utils/ProjectionScheme.js';
+import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _uv = /* @__PURE__ */ new Vector2();
 const _sphere = /* @__PURE__ */ new Sphere();
-const _v0 = /* @__PURE__ */ new Vector3();
-const _v1 = /* @__PURE__ */ new Vector3();
 
 export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
@@ -21,7 +21,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		super( rest );
 
 		this.shape = shape;
-		this.projection = 'geodetic';
+		this.projection = new ProjectionScheme();
+
 		this.endCaps = endCaps;
 
 		// TODO: are these necessary?
@@ -73,11 +74,11 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				const lon = MathUtils.mapLinear( _uv.x, 0, 1, west, east );
 				let lat = MathUtils.mapLinear( _uv.y, 0, 1, south, north );
-				if ( projection === 'mercator' && _uv.y !== 0 && _uv.y !== 1 ) {
+				if ( projection.isMercator && _uv.y !== 0 && _uv.y !== 1 ) {
 
 					// ensure we have an edge loop positioned at the mercator limit
 					// to avoid UV distortion as much as possible at low LoDs
-					const latLimit = this.mercatorToLatitude( 1 );
+					const latLimit = projection.convertProjectionToLatitude( 1 );
 					const vStep = 1 / yVerts;
 
 					const prevLat = MathUtils.mapLinear( _uv.y - vStep, 0, 1, south, north );
@@ -103,10 +104,10 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				position.setXYZ( i, ..._pos );
 				normal.setXYZ( i, ..._norm );
 
-				if ( projection === 'mercator' ) {
+				if ( projection.isMercator ) {
 
-					const u = MathUtils.mapLinear( this.longitudeToMercator( lon ), minU, maxU, 0, 1 );
-					const v = MathUtils.mapLinear( this.latitudeToMercator( lat ), minV, maxV, 0, 1 );
+					const u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, 0, 1 );
+					const v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, 0, 1 );
 					uv.setXY( i, u, v );
 
 				}
@@ -139,12 +140,12 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			// calculate the region ranges
 			let south, north, west, east;
-			if ( projection === 'mercator' ) {
+			if ( projection.isMercator ) {
 
-				south = this.mercatorToLatitude( minV );
-				north = this.mercatorToLatitude( maxV );
-				west = this.mercatorToLongitude( minU );
-				east = this.mercatorToLongitude( maxU );
+				south = projection.convertProjectionToLatitude( minV );
+				north = projection.convertProjectionToLatitude( maxV );
+				west = projection.convertProjectionToLongitude( minU );
+				east = projection.convertProjectionToLongitude( maxU );
 
 				// TODO: need to make sure this is actually at the edge of the full mercator
 				// extent rather than a sub view.
@@ -182,10 +183,11 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// calculate the changes in lat / lon at the given point
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
 			let latFactor, lonFactor;
-			if ( projection === 'mercator' ) {
+			if ( projection.isMercator ) {
 
-				const mercatorY = this.latitudeToMercator( midLat );
-				[ latFactor, lonFactor ] = this.getMercatorToCartographicDerivative( minU, mercatorY );
+				const mercatorY = projection.convertLatitudeToProjection( midLat );
+				lonFactor = projection.getLongitudeDerivativeAtValue( minU );
+				latFactor = projection.getLatitudeDerivativeAtValue( mercatorY );
 
 			} else {
 
@@ -197,7 +199,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// TODO: is this correct?
 
 			// calculate the size of a pixel on the surface
-			const [ xDeriv, yDeriv ] = this.getCartographicToMeterDerivative( midLat, east );
+			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
 			const tilePixelWidth = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 			const rootPixelWidth = Math.max( rootUWidth * lonFactor * xDeriv, rootVWidth * latFactor * yDeriv );
 			tile.geometricError = tilePixelWidth - rootPixelWidth;
@@ -214,87 +216,6 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		}
 
 		return tile;
-
-	}
-
-	latitudeToMercator( lat ) {
-
-		// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-		const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
-		return ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
-
-	}
-
-	longitudeToMercator( lon ) {
-
-		return ( lon + Math.PI ) / ( 2 * Math.PI );
-
-	}
-
-	mercatorToLatitude( value ) {
-
-		// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
-		// TODO: support partial lat ranges here
-		// const { minLat, maxLat } = this;
-		const ratio = MathUtils.mapLinear( value, 0, 1, - 1, 1 );
-		return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
-
-	}
-
-	mercatorToLongitude( value ) {
-
-		const { minLon, maxLon } = this;
-		return MathUtils.mapLinear( value, 0, 1, minLon, maxLon );
-
-	}
-
-	getMercatorToCartographicDerivative( x, y ) {
-
-		const EPS = 1e-5;
-		let xp = x - EPS;
-		let yp = y - EPS;
-		if ( xp < 0 ) {
-
-			xp = x + EPS;
-
-		}
-
-		if ( yp < 0 ) {
-
-			yp = y + EPS;
-
-		}
-
-		return [
-			Math.abs( this.mercatorToLatitude( y ) - this.mercatorToLatitude( yp ) ) / EPS,
-			Math.abs( this.mercatorToLongitude( x ) - this.mercatorToLongitude( xp ) ) / EPS,
-		];
-
-	}
-
-	getCartographicToMeterDerivative( lat, lon ) {
-
-		const { tiles } = this;
-		const { ellipsoid } = tiles;
-
-		const EPS = 1e-5;
-		const lonp = lon + EPS;
-		let latp = lat + EPS;
-		if ( Math.abs( latp ) > Math.PI / 2 ) {
-
-			latp = latp - EPS;
-
-		}
-
-		ellipsoid.getCartographicToPosition( lat, lon, 0, _v0 );
-
-		ellipsoid.getCartographicToPosition( latp, lon, 0, _v1 );
-		const dy = _v0.distanceTo( _v1 ) / EPS;
-
-		ellipsoid.getCartographicToPosition( lat, lonp, 0, _v1 );
-		const dx = _v0.distanceTo( _v1 ) / EPS;
-
-		return [ dx, dy ];
 
 	}
 

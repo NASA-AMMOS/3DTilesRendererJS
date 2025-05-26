@@ -36,7 +36,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.width = tileWidth * ( 2 ** maxLevel );
 		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
-		this.projection = 'mercator';
+		this.projection.setScheme( 'EPSG:3857' );
 
 		return this.getTileset( url );
 
@@ -105,51 +105,20 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				// const x = parseFloat( origin.getAttribute( 'x' ) );
 				// const y = parseFloat( origin.getAttribute( 'y' ) );
 
+				const { projection } = this;
+
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
 				const tileHeight = parseInt( tileFormat.getAttribute( 'height' ) );
 				const extension = tileFormat.getAttribute( 'extension' );
-
-				const profile = tileSets.getAttribute( 'profile' );
 				const srs = xml.querySelector( 'SRS' ).textContent;
-
-				switch ( srs ) {
-
-					case 'EPSG:3857': // web-mercator spherical projection
-					case 'EPSG:4326': // equirect projection
-						break;
-					default:
-						throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
-
-				}
-
-				// TODO: global-geodetic seems to require two horizontal root tiles. Is hardcoding the right way?
-				let widthMultiplier = 1;
-				let heightMultiplier = 1;
-				switch ( profile ) {
-
-					case 'geodetic':
-					case 'global-geodetic':
-						widthMultiplier = 2;
-						heightMultiplier = 1;
-						this.projection = 'geodetic';
-						break;
-					case 'mercator':
-					case 'global-mercator':
-						this.projection = 'mercator';
-						break;
-					case 'local':
-					case 'none':
-					default:
-						throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
-
-				}
+				projection.setScheme( srs );
 
 				const levels = tileSetList.length;
 				const maxLevel = levels - 1;
 				this.extension = extension;
-				this.width = widthMultiplier * tileWidth * ( 2 ** maxLevel );
-				this.height = heightMultiplier * tileHeight * ( 2 ** maxLevel );
+				this.width = projection.tileCountX * tileWidth * ( 2 ** maxLevel );
+				this.height = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
 				this.tileWidth = tileWidth;
 				this.tileHeight = tileHeight;
 				this.levels = levels;
