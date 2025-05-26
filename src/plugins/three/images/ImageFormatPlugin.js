@@ -4,7 +4,6 @@ import { TilingScheme } from './utils/TilingScheme.js';
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
 export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
-export const UV_BOUNDS = Symbol( 'UV_BOUNDS' );
 
 // Base class for supporting tiled images with a consistent size / resolution per tile
 export class ImageFormatPlugin {
@@ -136,7 +135,9 @@ export class ImageFormatPlugin {
 			0, 0, 0,
 		];
 
-		tileset.root[ UV_BOUNDS ] = [ 0, 0, 1, 1 ];
+		tileset.root[ TILE_LEVEL ] = 0;
+		tileset.root[ TILE_X ] = 0;
+		tileset.root[ TILE_Y ] = 0;
 
 		this.tiles.preprocessTileSet( tileset, baseUrl );
 
@@ -213,7 +214,6 @@ export class ImageFormatPlugin {
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
-			[ UV_BOUNDS ]: span,
 		};
 
 	}

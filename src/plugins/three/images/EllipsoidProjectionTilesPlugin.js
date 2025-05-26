@@ -1,4 +1,4 @@
-import { ImageFormatPlugin, TILE_LEVEL, UV_BOUNDS } from './ImageFormatPlugin.js';
+import { ImageFormatPlugin, TILE_LEVEL, TILE_X, TILE_Y } from './ImageFormatPlugin.js';
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
 import { ProjectionScheme } from './utils/ProjectionScheme.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
@@ -34,14 +34,18 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 	// override the parse to mesh logic to support a region mesh
 	async parseToMesh( buffer, tile, ...args ) {
 
-		const { shape, projection, tiles } = this;
+		const { shape, projection, tiles, tiling, flipY } = this;
 		const mesh = await super.parseToMesh( buffer, tile, ...args );
 
 		// if displaying the tiles as an ellipsoid
 		if ( shape === 'ellipsoid' ) {
 
 			const ellipsoid = tiles.ellipsoid;
-			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
+			const level = tile[ TILE_LEVEL ];
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+
+			const [ minU, minV, maxU, maxV ] = tiling.getNormalizedTileSpan( x, y, level, 0, flipY );
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 
 			// new geometry
@@ -112,11 +116,13 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super.preprocessNode( tile, rest );
 
-		const { shape, projection, endCaps, tiling } = this;
+		const { shape, projection, endCaps, tiling, flipY } = this;
 		if ( shape === 'ellipsoid' ) {
 
-			const level = tile[ TILE_LEVEL ] || 0;
-			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
+			const level = tile[ TILE_LEVEL ];
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+			const [ minU, minV, maxU, maxV ] = tiling.getNormalizedTileSpan( x, y, level, 0, flipY );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
 			const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
