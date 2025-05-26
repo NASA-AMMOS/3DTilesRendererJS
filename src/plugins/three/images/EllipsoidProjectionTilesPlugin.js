@@ -25,7 +25,9 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		this.endCaps = endCaps;
 
-		// TODO: are these necessary?
+		// TODO: are these necessary? No
+		// TODO: Remove these and rely on tiling bounds - but bounds only represent the
+		// area where relevant data is and does not otherwise impact the tiling scheme.
 		this.minLat = - Math.PI / 2;
 		this.maxLat = Math.PI / 2;
 		this.minLon = - Math.PI;
@@ -131,13 +133,13 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		if ( shape === 'ellipsoid' ) {
 
 			const [ minU, minV, maxU, maxV ] = tile[ UV_BOUNDS ];
-			const { tileWidth, tileHeight, tilePixelWidth, tilePixelHeight } = tiling;
+			const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight } = tiling;
 
 			// one pixel width in uv space
-			const tileUWidth = ( maxU - minU ) / tileWidth;
-			const tileVWidth = ( maxV - minV ) / tileHeight;
-			const rootUWidth = 1 / tilePixelWidth;
-			const rootVWidth = 1 / tilePixelHeight;
+			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
+			const tileVWidth = ( maxV - minV ) / tilePixelHeight;
+			const rootUWidth = 1 / pixelWidth;
+			const rootVWidth = 1 / pixelHeight;
 
 			// calculate the region ranges
 			let south, north, west, east;
