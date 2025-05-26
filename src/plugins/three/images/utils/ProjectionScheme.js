@@ -108,6 +108,7 @@ export class ProjectionScheme {
 
 		if ( this.isMercator ) {
 
+			// TODO: why is this 2 * Math.PI rather than Math.PI?
 			return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
 
 		} else {
