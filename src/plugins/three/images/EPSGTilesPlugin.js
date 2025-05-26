@@ -145,7 +145,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				// assign settings
 				this.extension = extension;
-				this.levels = levels;
 				this.tileSets = tileSetList;
 
 				// initialize tiling and projection schemes
