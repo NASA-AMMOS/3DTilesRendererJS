@@ -2,47 +2,6 @@
 // Assumes that tiles are split into four child tiles at each level.
 export class TilingScheme {
 
-	// TODO: this all relies on bounds which re not reliable or well defined at the moment
-	// are bounds in pixels?
-	// The width of the bounds range
-	get boundsWidth() {
-
-		return this.bounds[ 2 ] - this.bounds[ 0 ];
-
-	}
-
-	get boundsHeight() {
-
-		return this.bounds[ 3 ] - this.bounds[ 1 ];
-
-	}
-
-	// The width of an individual tile
-	get tileWidth() {
-
-		return this.boundsWidth / this.tileCountX;
-
-	}
-
-	get tileHeight() {
-
-		return this.boundsHeight / this.tileCountY;
-
-	}
-
-	// The minimum tile index
-	get minTileX() {
-
-		return ( this.bounds[ 0 ] - this.origin[ 0 ] ) / this.tileWidth;
-
-	}
-
-	get minTileY() {
-
-		return ( this.bounds[ 0 ] - this.origin[ 0 ] ) / this.tileWidth;
-
-	}
-
 	get levelCount() {
 
 		return this._levels.length;
@@ -74,7 +33,9 @@ export class TilingScheme {
 
 	constructor() {
 
-		// TODO: add overlap? Pixel information?
+		// TODO: add overlap? Pixel information? FlipY?
+
+		this.flipY = false;
 
 		// The number of tiles on each axis
 		this.tileCountX = 1;
@@ -109,6 +70,7 @@ export class TilingScheme {
 			tilePixelHeight = 256,
 			tileCountX = 2 ** level,
 			tileCountY = 2 ** level,
+			unitsPerPixel = 2 ** - level,
 		} = options;
 
 		const {
@@ -117,6 +79,7 @@ export class TilingScheme {
 		} = options;
 
 		levels[ level ] = {
+			unitsPerPixel,
 			tilePixelWidth,
 			tilePixelHeight,
 			pixelWidth,
@@ -163,7 +126,29 @@ export class TilingScheme {
 
 	getLevel( level ) {
 
-		return this._levels[ level ];
+		const info = this._levels[ level ];
+
+		if ( info ) {
+
+			const { unitsPerPixel, tilePixelWidth, tilePixelHeight } = info;
+			const tileBoundsWidth = unitsPerPixel * tilePixelWidth;
+			const tileBoundsHeight = unitsPerPixel * tilePixelHeight;
+
+			const boundsLeft = this.bounds[ 0 ];
+			const boundsBottom = this.bounds[ 1 ];
+
+			const originX = this.origin[ 0 ];
+			const originY = this.origin[ 1 ];
+
+			const tileMinX = ( boundsLeft - originX ) / tileBoundsWidth;
+			const tileMinY = ( boundsBottom - originY ) / tileBoundsHeight;
+
+			info.tileMinX = tileMinX;
+			info.tileMinY = tileMinY;
+
+		}
+
+		return info;
 
 	}
 
@@ -189,22 +174,22 @@ export class TilingScheme {
 	}
 
 	// tile index query functions
-	getTileAtBoundsPoint( x, y, level, target = [] ) {
+	// getTileAtBoundsPoint( x, y, level, target = [] ) {
 
-		// TODO
+	// 	// TODO
 
-		const levelMultiplier = 2 ** level;
-		const tileWidth = this.tileWidth / levelMultiplier;
-		const tileHeight = this.tileHeight / levelMultiplier;
+	// 	const levelMultiplier = 2 ** level;
+	// 	const tileWidth = this.tileWidth / levelMultiplier;
+	// 	const tileHeight = this.tileHeight / levelMultiplier;
 
-		const relativeX = x - this.origin[ 0 ];
-		const relativeY = y - this.origin[ 1 ];
+	// 	const relativeX = x - this.origin[ 0 ];
+	// 	const relativeY = y - this.origin[ 1 ];
 
-		target[ 0 ] = Math.floor( relativeX / tileWidth );
-		target[ 1 ] = Math.floor( relativeY / tileHeight );
-		return target;
+	// 	target[ 0 ] = Math.floor( relativeX / tileWidth );
+	// 	target[ 1 ] = Math.floor( relativeY / tileHeight );
+	// 	return target;
 
-	}
+	// }
 
 	getTileExists( tx, ty, level ) {
 
@@ -215,8 +200,9 @@ export class TilingScheme {
 	}
 
 	// pixel dimensions query function
-	getNormalizedTileSpan( x, y, level, pixelOverlap = 0, flipY = false ) {
+	getNormalizedTileSpan( x, y, level, pixelOverlap = 0 ) {
 
+		const { flipY } = this;
 		const { pixelWidth, pixelHeight, tilePixelWidth, tilePixelHeight } = this.getLevel( level );
 		let tileX = tilePixelWidth * x - pixelOverlap;
 		let tileY = tilePixelHeight * y - pixelOverlap;

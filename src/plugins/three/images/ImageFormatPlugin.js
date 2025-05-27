@@ -27,7 +27,6 @@ export class ImageFormatPlugin {
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
-		this.flipY = false;
 
 	}
 
@@ -153,7 +152,7 @@ export class ImageFormatPlugin {
 
 	createChild( level, x, y ) {
 
-		const { overlap, pixelSize, center, flipY, tiling } = this;
+		const { overlap, pixelSize, center, tiling } = this;
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		if ( ! tiling.getTileExists( x, y, level ) ) {
@@ -167,7 +166,7 @@ export class ImageFormatPlugin {
 		const geometricError = pixelSize * ( Math.max( pixelWidth / levelWidth, pixelHeight / levelHeight ) - 1 );
 
 		// get the normalize span of this tile relative to the image
-		const span = tiling.getNormalizedTileSpan( x, y, level, overlap, flipY );
+		const span = tiling.getNormalizedTileSpan( x, y, level, overlap );
 
 		// calculate the world space bounds position from the range
 		const [ minX, minY, maxX, maxY ] = span;

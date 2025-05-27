@@ -21,7 +21,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.tileDimension = tileDimension;
 		this.levels = levels;
 		this.url = null;
-		this.flipY = true;
 
 	}
 
@@ -31,6 +30,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		const { tiles, tiling, projection, tileDimension, levels } = this;
 
 		projection.setScheme( 'EPSG:3857' );
+		tiling.flipY = true;
 		tiling.generateLevels( levels, 1, 1, {
 			tilePixelWidth: tileDimension,
 			tilePixelHeight: tileDimension,
@@ -62,7 +62,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( ...args );
 
 		this.name = 'TMS_TILES_PLUGIN';
-		this.flipY = false;
 		this.url = null;
 
 	}
@@ -158,7 +157,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( ...args );
 
 		this.name = 'WMTS_TILES_PLUGIN';
-		this.flipY = true;
 		this.url = null;
 		this.extension = null;
 		this.matrixSet = null;
@@ -264,6 +262,7 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				projection.setScheme( matrixSet.supportedCrs );
 
+				tiling.flipY = true;
 				tiling.levels = matrixSet.levels.length;
 				tiling.tileCountX = projection.tileCountX;
 				tiling.tileCountY = projection.tileCountY;

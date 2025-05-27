@@ -13,7 +13,6 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 		this.name = 'DZI_TILES_PLUGIN';
 		this.stem = null;
 		this.format = null;
-		this.flipY = true;
 
 	}
 
@@ -66,6 +65,7 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 				// Assign tiling properties
 				const { tiling } = this;
 				const levels = Math.ceil( Math.log2( Math.max( width, height ) ) ) + 1;
+				tiling.flipY = true;
 				tiling.generateLevels( levels, 1, 1, {
 					tilePixelWidth: tileSize,
 					tilePixelHeight: tileSize,
