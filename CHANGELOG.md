@@ -14,10 +14,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TileFlatteningPlugin: Fixed disposal throwing an error.
 - Change `load-error` event field from `uri` to `url` as documented.
 - Fixed type definitions for some events.
+- B3DM, I3DM, PNTS Loaders: Fixed case where RTC_CENTER feature would not be parsed correctly.
 
 ### Added
 - Ability to resolve to any file in "./src".
-- QuantizedMesh: Add support for attributions.
+- QuantizedMeshPlugin: Add support for attributions.
+- QuantizedMeshPlugin: Add support for "metadataAvailability".
+- QuantizedMeshPlugin: Add support for auto-filling child tiles from parent data when not present.
+- QuantizedMeshPlugin: Add support for auto-calculating skirth length.
+
+### Changed
+- QuantizedMeshPlugin, Image Plugins: Remove internal, custom queue for generating children in favor of TilesRenderer's new process queue.
 
 ## [0.4.9] - 2025.05.07
 ### Fixed

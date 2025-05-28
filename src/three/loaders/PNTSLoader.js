@@ -198,7 +198,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 			result.scene.featureTable = featureTable;
 			result.scene.batchTable = batchTable;
 
-			const rtcCenter = featureTable.getData( 'RTC_CENTER' );
+			const rtcCenter = featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' );
 			if ( rtcCenter ) {
 
 				result.scene.position.x += rtcCenter[ 0 ];

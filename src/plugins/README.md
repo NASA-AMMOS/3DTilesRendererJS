@@ -674,8 +674,9 @@ Available options are as follows:
 	// If true then the TilesRenderer error target is set to 2 so an expected amount of tile detail is rendered.
 	useRecommendedSettings: true,
 
-	// The length of the skirts to generate for each tile. No skirts are generated if set to 0.
-	skirtLength: 1000,
+	// The length of the skirts to generate for each tile. No skirts are generated if set to "0". Skirt length is automtically
+	// calculated from geometric error if set to "null".
+	skirtLength: null,
 
 	// If true then the normals on the edge of the tile are replicated on skirt vertices. Otherwise the skits have flat edges.
 	smoothSkirtNormals: true,
