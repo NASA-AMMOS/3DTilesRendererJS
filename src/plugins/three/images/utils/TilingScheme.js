@@ -1,5 +1,11 @@
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
+function clamp( value, min, max ) {
+
+	return Math.max( Math.min( value, max ), min );
+
+}
+
 export class TilingScheme {
 
 	get levelCount() {
@@ -33,23 +39,14 @@ export class TilingScheme {
 
 	constructor() {
 
-		// TODO: add overlap? Pixel information? FlipY?
+		// TODO: add overlap? Pixel information?
 
 		this.flipY = false;
 
-		// The number of tiles on each axis
-		this.tileCountX = 1;
-		this.tileCountY = 1;
-
-		// pixel information
-		this.pixelWidth = 1;
-		this.pixelHeight = 1;
-		this.tilePixelWidth = 1;
-		this.tilePixelHeight = 1;
-
 		// The origin and bounds
-		this.bounds = [ 0, 0, 1, 1 ];
-		this.origin = [ 0, 0 ];
+		this.rootBounds = [ 0, 0, 1, 1 ];
+		this.rootOrigin = [ 0, 0 ];
+		this.projection = null;
 
 		this._levels = [];
 
@@ -70,7 +67,6 @@ export class TilingScheme {
 			tilePixelHeight = 256,
 			tileCountX = 2 ** level,
 			tileCountY = 2 ** level,
-			unitsPerPixel = 2 ** - level,
 		} = options;
 
 		const {
@@ -79,7 +75,6 @@ export class TilingScheme {
 		} = options;
 
 		levels[ level ] = {
-			unitsPerPixel,
 			tilePixelWidth,
 			tilePixelHeight,
 			pixelWidth,
@@ -126,76 +121,130 @@ export class TilingScheme {
 
 	getLevel( level ) {
 
-		const info = this._levels[ level ];
-
-		if ( info ) {
-
-			const { unitsPerPixel, tilePixelWidth, tilePixelHeight } = info;
-			const tileBoundsWidth = unitsPerPixel * tilePixelWidth;
-			const tileBoundsHeight = unitsPerPixel * tilePixelHeight;
-
-			const boundsLeft = this.bounds[ 0 ];
-			const boundsBottom = this.bounds[ 1 ];
-
-			const originX = this.origin[ 0 ];
-			const originY = this.origin[ 1 ];
-
-			const tileMinX = ( boundsLeft - originX ) / tileBoundsWidth;
-			const tileMinY = ( boundsBottom - originY ) / tileBoundsHeight;
-
-			info.tileMinX = tileMinX;
-			info.tileMinY = tileMinY;
-
-		}
-
-		return info;
+		return this._levels[ level ];
 
 	}
 
 	// bounds setters
 	setOrigin( x, y ) {
 
-		// TODO
-
-		this.origin[ 0 ] = x;
-		this.origin[ 1 ] = y;
+		this.rootOrigin[ 0 ] = x;
+		this.rootOrigin[ 1 ] = y;
 
 	}
 
 	setBounds( minX, minY, maxX, maxY ) {
 
-		// TODO
-
-		this.bounds[ 0 ] = minX;
-		this.bounds[ 1 ] = minY;
-		this.bounds[ 2 ] = maxX;
-		this.bounds[ 3 ] = maxY;
+		this.rootBounds[ 0 ] = minX;
+		this.rootBounds[ 1 ] = minY;
+		this.rootBounds[ 2 ] = maxX;
+		this.rootBounds[ 3 ] = maxY;
 
 	}
 
-	// tile index query functions
-	// getTileAtBoundsPoint( x, y, level, target = [] ) {
+	setProjection( projection ) {
 
-	// 	// TODO
+		if ( this._levels.length > 0 ) {
 
-	// 	const levelMultiplier = 2 ** level;
-	// 	const tileWidth = this.tileWidth / levelMultiplier;
-	// 	const tileHeight = this.tileHeight / levelMultiplier;
+			throw new Error();
 
-	// 	const relativeX = x - this.origin[ 0 ];
-	// 	const relativeY = y - this.origin[ 1 ];
+		}
 
-	// 	target[ 0 ] = Math.floor( relativeX / tileWidth );
-	// 	target[ 1 ] = Math.floor( relativeY / tileHeight );
-	// 	return target;
+		this.projection = projection;
 
-	// }
+		const bounds = projection.getBounds();
+		this.setBounds( ...bounds );
+		this.setOrigin( bounds[ 0 ], bounds[ 1 ] );
 
-	getTileExists( tx, ty, level ) {
+	}
 
-		const { levelCount, minLevel } = this;
-		const { tileCountX, tileCountY } = this.getLevel( level );
-		return tx < tileCountX && ty < tileCountY && level < levelCount && level >= minLevel;
+	getTileAtPoint( bx, by, level ) {
+
+		const { tileCountX, tileCountY, projection } = this.getLevel( level );
+		const xStride = 1 / tileCountX;
+		const yStride = 1 / tileCountY;
+
+		bx = projection.convertLongitudeToValue( bx );
+		by = projection.convertLatitudeToValue( by );
+
+		return [
+			Math.floor( bx / xStride ),
+			Math.floor( by / yStride ),
+		];
+
+	}
+
+	getTileExists( x, y, level, LOG ) {
+
+		const [ rminx, rminy, rmaxx, rmaxy ] = this.rootBounds;
+		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level, LOG );
+		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
+
+		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
+
+	}
+
+	getTileBounds( x, y, level, pixelOverlap = 0, normalized = false, LOG = false ) {
+
+		const { flipY } = this;
+		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, projection } = this.getLevel( level );
+
+		let tileLeft = clamp( tilePixelWidth * x - pixelOverlap, 0, pixelWidth );
+		let tileTop = clamp( tilePixelHeight * y - pixelOverlap, 0, pixelHeight );
+		let tileRight = clamp( tileLeft + tilePixelWidth + pixelOverlap * 2, 0, pixelWidth );
+		let tileBottom = clamp( tileTop + tilePixelHeight + pixelOverlap * 2, 0, pixelHeight );
+
+		// normalized
+		tileLeft = tileLeft / pixelWidth;
+		tileRight = tileRight / pixelWidth;
+		tileTop = tileTop / pixelHeight;
+		tileBottom = tileBottom / pixelHeight;
+
+		// invert y
+		if ( flipY ) {
+
+			const extents = ( tileBottom - tileTop ) / 2;
+			const centerY = ( tileTop + tileBottom ) / 2;
+			const invCenterY = 1.0 - centerY;
+
+			tileTop = invCenterY - extents;
+			tileBottom = invCenterY + extents;
+
+		}
+
+		const bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
+		if ( projection && ! normalized ) {
+
+			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
+
+		}
+
+		return bounds;
+
+	}
+
+	offsetTileIndices( x, y, level ) {
+
+		const { tileCountX, tileCountY, projection, rootBounds, rootOrigin } = this.getLevel( level );
+		const xStride = 1 / tileCountX;
+		const yStride = 1 / tileCountY;
+		let originDeltaX = rootOrigin[ 0 ] - rootBounds[ 0 ];
+		let originDeltaY = rootOrigin[ 1 ] - rootBounds[ 1 ];
+
+		if ( projection ) {
+
+			originDeltaX = projection.convertProjectionToLongitude( rootOrigin[ 0 ] ) - projection.convertProjectionToLongitude( rootBounds[ 0 ] );
+			originDeltaY = projection.convertProjectionToLatitude( rootOrigin[ 1 ] ) - projection.convertProjectionToLatitude( rootBounds[ 1 ] );
+
+		}
+
+		const tileOffsetX = Math.round( originDeltaX / xStride );
+		const tileOffsetY = Math.round( originDeltaY / yStride );
+
+		return [ x - tileOffsetX, y - tileOffsetY ];
 
 	}
 

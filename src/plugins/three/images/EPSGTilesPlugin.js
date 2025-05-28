@@ -74,6 +74,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
+				console.log( text )
+
 				const { projection, tiling } = this;
 
 				// elements
@@ -123,173 +125,63 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				// initialize tiling and projection schemes
 				projection.setScheme( srs );
 
-				tiling.levels = levels;
-				tiling.tileCountX = projection.tileCountX;
-				tiling.tileCountY = projection.tileCountY;
-				tiling.pixelWidth = projection.tileCountX * tileWidth * ( 2 ** maxLevel );
-				tiling.pixelHeight = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
-				tiling.tilePixelWidth = tileWidth;
-				tiling.tilePixelHeight = tileHeight;
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
 
-				return this.getTileset( url );
+				tileSetList.forEach( ( { order } ) => {
+
+					tiling.setLevel( order, {
+						tilePixelWidth: tileWidth,
+						tilePixelHeight: tileHeight,
+					} );
+
+				} );
+
+
+				fetch( this.getUrl( 0, 4, 9 ), this.tiles.fetchOptions ).then( res => res.arrayBuffer() )
+					.then( buffer => {
+
+						const str = _arrayBufferToBase64( buffer );
+						const datauri = 'data:image/png;base64,' + str;
+
+
+
+
+
+						const img = document.createElement('img');
+						img.src = datauri;
+						img.style.position='absolute';
+						img.style.left='0';
+						img.style.top='0';
+						document.body.appendChild( img );
+
+					});
+
+
+
+
+				function _arrayBufferToBase64( buffer ) {
+					var binary = '';
+					var bytes = new Uint8Array( buffer );
+					var len = bytes.byteLength;
+					for (var i = 0; i < len; i++) {
+						binary += String.fromCharCode( bytes[ i ] );
+					}
+					return window.btoa( binary );
+				}
+
+
 
 			} );
 
 	}
 
 	getUrl( level, x, y ) {
+
+		console.log( level, this.tileSets[level])
 
 		const { url, extension, tileSets } = this;
 		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
-
-	}
-
-}
-
-// Support for WMTS tiles
-// https://www.ogc.org/standards/wmts/
-export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
-
-	constructor( ...args ) {
-
-		super( ...args );
-
-		this.name = 'WMTS_TILES_PLUGIN';
-		this.url = null;
-		this.extension = null;
-		this.matrixSet = null;
-
-	}
-
-	loadRootTileSet() {
-
-		const url = new URL( 'WMTSCapabilities.xml', this.tiles.rootURL ).toString();
-		return this.tiles
-			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
-			.then( res => res.text() )
-			.then( text => {
-
-				const { projection, tiling } = this;
-
-				// elements
-				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				const contents = xml.querySelector( 'Contents' );
-				const layers = [ ...contents.querySelectorAll( 'Layer' ) ]
-					.map( layer => {
-
-						const identifier = layer.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent;
-						const links = [ ...layer.querySelectorAll( 'TileMatrixSet' ) ].map( tms => tms.textContent );
-						const formats = [ ...layer.querySelectorAll( 'Format' ) ].map( f => f.textContent );
-						const styles = [ ...layer.querySelectorAll( 'Style' ) ]
-							.sort( ( a, b ) => {
-
-								return a.getAttribute( 'isDefault' ) === 'true' ? 1 : 0;
-
-							} )
-							.map( el => {
-
-								return el.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent;
-
-							} );
-
-						const resourceUrls = [ ...layer.querySelectorAll( 'ResourceURL' ) ]
-							.map( res => ( {
-								format: res.getAttribute( 'format' ),
-								template: res.getAttribute( 'template' ),
-							} ) );
-
-						return {
-							identifier,
-							links,
-							formats,
-							styles,
-							resourceUrls,
-						};
-
-					} );
-
-				const matrixSets = [ ...contents.childNodes ]
-					.filter( node => {
-
-						return node.nodeName === 'TileMatrixSet';
-
-					} )
-					.map( matrixSet => {
-
-						const identifier = matrixSet.getElementsByTagName( 'ows:Identifier' )[ 0 ];
-						const supportedCrs = matrixSet.getElementsByTagName( 'ows:SupportedCRS' )[ 0 ];
-						const boundingBox = matrixSet.getElementsByTagName( 'ows:BoundingBox' )[ 0 ];
-
-						// TODO: is this bounding box in meters? pixels?
-						const lowerBound = boundingBox.getElementsByTagName( 'ows:LowerCorner' )[ 0 ];
-						const upperBound = boundingBox.getElementsByTagName( 'ows:UpperCorner' )[ 0 ];
-						const bounds = [
-							...lowerBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
-							...upperBound.textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) ),
-						];
-
-						const levels = [ ...matrixSet.querySelectorAll( 'TileMatrix' ) ]
-							.map( ms => {
-
-								return {
-									identifier: ms.getElementsByTagName( 'ows:Identifier' )[ 0 ].textContent,
-									tileWidth: parseInt( ms.querySelector( 'TileWidth' ).textContent ),
-									tileHeight: parseInt( ms.querySelector( 'TileHeight' ).textContent ),
-									matrixWidth: parseInt( ms.querySelector( 'MatrixWidth' ).textContent ),
-									matrixHeight: parseInt( ms.querySelector( 'MatrixHeight' ).textContent ),
-								};
-
-							} );
-
-						// TODO: flat bounding box?
-						return {
-							name: identifier.textContent,
-							supportedCrs: supportedCrs.textContent.replace( /.+?EPSG::/, 'EPSG:' ),
-							levels,
-							bounds,
-						};
-
-					} );
-
-				// NOTE: only the first layer and matrix set are loaded
-				const layer = layers[ 0 ];
-				const matrixSet = matrixSets[ 0 ];
-				const levels = matrixSet.levels.length;
-				const maxLevel = levels - 1;
-				const { tileWidth, tileHeight } = matrixSet.levels[ 0 ];
-
-				projection.setScheme( matrixSet.supportedCrs );
-
-				tiling.flipY = true;
-				tiling.levels = matrixSet.levels.length;
-				tiling.tileCountX = projection.tileCountX;
-				tiling.tileCountY = projection.tileCountY;
-				tiling.pixelWidth = projection.tileCountX * tileWidth * ( 2 ** maxLevel );
-				tiling.pixelHeight = projection.tileCountY * tileHeight * ( 2 ** maxLevel );
-				tiling.tilePixelWidth = tileWidth;
-				tiling.tilePixelHeight = tileHeight;
-				tiling.setOrigin( matrixSet.bounds[ 0 ], matrixSet.bounds[ 1 ] );
-				tiling.setBounds( ...matrixSet.bounds );
-
-				const resourceUrl = layer.resourceUrls[ 0 ];
-				this.url = decodeURI( new URL( resourceUrl.template, this.tiles.rootURL ).toString() );
-				this.matrixSet = matrixSet.levels;
-
-				return this.getTileset( url );
-
-			} );
-
-	}
-
-	getUrl( level, x, y ) {
-
-		const { url, matrixSet } = this;
-		return url
-			.replace( '{TileMatrix}', matrixSet[ level ].identifier )
-			.replace( '{TileCol}', x )
-			.replace( '{TileRow}', y );
 
 	}
 

@@ -73,9 +73,6 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 					pixelHeight: height,
 				} );
 
-				// TODO
-				tiling.setBounds( 0, 0, width, height );
-
 				return this.getTileset( url );
 
 			} );

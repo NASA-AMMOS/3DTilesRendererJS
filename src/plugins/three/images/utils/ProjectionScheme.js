@@ -119,4 +119,13 @@ export class ProjectionScheme {
 
 	}
 
+	getBounds() {
+
+		return [
+			this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
+			this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
+		];
+
+	}
+
 }

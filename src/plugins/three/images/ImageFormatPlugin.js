@@ -118,7 +118,12 @@ export class ImageFormatPlugin {
 
 			for ( let y = 0; y < tileCountY; y ++ ) {
 
-				tileset.root.children.push( this.createChild( 0, x, y ) );
+				const child = this.createChild( 0, x, y );
+				if ( child !== null ) {
+
+					tileset.root.children.push( child );
+
+				}
 
 			}
 
