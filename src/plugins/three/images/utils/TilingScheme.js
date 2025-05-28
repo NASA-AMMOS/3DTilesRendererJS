@@ -1,11 +1,5 @@
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
-function clamp( value, min, max ) {
-
-	return Math.max( Math.min( value, max ), min );
-
-}
-
 export class TilingScheme {
 
 	get levelCount() {
@@ -184,15 +178,21 @@ export class TilingScheme {
 
 	}
 
-	getTileBounds( x, y, level, pixelOverlap = 0, normalized = false, LOG = false ) {
+	getTileBounds( x, y, level, pixelOverlap = 0, normalized = false ) {
 
 		const { flipY } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, projection } = this.getLevel( level );
 
-		let tileLeft = clamp( tilePixelWidth * x - pixelOverlap, 0, pixelWidth );
-		let tileTop = clamp( tilePixelHeight * y - pixelOverlap, 0, pixelHeight );
-		let tileRight = clamp( tileLeft + tilePixelWidth + pixelOverlap * 2, 0, pixelWidth );
-		let tileBottom = clamp( tileTop + tilePixelHeight + pixelOverlap * 2, 0, pixelHeight );
+		let tileLeft = tilePixelWidth * x - pixelOverlap;
+		let tileTop = tilePixelHeight * y - pixelOverlap;
+		let tileRight = tileLeft + tilePixelWidth + pixelOverlap * 2;
+		let tileBottom = tileTop + tilePixelHeight + pixelOverlap * 2;
+
+		// clamp
+		tileLeft = Math.max( tileLeft, 0 );
+		tileTop = Math.max( tileTop, 0 );
+		tileRight = Math.min( tileRight, pixelWidth );
+		tileBottom = Math.min( tileBottom, pixelHeight );
 
 		// normalized
 		tileLeft = tileLeft / pixelWidth;
@@ -245,62 +245,6 @@ export class TilingScheme {
 		const tileOffsetY = Math.round( originDeltaY / yStride );
 
 		return [ x - tileOffsetX, y - tileOffsetY ];
-
-	}
-
-	// pixel dimensions query function
-	getNormalizedTileSpan( x, y, level, pixelOverlap = 0 ) {
-
-		const { flipY } = this;
-		const { pixelWidth, pixelHeight, tilePixelWidth, tilePixelHeight } = this.getLevel( level );
-		let tileX = tilePixelWidth * x - pixelOverlap;
-		let tileY = tilePixelHeight * y - pixelOverlap;
-		let tileWidthOverlap = tilePixelWidth + pixelOverlap * 2;
-		let tileHeightOverlap = tilePixelHeight + pixelOverlap * 2;
-
-		// adjust the starting position of the tile to the edge of the image
-		if ( tileX < 0 ) {
-
-			tileWidthOverlap += tileX;
-			tileX = 0;
-
-		}
-
-		if ( tileY < 0 ) {
-
-			tileHeightOverlap += tileY;
-			tileY = 0;
-
-		}
-
-		// clamp the dimensions to the edge of the image
-		if ( tileX + tileWidthOverlap > pixelWidth ) {
-
-			tileWidthOverlap = pixelWidth - tileX;
-
-		}
-
-		if ( tileY + tileHeightOverlap > pixelHeight ) {
-
-			tileHeightOverlap = pixelHeight - tileY;
-
-		}
-
-		if ( flipY ) {
-
-			let centerY = tileY + tileHeightOverlap / 2;
-			centerY = pixelHeight - centerY;
-
-			tileY = centerY - tileHeightOverlap / 2;
-
-		}
-
-		return [
-			tileX / pixelWidth,
-			tileY / pixelHeight,
-			( tileX + tileWidthOverlap ) / pixelWidth,
-			( tileY + tileHeightOverlap ) / pixelHeight,
-		];
 
 	}
 
