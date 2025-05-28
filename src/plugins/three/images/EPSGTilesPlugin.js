@@ -2,6 +2,7 @@
 // Support for XYZ / Slippy tile systems
 
 import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin.js';
+import { MathUtils } from 'three';
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
@@ -75,8 +76,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
-				console.log( text )
-
 				const { projection, tiling } = this;
 
 				// elements
@@ -100,10 +99,10 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 					} );
 
 				// bounding box
-				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
+				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) ) * MathUtils.DEG2RAD;
+				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) ) * MathUtils.DEG2RAD;
+				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) ) * MathUtils.DEG2RAD;
+				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
 
 				// origin in lat / lon
 				const originX = parseFloat( origin.getAttribute( 'x' ) );
@@ -115,9 +114,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				const extension = tileFormat.getAttribute( 'extension' );
 				const srs = xml.querySelector( 'SRS' ).textContent;
 
-				const levels = tileSetList.length;
-				const maxLevel = levels - 1;
-
 				// assign settings
 				this.extension = extension;
 				this.url = this.tiles.rootURL;
@@ -126,60 +122,27 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				// initialize tiling and projection schemes
 				projection.setScheme( srs );
 
+				tiling.setProjection( projection );
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
 
 				tileSetList.forEach( ( { order } ) => {
 
 					tiling.setLevel( order, {
+						tileCountX: projection.tileCountX * 2 ** order,
 						tilePixelWidth: tileWidth,
 						tilePixelHeight: tileHeight,
 					} );
 
 				} );
 
-
-				fetch( this.getUrl( 0, 4, 9 ), this.tiles.fetchOptions ).then( res => res.arrayBuffer() )
-					.then( buffer => {
-
-						const str = _arrayBufferToBase64( buffer );
-						const datauri = 'data:image/png;base64,' + str;
-
-
-
-
-
-						const img = document.createElement('img');
-						img.src = datauri;
-						img.style.position='absolute';
-						img.style.left='0';
-						img.style.top='0';
-						document.body.appendChild( img );
-
-					});
-
-
-
-
-				function _arrayBufferToBase64( buffer ) {
-					var binary = '';
-					var bytes = new Uint8Array( buffer );
-					var len = bytes.byteLength;
-					for (var i = 0; i < len; i++) {
-						binary += String.fromCharCode( bytes[ i ] );
-					}
-					return window.btoa( binary );
-				}
-
-
+				return this.getTileset( url );
 
 			} );
 
 	}
 
 	getUrl( level, x, y ) {
-
-		console.log( level, this.tileSets[level])
 
 		const { url, extension, tileSets } = this;
 		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();

@@ -139,6 +139,7 @@ export class TilingScheme {
 
 		this.projection = projection;
 
+		// TODO: Set projection will override the bounds?
 		const bounds = projection.getBounds();
 		this.setBounds( ...bounds );
 		this.setOrigin( bounds[ 0 ], bounds[ 1 ] );
@@ -169,6 +170,23 @@ export class TilingScheme {
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
+
+	}
+
+	getFullBounds( normalized = false ) {
+
+		const { projection } = this;
+		const bounds = [ ...this.rootBounds ];
+		if ( projection && normalized ) {
+
+			bounds[ 0 ] = projection.convertLongitudeToProjection( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertLatitudeToProjection( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertLongitudeToProjection( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertLatitudeToProjection( bounds[ 3 ] );
+
+		}
+
+		return bounds;
 
 	}
 
@@ -222,6 +240,7 @@ export class TilingScheme {
 
 	offsetTileIndices( x, y, level ) {
 
+		// TODO
 		const { tileCountX, tileCountY, projection, rootBounds, rootOrigin } = this.getLevel( level );
 		const xStride = 1 / tileCountX;
 		const yStride = 1 / tileCountY;

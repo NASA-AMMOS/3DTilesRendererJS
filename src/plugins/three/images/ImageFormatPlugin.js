@@ -97,7 +97,8 @@ export class ImageFormatPlugin {
 	getTileset( baseUrl ) {
 
 		const { tiling, tiles } = this;
-		const { tileCountX, tileCountY } = tiling.getLevel( tiling.minLevel );
+		const minLevel = tiling.minLevel;
+		const { tileCountX, tileCountY } = tiling.getLevel( minLevel );
 
 		// generate all children for the root
 		const children = [];
@@ -105,7 +106,7 @@ export class ImageFormatPlugin {
 
 			for ( let y = 0; y < tileCountY; y ++ ) {
 
-				const child = this.createChild( 0, x, y );
+				const child = this.createChild( minLevel, x, y );
 				if ( child !== null ) {
 
 					children.push( child );
@@ -125,7 +126,7 @@ export class ImageFormatPlugin {
 			root: {
 				refine: 'REPLACE',
 				geometricError: 1e5,
-				boundingVolume: this.createBoundingVolume( 0, 0, 0 ),
+				boundingVolume: this.createBoundingVolume( 0, 0, 0, true ),
 				children,
 
 				[ TILE_LEVEL ]: 0,
@@ -146,13 +147,13 @@ export class ImageFormatPlugin {
 
 	}
 
-	createBoundingVolume( level, x, y ) {
+	createBoundingVolume( level, x, y, isRoot = false ) {
 
 		const { center, pixelSize, tiling } = this;
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = tiling.getTileBounds( x, y, level, true );
+		const [ minX, minY, maxX, maxY ] = isRoot ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;

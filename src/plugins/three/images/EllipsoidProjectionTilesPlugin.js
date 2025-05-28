@@ -112,12 +112,12 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
-	createBoundingVolume( level, x, y ) {
+	createBoundingVolume( level, x, y, isRoot = false ) {
 
 		if ( this.shape === 'ellipsoid' ) {
 
 			const { tiling, endCaps } = this;
-			const normalizedBounds = tiling.getTileBounds( x, y, level, true );
+			const normalizedBounds = isRoot ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
 			const cartBounds = tiling.getTileBounds( x, y, level );
 
 			if ( endCaps ) {
@@ -144,7 +144,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		} else {
 
-			return super.createBoundingVolume( level, x, y );
+			return super.createBoundingVolume( level, x, y, isRoot );
 
 		}
 
