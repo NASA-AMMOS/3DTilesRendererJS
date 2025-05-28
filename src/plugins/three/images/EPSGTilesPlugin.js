@@ -57,6 +57,8 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 // Support for TMS tiles
 // https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
+// NOTE: Most, if not all, TMS generation implementations do not correctly support the Origin tag
+// and tile index offsets, including CesiumJS and Ion.
 export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	constructor( ...args ) {
@@ -105,8 +107,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
 
 				// origin in lat / lon
-				const originX = parseFloat( origin.getAttribute( 'x' ) );
-				const originY = parseFloat( origin.getAttribute( 'y' ) );
+				const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
+				const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
 
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
@@ -122,9 +124,9 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 				// initialize tiling and projection schemes
 				projection.setScheme( srs );
 
-				tiling.setProjection( projection );
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
+				tiling.setProjection( projection );
 
 				tileSetList.forEach( ( { order } ) => {
 
@@ -144,8 +146,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	getUrl( level, x, y ) {
 
-		const { url, extension, tileSets } = this;
-		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
+		const { url, extension, tileSets, tiling } = this;
+		return new URL( `${ parseInt( tileSets[ level - tiling.minLevel ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
 
 	}
 

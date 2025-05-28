@@ -31,14 +31,28 @@ export class TilingScheme {
 
 	}
 
+	// prioritize user-set bounds over projection bounds if present
+	get rootBounds() {
+
+		return this._rootBounds ?? this.projection?.getBounds() ?? [ 0, 0, 1, 1 ];
+
+	}
+
+	get rootOrigin() {
+
+		const bounds = this.rootBounds;
+		return this._rootOrigin ?? [ bounds[ 0 ], bounds[ 1 ] ];
+
+	}
+
 	constructor() {
 
 		this.flipY = false;
 		this.pixelOverlap = 0;
 
 		// The origin and bounds
-		this.rootBounds = [ 0, 0, 1, 1 ];
-		this.rootOrigin = [ 0, 0 ];
+		this._rootBounds = null;
+		this._rootOrigin = null;
 		this.projection = null;
 
 		this._levels = [];
@@ -121,28 +135,19 @@ export class TilingScheme {
 	// bounds setters
 	setOrigin( x, y ) {
 
-		this.rootOrigin[ 0 ] = x;
-		this.rootOrigin[ 1 ] = y;
+		this._rootOrigin = [ x, y ];
 
 	}
 
 	setBounds( minX, minY, maxX, maxY ) {
 
-		this.rootBounds[ 0 ] = minX;
-		this.rootBounds[ 1 ] = minY;
-		this.rootBounds[ 2 ] = maxX;
-		this.rootBounds[ 3 ] = maxY;
+		this._rootBounds = [ minX, minY, maxX, maxY ];
 
 	}
 
 	setProjection( projection ) {
 
 		this.projection = projection;
-
-		// TODO: Set projection will override the bounds?
-		const bounds = projection.getBounds();
-		this.setBounds( ...bounds );
-		this.setOrigin( bounds[ 0 ], bounds[ 1 ] );
 
 	}
 
@@ -235,29 +240,6 @@ export class TilingScheme {
 		}
 
 		return bounds;
-
-	}
-
-	offsetTileIndices( x, y, level ) {
-
-		// TODO
-		const { tileCountX, tileCountY, projection, rootBounds, rootOrigin } = this.getLevel( level );
-		const xStride = 1 / tileCountX;
-		const yStride = 1 / tileCountY;
-		let originDeltaX = rootOrigin[ 0 ] - rootBounds[ 0 ];
-		let originDeltaY = rootOrigin[ 1 ] - rootBounds[ 1 ];
-
-		if ( projection ) {
-
-			originDeltaX = projection.convertProjectionToLongitude( rootOrigin[ 0 ] ) - projection.convertProjectionToLongitude( rootBounds[ 0 ] );
-			originDeltaY = projection.convertProjectionToLatitude( rootOrigin[ 1 ] ) - projection.convertProjectionToLatitude( rootBounds[ 1 ] );
-
-		}
-
-		const tileOffsetX = Math.round( originDeltaX / xStride );
-		const tileOffsetY = Math.round( originDeltaY / yStride );
-
-		return [ x - tileOffsetX, y - tileOffsetY ];
 
 	}
 
