@@ -79,13 +79,13 @@ export class ImageFormatPlugin {
 
 	}
 
-	preprocessNode( tile, dir, parentTile ) {
+	preprocessNode( tile ) {
 
 		// generate children
 		const { tiling } = this;
 		const maxLevel = tiling.maxLevel;
 		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel ) {
+		if ( level < maxLevel && tile.parent !== null ) {
 
 			this.expandChildren( tile );
 

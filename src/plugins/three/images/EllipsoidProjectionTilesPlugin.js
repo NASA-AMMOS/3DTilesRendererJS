@@ -45,7 +45,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
 
-			const [ minU, minV, maxU, maxV ] = tiling.getNormalizedTileSpan( x, y, level, 0 );
+			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 
 			// new geometry
@@ -122,7 +122,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const level = tile[ TILE_LEVEL ];
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
-			const [ minU, minV, maxU, maxV ] = tiling.getNormalizedTileSpan( x, y, level, 0 );
+			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
 			const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 

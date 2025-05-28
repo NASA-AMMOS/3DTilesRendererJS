@@ -31,6 +31,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 		projection.setScheme( 'EPSG:3857' );
 		tiling.flipY = true;
+		tiling.setProjection( projection );
 		tiling.generateLevels( levels, 1, 1, {
 			tilePixelWidth: tileDimension,
 			tilePixelHeight: tileDimension,
