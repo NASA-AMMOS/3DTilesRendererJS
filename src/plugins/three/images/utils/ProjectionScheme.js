@@ -29,13 +29,13 @@ export class ProjectionScheme {
 			case 'EPSG:4326':
 				this.tileCountX = 2;
 				this.tileCountY = 1;
-				return;
+				break;
 
 			// mercator
 			case 'EPSG:3857':
 				this.tileCountX = 1;
 				this.tileCountY = 1;
-				return;
+				break;
 
 			default:
 				throw new Error();

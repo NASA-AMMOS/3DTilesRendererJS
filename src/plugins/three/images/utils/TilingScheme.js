@@ -137,12 +137,6 @@ export class TilingScheme {
 
 	setProjection( projection ) {
 
-		if ( this._levels.length > 0 ) {
-
-			throw new Error();
-
-		}
-
 		this.projection = projection;
 
 		const bounds = projection.getBounds();
@@ -180,8 +174,8 @@ export class TilingScheme {
 
 	getTileBounds( x, y, level, normalized = false ) {
 
-		const { flipY, pixelOverlap } = this;
-		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, projection } = this.getLevel( level );
+		const { flipY, pixelOverlap, projection } = this;
+		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;
 		let tileTop = tilePixelHeight * y - pixelOverlap;

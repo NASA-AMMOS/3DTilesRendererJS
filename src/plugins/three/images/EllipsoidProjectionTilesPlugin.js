@@ -112,16 +112,55 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
+	createBoundingVolume( level, x, y ) {
+
+		if ( this.shape === 'ellipsoid' ) {
+
+			const { tiling, endCaps } = this;
+			const normalizedBounds = tiling.getTileBounds( x, y, level, true );
+			const cartBounds = tiling.getTileBounds( x, y, level );
+
+			if ( endCaps ) {
+
+				// if the north side is at the edge
+				if ( normalizedBounds[ 3 ] === 1 ) {
+
+					cartBounds[ 3 ] = Math.PI / 2;
+
+				}
+
+				// if the south side is at the edge
+				if ( normalizedBounds[ 1 ] === 0 ) {
+
+					cartBounds[ 1 ] = - Math.PI / 2;
+
+				}
+
+			}
+
+			return {
+				region: [ ...cartBounds, - 1, 1 ],
+			};
+
+		} else {
+
+			return super.createBoundingVolume( level, x, y );
+
+		}
+
+	}
+
 	preprocessNode( tile, ...rest ) {
 
 		super.preprocessNode( tile, rest );
 
-		const { shape, projection, endCaps, tiling } = this;
+		const { shape, projection, tiling } = this;
 		if ( shape === 'ellipsoid' ) {
 
 			const level = tile[ TILE_LEVEL ];
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
+
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
 			const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
@@ -133,33 +172,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const rootVWidth = 1 / pixelHeight;
 
 			// calculate the region ranges
-			const west = projection.convertProjectionToLongitude( minU );
-			const east = projection.convertProjectionToLongitude( maxU );
-			let south = projection.convertProjectionToLatitude( minV );
-			let north = projection.convertProjectionToLatitude( maxV );
-
-			// TODO: need to make sure this is actually at the edge of the full mercator
-			// extent rather than a sub view.
-			if ( endCaps ) {
-
-				if ( maxV === 1 ) {
-
-					north = Math.PI / 2;
-
-				}
-
-				if ( minV === 0 ) {
-
-					south = - Math.PI / 2;
-
-				}
-
-			}
-
-			tile.boundingVolume.region = [
-				west, south, east, north,
-				- 1, 1 // min / max height
-			];
+			const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
 
 			// calculate the changes in lat / lon at the given point
 			// find the most bowed point of the latitude range since the amount that latitude changes is
@@ -176,8 +189,6 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const tilePixelWidth2 = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 			const rootPixelWidth = Math.max( rootUWidth * lonFactor * xDeriv, rootVWidth * latFactor * yDeriv );
 			tile.geometricError = tilePixelWidth2 - rootPixelWidth;
-
-			delete tile.boundingVolume.box;
 
 			// if this is the root then keep the geometric error high
 			if ( tile.parent === null ) {
