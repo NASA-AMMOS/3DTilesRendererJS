@@ -33,9 +33,8 @@ export class TilingScheme {
 
 	constructor() {
 
-		// TODO: add overlap? Pixel information?
-
 		this.flipY = false;
+		this.pixelOverlap = 0;
 
 		// The origin and bounds
 		this.rootBounds = [ 0, 0, 1, 1 ];
@@ -152,6 +151,7 @@ export class TilingScheme {
 
 	}
 
+	// query functions
 	getTileAtPoint( bx, by, level ) {
 
 		const { tileCountX, tileCountY, projection } = this.getLevel( level );
@@ -178,9 +178,9 @@ export class TilingScheme {
 
 	}
 
-	getTileBounds( x, y, level, pixelOverlap = 0, normalized = false ) {
+	getTileBounds( x, y, level, normalized = false ) {
 
-		const { flipY } = this;
+		const { flipY, pixelOverlap } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, projection } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;

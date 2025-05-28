@@ -58,7 +58,6 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 				const format = image.getAttribute( 'Format' );
 
 				// Assign deep zoom properties
-				this.overlap = overlap;
 				this.format = format;
 				this.stem = url.split( /\.[^.]+$/g )[ 0 ];
 
@@ -66,6 +65,7 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 				const { tiling } = this;
 				const levels = Math.ceil( Math.log2( Math.max( width, height ) ) ) + 1;
 				tiling.flipY = true;
+				tiling.pixelOverlap = overlap;
 				tiling.generateLevels( levels, 1, 1, {
 					tilePixelWidth: tileSize,
 					tilePixelHeight: tileSize,

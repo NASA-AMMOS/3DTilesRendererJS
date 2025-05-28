@@ -19,9 +19,8 @@ export class ImageFormatPlugin {
 		this.priority = - 10;
 		this.tiles = null;
 
-		// amount of pixel overlap between tiles
+		// tiling scheme
 		this.tiling = new TilingScheme();
-		this.overlap = 0;
 
 		// options
 		this.pixelSize = pixelSize;
@@ -97,6 +96,27 @@ export class ImageFormatPlugin {
 	// Local functions
 	getTileset( baseUrl ) {
 
+		const { tiling, tiles } = this;
+		const { tileCountX, tileCountY } = tiling.getLevel( tiling.minLevel );
+
+		// generate all children for the root
+		const children = [];
+		for ( let x = 0; x < tileCountX; x ++ ) {
+
+			for ( let y = 0; y < tileCountY; y ++ ) {
+
+				const child = this.createChild( 0, x, y );
+				if ( child !== null ) {
+
+					children.push( child );
+
+				}
+
+			}
+
+		}
+
+		// generate tile set
 		const tileset = {
 			asset: {
 				version: '1.1'
@@ -105,10 +125,8 @@ export class ImageFormatPlugin {
 			root: {
 				refine: 'REPLACE',
 				geometricError: 1e5,
-				boundingVolume: {
-					box: this.createBounds( 0, 0, 0 ),
-				},
-				children: [],
+				boundingVolume: this.createBoundingVolume( 0, 0, 0 ),
+				children,
 
 				[ TILE_LEVEL ]: 0,
 				[ TILE_X ]: 0,
@@ -116,27 +134,7 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		// TODO: clean up bounds calculation
-		const { tiling } = this;
-		const { tileCountX, tileCountY } = tiling.getLevel( tiling.minLevel );
-
-		// generate all children for the root
-		for ( let x = 0; x < tileCountX; x ++ ) {
-
-			for ( let y = 0; y < tileCountY; y ++ ) {
-
-				const child = this.createChild( 0, x, y );
-				if ( child !== null ) {
-
-					tileset.root.children.push( child );
-
-				}
-
-			}
-
-		}
-
-		this.tiles.preprocessTileSet( tileset, baseUrl );
+		tiles.preprocessTileSet( tileset, baseUrl );
 
 		return tileset;
 
@@ -148,14 +146,13 @@ export class ImageFormatPlugin {
 
 	}
 
-	createBounds( level, x, y ) {
+	createBoundingVolume( level, x, y ) {
 
-		const { center, pixelSize, tiling, overlap } = this;
+		const { center, pixelSize, tiling } = this;
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
-		const span = tiling.getTileBounds( x, y, level, overlap );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = span;
+		const [ minX, minY, maxX, maxY ] = tiling.getTileBounds( x, y, level );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;
@@ -167,21 +164,25 @@ export class ImageFormatPlugin {
 
 		}
 
+		// scale the fields
 		centerX *= pixelWidth * pixelSize;
 		extentsX *= pixelWidth * pixelSize;
 
 		centerY *= pixelHeight * pixelSize;
 		extentsY *= pixelHeight * pixelSize;
 
-		return [
-			// center
-			centerX, centerY, 0,
+		// return bounding box
+		return {
+			box: [
+				// center
+				centerX, centerY, 0,
 
-			// x, y, z half vectors
-			extentsX, 0.0, 0.0,
-			0.0, extentsY, 0.0,
-			0.0, 0.0, 0.0,
-		];
+				// x, y, z half vectors
+				extentsX, 0.0, 0.0,
+				0.0, extentsY, 0.0,
+				0.0, 0.0, 0.0,
+			],
+		};
 
 	}
 
@@ -203,12 +204,7 @@ export class ImageFormatPlugin {
 		return {
 			refine: 'REPLACE',
 			geometricError: geometricError,
-			boundingVolume: {
-				// DZI operates in a left handed coordinate system so we have to flip y to orient it correctly. FlipY
-				// is also enabled on the image bitmap texture generation above.
-				box: this.createBounds( level, x, y ),
-
-			},
+			boundingVolume: this.createBoundingVolume( level, x, y ),
 			content: {
 				uri: this.getUrl( level, x, y ),
 			},
@@ -227,6 +223,7 @@ export class ImageFormatPlugin {
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
+
 		for ( let cx = 0; cx < 2; cx ++ ) {
 
 			for ( let cy = 0; cy < 2; cy ++ ) {
