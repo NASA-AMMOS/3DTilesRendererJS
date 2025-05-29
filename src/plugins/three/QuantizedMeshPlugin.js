@@ -1,4 +1,4 @@
-import { MathUtils, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
 import { TilingScheme } from './images/utils/TilingScheme.js';
 import { ProjectionScheme } from './images/utils/ProjectionScheme.js';
