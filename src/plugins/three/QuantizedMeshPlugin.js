@@ -1,5 +1,7 @@
 import { MathUtils, Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
+import { TilingScheme } from './images/utils/TilingScheme.js';
+import { ProjectionScheme } from './images/utils/ProjectionScheme.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -94,6 +96,9 @@ export class QuantizedMeshPlugin {
 		this.solid = solid;
 		this.attribution = null;
 
+		this.tiling = new TilingScheme();
+		this.projection = new ProjectionScheme();
+
 	}
 
 	// Plugin function
@@ -143,12 +148,19 @@ export class QuantizedMeshPlugin {
 
 				this.layer = json;
 				const {
-					projection = 'EPSG:4326',
+					projection: layerProjection = 'EPSG:4326',
 					extensions = [],
 					attribution = '',
 					available = null,
 				} = json;
 
+				const {
+					tiling,
+					tiles,
+					projection,
+				} = this;
+
+				// attribution
 				if ( attribution ) {
 
 					this.attribution = {
@@ -159,17 +171,34 @@ export class QuantizedMeshPlugin {
 
 				}
 
+				// extensions
 				if ( extensions.length > 0 ) {
 
 					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
 
 				}
 
-				const west = - 180 * MathUtils.DEG2RAD;
-				const south = - 90 * MathUtils.DEG2RAD;
-				const east = 180 * MathUtils.DEG2RAD;
-				const north = 90 * MathUtils.DEG2RAD;
+				// initialize tiling, projection
+				projection.setScheme( layerProjection );
 
+				const { tileCountX, tileCountY } = projection;
+				tiling.setProjection( projection );
+				tiling.generateLevels( getMaxLevel( json ), tileCountX, tileCountY );
+
+				// initialize children
+				const children = [];
+				for ( let x = 0; x < tileCountX; x ++ ) {
+
+					const child = this.createChild( 0, x, 0, available );
+					if ( child ) {
+
+						children.push( child );
+
+					}
+
+				}
+
+				// produce the tile set root
 				const tileset = {
 					asset: {
 						version: '1.1'
@@ -179,38 +208,18 @@ export class QuantizedMeshPlugin {
 						refine: 'REPLACE',
 						geometricError: Infinity,
 						boundingVolume: {
-							region: [
-								west, south, east, north,
-								- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
-							],
+							region: [ ...this.tiling.getFullBounds(), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ],
 						},
-						children: [],
+						children: children,
 
 						[ TILE_AVAILABLE ]: available,
 						[ TILE_LEVEL ]: - 1,
 					},
 				};
 
-				const xTiles = projection === 'EPSG:4326' ? 2 : 1;
-				for ( let x = 0; x < xTiles; x ++ ) {
-
-					const step = ( east - west ) / xTiles;
-					const region = [
-						west + step * x, south, west + step * x + step, north,
-						- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
-					];
-					const child = this.createChild( 0, x, 0, region, available );
-					if ( child ) {
-
-						tileset.root.children.push( child );
-
-					}
-
-				}
-
 				let baseUrl = tiles.rootURL;
 				tiles.invokeAllPlugins( plugin => baseUrl = plugin.preprocessURL ? plugin.preprocessURL( baseUrl, null ) : baseUrl );
-				this.tiles.preprocessTileSet( tileset, baseUrl );
+				tiles.preprocessTileSet( tileset, baseUrl );
 
 				return tileset;
 
@@ -220,16 +229,24 @@ export class QuantizedMeshPlugin {
 
 	async parseToMesh( buffer, tile, extension, uri ) {
 
-		const ellipsoid = this.tiles.ellipsoid;
-		const loader = new QuantizedMeshLoader( this.tiles.manager );
+		const {
+			skirtLength,
+			solid,
+			smoothSkirtNormals,
+			tiles,
+		} = this;
+
+		// set up loader
+		const ellipsoid = tiles.ellipsoid;
+		const loader = new QuantizedMeshLoader( tiles.manager );
 		loader.ellipsoid.copy( ellipsoid );
+		loader.solid = solid;
+		loader.smoothSkirtNormals = smoothSkirtNormals;
+		loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 
-		loader.solid = this.solid;
-		loader.smoothSkirtNormals = this.smoothSkirtNormals;
-		loader.skirtLength = this.skirtLength === null ? tile.geometricError : this.skirtLength;
-
+		// split the parent tile if needed
 		let result;
-		if ( extension === 'custom_split' ) {
+		if ( extension === 'tile_split' ) {
 
 			// split the parent tile
 			const searchParams = new URL( uri ).searchParams;
@@ -309,25 +326,29 @@ export class QuantizedMeshPlugin {
 	}
 
 	// Local functions
-	createChild( level, x, y, region, available ) {
+	createChild( level, x, y, available ) {
 
-		const { tiles, layer } = this;
+		const { tiles, layer, tiling, projection } = this;
+		const ellipsoid = tiles.ellipsoid;
+
 		const isAvailable = available === null || isTileAvailable( available, level, x, y );
 		const url = getContentUrl( x, y, level, 1, layer );
-		const ellipsoid = tiles.ellipsoid;
-		const [ , south, , north, , maxHeight ] = region;
+		const region = [ ...tiling.getTileBounds( x, y, level ), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ];
+		const [ /* west */, south, /* east */, north, /* minHeight */, maxHeight ] = region;
 		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
 
+		// get the projected perimeter
 		ellipsoid.getCartographicToPosition( midLat, 0, maxHeight, _vec );
 		_vec.z = 0;
 
 		// https://github.com/CesiumGS/cesium/blob/53889cbed2a91d38e0fae4b6f2dcf6783632fc92/packages/engine/Source/Scene/QuadtreeTileProvider.js#L24-L31
 		// Implicit quantized mesh tile error halves with every layer
-		const xTiles = layer.projection === 'EPSG:4326' ? 2 : 1;
+		const tileCountX = projection.tileCountX;
 		const maxRadius = Math.max( ...ellipsoid.radius );
-		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * xTiles );
+		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * tileCountX );
 		const geometricError = rootGeometricError / ( 2 ** level );
 
+		// Create the child
 		const tile = {
 			[ TILE_AVAILABLE ]: null,
 			[ TILE_LEVEL ]: level,
@@ -335,9 +356,7 @@ export class QuantizedMeshPlugin {
 			[ TILE_Y ]: y,
 			refine: 'REPLACE',
 			geometricError: geometricError,
-			boundingVolume: {
-				region: region,
-			},
+			boundingVolume: { region },
 			content: isAvailable ? { uri: url } : null,
 			children: []
 		};
@@ -363,23 +382,12 @@ export class QuantizedMeshPlugin {
 		const y = tile[ TILE_Y ];
 		const available = tile[ TILE_AVAILABLE ];
 
-		const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
-		const xStep = ( east - west ) / 2;
-		const yStep = ( north - south ) / 2;
-
 		let hasChildren = false;
 		for ( let cx = 0; cx < 2; cx ++ ) {
 
 			for ( let cy = 0; cy < 2; cy ++ ) {
 
-				const region = [
-					west + xStep * cx,
-					south + yStep * cy,
-					west + xStep * cx + xStep,
-					south + yStep * cy + yStep,
-					minHeight, maxHeight,
-				];
-				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, region, available );
+				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, available );
 				if ( child.content !== null ) {
 
 					tile.children.push( child );
@@ -388,7 +396,7 @@ export class QuantizedMeshPlugin {
 				} else {
 
 					tile.children.push( child );
-					child.content = { uri: `tile.custom_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.content = { uri: `tile.tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
@@ -406,7 +414,8 @@ export class QuantizedMeshPlugin {
 
 	fetchData( uri, options ) {
 
-		if ( /custom_split/.test( uri ) ) {
+		// if this is our custom url indicating a tile split then return fake response
+		if ( /tile_split/.test( uri ) ) {
 
 			return {
 				ok: true,
