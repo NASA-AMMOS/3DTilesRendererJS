@@ -13,11 +13,10 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 		this.name = 'DZI_TILES_PLUGIN';
 		this.stem = null;
 		this.format = null;
-		this.flipY = true;
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		return `${ this.stem }_files/${ level }/${ x }_${ y }.${ this.format }`;
 
@@ -52,15 +51,27 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 				const size = image.querySelector( 'Size' );
 
 				// Image properties
+				const width = parseInt( size.getAttribute( 'Width' ) );
+				const height = parseInt( size.getAttribute( 'Height' ) );
 				const tileSize = parseInt( image.getAttribute( 'TileSize' ) );
-				this.tileWidth = tileSize;
-				this.tileHeight = tileSize;
-				this.overlap = parseInt( image.getAttribute( 'Overlap' ) );
-				this.format = image.getAttribute( 'Format' );
-				this.width = parseInt( size.getAttribute( 'Width' ) );
-				this.height = parseInt( size.getAttribute( 'Height' ) );
-				this.levels = Math.ceil( Math.log2( Math.max( this.width, this.height ) ) ) + 1;
+				const overlap = parseInt( image.getAttribute( 'Overlap' ) );
+				const format = image.getAttribute( 'Format' );
+
+				// Assign deep zoom properties
+				this.format = format;
 				this.stem = url.split( /\.[^.]+$/g )[ 0 ];
+
+				// Assign tiling properties
+				const { tiling } = this;
+				const levels = Math.ceil( Math.log2( Math.max( width, height ) ) ) + 1;
+				tiling.flipY = true;
+				tiling.pixelOverlap = overlap;
+				tiling.generateLevels( levels, 1, 1, {
+					tilePixelWidth: tileSize,
+					tilePixelHeight: tileSize,
+					pixelWidth: width,
+					pixelHeight: height,
+				} );
 
 				return this.getTileset( url );
 

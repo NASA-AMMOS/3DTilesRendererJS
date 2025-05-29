@@ -2,6 +2,7 @@
 // Support for XYZ / Slippy tile systems
 
 import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin.js';
+import { MathUtils } from 'three';
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
@@ -18,31 +19,35 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( { pixelSize, ...rest } );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.tileWidth = tileDimension;
-		this.tileHeight = tileDimension;
+		this.tileDimension = tileDimension;
 		this.levels = levels;
 		this.url = null;
-		this.flipY = true;
 
 	}
 
 	async loadRootTileSet() {
 
 		// transform the url
-		const { tiles, tileWidth, tileHeight, maxLevel } = this;
+		const { tiles, tiling, projection, tileDimension, levels } = this;
+
+		projection.setScheme( 'EPSG:3857' );
+		tiling.flipY = true;
+		tiling.setProjection( projection );
+		tiling.generateLevels( levels, 1, 1, {
+			tilePixelWidth: tileDimension,
+			tilePixelHeight: tileDimension,
+		} );
+
+		// initialize url
 		let url = tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-
-		this.width = tileWidth * ( 2 ** maxLevel );
-		this.height = tileHeight * ( 2 ** maxLevel );
 		this.url = url;
-		this.projection = 'mercator';
 
 		return this.getTileset( url );
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		return this.url.replace( '{z}', level ).replace( '{x}', x ).replace( '{y}', y );
 
@@ -52,6 +57,8 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 // Support for TMS tiles
 // https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
+// NOTE: Most, if not all, TMS generation implementations do not correctly support the Origin tag
+// and tile index offsets, including CesiumJS and Ion.
 export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	constructor( ...args ) {
@@ -59,9 +66,7 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( ...args );
 
 		this.name = 'TMS_TILES_PLUGIN';
-		this.flipY = false;
 		this.url = null;
-		this.extension = null;
 
 	}
 
@@ -73,12 +78,17 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			.then( res => res.text() )
 			.then( text => {
 
+				const { projection, tiling } = this;
+
+				// elements
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				// const boundingBox = xml.querySelector( 'BoundingBox' );
-				// const origin = xml.querySelector( 'Origin' );
+				const boundingBox = xml.querySelector( 'BoundingBox' );
+				const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
-				const tileSets = xml.querySelector( 'TileSets' );
-				const tileSetList = [ ...tileSets.querySelectorAll( 'TileSet' ) ]
+				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
+
+				// tile set definitions
+				const tileSetList = [ ...tileSets ]
 					.map( ts => ( {
 						href: parseInt( ts.getAttribute( 'href' ) ),
 						unitsPerPixel: parseFloat( ts.getAttribute( 'units-per-pixel' ) ),
@@ -90,77 +100,43 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 					} );
 
-				// TODO: need to account for these values (origin and min values) when generating ellipsoid
-				// TODO: might want to account for this offset when positioning the tiles? Or expose it? Could be
-				// used for overlays.
-				// TODO: the origin can be outside the box bounds and result in negative values for tiles. The tile coordinates
-				// may need to account for this origin positioning - ie they may not start at 0, 0?
-				// the extents of the tile set in lat / lon
-				// const minX = parseFloat( boundingBox.getAttribute( 'minx' ) );
-				// const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) );
-				// const minY = parseFloat( boundingBox.getAttribute( 'miny' ) );
-				// const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) );
+				// bounding box
+				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) ) * MathUtils.DEG2RAD;
+				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) ) * MathUtils.DEG2RAD;
+				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) ) * MathUtils.DEG2RAD;
+				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
 
 				// origin in lat / lon
-				// const x = parseFloat( origin.getAttribute( 'x' ) );
-				// const y = parseFloat( origin.getAttribute( 'y' ) );
+				const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
+				const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
 
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
 				const tileHeight = parseInt( tileFormat.getAttribute( 'height' ) );
 				const extension = tileFormat.getAttribute( 'extension' );
-
-				const profile = tileSets.getAttribute( 'profile' );
 				const srs = xml.querySelector( 'SRS' ).textContent;
 
-				switch ( srs ) {
-
-					case 'EPSG:3857': // web-mercator spherical projection
-					case 'EPSG:4326': // equirect projection
-						break;
-					default:
-						throw new Error( `TMSTilesPlugin: ${ srs } SRS not supported.` );
-
-				}
-
-				// TODO: global-geodetic seems to require two horizontal root tiles. Is hardcoding the right way?
-				let widthMultiplier = 1;
-				let heightMultiplier = 1;
-				switch ( profile ) {
-
-					case 'geodetic':
-					case 'global-geodetic':
-						widthMultiplier = 2;
-						heightMultiplier = 1;
-						this.projection = 'geodetic';
-						break;
-					case 'mercator':
-					case 'global-mercator':
-						this.projection = 'mercator';
-						break;
-					case 'local':
-					case 'none':
-					default:
-						throw new Error( `TMSTilesPlugin: Profile ${ profile } not supported.` );
-
-				}
-
-				const levels = tileSetList.length;
-				const maxLevel = levels - 1;
+				// assign settings
 				this.extension = extension;
-				this.width = widthMultiplier * tileWidth * ( 2 ** maxLevel );
-				this.height = heightMultiplier * tileHeight * ( 2 ** maxLevel );
-				this.tileWidth = tileWidth;
-				this.tileHeight = tileHeight;
-				this.levels = levels;
 				this.url = this.tiles.rootURL;
 				this.tileSets = tileSetList;
 
-				// ellipsoid projection data
-				// this.minLat = minY;
-				// this.maxLat = maxY;
-				// this.minLon = minX;
-				// this.maxLon = maxX;
+				// initialize tiling and projection schemes
+				projection.setScheme( srs );
+
+				tiling.setOrigin( originX, originY );
+				tiling.setBounds( minX, minY, maxX, maxY );
+				tiling.setProjection( projection );
+
+				tileSetList.forEach( ( { order } ) => {
+
+					tiling.setLevel( order, {
+						tileCountX: projection.tileCountX * 2 ** order,
+						tilePixelWidth: tileWidth,
+						tilePixelHeight: tileHeight,
+					} );
+
+				} );
 
 				return this.getTileset( url );
 
@@ -168,10 +144,10 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
-		const { url, extension, tileSets } = this;
-		return new URL( `${ parseInt( tileSets[ level ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
+		const { url, extension, tileSets, tiling } = this;
+		return new URL( `${ parseInt( tileSets[ level - tiling.minLevel ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
 
 	}
 
