@@ -72,7 +72,7 @@ export class ImageFormatPlugin {
 
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when using batched mesh rendering.
-		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture } ) );
+		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture, transparent: true } ) );
 		mesh.position.set( x, y, z );
 
 		return mesh;
@@ -106,7 +106,7 @@ export class ImageFormatPlugin {
 
 			for ( let y = 0; y < tileCountY; y ++ ) {
 
-				const child = this.createChild( minLevel, x, y );
+				const child = this.createChild( x, y, minLevel );
 				if ( child !== null ) {
 
 					children.push( child );
@@ -126,7 +126,7 @@ export class ImageFormatPlugin {
 			root: {
 				refine: 'REPLACE',
 				geometricError: 1e5,
-				boundingVolume: this.createBoundingVolume( - 1, 0, 0 ),
+				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
 				children,
 
 				[ TILE_LEVEL ]: - 1,
@@ -141,13 +141,13 @@ export class ImageFormatPlugin {
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		// override
 
 	}
 
-	createBoundingVolume( level, x, y ) {
+	createBoundingVolume( x, y, level ) {
 
 		const { center, pixelSize, tiling } = this;
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
@@ -187,7 +187,7 @@ export class ImageFormatPlugin {
 
 	}
 
-	createChild( level, x, y ) {
+	createChild( x, y, level ) {
 
 		const { pixelSize, tiling } = this;
 		if ( ! tiling.getTileExists( x, y, level ) ) {
@@ -205,9 +205,9 @@ export class ImageFormatPlugin {
 		return {
 			refine: 'REPLACE',
 			geometricError: geometricError,
-			boundingVolume: this.createBoundingVolume( level, x, y ),
+			boundingVolume: this.createBoundingVolume( x, y, level ),
 			content: {
-				uri: this.getUrl( level, x, y ),
+				uri: this.getUrl( x, y, level ),
 			},
 			children: [],
 
@@ -229,7 +229,7 @@ export class ImageFormatPlugin {
 
 			for ( let cy = 0; cy < 2; cy ++ ) {
 
-				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy );
+				const child = this.createChild( 2 * x + cx, 2 * y + cy, level + 1 );
 				if ( child ) {
 
 					tile.children.push( child );

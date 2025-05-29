@@ -112,7 +112,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
-	createBoundingVolume( level, x, y ) {
+	createBoundingVolume( x, y, level ) {
 
 		if ( this.shape === 'ellipsoid' ) {
 
@@ -145,7 +145,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		} else {
 
-			return super.createBoundingVolume( level, x, y, isRoot );
+			return super.createBoundingVolume( x, y, level );
 
 		}
 

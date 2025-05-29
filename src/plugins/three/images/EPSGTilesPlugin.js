@@ -47,7 +47,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		return this.url.replace( '{z}', level ).replace( '{x}', x ).replace( '{y}', y );
 
@@ -144,7 +144,7 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		const { url, extension, tileSets, tiling } = this;
 		return new URL( `${ parseInt( tileSets[ level - tiling.minLevel ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();

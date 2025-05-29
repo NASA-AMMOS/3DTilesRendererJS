@@ -16,7 +16,7 @@ export class DeepZoomImagePlugin extends ImageFormatPlugin {
 
 	}
 
-	getUrl( level, x, y ) {
+	getUrl( x, y, level ) {
 
 		return `${ this.stem }_files/${ level }/${ x }_${ y }.${ this.format }`;
 
