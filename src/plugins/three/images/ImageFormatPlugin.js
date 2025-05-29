@@ -126,10 +126,10 @@ export class ImageFormatPlugin {
 			root: {
 				refine: 'REPLACE',
 				geometricError: 1e5,
-				boundingVolume: this.createBoundingVolume( 0, 0, 0, true ),
+				boundingVolume: this.createBoundingVolume( - 1, 0, 0 ),
 				children,
 
-				[ TILE_LEVEL ]: 0,
+				[ TILE_LEVEL ]: - 1,
 				[ TILE_X ]: 0,
 				[ TILE_Y ]: 0,
 			}
@@ -147,13 +147,13 @@ export class ImageFormatPlugin {
 
 	}
 
-	createBoundingVolume( level, x, y, isRoot = false ) {
+	createBoundingVolume( level, x, y ) {
 
 		const { center, pixelSize, tiling } = this;
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = isRoot ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
+		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;
