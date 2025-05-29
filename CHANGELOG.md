@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Change `load-error` event field from `uri` to `url` as documented.
 - Fixed type definitions for some events.
 - B3DM, I3DM, PNTS Loaders: Fixed case where RTC_CENTER feature would not be parsed correctly.
+- Re-add "load-tile-set" event when child tile sets are loaded.
+- Re-add url to "load-tile-set" event.
+- TMSTilesPlugin: Add support for limited bounds.
 
 ### Added
 - Ability to resolve to any file in "./src".
