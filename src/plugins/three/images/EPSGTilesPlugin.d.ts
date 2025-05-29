@@ -22,14 +22,3 @@ export class TMSTilesPlugin {
 	} );
 
 }
-
-export class WMTSTilesPlugin {
-
-	constructor( options: {
-		center?: boolean,
-		pixelSize?: number,
-		projection?: 'ellipsoid' | 'planar',
-		useRecommendedSettings?: boolean,
-	} );
-
-}
