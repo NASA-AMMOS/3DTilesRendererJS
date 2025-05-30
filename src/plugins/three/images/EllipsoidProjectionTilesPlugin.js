@@ -24,6 +24,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 		super( rest );
 
 		this.projection = new ProjectionScheme();
+		this.tiling.setProjection( this.projection );
 
 		// options
 		this.shape = shape;

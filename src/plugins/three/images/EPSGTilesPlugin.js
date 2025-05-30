@@ -32,7 +32,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 		projection.setScheme( 'EPSG:3857' );
 		tiling.flipY = true;
-		tiling.setProjection( projection );
 		tiling.generateLevels( levels, 1, 1, {
 			tilePixelWidth: tileDimension,
 			tilePixelHeight: tileDimension,
@@ -123,10 +122,8 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 				// initialize tiling and projection schemes
 				projection.setScheme( srs );
-
 				tiling.setOrigin( originX, originY );
 				tiling.setBounds( minX, minY, maxX, maxY );
-				tiling.setProjection( projection );
 
 				tileSetList.forEach( ( { order } ) => {
 
