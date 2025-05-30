@@ -12,11 +12,13 @@ export class DataCache {
 	constructor() {
 
 		this.loadQueue = new PriorityQueue();
+		this.loadQueue.priorityCallback = () => 0;
 		this.cache = {};
-		this.fetchItem = null;
-		this.disposeItem = null;
 
 	}
+
+	fetchItem() {}
+	disposeItem() {}
 
 	// fetches the associated data if it doesn't exist and increments the lock counter
 	setData( ...args ) {
@@ -53,17 +55,20 @@ export class DataCache {
 		} else {
 
 			const abortController = new AbortController();
-			const result = this.loadQueue.add( key, () => {
+			const info = {
+				abortController,
+				result: null,
+				count: 1,
+			};
 
-				return this.fetchItem( ...args, abortController.signal );
+			info.result = this.loadQueue.add( key, async () => {
+
+				const res = await this.fetchItem( ...args, abortController.signal );
+				info.result = res;
 
 			} );
 
-			this.cache[ key ] = {
-				abortController,
-				result,
-				count: 1,
-			};
+			this.cache[ key ] = info;
 
 		}
 

@@ -38,7 +38,7 @@ export class TiledImageSource extends DataCache {
 
 	fetchItem( ...args ) {
 
-		const url = this.getURL( ...args );
+		const url = this.getUrl( ...args );
 		return this
 			.fetchData( url, this.fetchOptions )
 			.then( res => res.arrayBuffer() )

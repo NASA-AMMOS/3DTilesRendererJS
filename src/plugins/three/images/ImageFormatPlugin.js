@@ -113,6 +113,15 @@ export class ImageFormatPlugin {
 
 	}
 
+	disposeTile( tile ) {
+
+		const tx = tile[ TILE_X ];
+		const ty = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		this.imageSource.disposeItem( tx, ty, level );
+
+	}
+
 	// Local functions
 	getTileset( baseUrl ) {
 

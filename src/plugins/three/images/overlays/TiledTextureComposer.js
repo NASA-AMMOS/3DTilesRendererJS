@@ -1,0 +1,130 @@
+import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, Mesh } from 'three';
+
+const camera = new OrthographicCamera();
+export class TiledTextureComposer {
+
+	constructor( renderer ) {
+
+		this.renderer = renderer;
+		this.renderTarget = null;
+		this.range = [ 0, 0, 1, 1 ];
+		this.quad = new Mesh( new PlaneGeometry(), new ComposeTextureMaterial() );
+
+	}
+
+	setRenderTarget( renderTarget, range ) {
+
+		this.renderTarget = renderTarget;
+		this.range = [ ...range ];
+
+	}
+
+	draw( texture, span, projection, LOG ) {
+
+		const { range, renderer, quad, renderTarget } = this;
+		const material = quad.material;
+		material.map = texture;
+
+		material.minRange.x = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], - 1, 1 );
+		material.minRange.y = MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], - 1, 1 );
+
+		material.maxRange.x = MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], - 1, 1 );
+		material.maxRange.y = MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], - 1, 1 );
+
+		if ( LOG ) {
+
+			console.log( material.minRange, material.maxRange )
+
+		}
+
+		const currentRenderTarget = renderer.getRenderTarget();
+		const currentAutoClear = renderer.autoClear;
+		renderer.autoClear = false;
+		renderer.setRenderTarget( renderTarget );
+		renderer.render( quad, camera );
+		renderer.setRenderTarget( currentRenderTarget );
+		renderer.autoClear = currentAutoClear;
+
+	}
+
+	dispose() {
+
+		this.quad.material.dispose();
+		this.quad.geometry.dispose();
+
+	}
+
+}
+
+
+export class ComposeTextureMaterial extends ShaderMaterial {
+
+	get minRange() {
+
+		return this.uniforms.minRange.value;
+
+	}
+
+	get maxRange() {
+
+		return this.uniforms.maxRange.value;
+
+	}
+
+	get map() {
+
+		return this.uniforms.map.value;
+
+	}
+
+	set map( v ) {
+
+		this.uniforms.map.value = v;
+
+	}
+
+	constructor() {
+
+		super( {
+			depthWrite: false,
+			depthTest: false,
+			transparent: true,
+			side: 2,
+			uniforms: {
+				map: { value: null },
+				minRange: { value: new Vector2() },
+				maxRange: { value: new Vector2() },
+			},
+
+			vertexShader: /* glsl */`
+
+				uniform vec2 minRange;
+				uniform vec2 maxRange;
+				varying vec2 vUv;
+
+				void main() {
+
+					vUv = uv;
+					gl_Position = vec4( mix( minRange, maxRange, uv ), 0, 1 );
+
+				}
+
+			`,
+
+			fragmentShader: /* glsl */`
+
+				uniform sampler2D map;
+				varying vec2 vUv;
+				void main() {
+
+					gl_FragColor = texture( map, vUv );
+
+				}
+
+			`,
+		} );
+
+
+	}
+
+}
