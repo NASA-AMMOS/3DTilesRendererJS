@@ -2,7 +2,8 @@
 // Support for XYZ / Slippy tile systems
 
 import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin.js';
-import { MathUtils } from 'three';
+import { XYZImageSource } from './sources/XYZImageSource.js';
+import { TMSImageSource } from './sources/TMSImageSource.js';
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
@@ -19,36 +20,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( { pixelSize, ...rest } );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.tileDimension = tileDimension;
-		this.levels = levels;
-		this.url = null;
-
-	}
-
-	async loadRootTileSet() {
-
-		// transform the url
-		const { tiles, tiling, projection, tileDimension, levels } = this;
-
-		projection.setScheme( 'EPSG:3857' );
-		tiling.flipY = true;
-		tiling.generateLevels( levels, 1, 1, {
-			tilePixelWidth: tileDimension,
-			tilePixelHeight: tileDimension,
-		} );
-
-		// initialize url
-		let url = tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-		this.url = url;
-
-		return this.getTileset( url );
-
-	}
-
-	getUrl( x, y, level ) {
-
-		return this.url.replace( '{z}', level ).replace( '{x}', x ).replace( '{y}', y );
+		this.imageSource = new XYZImageSource( { levels, tileDimension } );
 
 	}
 
@@ -65,86 +37,7 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( ...args );
 
 		this.name = 'TMS_TILES_PLUGIN';
-		this.url = null;
-
-	}
-
-	loadRootTileSet() {
-
-		const url = new URL( 'tilemapresource.xml', this.tiles.rootURL ).toString();
-		return this.tiles
-			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( url, this.tiles.fetchOptions ) )
-			.then( res => res.text() )
-			.then( text => {
-
-				const { projection, tiling } = this;
-
-				// elements
-				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				const boundingBox = xml.querySelector( 'BoundingBox' );
-				const origin = xml.querySelector( 'Origin' );
-				const tileFormat = xml.querySelector( 'TileFormat' );
-				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
-
-				// tile set definitions
-				const tileSetList = [ ...tileSets ]
-					.map( ts => ( {
-						href: parseInt( ts.getAttribute( 'href' ) ),
-						unitsPerPixel: parseFloat( ts.getAttribute( 'units-per-pixel' ) ),
-						order: parseInt( ts.getAttribute( 'order' ) ),
-					} ) )
-					.sort( ( a, b ) => {
-
-						return a.order - b.order;
-
-					} );
-
-				// bounding box
-				const minX = parseFloat( boundingBox.getAttribute( 'minx' ) ) * MathUtils.DEG2RAD;
-				const maxX = parseFloat( boundingBox.getAttribute( 'maxx' ) ) * MathUtils.DEG2RAD;
-				const minY = parseFloat( boundingBox.getAttribute( 'miny' ) ) * MathUtils.DEG2RAD;
-				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
-
-				// origin in lat / lon
-				const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
-				const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
-
-				// image dimensions in pixels
-				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
-				const tileHeight = parseInt( tileFormat.getAttribute( 'height' ) );
-				const extension = tileFormat.getAttribute( 'extension' );
-				const srs = xml.querySelector( 'SRS' ).textContent;
-
-				// assign settings
-				this.extension = extension;
-				this.url = this.tiles.rootURL;
-				this.tileSets = tileSetList;
-
-				// initialize tiling and projection schemes
-				projection.setScheme( srs );
-				tiling.setOrigin( originX, originY );
-				tiling.setBounds( minX, minY, maxX, maxY );
-
-				tileSetList.forEach( ( { order } ) => {
-
-					tiling.setLevel( order, {
-						tileCountX: projection.tileCountX * 2 ** order,
-						tilePixelWidth: tileWidth,
-						tilePixelHeight: tileHeight,
-					} );
-
-				} );
-
-				return this.getTileset( url );
-
-			} );
-
-	}
-
-	getUrl( x, y, level ) {
-
-		const { url, extension, tileSets, tiling } = this;
-		return new URL( `${ parseInt( tileSets[ level - tiling.minLevel ].href ) }/${ x }/${ y }.${ extension }`, url ).toString();
+		this.imageSource = new TMSImageSource();
 
 	}
 

@@ -17,28 +17,30 @@ export class TiledImageSource extends DataCache {
 
 	}
 
+	async processBuffer( buffer ) {
+
+		const blob = new Blob( [ buffer ] );
+		const imageBitmap = await createImageBitmap( blob, {
+			premultiplyAlpha: 'none',
+			colorSpaceConversion: 'none',
+			imageOrientation: 'flipY',
+		} );
+		const texture = new Texture( imageBitmap );
+		texture.generateMipmaps = false;
+		texture.colorSpace = SRGBColorSpace;
+		texture.needsUpdate = true;
+
+		return texture;
+
+	}
+
 	fetchItem( ...args ) {
 
 		const url = this.getURL( ...args );
 		return this
 			.fetchData( url, this.fetchOptions )
 			.then( res => res.arrayBuffer() )
-			.then( async buffer => {
-
-				const blob = new Blob( [ buffer ] );
-				const imageBitmap = await createImageBitmap( blob, {
-					premultiplyAlpha: 'none',
-					colorSpaceConversion: 'none',
-					imageOrientation: 'flipY',
-				} );
-				const texture = new Texture( imageBitmap );
-				texture.generateMipmaps = false;
-				texture.colorSpace = SRGBColorSpace;
-				texture.needsUpdate = true;
-
-				return texture;
-
-			} );
+			.then( buffer => this.processBuffer( buffer ) );
 
 	}
 
@@ -53,7 +55,7 @@ export class TiledImageSource extends DataCache {
 
 	}
 
-	getURL( ...args ) {
+	getUrl( ...args ) {
 
 	}
 

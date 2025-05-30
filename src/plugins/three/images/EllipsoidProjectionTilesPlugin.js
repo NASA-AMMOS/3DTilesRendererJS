@@ -1,6 +1,5 @@
 import { ImageFormatPlugin, TILE_LEVEL, TILE_X, TILE_Y } from './ImageFormatPlugin.js';
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
-import { ProjectionScheme } from './utils/ProjectionScheme.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 
 const MAX_LON_VERTS = 30;
@@ -13,6 +12,12 @@ const _sphere = /* @__PURE__ */ new Sphere();
 
 export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
+	get projection() {
+
+		return this.tiling.projection;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -23,9 +28,6 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 		super( rest );
 
-		this.projection = new ProjectionScheme();
-		this.tiling.setProjection( this.projection );
-
 		// options
 		this.shape = shape;
 		this.endCaps = endCaps;
@@ -35,10 +37,10 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 	// override the parse to mesh logic to support a region mesh
 	async parseToMesh( buffer, tile, ...args ) {
 
-		const { shape, projection, tiles, tiling } = this;
 		const mesh = await super.parseToMesh( buffer, tile, ...args );
 
 		// if displaying the tiles as an ellipsoid
+		const { shape, projection, tiles, tiling } = this;
 		if ( shape === 'ellipsoid' ) {
 
 			const ellipsoid = tiles.ellipsoid;

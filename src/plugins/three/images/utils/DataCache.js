@@ -19,6 +19,29 @@ export class DataCache {
 	}
 
 	// fetches the associated data if it doesn't exist and increments the lock counter
+	setData( ...args ) {
+
+		const { cache } = this;
+		const data = args.pop();
+		const key = hash( ...args );
+		if ( key in cache ) {
+
+			throw new Error();
+
+		} else {
+
+			this.cache[ key ] = {
+				abortController: new AbortController(),
+				result: data,
+				count: 1,
+			};
+
+		}
+
+		return data;
+
+	}
+
 	lock( ...args ) {
 
 		const { cache } = this;
@@ -59,12 +82,18 @@ export class DataCache {
 			if ( cache[ key ].count === 0 ) {
 
 				loadQueue.remove( key );
-				cache[ key ].signal.abort();
-				cache[ key ].result.then( item => {
 
-					this.disposeItem( item );
+				const { result, abortController } = cache[ key ];
+				abortController.abort();
+				if ( result instanceof Promise ) {
 
-				} );
+					result.then( item => this.disposeItem( item ) );
+
+				} else {
+
+					this.disposeItem( result );
+
+				}
 
 				delete cache[ key ];
 
@@ -102,12 +131,18 @@ export class DataCache {
 		for ( const key in cache ) {
 
 			loadQueue.remove( key );
-			cache[ key ].abortController.abort();
-			cache[ key ].result.then( item => {
 
-				this.disposeItem( item );
+			const { abortController, result } = cache[ key ];
+			abortController.abort();
+			if ( result instanceof Promise ) {
 
-			} );
+				result.then( item => this.disposeItem( item ) );
+
+			} else {
+
+				this.disposeItem( result );
+
+			}
 
 		}
 
