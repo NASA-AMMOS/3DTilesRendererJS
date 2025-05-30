@@ -158,15 +158,19 @@ export class TilingScheme {
 	}
 
 	// query functions
-	getTileAtPoint( bx, by, level, clampTiles = true ) {
+	getTileAtPoint( bx, by, level, normalized = false, clampTiles = true ) {
 
 		const { projection, flipY } = this;
 		const { tileCountX, tileCountY } = this.getLevel( level );
 		const xStride = 1 / tileCountX;
 		const yStride = 1 / tileCountY;
 
-		bx = projection.convertLongitudeToProjection( bx );
-		by = projection.convertLatitudeToProjection( by );
+		if ( projection && ! normalized ) {
+
+			bx = projection.convertLongitudeToProjection( bx );
+			by = projection.convertLatitudeToProjection( by );
+
+		}
 
 		let tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
@@ -185,6 +189,21 @@ export class TilingScheme {
 		}
 
 		return [ tx, ty ];
+
+	}
+
+	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false, clampTiles = true ) {
+
+		const minTile = this.getTileAtPoint( minX, minY, level, normalized, clampTiles );
+		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, clampTiles );
+
+		if ( this.flipY ) {
+
+			[ minTile[ 1 ], maxTile[ 1 ] ] = [ maxTile[ 1 ], minTile[ 1 ] ];
+
+		}
+
+		return [ ...minTile, ...maxTile ];
 
 	}
 

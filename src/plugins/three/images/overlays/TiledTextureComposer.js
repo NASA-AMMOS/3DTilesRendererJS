@@ -19,23 +19,18 @@ export class TiledTextureComposer {
 
 	}
 
-	draw( texture, span, projection, LOG ) {
+	draw( texture, span, projection, opacity = 1 ) {
 
 		const { range, renderer, quad, renderTarget } = this;
 		const material = quad.material;
 		material.map = texture;
+		material.opacity = opacity;
 
 		material.minRange.x = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], - 1, 1 );
 		material.minRange.y = MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], - 1, 1 );
 
 		material.maxRange.x = MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], - 1, 1 );
 		material.maxRange.y = MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], - 1, 1 );
-
-		if ( LOG ) {
-
-			console.log( material.minRange, material.maxRange )
-
-		}
 
 		const currentRenderTarget = renderer.getRenderTarget();
 		const currentAutoClear = renderer.autoClear;
@@ -56,8 +51,21 @@ export class TiledTextureComposer {
 
 }
 
-
 export class ComposeTextureMaterial extends ShaderMaterial {
+
+	get opacity() {
+
+		return this.uniforms?.opacity.value;
+
+	}
+
+	set opacity( v ) {
+
+		if ( ! this.uniforms ) return;
+
+		this.uniforms.opacity.value = v;
+
+	}
 
 	get minRange() {
 
@@ -89,11 +97,11 @@ export class ComposeTextureMaterial extends ShaderMaterial {
 			depthWrite: false,
 			depthTest: false,
 			transparent: true,
-			side: 2,
 			uniforms: {
 				map: { value: null },
 				minRange: { value: new Vector2() },
 				maxRange: { value: new Vector2() },
+				opacity: { value: 1 },
 			},
 
 			vertexShader: /* glsl */`
@@ -113,11 +121,13 @@ export class ComposeTextureMaterial extends ShaderMaterial {
 
 			fragmentShader: /* glsl */`
 
+				uniform float opacity;
 				uniform sampler2D map;
 				varying vec2 vUv;
 				void main() {
 
 					gl_FragColor = texture( map, vUv );
+					gl_FragColor.a = opacity;
 
 				}
 
