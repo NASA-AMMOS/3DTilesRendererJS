@@ -1,4 +1,9 @@
-import { TilesRenderer } from '3d-tiles-renderer';
+import {
+	TilesRenderer,
+} from '3d-tiles-renderer';
+import {
+	GLTFExtensionsPlugin,
+} from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	DirectionalLight,
@@ -12,25 +17,33 @@ import {
 	MeshStandardMaterial,
 	PCFSoftShadowMap,
 	Sphere,
+	MeshBasicMaterial,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
 let offsetParent, box, sphere, dirLight, statsContainer;
 let stats;
 
-const DEFAULT = 0;
-const GRADIENT = 1;
-const TOPOGRAPHIC_LINES = 2;
-const LIGHTING = 3;
+const MATERIALS = Object.freeze( {
+	DEFAULT: 0,
+	GRADIENT: 1,
+	TOPOGRAPHIC_LINES: 2,
+	LIGHTING: 3,
+	UNLIT: 4,
+} );
+
+const materialParam = new URLSearchParams( window.location.search ).get( 'material' );
 const params = {
 
-	'material': DEFAULT,
+	'material': materialParam in MATERIALS ? MATERIALS[ materialParam ] : MATERIALS.DEFAULT,
 	'orthographic': false,
 	'rebuild': initTiles,
-
+	'up': new URLSearchParams( window.location.search ).get( 'up' ) ?? '+Y',
 };
 
 const gradientShader = {
@@ -130,33 +143,36 @@ function updateMaterial( scene ) {
 			c.material.dispose();
 			switch ( materialIndex ) {
 
-				case DEFAULT:
+				case MATERIALS.DEFAULT:
 					c.material = c.originalMaterial;
 					c.material.side = 2;
 					c.receiveShadow = false;
 					c.castShadow = false;
 					break;
-				case GRADIENT:
+				case MATERIALS.GRADIENT:
 					c.material = new ShaderMaterial( gradientShader );
 					c.material.side = 2;
 					c.receiveShadow = false;
 					c.castShadow = false;
 					break;
-				case TOPOGRAPHIC_LINES:
+				case MATERIALS.TOPOGRAPHIC_LINES:
 					c.material = new ShaderMaterial( topoShader );
 					c.material.side = 2;
 					c.material.flatShading = true;
 					c.receiveShadow = false;
 					c.castShadow = false;
 					break;
-				case LIGHTING:
+				case MATERIALS.LIGHTING:
 					c.material = new MeshStandardMaterial();
 					c.material.side = 2;
 					c.receiveShadow = true;
 					c.castShadow = true;
+					break;
+				case MATERIALS.UNLIT:
+					c.material = new MeshBasicMaterial( { side: 2, color: 0xffffff, map: c.originalMaterial.map } );
+					break;
 
 			}
-
 
 		}
 
@@ -209,6 +225,18 @@ function initTiles() {
 	tiles.addEventListener( 'load-model', onLoadModel );
 	tiles.addEventListener( 'dispose-model', onDisposeModel );
 	offsetParent.add( tiles.group );
+
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
+
+	const ktx2loader = new KTX2Loader();
+	ktx2loader.setTranscoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/basis/' );
+	ktx2loader.detectSupport( renderer );
+	tiles.registerPlugin( new GLTFExtensionsPlugin( {
+		rtc: true,
+		dracoLoader: dracoLoader,
+		ktxLoader: ktx2loader,
+	} ) );
 
 }
 
@@ -271,7 +299,7 @@ function init() {
 	const gui = new GUI();
 	gui.width = 300;
 	gui.add( params, 'orthographic' );
-	gui.add( params, 'material', { DEFAULT, GRADIENT, TOPOGRAPHIC_LINES, LIGHTING } )
+	gui.add( params, 'material', MATERIALS )
 		.onChange( () => {
 
 			tiles.forEachLoadedModel( updateMaterial );
@@ -349,6 +377,10 @@ function animate() {
 	if ( params.up === '-Z' ) {
 
 		offsetParent.rotation.x = Math.PI / 2;
+
+	} else if ( params.up === '+Z' || params.up === 'Z' ) {
+
+		offsetParent.rotation.x = - Math.PI / 2;
 
 	}
 	offsetParent.updateMatrixWorld( true );
