@@ -73,38 +73,42 @@ export class ImageOverlayPlugin {
 
 		textureMap.delete( tile );
 
-		const ranges = rangeMap.get( tile );
-		rangeMap.delete( tile );
-		ranges.forEach( range => {
+		if ( rangeMap.has( tile ) ) {
 
-			const [ minLon, minLat, maxLon, maxLat, level ] = range;
-			this._overlays.forEach( ( { overlay } ) => {
+			const ranges = rangeMap.get( tile );
+			rangeMap.delete( tile );
+			ranges.forEach( range => {
 
-				const minTile = overlay.tiling.getTileAtPoint( minLon, minLat, level );
-				const maxTile = overlay.tiling.getTileAtPoint( maxLon, maxLat, level );
-				if ( overlay.tiling.flipY ) {
+				const [ minLon, minLat, maxLon, maxLat, level ] = range;
+				this._overlays.forEach( ( { overlay } ) => {
 
-					[ minTile[ 1 ], maxTile[ 1 ] ] = [ maxTile[ 1 ], minTile[ 1 ] ];
+					const minTile = overlay.tiling.getTileAtPoint( minLon, minLat, level );
+					const maxTile = overlay.tiling.getTileAtPoint( maxLon, maxLat, level );
+					if ( overlay.tiling.flipY ) {
 
-				}
+						[ minTile[ 1 ], maxTile[ 1 ] ] = [ maxTile[ 1 ], minTile[ 1 ] ];
 
-				for ( let x = minTile[ 0 ], lx = maxTile[ 0 ]; x <= lx; x ++ ) {
+					}
 
-					for ( let y = minTile[ 1 ], ly = maxTile[ 1 ]; y <= ly; y ++ ) {
+					for ( let x = minTile[ 0 ], lx = maxTile[ 0 ]; x <= lx; x ++ ) {
 
-						if ( overlay.imageSource.tiling.getTileExists( x, y, level ) ) {
+						for ( let y = minTile[ 1 ], ly = maxTile[ 1 ]; y <= ly; y ++ ) {
 
-							overlay.imageSource.release( x, y, level );
+							if ( overlay.imageSource.tiling.getTileExists( x, y, level ) ) {
+
+								overlay.imageSource.release( x, y, level );
+
+							}
 
 						}
 
 					}
 
-				}
+				} );
 
 			} );
 
-		} );
+		}
 
 	}
 
@@ -218,7 +222,7 @@ export class ImageOverlayPlugin {
 		textureMap.set( tile, textures );
 
 
-		// basic geometric error mapping level only
+		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
 		const promises = meshes.map( async mesh => {
 
@@ -299,14 +303,15 @@ export class ImageOverlayPlugin {
 			const promises = [];
 			overlays.forEach( ( { overlay } ) => {
 
-				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, level );
+				const overlayLevel = Math.min( level, overlay.tiling.maxLevel );
+				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, overlayLevel );
 				for ( let x = minX; x <= maxX; x ++ ) {
 
 					for ( let y = minY; y <= maxY; y ++ ) {
 
-						if ( overlay.imageSource.tiling.getTileExists( x, y, level ) ) {
+						if ( overlay.imageSource.tiling.getTileExists( x, y, overlayLevel ) ) {
 
-							promises.push( overlay.imageSource.lock( x, y, level ) );
+							promises.push( overlay.imageSource.lock( x, y, overlayLevel ) );
 
 						}
 
@@ -319,22 +324,29 @@ export class ImageOverlayPlugin {
 			await Promise.all( promises );
 
 			tileComposer.setRenderTarget( scratchTarget, [ minLon, minLat, maxLon, maxLat ] );
-			tileComposer.draw( mesh.material.map, [ minLon, minLat, maxLon, maxLat ] );
+
+			if ( mesh.material.map ) {
+
+				tileComposer.draw( mesh.material.map, [ minLon, minLat, maxLon, maxLat ] );
+
+			} else {
+
+				tileComposer.clear( 0xffffff );
+
+			}
 
 			overlays.forEach( ( { overlay } ) => {
 
-				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, level );
+				const overlayLevel = Math.min( level, overlay.tiling.maxLevel );
+				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, overlayLevel );
 				for ( let x = minX; x <= maxX; x ++ ) {
 
 					for ( let y = minY; y <= maxY; y ++ ) {
 
-						if ( overlay.imageSource.tiling.getTileExists( x, y, level ) ) {
+						if ( overlay.imageSource.tiling.getTileExists( x, y, overlayLevel ) ) {
 
-							const span = overlay.imageSource.tiling.getTileBounds( x, y, level );
-
-							console.log( [ minLon, minLat, maxLon, maxLat ], span );
-
-							const tex = overlay.imageSource.get( x, y, level );
+							const span = overlay.imageSource.tiling.getTileBounds( x, y, overlayLevel );
+							const tex = overlay.imageSource.get( x, y, overlayLevel );
 							tileComposer.draw( tex, span, null, 0.5 );
 
 						}

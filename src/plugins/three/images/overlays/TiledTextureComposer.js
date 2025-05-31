@@ -1,6 +1,7 @@
-import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, Mesh } from 'three';
+import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, Mesh, Color } from 'three';
 
-const camera = new OrthographicCamera();
+const _camera = /* @__PURE__ */ new OrthographicCamera();
+const _color = /* @__PURE__ */ new Color();
 export class TiledTextureComposer {
 
 	constructor( renderer ) {
@@ -36,9 +37,25 @@ export class TiledTextureComposer {
 		const currentAutoClear = renderer.autoClear;
 		renderer.autoClear = false;
 		renderer.setRenderTarget( renderTarget );
-		renderer.render( quad, camera );
+		renderer.render( quad, _camera );
 		renderer.setRenderTarget( currentRenderTarget );
 		renderer.autoClear = currentAutoClear;
+
+	}
+
+	clear( color ) {
+
+		const { renderer, renderTarget } = this;
+		const currentRenderTarget = renderer.getRenderTarget();
+		const currentClearColor = renderer.getClearColor( _color );
+		const currentClearAlpha = renderer.getClearAlpha();
+
+		renderer.setClearColor( color, 1 );
+		renderer.setRenderTarget( renderTarget );
+		renderer.clear();
+
+		renderer.setRenderTarget( currentRenderTarget );
+		renderer.setClearColor( currentClearColor, currentClearAlpha );
 
 	}
 
