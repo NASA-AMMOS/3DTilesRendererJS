@@ -58,7 +58,7 @@ const params = {
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
-	up: hashUrl ? '+Z' : '+Y',
+	up: new URLSearchParams( window.location.search ).get( 'up' ) ?? hashUrl ? '+Z' : '+Y',
 	enableDebug: true,
 	displayParentBounds: false,
 	displayBoxBounds: false,
