@@ -1,11 +1,12 @@
-import { Vector3, WebGLRenderTarget, MathUtils } from 'three';
+import { Vector3, WebGLRenderTarget, Matrix4 } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
-import { forEachTileInBounds } from './overlays/utils.js';
+import { forEachTileInBounds, getGeometryRange } from './overlays/utils.js';
 
+const _matrix = /* @__PURE__ */ new Matrix4();
 export class ImageOverlayPlugin {
 
 	constructor( options = {} ) {
@@ -39,7 +40,7 @@ export class ImageOverlayPlugin {
 
 		this.tiles = tiles;
 		this.processQueue = new PriorityQueue();
-		this.processQueue.priorityCallback = tile => Number( tiles.visibleTiles.has( tile ) );
+		this.processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
 		this.tileComposer = new TiledTextureComposer( this.renderer );
 		this.uvRemapper = new UVRemapper( this.renderer );
 		this.scratchTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
@@ -57,7 +58,7 @@ export class ImageOverlayPlugin {
 
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this.processQueue.add( tile => {
+			this.processQueue.add( tile, tile => {
 
 				return this.updateTile( scene, tile );
 
@@ -115,7 +116,11 @@ export class ImageOverlayPlugin {
 
 	processTileModel( scene, tile ) {
 
-		return this.updateTile( scene, tile );
+		return this.processQueue.add( tile, tile => {
+
+			return this.updateTile( scene, tile );
+
+		} );
 
 	}
 
@@ -191,8 +196,6 @@ export class ImageOverlayPlugin {
 	// internal
 	updateTile( scene, tile ) {
 
-		const _vec = new Vector3();
-		const _cart = {};
 		const overlays = this._overlays;
 		const { tileComposer, tiles, rangeMap, textureMap, scratchTarget } = this;
 		const { ellipsoid, group } = tiles;
@@ -222,91 +225,27 @@ export class ImageOverlayPlugin {
 		const textures = new Map();
 		textureMap.set( tile, textures );
 
-
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
 		const promises = meshes.map( async mesh => {
 
-			textures.set( mesh, mesh.material.map );
+			const { material, geometry } = mesh;
+			const { map } = material;
 
-			// create a mirror geometry we can use for custom uvs
-			const mirror = mesh.clone();
-			mirror.geometry = mirror.geometry.clone();
+			// save the original applied texture
+			textures.set( mesh, map );
 
+			// compute the local transform and center of the mesh
+			_matrix.copy( mesh.matrixWorld );
 			if ( scene.parent ) {
 
-				mirror.matrixWorld.premultiply( group.matrixWorldInverse );
+				_matrix.premultiply( group.matrixWorldInverse );
 
 			}
 
-			mirror.matrixWorld.decompose( mirror.position, mirror.rotation, mirror.scale );
-			mirror.geometry.computeBoundingBox();
-			mirror.geometry.boundingBox.getCenter( _vec ).applyMatrix4( mirror.matrixWorld );
-
-			// find a rough mid lat / lon point
-			ellipsoid.getPositionToCartographic( _vec, _cart );
-			const centerLat = _cart.lat;
-			const centerLon = _cart.lon;
-
-			// find the lat / lon ranges
-			let minLat = Infinity;
-			let minLon = Infinity;
-			let maxLat = - Infinity;
-			let maxLon = - Infinity;
-
-			const newUvs = [];
-			const posAttr = mirror.geometry.getAttribute( 'position' );
-			for ( let i = 0; i < posAttr.count; i ++ ) {
-
-				// get the lat / lon values per vertex
-				_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( mirror.matrixWorld );
-				ellipsoid.getPositionToCartographic( _vec, _cart );
-
-				// the latitude calculations are not so stable at the poles so force the lat value to
-				// the mid point to ensure we don't load an unnecessarily large of tiles
-				if ( Math.abs( Math.abs( _cart.lat ) - Math.PI / 2 ) < 1e-5 ) {
-
-					_cart.lon = centerLon;
-
-				}
-
-				// ensure we're not wrapping on the same geometry
-				if ( Math.abs( centerLon - _cart.lon ) > Math.PI ) {
-
-					_cart.lon += Math.sign( centerLon - _cart.lon ) * Math.PI * 2;
-
-				}
-
-				if ( Math.abs( centerLat - _cart.lat ) > Math.PI ) {
-
-					_cart.lat += Math.sign( centerLat - _cart.lat ) * Math.PI * 2;
-
-				}
-
-				newUvs.push( _cart.lon, _cart.lat );
-
-				// save the min and max values
-				minLat = Math.min( minLat, _cart.lat );
-				maxLat = Math.max( maxLat, _cart.lat );
-
-				minLon = Math.min( minLon, _cart.lon );
-				maxLon = Math.max( maxLon, _cart.lon );
-
-			}
-
-			// remap the uvs
-			const lonRange = maxLon - minLon;
-			const latRange = maxLat - minLat;
-			for ( let i = 0; i < newUvs.length; i += 2 ) {
-
-				newUvs[ i + 0 ] -= minLon;
-				newUvs[ i + 0 ] /= lonRange;
-
-				newUvs[ i + 1 ] -= minLat;
-				newUvs[ i + 1 ] /= latRange;
-
-			}
-
+			// get uvs and range
+			const { range, uv } = getGeometryRange( geometry, _matrix, ellipsoid );
+			const [ minLon, minLat, maxLon, maxLat ] = range;
 			ranges.push( [ minLon, minLat, maxLon, maxLat, level ] );
 
 			// preload the textures
@@ -315,14 +254,17 @@ export class ImageOverlayPlugin {
 
 				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
 
+					// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
 					promises.push( overlay.imageSource.lock( tx, ty, tl ) );
 
 				} );
 
 			} );
 
+			// wait for all textures to load
 			await Promise.all( promises );
 
+			// initialize the texture
 			tileComposer.setRenderTarget( scratchTarget, [ minLon, minLat, maxLon, maxLat ] );
 
 			if ( mesh.material.map ) {
@@ -335,6 +277,7 @@ export class ImageOverlayPlugin {
 
 			}
 
+			// draw the texture
 			overlays.forEach( ( { overlay } ) => {
 
 				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
@@ -355,8 +298,7 @@ export class ImageOverlayPlugin {
 			} );
 
 			this.uvRemapper.setRenderTarget( finalTarget );
-			this.uvRemapper.setUVs( newUvs, mirror.geometry.getAttribute( 'uv' ), mirror.geometry.index );
-			this.uvRemapper.setUVs( mirror.geometry.attributes.uv, mirror.geometry.attributes.uv, mirror.geometry.index );
+			this.uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
 			this.uvRemapper.draw( scratchTarget.texture );
 
 			mesh.material.map = finalTarget.texture;
