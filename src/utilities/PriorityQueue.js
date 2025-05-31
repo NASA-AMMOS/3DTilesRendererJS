@@ -94,9 +94,13 @@ class PriorityQueue {
 		const index = items.indexOf( item );
 		if ( index !== - 1 ) {
 
+			// reject the promise to ensure there are no dangling promises - add a
+			// catch here to handle the case where the promise was never used anywhere
+			// else.
 			const info = callbacks.get( item );
 			info.promise.catch( () => {} );
 			info.reject( new Error( 'PriorityQueue: Item removed.' ) );
+
 			items.splice( index, 1 );
 			callbacks.delete( item );
 
