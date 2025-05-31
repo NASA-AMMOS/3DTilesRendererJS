@@ -4,6 +4,7 @@ import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
+import { forEachTileInBounds } from './overlays/utils.js';
 
 export class ImageOverlayPlugin {
 
@@ -312,21 +313,11 @@ export class ImageOverlayPlugin {
 			const promises = [];
 			overlays.forEach( ( { overlay } ) => {
 
-				const overlayLevel = Math.min( level, overlay.tiling.maxLevel );
-				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, overlayLevel );
-				for ( let x = minX; x <= maxX; x ++ ) {
+				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
 
-					for ( let y = minY; y <= maxY; y ++ ) {
+					promises.push( overlay.imageSource.lock( tx, ty, tl ) );
 
-						if ( overlay.imageSource.tiling.getTileExists( x, y, overlayLevel ) ) {
-
-							promises.push( overlay.imageSource.lock( x, y, overlayLevel ) );
-
-						}
-
-					}
-
-				}
+				} );
 
 			} );
 
@@ -346,23 +337,13 @@ export class ImageOverlayPlugin {
 
 			overlays.forEach( ( { overlay } ) => {
 
-				const overlayLevel = Math.min( level, overlay.tiling.maxLevel );
-				const [ minX, minY, maxX, maxY ] = overlay.tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, overlayLevel );
-				for ( let x = minX; x <= maxX; x ++ ) {
+				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
 
-					for ( let y = minY; y <= maxY; y ++ ) {
+					const span = overlay.imageSource.tiling.getTileBounds( tx, ty, tl );
+					const tex = overlay.imageSource.get( tx, ty, tl );
+					tileComposer.draw( tex, span, null, overlay.opacity );
 
-						if ( overlay.imageSource.tiling.getTileExists( x, y, overlayLevel ) ) {
-
-							const span = overlay.imageSource.tiling.getTileBounds( x, y, overlayLevel );
-							const tex = overlay.imageSource.get( x, y, overlayLevel );
-							tileComposer.draw( tex, span, null, overlay.opacity );
-
-						}
-
-					}
-
-				}
+				} );
 
 			} );
 
