@@ -1,35 +1,14 @@
 import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial } from 'three';
 
-function ensureBufferAttribute( buffer ) {
-
-	if ( buffer instanceof BufferAttribute ) {
-
-		return buffer;
-
-	} else if ( buffer instanceof Float32Array ) {
-
-		return new BufferAttribute( buffer, 2, false );
-
-	} else if ( Array.isArray( buffer ) ) {
-
-		return new BufferAttribute( new Float32Array( buffer ), 2, false );
-
-	} else {
-
-		return new BufferAttribute( buffer, 2, true );
-
-	}
-
-}
-
-const camera = new OrthographicCamera();
+// Class for converting a texture from one UV set up to a target one
+const camera = /* @__PURE__ */new OrthographicCamera();
 export class UVRemapper {
 
 	constructor( renderer ) {
 
 		this.renderer = renderer;
 		this.renderTarget = null;
-		this.quad = new Mesh( new BufferGeometry(), new ComposeTextureMaterial() );
+		this.quad = new Mesh( new BufferGeometry(), new RemapMaterial() );
 
 	}
 
@@ -77,19 +56,8 @@ export class UVRemapper {
 
 }
 
-export class ComposeTextureMaterial extends ShaderMaterial {
-
-	get minRange() {
-
-		return this.uniforms.minRange.value;
-
-	}
-
-	get maxRange() {
-
-		return this.uniforms.maxRange.value;
-
-	}
+// Class that converts texture using "fromUv" and "toUv".
+class RemapMaterial extends ShaderMaterial {
 
 	get map() {
 
@@ -140,6 +108,29 @@ export class ComposeTextureMaterial extends ShaderMaterial {
 
 			`,
 		} );
+
+	}
+
+}
+
+// Convert the buffer to a UV buffer attribute
+function ensureBufferAttribute( buffer ) {
+
+	if ( buffer instanceof BufferAttribute ) {
+
+		return buffer;
+
+	} else if ( buffer instanceof Float32Array ) {
+
+		return new BufferAttribute( buffer, 2, false );
+
+	} else if ( Array.isArray( buffer ) ) {
+
+		return new BufferAttribute( new Float32Array( buffer ), 2, false );
+
+	} else {
+
+		return new BufferAttribute( buffer, 2, true );
 
 	}
 

@@ -86,27 +86,11 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat, level ] = range;
 				this._overlays.forEach( ( { overlay } ) => {
 
-					const minTile = overlay.tiling.getTileAtPoint( minLon, minLat, level );
-					const maxTile = overlay.tiling.getTileAtPoint( maxLon, maxLat, level );
-					if ( overlay.tiling.flipY ) {
+					forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
 
-						[ minTile[ 1 ], maxTile[ 1 ] ] = [ maxTile[ 1 ], minTile[ 1 ] ];
+						overlay.imageSource.release( tx, ty, tl );
 
-					}
-
-					for ( let x = minTile[ 0 ], lx = maxTile[ 0 ]; x <= lx; x ++ ) {
-
-						for ( let y = minTile[ 1 ], ly = maxTile[ 1 ]; y <= ly; y ++ ) {
-
-							if ( overlay.imageSource.tiling.getTileExists( x, y, level ) ) {
-
-								overlay.imageSource.release( x, y, level );
-
-							}
-
-						}
-
-					}
+					} );
 
 				} );
 
@@ -287,6 +271,7 @@ export class ImageOverlayPlugin {
 
 					const span = overlay.imageSource.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
+					tex.generateMipmaps = false;
 					tileComposer.draw( tex, span, null, overlay.opacity );
 
 				} );

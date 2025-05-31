@@ -2,6 +2,9 @@ import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, 
 
 const _camera = /* @__PURE__ */ new OrthographicCamera();
 const _color = /* @__PURE__ */ new Color();
+
+// Utility for composing a series of tiled textures together onto a target texture in a given range
+// TODO: support mercator projection
 export class TiledTextureComposer {
 
 	constructor( renderer ) {
@@ -68,7 +71,8 @@ export class TiledTextureComposer {
 
 }
 
-export class ComposeTextureMaterial extends ShaderMaterial {
+// Draws the given texture with no depth testing at the given bounds defined by "minRange" and "maxRange"
+class ComposeTextureMaterial extends ShaderMaterial {
 
 	get opacity() {
 
