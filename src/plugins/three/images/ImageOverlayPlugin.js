@@ -62,7 +62,7 @@ export class ImageOverlayPlugin {
 
 			this.processQueue.add( tile, tile => {
 
-				return this.updateTile( scene, tile );
+				return this.updateTileOverlays( scene, tile );
 
 			} );
 
@@ -120,7 +120,7 @@ export class ImageOverlayPlugin {
 
 		return this.processQueue.add( tile, tile => {
 
-			return this.updateTile( scene, tile );
+			return this.updateTileOverlays( scene, tile );
 
 		} );
 
@@ -196,10 +196,10 @@ export class ImageOverlayPlugin {
 	}
 
 	// internal
-	updateTile( scene, tile ) {
+	updateTileOverlays( scene, tile ) {
 
 		const overlays = this._overlays;
-		const { tileComposer, tiles, rangeMap, textureMap, scratchTarget } = this;
+		const { tileComposer, tiles, rangeMap, textureMap, scratchTarget, resolution, uvRemapper } = this;
 		const { ellipsoid, group } = tiles;
 		scene.updateMatrixWorld();
 
@@ -215,6 +215,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// TODO: remove this check
 		if ( rangeMap.has( tile ) ) {
 
 			throw new Error();
@@ -229,7 +230,9 @@ export class ImageOverlayPlugin {
 
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
-		const promises = meshes.map( async mesh => {
+		return Promise.all( meshes.map( async mesh => {
+
+			// TODO: reset tile material
 
 			const { material, geometry } = mesh;
 			const { map } = material;
@@ -247,31 +250,29 @@ export class ImageOverlayPlugin {
 
 			// get uvs and range
 			const { range, uv } = getGeometryRange( geometry, _matrix, ellipsoid );
-			const [ minLon, minLat, maxLon, maxLat ] = range;
-			ranges.push( [ minLon, minLat, maxLon, maxLat, level ] );
+			ranges.push( [ ...range, level ] );
 
-			// preload the textures
-			const promises = [];
-			overlays.forEach( ( { overlay } ) => {
+			// wait for all textures to load
+			await Promise.all( overlays.flatMap( ( { overlay } ) => {
 
-				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
+				const promises = [];
+				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
 					// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
 					promises.push( overlay.imageSource.lock( tx, ty, tl ) );
 
 				} );
 
-			} );
+				return promises;
 
-			// wait for all textures to load
-			await Promise.all( promises );
+			} ) );
 
 			// initialize the texture
-			tileComposer.setRenderTarget( scratchTarget, [ minLon, minLat, maxLon, maxLat ] );
+			tileComposer.setRenderTarget( scratchTarget, range );
 
-			if ( mesh.material.map ) {
+			if ( map ) {
 
-				tileComposer.draw( mesh.material.map, [ minLon, minLat, maxLon, maxLat ] );
+				tileComposer.draw( mesh.material.map, range );
 
 			} else {
 
@@ -279,10 +280,10 @@ export class ImageOverlayPlugin {
 
 			}
 
-			// draw the texture
+			// draw the textures
 			overlays.forEach( ( { overlay } ) => {
 
-				forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
+				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
 					const span = overlay.imageSource.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
@@ -293,21 +294,18 @@ export class ImageOverlayPlugin {
 			} );
 
 			// TODO: dispose of this texture on dispose, reuse on reset
-			const finalTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
+			const finalTarget = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
 				stencilBuffer: false,
 				generateMipmaps: false,
 			} );
 
-			this.uvRemapper.setRenderTarget( finalTarget );
-			this.uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
-			this.uvRemapper.draw( scratchTarget.texture );
-
+			uvRemapper.setRenderTarget( finalTarget );
+			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
+			uvRemapper.draw( scratchTarget.texture );
 			mesh.material.map = finalTarget.texture;
 
-		} );
-
-		return Promise.all( promises );
+		} ) );
 
 	}
 
