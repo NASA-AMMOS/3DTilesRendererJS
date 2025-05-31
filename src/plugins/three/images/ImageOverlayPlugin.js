@@ -1,4 +1,4 @@
-import { Vector3, WebGLRenderTarget } from 'three';
+import { Vector3, WebGLRenderTarget, MathUtils } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -260,7 +260,14 @@ export class ImageOverlayPlugin {
 				// get the lat / lon values per vertex
 				_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( mirror.matrixWorld );
 				ellipsoid.getPositionToCartographic( _vec, _cart );
-				newUvs.push( _cart.lon, _cart.lat );
+
+				// the latitude calculations are not so stable at the poles so force the lat value to
+				// the mid point to ensure we don't load an unnecessarily large of tiles
+				if ( Math.abs( Math.abs( _cart.lat ) - Math.PI / 2 ) < 1e-5 ) {
+
+					_cart.lon = centerLon;
+
+				}
 
 				// ensure we're not wrapping on the same geometry
 				if ( Math.abs( centerLon - _cart.lon ) > Math.PI ) {
@@ -274,6 +281,8 @@ export class ImageOverlayPlugin {
 					_cart.lat += Math.sign( centerLat - _cart.lat ) * Math.PI * 2;
 
 				}
+
+				newUvs.push( _cart.lon, _cart.lat );
 
 				// save the min and max values
 				minLat = Math.min( minLat, _cart.lat );
