@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial, PlaneGeometry } from 'three';
+import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial } from 'three';
 
 function ensureBufferAttribute( buffer ) {
 

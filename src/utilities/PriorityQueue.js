@@ -86,6 +86,7 @@ class PriorityQueue {
 		const index = items.indexOf( item );
 		if ( index !== - 1 ) {
 
+			callbacks.get( item ).reject( new Error( 'PriorityQueue: Item removed.' ) );
 			items.splice( index, 1 );
 			callbacks.delete( item );
 

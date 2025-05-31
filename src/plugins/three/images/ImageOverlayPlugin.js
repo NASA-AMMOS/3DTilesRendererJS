@@ -1,4 +1,4 @@
-import { Vector3, WebGLRenderTarget, Matrix4 } from 'three';
+import { WebGLRenderTarget, Matrix4 } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -19,14 +19,16 @@ export class ImageOverlayPlugin {
 
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
 
-		this.needsUpdate = true;
-		this.processQueue = null;
+		// options
+		this.renderer = renderer;
 		this.resolution = resolution;
 		this.overlays = overlays;
 		this._overlays = [];
 
+		// internal
+		this.needsUpdate = true;
+		this.processQueue = null;
 		this.tiles = null;
-		this.renderer = renderer;
 		this.tileComposer = null;
 		this.uvRemapper = null;
 		this.scratchTarget = null;

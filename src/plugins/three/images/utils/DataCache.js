@@ -65,6 +65,7 @@ export class DataCache {
 
 				const res = await this.fetchItem( ...args, abortController.signal );
 				info.result = res;
+				return res;
 
 			} );
 
@@ -86,19 +87,19 @@ export class DataCache {
 			cache[ key ].count --;
 			if ( cache[ key ].count === 0 ) {
 
-				loadQueue.remove( key );
-
 				const { result, abortController } = cache[ key ];
 				abortController.abort();
 				if ( result instanceof Promise ) {
 
-					result.then( item => this.disposeItem( item ) );
+					result.then( item => this.disposeItem( item ) ).catch( () => {} );
 
 				} else {
 
 					this.disposeItem( result );
 
 				}
+
+				loadQueue.remove( key );
 
 				delete cache[ key ];
 
