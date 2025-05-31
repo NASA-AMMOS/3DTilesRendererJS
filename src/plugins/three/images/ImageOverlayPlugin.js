@@ -356,7 +356,7 @@ export class ImageOverlayPlugin {
 
 							const span = overlay.imageSource.tiling.getTileBounds( x, y, overlayLevel );
 							const tex = overlay.imageSource.get( x, y, overlayLevel );
-							tileComposer.draw( tex, span, null, 0.5 );
+							tileComposer.draw( tex, span, null, overlay.opacity );
 
 						}
 
@@ -404,7 +404,11 @@ class ImageOverlay {
 
 	constructor( options = {} ) {
 
+		const {
+			opacity = 1,
+		} = options;
 		this.imageSource = null;
+		this.opacity = opacity;
 
 	}
 
