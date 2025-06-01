@@ -49,8 +49,9 @@ export function getGeometryRange( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( geomToEllipsoidMatrix );
 		ellipsoid.getPositionToCartographic( _vec, _cart );
 
-		// the latitude calculations are not so stable at the poles so force the lat value to
+		// The latitude calculations are not so stable at the poles so force the lat value to
 		// the mid point to ensure we don't load an unnecessarily large of tiles
+		// NOTE: this can distort the texture a bit at the poles
 		if ( Math.abs( Math.abs( _cart.lat ) - Math.PI / 2 ) < 1e-5 ) {
 
 			_cart.lon = centerLon;

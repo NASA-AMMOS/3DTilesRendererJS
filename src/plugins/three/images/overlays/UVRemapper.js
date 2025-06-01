@@ -1,7 +1,7 @@
-import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial } from 'three';
+import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial, Color } from 'three';
 
 // Class for converting a texture from one UV set up to a target one
-const camera = /* @__PURE__ */new OrthographicCamera();
+const _camera = /* @__PURE__ */new OrthographicCamera();
 export class UVRemapper {
 
 	constructor( renderer ) {
@@ -41,7 +41,7 @@ export class UVRemapper {
 		const currentAutoClear = renderer.autoClear;
 		renderer.autoClear = false;
 		renderer.setRenderTarget( renderTarget );
-		renderer.render( quad, camera );
+		renderer.render( quad, _camera );
 		renderer.setRenderTarget( currentRenderTarget );
 		renderer.autoClear = currentAutoClear;
 
@@ -89,8 +89,8 @@ class RemapMaterial extends ShaderMaterial {
 
 				void main() {
 
-					vUv = toUv;
-					gl_Position = vec4( mix( vec2( - 1 ), vec2( 1 ), fromUv ), 0, 1 );
+					vUv = fromUv;
+					gl_Position = vec4( mix( vec2( - 1 ), vec2( 1 ), toUv ), 0, 1 );
 
 				}
 
