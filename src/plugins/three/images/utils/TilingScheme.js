@@ -172,6 +172,13 @@ export class TilingScheme {
 
 		}
 
+		if ( clampTiles ) {
+
+			bx = clamp( bx, 0, 1 );
+			by = clamp( by, 0, 1 );
+
+		}
+
 		let tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 

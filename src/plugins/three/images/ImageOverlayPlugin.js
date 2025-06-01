@@ -66,11 +66,18 @@ export class ImageOverlayPlugin {
 
 			if ( this.needsUpdate ) {
 
+				this.activeOverlays.sort( ( a, b ) => {
+
+					return a.order - b.order;
+
+				} );
+
 				tiles.forEachLoadedModel( ( scene, tile ) => {
 
 					this.updateTileOverlays( tile );
 
 				} );
+
 				this.needsUpdate = false;
 
 			}
@@ -236,17 +243,9 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// TODO: remove this check
-		if ( tileMeshInfo.has( tile ) ) {
-
-			throw new Error();
-
-		}
-
-		const meshInfo = new Map();
-
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
+		const meshInfo = new Map();
 		await Promise.all( meshes.map( async mesh => {
 
 			const { material, geometry } = mesh;
@@ -317,16 +316,7 @@ export class ImageOverlayPlugin {
 
 			// initialize the texture
 			tileComposer.setRenderTarget( scratchTarget, range );
-
-			if ( map ) {
-
-				tileComposer.draw( mesh.material.map, range );
-
-			} else {
-
-				tileComposer.clear( 0xffffff );
-
-			}
+			tileComposer.clear( 0xffffff, 0 );
 
 			// draw the textures
 			activeOverlays.forEach( ( { overlay } ) => {
@@ -335,14 +325,24 @@ export class ImageOverlayPlugin {
 
 					const span = overlay.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
-					tex.generateMipmaps = false;
-					tileComposer.draw( tex, span, overlay.projection, overlay.opacity );
+					tileComposer.draw( tex, span, overlay.projection, overlay.color, overlay.opacity );
 
 				} );
 
 			} );
 
-			// adjust hte UVs
+			tileComposer.setRenderTarget( target, range );
+			if ( map ) {
+
+				tileComposer.draw( map, range );
+
+			} else {
+
+				tileComposer.clear( 0xffffff );
+
+			}
+
+			// adjust the UVs
 			uvRemapper.setRenderTarget( target );
 			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
 			uvRemapper.draw( scratchTarget.texture );
@@ -372,9 +372,11 @@ class ImageOverlay {
 
 		const {
 			opacity = 1,
+			color = 0xffffff,
 		} = options;
 		this.imageSource = null;
 		this.opacity = opacity;
+		this.color = new Color( color );
 
 	}
 

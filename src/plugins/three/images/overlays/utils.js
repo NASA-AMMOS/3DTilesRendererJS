@@ -3,8 +3,15 @@ import { Vector3 } from 'three';
 // iterates over all present tiles in the given tile set at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, callback ) {
 
+	// pull the bounds in a bit to avoid loading unnecessary tiles
+	let [ minLon, minLat, maxLon, maxLat ] = range;
+	minLat += 1e-5;
+	minLon += 1e-5;
+	maxLat -= 1e-5;
+	maxLon -= 1e-5;
+
 	const clampedLevel = Math.max( Math.min( level, tiling.maxLevel ), tiling.minLevel );
-	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( ...range, clampedLevel );
+	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel );
 	for ( let x = minX; x <= maxX; x ++ ) {
 
 		for ( let y = minY; y <= maxY; y ++ ) {
