@@ -1,10 +1,10 @@
-import { WebGLRenderTarget, Matrix4 } from 'three';
+import { WebGLRenderTarget, Matrix4, Color } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
-import { forEachTileInBounds, getGeometryRange } from './overlays/utils.js';
+import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 export class ImageOverlayPlugin {
@@ -260,7 +260,7 @@ export class ImageOverlayPlugin {
 			}
 
 			// get uvs and range
-			const { range, uv } = getGeometryRange( geometry, _matrix, ellipsoid );
+			const { range, uv } = getGeometryCartographicRange( geometry, _matrix, ellipsoid );
 			meshInfo.set( mesh, {
 				range,
 				level,

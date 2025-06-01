@@ -29,7 +29,7 @@ export function forEachTileInBounds( range, level, tiling, callback ) {
 }
 
 // returns the lat / lon range of the given geometry in addition to the normalized uvs
-export function getGeometryRange( geometry, geomToEllipsoidMatrix, ellipsoid ) {
+export function getGeometryCartographicRange( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 	const _vec = new Vector3();
 	const _cart = {};
