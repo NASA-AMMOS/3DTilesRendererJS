@@ -118,7 +118,7 @@ export class ImageFormatPlugin {
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		this.imageSource.disposeItem( tx, ty, level );
+		this.imageSource.release( tx, ty, level );
 
 	}
 

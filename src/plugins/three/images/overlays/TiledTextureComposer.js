@@ -22,13 +22,14 @@ export class TiledTextureComposer {
 
 	}
 
-	draw( texture, span, projection = null, opacity = 1 ) {
+	draw( texture, span, projection = null, color = 0xffffff, opacity = 1 ) {
 
 		// draw the texture at the given sub range
 		const { range, renderer, quad, renderTarget } = this;
 		const material = quad.material;
 		material.map = texture;
 		material.opacity = opacity;
+		material.color.set( color );
 
 		// prep for mercator projection
 		if ( projection !== null ) {
@@ -41,7 +42,7 @@ export class TiledTextureComposer {
 
 			material.minCart.set( 0, 0 );
 			material.maxCart.set( 1, 1 );
-			material.isMaterial = false;
+			material.isMercator = false;
 
 		}
 
@@ -63,7 +64,7 @@ export class TiledTextureComposer {
 
 	}
 
-	clear( color ) {
+	clear( color, alpha = 1 ) {
 
 		// clear the texture
 		const { renderer, renderTarget } = this;
@@ -71,7 +72,7 @@ export class TiledTextureComposer {
 		const currentClearColor = renderer.getClearColor( _color );
 		const currentClearAlpha = renderer.getClearAlpha();
 
-		renderer.setClearColor( color, 1 );
+		renderer.setClearColor( color, alpha );
 		renderer.setRenderTarget( renderTarget );
 		renderer.clear();
 
@@ -91,6 +92,12 @@ export class TiledTextureComposer {
 
 // Draws the given texture with no depth testing at the given bounds defined by "minRange" and "maxRange"
 class ComposeTextureMaterial extends ShaderMaterial {
+
+	get color() {
+
+		return this.uniforms.color.value;
+
+	}
 
 	get opacity() {
 
@@ -161,6 +168,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 			depthTest: false,
 			transparent: true,
 			uniforms: {
+				color: { value: new Color() },
 				map: { value: null },
 
 				// the normalized [0, 1] range of the target to draw to
@@ -194,6 +202,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 			fragmentShader: /* glsl */`
 
+				uniform vec3 color;
 				uniform float opacity;
 				uniform sampler2D map;
 				varying vec2 vUv;
@@ -233,7 +242,8 @@ class ComposeTextureMaterial extends ShaderMaterial {
 					}
 
 					gl_FragColor = texture( map, uv );
-					gl_FragColor.a = opacity;
+					gl_FragColor.rgb *= color;
+					gl_FragColor.a *= opacity;
 
 				}
 

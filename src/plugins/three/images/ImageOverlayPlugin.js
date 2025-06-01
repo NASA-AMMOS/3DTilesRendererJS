@@ -26,14 +26,13 @@ export class ImageOverlayPlugin {
 		this.activeOverlays = [];
 
 		// internal
-		this.needsUpdate = true;
+		this.needsUpdate = false;
 		this.processQueue = null;
 		this.tiles = null;
 		this.tileComposer = null;
 		this.uvRemapper = null;
 		this.scratchTarget = null;
-		this.rangeMap = new Map();
-		this.textureMap = new Map();
+		this.tileMeshInfo = new Map();
 
 	}
 
@@ -41,8 +40,12 @@ export class ImageOverlayPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		// init the queue
 		this.processQueue = new PriorityQueue();
 		this.processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
+
+		// init texture renderers
 		this.tileComposer = new TiledTextureComposer( this.renderer );
 		this.uvRemapper = new UVRemapper( this.renderer );
 		this.scratchTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
@@ -51,6 +54,7 @@ export class ImageOverlayPlugin {
 			generateMipmaps: false,
 		} );
 
+		// init overlays
 		this.overlays.forEach( ( overlay, order ) => {
 
 			this.addOverlay( overlay, order );
@@ -58,39 +62,58 @@ export class ImageOverlayPlugin {
 		} );
 		this.overlays = null;
 
+		this._onUpdateAfter = () => {
+
+			if ( this.needsUpdate ) {
+
+				tiles.forEachLoadedModel( ( scene, tile ) => {
+
+					this.updateTileOverlays( tile );
+
+				} );
+				this.needsUpdate = false;
+
+			}
+
+		};
+
+		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this.processQueue.add( tile, tile => {
+			this.processQueue.add( tile, async tile => {
 
-				return this.updateTileOverlays( scene, tile );
+				await this.initTileOverlays( scene, tile );
+				this.updateTileOverlays( tile );
 
 			} );
 
 		} );
 
+		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+
 	}
 
 	disposeTile( tile ) {
 
-		const { processQueue, rangeMap, textureMap, activeOverlays } = this;
+		const { processQueue, activeOverlays, tileMeshInfo } = this;
+
+		this.resetTileOverlay( tile );
 
 		// stop any tile loads
 		processQueue.remove( tile );
 
-		// remove all texture references
-		textureMap.delete( tile );
-
 		// decrement all tile references
-		if ( rangeMap.has( tile ) ) {
+		if ( tileMeshInfo.has( tile ) ) {
 
-			const ranges = rangeMap.get( tile );
-			rangeMap.delete( tile );
-			ranges.forEach( range => {
+			const meshInfo = tileMeshInfo.get( tile );
+			tileMeshInfo.delete( tile );
+			meshInfo.forEach( ( { range, level, target } ) => {
 
-				const [ minLon, minLat, maxLon, maxLat, level ] = range;
+				target.dispose();
+
 				activeOverlays.forEach( ( { overlay } ) => {
 
-					forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
+					forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
 						overlay.imageSource.release( tx, ty, tl );
 
@@ -106,9 +129,10 @@ export class ImageOverlayPlugin {
 
 	processTileModel( scene, tile ) {
 
-		return this.processQueue.add( tile, tile => {
+		return this.processQueue.add( tile, async tile => {
 
-			return this.updateTileOverlays( scene, tile );
+			await this.initTileOverlays( scene, tile );
+			this.updateTileOverlays( tile );
 
 		} );
 
@@ -135,6 +159,9 @@ export class ImageOverlayPlugin {
 			this.disposeTile( tile );
 
 		} );
+
+		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+
 
 	}
 
@@ -176,34 +203,25 @@ export class ImageOverlayPlugin {
 	// internal
 	resetTileOverlay( tile ) {
 
-		const { rangeMap, textureMap } = this;
-		rangeMap.delete( tile );
+		const { tileMeshInfo } = this;
+		if ( tileMeshInfo.has( tile ) ) {
 
-		const textures = textureMap.get( tile );
-		textureMap.delete( tile );
-		if ( textures ) {
-
-			textures.forEach( ( map, mesh ) => {
+			const meshInfo = tileMeshInfo.get( tile );
+			meshInfo.forEach( ( { map }, mesh ) => {
 
 				mesh.material.map = map;
-				mesh.material.needsUpdate = true;
 
 			} );
-
-			textures.clear();
 
 		}
 
 	}
 
-	updateTileOverlays( scene, tile ) {
+	async initTileOverlays( scene, tile ) {
 
 		const overlays = this.activeOverlays;
-		const { tileComposer, tiles, rangeMap, textureMap, scratchTarget, resolution, uvRemapper } = this;
+		const { tiles, tileMeshInfo, resolution } = this;
 		const { ellipsoid, group } = tiles;
-
-		// reset the meshes
-		this.resetTileOverlay( tile );
 
 		// find all meshes to project on
 		const meshes = [];
@@ -219,29 +237,20 @@ export class ImageOverlayPlugin {
 		} );
 
 		// TODO: remove this check
-		if ( rangeMap.has( tile ) ) {
+		if ( tileMeshInfo.has( tile ) ) {
 
 			throw new Error();
 
 		}
 
-		const ranges = [];
-		rangeMap.set( tile, ranges );
-
-		const textures = new Map();
-		textureMap.set( tile, textures );
+		const meshInfo = new Map();
 
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
-		return Promise.all( meshes.map( async mesh => {
-
-			// TODO: reset tile material
+		await Promise.all( meshes.map( async mesh => {
 
 			const { material, geometry } = mesh;
 			const { map } = material;
-
-			// save the original applied texture
-			textures.set( mesh, map );
 
 			// compute the local transform and center of the mesh
 			_matrix.copy( mesh.matrixWorld );
@@ -253,7 +262,16 @@ export class ImageOverlayPlugin {
 
 			// get uvs and range
 			const { range, uv } = getGeometryRange( geometry, _matrix, ellipsoid );
-			ranges.push( [ ...range, level ] );
+			meshInfo.set( mesh, {
+				range,
+				level,
+				uv,
+				map,
+				target: new WebGLRenderTarget(
+					resolution, resolution,
+					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false }
+				),
+			} );
 
 			// wait for all textures to load
 			await Promise.all( overlays.flatMap( ( { overlay } ) => {
@@ -270,6 +288,33 @@ export class ImageOverlayPlugin {
 
 			} ) );
 
+		} ) );
+
+		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
+		tileMeshInfo.set( tile, meshInfo );
+
+	}
+
+	updateTileOverlays( tile ) {
+
+		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, activeOverlays } = this;
+
+		// if the tile is not in the mesh info map then the textures are not ready
+		if ( ! tileMeshInfo.has( tile ) ) {
+
+			return;
+
+		}
+
+		// reset the meshes
+		this.resetTileOverlay( tile );
+
+		const meshInfo = tileMeshInfo.get( tile );
+		meshInfo.forEach( ( info, mesh ) => {
+
+			const { map, level, range, uv, target } = info;
+			const { material, geometry } = mesh;
+
 			// initialize the texture
 			tileComposer.setRenderTarget( scratchTarget, range );
 
@@ -284,7 +329,7 @@ export class ImageOverlayPlugin {
 			}
 
 			// draw the textures
-			overlays.forEach( ( { overlay } ) => {
+			activeOverlays.forEach( ( { overlay } ) => {
 
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
@@ -297,19 +342,13 @@ export class ImageOverlayPlugin {
 
 			} );
 
-			// TODO: dispose of this texture on dispose, reuse on reset
-			const finalTarget = new WebGLRenderTarget( resolution, resolution, {
-				depthBuffer: false,
-				stencilBuffer: false,
-				generateMipmaps: false,
-			} );
-
-			uvRemapper.setRenderTarget( finalTarget );
+			// adjust hte UVs
+			uvRemapper.setRenderTarget( target );
 			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
 			uvRemapper.draw( scratchTarget.texture );
-			mesh.material.map = finalTarget.texture;
+			material.map = target.texture;
 
-		} ) );
+		} );
 
 	}
 
