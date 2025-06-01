@@ -10,6 +10,7 @@ export { TilesFadePlugin } from './three/fade/TilesFadePlugin.js';
 export { BatchedTilesPlugin } from './three/batched/BatchedTilesPlugin.js';
 export { TileFlatteningPlugin } from './three/TileFlatteningPlugin.js';
 export { QuantizedMeshPlugin } from './three/QuantizedMeshPlugin.js';
+export * from './three/images/ImageOverlayPlugin.js';
 export * from './three/LoadRegionPlugin.js';
 export * from './three/DebugTilesPlugin.js';
 
