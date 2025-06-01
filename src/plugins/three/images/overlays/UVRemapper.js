@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial, Color } from 'three';
+import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial } from 'three';
 
 // Class for converting a texture from one UV set up to a target one
 const _camera = /* @__PURE__ */new OrthographicCamera();

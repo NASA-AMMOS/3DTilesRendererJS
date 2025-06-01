@@ -23,7 +23,7 @@ export class ImageOverlayPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 		this.overlays = overlays;
-		this._overlays = [];
+		this.activeOverlays = [];
 
 		// internal
 		this.needsUpdate = true;
@@ -72,11 +72,15 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { processQueue, rangeMap, textureMap } = this;
+		const { processQueue, rangeMap, textureMap, activeOverlays } = this;
+
+		// stop any tile loads
 		processQueue.remove( tile );
 
+		// remove all texture references
 		textureMap.delete( tile );
 
+		// decrement all tile references
 		if ( rangeMap.has( tile ) ) {
 
 			const ranges = rangeMap.get( tile );
@@ -84,7 +88,7 @@ export class ImageOverlayPlugin {
 			ranges.forEach( range => {
 
 				const [ minLon, minLat, maxLon, maxLat, level ] = range;
-				this._overlays.forEach( ( { overlay } ) => {
+				activeOverlays.forEach( ( { overlay } ) => {
 
 					forEachTileInBounds( [ minLon, minLat, maxLon, maxLat ], level, overlay.tiling, ( tx, ty, tl ) => {
 
@@ -118,7 +122,7 @@ export class ImageOverlayPlugin {
 
 		this.scratchTarget.dispose();
 
-		this._overlays.forEach( ( { overlay } ) => {
+		this.activeOverlays.forEach( ( { overlay } ) => {
 
 			this.deleteOverlay( overlay );
 
@@ -127,17 +131,7 @@ export class ImageOverlayPlugin {
 		// reset the textures of the meshes
 		this.tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			const textures = this.textureMap.get( tile );
-			scene.traverse( c => {
-
-				if ( textures.has( c ) ) {
-
-					c.material.map = textures.get( c );
-
-				}
-
-			} );
-
+			this.resetTileOverlay( tile );
 			this.disposeTile( tile );
 
 		} );
@@ -156,15 +150,15 @@ export class ImageOverlayPlugin {
 
 		};
 
-		this._overlays.push( { overlay, order } );
+		this.activeOverlays.push( { overlay, order } );
 		this.needsUpdate = true;
 
 	}
 
 	setOverlayOrder( overlay, order ) {
 
-		const index = this._overlays.findIndex( info => info.overlay === overlay );
-		this._overlays[ index ].order = order;
+		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		this.activeOverlays[ index ].order = order;
 		this.needsUpdate = true;
 
 	}
@@ -173,22 +167,47 @@ export class ImageOverlayPlugin {
 
 		overlay.dispose();
 
-		const index = this._overlays.findIndex( info => info.overlay === overlay );
-		this._overlays.splice( index, 1 );
+		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		this.activeOverlays.splice( index, 1 );
 		this.needsUpdate = true;
 
 	}
 
 	// internal
+	resetTileOverlay( tile ) {
+
+		const { rangeMap, textureMap } = this;
+		rangeMap.delete( tile );
+
+		const textures = textureMap.get( tile );
+		textureMap.delete( tile );
+		if ( textures ) {
+
+			textures.forEach( ( map, mesh ) => {
+
+				mesh.material.map = map;
+				mesh.material.needsUpdate = true;
+
+			} );
+
+			textures.clear();
+
+		}
+
+	}
+
 	updateTileOverlays( scene, tile ) {
 
-		const overlays = this._overlays;
+		const overlays = this.activeOverlays;
 		const { tileComposer, tiles, rangeMap, textureMap, scratchTarget, resolution, uvRemapper } = this;
 		const { ellipsoid, group } = tiles;
-		scene.updateMatrixWorld();
+
+		// reset the meshes
+		this.resetTileOverlay( tile );
 
 		// find all meshes to project on
 		const meshes = [];
+		scene.updateMatrixWorld();
 		scene.traverse( c => {
 
 			if ( c.isMesh ) {
@@ -317,6 +336,12 @@ class ImageOverlay {
 		} = options;
 		this.imageSource = null;
 		this.opacity = opacity;
+
+	}
+
+	dispose() {
+
+		this.imageSource.dispose();
 
 	}
 

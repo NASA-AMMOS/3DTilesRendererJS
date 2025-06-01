@@ -46,7 +46,7 @@ export class TiledImageSource extends DataCache {
 
 	}
 
-	dispose( texture ) {
+	disposeItem( texture ) {
 
 		texture.dispose();
 		if ( texture.image instanceof ImageBitmap ) {
