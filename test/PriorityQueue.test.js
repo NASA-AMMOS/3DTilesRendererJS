@@ -196,4 +196,25 @@ describe( 'PriorityQueue', () => {
 
 	} );
 
+	it( 'should reject any promises when removing an item.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.priorityCallback = () => 0;
+		queue.autoUpdate = false;
+		queue.maxJobs = 1;
+
+		let thrown = false;
+		const key = {};
+		const promise = queue
+			.add( key, async () => {} )
+			.catch( () => thrown = true );
+
+		queue.remove( key );
+
+		await promise;
+
+		expect( thrown ).toEqual( true );
+
+	} );
+
 } );

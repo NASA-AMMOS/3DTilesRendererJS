@@ -810,7 +810,11 @@ export class TilesRendererBase {
 
 				}
 
-				if ( res.ok ) {
+				if ( ! ( res instanceof Response ) ) {
+
+					return res;
+
+				} else if ( res.ok ) {
 
 					return extension === 'json' ? res.json() : res.arrayBuffer();
 
