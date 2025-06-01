@@ -49,8 +49,6 @@ export class ProjectionScheme {
 		if ( this.isMercator ) {
 
 			// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
-			// TODO: support partial lat ranges here
-			// const { minLat, maxLat } = this;
 			const ratio = MathUtils.mapLinear( v, 0, 1, - 1, 1 );
 			return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
 

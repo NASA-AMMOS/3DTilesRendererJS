@@ -269,10 +269,10 @@ export class ImageOverlayPlugin {
 
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
-					const span = overlay.imageSource.tiling.getTileBounds( tx, ty, tl );
+					const span = overlay.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
 					tex.generateMipmaps = false;
-					tileComposer.draw( tex, span, null, overlay.opacity );
+					tileComposer.draw( tex, span, overlay.projection, overlay.opacity );
 
 				} );
 

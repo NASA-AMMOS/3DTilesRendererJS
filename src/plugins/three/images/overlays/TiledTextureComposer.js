@@ -4,7 +4,6 @@ const _camera = /* @__PURE__ */ new OrthographicCamera();
 const _color = /* @__PURE__ */ new Color();
 
 // Utility for composing a series of tiled textures together onto a target texture in a given range
-// TODO: support mercator projection
 export class TiledTextureComposer {
 
 	constructor( renderer ) {
@@ -23,19 +22,37 @@ export class TiledTextureComposer {
 
 	}
 
-	draw( texture, span, projection, opacity = 1 ) {
+	draw( texture, span, projection = null, opacity = 1 ) {
 
+		// draw the texture at the given sub range
 		const { range, renderer, quad, renderTarget } = this;
 		const material = quad.material;
 		material.map = texture;
 		material.opacity = opacity;
 
+		// prep for mercator projection
+		if ( projection !== null ) {
+
+			material.minCart.set( span[ 0 ], span[ 1 ] );
+			material.maxCart.set( span[ 2 ], span[ 3 ] );
+			material.isMercator = projection.isMercator;
+
+		} else {
+
+			material.minCart.set( 0, 0 );
+			material.maxCart.set( 1, 1 );
+			material.isMaterial = false;
+
+		}
+
+		// map the range to draw the texture to
 		material.minRange.x = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], - 1, 1 );
 		material.minRange.y = MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], - 1, 1 );
 
 		material.maxRange.x = MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], - 1, 1 );
 		material.maxRange.y = MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], - 1, 1 );
 
+		// draw the texture
 		const currentRenderTarget = renderer.getRenderTarget();
 		const currentAutoClear = renderer.autoClear;
 		renderer.autoClear = false;
@@ -48,6 +65,7 @@ export class TiledTextureComposer {
 
 	clear( color ) {
 
+		// clear the texture
 		const { renderer, renderTarget } = this;
 		const currentRenderTarget = renderer.getRenderTarget();
 		const currentClearColor = renderer.getClearColor( _color );
@@ -88,6 +106,18 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 	}
 
+	get isMercator() {
+
+		return this.uniforms.isMercator.value === 1;
+
+	}
+
+	set isMercator( v ) {
+
+		this.uniforms.isMercator.value = v ? 1 : 0;
+
+	}
+
 	get minRange() {
 
 		return this.uniforms.minRange.value;
@@ -97,6 +127,18 @@ class ComposeTextureMaterial extends ShaderMaterial {
 	get maxRange() {
 
 		return this.uniforms.maxRange.value;
+
+	}
+
+	get minCart() {
+
+		return this.uniforms.minCart.value;
+
+	}
+
+	get maxCart() {
+
+		return this.uniforms.maxCart.value;
 
 	}
 
@@ -120,8 +162,18 @@ class ComposeTextureMaterial extends ShaderMaterial {
 			transparent: true,
 			uniforms: {
 				map: { value: null },
+
+				// the normalized [0, 1] range of the target to draw to
 				minRange: { value: new Vector2() },
 				maxRange: { value: new Vector2() },
+
+				// the cartographic lat / lon range that the texture spans
+				minCart: { value: new Vector2() },
+				maxCart: { value: new Vector2() },
+
+				// whether the texture to draw is using mercator projection
+				isMercator: { value: 0 },
+
 				opacity: { value: 1 },
 			},
 
@@ -145,9 +197,42 @@ class ComposeTextureMaterial extends ShaderMaterial {
 				uniform float opacity;
 				uniform sampler2D map;
 				varying vec2 vUv;
+
+				uniform int isMercator;
+				uniform vec2 minRange;
+				uniform vec2 maxRange;
+
+				uniform vec2 minCart;
+				uniform vec2 maxCart;
+
+				#define PI ${ Math.PI.toFixed( 8 ) }
+
+				vec2 cartToProjMercator( vec2 cart ) {
+
+					float mercatorN = log( tan( ( PI / 4.0 ) + ( cart.y / 2.0 ) ) );
+					vec2 result;
+					result.x = ( cart.x + PI ) / ( 2.0 * PI );
+					result.y = ( 1.0 / 2.0 ) + ( 1.0 * mercatorN / ( 2.0 * PI ) );
+					return result;
+
+				}
+
 				void main() {
 
-					gl_FragColor = texture( map, vUv );
+					vec2 uv = vUv;
+					if ( isMercator == 1 ) {
+
+						vec2 minProj = cartToProjMercator( minCart );
+						vec2 maxProj = cartToProjMercator( maxCart );
+						vec2 proj = cartToProjMercator( mix( minCart, maxCart, uv ) );
+
+						float range = maxProj.y - minProj.y;
+						float offset = proj.y - minProj.y;
+						uv.y = offset / range;
+
+					}
+
+					gl_FragColor = texture( map, uv );
 					gl_FragColor.a = opacity;
 
 				}
