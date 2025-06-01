@@ -103,7 +103,7 @@ export function getGeometryCartographicRange( geometry, geomToEllipsoidMatrix, e
 	}
 
 	return {
-		uv,
+		uv: new Float32Array( uv ),
 		range: [ minLon, minLat, maxLon, maxLat ],
 	};
 
