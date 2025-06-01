@@ -8,9 +8,9 @@ export class ImageOverlayPlugin {
 		resolution?: number,
 	} );
 
-	addOverlay( overlay: ImageOverlay, order?: number );
-	setOverlayOrder( overlay: ImageOverlay, order?: number );
-	deleteOverlay( overlay: ImageOverlay, order?: number );
+	addOverlay( overlay: ImageOverlay, order?: number ): void;
+	setOverlayOrder( overlay: ImageOverlay, order?: number ): void;
+	deleteOverlay( overlay: ImageOverlay, order?: number ): void;
 
 }
 
