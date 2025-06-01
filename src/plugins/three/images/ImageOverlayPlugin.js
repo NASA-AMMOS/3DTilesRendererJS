@@ -7,6 +7,8 @@ import { UVRemapper } from './overlays/UVRemapper.js';
 import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+
+// Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
 
 	constructor( options = {} ) {
@@ -62,6 +64,7 @@ export class ImageOverlayPlugin {
 		} );
 		this.overlays = null;
 
+		// update callback for when overlays have changed
 		this._onUpdateAfter = () => {
 
 			if ( this.needsUpdate ) {
@@ -104,6 +107,7 @@ export class ImageOverlayPlugin {
 
 		const { processQueue, activeOverlays, tileMeshInfo } = this;
 
+		// reset all state
 		this.resetTileOverlay( tile );
 
 		// stop any tile loads
@@ -118,7 +122,9 @@ export class ImageOverlayPlugin {
 
 				target.dispose();
 
-				activeOverlays.forEach( ( { overlay } ) => {
+				activeOverlays.forEach( async ( { overlay } ) => {
+
+					await overlay.whenReady();
 
 					forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
@@ -147,12 +153,12 @@ export class ImageOverlayPlugin {
 
 	dispose() {
 
+		// dispose textures
 		this.tileComposer.dispose();
-
 		this.uvRemapper.dispose();
-
 		this.scratchTarget.dispose();
 
+		// dispose of all overlays
 		this.activeOverlays.forEach( ( { overlay } ) => {
 
 			this.deleteOverlay( overlay );
@@ -173,9 +179,9 @@ export class ImageOverlayPlugin {
 	}
 
 	// public
-	addOverlay( overlay, order ) {
+	addOverlay( overlay, order = null ) {
 
-		const { tiles } = this;
+		const { tiles, activeOverlays } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		overlay.imageSource.fetchData = ( url, options ) => {
 
@@ -184,7 +190,13 @@ export class ImageOverlayPlugin {
 
 		};
 
-		this.activeOverlays.push( { overlay, order } );
+		if ( order === null ) {
+
+			order = activeOverlays.length;
+
+		}
+
+		activeOverlays.push( { overlay, order } );
 		this.needsUpdate = true;
 
 	}
@@ -192,18 +204,25 @@ export class ImageOverlayPlugin {
 	setOverlayOrder( overlay, order ) {
 
 		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
-		this.activeOverlays[ index ].order = order;
-		this.needsUpdate = true;
+		if ( index !== - 1 ) {
+
+			this.activeOverlays[ index ].order = order;
+			this.needsUpdate = true;
+
+		}
 
 	}
 
 	deleteOverlay( overlay ) {
 
-		overlay.dispose();
-
 		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
-		this.activeOverlays.splice( index, 1 );
-		this.needsUpdate = true;
+		if ( index !== - 1 ) {
+
+			overlay.dispose();
+			this.activeOverlays.splice( index, 1 );
+			this.needsUpdate = true;
+
+		}
 
 	}
 
@@ -273,7 +292,9 @@ export class ImageOverlayPlugin {
 			} );
 
 			// wait for all textures to load
-			await Promise.all( overlays.flatMap( ( { overlay } ) => {
+			await Promise.all( overlays.map( async ( { overlay } ) => {
+
+				await overlay.whenReady();
 
 				const promises = [];
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
@@ -283,7 +304,7 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				return promises;
+				return Promise.all( promises );
 
 			} ) );
 
@@ -380,6 +401,10 @@ class ImageOverlay {
 
 	}
 
+	whenReady() {
+
+	}
+
 	dispose() {
 
 		this.imageSource.dispose();
@@ -394,7 +419,13 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
-		this.imageSource.init( options.url );
+		this._whenReady = this.imageSource.init( options.url );
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
 
 	}
 
@@ -406,7 +437,13 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
-		this.imageSource.init( options.url );
+		this._whenReady = this.imageSource.init( options.url );
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
 
 	}
 

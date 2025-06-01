@@ -29,8 +29,8 @@ export class XYZImageSource extends TiledImageSource {
 		// transform the url
 		const { tiling, tileDimension, levels } = this;
 
-		tiling.setProjection( new ProjectionScheme( 'EPSG:3857' ) );
 		tiling.flipY = true;
+		tiling.setProjection( new ProjectionScheme( 'EPSG:3857' ) );
 		tiling.generateLevels( levels, 1, 1, {
 			tilePixelWidth: tileDimension,
 			tilePixelHeight: tileDimension,
