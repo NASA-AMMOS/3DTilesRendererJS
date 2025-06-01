@@ -15,11 +15,13 @@ export class TiledImageSource extends DataCache {
 
 	}
 
+	// async function for initializing the tiled image set
 	init( url ) {
 
 	}
 
-	async processBuffer( buffer ) {
+	// helper for processing the buffer into a texture
+	async processBufferToTexture( buffer ) {
 
 		const blob = new Blob( [ buffer ] );
 		const imageBitmap = await createImageBitmap( blob, {
@@ -36,16 +38,18 @@ export class TiledImageSource extends DataCache {
 
 	}
 
+	// fetch the item with the given key fields
 	fetchItem( ...args ) {
 
 		const url = this.getUrl( ...args );
 		return this
 			.fetchData( url, this.fetchOptions )
 			.then( res => res.arrayBuffer() )
-			.then( buffer => this.processBuffer( buffer ) );
+			.then( buffer => this.processBufferToTexture( buffer ) );
 
 	}
 
+	// dispose of the item that was fetched
 	disposeItem( texture ) {
 
 		texture.dispose();

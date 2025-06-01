@@ -15,6 +15,7 @@ export class TiledTextureComposer {
 
 	}
 
+	// set the target render texture and the range that represents the full span
 	setRenderTarget( renderTarget, range ) {
 
 		this.renderTarget = renderTarget;
@@ -22,6 +23,7 @@ export class TiledTextureComposer {
 
 	}
 
+	// draw the given texture at the given span with the provided projection
 	draw( texture, span, projection = null, color = 0xffffff, opacity = 1 ) {
 
 		// draw the texture at the given sub range
@@ -64,6 +66,7 @@ export class TiledTextureComposer {
 
 	}
 
+	// clear the set target
 	clear( color, alpha = 1 ) {
 
 		// clear the texture
@@ -93,6 +96,7 @@ export class TiledTextureComposer {
 // Draws the given texture with no depth testing at the given bounds defined by "minRange" and "maxRange"
 class ComposeTextureMaterial extends ShaderMaterial {
 
+	// color fields
 	get color() {
 
 		return this.uniforms.color.value;
@@ -113,18 +117,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 	}
 
-	get isMercator() {
-
-		return this.uniforms.isMercator.value === 1;
-
-	}
-
-	set isMercator( v ) {
-
-		this.uniforms.isMercator.value = v ? 1 : 0;
-
-	}
-
+	// the [ - 1, 1 ] NDC ranges to draw the texture at
 	get minRange() {
 
 		return this.uniforms.minRange.value;
@@ -134,6 +127,19 @@ class ComposeTextureMaterial extends ShaderMaterial {
 	get maxRange() {
 
 		return this.uniforms.maxRange.value;
+
+	}
+
+	// the cartographic lat / lon values used for mercator projection adjustments
+	set isMercator( v ) {
+
+		this.uniforms.isMercator.value = v ? 1 : 0;
+
+	}
+
+	get isMercator() {
+
+		return this.uniforms.isMercator.value === 1;
 
 	}
 
@@ -149,6 +155,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 	}
 
+	// access the map being drawn
 	get map() {
 
 		return this.uniforms.map.value;
@@ -214,8 +221,9 @@ class ComposeTextureMaterial extends ShaderMaterial {
 				uniform vec2 minCart;
 				uniform vec2 maxCart;
 
-				#define PI ${ Math.PI.toFixed( 8 ) }
+				#define PI ${ Math.PI.toFixed( 10 ) }
 
+				// convert the cartographic value to the [ 0, 1 ] range using mercator
 				vec2 cartToProjMercator( vec2 cart ) {
 
 					float mercatorN = log( tan( ( PI / 4.0 ) + ( cart.y / 2.0 ) ) );
@@ -231,6 +239,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 					vec2 uv = vUv;
 					if ( isMercator == 1 ) {
 
+						// take the point on the image and find the mercator point to sample
 						vec2 minProj = cartToProjMercator( minCart );
 						vec2 maxProj = cartToProjMercator( maxCart );
 						vec2 proj = cartToProjMercator( mix( minCart, maxCart, uv ) );
@@ -241,6 +250,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 					}
 
+					// sample the texture
 					gl_FragColor = texture( map, uv );
 					gl_FragColor.rgb *= color;
 					gl_FragColor.a *= opacity;

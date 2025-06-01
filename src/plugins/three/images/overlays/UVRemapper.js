@@ -12,12 +12,14 @@ export class UVRemapper {
 
 	}
 
+	// set the target render texture
 	setRenderTarget( renderTarget ) {
 
 		this.renderTarget = renderTarget;
 
 	}
 
+	// set the source uv and the target uv layout to resample textures to
 	setUVs( fromUv, toUv, index ) {
 
 		const { geometry } = this.quad;
@@ -31,6 +33,7 @@ export class UVRemapper {
 
 	}
 
+	// draw the texture to the target with the adjust uv target
 	draw( texture ) {
 
 		const { renderer, quad, renderTarget } = this;

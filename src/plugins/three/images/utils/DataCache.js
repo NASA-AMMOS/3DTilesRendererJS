@@ -1,5 +1,3 @@
-import { PriorityQueue } from '../../../../utilities/PriorityQueue.js';
-
 function hash( ...args ) {
 
 	return args.join( '_' );
@@ -7,20 +5,20 @@ function hash( ...args ) {
 }
 
 // class for retrieving and locking data being requested
+// "fetchItem" and "disposeItem" should be implemented
 export class DataCache {
 
 	constructor() {
 
-		this.loadQueue = new PriorityQueue();
-		this.loadQueue.priorityCallback = () => 0;
 		this.cache = {};
 
 	}
 
+	// overridable
 	fetchItem() {}
 	disposeItem() {}
 
-	// fetches the associated data if it doesn't exist and increments the lock counter
+	// sets the data in the cache explicitly without need to load
 	setData( ...args ) {
 
 		const { cache } = this;
@@ -28,7 +26,7 @@ export class DataCache {
 		const key = hash( ...args );
 		if ( key in cache ) {
 
-			throw new Error();
+			throw new Error( `DataCache: "${ key }" is already present.` );
 
 		} else {
 
@@ -44,6 +42,7 @@ export class DataCache {
 
 	}
 
+	// fetches the associated data if it doesn't exist and increments the lock counter
 	lock( ...args ) {
 
 		const { cache } = this;
@@ -61,13 +60,13 @@ export class DataCache {
 				count: 1,
 			};
 
-			info.result = this.loadQueue.add( key, async () => {
+			info.result = this.fetchItem( ...args, abortController.signal )
+				.then( res => {
 
-				const res = await this.fetchItem( ...args, abortController.signal );
-				info.result = res;
-				return res;
+					info.result = res;
+					return res;
 
-			} );
+				} );
 
 			this.cache[ key ] = info;
 
@@ -80,17 +79,24 @@ export class DataCache {
 	// decrements the lock counter for the item and deletes the item if it has reached zero
 	release( ...args ) {
 
-		const { cache, loadQueue } = this;
+		const { cache } = this;
 		const key = hash( ...args );
 		if ( key in cache ) {
 
-			cache[ key ].count --;
-			if ( cache[ key ].count === 0 ) {
+			// decrement the lock
+			const info = cache[ key ];
+			info.count --;
 
-				const { result, abortController } = cache[ key ];
+			// if the item is no longer being used
+			if ( info.count === 0 ) {
+
+				const { result, abortController } = info;
 				abortController.abort();
+
+				// dispose of the object even if it still is in progress
 				if ( result instanceof Promise ) {
 
+					// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
 					result.then( item => this.disposeItem( item ) ).catch( () => {} );
 
 				} else {
@@ -98,8 +104,6 @@ export class DataCache {
 					this.disposeItem( result );
 
 				}
-
-				loadQueue.remove( key );
 
 				delete cache[ key ];
 
@@ -118,7 +122,7 @@ export class DataCache {
 
 		const { cache } = this;
 		const key = hash( ...args );
-		if ( cache[ key ] ) {
+		if ( key in cache ) {
 
 			return cache[ key ].result;
 
@@ -133,16 +137,15 @@ export class DataCache {
 	// dispose all items
 	dispose() {
 
-		const { cache, loadQueue } = this;
+		const { cache } = this;
 		for ( const key in cache ) {
-
-			loadQueue.remove( key );
 
 			const { abortController, result } = cache[ key ];
 			abortController.abort();
+
 			if ( result instanceof Promise ) {
 
-				result.then( item => this.disposeItem( item ) );
+				result.then( item => this.disposeItem( item ) ).catch( () => {} );
 
 			} else {
 
