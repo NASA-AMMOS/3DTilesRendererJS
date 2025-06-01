@@ -1,5 +1,4 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Texture } from 'three';
-import { TilingScheme } from './utils/TilingScheme.js';
+import { Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -8,19 +7,26 @@ export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 // Base class for supporting tiled images with a consistent size / resolution per tile
 export class ImageFormatPlugin {
 
+	get tiling() {
+
+		return this.imageSource.tiling;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
 			pixelSize = 0.01,
 			center = false,
 			useRecommendedSettings = true,
+			imageSource = null,
 		} = options;
 
 		this.priority = - 10;
 		this.tiles = null;
 
 		// tiling scheme
-		this.tiling = new TilingScheme();
+		this.imageSource = imageSource;
 
 		// options
 		this.pixelSize = pixelSize;
@@ -41,21 +47,35 @@ export class ImageFormatPlugin {
 
 		this.tiles = tiles;
 
+		this.imageSource.fetchOptions = tiles.fetchOptions;
+		this.imageSource.fetchData = ( url, options ) => {
+
+			tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
+			return tiles.invokeOnePlugin( plugin => plugin !== this && plugin.fetchData && plugin.fetchData( url, options ) );
+
+		};
+
+	}
+
+	async loadRootTileSet() {
+
+		const { tiles, imageSource } = this;
+		let url = tiles.rootURL;
+		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
+		await imageSource.init( url );
+
+		return this.getTileset( url );
+
 	}
 
 	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
 		// Construct texture
-		const blob = new Blob( [ buffer ] );
-		const imageBitmap = await createImageBitmap( blob, {
-			premultiplyAlpha: 'none',
-			colorSpaceConversion: 'none',
-			imageOrientation: 'flipY',
-		} );
-		const texture = new Texture( imageBitmap );
-		texture.generateMipmaps = false;
-		texture.colorSpace = SRGBColorSpace;
-		texture.needsUpdate = true;
+		const tx = tile[ TILE_X ];
+		const ty = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		const texture = await this.imageSource.processBuffer( buffer );
+		this.imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh
 		let sx = 1, sy = 1;
@@ -90,6 +110,15 @@ export class ImageFormatPlugin {
 			this.expandChildren( tile );
 
 		}
+
+	}
+
+	disposeTile( tile ) {
+
+		const tx = tile[ TILE_X ];
+		const ty = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		this.imageSource.release( tx, ty, level );
 
 	}
 
@@ -143,7 +172,7 @@ export class ImageFormatPlugin {
 
 	getUrl( x, y, level ) {
 
-		// override
+		return this.imageSource.getUrl( x, y, level );
 
 	}
 
