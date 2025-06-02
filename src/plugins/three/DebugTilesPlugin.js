@@ -451,7 +451,6 @@ export class DebugTilesPlugin {
 
 							c.material = new MeshBasicMaterial( {
 								color: c[ ORIGINAL_MATERIAL ].color,
-								flatShading: c[ ORIGINAL_MATERIAL ].flatShading,
 								map: c[ ORIGINAL_MATERIAL ].map
 							} );
 
