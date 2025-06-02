@@ -44,6 +44,7 @@ let box, sphere;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent, geospatialRotationParent;
 let statsContainer, stats;
+const colorModeParam = new URLSearchParams( window.location.search ).get( 'colorMode' );
 
 const params = {
 
@@ -64,7 +65,7 @@ const params = {
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
-	colorMode: 0,
+	colorMode: colorModeParam in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ colorModeParam ] : DebugTilesPlugin.ColorModes.NONE,
 	showThirdPerson: false,
 	showSecondView: false,
 	reload: reinstantiateTiles,
