@@ -12,7 +12,6 @@ export const IS_LEAF : ColorMode;
 export const RANDOM_COLOR : ColorMode;
 export const RANDOM_NODE_COLOR: ColorMode;
 export const CUSTOM_COLOR: ColorMode;
-export const UNLIT: ColorMode;
 export class DebugTilesPlugin {
 
 	static ColorModes: typeof ColorMode;
@@ -23,6 +22,7 @@ export class DebugTilesPlugin {
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;
 	colorMode : ColorMode;
+	unlit: boolean;
 	maxDebugDepth : number;
 	maxDebugDistance : number;
 	maxDebugError : number;
