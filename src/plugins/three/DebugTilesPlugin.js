@@ -41,6 +41,7 @@ const RANDOM_COLOR = 7;
 const RANDOM_NODE_COLOR = 8;
 const CUSTOM_COLOR = 9;
 const LOAD_ORDER = 10;
+const UNLIT = 11;
 
 const ColorModes = Object.freeze( {
 	NONE,
@@ -54,6 +55,7 @@ const ColorModes = Object.freeze( {
 	RANDOM_NODE_COLOR,
 	CUSTOM_COLOR,
 	LOAD_ORDER,
+	UNLIT,
 } );
 
 export class DebugTilesPlugin {
@@ -444,6 +446,14 @@ export class DebugTilesPlugin {
 							pointsMaterial.size = originalMaterial.size;
 							pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
 							c.material = pointsMaterial;
+
+						} else if ( colorMode === UNLIT ) {
+
+							c.material = new MeshStandardMaterial( {
+								color: c[ ORIGINAL_MATERIAL ].color,
+								flatShading: c[ ORIGINAL_MATERIAL ].flatShading,
+								map: c[ ORIGINAL_MATERIAL ].map
+							} );
 
 						} else {
 
