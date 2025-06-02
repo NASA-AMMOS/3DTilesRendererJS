@@ -36,6 +36,7 @@ const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
 const hashUrl = window.location.hash.replace( /^#/, '' );
+const urlParams = new URLSearchParams( window.location.search );
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -44,7 +45,6 @@ let box, sphere;
 let raycaster, mouse, rayIntersect, lastHoveredElement;
 let offsetParent, geospatialRotationParent;
 let statsContainer, stats;
-const colorModeParam = new URLSearchParams( window.location.search ).get( 'colorMode' );
 
 const params = {
 
@@ -59,13 +59,13 @@ const params = {
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
-	up: new URLSearchParams( window.location.search ).get( 'up' ) ?? hashUrl ? '+Z' : '+Y',
+	up: urlParams.get( 'up' ) ?? hashUrl ? '+Z' : '+Y',
 	enableDebug: true,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
-	colorMode: colorModeParam in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ colorModeParam ] : DebugTilesPlugin.ColorModes.NONE,
+	colorMode: urlParams.get( 'colorMode' ) in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ urlParams.get( 'colorMode' ) ] : DebugTilesPlugin.ColorModes.NONE,
 	showThirdPerson: false,
 	showSecondView: false,
 	reload: reinstantiateTiles,
