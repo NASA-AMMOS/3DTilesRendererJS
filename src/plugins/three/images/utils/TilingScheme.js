@@ -1,5 +1,11 @@
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
+function clamp( x, min, max ) {
+
+	return Math.min( Math.max( x, min ), max );
+
+}
+
 export class TilingScheme {
 
 	get levelCount() {
@@ -152,19 +158,59 @@ export class TilingScheme {
 	}
 
 	// query functions
-	getTileAtPoint( bx, by, level ) {
+	getTileAtPoint( bx, by, level, normalized = false, clampTiles = true ) {
 
-		const { tileCountX, tileCountY, projection } = this.getLevel( level );
+		const { projection, flipY } = this;
+		const { tileCountX, tileCountY } = this.getLevel( level );
 		const xStride = 1 / tileCountX;
 		const yStride = 1 / tileCountY;
 
-		bx = projection.convertLongitudeToValue( bx );
-		by = projection.convertLatitudeToValue( by );
+		if ( projection && ! normalized ) {
 
-		return [
-			Math.floor( bx / xStride ),
-			Math.floor( by / yStride ),
-		];
+			bx = projection.convertLongitudeToProjection( bx );
+			by = projection.convertLatitudeToProjection( by );
+
+		}
+
+		if ( clampTiles ) {
+
+			bx = clamp( bx, 0, 1 );
+			by = clamp( by, 0, 1 );
+
+		}
+
+		let tx = Math.floor( bx / xStride );
+		let ty = Math.floor( by / yStride );
+
+		if ( flipY ) {
+
+			ty = tileCountY - 1 - ty;
+
+		}
+
+		if ( clampTiles ) {
+
+			tx = clamp( tx, 0, tileCountX - 1 );
+			ty = clamp( ty, 0, tileCountY - 1 );
+
+		}
+
+		return [ tx, ty ];
+
+	}
+
+	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false, clampTiles = true ) {
+
+		const minTile = this.getTileAtPoint( minX, minY, level, normalized, clampTiles );
+		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, clampTiles );
+
+		if ( this.flipY ) {
+
+			[ minTile[ 1 ], maxTile[ 1 ] ] = [ maxTile[ 1 ], minTile[ 1 ] ];
+
+		}
+
+		return [ ...minTile, ...maxTile ];
 
 	}
 

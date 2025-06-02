@@ -556,7 +556,7 @@ Sets the resolution being rendered to for the given camera via renderer which ac
 forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : void
 ```
 
-Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
+Fires the callback for every loaded scene in the hierarchy with the associated tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
 
 ### .registerPlugin
 
@@ -605,7 +605,7 @@ Disposes of all the tiles in the renderer. Calls dispose on all materials, textu
 
 ## PriorityQueue
 
-Piority-sorted queue to prioritize file downloads and parsing.
+Priority-sorted queue to prioritize file downloads and parsing.
 
 ### .maxJobs
 
@@ -629,7 +629,7 @@ Function to derive the job priority of the given item. Higher priority values ge
 schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 ```
 
-A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
+A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overridden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
 
 ## LRUCache
 
@@ -716,7 +716,7 @@ Returns an array of data associated with the `key` passed into the function. Ret
 
 # LICENSE
 
-The software is available under the [Apache V2.0 license](../LICENSE.txt).
+The software is available under the [Apache V2.0 license](LICENSE).
 
 Copyright © 2020 California Institute of Technology. ALL RIGHTS
 RESERVED. United States Government Sponsorship Acknowledged.

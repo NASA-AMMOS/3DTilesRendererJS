@@ -417,10 +417,7 @@ export class QuantizedMeshPlugin {
 		// if this is our custom url indicating a tile split then return fake response
 		if ( /tile_split/.test( uri ) ) {
 
-			return {
-				ok: true,
-				arrayBuffer: async () => null,
-			};
+			return null;
 
 		}
 
