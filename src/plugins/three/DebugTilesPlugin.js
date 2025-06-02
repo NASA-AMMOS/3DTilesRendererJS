@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 import { traverseAncestors, traverseSet } from '../../base/traverseFunctions.js';
@@ -449,7 +449,7 @@ export class DebugTilesPlugin {
 
 						} else if ( colorMode === UNLIT ) {
 
-							c.material = new MeshStandardMaterial( {
+							c.material = new MeshBasicMaterial( {
 								color: c[ ORIGINAL_MATERIAL ].color,
 								flatShading: c[ ORIGINAL_MATERIAL ].flatShading,
 								map: c[ ORIGINAL_MATERIAL ].map
