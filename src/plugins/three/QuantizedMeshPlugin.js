@@ -41,7 +41,7 @@ function isTileAvailable( available, level, x, y ) {
 function getMaxLevel( layer ) {
 
 	const { available = null, maxzoom = null } = layer;
-	return maxzoom === null ? available.length : maxzoom;
+	return maxzoom === null ? available.length - 1 : maxzoom;
 
 }
 
@@ -183,7 +183,7 @@ export class QuantizedMeshPlugin {
 
 				const { tileCountX, tileCountY } = projection;
 				tiling.setProjection( projection );
-				tiling.generateLevels( getMaxLevel( json ), tileCountX, tileCountY );
+				tiling.generateLevels( getMaxLevel( json ) + 1, tileCountX, tileCountY );
 
 				// initialize children
 				const children = [];
@@ -417,7 +417,7 @@ export class QuantizedMeshPlugin {
 		// if this is our custom url indicating a tile split then return fake response
 		if ( /tile_split/.test( uri ) ) {
 
-			return null;
+			return new ArrayBuffer();
 
 		}
 
