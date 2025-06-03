@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Matrix4, Color } from 'three';
+import { WebGLRenderTarget, Matrix4, Color, SRGBColorSpace } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -54,6 +54,7 @@ export class ImageOverlayPlugin {
 			depthBuffer: false,
 			stencilBuffer: false,
 			generateMipmaps: false,
+			colorSpace: SRGBColorSpace,
 		} );
 
 		// init overlays
@@ -287,7 +288,7 @@ export class ImageOverlayPlugin {
 				map,
 				target: new WebGLRenderTarget(
 					resolution, resolution,
-					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false }
+					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
 				),
 			} );
 

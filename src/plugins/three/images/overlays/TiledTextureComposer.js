@@ -1,4 +1,4 @@
-import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, Mesh, Color } from 'three';
+import { ShaderMaterial, MathUtils, Vector2, PlaneGeometry, OrthographicCamera, Mesh, Color, DoubleSide } from 'three';
 
 const _camera = /* @__PURE__ */ new OrthographicCamera();
 const _color = /* @__PURE__ */ new Color();
@@ -174,6 +174,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 			depthWrite: false,
 			depthTest: false,
 			transparent: true,
+			side: DoubleSide,
 			uniforms: {
 				color: { value: new Color() },
 				map: { value: null },

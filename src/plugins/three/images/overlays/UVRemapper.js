@@ -1,4 +1,4 @@
-import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial } from 'three';
+import { BufferGeometry, BufferAttribute, OrthographicCamera, Mesh, ShaderMaterial, DoubleSide } from 'three';
 
 // Class for converting a texture from one UV set up to a target one
 const _camera = /* @__PURE__ */new OrthographicCamera();
@@ -80,6 +80,7 @@ class RemapMaterial extends ShaderMaterial {
 			depthWrite: false,
 			depthTest: false,
 			transparent: true,
+			side: DoubleSide,
 			uniforms: {
 				map: { value: null },
 			},
