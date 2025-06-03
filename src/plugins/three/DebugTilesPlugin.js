@@ -860,7 +860,7 @@ export class DebugTilesPlugin {
 				if ( colorMode === NONE ) {
 
 					c.material.map = originalMaterial.map;
-					c.material.color.set( originalMaterial.map );
+					c.material.color.set( originalMaterial.color );
 
 				}
 
