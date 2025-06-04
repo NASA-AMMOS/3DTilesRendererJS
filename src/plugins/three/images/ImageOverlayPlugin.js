@@ -59,9 +59,15 @@ export class ImageOverlayPlugin {
 		} );
 
 		// init overlays
-		const overlays = this.overlays;
+		const { overlays, overlayOrder } = this;
 		this.overlays = [];
 		overlays.forEach( ( overlay, order ) => {
+
+			if ( overlayOrder.has( overlay ) ) {
+
+				order = overlayOrder.overlay;
+
+			}
 
 			this.addOverlay( overlay, order );
 
