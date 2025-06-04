@@ -161,6 +161,20 @@ export class ImageOverlayPlugin {
 
 	}
 
+	getAttributions( target ) {
+
+		this.overlays.forEach( overlay => {
+
+			if ( overlay.opacity > 0 ) {
+
+				overlay.getAttributions( target );
+
+			}
+
+		} );
+
+	}
+
 	dispose() {
 
 		// dispose textures
@@ -414,6 +428,10 @@ class ImageOverlay {
 
 	}
 
+	getAttributions( target ) {
+
+	}
+
 	dispose() {
 
 		this.imageSource.dispose();
@@ -483,6 +501,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
 		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this._attributions = [];
 
 	}
 
@@ -493,6 +512,11 @@ export class CesiumIonOverlay extends ImageOverlay {
 			.refreshToken()
 			.then( json => {
 
+				this._attributions = json.attributions.map( att => ( {
+					value: att.html,
+					type: 'html',
+					collapsible: att.collapsible,
+				} ) );
 				return this.imageSource.init( json.url );
 
 			} );
@@ -502,6 +526,12 @@ export class CesiumIonOverlay extends ImageOverlay {
 	whenReady() {
 
 		return this._whenReady;
+
+	}
+
+	getAttributions( target ) {
+
+		target.push( ...this._attributions );
 
 	}
 
