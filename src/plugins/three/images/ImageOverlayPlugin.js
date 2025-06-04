@@ -369,6 +369,7 @@ export class ImageOverlayPlugin {
 			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
 			uvRemapper.draw( scratchTarget.texture );
 			material.map = target.texture;
+			map.dispose();
 
 		} );
 
