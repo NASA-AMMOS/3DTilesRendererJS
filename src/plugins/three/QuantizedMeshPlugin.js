@@ -104,8 +104,8 @@ export class QuantizedMeshPlugin {
 	// Plugin function
 	init( tiles ) {
 
-		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
-		tiles.fetchOptions.header.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
+		tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+		tiles.fetchOptions.headers.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
 
 		if ( this.useRecommendedSettings ) {
 
@@ -174,7 +174,7 @@ export class QuantizedMeshPlugin {
 				// extensions
 				if ( extensions.length > 0 ) {
 
-					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
+					tiles.fetchOptions.headers[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
 
 				}
 
