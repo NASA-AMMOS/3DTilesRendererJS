@@ -163,7 +163,6 @@ export class DataCache {
 				delete cache[ key ];
 				this.count --;
 				this.cachedBytes -= info.bytes;
-				console.log()
 
 			}
 
