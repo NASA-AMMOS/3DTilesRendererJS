@@ -5,6 +5,7 @@ import * as THREE from 'three';
 export function estimateBytesUsed( object ) {
 
 	// NOTE: This is for backwards compatibility and should be removed later
+	// deprecated: remove in next major release
 	const { TextureUtils } = THREE;
 	if ( ! TextureUtils ) {
 
