@@ -39,3 +39,16 @@ export class TMSTilesOverlay extends ImageOverlay {
 	} );
 
 }
+
+export class CesiumIonOverlay extends ImageOverlay {
+
+	constructor( options: {
+		assetId: number | string,
+		apiToken: string,
+		autoRefreshToken?: boolean
+
+		color: number | Color,
+		opacity: number,
+	} );
+
+}

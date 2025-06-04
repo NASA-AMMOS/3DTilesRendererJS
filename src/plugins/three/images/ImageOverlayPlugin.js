@@ -185,6 +185,7 @@ export class ImageOverlayPlugin {
 
 		const { tiles, activeOverlays } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
+		overlay.init();
 
 		if ( order === null ) {
 
@@ -416,7 +417,13 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
-		this._whenReady = this.imageSource.init( options.url );
+		this.url = options.url;
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init( this.url );
 
 	}
 
@@ -434,7 +441,13 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
-		this._whenReady = this.imageSource.init( options.url );
+		this.url = options.url;
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init( this.url );
 
 	}
 
@@ -459,6 +472,11 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
 		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+
+	}
+
+	init() {
+
 		this._whenReady = this
 			.auth
 			.refreshToken()
