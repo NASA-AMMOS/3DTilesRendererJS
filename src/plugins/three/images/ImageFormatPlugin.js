@@ -74,7 +74,7 @@ export class ImageFormatPlugin {
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const texture = await this.imageSource.processBuffer( buffer );
+		const texture = await this.imageSource.processBufferToTexture( buffer );
 		this.imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh

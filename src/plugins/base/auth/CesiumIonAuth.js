@@ -28,7 +28,7 @@ export class CesiumIonAuth {
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 			await this.refreshToken( options );
-			return fetch( this.preprocessURL( url ), options );
+			return fetch( url, fetchOptions );
 
 		} else {
 

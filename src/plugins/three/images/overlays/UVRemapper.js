@@ -48,6 +48,8 @@ export class UVRemapper {
 		renderer.setRenderTarget( currentRenderTarget );
 		renderer.autoClear = currentAutoClear;
 
+		material.map = null;
+
 	}
 
 	dispose() {
@@ -122,7 +124,7 @@ function ensureBufferAttribute( buffer ) {
 
 	if ( buffer instanceof BufferAttribute ) {
 
-		return buffer;
+		return buffer.clone();
 
 	} else if ( buffer instanceof Float32Array ) {
 
