@@ -407,7 +407,8 @@ export class TilesRendererBase {
 	dispose() {
 
 		// dispose of all the plugins
-		this.plugins.forEach( plugin => {
+		const plugins = [ ...this.plugins ];
+		plugins.forEach( plugin => {
 
 			this.unregisterPlugin( plugin );
 
