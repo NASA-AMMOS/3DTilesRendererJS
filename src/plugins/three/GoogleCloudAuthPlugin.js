@@ -133,6 +133,7 @@ export class GoogleCloudAuthPlugin {
 		uri = new URL( uri );
 		if ( /^http/.test( uri.protocol ) ) {
 
+			uri.searchParams.delete( 'key' );
 			uri.searchParams.append( 'key', this.apiToken );
 			if ( this.sessionToken !== null ) {
 

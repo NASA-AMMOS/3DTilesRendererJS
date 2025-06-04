@@ -101,7 +101,16 @@ export class CesiumIonAuthPlugin {
 
 	fetchData( uri, options ) {
 
-		return this.auth.fetch( uri, options );
+		const tiles = this.tiles;
+		if ( tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) !== null ) {
+
+			return null;
+
+		} else {
+
+			return this.auth.fetch( uri, options );
+
+		}
 
 	}
 
