@@ -184,7 +184,7 @@ export class ImageOverlayPlugin {
 
 		// dispose of all overlays
 		const overlays = [ ...this.overlays ];
-		overlays.forEach( ( { overlay } ) => {
+		overlays.forEach( overlay => {
 
 			this.deleteOverlay( overlay );
 
@@ -224,7 +224,7 @@ export class ImageOverlayPlugin {
 
 	setOverlayOrder( overlay, order ) {
 
-		const index = this.overlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
 			this.overlayOrder.set( overlay, order );
@@ -236,7 +236,7 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const index = this.overlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
 			overlay.dispose();
