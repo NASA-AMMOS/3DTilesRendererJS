@@ -15,6 +15,7 @@ export class CesiumIonAuth {
 
 		await this._tokenRefreshPromise;
 
+		// insert the authorization token
 		const fetchOptions = { ...options };
 		fetchOptions.headers = fetchOptions.headers || {};
 		fetchOptions.headers = {
@@ -22,6 +23,7 @@ export class CesiumIonAuth {
 			Authorization: this._bearerToken,
 		};
 
+		// try to refresh the token if we failed ot render
 		const res = await fetch( url, fetchOptions );
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
