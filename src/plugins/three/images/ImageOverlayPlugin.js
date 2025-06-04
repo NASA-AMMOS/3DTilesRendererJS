@@ -5,6 +5,7 @@ import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
 import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
+import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -184,12 +185,6 @@ export class ImageOverlayPlugin {
 
 		const { tiles, activeOverlays } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
-		overlay.imageSource.fetchData = ( url, options ) => {
-
-			tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-			return tiles.invokeOnePlugin( plugin => plugin !== this && plugin.fetchData && plugin.fetchData( url, options ) );
-
-		};
 
 		if ( order === null ) {
 
@@ -457,7 +452,27 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		super( options );
 
-		// TODO: need to deal with authentication
+		const { apiToken, authRefreshToken, assetId } = options;
+		this.assetId = assetId;
+		this.auth = new CesiumIonAuth( { apiToken, authRefreshToken } );
+		this.imageSource = new TMSImageSource( options );
+
+		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
+		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this._whenReady = this
+			.auth
+			.refreshToken()
+			.then( json => {
+
+				return this.imageSource.init( json.url );
+
+			} );
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
 
 	}
 
