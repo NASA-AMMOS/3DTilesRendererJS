@@ -193,7 +193,7 @@ export class GoogleCloudAuthPlugin {
 
 					}
 
-					res.json();
+					return res.json();
 
 				} )
 				.then( res => {
