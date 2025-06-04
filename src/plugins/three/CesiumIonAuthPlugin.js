@@ -184,10 +184,4 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	dispose() {
-
-		this.auth.dispose();
-
-	}
-
 }
