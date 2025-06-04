@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add "ImageOverlayPlugin".
 - DebugTilesRenderer: Added "unlit" option.
 
+### Fixed
+- TilesRendererBase: Fixed plugins not being disposed of correctly.
+
 ## [0.4.10] - 2025.05.31
 ### Fixed
 - Fixed calls to `updateWorldMatrix` causing the matrixWorldInverse field to become out of sync.
