@@ -14,13 +14,15 @@ export const RANDOM_NODE_COLOR: ColorMode;
 export const CUSTOM_COLOR: ColorMode;
 export class DebugTilesPlugin {
 
+	static ColorModes: typeof ColorMode;
+
 	enabled: boolean;
 
 	displayBoxBounds : boolean;
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;
 	colorMode : ColorMode;
-
+	unlit: boolean;
 	maxDebugDepth : number;
 	maxDebugDistance : number;
 	maxDebugError : number;
