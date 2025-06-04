@@ -1,26 +1,47 @@
+import { CesiumIonAuth } from '../base/auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
 export class CesiumIonAuthPlugin {
 
+	get apiToken() {
+
+		return this.auth.apiToken;
+
+	}
+
+	set apiToken( v ) {
+
+		this.auth.apiToken = v;
+
+	}
+
+	get autoRefreshToken() {
+
+		return this.auth.autoRefreshToken;
+
+	}
+
+	set autoRefreshToken( v ) {
+
+		this.auth.autoRefreshToken = v;
+
+	}
+
 	constructor( { apiToken, assetId = null, autoRefreshToken = false, useRecommendedSettings = true } ) {
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.priority = - Infinity;
+		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
 
-		this.apiToken = apiToken;
 		this.assetId = assetId;
 		this.autoRefreshToken = autoRefreshToken;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.tiles = null;
-		this.endpointURL = null;
 
-		this._bearerToken = null;
 		this._tileSetVersion = - 1;
-		this._tokenRefreshPromise = null;
 		this._attributions = [];
-		this._disposed = false;
 
 	}
 
@@ -33,7 +54,7 @@ export class CesiumIonAuthPlugin {
 		}
 
 		this.tiles = tiles;
-		this.endpointURL = tiles.rootURL;
+		this.auth.authURL = tiles.rootURL;
 
 		// reset the tiles in case this plugin was removed and re-added
 		tiles.resetFailedTiles();
@@ -44,10 +65,23 @@ export class CesiumIonAuthPlugin {
 
 		// ensure we have an up-to-date token and root url, then trigger the internal
 		// root tile set load function
-		return this._refreshToken()
-			.then( () => {
+		return this
+			.auth
+			.refreshToken()
+			.then( json => {
 
+				this._initializeFromAsset( json );
 				return this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.loadRootTileSet && plugin.loadRootTileSet() );
+
+			} )
+			.catch( error => {
+
+				this.tiles.dispatchEvent( {
+					type: 'load-error',
+					tile: null,
+					error,
+					url: this.auth.authURL,
+				} );
 
 			} );
 
@@ -67,38 +101,7 @@ export class CesiumIonAuthPlugin {
 
 	fetchData( uri, options ) {
 
-		const tiles = this.tiles;
-		if ( tiles.getPluginByName( 'GOOGLE_CLOUD_AUTH_PLUGIN' ) !== null ) {
-
-			return null;
-
-		} else {
-
-			return Promise.resolve().then( async () => {
-
-				// wait for the token to refresh if loading
-				if ( this._tokenRefreshPromise !== null ) {
-
-					await this._tokenRefreshPromise;
-					uri = this.preprocessURL( uri );
-
-				}
-
-				const res = await fetch( uri, options );
-				if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
-
-					await this._refreshToken( options );
-					return fetch( this.preprocessURL( uri ), options );
-
-				} else {
-
-					return res;
-
-				}
-
-			} );
-
-		}
+		return this.auth.fetch( uri, options );
 
 	}
 
@@ -112,127 +115,69 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	_refreshToken( options ) {
+	_initializeFromAsset( json ) {
 
-		if ( this._tokenRefreshPromise === null ) {
+		const tiles = this.tiles;
+		if ( 'externalType' in json ) {
 
-			// construct the url to fetch the endpoint
-			const url = new URL( this.endpointURL );
-			url.searchParams.append( 'access_token', this.apiToken );
+			const url = new URL( json.options.url );
+			tiles.rootURL = json.options.url;
 
-			this._tokenRefreshPromise = fetch( url, options )
-				.then( res => {
+			// if the tile set is "external" then assume it's a google API tile set
+			tiles.registerPlugin( new GoogleCloudAuthPlugin( {
+				apiToken: url.searchParams.get( 'key' ),
+				autoRefreshToken: this.autoRefreshToken,
+				useRecommendedSettings: this.useRecommendedSettings,
+			} ) );
 
-					if ( this._disposed ) {
+		} else {
 
-						return null;
+			// GLTF
+			// CZML
+			// KML
+			// GEOJSON
+			if ( json.type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
 
-					}
+				tiles.registerPlugin( new QuantizedMeshPlugin( {
+					useRecommendedSettings: this.useRecommendedSettings,
+				} ) );
 
-					if ( ! res.ok ) {
+			} else if ( json.type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
 
-						throw new Error( `CesiumIonAuthPlugin: Failed to load data with error code ${ res.status }` );
+				tiles.registerPlugin( new TMSTilesPlugin( {
+					useRecommendedSettings: this.useRecommendedSettings,
+					shape: 'ellipsoid',
+				} ) );
 
-					}
+			}
 
-					return res.json();
+			tiles.rootURL = json.url;
 
-				} )
-				.then( json => {
+			// save the version key if present
+			const url = new URL( json.url );
+			if ( url.searchParams.has( 'v' ) && this._tileSetVersion === - 1 ) {
 
-					if ( this._disposed ) {
+				this._tileSetVersion = url.searchParams.get( 'v' );
 
-						return null;
+			}
 
-					}
+			if ( json.attributions ) {
 
-					const tiles = this.tiles;
-					if ( 'externalType' in json ) {
+				this._attributions = json.attributions.map( att => ( {
+					value: att.html,
+					type: 'html',
+					collapsible: att.collapsible,
+				} ) );
 
-						const url = new URL( json.options.url );
-						tiles.rootURL = json.options.url;
-
-						// if the tile set is "external" then assume it's a google API tile set
-						tiles.registerPlugin( new GoogleCloudAuthPlugin( {
-							apiToken: url.searchParams.get( 'key' ),
-							autoRefreshToken: this.autoRefreshToken,
-							useRecommendedSettings: this.useRecommendedSettings,
-						} ) );
-
-					} else {
-
-						// GLTF
-						// CZML
-						// KML
-						// GEOJSON
-						if ( json.type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
-
-							tiles.registerPlugin( new QuantizedMeshPlugin( {
-								useRecommendedSettings: this.useRecommendedSettings,
-							} ) );
-
-						} else if ( json.type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
-
-							tiles.registerPlugin( new TMSTilesPlugin( {
-								useRecommendedSettings: this.useRecommendedSettings,
-								shape: 'ellipsoid',
-							} ) );
-
-						}
-
-						tiles.rootURL = json.url;
-						tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
-						tiles.fetchOptions.headers.Authorization = `Bearer ${ json.accessToken }`;
-
-						// save the version key if present
-						if ( url.searchParams.has( 'v' ) && this._tileSetVersion === - 1 ) {
-
-							const url = new URL( json.url );
-							this._tileSetVersion = url.searchParams.get( 'v' );
-
-						}
-
-						this._bearerToken = json.accessToken;
-						if ( json.attributions ) {
-
-							this._attributions = json.attributions.map( att => ( {
-								value: att.html,
-								type: 'html',
-								collapsible: att.collapsible,
-							} ) );
-
-						}
-
-					}
-
-					this._tokenRefreshPromise = null;
-
-					return json;
-
-				} );
-
-			// dispatch an error if we fail to refresh the token
-			this._tokenRefreshPromise
-				.catch( error => {
-
-					this.tiles.dispatchEvent( {
-						type: 'load-error',
-						tile: null,
-						error,
-						url,
-					} );
-
-				} );
+			}
 
 		}
-
-		return this._tokenRefreshPromise;
 
 	}
 
 	dispose() {
 
-		this._disposed = true;
+		this.auth.dispose();
 
 	}
 
