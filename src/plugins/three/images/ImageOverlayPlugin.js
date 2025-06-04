@@ -26,7 +26,7 @@ export class ImageOverlayPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 		this.overlays = overlays;
-		this.activeOverlays = [];
+		this.overlayOrder = new WeakMap();
 
 		// internal
 		this.needsUpdate = false;
@@ -59,21 +59,23 @@ export class ImageOverlayPlugin {
 		} );
 
 		// init overlays
-		this.overlays.forEach( ( overlay, order ) => {
+		const overlays = this.overlays;
+		this.overlays = [];
+		overlays.forEach( ( overlay, order ) => {
 
 			this.addOverlay( overlay, order );
 
 		} );
-		this.overlays = null;
 
 		// update callback for when overlays have changed
 		this._onUpdateAfter = () => {
 
 			if ( this.needsUpdate ) {
 
-				this.activeOverlays.sort( ( a, b ) => {
+				const overlayOrder = this.overlayOrder;
+				this.overlays.sort( ( a, b ) => {
 
-					return a.order - b.order;
+					return overlayOrder.get( a ) - overlayOrder.get( b );
 
 				} );
 
@@ -107,7 +109,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { processQueue, activeOverlays, tileMeshInfo } = this;
+		const { processQueue, overlays, tileMeshInfo } = this;
 
 		// reset all state
 		this.resetTileOverlay( tile );
@@ -124,7 +126,7 @@ export class ImageOverlayPlugin {
 
 				target.dispose();
 
-				activeOverlays.forEach( async ( { overlay } ) => {
+				overlays.forEach( async overlay => {
 
 					await overlay.whenReady();
 
@@ -161,7 +163,8 @@ export class ImageOverlayPlugin {
 		this.scratchTarget.dispose();
 
 		// dispose of all overlays
-		this.activeOverlays.forEach( ( { overlay } ) => {
+		const overlays = [ ...this.overlays ];
+		overlays.forEach( ( { overlay } ) => {
 
 			this.deleteOverlay( overlay );
 
@@ -183,27 +186,28 @@ export class ImageOverlayPlugin {
 	// public
 	addOverlay( overlay, order = null ) {
 
-		const { tiles, activeOverlays } = this;
+		const { tiles, overlays, overlayOrder } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		overlay.init();
 
 		if ( order === null ) {
 
-			order = activeOverlays.length;
+			order = overlays.length;
 
 		}
 
-		activeOverlays.push( { overlay, order } );
+		overlayOrder.set( overlay, order );
+		overlays.push( overlay );
 		this.needsUpdate = true;
 
 	}
 
 	setOverlayOrder( overlay, order ) {
 
-		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.findIndex( info => info.overlay === overlay );
 		if ( index !== - 1 ) {
 
-			this.activeOverlays[ index ].order = order;
+			this.overlayOrder.set( overlay, order );
 			this.needsUpdate = true;
 
 		}
@@ -212,11 +216,12 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.findIndex( info => info.overlay === overlay );
 		if ( index !== - 1 ) {
 
 			overlay.dispose();
-			this.activeOverlays.splice( index, 1 );
+			this.overlayOrder.delete( overlay );
+			this.overlays.splice( index, 1 );
 			this.needsUpdate = true;
 
 		}
@@ -242,7 +247,7 @@ export class ImageOverlayPlugin {
 
 	async initTileOverlays( scene, tile ) {
 
-		const overlays = this.activeOverlays;
+		const overlays = this.overlays;
 		const { tiles, tileMeshInfo, resolution } = this;
 		const { ellipsoid, group } = tiles;
 
@@ -289,7 +294,7 @@ export class ImageOverlayPlugin {
 			} );
 
 			// wait for all textures to load
-			await Promise.all( overlays.map( async ( { overlay } ) => {
+			await Promise.all( overlays.map( async overlay => {
 
 				await overlay.whenReady();
 
@@ -314,7 +319,7 @@ export class ImageOverlayPlugin {
 
 	updateTileOverlays( tile ) {
 
-		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, activeOverlays } = this;
+		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays } = this;
 
 		// if the tile is not in the mesh info map then the textures are not ready
 		if ( ! tileMeshInfo.has( tile ) ) {
@@ -337,7 +342,7 @@ export class ImageOverlayPlugin {
 			tileComposer.clear( 0xffffff, 0 );
 
 			// draw the textures
-			activeOverlays.forEach( ( { overlay } ) => {
+			overlays.forEach( overlay => {
 
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
