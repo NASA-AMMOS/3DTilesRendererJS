@@ -57,10 +57,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		renderer,
-		resolution: 1024,
-		overlays: [
-			washingtonOverlay,
-		]
+		overlays: [ washingtonOverlay ],
 	} ) );
 
 	updateBaseOverlay();
@@ -138,7 +135,6 @@ function updateBaseOverlay() {
 	if ( baseOverlay ) {
 
 		plugin.deleteOverlay( baseOverlay );
-		console.log('DELETED')
 
 	}
 

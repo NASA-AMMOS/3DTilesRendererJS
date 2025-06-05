@@ -74,7 +74,8 @@ export class ImageOverlayPlugin {
 		} );
 
 		// update callback for when overlays have changed
-		this._onUpdateAfter = () => {
+		let execId = 0;
+		this._onUpdateAfter = async () => {
 
 			if ( this.needsUpdate ) {
 
@@ -85,13 +86,25 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				tiles.forEachLoadedModel( ( scene, tile ) => {
-
-					this.updateTileOverlays( tile );
-
-				} );
-
 				this.needsUpdate = false;
+
+				// use an exec id to ensure we don't encounter a race condition
+				execId ++;
+				const id = execId;
+
+				// wait for all overlays to be ready
+				const promises = this.overlays.map( overlay => overlay.whenReady() );
+				await Promise.all( promises );
+
+				if ( id === execId ) {
+
+					tiles.forEachLoadedModel( ( scene, tile ) => {
+
+						this.updateTileTextures( tile );
+
+					} );
+
+				}
 
 			}
 
@@ -102,8 +115,9 @@ export class ImageOverlayPlugin {
 
 			this.processQueue.add( tile, async tile => {
 
-				await this.initTileOverlays( scene, tile );
-				this.updateTileOverlays( tile );
+				await this.initTileState( scene, tile );
+				await this.initAllOverlays( scene, tile );
+				this.updateTileTextures( tile );
 
 			} );
 
@@ -154,8 +168,9 @@ export class ImageOverlayPlugin {
 
 		return this.processQueue.add( tile, async tile => {
 
-			await this.initTileOverlays( scene, tile );
-			this.updateTileOverlays( tile );
+			await this.initTileState( scene, tile );
+			await this.initAllOverlays( scene, tile );
+			this.updateTileTextures( tile );
 
 		} );
 
@@ -218,7 +233,20 @@ export class ImageOverlayPlugin {
 
 		overlayOrder.set( overlay, order );
 		overlays.push( overlay );
-		this.needsUpdate = true;
+
+		const promises = [];
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			promises.push( this.initOverlay( overlay, scene, tile ) );
+
+		} );
+
+		this.needsUpdate = false;
+		Promise.all( promises ).then( () => {
+
+			this.needsUpdate = true;
+
+		} );
 
 	}
 
@@ -265,7 +293,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async initTileOverlays( scene, tile ) {
+	async initTileState( scene, tile ) {
 
 		const overlays = this.overlays;
 		const { tiles, tileMeshInfo, resolution } = this;
@@ -313,23 +341,6 @@ export class ImageOverlayPlugin {
 				),
 			} );
 
-			// wait for all textures to load
-			await Promise.all( overlays.map( async overlay => {
-
-				await overlay.whenReady();
-
-				const promises = [];
-				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
-
-					// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
-					promises.push( overlay.imageSource.lock( tx, ty, tl ) );
-
-				} );
-
-				return Promise.all( promises );
-
-			} ) );
-
 		} ) );
 
 		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
@@ -337,7 +348,55 @@ export class ImageOverlayPlugin {
 
 	}
 
-	updateTileOverlays( tile ) {
+	initAllOverlays( scene, tile ) {
+
+		const { overlays } = this;
+		return Promise.all( overlays.map( async overlay => {
+
+			await this.initOverlay( overlay, scene, tile );
+
+		} ) );
+
+	}
+
+	async initOverlay( overlay, scene, tile ) {
+
+		const { tileMeshInfo } = this;
+		const meshInfo = tileMeshInfo.get( tile );
+		const promises = [];
+
+		await overlay.whenReady();
+
+		scene.traverse( mesh => {
+
+			if ( meshInfo.has( mesh ) ) {
+
+				promises.push( ( async () => {
+
+					const { range, level } = meshInfo.get( mesh );
+					await overlay.whenReady();
+
+					const promises = [];
+					forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
+
+						// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
+						promises.push( overlay.imageSource.lock( tx, ty, tl ) );
+
+					} );
+
+					await Promise.all( promises );
+
+				} )() );
+
+			}
+
+		} );
+
+		await Promise.all( promises );
+
+	}
+
+	updateTileTextures( tile ) {
 
 		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays } = this;
 
