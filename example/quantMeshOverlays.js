@@ -19,13 +19,14 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { CesiumIonOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
 import { XYZTilesOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
 
-let controls, scene, renderer, tiles, camera, washingtonOverlay;
+let controls, scene, renderer, tiles, camera, washingtonOverlay, baseOverlay;
 let statsContainer, stats;
 
 const params = {
 
 	enableCacheDisplay: false,
 	enableRendererStats: false,
+	mapBase: false,
 	errorTarget: 2,
 	layerOpacity: 1.0,
 	reload: reinstantiateTiles,
@@ -58,16 +59,11 @@ function reinstantiateTiles() {
 		renderer,
 		resolution: 1024,
 		overlays: [
-			new XYZTilesOverlay( {
-				url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-			} ),
-			// new CesiumIonOverlay( {
-			// 	assetId: '3954',
-			// 	apiToken: import.meta.env.VITE_ION_KEY,
-			// } ),
 			washingtonOverlay,
 		]
 	} ) );
+
+	updateBaseOverlay();
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
@@ -116,6 +112,7 @@ function init() {
 	gui.width = 300;
 	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'enableRendererStats' );
+	gui.add( params, 'mapBase' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
 	gui.add( params, 'layerOpacity', 0, 1 ).onChange( v => {
 
@@ -132,6 +129,35 @@ function init() {
 	stats = new Stats();
 	stats.showPanel( 0 );
 	document.body.appendChild( stats.dom );
+
+}
+
+function updateBaseOverlay() {
+
+	const plugin = tiles.getPluginByName( 'IMAGE_OVERLAY_PLUGIN' );
+	if ( baseOverlay ) {
+
+		plugin.deleteOverlay( baseOverlay );
+		console.log('DELETED')
+
+	}
+
+	if ( params.mapBase ) {
+
+		baseOverlay = new XYZTilesOverlay( {
+			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+		} );
+
+	} else {
+
+		baseOverlay = new CesiumIonOverlay( {
+			assetId: '3954',
+			apiToken: import.meta.env.VITE_ION_KEY,
+		} );
+
+	}
+
+	plugin.addOverlay( baseOverlay, - 1 );
 
 }
 

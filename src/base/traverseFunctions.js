@@ -245,20 +245,23 @@ export function markUsedTiles( tile, renderer ) {
 	}
 
 	// Disabled for now because this will cause otherwise unused children to be added to the lru cache
-	// if none of the children are in the frustum then this tile shouldn't be displayed
-	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 && ! tile.__hasUnrenderableContent ) {
+	// if none of the children are in the frustum then this tile shouldn't be displayed.
+	// Otherwise this can cause load oscillation as parents are traversed and loaded and then determined
+	// to not be used because children aren't visible. See #1165.
+	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 && ! tile.__hasUnrenderableContent ) {
 
-		// TODO: we're not checking tiles with unrenderable content here since external tile sets might look like they're in the frustum,
-		// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
-		// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
-		// sets around even when they're not needed. See issue #741.
+	// 	// TODO: we're not checking tiles with unrenderable content here since external tile sets might look like they're in the frustum,
+	// 	// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
+	// 	// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
+	// 	// sets around even when they're not needed. See issue #741.
 
-		// TODO: what if we mark the tile as not in the frustum but we _do_ mark it as used? Then we can stop frustum traversal and at least
-		// prevent tiles from rendering unless they're needed.
-		tile.__inFrustum = false;
-		return;
+	// 	// TODO: what if we mark the tile as not in the frustum but we _do_ mark it as used? Then we can stop frustum traversal and at least
+	// 	// prevent tiles from rendering unless they're needed.
+	// 	console.log('FAILED')
+	// 	tile.__inFrustum = false;
+	// 	return;
 
-	}
+	// }
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );

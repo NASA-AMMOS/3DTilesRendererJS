@@ -1,3 +1,4 @@
+// Class for making fetches to Cesium Ion, refreshing the token if needed.
 export class CesiumIonAuth {
 
 	constructor( options = {} ) {
