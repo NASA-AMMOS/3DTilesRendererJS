@@ -110,6 +110,12 @@ export class ImageOverlayPlugin {
 
 		};
 
+		this._onTileDownloadStart = ( { tile } ) => {
+
+			this.initOverlaysFromTile( tile );
+
+		};
+
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
@@ -124,6 +130,7 @@ export class ImageOverlayPlugin {
 		} );
 
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
+		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
 	}
 
@@ -155,6 +162,24 @@ export class ImageOverlayPlugin {
 						overlay.imageSource.release( tx, ty, tl );
 
 					} );
+
+				} );
+
+			} );
+
+		}
+
+		if ( tile.boundingVolume.region ) {
+
+			overlays.forEach( async overlay => {
+
+				await overlay.whenReady();
+
+				const level = tile.__depthFromRenderedParent - 1;
+				const range = tile.boundingVolume.region;
+				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
+
+					overlay.imageSource.release( tx, ty, tl );
 
 				} );
 
@@ -236,7 +261,7 @@ export class ImageOverlayPlugin {
 		const promises = [];
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			promises.push( this.initOverlay( overlay, scene, tile ) );
+			promises.push( this.initOverlayFromScene( overlay, scene, tile ) );
 
 		} );
 
@@ -349,44 +374,59 @@ export class ImageOverlayPlugin {
 	initAllOverlays( scene, tile ) {
 
 		const { overlays } = this;
-		return Promise.all( overlays.map( async overlay => {
+		const promises = overlays.map( async overlay => {
 
-			await this.initOverlay( overlay, scene, tile );
+			await this.initOverlayFromScene( overlay, scene, tile );
 
-		} ) );
+		} );
+
+		promises.push( this.initOverlaysFromTile( tile ) );
+		return Promise.all( promises );
 
 	}
 
-	async initOverlay( overlay, scene, tile ) {
+	async initOverlaysFromTile( tile ) {
+
+		if ( tile.boundingVolume.region ) {
+
+			console.log('INITING')
+			const level = tile.__depthFromRenderedParent - 1;
+			const region = tile.boundingVolume.region;
+			await Promise.all( this.overlays.map( overlay => this.initOverlayFromRegion( overlay, region, level ) ) );
+
+		}
+
+	}
+
+	async initOverlayFromScene( overlay, scene, tile ) {
 
 		const { tileMeshInfo } = this;
 		const meshInfo = tileMeshInfo.get( tile );
 		const promises = [];
 
-		await overlay.whenReady();
-
 		scene.traverse( mesh => {
 
 			if ( meshInfo.has( mesh ) ) {
 
-				promises.push( ( async () => {
-
-					const { range, level } = meshInfo.get( mesh );
-					await overlay.whenReady();
-
-					const promises = [];
-					forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
-
-						// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
-						promises.push( overlay.imageSource.lock( tx, ty, tl ) );
-
-					} );
-
-					await Promise.all( promises );
-
-				} )() );
+				const { range, level } = meshInfo.get( mesh );
+				promises.push( this.initOverlayFromRegion( overlay, range, level ) );
 
 			}
+
+		} );
+
+		await Promise.all( promises );
+
+	}
+
+	async initOverlayFromRegion( overlay, range, level ) {
+
+		await overlay.whenReady();
+
+		const promises = [];
+		forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
+
+			promises.push( overlay.imageSource.lock( tx, ty, tl ) );
 
 		} );
 
