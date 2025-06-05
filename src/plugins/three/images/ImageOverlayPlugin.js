@@ -21,6 +21,7 @@ export class ImageOverlayPlugin {
 		} = options;
 
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
+		this.priority = 100;
 
 		// options
 		this.renderer = renderer;
@@ -389,7 +390,6 @@ export class ImageOverlayPlugin {
 
 		if ( tile.boundingVolume.region ) {
 
-			console.log('INITING')
 			const level = tile.__depthFromRenderedParent - 1;
 			const region = tile.boundingVolume.region;
 			await Promise.all( this.overlays.map( overlay => this.initOverlayFromRegion( overlay, region, level ) ) );
@@ -468,35 +468,46 @@ export class ImageOverlayPlugin {
 			tileComposer.clear( 0xffffff, 0 );
 
 			// draw the textures
+			let tileCount = 0;
 			overlays.forEach( overlay => {
 
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
 					const span = overlay.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
+					tileCount ++;
 					tileComposer.draw( tex, span, overlay.projection, overlay.color, overlay.opacity );
 
 				} );
 
 			} );
 
-			tileComposer.setRenderTarget( target, range );
-			if ( map ) {
+			// don't use the render target if there are no overlays to apply
+			if ( tileCount !== 0 ) {
 
-				tileComposer.draw( map, range );
-				map.dispose();
+				tileComposer.setRenderTarget( target, range );
+				if ( map ) {
+
+					tileComposer.draw( map, range );
+					map.dispose();
+
+				} else {
+
+					tileComposer.clear( 0xffffff );
+
+				}
+
+				// adjust the UVs
+				uvRemapper.setRenderTarget( target );
+				uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
+				uvRemapper.draw( scratchTarget.texture );
+				material.map = target.texture;
 
 			} else {
 
-				tileComposer.clear( 0xffffff );
+				target.dispose();
 
 			}
-
-			// adjust the UVs
-			uvRemapper.setRenderTarget( target );
-			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
-			uvRemapper.draw( scratchTarget.texture );
-			material.map = target.texture;
 
 		} );
 
