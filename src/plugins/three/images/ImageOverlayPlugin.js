@@ -79,8 +79,8 @@ export class ImageOverlayPlugin {
 
 			if ( this.needsUpdate ) {
 
-				const overlayOrder = this.overlayOrder;
-				this.overlays.sort( ( a, b ) => {
+				const { overlays, overlayOrder } = this;
+				overlays.sort( ( a, b ) => {
 
 					return overlayOrder.get( a ) - overlayOrder.get( b );
 
@@ -93,7 +93,7 @@ export class ImageOverlayPlugin {
 				const id = execId;
 
 				// wait for all overlays to be ready
-				const promises = this.overlays.map( overlay => overlay.whenReady() );
+				const promises = overlays.map( overlay => overlay.whenReady() );
 				await Promise.all( promises );
 
 				if ( id === execId ) {
@@ -295,7 +295,6 @@ export class ImageOverlayPlugin {
 
 	async initTileState( scene, tile ) {
 
-		const overlays = this.overlays;
 		const { tiles, tileMeshInfo, resolution } = this;
 		const { ellipsoid, group } = tiles;
 
