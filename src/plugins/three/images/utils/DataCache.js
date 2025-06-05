@@ -11,12 +11,19 @@ export class DataCache {
 	constructor() {
 
 		this.cache = {};
+		this.count = 0;
+		this.cachedBytes = 0;
 
 	}
 
 	// overridable
 	fetchItem() {}
 	disposeItem() {}
+	getMemoryUsage( item ) {
+
+		return 0;
+
+	}
 
 	// sets the data in the cache explicitly without need to load
 	setData( ...args ) {
@@ -34,7 +41,10 @@ export class DataCache {
 				abortController: new AbortController(),
 				result: data,
 				count: 1,
+				bytes: this.getMemoryUsage( data ),
 			};
+			this.count ++;
+			this.cachedBytes += this.cache[ key ].bytes;
 
 		}
 
@@ -58,17 +68,21 @@ export class DataCache {
 				abortController,
 				result: null,
 				count: 1,
+				bytes: 0,
 			};
 
 			info.result = this.fetchItem( ...args, abortController.signal )
 				.then( res => {
 
 					info.result = res;
+					info.bytes = this.getMemoryUsage( res );
+					this.cachedBytes += info.bytes;
 					return res;
 
 				} );
 
 			this.cache[ key ] = info;
+			this.count ++;
 
 		}
 
@@ -79,41 +93,8 @@ export class DataCache {
 	// decrements the lock counter for the item and deletes the item if it has reached zero
 	release( ...args ) {
 
-		const { cache } = this;
 		const key = hash( ...args );
-		if ( key in cache ) {
-
-			// decrement the lock
-			const info = cache[ key ];
-			info.count --;
-
-			// if the item is no longer being used
-			if ( info.count === 0 ) {
-
-				const { result, abortController } = info;
-				abortController.abort();
-
-				// dispose of the object even if it still is in progress
-				if ( result instanceof Promise ) {
-
-					// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
-					result.then( item => this.disposeItem( item ) ).catch( () => {} );
-
-				} else {
-
-					this.disposeItem( result );
-
-				}
-
-				delete cache[ key ];
-
-			}
-
-			return true;
-
-		}
-
-		return false;
+		this.releaseViaFullKey( key );
 
 	}
 
@@ -140,22 +121,56 @@ export class DataCache {
 		const { cache } = this;
 		for ( const key in cache ) {
 
-			const { abortController, result } = cache[ key ];
+			const { abortController } = cache[ key ];
 			abortController.abort();
 
-			if ( result instanceof Promise ) {
-
-				result.then( item => this.disposeItem( item ) ).catch( () => {} );
-
-			} else {
-
-				this.disposeItem( result );
-
-			}
+			this.releaseViaFullKey( key, true );
 
 		}
 
 		this.cache = {};
+
+	}
+
+	// releases an item with an optional force flag
+	releaseViaFullKey( key, force = false ) {
+
+		const { cache } = this;
+		if ( key in cache ) {
+
+			// decrement the lock
+			const info = cache[ key ];
+			info.count --;
+
+			// if the item is no longer being used
+			if ( info.count === 0 || force ) {
+
+				const { result, abortController } = info;
+				abortController.abort();
+
+				// dispose of the object even if it still is in progress
+				if ( result instanceof Promise ) {
+
+					// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
+					result.then( item => this.disposeItem( item ) ).catch( () => {} );
+
+				} else {
+
+					this.disposeItem( result );
+
+				}
+
+				delete cache[ key ];
+				this.count --;
+				this.cachedBytes -= info.bytes;
+
+			}
+
+			return true;
+
+		}
+
+		return false;
 
 	}
 

@@ -104,8 +104,9 @@ export class QuantizedMeshPlugin {
 	// Plugin function
 	init( tiles ) {
 
-		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
-		tiles.fetchOptions.header.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
+		// TODO: should we avoid setting this globally?
+		tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+		tiles.fetchOptions.headers.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
 
 		if ( this.useRecommendedSettings ) {
 
@@ -116,22 +117,6 @@ export class QuantizedMeshPlugin {
 		this.tiles = tiles;
 
 	}
-
-	// NOTE: we expand children only once the mesh data is loaded to ensure the mesh
-	// data is ready for clipping
-	// preprocessNode( tile, dir, parentTile ) {
-
-	// 	// generate children
-	// 	const level = tile[ TILE_LEVEL ];
-	// 	const maxLevel = getMaxLevel( this.layer );
-	// 	const hasMetadata = getTileHasMetadata( tile, this.layer );
-	// 	if ( level >= 0 && level < maxLevel && ! hasMetadata ) {
-
-	// 		this.expandChildren( tile );
-
-	// 	}
-
-	// }
 
 	loadRootTileSet() {
 
@@ -174,7 +159,7 @@ export class QuantizedMeshPlugin {
 				// extensions
 				if ( extensions.length > 0 ) {
 
-					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
+					tiles.fetchOptions.headers[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
 
 				}
 
@@ -373,9 +358,6 @@ export class QuantizedMeshPlugin {
 	}
 
 	expandChildren( tile ) {
-
-		tile.children.length = 0;
-		tile.__childrenProcessed = 0;
 
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];

@@ -64,6 +64,8 @@ export class TiledTextureComposer {
 		renderer.setRenderTarget( currentRenderTarget );
 		renderer.autoClear = currentAutoClear;
 
+		material.map = null;
+
 	}
 
 	// clear the set target

@@ -5,6 +5,7 @@ import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
 import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
+import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -25,7 +26,7 @@ export class ImageOverlayPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 		this.overlays = overlays;
-		this.activeOverlays = [];
+		this.overlayOrder = new WeakMap();
 
 		// internal
 		this.needsUpdate = false;
@@ -58,31 +59,52 @@ export class ImageOverlayPlugin {
 		} );
 
 		// init overlays
-		this.overlays.forEach( ( overlay, order ) => {
+		const { overlays, overlayOrder } = this;
+		this.overlays = [];
+		overlays.forEach( ( overlay, order ) => {
+
+			if ( overlayOrder.has( overlay ) ) {
+
+				order = overlayOrder.overlay;
+
+			}
 
 			this.addOverlay( overlay, order );
 
 		} );
-		this.overlays = null;
 
 		// update callback for when overlays have changed
-		this._onUpdateAfter = () => {
+		let execId = 0;
+		this._onUpdateAfter = async () => {
 
 			if ( this.needsUpdate ) {
 
-				this.activeOverlays.sort( ( a, b ) => {
+				const { overlays, overlayOrder } = this;
+				overlays.sort( ( a, b ) => {
 
-					return a.order - b.order;
-
-				} );
-
-				tiles.forEachLoadedModel( ( scene, tile ) => {
-
-					this.updateTileOverlays( tile );
+					return overlayOrder.get( a ) - overlayOrder.get( b );
 
 				} );
 
 				this.needsUpdate = false;
+
+				// use an exec id to ensure we don't encounter a race condition
+				execId ++;
+				const id = execId;
+
+				// wait for all overlays to be ready
+				const promises = overlays.map( overlay => overlay.whenReady() );
+				await Promise.all( promises );
+
+				if ( id === execId ) {
+
+					tiles.forEachLoadedModel( ( scene, tile ) => {
+
+						this.updateTileTextures( tile );
+
+					} );
+
+				}
 
 			}
 
@@ -93,8 +115,9 @@ export class ImageOverlayPlugin {
 
 			this.processQueue.add( tile, async tile => {
 
-				await this.initTileOverlays( scene, tile );
-				this.updateTileOverlays( tile );
+				await this.initTileState( scene, tile );
+				await this.initAllOverlays( scene, tile );
+				this.updateTileTextures( tile );
 
 			} );
 
@@ -106,7 +129,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { processQueue, activeOverlays, tileMeshInfo } = this;
+		const { processQueue, overlays, tileMeshInfo } = this;
 
 		// reset all state
 		this.resetTileOverlay( tile );
@@ -123,7 +146,7 @@ export class ImageOverlayPlugin {
 
 				target.dispose();
 
-				activeOverlays.forEach( async ( { overlay } ) => {
+				overlays.forEach( async overlay => {
 
 					await overlay.whenReady();
 
@@ -145,8 +168,23 @@ export class ImageOverlayPlugin {
 
 		return this.processQueue.add( tile, async tile => {
 
-			await this.initTileOverlays( scene, tile );
-			this.updateTileOverlays( tile );
+			await this.initTileState( scene, tile );
+			await this.initAllOverlays( scene, tile );
+			this.updateTileTextures( tile );
+
+		} );
+
+	}
+
+	getAttributions( target ) {
+
+		this.overlays.forEach( overlay => {
+
+			if ( overlay.opacity > 0 ) {
+
+				overlay.getAttributions( target );
+
+			}
 
 		} );
 
@@ -160,7 +198,8 @@ export class ImageOverlayPlugin {
 		this.scratchTarget.dispose();
 
 		// dispose of all overlays
-		this.activeOverlays.forEach( ( { overlay } ) => {
+		const overlays = [ ...this.overlays ];
+		overlays.forEach( overlay => {
 
 			this.deleteOverlay( overlay );
 
@@ -176,38 +215,46 @@ export class ImageOverlayPlugin {
 
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 
-
 	}
 
 	// public
 	addOverlay( overlay, order = null ) {
 
-		const { tiles, activeOverlays } = this;
+		const { tiles, overlays, overlayOrder } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
-		overlay.imageSource.fetchData = ( url, options ) => {
-
-			tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-			return tiles.invokeOnePlugin( plugin => plugin !== this && plugin.fetchData && plugin.fetchData( url, options ) );
-
-		};
+		overlay.init();
 
 		if ( order === null ) {
 
-			order = activeOverlays.length;
+			order = overlays.length;
 
 		}
 
-		activeOverlays.push( { overlay, order } );
-		this.needsUpdate = true;
+		overlayOrder.set( overlay, order );
+		overlays.push( overlay );
+
+		const promises = [];
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			promises.push( this.initOverlay( overlay, scene, tile ) );
+
+		} );
+
+		this.needsUpdate = false;
+		Promise.all( promises ).then( () => {
+
+			this.needsUpdate = true;
+
+		} );
 
 	}
 
 	setOverlayOrder( overlay, order ) {
 
-		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
-			this.activeOverlays[ index ].order = order;
+			this.overlayOrder.set( overlay, order );
 			this.needsUpdate = true;
 
 		}
@@ -216,11 +263,12 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const index = this.activeOverlays.findIndex( info => info.overlay === overlay );
+		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
 			overlay.dispose();
-			this.activeOverlays.splice( index, 1 );
+			this.overlayOrder.delete( overlay );
+			this.overlays.splice( index, 1 );
 			this.needsUpdate = true;
 
 		}
@@ -244,9 +292,8 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async initTileOverlays( scene, tile ) {
+	async initTileState( scene, tile ) {
 
-		const overlays = this.activeOverlays;
 		const { tiles, tileMeshInfo, resolution } = this;
 		const { ellipsoid, group } = tiles;
 
@@ -292,23 +339,6 @@ export class ImageOverlayPlugin {
 				),
 			} );
 
-			// wait for all textures to load
-			await Promise.all( overlays.map( async ( { overlay } ) => {
-
-				await overlay.whenReady();
-
-				const promises = [];
-				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
-
-					// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
-					promises.push( overlay.imageSource.lock( tx, ty, tl ) );
-
-				} );
-
-				return Promise.all( promises );
-
-			} ) );
-
 		} ) );
 
 		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
@@ -316,9 +346,57 @@ export class ImageOverlayPlugin {
 
 	}
 
-	updateTileOverlays( tile ) {
+	initAllOverlays( scene, tile ) {
 
-		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, activeOverlays } = this;
+		const { overlays } = this;
+		return Promise.all( overlays.map( async overlay => {
+
+			await this.initOverlay( overlay, scene, tile );
+
+		} ) );
+
+	}
+
+	async initOverlay( overlay, scene, tile ) {
+
+		const { tileMeshInfo } = this;
+		const meshInfo = tileMeshInfo.get( tile );
+		const promises = [];
+
+		await overlay.whenReady();
+
+		scene.traverse( mesh => {
+
+			if ( meshInfo.has( mesh ) ) {
+
+				promises.push( ( async () => {
+
+					const { range, level } = meshInfo.get( mesh );
+					await overlay.whenReady();
+
+					const promises = [];
+					forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
+
+						// TODO: ideally we would fetch the relevant tiles before the mesh had been loaded and parsed so they're ready asap
+						promises.push( overlay.imageSource.lock( tx, ty, tl ) );
+
+					} );
+
+					await Promise.all( promises );
+
+				} )() );
+
+			}
+
+		} );
+
+		await Promise.all( promises );
+
+	}
+
+	updateTileTextures( tile ) {
+
+		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays } = this;
 
 		// if the tile is not in the mesh info map then the textures are not ready
 		if ( ! tileMeshInfo.has( tile ) ) {
@@ -329,6 +407,15 @@ export class ImageOverlayPlugin {
 
 		// reset the meshes
 		this.resetTileOverlay( tile );
+
+		// if there are no overlays then don't bother copying texture data.
+		// this also doubles as a check for when the plugin has been disposed and async
+		// functions are continuing to run.
+		if ( overlays.length === 0 ) {
+
+			return;
+
+		}
 
 		const meshInfo = tileMeshInfo.get( tile );
 		meshInfo.forEach( ( info, mesh ) => {
@@ -341,7 +428,7 @@ export class ImageOverlayPlugin {
 			tileComposer.clear( 0xffffff, 0 );
 
 			// draw the textures
-			activeOverlays.forEach( ( { overlay } ) => {
+			overlays.forEach( overlay => {
 
 				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
 
@@ -357,6 +444,7 @@ export class ImageOverlayPlugin {
 			if ( map ) {
 
 				tileComposer.draw( map, range );
+				map.dispose();
 
 			} else {
 
@@ -369,7 +457,6 @@ export class ImageOverlayPlugin {
 			uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
 			uvRemapper.draw( scratchTarget.texture );
 			material.map = target.texture;
-			map.dispose();
 
 		} );
 
@@ -407,6 +494,10 @@ class ImageOverlay {
 
 	}
 
+	getAttributions( target ) {
+
+	}
+
 	dispose() {
 
 		this.imageSource.dispose();
@@ -421,7 +512,13 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
-		this._whenReady = this.imageSource.init( options.url );
+		this.url = options.url;
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init( this.url );
 
 	}
 
@@ -439,7 +536,13 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
-		this._whenReady = this.imageSource.init( options.url );
+		this.url = options.url;
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init( this.url );
 
 	}
 
@@ -457,7 +560,44 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		super( options );
 
-		// TODO: need to deal with authentication
+		const { apiToken, authRefreshToken, assetId } = options;
+		this.assetId = assetId;
+		this.auth = new CesiumIonAuth( { apiToken, authRefreshToken } );
+		this.imageSource = new TMSImageSource( options );
+
+		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
+		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this._attributions = [];
+
+	}
+
+	init() {
+
+		this._whenReady = this
+			.auth
+			.refreshToken()
+			.then( json => {
+
+				this._attributions = json.attributions.map( att => ( {
+					value: att.html,
+					type: 'html',
+					collapsible: att.collapsible,
+				} ) );
+				return this.imageSource.init( json.url );
+
+			} );
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
+
+	}
+
+	getAttributions( target ) {
+
+		target.push( ...this._attributions );
 
 	}
 
