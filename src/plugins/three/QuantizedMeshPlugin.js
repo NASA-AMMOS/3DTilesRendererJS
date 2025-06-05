@@ -359,9 +359,6 @@ export class QuantizedMeshPlugin {
 
 	expandChildren( tile ) {
 
-		tile.children.length = 0;
-		tile.__childrenProcessed = 0;
-
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];

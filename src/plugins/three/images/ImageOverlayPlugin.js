@@ -215,7 +215,6 @@ export class ImageOverlayPlugin {
 
 		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 
-
 	}
 
 	// public
@@ -408,6 +407,15 @@ export class ImageOverlayPlugin {
 
 		// reset the meshes
 		this.resetTileOverlay( tile );
+
+		// if there are no overlays then don't bother copying texture data.
+		// this also doubles as a check for when the plugin has been disposed and async
+		// functions are continuing to run.
+		if ( overlays.length === 0 ) {
+
+			return;
+
+		}
 
 		const meshInfo = tileMeshInfo.get( tile );
 		meshInfo.forEach( ( info, mesh ) => {
