@@ -335,7 +335,7 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 { type: 'tiles-load-end' }
 
 // Fired when tile content begins downloading.
-{ type: 'tiles-download-start', tile: Object }
+{ type: 'tile-download-start', tile: Object }
 
 // Fired when a tile content or the root tile set fails to load.
 { type: 'load-error', tile: Object | null, error: Error, url: string | URL }

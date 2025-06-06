@@ -125,7 +125,7 @@ export class ImageOverlayPlugin {
 			processQueue.add( tile, async tile => {
 
 				await this._initTileState( scene, tile );
-				await this._initAllOverlays( scene, tile );
+				await this._initAllOverlays( scene, tile, true );
 				this._redrawTileTextures( tile );
 
 			} );
@@ -214,7 +214,7 @@ export class ImageOverlayPlugin {
 		return this.processQueue.add( tile, async tile => {
 
 			await this._initTileState( scene, tile );
-			await this._initAllOverlays( scene, tile );
+			await this._initAllOverlays( scene, tile, false );
 			this._redrawTileTextures( tile );
 
 		} );
@@ -282,6 +282,7 @@ export class ImageOverlayPlugin {
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			promises.push( this._initOverlayFromScene( overlay, scene, tile ) );
+			// TODO: also needs to add region
 
 		} );
 
@@ -394,7 +395,7 @@ export class ImageOverlayPlugin {
 	}
 
 	// start load of all textures in all overlays from a scene
-	_initAllOverlays( scene, tile ) {
+	_initAllOverlays( scene, tile, includeTileRegion ) {
 
 		const { overlays } = this;
 		const promises = overlays.map( overlay => {
@@ -403,7 +404,13 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		promises.push( this._initOverlaysFromTileRegion( tile ) );
+		// we only need to include the tile region here when initializing from an existing set of tiles or
+		if ( includeTileRegion ) {
+
+			promises.push( this._initOverlaysFromTileRegion( tile ) );
+
+		}
+
 		return Promise.all( promises );
 
 	}
