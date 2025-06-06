@@ -800,7 +800,9 @@ export class TilesRendererBase {
 
 			}
 
-			return this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
+			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
+			this.dispatchEvent( { type: 'tile-download-start', tile } );
+			return res;
 
 		} )
 			.then( res => {
