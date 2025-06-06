@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Matrix4, Color, SRGBColorSpace, InstancedInterleavedBuffer, ReinhardToneMapping } from 'three';
+import { WebGLRenderTarget, Matrix4, Color, SRGBColorSpace } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
