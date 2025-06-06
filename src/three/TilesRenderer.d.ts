@@ -11,6 +11,7 @@ export interface TilesRendererEventMap {
 	'load-tile-set': { tileSet: object, url: string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
+	'tile-download-start': { tile: Tile };
 	'load-content': {};
 	'load-model': { scene: Object3D; tile: Tile };
 	'dispose-model': { scene: Object3D; tile: Tile };
