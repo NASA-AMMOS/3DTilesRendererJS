@@ -207,7 +207,13 @@ function updateHash() {
 
 	}
 
-	const camera = transition.camera;
+	if ( transition.mode !== 'perspective' ) {
+
+		transition.syncCameras();
+
+	}
+
+	const camera = transition.perspectiveCamera;
 	const cartographicResult = {};
 	const orientationResult = {};
 	const tilesMatInv = tiles.group.matrixWorld.clone().invert();
