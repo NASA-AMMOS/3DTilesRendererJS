@@ -209,6 +209,7 @@ function updateHash() {
 
 	if ( transition.mode !== 'perspective' ) {
 
+		controls.getPivotPoint( transition.fixedPoint );
 		transition.syncCameras();
 
 	}
