@@ -272,7 +272,7 @@ function initFromHash() {
 	tiles.group.updateMatrixWorld();
 
 	// get the position fields
-	const camera = transition.camera;
+	const camera = transition.perspectiveCamera;
 	const lat = parseFloat( urlParams.get( 'lat' ) );
 	const lon = parseFloat( urlParams.get( 'lon' ) );
 	const height = parseFloat( urlParams.get( 'height' ) ) || 1000;
@@ -305,6 +305,15 @@ function initFromHash() {
 		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
 		camera.position.applyMatrix4( tiles.group.matrixWorld );
 		camera.lookAt( 0, 0, 0 );
+
+	}
+
+	if ( transition.mode !== 'perspective' ) {
+
+		const currentMode = transition.mode;
+		transition.mode = 'perspective';
+		transition.syncCameras();
+		transition.mode = currentMode;
 
 	}
 
