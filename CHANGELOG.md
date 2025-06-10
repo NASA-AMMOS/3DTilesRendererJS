@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - TilesRendererBase: Fixed plugins not being disposed of correctly.
 - GoogleCloudAuthPlugin: Throw an error when the tile root fails to load.
+- Fixed some type definitions.
 
 ## [0.4.10] - 2025.05.31
 ### Fixed
