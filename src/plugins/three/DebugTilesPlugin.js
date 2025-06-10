@@ -13,7 +13,7 @@ const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
 const colors = {};
 
-// Return a consistant random color for an index
+// Return a consistent random color for an index
 export function getIndexedRandomColor( index ) {
 
 	if ( ! colors[ index ] ) {
@@ -111,13 +111,13 @@ export class DebugTilesPlugin {
 			maxDebugError: - 1,
 			customColorCallback: null,
 			unlit: false,
+			enabled: true,
 			...options,
 		};
 
 		this.name = 'DEBUG_TILES_PLUGIN';
 		this.tiles = null;
 
-		this._enabled = true;
 		this._colorMode = null;
 		this._unlit = null;
 		this.materialsNeedUpdate = false;
@@ -129,6 +129,7 @@ export class DebugTilesPlugin {
 		this.regionGroup = null;
 
 		// options
+		this._enabled = options.enabled;
 		this._displayParentBounds = options.displayParentBounds;
 		this.displayBoxBounds = options.displayBoxBounds;
 		this.displaySphereBounds = options.displaySphereBounds;
@@ -158,19 +159,17 @@ export class DebugTilesPlugin {
 
 		if ( v !== this._enabled ) {
 
-			this._enabled = v;
-
-			if ( this._enabled ) {
-
-				if ( this.tiles ) {
-
-					this.init( this.tiles );
-
-				}
-
-			} else {
+			if (!v) {
 
 				this.dispose();
+
+			}
+
+			this._enabled = v;
+
+			if ( this._enabled && this.tiles ) {
+
+				this.init( this.tiles );
 
 			}
 
@@ -223,6 +222,12 @@ export class DebugTilesPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		if (!this.enabled) {
+
+			return;
+
+		}
 
 		// initialize groups
 		const tilesGroup = tiles.group;
@@ -922,6 +927,12 @@ export class DebugTilesPlugin {
 	}
 
 	dispose() {
+
+		if (!this.enabled) {
+
+			return;
+
+		}
 
 		const tiles = this.tiles;
 
