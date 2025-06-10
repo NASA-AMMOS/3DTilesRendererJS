@@ -159,7 +159,7 @@ export class DebugTilesPlugin {
 
 		if ( v !== this._enabled ) {
 
-			if (!v) {
+			if ( ! v ) {
 
 				this.dispose();
 
@@ -223,7 +223,7 @@ export class DebugTilesPlugin {
 
 		this.tiles = tiles;
 
-		if (!this.enabled) {
+		if ( ! this.enabled ) {
 
 			return;
 
@@ -928,7 +928,7 @@ export class DebugTilesPlugin {
 
 	dispose() {
 
-		if (!this.enabled) {
+		if ( ! this.enabled ) {
 
 			return;
 
