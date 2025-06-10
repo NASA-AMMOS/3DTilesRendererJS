@@ -24,11 +24,11 @@ const _zoomPointUp = /* @__PURE__ */ new Vector3();
 const _toCenter = /* @__PURE__ */ new Vector3();
 const _ray = /* @__PURE__ */ new Ray();
 const _ellipsoid = /* @__PURE__ */ new Ellipsoid();
+const _pointer = /* @__PURE__ */ new Vector2();
 const _latLon = {};
 
-const _pointer = new Vector2();
-const MIN_ELEVATION = 400;
-
+// hand picked minimum elevation to tune far plane near surface
+const MIN_ELEVATION = 2550;
 export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoid() {
@@ -222,12 +222,12 @@ export class GlobeControls extends EnvironmentControls {
 			ellipsoid.getPositionToCartographic( _pos, _latLon );
 
 			// use a minimum elevation for computing the horizon distance to avoid the far clip
-			// plane approaching zero as the camera goes to or below sea level.
+			// plane approaching zero or clipping mountains over the horizon in the distance as
+			// the camera goes to or below sea level.
 			const elevation = Math.max( ellipsoid.getPositionElevation( _pos ), MIN_ELEVATION );
 			const horizonDistance = ellipsoid.calculateHorizonDistance( _latLon.lat, elevation );
 
-			// extend the horizon distance by 2.5 to handle cases where geometry extends above the horizon
-			camera.far = horizonDistance * 2.5 + 0.1 + maxRadius * farMargin;
+			camera.far = horizonDistance + 0.1 + maxRadius * farMargin;
 			camera.updateProjectionMatrix();
 
 		} else {
