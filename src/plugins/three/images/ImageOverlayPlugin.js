@@ -74,8 +74,8 @@ export class ImageOverlayPlugin {
 		this.uvRemapper = null;
 		this.scratchTarget = null;
 		this.tileMeshInfo = new Map();
-
-		window.PLUGIN = this;
+		this.usedTextures = new Set();
+		this._scheduled = false;
 
 	}
 
@@ -457,7 +457,7 @@ export class ImageOverlayPlugin {
 	// redraw the tile texture
 	_redrawTileTextures( tile ) {
 
-		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays } = this;
+		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays, usedTextures } = this;
 
 		// if the tile is not in the mesh info map then the textures are not ready
 		if ( ! tileMeshInfo.has( tile ) ) {
@@ -498,6 +498,8 @@ export class ImageOverlayPlugin {
 					const tex = overlay.imageSource.get( tx, ty, tl );
 					tileCount ++;
 					tileComposer.draw( tex, span, overlay.projection, overlay.color, overlay.opacity );
+					usedTextures.add( tex );
+					this._scheduleCleanup();
 
 				} );
 
@@ -531,6 +533,30 @@ export class ImageOverlayPlugin {
 			}
 
 		} );
+
+	}
+
+	_scheduleCleanup() {
+
+		// clean up textures used for drawing the tile overlays
+		if ( ! this._scheduled ) {
+
+			this._scheduled = true;
+			requestAnimationFrame( () => {
+
+				const { usedTextures } = this;
+				usedTextures.forEach( tex => {
+
+					tex.dispose();
+
+				} );
+
+				usedTextures.clear();
+				this._scheduled = false;
+
+			} );
+
+		}
 
 	}
 
