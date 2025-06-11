@@ -157,23 +157,21 @@ export class DebugTilesPlugin {
 
 	set enabled( v ) {
 
-		if ( v !== this._enabled ) {
+		if ( v !== this._enabled && this.tiles !== null ) {
 
-			if ( ! v ) {
+			if ( v ) {
+
+				this.init( this.tiles );
+
+			} else {
 
 				this.dispose();
 
 			}
 
-			this._enabled = v;
-
-			if ( this._enabled && this.tiles ) {
-
-				this.init( this.tiles );
-
-			}
-
 		}
+
+		this._enabled = v;
 
 	}
 
