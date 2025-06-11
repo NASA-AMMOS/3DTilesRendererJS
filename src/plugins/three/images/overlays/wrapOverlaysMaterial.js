@@ -1,5 +1,3 @@
-import { Color, Matrix4, Vector2, Vector3 } from 'three';
-
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 

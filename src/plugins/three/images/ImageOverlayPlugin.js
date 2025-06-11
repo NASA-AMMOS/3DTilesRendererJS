@@ -9,6 +9,14 @@ import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
+
+// init tile overlay via region if available
+// init tile overlay via scene when loaded
+// assign uvs and draw (delete uvs and dispose geometry?)
+
+
+
+
 // function for marking and releasing images in the given overlay
 async function markOverlayImages( range, level, overlay, doRelease ) {
 
@@ -319,6 +327,98 @@ export class ImageOverlayPlugin {
 		}
 
 	}
+
+	// new internal
+	async _initTileOverlayInfo( tile, overlay = this.overlays ) {
+
+		if ( Array.isArray( overlay ) ) {
+
+			return Promise.all( overlay.map( o => this._initTileOverlayInfo( tile, o ) ) );
+
+		}
+
+		const info = {
+			range: null,
+			meshRange: null,
+			level: - 1,
+			meshInfo: new Map(),
+		};
+
+		this.overlayInfo
+			.get( overlay )
+			.tileInfo
+			.set( tile, info );
+
+		if ( tile.boundingVolume.region ) {
+
+			const level = tile.__depthFromRenderedParent - 1;
+			const region = tile.boundingVolume.region;
+			await markOverlayImages( region, level, this.overlays, false );
+			info.range = region.splice();
+			info.level = level;
+
+		}
+
+	}
+
+	async _initTileSceneOverlayInfo( scene, tile, overlay = this.overlays ) {
+
+		if ( Array.isArray( overlay ) ) {
+
+			return Promise.all( overlay.map( o => this._initTileSceneOverlayInfo( scene, tile, o ) ) );
+
+		}
+
+		const { tiles, overlayInfo, resolution } = this;
+		const { ellipsoid } = tiles;
+
+		// find all meshes to project on
+		const meshes = [];
+		scene.updateMatrixWorld();
+		scene.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				meshes.push( c );
+
+			}
+
+		} );
+
+		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid );
+		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
+		tileInfo.meshRange = range;
+		meshes.forEach( ( mesh, i ) => {
+
+			tileInfo.meshInfo.set( mesh, {
+				range: ranges[ i ],
+				uv: uvs[ i ],
+				target: new WebGLRenderTarget(
+					resolution, resolution,
+					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
+				),
+			} );
+
+			// TODO: draw textures
+
+		} );
+
+	}
+
+	async _updateLayers( scene, tile ) {
+
+
+
+	}
+
+
+
+
+
+
+
+
+
 
 	// internal
 	// save the state associated with each mesh
