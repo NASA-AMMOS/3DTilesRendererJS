@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GoogleCloudAuthPlugin: Throw an error when the tile root fails to load.
 - Fixed some type definitions.
 - GlobeControls: Adjust the perspective camera.far calculation to better limit loaded tiles.
+- DebugTilesPlugin: Fix case where the plugin could not be disabled before registration.
 
 ## [0.4.10] - 2025.05.31
 ### Fixed
