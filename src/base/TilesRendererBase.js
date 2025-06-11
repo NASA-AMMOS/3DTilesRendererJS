@@ -219,6 +219,8 @@ export class TilesRendererBase {
 
 		if ( plugins.includes( plugin ) ) {
 
+			plugin[ PLUGIN_REGISTERED ] = false;
+
 			const index = plugins.indexOf( plugin );
 			plugins.splice( index, 1 );
 			if ( plugin.dispose ) {
