@@ -64,7 +64,6 @@ export class ImageOverlayPlugin {
 		this.renderer = renderer;
 		this.resolution = resolution;
 		this.overlays = overlays;
-		this.overlayOrder = new WeakMap();
 
 		// internal
 		this.needsUpdate = false;
@@ -74,6 +73,7 @@ export class ImageOverlayPlugin {
 		this.uvRemapper = null;
 		this.scratchTarget = null;
 		this.tileInfo = new Map();
+		this.overlayInfo = new Map();
 		this.usedTextures = new Set();
 		this._scheduled = false;
 
@@ -107,17 +107,15 @@ export class ImageOverlayPlugin {
 		this.scratchTarget = scratchTarget;
 
 		// init overlays
-		const { overlays, overlayOrder } = this;
+		const { overlays, overlayInfo } = this;
 		this.overlays = [];
 		overlays.forEach( ( overlay, order ) => {
 
-			if ( overlayOrder.has( overlay ) ) {
+			if ( ! overlayInfo.has( overlay ) ) {
 
-				order = overlayOrder.overlay;
+				this.addOverlay( overlay, order );
 
 			}
-
-			this.addOverlay( overlay, order );
 
 		} );
 
@@ -140,8 +138,8 @@ export class ImageOverlayPlugin {
 
 			if ( this.needsUpdate ) {
 
-				const { overlays, overlayOrder } = this;
-				overlays.sort( ( a, b ) => overlayOrder.get( a ) - overlayOrder.get( b ) );
+				const { overlays, overlayInfo } = this;
+				overlays.sort( ( a, b ) => overlayInfo.get( a ).order - overlayInfo.get( b ).order );
 				this.needsUpdate = false;
 
 				// use an exec id to ensure we don't encounter a race condition
@@ -263,7 +261,7 @@ export class ImageOverlayPlugin {
 	// public
 	addOverlay( overlay, order = null ) {
 
-		const { tiles, overlays, overlayOrder } = this;
+		const { tiles, overlays, overlayInfo } = this;
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		overlay.init();
 
@@ -273,8 +271,12 @@ export class ImageOverlayPlugin {
 
 		}
 
-		overlayOrder.set( overlay, order );
 		overlays.push( overlay );
+		overlayInfo.set( overlay, {
+			order: order,
+			uniforms: {},
+			tileInfo: new Map(),
+		} );
 
 		const promises = [];
 		tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -297,7 +299,7 @@ export class ImageOverlayPlugin {
 		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
-			this.overlayOrder.set( overlay, order );
+			this.overlayInfo.get( overlay ).order = order;
 			this.needsUpdate = true;
 
 		}
@@ -310,8 +312,8 @@ export class ImageOverlayPlugin {
 		if ( index !== - 1 ) {
 
 			overlay.dispose();
-			this.overlayOrder.delete( overlay );
 			this.overlays.splice( index, 1 );
+			this.overlayInfo.delete( overlay );
 			this.needsUpdate = true;
 
 		}
@@ -487,6 +489,9 @@ export class ImageOverlayPlugin {
 
 					const span = overlay.tiling.getTileBounds( tx, ty, tl );
 					const tex = overlay.imageSource.get( tx, ty, tl );
+					// if ( tex === null || ! tex.isTexture ) debugger
+					// TODO: we getting promises and null here for some reason
+
 					tileCount ++;
 					tileComposer.draw( tex, span, overlay.projection, overlay.color, overlay.opacity );
 					usedTextures.add( tex );
