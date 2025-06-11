@@ -934,26 +934,22 @@ export class DebugTilesPlugin {
 
 		const tiles = this.tiles;
 
-		if ( tiles ) {
+		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
+		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
 
-			tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
-			tiles.removeEventListener( 'load-model', this._onLoadModelCB );
-			tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
-			tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
-			tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
+		// reset all materials
+		this.colorMode = NONE;
+		this._onUpdateAfter();
 
-			// reset all materials
-			this.colorMode = NONE;
-			this._onUpdateAfter();
+		// dispose of all helper objects
+		tiles.traverse( tile => {
 
-			// dispose of all helper objects
-			tiles.traverse( tile => {
+			this._onDisposeModel( tile );
 
-				this._onDisposeModel( tile );
-
-			} );
-
-		}
+		} );
 
 		this.boxGroup?.removeFromParent();
 		this.sphereGroup?.removeFromParent();
