@@ -4,7 +4,7 @@ import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
-import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
+import { forEachTileInBounds, getGeometryCartographicRange, getMeshesCartographicRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
@@ -73,7 +73,7 @@ export class ImageOverlayPlugin {
 		this.tileComposer = null;
 		this.uvRemapper = null;
 		this.scratchTarget = null;
-		this.tileMeshInfo = new Map();
+		this.tileInfo = new Map();
 		this.usedTextures = new Set();
 		this._scheduled = false;
 
@@ -179,7 +179,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { processQueue, overlays, tileMeshInfo } = this;
+		const { processQueue, overlays, tileInfo } = this;
 
 		// reset all state
 		this._resetTileOverlay( tile );
@@ -188,10 +188,10 @@ export class ImageOverlayPlugin {
 		processQueue.remove( tile );
 
 		// decrement all tile references
-		if ( tileMeshInfo.has( tile ) ) {
+		if ( tileInfo.has( tile ) ) {
 
-			const meshInfo = tileMeshInfo.get( tile );
-			tileMeshInfo.delete( tile );
+			const { meshInfo } = tileInfo.get( tile );
+			tileInfo.delete( tile );
 			meshInfo.forEach( ( { range, level, target } ) => {
 
 				target.dispose();
@@ -326,7 +326,7 @@ export class ImageOverlayPlugin {
 	// save the state associated with each mesh
 	async _initTileState( scene, tile ) {
 
-		const { tiles, tileMeshInfo, resolution } = this;
+		const { tiles, tileInfo, resolution } = this;
 		const { ellipsoid, group } = tiles;
 
 		// find all meshes to project on
@@ -341,6 +341,7 @@ export class ImageOverlayPlugin {
 			}
 
 		} );
+
 
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
@@ -374,7 +375,12 @@ export class ImageOverlayPlugin {
 		} ) );
 
 		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
-		tileMeshInfo.set( tile, meshInfo );
+		const range = getMeshesCartographicRange( meshes, ellipsoid );
+		tileInfo.set( tile, {
+			range,
+			level,
+			meshInfo,
+		} );
 
 	}
 
@@ -418,8 +424,8 @@ export class ImageOverlayPlugin {
 	// init the tiles from a single tile and scene
 	async _initOverlayFromScene( overlay, scene, tile ) {
 
-		const { tileMeshInfo } = this;
-		const meshInfo = tileMeshInfo.get( tile );
+		const { tileInfo } = this;
+		const { meshInfo } = tileInfo.get( tile );
 		const promises = [];
 
 		scene.traverse( mesh => {
@@ -440,10 +446,10 @@ export class ImageOverlayPlugin {
 	// reset the tile material map
 	_resetTileOverlay( tile ) {
 
-		const { tileMeshInfo } = this;
-		if ( tileMeshInfo.has( tile ) ) {
+		const { tileInfo } = this;
+		if ( tileInfo.has( tile ) ) {
 
-			const meshInfo = tileMeshInfo.get( tile );
+			const { meshInfo } = tileInfo.get( tile );
 			meshInfo.forEach( ( { map }, mesh ) => {
 
 				mesh.material.map = map;
@@ -457,10 +463,10 @@ export class ImageOverlayPlugin {
 	// redraw the tile texture
 	_redrawTileTextures( tile ) {
 
-		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays, usedTextures } = this;
+		const { tileComposer, tileInfo, scratchTarget, uvRemapper, overlays, usedTextures } = this;
 
 		// if the tile is not in the mesh info map then the textures are not ready
-		if ( ! tileMeshInfo.has( tile ) ) {
+		if ( ! tileInfo.has( tile ) ) {
 
 			return;
 
@@ -478,7 +484,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const meshInfo = tileMeshInfo.get( tile );
+		const { meshInfo } = tileInfo.get( tile );
 		meshInfo.forEach( ( info, mesh ) => {
 
 			const { map, level, range, uv, target } = info;

@@ -109,3 +109,87 @@ export function getGeometryCartographicRange( geometry, geomToEllipsoidMatrix, e
 	};
 
 }
+
+function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
+
+	const _vec = new Vector3();
+	const _cart = {};
+	const uv = [];
+	const posAttr = geometry.getAttribute( 'position' );
+
+	geometry.computeBoundingBox();
+	geometry.boundingBox.getCenter( _vec ).applyMatrix4( geomToEllipsoidMatrix );
+
+	// find a rough mid lat / lon point
+	ellipsoid.getPositionToCartographic( _vec, _cart );
+	const centerLat = _cart.lat;
+	const centerLon = _cart.lon;
+
+	for ( let i = 0; i < posAttr.count; i ++ ) {
+
+		// get the lat / lon values per vertex
+		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( geomToEllipsoidMatrix );
+		ellipsoid.getPositionToCartographic( _vec, _cart );
+
+		// The latitude calculations are not so stable at the poles so force the lat value to
+		// the mid point to ensure we don't load an unnecessarily large of tiles
+		// NOTE: this can distort the texture a bit at the poles
+		if ( Math.abs( Math.abs( _cart.lat ) - Math.PI / 2 ) < 1e-5 ) {
+
+			_cart.lon = centerLon;
+
+		}
+
+		// ensure we're not wrapping on the same geometry
+		if ( Math.abs( centerLon - _cart.lon ) > Math.PI ) {
+
+			_cart.lon += Math.sign( centerLon - _cart.lon ) * Math.PI * 2;
+
+		}
+
+		if ( Math.abs( centerLat - _cart.lat ) > Math.PI ) {
+
+			_cart.lat += Math.sign( centerLat - _cart.lat ) * Math.PI * 2;
+
+		}
+
+		uv.push( _cart.lon, _cart.lat );
+
+	}
+
+	return uv;
+
+}
+
+export function getMeshesCartographicRange( meshes, ellipsoid ) {
+
+	// find the lat / lon ranges
+	let minLat = Infinity;
+	let minLon = Infinity;
+	let maxLat = - Infinity;
+	let maxLon = - Infinity;
+	meshes.forEach( mesh => {
+
+		const uv = getGeometryCartoChannel( mesh.geometry, mesh.matrixWorld, ellipsoid );
+		for ( let i = 0; i < uv.length; i += 2 ) {
+
+			const lon = uv[ i + 0 ];
+			const lat = uv[ i + 1 ];
+
+			// save the min and max values
+			minLat = Math.min( minLat, lat );
+			maxLat = Math.max( maxLat, lat );
+
+			minLon = Math.min( minLon, lon );
+			maxLon = Math.max( maxLon, lon );
+
+		}
+
+	} );
+
+	return {
+		// uv: new Float32Array( uv ),
+		range: [ minLon, minLat, maxLon, maxLat ],
+	};
+
+}
