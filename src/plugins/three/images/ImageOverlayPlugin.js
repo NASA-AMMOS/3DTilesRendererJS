@@ -338,14 +338,17 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid );
+
 
 		// TODO: basic geometric error mapping level only
 		const level = tile.__depthFromRenderedParent - 1;
 		const meshInfo = new Map();
-		await Promise.all( meshes.map( async mesh => {
+		await Promise.all( meshes.map( async ( mesh, i ) => {
 
 			const { material, geometry } = mesh;
 			const { map } = material;
+			const range = ranges[ i ];
 
 			// compute the local transform and center of the mesh
 			_matrix.copy( mesh.matrixWorld );
@@ -356,7 +359,7 @@ export class ImageOverlayPlugin {
 			}
 
 			// get uvs and range
-			const { range, uv } = getGeometryCartographicRange( geometry, _matrix, ellipsoid );
+			const { uv } = getGeometryCartographicRange( geometry, _matrix, ellipsoid );
 			meshInfo.set( mesh, {
 				range,
 				level,
@@ -371,7 +374,6 @@ export class ImageOverlayPlugin {
 		} ) );
 
 		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
-		const { range } = getMeshesCartographicRange( meshes, ellipsoid );
 		tileInfo.set( tile, {
 			range,
 			level,

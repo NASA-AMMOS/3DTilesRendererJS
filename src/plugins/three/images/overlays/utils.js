@@ -125,6 +125,10 @@ function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 	const centerLat = _cart.lat;
 	const centerLon = _cart.lon;
 
+	let minLat = Infinity;
+	let minLon = Infinity;
+	let maxLat = - Infinity;
+	let maxLon = - Infinity;
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
 		// get the lat / lon values per vertex
@@ -155,9 +159,16 @@ function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 		uv.push( _cart.lon, _cart.lat );
 
+		minLat = Math.min( minLat, _cart.lat );
+		maxLat = Math.max( maxLat, _cart.lat );
+
+		minLon = Math.min( minLon, _cart.lon );
+		maxLon = Math.max( maxLon, _cart.lon );
+
 	}
 
-	return uv;
+	const range = [ minLon, minLat, maxLon, maxLat ];
+	return { uv, range };
 
 }
 
@@ -168,27 +179,39 @@ export function getMeshesCartographicRange( meshes, ellipsoid ) {
 	let minLon = Infinity;
 	let maxLat = - Infinity;
 	let maxLon = - Infinity;
+	const uvs = [];
+	const ranges = [];
 	meshes.forEach( mesh => {
 
-		const uv = getGeometryCartoChannel( mesh.geometry, mesh.matrixWorld, ellipsoid );
-		for ( let i = 0; i < uv.length; i += 2 ) {
+		const { uv, range } = getGeometryCartoChannel( mesh.geometry, mesh.matrixWorld, ellipsoid );
+		uvs.push( uv );
+		ranges.push( range );
 
-			const lon = uv[ i + 0 ];
-			const lat = uv[ i + 1 ];
+		// save the min and max values
+		minLat = Math.min( minLat, range[ 0 ] );
+		maxLat = Math.max( maxLat, range[ 2 ] );
 
-			// save the min and max values
-			minLat = Math.min( minLat, lat );
-			maxLat = Math.max( maxLat, lat );
+		minLon = Math.min( minLon, range[ 1 ] );
+		maxLon = Math.max( maxLon, range[ 3 ] );
 
-			minLon = Math.min( minLon, lon );
-			maxLon = Math.max( maxLon, lon );
+	} );
+
+	const lonRange = maxLon - minLon;
+	const latRange = maxLat - minLat;
+	uvs.forEach( uv => {
+
+		for ( let i = 0, l = uv.length; i < l; i ++ ) {
+
+			uv[ i + 0 ] = ( uv[ i + 0 ] - minLon ) / lonRange;
+			uv[ i + 1 ] = ( uv[ i + 1 ] - minLat ) / latRange;
 
 		}
 
 	} );
 
 	return {
-		// uv: new Float32Array( uv ),
+		uvs,
+		ranges,
 		range: [ minLon, minLat, maxLon, maxLat ],
 	};
 
