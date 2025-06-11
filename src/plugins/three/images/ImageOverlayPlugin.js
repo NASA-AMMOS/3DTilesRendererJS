@@ -190,14 +190,10 @@ export class ImageOverlayPlugin {
 		// decrement all tile references
 		if ( tileInfo.has( tile ) ) {
 
-			const { meshInfo } = tileInfo.get( tile );
+			const { meshInfo, range, level } = tileInfo.get( tile );
 			tileInfo.delete( tile );
-			meshInfo.forEach( ( { range, level, target } ) => {
-
-				target.dispose();
-				markOverlayImages( range, level, overlays, true );
-
-			} );
+			markOverlayImages( range, level, overlays, true );
+			meshInfo.forEach( ( { target } ) => target.dispose() );
 
 		}
 
@@ -375,7 +371,7 @@ export class ImageOverlayPlugin {
 		} ) );
 
 		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
-		const range = getMeshesCartographicRange( meshes, ellipsoid );
+		const { range } = getMeshesCartographicRange( meshes, ellipsoid );
 		tileInfo.set( tile, {
 			range,
 			level,
@@ -425,21 +421,8 @@ export class ImageOverlayPlugin {
 	async _initOverlayFromScene( overlay, scene, tile ) {
 
 		const { tileInfo } = this;
-		const { meshInfo } = tileInfo.get( tile );
-		const promises = [];
-
-		scene.traverse( mesh => {
-
-			if ( meshInfo.has( mesh ) ) {
-
-				const { range, level } = meshInfo.get( mesh );
-				promises.push( markOverlayImages( range, level, overlay, false ) );
-
-			}
-
-		} );
-
-		await Promise.all( promises );
+		const { range, level } = tileInfo.get( tile );
+		await markOverlayImages( range, level, overlay, false );
 
 	}
 
@@ -484,10 +467,10 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { meshInfo } = tileInfo.get( tile );
+		const { meshInfo, level } = tileInfo.get( tile );
 		meshInfo.forEach( ( info, mesh ) => {
 
-			const { map, level, range, uv, target } = info;
+			const { map, range, uv, target } = info;
 			const { material, geometry } = mesh;
 
 			// initialize the texture
