@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute } from 'three';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -61,7 +61,7 @@ export class ImageOverlayPlugin {
 		// options
 		this.renderer = renderer;
 		this.resolution = resolution;
-		this.overlays = overlays;
+		this.overlays = [];
 
 		// internal
 		this.needsUpdate = false;
@@ -72,6 +72,7 @@ export class ImageOverlayPlugin {
 		this.tileInfo = new Map();
 		this.overlayInfo = new Map();
 		this.usedTextures = new Set();
+		this.meshParams = new WeakMap();
 		this._scheduled = false;
 
 		overlays.forEach( overlay => {
@@ -379,7 +380,8 @@ export class ImageOverlayPlugin {
 
 			if ( c.material ) {
 
-				wrapOverlaysMaterial( c.material );
+				const params = wrapOverlaysMaterial( c.material );
+				this.meshParams.set( c, params );
 
 			}
 
@@ -482,7 +484,36 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( scene, tile ) {
 
-		// TODO: update the materials and uvs
+		const { overlayInfo, overlays } = this;
+		overlays.forEach( ( overlay, i ) => {
+
+			const { tileInfo } = overlayInfo.get( overlay );
+			const { meshInfo } = tileInfo.get( tile );
+			meshInfo.forEach( ( { uv, target }, mesh ) => {
+
+				const { geometry, material } = mesh;
+				const params = this.meshParams.get( mesh );
+
+				// assign the new uvs
+				geometry.dispose();
+				geometry.setAttribute( `uv_layer_${ i }`, new BufferAttribute( new Float32Array( uv ), 2, false ) );
+
+				// set the uniform array lengths
+				params.layerMaps.length = overlays.length;
+				params.layerInfo.length = overlays.length;
+
+				// assign the uniforms
+				params.layerMaps.value[ i ] = target.texture;
+				params.layerInfo.value[ i ] = {
+					opacity: overlay.opacity,
+					tint: overlay.color,
+				};
+
+				material.needsUpdate = true;
+
+			} );
+
+		} );
 
 	}
 
