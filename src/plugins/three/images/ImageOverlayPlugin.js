@@ -3,7 +3,6 @@ import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import { UVRemapper } from './overlays/UVRemapper.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
@@ -69,7 +68,6 @@ export class ImageOverlayPlugin {
 		this.processQueue = null;
 		this.tiles = null;
 		this.tileComposer = null;
-		this.uvRemapper = null;
 		this.scratchTarget = null;
 		this.tileInfo = new Map();
 		this.overlayInfo = new Map();
@@ -96,7 +94,6 @@ export class ImageOverlayPlugin {
 		};
 
 		const tileComposer = new TiledTextureComposer( this.renderer );
-		const uvRemapper = new UVRemapper( this.renderer );
 		const scratchTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
 			depthBuffer: false,
 			stencilBuffer: false,
@@ -108,7 +105,6 @@ export class ImageOverlayPlugin {
 		this.tiles = tiles;
 		this.processQueue = processQueue;
 		this.tileComposer = tileComposer;
-		this.uvRemapper = uvRemapper;
 		this.scratchTarget = scratchTarget;
 
 		// init all existing tiles
@@ -116,7 +112,6 @@ export class ImageOverlayPlugin {
 
 			processQueue.add( tile, async tile => {
 
-				// TODO: wrap materials
 				this._wrapMaterials( scene );
 
 				await this._initTileOverlayInfo( tile );
@@ -152,8 +147,14 @@ export class ImageOverlayPlugin {
 
 				if ( id === execId ) {
 
-					// TODO: update materials
-					// TODO: if the order is the only thing that changes then we don't really need to wait?
+					// TODO: update drawn textures
+
+					// TODO: if the order is the only thing that changes then we don't really need to wait for the above?
+					tiles.forEachLoadedModel( ( scene, tile ) => {
+
+						this._updateLayers( scene, tile );
+
+					} );
 
 				}
 
@@ -169,6 +170,12 @@ export class ImageOverlayPlugin {
 
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
+
+		this.overlays.forEach( overlay => {
+
+			this._initOverlay( overlay );
+
+		} );
 
 	}
 
@@ -272,8 +279,6 @@ export class ImageOverlayPlugin {
 	addOverlay( overlay, order = null ) {
 
 		const { tiles, overlays, overlayInfo } = this;
-		overlay.imageSource.fetchOptions = tiles.fetchOptions;
-		overlay.init();
 
 		if ( order === null ) {
 
@@ -289,25 +294,11 @@ export class ImageOverlayPlugin {
 			tileInfo: new Map(),
 		} );
 
-		const promises = [];
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		if ( tiles !== null ) {
 
-			promises.push( this.processQueue.add( tile, async () => {
+			this._initOverlay( overlay );
 
-				await this._initTileOverlayInfo( tile, overlay );
-				await this._initTileSceneOverlayInfo( scene, tile, overlay );
-				this._updateLayers( scene, tile );
-
-			} ) );
-
-		} );
-
-		this.needsUpdate = false;
-		Promise.all( promises ).then( () => {
-
-			this.needsUpdate = true;
-
-		} );
+		}
 
 	}
 
@@ -354,6 +345,34 @@ export class ImageOverlayPlugin {
 	}
 
 	// new internal
+	_initOverlay( overlay ) {
+
+		const { tiles } = this;
+		overlay.imageSource.fetchOptions = tiles.fetchOptions;
+		overlay.init();
+
+		const promises = [];
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			promises.push( this.processQueue.add( tile, async () => {
+
+				await this._initTileOverlayInfo( tile, overlay );
+				await this._initTileSceneOverlayInfo( scene, tile, overlay );
+				this._updateLayers( scene, tile );
+
+			} ) );
+
+		} );
+
+		this.needsUpdate = false;
+		Promise.all( promises ).then( () => {
+
+			this.needsUpdate = true;
+
+		} );
+
+	}
+
 	_wrapMaterials( scene ) {
 
 		scene.traverse( c => {
