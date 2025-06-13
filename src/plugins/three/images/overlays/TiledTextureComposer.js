@@ -33,21 +33,6 @@ export class TiledTextureComposer {
 		material.opacity = opacity;
 		material.color.set( color );
 
-		// prep for mercator projection
-		if ( projection !== null ) {
-
-			material.minCart.set( span[ 0 ], span[ 1 ] );
-			material.maxCart.set( span[ 2 ], span[ 3 ] );
-			material.isMercator = projection.isMercator;
-
-		} else {
-
-			material.minCart.set( 0, 0 );
-			material.maxCart.set( 1, 1 );
-			material.isMercator = false;
-
-		}
-
 		// map the range to draw the texture to
 		material.minRange.x = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], - 1, 1 );
 		material.minRange.y = MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], - 1, 1 );
@@ -132,31 +117,6 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 	}
 
-	// the cartographic lat / lon values used for mercator projection adjustments
-	set isMercator( v ) {
-
-		this.uniforms.isMercator.value = v ? 1 : 0;
-
-	}
-
-	get isMercator() {
-
-		return this.uniforms.isMercator.value === 1;
-
-	}
-
-	get minCart() {
-
-		return this.uniforms.minCart.value;
-
-	}
-
-	get maxCart() {
-
-		return this.uniforms.maxCart.value;
-
-	}
-
 	// access the map being drawn
 	get map() {
 
@@ -185,13 +145,6 @@ class ComposeTextureMaterial extends ShaderMaterial {
 				minRange: { value: new Vector2() },
 				maxRange: { value: new Vector2() },
 
-				// the cartographic lat / lon range that the texture spans
-				minCart: { value: new Vector2() },
-				maxCart: { value: new Vector2() },
-
-				// whether the texture to draw is using mercator projection
-				isMercator: { value: 0 },
-
 				opacity: { value: 1 },
 			},
 
@@ -217,44 +170,13 @@ class ComposeTextureMaterial extends ShaderMaterial {
 				uniform sampler2D map;
 				varying vec2 vUv;
 
-				uniform int isMercator;
 				uniform vec2 minRange;
 				uniform vec2 maxRange;
 
-				uniform vec2 minCart;
-				uniform vec2 maxCart;
-
-				#define PI ${ Math.PI.toFixed( 10 ) }
-
-				// convert the cartographic value to the [ 0, 1 ] range using mercator
-				vec2 cartToProjMercator( vec2 cart ) {
-
-					float mercatorN = log( tan( ( PI / 4.0 ) + ( cart.y / 2.0 ) ) );
-					vec2 result;
-					result.x = ( cart.x + PI ) / ( 2.0 * PI );
-					result.y = ( 1.0 / 2.0 ) + ( 1.0 * mercatorN / ( 2.0 * PI ) );
-					return result;
-
-				}
-
 				void main() {
 
-					vec2 uv = vUv;
-					if ( isMercator == 1 ) {
-
-						// take the point on the image and find the mercator point to sample
-						vec2 minProj = cartToProjMercator( minCart );
-						vec2 maxProj = cartToProjMercator( maxCart );
-						vec2 proj = cartToProjMercator( mix( minCart, maxCart, uv ) );
-
-						float range = maxProj.y - minProj.y;
-						float offset = proj.y - minProj.y;
-						uv.y = offset / range;
-
-					}
-
 					// sample the texture
-					gl_FragColor = texture( map, uv );
+					gl_FragColor = texture( map, vUv );
 					gl_FragColor.rgb *= color;
 					gl_FragColor.a *= opacity;
 
