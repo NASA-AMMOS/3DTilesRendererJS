@@ -6,6 +6,7 @@ import { TMSImageSource } from './sources/TMSImageSource.js';
 import { UVRemapper } from './overlays/UVRemapper.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
+import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 
 // function for marking and releasing images in the given overlay
 async function markOverlayImages( range, level, overlay, doRelease ) {
@@ -115,9 +116,12 @@ export class ImageOverlayPlugin {
 
 			processQueue.add( tile, async tile => {
 
+				// TODO: wrap materials
+				this._wrapMaterials( scene );
+
 				await this._initTileOverlayInfo( tile );
 				await this._initTileSceneOverlayInfo( scene, tile );
-				// TODO: update material layers
+				this._updateLayers( scene, tile );
 
 			} );
 
@@ -214,8 +218,10 @@ export class ImageOverlayPlugin {
 
 		return this.processQueue.add( tile, async tile => {
 
+			this._wrapMaterials( scene );
+
 			await this._initTileSceneOverlayInfo( scene, tile );
-			// TODO: update materials
+			this._updateLayers( scene, tile );
 
 		} );
 
@@ -290,7 +296,7 @@ export class ImageOverlayPlugin {
 
 				await this._initTileOverlayInfo( tile, overlay );
 				await this._initTileSceneOverlayInfo( scene, tile, overlay );
-				// TODO: update materials
+				this._updateLayers( scene, tile );
 
 			} ) );
 
@@ -348,6 +354,20 @@ export class ImageOverlayPlugin {
 	}
 
 	// new internal
+	_wrapMaterials( scene ) {
+
+		scene.traverse( c => {
+
+			if ( c.material ) {
+
+				wrapOverlaysMaterial( c.material );
+
+			}
+
+		} );
+
+	}
+
 	async _initTileOverlayInfo( tile, overlay = this.overlays ) {
 
 		if ( Array.isArray( overlay ) ) {

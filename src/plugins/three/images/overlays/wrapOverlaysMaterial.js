@@ -1,5 +1,5 @@
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
-export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
+export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
 		layerMaps: { value: [] },
@@ -26,13 +26,18 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 		shader.vertexShader = shader
 			.vertexShader
-			.replace( /void main\(/, value => /* glsl */`
+			.replace( /void main\(\s*\)\s*{/, value => /* glsl */`
 
 				#pragma unroll_loop_start
-					for ( int i = 0; i < LAYER_COUNT; i ++ ) {
+					for ( int i = 0; i < 10; i ++ ) {
 
-						attribute vec2 layer_uv_UNROLLED_LOOP_INDEX;
-						varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+
+							attribute vec2 layer_uv_UNROLLED_LOOP_INDEX;
+							varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+
+						#endif
+
 
 					}
 				#pragma unroll_loop_end
@@ -40,9 +45,13 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 				${ value }
 
 				#pragma unroll_loop_start
-					for ( int i = 0; i < LAYER_COUNT; i ++ ) {
+					for ( int i = 0; i < 10; i ++ ) {
 
-						layer_uv_UNROLLED_LOOP_INDEX = v_layer_uv_UNROLLED_LOOP_INDEX;
+						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+
+							v_layer_uv_UNROLLED_LOOP_INDEX = layer_uv_UNROLLED_LOOP_INDEX;
+
+						#endif
 
 					}
 				#pragma unroll_loop_end
@@ -57,16 +66,20 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					struct LayerInfo {
 						vec3 tint;
 						float opacity;
-						bool isMercator;
-					}
-					sampler2D layerMaps[ LAYER_COUNT ];
+					};
+
+					uniform sampler2D layerMaps[ LAYER_COUNT ];
 					uniform LayerInfo layerInfo[ LAYER_COUNT ];
 				#endif
 
 				#pragma unroll_loop_start
-					for ( int i = 0; i < LAYER_COUNT; i ++ ) {
+					for ( int i = 0; i < 10; i ++ ) {
 
-						varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+
+							varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+
+						#endif
 
 					}
 				#pragma unroll_loop_end
@@ -84,20 +97,21 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 					vec2 layerUV;
 					float layerOpacity;
 					#pragma unroll_loop_start
-						for ( int i = 0; i < LAYER_COUNT; i ++ ) {
+						for ( int i = 0; i < 10; i ++ ) {
 
-							layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
+							#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
-							// TODO: handle mercator sampling
+								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
+								layerColor = texture( layerMaps[ i ], layerUV );
 
-							layerColor = texture( layerMaps[ i ], layerUV );
+								// apply tint
+								layerColor.rgb *= layerInfo[ i ].tint;
+								layerColor.rgba *= layerInfo[ i ].opacity;
 
-							// apply tint
-							layerColor.rgb *= layerInfo[ i ].tint;
-							layerColor.a *= layerInfo[ i ].opacity;
+								// premultiplied alpha equation
+								diffuseColor = layerColor + diffuseColor * ( 1.0 - layerColor.a );
 
-							// premultiplied alpha equation
-							diffuseColor.rgb = layerColor + diffuseColor * ( 1.0 - layerColor.a );
+							#endif
 
 						}
 					#pragma unroll_loop_end
