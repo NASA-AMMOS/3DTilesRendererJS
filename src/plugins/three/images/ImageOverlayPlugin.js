@@ -310,7 +310,11 @@ export class ImageOverlayPlugin {
 
 				meshInfo.forEach( ( { target } ) => {
 
-					target.dispose();
+					if ( target !== null ) {
+
+						target.dispose();
+
+					}
 
 				} );
 
