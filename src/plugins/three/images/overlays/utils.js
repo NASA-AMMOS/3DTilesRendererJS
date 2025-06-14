@@ -1,4 +1,4 @@
-import { Vector3, Matrix4 } from 'three';
+import { Vector3, Matrix4, MathUtils } from 'three';
 
 // iterates over all present tiles in the given tile set at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, callback ) {
@@ -29,7 +29,7 @@ export function forEachTileInBounds( range, level, tiling, callback ) {
 
 }
 
-function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
+function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 	const _vec = new Vector3();
 	const _cart = {};
@@ -91,7 +91,7 @@ function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, projection ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -112,7 +112,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 		}
 
-		const { uv, range } = getGeometryCartoChannel( mesh.geometry, _matrix, ellipsoid );
+		const { uv, range } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
 		uvs.push( uv );
 		ranges.push( range );
 
@@ -125,14 +125,27 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	} );
 
-	const lonRange = maxLon - minLon;
-	const latRange = maxLat - minLat;
+	const minU = projection.convertLongitudeToProjection( minLon );
+	const maxU = projection.convertLongitudeToProjection( maxLon );
+
+	let minV = projection.convertLatitudeToProjection( minLat );
+	let maxV = projection.convertLatitudeToProjection( maxLat );
+	minV = MathUtils.clamp( minV, 0, 1 );
+	maxV = MathUtils.clamp( maxV, 0, 1 );
+
 	uvs.forEach( uv => {
 
 		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
 
-			uv[ i + 0 ] = ( uv[ i + 0 ] - minLon ) / lonRange;
-			uv[ i + 1 ] = ( uv[ i + 1 ] - minLat ) / latRange;
+			const lon = uv[ i + 0 ];
+			const lat = uv[ i + 1 ];
+
+			const u = projection.convertLongitudeToProjection( lon );
+			let v = projection.convertLatitudeToProjection( lat );
+			v = MathUtils.clamp( v, 0, 1 );
+
+			uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
+			uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 
 		}
 
