@@ -9,4 +9,6 @@ export class ReorientationPlugin {
 		height?: number,
 	} );
 
+	transformLatLonHeightToOrigin( lat: number, lon: number, height?: number ): void;
+
 }

@@ -12,7 +12,22 @@ export const IS_LEAF : ColorMode;
 export const RANDOM_COLOR : ColorMode;
 export const RANDOM_NODE_COLOR: ColorMode;
 export const CUSTOM_COLOR: ColorMode;
+
 export class DebugTilesPlugin {
+
+	constructor( options?: {
+		displayParentBounds?: boolean,
+		displayBoxBounds?: boolean,
+		displaySphereBounds?: boolean,
+		displayRegionBounds?: boolean,
+		colorMode?: ColorMode,
+		maxDebugDepth?: number,
+		maxDebugDistance?: number,
+		maxDebugError?: number,
+		customColorCallback?: ( val: Tile, target: Color ) => void,
+		unlit?: boolean,
+		enabled?: boolean,
+	} );
 
 	static ColorModes: typeof ColorMode;
 
