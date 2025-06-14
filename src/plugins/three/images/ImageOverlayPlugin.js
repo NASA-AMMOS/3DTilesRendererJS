@@ -302,17 +302,13 @@ export class ImageOverlayPlugin {
 		if ( index !== - 1 ) {
 
 			const { tileInfo } = overlayInfo.get( overlay );
-			tileInfo.forEach( ( { meshInfo } ) => {
+			tileInfo.forEach( ( { meshInfo, target } ) => {
 
-				meshInfo.forEach( ( { target } ) => {
+				if ( target !== null ) {
 
-					if ( target !== null ) {
+					target.dispose();
 
-						target.dispose();
-
-					}
-
-				} );
+				}
 
 				meshInfo.clear();
 
@@ -485,12 +481,14 @@ export class ImageOverlayPlugin {
 		if ( target !== null ) {
 
 			const { tiling, imageSource } = overlay;
-			tileComposer.setRenderTarget( target, range );
+			const clampedRange = tiling.clampToBounds( range );
+			const normRange = tiling.toNormalizedRange( clampedRange );
+			tileComposer.setRenderTarget( target, normRange );
 			tileComposer.clear( 0xffffff, 0 );
 
 			forEachTileInBounds( range, tileInfo.level, tiling, ( tx, ty, tl ) => {
 
-				const span = tiling.getTileBounds( tx, ty, tl );
+				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
 				tex.dispose();
