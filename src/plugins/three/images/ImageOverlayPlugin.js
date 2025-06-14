@@ -380,7 +380,7 @@ export class ImageOverlayPlugin {
 
 			if ( c.material ) {
 
-				const params = wrapOverlaysMaterial( c.material );
+				const params = wrapOverlaysMaterial( c.material, c.material.onBeforeCompile );
 				this.meshParams.set( c, params );
 
 			}
@@ -461,10 +461,10 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		await markOverlayImages( range, tileInfo.level, overlay, true );
+		await markOverlayImages( range, tileInfo.level, overlay, false );
 
 		// draw the textures
-		const { tiling, imageSource, projection } = overlay;
+		const { tiling, imageSource } = overlay;
 		tileInfo.meshInfo.forEach( ( { target, range } ) => {
 
 			tileComposer.setRenderTarget( target, range );
@@ -474,7 +474,7 @@ export class ImageOverlayPlugin {
 
 				const span = tiling.getTileBounds( tx, ty, tl );
 				const tex = imageSource.get( tx, ty, tl );
-				tileComposer.draw( tex, span, projection );
+				tileComposer.draw( tex, span );
 
 			} );
 
@@ -496,7 +496,7 @@ export class ImageOverlayPlugin {
 
 				// assign the new uvs
 				geometry.dispose();
-				geometry.setAttribute( `uv_layer_${ i }`, new BufferAttribute( new Float32Array( uv ), 2, false ) );
+				geometry.setAttribute( `layer_uv_${ i }`, new BufferAttribute( new Float32Array( uv ), 2, false ) );
 
 				// set the uniform array lengths
 				params.layerMaps.length = overlays.length;
@@ -509,6 +509,7 @@ export class ImageOverlayPlugin {
 					tint: overlay.color,
 				};
 
+				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
 
 			} );
