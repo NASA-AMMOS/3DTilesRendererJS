@@ -463,10 +463,12 @@ export class ImageOverlayPlugin {
 			let target = null;
 			if ( countTilesToDraw( range, tileInfo.level, overlay ) !== 0 ) {
 
-				target = new WebGLRenderTarget(
-					resolution, resolution,
-					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
-				);
+				target = new WebGLRenderTarget( resolution, resolution, {
+					depthBuffer: false,
+					stencilBuffer: false,
+					generateMipmaps: false,
+					colorSpace: SRGBColorSpace,
+				} );
 
 			}
 
