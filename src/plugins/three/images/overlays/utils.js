@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, Matrix4 } from 'three';
 
 // iterates over all present tiles in the given tile set at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, callback ) {
@@ -91,7 +91,7 @@ function getGeometryCartoChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -100,9 +100,19 @@ export function getMeshesCartographicRange( meshes, ellipsoid ) {
 	let maxLon = - Infinity;
 	const uvs = [];
 	const ranges = [];
+
+	const _matrix = new Matrix4();
 	meshes.forEach( mesh => {
 
-		const { uv, range } = getGeometryCartoChannel( mesh.geometry, mesh.matrixWorld, ellipsoid );
+		// multiply in the ellipsoid matrix if necessary
+		_matrix.copy( mesh.matrixWorld );
+		if ( meshToEllipsoidMatrix ) {
+
+			_matrix.premultiply( meshToEllipsoidMatrix );
+
+		}
+
+		const { uv, range } = getGeometryCartoChannel( mesh.geometry, _matrix, ellipsoid );
 		uvs.push( uv );
 		ranges.push( range );
 

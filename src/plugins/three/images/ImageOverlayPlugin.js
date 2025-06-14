@@ -447,7 +447,8 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid );
+		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
+		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix );
 		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
 		tileInfo.meshRange = range;
 		meshes.forEach( ( mesh, i ) => {
