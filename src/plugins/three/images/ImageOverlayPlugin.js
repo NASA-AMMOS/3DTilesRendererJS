@@ -43,6 +43,18 @@ async function markOverlayImages( range, level, overlay, doRelease ) {
 
 }
 
+function countTilesToDraw( range, level, overlay ) {
+
+	let total = 0;
+	forEachTileInBounds( range, level, overlay.tiling, () => {
+
+		total ++;
+
+	} );
+
+	return total;
+
+}
 
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
@@ -68,7 +80,6 @@ export class ImageOverlayPlugin {
 		this.processQueue = null;
 		this.tiles = null;
 		this.tileComposer = null;
-		this.scratchTarget = null;
 		this.tileInfo = new Map();
 		this.overlayInfo = new Map();
 		this.usedTextures = new Set();
@@ -95,18 +106,11 @@ export class ImageOverlayPlugin {
 		};
 
 		const tileComposer = new TiledTextureComposer( this.renderer );
-		const scratchTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
-			depthBuffer: false,
-			stencilBuffer: false,
-			generateMipmaps: false,
-			colorSpace: SRGBColorSpace,
-		} );
 
 		// save variables
 		this.tiles = tiles;
 		this.processQueue = processQueue;
 		this.tileComposer = tileComposer;
-		this.scratchTarget = scratchTarget;
 
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -253,7 +257,7 @@ export class ImageOverlayPlugin {
 		// reset the textures of the meshes
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this._resetTileOverlay( tile );
+			this._updateLayers( scene, tile );
 			this.disposeTile( tile );
 
 		} );
@@ -454,13 +458,22 @@ export class ImageOverlayPlugin {
 		tileInfo.meshRange = range;
 		meshes.forEach( ( mesh, i ) => {
 
+			// if there are no textures to draw in the tiled image set the don't
+			// allocate a texture for it.
+			let target = null;
+			if ( countTilesToDraw( range, tileInfo.level, overlay ) !== 0 ) {
+
+				target = new WebGLRenderTarget(
+					resolution, resolution,
+					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
+				);
+
+			}
+
 			tileInfo.meshInfo.set( mesh, {
 				range: ranges[ i ],
 				uv: uvs[ i ],
-				target: new WebGLRenderTarget(
-					resolution, resolution,
-					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
-				),
+				target: target,
 			} );
 
 		} );
@@ -471,6 +484,12 @@ export class ImageOverlayPlugin {
 		const { tiling, imageSource } = overlay;
 		tileInfo.meshInfo.forEach( ( { target, range } ) => {
 
+			if ( target === null ) {
+
+				return;
+
+			}
+
 			tileComposer.setRenderTarget( target, range );
 			tileComposer.clear( 0xffffff, 0 );
 
@@ -479,6 +498,7 @@ export class ImageOverlayPlugin {
 				const span = tiling.getTileBounds( tx, ty, tl );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
+				tex.dispose();
 
 			} );
 
@@ -507,7 +527,7 @@ export class ImageOverlayPlugin {
 				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
-				params.layerMaps.value[ i ] = target.texture;
+				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
 				params.layerInfo.value[ i ] = overlay;
 
 				material.defines.LAYER_COUNT = overlays.length;
