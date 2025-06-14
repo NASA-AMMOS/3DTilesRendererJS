@@ -28,7 +28,8 @@ const params = {
 	enableRendererStats: false,
 	mapBase: false,
 	errorTarget: 2,
-	layerOpacity: 1.0,
+	opacity: 1.0,
+	color: '#ffffff',
 	reload: reinstantiateTiles,
 
 };
@@ -111,12 +112,19 @@ function init() {
 	gui.add( params, 'enableRendererStats' );
 	gui.add( params, 'mapBase' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
-	gui.add( params, 'layerOpacity', 0, 1 ).onChange( v => {
+
+	const layerFolder = gui.addFolder( 'Layer' );
+	layerFolder.add( params, 'opacity', 0, 1 ).onChange( v => {
 
 		washingtonOverlay.opacity = v;
-		tiles.getPluginByName( 'IMAGE_OVERLAY_PLUGIN' ).needsUpdate = true;
 
 	} );
+	layerFolder.addColor( params, 'color' ).onChange( v => {
+
+		washingtonOverlay.color.set( v );
+
+	} );
+
 	gui.add( params, 'reload' );
 
 	statsContainer = document.createElement( 'div' );

@@ -112,8 +112,9 @@ class ComposeTextureMaterial extends ShaderMaterial {
 		super( {
 			depthWrite: false,
 			depthTest: false,
-			transparent: true,
+			transparent: false,
 			side: DoubleSide,
+			premultipliedAlpha: true,
 			uniforms: {
 				map: { value: null },
 
@@ -148,6 +149,7 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 					// sample the texture
 					gl_FragColor = texture( map, vUv );
+					#include <premultiplied_alpha_fragment>
 
 				}
 
