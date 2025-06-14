@@ -3,7 +3,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
 		layerMaps: { value: [] },
-		layerInfo: { value: [] },
+		layerColor: { value: [] },
 	};
 
 	material.defines = {
@@ -63,13 +63,13 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 			.replace( /void main\(/, value => /* glsl */`
 
 				#if LAYER_COUNT != 0
-					struct LayerInfo {
+					struct LayerTint {
 						vec3 color;
 						float opacity;
 					};
 
 					uniform sampler2D layerMaps[ LAYER_COUNT ];
-					uniform LayerInfo layerInfo[ LAYER_COUNT ];
+					uniform LayerTint layerColor[ LAYER_COUNT ];
 				#endif
 
 				#pragma unroll_loop_start
@@ -93,7 +93,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 				#if LAYER_COUNT != 0
 				{
-					vec4 layerColor;
+					vec4 tint;
 					vec2 layerUV;
 					float layerOpacity;
 					#pragma unroll_loop_start
@@ -102,14 +102,14 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 							#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
 								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
-								layerColor = texture( layerMaps[ i ], layerUV );
+								tint = texture( layerMaps[ i ], layerUV );
 
 								// apply tint & opacity
-								layerColor.rgb *= layerInfo[ i ].color;
-								layerColor.rgba *= layerInfo[ i ].opacity;
+								tint.rgb *= layerColor[ i ].color;
+								tint.rgba *= layerColor[ i ].opacity;
 
 								// premultiplied alpha equation
-								diffuseColor = layerColor + diffuseColor * ( 1.0 - layerColor.a );
+								diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
 
 							#endif
 

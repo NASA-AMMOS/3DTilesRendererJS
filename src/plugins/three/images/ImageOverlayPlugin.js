@@ -526,11 +526,11 @@ export class ImageOverlayPlugin {
 
 				// set the uniform array lengths
 				params.layerMaps.length = overlays.length;
-				params.layerInfo.length = overlays.length;
+				params.layerColor.length = overlays.length;
 
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
-				params.layerInfo.value[ i ] = overlay;
+				params.layerColor.value[ i ] = overlay;
 
 				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
