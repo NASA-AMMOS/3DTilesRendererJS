@@ -99,7 +99,6 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 	let maxLat = - Infinity;
 	let maxLon = - Infinity;
 	const uvs = [];
-	const ranges = [];
 
 	const _matrix = new Matrix4();
 	meshes.forEach( mesh => {
@@ -114,7 +113,6 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 		const { uv, range } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
 		uvs.push( uv );
-		ranges.push( range );
 
 		// save the min and max values
 		minLat = Math.min( minLat, range[ 1 ] );
@@ -153,7 +151,6 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		ranges,
 		range: [ minLon, minLat, maxLon, maxLat ],
 	};
 

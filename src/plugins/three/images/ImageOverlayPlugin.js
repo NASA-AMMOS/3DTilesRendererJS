@@ -435,17 +435,17 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// wait for the overlay to be completely loaded so projection and tiling are available
 		await overlay.whenReady();
-
 		if ( ! overlayInfo.has( overlay ) ) {
 
 			return;
 
 		}
 
-
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
-		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, overlay.projection );
+		const { tiling, projection, imageSource } = overlay;
+		const { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, projection );
 		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
 
 		// if there are no textures to draw in the tiled image set the don't
@@ -460,7 +460,6 @@ export class ImageOverlayPlugin {
 				colorSpace: SRGBColorSpace,
 			} );
 
-
 		}
 
 		tileInfo.meshRange = range;
@@ -469,7 +468,6 @@ export class ImageOverlayPlugin {
 		meshes.forEach( ( mesh, i ) => {
 
 			tileInfo.meshInfo.set( mesh, {
-				range: ranges[ i ],
 				uv: uvs[ i ],
 			} );
 
@@ -488,7 +486,6 @@ export class ImageOverlayPlugin {
 		// draw the textures
 		if ( target !== null ) {
 
-			const { tiling, imageSource } = overlay;
 			const clampedRange = tiling.clampToBounds( range );
 			const normRange = tiling.toNormalizedRange( clampedRange );
 			tileComposer.setRenderTarget( target, normRange );
