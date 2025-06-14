@@ -412,9 +412,11 @@ export class ImageOverlayPlugin {
 		if ( tile.boundingVolume.region ) {
 
 			const level = tile.__depthFromRenderedParent - 1;
-			const region = tile.boundingVolume.region;
-			await markOverlayImages( region, level, this.overlays, false );
-			info.range = region.splice();
+			const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
+			const range = [ minLon, minLat, maxLon, maxLat ];
+			await markOverlayImages( range, level, this.overlays, false );
+
+			info.range = range;
 			info.level = level;
 
 		}

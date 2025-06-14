@@ -107,11 +107,11 @@ export function getMeshesCartographicRange( meshes, ellipsoid ) {
 		ranges.push( range );
 
 		// save the min and max values
-		minLat = Math.min( minLat, range[ 0 ] );
-		maxLat = Math.max( maxLat, range[ 2 ] );
+		minLat = Math.min( minLat, range[ 1 ] );
+		maxLat = Math.max( maxLat, range[ 3 ] );
 
-		minLon = Math.min( minLon, range[ 1 ] );
-		maxLon = Math.max( maxLon, range[ 3 ] );
+		minLon = Math.min( minLon, range[ 0 ] );
+		maxLon = Math.max( maxLon, range[ 2 ] );
 
 	} );
 
