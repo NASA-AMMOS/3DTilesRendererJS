@@ -83,10 +83,10 @@ function init() {
 	// scene
 	scene = new Scene();
 
-	// camera and transition set up
+	// camera set up
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 4800000, 2570000, 14720000 );
-	camera.lookAt( 0, 0, 0 );
+	camera.position.set( 1150000, 3920000, 4980000 );
+	camera.rotation.set( 0.381, 0.202, - 0.090 );
 
 	// lights
 	const ambientLight = new AmbientLight( 0xffffff, 0.25 );
@@ -113,7 +113,7 @@ function init() {
 	gui.add( params, 'mapBase' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
 
-	const layerFolder = gui.addFolder( 'Layer' );
+	const layerFolder = gui.addFolder( 'Washington DC Layer' );
 	layerFolder.add( params, 'opacity', 0, 1 ).onChange( v => {
 
 		washingtonOverlay.opacity = v;

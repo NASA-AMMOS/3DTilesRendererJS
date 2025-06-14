@@ -499,6 +499,8 @@ export class ImageOverlayPlugin {
 				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
+
+				// TODO: this is still failing sometimes
 				tex.dispose();
 
 			} );
