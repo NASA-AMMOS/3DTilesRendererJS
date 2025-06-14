@@ -942,7 +942,12 @@ export class DebugTilesPlugin {
 
 		// reset all materials
 		this.colorMode = NONE;
-		this._onUpdateAfter();
+		this.unlit = false;
+		tiles.forEachLoadedModel( scene => {
+
+			this._updateMaterial( scene );
+
+		} );
 
 		// dispose of all helper objects
 		tiles.traverse( tile => {
