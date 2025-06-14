@@ -263,8 +263,8 @@ export class ImageOverlayPlugin {
 
 		if ( order === null ) {
 
-			// TODO: this should be the largest order value
-			order = overlays.length;
+			// set the order to the next largest order value
+			order = overlays.reduce( ( v, o ) => Math.max( v, o.order + 1 ), 0 );
 
 		}
 
@@ -335,13 +335,8 @@ export class ImageOverlayPlugin {
 		const promises = [];
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			promises.push( ( async () => {
-
-				this._initTileOverlayInfo( tile, overlay );
-				await this._initTileSceneOverlayInfo( scene, tile, overlay );
-				this._updateLayers( tile );
-
-			} )() );
+			this._initTileOverlayInfo( tile, overlay );
+			promises.push( this._initTileSceneOverlayInfo( scene, tile, overlay ) );
 
 		} );
 
