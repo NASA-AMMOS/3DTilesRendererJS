@@ -369,11 +369,12 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async _initTileOverlayInfo( tile, overlay = this.overlays ) {
+	_initTileOverlayInfo( tile, overlay = this.overlays ) {
 
 		if ( Array.isArray( overlay ) ) {
 
-			return Promise.all( overlay.map( o => this._initTileOverlayInfo( tile, o ) ) );
+			overlay.forEach( o => this._initTileOverlayInfo( tile, o ) );
+			return;
 
 		}
 
@@ -405,7 +406,7 @@ export class ImageOverlayPlugin {
 			const range = [ minLon, minLat, maxLon, maxLat ];
 			info.range = range;
 
-			await markOverlayImages( range, level, overlay, false );
+			markOverlayImages( range, level, overlay, false );
 
 		}
 
@@ -467,9 +468,9 @@ export class ImageOverlayPlugin {
 
 		meshes.forEach( ( mesh, i ) => {
 
-			tileInfo.meshInfo.set( mesh, {
-				uv: uvs[ i ],
-			} );
+			const array = new Float32Array( uvs[ i ] );
+			const attribute = new BufferAttribute( array, 2 );
+			tileInfo.meshInfo.set( mesh, { attribute } );
 
 		} );
 
@@ -521,14 +522,14 @@ export class ImageOverlayPlugin {
 			}
 
 			const { meshInfo, target } = tileInfo.get( tile );
-			meshInfo.forEach( ( { uv }, mesh ) => {
+			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
 				const params = this.meshParams.get( mesh );
 
 				// assign the new uvs
 				geometry.dispose();
-				geometry.setAttribute( `layer_uv_${ i }`, new BufferAttribute( new Float32Array( uv ), 2, false ) );
+				geometry.setAttribute( `layer_uv_${ i }`, attribute );
 
 				// set the uniform array lengths
 				params.layerMaps.length = overlays.length;
