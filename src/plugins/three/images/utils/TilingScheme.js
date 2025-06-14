@@ -214,10 +214,10 @@ export class TilingScheme {
 
 	}
 
-	getTileExists( x, y, level, LOG ) {
+	getTileExists( x, y, level ) {
 
 		const [ rminx, rminy, rmaxx, rmaxy ] = this.rootBounds;
-		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level, LOG );
+		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
