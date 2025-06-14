@@ -168,7 +168,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlays, overlayInfo, tileControllers } = this;
+		const { overlayInfo, tileControllers } = this;
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -180,7 +180,7 @@ export class ImageOverlayPlugin {
 		}
 
 		// stop any tile loads
-		overlayInfo.forEach( ( ( { tileInfo } ) => {
+		overlayInfo.forEach( ( ( { tileInfo }, overlay ) => {
 
 			if ( tileInfo.has( tile ) ) {
 
@@ -189,13 +189,13 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( meshRange !== null ) {
 
-					markOverlayImages( meshRange, level, overlays, true );
+					markOverlayImages( meshRange, level, overlay, true );
 
 				}
 
 				if ( range !== null ) {
 
-					markOverlayImages( range, level, overlays, true );
+					markOverlayImages( range, level, overlay, true );
 
 				}
 
@@ -494,8 +494,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const clampedRange = tiling.clampToBounds( range );
-		await markOverlayImages( clampedRange, info.level, overlay, false );
+		await markOverlayImages( range, info.level, overlay, false );
 
 		// check if the overlay has been disposed since starting this function
 		if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -507,6 +506,7 @@ export class ImageOverlayPlugin {
 		// draw the textures
 		if ( target !== null ) {
 
+			const clampedRange = tiling.clampToBounds( range );
 			const normRange = tiling.toNormalizedRange( clampedRange );
 			tileComposer.setRenderTarget( target, normRange );
 			tileComposer.clear( 0xffffff, 0 );
@@ -516,8 +516,6 @@ export class ImageOverlayPlugin {
 				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
-
-				// TODO: this is still failing sometimes
 				tex.dispose();
 
 			} );
