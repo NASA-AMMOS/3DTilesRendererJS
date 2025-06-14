@@ -102,13 +102,9 @@ export class ImageOverlayPlugin {
 		this.tileComposer = tileComposer;
 
 		// init all existing tiles
-		tiles.forEachLoadedModel( async ( scene, tile ) => {
+		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this._wrapMaterials( scene );
-
-			await this._initTileOverlayInfo( tile );
-			await this._initTileSceneOverlayInfo( scene, tile );
-			this._updateLayers( scene, tile );
+			this.processTileModel( scene, tile );
 
 		} );
 
@@ -131,18 +127,19 @@ export class ImageOverlayPlugin {
 				execId ++;
 				const id = execId;
 
-				// wait for all overlays to be ready
+				// wait for all overlays to be ready and therefore after all prior work that
+				// awaits these promises is ready
 				const promises = overlays.map( overlay => overlay.whenReady() );
 				await Promise.all( promises );
 
 				if ( id === execId ) {
 
-					// TODO: update drawn textures
+					// TODO: When a planar projection has been updated, we have to update drawn textures? Uvs?
 
 					// TODO: if the order is the only thing that changes then we don't really need to wait for the above?
 					tiles.forEachLoadedModel( ( scene, tile ) => {
 
-						this._updateLayers( scene, tile );
+						this._updateLayers( tile );
 
 					} );
 
@@ -212,10 +209,9 @@ export class ImageOverlayPlugin {
 	async processTileModel( scene, tile ) {
 
 		this._wrapMaterials( scene );
-
-		await this._initTileOverlayInfo( tile );
+		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
-		this._updateLayers( scene, tile );
+		this._updateLayers( tile );
 
 	}
 
@@ -237,7 +233,7 @@ export class ImageOverlayPlugin {
 		// reset the textures of the meshes
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this._updateLayers( scene, tile );
+			this._updateLayers( tile );
 			this.disposeTile( tile );
 
 		} );
@@ -345,9 +341,9 @@ export class ImageOverlayPlugin {
 
 			promises.push( ( async () => {
 
-				await this._initTileOverlayInfo( tile, overlay );
+				this._initTileOverlayInfo( tile, overlay );
 				await this._initTileSceneOverlayInfo( scene, tile, overlay );
-				this._updateLayers( scene, tile );
+				this._updateLayers( tile );
 
 			} )() );
 
@@ -382,6 +378,14 @@ export class ImageOverlayPlugin {
 		if ( Array.isArray( overlay ) ) {
 
 			return Promise.all( overlay.map( o => this._initTileOverlayInfo( tile, o ) ) );
+
+		}
+
+		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
+		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
+		if ( this.overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
+
+			return;
 
 		}
 
@@ -436,8 +440,16 @@ export class ImageOverlayPlugin {
 
 		await overlay.whenReady();
 
+		if ( ! overlayInfo.has( overlay ) ) {
+
+			return;
+
+		}
+
+
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, overlay.projection );
+
 		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
 		tileInfo.meshRange = range;
 		meshes.forEach( ( mesh, i ) => {
@@ -492,12 +504,20 @@ export class ImageOverlayPlugin {
 
 	}
 
-	_updateLayers( scene, tile ) {
+	_updateLayers( tile ) {
 
 		const { overlayInfo, overlays } = this;
 		overlays.forEach( ( overlay, i ) => {
 
+			// if the overlay has been removed before this function is fired then the tile will have been removed.
+			// TODO: we should make this more robust
 			const { tileInfo } = overlayInfo.get( overlay );
+			if ( ! tileInfo.has( tile ) ) {
+
+				return;
+
+			}
+
 			const { meshInfo } = tileInfo.get( tile );
 			meshInfo.forEach( ( { uv, target }, mesh ) => {
 
