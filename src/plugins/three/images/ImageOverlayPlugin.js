@@ -78,7 +78,7 @@ export class ImageOverlayPlugin {
 		this.needsUpdate = false;
 		this.tiles = null;
 		this.tileComposer = null;
-		this.tileInfo = new Map();
+		this.tileControllers = new Map();
 		this.overlayInfo = new Map();
 		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
@@ -168,7 +168,16 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlays, overlayInfo } = this;
+		const { overlays, overlayInfo, tileControllers } = this;
+
+		// Cancel any ongoing tasks. If a tile is cancelled while downloading
+		// this will not have been created, yet.
+		if ( tileControllers.has( tile ) ) {
+
+			tileControllers.get( tile ).abort();
+			tileControllers.delete( tile );
+
+		}
 
 		// stop any tile loads
 		overlayInfo.forEach( ( ( { tileInfo } ) => {
@@ -268,11 +277,13 @@ export class ImageOverlayPlugin {
 
 		}
 
+		const controller = new AbortController();
 		overlays.push( overlay );
 		overlayInfo.set( overlay, {
 			order: order,
 			uniforms: {},
 			tileInfo: new Map(),
+			controller: controller,
 		} );
 
 		if ( tiles !== null ) {
@@ -301,7 +312,7 @@ export class ImageOverlayPlugin {
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
-			const { tileInfo } = overlayInfo.get( overlay );
+			const { tileInfo, controller } = overlayInfo.get( overlay );
 			tileInfo.forEach( ( { meshInfo, target } ) => {
 
 				if ( target !== null ) {
@@ -316,16 +327,18 @@ export class ImageOverlayPlugin {
 
 			tileInfo.clear();
 			overlayInfo.delete( overlay );
+			controller.abort();
 
 			overlay.dispose();
-			this.overlays.splice( index, 1 );
+			overlays.splice( index, 1 );
 			this.needsUpdate = true;
 
 		}
 
 	}
 
-	// new internal
+	// internal
+	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
 		const { tiles } = this;
@@ -349,6 +362,7 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// wrap all materials in the given scene wit the overlay material shader
 	_wrapMaterials( scene ) {
 
 		scene.traverse( c => {
@@ -364,6 +378,8 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// Initialize per-tile overlay information. This function triggers an async function but
+	// does not need to be awaited for use since it's just locking textures which are awaited later.
 	_initTileOverlayInfo( tile, overlay = this.overlays ) {
 
 		if ( Array.isArray( overlay ) ) {
@@ -375,7 +391,8 @@ export class ImageOverlayPlugin {
 
 		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
 		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
-		if ( this.overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
+		const { overlayInfo, tileControllers } = this;
+		if ( overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
 
 			return;
 
@@ -390,11 +407,14 @@ export class ImageOverlayPlugin {
 			meshInfo: new Map(),
 		};
 
-		this.overlayInfo
+		overlayInfo
 			.get( overlay )
 			.tileInfo
 			.set( tile, info );
 
+		tileControllers.set( tile, new AbortController() );
+
+		// If the tile has a region bounding volume then mark the tiles to preload
 		if ( tile.boundingVolume.region ) {
 
 			const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
@@ -407,6 +427,7 @@ export class ImageOverlayPlugin {
 
 	}
 
+	// initialize the scene meshes
 	async _initTileSceneOverlayInfo( scene, tile, overlay = this.overlays ) {
 
 		if ( Array.isArray( overlay ) ) {
@@ -415,8 +436,10 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer } = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers } = this;
 		const { ellipsoid } = tiles;
+		const { controller, tileInfo } = overlayInfo.get( overlay );
+		const tileController = tileControllers.get( tile );
 
 		// find all meshes to project on
 		const meshes = [];
@@ -433,7 +456,9 @@ export class ImageOverlayPlugin {
 
 		// wait for the overlay to be completely loaded so projection and tiling are available
 		await overlay.whenReady();
-		if ( ! overlayInfo.has( overlay ) ) {
+
+		// check if the overlay or tile have been disposed since starting this function
+		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 			return;
 
@@ -442,12 +467,12 @@ export class ImageOverlayPlugin {
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { tiling, projection, imageSource } = overlay;
 		const { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, projection );
-		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
+		const info = tileInfo.get( tile );
 
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
 		let target = null;
-		if ( countTilesToDraw( range, tileInfo.level, overlay ) !== 0 ) {
+		if ( countTilesToDraw( range, info.level, overlay ) !== 0 ) {
 
 			target = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
@@ -458,22 +483,22 @@ export class ImageOverlayPlugin {
 
 		}
 
-		tileInfo.meshRange = range;
-		tileInfo.target = target;
+		info.meshRange = range;
+		info.target = target;
 
 		meshes.forEach( ( mesh, i ) => {
 
 			const array = new Float32Array( uvs[ i ] );
 			const attribute = new BufferAttribute( array, 2 );
-			tileInfo.meshInfo.set( mesh, { attribute } );
+			info.meshInfo.set( mesh, { attribute } );
 
 		} );
 
-		await markOverlayImages( range, tileInfo.level, overlay, false );
+		const clampedRange = tiling.clampToBounds( range );
+		await markOverlayImages( clampedRange, info.level, overlay, false );
 
-		// if the overlay has been removed since the async function start
-		// TODO: is there a better way to handle this?
-		if ( ! overlayInfo.has( overlay ) ) {
+		// check if the overlay has been disposed since starting this function
+		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 			return;
 
@@ -482,12 +507,11 @@ export class ImageOverlayPlugin {
 		// draw the textures
 		if ( target !== null ) {
 
-			const clampedRange = tiling.clampToBounds( range );
 			const normRange = tiling.toNormalizedRange( clampedRange );
 			tileComposer.setRenderTarget( target, normRange );
 			tileComposer.clear( 0xffffff, 0 );
 
-			forEachTileInBounds( range, tileInfo.level, tiling, ( tx, ty, tl ) => {
+			forEachTileInBounds( clampedRange, info.level, tiling, ( tx, ty, tl ) => {
 
 				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
@@ -504,18 +528,20 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( tile ) {
 
-		const { overlayInfo, overlays } = this;
+		const { overlayInfo, overlays, tileControllers } = this;
+		const tileController = tileControllers.get( tile );
+
+		// if the tile has been disposed before this function is called then exit early
+		if ( tileController.signal.aborted ) {
+
+			return;
+
+		}
+
+		// update the uvs and texture overlays for each mesh
 		overlays.forEach( ( overlay, i ) => {
 
-			// if the overlay has been removed before this function is fired then the tile will have been removed.
-			// TODO: we should make this more robust
 			const { tileInfo } = overlayInfo.get( overlay );
-			if ( ! tileInfo.has( tile ) ) {
-
-				return;
-
-			}
-
 			const { meshInfo, target } = tileInfo.get( tile );
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
