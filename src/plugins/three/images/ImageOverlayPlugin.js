@@ -507,10 +507,7 @@ export class ImageOverlayPlugin {
 
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target.texture;
-				params.layerInfo.value[ i ] = {
-					opacity: overlay.opacity,
-					tint: overlay.color,
-				};
+				params.layerInfo.value[ i ] = overlay;
 
 				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;

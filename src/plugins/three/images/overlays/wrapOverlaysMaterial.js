@@ -64,7 +64,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 				#if LAYER_COUNT != 0
 					struct LayerInfo {
-						vec3 tint;
+						vec3 color;
 						float opacity;
 					};
 
@@ -104,8 +104,8 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
 								layerColor = texture( layerMaps[ i ], layerUV );
 
-								// apply tint
-								layerColor.rgb *= layerInfo[ i ].tint;
+								// apply tint & opacity
+								layerColor.rgb *= layerInfo[ i ].color;
 								layerColor.rgba *= layerInfo[ i ].opacity;
 
 								// premultiplied alpha equation
