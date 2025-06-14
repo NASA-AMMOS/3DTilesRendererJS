@@ -119,7 +119,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid ) {
 	const latRange = maxLat - minLat;
 	uvs.forEach( uv => {
 
-		for ( let i = 0, l = uv.length; i < l; i ++ ) {
+		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
 
 			uv[ i + 0 ] = ( uv[ i + 0 ] - minLon ) / lonRange;
 			uv[ i + 1 ] = ( uv[ i + 1 ] - minLat ) / latRange;
