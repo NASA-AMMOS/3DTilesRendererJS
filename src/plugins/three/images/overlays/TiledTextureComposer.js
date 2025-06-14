@@ -24,14 +24,12 @@ export class TiledTextureComposer {
 	}
 
 	// draw the given texture at the given span with the provided projection
-	draw( texture, span, projection = null, color = 0xffffff, opacity = 1 ) {
+	draw( texture, span ) {
 
 		// draw the texture at the given sub range
 		const { range, renderer, quad, renderTarget } = this;
 		const material = quad.material;
 		material.map = texture;
-		material.opacity = opacity;
-		material.color.set( color );
 
 		// map the range to draw the texture to
 		material.minRange.x = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], - 1, 1 );
@@ -83,27 +81,6 @@ export class TiledTextureComposer {
 // Draws the given texture with no depth testing at the given bounds defined by "minRange" and "maxRange"
 class ComposeTextureMaterial extends ShaderMaterial {
 
-	// color fields
-	get color() {
-
-		return this.uniforms.color.value;
-
-	}
-
-	get opacity() {
-
-		return this.uniforms?.opacity.value;
-
-	}
-
-	set opacity( v ) {
-
-		if ( ! this.uniforms ) return;
-
-		this.uniforms.opacity.value = v;
-
-	}
-
 	// the [ - 1, 1 ] NDC ranges to draw the texture at
 	get minRange() {
 
@@ -138,14 +115,11 @@ class ComposeTextureMaterial extends ShaderMaterial {
 			transparent: true,
 			side: DoubleSide,
 			uniforms: {
-				color: { value: new Color() },
 				map: { value: null },
 
 				// the normalized [0, 1] range of the target to draw to
 				minRange: { value: new Vector2() },
 				maxRange: { value: new Vector2() },
-
-				opacity: { value: 1 },
 			},
 
 			vertexShader: /* glsl */`
@@ -165,20 +139,15 @@ class ComposeTextureMaterial extends ShaderMaterial {
 
 			fragmentShader: /* glsl */`
 
-				uniform vec3 color;
-				uniform float opacity;
 				uniform sampler2D map;
-				varying vec2 vUv;
-
 				uniform vec2 minRange;
 				uniform vec2 maxRange;
+				varying vec2 vUv;
 
 				void main() {
 
 					// sample the texture
 					gl_FragColor = texture( map, vUv );
-					gl_FragColor.rgb *= color;
-					gl_FragColor.a *= opacity;
 
 				}
 
