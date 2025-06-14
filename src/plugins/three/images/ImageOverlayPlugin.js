@@ -477,6 +477,14 @@ export class ImageOverlayPlugin {
 
 		await markOverlayImages( range, tileInfo.level, overlay, false );
 
+		// if the overlay has been removed since the async function start
+		// TODO: is there a better way to handle this?
+		if ( ! overlayInfo.has( overlay ) ) {
+
+			return;
+
+		}
+
 		// draw the textures
 		if ( target !== null ) {
 
