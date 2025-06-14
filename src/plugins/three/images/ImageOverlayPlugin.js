@@ -175,7 +175,7 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, range, meshRange, level } = tileInfo.get( tile );
+				const { meshInfo, range, meshRange, level, target } = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null ) {
@@ -190,12 +190,12 @@ export class ImageOverlayPlugin {
 
 				}
 
-				// release the render targets
-				meshInfo.forEach( ( { target } ) => {
+				if ( target !== null ) {
 
+					// release the render targets
 					target.dispose();
 
-				} );
+				}
 
 				tileInfo.delete( tile );
 				meshInfo.clear();
@@ -394,6 +394,7 @@ export class ImageOverlayPlugin {
 			range: null,
 			meshRange: null,
 			level: level,
+			target: null,
 			meshInfo: new Map(),
 		};
 
@@ -449,29 +450,31 @@ export class ImageOverlayPlugin {
 
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { range, ranges, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, overlay.projection );
-
 		const tileInfo = overlayInfo.get( overlay ).tileInfo.get( tile );
+
+		// if there are no textures to draw in the tiled image set the don't
+		// allocate a texture for it.
+		let target = null;
+		if ( countTilesToDraw( range, tileInfo.level, overlay ) !== 0 ) {
+
+			target = new WebGLRenderTarget( resolution, resolution, {
+				depthBuffer: false,
+				stencilBuffer: false,
+				generateMipmaps: false,
+				colorSpace: SRGBColorSpace,
+			} );
+
+
+		}
+
 		tileInfo.meshRange = range;
+		tileInfo.target = target;
+
 		meshes.forEach( ( mesh, i ) => {
-
-			// if there are no textures to draw in the tiled image set the don't
-			// allocate a texture for it.
-			let target = null;
-			if ( countTilesToDraw( range, tileInfo.level, overlay ) !== 0 ) {
-
-				target = new WebGLRenderTarget( resolution, resolution, {
-					depthBuffer: false,
-					stencilBuffer: false,
-					generateMipmaps: false,
-					colorSpace: SRGBColorSpace,
-				} );
-
-			}
 
 			tileInfo.meshInfo.set( mesh, {
 				range: ranges[ i ],
 				uv: uvs[ i ],
-				target: target,
 			} );
 
 		} );
@@ -479,15 +482,9 @@ export class ImageOverlayPlugin {
 		await markOverlayImages( range, tileInfo.level, overlay, false );
 
 		// draw the textures
-		const { tiling, imageSource } = overlay;
-		tileInfo.meshInfo.forEach( ( { target, range } ) => {
+		if ( target !== null ) {
 
-			if ( target === null ) {
-
-				return;
-
-			}
-
+			const { tiling, imageSource } = overlay;
 			tileComposer.setRenderTarget( target, range );
 			tileComposer.clear( 0xffffff, 0 );
 
@@ -500,7 +497,7 @@ export class ImageOverlayPlugin {
 
 			} );
 
-		} );
+		}
 
 	}
 
@@ -518,8 +515,8 @@ export class ImageOverlayPlugin {
 
 			}
 
-			const { meshInfo } = tileInfo.get( tile );
-			meshInfo.forEach( ( { uv, target }, mesh ) => {
+			const { meshInfo, target } = tileInfo.get( tile );
+			meshInfo.forEach( ( { uv }, mesh ) => {
 
 				const { geometry, material } = mesh;
 				const params = this.meshParams.get( mesh );
