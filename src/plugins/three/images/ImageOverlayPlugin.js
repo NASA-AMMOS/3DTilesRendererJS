@@ -346,14 +346,19 @@ export class ImageOverlayPlugin {
 		overlay.init();
 
 		const promises = [];
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		tiles.forEachLoadedModel( async ( scene, tile ) => {
 
 			this._initTileOverlayInfo( tile, overlay );
-			promises.push( this._initTileSceneOverlayInfo( scene, tile, overlay ) );
+
+			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
+			promises.push( promise );
+
+			// mark tiles as needing an update after initialized so we get a trickle in of tiles
+			await promise;
+			this.needsUpdate = true;
 
 		} );
 
-		this.needsUpdate = false;
 		Promise.all( promises ).then( () => {
 
 			this.needsUpdate = true;
@@ -436,7 +441,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer, tileControllers } = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -516,7 +521,8 @@ export class ImageOverlayPlugin {
 				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
-				tex.dispose();
+				usedTextures.add( tex );
+				this._scheduleCleanup();
 
 			} );
 
@@ -547,8 +553,13 @@ export class ImageOverlayPlugin {
 				const params = this.meshParams.get( mesh );
 
 				// assign the new uvs
-				geometry.dispose();
-				geometry.setAttribute( `layer_uv_${ i }`, attribute );
+				const key = `layer_uv_${ i }`;
+				if ( geometry.getAttribute( key ) !== attribute ) {
+
+					geometry.setAttribute( key, attribute );
+					geometry.dispose();
+
+				}
 
 				// set the uniform array lengths
 				params.layerMaps.length = overlays.length;
