@@ -214,10 +214,10 @@ export class TilingScheme {
 
 	}
 
-	getTileExists( x, y, level, LOG ) {
+	getTileExists( x, y, level ) {
 
 		const [ rminx, rminy, rmaxx, rmaxy ] = this.rootBounds;
-		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level, LOG );
+		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
@@ -286,6 +286,48 @@ export class TilingScheme {
 		}
 
 		return bounds;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		const result = [ ...range ];
+		const { projection } = this;
+		if ( this.projection ) {
+
+			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
+			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
+			result[ 2 ] = projection.convertLongitudeToProjection( result[ 2 ] );
+			result[ 3 ] = projection.convertLatitudeToProjection( result[ 3 ] );
+
+		}
+
+		return result;
+
+	}
+
+	clampToBounds( range, normalized = false ) {
+
+		const result = [ ...range ];
+		const { projection } = this;
+		if ( normalized || ! projection ) {
+
+			result[ 0 ] = clamp( result[ 0 ], 0, 1 );
+			result[ 1 ] = clamp( result[ 1 ], 0, 1 );
+			result[ 2 ] = clamp( result[ 2 ], 0, 1 );
+			result[ 3 ] = clamp( result[ 3 ], 0, 1 );
+
+		} else {
+
+			const [ minX, minY, maxX, maxY ] = projection.getBounds();
+			result[ 0 ] = clamp( result[ 0 ], minX, maxX );
+			result[ 1 ] = clamp( result[ 1 ], minY, maxY );
+			result[ 2 ] = clamp( result[ 2 ], minX, maxX );
+			result[ 3 ] = clamp( result[ 3 ], minY, maxY );
+
+		}
+
+		return result;
 
 	}
 

@@ -1,13 +1,10 @@
-import { WebGLRenderTarget, Matrix4, Color, SRGBColorSpace } from 'three';
-import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import { UVRemapper } from './overlays/UVRemapper.js';
-import { forEachTileInBounds, getGeometryCartographicRange } from './overlays/utils.js';
+import { forEachTileInBounds, getMeshesCartographicRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
-
-const _matrix = /* @__PURE__ */ new Matrix4();
+import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 
 // function for marking and releasing images in the given overlay
 async function markOverlayImages( range, level, overlay, doRelease ) {
@@ -45,6 +42,18 @@ async function markOverlayImages( range, level, overlay, doRelease ) {
 
 }
 
+function countTilesToDraw( range, level, overlay ) {
+
+	let total = 0;
+	forEachTileInBounds( range, level, overlay.tiling, () => {
+
+		total ++;
+
+	} );
+
+	return total;
+
+}
 
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
@@ -63,74 +72,39 @@ export class ImageOverlayPlugin {
 		// options
 		this.renderer = renderer;
 		this.resolution = resolution;
-		this.overlays = overlays;
-		this.overlayOrder = new WeakMap();
+		this.overlays = [];
 
 		// internal
 		this.needsUpdate = false;
-		this.processQueue = null;
 		this.tiles = null;
 		this.tileComposer = null;
-		this.uvRemapper = null;
-		this.scratchTarget = null;
-		this.tileMeshInfo = new Map();
+		this.tileControllers = new Map();
+		this.overlayInfo = new Map();
+		this.usedTextures = new Set();
+		this.meshParams = new WeakMap();
+		this._scheduled = false;
 
-		window.PLUGIN = this;
+		overlays.forEach( overlay => {
+
+			this.addOverlay( overlay );
+
+		} );
 
 	}
 
 	// plugin functions
 	init( tiles ) {
 
-		// init the queue
-		const processQueue = new PriorityQueue();
-		processQueue.priorityCallback = ( ...args ) => {
-
-			return tiles.downloadQueue.priorityCallback( ...args );
-
-		};
-
 		const tileComposer = new TiledTextureComposer( this.renderer );
-		const uvRemapper = new UVRemapper( this.renderer );
-		const scratchTarget = new WebGLRenderTarget( this.resolution, this.resolution, {
-			depthBuffer: false,
-			stencilBuffer: false,
-			generateMipmaps: false,
-			colorSpace: SRGBColorSpace,
-		} );
 
 		// save variables
 		this.tiles = tiles;
-		this.processQueue = processQueue;
 		this.tileComposer = tileComposer;
-		this.uvRemapper = uvRemapper;
-		this.scratchTarget = scratchTarget;
-
-		// init overlays
-		const { overlays, overlayOrder } = this;
-		this.overlays = [];
-		overlays.forEach( ( overlay, order ) => {
-
-			if ( overlayOrder.has( overlay ) ) {
-
-				order = overlayOrder.overlay;
-
-			}
-
-			this.addOverlay( overlay, order );
-
-		} );
 
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			processQueue.add( tile, async tile => {
-
-				await this._initTileState( scene, tile );
-				await this._initOverlays( scene, tile, true );
-				this._redrawTileTextures( tile );
-
-			} );
+			this.processTileModel( scene, tile );
 
 		} );
 
@@ -140,23 +114,32 @@ export class ImageOverlayPlugin {
 
 			if ( this.needsUpdate ) {
 
-				const { overlays, overlayOrder } = this;
-				overlays.sort( ( a, b ) => overlayOrder.get( a ) - overlayOrder.get( b ) );
 				this.needsUpdate = false;
+
+				const { overlays, overlayInfo } = this;
+				overlays.sort( ( a, b ) => {
+
+					return overlayInfo.get( a ).order - overlayInfo.get( b ).order;
+
+				} );
 
 				// use an exec id to ensure we don't encounter a race condition
 				execId ++;
 				const id = execId;
 
-				// wait for all overlays to be ready
+				// wait for all overlays to be ready and therefore after all prior work that
+				// awaits these promises is ready
 				const promises = overlays.map( overlay => overlay.whenReady() );
 				await Promise.all( promises );
 
 				if ( id === execId ) {
 
+					// TODO: When a planar projection has been updated, we have to update drawn textures? Uvs?
+
+					// TODO: if the order is the only thing that changes then we don't really need to wait for the above?
 					tiles.forEachLoadedModel( ( scene, tile ) => {
 
-						this._redrawTileTextures( tile );
+						this._updateLayers( tile );
 
 					} );
 
@@ -168,58 +151,103 @@ export class ImageOverlayPlugin {
 
 		this._onTileDownloadStart = ( { tile } ) => {
 
-			this._initOverlaysFromTileRegion( tile );
+			this._initTileOverlayInfo( tile );
 
 		};
 
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
+		this.overlays.forEach( overlay => {
+
+			this._initOverlay( overlay );
+
+		} );
+
 	}
 
 	disposeTile( tile ) {
 
-		const { processQueue, overlays, tileMeshInfo } = this;
+		const { overlayInfo, tileControllers } = this;
 
-		// reset all state
-		this._resetTileOverlay( tile );
+		// Cancel any ongoing tasks. If a tile is cancelled while downloading
+		// this will not have been created, yet.
+		if ( tileControllers.has( tile ) ) {
+
+			tileControllers.get( tile ).abort();
+			tileControllers.delete( tile );
+
+		}
 
 		// stop any tile loads
-		processQueue.remove( tile );
+		overlayInfo.forEach( ( ( { tileInfo }, overlay ) => {
 
-		// decrement all tile references
-		if ( tileMeshInfo.has( tile ) ) {
+			if ( tileInfo.has( tile ) ) {
 
-			const meshInfo = tileMeshInfo.get( tile );
-			tileMeshInfo.delete( tile );
-			meshInfo.forEach( ( { range, level, target } ) => {
+				const { meshInfo, range, meshRange, level, target } = tileInfo.get( tile );
 
-				target.dispose();
-				markOverlayImages( range, level, overlays, true );
+				// release the ranges
+				if ( meshRange !== null ) {
 
-			} );
+					markOverlayImages( meshRange, level, overlay, true );
 
-		}
+				}
 
-		if ( tile.boundingVolume.region ) {
+				if ( range !== null ) {
 
-			const level = tile.__depthFromRenderedParent - 1;
-			const range = tile.boundingVolume.region;
-			markOverlayImages( range, level, overlays, true );
+					markOverlayImages( range, level, overlay, true );
 
-		}
+				}
+
+				if ( target !== null ) {
+
+					// release the render targets
+					target.dispose();
+
+				}
+
+				tileInfo.delete( tile );
+				meshInfo.clear();
+
+			}
+
+		} ) );
 
 	}
 
-	processTileModel( scene, tile ) {
+	async processTileModel( scene, tile ) {
 
-		return this.processQueue.add( tile, async tile => {
+		this._wrapMaterials( scene );
+		this._initTileOverlayInfo( tile );
+		await this._initTileSceneOverlayInfo( scene, tile );
+		this._updateLayers( tile );
 
-			await this._initTileState( scene, tile );
-			await this._initOverlays( scene, tile, false );
-			this._redrawTileTextures( tile );
+	}
+
+	dispose() {
+
+		const { tileComposer, tiles } = this;
+
+		// dispose textures
+		tileComposer.dispose();
+
+		// dispose of all overlays
+		const overlays = [ ...this.overlays ];
+		overlays.forEach( overlay => {
+
+			this.deleteOverlay( overlay );
 
 		} );
+
+		// reset the textures of the meshes
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this._updateLayers( tile );
+			this.disposeTile( tile );
+
+		} );
+
+		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 
 	}
 
@@ -237,62 +265,32 @@ export class ImageOverlayPlugin {
 
 	}
 
-	dispose() {
-
-		// dispose textures
-		this.tileComposer.dispose();
-		this.uvRemapper.dispose();
-		this.scratchTarget.dispose();
-
-		// dispose of all overlays
-		const overlays = [ ...this.overlays ];
-		overlays.forEach( overlay => {
-
-			this.deleteOverlay( overlay );
-
-		} );
-
-		// reset the textures of the meshes
-		this.tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			this._resetTileOverlay( tile );
-			this.disposeTile( tile );
-
-		} );
-
-		this.tiles.removeEventListener( 'update-after', this._onUpdateAfter );
-
-	}
-
 	// public
 	addOverlay( overlay, order = null ) {
 
-		const { tiles, overlays, overlayOrder } = this;
-		overlay.imageSource.fetchOptions = tiles.fetchOptions;
-		overlay.init();
+		const { tiles, overlays, overlayInfo } = this;
 
 		if ( order === null ) {
 
-			order = overlays.length;
+			// set the order to the next largest order value
+			order = overlays.reduce( ( v, o ) => Math.max( v, o.order + 1 ), 0 );
 
 		}
 
-		overlayOrder.set( overlay, order );
+		const controller = new AbortController();
 		overlays.push( overlay );
-
-		const promises = [];
-		tiles.forEachLoadedModel( ( scene, tile ) => {
-
-			promises.push( this._initOverlays( scene, tile, true, overlay ) );
-
+		overlayInfo.set( overlay, {
+			order: order,
+			uniforms: {},
+			tileInfo: new Map(),
+			controller: controller,
 		} );
 
-		this.needsUpdate = false;
-		Promise.all( promises ).then( () => {
+		if ( tiles !== null ) {
 
-			this.needsUpdate = true;
+			this._initOverlay( overlay );
 
-		} );
+		}
 
 	}
 
@@ -301,7 +299,7 @@ export class ImageOverlayPlugin {
 		const index = this.overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
-			this.overlayOrder.set( overlay, order );
+			this.overlayInfo.get( overlay ).order = order;
 			this.needsUpdate = true;
 
 		}
@@ -310,12 +308,29 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const index = this.overlays.indexOf( overlay );
+		const { overlays, overlayInfo } = this;
+		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
+			const { tileInfo, controller } = overlayInfo.get( overlay );
+			tileInfo.forEach( ( { meshInfo, target } ) => {
+
+				if ( target !== null ) {
+
+					target.dispose();
+
+				}
+
+				meshInfo.clear();
+
+			} );
+
+			tileInfo.clear();
+			overlayInfo.delete( overlay );
+			controller.abort();
+
 			overlay.dispose();
-			this.overlayOrder.delete( overlay );
-			this.overlays.splice( index, 1 );
+			overlays.splice( index, 1 );
 			this.needsUpdate = true;
 
 		}
@@ -323,11 +338,113 @@ export class ImageOverlayPlugin {
 	}
 
 	// internal
-	// save the state associated with each mesh
-	async _initTileState( scene, tile ) {
+	// initialize the overlay to use the right fetch options, load all data for existing tiles
+	_initOverlay( overlay ) {
 
-		const { tiles, tileMeshInfo, resolution } = this;
-		const { ellipsoid, group } = tiles;
+		const { tiles } = this;
+		overlay.imageSource.fetchOptions = tiles.fetchOptions;
+		overlay.init();
+
+		const promises = [];
+		tiles.forEachLoadedModel( async ( scene, tile ) => {
+
+			this._initTileOverlayInfo( tile, overlay );
+
+			const promise = this._initTileSceneOverlayInfo( scene, tile, overlay );
+			promises.push( promise );
+
+			// mark tiles as needing an update after initialized so we get a trickle in of tiles
+			await promise;
+			this.needsUpdate = true;
+
+		} );
+
+		Promise.all( promises ).then( () => {
+
+			this.needsUpdate = true;
+
+		} );
+
+	}
+
+	// wrap all materials in the given scene wit the overlay material shader
+	_wrapMaterials( scene ) {
+
+		scene.traverse( c => {
+
+			if ( c.material ) {
+
+				const params = wrapOverlaysMaterial( c.material, c.material.onBeforeCompile );
+				this.meshParams.set( c, params );
+
+			}
+
+		} );
+
+	}
+
+	// Initialize per-tile overlay information. This function triggers an async function but
+	// does not need to be awaited for use since it's just locking textures which are awaited later.
+	_initTileOverlayInfo( tile, overlay = this.overlays ) {
+
+		if ( Array.isArray( overlay ) ) {
+
+			overlay.forEach( o => this._initTileOverlayInfo( tile, o ) );
+			return;
+
+		}
+
+		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
+		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
+		const { overlayInfo, tileControllers } = this;
+		if ( overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
+
+			return;
+
+		}
+
+		const level = tile.__depthFromRenderedParent - 1;
+		const info = {
+			range: null,
+			meshRange: null,
+			level: level,
+			target: null,
+			meshInfo: new Map(),
+		};
+
+		overlayInfo
+			.get( overlay )
+			.tileInfo
+			.set( tile, info );
+
+		tileControllers.set( tile, new AbortController() );
+
+		// If the tile has a region bounding volume then mark the tiles to preload
+		if ( tile.boundingVolume.region ) {
+
+			const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
+			const range = [ minLon, minLat, maxLon, maxLat ];
+			info.range = range;
+
+			markOverlayImages( range, level, overlay, false );
+
+		}
+
+	}
+
+	// initialize the scene meshes
+	async _initTileSceneOverlayInfo( scene, tile, overlay = this.overlays ) {
+
+		if ( Array.isArray( overlay ) ) {
+
+			return Promise.all( overlay.map( o => this._initTileSceneOverlayInfo( scene, tile, o ) ) );
+
+		}
+
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures } = this;
+		const { ellipsoid } = tiles;
+		const { controller, tileInfo } = overlayInfo.get( overlay );
+		const tileController = tileControllers.get( tile );
 
 		// find all meshes to project on
 		const meshes = [];
@@ -342,195 +459,146 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// TODO: basic geometric error mapping level only
-		const level = tile.__depthFromRenderedParent - 1;
-		const meshInfo = new Map();
-		await Promise.all( meshes.map( async mesh => {
+		// wait for the overlay to be completely loaded so projection and tiling are available
+		await overlay.whenReady();
 
-			const { material, geometry } = mesh;
-			const { map } = material;
+		// check if the overlay or tile have been disposed since starting this function
+		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
-			// compute the local transform and center of the mesh
-			_matrix.copy( mesh.matrixWorld );
-			if ( scene.parent ) {
-
-				_matrix.premultiply( group.matrixWorldInverse );
-
-			}
-
-			// get uvs and range
-			const { range, uv } = getGeometryCartographicRange( geometry, _matrix, ellipsoid );
-			meshInfo.set( mesh, {
-				range,
-				level,
-				uv,
-				map,
-				target: new WebGLRenderTarget(
-					resolution, resolution,
-					{ depthBuffer: false, stencilBuffer: false, generateMipmaps: false, colorSpace: SRGBColorSpace }
-				),
-			} );
-
-		} ) );
-
-		// wait to save the mesh info here so we can use it as an indicator that the textures are ready
-		tileMeshInfo.set( tile, meshInfo );
-
-	}
-
-	// start load of all textures in all overlays from a scene
-	async _initOverlays( scene, tile, includeTileRegion, overlay = this.overlays ) {
-
-		if ( Array.isArray( overlay ) ) {
-
-			await Promise.all( overlay.map( o => this._initOverlays( scene, tile, includeTileRegion, o ) ) );
 			return;
 
 		}
 
-		const promises = [];
-		promises.push( this._initOverlayFromScene( overlay, scene, tile ) );
+		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
+		const { tiling, projection, imageSource } = overlay;
+		const { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, projection );
+		const info = tileInfo.get( tile );
 
-		// we only need to include the tile region here when initializing from an existing set of tiles or
-		if ( includeTileRegion ) {
+		// if there are no textures to draw in the tiled image set the don't
+		// allocate a texture for it.
+		let target = null;
+		if ( countTilesToDraw( range, info.level, overlay ) !== 0 ) {
 
-			promises.push( this._initOverlaysFromTileRegion( tile ) );
-
-		}
-
-		await Promise.all( promises );
-
-	}
-
-	// start load of all texture in all overlays fro ma tile region
-	async _initOverlaysFromTileRegion( tile ) {
-
-		if ( tile.boundingVolume.region ) {
-
-			const level = tile.__depthFromRenderedParent - 1;
-			const region = tile.boundingVolume.region;
-			await markOverlayImages( region, level, this.overlays, false );
+			target = new WebGLRenderTarget( resolution, resolution, {
+				depthBuffer: false,
+				stencilBuffer: false,
+				generateMipmaps: false,
+				colorSpace: SRGBColorSpace,
+			} );
 
 		}
 
-	}
+		info.meshRange = range;
+		info.target = target;
 
-	// init the tiles from a single tile and scene
-	async _initOverlayFromScene( overlay, scene, tile ) {
+		meshes.forEach( ( mesh, i ) => {
 
-		const { tileMeshInfo } = this;
-		const meshInfo = tileMeshInfo.get( tile );
-		const promises = [];
-
-		scene.traverse( mesh => {
-
-			if ( meshInfo.has( mesh ) ) {
-
-				const { range, level } = meshInfo.get( mesh );
-				promises.push( markOverlayImages( range, level, overlay, false ) );
-
-			}
+			const array = new Float32Array( uvs[ i ] );
+			const attribute = new BufferAttribute( array, 2 );
+			info.meshInfo.set( mesh, { attribute } );
 
 		} );
 
-		await Promise.all( promises );
+		await markOverlayImages( range, info.level, overlay, false );
 
-	}
-
-	// reset the tile material map
-	_resetTileOverlay( tile ) {
-
-		const { tileMeshInfo } = this;
-		if ( tileMeshInfo.has( tile ) ) {
-
-			const meshInfo = tileMeshInfo.get( tile );
-			meshInfo.forEach( ( { map }, mesh ) => {
-
-				mesh.material.map = map;
-
-			} );
-
-		}
-
-	}
-
-	// redraw the tile texture
-	_redrawTileTextures( tile ) {
-
-		const { tileComposer, tileMeshInfo, scratchTarget, uvRemapper, overlays } = this;
-
-		// if the tile is not in the mesh info map then the textures are not ready
-		if ( ! tileMeshInfo.has( tile ) ) {
+		// check if the overlay has been disposed since starting this function
+		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 			return;
 
 		}
 
-		// reset the meshes
-		this._resetTileOverlay( tile );
+		// draw the textures
+		if ( target !== null ) {
 
-		// if there are no overlays then don't bother copying texture data.
-		// this also doubles as a check for when the plugin has been disposed and async
-		// functions are continuing to run.
-		if ( overlays.length === 0 ) {
-
-			return;
-
-		}
-
-		const meshInfo = tileMeshInfo.get( tile );
-		meshInfo.forEach( ( info, mesh ) => {
-
-			const { map, level, range, uv, target } = info;
-			const { material, geometry } = mesh;
-
-			// initialize the texture
-			tileComposer.setRenderTarget( scratchTarget, range );
+			const clampedRange = tiling.clampToBounds( range );
+			const normRange = tiling.toNormalizedRange( clampedRange );
+			tileComposer.setRenderTarget( target, normRange );
 			tileComposer.clear( 0xffffff, 0 );
 
-			// draw the textures
-			let tileCount = 0;
-			overlays.forEach( overlay => {
+			forEachTileInBounds( clampedRange, info.level, tiling, ( tx, ty, tl ) => {
 
-				forEachTileInBounds( range, level, overlay.tiling, ( tx, ty, tl ) => {
-
-					const span = overlay.tiling.getTileBounds( tx, ty, tl );
-					const tex = overlay.imageSource.get( tx, ty, tl );
-					tileCount ++;
-					tileComposer.draw( tex, span, overlay.projection, overlay.color, overlay.opacity );
-
-				} );
+				const span = tiling.getTileBounds( tx, ty, tl, true );
+				const tex = imageSource.get( tx, ty, tl );
+				tileComposer.draw( tex, span );
+				usedTextures.add( tex );
+				this._scheduleCleanup();
 
 			} );
 
-			// don't use the render target if there are no overlays to apply
-			if ( tileCount !== 0 ) {
+		}
 
-				tileComposer.setRenderTarget( target, range );
-				if ( map ) {
+	}
 
-					tileComposer.draw( map, range );
-					map.dispose();
+	_updateLayers( tile ) {
 
-				} else {
+		const { overlayInfo, overlays, tileControllers } = this;
+		const tileController = tileControllers.get( tile );
 
-					tileComposer.clear( 0xffffff );
+		// if the tile has been disposed before this function is called then exit early
+		if ( tileController.signal.aborted ) {
+
+			return;
+
+		}
+
+		// update the uvs and texture overlays for each mesh
+		overlays.forEach( ( overlay, i ) => {
+
+			const { tileInfo } = overlayInfo.get( overlay );
+			const { meshInfo, target } = tileInfo.get( tile );
+			meshInfo.forEach( ( { attribute }, mesh ) => {
+
+				const { geometry, material } = mesh;
+				const params = this.meshParams.get( mesh );
+
+				// assign the new uvs
+				const key = `layer_uv_${ i }`;
+				if ( geometry.getAttribute( key ) !== attribute ) {
+
+					geometry.setAttribute( key, attribute );
+					geometry.dispose();
 
 				}
 
-				// adjust the UVs
-				uvRemapper.setRenderTarget( target );
-				uvRemapper.setUVs( uv, geometry.getAttribute( 'uv' ), geometry.index );
-				uvRemapper.draw( scratchTarget.texture );
-				material.map = target.texture;
+				// set the uniform array lengths
+				params.layerMaps.length = overlays.length;
+				params.layerColor.length = overlays.length;
 
-			} else {
+				// assign the uniforms
+				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
+				params.layerColor.value[ i ] = overlay;
 
-				target.dispose();
+				material.defines.LAYER_COUNT = overlays.length;
+				material.needsUpdate = true;
 
-			}
+			} );
 
 		} );
+
+	}
+
+	_scheduleCleanup() {
+
+		// clean up textures used for drawing the tile overlays
+		if ( ! this._scheduled ) {
+
+			this._scheduled = true;
+			requestAnimationFrame( () => {
+
+				const { usedTextures } = this;
+				usedTextures.forEach( tex => {
+
+					tex.dispose();
+
+				} );
+
+				usedTextures.clear();
+				this._scheduled = false;
+
+			} );
+
+		}
 
 	}
 

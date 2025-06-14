@@ -98,7 +98,7 @@ export class FadeMaterialManager {
 
 		}
 
-		fadeParams.set( material, wrapFadeMaterial( material ) );
+		fadeParams.set( material, wrapFadeMaterial( material, material.onBeforeCompile ) );
 
 	}
 

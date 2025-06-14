@@ -168,9 +168,11 @@ export class DataCache {
 
 			return true;
 
-		}
+		} else {
 
-		return false;
+			throw new Error( 'DataCache: Attempting to release key that does not exist' );
+
+		}
 
 	}
 

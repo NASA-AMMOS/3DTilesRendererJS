@@ -2,8 +2,8 @@ import { ImageFormatPlugin, TILE_LEVEL, TILE_X, TILE_Y } from './ImageFormatPlug
 import { MathUtils, PlaneGeometry, Sphere, Vector2, Vector3 } from 'three';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 
-const MAX_LON_VERTS = 30;
-const MAX_LAT_VERTS = 15;
+const MIN_LON_VERTS = 30;
+const MIN_LAT_VERTS = 15;
 
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
@@ -55,8 +55,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// default to a minimum number of vertices per degree on each axis
 			const latVerts = Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 );
 			const lonVerts = Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 );
-			const yVerts = Math.max( MAX_LAT_VERTS, latVerts );
-			const xVerts = Math.max( MAX_LON_VERTS, lonVerts );
+			const yVerts = Math.max( MIN_LAT_VERTS, latVerts );
+			const xVerts = Math.max( MIN_LON_VERTS, lonVerts );
 			const geometry = new PlaneGeometry( 1, 1, xVerts, yVerts );
 
 			// adjust the geometry to position it at the region
