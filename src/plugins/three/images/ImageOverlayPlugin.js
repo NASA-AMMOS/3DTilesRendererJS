@@ -1,5 +1,4 @@
 import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute } from 'three';
-import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
@@ -77,7 +76,6 @@ export class ImageOverlayPlugin {
 
 		// internal
 		this.needsUpdate = false;
-		this.processQueue = null;
 		this.tiles = null;
 		this.tileComposer = null;
 		this.tileInfo = new Map();
@@ -97,33 +95,20 @@ export class ImageOverlayPlugin {
 	// plugin functions
 	init( tiles ) {
 
-		// init the queue
-		const processQueue = new PriorityQueue();
-		processQueue.priorityCallback = ( ...args ) => {
-
-			return tiles.downloadQueue.priorityCallback( ...args );
-
-		};
-
 		const tileComposer = new TiledTextureComposer( this.renderer );
 
 		// save variables
 		this.tiles = tiles;
-		this.processQueue = processQueue;
 		this.tileComposer = tileComposer;
 
 		// init all existing tiles
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		tiles.forEachLoadedModel( async ( scene, tile ) => {
 
-			processQueue.add( tile, async tile => {
+			this._wrapMaterials( scene );
 
-				this._wrapMaterials( scene );
-
-				await this._initTileOverlayInfo( tile );
-				await this._initTileSceneOverlayInfo( scene, tile );
-				this._updateLayers( scene, tile );
-
-			} );
+			await this._initTileOverlayInfo( tile );
+			await this._initTileSceneOverlayInfo( scene, tile );
+			this._updateLayers( scene, tile );
 
 		} );
 
@@ -186,12 +171,10 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { processQueue, overlays, overlayInfo } = this;
+		const { overlays, overlayInfo } = this;
 
 		// stop any tile loads
-		processQueue.remove( tile );
-
-		overlayInfo.forEach( ( ( { tileInfo }, overlay ) => {
+		overlayInfo.forEach( ( ( { tileInfo } ) => {
 
 			if ( tileInfo.has( tile ) ) {
 
@@ -226,16 +209,13 @@ export class ImageOverlayPlugin {
 
 	}
 
-	processTileModel( scene, tile ) {
+	async processTileModel( scene, tile ) {
 
-		return this.processQueue.add( tile, async tile => {
+		this._wrapMaterials( scene );
 
-			this._wrapMaterials( scene );
-
-			await this._initTileSceneOverlayInfo( scene, tile );
-			this._updateLayers( scene, tile );
-
-		} );
+		await this._initTileOverlayInfo( tile );
+		await this._initTileSceneOverlayInfo( scene, tile );
+		this._updateLayers( scene, tile );
 
 	}
 
@@ -359,13 +339,13 @@ export class ImageOverlayPlugin {
 		const promises = [];
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			promises.push( this.processQueue.add( tile, async () => {
+			promises.push( ( async () => {
 
 				await this._initTileOverlayInfo( tile, overlay );
 				await this._initTileSceneOverlayInfo( scene, tile, overlay );
 				this._updateLayers( scene, tile );
 
-			} ) );
+			} )() );
 
 		} );
 
