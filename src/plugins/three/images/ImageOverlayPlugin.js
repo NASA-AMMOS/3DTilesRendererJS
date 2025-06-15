@@ -217,6 +217,8 @@ export class ImageOverlayPlugin {
 
 	async processTileModel( scene, tile ) {
 
+		this.tileControllers.set( tile, new AbortController() );
+
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
@@ -396,7 +398,7 @@ export class ImageOverlayPlugin {
 
 		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
 		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
-		const { overlayInfo, tileControllers } = this;
+		const { overlayInfo } = this;
 		if ( overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
 
 			return;
@@ -416,8 +418,6 @@ export class ImageOverlayPlugin {
 			.get( overlay )
 			.tileInfo
 			.set( tile, info );
-
-		tileControllers.set( tile, new AbortController() );
 
 		// If the tile has a region bounding volume then mark the tiles to preload
 		if ( tile.boundingVolume.region ) {
