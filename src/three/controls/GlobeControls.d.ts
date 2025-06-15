@@ -9,6 +9,8 @@ export class GlobeControls extends EnvironmentControls {
 	nearMargin: number;
 	farMargin: number;
 
+	adjustCameraAutomatically: boolean;
+
 	get ellipsoid(): Ellipsoid;
 	get tilesGroup(): Group;
 
