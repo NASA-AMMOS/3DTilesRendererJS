@@ -23,15 +23,17 @@ let controls, scene, renderer, tiles, camera, washingtonOverlay, baseOverlay;
 let statsContainer, stats;
 
 const params = {
-
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	mapBase: false,
 	errorTarget: 2,
 	opacity: 1.0,
 	color: '#ffffff',
-	reload: reinstantiateTiles,
 
+	baseOpacity: 1.0,
+	baseColor: '#ffffff',
+
+	reload: reinstantiateTiles,
 };
 
 init();
@@ -110,20 +112,16 @@ function init() {
 	gui.width = 300;
 	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'enableRendererStats' );
-	gui.add( params, 'mapBase' ).onChange( updateBaseOverlay );
+	gui.add( params, 'mapBase' ).name( 'OpenStreetMap' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
 
-	const layerFolder = gui.addFolder( 'Washington DC Layer' );
-	layerFolder.add( params, 'opacity', 0, 1 ).onChange( v => {
+	const washingtonFolder = gui.addFolder( 'Washington DC Layer' );
+	washingtonFolder.add( params, 'opacity', 0, 1 );
+	washingtonFolder.addColor( params, 'color' );
 
-		washingtonOverlay.opacity = v;
-
-	} );
-	layerFolder.addColor( params, 'color' ).onChange( v => {
-
-		washingtonOverlay.color.set( v );
-
-	} );
+	const baseFolder = gui.addFolder( 'Base Layer' );
+	baseFolder.add( params, 'baseOpacity', 0, 1 ).name( 'opacity' );
+	baseFolder.addColor( params, 'baseColor' ).name( 'color' );
 
 	gui.add( params, 'reload' );
 
@@ -182,6 +180,12 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
+
+	washingtonOverlay.color.set( params.color );
+	washingtonOverlay.opacity = params.opacity;
+
+	baseOverlay.color.set( params.baseColor );
+	baseOverlay.opacity = params.baseOpacity;
 
 	controls.update();
 
