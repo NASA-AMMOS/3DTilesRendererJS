@@ -263,44 +263,6 @@ export class TopoLinesPlugin {
 
 		this.tiles = tiles;
 
-		this._loadModelCallback = ( { scene } ) => {
-
-			scene.traverse( c => {
-
-				if ( c.material ) {
-
-					const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
-					params.ellipsoid.value = tiles.ellipsoid.radius;
-					params.frame.value = tiles.group.matrixWorld;
-
-					params.thickness = this.thicknessUniform;
-
-					params.topoColor.value = this.topoColor;
-					params.topoOpacity = this.topoOpacityUniform;
-					params.topoLimit.value = this.topoLimit;
-					params.topoFadeLimit.value = this.topoFadeLimit;
-
-					params.cartoColor.value = this.cartoColor;
-					params.cartoOpacity = this.cartoOpacityUniform;
-					params.cartoLimit.value = this.cartoLimit;
-					params.cartoFadeLimit.value = this.cartoFadeLimit;
-
-					params.resolution.value = this._resolution;
-					params.pixelRatio = this._pixelRatioUniform;
-
-					c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
-					c.material.needsUpdate = true;
-
-				}
-
-			} );
-
-			this.updateDefines( scene );
-
-		};
-
-		tiles.addEventListener( 'load-model', this._loadModelCallback );
-
 		// Create an empty
 		const resolutionSampleObject = new ResolutionSampler();
 		resolutionSampleObject.frustumCulled = false;
@@ -369,12 +331,48 @@ export class TopoLinesPlugin {
 
 	}
 
+	processTileModel( scene, tile ) {
+
+		const { tiles } = this;
+		scene.traverse( c => {
+
+			if ( c.material ) {
+
+				const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
+				params.ellipsoid.value = tiles.ellipsoid.radius;
+				params.frame.value = tiles.group.matrixWorld;
+
+				params.thickness = this.thicknessUniform;
+
+				params.topoColor.value = this.topoColor;
+				params.topoOpacity = this.topoOpacityUniform;
+				params.topoLimit.value = this.topoLimit;
+				params.topoFadeLimit.value = this.topoFadeLimit;
+
+				params.cartoColor.value = this.cartoColor;
+				params.cartoOpacity = this.cartoOpacityUniform;
+				params.cartoLimit.value = this.cartoLimit;
+				params.cartoFadeLimit.value = this.cartoFadeLimit;
+
+				params.resolution.value = this._resolution;
+				params.pixelRatio = this._pixelRatioUniform;
+
+				c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
+				c.material.needsUpdate = true;
+
+			}
+
+		} );
+
+		this.updateDefines( scene );
+
+	}
+
 	dispose() {
 
 		this.cartoOpacity = 0;
 		this.topoOpacity = 0;
 
-		this.tiles.removeEventListener( 'load-model', this._loadModelCallback );
 		this.updateDefines();
 
 		this._resolutionSampleObject.dispose();
