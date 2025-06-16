@@ -82,6 +82,7 @@ export class ImageOverlayPlugin {
 		this.overlayInfo = new Map();
 		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
+		this.pendingTiles = new Map();
 		this._scheduled = false;
 
 		overlays.forEach( overlay => {
@@ -104,7 +105,7 @@ export class ImageOverlayPlugin {
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			this.processTileModel( scene, tile );
+			this._processTileModel( scene, tile, true );
 
 		} );
 
@@ -215,14 +216,32 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async processTileModel( scene, tile ) {
+	processTileModel( scene, tile ) {
+
+		return this._processTileModel( scene, tile );
+
+	}
+
+	async _processTileModel( scene, tile, initialization = false ) {
 
 		this.tileControllers.set( tile, new AbortController() );
+
+		if ( ! initialization ) {
+
+			// we save all these pending tiles so that they can be correctly initialized if an
+			// overlay is added in the time between when this function starts and after the async
+			// await call. Otherwise the tile could be missed. But if we're initializing the plugin
+			// then we don't need to do this because the tiles are already included in the traversal.
+			this.pendingTiles.set( tile, scene );
+
+		}
 
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
 		this._updateLayers( tile );
+
+		this.pendingTiles.delete( tile );
 
 	}
 
@@ -348,7 +367,7 @@ export class ImageOverlayPlugin {
 		overlay.init();
 
 		const promises = [];
-		tiles.forEachLoadedModel( async ( scene, tile ) => {
+		const initTile = async ( scene, tile ) => {
 
 			this._initTileOverlayInfo( tile, overlay );
 
@@ -358,6 +377,13 @@ export class ImageOverlayPlugin {
 			// mark tiles as needing an update after initialized so we get a trickle in of tiles
 			await promise;
 			this.needsUpdate = true;
+
+		};
+
+		tiles.forEachLoadedModel( initTile );
+		this.pendingTiles.forEach( ( scene, tile ) => {
+
+			initTile( scene, tile );
 
 		} );
 
