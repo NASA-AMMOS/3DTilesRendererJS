@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 import { traverseAncestors, traverseSet } from '../../base/traverseFunctions.js';
@@ -13,7 +13,7 @@ const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
 const colors = {};
 
-// Return a consistant random color for an index
+// Return a consistent random color for an index
 export function getIndexedRandomColor( index ) {
 
 	if ( ! colors[ index ] ) {
@@ -64,6 +64,40 @@ export class DebugTilesPlugin {
 
 	}
 
+	get unlit() {
+
+		return this._unlit;
+
+	}
+
+	set unlit( v ) {
+
+		if ( v !== this._unlit ) {
+
+			this._unlit = v;
+			this.materialsNeedUpdate = true;
+
+		}
+
+	}
+
+	get colorMode() {
+
+		return this._colorMode;
+
+	}
+
+	set colorMode( v ) {
+
+		if ( v !== this._colorMode ) {
+
+			this._colorMode = v;
+			this.materialsNeedUpdate = true;
+
+		}
+
+	}
+
 	constructor( options ) {
 
 		options = {
@@ -76,13 +110,17 @@ export class DebugTilesPlugin {
 			maxDebugDistance: - 1,
 			maxDebugError: - 1,
 			customColorCallback: null,
+			unlit: false,
+			enabled: true,
 			...options,
 		};
 
 		this.name = 'DEBUG_TILES_PLUGIN';
 		this.tiles = null;
 
-		this._enabled = true;
+		this._colorMode = null;
+		this._unlit = null;
+		this.materialsNeedUpdate = false;
 
 		this.extremeDebugDepth = - 1;
 		this.extremeDebugError = - 1;
@@ -91,6 +129,7 @@ export class DebugTilesPlugin {
 		this.regionGroup = null;
 
 		// options
+		this._enabled = options.enabled;
 		this._displayParentBounds = options.displayParentBounds;
 		this.displayBoxBounds = options.displayBoxBounds;
 		this.displaySphereBounds = options.displaySphereBounds;
@@ -100,6 +139,7 @@ export class DebugTilesPlugin {
 		this.maxDebugDistance = options.maxDebugDistance;
 		this.maxDebugError = options.maxDebugError;
 		this.customColorCallback = options.customColorCallback;
+		this.unlit = options.unlit;
 
 		this.getDebugColor = ( value, target ) => {
 
@@ -117,17 +157,11 @@ export class DebugTilesPlugin {
 
 	set enabled( v ) {
 
-		if ( v !== this._enabled ) {
+		if ( v !== this._enabled && this.tiles !== null ) {
 
-			this._enabled = v;
+			if ( v ) {
 
-			if ( this._enabled ) {
-
-				if ( this.tiles ) {
-
-					this.init( this.tiles );
-
-				}
+				this.init( this.tiles );
 
 			} else {
 
@@ -136,6 +170,8 @@ export class DebugTilesPlugin {
 			}
 
 		}
+
+		this._enabled = v;
 
 	}
 
@@ -184,6 +220,12 @@ export class DebugTilesPlugin {
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		if ( ! this.enabled ) {
+
+			return;
+
+		}
 
 		// initialize groups
 		const tilesGroup = tiles.group;
@@ -339,11 +381,22 @@ export class DebugTilesPlugin {
 
 	_onUpdateAfter() {
 
-		const tiles = this.tiles;
+		const { tiles, colorMode } = this;
 
 		if ( ! tiles.root ) {
 
 			return;
+
+		}
+
+		if ( this.materialsNeedUpdate ) {
+
+			tiles.forEachLoadedModel( scene => {
+
+				this._updateMaterial( scene );
+
+			} );
+			this.materialsNeedUpdate = false;
 
 		}
 
@@ -387,9 +440,7 @@ export class DebugTilesPlugin {
 
 		}
 
-		const errorTarget = this.errorTarget;
-		const colorMode = this.colorMode;
-		const visibleTiles = tiles.visibleTiles;
+		const { errorTarget, visibleTiles } = tiles;
 		let sortedTiles;
 		if ( colorMode === LOAD_ORDER ) {
 
@@ -426,33 +477,7 @@ export class DebugTilesPlugin {
 
 				}
 
-				const currMaterial = c.material;
-				if ( currMaterial ) {
-
-					// Reset the material if needed
-					const originalMaterial = c[ ORIGINAL_MATERIAL ];
-					if ( colorMode === NONE && currMaterial !== originalMaterial ) {
-
-						c.material.dispose();
-						c.material = c[ ORIGINAL_MATERIAL ];
-
-					} else if ( colorMode !== NONE && currMaterial === originalMaterial ) {
-
-						if ( c.isPoints ) {
-
-							const pointsMaterial = new PointsMaterial();
-							pointsMaterial.size = originalMaterial.size;
-							pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
-							c.material = pointsMaterial;
-
-						} else {
-
-							c.material = new MeshStandardMaterial();
-							c.material.flatShading = true;
-
-						}
-
-					}
+				if ( c.material ) {
 
 					if ( colorMode !== RANDOM_COLOR ) {
 
@@ -791,6 +816,67 @@ export class DebugTilesPlugin {
 
 	}
 
+	_updateMaterial( scene ) {
+
+		// update the materials for debug rendering
+		const { colorMode, unlit } = this;
+		scene.traverse( c => {
+
+			if ( ! c.material ) {
+
+				return;
+
+			}
+
+			const currMaterial = c.material;
+			const originalMaterial = c[ ORIGINAL_MATERIAL ];
+
+			// dispose the previous material
+			if ( currMaterial !== originalMaterial ) {
+
+				currMaterial.dispose();
+
+			}
+
+			// assign the new material
+			if ( colorMode !== NONE || unlit ) {
+
+				if ( c.isPoints ) {
+
+					const pointsMaterial = new PointsMaterial();
+					pointsMaterial.size = originalMaterial.size;
+					pointsMaterial.sizeAttenuation = originalMaterial.sizeAttenuation;
+					c.material = pointsMaterial;
+
+				} else if ( unlit ) {
+
+					c.material = new MeshBasicMaterial();
+
+				} else {
+
+					c.material = new MeshStandardMaterial();
+					c.material.flatShading = true;
+
+				}
+
+				// if no debug rendering is happening then assign the material properties
+				if ( colorMode === NONE ) {
+
+					c.material.map = originalMaterial.map;
+					c.material.color.set( originalMaterial.color );
+
+				}
+
+			} else {
+
+				c.material = originalMaterial;
+
+			}
+
+		} );
+
+	}
+
 	_onLoadModel( scene, tile ) {
 
 		tile[ LOAD_TIME ] = performance.now();
@@ -806,6 +892,9 @@ export class DebugTilesPlugin {
 			}
 
 		} );
+
+		// Update the materials to align with the settings
+		this._updateMaterial( scene );
 
 	}
 
@@ -837,28 +926,35 @@ export class DebugTilesPlugin {
 
 	dispose() {
 
-		const tiles = this.tiles;
+		if ( ! this.enabled ) {
 
-		if ( tiles ) {
-
-			tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
-			tiles.removeEventListener( 'load-model', this._onLoadModelCB );
-			tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
-			tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
-			tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
-
-			// reset all materials
-			this.colorMode = NONE;
-			this._onUpdateAfter();
-
-			// dispose of all helper objects
-			tiles.traverse( tile => {
-
-				this._onDisposeModel( tile );
-
-			} );
+			return;
 
 		}
+
+		const tiles = this.tiles;
+
+		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
+		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
+		tiles.removeEventListener( 'tile-visibility-change', this._onTileVisibilityChangeCB );
+
+		// reset all materials
+		this.colorMode = NONE;
+		this.unlit = false;
+		tiles.forEachLoadedModel( scene => {
+
+			this._updateMaterial( scene );
+
+		} );
+
+		// dispose of all helper objects
+		tiles.traverse( tile => {
+
+			this._onDisposeModel( tile );
+
+		} );
 
 		this.boxGroup?.removeFromParent();
 		this.sphereGroup?.removeFromParent();

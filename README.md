@@ -47,6 +47,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
 
+[Quantized Mesh with Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/quantMeshOverlays.html)
+
 [Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
 
 **React Three Fiber**
@@ -316,17 +318,17 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 // Fired when the content of a model is loaded. Fired along side the
 // above two events.
-{ type: 'load-content', tileSet: Object, url: String }
+{ type: 'load-content' }
 
 // Fired when a tile model is disposed.
 { type: 'dispose-model', scene: THREE.Group, tile: Object }
 
 // Fired when the tile set hierarchy is ready for "update to be called
 // again due to new content having loaded or asynchronous processing finished.
-{ type: 'needs-update', tileSet: Object, url: String }
+{ type: 'needs-update' }
 
 // Fired when a tiles visibility changes.
-{ type: 'tile-visibility-change', scene: THREE.Group, tile: Object }
+{ type: 'tile-visibility-change', scene: THREE.Group, tile: Object, visible: boolean }
 
 // Fired when tiles start loading.
 { type: 'tiles-load-start' }
@@ -334,8 +336,20 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 // Fired when all tiles finish loading.
 { type: 'tiles-load-end' }
 
+// Fired when tile content begins downloading.
+{ type: 'tile-download-start', tile: Object }
+
 // Fired when a tile content or the root tile set fails to load.
 { type: 'load-error', tile: Object | null, error: Error, url: string | URL }
+
+// Fired when a camera is added to be accounted for when traversing the tile set.
+{ type: 'add-camera', camera: Camera }
+
+// Fired when a camera is removed from being accounted for when traversing the tile set.
+{ type: 'delete-camera', camera: Camera }
+
+// Fired when the resolution being rendered to is changed for any tracked camera.
+{ type: 'camera-resolution-change' }
 ```
 
 ### .fetchOptions
@@ -547,7 +561,7 @@ Sets the resolution being rendered to for the given camera via renderer which ac
 forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : void
 ```
 
-Fires the callback for every loaded scene in the hierarchy with the associatd tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
+Fires the callback for every loaded scene in the hierarchy with the associated tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
 
 ### .registerPlugin
 
@@ -596,7 +610,7 @@ Disposes of all the tiles in the renderer. Calls dispose on all materials, textu
 
 ## PriorityQueue
 
-Piority-sorted queue to prioritize file downloads and parsing.
+Priority-sorted queue to prioritize file downloads and parsing.
 
 ### .maxJobs
 
@@ -620,7 +634,7 @@ Function to derive the job priority of the given item. Higher priority values ge
 schedulingCallback = requestAnimationFrame : ( cb : Function ) => void
 ```
 
-A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overriden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
+A function used for scheduling when to run jobs next so more work doesn't happen in a single frame than there is time for -- defaults to the next frame. This should be overridden in scenarios where requestAnimationFrame is not reliable, such as when running in WebXR. See the VR demo for one example on how to handle this with WebXR.
 
 ## LRUCache
 
@@ -707,7 +721,7 @@ Returns an array of data associated with the `key` passed into the function. Ret
 
 # LICENSE
 
-The software is available under the [Apache V2.0 license](../LICENSE.txt).
+The software is available under the [Apache V2.0 license](LICENSE).
 
 Copyright © 2020 California Institute of Technology. ALL RIGHTS
 RESERVED. United States Government Sponsorship Acknowledged.

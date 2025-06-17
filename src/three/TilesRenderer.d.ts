@@ -11,12 +11,15 @@ export interface TilesRendererEventMap {
 	'load-tile-set': { tileSet: object, url: string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
+	'tile-download-start': { tile: Tile };
 	'load-content': {};
 	'load-model': { scene: Object3D; tile: Tile };
 	'dispose-model': { scene: Object3D; tile: Tile };
 	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
 	'update-before': {};
 	'update-after': {};
+	'needs-update': {};
+	'load-error': { tile: Tile | null, error: Error, url: string | URL };
 }
 
 export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase implements EventDispatcher<TEventMap> {

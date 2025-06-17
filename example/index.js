@@ -36,6 +36,7 @@ const ALL_HITS = 1;
 const FIRST_HIT_ONLY = 2;
 
 const hashUrl = window.location.hash.replace( /^#/, '' );
+const urlParams = new URLSearchParams( window.location.search );
 let camera, controls, scene, renderer, tiles, cameraHelper;
 let thirdPersonCamera, thirdPersonRenderer, thirdPersonControls;
 let secondRenderer, secondCameraHelper, secondControls, secondCamera;
@@ -58,13 +59,14 @@ const params = {
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
-	up: hashUrl ? '+Z' : '+Y',
+	up: urlParams.get( 'up' ) ?? hashUrl ? '+Z' : '+Y',
 	enableDebug: true,
 	displayParentBounds: false,
 	displayBoxBounds: false,
 	displaySphereBounds: false,
 	displayRegionBounds: false,
-	colorMode: 0,
+	colorMode: urlParams.get( 'colorMode' ) in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ urlParams.get( 'colorMode' ) ] : DebugTilesPlugin.ColorModes.NONE,
+	unlit: Boolean( urlParams.get( 'unlit' ) ),
 	showThirdPerson: false,
 	showSecondView: false,
 	reload: reinstantiateTiles,
@@ -266,6 +268,7 @@ function init() {
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
+	debug.add( params, 'unlit' );
 	debug.open();
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -465,6 +468,7 @@ function animate() {
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );
+	plugin.unlit = params.unlit;
 
 	if ( params.orthographic ) {
 

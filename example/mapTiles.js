@@ -51,6 +51,7 @@ function init() {
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
+		scheduleRender();
 
 	} );
 

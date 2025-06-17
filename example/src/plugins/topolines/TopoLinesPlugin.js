@@ -117,13 +117,13 @@ export class TopoLinesPlugin {
 			topoColor = 		new Color( 0xffffff ),
 			topoOpacity = 		0.5,
 			topoLimit = 		isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
-			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
+			topoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 4.25 * 1e3 ),
 
 			// options for cartesian and cartographic lines when in planar and ellipsoid mode respectively
 			cartoColor = 		new Color( 0xffffff ),
 			cartoOpacity = 		isPlanar ? 0 : 0.5,
 			cartoLimit = 		new Vector2( 0.1, 1e10 ),
-			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1.5 * 1e4, 1e6 ),
+			cartoFadeLimit = 	isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 4.5 * 1e3, 1e6 ),
 		} = options;
 
 		this.name = 'TOPO_LINES_PLUGIN';
@@ -263,42 +263,6 @@ export class TopoLinesPlugin {
 
 		this.tiles = tiles;
 
-		this._loadModelCallback = ( { scene } ) => {
-
-			scene.traverse( c => {
-
-				if ( c.material ) {
-
-					const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
-					params.ellipsoid.value = tiles.ellipsoid.radius;
-					params.frame.value = tiles.group.matrixWorld;
-
-					params.thickness = this.thicknessUniform;
-
-					params.topoColor.value = this.topoColor;
-					params.topoOpacity = this.topoOpacityUniform;
-					params.topoLimit.value = this.topoLimit;
-					params.topoFadeLimit.value = this.topoFadeLimit;
-
-					params.cartoColor.value = this.cartoColor;
-					params.cartoOpacity = this.cartoOpacityUniform;
-					params.cartoLimit.value = this.cartoLimit;
-					params.cartoFadeLimit.value = this.cartoFadeLimit;
-
-					params.resolution.value = this._resolution;
-					params.pixelRatio = this._pixelRatioUniform;
-
-					c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
-					c.material.needsUpdate = true;
-
-				}
-
-			} );
-
-		};
-
-		tiles.addEventListener( 'load-model', this._loadModelCallback );
-
 		// Create an empty
 		const resolutionSampleObject = new ResolutionSampler();
 		resolutionSampleObject.frustumCulled = false;
@@ -324,11 +288,11 @@ export class TopoLinesPlugin {
 
 	}
 
-	updateDefines() {
+	updateDefines( scene = null ) {
 
 		const USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
 		const USE_TOPO_LINES = Number( ! ! ( this.topoOpacity + this.cartoOpacity ) );
-		this.tiles.forEachLoadedModel( scene => {
+		const update = scene => {
 
 			scene.traverse( c => {
 
@@ -353,7 +317,54 @@ export class TopoLinesPlugin {
 
 			} );
 
+		};
+
+		if ( scene !== null ) {
+
+			update( scene );
+
+		} else {
+
+			this.tiles.forEachLoadedModel( update );
+
+		}
+
+	}
+
+	processTileModel( scene, tile ) {
+
+		const { tiles } = this;
+		scene.traverse( c => {
+
+			if ( c.material ) {
+
+				const params = wrapTopoLineMaterial( c.material, c.material.onBeforeCompile );
+				params.ellipsoid.value = tiles.ellipsoid.radius;
+				params.frame.value = tiles.group.matrixWorld;
+
+				params.thickness = this.thicknessUniform;
+
+				params.topoColor.value = this.topoColor;
+				params.topoOpacity = this.topoOpacityUniform;
+				params.topoLimit.value = this.topoLimit;
+				params.topoFadeLimit.value = this.topoFadeLimit;
+
+				params.cartoColor.value = this.cartoColor;
+				params.cartoOpacity = this.cartoOpacityUniform;
+				params.cartoLimit.value = this.cartoLimit;
+				params.cartoFadeLimit.value = this.cartoFadeLimit;
+
+				params.resolution.value = this._resolution;
+				params.pixelRatio = this._pixelRatioUniform;
+
+				c.material.defines.USE_TOPO_ELLIPSOID = Number( this.projection === 'ellipsoid' );
+				c.material.needsUpdate = true;
+
+			}
+
 		} );
+
+		this.updateDefines( scene );
 
 	}
 
@@ -362,7 +373,6 @@ export class TopoLinesPlugin {
 		this.cartoOpacity = 0;
 		this.topoOpacity = 0;
 
-		this.tiles.removeEventListener( 'load-model', this._loadModelCallback );
 		this.updateDefines();
 
 		this._resolutionSampleObject.dispose();

@@ -9,6 +9,7 @@ import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants.js';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );
+export const TilesPluginContext = createContext( null );
 
 // group that matches the transform of the tile set root group
 function TileSetRoot( { children } ) {
@@ -142,7 +143,7 @@ export function EastNorthUpFrame( props ) {
 // component for registering a plugin
 export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
-	const { plugin, args, ...options } = props;
+	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
 
 	// create the instance
@@ -194,6 +195,8 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 		};
 
 	}, [ instance, tiles ] );
+
+	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
 } );
 

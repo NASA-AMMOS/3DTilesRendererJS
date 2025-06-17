@@ -133,6 +133,7 @@ export class GoogleCloudAuthPlugin {
 		uri = new URL( uri );
 		if ( /^http/.test( uri.protocol ) ) {
 
+			uri.searchParams.delete( 'key' );
 			uri.searchParams.append( 'key', this.apiToken );
 			if ( this.sessionToken !== null ) {
 
@@ -185,7 +186,17 @@ export class GoogleCloudAuthPlugin {
 			const rootURL = new URL( this.tiles.rootURL );
 			rootURL.searchParams.append( 'key', this.apiToken );
 			this._tokenRefreshPromise = fetch( rootURL, options )
-				.then( res => res.json() )
+				.then( res => {
+
+					if ( ! res.ok ) {
+
+						throw new Error( `GoogleCloudAuthPlugin: Failed to load data with error code: ${res.status}` );
+
+					}
+
+					return res.json();
+
+				} )
 				.then( res => {
 
 					this.sessionToken = getSessionToken( res.root );
@@ -201,7 +212,7 @@ export class GoogleCloudAuthPlugin {
 						type: 'load-error',
 						tile: null,
 						error,
-						rootURL,
+						url: rootURL,
 					} );
 
 				} );

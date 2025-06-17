@@ -19,6 +19,7 @@ export class TilesRendererBase {
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;
 	downloadQueue : PriorityQueue;
+	processNodeQueue: PriorityQueue;
 
 	constructor( url?: string );
 	update() : void;

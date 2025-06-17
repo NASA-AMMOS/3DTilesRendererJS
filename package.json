@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -24,7 +24,8 @@
   "exports": {
     ".": "./src/index.js",
     "./r3f": "./src/r3f/index.jsx",
-    "./plugins": "./src/plugins/index.js"
+    "./plugins": "./src/plugins/index.js",
+    "./src/*": "./src/*"
   },
   "scripts": {
     "start": "vite --config ./vite.config.js",
@@ -79,11 +80,20 @@
     "vite": "^6.2.2"
   },
   "peerDependencies": {
-    "three": ">=0.166.0"
-  },
-  "optionalDependencies": {
     "@react-three/fiber": "^8.17.9",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": ">=0.166.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { BatchTable } from '../../utilities/BatchTable.js';
 import { FeatureTable } from '../../utilities/FeatureTable.js';
+import { LoaderBase } from './LoaderBase.js';
 
 export interface B3DMBaseResult {
 
@@ -10,9 +11,7 @@ export interface B3DMBaseResult {
 
 }
 
-export class B3DMLoaderBase {
-
-	load( url : string ) : Promise< B3DMBaseResult >;
-	parse( buffer : ArrayBuffer ) : B3DMBaseResult;
+export class B3DMLoaderBase<Result = B3DMBaseResult, ParseResult = Result>
+	extends LoaderBase<Result, ParseResult> {
 
 }

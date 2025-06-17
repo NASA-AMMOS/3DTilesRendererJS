@@ -290,6 +290,12 @@ export class TilesRendererBase {
 			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
 				.then( root => {
 
+					let processedUrl = this.rootURL;
+					if ( processedUrl !== null ) {
+
+						this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+
+					}
 					this.rootLoadingState = LOADED;
 					this.rootTileSet = root;
 					this.dispatchEvent( { type: 'needs-update' } );
@@ -297,6 +303,7 @@ export class TilesRendererBase {
 					this.dispatchEvent( {
 						type: 'load-tile-set',
 						tileSet: root,
+						url: processedUrl,
 					} );
 
 				} )
@@ -310,6 +317,7 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile: null,
 						error,
+						url: this.rootURL,
 					} );
 
 				} );
@@ -399,7 +407,8 @@ export class TilesRendererBase {
 	dispose() {
 
 		// dispose of all the plugins
-		this.plugins.forEach( plugin => {
+		const plugins = [ ...this.plugins ];
+		plugins.forEach( plugin => {
 
 			this.unregisterPlugin( plugin );
 
@@ -701,6 +710,7 @@ export class TilesRendererBase {
 		}
 
 		let isExternalTileSet = false;
+		let externalTileset = null;
 		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
 
@@ -790,7 +800,9 @@ export class TilesRendererBase {
 
 			}
 
-			return this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
+			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
+			this.dispatchEvent( { type: 'tile-download-start', tile } );
+			return res;
 
 		} )
 			.then( res => {
@@ -801,7 +813,11 @@ export class TilesRendererBase {
 
 				}
 
-				if ( res.ok ) {
+				if ( ! ( res instanceof Response ) ) {
+
+					return res;
+
+				} else if ( res.ok ) {
 
 					return extension === 'json' ? res.json() : res.arrayBuffer();
 
@@ -838,6 +854,7 @@ export class TilesRendererBase {
 
 						this.preprocessTileSet( content, uri, tile );
 						tile.children.push( content.root );
+						externalTileset = content;
 						isExternalTileSet = true;
 						return Promise.resolve();
 
@@ -886,6 +903,15 @@ export class TilesRendererBase {
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
 				this.dispatchEvent( { type: 'load-content' } );
+				if ( isExternalTileSet ) {
+
+					this.dispatchEvent( {
+						type: 'load-tile-set',
+						tileSet: externalTileset,
+						url: uri,
+					} );
+
+				}
 				if ( tile.cached.scene ) {
 
 					this.dispatchEvent( {
@@ -932,7 +958,7 @@ export class TilesRendererBase {
 						type: 'load-error',
 						tile,
 						error,
-						uri,
+						url: uri,
 					} );
 
 				} else {

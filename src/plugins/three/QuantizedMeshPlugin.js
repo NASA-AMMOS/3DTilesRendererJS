@@ -1,26 +1,22 @@
-import { MathUtils, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
-import { PriorityQueue } from '../../utilities/PriorityQueue.js';
+import { TilingScheme } from './images/utils/TilingScheme.js';
+import { ProjectionScheme } from './images/utils/ProjectionScheme.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
+const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
 
 // We don't know the height ranges for the tile set on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
-const INITIAL_HEIGHT_RANGE = 1e5;
+const INITIAL_HEIGHT_RANGE = 1e4;
 const _vec = /* @__PURE__ */ new Vector3();
 
 // Checks if the given tile is available
-function isAvailable( layer, level, x, y ) {
+function isTileAvailable( available, level, x, y ) {
 
-	const {
-		minzoom,
-		maxzoom,
-		available,
-	} = layer;
-
-	if ( level >= minzoom && level <= maxzoom && level < available.length ) {
+	if ( level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -41,42 +37,76 @@ function isAvailable( layer, level, x, y ) {
 
 }
 
+// Calculates the max level that can be loaded.
+function getMaxLevel( layer ) {
+
+	const { available = null, maxzoom = null } = layer;
+	return maxzoom === null ? available.length - 1 : maxzoom;
+
+}
+
+// Calculates whether metadata availability is present - returns -1 if not.
+function getMetadataAvailability( layer ) {
+
+	const { metadataAvailability = - 1 } = layer;
+	return metadataAvailability;
+
+}
+
+// Calculates whether the given tile should have metadata availability
+function getTileHasMetadata( tile, layer ) {
+
+	const level = tile[ TILE_LEVEL ];
+	const metadataAvailability = getMetadataAvailability( layer );
+	const maxLevel = getMaxLevel( layer );
+
+	return level < maxLevel && metadataAvailability !== - 1 && ( level % metadataAvailability ) === 0;
+
+}
+
+// Constructs the url for the given tile content
+function getContentUrl( x, y, level, version, layer ) {
+
+	return layer.tiles[ 0 ]
+		.replace( /{\s*z\s*}/g, level )
+		.replace( /{\s*x\s*}/g, x )
+		.replace( /{\s*y\s*}/g, y )
+		.replace( /{\s*version\s*}/g, version );
+
+}
+
 export class QuantizedMeshPlugin {
 
-	get maxLevel() {
+	constructor( options = {} ) {
 
-		return this.layer.available.length;
-
-	}
-
-	constructor( {
-		useRecommendedSettings = true,
-		skirtLength = 1000,
-		smoothSkirtNormals = true,
-		solid = false,
-	} ) {
+		const {
+			useRecommendedSettings = true,
+			skirtLength = null,
+			smoothSkirtNormals = true,
+			solid = false,
+		} = options;
 
 		this.name = 'QUANTIZED_MESH_PLUGIN';
 
 		this.tiles = null;
 		this.layer = null;
-		this.processQueue = null;
 		this.useRecommendedSettings = useRecommendedSettings;
 		this.skirtLength = skirtLength;
 		this.smoothSkirtNormals = smoothSkirtNormals;
 		this.solid = solid;
-		this.needsUpdate = true;
+		this.attribution = null;
+
+		this.tiling = new TilingScheme();
+		this.projection = new ProjectionScheme();
 
 	}
 
+	// Plugin function
 	init( tiles ) {
 
-		const processQueue = new PriorityQueue();
-		processQueue.priorityCallback = tiles.downloadQueue.priorityCallback;
-		processQueue.maxJobs = 20;
-
-		tiles.fetchOptions.header = tiles.fetchOptions.header || {};
-		tiles.fetchOptions.header.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
+		// TODO: should we avoid setting this globally?
+		tiles.fetchOptions.headers = tiles.fetchOptions.headers || {};
+		tiles.fetchOptions.headers.Accept = 'application/vnd.quantized-mesh,application/octet-stream;q=0.9';
 
 		if ( this.useRecommendedSettings ) {
 
@@ -85,62 +115,15 @@ export class QuantizedMeshPlugin {
 		}
 
 		this.tiles = tiles;
-		this.processQueue = processQueue;
-		this.processCallback = tile => {
-
-			const level = tile[ TILE_LEVEL ];
-			const x = tile[ TILE_X ];
-			const y = tile[ TILE_Y ];
-
-			const [ west, south, east, north, minHeight, maxHeight ] = tile.boundingVolume.region;
-			const xStep = ( east - west ) / 2;
-			const yStep = ( north - south ) / 2;
-			for ( let cx = 0; cx < 2; cx ++ ) {
-
-				for ( let cy = 0; cy < 2; cy ++ ) {
-
-					const region = [
-						west + xStep * cx,
-						south + yStep * cy,
-						west + xStep * cx + xStep,
-						south + yStep * cy + yStep,
-						minHeight, maxHeight,
-					];
-					const child = this.expand( level + 1, 2 * x + cx, 2 * y + cy, region );
-					if ( child ) {
-
-						tile.children.push( child );
-
-					}
-
-				}
-
-			}
-
-		};
-
-	}
-
-	preprocessNode( tile, dir, parentTile ) {
-
-		// generate children
-		const { maxLevel } = this;
-		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel ) {
-
-			// marking the tiles as needing an update here prevents cases where we need to process children but there's a frame delay
-			// meaning we may miss our chance on the next loop to perform an update if the "UpdateOnChange" plugin is being used.
-			this.processQueue.add( tile, this.processCallback );
-			this.needsUpdate = true;
-
-		}
 
 	}
 
 	loadRootTileSet() {
 
 		const { tiles } = this;
-		let url = new URL( 'layer.json', tiles.rootURL );
+
+		// initialize href to resolve the root in case it's specified as a relative url
+		let url = new URL( 'layer.json', new URL( tiles.rootURL, location.href ) );
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 
 		return tiles
@@ -149,19 +132,58 @@ export class QuantizedMeshPlugin {
 			.then( json => {
 
 				this.layer = json;
+				const {
+					projection: layerProjection = 'EPSG:4326',
+					extensions = [],
+					attribution = '',
+					available = null,
+				} = json;
 
-				if ( json.extensions.length > 0 ) {
+				const {
+					tiling,
+					tiles,
+					projection,
+				} = this;
 
-					tiles.fetchOptions.header[ 'Accept' ] += `;extensions=${ json.extensions.join( '-' ) }`;
+				// attribution
+				if ( attribution ) {
+
+					this.attribution = {
+						value: attribution,
+						type: 'string',
+						collapsible: true,
+					};
 
 				}
 
-				const { bounds } = json;
-				const west = MathUtils.DEG2RAD * bounds[ 0 ];
-				const south = MathUtils.DEG2RAD * bounds[ 1 ];
-				const east = MathUtils.DEG2RAD * bounds[ 2 ];
-				const north = MathUtils.DEG2RAD * bounds[ 3 ];
+				// extensions
+				if ( extensions.length > 0 ) {
 
+					tiles.fetchOptions.headers[ 'Accept' ] += `;extensions=${ extensions.join( '-' ) }`;
+
+				}
+
+				// initialize tiling, projection
+				projection.setScheme( layerProjection );
+
+				const { tileCountX, tileCountY } = projection;
+				tiling.setProjection( projection );
+				tiling.generateLevels( getMaxLevel( json ) + 1, tileCountX, tileCountY );
+
+				// initialize children
+				const children = [];
+				for ( let x = 0; x < tileCountX; x ++ ) {
+
+					const child = this.createChild( 0, x, 0, available );
+					if ( child ) {
+
+						children.push( child );
+
+					}
+
+				}
+
+				// produce the tile set root
 				const tileset = {
 					asset: {
 						version: '1.1'
@@ -171,35 +193,18 @@ export class QuantizedMeshPlugin {
 						refine: 'REPLACE',
 						geometricError: Infinity,
 						boundingVolume: {
-							region: [
-								west, south, east, north,
-								- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
-							],
+							region: [ ...this.tiling.getFullBounds(), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ],
 						},
-						children: [],
+						children: children,
+
+						[ TILE_AVAILABLE ]: available,
+						[ TILE_LEVEL ]: - 1,
 					},
 				};
 
-				const xTiles = json.projection === 'EPSG:4326' ? 2 : 1;
-				for ( let x = 0; x < xTiles; x ++ ) {
-
-					const step = ( east - west ) / xTiles;
-					const region = [
-						west + step * x, south, west + step * x + step, north,
-						- INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE,
-					];
-					const child = this.expand( 0, x, 0, region );
-					if ( child ) {
-
-						tileset.root.children.push( child );
-
-					}
-
-				}
-
 				let baseUrl = tiles.rootURL;
 				tiles.invokeAllPlugins( plugin => baseUrl = plugin.preprocessURL ? plugin.preprocessURL( baseUrl, null ) : baseUrl );
-				this.tiles.preprocessTileSet( tileset, baseUrl );
+				tiles.preprocessTileSet( tileset, baseUrl );
 
 				return tileset;
 
@@ -207,82 +212,51 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	expand( level, x, y, region ) {
+	async parseToMesh( buffer, tile, extension, uri ) {
 
-		if ( ! isAvailable( this.layer, level, x, y ) ) {
+		const {
+			skirtLength,
+			solid,
+			smoothSkirtNormals,
+			tiles,
+		} = this;
 
-			return null;
-
-		}
-
-		const url = this.layer.tiles[ 0 ]
-			.replace( /{\s*z\s*}/g, level )
-			.replace( /{\s*x\s*}/g, x )
-			.replace( /{\s*y\s*}/g, y )
-			.replace( /{\s*version\s*}/g, 1 );
-
-		const { tiles } = this;
+		// set up loader
 		const ellipsoid = tiles.ellipsoid;
-		const [ , south, , north, , maxHeight ] = region;
-		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
+		const loader = new QuantizedMeshLoader( tiles.manager );
+		loader.ellipsoid.copy( ellipsoid );
+		loader.solid = solid;
+		loader.smoothSkirtNormals = smoothSkirtNormals;
+		loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 
-		ellipsoid.getCartographicToPosition( midLat, 0, maxHeight, _vec );
-		_vec.z = 0;
+		// split the parent tile if needed
+		let result;
+		if ( extension === 'tile_split' ) {
 
-		// https://github.com/CesiumGS/cesium/blob/53889cbed2a91d38e0fae4b6f2dcf6783632fc92/packages/engine/Source/Scene/QuadtreeTileProvider.js#L24-L31
-		// Implicit quantized mesh tile error halves with every layer
-		const xTiles = this.layer.projection === 'EPSG:4326' ? 2 : 1;
-		const maxRadius = Math.max( ...ellipsoid.radius );
-		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * xTiles );
-		const geometricError = rootGeometricError / ( 2 ** level );
+			// split the parent tile
+			const searchParams = new URL( uri ).searchParams;
+			const left = searchParams.get( 'left' ) === 'true';
+			const bottom = searchParams.get( 'bottom' ) === 'true';
 
-		return {
-			[ TILE_LEVEL ]: level,
-			[ TILE_X ]: x,
-			[ TILE_Y ]: y,
-			refine: 'REPLACE',
-			geometricError: geometricError,
-			boundingVolume: {
-				region: region,
-			},
-			content: {
-				uri: url,
-			},
-			children: []
-		};
+			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
+			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
 
-	}
+		} else {
 
-	doTilesNeedUpdate() {
+			const [ west, south, east, north ] = tile.boundingVolume.region;
+			loader.minLat = south;
+			loader.maxLat = north;
+			loader.minLon = west;
+			loader.maxLon = east;
 
-		if ( this.needsUpdate ) {
-
-			this.needsUpdate = false;
-			return true;
+			// parse the tile data
+			result = loader.parse( buffer );
 
 		}
-
-		return null;
-
-	}
-
-	parseToMesh( buffer, tile ) {
-
-		const ellipsoid = this.tiles.ellipsoid;
-		const [ west, south, east, north ] = tile.boundingVolume.region;
-		const loader = new QuantizedMeshLoader( this.tiles.manager );
-		loader.minLat = south;
-		loader.maxLat = north;
-		loader.minLon = west;
-		loader.maxLon = east;
-		loader.ellipsoid.copy( ellipsoid );
-
-		loader.solid = this.solid;
-		loader.smoothSkirtNormals = this.smoothSkirtNormals;
-		loader.skirtLength = this.skirtLength;
-
-		// parse the tile data
-		const result = loader.parse( buffer );
 
 		// adjust the bounding region to be more accurate based on the contents of the terrain file
 		// NOTE: The debug region bounds are only created after the tile is first shown so the debug
@@ -293,14 +267,157 @@ export class QuantizedMeshPlugin {
 		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
 
 		// use the geometric error value if it's present
-		if ( metadata && 'geometricerror' in metadata ) {
+		if ( metadata ) {
 
-			tile.geometricError = metadata.geometricerror;
+			if ( 'geometricerror' in metadata ) {
 
+				tile.geometricError = metadata.geometricerror;
+
+			}
+
+			// if the tile hasn't been expanded yet and isn't in the queue to do so then
+			// mark it for expansion again
+			const hasMetadata = getTileHasMetadata( tile, this.layer );
+			if ( hasMetadata && 'available' in metadata && tile.children.length === 0 ) {
+
+				// add an offset to account for the current and previous layers
+				tile[ TILE_AVAILABLE ] = [
+					...new Array( tile[ TILE_LEVEL ] + 1 ).fill( null ),
+					...metadata.available,
+				];
+
+			}
 
 		}
 
+		// NOTE: we expand children only once the parent mesh data is loaded to ensure the mesh
+		// data is ready for clipping. It's possible that this child data gets to the parse stage
+		// first, otherwise, while the parent is still downloading.
+		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		this.expandChildren( tile );
+
 		return result;
+
+	}
+
+	getAttributions( target ) {
+
+		if ( this.attribution ) {
+
+			target.push( this.attribution );
+
+		}
+
+	}
+
+	// Local functions
+	createChild( level, x, y, available ) {
+
+		const { tiles, layer, tiling, projection } = this;
+		const ellipsoid = tiles.ellipsoid;
+
+		const isAvailable = available === null || isTileAvailable( available, level, x, y );
+		const url = getContentUrl( x, y, level, 1, layer );
+		const region = [ ...tiling.getTileBounds( x, y, level ), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ];
+		const [ /* west */, south, /* east */, north, /* minHeight */, maxHeight ] = region;
+		const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
+
+		// get the projected perimeter
+		ellipsoid.getCartographicToPosition( midLat, 0, maxHeight, _vec );
+		_vec.z = 0;
+
+		// https://github.com/CesiumGS/cesium/blob/53889cbed2a91d38e0fae4b6f2dcf6783632fc92/packages/engine/Source/Scene/QuadtreeTileProvider.js#L24-L31
+		// Implicit quantized mesh tile error halves with every layer
+		const tileCountX = projection.tileCountX;
+		const maxRadius = Math.max( ...ellipsoid.radius );
+		const rootGeometricError = maxRadius * 2 * Math.PI * 0.25 / ( 65 * tileCountX );
+		const geometricError = rootGeometricError / ( 2 ** level );
+
+		// Create the child
+		const tile = {
+			[ TILE_AVAILABLE ]: null,
+			[ TILE_LEVEL ]: level,
+			[ TILE_X ]: x,
+			[ TILE_Y ]: y,
+			refine: 'REPLACE',
+			geometricError: geometricError,
+			boundingVolume: { region },
+			content: isAvailable ? { uri: url } : null,
+			children: []
+		};
+
+		// if we're relying on tile metadata availability then skip storing the tile metadata
+		if ( ! getTileHasMetadata( tile, layer ) ) {
+
+			tile[ TILE_AVAILABLE ] = available;
+
+		}
+
+		return tile;
+
+	}
+
+	expandChildren( tile ) {
+
+		const level = tile[ TILE_LEVEL ];
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		const available = tile[ TILE_AVAILABLE ];
+
+		let hasChildren = false;
+		for ( let cx = 0; cx < 2; cx ++ ) {
+
+			for ( let cy = 0; cy < 2; cy ++ ) {
+
+				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, available );
+				if ( child.content !== null ) {
+
+					tile.children.push( child );
+					hasChildren = true;
+
+				} else {
+
+					tile.children.push( child );
+					child.content = { uri: `tile.tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+
+				}
+
+			}
+
+		}
+
+		if ( ! hasChildren ) {
+
+			tile.children.length = 0;
+
+		}
+
+	}
+
+	fetchData( uri, options ) {
+
+		// if this is our custom url indicating a tile split then return fake response
+		if ( /tile_split/.test( uri ) ) {
+
+			return new ArrayBuffer();
+
+		}
+
+	}
+
+	disposeTile( tile ) {
+
+		// dispose of the generated children past the metadata layer to avoid accumulating too much
+		if ( getTileHasMetadata( tile, this.layer ) ) {
+
+			tile.children.length = 0;
+			tile.__childrenProcessed = 0;
+			tile[ TILE_AVAILABLE ] = null;
+
+		}
+
+		tile.children.length = 0;
+		tile.__childrenProcessed = 0;
 
 	}
 

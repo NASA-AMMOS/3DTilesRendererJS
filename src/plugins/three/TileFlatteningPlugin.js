@@ -228,7 +228,7 @@ export class TileFlatteningPlugin {
 
 	}
 
-	addShape( mesh, direction = new Vector3( 0, - 1, 0 ), threshold = Infinity ) {
+	addShape( mesh, direction = new Vector3( 0, 0, - 1 ), threshold = Infinity ) {
 
 		if ( this.hasShape( mesh ) ) {
 
@@ -317,7 +317,7 @@ export class TileFlatteningPlugin {
 
 		this.positionsMap.forEach( geomMap => {
 
-			geomMap.forEach( ( geometry, buffer ) => {
+			geomMap.forEach( ( buffer, geometry ) => {
 
 				const { position } = geometry.attributes;
 				position.array.set( buffer );

@@ -674,8 +674,9 @@ Available options are as follows:
 	// If true then the TilesRenderer error target is set to 2 so an expected amount of tile detail is rendered.
 	useRecommendedSettings: true,
 
-	// The length of the skirts to generate for each tile. No skirts are generated if set to 0.
-	skirtLength: 1000,
+	// The length of the skirts to generate for each tile. No skirts are generated if set to "0". Skirt length is automtically
+	// calculated from geometric error if set to "null".
+	skirtLength: null,
 
 	// If true then the normals on the edge of the tile are replicated on skirt vertices. Otherwise the skits have flat edges.
 	smoothSkirtNormals: true,
@@ -798,3 +799,41 @@ clearShapes(): void
 ```
 
 Deletes all shapes and resets the tiles.
+
+## TopoLinesPlugin
+
+_available in the examples directory_
+
+Plugin for rendering topographic contour lines on the tile set.
+
+### .constructor
+
+```js
+constructor( options : Object )
+```
+
+Available options are as follows:
+
+```js
+{
+	// whether the data set is 'planar' or 'ellipsoid'
+	projection = 'planar',
+
+	// the thickness of the topo lines
+	thickness = 1,
+
+	// options for topographic lines
+	// "topoLimit" refers to the min and max distances between each topo line
+	// "topoFadeLimit" refers to the fade in and out point of the topo lines as a whole
+	topoColor = new Color( 0xffffff ),
+	topoOpacity = 0.5,
+	topoLimit = isPlanar ? new Vector2( 0.1, 1e10 ) : new Vector2( 1, 1e10 ),
+	topoFadeLimit = isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 0, 1e4 ),
+
+	// options for cartesian and cartographic lines when in planar and ellipsoid mode respectively
+	cartoColor = new Color( 0xffffff ),
+	cartoOpacity = isPlanar ? 0 : 0.5,
+	cartoLimit = new Vector2( 0.1, 1e10 ),
+	cartoFadeLimit = isPlanar ? new Vector2( 0, 1e10 ) : new Vector2( 1.5 * 1e4, 1e6 ),
+}
+```
