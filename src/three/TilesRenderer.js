@@ -986,13 +986,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 			target.inView = true;
 			target.error = inViewError;
-			target.distanceToCamera = inViewDistance;
+			target.distanceFromCamera = inViewDistance;
 
 		} else {
 
 			target.inView = false;
 			target.error = maxError;
-			target.distanceToCamera = minDistance;
+			target.distanceFromCamera = minDistance;
 
 		}
 
