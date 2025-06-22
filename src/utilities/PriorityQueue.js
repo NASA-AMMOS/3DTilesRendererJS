@@ -116,7 +116,6 @@ class PriorityQueue {
 			const item = items[ i ];
 			if ( filter( item ) ) {
 
-				console.log('REMOVING')
 				this.remove( item );
 
 			}
