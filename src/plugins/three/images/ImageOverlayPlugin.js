@@ -523,7 +523,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// find all meshes to project on
+		// find all meshes to project on and ensure matrices are up to date
 		const meshes = [];
 		scene.updateMatrixWorld();
 		scene.traverse( c => {
