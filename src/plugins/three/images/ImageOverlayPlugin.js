@@ -385,7 +385,6 @@ export class ImageOverlayPlugin {
 			overlays.splice( index, 1 );
 
 			// Remove any items that reference the overlay being disposed
-			console.log( processQueue.items.length )
 			processQueue.removeByFilter( item => {
 
 				return item.overlay === overlay;
