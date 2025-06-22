@@ -111,13 +111,17 @@ export class ImageOverlayPlugin {
 			const visibleB = tiles.visibleTiles.has( tileB );
 			if ( visibleA !== visibleB ) {
 
+				// load visible tiles first
 				return visibleA ? 1 : - 1;
 
 			} else {
 
+				// the fallback to the download queue tile priority
 				return tiles.downloadQueue.priorityCallback( tileA, tileB );
 
 			}
+
+			// TODO: we could prioritize by overlay order here to ensure consistency
 
 		};
 
