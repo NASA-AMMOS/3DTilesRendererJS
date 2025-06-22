@@ -513,6 +513,16 @@ export class ImageOverlayPlugin {
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
 
+		// wait for the overlay to be completely loaded so projection and tiling are available
+		await overlay.whenReady();
+
+		// check if the overlay or tile have been disposed since starting this function
+		if ( controller.signal.aborted || tileController.signal.aborted ) {
+
+			return;
+
+		}
+
 		// find all meshes to project on
 		const meshes = [];
 		scene.updateMatrixWorld();
@@ -525,16 +535,6 @@ export class ImageOverlayPlugin {
 			}
 
 		} );
-
-		// wait for the overlay to be completely loaded so projection and tiling are available
-		await overlay.whenReady();
-
-		// check if the overlay or tile have been disposed since starting this function
-		if ( controller.signal.aborted || tileController.signal.aborted ) {
-
-			return;
-
-		}
 
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { tiling, projection, imageSource } = overlay;
