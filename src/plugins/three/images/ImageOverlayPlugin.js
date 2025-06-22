@@ -4,6 +4,7 @@ import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { forEachTileInBounds, getMeshesCartographicRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
+import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 
 // function for marking and releasing images in the given overlay
@@ -83,6 +84,9 @@ export class ImageOverlayPlugin {
 		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
+		this.processQueue = null;
+		this._onUpdateAfter = null;
+		this._onTileDownloadStart = null;
 		this._scheduled = false;
 
 		overlays.forEach( overlay => {
@@ -97,10 +101,17 @@ export class ImageOverlayPlugin {
 	init( tiles ) {
 
 		const tileComposer = new TiledTextureComposer( this.renderer );
+		const processQueue = new PriorityQueue();
+		processQueue.priorityCallback = ( a, b ) => {
+
+			return tiles.downloadQueue.priorityCallback( a.tile, b.tile );
+
+		};
 
 		// save variables
 		this.tiles = tiles;
 		this.tileComposer = tileComposer;
+		this.processQueue = processQueue;
 
 		// init all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
