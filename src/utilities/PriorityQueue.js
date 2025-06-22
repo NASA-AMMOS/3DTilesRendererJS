@@ -108,6 +108,22 @@ class PriorityQueue {
 
 	}
 
+	removeByFilter( filter ) {
+
+		const { items } = this;
+		for ( let i = 0; i < items.length; i ++ ) {
+
+			const item = items[ i ];
+			if ( filter( item ) ) {
+
+				this.remove( item );
+
+			}
+
+		}
+
+	}
+
 	tryRunJobs() {
 
 		this.sort();
