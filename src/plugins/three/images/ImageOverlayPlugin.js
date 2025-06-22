@@ -104,7 +104,20 @@ export class ImageOverlayPlugin {
 		const processQueue = new PriorityQueue();
 		processQueue.priorityCallback = ( a, b ) => {
 
-			return tiles.downloadQueue.priorityCallback( a.tile, b.tile );
+			const tileA = a.tile;
+			const tileB = b.tile;
+
+			const visibleA = tiles.visibleTiles.has( tileA );
+			const visibleB = tiles.visibleTiles.has( tileB );
+			if ( visibleA !== visibleB ) {
+
+				return visibleA ? 1 : - 1;
+
+			} else {
+
+				return tiles.downloadQueue.priorityCallback( tileA, tileB );
+
+			}
 
 		};
 
