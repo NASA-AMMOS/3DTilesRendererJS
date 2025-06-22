@@ -180,7 +180,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayInfo, tileControllers } = this;
+		const { overlayInfo, tileControllers, processQueue } = this;
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -196,16 +196,16 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, range, meshRange, level, target } = tileInfo.get( tile );
+				const { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked } = tileInfo.get( tile );
 
 				// release the ranges
-				if ( meshRange !== null ) {
+				if ( meshRange !== null && meshRangeMarked ) {
 
 					markOverlayImages( meshRange, level, overlay, true );
 
 				}
 
-				if ( range !== null ) {
+				if ( range !== null && rangeMarked ) {
 
 					markOverlayImages( range, level, overlay, true );
 
@@ -224,6 +224,13 @@ export class ImageOverlayPlugin {
 			}
 
 		} ) );
+
+		// Remove any items that reference the tile being disposed
+		processQueue.removeByFilter( item => {
+
+			return item.tile === tile;
+
+		} );
 
 	}
 
@@ -340,7 +347,7 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo } = this;
+		const { overlays, overlayInfo, processQueue } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
@@ -363,6 +370,15 @@ export class ImageOverlayPlugin {
 
 			overlay.dispose();
 			overlays.splice( index, 1 );
+
+			// Remove any items that reference the overlay being disposed
+			console.log( processQueue.items.length )
+			processQueue.removeByFilter( item => {
+
+				return item.overlay === overlay;
+
+			} );
+
 			this.needsUpdate = true;
 
 		}
@@ -435,7 +451,7 @@ export class ImageOverlayPlugin {
 
 		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
 		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
-		const { overlayInfo } = this;
+		const { overlayInfo, processQueue } = this;
 		if ( overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
 
 			return;
@@ -449,6 +465,9 @@ export class ImageOverlayPlugin {
 			level: level,
 			target: null,
 			meshInfo: new Map(),
+
+			rangeMarked: false,
+			meshRangeMarked: false,
 		};
 
 		overlayInfo
@@ -463,7 +482,18 @@ export class ImageOverlayPlugin {
 			const range = [ minLon, minLat, maxLon, maxLat ];
 			info.range = range;
 
-			markOverlayImages( range, level, overlay, false );
+			processQueue
+				.add( { tile, overlay }, () => {
+
+					info.rangeMarked = true;
+					return markOverlayImages( range, level, overlay, false );
+
+				} )
+				.catch( () => {
+
+					// the queue throws an error if a task is removed early
+
+				} );
 
 		}
 
@@ -478,7 +508,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures } = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures, processQueue } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -536,7 +566,18 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		await markOverlayImages( range, info.level, overlay, false );
+		await processQueue
+			.add( { tile, overlay }, () => {
+
+				info.meshRangeMarked = true;
+				return markOverlayImages( range, info.level, overlay, false );
+
+			} )
+			.catch( () => {
+
+				// the queue throws an error if a task is removed early
+
+			} );
 
 		// check if the overlay has been disposed since starting this function
 		if ( controller.signal.aborted || tileController.signal.aborted ) {
