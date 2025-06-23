@@ -1,11 +1,13 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4 } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import { forEachTileInBounds, getMeshesCartographicRange } from './overlays/utils.js';
+import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
+
+const _matrix = /* @__PURE__ */ new Matrix4();
 
 // function for marking and releasing images in the given overlay
 async function markOverlayImages( range, level, overlay, doRelease ) {
@@ -574,12 +576,34 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// TODO: we need to get the UVs aligned to the projection frame
-
-		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { tiling, projection, imageSource } = overlay;
-		const { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, rootMatrix, projection );
 		const info = tileInfo.get( tile );
+		let range, uvs;
+
+		// retrieve the uvs and range for all the meshes
+		if ( overlay.frame !== null ) {
+
+			_matrix.copy( overlay.frame ).invert();
+			if ( scene.parent !== null ) {
+
+				_matrix.premultiply( tiles.group.matrixWorldInverse );
+
+			}
+
+			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, overlay.tiling.aspect ) );
+
+		} else {
+
+			_matrix.identity();
+			if ( scene.parent !== null ) {
+
+				_matrix.copy( tiles.group.matrixWorldInverse );
+
+			}
+
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
+
+		}
 
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
