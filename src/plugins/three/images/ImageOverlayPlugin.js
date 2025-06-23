@@ -178,8 +178,6 @@ export class ImageOverlayPlugin {
 
 				if ( id === execId ) {
 
-					// TODO: When a planar projection has been updated, we have to update drawn textures? Uvs?
-
 					// TODO: if the order is the only thing that changes then we don't really need to wait for the above?
 					tiles.forEachLoadedModel( ( scene, tile ) => {
 

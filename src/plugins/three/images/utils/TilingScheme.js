@@ -51,6 +51,13 @@ export class TilingScheme {
 
 	}
 
+	get aspect() {
+
+		const { pixelWidth, pixelHeight } = this.getLevel( this.maxLevel );
+		return pixelWidth / pixelHeight;
+
+	}
+
 	constructor() {
 
 		this.flipY = false;
