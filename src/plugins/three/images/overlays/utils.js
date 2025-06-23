@@ -29,6 +29,7 @@ export function forEachTileInBounds( range, level, tiling, callback ) {
 
 }
 
+// functions for generating UVs for cartographic-projected UVs
 function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellipsoid ) {
 
 	const _vec = new Vector3();
@@ -152,6 +153,95 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 	return {
 		uvs,
 		range: [ minLon, minLat, maxLon, maxLat ],
+	};
+
+}
+
+// functions for generating UVs for planar-projected UVs
+function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
+
+	const _vec = new Vector3();
+	const uv = [];
+	const posAttr = geometry.getAttribute( 'position' );
+
+	geometry.computeBoundingBox();
+	geometry.boundingBox.getCenter( _vec ).applyMatrix4( meshToFrame );
+
+	let minU = Infinity;
+	let minV = Infinity;
+	let maxU = - Infinity;
+	let maxV = - Infinity;
+	for ( let i = 0; i < posAttr.count; i ++ ) {
+
+		// divide U by the aspect to stretch the U dimension to the aspect of the image
+		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( meshToFrame );
+		_vec.x /= aspect;
+
+		uv.push( _vec.x, _vec.y );
+
+		minU = Math.min( minU, _vec.x );
+		maxU = Math.max( maxU, _vec.x );
+
+		minV = Math.min( minV, _vec.y );
+		maxV = Math.max( maxV, _vec.y );
+
+	}
+
+	const range = [ minU, minV, maxU, maxV ];
+	return { uv, range };
+
+}
+
+export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
+
+	// find the U / V ranges
+	let minU = Infinity;
+	let minV = Infinity;
+	let maxU = - Infinity;
+	let maxV = - Infinity;
+	const uvs = [];
+
+	const _matrix = new Matrix4();
+	meshes.forEach( mesh => {
+
+		// multiply in the ellipsoid matrix if necessary
+		_matrix.copy( mesh.matrixWorld );
+		if ( worldToFrame ) {
+
+			_matrix.premultiply( worldToFrame );
+
+		}
+
+		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, aspect );
+		uvs.push( uv );
+
+		// save the min and max values
+		minU = Math.min( minU, range[ 0 ] );
+		maxU = Math.max( maxU, range[ 2 ] );
+
+		minV = Math.min( minV, range[ 1 ] );
+		maxV = Math.max( maxV, range[ 3 ] );
+
+	} );
+
+
+	uvs.forEach( uv => {
+
+		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
+
+			const u = uv[ i + 0 ];
+			const v = uv[ i + 1 ];
+
+			uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
+			uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
+
+		}
+
+	} );
+
+	return {
+		uvs,
+		range: [ minU, minV, maxU, maxV ],
 	};
 
 }
