@@ -141,6 +141,21 @@ export class ImageOverlayPlugin {
 		let execId = 0;
 		this._onUpdateAfter = async () => {
 
+			this.overlayInfo.forEach( ( info, overlay ) => {
+
+				if (
+					Boolean( overlay.frame ) !== Boolean( info.frame ) ||
+					overlay.frame && info.frame && ! info.frame.equals( overlay.frame )
+				) {
+
+					// TODO: do a "light" disposal of the overlay, then reinitialization so new UVs etc will get generated
+
+					this.needsUpdate = true;
+
+				}
+
+			} );
+
 			if ( this.needsUpdate ) {
 
 				this.needsUpdate = false;
@@ -340,6 +355,7 @@ export class ImageOverlayPlugin {
 			uniforms: {},
 			tileInfo: new Map(),
 			controller: controller,
+			frame: overlay.frame ? overlay.frame.clone() : null,
 		} );
 
 		if ( tiles !== null ) {
@@ -491,25 +507,33 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
-		// If the tile has a region bounding volume then mark the tiles to preload
-		if ( tile.boundingVolume.region ) {
+		if ( overlay.frame !== null ) {
 
-			const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-			const range = [ minLon, minLat, maxLon, maxLat ];
-			info.range = range;
+			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
-			processQueue
-				.add( { tile, overlay }, () => {
+		} else {
 
-					info.rangeMarked = true;
-					return markOverlayImages( range, level, overlay, false );
+			// If the tile has a region bounding volume then mark the tiles to preload
+			if ( tile.boundingVolume.region ) {
 
-				} )
-				.catch( () => {
+				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
+				const range = [ minLon, minLat, maxLon, maxLat ];
+				info.range = range;
 
-					// the queue throws an error if a task is removed early
+				processQueue
+					.add( { tile, overlay }, () => {
 
-				} );
+						info.rangeMarked = true;
+						return markOverlayImages( range, level, overlay, false );
+
+					} )
+					.catch( () => {
+
+						// the queue throws an error if a task is removed early
+
+					} );
+
+			}
 
 		}
 
@@ -551,6 +575,8 @@ export class ImageOverlayPlugin {
 			}
 
 		} );
+
+		// TODO: we need to get the UVs aligned to the projection frame
 
 		const rootMatrix = scene.parent !== null ? tiles.group.matrixWorldInverse : null;
 		const { tiling, projection, imageSource } = overlay;
@@ -604,6 +630,8 @@ export class ImageOverlayPlugin {
 
 		// draw the textures
 		if ( target !== null ) {
+
+			// TODO: draw the images accounting for the planar projection
 
 			const clampedRange = tiling.clampToBounds( range );
 			const normRange = tiling.toNormalizedRange( clampedRange );
@@ -712,15 +740,23 @@ class ImageOverlay {
 
 	}
 
+	get isPlanarProjection() {
+
+		return Boolean( this.frame );
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
 			opacity = 1,
 			color = 0xffffff,
+			frame = null,
 		} = options;
 		this.imageSource = null;
 		this.opacity = opacity;
 		this.color = new Color( color );
+		this.frame = frame !== null ? frame.clone() : null;
 
 	}
 
