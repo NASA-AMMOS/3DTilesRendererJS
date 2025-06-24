@@ -479,9 +479,9 @@ export class ImageOverlayPlugin {
 			const w = maxX - minX;
 			const h = maxY - minY;
 
-			let level;
+			let level = 0;
 			const { maxLevel } = tiling;
-			for ( level = 0; level < maxLevel; level ++ ) {
+			for ( ; level < maxLevel; level ++ ) {
 
 				// the number of pixels per image on each axis
 				const wProj = resolution / w;
