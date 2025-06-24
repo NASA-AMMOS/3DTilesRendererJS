@@ -145,24 +145,57 @@ export class DataCache {
 			// if the item is no longer being used
 			if ( info.count === 0 || force ) {
 
-				const { result, abortController } = info;
-				abortController.abort();
+				const disposeCallback = () => {
 
-				// dispose of the object even if it still is in progress
-				if ( result instanceof Promise ) {
+					// if the object isn't in the cache anymore then exit early
+					if ( cache[ key ] !== info ) {
 
-					// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
-					result.then( item => this.disposeItem( item ) ).catch( () => {} );
+						return;
+
+					}
+
+					// abort any loads
+					const { result, abortController } = info;
+					abortController.abort();
+
+					// dispose of the object even if it still is in progress
+					if ( result instanceof Promise ) {
+
+						// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
+						result.then( item => this.disposeItem( item ) ).catch( () => {} );
+
+					} else {
+
+						this.disposeItem( result );
+
+					}
+
+					delete cache[ key ];
+					this.count --;
+					this.cachedBytes -= info.bytes;
+
+				};
+
+				if ( force ) {
+
+					// if we're forcing disposal then dispose immediately
+					disposeCallback();
 
 				} else {
 
-					this.disposeItem( result );
+					// queue for disposal in a frame here - we need to make sure we're not disposing of something twice
+					// this can get called multiple times in a row to increment then decrement again.
+					queueMicrotask( () => {
+
+						if ( info.count === 0 ) {
+
+							disposeCallback();
+
+						}
+
+					} );
 
 				}
-
-				delete cache[ key ];
-				this.count --;
-				this.cachedBytes -= info.bytes;
 
 			}
 

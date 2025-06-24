@@ -51,6 +51,13 @@ export class TilingScheme {
 
 	}
 
+	get aspect() {
+
+		const { pixelWidth, pixelHeight } = this.getLevel( this.maxLevel );
+		return pixelWidth / pixelHeight;
+
+	}
+
 	constructor() {
 
 		this.flipY = false;
@@ -172,13 +179,6 @@ export class TilingScheme {
 
 		}
 
-		if ( clampTiles ) {
-
-			bx = clamp( bx, 0, 1 );
-			by = clamp( by, 0, 1 );
-
-		}
-
 		let tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 
@@ -199,10 +199,10 @@ export class TilingScheme {
 
 	}
 
-	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false, clampTiles = true ) {
+	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
-		const minTile = this.getTileAtPoint( minX, minY, level, normalized, clampTiles );
-		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, clampTiles );
+		const minTile = this.getTileAtPoint( minX, minY, level, normalized, false );
+		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, false );
 
 		if ( this.flipY ) {
 
@@ -210,7 +210,22 @@ export class TilingScheme {
 
 		}
 
-		return [ ...minTile, ...maxTile ];
+		const { tileCountX, tileCountY } = this.getLevel( level );
+		const [ minTileX, minTileY ] = minTile;
+		const [ maxTileX, maxTileY ] = maxTile;
+
+		if ( maxTileX < 0 || maxTileY < 0 || minTileX >= tileCountX || minTileY >= tileCountY ) {
+
+			return [ 0, 0, - 1, - 1 ];
+
+		}
+
+		return [
+			clamp( minTileX, 0, tileCountX - 1 ),
+			clamp( minTileY, 0, tileCountY - 1 ),
+			clamp( maxTileX, 0, tileCountX - 1 ),
+			clamp( maxTileY, 0, tileCountY - 1 ),
+		];
 
 	}
 

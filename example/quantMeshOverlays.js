@@ -226,27 +226,6 @@ function updateHtml() {
 		const programCount = renderer.info.programs.length;
 		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount } Draw Calls: ${ render.calls }`;
 
-		const batchPlugin = tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' );
-		const fadePlugin = tiles.getPluginByName( 'FADE_TILES_PLUGIN' );
-		if ( batchPlugin ) {
-
-			let tot = 0;
-			batchPlugin.batchedMesh?._instanceInfo.forEach( info => {
-
-				if ( info.visible && info.active ) tot ++;
-
-			} );
-
-			fadePlugin.batchedMesh?._instanceInfo.forEach( info => {
-
-				if ( info.visible && info.active ) tot ++;
-
-			} );
-
-			str += ', Batched: ' + tot;
-
-		}
-
 	}
 
 	if ( statsContainer.innerHTML !== str ) {
