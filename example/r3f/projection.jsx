@@ -61,7 +61,7 @@ function App() {
 			</group>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } maxDistance={ 200 } minDistance={ 1 } cameraRadius={ 0 } />
+			<EnvironmentControls enableDamping={ true } maxDistance={ 300 } minDistance={ 1 } cameraRadius={ 0 } />
 			<PivotControls scale={ 150 } matrix={ worldMatrix } fixed />
 
 		</Canvas>
