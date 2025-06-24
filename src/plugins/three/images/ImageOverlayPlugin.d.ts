@@ -1,4 +1,4 @@
-import { Color, WebGLRenderer } from 'three';
+import { Color, Matrix4, WebGLRenderer } from 'three';
 
 export class ImageOverlayPlugin {
 
@@ -6,6 +6,7 @@ export class ImageOverlayPlugin {
 		overlays: Array<ImageOverlay>,
 		renderer: WebGLRenderer,
 		resolution?: number,
+		frame?: Matrix4 | null,
 	} );
 
 	addOverlay( overlay: ImageOverlay, order?: number ): void;

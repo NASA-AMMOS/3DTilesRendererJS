@@ -27,7 +27,7 @@ async function markOverlayImages( range, level, overlay, doRelease ) {
 
 	const promises = [];
 	const { imageSource, tiling } = overlay;
-	forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
+	forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 		if ( doRelease ) {
 
@@ -48,7 +48,7 @@ async function markOverlayImages( range, level, overlay, doRelease ) {
 function countTilesToDraw( range, level, overlay ) {
 
 	let total = 0;
-	forEachTileInBounds( range, level, overlay.tiling, () => {
+	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( x, y, l ) => {
 
 		total ++;
 
@@ -507,7 +507,7 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
-		if ( overlay.frame !== null ) {
+		if ( overlay.isPlanarProjection ) {
 
 			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
@@ -581,7 +581,7 @@ export class ImageOverlayPlugin {
 		let range, uvs;
 
 		// retrieve the uvs and range for all the meshes
-		if ( overlay.frame !== null ) {
+		if ( overlay.isPlanarProjection ) {
 
 			_matrix.copy( overlay.frame ).invert();
 			if ( scene.parent !== null ) {
@@ -605,10 +605,26 @@ export class ImageOverlayPlugin {
 
 		}
 
+		let clampedRange;
+		let normalizedRange;
+		if ( overlay.frame === null ) {
+
+			// if rendering for ellipsoid projection then clamp the range for iteration
+			// so we're not requesting tiles at extremely large numbers in the web-mercator case
+			clampedRange = tiling.clampToBounds( range );
+			normalizedRange = tiling.toNormalizedRange( clampedRange );
+
+		} else {
+
+			clampedRange = tiling.clampToBounds( range, true );
+			normalizedRange = range;
+
+		}
+
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
 		let target = null;
-		if ( countTilesToDraw( range, info.level, overlay ) !== 0 ) {
+		if ( countTilesToDraw( clampedRange, info.level, overlay ) !== 0 ) {
 
 			target = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
@@ -653,15 +669,12 @@ export class ImageOverlayPlugin {
 		// draw the textures
 		if ( target !== null ) {
 
-			// TODO: draw the images accounting for the planar projection
-
-			const clampedRange = tiling.clampToBounds( range );
-			const normRange = tiling.toNormalizedRange( clampedRange );
-			tileComposer.setRenderTarget( target, normRange );
+			tileComposer.setRenderTarget( target, normalizedRange );
 			tileComposer.clear( 0xffffff, 0 );
 
-			forEachTileInBounds( clampedRange, info.level, tiling, ( tx, ty, tl ) => {
+			forEachTileInBounds( clampedRange, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
+				// draw using normalized bounds since the mercator bounds are non-linear
 				const span = tiling.getTileBounds( tx, ty, tl, true );
 				const tex = imageSource.get( tx, ty, tl );
 				tileComposer.draw( tex, span );
