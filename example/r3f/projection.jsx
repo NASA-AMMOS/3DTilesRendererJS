@@ -13,8 +13,8 @@ function App() {
 
 	const worldMatrix = useMemo( () => {
 
-		const scale = new Vector3().setScalar( 20 );
-		const position = new Vector3( - scale.x, scale.y * 0.5, - 5 );
+		const scale = new Vector3().set( 40, 40, 1 );
+		const position = new Vector3( - scale.x, 5, scale.y * 0.5 );
 		const rotation = new Euler( - Math.PI / 2 );
 		const quaternion = new Quaternion().setFromEuler( rotation );
 		return new Matrix4().compose( position, quaternion, scale );
@@ -25,7 +25,7 @@ function App() {
 		<Canvas
 			frameloop='demand'
 			camera={ {
-				position: [ 0, 30, 40 ],
+				position: [ 0, 40, 35 ],
 			} }
 			style={ {
 				width: '100%',
@@ -42,14 +42,12 @@ function App() {
 				e.preventDefault();
 
 			} }
-
-
 		>
 			<color attach="background" args={ [ 0x222222 ] } />
 
 			{/* 3D Tiles renderer tileset */}
 			<group rotation-x={ Math.PI / 2 }>
-				<TilesRenderer url={ tilesetUrl } maxDepth={ 10 }>
+				<TilesRenderer url={ tilesetUrl }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 					<ImageOverlayPlugin>
 						<ImageOverlay

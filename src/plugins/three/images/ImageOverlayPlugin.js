@@ -737,11 +737,6 @@ export class ImageOverlayPlugin {
 				colorSpace: SRGBColorSpace,
 			} );
 
-		} else {
-
-			// TODO: this seems to never be fired?
-			console.log('EXITING')
-
 		}
 
 		info.meshRange = clampedRange;
