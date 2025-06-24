@@ -607,7 +607,11 @@ export class ImageOverlayPlugin {
 		const tileController = tileControllers.get( tile );
 
 		// wait for the overlay to be completely loaded so projection and tiling are available
-		await overlay.whenReady();
+		if ( ! overlay.isReady ) {
+
+			await overlay.whenReady();
+
+		}
 
 		// check if the overlay or tile have been disposed since starting this function
 		if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -639,7 +643,7 @@ export class ImageOverlayPlugin {
 			_matrix.copy( overlay.frame ).invert();
 			if ( scene.parent !== null ) {
 
-				_matrix.premultiply( tiles.group.matrixWorldInverse );
+				_matrix.multiply( tiles.group.matrixWorldInverse );
 
 			}
 
