@@ -418,6 +418,44 @@ export class ImageOverlayPlugin {
 	}
 
 	// internal
+	_calculateLevelFromOverlay( overlay, range, tile, normalized = false ) {
+
+		if ( overlay.isPlanarProjection ) {
+
+			const { resolution } = this;
+			const { tiling } = overlay;
+
+			const normalizedRange = normalized ? range : tiling.toNormalizedRange( range );
+			const [ minX, minY, maxX, maxY ] = normalizedRange;
+			const w = maxX - minX;
+			const h = maxY - minY;
+
+			let level;
+			const { maxLevel } = tiling;
+			for ( level = 0; level < maxLevel; level ++ ) {
+
+				const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+				const wPix = pixelWidth * w;
+				const hPix = pixelHeight * h;
+
+				if ( wPix > resolution && hPix > resolution ) {
+
+					break;
+
+				}
+
+			}
+
+			return level;
+
+		} else {
+
+			return tile.__depthFromRenderedParent - 1;
+
+		}
+
+	}
+
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
@@ -494,7 +532,7 @@ export class ImageOverlayPlugin {
 		const info = {
 			range: null,
 			meshRange: null,
-			level: level,
+			level: null,
 			target: null,
 			meshInfo: new Map(),
 
@@ -519,6 +557,7 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				const range = [ minLon, minLat, maxLon, maxLat ];
 				info.range = range;
+				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
 
 				processQueue
 					.add( { tile, overlay }, () => {
@@ -621,6 +660,13 @@ export class ImageOverlayPlugin {
 
 		}
 
+		// calculate the tiling level here if not already created
+		if ( info.level === null ) {
+
+			info.level = this._calculateLevelFromOverlay( overlay, normalizedRange, tile, true );
+
+		}
+
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
 		let target = null;
@@ -693,7 +739,7 @@ export class ImageOverlayPlugin {
 		const tileController = tileControllers.get( tile );
 
 		// if the tile has been disposed before this function is called then exit early
-		if ( tileController.signal.aborted ) {
+		if ( ! tileController || tileController.signal.aborted ) {
 
 			return;
 
