@@ -35,7 +35,6 @@ function App() {
 				left: 0,
 				top: 0,
 			} }
-
 			onContextMenu={ e => {
 
 				// disable the context menu click for pivot controls
