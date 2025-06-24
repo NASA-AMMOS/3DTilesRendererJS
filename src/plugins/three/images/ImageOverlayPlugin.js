@@ -704,7 +704,7 @@ export class ImageOverlayPlugin {
 
 		let clampedRange;
 		let normalizedRange;
-		if ( overlay.frame === null ) {
+		if ( ! overlay.isPlanarProjection ) {
 
 			// if rendering for ellipsoid projection then clamp the range for iteration
 			// so we're not requesting tiles at extremely large numbers in the web-mercator case

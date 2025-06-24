@@ -164,9 +164,6 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 	const uv = [];
 	const posAttr = geometry.getAttribute( 'position' );
 
-	geometry.computeBoundingBox();
-	geometry.boundingBox.getCenter( _vec ).applyMatrix4( meshToFrame );
-
 	let minU = Infinity;
 	let minV = Infinity;
 	let maxU = - Infinity;
@@ -223,7 +220,6 @@ export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
 		maxV = Math.max( maxV, range[ 3 ] );
 
 	} );
-
 
 	uvs.forEach( uv => {
 
