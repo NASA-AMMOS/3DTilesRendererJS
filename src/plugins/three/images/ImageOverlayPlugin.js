@@ -10,38 +10,67 @@ import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 const _matrix = /* @__PURE__ */ new Matrix4();
 
 // function for marking and releasing images in the given overlay
-async function markOverlayImages( range, level, overlay, doRelease ) {
+function markOverlayImages( range, level, overlay, doRelease ) {
 
+	// return null immediately if possible to allow for drawing without delay where possible
 	if ( Array.isArray( overlay ) ) {
 
-		await Promise.all( overlay.map( o => {
+		const promises = overlay
+			.map( o => markOverlayImages( range, level, o, doRelease ) )
+			.filter( p => p !== null );
 
-			return markOverlayImages( range, level, o, doRelease );
+		if ( promises.length === 0 ) {
 
-		} ) );
-		return;
-
-	}
-
-	await overlay.whenReady();
-
-	const promises = [];
-	const { imageSource, tiling } = overlay;
-	forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
-
-		if ( doRelease ) {
-
-			imageSource.release( tx, ty, tl );
+			return null;
 
 		} else {
 
-			promises.push( imageSource.lock( tx, ty, tl ) );
+			return Promise.all( promises );
 
 		}
 
-	} );
+	}
 
-	await Promise.all( promises );
+	if ( ! overlay.isReady ) {
+
+		return overlay.whenReady().then( markImages );
+
+	} else {
+
+		return markImages();
+
+	}
+
+	function markImages() {
+
+		const promises = [];
+		const { imageSource, tiling } = overlay;
+		forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+
+			if ( doRelease ) {
+
+				imageSource.release( tx, ty, tl );
+
+			} else {
+
+				promises.push( imageSource.lock( tx, ty, tl ) );
+
+			}
+
+		} );
+
+		const filteredPromises = promises.filter( p => p instanceof Promise );
+		if ( filteredPromises.length !== 0 ) {
+
+			return Promise.all( filteredPromises );
+
+		} else {
+
+			return null;
+
+		}
+
+	}
 
 }
 
@@ -838,6 +867,17 @@ class ImageOverlay {
 		this.opacity = opacity;
 		this.color = new Color( color );
 		this.frame = frame !== null ? frame.clone() : null;
+		this.isReady = false;
+
+	}
+
+	init() {
+
+		this.whenReady().then( () => {
+
+			this.isReady = true;
+
+		} );
 
 	}
 
@@ -871,6 +911,8 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		this._whenReady = this.imageSource.init( this.url );
 
+		super.init();
+
 	}
 
 	whenReady() {
@@ -894,6 +936,8 @@ export class TMSTilesOverlay extends ImageOverlay {
 	init() {
 
 		this._whenReady = this.imageSource.init( this.url );
+
+		super.init();
 
 	}
 
@@ -937,6 +981,8 @@ export class CesiumIonOverlay extends ImageOverlay {
 				return this.imageSource.init( json.url );
 
 			} );
+
+		super.init();
 
 	}
 
