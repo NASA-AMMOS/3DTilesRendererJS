@@ -169,7 +169,6 @@ export class ImageOverlayPlugin {
 		} );
 
 		// update callback for when overlays have changed
-		let execId = 0;
 		this._onUpdateAfter = async () => {
 
 			this.overlayInfo.forEach( ( info, overlay ) => {
@@ -198,25 +197,11 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				// use an exec id to ensure we don't encounter a race condition
-				execId ++;
-				const id = execId;
+				tiles.forEachLoadedModel( ( scene, tile ) => {
 
-				// wait for all overlays to be ready and therefore after all prior work that
-				// awaits these promises is ready
-				const promises = overlays.map( overlay => overlay.whenReady() );
-				await Promise.all( promises );
+					this._updateLayers( tile );
 
-				if ( id === execId ) {
-
-					// TODO: if the order is the only thing that changes then we don't really need to wait for the above?
-					tiles.forEachLoadedModel( ( scene, tile ) => {
-
-						this._updateLayers( tile );
-
-					} );
-
-				}
+				} );
 
 			}
 
