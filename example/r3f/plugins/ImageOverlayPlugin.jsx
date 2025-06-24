@@ -1,9 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { ImageOverlayPlugin as ImageOverlayPluginImpl } from '3d-tiles-renderer/plugins';
-import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-renderer/r3f';
+import { TilesPlugin, TilesPluginContext, TilesRendererContext, useObjectDep, useApplyRefs } from '3d-tiles-renderer/r3f';
 import { forwardRef, useContext, useEffect, useMemo } from 'react';
-import { useObjectDep } from '../../../src/r3f/utilities/useObjectDep.js';
-import { useApplyRefs } from '../../../src/r3f/utilities/useApplyRefs.js';
 
 export function ImageOverlayPlugin( { children, ...rest } ) {
 

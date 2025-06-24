@@ -5,3 +5,5 @@ export * from './components/CameraControls.jsx';
 export * from './components/CompassGizmo.jsx';
 export * from './components/CameraTransition.jsx';
 export * from './components/SettledObjects.jsx';
+export * from './utilities/useApplyRefs.js';
+export * from './utilities/useObjectDep.js';
