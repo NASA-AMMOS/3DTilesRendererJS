@@ -14,7 +14,7 @@ function App() {
 	const worldMatrix = useMemo( () => {
 
 		const scale = new Vector3().set( 40, 40, 1 );
-		const position = new Vector3( - scale.x, 5, scale.y * 0.5 );
+		const position = new Vector3( - scale.x, 5, scale.y * 0.25 );
 		const rotation = new Euler( - Math.PI / 2 );
 		const quaternion = new Quaternion().setFromEuler( rotation );
 		return new Matrix4().compose( position, quaternion, scale );
