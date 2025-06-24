@@ -74,12 +74,32 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 
 }
 
-function countTilesToDraw( range, level, overlay ) {
+// returns the total number of tiles that will be drawn for the provided range
+function countTilesInRange( range, level, overlay ) {
 
 	let total = 0;
 	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( x, y, l ) => {
 
 		total ++;
+
+	} );
+
+	return total;
+
+}
+
+// returns the total number of tiles that need to be loaded for the provided range
+function countTilesToLoad( range, level, overlay ) {
+
+	let total = 0;
+	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+
+		const tex = overlay.imageSource.get( tx, ty, tl );
+		if ( tex === null || tex instanceof Promise ) {
+
+			total ++;
+
+		}
 
 	} );
 
@@ -688,7 +708,7 @@ export class ImageOverlayPlugin {
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
 		let target = null;
-		if ( countTilesToDraw( clampedRange, info.level, overlay ) !== 0 ) {
+		if ( countTilesInRange( clampedRange, info.level, overlay ) !== 0 ) {
 
 			target = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
@@ -699,7 +719,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		info.meshRange = range;
+		info.meshRange = clampedRange;
 		info.target = target;
 
 		meshes.forEach( ( mesh, i ) => {
@@ -710,42 +730,58 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		await processQueue
-			.add( { tile, overlay }, () => {
+		const drawImagesFunc = async ( IN ) => {
 
-				info.meshRangeMarked = true;
-				return markOverlayImages( range, info.level, overlay, false );
+			info.meshRangeMarked = true;
 
-			} )
-			.catch( () => {
+			const promise = markOverlayImages( clampedRange, info.level, overlay, false );
+			if ( promise ) {
 
-				// the queue throws an error if a task is removed early
+				await promise;
 
-			} );
+			}
 
-		// check if the overlay has been disposed since starting this function
-		if ( controller.signal.aborted || tileController.signal.aborted ) {
+			// check if the overlay has been disposed since starting this function
+			if ( controller.signal.aborted || tileController.signal.aborted ) {
 
-			return;
+				return;
 
-		}
+			}
 
-		// draw the textures
-		if ( target !== null ) {
+			// draw the textures
+			if ( target !== null ) {
 
-			tileComposer.setRenderTarget( target, normalizedRange );
-			tileComposer.clear( 0xffffff, 0 );
+				tileComposer.setRenderTarget( target, normalizedRange );
+				tileComposer.clear( 0xffffff, 0 );
 
-			forEachTileInBounds( clampedRange, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+				forEachTileInBounds( clampedRange, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
-				// draw using normalized bounds since the mercator bounds are non-linear
-				const span = tiling.getTileBounds( tx, ty, tl, true );
-				const tex = imageSource.get( tx, ty, tl );
-				tileComposer.draw( tex, span );
-				usedTextures.add( tex );
-				this._scheduleCleanup();
+					// draw using normalized bounds since the mercator bounds are non-linear
+					const span = tiling.getTileBounds( tx, ty, tl, true );
+					const tex = imageSource.get( tx, ty, tl );
+					tileComposer.draw( tex, span );
+					usedTextures.add( tex );
+					this._scheduleCleanup();
 
-			} );
+				} );
+
+			}
+
+		};
+
+		if ( countTilesToLoad( clampedRange, info.level, overlay ) === 0 ) {
+
+			drawImagesFunc( true );
+
+		} else {
+
+			await processQueue
+				.add( { tile, overlay }, drawImagesFunc )
+				.catch( () => {
+
+					// the queue throws an error if a task is removed early
+
+				} );
 
 		}
 
