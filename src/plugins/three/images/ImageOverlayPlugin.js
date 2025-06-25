@@ -496,6 +496,7 @@ export class ImageOverlayPlugin {
 
 			}
 
+			// TODO: should this be one layer higher LoD?
 			return level;
 
 		} else {
