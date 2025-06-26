@@ -80,15 +80,6 @@ export class GoogleCloudAuthPlugin {
 		}
 
 		this.tiles = tiles;
-		this._onLoadCallback = ( { tileSet } ) => {
-
-			// the first tile set loaded will be the root
-			this.sessionToken = getSessionToken( tileSet.root );
-
-			// clear the callback once the root is loaded
-			tiles.removeEventListener( 'load-tile-set', this._onLoadCallback );
-
-		};
 
 		this._visibilityChangeCallback = ( { tile, visible } ) => {
 
@@ -105,7 +96,6 @@ export class GoogleCloudAuthPlugin {
 
 		};
 
-		tiles.addEventListener( 'load-tile-set', this._onLoadCallback );
 		tiles.addEventListener( 'tile-visibility-change', this._visibilityChangeCallback );
 
 	}
@@ -168,7 +158,20 @@ export class GoogleCloudAuthPlugin {
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
 			await this._refreshToken( options );
-			return fetch( this.preprocessURL( uri ), options );
+			res = await fetch( this.preprocessURL( uri ), options );
+
+		}
+
+		if ( this.sessionToken === null ) {
+
+			return res
+				.json()
+				.then( res => {
+
+					this.sessionToken = getSessionToken( res.root );
+					return root;
+
+				} );
 
 		} else {
 
