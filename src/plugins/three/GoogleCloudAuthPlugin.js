@@ -64,12 +64,17 @@ export class GoogleCloudAuthPlugin {
 
 		}
 
-		this.auth.authURL = tiles.rootURL;
+		if ( ! this.auth.sessionOptions ) {
+
+			this.auth.authURL = this.rootURL;
+
+		}
+
 		this.tiles = tiles;
 
 		this._visibilityChangeCallback = ( { tile, visible } ) => {
 
-			const copyright = tile.cached.metadata.asset.copyright || '';
+			const copyright = tile.cached.metadata?.asset?.copyright || '';
 			if ( visible ) {
 
 				this._attributionsManager.addAttributions( copyright );
