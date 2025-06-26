@@ -129,10 +129,12 @@ function getSessionToken( json ) {
 
 	if ( 'session' in json ) {
 
+		// if using the 2d maps api
 		return json.session;
 
 	} else {
 
+		// is using the 3d tiles api
 		let sessionToken = null;
 		const root = json.root;
 		traverseSet( root, tile => {
