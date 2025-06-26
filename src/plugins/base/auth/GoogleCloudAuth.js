@@ -35,6 +35,7 @@ export class GoogleCloudAuth {
 
 		await this._tokenRefreshPromise;
 
+		// construct the url
 		const fetchUrl = new URL( url );
 		fetchUrl.searchParams.append( 'key', this.apiToken );
 		if ( this.sessionToken ) {
