@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add "ImageOverlayPlugin".
 - DebugTilesRenderer: Added "unlit" option.
+- GoogleCloudAuthPlugin: Added support for creating a session that supports loading 2d map tiles.
 
 ### Fixed
 - TilesRendererBase: Fixed plugins not being disposed of correctly.
