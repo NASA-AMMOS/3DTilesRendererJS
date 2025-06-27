@@ -115,6 +115,14 @@ export class DataCache {
 
 	}
 
+	has( ...args ) {
+
+		const { cache } = this;
+		const key = hash( ...args );
+		return key in cache;
+
+	}
+
 	// dispose all items
 	dispose() {
 
