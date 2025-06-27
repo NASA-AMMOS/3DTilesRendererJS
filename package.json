@@ -1,98 +1,98 @@
 {
-	"name": "3d-tiles-renderer",
-	"version": "0.4.10",
-	"description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
-	"keywords": [
-		"3d-tiles",
-		"3dtiles",
-		"graphics",
-		"b3dm",
-		"gltf",
-		"threejs",
-		"rendering",
-		"geometry",
-		"terrain",
-		"cesium"
-	],
-	"type": "module",
-	"sideEffects": false,
-	"main": "src/index.js",
-	"module": "src/index.js",
-	"files": [
-		"src/*"
-	],
-	"exports": {
-		".": "./src/index.js",
-		"./r3f": "./src/r3f/index.jsx",
-		"./plugins": "./src/plugins/index.js",
-		"./src/*": "./src/*"
-	},
-	"scripts": {
-		"start": "vite --config ./vite.config.js",
-		"build-examples": "vite build --config ./vite.config.js",
-		"lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-		"test": "tsc --project tsconfig.test.json && jest"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/NASA-AMMOS/3DTilesRendererJS.git"
-	},
-	"bugs": {
-		"url": "https://github.com/NASA-AMMOS/3DTilesRendererJS/issues"
-	},
-	"homepage": "https://github.com/NASA-AMMOS/3DTilesRendererJS#readme",
-	"author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
-	"license": "Apache-2.0",
-	"devDependencies": {
-		"@babel/core": "^7.21.8",
-		"@babel/preset-env": "^7.21.5",
-		"@babel/preset-modules": "^0.1.6",
-		"@babel/preset-react": "^7.26.3",
-		"@babel/preset-typescript": "^7.26.0",
-		"@react-three/drei": "^9.114.3",
-		"@react-three/postprocessing": "^2.16.3",
-		"@takram/three-atmosphere": "^0.10.3",
-		"@takram/three-geospatial": "^0.1.0",
-		"@takram/three-geospatial-effects": "^0.1.0",
-		"@types/eslint": "^7.28.1",
-		"@types/jest": "^27.5.2",
-		"@types/react": "^18.3.12",
-		"@types/react-dom": "^18.3.1",
-		"@types/three": "^0.166.0",
-		"@typescript-eslint/eslint-plugin": "^7.14.1",
-		"@typescript-eslint/parser": "^7.14.1",
-		"@vitejs/plugin-react": "^4.3.2",
-		"babel-jest": "^27.5.1",
-		"cesium": "^1.97.0",
-		"concurrently": "^6.2.1",
-		"eslint": "^8.57.1",
-		"eslint-config-mdcs": "^5.0.0",
-		"eslint-plugin-jest": "^28.6.0",
-		"eslint-plugin-react": "^7.37.1",
-		"eslint-plugin-react-hooks": "^4.6.2",
-		"jest": "^27.1.1",
-		"jest-cli": "^27.1.1",
-		"leva": "^0.9.35",
-		"postprocessing": "^6.36.4",
-		"ts-jest": "^27.1.5",
-		"typescript": "^4.9.5",
-		"vite": "^6.2.2"
-	},
-	"peerDependencies": {
-		"@react-three/fiber": "^8.17.9 || ^9.0.0",
-		"react": "^18.3.1 || ^19.0.0",
-		"react-dom": "^18.3.1 || ^19.0.0",
-		"three": ">=0.166.0"
-	},
-	"peerDependenciesMeta": {
-		"@react-three/fiber": {
-			"optional": true
-		},
-		"react": {
-			"optional": true
-		},
-		"react-dom": {
-			"optional": true
-		}
-	}
+  "name": "3d-tiles-renderer",
+  "version": "0.4.10",
+  "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
+  "keywords": [
+    "3d-tiles",
+    "3dtiles",
+    "graphics",
+    "b3dm",
+    "gltf",
+    "threejs",
+    "rendering",
+    "geometry",
+    "terrain",
+    "cesium"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "files": [
+    "src/*"
+  ],
+  "exports": {
+    ".": "./src/index.js",
+    "./r3f": "./src/r3f/index.jsx",
+    "./plugins": "./src/plugins/index.js",
+    "./src/*": "./src/*"
+  },
+  "scripts": {
+    "start": "vite --config ./vite.config.js",
+    "build-examples": "vite build --config ./vite.config.js",
+    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
+    "test": "tsc --project tsconfig.test.json && jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NASA-AMMOS/3DTilesRendererJS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NASA-AMMOS/3DTilesRendererJS/issues"
+  },
+  "homepage": "https://github.com/NASA-AMMOS/3DTilesRendererJS#readme",
+  "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-modules": "^0.1.6",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "@react-three/drei": "^9.114.3",
+    "@react-three/postprocessing": "^2.16.3",
+    "@takram/three-atmosphere": "^0.10.3",
+    "@takram/three-geospatial": "^0.1.0",
+    "@takram/three-geospatial-effects": "^0.1.0",
+    "@types/eslint": "^7.28.1",
+    "@types/jest": "^27.5.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.166.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.14.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "babel-jest": "^27.5.1",
+    "cesium": "^1.97.0",
+    "concurrently": "^6.2.1",
+    "eslint": "^8.57.1",
+    "eslint-config-mdcs": "^5.0.0",
+    "eslint-plugin-jest": "^28.6.0",
+    "eslint-plugin-react": "^7.37.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "jest": "^27.1.1",
+    "jest-cli": "^27.1.1",
+    "leva": "^0.9.35",
+    "postprocessing": "^6.36.4",
+    "ts-jest": "^27.1.5",
+    "typescript": "^4.9.5",
+    "vite": "^6.2.2"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^8.17.9 || ^9.0.0",
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0",
+    "three": ">=0.166.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
 }
