@@ -304,20 +304,27 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedRange( range ) {
+	toNormalizedPoint( x, y ) {
 
-		const result = [ ...range ];
 		const { projection } = this;
+		const result = [ x, y ];
 		if ( this.projection ) {
 
 			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
 			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
-			result[ 2 ] = projection.convertLongitudeToProjection( result[ 2 ] );
-			result[ 3 ] = projection.convertLatitudeToProjection( result[ 3 ] );
 
 		}
 
 		return result;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		return [
+			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
+			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+		];
 
 	}
 
