@@ -92,7 +92,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, projection ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, tiling ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -124,14 +124,9 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	} );
 
-	const minU = projection.convertLongitudeToProjection( minLon );
-	const maxU = projection.convertLongitudeToProjection( maxLon );
-
-	let minV = projection.convertLatitudeToProjection( minLat );
-	let maxV = projection.convertLatitudeToProjection( maxLat );
-	minV = MathUtils.clamp( minV, 0, 1 );
-	maxV = MathUtils.clamp( maxV, 0, 1 );
-
+	// clamp the lat lon range to the bounds of the projection scheme
+	const clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+	const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 	uvs.forEach( uv => {
 
 		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
@@ -139,10 +134,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 			const lon = uv[ i + 0 ];
 			const lat = uv[ i + 1 ];
 
-			const u = projection.convertLongitudeToProjection( lon );
-			let v = projection.convertLatitudeToProjection( lat );
-			v = MathUtils.clamp( v, 0, 1 );
-
+			const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
 			uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 			uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 
@@ -152,13 +144,13 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		range: [ minLon, minLat, maxLon, maxLat ],
+		range: clampedRange,
 	};
 
 }
 
 // functions for generating UVs for planar-projected UVs
-function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
+function getGeometryPlanarChannel( geometry, meshToFrame, aspect, tiling ) {
 
 	const _vec = new Vector3();
 	const uv = [];
@@ -184,7 +176,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 	}
 
-	const range = [ minU, minV, maxU, maxV ];
+	const range = tiling.clampToBounds( [ minU, minV, maxU, maxV ], true );
 	return { uv, range };
 
 }
