@@ -689,7 +689,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, overlay.tiling.aspect, tiling ) );
+			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
 
 		} else {
 

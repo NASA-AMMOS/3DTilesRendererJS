@@ -124,7 +124,13 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	} );
 
-	// clamp the lat lon range to the bounds of the projection scheme
+	// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
+	// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
+	// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
+	// that show the underlying tile data. It's arguable which one is better but in all supported
+	// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
+	// globe range.
+	// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
 	const clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
 	const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 	uvs.forEach( uv => {
@@ -150,7 +156,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 }
 
 // functions for generating UVs for planar-projected UVs
-function getGeometryPlanarChannel( geometry, meshToFrame, aspect, tiling ) {
+function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 	const _vec = new Vector3();
 	const uv = [];
@@ -176,12 +182,12 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect, tiling ) {
 
 	}
 
-	const range = tiling.clampToBounds( [ minU, minV, maxU, maxV ], true );
+	const range = [ minU, minV, maxU, maxV ];
 	return { uv, range };
 
 }
 
-export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
+export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 	// find the U / V ranges
 	let minU = Infinity;
@@ -201,7 +207,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
 
 		}
 
-		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, aspect );
+		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspect );
 		uvs.push( uv );
 
 		// save the min and max values
