@@ -6,6 +6,7 @@ import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange }
 import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
+import { GoogleCloudAuth } from '../../base/auth/GoogleCloudAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -1068,6 +1069,61 @@ export class CesiumIonOverlay extends ImageOverlay {
 	getAttributions( target ) {
 
 		target.push( ...this._attributions );
+
+	}
+
+}
+
+export class GoogleMapsOverlay extends ImageOverlay {
+
+	constructor( options = {} ) {
+
+		super( options );
+
+		const { apiToken, sessionOptions, authRefreshToken, logoUrl } = options;
+		this.logoUrl = logoUrl;
+		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, authRefreshToken } );
+		this.imageSource = new XYZImageSource();
+
+		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this._logoAttribution = {
+			value: '',
+			type: 'image',
+			collapsible: false,
+		};
+
+	}
+
+	init() {
+
+		this._whenReady = this
+			.auth
+			.refreshToken()
+			.then( json => {
+
+				this.imageSource.tileDimension = json.tileWidth;
+				return this.imageSource.init( 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}' );
+
+			} );
+
+		super.init();
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
+
+	}
+
+	getAttributions( target ) {
+
+		if ( this.logoUrl ) {
+
+			this._logoAttribution.value = this.logoUrl;
+			target.push( this._logoAttribution );
+
+		}
 
 	}
 

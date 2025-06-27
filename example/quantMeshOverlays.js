@@ -6,6 +6,8 @@ import {
 	TilesFadePlugin,
 	CesiumIonAuthPlugin,
 	ImageOverlayPlugin,
+	CesiumIonOverlay,
+	XYZTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -16,8 +18,6 @@ import {
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { CesiumIonOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
-import { XYZTilesOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
 
 let controls, scene, renderer, tiles, camera, washingtonOverlay, baseOverlay;
 let statsContainer, stats;

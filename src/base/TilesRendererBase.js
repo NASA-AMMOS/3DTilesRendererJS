@@ -677,7 +677,11 @@ export class TilesRendererBase {
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( processedUrl, this.fetchOptions ) )
 			.then( res => {
 
-				if ( res.ok ) {
+				if ( ! ( res instanceof Response ) ) {
+
+					return res;
+
+				} else if ( res.ok ) {
 
 					return res.json();
 
