@@ -63,11 +63,14 @@ export function useDeepOptions( target, options, shallow = false ) {
 		}
 
 		const previousState = {};
+		const events = {};
 		for ( const key in options ) {
 
-			if ( isEventName( key ) ) {
+			if ( isEventName( key ) && target.addEventListener && ! ( key in target ) ) {
 
-				target.addEventListener( getEventName( key ), options[ key ] );
+				const eventName = getEventName( key );
+				events[ eventName ] = options[ key ];
+				target.addEventListener( eventName, options[ key ] );
 
 			} else {
 
@@ -81,20 +84,16 @@ export function useDeepOptions( target, options, shallow = false ) {
 
 		return () => {
 
-			for ( const key in options ) {
+			for ( const key in events ) {
 
-				if ( isEventName( key ) ) {
-
-					target.removeEventListener( getEventName( key ), options[ key ] );
-
-				}
+				target.removeEventListener( key, events[ key ] );
 
 			}
 
-			for ( const key in options ) {
+			for ( const key in previousState ) {
 
 				const path = shallow ? [ key ] : getPath( key );
-				setValueAtPath( target, path, options[ key ] );
+				setValueAtPath( target, path, previousState[ key ] );
 
 			}
 
