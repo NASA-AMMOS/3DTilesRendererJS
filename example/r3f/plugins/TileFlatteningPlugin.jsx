@@ -1,10 +1,42 @@
-import { forwardRef, useContext, useEffect, useState } from 'react';
+import { forwardRef, useContext, useEffect, useMemo, useState } from 'react';
 import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-renderer/r3f';
-import { TileFlatteningPlugin as TilesFlatteningPluginImpl } from '3d-tiles-renderer/plugins';
-import { Box3, Vector3 } from 'three';
+import { TileFlatteningPlugin as TileFlatteningPluginImpl } from '../../src/three/TileFlatteningPlugin.js';
+import { Box3, Group, Vector3 } from 'three';
+import { useFrame } from '@react-three/fiber';
 
-// NOTE: The flattening shape will not automatically update when child transforms are adjusted so in order
+// NOTE: The flattening shape will not automatically update when child geometry vertices are adjusted so in order
 // to force a remount of the component the use should modify a "key" property when it needs to change.
+
+// construct a hash relative to a frame
+function objectHash( obj ) {
+
+	let hash = '';
+	obj.traverse( c => {
+
+		if ( c === obj ) {
+
+			return;
+
+		}
+
+		if ( c.geometry ) {
+
+			hash += c.geometry.uuid + '_';
+
+		}
+
+		c.matrix.elements.forEach( v => {
+
+			hash += v.toFixed( 6 ) + ',';
+
+		} );
+
+
+	} );
+
+	return hash;
+
+}
 
 // Helper class for adding a flattening shape to the scene
 export function TileFlatteningShape( props ) {
@@ -31,6 +63,13 @@ export function TileFlatteningShape( props ) {
 	} = props;
 
 	const [ group, setGroup ] = useState( null );
+	const [ hash, setHash ] = useState( null );
+
+	const relativeGroup = useMemo( () => {
+
+		return new Group();
+
+	}, [] );
 
 	// Add the provided shape to the tile set
 	useEffect( () => {
@@ -45,10 +84,10 @@ export function TileFlatteningShape( props ) {
 		tiles.group.updateMatrixWorld();
 		group.updateMatrixWorld( true );
 
-		// transform the shape into the local frame of the tile set
-		const relativeGroup = group.clone();
-		relativeGroup
+		const local = group.clone();
+		local
 			.matrixWorld
+			.copy( group.matrixWorld )
 			.premultiply( tiles.group.matrixWorldInverse )
 			.decompose( relativeGroup.position, relativeGroup.quaternion, relativeGroup.scale );
 
@@ -61,7 +100,7 @@ export function TileFlatteningShape( props ) {
 		} else if ( relativeToEllipsoid ) {
 
 			const box = new Box3();
-			box.setFromObject( relativeGroup );
+			box.setFromObject( local );
 			box.getCenter( _direction );
 			tiles.ellipsoid.getPositionToNormal( _direction, _direction ).multiplyScalar( - 1 );
 
@@ -73,6 +112,7 @@ export function TileFlatteningShape( props ) {
 
 		// add a shape to the plugin
 		plugin.addShape( relativeGroup, _direction, threshold );
+		setHash( null );
 
 		return () => {
 
@@ -80,7 +120,38 @@ export function TileFlatteningShape( props ) {
 
 		};
 
-	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold ] );
+	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold, relativeGroup ] );
+
+	// detect if the object transform or geometry has changed
+	useFrame( () => {
+
+		if ( ! tiles || ! group ) {
+
+			return;
+
+		}
+
+		// check if the object needs to updated
+		const newHash = objectHash( group, tiles.group.matrixWorldInverse );
+		if ( hash !== newHash ) {
+
+			tiles.group.updateMatrixWorld( true );
+			group.updateMatrixWorld( true );
+
+			relativeGroup.clear();
+			relativeGroup.add( ...group.children.map( c => c.clone() ) );
+			relativeGroup
+				.matrixWorld
+				.copy( group.matrixWorld )
+				.premultiply( tiles.group.matrixWorldInverse )
+				.decompose( relativeGroup.position, relativeGroup.quaternion, relativeGroup.scale );
+
+			plugin.updateShape( relativeGroup );
+			setHash( newHash );
+
+		}
+
+	} );
 
 	return <group ref={ setGroup } visible={ visible } raycast={ () => false }>{ children }</group>;
 
@@ -91,6 +162,6 @@ export const TileFlatteningPlugin = forwardRef( function TileFlatteningPlugin( p
 
 	const { children, ...rest } = props;
 
-	return <TilesPlugin plugin={ TilesFlatteningPluginImpl } ref={ ref } { ...rest }>{ children }</TilesPlugin>;
+	return <TilesPlugin plugin={ TileFlatteningPluginImpl } ref={ ref } { ...rest }>{ children }</TilesPlugin>;
 
 } );
