@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed some type definitions.
 - GlobeControls: Adjust the perspective camera.far calculation to better limit loaded tiles.
 - DebugTilesPlugin: Fix case where the plugin could not be disabled before registration.
+- Fix case where properties would fail to add if they looked like events with an "on" prefix.
+- Simplify the TileFlatteningPlugin implementation.
+- ReorientationPlugin: Fix plugin disposal not removing an event correctly.
+- ReorientationPlugin: Fix plugin not working if added after TilesRenderer initialization.
 
 ## [0.4.10] - 2025.05.31
 ### Fixed
