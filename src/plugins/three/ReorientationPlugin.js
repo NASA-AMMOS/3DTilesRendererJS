@@ -103,6 +103,12 @@ export class ReorientationPlugin {
 
 		tiles.addEventListener( 'load-tile-set', this._callback );
 
+		if ( tiles.root ) {
+
+			this._callback();
+
+		}
+
 	}
 
 	transformLatLonHeightToOrigin( lat, lon, height = 0 ) {
@@ -129,7 +135,7 @@ export class ReorientationPlugin {
 		group.quaternion.identity();
 		group.scale.set( 1, 1, 1 );
 
-		this.tiles.addEventListener( 'load-tile-set', this._callback );
+		this.tiles.removeEventListener( 'load-tile-set', this._callback );
 
 	}
 
