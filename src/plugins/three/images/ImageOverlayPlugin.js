@@ -1024,9 +1024,9 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		super( options );
 
-		const { apiToken, authRefreshToken, assetId } = options;
+		const { apiToken, autoRefreshToken, assetId } = options;
 		this.assetId = assetId;
-		this.auth = new CesiumIonAuth( { apiToken, authRefreshToken } );
+		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
 		this.imageSource = new TMSImageSource( options );
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
@@ -1075,9 +1075,9 @@ export class GoogleMapsOverlay extends ImageOverlay {
 
 		super( options );
 
-		const { apiToken, sessionOptions, authRefreshToken, logoUrl } = options;
+		const { apiToken, sessionOptions, autoRefreshToken, logoUrl } = options;
 		this.logoUrl = logoUrl;
-		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, authRefreshToken } );
+		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
 
 		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
