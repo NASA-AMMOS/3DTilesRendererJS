@@ -1,8 +1,7 @@
-import { Sphere, Vector3 } from 'three';
+import { Sphere } from 'three';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 
 const sphere = /* @__PURE__ */ new Sphere();
-const vec = /* @__PURE__ */ new Vector3();
 export class ReorientationPlugin {
 
 	constructor( options ) {
