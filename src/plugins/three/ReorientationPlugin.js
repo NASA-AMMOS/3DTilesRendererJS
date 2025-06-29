@@ -13,6 +13,11 @@ export class ReorientationPlugin {
 			lat: null,
 			lon: null,
 			height: 0,
+
+			azimuth: 0,
+			elevation: 0,
+			roll: 0,
+
 			...options,
 		};
 
@@ -22,6 +27,9 @@ export class ReorientationPlugin {
 		this.lat = options.lat;
 		this.lon = options.lon;
 		this.height = options.height;
+		this.azimuth = options.azimuth;
+		this.elevation = options.elevation;
+		this.roll = options.roll;
 		this.recenter = options.recenter;
 		this._callback = null;
 
@@ -33,12 +41,12 @@ export class ReorientationPlugin {
 
 		this._callback = () => {
 
-			const { up, lat, lon, height, recenter } = this;
+			const { up, lat, lon, height, azimuth, elevation, roll, recenter } = this;
 
 			if ( lat !== null && lon !== null ) {
 
 				// if the latitude and longitude are provided then remove the position offset
-				this.transformLatLonHeightToOrigin( lat, lon, height );
+				this.transformLatLonHeightToOrigin( lat, lon, height, azimuth, elevation, roll );
 
 			} else {
 
@@ -110,12 +118,12 @@ export class ReorientationPlugin {
 
 	}
 
-	transformLatLonHeightToOrigin( lat, lon, height = 0 ) {
+	transformLatLonHeightToOrigin( lat, lon, height = 0, azimuth = 0, elevation = 0, roll = 0 ) {
 
 		const { group, ellipsoid } = this.tiles;
 
 		// get ENU orientation (Z facing north and X facing west) and position
-		ellipsoid.getObjectFrame( lat, lon, height, 0, 0, 0, group.matrix, OBJECT_FRAME );
+		ellipsoid.getObjectFrame( lat, lon, height, azimuth, elevation, roll, group.matrix, OBJECT_FRAME );
 
 		// adjust the group matrix
 		group.matrix.invert().decompose( group.position, group.quaternion, group.scale );
