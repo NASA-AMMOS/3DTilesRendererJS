@@ -151,17 +151,7 @@ export class Ellipsoid {
 
 	}
 
-	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = null ) {
-
-		if ( point !== null ) {
-
-			console.warn( 'Ellipsoid: The signature for "getEastNorthUpAxes" no longer takes a "point" argument.' );
-
-		} else {
-
-			point = _pos;
-
-		}
+	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = _pos ) {
 
 		this.getCartographicToPosition( lat, lon, 0, point );
 		this.getCartographicToNormal( lat, lon, vecUp );		// up
