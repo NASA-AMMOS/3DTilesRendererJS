@@ -165,7 +165,7 @@ export class TilingScheme {
 	}
 
 	// query functions
-	getTileAtPoint( bx, by, level, normalized = false, clampTiles = true ) {
+	getTileAtPoint( bx, by, level, normalized = false ) {
 
 		const { projection, flipY } = this;
 		const { tileCountX, tileCountY } = this.getLevel( level );
@@ -179,19 +179,12 @@ export class TilingScheme {
 
 		}
 
-		let tx = Math.floor( bx / xStride );
+		const tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 
 		if ( flipY ) {
 
 			ty = tileCountY - 1 - ty;
-
-		}
-
-		if ( clampTiles ) {
-
-			tx = clamp( tx, 0, tileCountX - 1 );
-			ty = clamp( ty, 0, tileCountY - 1 );
 
 		}
 
@@ -235,6 +228,7 @@ export class TilingScheme {
 		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
+		// TODO: is supporting "just touch" correct?
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
 
 	}
