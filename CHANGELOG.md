@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Simplify the TileFlatteningPlugin implementation.
 - ReorientationPlugin: Fix plugin disposal not removing an event correctly.
 - ReorientationPlugin: Fix plugin not working if added after TilesRenderer initialization.
+- TopoLinesPlugin: Ensure the plugin can be added after TilesRenderer initialization.
+- TopoLinesPlugin, TilesFadePlugin, ImageOverlayPlugin: Ensure plugins are resilient to being removed and added again.
 
 ### Changed
 - Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions
