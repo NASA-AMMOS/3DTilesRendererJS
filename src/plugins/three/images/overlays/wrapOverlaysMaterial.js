@@ -1,10 +1,21 @@
+const OVERLAY_PARAMS = Symbol( 'OVERLAY_PARAMS' );
+
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
+
+	// if the material has already been wrapped then return the params
+	if ( material[ OVERLAY_PARAMS ] ) {
+
+		return material[ OVERLAY_PARAMS ];
+
+	}
 
 	const params = {
 		layerMaps: { value: [] },
 		layerColor: { value: [] },
 	};
+
+	material[ OVERLAY_PARAMS ] = params;
 
 	material.defines = {
 		...( material.defines || {} ),

@@ -71,6 +71,8 @@ export class FadeMaterialManager {
 
 		}
 
+		this.setFade( scene, 1, 0 );
+
 		// revert the materials
 		const fadeParams = this._fadeParams;
 		scene.traverse( child => {
@@ -79,8 +81,6 @@ export class FadeMaterialManager {
 			if ( material ) {
 
 				fadeParams.delete( material );
-				material.onBeforeCompile = () => {};
-				material.needsUpdate = true;
 
 			}
 
