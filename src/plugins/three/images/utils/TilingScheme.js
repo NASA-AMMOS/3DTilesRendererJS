@@ -179,7 +179,7 @@ export class TilingScheme {
 
 		}
 
-		let tx = Math.floor( bx / xStride );
+		const tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 
 		if ( flipY ) {

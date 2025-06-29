@@ -90,4 +90,15 @@ describe( 'TiltingScheme', () => {
 
 	} );
 
+	it( 'should correctly support flipY variable.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.generateLevels( 3, 1, 1 );
+		scheme.flipY = true;
+
+		expect( scheme.getTileAtPoint( - 0.25, - 0.25, 1, true ) ).toEqual( [ - 1, 2 ] );
+		expect( scheme.getTileAtPoint( 0, 0, 1, true ) ).toEqual( [ 0, 1 ] );
+
+	} );
+
 } );
