@@ -7,6 +7,7 @@ const _vec = new Vector3();
 const _vec2 = new Vector3();
 const _matrix = new Matrix4();
 const _matrix2 = new Matrix4();
+const _matrix3 = new Matrix4();
 const _sphere = new Sphere();
 const _euler = new Euler();
 
@@ -54,68 +55,45 @@ export class Ellipsoid {
 
 	}
 
-	// returns a frame with Z indicating altitude
-	// Y pointing north
-	// X pointing east
-	getEastNorthUpFrame( lat, lon, target ) {
+	// returns a frame with Z indicating altitude, Y pointing north, X pointing east
+	getEastNorthUpFrame( lat, lon, height, target ) {
 
-		this.getEastNorthUpAxes( lat, lon, _vecX, _vecY, _vecZ, _pos );
+		if ( height.isMatrix4 ) {
+
+			target = height;
+			height = 0;
+
+			console.warn( 'Ellipsoid: The signature for "getEastNorthUpFrame" has changed.' );
+
+		}
+
+		this.getEastNorthUpAxes( lat, lon, _vecX, _vecY, _vecZ );
+		this.getCartographicToPosition( lat, lon, height, _pos );
 		return target.makeBasis( _vecX, _vecY, _vecZ ).setPosition( _pos );
 
 	}
 
-	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = _pos ) {
+	// returns a frame with z indicating altitude and az, el, roll rotation within that frame
+	// - azimuth: measured off of true north, increasing towards "east" (z-axis)
+	// - elevation: measured off of the horizon, increasing towards sky (x-axis)
+	// - roll: rotation around northern axis (y-axis)
+	getOrientedEastNorthUpFrame( lat, lon, height, az, el, roll, target ) {
 
-		this.getCartographicToPosition( lat, lon, 0, point );
-		this.getCartographicToNormal( lat, lon, vecUp );		// up
-		vecEast.set( - point.y, point.x, 0 ).normalize();		// east
-		vecNorth.crossVectors( vecUp, vecEast ).normalize();	// north
-
-	}
-
-	// azimuth: measured off of true north, increasing towards "east"
-	// elevation: measured off of the horizon, increasing towards sky
-	// roll: rotation around northern axis
-	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
-
-		// if working with a frame that is not the ENU_FRAME then multiply in the
-		// offset for a camera or object so "forward" and "up" are oriented correct
-		if ( frame === CAMERA_FRAME ) {
-
-			_euler.set( - Math.PI / 2, 0, 0, 'XYZ' );
-			_matrix2.makeRotationFromEuler( _euler ).premultiply( rotationMatrix );
-
-		} else if ( frame === OBJECT_FRAME ) {
-
-			_euler.set( - Math.PI / 2, 0, Math.PI, 'XYZ' );
-			_matrix2.makeRotationFromEuler( _euler ).premultiply( rotationMatrix );
-
-		} else {
-
-			_matrix2.copy( rotationMatrix );
-
-		}
-
-		this.getEastNorthUpFrame( lat, lon, _matrix ).invert();
-		_matrix2.premultiply( _matrix );
-		_euler.setFromRotationMatrix( _matrix2, 'ZXY' );
-
-		target.azimuth = - _euler.z;
-		target.elevation = _euler.x;
-		target.roll = _euler.y;
-		return target;
+		return this.getObjectFrame( lat, lon, height, az, el, roll, target, ENU_FRAME );
 
 	}
 
-	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
+	// returns a frame similar to the ENU frame but rotated to match three.js object and camera conventions
+	// OBJECT_FRAME: oriented such that "+Y" is up and "+Z" is forward.
+	// CAMERA_FRAME: oriented such that "+Y" is up and "-Z" is forward.
+	getObjectFrame( lat, lon, height, az, el, roll, target, frame = OBJECT_FRAME ) {
 
-		this.getEastNorthUpFrame( lat, lon, _matrix );
+		this.getEastNorthUpFrame( lat, lon, height, _matrix );
 		_euler.set( el, roll, - az, 'ZXY' );
 
 		target
 			.makeRotationFromEuler( _euler )
-			.premultiply( _matrix )
-			.setPosition( 0, 0, 0 );
+			.premultiply( _matrix );
 
 		// Add in the orientation adjustment for objects and cameras so "forward" and "up" are oriented
 		// correctly
@@ -137,12 +115,94 @@ export class Ellipsoid {
 
 	}
 
+	getCartographicFromObjectFrame( matrix, target, frame = OBJECT_FRAME ) {
+
+		// if working with a frame that is not the ENU_FRAME then multiply in the
+		// offset for a camera or object so "forward" and "up" are oriented correct
+		if ( frame === CAMERA_FRAME ) {
+
+			_euler.set( - Math.PI / 2, 0, 0, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler ).premultiply( matrix );
+
+		} else if ( frame === OBJECT_FRAME ) {
+
+			_euler.set( - Math.PI / 2, 0, Math.PI, 'XYZ' );
+			_matrix2.makeRotationFromEuler( _euler ).premultiply( matrix );
+
+		} else {
+
+			_matrix2.copy( matrix );
+
+		}
+
+		// get the cartographic position of the frame
+		_pos.setFromMatrixPosition( _matrix2 );
+		this.getPositionToCartographic( _pos, target );
+
+		// get the relative rotation
+		this.getEastNorthUpFrame( target.lat, target.lon, 0, _matrix ).invert();
+		_matrix2.premultiply( _matrix );
+		_euler.setFromRotationMatrix( _matrix2, 'ZXY' );
+
+		target.azimuth = - _euler.z;
+		target.elevation = _euler.x;
+		target.roll = _euler.y;
+		return target;
+
+	}
+
+	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = null ) {
+
+		if ( point !== null ) {
+
+			console.warn( 'Ellipsoid: The signature for "getEastNorthUpAxes" no longer takes a "point" argument.' );
+
+		} else {
+
+			point = _pos;
+
+		}
+
+		this.getCartographicToPosition( lat, lon, 0, point );
+		this.getCartographicToNormal( lat, lon, vecUp );		// up
+		vecEast.set( - point.y, point.x, 0 ).normalize();		// east
+		vecNorth.crossVectors( vecUp, vecEast ).normalize();	// north
+
+	}
+
+	// azimuth: measured off of true north, increasing towards "east"
+	// elevation: measured off of the horizon, increasing towards sky
+	// roll: rotation around northern axis
+	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
+
+		console.warn( 'Ellipsoid: "getAzElRollFromRotationMatrix" is deprecated. Use "getCartographicFromObjectFrame", instead.' );
+		this.getCartographicToPosition( lat, lon, 0, _pos );
+		_matrix3.copy( rotationMatrix ).setPosition( _pos );
+
+		this.getCartographicFromObjectFrame( _matrix3, target, frame );
+		delete target.height;
+		delete target.lat;
+		delete target.lon;
+
+		return target;
+
+
+	}
+
+	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
+
+		console.warn( 'Ellipsoid: "getRotationMatrixFromAzElRoll" function has been deprecated. Use "getObjectFrame", instead.' );
+
+		this.getObjectFrame( lat, lon, 0, az, el, roll, target, frame );
+		target.setPosition( 0, 0, 0 );
+		return target;
+
+	}
+
 	getFrame( lat, lon, az, el, roll, height, target, frame = ENU_FRAME ) {
 
-		this.getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame );
-		this.getCartographicToPosition( lat, lon, height, _pos );
-		target.setPosition( _pos );
-		return target;
+		console.warn( 'Ellipsoid: "getFrame" function has been deprecated. Use "getObjectFrame", instead.' );
+		return this.getObjectFrame( lat, lon, height, az, el, roll, target, frame );
 
 	}
 
