@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ReorientationPlugin: Fix plugin not working if added after TilesRenderer initialization.
 - TopoLinesPlugin: Ensure the plugin can be added after TilesRenderer initialization.
 - TopoLinesPlugin, TilesFadePlugin, ImageOverlayPlugin: Ensure plugins are resilient to being removed and added again.
+- R3F: Fixed case where plugins may not have been able to register before the first call to TilesRenderer.update.
 
 ### Changed
 - Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions
