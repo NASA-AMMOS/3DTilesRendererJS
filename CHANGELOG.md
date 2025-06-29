@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add "ImageOverlayPlugin".
 - DebugTilesRenderer: Added "unlit" option.
 - GoogleCloudAuthPlugin: Added support for creating a session that supports loading 2d map tiles.
+- Ellipsoid: Added "getOrientedEastNorthUpFrame", "getObjectFrame", "getCartographicFromObjectFrame" functions.
 
 ### Fixed
 - TilesRendererBase: Fixed plugins not being disposed of correctly.
@@ -20,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Simplify the TileFlatteningPlugin implementation.
 - ReorientationPlugin: Fix plugin disposal not removing an event correctly.
 - ReorientationPlugin: Fix plugin not working if added after TilesRenderer initialization.
+
+### Changed
+- Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions
 
 ## [0.4.10] - 2025.05.31
 ### Fixed

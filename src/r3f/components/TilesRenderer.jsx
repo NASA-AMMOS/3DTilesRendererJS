@@ -64,7 +64,7 @@ export function EastNorthUpFrame( props ) {
 
 		}
 
-		localEllipsoid.getFrame( lat, lon, az, el, roll, height, group.matrix );
+		localEllipsoid.getOrientedEastNorthUpFrame( lat, lon, height, az, el, roll, group.matrix );
 		group.matrix.decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
 		invalidate();

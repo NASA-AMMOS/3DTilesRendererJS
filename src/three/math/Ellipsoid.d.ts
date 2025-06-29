@@ -17,6 +17,15 @@ export class Ellipsoid {
 	getPositionToNormal( pos: Vector3, target: Vector3 ): Vector3;
 	getPositionToSurfacePoint( pos: Vector3, target: Vector3 ): Vector3;
 
+	getEastNorthUpFrame( lat: number, lon: number, height: number, target: Matrix4 ): Matrix4;
+	getOrientedEastNorthUpFrame( lat: number, lon: number, height: number, az: number, el: number, roll: number, target: Matrix4 ): Matrix4;
+	getEastNorthUpAxes( lat: number, lon: number, vecEast: Vector3, vecNorth: Vector3, vecUp: Vector3, pos?: Vector3 ): void;
+
+	getObjectFrame( lat: number, lon: number, height: number, az: number, el: number, roll: number, target: Matrix4, frame?: Frames ): Matrix4;
+	getCartographicFromObjectFrame( matrix: Matrix4, target: object, frame?: Frames )
+		: { lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number };
+
+	// deprecated
 	getAzElRollFromRotationMatrix(
 		lat: number, lon: number, rotationMatrix: Matrix4,
 		target: object, frame: Frames,
@@ -30,8 +39,5 @@ export class Ellipsoid {
 		lat: number, lon: number, az: number, el: number, roll: number, height: number,
 		target: Matrix4, frame: Frames,
 	): Matrix4;
-
-	getEastNorthUpFrame( lat: number, lon: number, target: Matrix4 ): Matrix4;
-	getEastNorthUpAxes( lat: number, lon: number, vecEast: Vector3, vecNorth: Vector3, vecUp: Vector3, point?: Vector3 ): void;
 
 }
