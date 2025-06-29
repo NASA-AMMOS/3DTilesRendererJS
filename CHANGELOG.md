@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DebugTilesRenderer: Added "unlit" option.
 - GoogleCloudAuthPlugin: Added support for creating a session that supports loading 2d map tiles.
 - Ellipsoid: Added "getOrientedEastNorthUpFrame", "getObjectFrame", "getCartographicFromObjectFrame" functions.
+- ReorientationPlugin: Add suppor for setting azimuth, elevation, roll
 
 ### Fixed
 - TilesRendererBase: Fixed plugins not being disposed of correctly.
