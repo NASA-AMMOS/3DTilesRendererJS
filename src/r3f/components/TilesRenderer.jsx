@@ -209,7 +209,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const tiles = useMemo( () => {
 
-		new TilesRendererImpl( url );
+		return new TilesRendererImpl( url );
 
 	}, [ url ] );
 
