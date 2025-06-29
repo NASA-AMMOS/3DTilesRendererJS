@@ -71,6 +71,7 @@ export class FadeMaterialManager {
 
 		}
 
+		// mark the materials such that they are displayed at full value
 		this.setFade( scene, 1, 0 );
 
 		// revert the materials
