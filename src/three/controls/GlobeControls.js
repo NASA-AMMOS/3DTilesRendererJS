@@ -223,9 +223,13 @@ export class GlobeControls extends EnvironmentControls {
 			this.getCameraUpDirection( _globalUp );
 			this._alignCameraUp( _globalUp, 1 );
 
+			this.getCameraUpDirection( _globalUp );
+			this._clampRotation( _globalUp );
+
 		}
 
 	}
+
 
 	// Updates the passed camera near and far clip planes to encapsulate the ellipsoid from the
 	// current position in addition to adjusting the height.
@@ -659,6 +663,105 @@ export class GlobeControls extends EnvironmentControls {
 		camera.updateMatrixWorld();
 
 	}
+
+
+	_clampRotation( up ) {
+
+		const { camera, minAltitude, maxAltitude } = this;
+
+		camera.updateMatrixWorld();
+
+		// calculate current angles and clamp
+		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld ).normalize();
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
+
+		// get the signed angle relative to the top down view
+		if ( up.dot( _forward ) > 1 - 1e-2 ) {
+
+			_vec.copy( _right );
+
+		} else {
+
+			_vec.crossVectors( up, _forward ).normalize();
+
+		}
+
+		const sign = Math.sign( _vec.dot( _right ) );
+		const angle = sign * up.angleTo( _forward );
+
+		let offset;
+		if ( angle > maxAltitude ) {
+
+			offset = maxAltitude;
+
+		} else if ( angle < minAltitude ) {
+
+			offset = minAltitude;
+
+		} else {
+
+			return;
+
+		}
+
+		_forward.copy( up );
+		_quaternion.setFromAxisAngle( _right, offset );
+		_forward.applyQuaternion( _quaternion ).normalize();
+		_vec.crossVectors( _forward, _right ).normalize();
+
+		_rotMatrix.makeBasis( _right, _vec, _forward );
+		_quaternion.setFromRotationMatrix( _rotMatrix );
+
+
+
+
+
+
+		// _quaternion.setFromAxisAngle( _right, - offset );
+		camera.quaternion.copy( _quaternion );
+
+
+
+		// console.log('ADJUSTING')
+
+
+
+
+
+		const { state, pivotPoint, zoomPoint, zoomPointSet } = this;
+
+		// calculate the active point
+		let fixedPoint = null;
+		if ( state === DRAG || state === ROTATE ) {
+
+			fixedPoint = _pos.copy( pivotPoint );
+
+		} else if ( zoomPointSet ) {
+
+			fixedPoint = _pos.copy( zoomPoint );
+
+		}
+
+		// shift the camera in an effort to keep the fixed point in the same spot
+		if ( fixedPoint ) {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.copy( fixedPoint ).applyMatrix4( _invMatrix );
+
+			camera.updateMatrixWorld();
+			_vec.applyMatrix4( camera.matrixWorld );
+
+			_center.subVectors( fixedPoint, _vec );
+			camera.position.add( _center );
+
+		}
+
+		camera.updateMatrixWorld();
+
+
+
+	}
+
 
 	// tilt the camera to look at the center of the globe
 	_tiltTowardsCenter( alpha ) {
