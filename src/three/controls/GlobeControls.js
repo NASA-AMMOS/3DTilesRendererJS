@@ -47,7 +47,10 @@ export class GlobeControls extends EnvironmentControls {
 
 	get ellipsoidFrameInverse() {
 
-		return this._ellipsoidFrameInverse.copy( this.ellipsoidFrame ).invert();
+		const { ellipsoidGroup, ellipsoidFrame, _ellipsoidFrameInverse } = this;
+		return ellipsoidGroup.matrixWorldInverse ?
+			ellipsoidGroup.matrixWorldInverse :
+			_ellipsoidFrameInverse.copy( ellipsoidFrame ).invert();
 
 	}
 

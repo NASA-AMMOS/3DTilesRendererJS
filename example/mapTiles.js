@@ -95,7 +95,6 @@ function initTiles() {
 
 		// create the controls
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );
-		controls.setTilesRenderer( tiles );
 		controls.enableDamping = true;
 		controls.minZoomDistance = 2;
 		controls.minDistance = 0.01;
@@ -118,7 +117,7 @@ function initTiles() {
 
 		// create the controls
 		controls = new GlobeControls( scene, camera, renderer.domElement );
-		controls.setTilesRenderer( tiles );
+		controls.setEllipsoid( tiles.ellipsoid, tiles.tilesGroup );
 		controls.enableDamping = true;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 		controls.camera.quaternion.identity();
