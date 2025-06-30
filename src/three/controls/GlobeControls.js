@@ -68,7 +68,6 @@ export class GlobeControls extends EnvironmentControls {
 		this.nearMargin = 0.25;
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
-		this.reorientOnDrag = false;
 
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;

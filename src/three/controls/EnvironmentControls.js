@@ -105,7 +105,6 @@ export class EnvironmentControls extends EventDispatcher {
 		this.useFallbackPlane = true;
 
 		// settings for GlobeControls
-		this.reorientOnDrag = true;
 		this.scaleZoomOrientationAtEdges = false;
 
 		// internal state
@@ -523,6 +522,20 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	detach() {
+
+		this.domElement = null;
+
+		if ( this._detachCallback ) {
+
+			this._detachCallback();
+			this._detachCallback = null;
+			this.pointerTracker.reset();
+
+		}
+
+	}
+
 	// override-able functions for retrieving the up direction at a point
 	getUpDirection( point, target ) {
 
@@ -585,20 +598,6 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		return result;
-
-	}
-
-	detach() {
-
-		this.domElement = null;
-
-		if ( this._detachCallback ) {
-
-			this._detachCallback();
-			this._detachCallback = null;
-			this.pointerTracker.reset();
-
-		}
 
 	}
 
@@ -1297,31 +1296,26 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// sets the "up" axis for the current surface of the tile set
-	_setFrame( newUp, pivot ) {
+	_setFrame( newUp ) {
 
 		const {
 			up,
 			camera,
-			state,
 			zoomPoint,
 			zoomDirectionSet,
 			zoomPointSet,
-			reorientOnDrag,
 			scaleZoomOrientationAtEdges,
 		} = this;
 
-		camera.updateMatrixWorld();
-
-		// get the amount needed to rotate
-		_quaternion.setFromUnitVectors( up, newUp );
-
 		// If we're zooming then reorient around the zoom point
-		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			this.getUpDirection( zoomPoint, _vec );
+			// get the amount needed to rotate
+			_quaternion.setFromUnitVectors( up, newUp );
 
 			if ( scaleZoomOrientationAtEdges ) {
+
+				this.getUpDirection( zoomPoint, _vec );
 
 				let amt = Math.max( _vec.dot( up ) - 0.6, 0 ) / 0.4;
 				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
@@ -1341,28 +1335,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// rotates the camera position around the point being zoomed in to
 			makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+
+			camera.updateMatrixWorld();
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			// recompute the zoom direction after updating rotation to align with frame
 			this.zoomDirectionSet = false;
 			this._updateZoomDirection();
-
-		} else if ( action === DRAG && reorientOnDrag ) {
-
-			// If we're dragging then reorient around the drag point
-
-			// NOTE: We used to derive the pivot point here by getting the point below the camera
-			// but decided to pass it in via "update" to avoid multiple ray casts
-
-			if ( pivot ) {
-
-				// perform a simple realignment by rotating the camera around the pivot
-				makeRotateAroundPoint( pivot, _quaternion, _rotMatrix );
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-			}
 
 		}
 
