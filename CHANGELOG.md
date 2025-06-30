@@ -26,7 +26,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - R3F: Fixed case where plugins may not have been able to register before the first call to TilesRenderer.update.
 
 ### Changed
-- Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions
+- Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions.
+- GlobeControls, EnvironmentControls: Deprecate "setTilesRenderer" function in favor of "setScene" and "setEllipsoid" functions.
+- R3F GlobeControls, EnvironmentControls: Add "ellipsoid" and "ellipsoidGroup" properties.
 
 ## [0.4.10] - 2025.05.31
 ### Fixed
