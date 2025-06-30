@@ -672,6 +672,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		// we need to update the zoom point whenever we update in case the scene is animating or changing
+		this.zoomPointSet = false;
+
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
@@ -1254,12 +1257,20 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// calculate current angles and clamp
 		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
-
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
 		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
-		_vec.crossVectors( _localUp, _forward ).normalize();
-		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
+		if ( _localUp.dot( _forward ) > 1 - 1e-2 ) {
+
+			_vec.copy( _right );
+
+		} else {
+
+			_vec.crossVectors( _localUp, _forward ).normalize();
+
+		}
+
 		const sign = Math.sign( _vec.dot( _right ) );
 		const angle = sign * _localUp.angleTo( _forward );
 
@@ -1267,7 +1278,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
 		if ( altitude > 0 ) {
 
-			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
+			altitude = Math.min( angle - minAltitude, altitude );
 			altitude = Math.max( 0, altitude );
 
 		} else {
@@ -1283,9 +1294,8 @@ export class EnvironmentControls extends EventDispatcher {
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		// get a rotation axis for altitude and rotate
-		_rotationAxis.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-
-		_quaternion.setFromAxisAngle( _rotationAxis, altitude );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		_quaternion.setFromAxisAngle( _right, - altitude );
 		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
