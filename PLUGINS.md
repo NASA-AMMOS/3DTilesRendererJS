@@ -129,11 +129,18 @@ constructor(
 	scene = null : Scene,
 	camera = null : Camera,
 	domElement = null : DomElement,
-	tilesRenderer = null : GoogleTilesRenderer,
 )
 ```
 
 Takes the same items as `EnvironmentControls` in addition to the Google globe tiles renderer.
+
+### .setEllipsoid
+
+```js
+setEllipsoid( ellipsoid: Ellipsoid, ellipsoidGroup: Object3D ): void
+```
+
+Specifies the ellipsoid and a group representing the frame of the ellipsoid. Handles to both objects are retained so transformations can be respected.
 
 ## CameraTransitionManager
 
