@@ -18,7 +18,6 @@ const _pos = /* @__PURE__ */ new Vector3();
 const _vec = /* @__PURE__ */ new Vector3();
 const _center = /* @__PURE__ */ new Vector3();
 const _forward = /* @__PURE__ */ new Vector3();
-const _right = /* @__PURE__ */ new Vector3();
 const _targetRight = /* @__PURE__ */ new Vector3();
 const _globalUp = /* @__PURE__ */ new Vector3();
 const _quaternion = /* @__PURE__ */ new Quaternion();
@@ -68,7 +67,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.nearMargin = 0.25;
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
-		this.reorientOnDrag = false;
+		this.autoAdjustCameraRotation = false;
 
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
@@ -122,7 +121,7 @@ export class GlobeControls extends EnvironmentControls {
 		// use the closest point if no pivot was provided or it's closer
 		if (
 			super.getPivotPoint( target ) === null ||
-			target.distanceTo( _ray.origin ) > _vec.distanceTo( _ray.origin )
+			_pos.subVectors( target, _ray.origin ).dot( _ray.direction ) > _pos.subVectors( _vec, _ray.origin ).dot( _ray.direction )
 		) {
 
 			target.copy( _vec );
@@ -210,13 +209,27 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		const adjustCameraRotation = this.needsUpdate || this._inertiaNeedsUpdate();
+
 		// fire basic controls update
 		super.update( deltaTime );
 
 		// update the camera planes and the ortho camera position
 		this.adjustCamera( camera );
 
+		// align the camera up vector if the camera as updated
+		if ( adjustCameraRotation && this._isNearControls() ) {
+
+			this.getCameraUpDirection( _globalUp );
+			this._alignCameraUp( _globalUp, 1 );
+
+			this.getCameraUpDirection( _globalUp );
+			this._clampRotation( _globalUp );
+
+		}
+
 	}
+
 
 	// Updates the passed camera near and far clip planes to encapsulate the ellipsoid from the
 	// current position in addition to adjusting the height.
@@ -466,8 +479,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
-
 	}
 
 	// disable rotation once we're outside the control transition
@@ -485,7 +496,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
 
 	}
 
@@ -597,32 +607,6 @@ export class GlobeControls extends EnvironmentControls {
 		const { ellipsoidFrame } = this;
 		_globalUp.set( 0, 0, 1 ).transformDirection( ellipsoidFrame );
 		this._alignCameraUp( _globalUp, alpha );
-
-	}
-
-	// tilt the camera to align with the provided "up" value
-	_alignCameraUp( up, alpha = null ) {
-
-		const { camera } = this;
-		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		_targetRight.crossVectors( up, _forward );
-
-		// compute the alpha based on how far away from boresight the up vector is
-		// so we can ease into the correct orientation
-		if ( alpha === null ) {
-
-			alpha = 1 - Math.abs( _forward.dot( up ) );
-			alpha = MathUtils.mapLinear( alpha, 0, 1, - 0.01, 1 );
-			alpha = MathUtils.clamp( alpha, 0, 1 ) ** 2;
-
-		}
-
-		_targetRight.lerp( _right, 1 - alpha ).normalize();
-
-		_quaternion.setFromUnitVectors( _right, _targetRight );
-		camera.quaternion.premultiply( _quaternion );
-		camera.updateMatrixWorld();
 
 	}
 

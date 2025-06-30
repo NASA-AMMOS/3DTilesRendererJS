@@ -24,10 +24,14 @@ const DRAG_PLANE_THRESHOLD = 0.05;
 const DRAG_UP_THRESHOLD = 0.025;
 
 const _rotMatrix = /* @__PURE__ */ new Matrix4();
+const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _delta = /* @__PURE__ */ new Vector3();
 const _vec = /* @__PURE__ */ new Vector3();
+const _pos = /* @__PURE__ */ new Vector3();
+const _center = /* @__PURE__ */ new Vector3();
 const _forward = /* @__PURE__ */ new Vector3();
 const _right = /* @__PURE__ */ new Vector3();
+const _targetRight = /* @__PURE__ */ new Vector3();
 const _rotationAxis = /* @__PURE__ */ new Vector3();
 const _quaternion = /* @__PURE__ */ new Quaternion();
 const _plane = /* @__PURE__ */ new Plane();
@@ -105,8 +109,8 @@ export class EnvironmentControls extends EventDispatcher {
 		this.useFallbackPlane = true;
 
 		// settings for GlobeControls
-		this.reorientOnDrag = true;
 		this.scaleZoomOrientationAtEdges = false;
+		this.autoAdjustCameraRotation = true;
 
 		// internal state
 		this.state = NONE;
@@ -523,6 +527,20 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	detach() {
+
+		this.domElement = null;
+
+		if ( this._detachCallback ) {
+
+			this._detachCallback();
+			this._detachCallback = null;
+			this.pointerTracker.reset();
+
+		}
+
+	}
+
 	// override-able functions for retrieving the up direction at a point
 	getUpDirection( point, target ) {
 
@@ -588,20 +606,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	detach() {
-
-		this.domElement = null;
-
-		if ( this._detachCallback ) {
-
-			this._detachCallback();
-			this._detachCallback = null;
-			this.pointerTracker.reset();
-
-		}
-
-	}
-
 	resetState() {
 
 		if ( this.state !== NONE ) {
@@ -660,6 +664,7 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			state,
 			adjustHeight,
+			autoAdjustCameraRotation,
 		} = this;
 
 		camera.updateMatrixWorld();
@@ -673,8 +678,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		// we need to update the zoom point whenever we update in case the scene is animating or changing
+		this.zoomPointSet = false;
+
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
+		const adjustCameraRotation = this.needsUpdate || inertiaNeedsUpdate;
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
 			const zoomDelta = this.zoomDelta;
@@ -686,7 +695,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if ( state === DRAG || state === ROTATE ) {
 
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-				this.inertiaTargetDistance = _vec.copy( this.pivotPoint ).sub( camera.position ).dot( _forward );
+				this.inertiaTargetDistance = _vec.copy( pivotPoint ).sub( camera.position ).dot( _forward );
 
 			} else if ( state === NONE ) {
 
@@ -708,9 +717,8 @@ export class EnvironmentControls extends EventDispatcher {
 		// if using an orthographic camera then rotate around drag pivot
 		// reuse the "hit" information since it can be slow to perform multiple hits
 		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
-		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
 		this.getCameraUpDirection( _localUp );
-		this._setFrame( _localUp, rotationPoint );
+		this._setFrame( _localUp );
 
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
@@ -747,6 +755,17 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.pointerTracker.updateFrame();
+
+		if ( adjustCameraRotation && autoAdjustCameraRotation ) {
+
+			this.getCameraUpDirection( _localUp );
+			this._alignCameraUp( _localUp, 1 );
+
+			this.getCameraUpDirection( _localUp );
+			this._clampRotation( _localUp );
+
+
+		}
 
 	}
 
@@ -1256,20 +1275,29 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// calculate current angles and clamp
 		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
-
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
 		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
-		_vec.crossVectors( _localUp, _forward ).normalize();
-		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
-		const sign = Math.sign( _vec.dot( _right ) );
-		const angle = sign * _localUp.angleTo( _forward );
+		let angle;
+		if ( _localUp.dot( _forward ) > 1 - 1e-10 ) {
+
+			angle = 0;
+
+		} else {
+
+			_vec.crossVectors( _localUp, _forward ).normalize();
+
+			const sign = Math.sign( _vec.dot( _right ) );
+			angle = sign * _localUp.angleTo( _forward );
+
+		}
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
 		if ( altitude > 0 ) {
 
-			altitude = Math.min( angle - minAltitude - 1e-2, altitude );
+			altitude = Math.min( angle - minAltitude, altitude );
 			altitude = Math.max( 0, altitude );
 
 		} else {
@@ -1285,9 +1313,8 @@ export class EnvironmentControls extends EventDispatcher {
 		camera.matrixWorld.premultiply( _rotMatrix );
 
 		// get a rotation axis for altitude and rotate
-		_rotationAxis.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-
-		_quaternion.setFromAxisAngle( _rotationAxis, altitude );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+		_quaternion.setFromAxisAngle( _right, - altitude );
 		makeRotateAroundPoint( pivotPoint, _quaternion, _rotMatrix );
 		camera.matrixWorld.premultiply( _rotMatrix );
 
@@ -1297,31 +1324,26 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// sets the "up" axis for the current surface of the tile set
-	_setFrame( newUp, pivot ) {
+	_setFrame( newUp ) {
 
 		const {
 			up,
 			camera,
-			state,
 			zoomPoint,
 			zoomDirectionSet,
 			zoomPointSet,
-			reorientOnDrag,
 			scaleZoomOrientationAtEdges,
 		} = this;
 
-		camera.updateMatrixWorld();
-
-		// get the amount needed to rotate
-		_quaternion.setFromUnitVectors( up, newUp );
-
 		// If we're zooming then reorient around the zoom point
-		const action = state;
 		if ( zoomDirectionSet && ( zoomPointSet || this._updateZoomPoint() ) ) {
 
-			this.getUpDirection( zoomPoint, _vec );
+			// get the amount needed to rotate
+			_quaternion.setFromUnitVectors( up, newUp );
 
 			if ( scaleZoomOrientationAtEdges ) {
+
+				this.getUpDirection( zoomPoint, _vec );
 
 				let amt = Math.max( _vec.dot( up ) - 0.6, 0 ) / 0.4;
 				amt = MathUtils.mapLinear( amt, 0, 0.5, 0, 1 );
@@ -1341,28 +1363,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// rotates the camera position around the point being zoomed in to
 			makeRotateAroundPoint( zoomPoint, _quaternion, _rotMatrix );
+
+			camera.updateMatrixWorld();
 			camera.matrixWorld.premultiply( _rotMatrix );
 			camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
 
 			// recompute the zoom direction after updating rotation to align with frame
 			this.zoomDirectionSet = false;
 			this._updateZoomDirection();
-
-		} else if ( action === DRAG && reorientOnDrag ) {
-
-			// If we're dragging then reorient around the drag point
-
-			// NOTE: We used to derive the pivot point here by getting the point below the camera
-			// but decided to pass it in via "update" to avoid multiple ray casts
-
-			if ( pivot ) {
-
-				// perform a simple realignment by rotating the camera around the pivot
-				makeRotateAroundPoint( pivot, _quaternion, _rotMatrix );
-				camera.matrixWorld.premultiply( _rotMatrix );
-				camera.matrixWorld.decompose( camera.position, camera.quaternion, _vec );
-
-			}
 
 		}
 
@@ -1398,6 +1406,141 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		return null;
+
+	}
+
+	// tilt the camera to align with the provided "up" value
+	_alignCameraUp( up, alpha = 1 ) {
+
+		const { camera, state, pivotPoint, zoomPoint, zoomPointSet } = this;
+
+		// get the transform vectors
+		camera.updateMatrixWorld();
+		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
+
+		// compute an alpha based on the camera direction so we don't try to update the up direction
+		// when the camera is facing that way.
+		let multiplier = MathUtils.mapLinear( 1 - Math.abs( _forward.dot( up ) ), 0, 0.2, 0, 1 );
+		multiplier = MathUtils.clamp( multiplier, 0, 1 );
+		alpha *= multiplier;
+
+		// calculate the target direction for the right-facing vector
+		_targetRight.crossVectors( up, _forward );
+		_targetRight.lerp( _right, 1 - alpha ).normalize();
+
+		// adjust the camera transformation
+		_quaternion.setFromUnitVectors( _right, _targetRight );
+		camera.quaternion.premultiply( _quaternion );
+
+		// calculate the active point
+		let fixedPoint = null;
+		if ( state === DRAG || state === ROTATE ) {
+
+			fixedPoint = _pos.copy( pivotPoint );
+
+		} else if ( zoomPointSet ) {
+
+			fixedPoint = _pos.copy( zoomPoint );
+
+		}
+
+		// shift the camera in an effort to keep the fixed point in the same spot
+		if ( fixedPoint ) {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.copy( fixedPoint ).applyMatrix4( _invMatrix );
+
+			camera.updateMatrixWorld();
+			_vec.applyMatrix4( camera.matrixWorld );
+
+			_center.subVectors( fixedPoint, _vec );
+			camera.position.add( _center );
+
+		}
+
+		camera.updateMatrixWorld();
+
+	}
+
+	// clamp rotation to the given "up" vector
+	_clampRotation( up ) {
+
+		const { camera, minAltitude, maxAltitude, state, pivotPoint, zoomPoint, zoomPointSet } = this;
+
+		camera.updateMatrixWorld();
+
+		// calculate current angles and clamp
+		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
+
+		// get the signed angle relative to the top down view
+		let angle;
+		if ( up.dot( _forward ) > 1 - 1e-10 ) {
+
+			angle = 0;
+
+		} else {
+
+			_vec.crossVectors( up, _forward );
+
+			const sign = Math.sign( _vec.dot( _right ) );
+			angle = sign * up.angleTo( _forward );
+
+		}
+
+		// find the angle to target
+		let targetAngle;
+		if ( angle > maxAltitude ) {
+
+			targetAngle = maxAltitude;
+
+		} else if ( angle < minAltitude ) {
+
+			targetAngle = minAltitude;
+
+		} else {
+
+			return;
+
+		}
+
+		// construct a rotation basis
+		_forward.copy( up );
+		_quaternion.setFromAxisAngle( _right, targetAngle );
+		_forward.applyQuaternion( _quaternion ).normalize();
+		_vec.crossVectors( _forward, _right ).normalize();
+
+		_rotMatrix.makeBasis( _right, _vec, _forward );
+		camera.quaternion.setFromRotationMatrix( _rotMatrix );
+
+		// calculate the active point
+		let fixedPoint = null;
+		if ( state === DRAG || state === ROTATE ) {
+
+			fixedPoint = _pos.copy( pivotPoint );
+
+		} else if ( zoomPointSet ) {
+
+			fixedPoint = _pos.copy( zoomPoint );
+
+		}
+
+		// shift the camera in an effort to keep the fixed point in the same spot
+		if ( fixedPoint ) {
+
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.copy( fixedPoint ).applyMatrix4( _invMatrix );
+
+			camera.updateMatrixWorld();
+			_vec.applyMatrix4( camera.matrixWorld );
+
+			_center.subVectors( fixedPoint, _vec );
+			camera.position.add( _center );
+
+		}
+
+		camera.updateMatrixWorld();
 
 	}
 

@@ -207,7 +207,7 @@ function updateHash() {
 
 	}
 
-	if ( transition.mode !== 'perspective' ) {
+	if ( transition.mode !== 'perspective' && ! transition.animating ) {
 
 		controls.getPivotPoint( transition.fixedPoint );
 		transition.syncCameras();
