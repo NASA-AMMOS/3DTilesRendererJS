@@ -1449,16 +1449,16 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-
+	// clamp rotation to the given "up" vector
 	_clampRotation( up ) {
 
-		const { camera, minAltitude, maxAltitude } = this;
+		const { camera, minAltitude, maxAltitude, state, pivotPoint, zoomPoint, zoomPointSet } = this;
 
 		camera.updateMatrixWorld();
 
 		// calculate current angles and clamp
-		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld ).normalize();
-		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld ).normalize();
+		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
+		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
 
 		// get the signed angle relative to the top down view
 		if ( up.dot( _forward ) > 1 - 1e-2 ) {
@@ -1467,21 +1467,21 @@ export class EnvironmentControls extends EventDispatcher {
 
 		} else {
 
-			_vec.crossVectors( up, _forward ).normalize();
+			_vec.crossVectors( up, _forward );
 
 		}
 
+		// find the angle to target
 		const sign = Math.sign( _vec.dot( _right ) );
 		const angle = sign * up.angleTo( _forward );
-
-		let offset;
+		let targetAngle;
 		if ( angle > maxAltitude ) {
 
-			offset = maxAltitude;
+			targetAngle = maxAltitude;
 
 		} else if ( angle < minAltitude ) {
 
-			offset = minAltitude;
+			targetAngle = minAltitude;
 
 		} else {
 
@@ -1489,31 +1489,14 @@ export class EnvironmentControls extends EventDispatcher {
 
 		}
 
+		// construct a rotation basis
 		_forward.copy( up );
-		_quaternion.setFromAxisAngle( _right, offset );
+		_quaternion.setFromAxisAngle( _right, targetAngle );
 		_forward.applyQuaternion( _quaternion ).normalize();
 		_vec.crossVectors( _forward, _right ).normalize();
 
 		_rotMatrix.makeBasis( _right, _vec, _forward );
-		_quaternion.setFromRotationMatrix( _rotMatrix );
-
-
-
-
-
-
-		// _quaternion.setFromAxisAngle( _right, - offset );
-		camera.quaternion.copy( _quaternion );
-
-
-
-		// console.log('ADJUSTING')
-
-
-
-
-
-		const { state, pivotPoint, zoomPoint, zoomPointSet } = this;
+		camera.quaternion.setFromRotationMatrix( _rotMatrix );
 
 		// calculate the active point
 		let fixedPoint = null;
