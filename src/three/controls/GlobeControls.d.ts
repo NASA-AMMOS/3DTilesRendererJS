@@ -1,4 +1,4 @@
-import { Group, Vector3 } from 'three';
+import { Group, Matrix4, Object3D, Vector3 } from 'three';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { EnvironmentControls } from './EnvironmentControls.js';
 
@@ -10,8 +10,12 @@ export class GlobeControls extends EnvironmentControls {
 	farMargin: number;
 
 	get ellipsoid(): Ellipsoid;
+	get ellipsoidGroup(): Group;
+	get ellipsoidFrame(): Matrix4;
+	get ellipsoidFrameInverse(): Matrix4;
 	get tilesGroup(): Group;
 
+	setEllipsoid( ellipsoid: Ellipsoid, ellipsoidGroup: Object3D ): void;
 	getVectorToCenter( target: Vector3 ): Vector3;
 	getDistanceToCenter(): number;
 
