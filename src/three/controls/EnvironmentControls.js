@@ -685,7 +685,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if ( state === DRAG || state === ROTATE ) {
 
 				_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-				this.inertiaTargetDistance = _vec.copy( this.pivotPoint ).sub( camera.position ).dot( _forward );
+				this.inertiaTargetDistance = _vec.copy( pivotPoint ).sub( camera.position ).dot( _forward );
 
 			} else if ( state === NONE ) {
 
@@ -707,9 +707,8 @@ export class EnvironmentControls extends EventDispatcher {
 		// if using an orthographic camera then rotate around drag pivot
 		// reuse the "hit" information since it can be slow to perform multiple hits
 		const hit = camera.isOrthographicCamera ? null : adjustHeight && this._getPointBelowCamera() || null;
-		const rotationPoint = camera.isOrthographicCamera ? pivotPoint : hit && hit.point || null;
 		this.getCameraUpDirection( _localUp );
-		this._setFrame( _localUp, rotationPoint );
+		this._setFrame( _localUp );
 
 		// when dragging the camera and drag point may be moved
 		// to accommodate terrain so we try to move it back down
