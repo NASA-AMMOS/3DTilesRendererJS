@@ -10,6 +10,7 @@ import {
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _rotMatrix = /* @__PURE__ */ new Matrix4();
@@ -72,7 +73,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
 
-		this.ellipsoid = new Ellipsoid();
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
 		this.ellipsoidGroup = new Group();
 		this._ellipsoidFrameInverse = new Matrix4();
 
@@ -97,7 +98,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	setEllipsoid( ellipsoid, ellipsoidGroup ) {
 
-		this.ellipsoid = ellipsoid || new Ellipsoid();
+		this.ellipsoid = ellipsoid || WGS84_ELLIPSOID.clone();
 		this.ellipsoidGroup = ellipsoidGroup || new Group();
 
 	}
