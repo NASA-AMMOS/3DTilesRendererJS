@@ -89,7 +89,7 @@ export class GlobeControls extends EnvironmentControls {
 		super.setTilesRenderer( tilesRenderer );
 		if ( tilesRenderer !== null ) {
 
-			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.tilesGroup );
+			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.group );
 
 		}
 

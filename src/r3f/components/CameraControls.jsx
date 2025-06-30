@@ -23,7 +23,7 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	const appliedScene = scene || defaultScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
 	const appliedEllipsoid = ellipsoid || tilesRenderer?.ellipsoid || null;
-	const appliedEllipsoidFrame = ellipsoidFrame || tilesRenderer?.tilesGroup || null;
+	const appliedEllipsoidFrame = ellipsoidFrame || tilesRenderer?.group || null;
 
 	// create a controls instance
 	const controls = useMemo( () => {

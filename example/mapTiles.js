@@ -117,7 +117,7 @@ function initTiles() {
 
 		// create the controls
 		controls = new GlobeControls( scene, camera, renderer.domElement );
-		controls.setEllipsoid( tiles.ellipsoid, tiles.tilesGroup );
+		controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 		controls.enableDamping = true;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 		controls.camera.quaternion.identity();

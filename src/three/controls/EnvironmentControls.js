@@ -183,11 +183,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.tilesRenderer = tilesRenderer;
 		if ( this.tilesRenderer !== null ) {
 
-			if ( this.scene === null ) {
-
-				this.setScene( this.tilesRenderer.group );
-
-			}
+			this.setScene( this.tilesRenderer.group );
 
 		}
 

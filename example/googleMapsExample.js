@@ -87,7 +87,7 @@ function reinstantiateTiles() {
 	tiles.setResolutionFromRenderer( transition.camera, renderer );
 	tiles.setCamera( transition.camera );
 
-	controls.setEllipsoid( tiles.ellipsoid, tiles.tilesGroup );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
 }
 
