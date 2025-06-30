@@ -43,9 +43,9 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 		tilesRenderer?: TilesRenderer,
 	);
 
-	setScene ( scene: Object3D ): void;
-	setCamera ( camera: Camera ): void;
-	setTilesRenderer( tilesRenderer: TilesRenderer ): void;
+	setScene ( scene: Object3D | null ): void;
+	setCamera ( camera: Camera | null ): void;
+	setTilesRenderer( tilesRenderer: TilesRenderer | null ): void;
 
 	attach( domElement: HTMLElement ): void;
 	detach(): void;

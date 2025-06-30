@@ -178,23 +178,12 @@ export class EnvironmentControls extends EventDispatcher {
 
 	setTilesRenderer( tilesRenderer ) {
 
-		// TODO: what if a scene has multiple tile sets?
-		if ( this.tilesRenderer ) {
-
-			this.tilesRenderer.removeEventListener( 'tile-visibility-change', this._tilesOnChangeCallback );
-
-		}
+		console.warn( 'EnvironmentControls: "setTilesRenderer" has been deprecated. Use "setScene" and "setEllipsoid", instead.' );
 
 		this.tilesRenderer = tilesRenderer;
 		if ( this.tilesRenderer !== null ) {
 
-			this.tilesRenderer.addEventListener( 'tile-visibility-change', this._tilesOnChangeCallback );
-
-			if ( this.scene === null ) {
-
-				this.setScene( this.tilesRenderer.group );
-
-			}
+			this.setScene( this.tilesRenderer.group );
 
 		}
 

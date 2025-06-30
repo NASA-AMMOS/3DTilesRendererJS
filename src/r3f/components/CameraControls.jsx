@@ -9,7 +9,7 @@ import { useApplyRefs } from '../utilities/useApplyRefs.js';
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
-	const { controlsConstructor, domElement, scene, camera, tilesRenderer, ...rest } = props;
+	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, ...rest } = props;
 
 	const [ defaultCamera ] = useThree( state => [ state.camera ] );
 	const [ gl ] = useThree( state => [ state.gl ] );
@@ -18,11 +18,12 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	const [ get ] = useThree( state => [ state.get ] );
 	const [ set ] = useThree( state => [ state.set ] );
 
-	const defaultTilesRenderer = useContext( TilesRendererContext );
+	const tilesRenderer = useContext( TilesRendererContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
-	const appliedTilesRenderer = tilesRenderer || defaultTilesRenderer || null;
+	const appliedEllipsoid = ellipsoid || tilesRenderer?.ellipsoid || null;
+	const appliedEllipsoidFrame = ellipsoidFrame || tilesRenderer?.group || null;
 
 	// create a controls instance
 	const controls = useMemo( () => {
@@ -68,9 +69,13 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	// assign the tiles renderer
 	useEffect( () => {
 
-		controls.setTilesRenderer( appliedTilesRenderer );
+		if ( controls.isGlobeControls ) {
 
-	}, [ controls, appliedTilesRenderer ] );
+			controls.setEllipsoid( appliedEllipsoid, appliedEllipsoidFrame );
+
+		}
+
+	}, [ controls, appliedEllipsoid, appliedEllipsoidFrame ] );
 
 	// attach to the dom element
 	useEffect( () => {
