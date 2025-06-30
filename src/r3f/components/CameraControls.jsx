@@ -9,7 +9,7 @@ import { useApplyRefs } from '../utilities/useApplyRefs.js';
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
-	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, ...rest } = props;
+	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, tilesRenderer, ...rest } = props;
 
 	const [ defaultCamera ] = useThree( state => [ state.camera ] );
 	const [ gl ] = useThree( state => [ state.gl ] );
@@ -18,12 +18,13 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	const [ get ] = useThree( state => [ state.get ] );
 	const [ set ] = useThree( state => [ state.set ] );
 
-	const tilesRenderer = useContext( TilesRendererContext );
+	const contextTilesRenderer = useContext( TilesRendererContext );
+	const appliedTilesRenderer = tilesRenderer || contextTilesRenderer;
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
-	const appliedEllipsoid = ellipsoid || tilesRenderer?.ellipsoid || null;
-	const appliedEllipsoidFrame = ellipsoidFrame || tilesRenderer?.group || null;
+	const appliedEllipsoid = ellipsoid || appliedTilesRenderer?.ellipsoid || null;
+	const appliedEllipsoidFrame = ellipsoidFrame || appliedTilesRenderer?.group || null;
 
 	// create a controls instance
 	const controls = useMemo( () => {
