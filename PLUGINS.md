@@ -53,7 +53,7 @@ Detaches from the current dom element.
 ### .setCamera
 
 ```js
-setCamera( camera : Camera ) : void
+setCamera( camera : Camera | null ) : void
 ```
 
 Sets the camera the controls are using.
@@ -61,7 +61,7 @@ Sets the camera the controls are using.
 ### .setScene
 
 ```js
-setScene( scene : Object3D ) : void
+setScene( scene : Object3D | null ) : void
 ```
 
 The scene to raycast against for control interactions.
@@ -137,7 +137,7 @@ Takes the same items as `EnvironmentControls` in addition to the Google globe ti
 ### .setEllipsoid
 
 ```js
-setEllipsoid( ellipsoid: Ellipsoid, ellipsoidGroup: Object3D ): void
+setEllipsoid( ellipsoid: Ellipsoid | null, ellipsoidGroup: Object3D | null ): void
 ```
 
 Specifies the ellipsoid and a group representing the frame of the ellipsoid. Handles to both objects are retained so transformations can be respected.
