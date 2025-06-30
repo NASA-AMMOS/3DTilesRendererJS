@@ -986,19 +986,18 @@ export class TilesRenderer extends TilesRendererBase {
 
 			target.inView = true;
 			target.error = inViewError;
-			target.distanceToCamera = inViewDistance;
+			target.distanceFromCamera = inViewDistance;
 
 		} else {
 
 			target.inView = false;
 			target.error = maxError;
-			target.distanceToCamera = minDistance;
+			target.distanceFromCamera = minDistance;
 
 		}
 
 	}
 
-	// TODO: deprecate this function and provide a plugin to help with this
 	// adjust the rotation of the group such that Y is altitude, X is North, and Z is East
 	setLatLonToYUp( lat, lon ) {
 
@@ -1009,7 +1008,7 @@ export class TilesRenderer extends TilesRendererBase {
 		_euler.set( Math.PI / 2, Math.PI / 2, 0 );
 		_mat.makeRotationFromEuler( _euler );
 
-		ellipsoid.getEastNorthUpFrame( lat, lon, group.matrix )
+		ellipsoid.getEastNorthUpFrame( lat, lon, 0, group.matrix )
 			.multiply( _mat )
 			.invert()
 			.decompose(

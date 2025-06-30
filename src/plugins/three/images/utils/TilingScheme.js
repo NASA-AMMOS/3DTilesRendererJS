@@ -51,6 +51,13 @@ export class TilingScheme {
 
 	}
 
+	get aspect() {
+
+		const { pixelWidth, pixelHeight } = this.getLevel( this.maxLevel );
+		return pixelWidth / pixelHeight;
+
+	}
+
 	constructor() {
 
 		this.flipY = false;
@@ -158,7 +165,7 @@ export class TilingScheme {
 	}
 
 	// query functions
-	getTileAtPoint( bx, by, level, normalized = false, clampTiles = true ) {
+	getTileAtPoint( bx, by, level, normalized = false ) {
 
 		const { projection, flipY } = this;
 		const { tileCountX, tileCountY } = this.getLevel( level );
@@ -172,14 +179,7 @@ export class TilingScheme {
 
 		}
 
-		if ( clampTiles ) {
-
-			bx = clamp( bx, 0, 1 );
-			by = clamp( by, 0, 1 );
-
-		}
-
-		let tx = Math.floor( bx / xStride );
+		const tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 
 		if ( flipY ) {
@@ -188,21 +188,14 @@ export class TilingScheme {
 
 		}
 
-		if ( clampTiles ) {
-
-			tx = clamp( tx, 0, tileCountX - 1 );
-			ty = clamp( ty, 0, tileCountY - 1 );
-
-		}
-
 		return [ tx, ty ];
 
 	}
 
-	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false, clampTiles = true ) {
+	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
-		const minTile = this.getTileAtPoint( minX, minY, level, normalized, clampTiles );
-		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, clampTiles );
+		const minTile = this.getTileAtPoint( minX, minY, level, normalized, false );
+		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, false );
 
 		if ( this.flipY ) {
 
@@ -210,7 +203,22 @@ export class TilingScheme {
 
 		}
 
-		return [ ...minTile, ...maxTile ];
+		const { tileCountX, tileCountY } = this.getLevel( level );
+		const [ minTileX, minTileY ] = minTile;
+		const [ maxTileX, maxTileY ] = maxTile;
+
+		if ( maxTileX < 0 || maxTileY < 0 || minTileX >= tileCountX || minTileY >= tileCountY ) {
+
+			return [ 0, 0, - 1, - 1 ];
+
+		}
+
+		return [
+			clamp( minTileX, 0, tileCountX - 1 ),
+			clamp( minTileY, 0, tileCountY - 1 ),
+			clamp( maxTileX, 0, tileCountX - 1 ),
+			clamp( maxTileY, 0, tileCountY - 1 ),
+		];
 
 	}
 
@@ -220,6 +228,7 @@ export class TilingScheme {
 		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
+		// TODO: is supporting "just touch" correct?
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
 
 	}
@@ -289,20 +298,27 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedRange( range ) {
+	toNormalizedPoint( x, y ) {
 
-		const result = [ ...range ];
 		const { projection } = this;
+		const result = [ x, y ];
 		if ( this.projection ) {
 
 			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
 			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
-			result[ 2 ] = projection.convertLongitudeToProjection( result[ 2 ] );
-			result[ 3 ] = projection.convertLatitudeToProjection( result[ 3 ] );
 
 		}
 
 		return result;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		return [
+			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
+			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+		];
 
 	}
 

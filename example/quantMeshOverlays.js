@@ -6,6 +6,8 @@ import {
 	TilesFadePlugin,
 	CesiumIonAuthPlugin,
 	ImageOverlayPlugin,
+	CesiumIonOverlay,
+	XYZTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
@@ -16,8 +18,6 @@ import {
 } from 'three';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { CesiumIonOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
-import { XYZTilesOverlay } from '../src/plugins/three/images/ImageOverlayPlugin.js';
 
 let controls, scene, renderer, tiles, camera, washingtonOverlay, baseOverlay;
 let statsContainer, stats;
@@ -225,27 +225,6 @@ function updateHtml() {
 		const render = renderer.info.render;
 		const programCount = renderer.info.programs.length;
 		str += `Geometries: ${ memory.geometries } Textures: ${ memory.textures } Programs: ${ programCount } Draw Calls: ${ render.calls }`;
-
-		const batchPlugin = tiles.getPluginByName( 'BATCHED_TILES_PLUGIN' );
-		const fadePlugin = tiles.getPluginByName( 'FADE_TILES_PLUGIN' );
-		if ( batchPlugin ) {
-
-			let tot = 0;
-			batchPlugin.batchedMesh?._instanceInfo.forEach( info => {
-
-				if ( info.visible && info.active ) tot ++;
-
-			} );
-
-			fadePlugin.batchedMesh?._instanceInfo.forEach( info => {
-
-				if ( info.visible && info.active ) tot ++;
-
-			} );
-
-			str += ', Batched: ' + tot;
-
-		}
 
 	}
 

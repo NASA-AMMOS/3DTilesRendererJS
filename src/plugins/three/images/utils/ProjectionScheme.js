@@ -88,13 +88,13 @@ export class ProjectionScheme {
 
 	}
 
-	getLongitudeDerivativeAtValue( value ) {
+	getLongitudeDerivativeAtProjection( value ) {
 
 		return 2 * Math.PI;
 
 	}
 
-	getLatitudeDerivativeAtValue( value ) {
+	getLatitudeDerivativeAtProjection( value ) {
 
 		const EPS = 1e-5;
 		let yp = value - EPS;

@@ -3,7 +3,7 @@ import { LOADED, FAILED, UNLOADED } from './constants.js';
 const viewErrorTarget = {
 	inView: false,
 	error: Infinity,
-	distance: Infinity,
+	distanceFromCamera: Infinity,
 };
 
 function isDownloadFinished( value ) {
@@ -45,7 +45,7 @@ function resetFrameState( tile, renderer ) {
 		renderer.calculateTileViewError( tile, viewErrorTarget );
 		tile.__inFrustum = viewErrorTarget.inView;
 		tile.__error = viewErrorTarget.error;
-		tile.__distanceFromCamera = viewErrorTarget.distance;
+		tile.__distanceFromCamera = viewErrorTarget.distanceFromCamera;
 
 	}
 

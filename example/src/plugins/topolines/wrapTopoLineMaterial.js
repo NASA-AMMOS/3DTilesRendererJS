@@ -2,6 +2,8 @@
 
 import { Color, Matrix4, Vector2, Vector3 } from 'three';
 
+const TOPO_PARAMS = Symbol( 'TOPO_PARAMS' );
+
 const ELLIPSOID_FUNC = /* glsl */`
 
 	vec3 getPositionToSurfacePoint( vec3 radius, vec3 pos ) {
@@ -112,6 +114,13 @@ const MATH_FUNC = /* glsl */`
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
+	// if the material has already been wrapped then return the params
+	if ( material[ TOPO_PARAMS ] ) {
+
+		return material[ TOPO_PARAMS ];
+
+	}
+
 	const params = {
 		resolution: { value: new Vector2() },
 		pixelRatio: { value: 1 },
@@ -131,6 +140,8 @@ export function wrapTopoLineMaterial( material, previousOnBeforeCompile ) {
 
 		thickness: { value: 1.0 },
 	};
+
+	material[ TOPO_PARAMS ] = params;
 
 	material.defines = {
 		...( material.defines || {} ),

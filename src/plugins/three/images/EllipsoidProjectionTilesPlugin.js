@@ -191,8 +191,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
 			const midV = projection.convertLatitudeToProjection( midLat );
-			const lonFactor = projection.getLongitudeDerivativeAtValue( minU );
-			const latFactor = projection.getLatitudeDerivativeAtValue( midV );
+			const lonFactor = projection.getLongitudeDerivativeAtProjection( minU );
+			const latFactor = projection.getLatitudeDerivativeAtProjection( midV );
 
 			// TODO: is this correct?
 

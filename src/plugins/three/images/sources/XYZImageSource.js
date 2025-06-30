@@ -38,6 +38,8 @@ export class XYZImageSource extends TiledImageSource {
 
 		this.url = url;
 
+		return Promise.resolve();
+
 	}
 
 }

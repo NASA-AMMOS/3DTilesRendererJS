@@ -1,8 +1,7 @@
-import { Sphere, Vector3 } from 'three';
+import { Sphere } from 'three';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 
 const sphere = /* @__PURE__ */ new Sphere();
-const vec = /* @__PURE__ */ new Vector3();
 export class ReorientationPlugin {
 
 	constructor( options ) {
@@ -14,6 +13,11 @@ export class ReorientationPlugin {
 			lat: null,
 			lon: null,
 			height: 0,
+
+			azimuth: 0,
+			elevation: 0,
+			roll: 0,
+
 			...options,
 		};
 
@@ -23,6 +27,9 @@ export class ReorientationPlugin {
 		this.lat = options.lat;
 		this.lon = options.lon;
 		this.height = options.height;
+		this.azimuth = options.azimuth;
+		this.elevation = options.elevation;
+		this.roll = options.roll;
 		this.recenter = options.recenter;
 		this._callback = null;
 
@@ -34,12 +41,12 @@ export class ReorientationPlugin {
 
 		this._callback = () => {
 
-			const { up, lat, lon, height, recenter } = this;
+			const { up, lat, lon, height, azimuth, elevation, roll, recenter } = this;
 
 			if ( lat !== null && lon !== null ) {
 
 				// if the latitude and longitude are provided then remove the position offset
-				this.transformLatLonHeightToOrigin( lat, lon, height );
+				this.transformLatLonHeightToOrigin( lat, lon, height, azimuth, elevation, roll );
 
 			} else {
 
@@ -103,21 +110,23 @@ export class ReorientationPlugin {
 
 		tiles.addEventListener( 'load-tile-set', this._callback );
 
+		if ( tiles.root ) {
+
+			this._callback();
+
+		}
+
 	}
 
-	transformLatLonHeightToOrigin( lat, lon, height = 0 ) {
+	transformLatLonHeightToOrigin( lat, lon, height = 0, azimuth = 0, elevation = 0, roll = 0 ) {
 
 		const { group, ellipsoid } = this.tiles;
 
 		// get ENU orientation (Z facing north and X facing west) and position
-		ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, group.matrix, OBJECT_FRAME );
-		ellipsoid.getCartographicToPosition( lat, lon, height, vec );
+		ellipsoid.getObjectFrame( lat, lon, height, azimuth, elevation, roll, group.matrix, OBJECT_FRAME );
 
 		// adjust the group matrix
-		group.matrix
-			.setPosition( vec )
-			.invert()
-			.decompose( group.position, group.quaternion, group.scale );
+		group.matrix.invert().decompose( group.position, group.quaternion, group.scale );
 		group.updateMatrixWorld();
 
 	}
@@ -129,7 +138,7 @@ export class ReorientationPlugin {
 		group.quaternion.identity();
 		group.scale.set( 1, 1, 1 );
 
-		this.tiles.addEventListener( 'load-tile-set', this._callback );
+		this.tiles.removeEventListener( 'load-tile-set', this._callback );
 
 	}
 

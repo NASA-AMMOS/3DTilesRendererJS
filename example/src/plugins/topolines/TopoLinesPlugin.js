@@ -286,6 +286,12 @@ export class TopoLinesPlugin {
 		tiles.group.add( resolutionSampleObject );
 		this._resolutionSampleObject = resolutionSampleObject;
 
+		tiles.forEachLoadedModel( scene => {
+
+			this.processTileModel( scene );
+
+		} );
+
 	}
 
 	updateDefines( scene = null ) {
@@ -376,6 +382,22 @@ export class TopoLinesPlugin {
 		this.updateDefines();
 
 		this._resolutionSampleObject.dispose();
+
+		// dispose of all the materials to force a shader rebuild of the shader since the behavior relies on
+		// assigning uniforms parameters
+		this.tiles.forEachLoadedModel( scene => {
+
+			scene.traverse( c => {
+
+				if ( c.material ) {
+
+					c.material.dispose();
+
+				}
+
+			} );
+
+		} );
 
 	}
 

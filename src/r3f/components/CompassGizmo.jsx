@@ -190,7 +190,7 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 		ellipsoid.getPositionToCartographic( _pos, _cart );
 
 		ellipsoid
-			.getRotationMatrixFromAzElRoll( _cart.lat, _cart.lon, 0, 0, 0, _enuMatrix )
+			.getEastNorthUpFrame( _cart.lat, _cart.lon, 0, _enuMatrix )
 			.premultiply( tiles.group.matrixWorld );
 
 		// get the camera orientation in the local ENU frame

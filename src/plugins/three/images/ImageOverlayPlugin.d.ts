@@ -1,4 +1,4 @@
-import { Color, WebGLRenderer } from 'three';
+import { Color, Matrix4, WebGLRenderer } from 'three';
 
 export class ImageOverlayPlugin {
 
@@ -10,11 +10,17 @@ export class ImageOverlayPlugin {
 
 	addOverlay( overlay: ImageOverlay, order?: number ): void;
 	setOverlayOrder( overlay: ImageOverlay, order?: number ): void;
-	deleteOverlay( overlay: ImageOverlay, order?: number ): void;
+	deleteOverlay( overlay: ImageOverlay ): void;
 
 }
 
-export class ImageOverlay {}
+export class ImageOverlay {
+
+	color: number | Color;
+	opacity: number;
+	frame?: Matrix4 | null;
+
+}
 
 export class XYZTilesOverlay extends ImageOverlay {
 
@@ -25,6 +31,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		color: number | Color,
 		opacity: number,
+		frame?: Matrix4 | null,
 	} );
 
 }
@@ -36,6 +43,7 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		color: number | Color,
 		opacity: number,
+		frame?: Matrix4 | null,
 	} );
 
 }
@@ -45,10 +53,26 @@ export class CesiumIonOverlay extends ImageOverlay {
 	constructor( options: {
 		assetId: number | string,
 		apiToken: string,
-		autoRefreshToken?: boolean
+		autoRefreshToken?: boolean,
 
 		color: number | Color,
 		opacity: number,
+		frame?: Matrix4 | null,
+	} );
+
+}
+
+export class GoogleMapsOverlay extends ImageOverlay {
+
+	constructor( options: {
+		apiToken: string,
+		autoRefreshToken?: boolean,
+		logoUrl?: string,
+		sessionOptions?: null | { mapType: string, language: string, region: string },
+
+		color: number | Color,
+		opacity: number,
+		frame?: Matrix4 | null,
 	} );
 
 }

@@ -1,5 +1,5 @@
 import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer } from '3d-tiles-renderer';
-import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, CesiumIonAuthPlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, CesiumIonAuthPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
 import {
 	Scene,
 	WebGLRenderer,
@@ -37,15 +37,16 @@ function reinstantiateTiles() {
 		// We use unpkg here but in practice should be provided by the application.
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
+	tiles.registerPlugin( new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } ) );
 
-	// tiles.setLatLonToYUp( 35.3606 * MathUtils.DEG2RAD, 138.7274 * MathUtils.DEG2RAD ); // Mt Fuji
-	// tiles.setLatLonToYUp( 48.8584 * MathUtils.DEG2RAD, 2.2945 * MathUtils.DEG2RAD ); // Eiffel Tower
-	// tiles.setLatLonToYUp( 41.8902 * MathUtils.DEG2RAD, 12.4922 * MathUtils.DEG2RAD ); // Colosseum
-	// tiles.setLatLonToYUp( 43.8803 * MathUtils.DEG2RAD, - 103.4538 * MathUtils.DEG2RAD ); // Mt Rushmore
-	// tiles.setLatLonToYUp( 36.2679 * MathUtils.DEG2RAD, - 112.3535 * MathUtils.DEG2RAD ); // Grand Canyon
-	// tiles.setLatLonToYUp( - 22.951890 * MathUtils.DEG2RAD, - 43.210439 * MathUtils.DEG2RAD ); // Christ the Redeemer
-	// tiles.setLatLonToYUp( 34.9947 * MathUtils.DEG2RAD, 135.7847 * MathUtils.DEG2RAD ); // Kiyomizu-dera
-	tiles.setLatLonToYUp( 35.6586 * MathUtils.DEG2RAD, 139.7454 * MathUtils.DEG2RAD ); // Tokyo Tower
+	// 35.3606, 138.7274 // Mt Fuji
+	// 48.8584, 2.2945 // Eiffel Tower
+	// 41.8902, 12.4922 // Colosseum
+	// 43.8803, - 103.4538 // Mt Rushmore
+	// 36.2679, - 112.3535 // Grand Canyon
+	// - 22.951890, - 43.210439 // Christ the Redeemer
+	// 34.9947, 135.7847 // Kiyomizu-dera
+	// 35.6586, 139.7454 // Tokyo Tower
 
 	scene.add( tiles.group );
 

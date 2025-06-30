@@ -7,8 +7,12 @@ export class ReorientationPlugin {
 		lat?: number | null,
 		lon?: number | null,
 		height?: number,
+
+		azimuth?: number,
+		elevation?: number,
+		roll?: number,
 	} );
 
-	transformLatLonHeightToOrigin( lat: number, lon: number, height?: number ): void;
+	transformLatLonHeightToOrigin( lat: number, lon: number, height?: number, azimuth?: number, elevation?: number, roll?: number ): void;
 
 }

@@ -382,7 +382,7 @@ The max depth to which tiles will be loaded and rendered. Setting it to `1` will
 displayActiveTiles = false : Boolean
 ```
 
-"Active tiles" are those that are loaded and available but not necessarily visible. If [loadSiblings](#loadSiblings) is true then the tiles loaded up to the extents of the tile set will be considered active even outside the camera view. These tiles are useful for raycasting off camera or for casting shadows.
+"Active tiles" are those that are loaded and available but not necessarily visible. These tiles are useful for raycasting off camera or for casting shadows.
 
 Active tiles not currently visible in a camera frustum are removed from the scene as an optimization. Setting `displayActiveTiles` to true will keep them in the scene to be rendered from an outside camera view not accounted for by the tiles renderer.
 
