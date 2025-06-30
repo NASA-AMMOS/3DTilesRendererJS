@@ -120,7 +120,7 @@ export class GlobeControls extends EnvironmentControls {
 		// use the closest point if no pivot was provided or it's closer
 		if (
 			super.getPivotPoint( target ) === null ||
-			target.distanceTo( _ray.origin ) > _vec.distanceTo( _ray.origin )
+			_pos.subVectors( target, _ray.origin ).dot( _ray.direction ) > _pos.subVectors( _vec, _ray.origin ).dot( _ray.direction )
 		) {
 
 			target.copy( _vec );
