@@ -178,6 +178,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 	setTilesRenderer( tilesRenderer ) {
 
+		console.warn( 'EnvironmentControls: "setTilesRenderer" has been deprecated. Use "setScene" and "setEllipsoid", instead.' );
+
 		this.tilesRenderer = tilesRenderer;
 		if ( this.tilesRenderer !== null ) {
 

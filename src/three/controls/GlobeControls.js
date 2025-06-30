@@ -34,7 +34,14 @@ export class GlobeControls extends EnvironmentControls {
 
 	get tilesGroup() {
 
+		console.warn( 'GlobeControls: "tilesGroup" has been deprecated. Use "ellipsoidGroup", instead.' );
 		return this.ellipsoidFrame;
+
+	}
+
+	get ellipsoidFrame() {
+
+		return this.ellipsoidGroup.matrixWorld;
 
 	}
 
@@ -57,9 +64,13 @@ export class GlobeControls extends EnvironmentControls {
 		this.globeInertiaFactor = 0;
 
 		this.ellipsoid = new Ellipsoid();
-		this.ellipsoidFrame = new Group();
+		this.ellipsoidGroup = new Group();
 
-		this.setTilesRenderer( tilesRenderer );
+		if ( tilesRenderer !== null ) {
+
+			this.setTilesRenderer( tilesRenderer );
+
+		}
 
 	}
 
@@ -74,24 +85,10 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	setScene( scene ) {
-
-		if ( scene === null && this.tilesRenderer !== null ) {
-
-			super.setScene( this.tilesRenderer.group );
-
-		} else {
-
-			super.setScene( scene );
-
-		}
-
-	}
-
-	setEllipsoid( ellipsoid, ellipsoidFrame ) {
+	setEllipsoid( ellipsoid, ellipsoidGroup ) {
 
 		this.ellipsoid = ellipsoid || new Ellipsoid();
-		this.ellipsoidFrame = ellipsoidFrame || new Group();
+		this.ellipsoidGroup = ellipsoidGroup || new Group();
 
 	}
 
