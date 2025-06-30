@@ -1262,22 +1262,22 @@ export class EnvironmentControls extends EventDispatcher {
 		// calculate current angles and clamp
 		_forward.set( 0, 0, 1 ).transformDirection( camera.matrixWorld );
 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		// this.getUpDirection( pivotPoint, _localUp );
-		this.getCameraUpDirection( _localUp );
+		this.getUpDirection( pivotPoint, _localUp );
 
 		// get the signed angle relative to the top down view
-		if ( _localUp.dot( _forward ) > 1 - 1e-2 ) {
+		let angle;
+		if ( _localUp.dot( _forward ) > 1 - 1e-10 ) {
 
-			_vec.copy( _right );
+			angle = 0;
 
 		} else {
 
 			_vec.crossVectors( _localUp, _forward ).normalize();
 
-		}
+			const sign = Math.sign( _vec.dot( _right ) );
+			angle = sign * _localUp.angleTo( _forward );
 
-		const sign = Math.sign( _vec.dot( _right ) );
-		const angle = sign * _localUp.angleTo( _forward );
+		}
 
 		// clamp the rotation to be within the provided limits
 		// clamp to 0 here, as well, so we don't "pop" to the the value range
@@ -1461,19 +1461,21 @@ export class EnvironmentControls extends EventDispatcher {
 		_right.set( 1, 0, 0 ).transformDirection( camera.matrixWorld );
 
 		// get the signed angle relative to the top down view
-		if ( up.dot( _forward ) > 1 - 1e-2 ) {
+		let angle;
+		if ( up.dot( _forward ) > 1 - 1e-10 ) {
 
-			_vec.copy( _right );
+			angle = 0;
 
 		} else {
 
 			_vec.crossVectors( up, _forward );
 
+			const sign = Math.sign( _vec.dot( _right ) );
+			angle = sign * up.angleTo( _forward );
+
 		}
 
 		// find the angle to target
-		const sign = Math.sign( _vec.dot( _right ) );
-		const angle = sign * up.angleTo( _forward );
 		let targetAngle;
 		if ( angle > maxAltitude ) {
 
