@@ -7,7 +7,7 @@ import {
 	Ray,
 	Group,
 } from 'three';
-import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
+import { DRAG, ZOOM, ROTATE, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
@@ -209,11 +209,21 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		const needsUpdate = this.needsUpdate;
+
 		// fire basic controls update
 		super.update( deltaTime );
 
 		// update the camera planes and the ortho camera position
 		this.adjustCamera( camera );
+
+		// align the camera up vector if the camera as updated
+		if ( needsUpdate && this._isNearControls() ) {
+
+			this.getCameraUpDirection( _globalUp );
+			this._alignCameraUp( _globalUp, 1 );
+
+		}
 
 	}
 
@@ -465,8 +475,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
-
 	}
 
 	// disable rotation once we're outside the control transition
@@ -484,7 +492,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
 
 	}
 
@@ -600,27 +607,55 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	// tilt the camera to align with the provided "up" value
-	_alignCameraUp( up, alpha = null ) {
+	_alignCameraUp( up, alpha = 1 ) {
 
-		const { camera } = this;
+		const { camera, state, pivotPoint, zoomPoint, zoomPointSet } = this;
+
+		// get the transform vectors
+		camera.updateMatrixWorld();
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
+
+		// compute an alpha based on the camera direction so we don't try to update the up direction
+		// when the camera is facing that way.
+		let multiplier = MathUtils.mapLinear( 1 - Math.abs( _forward.dot( up ) ), 0, 0.2, 0, 1 );
+		multiplier = MathUtils.clamp( multiplier, 0, 1 );
+		alpha *= multiplier;
+
+		// calculate the target direction for the right-facing vector
 		_targetRight.crossVectors( up, _forward );
+		_targetRight.lerp( _right, 1 - alpha ).normalize();
 
-		// compute the alpha based on how far away from boresight the up vector is
-		// so we can ease into the correct orientation
-		if ( alpha === null ) {
+		// adjust the camera transformation
+		_quaternion.setFromUnitVectors( _right, _targetRight );
+		camera.quaternion.premultiply( _quaternion );
 
-			alpha = 1 - Math.abs( _forward.dot( up ) );
-			alpha = MathUtils.mapLinear( alpha, 0, 1, - 0.01, 1 );
-			alpha = MathUtils.clamp( alpha, 0, 1 ) ** 2;
+		// calculate the active point
+		let fixedPoint = null;
+		if ( state === DRAG || state === ROTATE ) {
+
+			fixedPoint = _pos.copy( pivotPoint );
+
+		} else if ( zoomPointSet ) {
+
+			fixedPoint = _pos.copy( zoomPoint );
 
 		}
 
-		_targetRight.lerp( _right, 1 - alpha ).normalize();
+		// shift the camera in an effort to keep the fixed point in the same spot
+		if ( fixedPoint ) {
 
-		_quaternion.setFromUnitVectors( _right, _targetRight );
-		camera.quaternion.premultiply( _quaternion );
+			_invMatrix.copy( camera.matrixWorld ).invert();
+			_vec.copy( fixedPoint ).applyMatrix4( _invMatrix );
+
+			camera.updateMatrixWorld();
+			_vec.applyMatrix4( camera.matrixWorld );
+
+			_center.subVectors( fixedPoint, _vec );
+			camera.position.add( _center );
+
+		}
+
 		camera.updateMatrixWorld();
 
 	}
