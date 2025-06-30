@@ -110,6 +110,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// settings for GlobeControls
 		this.scaleZoomOrientationAtEdges = false;
+		this.autoAdjustCameraRotation = true;
 
 		// internal state
 		this.state = NONE;
@@ -663,6 +664,7 @@ export class EnvironmentControls extends EventDispatcher {
 			up,
 			state,
 			adjustHeight,
+			autoAdjustCameraRotation,
 		} = this;
 
 		camera.updateMatrixWorld();
@@ -681,6 +683,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
+		const adjustCameraRotation = this.needsUpdate || inertiaNeedsUpdate;
 		if ( this.needsUpdate || inertiaNeedsUpdate ) {
 
 			const zoomDelta = this.zoomDelta;
@@ -752,6 +755,17 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		this.pointerTracker.updateFrame();
+
+		if ( adjustCameraRotation && autoAdjustCameraRotation ) {
+
+			this.getCameraUpDirection( _localUp );
+			this._alignCameraUp( _localUp, 1 );
+
+			this.getCameraUpDirection( _localUp );
+			this._clampRotation( _localUp );
+
+
+		}
 
 	}
 

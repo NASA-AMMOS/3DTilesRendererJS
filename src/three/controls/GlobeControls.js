@@ -67,6 +67,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.nearMargin = 0.25;
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
+		this.autoAdjustCameraRotation = false;
 
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
@@ -208,7 +209,7 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		const needsUpdate = this.needsUpdate;
+		const adjustCameraRotation = this.needsUpdate || this._inertiaNeedsUpdate();
 
 		// fire basic controls update
 		super.update( deltaTime );
@@ -217,7 +218,7 @@ export class GlobeControls extends EnvironmentControls {
 		this.adjustCamera( camera );
 
 		// align the camera up vector if the camera as updated
-		if ( needsUpdate && this._isNearControls() ) {
+		if ( adjustCameraRotation && this._isNearControls() ) {
 
 			this.getCameraUpDirection( _globalUp );
 			this._alignCameraUp( _globalUp, 1 );
