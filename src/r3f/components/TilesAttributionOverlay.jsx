@@ -2,6 +2,12 @@ import { useContext, useState, useEffect, useMemo } from 'react';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
+function randomID() {
+
+	return crypto.getRandomValues( new Uint32Array( 1 ) )[ 0 ].toString( 16 );
+
+}
+
 // Overlay for displaying tile data set attributions
 export function TilesAttributionOverlay( { children, style, generateAttributions, ...rest } ) {
 
@@ -47,7 +53,7 @@ export function TilesAttributionOverlay( { children, style, generateAttributions
 	}, [ tiles ] );
 
 	// Generate CSS for modifying child elements implicit to the html attributions
-	const classId = useMemo( () => 'class_' + window.crypto.randomUUID(), [] );
+	const classId = useMemo( () => 'class_' + randomID(), [] );
 	const styles = useMemo( () => `
 		#${ classId } a {
 			color: white;
