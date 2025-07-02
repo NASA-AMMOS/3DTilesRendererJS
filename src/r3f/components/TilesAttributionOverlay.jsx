@@ -2,19 +2,9 @@ import { useContext, useState, useEffect, useMemo } from 'react';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
 
-function randomUUID() {
+function randomID() {
 
-	if ( window.crypto.randomUUID ) {
-
-		return window.crypto.randomUUID();
-
-	}
-
-	// https://stackoverflow.com/a/2117523
-	return '10000000-1000-4000-8000-100000000000'.replace(
-		/[018]/g,
-		c => ( + c ^ crypto.getRandomValues( new Uint8Array( 1 ) )[ 0 ] & 15 >> + c / 4 ).toString( 16 )
-	);
+	return crypto.getRandomValues( new Uint32Array( 1 ) )[ 0 ].toString( 16 );
 
 }
 
@@ -63,7 +53,7 @@ export function TilesAttributionOverlay( { children, style, generateAttributions
 	}, [ tiles ] );
 
 	// Generate CSS for modifying child elements implicit to the html attributions
-	const classId = useMemo( () => 'class_' + randomUUID(), [] );
+	const classId = useMemo( () => 'class_' + randomID(), [] );
 	const styles = useMemo( () => `
 		#${ classId } a {
 			color: white;
