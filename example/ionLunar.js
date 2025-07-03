@@ -39,7 +39,7 @@ function reinstantiateTiles() {
 	scene.add( tiles.group );
 
 	tiles.setCamera( camera );
-	controls.setTilesRenderer( tiles );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
 }
 

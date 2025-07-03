@@ -71,8 +71,10 @@ export class DataCache {
 				bytes: 0,
 			};
 
-			info.result = this.fetchItem( ...args, abortController.signal )
-				.then( res => {
+			info.result = this.fetchItem( ...args, abortController.signal );
+			if ( info.result instanceof Promise ) {
+
+				info.result.then( res => {
 
 					info.result = res;
 					info.bytes = this.getMemoryUsage( res );
@@ -80,6 +82,13 @@ export class DataCache {
 					return res;
 
 				} );
+
+			} else {
+
+				info.bytes = this.getMemoryUsage( info.result );
+				this.cachedBytes += info.bytes;
+
+			}
 
 			this.cache[ key ] = info;
 			this.count ++;
@@ -103,7 +112,7 @@ export class DataCache {
 
 		const { cache } = this;
 		const key = hash( ...args );
-		if ( key in cache ) {
+		if ( key in cache && cache[ key ].count > 0 ) {
 
 			return cache[ key ].result;
 
@@ -112,6 +121,14 @@ export class DataCache {
 			return null;
 
 		}
+
+	}
+
+	has( ...args ) {
+
+		const { cache } = this;
+		const key = hash( ...args );
+		return key in cache;
 
 	}
 
@@ -136,7 +153,7 @@ export class DataCache {
 	releaseViaFullKey( key, force = false ) {
 
 		const { cache } = this;
-		if ( key in cache ) {
+		if ( key in cache && cache[ key ].count > 0 ) {
 
 			// decrement the lock
 			const info = cache[ key ];
@@ -147,7 +164,7 @@ export class DataCache {
 
 				const disposeCallback = () => {
 
-					// if the object isn't in the cache anymore then exit early
+					// if the object isn't in the cache anymore then exit early because it's been disposed elsewhere
 					if ( cache[ key ] !== info ) {
 
 						return;
@@ -201,11 +218,9 @@ export class DataCache {
 
 			return true;
 
-		} else {
-
-			throw new Error( 'DataCache: Attempting to release key that does not exist' );
-
 		}
+
+		throw new Error( 'DataCache: Attempting to release key that does not exist' );
 
 	}
 

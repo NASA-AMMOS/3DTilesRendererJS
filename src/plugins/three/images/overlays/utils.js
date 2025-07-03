@@ -92,7 +92,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, projection ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, tiling ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -124,14 +124,15 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	} );
 
-	const minU = projection.convertLongitudeToProjection( minLon );
-	const maxU = projection.convertLongitudeToProjection( maxLon );
-
-	let minV = projection.convertLatitudeToProjection( minLat );
-	let maxV = projection.convertLatitudeToProjection( maxLat );
-	minV = MathUtils.clamp( minV, 0, 1 );
-	maxV = MathUtils.clamp( maxV, 0, 1 );
-
+	// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
+	// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
+	// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
+	// that show the underlying tile data. It's arguable which one is better but in all supported
+	// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
+	// globe range.
+	// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
+	const clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+	const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 	uvs.forEach( uv => {
 
 		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
@@ -139,10 +140,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 			const lon = uv[ i + 0 ];
 			const lat = uv[ i + 1 ];
 
-			const u = projection.convertLongitudeToProjection( lon );
-			let v = projection.convertLatitudeToProjection( lat );
-			v = MathUtils.clamp( v, 0, 1 );
-
+			const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
 			uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 			uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 
@@ -152,7 +150,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		range: [ minLon, minLat, maxLon, maxLat ],
+		range: clampedRange,
 	};
 
 }
@@ -189,7 +187,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 }
 
-export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
+export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 	// find the U / V ranges
 	let minU = Infinity;
@@ -209,7 +207,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, aspect ) {
 
 		}
 
-		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, aspect );
+		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspect );
 		uvs.push( uv );
 
 		// save the min and max values

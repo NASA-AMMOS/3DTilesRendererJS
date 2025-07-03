@@ -87,7 +87,7 @@ function reinstantiateTiles() {
 	tiles.setResolutionFromRenderer( transition.camera, renderer );
 	tiles.setCamera( transition.camera );
 
-	controls.setTilesRenderer( tiles );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
 }
 
@@ -207,7 +207,7 @@ function updateHash() {
 
 	}
 
-	if ( transition.mode !== 'perspective' ) {
+	if ( transition.mode !== 'perspective' && ! transition.animating ) {
 
 		controls.getPivotPoint( transition.fixedPoint );
 		transition.syncCameras();
@@ -216,22 +216,16 @@ function updateHash() {
 
 	const camera = transition.perspectiveCamera;
 	const cartographicResult = {};
-	const orientationResult = {};
 	const tilesMatInv = tiles.group.matrixWorld.clone().invert();
-	const localCameraPos = camera.position.clone().applyMatrix4( tilesMatInv );
 	const localCameraMat = camera.matrixWorld.clone().premultiply( tilesMatInv );
 
 	// get the data
-	WGS84_ELLIPSOID.getPositionToCartographic( localCameraPos, cartographicResult );
-	WGS84_ELLIPSOID.getAzElRollFromRotationMatrix(
-		cartographicResult.lat, cartographicResult.lon, localCameraMat,
-		orientationResult, CAMERA_FRAME,
-	);
+	WGS84_ELLIPSOID.getCartographicFromObjectFrame( localCameraMat, cartographicResult, CAMERA_FRAME );
 
 	// convert to DEG
-	orientationResult.azimuth *= MathUtils.RAD2DEG;
-	orientationResult.elevation *= MathUtils.RAD2DEG;
-	orientationResult.roll *= MathUtils.RAD2DEG;
+	cartographicResult.azimuth *= MathUtils.RAD2DEG;
+	cartographicResult.elevation *= MathUtils.RAD2DEG;
+	cartographicResult.roll *= MathUtils.RAD2DEG;
 	cartographicResult.lat *= MathUtils.RAD2DEG;
 	cartographicResult.lon *= MathUtils.RAD2DEG;
 
@@ -240,9 +234,9 @@ function updateHash() {
 	urlParams.set( 'lat', cartographicResult.lat.toFixed( 4 ) );
 	urlParams.set( 'lon', cartographicResult.lon.toFixed( 4 ) );
 	urlParams.set( 'height', cartographicResult.height.toFixed( 2 ) );
-	urlParams.set( 'az', orientationResult.azimuth.toFixed( 2 ) );
-	urlParams.set( 'el', orientationResult.elevation.toFixed( 2 ) );
-	urlParams.set( 'roll', orientationResult.roll.toFixed( 2 ) );
+	urlParams.set( 'az', cartographicResult.azimuth.toFixed( 2 ) );
+	urlParams.set( 'el', cartographicResult.elevation.toFixed( 2 ) );
+	urlParams.set( 'roll', cartographicResult.roll.toFixed( 2 ) );
 
 	if ( params.useBatchedMesh ) {
 
@@ -286,8 +280,8 @@ function initFromHash() {
 		const roll = parseFloat( urlParams.get( 'roll' ) ) || 0;
 
 		// extract the east-north-up frame into matrix world
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll(
-			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD,
+		WGS84_ELLIPSOID.getObjectFrame(
+			lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height,
 			az * MathUtils.DEG2RAD, el * MathUtils.DEG2RAD, roll * MathUtils.DEG2RAD,
 			camera.matrixWorld, CAMERA_FRAME,
 		);
@@ -295,10 +289,6 @@ function initFromHash() {
 		// apply the necessary tiles transform
 		camera.matrixWorld.premultiply( tiles.group.matrixWorld );
 		camera.matrixWorld.decompose( camera.position, camera.quaternion, camera.scale );
-
-		// get the height
-		WGS84_ELLIPSOID.getCartographicToPosition( lat * MathUtils.DEG2RAD, lon * MathUtils.DEG2RAD, height, camera.position );
-		camera.position.applyMatrix4( tiles.group.matrixWorld );
 
 	} else {
 

@@ -284,27 +284,36 @@ describe( 'Ellipsoid Azimuth Elevation', () => {
 	it( 'should produce the same values when retrieving data.', () => {
 
 		const mat = new Matrix4();
-		const LAT = 35.6586;
-		const LON = 139.7454;
+		const LAT = 35.6586 * MathUtils.DEG2RAD;
+		const LON = 139.7454 * MathUtils.DEG2RAD;
 		const angles = 25 * MathUtils.DEG2RAD;
 		const res = {};
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, 0, 0, 0, mat );
-		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getObjectFrame( LAT, LON, 0, 0, 0, 0, mat );
+		WGS84_ELLIPSOID.getCartographicFromObjectFrame( mat, res );
 
+		expect( res.height ).toBeCloseTo( 0 );
+		expect( res.lat ).toBeCloseTo( LAT );
+		expect( res.lon ).toBeCloseTo( LON );
 		expect( res.elevation ).toBeCloseTo( 0 );
 		expect( res.azimuth ).toBeCloseTo( 0 );
 		expect( res.roll ).toBeCloseTo( 0 );
 
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, angles, angles, angles, mat );
-		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getObjectFrame( LAT, LON, 0, angles, angles, angles, mat );
+		WGS84_ELLIPSOID.getCartographicFromObjectFrame( mat, res );
 
+		expect( res.height ).toBeCloseTo( 0 );
+		expect( res.lat ).toBeCloseTo( LAT );
+		expect( res.lon ).toBeCloseTo( LON );
 		expect( res.elevation ).toBeCloseTo( angles );
 		expect( res.azimuth ).toBeCloseTo( angles );
 		expect( res.roll ).toBeCloseTo( angles );
 
-		WGS84_ELLIPSOID.getRotationMatrixFromAzElRoll( LAT, LON, - angles, - angles, - angles, mat );
-		WGS84_ELLIPSOID.getAzElRollFromRotationMatrix( LAT, LON, mat, res );
+		WGS84_ELLIPSOID.getObjectFrame( LAT, LON, 0, - angles, - angles, - angles, mat );
+		WGS84_ELLIPSOID.getCartographicFromObjectFrame( mat, res );
 
+		expect( res.height ).toBeCloseTo( 0 );
+		expect( res.lat ).toBeCloseTo( LAT );
+		expect( res.lon ).toBeCloseTo( LON );
 		expect( res.elevation ).toBeCloseTo( - angles );
 		expect( res.azimuth ).toBeCloseTo( - angles );
 		expect( res.roll ).toBeCloseTo( - angles );

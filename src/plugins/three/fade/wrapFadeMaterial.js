@@ -1,12 +1,22 @@
 // Adjusts the provided material to support fading in and out using a bayer pattern. Providing a "previous"
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
+const FADE_PARAMS = Symbol( 'FADE_PARAMS' );
 export function wrapFadeMaterial( material, previousOnBeforeCompile ) {
+
+	// if the material has already been wrapped then return the params
+	if ( material[ FADE_PARAMS ] ) {
+
+		return material[ FADE_PARAMS ];
+
+	}
 
 	const params = {
 		fadeIn: { value: 0 },
 		fadeOut: { value: 0 },
 		fadeTexture: { value: null },
 	};
+
+	material[ FADE_PARAMS ] = params;
 
 	material.defines = {
 		...( material.defines || {} ),

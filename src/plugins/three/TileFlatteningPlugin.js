@@ -1,44 +1,37 @@
-import { DoubleSide, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
-import { OBB } from '../../three/math/OBB.js';
+import { Box3, DoubleSide, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
 
 // Limitations:
 // - No support for BatchedTilesPlugin when resetting or modifying geometry
 // - Sharing geometry between models may result in incorrect flattening
 
 const _sphere = /* @__PURE__ */ new Sphere();
-const _obb = /* @__PURE__ */ new OBB();
 const _vec = /* @__PURE__ */ new Vector3();
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _doubleSidedMaterial = /* @__PURE__ */ new MeshBasicMaterial( { side: DoubleSide } );
+const _box = /* @__PURE__ */ new Box3();
 const RAYCAST_DISTANCE = 1e5;
 
 function calculateSphere( object, target ) {
 
-	if ( object instanceof OBB ) {
+	if ( object.isBufferGeometry ) {
 
-		_obb.copy( object );
+		if ( object.boundingSphere === null ) {
+
+			object.computeBoundingSphere();
+
+		}
+
+		return target.copy( object.boundingSphere );
 
 	} else {
 
-		// clone the object so we can calculate the root bounding box
-		const clone = object.clone();
-		clone.position.set( 0, 0, 0 );
-		clone.quaternion.identity();
-		clone.scale.setScalar( 1 );
-
-		// construct obb
-		_obb.box.setFromObject( clone, true );
-		_obb.box.getSize( _vec );
-		_obb.transform.copy( object.matrix );
+		_box.setFromObject( object );
+		_box.getBoundingSphere( target );
+		return target;
 
 	}
-
-	// get sphere
-	_obb.box.getBoundingSphere( target ).applyMatrix4( _obb.transform );
-
-	return target;
 
 }
 
@@ -139,68 +132,70 @@ export class TileFlatteningPlugin {
 
 		}
 
-		const ray = _raycaster.ray;
-		shapes.forEach( ( {
-			shape,
-			direction,
-			sphere,
-			threshold,
-		} ) => {
+		// TODO: if we save the sphere of the original mesh we can check the height to limit the tiles checked
+		// TODO: we should use the tile bounding volume sphere if present
+		scene.updateMatrixWorld( true );
 
-			// TODO: if we save the sphere of the original mesh we can check the height to limit the tiles checked
-			// TODO: we should use the tile bounding volume sphere if present
+		// iterate over every geometry
+		scene.traverse( c => {
 
-			// calculate the project distance between circles
-			const { boundingVolume } = tile.cached;
-			calculateSphere( boundingVolume.obb || boundingVolume.regionObb, _sphere );
-			_vec.subVectors( _sphere.center, sphere.center );
-			_vec.addScaledVector( direction, - direction.dot( _vec ) );
+			const { geometry } = c;
 
-			const r2 = ( _sphere.radius + sphere.radius ) ** 2;
-			if ( _vec.lengthSq() > r2 ) {
+			if ( ! geometry ) {
 
 				return;
 
 			}
 
-			// prepare the shape and ray
-			ray.direction.copy( direction ).multiplyScalar( - 1 );
+			// calculate matrices
+			_matrix.copy( c.matrixWorld );
+			if ( scene.parent !== null ) {
 
-			scene.updateMatrixWorld( true );
+				_matrix.premultiply( tiles.group.matrixWorldInverse );
 
-			// iterate over every geometry
-			scene.traverse( c => {
+			}
 
-				if ( c.geometry ) {
+			_invMatrix.copy( _matrix ).invert();
 
-					const { position } = c.geometry.attributes;
-					position.needsUpdate = true;
+			// calculate sphere for mesh
+			calculateSphere( geometry, _sphere ).applyMatrix4( _matrix );
 
-					_matrix.copy( c.matrixWorld );
-					if ( scene.parent !== null ) {
+			// iterate over each shape
+			shapes.forEach( ( {
+				shape,
+				direction,
+				sphere,
+				threshold,
+			} ) => {
 
-						_matrix.premultiply( tiles.group.matrixWorldInverse );
+				// check if the spheres overlap so there may actually be potential of geometry overlap
+				_vec.subVectors( _sphere.center, sphere.center );
+				_vec.addScaledVector( direction, - direction.dot( _vec ) );
 
-					}
+				const r2 = ( _sphere.radius + sphere.radius ) ** 2;
+				if ( _vec.lengthSq() > r2 ) {
 
-					_invMatrix.copy( _matrix ).invert();
+					return;
 
-					// iterate over every vertex position
-					for ( let i = 0, l = position.count; i < l; i ++ ) {
+				}
 
-						ray.origin
-							.fromBufferAttribute( position, i )
-							.applyMatrix4( _matrix )
-							.addScaledVector( direction, RAYCAST_DISTANCE );
-						_raycaster.far = RAYCAST_DISTANCE;
+				// iterate over every vertex position
+				const { position } = geometry.attributes;
+				const { ray } = _raycaster;
+				ray.direction.copy( direction ).multiplyScalar( - 1 );
+				for ( let i = 0, l = position.count; i < l; i ++ ) {
 
-						const hit = _raycaster.intersectObject( shape )[ 0 ];
-						if ( hit && RAYCAST_DISTANCE - hit.distance < threshold ) {
+					ray.origin
+						.fromBufferAttribute( position, i )
+						.applyMatrix4( _matrix )
+						.addScaledVector( direction, RAYCAST_DISTANCE );
+					_raycaster.far = RAYCAST_DISTANCE;
 
-							hit.point.applyMatrix4( _invMatrix );
-							position.setXYZ( i, ...hit.point );
+					const hit = _raycaster.intersectObject( shape )[ 0 ];
+					if ( hit && RAYCAST_DISTANCE - hit.distance < threshold ) {
 
-						}
+						hit.point.applyMatrix4( _invMatrix );
+						position.setXYZ( i, ...hit.point );
 
 					}
 
@@ -209,6 +204,7 @@ export class TileFlatteningPlugin {
 			} );
 
 		} );
+
 
 		this.tiles.dispatchEvent( { type: 'needs-render' } );
 
@@ -238,11 +234,8 @@ export class TileFlatteningPlugin {
 
 		this.needsUpdate = true;
 
-		mesh.updateMatrix();
-
-		const sphere = calculateSphere( mesh, new Sphere() );
 		const shape = mesh.clone();
-		shape.matrixWorld.copy( shape.matrix );
+		shape.updateMatrixWorld( true );
 		shape.traverse( c => {
 
 			if ( c.material ) {
@@ -253,6 +246,7 @@ export class TileFlatteningPlugin {
 
 		} );
 
+		const sphere = calculateSphere( shape, new Sphere() );
 		this.shapes.set( mesh, {
 			shape: shape,
 			direction: direction.clone(),
@@ -270,22 +264,9 @@ export class TileFlatteningPlugin {
 
 		}
 
-		this.needsUpdate = true;
-
-		mesh.updateMatrix();
-
-		const info = this.shapes.get( mesh );
-		calculateSphere( mesh, info.sphere );
-		info.shape = mesh.clone();
-		info.shape.traverse( c => {
-
-			if ( c.material ) {
-
-				c.material = _doubleSidedMaterial;
-
-			}
-
-		} );
+		const { direction, threshold } = this.shapes.get( mesh );
+		this.deleteShape( mesh );
+		this.addShape( mesh, direction, threshold );
 
 	}
 

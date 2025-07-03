@@ -675,7 +675,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const { tiling, projection, imageSource } = overlay;
+		const { tiling, imageSource } = overlay;
 		const info = tileInfo.get( tile );
 		let range, uvs;
 
@@ -689,7 +689,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, overlay.tiling.aspect ) );
+			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
 
 		} else {
 
@@ -700,22 +700,17 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
 
 		}
 
-		let clampedRange;
 		let normalizedRange;
 		if ( ! overlay.isPlanarProjection ) {
 
-			// if rendering for ellipsoid projection then clamp the range for iteration
-			// so we're not requesting tiles at extremely large numbers in the web-mercator case
-			clampedRange = tiling.clampToBounds( range );
-			normalizedRange = tiling.toNormalizedRange( clampedRange );
+			normalizedRange = tiling.toNormalizedRange( range );
 
 		} else {
 
-			clampedRange = tiling.clampToBounds( range, true );
 			normalizedRange = range;
 
 		}
@@ -730,7 +725,7 @@ export class ImageOverlayPlugin {
 		// if there are no textures to draw in the tiled image set the don't
 		// allocate a texture for it.
 		let target = null;
-		if ( countTilesInRange( clampedRange, info.level, overlay ) !== 0 ) {
+		if ( countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
 			target = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
@@ -741,7 +736,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		info.meshRange = clampedRange;
+		info.meshRange = range;
 		info.target = target;
 
 		meshes.forEach( ( mesh, i ) => {
@@ -759,7 +754,7 @@ export class ImageOverlayPlugin {
 
 					info.meshRangeMarked = true;
 
-					const promise = markOverlayImages( clampedRange, info.level, overlay, false );
+					const promise = markOverlayImages( range, info.level, overlay, false );
 					if ( promise ) {
 
 						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
@@ -767,7 +762,7 @@ export class ImageOverlayPlugin {
 						tileComposer.setRenderTarget( target, normalizedRange );
 						tileComposer.clear( 0xffffff, 0 );
 
-						forEachTileInBounds( clampedRange, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 							// draw using normalized bounds since the mercator bounds are non-linear
 							const span = tiling.getTileBounds( tx, ty, tl, true );
@@ -797,7 +792,7 @@ export class ImageOverlayPlugin {
 					tileComposer.setRenderTarget( target, normalizedRange );
 					tileComposer.clear( 0xffffff, 0 );
 
-					forEachTileInBounds( clampedRange, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 						// draw using normalized bounds since the mercator bounds are non-linear
 						const span = tiling.getTileBounds( tx, ty, tl, true );
@@ -1029,9 +1024,9 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 		super( options );
 
-		const { apiToken, authRefreshToken, assetId } = options;
+		const { apiToken, autoRefreshToken, assetId } = options;
 		this.assetId = assetId;
-		this.auth = new CesiumIonAuth( { apiToken, authRefreshToken } );
+		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
 		this.imageSource = new TMSImageSource( options );
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
@@ -1080,9 +1075,9 @@ export class GoogleMapsOverlay extends ImageOverlay {
 
 		super( options );
 
-		const { apiToken, sessionOptions, authRefreshToken, logoUrl } = options;
+		const { apiToken, sessionOptions, autoRefreshToken, logoUrl } = options;
 		this.logoUrl = logoUrl;
-		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, authRefreshToken } );
+		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
 
 		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );

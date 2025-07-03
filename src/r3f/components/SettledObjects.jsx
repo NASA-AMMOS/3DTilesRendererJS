@@ -42,7 +42,7 @@ export const AnimatedSettledObject = forwardRef( function AnimatedSettledObject(
 			target.copy( hit.point );
 			isTargetSet.value = true;
 
-			queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
+			queries.ellipsoid.getObjectFrame( lat, lon, 0, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 			objectRef.current.quaternion.setFromRotationMatrix( _matrix );
 			invalidate();
 
@@ -148,7 +148,7 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 				if ( lat !== null && lon !== null ) {
 
 					objectRef.current.position.copy( hit.point );
-					queries.ellipsoid.getRotationMatrixFromAzElRoll( lat, lon, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
+					queries.ellipsoid.getObjectFrame( lat, lon, 0, 0, 0, 0, _matrix, OBJECT_FRAME ).premultiply( tiles.group.matrixWorld );
 					objectRef.current.quaternion.setFromRotationMatrix( _matrix );
 					invalidate();
 

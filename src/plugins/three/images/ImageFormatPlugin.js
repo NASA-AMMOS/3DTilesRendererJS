@@ -70,6 +70,12 @@ export class ImageFormatPlugin {
 
 	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
+		if ( abortSignal.aborted ) {
+
+			return null;
+
+		}
+
 		// Construct texture
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
@@ -118,7 +124,13 @@ export class ImageFormatPlugin {
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		this.imageSource.release( tx, ty, level );
+		const { imageSource } = this;
+		if ( imageSource.has( tx, ty, level ) ) {
+
+			// only dispose of the image data if it hasn't been aborted
+			imageSource.release( tx, ty, level );
+
+		}
 
 	}
 

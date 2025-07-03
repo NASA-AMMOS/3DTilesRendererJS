@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.4.12] - Unreleased
+### Fixed
+- R3F TilesAttributionOverlay not functioning on non-HTTPS domains.
+- Support for React 19 while maintaining React 18 support.
+
+## [0.4.11] - 2025.07.01
 ### Added
 - Add "ImageOverlayPlugin".
 - DebugTilesRenderer: Added "unlit" option.
 - GoogleCloudAuthPlugin: Added support for creating a session that supports loading 2d map tiles.
-- Support for React 19 while maintaining React 18 support.
+- Ellipsoid: Added "getOrientedEastNorthUpFrame", "getObjectFrame", "getCartographicFromObjectFrame" functions.
+- ReorientationPlugin: Add suppor for setting azimuth, elevation, roll
 
 ### Fixed
 - TilesRendererBase: Fixed plugins not being disposed of correctly.
@@ -17,6 +23,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed some type definitions.
 - GlobeControls: Adjust the perspective camera.far calculation to better limit loaded tiles.
 - DebugTilesPlugin: Fix case where the plugin could not be disabled before registration.
+- Fix case where properties would fail to add if they looked like events with an "on" prefix.
+- Simplify the TileFlatteningPlugin implementation.
+- ReorientationPlugin: Fix plugin disposal not removing an event correctly.
+- ReorientationPlugin: Fix plugin not working if added after TilesRenderer initialization.
+- TopoLinesPlugin: Ensure the plugin can be added after TilesRenderer initialization.
+- TopoLinesPlugin, TilesFadePlugin, ImageOverlayPlugin: Ensure plugins are resilient to being removed and added again.
+- R3F: Fixed case where plugins may not have been able to register before the first call to TilesRenderer.update.
+
+### Changed
+- Ellipsoid: Deprecated "getAzElRollFromRotationMatrix", "getRotationMatrixFromAzElRoll", "getFrame" functions.
+- GlobeControls, EnvironmentControls: Deprecate "setTilesRenderer" function in favor of "setScene" and "setEllipsoid" functions.
+- R3F GlobeControls, EnvironmentControls: Add "ellipsoid" and "ellipsoidGroup" properties.
 
 ## [0.4.10] - 2025.05.31
 ### Fixed

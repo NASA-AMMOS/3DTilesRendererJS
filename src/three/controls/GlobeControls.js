@@ -5,10 +5,12 @@ import {
 	Vector3,
 	MathUtils,
 	Ray,
+	Group,
 } from 'three';
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
 import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
 const _invMatrix = /* @__PURE__ */ new Matrix4();
 const _rotMatrix = /* @__PURE__ */ new Matrix4();
@@ -16,7 +18,6 @@ const _pos = /* @__PURE__ */ new Vector3();
 const _vec = /* @__PURE__ */ new Vector3();
 const _center = /* @__PURE__ */ new Vector3();
 const _forward = /* @__PURE__ */ new Vector3();
-const _right = /* @__PURE__ */ new Vector3();
 const _targetRight = /* @__PURE__ */ new Vector3();
 const _globalUp = /* @__PURE__ */ new Vector3();
 const _quaternion = /* @__PURE__ */ new Quaternion();
@@ -31,15 +32,25 @@ const _latLon = {};
 const MIN_ELEVATION = 2550;
 export class GlobeControls extends EnvironmentControls {
 
-	get ellipsoid() {
+	get tilesGroup() {
 
-		return this.tilesRenderer ? this.tilesRenderer.ellipsoid : null;
+		console.warn( 'GlobeControls: "tilesGroup" has been deprecated. Use "ellipsoidGroup", instead.' );
+		return this.ellipsoidFrame;
 
 	}
 
-	get tilesGroup() {
+	get ellipsoidFrame() {
 
-		return this.tilesRenderer ? this.tilesRenderer.group : null;
+		return this.ellipsoidGroup.matrixWorld;
+
+	}
+
+	get ellipsoidFrameInverse() {
+
+		const { ellipsoidGroup, ellipsoidFrame, _ellipsoidFrameInverse } = this;
+		return ellipsoidGroup.matrixWorldInverse ?
+			ellipsoidGroup.matrixWorldInverse :
+			_ellipsoidFrameInverse.copy( ellipsoidFrame ).invert();
 
 	}
 
@@ -56,32 +67,44 @@ export class GlobeControls extends EnvironmentControls {
 		this.nearMargin = 0.25;
 		this.farMargin = 0;
 		this.useFallbackPlane = false;
-		this.reorientOnDrag = false;
+		this.autoAdjustCameraRotation = false;
 
 		this.globeInertia = new Quaternion();
 		this.globeInertiaFactor = 0;
 
-		this.setTilesRenderer( tilesRenderer );
+		this.ellipsoid = WGS84_ELLIPSOID.clone();
+		this.ellipsoidGroup = new Group();
+		this._ellipsoidFrameInverse = new Matrix4();
 
-	}
+		if ( tilesRenderer !== null ) {
 
-	setScene( scene ) {
-
-		if ( scene === null && this.tilesRenderer !== null ) {
-
-			super.setScene( this.tilesRenderer.group );
-
-		} else {
-
-			super.setScene( scene );
+			this.setTilesRenderer( tilesRenderer );
 
 		}
 
 	}
 
+	setTilesRenderer( tilesRenderer ) {
+
+		super.setTilesRenderer( tilesRenderer );
+		if ( tilesRenderer !== null ) {
+
+			this.setEllipsoid( tilesRenderer.ellipsoid, tilesRenderer.group );
+
+		}
+
+	}
+
+	setEllipsoid( ellipsoid, ellipsoidGroup ) {
+
+		this.ellipsoid = ellipsoid || WGS84_ELLIPSOID.clone();
+		this.ellipsoidGroup = ellipsoidGroup || new Group();
+
+	}
+
 	getPivotPoint( target ) {
 
-		const { camera, tilesGroup, ellipsoid } = this;
+		const { camera, ellipsoidFrame, ellipsoidFrameInverse, ellipsoid } = this;
 
 		// get camera values
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
@@ -89,16 +112,16 @@ export class GlobeControls extends EnvironmentControls {
 		// set a ray in the local ellipsoid frame
 		_ray.origin.copy( camera.position );
 		_ray.direction.copy( _forward );
-		_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
+		_ray.applyMatrix4( ellipsoidFrameInverse );
 
 		// get the estimated closest point
 		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
-		_vec.applyMatrix4( tilesGroup.matrixWorld );
+		_vec.applyMatrix4( ellipsoidFrame );
 
 		// use the closest point if no pivot was provided or it's closer
 		if (
 			super.getPivotPoint( target ) === null ||
-			target.distanceTo( _ray.origin ) > _vec.distanceTo( _ray.origin )
+			_pos.subVectors( target, _ray.origin ).dot( _ray.direction ) > _pos.subVectors( _vec, _ray.origin ).dot( _ray.direction )
 		) {
 
 			target.copy( _vec );
@@ -112,9 +135,9 @@ export class GlobeControls extends EnvironmentControls {
 	// get the vector to the center of the provided globe
 	getVectorToCenter( target ) {
 
-		const { tilesGroup, camera } = this;
+		const { ellipsoidFrame, camera } = this;
 		return target
-			.setFromMatrixPosition( tilesGroup.matrixWorld )
+			.setFromMatrixPosition( ellipsoidFrame )
 			.sub( camera.position );
 
 	}
@@ -131,25 +154,25 @@ export class GlobeControls extends EnvironmentControls {
 	getUpDirection( point, target ) {
 
 		// get the "up" direction based on the wgs84 ellipsoid
-		const { tilesGroup, ellipsoid } = this;
-		_vec.copy( point ).applyMatrix4( tilesGroup.matrixWorldInverse );
+		const { ellipsoidFrame, ellipsoidFrameInverse, ellipsoid } = this;
+		_vec.copy( point ).applyMatrix4( ellipsoidFrameInverse );
 
 		ellipsoid.getPositionToNormal( _vec, target );
-		target.transformDirection( tilesGroup.matrixWorld );
+		target.transformDirection( ellipsoidFrame );
 
 	}
 
 	getCameraUpDirection( target ) {
 
-		const { tilesGroup, ellipsoid, camera } = this;
+		const { ellipsoidFrame, ellipsoidFrameInverse, ellipsoid, camera } = this;
 		if ( camera.isOrthographicCamera ) {
 
 			this._getVirtualOrthoCameraPosition( _vec );
 
-			_vec.applyMatrix4( tilesGroup.matrixWorldInverse );
+			_vec.applyMatrix4( ellipsoidFrameInverse );
 
 			ellipsoid.getPositionToNormal( _vec, target );
-			target.transformDirection( tilesGroup.matrixWorld );
+			target.transformDirection( ellipsoidFrame );
 
 		} else {
 
@@ -161,7 +184,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
-		if ( ! this.enabled || ! this.tilesGroup || ! this.camera || deltaTime === 0 ) {
+		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 
 			return;
 
@@ -186,13 +209,27 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
+		const adjustCameraRotation = this.needsUpdate || this._inertiaNeedsUpdate();
+
 		// fire basic controls update
 		super.update( deltaTime );
 
 		// update the camera planes and the ortho camera position
 		this.adjustCamera( camera );
 
+		// align the camera up vector if the camera as updated
+		if ( adjustCameraRotation && this._isNearControls() ) {
+
+			this.getCameraUpDirection( _globalUp );
+			this._alignCameraUp( _globalUp, 1 );
+
+			this.getCameraUpDirection( _globalUp );
+			this._clampRotation( _globalUp );
+
+		}
+
 	}
+
 
 	// Updates the passed camera near and far clip planes to encapsulate the ellipsoid from the
 	// current position in addition to adjusting the height.
@@ -200,13 +237,13 @@ export class GlobeControls extends EnvironmentControls {
 
 		super.adjustCamera( camera );
 
-		const { tilesGroup, ellipsoid, nearMargin, farMargin } = this;
+		const { ellipsoidFrame, ellipsoidFrameInverse, ellipsoid, nearMargin, farMargin } = this;
 		const maxRadius = Math.max( ...ellipsoid.radius );
 		if ( camera.isPerspectiveCamera ) {
 
 			// adjust the clip planes
 			const distanceToCenter = _vec
-				.setFromMatrixPosition( tilesGroup.matrixWorld )
+				.setFromMatrixPosition( ellipsoidFrame )
 				.sub( camera.position ).length();
 
 			// update the projection matrix
@@ -218,7 +255,7 @@ export class GlobeControls extends EnvironmentControls {
 			camera.near = Math.max( minNear, distanceToCenter - maxRadius - margin );
 
 			// update the far plane to the horizon distance
-			_pos.copy( camera.position ).applyMatrix4( tilesGroup.matrixWorldInverse );
+			_pos.copy( camera.position ).applyMatrix4( ellipsoidFrameInverse );
 			ellipsoid.getPositionToCartographic( _pos, _latLon );
 
 			// use a minimum elevation for computing the horizon distance to avoid the far clip
@@ -236,7 +273,7 @@ export class GlobeControls extends EnvironmentControls {
 			camera.updateMatrixWorld();
 
 			_invMatrix.copy( camera.matrixWorld ).invert();
-			_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).applyMatrix4( _invMatrix );
+			_vec.setFromMatrixPosition( ellipsoidFrame ).applyMatrix4( _invMatrix );
 
 			const distanceToCenter = - _vec.z;
 			camera.near = distanceToCenter - maxRadius * ( 1 + nearMargin );
@@ -275,7 +312,7 @@ export class GlobeControls extends EnvironmentControls {
 			cameraRadius,
 			minDistance,
 			inertiaTargetDistance,
-			tilesGroup,
+			ellipsoidFrame,
 		} = this;
 
 		if ( ! this.enableDamping || this.inertiaStableFrames > 1 ) {
@@ -292,7 +329,7 @@ export class GlobeControls extends EnvironmentControls {
 		const pixelWidth = 2 / resolution;
 		const pixelThreshold = 0.25 * pixelWidth;
 
-		_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+		_center.setFromMatrixPosition( ellipsoidFrame );
 
 		if ( this.globeInertiaFactor !== 0 ) {
 
@@ -343,7 +380,7 @@ export class GlobeControls extends EnvironmentControls {
 			}
 
 			// construct the rotation matrix
-			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+			_center.setFromMatrixPosition( ellipsoidFrame );
 			_quaternion.identity().slerp( globeInertia, this.globeInertiaFactor * deltaTime );
 			makeRotateAroundPoint( _center, _quaternion, _rotMatrix );
 
@@ -378,7 +415,8 @@ export class GlobeControls extends EnvironmentControls {
 				pivotPoint,
 				pointerTracker,
 				domElement,
-				tilesGroup,
+				ellipsoidFrame,
+				ellipsoidFrameInverse,
 			} = this;
 
 			// reuse cache variables
@@ -391,11 +429,11 @@ export class GlobeControls extends EnvironmentControls {
 			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// transform to ellipsoid frame
-			raycaster.ray.applyMatrix4( tilesGroup.matrixWorldInverse );
+			raycaster.ray.applyMatrix4( ellipsoidFrameInverse );
 
 			// construct an ellipsoid that matches a sphere with the radius of the globe so
 			// the drag position matches where the initial click was
-			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( tilesGroup.matrixWorldInverse ).length();
+			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( ellipsoidFrameInverse ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
 			// find the hit point and use the closest point on the horizon if we miss
@@ -412,10 +450,10 @@ export class GlobeControls extends EnvironmentControls {
 				closestRayEllipsoidSurfacePointEstimate( raycaster.ray, _ellipsoid, _vec );
 
 			}
-			_vec.applyMatrix4( tilesGroup.matrixWorld );
+			_vec.applyMatrix4( ellipsoidFrame );
 
 			// get the point directions
-			_center.setFromMatrixPosition( tilesGroup.matrixWorld );
+			_center.setFromMatrixPosition( ellipsoidFrame );
 			pivotDir.subVectors( pivotPoint, _center ).normalize();
 			newPivotDir.subVectors( _vec, _center ).normalize();
 
@@ -441,8 +479,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
-
 	}
 
 	// disable rotation once we're outside the control transition
@@ -460,7 +496,6 @@ export class GlobeControls extends EnvironmentControls {
 
 		}
 
-		this._alignCameraUp( this.up );
 
 	}
 
@@ -569,35 +604,9 @@ export class GlobeControls extends EnvironmentControls {
 	// tilt the camera to align with north
 	_alignCameraUpToNorth( alpha ) {
 
-		const { tilesGroup } = this;
-		_globalUp.set( 0, 0, 1 ).transformDirection( tilesGroup.matrixWorld );
+		const { ellipsoidFrame } = this;
+		_globalUp.set( 0, 0, 1 ).transformDirection( ellipsoidFrame );
 		this._alignCameraUp( _globalUp, alpha );
-
-	}
-
-	// tilt the camera to align with the provided "up" value
-	_alignCameraUp( up, alpha = null ) {
-
-		const { camera } = this;
-		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_right.set( - 1, 0, 0 ).transformDirection( camera.matrixWorld );
-		_targetRight.crossVectors( up, _forward );
-
-		// compute the alpha based on how far away from boresight the up vector is
-		// so we can ease into the correct orientation
-		if ( alpha === null ) {
-
-			alpha = 1 - Math.abs( _forward.dot( up ) );
-			alpha = MathUtils.mapLinear( alpha, 0, 1, - 0.01, 1 );
-			alpha = MathUtils.clamp( alpha, 0, 1 ) ** 2;
-
-		}
-
-		_targetRight.lerp( _right, 1 - alpha ).normalize();
-
-		_quaternion.setFromUnitVectors( _right, _targetRight );
-		camera.quaternion.premultiply( _quaternion );
-		camera.updateMatrixWorld();
 
 	}
 
@@ -606,11 +615,11 @@ export class GlobeControls extends EnvironmentControls {
 
 		const {
 			camera,
-			tilesGroup,
+			ellipsoidFrame,
 		} = this;
 
 		_forward.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld ).normalize();
-		_vec.setFromMatrixPosition( tilesGroup.matrixWorld ).sub( camera.position ).normalize();
+		_vec.setFromMatrixPosition( ellipsoidFrame ).sub( camera.position ).normalize();
 		_vec.lerp( _forward, 1 - alpha ).normalize();
 
 		_quaternion.setFromUnitVectors( _forward, _vec );
@@ -704,7 +713,7 @@ export class GlobeControls extends EnvironmentControls {
 	// in space and derive a reasonable "up" value.
 	_getVirtualOrthoCameraPosition( target, camera = this.camera ) {
 
-		const { tilesGroup, ellipsoid } = this;
+		const { ellipsoidFrame, ellipsoidFrameInverse, ellipsoid } = this;
 		if ( ! camera.isOrthographicCamera ) {
 
 			throw new Error();
@@ -714,11 +723,11 @@ export class GlobeControls extends EnvironmentControls {
 		// get ray in globe coordinate frame
 		_ray.origin.copy( camera.position );
 		_ray.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-		_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
+		_ray.applyMatrix4( ellipsoidFrameInverse );
 
 		// get the closest point to the ray on the globe in the global coordinate frame
 		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
-		_pos.applyMatrix4( tilesGroup.matrixWorld );
+		_pos.applyMatrix4( ellipsoidFrame );
 
 		// get ortho camera info
 		const orthoHeight = ( camera.top - camera.bottom );
@@ -754,14 +763,14 @@ export class GlobeControls extends EnvironmentControls {
 		if ( result === null ) {
 
 			// if there was no hit then fallback to intersecting the ellipsoid.
-			const { ellipsoid, tilesGroup } = this;
-			_ray.copy( raycaster.ray ).applyMatrix4( tilesGroup.matrixWorldInverse );
+			const { ellipsoid, ellipsoidFrame, ellipsoidFrameInverse } = this;
+			_ray.copy( raycaster.ray ).applyMatrix4( ellipsoidFrameInverse );
 
 			const point = ellipsoid.intersectRay( _ray, _vec );
 			if ( point !== null ) {
 
 				return {
-					point: point.clone().applyMatrix4( tilesGroup.matrixWorld ),
+					point: point.clone().applyMatrix4( ellipsoidFrame ),
 				};
 
 			} else {

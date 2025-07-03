@@ -165,7 +165,7 @@ export class TilingScheme {
 	}
 
 	// query functions
-	getTileAtPoint( bx, by, level, normalized = false, clampTiles = true ) {
+	getTileAtPoint( bx, by, level, normalized = false ) {
 
 		const { projection, flipY } = this;
 		const { tileCountX, tileCountY } = this.getLevel( level );
@@ -179,19 +179,12 @@ export class TilingScheme {
 
 		}
 
-		let tx = Math.floor( bx / xStride );
+		const tx = Math.floor( bx / xStride );
 		let ty = Math.floor( by / yStride );
 
 		if ( flipY ) {
 
 			ty = tileCountY - 1 - ty;
-
-		}
-
-		if ( clampTiles ) {
-
-			tx = clamp( tx, 0, tileCountX - 1 );
-			ty = clamp( ty, 0, tileCountY - 1 );
 
 		}
 
@@ -235,6 +228,7 @@ export class TilingScheme {
 		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
+		// TODO: is supporting "just touch" correct?
 		return ! isDegenerate && tminx <= rmaxx && tminy <= rmaxy && tmaxx >= rminx && tmaxy >= rminy;
 
 	}
@@ -304,20 +298,27 @@ export class TilingScheme {
 
 	}
 
-	toNormalizedRange( range ) {
+	toNormalizedPoint( x, y ) {
 
-		const result = [ ...range ];
 		const { projection } = this;
+		const result = [ x, y ];
 		if ( this.projection ) {
 
 			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
 			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
-			result[ 2 ] = projection.convertLongitudeToProjection( result[ 2 ] );
-			result[ 3 ] = projection.convertLatitudeToProjection( result[ 3 ] );
 
 		}
 
 		return result;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		return [
+			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
+			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+		];
 
 	}
 
