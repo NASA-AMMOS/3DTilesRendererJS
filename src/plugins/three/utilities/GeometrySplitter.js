@@ -1,10 +1,12 @@
 import { Vector3, MathUtils, Triangle, BufferGeometry, BufferAttribute, Mesh } from 'three';
 
+const vertNames = [ 'a', 'b', 'c' ];
 export class GeometrySplitter {
 
 	constructor() {
 
 		this.splitOperations = [];
+		this.trianglePool = new TrianglePool();
 
 	}
 
@@ -17,27 +19,19 @@ export class GeometrySplitter {
 
 	}
 
+	clearSplitOperations() {
+
+		this.splitOperations.length = 0;
+
+	}
+
 	// generates a child mesh in the given quadrant using the same settings as the loader
 	run( mesh, left, bottom ) {
 
-		// scratch vectors
-		const _uv0 = new Vector3();
-		const _uv1 = new Vector3();
-
-		const _pos0 = new Vector3();
-		const _pos1 = new Vector3();
-		const _pos2 = new Vector3();
-		const _pos3 = new Vector3();
-
-		const _temp = new Vector3();
-		const _temp2 = new Vector3();
-		const _cart = {};
+		const { trianglePool } = this;
 
 		// helper variables
 		const SPLIT_VALUE = 0.5;
-		const triPool = new TrianglePool();
-		const vertNames = [ 'a', 'b', 'c' ];
-		const { ellipsoid, skirtLength, solid, smoothSkirtNormals } = this;
 
 		// source geometry
 		const sourceGeometry = mesh.geometry;
@@ -52,23 +46,17 @@ export class GeometrySplitter {
 		const newUv = [];
 		const newIndex = [];
 
-		// uv offsets
-		const xUvOffset = left ? 0 : - 0.5;
-		const yUvOffset = bottom ? 0 : - 0.5;
-
 		// iterate over each group separately to retain the group information
 		const geometry = new BufferGeometry();
 		const capGroup = sourceGeometry.groups[ 0 ];
 
 		// construct the cap geometry
-		let newStart = newIndex.length;
-		let materialIndex = 0;
 		for ( let i = capGroup.start / 3; i < ( capGroup.start + capGroup.count ) / 3; i ++ ) {
 
 			const i0 = index.getX( i * 3 + 0 );
 			const i1 = index.getX( i * 3 + 1 );
 			const i2 = index.getX( i * 3 + 2 );
-			const tri = triPool.get();
+			const tri = trianglePool.get();
 			tri.setFromAttributeAndIndices( sourceGeometry, i0, i1, i2 );
 
 			// split the triangle by the first axis
@@ -84,42 +72,18 @@ export class GeometrySplitter {
 			}
 
 			// save the geometry
-			const { minLat, maxLat, minLon, maxLon, ellipsoid } = this;
 			for ( let t = 0, l = yResult.length; t < l; t ++ ) {
 
 				const tri = yResult[ t ];
-				vertNames.forEach( n => {
-
-					const uv = tri.uv[ n ];
-					if ( uv.x !== SPLIT_VALUE && uv.y !== SPLIT_VALUE ) {
-
-						return;
-
-					}
-
-					const point = tri.position[ n ];
-					const lat = MathUtils.lerp( minLat, maxLat, uv.y );
-					const lon = MathUtils.lerp( minLon, maxLon, uv.x );
-
-					point.add( mesh.position );
-					ellipsoid.getPositionToCartographic( point, _cart );
-					ellipsoid.getCartographicToPosition( lat, lon, _cart.height, point );
-					point.sub( mesh.position );
-
-				} );
-
 				pushVertex( tri.position.a, tri.uv.a, tri.normal.a, false );
 				pushVertex( tri.position.b, tri.uv.b, tri.normal.b, false );
 				pushVertex( tri.position.c, tri.uv.c, tri.normal.c, false );
 
 			}
 
-			triPool.reset();
+			trianglePool.reset();
 
 		}
-
-		geometry.addGroup( newStart, newIndex.length - newStart, materialIndex );
-		materialIndex ++;
 
 		// new geometry
 		const indexBuffer = newPosition.length / 3 > 65535 ? new Uint32Array( newIndex ) : new Uint16Array( newIndex );
@@ -190,9 +154,9 @@ export class GeometrySplitter {
 			} else if ( edgeIndices.length === 2 ) {
 
 				// TODO: how can we determine which triangles actually need to be added here ahead of time
-				const tri0 = triPool.get();
-				const tri1 = triPool.get();
-				const tri2 = triPool.get();
+				const tri0 = trianglePool.get();
+				const tri1 = trianglePool.get();
+				const tri2 = trianglePool.get();
 
 				const sequential = ( ( edgeIndices[ 0 ] + 1 ) % 3 ) === edgeIndices[ 1 ];
 				if ( sequential ) {
