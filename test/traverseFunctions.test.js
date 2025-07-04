@@ -1,4 +1,4 @@
-import { traverseAncestors, traverseSet } from '../src/core/traverseFunctions.js';
+import { traverseAncestors, traverseSet } from '../src/core/renderer/traverseFunctions.js';
 
 describe( 'traverseSet', () => {
 
