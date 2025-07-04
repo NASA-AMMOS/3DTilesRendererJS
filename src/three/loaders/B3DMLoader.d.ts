@@ -1,6 +1,6 @@
 import { B3DMBaseResult, B3DMLoaderBase } from '../../core/loaders/B3DMLoaderBase.js';
-import { BatchTable } from '../../core/core/utilities/BatchTable.js';
-import { FeatureTable } from '../../core/core/utilities/FeatureTable.js';
+import { BatchTable } from '../../core/utilities/BatchTable.js';
+import { FeatureTable } from '../../core/utilities/FeatureTable.js';
 import { LoadingManager, Group } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

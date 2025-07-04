@@ -1,9 +1,9 @@
-import { getUrlExtension } from '../core/utilities/urlExtension.js';
-import { LRUCache } from '../core/utilities/LRUCache.js';
-import { PriorityQueue } from '../core/utilities/PriorityQueue.js';
+import { getUrlExtension } from '..//utilities/urlExtension.js';
+import { LRUCache } from '..//utilities/LRUCache.js';
+import { PriorityQueue } from '..//utilities/PriorityQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves, traverseSet } from './traverseFunctions.js';
 import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from './constants.js';
-import { throttle } from '../core/utilities/throttle.js';
+import { throttle } from '..//utilities/throttle.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 

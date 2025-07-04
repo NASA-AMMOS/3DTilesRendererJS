@@ -14,7 +14,7 @@ import {
 	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { readMagicBytes } from '../core/core/utilities/readMagicBytes.js';
+import { readMagicBytes } from '../core/utilities/readMagicBytes.js';
 import { TileBoundingVolume } from './math/TileBoundingVolume.js';
 import { ExtendedFrustum } from './math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';

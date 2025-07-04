@@ -1,4 +1,4 @@
-import { LRUCache } from '../src/core/core/utilities/LRUCache.js';
+import { LRUCache } from '../src/core/utilities/LRUCache.js';
 
 globalThis.requestAnimationFrame = setTimeout;
 globalThis.cancelAnimationFrame = clearTimeout;
