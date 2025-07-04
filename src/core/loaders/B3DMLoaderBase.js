@@ -1,10 +1,10 @@
 // B3DM File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Batched3DModel/README.md
 
-import { BatchTable } from '../../utilities/BatchTable.js';
-import { FeatureTable } from '../../utilities/FeatureTable.js';
+import { BatchTable } from '../utilities/BatchTable.js';
+import { FeatureTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
-import { readMagicBytes } from '../../utilities/readMagicBytes.js';
+import { readMagicBytes } from '../utilities/readMagicBytes.js';
 
 export class B3DMLoaderBase extends LoaderBase {
 

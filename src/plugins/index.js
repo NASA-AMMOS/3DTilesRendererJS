@@ -19,7 +19,7 @@ export * from './three/images/DeepZoomImagePlugin.js';
 export * from './three/images/EPSGTilesPlugin.js';
 
 // common plugins
-export { ImplicitTilingPlugin } from './base/ImplicitTilingPlugin.js';
+export { ImplicitTilingPlugin } from './core/ImplicitTilingPlugin.js';
 
 // gltf extensions
 export { GLTFCesiumRTCExtension } from './three/gltf/GLTFCesiumRTCExtension.js';
