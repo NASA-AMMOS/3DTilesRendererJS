@@ -1,15 +1,15 @@
 import { Vector2 } from 'three';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 import { ClassProperty } from './ClassProperty.js';
-import { TextureReadUtility } from '../core/utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../core/utilities/TexCoordUtilities.js';
+import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
+import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utilities/TexCoordUtilities.js';
 import {
 	initializeFromClass,
 	initializeFromProperty,
 	getArrayConstructorFromComponentType,
 	readDataFromBufferToType,
 	getField
-} from '../core/utilities/ClassPropertyHelpers.js';
+} from '../utilities/ClassPropertyHelpers.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _srcPixel = /* @__PURE__ */ new Vector2();

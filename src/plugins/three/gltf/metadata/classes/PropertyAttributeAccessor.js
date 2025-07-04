@@ -1,4 +1,4 @@
-import { initializeFromClass, isMatrixType, isVectorType } from '../core/utilities/ClassPropertyHelpers.js';
+import { initializeFromClass, isMatrixType, isVectorType } from '../utilities/ClassPropertyHelpers.js';
 import { ClassProperty } from './ClassProperty.js';
 import { PropertySetAccessor } from './PropertySetAccessor.js';
 
