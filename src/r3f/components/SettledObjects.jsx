@@ -1,12 +1,12 @@
 import { cloneElement, createContext, forwardRef, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { useMultipleRefs } from '../core/utilities/useMultipleRefs.js';
+import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
-import { QueryManager } from '../core/utilities/QueryManager.js';
-import { useDeepOptions } from '../core/utilities/useOptions.js';
+import { QueryManager } from '../utilities/QueryManager.js';
+import { useDeepOptions } from '../utilities/useOptions.js';
 import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
 import { Matrix4, Ray, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useApplyRefs } from '../core/utilities/useApplyRefs.js';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 const QueryManagerContext = createContext( null );
 const _matrix = /* @__PURE__ */ new Matrix4();

@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useC
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/TilesRenderer.js';
-import { useDeepOptions } from '../core/utilities/useOptions.js';
-import { useObjectDep } from '../core/utilities/useObjectDep.js';
-import { useApplyRefs } from '../core/utilities/useApplyRefs.js';
+import { useDeepOptions } from '../utilities/useOptions.js';
+import { useObjectDep } from '../utilities/useObjectDep.js';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 import { WGS84_ELLIPSOID } from '../../three/math/GeoConstants.js';
 
 // context for accessing the tile set

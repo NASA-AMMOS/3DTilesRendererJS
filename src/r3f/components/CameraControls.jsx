@@ -2,9 +2,9 @@ import { forwardRef, useMemo, useEffect, useContext } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { EnvironmentControls as EnvironmentControlsImpl } from '../../three/controls/EnvironmentControls.js';
 import { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls.js';
-import { useShallowOptions } from '../core/utilities/useOptions.js';
+import { useShallowOptions } from '../utilities/useOptions.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
-import { useApplyRefs } from '../core/utilities/useApplyRefs.js';
+import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
