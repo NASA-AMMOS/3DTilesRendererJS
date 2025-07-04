@@ -23,6 +23,8 @@
   ],
   "exports": {
     ".": "./src/index.js",
+    "./core": "./src/core/index.js",
+    "./three": "./src/three/index.js",
     "./r3f": "./src/r3f/index.jsx",
     "./plugins": "./src/plugins/index.js",
     "./src/*": "./src/*"
