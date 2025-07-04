@@ -1,4 +1,4 @@
-import { decodeOctNormal } from '../src/utilities/decodeOctNormal';
+import { decodeOctNormal } from '../src/core/core/utilities/decodeOctNormal';
 
 const PRECISION = 0.005;
 

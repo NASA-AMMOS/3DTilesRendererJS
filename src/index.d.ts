@@ -29,7 +29,7 @@ export { CMPTLoaderBase } from './core/loaders/CMPTLoaderBase.js';
 export { LoaderBase } from './core/loaders/LoaderBase.js';
 export * from './core/constants.js';
 
-export { LRUCache } from './utilities/LRUCache.js';
-export { PriorityQueue } from './utilities/PriorityQueue.js';
-export { BatchTable } from './utilities/BatchTable.js';
-export { FeatureTable } from './utilities/FeatureTable.js';
+export { LRUCache } from './core/core/utilities/LRUCache.js';
+export { PriorityQueue } from './core/core/utilities/PriorityQueue.js';
+export { BatchTable } from './core/core/utilities/BatchTable.js';
+export { FeatureTable } from './core/core/utilities/FeatureTable.js';

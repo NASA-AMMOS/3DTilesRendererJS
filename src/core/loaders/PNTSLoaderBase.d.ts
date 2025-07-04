@@ -1,5 +1,5 @@
-import { BatchTable } from '../../utilities/BatchTable.js';
-import { FeatureTable } from '../../utilities/FeatureTable.js';
+import { BatchTable } from '../core/utilities/BatchTable.js';
+import { FeatureTable } from '../core/utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
 
 export interface PNTSBaseResult {

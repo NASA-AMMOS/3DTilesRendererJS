@@ -1,6 +1,6 @@
 import { Vector2 } from 'three';
-import { TextureReadUtility } from '../utilities/TextureReadUtility.js';
-import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../utilities/TexCoordUtilities.js';
+import { TextureReadUtility } from '../core/utilities/TextureReadUtility.js';
+import { getTexCoord, getTexelIndices, getTriangleVertexIndices } from '../core/utilities/TexCoordUtilities.js';
 
 const _uv = /* @__PURE__ */ new Vector2();
 const _pixel = /* @__PURE__ */ new Vector2();

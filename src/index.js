@@ -25,6 +25,6 @@ export { PNTSLoaderBase } from './core/loaders/PNTSLoaderBase.js';
 export { CMPTLoaderBase } from './core/loaders/CMPTLoaderBase.js';
 export * from './core/constants.js';
 
-export { LRUCache } from './utilities/LRUCache.js';
-export { PriorityQueue } from './utilities/PriorityQueue.js';
+export { LRUCache } from './core/utilities/LRUCache.js';
+export { PriorityQueue } from './core/utilities/PriorityQueue.js';
 

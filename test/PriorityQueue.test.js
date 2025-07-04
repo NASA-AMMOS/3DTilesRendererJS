@@ -1,4 +1,4 @@
-import { PriorityQueue } from '../src/utilities/PriorityQueue.js';
+import { PriorityQueue } from '../src/core/core/utilities/PriorityQueue.js';
 
 // eslint-disable-next-line
 globalThis.requestAnimationFrame = cb => setTimeout( cb );

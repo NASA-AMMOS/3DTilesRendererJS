@@ -7,7 +7,7 @@ import {
 	getField,
 	isNumericType,
 	typeToComponentCount,
-} from '../utilities/ClassPropertyHelpers.js';
+} from '../core/utilities/ClassPropertyHelpers.js';
 
 class PropertyTableClassProperty extends ClassProperty {
 

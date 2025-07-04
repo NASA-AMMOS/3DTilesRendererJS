@@ -3,8 +3,8 @@
  * https://github.com/CesiumGS/cesium/blob/0a69f67b393ba194eefb7254600811c4b712ddc0/packages/engine/Source/Scene/Implicit3DTileContent.js
  */
 import { LoaderBase } from '../../core/loaders/LoaderBase.js';
-import { readMagicBytes } from '../../utilities/readMagicBytes.js';
-import { arrayToString } from '../../utilities/arrayToString.js';
+import { readMagicBytes } from '../../core/utilities/readMagicBytes.js';
+import { arrayToString } from '../../core/utilities/arrayToString.js';
 
 function isOctreeSubdivision( tile ) {
 

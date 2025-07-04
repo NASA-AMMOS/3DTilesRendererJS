@@ -1,8 +1,8 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { CameraTransitionManager } from '../../three/controls/CameraTransitionManager.js';
-import { useDeepOptions } from '../utilities/useOptions.js';
-import { useApplyRefs } from '../utilities/useApplyRefs.js';
+import { useDeepOptions } from '../core/utilities/useOptions.js';
+import { useApplyRefs } from '../core/utilities/useApplyRefs.js';
 
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 

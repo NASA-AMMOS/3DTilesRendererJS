@@ -6,7 +6,7 @@ import {
 	resolveDefaultElement,
 	resolveNoData,
 	resolveDefault,
-} from '../utilities/ClassPropertyHelpers.js';
+} from '../core/utilities/ClassPropertyHelpers.js';
 
 export class ClassProperty {
 
