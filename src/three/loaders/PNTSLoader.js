@@ -1,4 +1,4 @@
-import { PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase.js';
+import { PNTSLoaderBase } from '../../core/loaders/PNTSLoaderBase.js';
 import {
 	Points,
 	PointsMaterial,

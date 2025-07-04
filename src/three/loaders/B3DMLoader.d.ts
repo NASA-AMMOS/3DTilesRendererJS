@@ -1,4 +1,4 @@
-import { B3DMBaseResult, B3DMLoaderBase } from '../../base/loaders/B3DMLoaderBase.js';
+import { B3DMBaseResult, B3DMLoaderBase } from '../../core/loaders/B3DMLoaderBase.js';
 import { BatchTable } from '../../utilities/BatchTable.js';
 import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { LoadingManager, Group } from 'three';

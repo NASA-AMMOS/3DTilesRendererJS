@@ -1,4 +1,4 @@
-import { I3DMBaseResult, I3DMLoaderBase } from '../../base/loaders/I3DMLoaderBase.js';
+import { I3DMBaseResult, I3DMLoaderBase } from '../../core/loaders/I3DMLoaderBase.js';
 import { BatchTable } from '../../utilities/BatchTable.js';
 import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';

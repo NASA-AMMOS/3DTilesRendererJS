@@ -1,5 +1,5 @@
 import { TileBoundingVolume } from '../../three/math/TileBoundingVolume.js';
-import { Tile } from '../../base/Tile.js';
+import { Tile } from '../../core/Tile.js';
 import { TilesRenderer } from '../../three/TilesRenderer.js';
 import { OBB } from '../../three/math/OBB.js';
 import { Sphere, Ray } from 'three';

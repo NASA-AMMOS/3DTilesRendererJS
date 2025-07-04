@@ -1,4 +1,4 @@
-import { PNTSBaseResult, PNTSLoaderBase } from '../../base/loaders/PNTSLoaderBase.js';
+import { PNTSBaseResult, PNTSLoaderBase } from '../../core/loaders/PNTSLoaderBase.js';
 import { BatchTable } from '../../utilities/BatchTable.js';
 import { FeatureTable } from '../../utilities/FeatureTable.js';
 import { Points, LoadingManager } from 'three';

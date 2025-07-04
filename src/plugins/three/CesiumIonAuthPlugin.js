@@ -1,4 +1,4 @@
-import { CesiumIonAuth } from '../base/auth/CesiumIonAuth.js';
+import { CesiumIonAuth } from '../core/auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';

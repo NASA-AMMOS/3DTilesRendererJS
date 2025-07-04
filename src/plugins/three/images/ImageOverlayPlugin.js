@@ -3,10 +3,10 @@ import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
-import { CesiumIonAuth } from '../../base/auth/CesiumIonAuth.js';
+import { CesiumIonAuth } from '../../core/auth/CesiumIonAuth.js';
 import { PriorityQueue } from '../../../utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
-import { GoogleCloudAuth } from '../../base/auth/GoogleCloudAuth.js';
+import { GoogleCloudAuth } from '../../core/auth/GoogleCloudAuth.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 

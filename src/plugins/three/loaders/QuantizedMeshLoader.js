@@ -13,7 +13,7 @@ import {
 	UnsignedByteType,
 	Vector3,
 } from 'three';
-import { QuantizedMeshLoaderBase } from '../../base/loaders/QuantizedMeshLoaderBase.js';
+import { QuantizedMeshLoaderBase } from '../../core/loaders/QuantizedMeshLoaderBase.js';
 import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
 
 const _norm = /* @__PURE__ */ new Vector3();

@@ -17,13 +17,13 @@ export { EnvironmentControls } from './three/controls/EnvironmentControls.js';
 export { CameraTransitionManager } from './three/controls/CameraTransitionManager.js';
 
 // common
-export { TilesRendererBase } from './base/TilesRendererBase.js';
-export { LoaderBase } from './base/loaders/LoaderBase.js';
-export { B3DMLoaderBase } from './base/loaders/B3DMLoaderBase.js';
-export { I3DMLoaderBase } from './base/loaders/I3DMLoaderBase.js';
-export { PNTSLoaderBase } from './base/loaders/PNTSLoaderBase.js';
-export { CMPTLoaderBase } from './base/loaders/CMPTLoaderBase.js';
-export * from './base/constants.js';
+export { TilesRendererBase } from './core/TilesRendererBase.js';
+export { LoaderBase } from './core/loaders/LoaderBase.js';
+export { B3DMLoaderBase } from './core/loaders/B3DMLoaderBase.js';
+export { I3DMLoaderBase } from './core/loaders/I3DMLoaderBase.js';
+export { PNTSLoaderBase } from './core/loaders/PNTSLoaderBase.js';
+export { CMPTLoaderBase } from './core/loaders/CMPTLoaderBase.js';
+export * from './core/constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';

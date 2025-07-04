@@ -1,4 +1,4 @@
-import { TilesRendererBase } from '../base/TilesRendererBase.js';
+import { TilesRendererBase } from '../core/TilesRendererBase.js';
 import { B3DMLoader } from './loaders/B3DMLoader.js';
 import { PNTSLoader } from './loaders/PNTSLoader.js';
 import { I3DMLoader } from './loaders/I3DMLoader.js';
