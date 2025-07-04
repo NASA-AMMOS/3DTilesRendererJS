@@ -1,5 +1,5 @@
 import { Camera, EventDispatcher, Object3D, Plane, Vector3 } from 'three';
-import { TilesRenderer } from '../TilesRenderer.js';
+import { TilesRenderer } from '../renderer/TilesRenderer.js';
 
 export interface EnvironmentControlsEventMap {
 	'change': {};

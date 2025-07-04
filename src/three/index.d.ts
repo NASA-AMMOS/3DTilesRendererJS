@@ -1,6 +1,6 @@
 // three.js
-export { TilesRenderer, TilesRendererEventMap } from './TilesRenderer.js';
-export { TilesGroup } from './TilesGroup.js';
+export { TilesRenderer, TilesRendererEventMap } from './renderer/TilesRenderer.js';
+export { TilesGroup } from './renderer/TilesGroup.js';
 export { B3DMLoader, B3DMScene } from './loaders/B3DMLoader.js';
 export { I3DMLoader, I3DMScene } from './loaders/I3DMLoader.js';
 export { PNTSLoader, PNTSScene } from './loaders/PNTSLoader.js';

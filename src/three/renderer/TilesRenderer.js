@@ -1,8 +1,8 @@
-import { TilesRendererBase } from '../core/TilesRendererBase.js';
-import { B3DMLoader } from './loaders/B3DMLoader.js';
-import { PNTSLoader } from './loaders/PNTSLoader.js';
-import { I3DMLoader } from './loaders/I3DMLoader.js';
-import { CMPTLoader } from './loaders/CMPTLoader.js';
+import { TilesRendererBase } from '../../core/renderer/TilesRendererBase.js';
+import { B3DMLoader } from '../loaders/B3DMLoader.js';
+import { PNTSLoader } from '../loaders/PNTSLoader.js';
+import { I3DMLoader } from '../loaders/I3DMLoader.js';
+import { CMPTLoader } from '../loaders/CMPTLoader.js';
 import { TilesGroup } from './TilesGroup.js';
 import {
 	Matrix4,
@@ -14,11 +14,11 @@ import {
 	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { readMagicBytes } from '../core/utilities/readMagicBytes.js';
-import { TileBoundingVolume } from './math/TileBoundingVolume.js';
-import { ExtendedFrustum } from './math/ExtendedFrustum.js';
+import { readMagicBytes } from '../../core/utilities/readMagicBytes.js';
+import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
+import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
-import { WGS84_ELLIPSOID } from './math/GeoConstants.js';
+import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const _mat = new Matrix4();

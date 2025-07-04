@@ -1,5 +1,5 @@
 // three.js
-export { TilesRenderer } from './TilesRenderer.js';
+export { TilesRenderer } from './renderer/TilesRenderer.js';
 export { B3DMLoader } from './loaders/B3DMLoader.js';
 export { PNTSLoader } from './loaders/PNTSLoader.js';
 export { I3DMLoader } from './loaders/I3DMLoader.js';

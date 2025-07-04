@@ -1,8 +1,8 @@
 // common
-export { TilesRendererBase } from './TilesRendererBase.js';
-export { Tile } from './Tile.js';
-export { TileBase } from './TileBase.js';
-export { Tileset } from './Tileset.js';
+export { TilesRendererBase } from './renderer/TilesRendererBase.js';
+export { Tile } from './renderer/Tile.js';
+export { TileBase } from './renderer/TileBase.js';
+export { Tileset } from './renderer/Tileset.js';
 export { B3DMLoaderBase } from './loaders/B3DMLoaderBase.js';
 export { I3DMLoaderBase } from './loaders/I3DMLoaderBase.js';
 export { PNTSLoaderBase } from './loaders/PNTSLoaderBase.js';
