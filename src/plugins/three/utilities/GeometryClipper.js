@@ -565,7 +565,7 @@ function readInterpolatedAttribute( attribute, i0, i1, i2, barycoord, target ) {
 }
 
 // Hash the provided numbers
-function hashVertex( ...args ) {
+export function hashVertex( ...args ) {
 
 	const scalar = 1e5;
 	const additive = 0.5;
