@@ -1,5 +1,6 @@
 import { MathUtils, Triangle, BufferGeometry, BufferAttribute, Mesh, Vector4 } from 'three';
 
+const SPLIT_VALUE = 0;
 const vertNames = [ 'a', 'b', 'c' ];
 const _vec = /* @__PURE__ */ new Vector4();
 const _v0 = /* @__PURE__ */ new Vector4();
@@ -61,6 +62,7 @@ export class GeometryClipper {
 
 		// initialize the result
 		target.index = target.index || [];
+		target.vertexIsClipped = target.vertexIsClipped || [];
 		target.attributes = target.attributes || {};
 
 		// iterate over each group separately to retain the group information
@@ -74,17 +76,17 @@ export class GeometryClipper {
 		}
 
 		// run the clip operations
-		for ( let i = start / 3, l = ( start + count ) / 3; i < l; i ++ ) {
+		for ( let i = start, l = start + count; i < l; i += 3 ) {
 
 			// get the indices
-			let i0 = i * 3 + 0;
-			let i1 = i * 3 + 1;
-			let i2 = i * 3 + 2;
+			let i0 = i + 0;
+			let i1 = i + 1;
+			let i2 = i + 2;
 			if ( index ) {
 
-				i0 = index.getX( i * 3 + 0 );
-				i1 = index.getX( i * 3 + 1 );
-				i2 = index.getX( i * 3 + 2 );
+				i0 = index.getX( i0 );
+				i1 = index.getX( i1 );
+				i2 = index.getX( i2 );
 
 			}
 
@@ -100,11 +102,11 @@ export class GeometryClipper {
 				const result = [];
 				for ( let t = 0; t < triangles.length; t ++ ) {
 
-					const tri = triangles[ i ];
-					const { i0, i1, i2, barycoord } = tri;
-					tri.clipValues.a = callback( sourceGeometry, i0, i1, i2, barycoord.a );
-					tri.clipValues.b = callback( sourceGeometry, i0, i1, i2, barycoord.b );
-					tri.clipValues.c = callback( sourceGeometry, i0, i1, i2, barycoord.c );
+					const tri = triangles[ t ];
+					const { indices, barycoord } = tri;
+					tri.clipValues.a = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.a );
+					tri.clipValues.b = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.b );
+					tri.clipValues.c = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.c );
 
 					this.splitTriangle( tri, ! keepPositive, result );
 
@@ -133,18 +135,19 @@ export class GeometryClipper {
 			for ( let i = 0; i < 3; i ++ ) {
 
 				const hash = tri.getVertexHash( i, geometry );
+
 				if ( ! ( hash in vertToNewIndexMap ) ) {
 
 					vertToNewIndexMap[ hash ] = nextIndex;
 					nextIndex ++;
 
 					tri.getVertexData( i, geometry, target.attributes );
+					target.vertexIsClipped.push( tri.clipValues[ vertNames[ i ] ] === SPLIT_VALUE );
 
 				}
 
 				const index = vertToNewIndexMap[ hash ];
 				target.index.push( index );
-				return index;
 
 			}
 
@@ -155,7 +158,7 @@ export class GeometryClipper {
 	// Takes the set of resultant data and constructs a mesh
 	constructMesh( attributes, index, sourceMesh ) {
 
-		const sourceGeometry = sourceMesh;
+		const sourceGeometry = sourceMesh.geometry;
 
 		// new geometry
 		const geometry = new BufferGeometry();
@@ -187,7 +190,6 @@ export class GeometryClipper {
 	// Splits the given triangle
 	splitTriangle( tri, keepNegative, target ) {
 
-		const SPLIT_VALUE = 0;
 		const { trianglePool } = this;
 
 		// TODO: clean up, add scratch variables, optimize
@@ -392,12 +394,11 @@ class ClipTriangle {
 
 			// Construct a hash based on all the interpolated attributes
 			const { attributes } = geometry;
-			const [ i0, i1, i2 ] = indices;
 			let result = '';
 			for ( const name in attributes ) {
 
 				const attr = attributes[ name ];
-				readInterpolatedAttribute( attr, i0, i1, i2, bc, _vec );
+				readInterpolatedAttribute( attr, indices.a, indices.b, indices.c, bc, _vec );
 
 				// normalize values if needed
 				if ( name === 'normal' || name === 'tangent' || name === 'bitangent' ) {
@@ -442,7 +443,6 @@ class ClipTriangle {
 		const bc = barycoord[ vn ];
 
 		const { attributes } = geometry;
-		const [ i0, i1, i2 ] = indices;
 		for ( const name in attributes ) {
 
 			// initialize the resulting array if necessary
@@ -451,7 +451,7 @@ class ClipTriangle {
 			const attr = attributes[ name ];
 			const arr = target[ name ];
 
-			readInterpolatedAttribute( attr, i0, i1, i2, bc, _vec );
+			readInterpolatedAttribute( attr, indices.a, indices.b, indices.c, bc, _vec );
 
 			// normalize values if needed
 			if ( name === 'normal' || name === 'tangent' || name === 'bitangent' ) {
@@ -515,7 +515,7 @@ class ClipTriangle {
 	// Lerp the given vertex along to the provided edge of the provided triangle
 	lerpVertexFromEdge( other, e0, e1, alpha, targetVertex ) {
 
-		this.clipValues[ targetVertex ] = MathUtils.lerpVectors( other.clipValues[ e0 ], other.clipValues[ e1 ], alpha );
+		this.clipValues[ targetVertex ] = MathUtils.lerp( other.clipValues[ e0 ], other.clipValues[ e1 ], alpha );
 		this.barycoord[ targetVertex ].lerpVectors( other.barycoord[ e0 ], other.barycoord[ e1 ], alpha );
 
 	}

@@ -1,5 +1,6 @@
-import { Vector2, Vector3 } from 'three';
+import { MathUtils, Vector2, Vector3 } from 'three';
 import { GeometryClipper, hashVertex } from './GeometryClipper.js';
+import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
 
 const _cart = {};
 const _vec = /* @__PURE__ */ new Vector3();
@@ -16,6 +17,21 @@ const _uv2 = /* @__PURE__ */ new Vector2();
 
 export class QuantizedMeshClipper extends GeometryClipper {
 
+	constructor() {
+
+		super();
+		this.ellipsoid = new Ellipsoid();
+		this.skirtLength = 1000;
+		this.smoothSkirtNormals = true;
+		this.solid = false;
+
+		this.minLat = - Math.PI / 2;
+		this.maxLat = Math.PI / 2;
+		this.minLon = - Math.PI;
+		this.maxLon = Math.PI;
+
+	}
+
 	clipToQuadrant( sourceMesh, left, bottom ) {
 
 		const { solid, skirtLength, ellipsoid, smoothSkirtNormals } = this;
@@ -27,7 +43,7 @@ export class QuantizedMeshClipper extends GeometryClipper {
 		let botResult, skirtResult;
 		const capGroup = sourceMesh.geometry.groups[ 0 ];
 		const capResult = this.getClippedData( sourceMesh, capGroup );
-		this.adjustVertices( capResult.attributes.position, sourceMesh.position, 0 );
+		this.adjustVertices( capResult, sourceMesh.position, 0 );
 
 		if ( solid ) {
 
@@ -42,7 +58,20 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 			}
 
-			this.adjustVertices( botResult.attributes.position, sourceMesh.position, - skirtLength );
+			const normal = botResult.attributes.normal;
+			if ( normal ) {
+
+				for ( let i = 0; i < normal.length; i += 3 ) {
+
+					normal[ i + 0 ] *= - 1;
+					normal[ i + 1 ] *= - 1;
+					normal[ i + 2 ] *= - 1;
+
+				}
+
+			}
+
+			this.adjustVertices( botResult, sourceMesh.position, - skirtLength );
 
 		}
 
@@ -50,13 +79,17 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 			skirtResult = {
 				index: [],
-				attributes: {},
+				attributes: {
+					position: [],
+					normal: [],
+					uv: [],
+				},
 			};
 
 			// push data onto the
 			let nextIndex = 0;
 			const vertToNewIndexMap = {};
-			const pushVertex = ( pos, norm, uv ) => {
+			const pushVertex = ( pos, uv, norm ) => {
 
 				const hash = hashVertex( ...pos, ...norm, ...uv );
 				if ( ! ( hash in vertToNewIndexMap ) ) {
@@ -93,7 +126,6 @@ export class QuantizedMeshClipper extends GeometryClipper {
 					_uv1.fromArray( capUv, i1 * 2 );
 
 					// find the vertices that lie on the edge
-					// TODO: with the new clipper these values might not be as precise?
 					if (
 						_uv0.x === _uv1.x && ( _uv0.x === 0 || _uv0.x === 0.5 || _uv0.x === 1.0 ) ||
 						_uv0.y === _uv1.y && ( _uv0.y === 0 || _uv0.y === 0.5 || _uv0.y === 1.0 )
@@ -157,7 +189,7 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 			}
 
-			for ( const key in attributes ) {
+			for ( const key in capResult.attributes ) {
 
 				result.attributes[ key ].push( ...attributes[ key ] );
 
@@ -175,7 +207,7 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 			}
 
-			for ( const key in attributes ) {
+			for ( const key in capResult.attributes ) {
 
 				result.attributes[ key ].push( ...attributes[ key ] );
 
@@ -215,7 +247,7 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 		if ( skirtResult ) {
 
-			skirtResult.geometry.addGroup( start, skirtResult.index.length, materialIndex );
+			resultMesh.geometry.addGroup( start, skirtResult.index.length, materialIndex );
 			start += skirtResult.index.length;
 			materialIndex ++;
 
@@ -225,17 +257,42 @@ export class QuantizedMeshClipper extends GeometryClipper {
 
 	}
 
-	adjustVertices( attrArray, position, offset ) {
+	adjustVertices( info, position, offset ) {
 
-		const { ellipsoid } = this;
-		for ( let i = 0; i < attrArray.length; i += 3 ) {
+		const { ellipsoid, minLat, maxLat, minLon, maxLon } = this;
+		const { attributes, vertexIsClipped } = info;
+		const posArr = attributes.position;
+		const uvArr = attributes.uv;
 
-			const point = _vec.fromArray( attrArray, i ).add( position );
+		const vertexCount = posArr.length / 3;
+		for ( let i = 0; i < vertexCount; i ++ ) {
+
+			const uv = _uv0.fromArray( uvArr, i * 2 );
+			if ( vertexIsClipped && vertexIsClipped[ i ] ) {
+
+				if ( Math.abs( uv.x - 0.5 ) < 1e-10 ) {
+
+					uv.x = 0.5;
+
+				}
+
+				if ( Math.abs( uv.y - 0.5 ) < 1e-10 ) {
+
+					uv.y = 0.5;
+
+				}
+
+				_uv0.toArray( uvArr, i * 2 );
+
+			}
+
+			const lat = MathUtils.lerp( minLat, maxLat, uv.y );
+			const lon = MathUtils.lerp( minLon, maxLon, uv.x );
+			const point = _vec.fromArray( posArr, i * 3 ).add( position );
 			ellipsoid.getPositionToCartographic( point, _cart );
-
-			const { lat, lon, height } = _cart;
-			ellipsoid.getCartographicToPosition( lat, lon, height + offset, point );
+			ellipsoid.getCartographicToPosition( lat, lon, _cart.height + offset, point );
 			point.sub( position );
+			point.toArray( posArr, i * 3 );
 
 		}
 
