@@ -47,6 +47,11 @@ export class GeometryClipper {
 	}
 
 	// Appends the clip operation data to the given "target" object so multiple ranges can be appended.
+	// The "target" object is returned with an "index" field, "vertexIsClipped" field, and series of arrays
+	// in "attributes".
+	// attributes - set of attribute arrays
+	// index - triangle indices referencing vertices in attributes
+	// vertexIsClipped - array indicating whether a vertex is on a clipped edge
 	getClippedData( mesh, range = null, target = {} ) {
 
 		const { trianglePool, splitOperations } = this;
