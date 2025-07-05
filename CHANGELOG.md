@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - R3F TilesAttributionOverlay not functioning on non-HTTPS domains.
 - Support for React 19 while maintaining React 18 support.
+- QuantizedMeshPlugin: Fixed case where availability metadata was not interpreted correctly.
 
 ## [0.4.11] - 2025.07.01
 ### Added
