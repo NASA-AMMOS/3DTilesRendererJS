@@ -224,7 +224,6 @@ export class QuantizedMeshPlugin {
 
 		// set up loader
 		const ellipsoid = tiles.ellipsoid;
-		const [ west, south, east, north ] = tile.boundingVolume.region;
 
 		// split the parent tile if needed
 		let result;
@@ -241,6 +240,8 @@ export class QuantizedMeshPlugin {
 			clipper.solid = solid;
 			clipper.smoothSkirtNormals = smoothSkirtNormals;
 			clipper.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
+
+			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
 			clipper.minLat = south;
 			clipper.maxLat = north;
 			clipper.minLon = west;
@@ -255,6 +256,8 @@ export class QuantizedMeshPlugin {
 			loader.solid = solid;
 			loader.smoothSkirtNormals = smoothSkirtNormals;
 			loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
+
+			const [ west, south, east, north ] = tile.boundingVolume.region;
 			loader.minLat = south;
 			loader.maxLat = north;
 			loader.minLon = west;
