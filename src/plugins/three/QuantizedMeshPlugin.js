@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
 import { TilingScheme } from './images/utils/TilingScheme.js';
 import { ProjectionScheme } from './images/utils/ProjectionScheme.js';
+import { QuantizedMeshClipper } from './utilities/QuantizedMeshClipper.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -223,11 +224,7 @@ export class QuantizedMeshPlugin {
 
 		// set up loader
 		const ellipsoid = tiles.ellipsoid;
-		const loader = new QuantizedMeshLoader( tiles.manager );
-		loader.ellipsoid.copy( ellipsoid );
-		loader.solid = solid;
-		loader.smoothSkirtNormals = smoothSkirtNormals;
-		loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
+		const [ west, south, east, north ] = tile.boundingVolume.region;
 
 		// split the parent tile if needed
 		let result;
@@ -238,22 +235,31 @@ export class QuantizedMeshPlugin {
 			const left = searchParams.get( 'left' ) === 'true';
 			const bottom = searchParams.get( 'bottom' ) === 'true';
 
-			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
-			loader.minLat = south;
-			loader.maxLat = north;
-			loader.minLon = west;
-			loader.maxLon = east;
-			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
+			// parse the tile data
+			const clipper = new QuantizedMeshClipper();
+			clipper.ellipsoid.copy( ellipsoid );
+			clipper.solid = solid;
+			clipper.smoothSkirtNormals = smoothSkirtNormals;
+			clipper.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
+			clipper.minLat = south;
+			clipper.maxLat = north;
+			clipper.minLon = west;
+			clipper.maxLon = east;
+
+			result = clipper.clipToQuadrant( tile.parent.cached.scene, left, bottom );
 
 		} else {
 
-			const [ west, south, east, north ] = tile.boundingVolume.region;
+			const loader = new QuantizedMeshLoader( tiles.manager );
+			loader.ellipsoid.copy( ellipsoid );
+			loader.solid = solid;
+			loader.smoothSkirtNormals = smoothSkirtNormals;
+			loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 			loader.minLat = south;
 			loader.maxLat = north;
 			loader.minLon = west;
 			loader.maxLon = east;
 
-			// parse the tile data
 			result = loader.parse( buffer );
 
 		}
