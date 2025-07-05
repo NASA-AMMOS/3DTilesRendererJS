@@ -17,7 +17,7 @@ const _vec = /* @__PURE__ */ new Vector3();
 // Checks if the given tile is available
 function isTileAvailable( available, level, x, y ) {
 
-	if ( level < available.length ) {
+	if ( available && level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -325,7 +325,9 @@ export class QuantizedMeshPlugin {
 		const { tiles, layer, tiling, projection } = this;
 		const ellipsoid = tiles.ellipsoid;
 
-		const isAvailable = available === null || isTileAvailable( available, level, x, y );
+		// metadata availability will return "null" if there are no more children but we
+		// have to always load the root tile data.
+		const isAvailable = available === null && level === 0 || isTileAvailable( available, level, x, y );
 		const url = getContentUrl( x, y, level, 1, layer );
 		const region = [ ...tiling.getTileBounds( x, y, level ), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ];
 		const [ /* west */, south, /* east */, north, /* minHeight */, maxHeight ] = region;
