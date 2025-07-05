@@ -30,6 +30,8 @@ export class QuantizedMeshClipper extends GeometryClipper {
 		this.minLon = - Math.PI;
 		this.maxLon = Math.PI;
 
+		this.attributeList = [ 'position', 'normal', 'uv' ];
+
 	}
 
 	clipToQuadrant( sourceMesh, left, bottom ) {

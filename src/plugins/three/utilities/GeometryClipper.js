@@ -12,6 +12,11 @@ export class GeometryClipper {
 
 	constructor() {
 
+		// the list of attributes to use in the geometry being clipped, such as
+		// [ 'position', 'normal', 'uv' ]
+		this.attributeList = null;
+
+		// internal
 		this.splitOperations = [];
 		this.trianglePool = new ClipTrianglePool();
 
@@ -54,7 +59,7 @@ export class GeometryClipper {
 	// vertexIsClipped - array indicating whether a vertex is on a clipped edge
 	getClippedData( mesh, range = null, target = {} ) {
 
-		const { trianglePool, splitOperations } = this;
+		const { trianglePool, splitOperations, attributeList } = this;
 
 		// source geometry
 		const sourceGeometry = mesh.geometry;
@@ -69,6 +74,17 @@ export class GeometryClipper {
 		target.index = target.index || [];
 		target.vertexIsClipped = target.vertexIsClipped || [];
 		target.attributes = target.attributes || {};
+
+		// initialize the attributes to the set in the attribute list or all if set to null
+		for ( const key in sourceGeometry.attributes ) {
+
+			if ( attributeList === null || attributeList.includes( key ) ) {
+
+				target.attributes[ key ] = [];
+
+			}
+
+		}
 
 		// iterate over each group separately to retain the group information
 		let start = 0;
@@ -450,8 +466,12 @@ class ClipTriangle {
 		const { attributes } = geometry;
 		for ( const name in attributes ) {
 
-			// initialize the resulting array if necessary
-			target[ name ] = target[ name ] || [];
+			// skip saving the data if we have no fields for it
+			if ( ! target[ name ] ) {
+
+				continue;
+
+			}
 
 			const attr = attributes[ name ];
 			const arr = target[ name ];
