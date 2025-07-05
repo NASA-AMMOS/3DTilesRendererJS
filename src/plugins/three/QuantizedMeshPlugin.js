@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import { QuantizedMeshLoader } from './loaders/QuantizedMeshLoader.js';
 import { TilingScheme } from './images/utils/TilingScheme.js';
 import { ProjectionScheme } from './images/utils/ProjectionScheme.js';
+import { QuantizedMeshClipper } from './utilities/QuantizedMeshClipper.js';
 
 const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
@@ -16,7 +17,7 @@ const _vec = /* @__PURE__ */ new Vector3();
 // Checks if the given tile is available
 function isTileAvailable( available, level, x, y ) {
 
-	if ( level < available.length ) {
+	if ( available && level < available.length ) {
 
 		// TODO: consider a binary search
 		const availableSet = available[ level ];
@@ -223,11 +224,6 @@ export class QuantizedMeshPlugin {
 
 		// set up loader
 		const ellipsoid = tiles.ellipsoid;
-		const loader = new QuantizedMeshLoader( tiles.manager );
-		loader.ellipsoid.copy( ellipsoid );
-		loader.solid = solid;
-		loader.smoothSkirtNormals = smoothSkirtNormals;
-		loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 
 		// split the parent tile if needed
 		let result;
@@ -238,14 +234,28 @@ export class QuantizedMeshPlugin {
 			const left = searchParams.get( 'left' ) === 'true';
 			const bottom = searchParams.get( 'bottom' ) === 'true';
 
+			// parse the tile data
+			const clipper = new QuantizedMeshClipper();
+			clipper.ellipsoid.copy( ellipsoid );
+			clipper.solid = solid;
+			clipper.smoothSkirtNormals = smoothSkirtNormals;
+			clipper.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
+
 			const [ west, south, east, north ] = tile.parent.boundingVolume.region;
-			loader.minLat = south;
-			loader.maxLat = north;
-			loader.minLon = west;
-			loader.maxLon = east;
-			result = loader.clipToQuadrant( tile.parent.cached.scene, left, bottom );
+			clipper.minLat = south;
+			clipper.maxLat = north;
+			clipper.minLon = west;
+			clipper.maxLon = east;
+
+			result = clipper.clipToQuadrant( tile.parent.cached.scene, left, bottom );
 
 		} else {
+
+			const loader = new QuantizedMeshLoader( tiles.manager );
+			loader.ellipsoid.copy( ellipsoid );
+			loader.solid = solid;
+			loader.smoothSkirtNormals = smoothSkirtNormals;
+			loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 
 			const [ west, south, east, north ] = tile.boundingVolume.region;
 			loader.minLat = south;
@@ -253,7 +263,6 @@ export class QuantizedMeshPlugin {
 			loader.minLon = west;
 			loader.maxLon = east;
 
-			// parse the tile data
 			result = loader.parse( buffer );
 
 		}
@@ -316,7 +325,9 @@ export class QuantizedMeshPlugin {
 		const { tiles, layer, tiling, projection } = this;
 		const ellipsoid = tiles.ellipsoid;
 
-		const isAvailable = available === null || isTileAvailable( available, level, x, y );
+		// metadata availability will return "null" if there are no more children but we
+		// have to always load the root tile data.
+		const isAvailable = available === null && level === 0 || isTileAvailable( available, level, x, y );
 		const url = getContentUrl( x, y, level, 1, layer );
 		const region = [ ...tiling.getTileBounds( x, y, level ), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ];
 		const [ /* west */, south, /* east */, north, /* minHeight */, maxHeight ] = region;
