@@ -227,7 +227,7 @@ export class QuantizedMeshPlugin {
 
 		// split the parent tile if needed
 		let result;
-		if ( extension === 'tile_split' ) {
+		if ( extension === 'quantized_tile_split' ) {
 
 			// split the parent tile
 			const searchParams = new URL( uri ).searchParams;
@@ -389,7 +389,7 @@ export class QuantizedMeshPlugin {
 				} else {
 
 					tile.children.push( child );
-					child.content = { uri: `tile.tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.content = { uri: `tile.quantized_tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
@@ -408,7 +408,7 @@ export class QuantizedMeshPlugin {
 	fetchData( uri, options ) {
 
 		// if this is our custom url indicating a tile split then return fake response
-		if ( /tile_split/.test( uri ) ) {
+		if ( /quantized_tile_split/.test( uri ) ) {
 
 			return new ArrayBuffer();
 
@@ -427,6 +427,7 @@ export class QuantizedMeshPlugin {
 
 		}
 
+		// TODO: is this correct?
 		tile.children.length = 0;
 		tile.__childrenProcessed = 0;
 

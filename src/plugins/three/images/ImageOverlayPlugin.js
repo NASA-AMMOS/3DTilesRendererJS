@@ -7,6 +7,7 @@ import { CesiumIonAuth } from '../../core/auth/CesiumIonAuth.js';
 import { PriorityQueue } from '../../../core/utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GoogleCloudAuth } from '../../core/auth/GoogleCloudAuth.js';
+import { GeometryClipper } from '../utilities/GeometryClipper.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 
@@ -381,6 +382,32 @@ export class ImageOverlayPlugin {
 		} );
 
 	}
+
+	parseToMesh( buffer, tile, extension, uri ) {
+
+		if ( extension === 'image_overlay_tile_split' ) {
+
+			// TODO: split on the given axes, keep the target model
+			const clipper = new GeometryClipper();
+
+		}
+
+		// TODO: generate "virtual" nodes for the node if needed
+		// TODO: handle disposal
+
+	}
+
+	fetchData( uri, options ) {
+
+		// if this is our custom url indicating a tile split then return fake response
+		if ( /image_overlay_tile_split/.test( uri ) ) {
+
+			return new ArrayBuffer();
+
+		}
+
+	}
+
 
 	// public
 	addOverlay( overlay, order = null ) {
