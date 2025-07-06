@@ -392,8 +392,9 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// TODO: generate "virtual" nodes for the node if needed
-		// TODO: handle disposal
+		// TODO: generate "virtual" nodes for the node if needed. Create a reusable function here since we
+		// need to clean and recreate all the virtual children when the overlays change
+		// TODO: handle disposal by checking if children are "virtual"
 
 	}
 
