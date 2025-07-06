@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4 } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Sphere } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
@@ -385,6 +385,31 @@ export class ImageOverlayPlugin {
 
 	parseToMesh( buffer, tile, extension, uri ) {
 
+		const { tiles } = this;
+		const relevantVectors = [];
+		const sphere = tile.cached.boundingVolume.getSphere( new Sphere() );
+		this.overlayInfo.forEach( ( overlay, { tileInfo } ) => {
+
+			const info = tileInfo.get( tile );
+			if ( info && info.target ) {
+
+				if ( overlay.frame ) {
+
+					const vec = new Vector3( 0, 0, 1 ).transformDirection( overlay.frame );
+					relevantVectors.push( vec );
+
+				} else {
+
+					const vec = new Vector3();
+					tiles.ellipsoid.getPositionToNormal( sphere.center, vec );
+					relevantVectors.push( vec );
+
+				}
+
+			}
+
+		} );
+
 		if ( extension === 'image_overlay_tile_split' ) {
 
 			// TODO: split on the given axes, keep the target model
@@ -395,6 +420,34 @@ export class ImageOverlayPlugin {
 		// TODO: generate "virtual" nodes for the node if needed. Create a reusable function here since we
 		// need to clean and recreate all the virtual children when the overlays change
 		// TODO: handle disposal by checking if children are "virtual"
+		const splits = relevantVectors.flatMap( vec => {
+
+			const right = new Vector3( 1, 0, 0 );
+			if ( vec.dot( right ) > 1 - 1e4 ) {
+
+				right.set( 0, 1, 0 );
+
+			}
+
+			const v0 = new Vector3().dotVectors( vec, right );
+			const v1 = new Vector3().dotVectors( vec, v0 );
+			return [ v0, v1 ];
+
+		} );
+		let sphereList = [ sphere ];
+
+		for ( let i = 0; i < splits.length; i ++ ) {
+
+			const axis = splits[ i ];
+			const center = sphere.center;
+			const scratch = new Vector3();
+			sphereList = sphereList.flatMap( s => {
+
+				// TODO: how to construct reasonable bounding volumes here?
+
+			} );
+
+		}
 
 	}
 
