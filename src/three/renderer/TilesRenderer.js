@@ -940,9 +940,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 			} else {
 
+				// avoid dividing 0 by 0 which can result in NaN. If the distance to the tile is
+				// 0 then the error should be infinity.
 				const sseDenominator = info.sseDenominator;
 				distance = boundingVolume.distanceToPoint( info.position );
-				error = tile.geometricError / ( distance * sseDenominator );
+				error = distance === 0 ? Infinity : tile.geometricError / ( distance * sseDenominator );
 
 			}
 
