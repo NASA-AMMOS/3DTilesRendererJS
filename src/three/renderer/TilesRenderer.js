@@ -942,7 +942,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 				const sseDenominator = info.sseDenominator;
 				distance = boundingVolume.distanceToPoint( info.position );
-				error = tile.geometricError / ( distance * sseDenominator );
+				error = distance === 0 ? Infinity : tile.geometricError / ( distance * sseDenominator );
 
 			}
 
