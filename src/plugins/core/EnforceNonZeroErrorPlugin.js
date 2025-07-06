@@ -21,7 +21,7 @@ export class EnforceNonZeroErrorPlugin {
 			let targetError = Infinity;
 			while ( parent !== null ) {
 
-				if ( parent.geometricError !== 0 && parent.geometricError < targetError) {
+				if ( parent.geometricError !== 0 && parent.geometricError < targetError ) {
 
 					targetError = parent.geometricError;
 					targetDepth = depth;
