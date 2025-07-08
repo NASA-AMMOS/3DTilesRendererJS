@@ -516,11 +516,11 @@ export class ImageOverlayPlugin {
 			// TODO: generate the same bounding volume type as the parent tile
 
 			// generate a region bounding volume
-			const { range, heightRange } = getMeshesCartographicRange( meshes, tiles.ellipsoid );
+			const { region } = getMeshesCartographicRange( meshes, tiles.ellipsoid );
 			children.push( {
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
-				boundingVolume: { region: [ ...range, ...heightRange ] },
+				boundingVolume: { region },
 				content: { uri: './child.image_overlay_tile_split' },
 				children: [],
 				[ SPLIT_TILE_DATA ]: result,

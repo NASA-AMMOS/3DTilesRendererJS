@@ -93,7 +93,12 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 	}
 
 	const range = [ minLon, minLat, maxLon, maxLat ];
-	return { uv, range, heightRange: [ minHeight, maxHeight ] };
+	const region = [ ...range, minHeight, maxHeight ];
+	return {
+		uv,
+		range,
+		region,
+	};
 
 }
 
@@ -119,18 +124,18 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 		}
 
-		const { uv, range, heightRange } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
+		const { uv, region } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
 		uvs.push( uv );
 
 		// save the min and max values
-		minLat = Math.min( minLat, range[ 1 ] );
-		maxLat = Math.max( maxLat, range[ 3 ] );
+		minLat = Math.min( minLat, region[ 1 ] );
+		maxLat = Math.max( maxLat, region[ 3 ] );
 
-		minLon = Math.min( minLon, range[ 0 ] );
-		maxLon = Math.max( maxLon, range[ 2 ] );
+		minLon = Math.min( minLon, region[ 0 ] );
+		maxLon = Math.max( maxLon, region[ 2 ] );
 
-		minHeight = Math.min( minHeight, heightRange[ 0 ] );
-		maxHeight = Math.max( maxHeight, heightRange[ 1 ] );
+		minHeight = Math.min( minHeight, region[ 4 ] );
+		maxHeight = Math.max( maxHeight, region[ 5 ] );
 
 	} );
 
@@ -165,8 +170,8 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		heightRange: [ minHeight, maxHeight ],
 		range: clampedRange,
+		region: [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ],
 	};
 
 }
@@ -203,8 +208,13 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 	}
 
+	// TODO: output a more complete bounds definition relative to the frame
 	const range = [ minU, minV, maxU, maxV ];
-	return { uv, range, heightRange: [ minW, maxW ] };
+	return {
+		uv,
+		range,
+		heightRange: [ minW, maxW ],
+	};
 
 }
 
@@ -259,6 +269,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 	} );
 
+	// TODO: output a more complete bounds definition relative to the frame
 	return {
 		uvs,
 		range: [ minU, minV, maxU, maxV ],
