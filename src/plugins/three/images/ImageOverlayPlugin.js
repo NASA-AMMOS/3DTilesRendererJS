@@ -457,7 +457,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// TODO: cull this to a limited
+		// TODO: cull this to a limited set of vectors that reasonably describe the splits needed. Maybe cones of 22.5 or 45 degrees.
 		splitDirections.length = 2;
 
 		// if there are no directions to split on then exit early
