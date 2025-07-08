@@ -199,7 +199,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 		maxV = Math.max( maxV, _vec.y );
 
 		minW = Math.min( minW, _vec.z );
-		minW = Math.max( maxW, _vec.z );
+		maxW = Math.max( maxW, _vec.z );
 
 	}
 
