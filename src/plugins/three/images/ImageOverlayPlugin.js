@@ -538,8 +538,6 @@ export class ImageOverlayPlugin {
 
 			}
 
-			// TODO: generate the same bounding volume type as the parent tile
-
 			// generate a region bounding volume
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
