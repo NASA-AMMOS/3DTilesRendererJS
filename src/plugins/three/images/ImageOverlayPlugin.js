@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Sphere } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
@@ -10,6 +10,10 @@ import { GoogleCloudAuth } from '../../core/auth/GoogleCloudAuth.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _vec = /* @__PURE__ */ new Vector3();
+const _center = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 
 // function for marking and releasing images in the given overlay
 function markOverlayImages( range, level, overlay, doRelease ) {
@@ -313,7 +317,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	processTileModel( scene, tile ) {
+	processTileModel( scene, tile, abortSignal ) {
 
 		return this._processTileModel( scene, tile );
 
@@ -336,6 +340,7 @@ export class ImageOverlayPlugin {
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
+		this.expandChildren( scene, tile ),
 		this._updateLayers( tile );
 
 		this.pendingTiles.delete( tile );
@@ -385,69 +390,145 @@ export class ImageOverlayPlugin {
 
 	parseToMesh( buffer, tile, extension, uri ) {
 
-		const { tiles } = this;
-		const relevantVectors = [];
-		const sphere = tile.cached.boundingVolume.getSphere( new Sphere() );
-		this.overlayInfo.forEach( ( overlay, { tileInfo } ) => {
+		if ( extension === 'image_overlay_tile_split' ) {
 
+			return tile[ SPLIT_TILE_DATA ];
+
+		}
+
+	}
+
+	async expandChildren( scene, tile ) {
+
+		if ( tile.children.length !== 0 ) {
+
+			return;
+
+		}
+
+		const { tiles, overlayInfo } = this;
+
+		// create a copy of the content to transform and split
+		const clone = scene.clone();
+		clone.updateMatrixWorld();
+
+		// get the center of the content
+		const box = new Box3();
+		box.setFromObject( clone );
+		box.getCenter( _center );
+
+		// find the vectors that are orthogonal to every overlay projection
+		const splitDirections = [];
+		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+			// if the tile has a render target associated with the overlay and the last level of detail
+			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target ) {
+			if ( info && info.target && overlay.tiling.maxLevel > info.level ) {
 
 				if ( overlay.frame ) {
 
-					const vec = new Vector3( 0, 0, 1 ).transformDirection( overlay.frame );
-					relevantVectors.push( vec );
+					_normal.set( 0, 0, 1 ).transformDirection( overlay.frame );
 
 				} else {
 
-					const vec = new Vector3();
-					tiles.ellipsoid.getPositionToNormal( sphere.center, vec );
-					relevantVectors.push( vec );
+					tiles.ellipsoid.getPositionToNormal( _center, _normal );
+					if ( _normal.length() < 1e-6 ) {
+
+						_normal.set( 1, 0, 0 );
+
+					}
 
 				}
 
+				// construct the orthogonal vectors
+				const other = _vec.set( 0, 0, 1 );
+				if ( Math.abs( _normal.dot( other ) ) > 1 - 1e-4 ) {
+
+					other.set( 1, 0, 0 );
+
+				}
+
+				const ortho0 = new Vector3().crossVectors( _normal, other ).normalize();
+				const ortho1 = new Vector3().crossVectors( _normal, ortho0 ).normalize();
+				splitDirections.push( ortho0, ortho1 );
+
 			}
 
 		} );
 
-		if ( extension === 'image_overlay_tile_split' ) {
+		// TODO: cull this to a limited
+		splitDirections.length = 2;
 
-			// TODO: split on the given axes, keep the target model
-			const clipper = new GeometryClipper();
+		// if there are no directions to split on then exit early
+		if ( splitDirections.length === 0 ) {
+
+			return;
 
 		}
 
-		// TODO: generate "virtual" nodes for the node if needed. Create a reusable function here since we
-		// need to clean and recreate all the virtual children when the overlays change
-		// TODO: handle disposal by checking if children are "virtual"
-		const splits = relevantVectors.flatMap( vec => {
+		// set up the splitter to ignore overlay uvs
+		const clipper = new GeometryClipper();
+		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
+		splitDirections.map( v => {
 
-			const right = new Vector3( 1, 0, 0 );
-			if ( vec.dot( right ) > 1 - 1e4 ) {
+			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
 
-				right.set( 0, 1, 0 );
-
-			}
-
-			const v0 = new Vector3().dotVectors( vec, right );
-			const v1 = new Vector3().dotVectors( vec, v0 );
-			return [ v0, v1 ];
-
-		} );
-		let sphereList = [ sphere ];
-
-		for ( let i = 0; i < splits.length; i ++ ) {
-
-			const axis = splits[ i ];
-			const center = sphere.center;
-			const scratch = new Vector3();
-			sphereList = sphereList.flatMap( s => {
-
-				// TODO: how to construct reasonable bounding volumes here?
+				Triangle.getInterpolatedAttribute( geometry.attributes.position, i0, i1, i2, barycoord, _vec );
+				return _vec.applyMatrix4( matrixWorld ).sub( _center ).dot( v );
 
 			} );
 
-		}
+		} );
+
+		// run the clipping operations by performing every permutation of sides
+		// defined by the split directions
+		const children = [];
+		clipper.forEachSplitPermutation( () => {
+
+			// clip the object itself
+			const result = clipper.clipObject( clone );
+
+			// remove the parent transform because it will be multiplied in after the fact
+			result.matrix
+				.premultiply( tile.cached.transformInverse )
+				.decompose( result.position, result.quaternion, result.scale );
+
+			// collect the meshes
+			const meshes = [];
+			result.traverse( c => {
+
+				if ( c.isMesh ) {
+
+					c.material = c.material.clone();
+					meshes.push( c );
+
+				}
+
+			} );
+
+			if ( meshes.length === 0 ) {
+
+				return;
+
+			}
+
+			// TODO: generate the same bounding volume type as the parent tile
+
+			// generate a region bounding volume
+			const { range, heightRange } = getMeshesCartographicRange( meshes, tiles.ellipsoid );
+			children.push( {
+				refine: 'REPLACE',
+				geometricError: tile.geometricError * 0.5,
+				boundingVolume: { region: [ ...range, ...heightRange ] },
+				content: { uri: './child.image_overlay_tile_split' },
+				children: [],
+				[ SPLIT_TILE_DATA ]: result,
+			} );
+
+		} );
+
+		tile.children.push( ...children );
 
 	}
 
@@ -461,7 +542,6 @@ export class ImageOverlayPlugin {
 		}
 
 	}
-
 
 	// public
 	addOverlay( overlay, order = null ) {

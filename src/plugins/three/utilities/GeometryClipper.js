@@ -22,6 +22,30 @@ export class GeometryClipper {
 
 	}
 
+	forEachSplitPermutation( callback ) {
+
+		const { splitOperations } = this;
+		const runPermutations = ( index = 0 ) => {
+
+			if ( index >= splitOperations.length ) {
+
+				callback();
+				return;
+
+			}
+
+			splitOperations[ index ].keepPositive = true;
+			runPermutations( index + 1 );
+
+			splitOperations[ index ].keepPositive = false;
+			runPermutations( index + 1 );
+
+		};
+
+		runPermutations();
+
+	}
+
 	// Takes an operation that returns a value for the given vertex passed to the callback. Triangles
 	// are clipped along edges where the interpolated value is equal to 0. The polygons on the positive
 	// side of the operation are kept if "keepPositive" is true.
