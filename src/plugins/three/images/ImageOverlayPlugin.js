@@ -457,11 +457,34 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// TODO: cull this to a limited set of vectors that reasonably describe the splits needed. Maybe cones of 22.5 or 45 degrees.
-		splitDirections.length = 2;
+		// Generate a reduced set of vectors by averages directions in a 45 degree cone so
+		// we don't split unnecessarily
+		const reducedDirections = [];
+		while ( splitDirections.length !== 0 ) {
+
+			const normalized = splitDirections.pop().clone();
+			const average = normalized.clone();
+			for ( let i = 0; i < splitDirections.length; i ++ ) {
+
+				const dir = splitDirections[ i ];
+				const dotProduct = normalized.dot( dir );
+				if ( Math.abs( dotProduct ) > Math.cos( Math.PI / 8 ) ) {
+
+					average.addScaledVector( dir, Math.sign( dotProduct ) );
+					normalized.copy( average ).normalize();
+					splitDirections.splice( i, 1 );
+					i --;
+
+				}
+
+			}
+
+			reducedDirections.push( average.normalize() );
+
+		}
 
 		// if there are no directions to split on then exit early
-		if ( splitDirections.length === 0 ) {
+		if ( reducedDirections.length === 0 ) {
 
 			return;
 
@@ -470,7 +493,7 @@ export class ImageOverlayPlugin {
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
 		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
-		splitDirections.map( v => {
+		reducedDirections.map( v => {
 
 			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
 
