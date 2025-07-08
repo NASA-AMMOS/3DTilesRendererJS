@@ -12,7 +12,9 @@ import { GeometryClipper } from '../utilities/GeometryClipper.js';
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
 const _center = /* @__PURE__ */ new Vector3();
+const _sphereCenter = /* @__PURE__ */ new Vector3();
 const _normal = /* @__PURE__ */ new Vector3();
+const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 
 // function for marking and releasing images in the given overlay
@@ -539,11 +541,52 @@ export class ImageOverlayPlugin {
 			// TODO: generate the same bounding volume type as the parent tile
 
 			// generate a region bounding volume
-			const { region } = getMeshesCartographicRange( meshes, tiles.ellipsoid );
+			const boundingVolume = {};
+			if ( tile.boundingVolume.region ) {
+
+				boundingVolume.region = getMeshesCartographicRange( meshes, tiles.ellipsoid ).region;
+
+			}
+
+			// create a sphere bounding volume
+			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
+
+				// compute the sphere center
+				_box
+					.setFromObject( result, true )
+					.getCenter( _sphereCenter );
+
+				// calculate the sq radius from all vertices
+				let maxSqRadius = 0;
+				result.traverse( c => {
+
+					const geometry = c.geometry;
+					if ( geometry ) {
+
+						const position = geometry.attributes.position;
+						for ( let i = 0, l = position.count; i < l; i ++ ) {
+
+							const sqRadius = _vec
+								.fromBufferAttribute( position, i )
+								.applyMatrix4( c.matrixWorld )
+								.distanceToSquared( _sphereCenter );
+
+							maxSqRadius = Math.max( maxSqRadius, sqRadius );
+
+						}
+
+					}
+
+				} );
+
+				boundingVolume.sphere = [ ..._sphereCenter, Math.sqrt( maxSqRadius ) ];
+
+			}
+
 			children.push( {
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
-				boundingVolume: { region },
+				boundingVolume: boundingVolume,
 				content: { uri: './child.image_overlay_tile_split' },
 				children: [],
 				[ SPLIT_TILE_DATA ]: result,
