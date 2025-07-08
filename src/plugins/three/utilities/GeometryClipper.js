@@ -117,7 +117,7 @@ export class GeometryClipper {
 
 					continue;
 
-				} else if ( Array.isArray( attributeList ) && attributeList.includes( key ) ) {
+				} else if ( Array.isArray( attributeList ) && ! attributeList.includes( key ) ) {
 
 					continue;
 

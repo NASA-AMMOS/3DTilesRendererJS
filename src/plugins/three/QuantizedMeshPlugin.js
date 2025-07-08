@@ -215,12 +215,6 @@ export class QuantizedMeshPlugin {
 
 	parseToMesh( buffer, tile, extension, uri ) {
 
-		if ( extension !== 'terrain' ) {
-
-			return;
-
-		}
-
 		const {
 			skirtLength,
 			solid,
@@ -255,7 +249,7 @@ export class QuantizedMeshPlugin {
 
 			result = clipper.clipToQuadrant( tile.parent.cached.scene, left, bottom );
 
-		} else {
+		} else if ( extension === 'terrain' ) {
 
 			const loader = new QuantizedMeshLoader( tiles.manager );
 			loader.ellipsoid.copy( ellipsoid );
@@ -270,6 +264,10 @@ export class QuantizedMeshPlugin {
 			loader.maxLon = east;
 
 			result = loader.parse( buffer );
+
+		} else {
+
+			return;
 
 		}
 
