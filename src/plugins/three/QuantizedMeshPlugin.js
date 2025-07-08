@@ -213,7 +213,13 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	async parseToMesh( buffer, tile, extension, uri ) {
+	parseToMesh( buffer, tile, extension, uri ) {
+
+		if ( extension !== 'terrain' ) {
+
+			return;
+
+		}
 
 		const {
 			skirtLength,
