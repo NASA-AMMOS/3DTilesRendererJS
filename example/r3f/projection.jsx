@@ -2,7 +2,7 @@ import { StrictMode, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
-import { TilesFadePlugin, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, CesiumIonOverlay, EnforceNonZeroErrorPlugin } from '3d-tiles-renderer/plugins';
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { PivotControls } from '@react-three/drei';
 import { ImageOverlay, ImageOverlayPlugin } from './plugins/ImageOverlayPlugin.jsx';
@@ -56,6 +56,7 @@ function App() {
 							worldFrame={ worldMatrix }
 						/>
 					</ImageOverlayPlugin>
+					<TilesPlugin plugin={ EnforceNonZeroErrorPlugin } />
 				</TilesRenderer>
 			</group>
 

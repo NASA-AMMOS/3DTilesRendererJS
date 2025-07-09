@@ -37,7 +37,7 @@ export class EnforceNonZeroErrorPlugin {
 			// for the sake of forced refinement. Then scale the error by the depth.
 			if ( targetDepth !== - 1 ) {
 
-				tile.geometricError = parent.geometricError * ( 2 ** - depth );
+				tile.geometricError = targetError * ( 2 ** - depth );
 
 			}
 
