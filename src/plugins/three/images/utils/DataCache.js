@@ -87,6 +87,10 @@ export class DataCache {
 
 					this.active --;
 
+				} ).catch( e => {
+
+					// error logging and handling can be handled elsewhere
+
 				} );
 
 			} else {

@@ -1002,7 +1002,16 @@ export class ImageOverlayPlugin {
 
 						} );
 
-						await promise;
+						try {
+
+							await promise;
+
+						} catch ( e ) {
+
+							// skip errors since this will throw when aborted
+							return;
+
+						}
 
 					}
 
