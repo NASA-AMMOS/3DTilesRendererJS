@@ -775,7 +775,10 @@ Constructor takes the following options:
 	overlays = []: Array<ImageOverlay>,
 
 	// The resolution of each render target to use for each overlay.
-	resolution = 256: null,
+	resolution = 256: number,
+
+	// Whether to continue to split tiles util the set of image data is available
+	enableTileSplitting = true: boolean,
 }
 ```
 

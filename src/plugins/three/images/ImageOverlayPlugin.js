@@ -105,6 +105,7 @@ export class ImageOverlayPlugin {
 			overlays = [],
 			resolution = 256,
 			renderer = null,
+			enableTileSplitting = true,
 		} = options;
 
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
@@ -113,6 +114,7 @@ export class ImageOverlayPlugin {
 		// options
 		this.renderer = renderer;
 		this.resolution = resolution;
+		this.enableTileSplitting = enableTileSplitting;
 		this.overlays = [];
 
 		// internal
@@ -402,7 +404,7 @@ export class ImageOverlayPlugin {
 
 	async expandChildren( scene, tile ) {
 
-		if ( tile.children.length !== 0 ) {
+		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
 
 			return;
 
