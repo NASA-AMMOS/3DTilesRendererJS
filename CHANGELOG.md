@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.12] - Unreleased
 ### Added
 - `3d-tiles-renderer/core` & `3d-tiles-renderer/three` export for dedicated files.
+- Added `EnforceNonZeroErrorPlugin`.
+- ImageOverlayPlugin: Add support for splitting tiles to match image tile detail.
 
 ### Fixed
 - R3F TilesAttributionOverlay not functioning on non-HTTPS domains.
@@ -14,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - QuantizedMeshPlugin: Fixed case where availability metadata was not interpreted correctly.
 - Fixed case where "screenspace error" could be calculated as "NaN" when the distance to the tile and geometricError are 0.
 - UpdateOnChangePlugin: Fix events not being disposed of properly.
+- QuantizedMeshPlugin: Only parse a mesh if the extension is "terrain".
+- ImageOverlayPlugin: Correctly cancel image tile loading when removing an overlay.
+
 
 ## [0.4.11] - 2025.07.01
 ### Added
