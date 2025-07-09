@@ -130,6 +130,7 @@ export class ImageOverlayPlugin {
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
 		this._cleanupScheduled = false;
+		this._virtualChildResetId = 0;
 
 		overlays.forEach( overlay => {
 
@@ -404,7 +405,20 @@ export class ImageOverlayPlugin {
 
 	}
 
-	resetVirtualChildren() {
+	async resetVirtualChildren() {
+
+		// only run this if all the overlays are ready and tile targets have been generated, etc
+		// so we can make an effort to only remove the necessary tiles.
+		this._virtualChildResetId ++;
+		const id = this._virtualChildResetId;
+
+		await Promise.all( this.overlays.map( o => o.whenReady() ) );
+
+		if ( id !== this._virtualChildResetId ) {
+
+			return;
+
+		}
 
 		// TODO: can we somehow only remove children if they are not needed or if the parent
 		// that was split needs a different projection? It makes an stable, order-agnostic hash and
