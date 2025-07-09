@@ -422,16 +422,17 @@ export class QuantizedMeshPlugin {
 
 	disposeTile( tile ) {
 
-		// dispose of the generated children past the metadata layer to avoid accumulating too much
+		// dispose of the available array since we will get it again if this tile is loaded
 		if ( getTileHasMetadata( tile, this.layer ) ) {
 
-			tile.children.length = 0;
-			tile.__childrenProcessed = 0;
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
-		// TODO: is this correct?
+		// Note: we remove all children always because child tiles can rely on splitting parent tiles
+		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
+		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
+		// we just remove all children and generate them again one the parent is loaded.
 		tile.children.length = 0;
 		tile.__childrenProcessed = 0;
 
