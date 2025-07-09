@@ -242,6 +242,8 @@ export class ImageOverlayPlugin {
 
 				} );
 
+				this.resetVirtualChildren();
+
 				tiles.dispatchEvent( { type: 'needs-rerender' } );
 
 			}
@@ -344,7 +346,7 @@ export class ImageOverlayPlugin {
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
-		this.expandChildren( scene, tile ),
+		this.expandVirtualChildren( scene, tile ),
 		this._updateLayers( tile );
 
 		this.pendingTiles.delete( tile );
@@ -402,7 +404,45 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async expandChildren( scene, tile ) {
+	resetVirtualChildren() {
+
+		// TODO: can we somehow only remove children if they are not needed or if the parent
+		// that was split needs a different projection? It makes an stable, order-agnostic hash and
+		// sorting more important
+
+		// collect the virtual tiles
+		const { tiles } = this;
+		const virtualTiles = [];
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			if ( SPLIT_TILE_DATA in tile ) {
+
+				virtualTiles.push( tile );
+
+			}
+
+		} );
+
+		// dispose of the virtual tiles from the bottom up
+		virtualTiles.reverse();
+		virtualTiles.forEach( tile => {
+
+			tiles.lruCache.remove( tile );
+			tile.parent.children.length = 0;
+			tile.parent.__childrenProcessed = 0;
+
+		} );
+
+		// re-expand tiles if needed
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			this.expandVirtualChildren( scene, tile );
+
+		} );
+
+	}
+
+	async expandVirtualChildren( scene, tile ) {
 
 		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
 
