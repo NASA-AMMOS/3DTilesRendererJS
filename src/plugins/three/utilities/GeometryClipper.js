@@ -22,6 +22,30 @@ export class GeometryClipper {
 
 	}
 
+	forEachSplitPermutation( callback ) {
+
+		const { splitOperations } = this;
+		const runPermutations = ( index = 0 ) => {
+
+			if ( index >= splitOperations.length ) {
+
+				callback();
+				return;
+
+			}
+
+			splitOperations[ index ].keepPositive = true;
+			runPermutations( index + 1 );
+
+			splitOperations[ index ].keepPositive = false;
+			runPermutations( index + 1 );
+
+		};
+
+		runPermutations();
+
+	}
+
 	// Takes an operation that returns a value for the given vertex passed to the callback. Triangles
 	// are clipped along edges where the interpolated value is equal to 0. The polygons on the positive
 	// side of the operation are kept if "keepPositive" is true.
@@ -42,10 +66,43 @@ export class GeometryClipper {
 
 	}
 
+	// clips an object hierarchy
+	clipObject( object ) {
+
+		const result = object.clone();
+		const toRemove = [];
+		result.traverse( c => {
+
+			if ( c.isMesh ) {
+
+				c.geometry = this.clip( c ).geometry;
+
+				const triCount = c.geometry.index ? c.geometry.index.count / 3 : c.attributes.position.count / 3;
+				if ( triCount === 0 ) {
+
+					toRemove.push( c );
+
+				}
+
+			}
+
+		} );
+
+		toRemove.forEach( m => {
+
+			m.removeFromParent();
+
+		} );
+
+		return result;
+
+	}
+
 	// Returns a new mesh that has been clipped by the split operations. Range indicates the range of
 	// elements to include when clipping.
 	clip( mesh, range = null ) {
 
+		// TODO: support multimaterial
 		const result = this.getClippedData( mesh, range );
 		return this.constructMesh( result.attributes, result.index, mesh );
 
@@ -78,11 +135,21 @@ export class GeometryClipper {
 		// initialize the attributes to the set in the attribute list or all if set to null
 		for ( const key in sourceGeometry.attributes ) {
 
-			if ( attributeList === null || attributeList.includes( key ) ) {
+			if ( attributeList !== null ) {
 
-				target.attributes[ key ] = [];
+				if ( attributeList instanceof Function && ! attributeList( key ) ) {
+
+					continue;
+
+				} else if ( Array.isArray( attributeList ) && ! attributeList.includes( key ) ) {
+
+					continue;
+
+				}
 
 			}
+
+			target.attributes[ key ] = [];
 
 		}
 
@@ -125,9 +192,9 @@ export class GeometryClipper {
 
 					const tri = triangles[ t ];
 					const { indices, barycoord } = tri;
-					tri.clipValues.a = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.a );
-					tri.clipValues.b = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.b );
-					tri.clipValues.c = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.c );
+					tri.clipValues.a = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.a, mesh.matrixWorld );
+					tri.clipValues.b = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.b, mesh.matrixWorld );
+					tri.clipValues.c = callback( sourceGeometry, indices.a, indices.b, indices.c, barycoord.c, mesh.matrixWorld );
 
 					this.splitTriangle( tri, ! keepPositive, result );
 
@@ -232,7 +299,17 @@ export class GeometryClipper {
 
 				edgeIndices.push( i );
 				edges.push( [ v, nv ] );
-				lerpValues.push( MathUtils.mapLinear( SPLIT_VALUE, pValue, npValue, 0, 1 ) );
+
+				if ( pValue === npValue ) {
+
+					// avoid NaN here which can occur with mapLinear when pValue and npValue are the same value
+					lerpValues.push( 0 );
+
+				} else {
+
+					lerpValues.push( MathUtils.mapLinear( SPLIT_VALUE, pValue, npValue, 0, 1 ) );
+
+				}
 
 			}
 

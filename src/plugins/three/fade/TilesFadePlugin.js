@@ -195,6 +195,7 @@ export class TilesFadePlugin {
 
 		this.tiles = null;
 		this.batchedMesh = null;
+		this._quickFadeTiles = new Set();
 		this._fadeManager = new FadeManager();
 		this._fadeMaterialManager = new FadeMaterialManager();
 		this._prevCameraTransforms = null;
@@ -216,6 +217,14 @@ export class TilesFadePlugin {
 
 		};
 		this._onDisposeModel = ( { tile, scene } ) => {
+
+			if ( this.tiles.visibleTiles.has( tile ) ) {
+
+				// mark the parent as needing to fade in quickly to accommodate the children disappearing.
+				// this can happen when a tile is forcefully disposed or removed from the lru cache while visible.
+				this._quickFadeTiles.add( tile.parent );
+
+			}
 
 			// delete the fade info from the managers on disposal of model
 			this._fadeManager.deleteObject( tile );
@@ -410,6 +419,14 @@ export class TilesFadePlugin {
 				this._fadeManager.fadeIn( tile );
 
 			}
+
+		}
+
+		// if a tile needs to be jumped in then complete the fade here
+		if ( this._quickFadeTiles.has( tile ) ) {
+
+			this._fadeManager.completeFade( tile );
+			this._quickFadeTiles.delete( tile );
 
 		}
 

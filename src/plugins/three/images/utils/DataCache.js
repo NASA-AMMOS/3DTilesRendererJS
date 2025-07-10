@@ -13,6 +13,7 @@ export class DataCache {
 		this.cache = {};
 		this.count = 0;
 		this.cachedBytes = 0;
+		this.active = 0;
 
 	}
 
@@ -71,7 +72,8 @@ export class DataCache {
 				bytes: 0,
 			};
 
-			info.result = this.fetchItem( ...args, abortController.signal );
+			this.active ++;
+			info.result = this.fetchItem( args, abortController.signal );
 			if ( info.result instanceof Promise ) {
 
 				info.result.then( res => {
@@ -81,10 +83,19 @@ export class DataCache {
 					this.cachedBytes += info.bytes;
 					return res;
 
+				} ).finally( () => {
+
+					this.active --;
+
+				} ).catch( e => {
+
+					// error logging and handling can be handled elsewhere
+
 				} );
 
 			} else {
 
+				this.active --;
 				info.bytes = this.getMemoryUsage( info.result );
 				this.cachedBytes += info.bytes;
 
@@ -179,17 +190,23 @@ export class DataCache {
 					if ( result instanceof Promise ) {
 
 						// "disposeItem" will throw potentially if fetch, etc are cancelled using the abort signal
-						result.then( item => this.disposeItem( item ) ).catch( () => {} );
+						result.then( item => {
+
+							this.disposeItem( item );
+							this.count --;
+							this.cachedBytes -= info.bytes;
+
+						} ).catch( () => {} );
 
 					} else {
 
 						this.disposeItem( result );
+						this.count --;
+						this.cachedBytes -= info.bytes;
 
 					}
 
 					delete cache[ key ];
-					this.count --;
-					this.cachedBytes -= info.bytes;
 
 				};
 

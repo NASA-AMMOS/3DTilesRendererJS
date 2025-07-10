@@ -6,6 +6,7 @@ export class ImageOverlayPlugin {
 		overlays: Array<ImageOverlay>,
 		renderer: WebGLRenderer,
 		resolution?: number,
+		enableTileSplitting?: boolean,
 	} );
 
 	addOverlay( overlay: ImageOverlay, order?: number ): void;

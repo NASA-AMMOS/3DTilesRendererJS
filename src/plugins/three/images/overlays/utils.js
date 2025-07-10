@@ -47,8 +47,10 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 	let minLat = Infinity;
 	let minLon = Infinity;
+	let minHeight = Infinity;
 	let maxLat = - Infinity;
 	let maxLon = - Infinity;
+	let maxHeight = - Infinity;
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
 		// get the lat / lon values per vertex
@@ -85,20 +87,30 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 		minLon = Math.min( minLon, _cart.lon );
 		maxLon = Math.max( maxLon, _cart.lon );
 
+		minHeight = Math.min( minHeight, _cart.height );
+		maxHeight = Math.max( maxHeight, _cart.height );
+
 	}
 
 	const range = [ minLon, minLat, maxLon, maxLat ];
-	return { uv, range };
+	const region = [ ...range, minHeight, maxHeight ];
+	return {
+		uv,
+		range,
+		region,
+	};
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix, tiling ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, tiling = null ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
 	let minLon = Infinity;
+	let minHeight = Infinity;
 	let maxLat = - Infinity;
 	let maxLon = - Infinity;
+	let maxHeight = - Infinity;
 	const uvs = [];
 
 	const _matrix = new Matrix4();
@@ -112,45 +124,54 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 		}
 
-		const { uv, range } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
+		const { uv, region } = getGeometryCartographicChannel( mesh.geometry, _matrix, ellipsoid );
 		uvs.push( uv );
 
 		// save the min and max values
-		minLat = Math.min( minLat, range[ 1 ] );
-		maxLat = Math.max( maxLat, range[ 3 ] );
+		minLat = Math.min( minLat, region[ 1 ] );
+		maxLat = Math.max( maxLat, region[ 3 ] );
 
-		minLon = Math.min( minLon, range[ 0 ] );
-		maxLon = Math.max( maxLon, range[ 2 ] );
+		minLon = Math.min( minLon, region[ 0 ] );
+		maxLon = Math.max( maxLon, region[ 2 ] );
 
-	} );
-
-	// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
-	// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
-	// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
-	// that show the underlying tile data. It's arguable which one is better but in all supported
-	// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
-	// globe range.
-	// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
-	const clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
-	const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
-	uvs.forEach( uv => {
-
-		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
-
-			const lon = uv[ i + 0 ];
-			const lat = uv[ i + 1 ];
-
-			const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
-			uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
-			uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
-
-		}
+		minHeight = Math.min( minHeight, region[ 4 ] );
+		maxHeight = Math.max( maxHeight, region[ 5 ] );
 
 	} );
+
+	let clampedRange = [ minLon, minLat, maxLon, maxLat ];
+	if ( tiling !== null ) {
+
+		// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
+		// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
+		// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
+		// that show the underlying tile data. It's arguable which one is better but in all supported
+		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
+		// globe range.
+		// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
+		clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+		const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
+		uvs.forEach( uv => {
+
+			for ( let i = 0, l = uv.length; i < l; i += 2 ) {
+
+				const lon = uv[ i + 0 ];
+				const lat = uv[ i + 1 ];
+
+				const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
+				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
+				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
+
+			}
+
+		} );
+
+	}
 
 	return {
 		uvs,
 		range: clampedRange,
+		region: [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ],
 	};
 
 }
@@ -164,8 +185,10 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 	let minU = Infinity;
 	let minV = Infinity;
+	let minW = Infinity;
 	let maxU = - Infinity;
 	let maxV = - Infinity;
+	let maxW = - Infinity;
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
 		// divide U by the aspect to stretch the U dimension to the aspect of the image
@@ -180,10 +203,18 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 		minV = Math.min( minV, _vec.y );
 		maxV = Math.max( maxV, _vec.y );
 
+		minW = Math.min( minW, _vec.z );
+		maxW = Math.max( maxW, _vec.z );
+
 	}
 
+	// TODO: output a more complete bounds definition relative to the frame
 	const range = [ minU, minV, maxU, maxV ];
-	return { uv, range };
+	return {
+		uv,
+		range,
+		heightRange: [ minW, maxW ],
+	};
 
 }
 
@@ -192,8 +223,10 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 	// find the U / V ranges
 	let minU = Infinity;
 	let minV = Infinity;
+	let minW = Infinity;
 	let maxU = - Infinity;
 	let maxV = - Infinity;
+	let maxW = - Infinity;
 	const uvs = [];
 
 	const _matrix = new Matrix4();
@@ -207,7 +240,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 		}
 
-		const { uv, range } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspect );
+		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspect );
 		uvs.push( uv );
 
 		// save the min and max values
@@ -216,6 +249,9 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 		minV = Math.min( minV, range[ 1 ] );
 		maxV = Math.max( maxV, range[ 3 ] );
+
+		minW = Math.min( minW, heightRange[ 0 ] );
+		maxW = Math.max( maxW, heightRange[ 1 ] );
 
 	} );
 
@@ -233,9 +269,11 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 	} );
 
+	// TODO: output a more complete bounds definition relative to the frame
 	return {
 		uvs,
 		range: [ minU, minV, maxU, maxV ],
+		heightRange: [ minW, maxW ],
 	};
 
 }

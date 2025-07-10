@@ -3,16 +3,16 @@ import { ImageOverlayPlugin as ImageOverlayPluginImpl } from '3d-tiles-renderer/
 import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-renderer/r3f';
 import { forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
 
-export function ImageOverlayPlugin( { children, ...rest } ) {
+export const ImageOverlayPlugin = forwardRef( function ImageOverlayPlugin( { children, ...rest }, ref ) {
 
 	const gl = useThree( state => state.gl );
 	return (
-		<TilesPlugin plugin={ ImageOverlayPluginImpl } args={ { renderer: gl, ...rest } }>
+		<TilesPlugin plugin={ ImageOverlayPluginImpl } args={ { renderer: gl, ...rest } } ref={ ref }>
 			{ children }
 		</TilesPlugin>
 	);
 
-}
+} );
 
 export const ImageOverlay = forwardRef( function ImageOverlay( props, ref ) {
 

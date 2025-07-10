@@ -57,11 +57,15 @@ export class TiledImageSource extends DataCache {
 	}
 
 	// fetch the item with the given key fields
-	fetchItem( ...args ) {
+	fetchItem( tokens, signal ) {
 
-		const url = this.getUrl( ...args );
+		const fetchOptions = {
+			...this.fetchOptions,
+			signal,
+		};
+		const url = this.getUrl( ...tokens );
 		return this
-			.fetchData( url, this.fetchOptions )
+			.fetchData( url, fetchOptions )
 			.then( res => res.arrayBuffer() )
 			.then( buffer => this.processBufferToTexture( buffer ) );
 

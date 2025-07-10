@@ -715,6 +715,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		// ensure the matrix is up to date in case the scene has a transform applied
+		scene.updateMatrix();
+		scene.matrix.premultiply( cachedTransform );
+		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+
 		// wait for extra processing by plugins if needed
 		await this.invokeAllPlugins( plugin => {
 
@@ -722,10 +727,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		// ensure the matrix is up to date in case the scene has a transform applied
-		scene.updateMatrix();
-		scene.matrix.premultiply( cachedTransform );
-		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
+		// frustum culling
 		scene.traverse( c => {
 
 			c[ INITIAL_FRUSTUM_CULLED ] = c.frustumCulled;

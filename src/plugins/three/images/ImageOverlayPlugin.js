@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4 } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
@@ -7,8 +7,16 @@ import { CesiumIonAuth } from '../../core/auth/CesiumIonAuth.js';
 import { PriorityQueue } from '../../../core/utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GoogleCloudAuth } from '../../core/auth/GoogleCloudAuth.js';
+import { GeometryClipper } from '../utilities/GeometryClipper.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+const _vec = /* @__PURE__ */ new Vector3();
+const _center = /* @__PURE__ */ new Vector3();
+const _sphereCenter = /* @__PURE__ */ new Vector3();
+const _normal = /* @__PURE__ */ new Vector3();
+const _box = /* @__PURE__ */ new Box3();
+const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
+const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 
 // function for marking and releasing images in the given overlay
 function markOverlayImages( range, level, overlay, doRelease ) {
@@ -98,6 +106,7 @@ export class ImageOverlayPlugin {
 			overlays = [],
 			resolution = 256,
 			renderer = null,
+			enableTileSplitting = true,
 		} = options;
 
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
@@ -106,6 +115,7 @@ export class ImageOverlayPlugin {
 		// options
 		this.renderer = renderer;
 		this.resolution = resolution;
+		this.enableTileSplitting = enableTileSplitting;
 		this.overlays = [];
 
 		// internal
@@ -121,6 +131,7 @@ export class ImageOverlayPlugin {
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
 		this._cleanupScheduled = false;
+		this._virtualChildResetId = 0;
 
 		overlays.forEach( overlay => {
 
@@ -233,6 +244,8 @@ export class ImageOverlayPlugin {
 
 				} );
 
+				this.resetVirtualChildren();
+
 				tiles.dispatchEvent( { type: 'needs-rerender' } );
 
 			}
@@ -258,7 +271,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayInfo, tileControllers, processQueue } = this;
+		const { overlayInfo, tileControllers, processQueue, pendingTiles } = this;
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -266,6 +279,7 @@ export class ImageOverlayPlugin {
 
 			tileControllers.get( tile ).abort();
 			tileControllers.delete( tile );
+			pendingTiles.delete( tile );
 
 		}
 
@@ -335,6 +349,7 @@ export class ImageOverlayPlugin {
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
+		this.expandVirtualChildren( scene, tile ),
 		this._updateLayers( tile );
 
 		this.pendingTiles.delete( tile );
@@ -362,9 +377,13 @@ export class ImageOverlayPlugin {
 			this._updateLayers( tile );
 			this.disposeTile( tile );
 
+			delete tile[ SPLIT_HASH ];
+
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
+
+		this.resetVirtualChildren( true );
 
 	}
 
@@ -379,6 +398,377 @@ export class ImageOverlayPlugin {
 			}
 
 		} );
+
+	}
+
+	parseToMesh( buffer, tile, extension, uri ) {
+
+		if ( extension === 'image_overlay_tile_split' ) {
+
+			return tile[ SPLIT_TILE_DATA ];
+
+		}
+
+	}
+
+	async resetVirtualChildren( fullDispose = false ) {
+
+		// only run this if all the overlays are ready and tile targets have been generated, etc
+		// so we can make an effort to only remove the necessary tiles.
+		this._virtualChildResetId ++;
+		const id = this._virtualChildResetId;
+
+		await Promise.all( this.overlays.map( o => o.whenReady() ) );
+
+		if ( id !== this._virtualChildResetId ) {
+
+			return;
+
+		}
+
+		// collect the tiles split into virtual tiles
+		const { tiles } = this;
+		const parents = new Set();
+		tiles.forEachLoadedModel( ( scene, tile ) => {
+
+			if ( SPLIT_HASH in tile ) {
+
+				parents.add( tile );
+
+			}
+
+		} );
+
+		// dispose of the virtual children if this tile would not be split or the spilt could change
+		// under the current overlays used.
+		parents.forEach( parent => {
+
+			if ( parent.parent === null ) {
+
+				return;
+
+			}
+
+			const clone = parent.cached.scene.clone();
+			clone.updateMatrixWorld();
+
+			const { hash } = this._getSplitVectors( clone, parent );
+			if ( parent[ SPLIT_HASH ] !== hash || fullDispose ) {
+
+				const children = collectChildren( parent );
+				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
+
+				// note that we need to remove children from the processing queue in this case
+				// because we are forcibly evicting them from the cache.
+				children.forEach( child => {
+
+					tiles.processNodeQueue.remove( child );
+					tiles.lruCache.remove( child );
+					child.parent = null;
+
+				} );
+
+				parent.__childrenProcessed = 0;
+				parent.children.length = 0;
+
+			}
+
+		} );
+
+		// re-expand tiles if needed
+		if ( ! fullDispose ) {
+
+			tiles.forEachLoadedModel( ( scene, tile ) => {
+
+				this.expandVirtualChildren( scene, tile );
+
+			} );
+
+		}
+
+		function collectChildren( root, target = [] ) {
+
+			root.children.forEach( child => {
+
+				target.push( child );
+				collectChildren( child, target );
+
+			} );
+			return target;
+
+		}
+
+	}
+
+	_getSplitVectors( scene, tile, centerTarget = _center ) {
+
+		const { tiles, overlayInfo } = this;
+
+		// get the center of the content
+		const box = new Box3();
+		box.setFromObject( scene );
+		box.getCenter( centerTarget );
+
+		// find the vectors that are orthogonal to every overlay projection
+		const splitDirections = [];
+		const hashTokens = [];
+		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+			// if the tile has a render target associated with the overlay and the last level of detail
+			// is not being displayed, yet, then we need to split
+			const info = tileInfo.get( tile );
+			if ( info && info.target && overlay.tiling.maxLevel > info.level ) {
+
+				// get the vector representing the projection direction
+				if ( overlay.frame ) {
+
+					_normal.set( 0, 0, 1 ).transformDirection( overlay.frame );
+
+				} else {
+
+					tiles.ellipsoid.getPositionToNormal( centerTarget, _normal );
+					if ( _normal.length() < 1e-6 ) {
+
+						_normal.set( 1, 0, 0 );
+
+					}
+
+				}
+
+				// dedupe vectors in the hash
+				const token = `${ _normal.x.toFixed( 3 ) },${ _normal.y.toFixed( 3 ) },${ _normal.z.toFixed( 3 ) }_`;
+				if ( ! hashTokens.includes( token ) ) {
+
+					hashTokens.push( token );
+
+				}
+
+				// construct the orthogonal vectors
+				const other = _vec.set( 0, 0, 1 );
+				if ( Math.abs( _normal.dot( other ) ) > 1 - 1e-4 ) {
+
+					other.set( 1, 0, 0 );
+
+				}
+
+				const ortho0 = new Vector3().crossVectors( _normal, other ).normalize();
+				const ortho1 = new Vector3().crossVectors( _normal, ortho0 ).normalize();
+				splitDirections.push( ortho0, ortho1 );
+
+			}
+
+		} );
+
+		// Generate a reduced set of vectors by averages directions in a 45 degree cone so
+		// we don't split unnecessarily
+		const directions = [];
+		while ( splitDirections.length !== 0 ) {
+
+			const normalized = splitDirections.pop().clone();
+			const average = normalized.clone();
+			for ( let i = 0; i < splitDirections.length; i ++ ) {
+
+				const dir = splitDirections[ i ];
+				const dotProduct = normalized.dot( dir );
+				if ( Math.abs( dotProduct ) > Math.cos( Math.PI / 8 ) ) {
+
+					average.addScaledVector( dir, Math.sign( dotProduct ) );
+					normalized.copy( average ).normalize();
+					splitDirections.splice( i, 1 );
+					i --;
+
+				}
+
+			}
+
+			directions.push( average.normalize() );
+
+		}
+
+		return { directions, hash: hashTokens.join( '' ) };
+
+	}
+
+	async expandVirtualChildren( scene, tile ) {
+
+		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
+
+			return;
+
+		}
+
+		const { tiles } = this;
+
+		// create a copy of the content to transform and split
+		const clone = scene.clone();
+		clone.updateMatrixWorld();
+
+		// get the directions to split on
+		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
+		tile[ SPLIT_HASH ] = hash;
+
+		// if there are no directions to split on then exit early
+		if ( directions.length === 0 ) {
+
+			return;
+
+		}
+
+		// set up the splitter to ignore overlay uvs
+		const clipper = new GeometryClipper();
+		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
+		directions.map( splitDirection => {
+
+			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
+
+				Triangle.getInterpolatedAttribute( geometry.attributes.position, i0, i1, i2, barycoord, _vec );
+				return _vec.applyMatrix4( matrixWorld ).sub( _center ).dot( splitDirection );
+
+			} );
+
+		} );
+
+		// run the clipping operations by performing every permutation of sides
+		// defined by the split directions
+		const children = [];
+		clipper.forEachSplitPermutation( () => {
+
+			// clip the object itself
+			const result = clipper.clipObject( clone );
+
+			// remove the parent transform because it will be multiplied back in after the fact
+			result.matrix
+				.premultiply( tile.cached.transformInverse )
+				.decompose( result.position, result.quaternion, result.scale );
+
+			// collect the meshes
+			const meshes = [];
+			result.traverse( c => {
+
+				if ( c.isMesh ) {
+
+					const material = c.material.clone();
+					c.material = material;
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							if ( value.source.data instanceof ImageBitmap ) {
+
+								// clone any image bitmap textures using canvas because if we share the texture then when
+								// the clipped child is disposed then it will dispose of the parent tile texture data, as well.
+								const canvas = document.createElement( 'canvas' );
+								canvas.width = value.image.width;
+								canvas.height = value.image.height;
+
+								const ctx = canvas.getContext( '2d' );
+								ctx.scale( 1, - 1 );
+								ctx.drawImage( value.source.data, 0, 0, canvas.width, - canvas.height );
+
+								const tex = new CanvasTexture( canvas );
+								tex.mapping = value.mapping;
+								tex.wrapS = value.wrapS;
+								tex.wrapT = value.wrapT;
+								tex.minFilter = value.minFilter;
+								tex.magFilter = value.magFilter;
+								tex.format = value.format;
+								tex.type = value.type;
+								tex.anisotropy = value.anisotropy;
+								tex.colorSpace = value.colorSpace;
+								tex.generateMipmaps = value.generateMipmaps;
+
+								material[ key ] = tex;
+
+							}
+
+						}
+
+					}
+
+					meshes.push( c );
+
+				}
+
+			} );
+
+			if ( meshes.length === 0 ) {
+
+				return;
+
+			}
+
+			// generate a region bounding volume
+			const boundingVolume = {};
+			if ( tile.boundingVolume.region ) {
+
+				boundingVolume.region = getMeshesCartographicRange( meshes, tiles.ellipsoid ).region;
+
+			}
+
+			// create a sphere bounding volume
+			if ( tile.boundingVolume.box || tile.boundingVolume.sphere || tile.boundingVolume.region ) {
+
+				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
+				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
+				// through tiles. The same may be the case with frustum checks. In theory, though, we should not need a sphere
+				// bounds if a region bounds are present.
+
+				// compute the sphere center
+				_box
+					.setFromObject( result, true )
+					.getCenter( _sphereCenter );
+
+				// calculate the sq radius from all vertices
+				let maxSqRadius = 0;
+				result.traverse( c => {
+
+					const geometry = c.geometry;
+					if ( geometry ) {
+
+						const position = geometry.attributes.position;
+						for ( let i = 0, l = position.count; i < l; i ++ ) {
+
+							const sqRadius = _vec
+								.fromBufferAttribute( position, i )
+								.applyMatrix4( c.matrixWorld )
+								.distanceToSquared( _sphereCenter );
+
+							maxSqRadius = Math.max( maxSqRadius, sqRadius );
+
+						}
+
+					}
+
+				} );
+
+				boundingVolume.sphere = [ ..._sphereCenter, Math.sqrt( maxSqRadius ) ];
+
+			}
+
+			children.push( {
+				refine: 'REPLACE',
+				geometricError: tile.geometricError * 0.5,
+				boundingVolume: boundingVolume,
+				content: { uri: './child.image_overlay_tile_split' },
+				children: [],
+				[ SPLIT_TILE_DATA ]: result,
+			} );
+
+		} );
+
+		tile.children.push( ...children );
+
+	}
+
+	fetchData( uri, options ) {
+
+		// if this is our custom url indicating a tile split then return fake response
+		if ( /image_overlay_tile_split/.test( uri ) ) {
+
+			return new ArrayBuffer();
+
+		}
 
 	}
 
@@ -656,6 +1046,7 @@ export class ImageOverlayPlugin {
 		}
 
 		// check if the overlay or tile have been disposed since starting this function
+		// if the tileController is not present then the tile has been disposed of already
 		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 			return;
@@ -777,7 +1168,16 @@ export class ImageOverlayPlugin {
 
 						} );
 
-						await promise;
+						try {
+
+							await promise;
+
+						} catch ( e ) {
+
+							// skip errors since this will throw when aborted
+							return;
+
+						}
 
 					}
 

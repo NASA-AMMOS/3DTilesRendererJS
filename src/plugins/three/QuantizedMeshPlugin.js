@@ -213,7 +213,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	async parseToMesh( buffer, tile, extension, uri ) {
+	parseToMesh( buffer, tile, extension, uri ) {
 
 		const {
 			skirtLength,
@@ -227,7 +227,7 @@ export class QuantizedMeshPlugin {
 
 		// split the parent tile if needed
 		let result;
-		if ( extension === 'tile_split' ) {
+		if ( extension === 'quantized_tile_split' ) {
 
 			// split the parent tile
 			const searchParams = new URL( uri ).searchParams;
@@ -249,7 +249,7 @@ export class QuantizedMeshPlugin {
 
 			result = clipper.clipToQuadrant( tile.parent.cached.scene, left, bottom );
 
-		} else {
+		} else if ( extension === 'terrain' ) {
 
 			const loader = new QuantizedMeshLoader( tiles.manager );
 			loader.ellipsoid.copy( ellipsoid );
@@ -264,6 +264,10 @@ export class QuantizedMeshPlugin {
 			loader.maxLon = east;
 
 			result = loader.parse( buffer );
+
+		} else {
+
+			return;
 
 		}
 
@@ -389,7 +393,7 @@ export class QuantizedMeshPlugin {
 				} else {
 
 					tile.children.push( child );
-					child.content = { uri: `tile.tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.content = { uri: `tile.quantized_tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
 
 				}
 
@@ -408,7 +412,7 @@ export class QuantizedMeshPlugin {
 	fetchData( uri, options ) {
 
 		// if this is our custom url indicating a tile split then return fake response
-		if ( /tile_split/.test( uri ) ) {
+		if ( /quantized_tile_split/.test( uri ) ) {
 
 			return new ArrayBuffer();
 
@@ -418,15 +422,17 @@ export class QuantizedMeshPlugin {
 
 	disposeTile( tile ) {
 
-		// dispose of the generated children past the metadata layer to avoid accumulating too much
+		// dispose of the available array since we will get it again if this tile is loaded
 		if ( getTileHasMetadata( tile, this.layer ) ) {
 
-			tile.children.length = 0;
-			tile.__childrenProcessed = 0;
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
+		// Note: we remove all children always because child tiles can rely on splitting parent tiles
+		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
+		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
+		// we just remove all children and generate them again one the parent is loaded.
 		tile.children.length = 0;
 		tile.__childrenProcessed = 0;
 
