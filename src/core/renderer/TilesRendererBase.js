@@ -722,6 +722,7 @@ export class TilesRendererBase {
 		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
+		const processNodeQueue = this.processNodeQueue;
 		const extension = getUrlExtension( uri );
 
 		// track an abort controller and pass-through the below conditions if aborted
@@ -771,6 +772,7 @@ export class TilesRendererBase {
 
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
+			processNodeQueue.remove( t );
 
 		} );
 
