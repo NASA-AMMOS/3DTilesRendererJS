@@ -377,11 +377,13 @@ export class ImageOverlayPlugin {
 			this._updateLayers( tile );
 			this.disposeTile( tile );
 
+			delete tile[ SPLIT_HASH ];
+
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 
-		this.resetVirtualChildren( false );
+		this.resetVirtualChildren( true );
 
 	}
 
@@ -409,7 +411,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async resetVirtualChildren( rebuild = true ) {
+	async resetVirtualChildren( fullDispose = false ) {
 
 		// only run this if all the overlays are ready and tile targets have been generated, etc
 		// so we can make an effort to only remove the necessary tiles.
@@ -451,7 +453,7 @@ export class ImageOverlayPlugin {
 			clone.updateMatrixWorld();
 
 			const { hash } = this._getSplitVectors( clone, parent );
-			if ( parent[ SPLIT_HASH ] !== hash ) {
+			if ( parent[ SPLIT_HASH ] !== hash || fullDispose ) {
 
 				const children = collectChildren( parent );
 				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
@@ -474,7 +476,7 @@ export class ImageOverlayPlugin {
 		} );
 
 		// re-expand tiles if needed
-		if ( rebuild ) {
+		if ( ! fullDispose ) {
 
 			tiles.forEachLoadedModel( ( scene, tile ) => {
 
@@ -661,7 +663,8 @@ export class ImageOverlayPlugin {
 								canvas.height = value.image.height;
 
 								const ctx = canvas.getContext( '2d' );
-								ctx.drawImage( value.source.data, 0, 0 );
+								ctx.scale( 1, - 1 );
+								ctx.drawImage( value.source.data, 0, 0, canvas.width, - canvas.height );
 
 								const tex = new CanvasTexture( canvas );
 								tex.mapping = value.mapping;
