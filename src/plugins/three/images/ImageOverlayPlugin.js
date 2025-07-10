@@ -424,7 +424,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// collect the virtual tiles
+		// collect the tiles split into virtual tiles
 		const { tiles } = this;
 		const parents = new Set();
 		tiles.forEachLoadedModel( ( scene, tile ) => {
@@ -437,6 +437,8 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// dispose of the virtual children if this tile would not be split or the spilt could change
+		// under the current overlays used.
 		parents.forEach( parent => {
 
 			if ( parent.parent === null ) {
@@ -515,6 +517,7 @@ export class ImageOverlayPlugin {
 			const info = tileInfo.get( tile );
 			if ( info && info.target && overlay.tiling.maxLevel > info.level ) {
 
+				// get the vector representing the projection direction
 				if ( overlay.frame ) {
 
 					_normal.set( 0, 0, 1 ).transformDirection( overlay.frame );
@@ -612,12 +615,12 @@ export class ImageOverlayPlugin {
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
 		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
-		directions.map( v => {
+		directions.map( splitDirection => {
 
 			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
 
 				Triangle.getInterpolatedAttribute( geometry.attributes.position, i0, i1, i2, barycoord, _vec );
-				return _vec.applyMatrix4( matrixWorld ).sub( _center ).dot( v );
+				return _vec.applyMatrix4( matrixWorld ).sub( _center ).dot( splitDirection );
 
 			} );
 
@@ -631,7 +634,7 @@ export class ImageOverlayPlugin {
 			// clip the object itself
 			const result = clipper.clipObject( clone );
 
-			// remove the parent transform because it will be multiplied in after the fact
+			// remove the parent transform because it will be multiplied back in after the fact
 			result.matrix
 				.premultiply( tile.cached.transformInverse )
 				.decompose( result.position, result.quaternion, result.scale );
