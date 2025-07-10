@@ -271,7 +271,7 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayInfo, tileControllers, processQueue } = this;
+		const { overlayInfo, tileControllers, processQueue, pendingTiles } = this;
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -279,6 +279,7 @@ export class ImageOverlayPlugin {
 
 			tileControllers.get( tile ).abort();
 			tileControllers.delete( tile );
+			pendingTiles.delete( tile );
 
 		}
 
@@ -325,7 +326,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	processTileModel( scene, tile, abortSignal ) {
+	processTileModel( scene, tile ) {
 
 		return this._processTileModel( scene, tile );
 
@@ -423,30 +424,50 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// TODO: can we somehow only remove children if they are not needed or if the parent
-		// that was split needs a different projection? It makes an stable, order-agnostic hash and
-		// sorting more important
-
 		// collect the virtual tiles
 		const { tiles } = this;
-		const virtualTiles = [];
+		const parents = new Set();
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			if ( SPLIT_TILE_DATA in tile ) {
+			if ( SPLIT_HASH in tile ) {
 
-				virtualTiles.push( tile );
+				parents.add( tile );
 
 			}
 
 		} );
 
-		// dispose of the virtual tiles from the bottom up
-		virtualTiles.reverse();
-		virtualTiles.forEach( tile => {
+		parents.forEach( parent => {
 
-			tiles.lruCache.remove( tile );
-			tile.parent.children.length = 0;
-			tile.parent.__childrenProcessed = 0;
+			if ( parent.parent === null ) {
+
+				return;
+
+			}
+
+			const clone = parent.cached.scene.clone();
+			clone.updateMatrixWorld();
+
+			const { hash } = this._getSplitVectors( clone, parent );
+			if ( parent[ SPLIT_HASH ] !== hash ) {
+
+				const children = collectChildren( parent );
+				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
+
+				// note that we need to remove children from the processing queue in this case
+				// because we are forcibly evicting them from the cache.
+				children.forEach( child => {
+
+					tiles.processNodeQueue.remove( child );
+					tiles.lruCache.remove( child );
+					child.parent = null;
+
+				} );
+
+				parent.__childrenProcessed = 0;
+				parent.children.length = 0;
+
+			}
 
 		} );
 
@@ -458,6 +479,18 @@ export class ImageOverlayPlugin {
 				this.expandVirtualChildren( scene, tile );
 
 			} );
+
+		}
+
+		function collectChildren( root, target = [] ) {
+
+			root.children.forEach( child => {
+
+				target.push( child );
+				collectChildren( child, target );
+
+			} );
+			return target;
 
 		}
 
@@ -474,7 +507,7 @@ export class ImageOverlayPlugin {
 
 		// find the vectors that are orthogonal to every overlay projection
 		const splitDirections = [];
-		let hash = '';
+		const hashTokens = [];
 		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
 			// if the tile has a render target associated with the overlay and the last level of detail
@@ -497,7 +530,13 @@ export class ImageOverlayPlugin {
 
 				}
 
-				hash += `${ info.level }_${ _normal.x.toFixed( 3 ) }_${ _normal.y.toFixed( 3 ) }_${ _normal.z.toFixed( 3 ) }_`;
+				// dedupe vectors in the hash
+				const token = `${ _normal.x.toFixed( 3 ) },${ _normal.y.toFixed( 3 ) },${ _normal.z.toFixed( 3 ) }_`;
+				if ( ! hashTokens.includes( token ) ) {
+
+					hashTokens.push( token );
+
+				}
 
 				// construct the orthogonal vectors
 				const other = _vec.set( 0, 0, 1 );
@@ -541,7 +580,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		return { directions, hash };
+		return { directions, hash: hashTokens.join( '' ) };
 
 	}
 
@@ -625,7 +664,12 @@ export class ImageOverlayPlugin {
 			}
 
 			// create a sphere bounding volume
-			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
+			if ( tile.boundingVolume.box || tile.boundingVolume.sphere || tile.boundingVolume.region ) {
+
+				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
+				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
+				// through tiles. The same may be the case with frustum checks. In theory, though, we should not need a sphere
+				// bounds if a region bounds are present.
 
 				// compute the sphere center
 				_box
@@ -959,6 +1003,7 @@ export class ImageOverlayPlugin {
 		}
 
 		// check if the overlay or tile have been disposed since starting this function
+		// if the tileController is not present then the tile has been disposed of already
 		if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 			return;
