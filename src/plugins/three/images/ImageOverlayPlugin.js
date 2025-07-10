@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
@@ -645,7 +645,44 @@ export class ImageOverlayPlugin {
 
 				if ( c.isMesh ) {
 
-					c.material = c.material.clone();
+					const material = c.material.clone();
+					c.material = material;
+					for ( const key in material ) {
+
+						const value = material[ key ];
+						if ( value && value.isTexture ) {
+
+							if ( value.source.data instanceof ImageBitmap ) {
+
+								// clone any image bitmap textures using canvas because if we share the texture then when
+								// the clipped child is disposed then it will dispose of the parent tile texture data, as well.
+								const canvas = document.createElement( 'canvas' );
+								canvas.width = value.image.width;
+								canvas.height = value.image.height;
+
+								const ctx = canvas.getContext( '2d' );
+								ctx.drawImage( value.source.data, 0, 0 );
+
+								const tex = new CanvasTexture( canvas );
+								tex.mapping = value.mapping;
+								tex.wrapS = value.wrapS;
+								tex.wrapT = value.wrapT;
+								tex.minFilter = value.minFilter;
+								tex.magFilter = value.magFilter;
+								tex.format = value.format;
+								tex.type = value.type;
+								tex.anisotropy = value.anisotropy;
+								tex.colorSpace = value.colorSpace;
+								tex.generateMipmaps = value.generateMipmaps;
+
+								material[ key ] = tex;
+
+							}
+
+						}
+
+					}
+
 					meshes.push( c );
 
 				}
