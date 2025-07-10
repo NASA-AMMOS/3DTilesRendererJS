@@ -16,6 +16,7 @@ const _sphereCenter = /* @__PURE__ */ new Vector3();
 const _normal = /* @__PURE__ */ new Vector3();
 const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
+const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 
 // function for marking and releasing images in the given overlay
 function markOverlayImages( range, level, overlay, doRelease ) {
@@ -379,6 +380,8 @@ export class ImageOverlayPlugin {
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
 
+		this.resetVirtualChildren( false );
+
 	}
 
 	getAttributions( target ) {
@@ -405,7 +408,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	async resetVirtualChildren() {
+	async resetVirtualChildren( rebuild = true ) {
 
 		// only run this if all the overlays are ready and tile targets have been generated, etc
 		// so we can make an effort to only remove the necessary tiles.
@@ -448,35 +451,30 @@ export class ImageOverlayPlugin {
 		} );
 
 		// re-expand tiles if needed
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		if ( rebuild ) {
 
-			this.expandVirtualChildren( scene, tile );
+			tiles.forEachLoadedModel( ( scene, tile ) => {
 
-		} );
+				this.expandVirtualChildren( scene, tile );
 
-	}
-
-	async expandVirtualChildren( scene, tile ) {
-
-		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
-
-			return;
+			} );
 
 		}
 
-		const { tiles, overlayInfo } = this;
+	}
 
-		// create a copy of the content to transform and split
-		const clone = scene.clone();
-		clone.updateMatrixWorld();
+	_getSplitVectors( scene, tile, centerTarget = _center ) {
+
+		const { tiles, overlayInfo } = this;
 
 		// get the center of the content
 		const box = new Box3();
-		box.setFromObject( clone );
-		box.getCenter( _center );
+		box.setFromObject( scene );
+		box.getCenter( centerTarget );
 
 		// find the vectors that are orthogonal to every overlay projection
 		const splitDirections = [];
+		let hash = '';
 		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
 
 			// if the tile has a render target associated with the overlay and the last level of detail
@@ -490,7 +488,7 @@ export class ImageOverlayPlugin {
 
 				} else {
 
-					tiles.ellipsoid.getPositionToNormal( _center, _normal );
+					tiles.ellipsoid.getPositionToNormal( centerTarget, _normal );
 					if ( _normal.length() < 1e-6 ) {
 
 						_normal.set( 1, 0, 0 );
@@ -498,6 +496,8 @@ export class ImageOverlayPlugin {
 					}
 
 				}
+
+				hash += `${ info.level }_${ _normal.x.toFixed( 3 ) }_${ _normal.y.toFixed( 3 ) }_${ _normal.z.toFixed( 3 ) }_`;
 
 				// construct the orthogonal vectors
 				const other = _vec.set( 0, 0, 1 );
@@ -517,7 +517,7 @@ export class ImageOverlayPlugin {
 
 		// Generate a reduced set of vectors by averages directions in a 45 degree cone so
 		// we don't split unnecessarily
-		const reducedDirections = [];
+		const directions = [];
 		while ( splitDirections.length !== 0 ) {
 
 			const normalized = splitDirections.pop().clone();
@@ -537,12 +537,34 @@ export class ImageOverlayPlugin {
 
 			}
 
-			reducedDirections.push( average.normalize() );
+			directions.push( average.normalize() );
 
 		}
 
+		return { directions, hash };
+
+	}
+
+	async expandVirtualChildren( scene, tile ) {
+
+		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
+
+			return;
+
+		}
+
+		const { tiles } = this;
+
+		// create a copy of the content to transform and split
+		const clone = scene.clone();
+		clone.updateMatrixWorld();
+
+		// get the directions to split on
+		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
+		tile[ SPLIT_HASH ] = hash;
+
 		// if there are no directions to split on then exit early
-		if ( reducedDirections.length === 0 ) {
+		if ( directions.length === 0 ) {
 
 			return;
 
@@ -551,7 +573,7 @@ export class ImageOverlayPlugin {
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
 		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
-		reducedDirections.map( v => {
+		directions.map( v => {
 
 			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
 
