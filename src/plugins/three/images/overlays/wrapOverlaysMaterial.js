@@ -44,8 +44,8 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
-							attribute vec2 layer_uv_UNROLLED_LOOP_INDEX;
-							varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+							attribute vec3 layer_uv_UNROLLED_LOOP_INDEX;
+							varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
 
 						#endif
 
@@ -88,7 +88,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
-							varying vec2 v_layer_uv_UNROLLED_LOOP_INDEX;
+							varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
 
 						#endif
 
@@ -105,19 +105,25 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 				#if LAYER_COUNT != 0
 				{
 					vec4 tint;
-					vec2 layerUV;
+					vec3 layerUV;
 					float layerOpacity;
+					float wOpacity;
+					float wDelta;
 					#pragma unroll_loop_start
 						for ( int i = 0; i < 10; i ++ ) {
 
 							#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
 								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
-								tint = texture( layerMaps[ i ], layerUV );
+								tint = texture( layerMaps[ i ], layerUV.xy );
+
+								// discard texture outside 0, 1 on w
+								wDelta = fwidth( layerUV.z );
+								wOpacity = smoothstep( 0.0, wDelta, layerUV.z ) * smoothstep( 1.0, 1.0 - wDelta, layerUV.z );
 
 								// apply tint & opacity
 								tint.rgb *= layerColor[ i ].color;
-								tint.rgba *= layerColor[ i ].opacity;
+								tint.rgba *= layerColor[ i ].opacity * wOpacity;
 
 								// premultiplied alpha equation
 								diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );

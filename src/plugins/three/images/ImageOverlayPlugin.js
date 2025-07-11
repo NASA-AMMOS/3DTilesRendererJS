@@ -1133,7 +1133,7 @@ export class ImageOverlayPlugin {
 		meshes.forEach( ( mesh, i ) => {
 
 			const array = new Float32Array( uvs[ i ] );
-			const attribute = new BufferAttribute( array, 2 );
+			const attribute = new BufferAttribute( array, 3 );
 			info.meshInfo.set( mesh, { attribute } );
 
 		} );
@@ -1320,6 +1320,12 @@ class ImageOverlay {
 	get isPlanarProjection() {
 
 		return Boolean( this.frame );
+
+	}
+
+	get aspectRatio() {
+
+		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
 
 	}
 

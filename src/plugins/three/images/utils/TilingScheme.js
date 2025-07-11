@@ -51,7 +51,7 @@ export class TilingScheme {
 
 	}
 
-	get aspect() {
+	get aspectRatio() {
 
 		const { pixelWidth, pixelHeight } = this.getLevel( this.maxLevel );
 		return pixelWidth / pixelHeight;
