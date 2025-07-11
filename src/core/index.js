@@ -1,5 +1,5 @@
 // common
-export { TilesRendererBase } from './renderer/TilesRendererBase.js';
+export { TilesRendererBase } from './tiles/TilesRendererBase.js';
 export { LoaderBase } from './loaders/LoaderBase.js';
 export { B3DMLoaderBase } from './loaders/B3DMLoaderBase.js';
 export { I3DMLoaderBase } from './loaders/I3DMLoaderBase.js';

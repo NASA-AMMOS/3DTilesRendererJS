@@ -1,4 +1,4 @@
-import { Tile } from '../../core/renderer/Tile.js';
+import { Tile } from '../../core/tiles/Tile.js';
 import { Color } from 'three';
 
 export enum ColorMode {}
