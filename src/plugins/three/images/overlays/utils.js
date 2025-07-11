@@ -79,7 +79,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 		}
 
-		uv.push( _cart.lon, _cart.lat );
+		uv.push( _cart.lon, _cart.lat, _cart.height );
 
 		minLat = Math.min( minLat, _cart.lat );
 		maxLat = Math.max( maxLat, _cart.lat );
@@ -153,14 +153,16 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 		const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 		uvs.forEach( uv => {
 
-			for ( let i = 0, l = uv.length; i < l; i += 2 ) {
+			for ( let i = 0, l = uv.length; i < l; i += 3 ) {
 
 				const lon = uv[ i + 0 ];
 				const lat = uv[ i + 1 ];
+				const h = uv[ i + 2 ];
 
 				const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
+				uv[ i + 2 ] = MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );
 
 			}
 
@@ -177,7 +179,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 }
 
 // functions for generating UVs for planar-projected UVs
-function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
+function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
 
 	const _vec = new Vector3();
 	const uv = [];
@@ -193,9 +195,9 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspect ) {
 
 		// divide U by the aspect to stretch the U dimension to the aspect of the image
 		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( meshToFrame );
-		_vec.x /= aspect;
+		_vec.x /= aspectRatio;
 
-		uv.push( _vec.x, _vec.y );
+		uv.push( _vec.x, _vec.y, _vec.z );
 
 		minU = Math.min( minU, _vec.x );
 		maxU = Math.max( maxU, _vec.x );
@@ -240,7 +242,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 		}
 
-		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspect );
+		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspectRatio );
 		uvs.push( uv );
 
 		// save the min and max values
@@ -257,7 +259,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 	uvs.forEach( uv => {
 
-		for ( let i = 0, l = uv.length; i < l; i += 2 ) {
+		for ( let i = 0, l = uv.length; i < l; i += 3 ) {
 
 			const u = uv[ i + 0 ];
 			const v = uv[ i + 1 ];

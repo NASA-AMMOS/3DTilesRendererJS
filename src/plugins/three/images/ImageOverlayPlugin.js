@@ -1068,7 +1068,7 @@ export class ImageOverlayPlugin {
 
 		const { tiling, imageSource } = overlay;
 		const info = tileInfo.get( tile );
-		let range, uvs;
+		let range, uvs, heightInRange;
 
 		// retrieve the uvs and range for all the meshes
 		if ( overlay.isPlanarProjection ) {
@@ -1080,7 +1080,9 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
+			let heightRange;
+			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
+			heightInRange = ! ( heightRange[ 0 ] > 1 || heightRange[ 1 ] < 0 );
 
 		} else {
 
@@ -1092,6 +1094,7 @@ export class ImageOverlayPlugin {
 			}
 
 			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
+			heightInRange = true;
 
 		}
 
@@ -1113,10 +1116,10 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// if there are no textures to draw in the tiled image set the don't
-		// allocate a texture for it.
+		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
+		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( countTilesInRange( range, info.level, overlay ) !== 0 ) {
+		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
 			target = new WebGLRenderTarget( resolution, resolution, {
 				depthBuffer: false,
@@ -1133,7 +1136,7 @@ export class ImageOverlayPlugin {
 		meshes.forEach( ( mesh, i ) => {
 
 			const array = new Float32Array( uvs[ i ] );
-			const attribute = new BufferAttribute( array, 2 );
+			const attribute = new BufferAttribute( array, 3 );
 			info.meshInfo.set( mesh, { attribute } );
 
 		} );
@@ -1320,6 +1323,12 @@ class ImageOverlay {
 	get isPlanarProjection() {
 
 		return Boolean( this.frame );
+
+	}
+
+	get aspectRatio() {
+
+		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
 
 	}
 
