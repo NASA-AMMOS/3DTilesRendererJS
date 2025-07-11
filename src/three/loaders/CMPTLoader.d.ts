@@ -1,8 +1,8 @@
-import { B3DMBaseResult } from '../../core/loaders/B3DMLoaderBase.js';
-import { I3DMBaseResult } from '../../core/loaders/I3DMLoaderBase.js';
-import { PNTSBaseResult } from '../../core/loaders/PNTSLoaderBase.js';
+import { B3DMBaseResult } from '../../core/renderer/loaders/B3DMLoaderBase.js';
+import { I3DMBaseResult } from '../../core/renderer/loaders/I3DMLoaderBase.js';
+import { PNTSBaseResult } from '../../core/renderer/loaders/PNTSLoaderBase.js';
 import { Group, LoadingManager } from 'three';
-import { CMPTLoaderBase } from '../../core/loaders/CMPTLoaderBase.js';
+import { CMPTLoaderBase } from '../../core/renderer/loaders/CMPTLoaderBase.js';
 
 export interface CMPTResult {
 

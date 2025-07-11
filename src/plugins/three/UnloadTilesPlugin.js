@@ -1,4 +1,4 @@
-import { LRUCache } from '../../core/utilities/LRUCache.js';
+import { LRUCache } from '../../core/renderer/utilities/LRUCache.js';
 
 // Plugin that disposes tiles on unload to remove them from the GPU, saving memory
 

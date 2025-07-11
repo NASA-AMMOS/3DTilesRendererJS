@@ -3,7 +3,7 @@ import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/math/EllipsoidRegion.js';
 import { Ellipsoid } from '../src/three/math/Ellipsoid.js';
-import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/core/constants.js';
+import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/core/renderer/constants.js';
 import { WGS84_ELLIPSOID } from '../src/three/math/GeoConstants.js';
 
 function epsCompare( a, b, EPSILON = 1e-10 ) {

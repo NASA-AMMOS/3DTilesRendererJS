@@ -1,4 +1,4 @@
-import { PNTSLoaderBase } from '../../core/loaders/PNTSLoaderBase.js';
+import { PNTSLoaderBase } from '../../core/renderer/loaders/PNTSLoaderBase.js';
 import {
 	Points,
 	PointsMaterial,
@@ -8,8 +8,8 @@ import {
 	Vector3,
 	Color,
 } from 'three';
-import { rgb565torgb } from '../../core/utilities/rgb565torgb.js';
-import { decodeOctNormal } from '../../core/utilities/decodeOctNormal.js';
+import { rgb565torgb } from '../../core/renderer/utilities/rgb565torgb.js';
+import { decodeOctNormal } from '../../core/renderer/utilities/decodeOctNormal.js';
 
 const DRACO_ATTRIBUTE_MAP = {
 	RGB: 'color',
