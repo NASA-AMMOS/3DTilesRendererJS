@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useObjectDep } from './useObjectDep.js';
 
 // return true if the given key is for registering an event
@@ -54,7 +54,7 @@ function setValueAtPath( object, path, value ) {
 export function useDeepOptions( target, options, shallow = false ) {
 
 	// assign options recursively
-	useEffect( () => {
+	useLayoutEffect( () => {
 
 		if ( target === null ) {
 

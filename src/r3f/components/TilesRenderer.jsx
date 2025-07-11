@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState, useLayoutEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/TilesRenderer.js';
@@ -179,7 +179,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	useApplyRefs( instance, ref );
 
 	// register the instance
-	useEffect( () => {
+	useLayoutEffect( () => {
 
 		if ( tiles === null ) {
 
@@ -205,23 +205,12 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
-	const [ initialized, setInitialized ] = useState( false );
 
 	const tiles = useMemo( () => {
 
 		return new TilesRendererImpl( url );
 
 	}, [ url ] );
-
-	useEffect( () => {
-
-		// Due to pmndrs/react-three-fiber#3549 it's possible that useFrame will fire before useEffect when
-		// there are many children added to the component resulting in plugins not being registered before
-		// the first call to update (which can be required for auth or root url construction).
-		// So we check here by setting a flag to ensure useEffect has already fired before running useFrame.
-		setInitialized( true );
-
-	}, [] );
 
 	// create the tile set
 	useEffect( () => {
@@ -239,7 +228,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// update the resolution for the camera
 	useFrame( () => {
 
-		if ( tiles === null || ! enabled || ! initialized ) {
+		if ( tiles === null || ! enabled ) {
 
 			return;
 
