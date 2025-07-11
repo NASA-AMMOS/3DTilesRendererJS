@@ -1,4 +1,4 @@
-import { GoogleCloudAuth } from '../core/auth/GoogleCloudAuth.js';
+import { GoogleCloudAuth } from '../../core/plugins/auth/GoogleCloudAuth.js';
 import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 
 const TILES_3D_API = 'https://tile.googleapis.com/v1/3dtiles/root.json';
