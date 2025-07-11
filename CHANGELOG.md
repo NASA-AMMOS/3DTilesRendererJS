@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `3d-tiles-renderer/core` & `3d-tiles-renderer/three` export for dedicated files.
 - Added `EnforceNonZeroErrorPlugin`.
 - ImageOverlayPlugin: Add support for splitting tiles to match image tile detail.
+- ImageOverlayPlugin: Planar projection now only works when the projection is within the range 0, 1 along the z-projection axis.
 
 ### Fixed
 - R3F TilesAttributionOverlay not functioning on non-HTTPS domains.
