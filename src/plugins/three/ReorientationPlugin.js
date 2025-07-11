@@ -1,5 +1,5 @@
 import { Sphere } from 'three';
-import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
+import { OBJECT_FRAME } from '../../three/renderer/math/Ellipsoid.js';
 
 const sphere = /* @__PURE__ */ new Sphere();
 export class ReorientationPlugin {

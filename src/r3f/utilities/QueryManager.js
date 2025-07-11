@@ -8,7 +8,7 @@ import {
 	Vector2,
 } from 'three';
 import { SceneObserver } from './SceneObserver.js';
-import { Ellipsoid } from '../../three/math/Ellipsoid.js';
+import { Ellipsoid } from '../../three/renderer/math/Ellipsoid.js';
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _line0 = /* @__PURE__ */ new Line3();

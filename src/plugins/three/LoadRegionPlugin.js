@@ -1,5 +1,5 @@
 import { Ray, Sphere } from 'three';
-import { OBB } from '../../three/math/OBB.js';
+import { OBB } from '../../three/renderer/math/OBB.js';
 
 export class LoadRegionPlugin {
 

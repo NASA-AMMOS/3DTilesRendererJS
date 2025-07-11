@@ -1,7 +1,7 @@
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { Camera, Object3D } from 'three';
-import type { EnvironmentControls as EnvironmentControlsImpl } from '../../three/controls/EnvironmentControls.js';
-import type { GlobeControls as GlobeControlsImpl } from '../../three/controls/GlobeControls.js';
+import type { EnvironmentControls as EnvironmentControlsImpl } from '../../three/renderer/controls/EnvironmentControls.js';
+import type { GlobeControls as GlobeControlsImpl } from '../../three/renderer/controls/GlobeControls.js';
 import type { TilesRenderer } from './TilesRenderer.jsx';
 
 interface ControlsBaseProps {

@@ -1,6 +1,6 @@
 import { MathUtils, Vector2, Vector3 } from 'three';
 import { GeometryClipper, hashVertex } from './GeometryClipper.js';
-import { Ellipsoid } from '../../../three/math/Ellipsoid.js';
+import { Ellipsoid } from '../../../three/renderer/math/Ellipsoid.js';
 
 const _cart = {};
 const _vec = /* @__PURE__ */ new Vector3();
