@@ -599,8 +599,6 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles } = this;
-
 		// create a copy of the content to transform and split
 		const clone = scene.clone();
 		clone.updateMatrixWorld();
@@ -705,7 +703,7 @@ export class ImageOverlayPlugin {
 			if ( tile.boundingVolume.region ) {
 
 				// TODO: disabled because the bounding volume isn't precise for frustum culling at small scales
-				// boundingVolume.region = getMeshesCartographicRange( meshes, tiles.ellipsoid ).region;
+				// boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
 
 			}
 
