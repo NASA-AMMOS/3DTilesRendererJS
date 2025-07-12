@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.12] - Unreleased
 ### Added
 - `3d-tiles-renderer/core` & `3d-tiles-renderer/three` export for dedicated files.
+- `3d-tiles-renderer/core/plugins` & `3d-tiles-renderer/three/plugins` export for dedicated plugins.
 - Added `EnforceNonZeroErrorPlugin`.
 - ImageOverlayPlugin: Add support for splitting tiles to match image tile detail.
 - ImageOverlayPlugin: Planar projection now only works when the projection is within the range 0, 1 along the z-projection axis.
@@ -19,7 +20,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - UpdateOnChangePlugin: Fix events not being disposed of properly.
 - QuantizedMeshPlugin: Only parse a mesh if the extension is "terrain".
 - ImageOverlayPlugin: Correctly cancel image tile loading when removing an overlay.
-
 
 ## [0.4.11] - 2025.07.01
 ### Added
