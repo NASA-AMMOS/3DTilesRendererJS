@@ -93,8 +93,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this.cameraInfo = [];
 		this._optimizeRaycast = true;
 		this._upRotationMatrix = new Matrix4();
-
-		this.lruCache.computeMemoryUsageCallback = tile => tile.cached.bytesUsed ?? null;
+		this._bytesUsed = new WeakMap();
 
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
@@ -796,7 +795,6 @@ export class TilesRenderer extends TilesRendererBase {
 		cached.textures = textures;
 		cached.scene = scene;
 		cached.metadata = metadata;
-		cached.bytesUsed = estimateBytesUsed( scene );
 
 	}
 
@@ -912,6 +910,19 @@ export class TilesRenderer extends TilesRendererBase {
 			tile,
 			visible,
 		} );
+
+	}
+
+	calculateBytesUsed( tile, scene ) {
+
+		const bytesUsed = this._bytesUsed;
+		if ( ! bytesUsed.has( tile ) && scene ) {
+
+			bytesUsed.set( tile, estimateBytesUsed( scene ) );
+
+		}
+
+		return bytesUsed.get( tile ) ?? null;
 
 	}
 

@@ -123,6 +123,7 @@ export class TilesRendererBase {
 		this.isLoading = false;
 
 		const lruCache = new LRUCache();
+		lruCache.computeMemoryUsageCallback = tile => this.getBytesUsed( tile ) ?? null;
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
@@ -445,6 +446,12 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
+	calculateBytesUsed( scene, tile ) {
+
+		return 0;
+
+	}
+
 	dispatchEvent( e ) {
 
 		// event to be overriden for dispatching via an event system
@@ -644,6 +651,23 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
+	getBytesUsed( tile ) {
+
+		let bytes = 0;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin.calculateBytesUsed ) {
+
+				bytes += plugin.calculateBytesUsed( tile.cached.scene ) || 0;
+
+			}
+
+		} );
+
+		return bytes;
+
+	}
+
 	preprocessTileSet( json, url, parent = null ) {
 
 		const version = json.asset.version;
