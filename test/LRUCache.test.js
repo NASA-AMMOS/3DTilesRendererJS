@@ -124,12 +124,12 @@ describe( 'LRUCache', () => {
 		cache.minBytesSize = 5;
 		cache.maxBytesSize = 25;
 		cache.unloadPercent = 1;
-		cache.computeMemoryUsageCallback = () => 4;
 
 		for ( let i = 0; i < 10; i ++ ) {
 
 			const item = { priority: 1 };
 			cache.add( item, () => {} );
+			cache.setMemoryUsage( item, 4 );
 
 		}
 
