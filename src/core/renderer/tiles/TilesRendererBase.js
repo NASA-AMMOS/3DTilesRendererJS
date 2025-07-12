@@ -11,7 +11,14 @@ const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 // "tile a" is loaded first.
 const priorityCallback = ( a, b ) => {
 
-	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		return aPriority > bPriority ? - 1 : 1;
+
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
 		// load shallower tiles first using "depth from rendered parent" to help
 		// even out depth disparities caused by non-content parent tiles
@@ -48,7 +55,14 @@ const priorityCallback = ( a, b ) => {
 // is unloaded first.
 const lruPriorityCallback = ( a, b ) => {
 
-	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		return aPriority > bPriority ? - 1 : 1;
+
+	} else  if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
 		// dispose of deeper tiles first
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
