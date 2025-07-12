@@ -123,7 +123,6 @@ export class TilesRendererBase {
 		this.isLoading = false;
 
 		const lruCache = new LRUCache();
-		lruCache.computeMemoryUsageCallback = tile => this.getBytesUsed( tile );
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
