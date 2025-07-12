@@ -109,8 +109,10 @@ export class ImageOverlayPlugin {
 			enableTileSplitting = true,
 		} = options;
 
+		// plugin needs to run before other plugins that fetch data since content
+		// is handled and loaded in a custom way
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
-		this.priority = 100;
+		this.priority = - 10;
 
 		// options
 		this.renderer = renderer;

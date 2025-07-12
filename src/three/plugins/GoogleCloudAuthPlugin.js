@@ -14,7 +14,6 @@ export class GoogleCloudAuthPlugin {
 	} ) {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
-		this.priority = - Infinity;
 
 		this.apiToken = apiToken;
 		this.useRecommendedSettings = useRecommendedSettings;

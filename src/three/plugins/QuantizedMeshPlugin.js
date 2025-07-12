@@ -87,7 +87,10 @@ export class QuantizedMeshPlugin {
 			solid = false,
 		} = options;
 
+		// plugin needs to run before other plugins that fetch data since content
+		// is handled and loaded in a custom way
 		this.name = 'QUANTIZED_MESH_PLUGIN';
+		this.priority = - 1000;
 
 		this.tiles = null;
 		this.layer = null;
