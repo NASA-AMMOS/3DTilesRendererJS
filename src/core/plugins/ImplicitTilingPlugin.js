@@ -77,6 +77,12 @@ export class ImplicitTilingPlugin {
 		if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
 			// TODO: ideally the plugin doesn't need to know about children being processed
+			tile.children.forEach( child => {
+
+				// TODO: there should be a reliable way for removing children like this.
+				this.tiles.processNodeQueue.remove( child );
+
+			} );
 			tile.children.length = 0;
 			tile.__childrenProcessed = 0;
 

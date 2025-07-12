@@ -436,8 +436,19 @@ export class QuantizedMeshPlugin {
 		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
 		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
 		// we just remove all children and generate them again one the parent is loaded.
-		tile.children.length = 0;
-		tile.__childrenProcessed = 0;
+		// Only get rid of the children if this plugin was responsible for them.
+		if ( TILE_AVAILABLE in tile ) {
+
+			tile.children.forEach( child => {
+
+				// TODO: there should be a reliable way for removing children like this.
+				this.tiles.processNodeQueue.remove( child );
+
+			} );
+			tile.children.length = 0;
+			tile.__childrenProcessed = 0;
+
+		}
 
 	}
 
