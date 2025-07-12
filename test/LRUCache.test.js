@@ -143,7 +143,7 @@ describe( 'LRUCache', () => {
 
 	} );
 
-	it( 'should update memory usage when the items are triggers.', () => {
+	it( 'should update memory usage per item when triggered.', () => {
 
 		const cache = new LRUCache();
 		cache.minBytesSize = 10;
@@ -178,6 +178,23 @@ describe( 'LRUCache', () => {
 		cache.unloadUnusedContent();
 		expect( cache.cachedBytes ).toEqual( 28 );
 		expect( cache.itemList.length ).toEqual( 7 );
+
+	} );
+
+	it( 'should update memory usage for all items when triggered.', () => {
+
+		const cache = new LRUCache();
+		let called = 0;
+		cache.computeMemoryUsageCallback = () => called ++;
+
+		for ( let i = 0; i < 10; i ++ ) {
+
+			cache.add( {}, () => {} );
+
+		}
+
+		cache.updateMemoryUsage();
+		expect( called ).toEqual( 10 );
 
 	} );
 
