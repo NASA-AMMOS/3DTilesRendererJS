@@ -126,11 +126,11 @@ export class TilesRendererBase {
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
-		downloadQueue.maxJobs = 10;
+		downloadQueue.maxJobs = 25;
 		downloadQueue.priorityCallback = priorityCallback;
 
 		const parseQueue = new PriorityQueue();
-		parseQueue.maxJobs = 1;
+		parseQueue.maxJobs = 5;
 		parseQueue.priorityCallback = priorityCallback;
 
 		const processNodeQueue = new PriorityQueue();

@@ -148,6 +148,7 @@ export class ImageOverlayPlugin {
 
 		const tileComposer = new TiledTextureComposer( this.renderer );
 		const processQueue = new PriorityQueue();
+		processQueue.maxJobs = 10;
 		processQueue.priorityCallback = ( a, b ) => {
 
 			const tileA = a.tile;
