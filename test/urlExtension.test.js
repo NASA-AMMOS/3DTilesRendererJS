@@ -1,4 +1,4 @@
-import { getUrlExtension } from '../src/core/utilities/urlExtension.js';
+import { getUrlExtension } from '../src/core/renderer/utilities/urlExtension.js';
 
 describe( 'getUrlExtension', () => {
 

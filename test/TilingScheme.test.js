@@ -1,5 +1,5 @@
-import { TilingScheme } from '../src/plugins/three/images/utils/TilingScheme.js';
-import { ProjectionScheme } from '../src/plugins/three/images/utils/ProjectionScheme.js';
+import { TilingScheme } from '../src/three/plugins/images/utils/TilingScheme.js';
+import { ProjectionScheme } from '../src/three/plugins/images/utils/ProjectionScheme.js';
 
 describe( 'TiltingScheme', () => {
 

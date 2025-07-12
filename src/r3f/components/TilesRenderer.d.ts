@@ -1,4 +1,4 @@
-import type { TilesRenderer as TilesRendererImpl, TilesRendererEventMap } from '../../three/renderer/TilesRenderer.js';
+import type { TilesRenderer as TilesRendererImpl, TilesRendererEventMap } from '../../three/renderer/tiles/TilesRenderer.js';
 import type {
 	ReactNode,
 	Context,

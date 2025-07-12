@@ -1,4 +1,4 @@
-import { ProjectionScheme } from '../src/plugins/three/images/utils/ProjectionScheme.js';
+import { ProjectionScheme } from '../src/three/plugins/images/utils/ProjectionScheme.js';
 import { MathUtils } from 'three';
 
 describe( 'ProjectionScheme', () => {

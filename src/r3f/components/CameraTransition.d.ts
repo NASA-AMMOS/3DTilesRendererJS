@@ -1,5 +1,5 @@
 import { Camera } from 'three';
-import { CameraTransitionManager } from '../../three/controls/CameraTransitionManager.js';
+import { CameraTransitionManager } from '../../three/renderer/controls/CameraTransitionManager.js';
 
 interface CameraTransitionProps {
     mode?: 'perspective' | 'orthographic';

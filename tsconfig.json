@@ -10,6 +10,6 @@
     },
     "files": [
         "src/index.d.ts",
-        "src/plugins/index.d.ts"
+        "src/plugins.d.ts"
     ]
 }

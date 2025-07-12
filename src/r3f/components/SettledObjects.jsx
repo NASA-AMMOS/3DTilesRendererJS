@@ -3,7 +3,7 @@ import { useMultipleRefs } from '../utilities/useMultipleRefs.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { QueryManager } from '../utilities/QueryManager.js';
 import { useDeepOptions } from '../utilities/useOptions.js';
-import { OBJECT_FRAME } from '../../three/math/Ellipsoid.js';
+import { OBJECT_FRAME } from '../../three/renderer/math/Ellipsoid.js';
 import { Matrix4, Ray, Vector3 } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
