@@ -704,7 +704,8 @@ export class ImageOverlayPlugin {
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
 
-				boundingVolume.region = getMeshesCartographicRange( meshes, tiles.ellipsoid ).region;
+				// TODO: disabled because the bounding volume isn't precise for frustum culling at small scales
+				// boundingVolume.region = getMeshesCartographicRange( meshes, tiles.ellipsoid ).region;
 
 			}
 
