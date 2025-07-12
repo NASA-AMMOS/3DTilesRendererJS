@@ -250,7 +250,7 @@ export class ImageOverlayPlugin {
 				} );
 
 				this.resetVirtualChildren();
-				tiles.lruCache.updateMemoryUsage();
+				tiles.recalculateBytesUsed();
 
 				tiles.dispatchEvent( { type: 'needs-rerender' } );
 
@@ -1262,7 +1262,7 @@ export class ImageOverlayPlugin {
 
 		const { overlayInfo, overlays, tileControllers } = this;
 		const tileController = tileControllers.get( tile );
-		this.tiles.lruCache.updateMemoryUsage( tile );
+		this.tiles.recalculateBytesUsed( tile );
 
 		// if the tile has been disposed before this function is called then exit early
 		if ( ! tileController || tileController.signal.aborted ) {

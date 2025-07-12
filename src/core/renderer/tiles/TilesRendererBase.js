@@ -123,7 +123,7 @@ export class TilesRendererBase {
 		this.isLoading = false;
 
 		const lruCache = new LRUCache();
-		lruCache.computeMemoryUsageCallback = tile => this.getBytesUsed( tile ) ?? null;
+		lruCache.computeMemoryUsageCallback = tile => this.getBytesUsed( tile );
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
 
 		const downloadQueue = new PriorityQueue();
@@ -139,6 +139,7 @@ export class TilesRendererBase {
 		processNodeQueue.priorityCallback = priorityCallback;
 		processNodeQueue.log = true;
 
+		this.processedTiles = new WeakSet();
 		this.visibleTiles = new Set();
 		this.activeTiles = new Set();
 		this.usedSet = new Set();
@@ -491,6 +492,8 @@ export class TilesRendererBase {
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
 
+		this.processedTiles.add( tile );
+
 		if ( tile.content ) {
 
 			// Fix old file formats
@@ -668,6 +671,29 @@ export class TilesRendererBase {
 
 	}
 
+	recalculateBytesUsed( tile = null ) {
+
+		const { lruCache, processedTiles } = this;
+		if ( tile === null ) {
+
+			lruCache.itemSet.forEach( item => {
+
+				if ( processedTiles.has( item ) ) {
+
+					lruCache.setMemoryUsage( item, this.getBytesUsed( item ) );
+
+				}
+
+			} );
+
+		} else {
+
+			lruCache.setMemoryUsage( tile, this.getBytesUsed( tile ) );
+
+		}
+
+	}
+
 	preprocessTileSet( json, url, parent = null ) {
 
 		const version = json.asset.version;
@@ -813,6 +839,7 @@ export class TilesRendererBase {
 
 		}
 
+		lruCache.setMemoryUsage( tile, this.getBytesUsed( tile ) );
 		this.cachedSinceLoadComplete.add( tile );
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
@@ -912,7 +939,8 @@ export class TilesRendererBase {
 				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
 				if ( lruCache.getMemoryUsage( tile ) === 0 ) {
 
-					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
+					const bytesUsed = this.getBytesUsed( tile );
+					if ( lruCache.isFull() && bytesUsed > 0 ) {
 
 						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
 						// be loaded again later from the disk cache if needed.
@@ -922,7 +950,7 @@ export class TilesRendererBase {
 					} else {
 
 						// Otherwise update the item to the latest known value
-						lruCache.updateMemoryUsage( tile );
+						lruCache.setMemoryUsage( tile, bytesUsed );
 
 					}
 
