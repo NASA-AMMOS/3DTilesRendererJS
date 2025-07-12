@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageOverlayPlugin: Add support for splitting tiles to match image tile detail.
 - ImageOverlayPlugin: Planar projection now only works when the projection is within the range 0, 1 along the z-projection axis.
 
+### Changed
+- TilesRenderer: Increased default queue sizes from 1 to 5 for parse queue, 10 to 25 for download queue.
+
 ### Fixed
 - R3F TilesAttributionOverlay not functioning on non-HTTPS domains.
 - Support for React 19 while maintaining React 18 support.
