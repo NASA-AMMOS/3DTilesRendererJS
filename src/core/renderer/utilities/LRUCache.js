@@ -167,8 +167,21 @@ class LRUCache {
 
 	}
 
-	updateMemoryUsage( item ) {
+	updateMemoryUsage( item = null ) {
 
+		// update all memory if no item is provided
+		if ( item === null ) {
+
+			this.itemSet.forEach( item => {
+
+				this.updateMemoryUsage( item );
+
+			} );
+			return;
+
+		}
+
+		// update the memory fo the item passed
 		const itemSet = this.itemSet;
 		const bytesMap = this.bytesMap;
 		if ( ! itemSet.has( item ) ) {

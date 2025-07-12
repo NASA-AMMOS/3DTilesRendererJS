@@ -658,7 +658,7 @@ export class TilesRendererBase {
 
 			if ( plugin.calculateBytesUsed ) {
 
-				bytes += plugin.calculateBytesUsed( tile.cached.scene ) || 0;
+				bytes += plugin.calculateBytesUsed( tile, tile.cached.scene ) || 0;
 
 			}
 
@@ -910,7 +910,7 @@ export class TilesRendererBase {
 
 				// If the memory of the item hasn't been registered yet then that means the memory usage hasn't
 				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
-				if ( lruCache.getMemoryUsage( tile ) === null ) {
+				if ( lruCache.getMemoryUsage( tile ) === 0 ) {
 
 					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
 
