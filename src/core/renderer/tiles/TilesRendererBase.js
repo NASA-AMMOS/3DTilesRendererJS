@@ -893,6 +893,7 @@ export class TilesRendererBase {
 						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
 						// be loaded again later from the disk cache if needed.
 						lruCache.remove( tile );
+						return;
 
 					} else {
 
