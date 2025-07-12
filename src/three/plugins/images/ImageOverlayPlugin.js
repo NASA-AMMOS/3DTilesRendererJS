@@ -946,6 +946,13 @@ export class ImageOverlayPlugin {
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		if ( ! overlay.isInitialized ) {
 
+			overlay.imageSource.fetchData = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
+
+					return overlay.fetch( ...args );
+
+				} );
 			overlay.init();
 
 		}
@@ -1401,6 +1408,12 @@ class ImageOverlay {
 
 	}
 
+	fetch( ...args ) {
+
+		return fetch( ...args );
+
+	}
+
 	whenReady() {
 
 	}
@@ -1423,6 +1436,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
 
 	}
@@ -1449,6 +1463,7 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
 
 	}
@@ -1481,7 +1496,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 		this.imageSource = new TMSImageSource( options );
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
-		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._attributions = [];
 
 	}
@@ -1503,6 +1518,12 @@ export class CesiumIonOverlay extends ImageOverlay {
 			} );
 
 		super.init();
+
+	}
+
+	fetch( ...args ) {
+
+		return this.auth.fetch( ...args );
 
 	}
 
@@ -1531,7 +1552,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
 
-		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._logoAttribution = {
 			value: '',
 			type: 'image',
@@ -1553,6 +1574,12 @@ export class GoogleMapsOverlay extends ImageOverlay {
 			} );
 
 		super.init();
+
+	}
+
+	fetch( ...args ) {
+
+		return this.auth.fetch( ...args );
 
 	}
 
