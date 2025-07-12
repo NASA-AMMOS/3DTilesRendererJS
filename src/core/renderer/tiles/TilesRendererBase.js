@@ -16,7 +16,8 @@ const priorityCallback = ( a, b ) => {
 
 	if ( aPriority !== bPriority ) {
 
-		return aPriority > bPriority ? - 1 : 1;
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
 
 	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
@@ -60,7 +61,8 @@ const lruPriorityCallback = ( a, b ) => {
 
 	if ( aPriority !== bPriority ) {
 
-		return aPriority > bPriority ? - 1 : 1;
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
 
 	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
