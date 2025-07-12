@@ -1,6 +1,6 @@
 Documentation for addons provided by the project and in the examples folder.
 
-Plugin documentation has been moved to the [plugins directory](./src/plugins/README.md).
+Plugin documentation has been moved to the [plugins directory](./src/three/plugins/README.md).
 
 # Controls
 
