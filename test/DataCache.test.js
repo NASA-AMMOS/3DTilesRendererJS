@@ -1,4 +1,4 @@
-import { DataCache } from '../src/plugins/three/images/utils/DataCache.js';
+import { DataCache } from '../src/three/plugins/images/utils/DataCache.js';
 
 function waitFrame() {
 
