@@ -496,6 +496,7 @@ export class ImageOverlayPlugin {
 			const { hash } = this._getSplitVectors( clone, parent );
 			if ( parent[ SPLIT_HASH ] !== hash || fullDispose ) {
 
+				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
 				const children = collectChildren( parent );
 				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
 
@@ -509,8 +510,8 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				parent.__childrenProcessed = 0;
 				parent.children.length = 0;
+				parent.__childrenProcessed = 0;
 
 			}
 
