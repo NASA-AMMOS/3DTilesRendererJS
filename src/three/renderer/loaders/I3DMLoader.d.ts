@@ -1,6 +1,6 @@
-import { I3DMBaseResult, I3DMLoaderBase } from '../../../core/loaders/I3DMLoaderBase.js';
-import { BatchTable } from '../../../core/re/renderer/utilities/BatchTable.ts';
-import { FeatureTable } from '../../../core/re/renderer/utilities/FeatureTable.ts';
+import { I3DMBaseResult, I3DMLoaderBase } from '../../../core/renderer/loaders/I3DMLoaderBase.js';
+import { BatchTable } from '../../../core/renderer/utilities/BatchTable.ts';
+import { FeatureTable } from '../../../core/renderer/utilities/FeatureTable.ts';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Group, LoadingManager } from 'three';
 
