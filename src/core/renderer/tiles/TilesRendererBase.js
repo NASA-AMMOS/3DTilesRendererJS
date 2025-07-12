@@ -62,7 +62,7 @@ const lruPriorityCallback = ( a, b ) => {
 
 		return aPriority > bPriority ? - 1 : 1;
 
-	} else  if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
 		// dispose of deeper tiles first
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
