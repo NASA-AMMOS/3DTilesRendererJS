@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - UpdateOnChangePlugin: Fix events not being disposed of properly.
 - QuantizedMeshPlugin: Only parse a mesh if the extension is "terrain".
 - ImageOverlayPlugin: Correctly cancel image tile loading when removing an overlay.
+- TilesRenderer: Fix case where load events could be fired on tiles after they had been disposed when the cache is full.
 
 ## [0.4.11] - 2025.07.01
 ### Added
