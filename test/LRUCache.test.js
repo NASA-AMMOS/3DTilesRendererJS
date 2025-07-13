@@ -124,12 +124,12 @@ describe( 'LRUCache', () => {
 		cache.minBytesSize = 5;
 		cache.maxBytesSize = 25;
 		cache.unloadPercent = 1;
-		cache.computeMemoryUsageCallback = () => 4;
 
 		for ( let i = 0; i < 10; i ++ ) {
 
 			const item = { priority: 1 };
 			cache.add( item, () => {} );
+			cache.setMemoryUsage( item, 4 );
 
 		}
 
@@ -143,18 +143,18 @@ describe( 'LRUCache', () => {
 
 	} );
 
-	it( 'should update memory usage when the items are triggers.', () => {
+	it( 'should update memory usage per item when triggered.', () => {
 
 		const cache = new LRUCache();
 		cache.minBytesSize = 10;
 		cache.maxBytesSize = 25;
 		cache.unloadPercent = 1;
-		cache.computeMemoryUsageCallback = () => 1;
 
 		const items = new Array( 10 ).fill().map( () => ( { priority: 1 } ) );
 		for ( let i = 0; i < 10; i ++ ) {
 
 			cache.add( items[ i ], () => {} );
+			cache.setMemoryUsage( items[ i ], 1 );
 
 		}
 
@@ -165,10 +165,9 @@ describe( 'LRUCache', () => {
 		expect( cache.cachedBytes ).toEqual( 10 );
 		expect( cache.itemList.length ).toEqual( 10 );
 
-		cache.computeMemoryUsageCallback = () => 4;
 		for ( let i = 0; i < 10; i ++ ) {
 
-			cache.updateMemoryUsage( items[ i ] );
+			cache.setMemoryUsage( items[ i ], 4 );
 
 		}
 
@@ -200,8 +199,7 @@ describe( 'LRUCache', () => {
 		expect( cache.isFull() ).toEqual( false );
 
 		// update all items to have a memory quantity that's over the cache limit and update the items
-		cache.computeMemoryUsageCallback = () => 1;
-		cache.itemList.forEach( item => cache.updateMemoryUsage( item ) );
+		cache.itemList.forEach( item => cache.setMemoryUsage( item, 1 ) );
 
 		expect( cache.isFull() ).toEqual( true );
 		expect( cache.itemList.length ).toEqual( 10 );
@@ -231,10 +229,9 @@ describe( 'LRUCache', () => {
 		expect( cache.isFull() ).toEqual( false );
 
 		// update all items to have a memory quantity that's over the cache limit and update the items
-		cache.computeMemoryUsageCallback = () => 1;
 		cache.itemList.forEach( item => {
 
-			cache.updateMemoryUsage( item );
+			cache.setMemoryUsage( item, 1 );
 			cache.setLoaded( item, true );
 
 		} );

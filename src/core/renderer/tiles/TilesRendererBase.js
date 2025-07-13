@@ -11,7 +11,15 @@ const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 // "tile a" is loaded first.
 const priorityCallback = ( a, b ) => {
 
-	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
 		// load shallower tiles first using "depth from rendered parent" to help
 		// even out depth disparities caused by non-content parent tiles
@@ -48,7 +56,15 @@ const priorityCallback = ( a, b ) => {
 // is unloaded first.
 const lruPriorityCallback = ( a, b ) => {
 
-	if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
 		// dispose of deeper tiles first
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
@@ -138,6 +154,7 @@ export class TilesRendererBase {
 		processNodeQueue.priorityCallback = priorityCallback;
 		processNodeQueue.log = true;
 
+		this.processedTiles = new WeakSet();
 		this.visibleTiles = new Set();
 		this.activeTiles = new Set();
 		this.usedSet = new Set();
@@ -445,6 +462,12 @@ export class TilesRendererBase {
 	}
 
 	// Overrideable
+	calculateBytesUsed( scene, tile ) {
+
+		return 0;
+
+	}
+
 	dispatchEvent( e ) {
 
 		// event to be overriden for dispatching via an event system
@@ -483,6 +506,8 @@ export class TilesRendererBase {
 	}
 
 	preprocessNode( tile, tileSetDir, parentTile = null ) {
+
+		this.processedTiles.add( tile );
 
 		if ( tile.content ) {
 
@@ -644,6 +669,46 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
+	getBytesUsed( tile ) {
+
+		let bytes = 0;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin.calculateBytesUsed ) {
+
+				bytes += plugin.calculateBytesUsed( tile, tile.cached.scene ) || 0;
+
+			}
+
+		} );
+
+		return bytes;
+
+	}
+
+	recalculateBytesUsed( tile = null ) {
+
+		const { lruCache, processedTiles } = this;
+		if ( tile === null ) {
+
+			lruCache.itemSet.forEach( item => {
+
+				if ( processedTiles.has( item ) ) {
+
+					lruCache.setMemoryUsage( item, this.getBytesUsed( item ) );
+
+				}
+
+			} );
+
+		} else {
+
+			lruCache.setMemoryUsage( tile, this.getBytesUsed( tile ) );
+
+		}
+
+	}
+
 	preprocessTileSet( json, url, parent = null ) {
 
 		const version = json.asset.version;
@@ -789,6 +854,7 @@ export class TilesRendererBase {
 
 		}
 
+		lruCache.setMemoryUsage( tile, this.getBytesUsed( tile ) );
 		this.cachedSinceLoadComplete.add( tile );
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
@@ -886,9 +952,10 @@ export class TilesRendererBase {
 
 				// If the memory of the item hasn't been registered yet then that means the memory usage hasn't
 				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
-				if ( lruCache.getMemoryUsage( tile ) === null ) {
+				if ( lruCache.getMemoryUsage( tile ) === 0 ) {
 
-					if ( lruCache.isFull() && lruCache.computeMemoryUsageCallback( tile ) > 0 ) {
+					const bytesUsed = this.getBytesUsed( tile );
+					if ( lruCache.isFull() && bytesUsed > 0 ) {
 
 						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
 						// be loaded again later from the disk cache if needed.
@@ -898,7 +965,7 @@ export class TilesRendererBase {
 					} else {
 
 						// Otherwise update the item to the latest known value
-						lruCache.updateMemoryUsage( tile );
+						lruCache.setMemoryUsage( tile, bytesUsed );
 
 					}
 

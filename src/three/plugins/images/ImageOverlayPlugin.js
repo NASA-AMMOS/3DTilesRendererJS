@@ -8,6 +8,7 @@ import { PriorityQueue } from '../../../core/renderer/utilities/PriorityQueue.js
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GoogleCloudAuth } from '../../../core/plugins/auth/GoogleCloudAuth.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
+import { safeTextureGetByteLength } from '../../renderer/tiles/utilities.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -134,6 +135,7 @@ export class ImageOverlayPlugin {
 		this._onTileDownloadStart = null;
 		this._cleanupScheduled = false;
 		this._virtualChildResetId = 0;
+		this._bytesUsed = new WeakMap();
 
 		overlays.forEach( overlay => {
 
@@ -248,6 +250,7 @@ export class ImageOverlayPlugin {
 				} );
 
 				this.resetVirtualChildren();
+				tiles.recalculateBytesUsed();
 
 				tiles.dispatchEvent( { type: 'needs-rerender' } );
 
@@ -326,6 +329,41 @@ export class ImageOverlayPlugin {
 			return item.tile === tile;
 
 		} );
+
+	}
+
+	calculateBytesUsed( tile ) {
+
+		const { overlayInfo } = this;
+		const bytesUsed = this._bytesUsed;
+
+		let bytes = null;
+		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+
+			if ( tileInfo.has( tile ) ) {
+
+				const { target } = tileInfo.get( tile );
+				bytes = bytes || 0;
+				bytes += safeTextureGetByteLength( target?.texture );
+
+			}
+
+		} );
+
+		if ( bytes !== null ) {
+
+			bytesUsed.set( tile, bytes );
+			return bytes;
+
+		} else if ( bytesUsed.has( tile ) ) {
+
+			return bytesUsed.get( tile );
+
+		} else {
+
+			return 0;
+
+		}
 
 	}
 
@@ -458,6 +496,7 @@ export class ImageOverlayPlugin {
 			const { hash } = this._getSplitVectors( clone, parent );
 			if ( parent[ SPLIT_HASH ] !== hash || fullDispose ) {
 
+				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
 				const children = collectChildren( parent );
 				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
 
@@ -471,8 +510,8 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				parent.__childrenProcessed = 0;
 				parent.children.length = 0;
+				parent.__childrenProcessed = 0;
 
 			}
 
@@ -907,6 +946,13 @@ export class ImageOverlayPlugin {
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		if ( ! overlay.isInitialized ) {
 
+			overlay.imageSource.fetchData = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
+
+					return overlay.fetch( ...args );
+
+				} );
 			overlay.init();
 
 		}
@@ -921,7 +967,7 @@ export class ImageOverlayPlugin {
 
 			// mark tiles as needing an update after initialized so we get a trickle in of tiles
 			await promise;
-			this._markNeedsUpdate();
+			this._updateLayers( tile );
 
 		};
 
@@ -1223,6 +1269,7 @@ export class ImageOverlayPlugin {
 
 		const { overlayInfo, overlays, tileControllers } = this;
 		const tileController = tileControllers.get( tile );
+		this.tiles.recalculateBytesUsed( tile );
 
 		// if the tile has been disposed before this function is called then exit early
 		if ( ! tileController || tileController.signal.aborted ) {
@@ -1361,6 +1408,12 @@ class ImageOverlay {
 
 	}
 
+	fetch( ...args ) {
+
+		return fetch( ...args );
+
+	}
+
 	whenReady() {
 
 	}
@@ -1383,6 +1436,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
 
 	}
@@ -1409,6 +1463,7 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
 
 	}
@@ -1441,7 +1496,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 		this.imageSource = new TMSImageSource( options );
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
-		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._attributions = [];
 
 	}
@@ -1463,6 +1518,12 @@ export class CesiumIonOverlay extends ImageOverlay {
 			} );
 
 		super.init();
+
+	}
+
+	fetch( ...args ) {
+
+		return this.auth.fetch( ...args );
 
 	}
 
@@ -1491,7 +1552,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
 
-		this.imageSource.fetchData = ( ...args ) => this.auth.fetch( ...args );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._logoAttribution = {
 			value: '',
 			type: 'image',
@@ -1513,6 +1574,12 @@ export class GoogleMapsOverlay extends ImageOverlay {
 			} );
 
 		super.init();
+
+	}
+
+	fetch( ...args ) {
+
+		return this.auth.fetch( ...args );
 
 	}
 

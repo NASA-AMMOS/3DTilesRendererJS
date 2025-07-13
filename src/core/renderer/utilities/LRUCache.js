@@ -55,7 +55,6 @@ class LRUCache {
 		this.loadedSet = new Set();
 
 		this._unloadPriorityCallback = null;
-		this.computeMemoryUsageCallback = () => null;
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -71,7 +70,22 @@ class LRUCache {
 
 	getMemoryUsage( item ) {
 
-		return this.bytesMap.get( item ) ?? null;
+		return this.bytesMap.get( item ) || 0;
+
+	}
+
+	setMemoryUsage( item, bytes ) {
+
+		const { bytesMap, itemSet } = this;
+		if ( ! itemSet.has( item ) ) {
+
+			return;
+
+		}
+
+		this.cachedBytes -= bytesMap.get( item ) || 0;
+		bytesMap.set( item, bytes );
+		this.cachedBytes += bytes;
 
 	}
 
@@ -93,16 +107,10 @@ class LRUCache {
 		const usedSet = this.usedSet;
 		const itemList = this.itemList;
 		const callbacks = this.callbacks;
-		const bytesMap = this.bytesMap;
 		itemList.push( item );
 		usedSet.add( item );
 		itemSet.set( item, Date.now() );
 		callbacks.set( item, removeCb );
-
-		// computeMemoryUsageCallback can return "null" if memory usage is not known, yet
-		const bytes = this.computeMemoryUsageCallback( item );
-		this.cachedBytes += bytes || 0;
-		bytesMap.set( item, bytes );
 
 		return true;
 
@@ -164,24 +172,6 @@ class LRUCache {
 			}
 
 		}
-
-	}
-
-	updateMemoryUsage( item ) {
-
-		const itemSet = this.itemSet;
-		const bytesMap = this.bytesMap;
-		if ( ! itemSet.has( item ) ) {
-
-			return;
-
-		}
-
-		this.cachedBytes -= bytesMap.get( item ) || 0;
-
-		const bytes = this.computeMemoryUsageCallback( item );
-		bytesMap.set( item, bytes );
-		this.cachedBytes += bytes;
 
 	}
 

@@ -3,13 +3,13 @@ import { Vector3, Matrix4, MathUtils } from 'three';
 // iterates over all present tiles in the given tile set at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, normalized, callback ) {
 
-	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-7 was chosen since smaller values
+	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-8 was chosen since smaller values
 	// are not larger enough and cause extra tiles to load in cases where 1-to-1 tile-to-image should occur
 	let [ minLon, minLat, maxLon, maxLat ] = range;
-	minLat += 1e-7;
-	minLon += 1e-7;
-	maxLat -= 1e-7;
-	maxLon -= 1e-7;
+	minLat += 1e-8;
+	minLon += 1e-8;
+	maxLat -= 1e-8;
+	maxLon -= 1e-8;
 
 	const clampedLevel = Math.max( Math.min( level, tiling.maxLevel ), tiling.minLevel );
 	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel, normalized );
