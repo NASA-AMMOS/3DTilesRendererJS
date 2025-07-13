@@ -53,6 +53,8 @@ export function TileFlatteningShape( props ) {
 
 		// the "threshold" option for "addShape"
 		threshold = Infinity,
+		thresholdMode = 'none',
+		flattenRange = 0,
 
 		// the "direction" option for "addShape"
 		direction = null,
@@ -111,7 +113,11 @@ export function TileFlatteningShape( props ) {
 		}
 
 		// add a shape to the plugin
-		plugin.addShape( relativeGroup, _direction, threshold );
+		plugin.addShape( relativeGroup, _direction, {
+			threshold,
+			thresholdMode,
+			flattenRange,
+		} );
 		setHash( null );
 
 		return () => {
@@ -120,7 +126,7 @@ export function TileFlatteningShape( props ) {
 
 		};
 
-	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold, relativeGroup ] );
+	}, [ group, tiles, plugin, direction, relativeToEllipsoid, threshold, thresholdMode, flattenRange, relativeGroup ] );
 
 	// detect if the object transform or geometry has changed
 	useFrame( () => {

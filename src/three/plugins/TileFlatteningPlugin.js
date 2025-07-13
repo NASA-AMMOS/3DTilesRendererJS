@@ -1,4 +1,4 @@
-import { Box3, DoubleSide, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
+import { Box3, DoubleSide, MathUtils, Matrix4, MeshBasicMaterial, Raycaster, Sphere, Vector3 } from 'three';
 
 // Limitations:
 // - No support for BatchedTilesPlugin when resetting or modifying geometry
@@ -165,7 +165,10 @@ export class TileFlatteningPlugin {
 				shape,
 				direction,
 				sphere,
+
+				thresholdMode,
 				threshold,
+				flattenRange,
 			} ) => {
 
 				// check if the spheres overlap so there may actually be potential of geometry overlap
@@ -192,10 +195,19 @@ export class TileFlatteningPlugin {
 					_raycaster.far = RAYCAST_DISTANCE;
 
 					const hit = _raycaster.intersectObject( shape )[ 0 ];
-					if ( hit && RAYCAST_DISTANCE - hit.distance < threshold ) {
+					if ( hit ) {
 
-						hit.point.applyMatrix4( _invMatrix );
-						position.setXYZ( i, ...hit.point );
+						let rangeAlpha = ( RAYCAST_DISTANCE - hit.distance ) / threshold;
+						const aboveThreshold = rangeAlpha >= 1;
+						if ( ! aboveThreshold || aboveThreshold && thresholdMode === 'flatten' ) {
+
+							rangeAlpha = Math.min( rangeAlpha, 1.0 );
+
+							hit.point.addScaledVector( ray.direction, MathUtils.mapLinear( rangeAlpha, 0, 1, - flattenRange, 0 ) );
+							hit.point.applyMatrix4( _invMatrix );
+							position.setXYZ( i, ...hit.point );
+
+						}
 
 					}
 
@@ -224,11 +236,20 @@ export class TileFlatteningPlugin {
 
 	}
 
-	addShape( mesh, direction = new Vector3( 0, 0, - 1 ), threshold = Infinity ) {
+	addShape( mesh, direction = new Vector3( 0, 0, - 1 ), options = {} ) {
 
 		if ( this.hasShape( mesh ) ) {
 
 			throw new Error( 'TileFlatteningPlugin: Shape is already used.' );
+
+		}
+
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'TileFlatteningPlugin: "addShape" function signature has changed. Please use an options object, instead.' );
+			options = {
+				threshold: options,
+			};
 
 		}
 
@@ -251,7 +272,19 @@ export class TileFlatteningPlugin {
 			shape: shape,
 			direction: direction.clone(),
 			sphere: sphere,
-			threshold: threshold,
+
+			// "flatten": Flattens the vertices above the shape
+			// "none": leaves the vertices above the shape as they are
+			thresholdMode: 'none',
+
+			// only flatten within this range above the object
+			threshold: Infinity,
+
+			// the range to flatten vertices in to. 0 is completely flat
+			// while 0.1 means a 10cm range.
+			flattenRange: 0,
+
+			...options,
 		} );
 
 	}
@@ -264,9 +297,13 @@ export class TileFlatteningPlugin {
 
 		}
 
-		const { direction, threshold } = this.shapes.get( mesh );
+		const { direction, threshold, thresholdMode, flattenRange } = this.shapes.get( mesh );
 		this.deleteShape( mesh );
-		this.addShape( mesh, direction, threshold );
+		this.addShape( mesh, direction, {
+			threshold,
+			thresholdMode,
+			flattenRange,
+		} );
 
 	}
 
