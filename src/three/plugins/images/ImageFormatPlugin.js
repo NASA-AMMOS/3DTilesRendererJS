@@ -81,6 +81,16 @@ export class ImageFormatPlugin {
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
 		const texture = await this.imageSource.processBufferToTexture( buffer );
+
+		// clean up the texture if it's not going to be used.
+		if ( abortSignal.aborted ) {
+
+			texture.dispose();
+			texture.image.close();
+			return null;
+
+		}
+
 		this.imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh
