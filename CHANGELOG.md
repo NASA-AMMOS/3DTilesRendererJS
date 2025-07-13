@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added `EnforceNonZeroErrorPlugin`.
 - ImageOverlayPlugin: Add support for splitting tiles to match image tile detail.
 - ImageOverlayPlugin: Planar projection now only works when the projection is within the range 0, 1 along the z-projection axis.
+- ImageOverlayPlugin: Add support for adding downloads to the download queue, tracking used GPU memory in the LRUCache.
 
 ### Changed
 - TilesRenderer: Increased default queue sizes from 1 to 5 for parse queue, 10 to 25 for download queue.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - QuantizedMeshPlugin: Only parse a mesh if the extension is "terrain".
 - ImageOverlayPlugin: Correctly cancel image tile loading when removing an overlay.
 - TilesRenderer: Fix case where load events could be fired on tiles after they had been disposed when the cache is full.
+- ImageOverlayPlugin: Reduced the epsilon used for calculating which tiled images need to be loaded to avoid seams.
 
 ## [0.4.11] - 2025.07.01
 ### Added
