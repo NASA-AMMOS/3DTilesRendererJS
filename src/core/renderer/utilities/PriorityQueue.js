@@ -46,9 +46,6 @@ class PriorityQueue {
 		const items = this.items;
 		items.sort( priorityCallback );
 
-		console.log( items.map( a => a.priority ) );
-
-
 	}
 
 	has( item ) {
