@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -24,14 +24,11 @@
   "exports": {
     ".": "./src/index.js",
     "./plugins": "./src/plugins.js",
-
     "./core": "./src/core/renderer/index.js",
     "./three": "./src/three/renderer/index.js",
     "./r3f": "./src/r3f/index.jsx",
-
     "./core/plugins": "./src/core/plugins/index.js",
     "./three/plugins": "./src/three/plugins/index.js",
-
     "./src/*": "./src/*"
   },
   "scripts": {
