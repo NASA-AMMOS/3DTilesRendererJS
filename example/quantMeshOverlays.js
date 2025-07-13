@@ -25,6 +25,7 @@ let statsContainer, stats;
 const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
+	enableTileSplitting: true,
 	mapBase: false,
 	errorTarget: 2,
 	opacity: 1.0,
@@ -112,6 +113,7 @@ function init() {
 	gui.width = 300;
 	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'enableRendererStats' );
+	gui.add( params, 'enableTileSplitting' );
 	gui.add( params, 'mapBase' ).name( 'OpenStreetMap' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
 
@@ -180,6 +182,9 @@ function animate() {
 	requestAnimationFrame( animate );
 
 	if ( ! tiles ) return;
+
+	const plugin = tiles.getPluginByName( 'IMAGE_OVERLAY_PLUGIN' );
+	plugin.enableTileSplitting = params.enableTileSplitting;
 
 	washingtonOverlay.color.set( params.color );
 	washingtonOverlay.opacity = params.opacity;

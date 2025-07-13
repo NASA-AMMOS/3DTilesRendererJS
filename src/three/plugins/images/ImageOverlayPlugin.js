@@ -101,6 +101,23 @@ function countTilesInRange( range, level, overlay ) {
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
 
+	get enableTileSplitting() {
+
+		return this._enableTileSplitting;
+
+	}
+
+	set enableTileSplitting( v ) {
+
+		if ( this._enableTileSplitting !== v ) {
+
+			this._enableTileSplitting = v;
+			this._markNeedsUpdate();
+
+		}
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -118,7 +135,7 @@ export class ImageOverlayPlugin {
 		// options
 		this.renderer = renderer;
 		this.resolution = resolution;
-		this.enableTileSplitting = enableTileSplitting;
+		this._enableTileSplitting = enableTileSplitting;
 		this.overlays = [];
 
 		// internal
@@ -249,7 +266,7 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				this.resetVirtualChildren();
+				this.resetVirtualChildren( ! this.enableTileSplitting );
 				tiles.recalculateBytesUsed();
 
 				tiles.dispatchEvent( { type: 'needs-rerender' } );
