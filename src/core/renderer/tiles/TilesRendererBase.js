@@ -669,6 +669,7 @@ export class TilesRendererBase {
 	}
 
 	// Private Functions
+	// returns the total bytes used for by the given tile as reported by all plugins
 	getBytesUsed( tile ) {
 
 		let bytes = 0;
@@ -686,6 +687,7 @@ export class TilesRendererBase {
 
 	}
 
+	// force a recalculation of the tile or all tiles if no tile is provided
 	recalculateBytesUsed( tile = null ) {
 
 		const { lruCache, processedTiles } = this;

@@ -1269,6 +1269,8 @@ export class ImageOverlayPlugin {
 
 		const { overlayInfo, overlays, tileControllers } = this;
 		const tileController = tileControllers.get( tile );
+
+		// by this point all targets should be present and we can force the memory to update
 		this.tiles.recalculateBytesUsed( tile );
 
 		// if the tile has been disposed before this function is called then exit early
