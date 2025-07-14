@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Support for WMTS image overlays.
 - Added WMTSTilesPlugin for generating an ellipsoid.
+- XYZTilesPlugin, XYZImageOverlay: Add support for inverted Y tile order, ability to specif bounds.
 
 ### Fixed
 - ImageFormatPlugin: Fixed case where an error could throw if a texture was loaded twice in minor corner cases.
