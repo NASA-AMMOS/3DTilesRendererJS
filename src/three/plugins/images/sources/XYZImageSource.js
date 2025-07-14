@@ -36,7 +36,7 @@ export class XYZImageSource extends TiledImageSource {
 		// transform the url
 		const { tiling, tileDimension, levels, bounds, projection } = this;
 
-		tiling.flipY = /{\s*reverseY|y\s*}/g.test( url );
+		tiling.flipY = ! /{\s*reverseY|-\s*y\s*}/g.test( url );
 		tiling.setProjection( new ProjectionScheme( projection ) );
 		tiling.setBounds( ...bounds );
 		tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
