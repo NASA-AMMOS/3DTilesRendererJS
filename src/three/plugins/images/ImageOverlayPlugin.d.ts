@@ -29,6 +29,22 @@ export class XYZTilesOverlay extends ImageOverlay {
 		levels: number,
 		dimension: number,
 		url: string,
+		bounds?: [ number, number, number, number ],
+
+		color: number | Color,
+		opacity: number,
+		frame?: Matrix4 | null,
+	} );
+
+}
+
+export class WMTSTilesOverlay extends ImageOverlay {
+
+	constructor( options: {
+		levels: number,
+		dimension: number,
+		url: string,
+		bounds?: [ number, number, number, number ],
 
 		color: number | Color,
 		opacity: number,

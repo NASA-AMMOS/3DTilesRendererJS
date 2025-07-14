@@ -4,6 +4,7 @@
 import { EllipsoidProjectionTilesPlugin } from './EllipsoidProjectionTilesPlugin.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
+import { WMTSImageSource } from './sources/WMTSImageSource.js';
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
@@ -15,13 +16,14 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			levels,
 			tileDimension,
 			projection,
+			bounds,
 			...rest
 		} = options;
 
 		super( { pixelSize, ...rest } );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.imageSource = new XYZImageSource( { levels, tileDimension, projection } );
+		this.imageSource = new XYZImageSource( { levels, tileDimension, projection, bounds } );
 
 	}
 
@@ -33,12 +35,36 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 // and tile index offsets, including CesiumJS and Ion.
 export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
-	constructor( ...args ) {
+	constructor( options ) {
 
-		super( ...args );
+		super( options );
 
 		this.name = 'TMS_TILES_PLUGIN';
 		this.imageSource = new TMSImageSource();
+
+	}
+
+}
+
+// Support for WMTS tiles via a url template
+export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
+
+	constructor( options = {} ) {
+
+		// TODO: support WMTS capabilities request xml
+		const {
+			pixelSize = 1e-5,
+			levels,
+			tileDimension,
+			projection,
+			bounds,
+			...rest
+		} = options;
+
+		super( { pixelSize, ...rest } );
+
+		this.name = 'WTMS_TILES_PLUGIN';
+		this.imageSource = new WMTSImageSource( { levels, tileDimension, projection, bounds } );
 
 	}
 

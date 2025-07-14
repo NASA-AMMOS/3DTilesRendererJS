@@ -9,6 +9,7 @@ import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GoogleCloudAuth } from '../../../core/plugins/auth/GoogleCloudAuth.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { safeTextureGetByteLength } from '../../renderer/tiles/utilities.js';
+import { WMTSImageSource } from './sources/WMTSImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -1455,6 +1456,33 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+		this.url = options.url;
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init( this.url );
+
+		super.init();
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
+
+	}
+
+}
+
+export class WMTSTilesOverlay extends ImageOverlay {
+
+	constructor( options = {} ) {
+
+		super( options );
+		this.imageSource = new WMTSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
 
