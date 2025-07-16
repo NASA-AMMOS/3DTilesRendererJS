@@ -39,11 +39,7 @@ export class GoogleCloudAuthPlugin {
 
 	init( tiles ) {
 
-		if ( tiles == null ) {
-
-			return;
-
-		}
+		const { useRecommendedSettings, auth } = this;
 
 		// reset the tiles in case this plugin was removed and re-added
 		tiles.resetFailedTiles();
@@ -54,18 +50,16 @@ export class GoogleCloudAuthPlugin {
 
 		}
 
-		if ( this.useRecommendedSettings ) {
+		if ( ! auth.sessionOptions ) {
 
-			// This plugin changes below values to be more efficient for the photorealistic tiles
-			tiles.parseQueue.maxJobs = 10;
-			tiles.downloadQueue.maxJobs = 30;
-			tiles.errorTarget = 20;
+			auth.authURL = tiles.rootURL;
 
 		}
 
-		if ( ! this.auth.sessionOptions ) {
+		if ( useRecommendedSettings && ! auth.isMapTilesSession ) {
 
-			this.auth.authURL = this.rootURL;
+			// This plugin changes below values to be more efficient for the photorealistic tiles
+			tiles.errorTarget = 20;
 
 		}
 
