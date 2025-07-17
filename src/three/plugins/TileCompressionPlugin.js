@@ -84,7 +84,10 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 	}
 
 	// shift the mesh to the center of the bounds
-	boundingBox.getCenter( _vec );
+	boundingBox
+		.getCenter( _vec )
+		.multiply( mesh.scale )
+		.applyQuaternion( mesh.quaternion );
 	mesh.position.add( _vec );
 
 	// adjust the scale to accommodate the new geometry data range
