@@ -91,7 +91,7 @@ export class CesiumIonAuthPlugin {
 		uri = new URL( uri );
 		if ( /^http/.test( uri.protocol ) && this._tileSetVersion != - 1 ) {
 
-			uri.searchParams.append( 'v', this._tileSetVersion );
+			uri.searchParams.set( 'v', this._tileSetVersion );
 
 		}
 		return uri.toString();

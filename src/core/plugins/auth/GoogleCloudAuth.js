@@ -37,10 +37,10 @@ export class GoogleCloudAuth {
 
 		// construct the url
 		const fetchUrl = new URL( url );
-		fetchUrl.searchParams.append( 'key', this.apiToken );
+		fetchUrl.searchParams.set( 'key', this.apiToken );
 		if ( this.sessionToken ) {
 
-			fetchUrl.searchParams.append( 'session', this.sessionToken );
+			fetchUrl.searchParams.set( 'session', this.sessionToken );
 
 		}
 
@@ -79,7 +79,7 @@ export class GoogleCloudAuth {
 
 			// construct the url to fetch the endpoint
 			const url = new URL( this.authURL );
-			url.searchParams.append( 'key', this.apiToken );
+			url.searchParams.set( 'key', this.apiToken );
 
 			// initialize options for map tiles
 			const fetchOptions = { ...options };

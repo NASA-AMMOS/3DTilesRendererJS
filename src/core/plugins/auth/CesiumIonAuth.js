@@ -45,7 +45,7 @@ export class CesiumIonAuth {
 
 			// construct the url to fetch the endpoint
 			const url = new URL( this.authURL );
-			url.searchParams.append( 'access_token', this.apiToken );
+			url.searchParams.set( 'access_token', this.apiToken );
 
 			this._tokenRefreshPromise = fetch( url, options )
 				.then( res => {
