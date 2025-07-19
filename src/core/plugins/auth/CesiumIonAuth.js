@@ -24,11 +24,14 @@ export class CesiumIonAuth {
 			Authorization: this._bearerToken,
 		};
 
-		// try to refresh the token if we failed ot render
+		// try to refresh the token if we failed to load the tile data
 		const res = await fetch( url, fetchOptions );
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
+			// refresh the bearer token
 			await this.refreshToken( options );
+			fetchOptions.headers.Authorization = this._bearerToken;
+
 			return fetch( url, fetchOptions );
 
 		} else {

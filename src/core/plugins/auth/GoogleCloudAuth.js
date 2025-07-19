@@ -44,11 +44,18 @@ export class GoogleCloudAuth {
 
 		}
 
-		// try to refresh the token if we failed ot render
+		// try to refresh the session token if we failed to load it
 		let res = await fetch( fetchUrl, options );
 		if ( res.status >= 400 && res.status <= 499 && this.autoRefreshToken ) {
 
+			// refresh the session token
 			await this.refreshToken( options );
+			if ( this.sessionToken ) {
+
+				fetchUrl.searchParams.set( 'session', this.sessionToken );
+
+			}
+
 			res = await fetch( fetchUrl, options );
 
 		}
