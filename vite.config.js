@@ -12,6 +12,7 @@ export default ( { mode } ) => {
 		envDir: '.',
 		base: '',
 		build: {
+			sourcemap: true,
 			outDir: './bundle/',
 			rollupOptions: {
 				input: [
