@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - GlobeControls: Dragging operations now end when dragging off the globe.
+- PriorityQueue: No longer requires a sort callback. If set to "null" then items are processed in the order added.
 
 ## [0.4.12] - 2025.07.13
 ### Added
