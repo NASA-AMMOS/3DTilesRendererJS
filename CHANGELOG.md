@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TileCompressionPlugin: Fix transform not working correctly when model is rotated, scaled.
 - GlobeControls: Fix case where the pivot point visualization was being inconsistently shown when zoomed out.
 - TilesRenderer: Prioritize tile downloads by tile error relative to error target.
+- GoogleCloudAuthPlugin, CesiumIonAuthPlugin: Ensure the new authentication and session token are used when an initial request fails when "autoRefreshToken" is enabled.
 
 ### Changed
 - GlobeControls: Dragging operations now end when dragging off the globe.
