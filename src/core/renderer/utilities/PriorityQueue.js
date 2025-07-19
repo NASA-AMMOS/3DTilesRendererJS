@@ -71,7 +71,7 @@ class PriorityQueue {
 			data.resolve = resolve;
 			data.reject = reject;
 
-			items.push( item );
+			items.unshift( item );
 			callbacks.set( item, data );
 
 			if ( this.autoUpdate ) {
