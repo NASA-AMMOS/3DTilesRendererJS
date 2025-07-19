@@ -6,6 +6,27 @@ const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve )
 
 describe( 'PriorityQueue', () => {
 
+	it( 'should process jobs in the order added if not priority callback is provided.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.maxJobs = 7;
+
+		const order = [];
+		const callback = item => order.push( item.priority );
+		queue.add( { priority: 6 }, callback );
+		queue.add( { priority: 3 }, callback );
+		queue.add( { priority: 4 }, callback );
+		queue.add( { priority: 0 }, callback );
+		queue.add( { priority: 8 }, callback );
+		queue.add( { priority: 2 }, callback );
+		queue.add( { priority: 1 }, callback );
+
+		await nextFrame();
+
+		expect( order ).toEqual( [ 6, 3, 4, 0, 8, 2, 1 ] );
+
+	} );
+
 	it( 'should run jobs automatically in the correct order.', async () => {
 
 		const queue = new PriorityQueue();
