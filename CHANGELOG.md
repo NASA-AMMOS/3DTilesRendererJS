@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageFormatPlugin: Fixed case where an error could throw if a texture was loaded twice in minor corner cases.
 - GoogleCloudAuthPlugin: Use the default load queue parameters.
 - GoogleCloudAuthPlugin: Fix issue relating to assigned auth url.
+- TileCompressionPlugin: Fix transform not working correctly when model is rotated, scaled.
 
 ## [0.4.12] - 2025.07.13
 ### Added
