@@ -320,7 +320,8 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointermoveCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
@@ -343,7 +344,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
 			if ( ! pointerTracker.updatePointer( e ) ) {
 
@@ -421,13 +421,13 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointerupCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
 			}
 
-			const { pointerTracker } = this;
 			pointerTracker.deletePointer( e );
 
 			if (
@@ -488,40 +488,41 @@ export class EnvironmentControls extends EventDispatcher {
 
 		};
 
-		const pointerenterCallback = e => {
+		const pointerleaveCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
 			}
 
-			const { pointerTracker } = this;
-			if ( e.buttons !== pointerTracker.getPointerButtons() ) {
-
-				pointerTracker.deletePointer( e );
-				this.resetState();
-
-			}
+			this.resetState();
 
 		};
 
 		domElement.addEventListener( 'contextmenu', contextMenuCallback );
 		domElement.addEventListener( 'pointerdown', pointerdownCallback );
-		domElement.addEventListener( 'pointermove', pointermoveCallback );
-		domElement.addEventListener( 'pointerup', pointerupCallback );
 		domElement.addEventListener( 'wheel', wheelCallback, { passive: false } );
-		domElement.addEventListener( 'pointerenter', pointerenterCallback );
+
+		// Register movement events on the root element so dragging does not break when dragging over other elements.
+		// Use "getRootNode" to enable offscreenCanvas usage.
+		// "pointerleave" event fires when leaving the window.
+		const document = domElement.getRootNode();
+		document.addEventListener( 'pointermove', pointermoveCallback );
+		document.addEventListener( 'pointerup', pointerupCallback );
+		document.addEventListener( 'pointerleave', pointerleaveCallback );
 
 		this._detachCallback = () => {
 
 			domElement.removeEventListener( 'contextmenu', contextMenuCallback );
 			domElement.removeEventListener( 'pointerdown', pointerdownCallback );
-			domElement.removeEventListener( 'pointermove', pointermoveCallback );
-			domElement.removeEventListener( 'pointerup', pointerupCallback );
 			domElement.removeEventListener( 'wheel', wheelCallback );
-			domElement.removeEventListener( 'pointerenter', pointerenterCallback );
+
+			document.removeEventListener( 'pointermove', pointermoveCallback );
+			document.removeEventListener( 'pointerup', pointerupCallback );
+			document.removeEventListener( 'pointerleave', pointerleaveCallback );
 
 		};
 
@@ -618,6 +619,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.pivotMesh.removeFromParent();
 		this.pivotMesh.visible = this.enabled;
 		this.actionHeightOffset = 0;
+		this.pointerTracker.reset();
 
 	}
 
