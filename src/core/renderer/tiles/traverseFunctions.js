@@ -82,7 +82,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		// queue this tile to download content
-		if ( tile.__hasContent && tile.__loadingState === UNLOADED && ! renderer.lruCache.isFull() ) {
+		if ( tile.__hasContent ) {
 
 			renderer.queueTileForDownload( tile );
 
@@ -366,7 +366,7 @@ export function markVisibleTiles( tile, renderer ) {
 			tile.__active = true;
 			stats.active ++;
 
-		} else if ( ! lruCache.isFull() && tile.__hasContent ) {
+		} else if ( tile.__hasContent ) {
 
 			renderer.queueTileForDownload( tile );
 
@@ -391,7 +391,7 @@ export function markVisibleTiles( tile, renderer ) {
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	const allChildrenLoaded = tile.__allChildrenLoaded;
 	const includeTile = meetsSSE || tile.refine === 'ADD';
-	if ( includeTile && ! loadedContent && ! lruCache.isFull() && hasContent ) {
+	if ( includeTile && ! loadedContent && hasContent ) {
 
 		renderer.queueTileForDownload( tile );
 

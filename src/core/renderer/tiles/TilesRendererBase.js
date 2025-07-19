@@ -278,7 +278,7 @@ export class TilesRendererBase {
 
 	queueTileForDownload( tile ) {
 
-		if ( tile.__loadingState !== UNLOADED ) {
+		if ( tile.__loadingState !== UNLOADED || this.lruCache.isFull() ) {
 
 			return;
 
