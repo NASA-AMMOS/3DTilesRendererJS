@@ -18,11 +18,7 @@ class PriorityQueue {
 		this.scheduled = false;
 		this.autoUpdate = true;
 
-		this.priorityCallback = () => {
-
-			throw new Error( 'PriorityQueue: PriorityCallback function not defined.' );
-
-		};
+		this.priorityCallback = null;
 
 		// Customizable scheduling callback. Default using requestAnimationFrame()
 		this.schedulingCallback = func => {
@@ -44,7 +40,11 @@ class PriorityQueue {
 
 		const priorityCallback = this.priorityCallback;
 		const items = this.items;
-		items.sort( priorityCallback );
+		if ( priorityCallback !== null ) {
+
+			items.sort( priorityCallback );
+
+		}
 
 	}
 

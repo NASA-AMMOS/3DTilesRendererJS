@@ -352,7 +352,6 @@ export function markVisibleTiles( tile, renderer ) {
 	}
 
 	// Request the tile contents or mark it as visible if we've found a leaf.
-	const lruCache = renderer.lruCache;
 	if ( tile.__isLeaf ) {
 
 		if ( tile.__loadingState === LOADED ) {
