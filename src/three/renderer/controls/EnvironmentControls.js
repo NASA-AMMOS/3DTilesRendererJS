@@ -255,6 +255,8 @@ export class EnvironmentControls extends EventDispatcher {
 
 				if ( pointerTracker.getPointerCount() === 0 ) {
 
+					// TODO: is it correct to only capture a single pointer? Or do we need to do it for
+					// every unique pointer id?
 					domElement.setPointerCapture( e.pointerId );
 
 				} else if ( pointerTracker.getPointerCount() > 2 ) {
