@@ -151,8 +151,6 @@ export class TilesRendererBase {
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
-		processNodeQueue.priorityCallback = priorityCallback;
-		processNodeQueue.log = true;
 
 		this.processedTiles = new WeakSet();
 		this.visibleTiles = new Set();
