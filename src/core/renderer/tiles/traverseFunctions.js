@@ -1,4 +1,4 @@
-import { LOADED, FAILED, UNLOADED } from '../constants.js';
+import { LOADED, FAILED } from '../constants.js';
 
 const viewErrorTarget = {
 	inView: false,
