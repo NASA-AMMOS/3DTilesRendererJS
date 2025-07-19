@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GoogleCloudAuthPlugin: Use the default load queue parameters.
 - GoogleCloudAuthPlugin: Fix issue relating to assigned auth url.
 - TileCompressionPlugin: Fix transform not working correctly when model is rotated, scaled.
+- GlobeControls: Fix case where the pivot point visualization was being inconsistently shown when zoomed out.
+
+### Changed
+- GlobeControls: Dragging operations now end when dragging off the globe.
 
 ## [0.4.12] - 2025.07.13
 ### Added

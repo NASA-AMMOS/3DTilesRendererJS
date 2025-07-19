@@ -8,7 +8,7 @@ import {
 	Group,
 } from 'three';
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { closestRayEllipsoidSurfacePointEstimate, closestRaySpherePointFromRotation, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
+import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
@@ -292,9 +292,9 @@ export class GlobeControls extends EnvironmentControls {
 	}
 
 	// resets the "stuck" drag modes
-	resetState() {
+	setState( ...args ) {
 
-		super.resetState();
+		super.setState( ...args );
 		this._dragMode = 0;
 		this._rotationMode = 0;
 
@@ -436,20 +436,15 @@ export class GlobeControls extends EnvironmentControls {
 			const pivotRadius = _vec.copy( pivotPoint ).applyMatrix4( ellipsoidFrameInverse ).length();
 			_ellipsoid.radius.setScalar( pivotRadius );
 
-			// find the hit point and use the closest point on the horizon if we miss
-			if ( camera.isPerspectiveCamera ) {
+			// if we drag off the sphere then end the operation and follow through on the inertia
+			if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
 
-				if ( ! _ellipsoid.intersectRay( raycaster.ray, _vec ) ) {
-
-					closestRaySpherePointFromRotation( raycaster.ray, pivotRadius, _vec );
-
-				}
-
-			} else {
-
-				closestRayEllipsoidSurfacePointEstimate( raycaster.ray, _ellipsoid, _vec );
+				this.resetState();
+				this._updateInertia( deltaTime );
+				return;
 
 			}
+
 			_vec.applyMatrix4( ellipsoidFrame );
 
 			// get the point directions
