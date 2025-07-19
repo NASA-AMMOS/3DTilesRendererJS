@@ -320,7 +320,8 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointermoveCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
@@ -343,7 +344,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			const { pointerTracker } = this;
 			pointerTracker.setHoverEvent( e );
 			if ( ! pointerTracker.updatePointer( e ) ) {
 
@@ -421,13 +421,13 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointerupCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
 			}
 
-			const { pointerTracker } = this;
 			pointerTracker.deletePointer( e );
 
 			if (
@@ -491,19 +491,14 @@ export class EnvironmentControls extends EventDispatcher {
 		const pointerleaveCallback = e => {
 
 			// exit early if the controls are disabled
-			if ( ! this.enabled ) {
+			const { pointerTracker } = this;
+			if ( ! this.enabled || pointerTracker.getPointerCount() === 0 ) {
 
 				return;
 
 			}
 
-			const { pointerTracker } = this;
-			if ( e.buttons !== pointerTracker.getPointerButtons() ) {
-
-				pointerTracker.deletePointer( e );
-				this.resetState();
-
-			}
+			this.resetState();
 
 		};
 
@@ -624,6 +619,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.pivotMesh.removeFromParent();
 		this.pivotMesh.visible = this.enabled;
 		this.actionHeightOffset = 0;
+		this.pointerTracker.reset();
 
 	}
 
