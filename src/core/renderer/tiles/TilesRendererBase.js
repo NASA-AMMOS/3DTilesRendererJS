@@ -19,17 +19,6 @@ const priorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
-	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
-
-		// load shallower tiles first using "depth from rendered parent" to help
-		// even out depth disparities caused by non-content parent tiles
-		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
-
-	} else if ( a.__inFrustum !== b.__inFrustum ) {
-
-		// load tiles that are in the frustum at the current depth
-		return a.__inFrustum ? 1 : - 1;
-
 	} else if ( a.__used !== b.__used ) {
 
 		// load tiles that have been used
@@ -45,6 +34,10 @@ const priorityCallback = ( a, b ) => {
 		// and finally visible tiles which have equal error (ex: if geometricError === 0)
 		// should prioritize based on distance.
 		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
+
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+
+		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
 
 	}
 
@@ -64,20 +57,20 @@ const lruPriorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
+	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
+
+		// dispose of least recent tiles first
+		return a.__lastFrameVisited > b.__lastFrameVisited ? - 1 : 1;
+
 	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
-		// dispose of deeper tiles first
+		// dispose of deeper tiles first so parents are not disposed before children
 		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
 
 	} else if ( a.__loadingState !== b.__loadingState ) {
 
 		// dispose of tiles that are earlier along in the loading process first
 		return a.__loadingState > b.__loadingState ? - 1 : 1;
-
-	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
-
-		// dispose of least recent tiles first
-		return a.__lastFrameVisited > b.__lastFrameVisited ? - 1 : 1;
 
 	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
 
