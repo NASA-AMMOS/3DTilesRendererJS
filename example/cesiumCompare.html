@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 		<meta charset="utf-8"/>
 
 		<style>
-			* {
+			html, body {
 				margin: 0;
 				padding: 0;
 				font-family:Arial, Helvetica, sans-serif;
 				color: white;
+				overflow: hidden;
 			}
 
 			.cesium-widget, canvas {
@@ -24,25 +25,41 @@
 				position: relative;
 			}
 
-			#cesium-container::before, #three-container::before {
-				content: attr(name);
+			.fullscreen #cesium-container, .fullscreen #three-container {
+				width: 100vw;
 				position: absolute;
 				left: 0;
 				top: 0;
-				pointer-events: none;
-				padding: 5px;
+			}
+
+			.fullscreen #cesium-container canvas {
+				opacity: 0.5;
+			}
+
+			.fullscreen #cesium-container .stats {
+				left: 250px;
 			}
 
 			#cesium-container {
 				pointer-events: none;
 			}
 
+			.fullscreen .stats {
+				position: fixed;
+				z-index: 1;
+			}
+
+			.stats::before {
+				content: attr(name);
+				font-size: 16px;
+				margin-left: -10px;
+			}
+
 			.stats {
 				position: absolute;
 				left: 0;
-				padding: 5px;
-				padding-left: 15px;
-				top: 20px;
+				margin: 5px;
+				margin-left: 15px;
 				font-size: 13px;
 			}
 
@@ -56,11 +73,11 @@
 		</style>
 	</head>
 	<body>
-		<div id="three-container" name="three">
-			<div class="stats">TEST</div>
+		<div id="three-container">
+			<div class="stats" name="three"></div>
 		</div>
-		<div id="cesium-container" name="cesium">
-			<div class="stats">TEST</div>
+		<div id="cesium-container">
+			<div class="stats" name="cesium"></div>
 		</div>
         <script src="./cesiumCompare.js" type="module"></script>
 	</body>

@@ -1,10 +1,10 @@
 
-import { GlobeControls, TilesRenderer, CAMERA_FRAME } from '3d-tiles-renderer';
+import { GlobeControls, TilesRenderer, CAMERA_FRAME, EnvironmentControls } from '3d-tiles-renderer';
 import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils } from 'three';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Cesium from 'cesium';
 
-const url = new URL( './local-data/photography/tileset.json', import.meta.url ).toString();
+const url = new URL( './data/tileset.json', import.meta.url ).toString();
 const threeContainer = document.getElementById( 'three-container' );
 const cesiumContainer = document.getElementById( 'cesium-container' );
 const threeStats = threeContainer.getElementsByClassName( 'stats' )[ 0 ];
@@ -17,11 +17,22 @@ let cameraInitialized = false;
 	await initThree();
 	await initCesium();
 
+	window.addEventListener( 'keydown', e => {
+
+		if ( e.key === ' ' ) {
+
+			document.body.classList.toggle( 'fullscreen' );
+
+		}
+
+	} );
+
 	updateFromHash();
 	setInterval( () => {
 
-		const { camera, tiles } = threeViewer;
-		const data = tiles.ellipsoid.getCartographicFromObjectFrame( camera.matrixWorld, {}, CAMERA_FRAME );
+		const { camera } = threeViewer;
+		const { position, rotation } = camera;
+		const data = [ ...position, rotation.x, rotation.y, rotation.z ].map( v => parseFloat( v.toFixed( 4 ) ) );
 		window.history.replaceState( undefined, undefined, `#${ JSON.stringify( data ) }` );
 
 	}, 100 );
@@ -35,24 +46,11 @@ function updateFromHash() {
 	const hash = window.location.hash.replace( /^#/, '' );
 	if ( ! hash ) return;
 
-	const {
-		lat,
-		lon,
-		height,
-		azimuth,
-		elevation,
-		roll,
-	} = JSON.parse( unescape( hash ) );
+	const [ x, y, z, ex, ey, ez ] = JSON.parse( unescape( hash ) );
 
-	const { camera, tiles } = threeViewer;
-	tiles.ellipsoid
-		.getObjectFrame( lat, lon, height, azimuth, elevation, roll, camera.matrixWorld, CAMERA_FRAME )
-		.decompose(
-			camera.position,
-			camera.quaternion,
-			camera.scale,
-		);
-
+	const { camera } = threeViewer;
+	camera.position.set( x, y, z );
+	camera.rotation.set( ex, ey, ez );
 	cameraInitialized = true;
 
 }
@@ -204,7 +202,7 @@ function render() {
 	writeStats( cesiumStats, 'loaded tiles', allLoadedTiles );
 	writeStats( cesiumStats, 'loaded geom tiles', cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
 	writeStats( cesiumStats, 'loaded subtree tiles', allLoadedTiles - cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
-	writeStats( cesiumStats, 'loaded shallow tiles', shallowTilesLoaded );
+	writeStats( cesiumStats, 'loaded layer 1 tiles', shallowTilesLoaded );
 	writeStats( cesiumStats, 'total memory', ( cesiumViewer.tiles.totalMemoryUsageInBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( cesiumStats, 'geometry memory', ( geometryBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( cesiumStats, 'texture memory', ( textureBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
@@ -246,20 +244,57 @@ async function initThree() {
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
+	let controls;
 	tiles.addEventListener( 'load-tile-set', () => {
 
-		if ( cameraInitialized ) return;
-
-		cameraInitialized = true;
-
+		// position the camera based on the model
 		const sphere = new Sphere();
 		tiles.getBoundingSphere( sphere );
 
-		camera.position.copy( sphere.center );
+		if ( sphere.center.distanceTo( camera.position ) > sphere.radius * 20 ) {
 
-		const offset = sphere.center.clone().normalize();
-		camera.position.addScaledVector( offset, sphere.radius );
-		camera.lookAt( sphere.center );
+			cameraInitialized = false;
+
+		}
+
+		if ( ! cameraInitialized ) {
+
+			cameraInitialized = true;
+			camera.position.copy( sphere.center );
+
+			if ( camera.position.length() > 1e5 ) {
+
+				const offset = sphere.center.clone().normalize();
+				camera.position.addScaledVector( offset, sphere.radius );
+
+			} else {
+
+				camera.position.x += sphere.radius;
+				camera.position.y += sphere.radius;
+				camera.position.z += sphere.radius;
+
+			}
+
+			camera.lookAt( sphere.center );
+
+		}
+
+		if ( camera.position.length() > 1e5 ) {
+
+			// controls
+			controls = new GlobeControls( scene, camera, renderer.domElement, null );
+			controls.enableDamping = true;
+			controls.adjustHeight = false;
+			controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+
+		} else {
+
+			controls = new EnvironmentControls( scene, camera, renderer.domElement, null );
+			controls.enableDamping = true;
+			controls.adjustHeight = false;
+
+		}
+
 
 
 	} );
@@ -286,12 +321,6 @@ async function initThree() {
 			camera.quaternion,
 			camera.scale,
 		);
-
-	// controls
-	const controls = new GlobeControls( scene, camera, renderer.domElement, null );
-	controls.enableDamping = true;
-	controls.adjustHeight = false;
-	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
 	// resize listeners
 	onWindowResize();
@@ -325,7 +354,13 @@ async function initThree() {
 
 	function update() {
 
-		controls.update();
+		onWindowResize();
+
+		if ( controls ) {
+
+			controls.update();
+
+		}
 
 		// update options
 		tiles.setResolutionFromRenderer( camera, renderer );
