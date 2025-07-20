@@ -4,7 +4,7 @@ import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtil
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Cesium from 'cesium';
 
-const url = new URL( './data/tileset.json', import.meta.url ).toString();
+const url = '../data/tileset.json';
 const threeContainer = document.getElementById( 'three-container' );
 const cesiumContainer = document.getElementById( 'cesium-container' );
 const threeStats = threeContainer.getElementsByClassName( 'stats' )[ 0 ];
@@ -396,25 +396,24 @@ async function initCesium() {
 	} );
 	viewer.scene.primitives.add( tileset );
 
-	// position the camera
-	await viewer.zoomTo( tileset );
-
 	// extract the quaternion
 	const camera = viewer.camera;
-	const { latitude, longitude, height } = camera.positionCartographic;
-	console.log( {
-		fov: camera.frustum.fov,
-		near: camera.frustum.near,
-		far: camera.frustum.far,
 
-		roll: camera.roll,
-		pitch: camera.pitch,
-		heading: camera.heading,
+	// log the camera information for debugging
+	// const { latitude, longitude, height } = camera.positionCartographic;
+	// console.log( {
+	// 	fov: camera.frustum.fov,
+	// 	near: camera.frustum.near,
+	// 	far: camera.frustum.far,
 
-		latitude,
-		longitude,
-		height,
-	} );
+	// 	roll: camera.roll,
+	// 	pitch: camera.pitch,
+	// 	heading: camera.heading,
+
+	// 	latitude,
+	// 	longitude,
+	// 	height,
+	// } );
 
 	cesiumViewer = {
 		tiles: tileset,
