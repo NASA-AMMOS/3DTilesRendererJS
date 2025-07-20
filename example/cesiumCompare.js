@@ -1,6 +1,7 @@
 
 import { GlobeControls, TilesRenderer, CAMERA_FRAME } from '3d-tiles-renderer';
-import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils } from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils } from 'three';
+import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Cesium from 'cesium';
 
 const url = new URL( './local-data/photography/tileset.json', import.meta.url ).toString();
@@ -9,19 +10,52 @@ const cesiumContainer = document.getElementById( 'cesium-container' );
 const threeStats = threeContainer.getElementsByClassName( 'stats' )[ 0 ];
 const cesiumStats = cesiumContainer.getElementsByClassName( 'stats' )[ 0 ];
 let cesiumViewer, threeViewer;
+let cameraInitialized = false;
 
 ( async () => {
 
 	await initThree();
 	await initCesium();
+
+	updateFromHash();
+	setInterval( () => {
+
+		const { camera, tiles } = threeViewer;
+		const data = tiles.ellipsoid.getCartographicFromObjectFrame( camera.matrixWorld, {}, CAMERA_FRAME );
+		window.history.replaceState( undefined, undefined, `#${ JSON.stringify( data ) }` );
+
+	}, 100 );
+
 	render();
 
 } )();
 
-// TODO: position the tile set in a reliable position to ensure visibility - eg at lat/lon 0/0
-// TODO: add ability to refresh to the same position
-// TODO: why are there no json tiles but there are geom tiles when scrolling off screen? How?
-// TODO: fov doesn't display right with a portrait style orientation
+function updateFromHash() {
+
+	const hash = window.location.hash.replace( /^#/, '' );
+	if ( ! hash ) return;
+
+	const {
+		lat,
+		lon,
+		height,
+		azimuth,
+		elevation,
+		roll,
+	} = JSON.parse( unescape( hash ) );
+
+	const { camera, tiles } = threeViewer;
+	tiles.ellipsoid
+		.getObjectFrame( lat, lon, height, azimuth, elevation, roll, camera.matrixWorld, CAMERA_FRAME )
+		.decompose(
+			camera.position,
+			camera.quaternion,
+			camera.scale,
+		);
+
+	cameraInitialized = true;
+
+}
 
 function render() {
 
@@ -40,7 +74,7 @@ function render() {
 	// update frustum
 	cesiumViewer.camera.frustum.near = threeViewer.camera.near;
 	cesiumViewer.camera.frustum.far = threeViewer.camera.far;
-	cesiumViewer.camera.frustum.fov = vertFovToHoriz( threeViewer.camera.fov, threeViewer.camera.aspect ) * MathUtils.DEG2RAD;
+	cesiumViewer.camera.frustum.fov = vertFovToCesiumFov( threeViewer.camera.fov, threeViewer.camera.aspect ) * MathUtils.DEG2RAD;
 
 	// set position
 	cesiumViewer.camera.position.x = threeViewer.camera.position.x;
@@ -60,12 +94,41 @@ function render() {
 	cesiumViewer.update();
 
 	let shallowTilesLoaded, loadedGeometryTiles, allLoadedTiles;
+	let textureBytes, geometryBytes;
 
 	// update three stats
 	loadedGeometryTiles = 0;
+	textureBytes = 0;
+	geometryBytes = 0;
 	threeViewer.tiles.forEachLoadedModel( ( scene, tile ) => {
 
 		loadedGeometryTiles ++;
+
+		scene.traverse( c => {
+
+			const { geometry, material } = c;
+			if ( geometry ) {
+
+				geometryBytes += estimateBytesUsed( c.geometry );
+				for ( const key in material ) {
+
+					const value = material[ key ];
+					if ( value && value.isTexture ) {
+
+						const { format, type, image } = value;
+						const { width, height } = image;
+
+						let bytes = TextureUtils.getByteLength( width, height, format, type );
+						bytes *= value.generateMipmaps ? 4 / 3 : 1;
+						textureBytes += bytes;
+
+					}
+
+				}
+
+			}
+
+		} );
 
 	} );
 
@@ -82,7 +145,7 @@ function render() {
 	} );
 
 	allLoadedTiles = 0;
-	traverse( threeViewer.root, t => {
+	traverse( threeViewer.root, ( t, d ) => {
 
 		if ( t.__hasContent && t.__loadingState !== 0 ) {
 
@@ -95,10 +158,12 @@ function render() {
 	clearStats( threeStats );
 	writeStats( threeStats, 'visible tiles', threeViewer.tiles.visibleTiles.size );
 	writeStats( threeStats, 'loaded tiles', allLoadedTiles );
-	writeStats( threeStats, 'loaded geom tiles', allLoadedTiles - loadedGeometryTiles );
-	writeStats( threeStats, 'loaded subtree tiles', loadedGeometryTiles );
+	writeStats( threeStats, 'loaded geom tiles', loadedGeometryTiles );
+	writeStats( threeStats, 'loaded subtree tiles', allLoadedTiles - loadedGeometryTiles );
 	writeStats( threeStats, 'loaded layer 1 tiles', shallowTilesLoaded );
-	writeStats( threeStats, 'memory', ( threeViewer.tiles.lruCache.cachedBytes * 1e-6 ).toFixed( 3 ) + 'MB' );
+	writeStats( threeStats, 'total memory', ( threeViewer.tiles.lruCache.cachedBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( threeStats, 'geometry memory', ( geometryBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( threeStats, 'texture memory', ( textureBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 
 	// update cesium stats
 
@@ -115,24 +180,34 @@ function render() {
 	} );
 
 	allLoadedTiles = 0;
+	geometryBytes = 0;
+	textureBytes = 0;
 	traverse( cesiumViewer.root, t => {
 
 		if ( t._content && t._content.ready ) {
 
 			allLoadedTiles ++;
 
+			if ( t._content._model ) {
+
+				geometryBytes += t._content._model.statistics.geometryByteLength;
+				textureBytes += t._content._model.statistics.texturesByteLength;
+
+			}
+
 		}
 
 	} );
 
-	window.ROOT = cesiumViewer.root;
 	clearStats( cesiumStats );
 	writeStats( cesiumStats, 'visible tiles', cesiumViewer.tiles.statistics.selected );
 	writeStats( cesiumStats, 'loaded tiles', allLoadedTiles );
 	writeStats( cesiumStats, 'loaded geom tiles', cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
 	writeStats( cesiumStats, 'loaded subtree tiles', allLoadedTiles - cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
 	writeStats( cesiumStats, 'loaded shallow tiles', shallowTilesLoaded );
-	writeStats( cesiumStats, 'memory', ( cesiumViewer.tiles.totalMemoryUsageInBytes * 1e-6 ).toFixed( 3 ) + 'MB' );
+	writeStats( cesiumStats, 'total memory', ( cesiumViewer.tiles.totalMemoryUsageInBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( cesiumStats, 'geometry memory', ( geometryBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( cesiumStats, 'texture memory', ( textureBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 
 }
 
@@ -170,6 +245,24 @@ async function initThree() {
 	tiles.lruCache.minBytesSize = 0;
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
+
+	tiles.addEventListener( 'load-tile-set', () => {
+
+		if ( cameraInitialized ) return;
+
+		cameraInitialized = true;
+
+		const sphere = new Sphere();
+		tiles.getBoundingSphere( sphere );
+
+		camera.position.copy( sphere.center );
+
+		const offset = sphere.center.clone().normalize();
+		camera.position.addScaledVector( offset, sphere.radius );
+		camera.lookAt( sphere.center );
+
+
+	} );
 
 	scene.add( tiles.group );
 
@@ -323,7 +416,9 @@ function horizFovToVert( fov, aspect ) {
 
 }
 
-function vertFovToHoriz( fov, aspect ) {
+function vertFovToCesiumFov( fov, aspect ) {
+
+	if ( aspect < 1 ) return fov;
 
 	return MathUtils.RAD2DEG * 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * fov / 2 ) * aspect );
 
