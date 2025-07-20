@@ -20,10 +20,15 @@ let cesiumViewer, threeViewer;
 
 // TODO: position the tile set in a reliable position to ensure visibility - eg at lat/lon 0/0
 // TODO: add ability to refresh to the same position
+// TODO: why are there no json tiles but there are geom tiles when scrolling off screen? How?
+// TODO: fov doesn't display right with a portrait style orientation
 
 function render() {
 
 	requestAnimationFrame( render );
+
+	window.THREE_DATA = threeViewer;
+	window.CESIUM_DATA = cesiumViewer;
 
 	// update three
 	threeViewer.update();
@@ -36,8 +41,6 @@ function render() {
 	cesiumViewer.camera.frustum.near = threeViewer.camera.near;
 	cesiumViewer.camera.frustum.far = threeViewer.camera.far;
 	cesiumViewer.camera.frustum.fov = vertFovToHoriz( threeViewer.camera.fov, threeViewer.camera.aspect ) * MathUtils.DEG2RAD;
-
-
 
 	// set position
 	cesiumViewer.camera.position.x = threeViewer.camera.position.x;
