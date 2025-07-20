@@ -92,8 +92,9 @@ function render() {
 	clearStats( threeStats );
 	writeStats( threeStats, 'visible tiles', threeViewer.tiles.visibleTiles.size );
 	writeStats( threeStats, 'loaded tiles', allLoadedTiles );
-	writeStats( threeStats, 'loaded geom tiles', loadedGeometryTiles );
-	writeStats( threeStats, 'shallow loaded tiles', shallowTilesLoaded );
+	writeStats( threeStats, 'loaded geom tiles', allLoadedTiles - loadedGeometryTiles );
+	writeStats( threeStats, 'loaded subtree tiles', loadedGeometryTiles );
+	writeStats( threeStats, 'loaded layer 1 tiles', shallowTilesLoaded );
 	writeStats( threeStats, 'memory', ( threeViewer.tiles.lruCache.cachedBytes * 1e-6 ).toFixed( 3 ) + 'MB' );
 
 	// update cesium stats
@@ -126,7 +127,8 @@ function render() {
 	writeStats( cesiumStats, 'visible tiles', cesiumViewer.tiles.statistics.selected );
 	writeStats( cesiumStats, 'loaded tiles', allLoadedTiles );
 	writeStats( cesiumStats, 'loaded geom tiles', cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
-	writeStats( cesiumStats, 'shallow loaded tiles', shallowTilesLoaded );
+	writeStats( cesiumStats, 'loaded subtree tiles', allLoadedTiles - cesiumViewer.tiles.statistics.numberOfTilesWithContentReady );
+	writeStats( cesiumStats, 'loaded shallow tiles', shallowTilesLoaded );
 	writeStats( cesiumStats, 'memory', ( cesiumViewer.tiles.totalMemoryUsageInBytes * 1e-6 ).toFixed( 3 ) + 'MB' );
 
 }
