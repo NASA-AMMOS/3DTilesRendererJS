@@ -269,7 +269,7 @@ export class TilesRendererBase {
 
 	queueTileForDownload( tile ) {
 
-		if ( tile.__loadingState !== UNLOADED || this.lruCache.isFull() ) {
+		if ( tile.__loadingState !== UNLOADED ) {
 
 			return;
 
@@ -357,7 +357,7 @@ export class TilesRendererBase {
 		// start the downloads of the tiles as needed
 		const queuedTiles = this.queuedTiles;
 		queuedTiles.sort( lruCache.unloadPriorityCallback );
-		for ( let i = 0, l = queuedTiles.length; i < l && ! lruCache.isFull(); i ++ ) {
+		for ( let i = 0, l = queuedTiles.length; i < l; i ++ ) {
 
 			this.requestTileContents( queuedTiles[ i ] );
 
@@ -765,7 +765,8 @@ export class TilesRendererBase {
 
 		// If the tile is already being loaded then don't
 		// start it again.
-		if ( tile.__loadingState !== UNLOADED ) {
+		const lruCache = this.lruCache;
+		if ( tile.__loadingState !== UNLOADED || lruCache.isFull() && this.getBytesUsed( tile ) !== 0 ) {
 
 			return;
 
@@ -777,7 +778,6 @@ export class TilesRendererBase {
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
 
 		const stats = this.stats;
-		const lruCache = this.lruCache;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const extension = getUrlExtension( uri );
@@ -947,20 +947,8 @@ export class TilesRendererBase {
 				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
 				if ( lruCache.getMemoryUsage( tile ) === 0 ) {
 
-					const bytesUsed = this.getBytesUsed( tile );
-					if ( lruCache.isFull() && bytesUsed > 0 ) {
-
-						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
-						// be loaded again later from the disk cache if needed.
-						lruCache.remove( tile );
-						return;
-
-					} else {
-
-						// Otherwise update the item to the latest known value
-						lruCache.setMemoryUsage( tile, bytesUsed );
-
-					}
+					// Otherwise update the item to the latest known value
+					lruCache.setMemoryUsage( tile, this.getBytesUsed( tile ) );
 
 				}
 

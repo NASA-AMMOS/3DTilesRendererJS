@@ -98,14 +98,15 @@ class LRUCache {
 
 		}
 
-		if ( this.isFull() ) {
+		const itemList = this.itemList;
+		const unloadPriorityCallback = this.unloadPriorityCallback || this.defaultPriorityCallback;
+		if ( this.isFull() && unloadPriorityCallback( item, itemList[ 0 ] ) > 0 ) {
 
 			return false;
 
 		}
 
 		const usedSet = this.usedSet;
-		const itemList = this.itemList;
 		const callbacks = this.callbacks;
 		itemList.push( item );
 		usedSet.add( item );
@@ -238,7 +239,7 @@ class LRUCache {
 
 					const loadedA = loadedSet.has( a );
 					const loadedB = loadedSet.has( b );
-					if ( loadedA === loadedB ) {
+					if ( loadedA === loadedB || true ) {
 
 						// Use the sort function otherwise
 						// higher priority should be further to the left
@@ -279,7 +280,6 @@ class LRUCache {
 				const item = itemList[ removedNodes ];
 				const bytes = bytesMap.get( item ) || 0;
 				if (
-					usedSet.has( item ) && loadedSet.has( item ) ||
 					this.cachedBytes - removedBytes - bytes < maxBytesSize &&
 					itemList.length - removedNodes <= maxSize
 				) {
