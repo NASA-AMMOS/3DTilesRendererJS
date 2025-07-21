@@ -35,7 +35,7 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Rendering shadows from offscreen tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)
 
-[Alterate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/landformSiteOverlay.html)
+[Alternate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/landformSiteOverlay.html)
 
 **Plugins**
 
