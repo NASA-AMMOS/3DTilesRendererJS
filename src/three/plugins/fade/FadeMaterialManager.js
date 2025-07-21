@@ -24,7 +24,7 @@ export class FadeMaterialManager {
 		scene.traverse( child => {
 
 			const material = child.material;
-			if ( material ) {
+			if ( material && fadeParams.has( material ) ) {
 
 				const params = fadeParams.get( material );
 				params.fadeIn.value = fadeIn;
