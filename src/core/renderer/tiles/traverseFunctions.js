@@ -38,7 +38,6 @@ function resetFrameState( tile, renderer ) {
 		tile.__active = false;
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
-		tile.__childrenWereVisible = false;
 		tile.__allChildrenLoaded = false;
 
 		// update tile frustum and error state
@@ -307,13 +306,11 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
-		let childrenWereVisible = false;
 		let allChildrenLoaded = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			markUsedSetLeaves( c, renderer );
-			childrenWereVisible = childrenWereVisible || c.__wasSetVisible || c.__childrenWereVisible;
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
@@ -333,7 +330,6 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 		}
 
-		tile.__childrenWereVisible = childrenWereVisible;
 		tile.__allChildrenLoaded = allChildrenLoaded;
 
 	}
@@ -380,7 +376,6 @@ export function markVisibleTiles( tile, renderer ) {
 	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.__error <= errorRequirement;
-	const childrenWereVisible = tile.__childrenWereVisible;
 
 	// NOTE: We can "trickle" root tiles in by enabling these lines.
 	// Don't wait for all children tiles to load if this tile set has empty tiles at the root
@@ -396,14 +391,12 @@ export function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content, not
-	// all children have loaded yet, and if no children were visible last frame. We want to keep children visible
-	// that _were_ visible to avoid a pop in level of detail as the camera moves around and parent / sibling tiles
-	// load in.
+	// Only mark this tile as visible if it meets the screen space error requirements, has loaded content,
+	// and not all children have loaded yet.
 
 	// Skip the tile entirely if there's no content to load
 	if (
-		( meetsSSE && ! allChildrenLoaded && ! childrenWereVisible && loadedContent )
+		( meetsSSE && ! allChildrenLoaded && loadedContent )
 			|| ( tile.refine === 'ADD' && loadedContent )
 	) {
 
