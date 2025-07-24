@@ -1,6 +1,7 @@
 
 import { GlobeControls, TilesRenderer, CAMERA_FRAME, EnvironmentControls } from '3d-tiles-renderer';
-import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils } from 'three';
+import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
+import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils, DirectionalLight, AmbientLight } from 'three';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Cesium from 'cesium';
 
@@ -301,6 +302,13 @@ async function initThree() {
 
 	scene.add( tiles.group );
 
+	// lights
+	const dirLight = new DirectionalLight( 0xffffff, 2 );
+	dirLight.position.set( 1, 2, 3 );
+
+	const ambLight = new AmbientLight( 0xffffff, 1 );
+	scene.add( dirLight, ambLight );
+
 	// position the camera
 	const lat = 0.5419733570174874;
 	const lon = 1.821470691863346;
@@ -390,7 +398,7 @@ async function initCesium() {
 
 	// initialize the tile set
 	const tileset = await Cesium.Cesium3DTileset.fromUrl( url, {
-		loadSiblings: true,
+		// loadSiblings: true,
 		maximumCacheOverflowBytes: 1e20,
 		cacheBytes: 0,
 	} );
