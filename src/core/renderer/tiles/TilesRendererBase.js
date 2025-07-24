@@ -945,24 +945,18 @@ export class TilesRendererBase {
 
 				// If the memory of the item hasn't been registered yet then that means the memory usage hasn't
 				// been accounted for by the cache yet so we need to check if it fits or if we should remove it.
-				if ( lruCache.getMemoryUsage( tile ) === 0 ) {
+				const bytesUsed = this.getBytesUsed( tile );
+				if ( lruCache.getMemoryUsage( tile ) === 0 && bytesUsed > 0 && lruCache.isFull() ) {
 
-					const bytesUsed = this.getBytesUsed( tile );
-					if ( lruCache.isFull() && bytesUsed > 0 ) {
-
-						// And if the cache is full due to newly loaded memory then lets discard this tile - it will
-						// be loaded again later from the disk cache if needed.
-						lruCache.remove( tile );
-						return;
-
-					} else {
-
-						// Otherwise update the item to the latest known value
-						lruCache.setMemoryUsage( tile, bytesUsed );
-
-					}
+					// And if the cache is full due to newly loaded memory then lets discard this tile - it will
+					// be loaded again later from the disk cache if needed.
+					lruCache.remove( tile );
+					return;
 
 				}
+
+				// update memory
+				lruCache.setMemoryUsage( tile, bytesUsed );
 
 				// dispatch an event indicating that this model has completed and that a new
 				// call to "update" is needed.
