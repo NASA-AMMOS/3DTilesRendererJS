@@ -1,6 +1,5 @@
 
 import { GlobeControls, TilesRenderer, CAMERA_FRAME, EnvironmentControls } from '3d-tiles-renderer';
-import { DebugTilesPlugin } from '3d-tiles-renderer/plugins';
 import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils, DirectionalLight, AmbientLight } from 'three';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import * as Cesium from 'cesium';
