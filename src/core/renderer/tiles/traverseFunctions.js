@@ -9,6 +9,7 @@ const viewErrorTarget = {
 // flag guiding the behavior of the traversal to load the siblings at the root of the
 // tile set or not. The spec seems to indicate "true" when using REPLACE define but
 // Cesium's behavior is "false".
+// See CesiumGS/3d-tiles#776
 const LOAD_ROOT_SIBLINGS = true;
 
 function isDownloadFinished( value ) {
