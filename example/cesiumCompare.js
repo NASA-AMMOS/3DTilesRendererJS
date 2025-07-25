@@ -223,8 +223,7 @@ async function initThree() {
 
 	// adjustments to match cesium defaults
 	renderer.domElement.style.imageRendering = 'pixelated';
-	renderer.setPixelRatio( 1 );
-	// renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setPixelRatio( window.devicePixelRatio );
 
 	// scene
 	const scene = new Scene();
@@ -284,23 +283,25 @@ async function initThree() {
 
 		}
 
-		if ( camera.position.length() > 1e5 ) {
+		if ( ! controls ) {
 
-			// controls
-			controls = new GlobeControls( scene, camera, renderer.domElement, null );
-			controls.enableDamping = true;
-			controls.adjustHeight = false;
-			controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+			if ( camera.position.length() > 1e5 ) {
 
-		} else {
+				// controls
+				controls = new GlobeControls( scene, camera, renderer.domElement, null );
+				controls.enableDamping = true;
+				controls.adjustHeight = false;
+				controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 
-			controls = new EnvironmentControls( scene, camera, renderer.domElement, null );
-			controls.enableDamping = true;
-			controls.adjustHeight = false;
+			} else {
+
+				controls = new EnvironmentControls( scene, camera, renderer.domElement, null );
+				controls.enableDamping = true;
+				controls.adjustHeight = false;
+
+			}
 
 		}
-
-
 
 	} );
 
