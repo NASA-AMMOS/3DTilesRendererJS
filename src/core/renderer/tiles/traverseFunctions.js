@@ -6,6 +6,11 @@ const viewErrorTarget = {
 	distanceFromCamera: Infinity,
 };
 
+// flag guiding the behavior of the traversal to load the siblings at the root of the
+// tile set or not. The spec seems to indicate "true" when using REPLACE define but
+// Cesium's behavior is "false".
+const LOAD_ROOT_SIBLINGS = false;
+
 function isDownloadFinished( value ) {
 
 	return value === LOADED || value === FAILED;
@@ -268,7 +273,7 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' && tile.__depth !== 0 ) {
+	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ( tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -383,7 +388,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tile set has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenLoaded = tile.__allChildrenLoaded || tile.__depth === 0;
+	const allChildrenLoaded = tile.__allChildrenLoaded || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( hasContent && ( meetsSSE || isAdditiveRefine ) ) {
