@@ -134,7 +134,7 @@ function render() {
 	shallowTilesLoaded = 0;
 	traverse( threeViewer.root, t => {
 
-		if ( t.__hasRenderableContent ) {
+		if ( t.__hasRenderableContent && t.__loadingState !== 0 ) {
 
 			shallowTilesLoaded ++;
 			return true;
@@ -181,11 +181,16 @@ function render() {
 	allLoadedTiles = 0;
 	geometryBytes = 0;
 	textureBytes = 0;
-	traverse( cesiumViewer.root, t => {
+	traverse( cesiumViewer.root, ( t, d ) => {
 
 		if ( t._content && t._content.ready ) {
 
-			allLoadedTiles ++;
+			// cesium treats the root node has having content
+			if ( d !== 0 ) {
+
+				allLoadedTiles ++;
+
+			}
 
 			if ( t._content._model ) {
 
