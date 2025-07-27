@@ -4,7 +4,6 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 // TODO
 // - WMTS supports tile ranges at the matrix level that need to be accounted for in the tiling scheme
 // - Enable image overlays to work more smoothly when the url is constructed by the image source
-// - Add demo for selecting the layer to display
 // - Add ability to set wmts fields after the fact?
 // - Correct for CRS84 vs EPGS:4326 (bounding box order will be swapped)
 // - Account for resolution / scale denominator relative to the equator (implicitly convert to lat / lons)
