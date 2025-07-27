@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.13] - Unreleased
+## [0.4.14] - Unreleased
 ### Added
 - Support for WMTS image overlays.
 - Added WMTSTilesPlugin for generating an ellipsoid.
-- XYZTilesPlugin, XYZImageOverlay: Add support for inverted Y tile order, ability to specif bounds.
+
+## [0.4.13] - 2025.07.27
+### Added
+- XYZTilesPlugin, XYZImageOverlay: Add support for inverted Y tile order, ability to specify bounds.
 
 ### Fixed
 - ImageFormatPlugin: Fixed case where an error could throw if a texture was loaded twice in minor corner cases.
