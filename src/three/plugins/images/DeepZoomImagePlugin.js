@@ -7,23 +7,13 @@ import { DeepZoomImageSource } from './sources/DeepZoomImageSource.js';
 // https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)
 export class DeepZoomImagePlugin extends ImageFormatPlugin {
 
-	constructor( ...args ) {
+	constructor( options = {} ) {
 
-		super( ...args );
+		const { url, ...rest } = options;
+		super( rest );
 
 		this.name = 'DZI_TILES_PLUGIN';
-		this.imageSource = new DeepZoomImageSource();
-
-	}
-
-	async loadRootTileSet() {
-
-		const { tiles, imageSource } = this;
-		let url = tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-		await imageSource.init( url );
-
-		return this.getTileset( url );
+		this.imageSource = new DeepZoomImageSource( { url } );
 
 	}
 

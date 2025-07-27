@@ -17,9 +17,7 @@ export class TiledImageSource extends DataCache {
 	}
 
 	// async function for initializing the tiled image set
-	init( url ) {
-
-	}
+	init() {}
 
 	// helper for processing the buffer into a texture
 	async processBufferToTexture( buffer ) {

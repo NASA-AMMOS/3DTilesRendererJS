@@ -17,13 +17,14 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			tileDimension,
 			projection,
 			bounds,
+			url,
 			...rest
 		} = options;
 
 		super( { pixelSize, ...rest } );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.imageSource = new XYZImageSource( { levels, tileDimension, projection, bounds } );
+		this.imageSource = new XYZImageSource( { url, levels, tileDimension, projection, bounds } );
 
 	}
 
@@ -35,12 +36,13 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 // and tile index offsets, including CesiumJS and Ion.
 export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
-	constructor( options ) {
+	constructor( options = {} ) {
 
-		super( options );
+		const { url, ...rest } = options;
+		super( rest );
 
 		this.name = 'TMS_TILES_PLUGIN';
-		this.imageSource = new TMSImageSource();
+		this.imageSource = new TMSImageSource( { url } );
 
 	}
 

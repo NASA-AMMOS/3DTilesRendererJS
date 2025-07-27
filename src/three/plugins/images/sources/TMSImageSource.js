@@ -4,13 +4,15 @@ import { MathUtils } from 'three';
 
 export class TMSImageSource extends TiledImageSource {
 
-	constructor() {
+	constructor( options = {} ) {
+
+		const { url = null } = options;
 
 		super();
 
 		this.tileSets = null;
 		this.extension = null;
-		this.url = null;
+		this.url = url;
 
 	}
 
@@ -21,7 +23,9 @@ export class TMSImageSource extends TiledImageSource {
 
 	}
 
-	init( url ) {
+	init() {
+
+		const { url } = this.url;
 
 		return this
 			.fetchData( new URL( 'tilemapresource.xml', url ), this.fetchOptions )
