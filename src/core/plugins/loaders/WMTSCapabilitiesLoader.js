@@ -47,6 +47,13 @@ function correctTupleUnits( tuple, crs ) {
 
 }
 
+function tupleToRadians( tuple ) {
+
+	tuple[ 0 ] *= Math.PI / 180;
+	tuple[ 1 ] *= Math.PI / 180;
+
+}
+
 function convertTupleToCartographic( tuple ) {
 
 	tuple[ 0 ] = 2 * Math.PI * tuple[ 0 ] / EQUATOR_CIRCUMFERENCE;
@@ -206,6 +213,9 @@ function parseBoundingBox( el ) {
 	correctTupleUnits( lowerCorner, crs );
 	correctTupleUnits( upperCorner, crs );
 
+	tupleToRadians( lowerCorner );
+	tupleToRadians( upperCorner );
+
 	if ( isCRS84( crs ) ) {
 
 		crs = 'EPSG:4326';
@@ -257,8 +267,6 @@ function parseTileMatrixSet( el ) {
 			const groundHeight = tm.tileHeight * tm.matrixHeight * pixelSpan;
 			let bottomRightCorner;
 
-			// TODO: understand why the dimensions are split
-
 			// debugger
 			correctTupleOrder( tm.topLeftCorner, supportedCRS );
 
@@ -281,8 +289,14 @@ function parseTileMatrixSet( el ) {
 
 			correctTupleUnits( bottomRightCorner, supportedCRS );
 			correctTupleUnits( tm.topLeftCorner, supportedCRS );
+
+			tupleToRadians( bottomRightCorner );
+			tupleToRadians( tm.topLeftCorner );
+
+			// construct the bounds
 			tm.bounds = [ ...tm.topLeftCorner, ...bottomRightCorner ];
 
+			// ensure min and max order is correct
 			[ tm.bounds[ 1 ], tm.bounds[ 3 ] ] = [ tm.bounds[ 3 ], tm.bounds[ 1 ] ];
 
 			tileMatrices.push( tm );
