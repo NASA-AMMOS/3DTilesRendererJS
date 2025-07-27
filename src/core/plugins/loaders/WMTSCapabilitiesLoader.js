@@ -5,13 +5,19 @@ const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 
 function isCRS84( crs ) {
 
-	return /crs84$/i.test( crs );
+	return /(:84|:crs84)$/i.test( crs );
+
+}
+
+function isEPSG4326( crs ) {
+
+	return /:4326$/i.test( crs );
 
 }
 
 function isWebMercator( crs ) {
 
-	return /EPSG::3857/i.test( crs );
+	return /:3857$/i.test( crs );
 
 }
 
@@ -21,13 +27,17 @@ function parseTuple( tuple ) {
 
 }
 
-function correctTuple( tuple, crs ) {
+function correctTupleOrder( tuple, crs ) {
 
-	if ( isCRS84( crs ) ) {
+	if ( isEPSG4326( crs ) ) {
 
-		[ tuple[ 1 ], tuple[ 0 ] ] = tuple;
+		[ tuple[ 1 ], tuple[ 0 ] ] = [ tuple[ 0 ], tuple[ 1 ] ];
 
 	}
+
+}
+
+function correctTupleUnits( tuple, crs ) {
 
 	if ( isWebMercator( crs ) ) {
 
@@ -190,12 +200,19 @@ function parseBoundingBox( el ) {
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
-	correctTuple( lowerCorner, crs );
-	correctTuple( upperCorner, crs );
+	correctTupleOrder( lowerCorner, crs );
+	correctTupleOrder( upperCorner, crs );
+
+	correctTupleUnits( lowerCorner, crs );
+	correctTupleUnits( upperCorner, crs );
 
 	if ( isCRS84( crs ) ) {
 
 		crs = 'EPSG:4326';
+
+	} else if ( isWebMercator( crs ) ) {
+
+		crs = 'EPSG:3857';
 
 	}
 
@@ -203,6 +220,7 @@ function parseBoundingBox( el ) {
 		crs,
 		lowerCorner,
 		upperCorner,
+		bounds: [ ...lowerCorner, ...upperCorner ],
 	};
 
 }
@@ -230,10 +248,43 @@ function parseTileMatrixSet( el ) {
 	const tileMatrices = [];
 	el
 		.querySelectorAll( 'TileMatrix' )
-		.forEach( el => {
+		.forEach( ( el, i ) => {
 
 			const tm = parseTileMatrix( el );
-			correctTuple( tm.topLeftCorner, supportedCRS );
+
+			const pixelSpan = 0.00028 * tm.scaleDenominator;
+			const groundWidth = tm.tileWidth * tm.matrixWidth * pixelSpan;
+			const groundHeight = tm.tileHeight * tm.matrixHeight * pixelSpan;
+			let bottomRightCorner;
+
+			// TODO: understand why the dimensions are split
+
+			// debugger
+			correctTupleOrder( tm.topLeftCorner, supportedCRS );
+
+			// TODO: confirm these calculations
+			if ( isWebMercator( supportedCRS ) ) {
+
+				bottomRightCorner = [
+					tm.topLeftCorner[ 0 ] + groundWidth,
+					tm.topLeftCorner[ 1 ] - groundHeight,
+				];
+
+			} else {
+
+				bottomRightCorner = [
+					tm.topLeftCorner[ 0 ] + 360 * groundWidth / EQUATOR_CIRCUMFERENCE,
+					tm.topLeftCorner[ 1 ] - 360 * groundHeight / EQUATOR_CIRCUMFERENCE,
+				];
+
+			}
+
+			correctTupleUnits( bottomRightCorner, supportedCRS );
+			correctTupleUnits( tm.topLeftCorner, supportedCRS );
+			tm.bounds = [ ...tm.topLeftCorner, ...bottomRightCorner ];
+
+			[ tm.bounds[ 1 ], tm.bounds[ 3 ] ] = [ tm.bounds[ 3 ], tm.bounds[ 1 ] ];
+
 			tileMatrices.push( tm );
 
 		} );
@@ -241,6 +292,10 @@ function parseTileMatrixSet( el ) {
 	if ( isCRS84( supportedCRS ) ) {
 
 		supportedCRS = 'EPSG:4326';
+
+	} else if ( isWebMercator( supportedCRS ) ) {
+
+		supportedCRS = 'EPSG:3857';
 
 	}
 
@@ -271,7 +326,8 @@ function parseTileMatrix( el ) {
 		matrixWidth,
 		matrixHeight,
 		scaleDenominator,
-		topLeftCorner
+		topLeftCorner,
+		bounds: null,
 	};
 
 }

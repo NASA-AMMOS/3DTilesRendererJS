@@ -4,6 +4,7 @@ interface WMTSBoundingBox {
 	crs: string,
 	lowerCorner: [ number, number ],
 	upperCorner: [ number, number ],
+	bounds: [ number, number, number, number ],
 }
 
 interface WMTSTileMatrixSet {
