@@ -9,13 +9,7 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
 let tiles, camera, gui;
-
-const params = {
-
-	errorTarget: 1,
-	planar: false,
-
-};
+let params, capabilities;
 
 init();
 render();
@@ -55,12 +49,27 @@ function init() {
 
 async function updateCapabilities() {
 
+	// load the capabilities file
 	const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
-	const capabilities = await new WMTSCapabilitiesLoader().loadAsync( url );
+	capabilities = await new WMTSCapabilitiesLoader().loadAsync( url );
 
-	window.capabilities = capabilities;
+	// update the ui
 	document.getElementById( 'info' ).innerHTML = 'WMTS Demonstration, ' + capabilities.serviceIdentification.title + '<br/>' + capabilities.serviceIdentification.abstract;
 
+	rebuildGUI();
+	rebuildTiles();
+
+}
+
+function rebuildGUI() {
+
+	if ( gui ) {
+
+		gui.destroy();
+
+	}
+
+	// use a default overlay
 	let defaultLayer = 'MODIS_Terra_CorrectedReflectance_TrueColor';
 	if ( ! capabilities.layers.find( l => l.identifier === defaultLayer ) ) {
 
@@ -68,76 +77,56 @@ async function updateCapabilities() {
 
 	}
 
-	const params = {
+	params = {
 		layer: defaultLayer,
 		style: null,
 		tileMatrixSet: null,
 		dimensions: {},
 	};
 
-	rebuildGUI();
-	rebuildTiles();
 
-	function rebuildGUI() {
+	const layer = capabilities.layers.find( l => l.identifier === params.layer );
+	params.style = layer.styles.find( s => s.isDefault ).identifier;
+	params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
 
-		if ( gui ) {
 
-			gui.destroy();
+	gui = new GUI();
+	gui.add( params, 'layer', capabilities.layers.map( l => l.identifier ) ).onChange( () => {
 
-		}
+		rebuildGUI();
+		rebuildTiles();
 
-		const layer = capabilities.layers.find( l => l.identifier === params.layer );
-		params.style = layer.styles.find( s => s.isDefault ).identifier;
-		params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
+	} );
+	gui.add( params, 'tileMatrixSet', layer.tileMatrixSets.map( tms => tms.identifier ) ).onChange( rebuildTiles );
+	gui.add( params, 'style', layer.styles.map( s => s.identifier ) ).onChange( rebuildTiles );
 
-		gui = new GUI();
-		gui.add( params, 'layer', capabilities.layers.map( l => l.identifier ) ).onChange( () => {
+	for ( const key in layer.dimensions ) {
 
-			rebuildGUI();
-			rebuildTiles();
+		const dim = layer.dimensions[ key ];
+		params.dimensions[ dim.identifier ] = layer.dimensions[ key ].defaultValue;
 
-		} );
-		gui.add( params, 'tileMatrixSet', layer.tileMatrixSets.map( tms => tms.identifier ) ).onChange( rebuildTiles );
-		gui.add( params, 'style', layer.styles.map( s => s.identifier ) ).onChange( rebuildTiles );
+		// Note that NASA GIBS uses a custom notation for time
+		// https://www.earthdata.nasa.gov/news/blog/wmts-time-dimensions-restful-access
+		let values = dim.values;
+		if ( dim.identifier === 'Time' && /gibs.earthdata/.test( url ) ) {
 
-		for ( const key in layer.dimensions ) {
+			values = values.flatMap( v => {
 
-			const dim = layer.dimensions[ key ];
-			params.dimensions[ dim.identifier ] = layer.dimensions[ key ].defaultValue;
+				const tokens = v.split( /\//g );
+				tokens.pop();
+				return tokens;
 
-			// Note that NASA GIBS uses a custom notation for time
-			// https://www.earthdata.nasa.gov/news/blog/wmts-time-dimensions-restful-access
-			let values = dim.values;
-			if ( dim.identifier === 'Time' && /gibs.earthdata/.test( url ) ) {
-
-				values = values.flatMap( v => {
-
-					const tokens = v.split( /\//g );
-					tokens.pop();
-					return tokens;
-
-				} );
-
-			}
-
-			gui.add( params.dimensions, dim.identifier, values ).onChange( rebuildTiles );
+			} );
 
 		}
 
-	}
-
-	function rebuildTiles() {
-
-		initTiles( {
-			capabilities,
-			...params,
-		} );
+		gui.add( params.dimensions, dim.identifier, values ).onChange( rebuildTiles );
 
 	}
 
 }
 
-function initTiles( options ) {
+function rebuildTiles() {
 
 	if ( tiles ) {
 
@@ -151,7 +140,8 @@ function initTiles( options ) {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new WMTSTilesPlugin( {
 		shape: 'ellipsoid',
-		...options
+		capabilities,
+		...params,
 	} ) );
 
 	tiles.setCamera( camera );
@@ -181,7 +171,6 @@ function render() {
 
 	if ( tiles ) {
 
-		tiles.errorTarget = params.errorTarget;
 		tiles.setCamera( camera );
 		tiles.setResolutionFromRenderer( camera, renderer );
 		tiles.update();
