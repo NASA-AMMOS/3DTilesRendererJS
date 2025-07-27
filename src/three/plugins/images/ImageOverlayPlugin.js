@@ -760,13 +760,12 @@ export class ImageOverlayPlugin {
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
 
-				// TODO: disabled because the bounding volume isn't precise for frustum culling at small scales
-				// boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
+				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
 
 			}
 
 			// create a sphere bounding volume
-			if ( tile.boundingVolume.box || tile.boundingVolume.sphere || tile.boundingVolume.region ) {
+			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
 
 				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
 				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
