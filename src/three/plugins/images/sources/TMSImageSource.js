@@ -25,7 +25,7 @@ export class TMSImageSource extends TiledImageSource {
 
 	init() {
 
-		const { url } = this.url;
+		const { url } = this;
 
 		return this
 			.fetchData( new URL( 'tilemapresource.xml', url ), this.fetchOptions )
