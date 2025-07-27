@@ -1,7 +1,41 @@
-import { LoaderBase } from './LoaderBase.js';
+import { LoaderBase } from '../../renderer/loaders/LoaderBase.js';
+
+interface WMTSBoundingBox {
+	crs: string,
+	lowerCorner: [ number, number ],
+	upperCorner: [ number, number ],
+}
+
+interface WMTSTileMatrixSet {
+	title: string;
+	identifier: string;
+	abstract: string;
+	supportedCRS: string;
+}
+
+interface WMTSLayer {
+	title: string;
+	identifier: string;
+	format: string;
+	boundingBox: WMTSBoundingBox,
+	wgs84BoundingBox: WMTSBoundingBox,
+	dimensions: Array<{ identifier: string, values: Array<string>, current: boolean, defaultValue: string }>;
+	styles: Array<{ identifier: string, title: string, isDefault: string }>,
+	resourceUrls: Array<{ template: string, format: string, resourceType: string }>,
+	tileMatrixSets: Array<WMTSTileMatrixSet>,
+}
+
+interface WMTSServiceIdentification {
+	title: string;
+	abstract: string;
+	serviceType: string;
+	serviceTypeVersion: string;
+}
 
 export interface WMTSCapabilitiesResult {
-
+	serviceIdentification: WMTSServiceIdentification,
+	tileMatrixSets: Array<WMTSTileMatrixSet>,
+	layers: Array<WMTSLayer>,
 }
 
 export class WMTSCapabilitiesLoader<Result = WMTSCapabilitiesResult, ParseResult = Result>

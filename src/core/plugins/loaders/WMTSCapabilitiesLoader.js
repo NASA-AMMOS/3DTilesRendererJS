@@ -12,13 +12,16 @@ export class WMTSCapabilitiesLoader extends LoaderBase {
 		const layers = getChildrenByTag( contents, 'Layer' ).map( el => parseLayer( el ) );
 		const serviceIdentification = parseServiceIdentification( xml.querySelector( 'ServiceIdentification' ) );
 
-		console.log( {
-			serviceIdentification,
-			tileMatrixSets,
-			layers,
-		} )
+		layers.forEach( layer => {
 
-		window.XML = xml;
+			layer.tileMatrixSets = layer.tileMatrixSetLinks.map( key => {
+
+				return tileMatrixSets.find( tms => tms.identifier === key );
+
+			} );
+
+		} );
+
 		return {
 			serviceIdentification,
 			tileMatrixSets,
@@ -50,7 +53,11 @@ function parseLayer( el ) {
 	const title = el.querySelector( 'Title' ).textContent;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const format = el.querySelector( 'Format' ).textContent;
-	const url = el.querySelector( 'ResourceURL' ).getAttribute( 'template' );
+	const resourceUrls = getChildrenByTag( el, 'ResourceUrl' ).map( el => {
+
+		return parseResourceUrl( el );
+
+	} );
 	const tileMatrixSetLinks = getChildrenByTag( el, 'TileMatrixSetLink' ).map( el => {
 
 		return getChildrenByTag( el, 'TileMatrixSet' )[ 0 ].textContent;
@@ -79,7 +86,21 @@ function parseLayer( el ) {
 		styles,
 		boundingBox,
 		wgs84BoundingBox,
-		url,
+		resourceUrls,
+	};
+
+}
+
+function parseResourceUrl( el ) {
+
+	const template = el.getAttribute( 'template' );
+	const format = el.getAttribute( 'format' );
+	const resourceType = el.getAttribute( 'resourceType' );
+
+	return {
+		template,
+		format,
+		resourceType,
 	};
 
 }
