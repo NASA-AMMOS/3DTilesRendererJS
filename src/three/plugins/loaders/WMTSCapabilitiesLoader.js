@@ -1,7 +1,15 @@
-import { WGS84_RADIUS } from '../../renderer/constants.js';
-import { LoaderBase } from '../../renderer/loaders/LoaderBase.js';
+import { WGS84_RADIUS } from '../../../core/renderer/constants.js';
+import { LoaderBase } from '../../../core/renderer/loaders/LoaderBase.js';
 
 const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
+
+// TODO: share this with ProjectionScheme. Or use ProjectionScheme here?
+function convertProjectionToMercatorLongitude( ratio ) {
+
+	ratio = ratio * 2 - 1;
+	return 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
+
+}
 
 function isCRS84( crs ) {
 
@@ -41,7 +49,14 @@ function correctTupleUnits( tuple, crs ) {
 
 	if ( isWebMercator( crs ) ) {
 
-		convertTupleToCartographic( tuple );
+		tuple[ 0 ] = 2 * Math.PI * tuple[ 0 ] / EQUATOR_CIRCUMFERENCE;
+		tuple[ 1 ] = convertProjectionToMercatorLongitude( 0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE );
+
+		// to degrees
+		tuple[ 0 ] *= 180 / Math.PI;
+		tuple[ 1 ] *= 180 / Math.PI;
+
+		return tuple;
 
 	}
 
@@ -51,22 +66,6 @@ function tupleToRadians( tuple ) {
 
 	tuple[ 0 ] *= Math.PI / 180;
 	tuple[ 1 ] *= Math.PI / 180;
-
-}
-
-function convertTupleToCartographic( tuple ) {
-
-	tuple[ 0 ] = 2 * Math.PI * tuple[ 0 ] / EQUATOR_CIRCUMFERENCE;
-
-	// TODO: share this with ProjectionScheme?
-	const ratio = 2 * tuple[ 1 ] / EQUATOR_CIRCUMFERENCE;
-	tuple[ 1 ] = 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
-
-	// to degrees
-	tuple[ 0 ] *= 180 / Math.PI;
-	tuple[ 1 ] *= 180 / Math.PI;
-
-	return tuple;
 
 }
 

@@ -1,4 +1,4 @@
-import { LoaderBase } from '../../renderer/loaders/LoaderBase.js';
+import { LoaderBase } from '../../../core/renderer/loaders/LoaderBase.js';
 
 interface WMTSBoundingBox {
 	crs: string,
