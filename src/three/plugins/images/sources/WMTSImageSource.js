@@ -5,7 +5,6 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 // - WMTS supports tile ranges at the matrix level that need to be accounted for in the tiling scheme
 // - Enable image overlays to work more smoothly when the url is constructed by the image source
 // - Add ability to set wmts fields after the fact?
-// - Correct for CRS84 vs EPGS:4326 (bounding box order will be swapped)
 // - Account for resolution / scale denominator relative to the equator (implicitly convert to lat / lons)
 export class WMTSImageSource extends TiledImageSource {
 
@@ -34,7 +33,6 @@ export class WMTSImageSource extends TiledImageSource {
 			layer = capabilities.layers.find( l => l.identifier === layer );
 
 		}
-
 
 		if ( ! tileMatrixSet ) {
 
@@ -80,7 +78,7 @@ export class WMTSImageSource extends TiledImageSource {
 		// transform the url
 		const { tiling, layer, tileMatrixSet, style, url, dimensions } = this;
 
-		const projection = tileMatrixSet.supportedCRS.includes( 'CRS84' ) ? 'EPSG:4326' : 'EPSG:3857';
+		const projection = tileMatrixSet.supportedCRS.includes( '4326' ) ? 'EPSG:4326' : 'EPSG:3857';
 
 		tiling.flipY = true;
 		tiling.setProjection( new ProjectionScheme( projection ) );
@@ -94,7 +92,6 @@ export class WMTSImageSource extends TiledImageSource {
 				tilePixelHeight: tileHeight,
 				tileCountX: tiling.projection.tileCountX * 2 ** i,
 				tileCountY: tiling.projection.tileCountY * 2 ** i,
-
 			} );
 
 		} );

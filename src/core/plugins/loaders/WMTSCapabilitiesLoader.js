@@ -1,4 +1,57 @@
+import { WGS84_RADIUS } from '../../renderer/constants.js';
 import { LoaderBase } from '../../renderer/loaders/LoaderBase.js';
+
+const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
+
+function isCRS84( crs ) {
+
+	return /crs84$/i.test( crs );
+
+}
+
+function isWebMercator( crs ) {
+
+	return /EPSG::3857/i.test( crs );
+
+}
+
+function parseTuple( tuple ) {
+
+	return tuple.trim().split( /\s+/ ).map( v => parseFloat( v ) );
+
+}
+
+function correctTuple( tuple, crs ) {
+
+	if ( isCRS84( crs ) ) {
+
+		[ tuple[ 1 ], tuple[ 0 ] ] = tuple;
+
+	}
+
+	if ( isWebMercator( crs ) ) {
+
+		convertTupleToCartographic( tuple );
+
+	}
+
+}
+
+function convertTupleToCartographic( tuple ) {
+
+	tuple[ 0 ] = 2 * Math.PI * tuple[ 0 ] / EQUATOR_CIRCUMFERENCE;
+
+	// TODO: share this with ProjectionScheme?
+	const ratio = 2 * tuple[ 1 ] / EQUATOR_CIRCUMFERENCE;
+	tuple[ 1 ] = 2 * Math.atan( Math.exp( ratio * Math.PI ) ) - Math.PI / 2;
+
+	// to degrees
+	tuple[ 0 ] *= 180 / Math.PI;
+	tuple[ 1 ] *= 180 / Math.PI;
+
+	return tuple;
+
+}
 
 export class WMTSCapabilitiesLoader extends LoaderBase {
 
@@ -74,8 +127,12 @@ function parseLayer( el ) {
 
 	} );
 
-	const boundingBox = parseBoundingBox( el.querySelector( 'BoundingBox' ) );
-	const wgs84BoundingBox = parseBoundingBox( el.querySelector( 'WGS84BoundingBox' ) );
+	let boundingBox = parseBoundingBox( el.querySelector( 'WGS84BoundingBox' ) );
+	if ( ! boundingBox ) {
+
+		boundingBox = parseBoundingBox( el.querySelector( 'BoundingBox' ) );
+
+	}
 
 	return {
 		title,
@@ -85,7 +142,6 @@ function parseLayer( el ) {
 		tileMatrixSetLinks,
 		styles,
 		boundingBox,
-		wgs84BoundingBox,
 		resourceUrls,
 	};
 
@@ -130,9 +186,18 @@ function parseBoundingBox( el ) {
 
 	}
 
-	const crs = el.getAttribute( 'crs' );
-	const lowerCorner = el.querySelector( 'LowerCorner' ).textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) );
-	const upperCorner = el.querySelector( 'UpperCorner' ).textContent.trim().split( /\s+/ ).map( v => parseFloat( v ) );
+	let crs = el.getAttribute( 'crs' );
+	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
+	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
+
+	correctTuple( lowerCorner, crs );
+	correctTuple( upperCorner, crs );
+
+	if ( isCRS84( crs ) ) {
+
+		crs = 'EPSG:4326';
+
+	}
 
 	return {
 		crs,
@@ -158,14 +223,26 @@ function parseStyle( el ) {
 
 function parseTileMatrixSet( el ) {
 
+	let supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
 	const title = el.querySelector( 'Title' )?.textContent || '';
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
-	const supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
 	const tileMatrices = [];
 	el
 		.querySelectorAll( 'TileMatrix' )
-		.forEach( el => tileMatrices.push( parseTileMatrix( el ) ) );
+		.forEach( el => {
+
+			const tm = parseTileMatrix( el );
+			correctTuple( tm.topLeftCorner, supportedCRS );
+			tileMatrices.push( tm );
+
+		} );
+
+	if ( isCRS84( supportedCRS ) ) {
+
+		supportedCRS = 'EPSG:4326';
+
+	}
 
 	return {
 		title,
@@ -185,6 +262,7 @@ function parseTileMatrix( el ) {
 	const matrixWidth = parseFloat( el.querySelector( 'MatrixWidth' ).textContent );
 	const matrixHeight = parseFloat( el.querySelector( 'MatrixHeight' ).textContent );
 	const scaleDenominator = parseFloat( el.querySelector( 'ScaleDenominator' ).textContent );
+	const topLeftCorner = parseTuple( el.querySelector( 'TopLeftCorner' ).textContent );
 
 	return {
 		identifier,
@@ -193,6 +271,7 @@ function parseTileMatrix( el ) {
 		matrixWidth,
 		matrixHeight,
 		scaleDenominator,
+		topLeftCorner
 	};
 
 }

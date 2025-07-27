@@ -18,7 +18,6 @@ interface WMTSLayer {
 	identifier: string;
 	format: string;
 	boundingBox: WMTSBoundingBox,
-	wgs84BoundingBox: WMTSBoundingBox,
 	dimensions: Array<{ identifier: string, values: Array<string>, current: boolean, defaultValue: string }>;
 	styles: Array<{ identifier: string, title: string, isDefault: string }>,
 	resourceUrls: Array<{ template: string, format: string, resourceType: string }>,
