@@ -54,17 +54,24 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		// TODO: support WMTS capabilities request xml
 		const {
 			pixelSize = 1e-5,
-			levels,
-			tileDimension,
-			projection,
-			bounds,
+			capabilities,
+			layer,
+			tileMatrixSet,
+			style,
+			dimensions,
 			...rest
 		} = options;
 
 		super( { pixelSize, ...rest } );
 
 		this.name = 'WTMS_TILES_PLUGIN';
-		this.imageSource = new WMTSImageSource( { levels, tileDimension, projection, bounds } );
+		this.imageSource = new WMTSImageSource( {
+			capabilities,
+			layer,
+			tileMatrixSet,
+			style,
+			dimensions
+		} );
 
 	}
 

@@ -60,7 +60,7 @@ export class ImageFormatPlugin {
 	async loadRootTileSet() {
 
 		const { tiles, imageSource } = this;
-		let url = tiles.rootURL;
+		let url = imageSource.url || tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
 		await imageSource.init( url );
 

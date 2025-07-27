@@ -53,7 +53,7 @@ function parseLayer( el ) {
 	const title = el.querySelector( 'Title' ).textContent;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const format = el.querySelector( 'Format' ).textContent;
-	const resourceUrls = getChildrenByTag( el, 'ResourceUrl' ).map( el => {
+	const resourceUrls = getChildrenByTag( el, 'ResourceURL' ).map( el => {
 
 		return parseResourceUrl( el );
 
