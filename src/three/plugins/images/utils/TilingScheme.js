@@ -148,12 +148,15 @@ export class TilingScheme {
 	// bounds setters
 	setOrigin( x, y ) {
 
+		// TODO: is this necessary? TMS doesn't use it
 		this._rootOrigin = [ x, y ];
 
 	}
 
+	// bounds representing the contentful region of the image
 	setBounds( minX, minY, maxX, maxY ) {
 
+		// TODO: rename this to "setContentBounds"
 		this._rootBounds = [ minX, minY, maxX, maxY ];
 
 	}
@@ -167,6 +170,10 @@ export class TilingScheme {
 	// query functions
 	getTileAtPoint( bx, by, level, normalized = false ) {
 
+		// TODO: this needs to transform the point to the local bounds of the layer (if present)
+		// and return the tile indices for that layer
+		// TODO: separate the set of tile-index functions from the root content bounds functions
+		// for clarity
 		const { projection, flipY } = this;
 		const { tileCountX, tileCountY } = this.getLevel( level );
 		const xStride = 1 / tileCountX;
@@ -192,6 +199,8 @@ export class TilingScheme {
 
 	}
 
+	// TODO: this needs to transform the point to the local bounds of the layer (if present)
+	// and return the tile indices for that layer
 	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
 		const minTile = this.getTileAtPoint( minX, minY, level, normalized, false );
@@ -222,6 +231,7 @@ export class TilingScheme {
 
 	}
 
+	// TODO: this needs to operate relative to the level origin (should happen implicitly via "getTileBounds")
 	getTileExists( x, y, level ) {
 
 		const [ rminx, rminy, rmaxx, rmaxy ] = this.rootBounds;
@@ -235,6 +245,7 @@ export class TilingScheme {
 
 	getFullBounds( normalized = false ) {
 
+		// TODO: rename this to "getContentBounds"
 		const { projection } = this;
 		const bounds = [ ...this.rootBounds ];
 		if ( projection && normalized ) {
@@ -250,6 +261,10 @@ export class TilingScheme {
 
 	}
 
+	// TODO: this needs to resolve a tile relative to the level origin / bounds but return a bounds
+	// relative to the content bounds & root origin
+	// TODO: With WMTS this could return bounds outside the range of the content bounds. Tools may
+	// have to clamp those bounds after. Or include a flag to clamp them?
 	getTileBounds( x, y, level, normalized = false ) {
 
 		const { flipY, pixelOverlap, projection } = this;
