@@ -45,10 +45,10 @@ export class TilingScheme {
 	}
 
 	// TODO: remove this?
-	get rootOrigin() {
+	get contentOrigin() {
 
 		const bounds = this.contentBounds;
-		return this._rootOrigin ?? [ bounds[ 0 ], bounds[ 1 ] ];
+		return this._contentOrigin ?? [ bounds[ 0 ], bounds[ 1 ] ];
 
 	}
 
@@ -66,7 +66,7 @@ export class TilingScheme {
 
 		// The origin and bounds
 		this._contentBounds = null;
-		this._rootOrigin = null;
+		this._contentOrigin = null;
 		this.projection = null;
 
 		this._levels = [];
@@ -168,7 +168,7 @@ export class TilingScheme {
 	setOrigin( x, y ) {
 
 		// TODO: is this necessary? TMS doesn't use it
-		this._rootOrigin = [ x, y ];
+		this._contentOrigin = [ x, y ];
 
 	}
 
