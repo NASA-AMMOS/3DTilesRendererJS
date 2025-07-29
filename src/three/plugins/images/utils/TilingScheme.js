@@ -165,7 +165,7 @@ export class TilingScheme {
 	}
 
 	// bounds setters
-	setOrigin( x, y ) {
+	setContentOrigin( x, y ) {
 
 		// TODO: is this necessary? TMS doesn't use it
 		this._contentOrigin = [ x, y ];
