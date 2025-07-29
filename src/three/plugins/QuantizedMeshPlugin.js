@@ -197,7 +197,7 @@ export class QuantizedMeshPlugin {
 						refine: 'REPLACE',
 						geometricError: Infinity,
 						boundingVolume: {
-							region: [ ...this.tiling.getFullBounds(), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ],
+							region: [ ...this.tiling.getContentBounds(), - INITIAL_HEIGHT_RANGE, INITIAL_HEIGHT_RANGE ],
 						},
 						children: children,
 

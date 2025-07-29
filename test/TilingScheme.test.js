@@ -35,8 +35,8 @@ describe( 'TiltingScheme', () => {
 		const scheme = new TilingScheme();
 		scheme.generateLevels( 3, 2, 1 );
 
-		expect( scheme.getFullBounds() ).toEqual( [ 0, 0, 1, 1 ] );
-		expect( scheme.getFullBounds( true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.getContentBounds() ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.getContentBounds( true ) ).toEqual( [ 0, 0, 1, 1 ] );
 		expect( scheme.getTileBounds( 0, 0, 0 ) ).toEqual( [ 0, 0, 0.5, 1 ] );
 		expect( scheme.getTileBounds( 0, 0, 1 ) ).toEqual( [ 0, 0, 0.25, 0.5 ] );
 
@@ -74,8 +74,8 @@ describe( 'TiltingScheme', () => {
 		scheme.generateLevels( 3, 2, 1 );
 		scheme.setProjection( new ProjectionScheme() );
 
-		expect( scheme.getFullBounds() ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
-		expect( scheme.getFullBounds( true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.getContentBounds() ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
+		expect( scheme.getContentBounds( true ) ).toEqual( [ 0, 0, 1, 1 ] );
 		expect( scheme.toNormalizedPoint( - Math.PI, - Math.PI / 2 ) ).toEqual( [ 0, 0 ] );
 		expect( scheme.toNormalizedPoint( 0, 0 ) ).toEqual( [ 0.5, 0.5 ] );
 

@@ -121,8 +121,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			const { tiling, endCaps } = this;
 			const isRoot = level === - 1;
-			const normalizedBounds = isRoot ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
-			const cartBounds = isRoot ? tiling.getFullBounds() : tiling.getTileBounds( x, y, level );
+			const normalizedBounds = isRoot ? tiling.getContentBounds( true ) : tiling.getTileBounds( x, y, level, true );
+			const cartBounds = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level );
 
 			if ( endCaps ) {
 

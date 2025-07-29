@@ -38,15 +38,16 @@ export class TilingScheme {
 	}
 
 	// prioritize user-set bounds over projection bounds if present
-	get rootBounds() {
+	get contentBounds() {
 
-		return this._rootBounds ?? this.projection?.getBounds() ?? [ 0, 0, 1, 1 ];
+		return this._contentBounds ?? this.projection?.getBounds() ?? [ 0, 0, 1, 1 ];
 
 	}
 
+	// TODO: remove this?
 	get rootOrigin() {
 
-		const bounds = this.rootBounds;
+		const bounds = this.contentBounds;
 		return this._rootOrigin ?? [ bounds[ 0 ], bounds[ 1 ] ];
 
 	}
@@ -64,7 +65,7 @@ export class TilingScheme {
 		this.pixelOverlap = 0;
 
 		// The origin and bounds
-		this._rootBounds = null;
+		this._contentBounds = null;
 		this._rootOrigin = null;
 		this.projection = null;
 
@@ -157,7 +158,7 @@ export class TilingScheme {
 	setBounds( minX, minY, maxX, maxY ) {
 
 		// TODO: rename this to "setContentBounds"
-		this._rootBounds = [ minX, minY, maxX, maxY ];
+		this._contentBounds = [ minX, minY, maxX, maxY ];
 
 	}
 
@@ -234,7 +235,7 @@ export class TilingScheme {
 	// TODO: this needs to operate relative to the level origin (should happen implicitly via "getTileBounds")
 	getTileExists( x, y, level ) {
 
-		const [ rminx, rminy, rmaxx, rmaxy ] = this.rootBounds;
+		const [ rminx, rminy, rmaxx, rmaxy ] = this.contentBounds;
 		const [ tminx, tminy, tmaxx, tmaxy ] = this.getTileBounds( x, y, level );
 		const isDegenerate = tminx >= tmaxx || tminy >= tmaxy;
 
@@ -243,11 +244,11 @@ export class TilingScheme {
 
 	}
 
-	getFullBounds( normalized = false ) {
+	getContentBounds( normalized = false ) {
 
 		// TODO: rename this to "getContentBounds"
 		const { projection } = this;
-		const bounds = [ ...this.rootBounds ];
+		const bounds = [ ...this.contentBounds ];
 		if ( projection && normalized ) {
 
 			bounds[ 0 ] = projection.convertLongitudeToProjection( bounds[ 0 ] );

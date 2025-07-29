@@ -205,7 +205,7 @@ export class ImageFormatPlugin {
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
+		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getContentBounds( true ) : tiling.getTileBounds( x, y, level, true );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;
