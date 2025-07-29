@@ -232,7 +232,6 @@ export class TilingScheme {
 
 	}
 
-	// TODO: this needs to operate relative to the level origin (should happen implicitly via "getTileBounds")
 	getTileExists( x, y, level ) {
 
 		const [ rminx, rminy, rmaxx, rmaxy ] = this.contentBounds;
@@ -263,9 +262,7 @@ export class TilingScheme {
 
 	// TODO: this needs to resolve a tile relative to the level origin / bounds but return a bounds
 	// relative to the content bounds & root origin
-	// TODO: With WMTS this could return bounds outside the range of the content bounds. Tools may
-	// have to clamp those bounds after. Or include a flag to clamp them?
-	getTileBounds( x, y, level, normalized = false ) {
+	getTileBounds( x, y, level, normalized = false, clampToContent = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight } = this.getLevel( level );
@@ -300,6 +297,17 @@ export class TilingScheme {
 		}
 
 		const bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
+		if ( clampToContent ) {
+
+			// clamp the bounds to the content of the tiled image
+			for ( let i = 0; i < 4; i ++ ) {
+
+				bounds[ i ] = clamp( bounds[ i ], 0, 1 );
+
+			}
+
+		}
+
 		if ( projection && ! normalized ) {
 
 			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
