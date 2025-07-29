@@ -659,7 +659,7 @@ The minimum cache size in number of items. Above this cached data will be unload
 ### .maxBytesSize
 
 ```js
-maxByteSize = 0.3 * 2**30 : Number
+maxByteSize = 0.4 * 2**30 : Number
 ```
 
 The maximum cached size in bytes. If that current amount of cached bytes is equal to this value then no more items can be cached.
@@ -669,7 +669,7 @@ _NOTE: Only works with three >= 0.166.0._
 ### .minBytesSize
 
 ```js
-minByteSize = 0.2 * 2**30 : Number
+minByteSize = 0.3 * 2**30 : Number
 ```
 
 The minimum cache size in number of bytes. Above this cached data will be unloaded if it's unused.
