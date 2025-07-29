@@ -88,6 +88,8 @@ export class TilingScheme {
 			tilePixelHeight = 256,
 			tileCountX = 2 ** level,
 			tileCountY = 2 ** level,
+			bounds = null,
+			origin = null,
 		} = options;
 
 		const {
@@ -95,13 +97,29 @@ export class TilingScheme {
 			pixelHeight = tilePixelHeight * tileCountY,
 		} = options;
 
+		// TODO: Can we remove some of these? Or infer them elsewhere? How should tileCountX be interpreted when origin and bounds
+		// are present? Or pixelWidth?
+		// It's possible that we can have "contentTileCount" and an "totalTileCount" for describing the number of tiles in and out
+		// of the local bounds.
+		// TODO: First step is removing or simplifying or understanding any portion of the code that uses this layer tile count.
 		levels[ level ] = {
+			// The pixel resolution of each tile.
 			tilePixelWidth,
 			tilePixelHeight,
+
+			// The total pixel resolution of the final image at this level. These numbers
+			// may not be a round multiple of the tile width.
 			pixelWidth,
 			pixelHeight,
+
+			// The total number of tiles needed to cover the full range of data in the projection.
 			tileCountX,
 			tileCountY,
+
+			// The origin is used as the origin at which to start counting tiles. The bounds is
+			// used to describe the range that tiles cover which may be outside the content range.
+			origin,
+			bounds,
 		};
 
 	}

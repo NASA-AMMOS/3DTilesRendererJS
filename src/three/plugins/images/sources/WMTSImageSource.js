@@ -84,12 +84,18 @@ export class WMTSImageSource extends TiledImageSource {
 		tiling.setContentBounds( ...tiling.projection.getBounds() );
 		tileMatrixSet.tileMatrices.forEach( ( tm, i ) => {
 
-			const { tileWidth, tileHeight } = tm;
+			// TODO: needs to set tileCountX from matrix width?
+			// TODO: How does bounds and tile count work together here?
+			// Can one typically be generated from the other?
+
+			const { tileWidth, tileHeight, matrixWidth, matrixHeight } = tm;
 			tiling.setLevel( i, {
 				tilePixelWidth: tileWidth,
 				tilePixelHeight: tileHeight,
-				tileCountX: tiling.projection.tileCountX * 2 ** i,
-				tileCountY: tiling.projection.tileCountY * 2 ** i,
+				tileCountX: matrixWidth || tiling.projection.tileCountX * 2 ** i,
+				tileCountY: matrixHeight || tiling.projection.tileCountY * 2 ** i,
+				origin: tm.topLeftCorner,
+				bounds: tm.bounds,
 			} );
 
 		} );
