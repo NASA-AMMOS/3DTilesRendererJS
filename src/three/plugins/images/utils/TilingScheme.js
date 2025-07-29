@@ -112,7 +112,7 @@ export class TilingScheme {
 			pixelWidth,
 			pixelHeight,
 
-			// The total number of tiles needed to cover the full range of data in the projection.
+			// Or the total number of tiles tht can be loaded at this level
 			tileCountX,
 			tileCountY,
 
@@ -314,17 +314,7 @@ export class TilingScheme {
 
 		}
 
-		const bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
-		if ( clampToContent ) {
-
-			// clamp the bounds to the content of the tiled image
-			for ( let i = 0; i < 4; i ++ ) {
-
-				bounds[ i ] = clamp( bounds[ i ], 0, 1 );
-
-			}
-
-		}
+		let bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
 
 		if ( projection && ! normalized ) {
 
@@ -332,6 +322,12 @@ export class TilingScheme {
 			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
 			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
 			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
+
+		}
+
+		if ( clampToContent ) {
+
+			bounds = this.clampToContentBounds( bounds, true );
 
 		}
 
@@ -363,7 +359,7 @@ export class TilingScheme {
 
 	}
 
-	clampToBounds( range, normalized = false ) {
+	clampToContentBounds( range, normalized = false ) {
 
 		const result = [ ...range ];
 		const { projection } = this;
