@@ -78,7 +78,7 @@ export class TMSImageSource extends TiledImageSource {
 				// initialize tiling and projection schemes
 				tiling.setProjection( new ProjectionScheme( srs ) );
 				tiling.setOrigin( originX, originY );
-				tiling.setBounds( minX, minY, maxX, maxY );
+				tiling.setContentBounds( minX, minY, maxX, maxY );
 
 				tileSetList.forEach( ( { order } ) => {
 

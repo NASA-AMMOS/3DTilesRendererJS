@@ -81,7 +81,7 @@ export class WMTSImageSource extends TiledImageSource {
 		// generate the tiling scheme
 		tiling.flipY = true;
 		tiling.setProjection( new ProjectionScheme( projection ) );
-		tiling.setBounds( ...tiling.projection.getBounds() );
+		tiling.setContentBounds( ...tiling.projection.getBounds() );
 		tileMatrixSet.tileMatrices.forEach( ( tm, i ) => {
 
 			const { tileWidth, tileHeight } = tm;

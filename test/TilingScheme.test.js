@@ -46,7 +46,7 @@ describe( 'TiltingScheme', () => {
 
 		const scheme = new TilingScheme();
 		scheme.generateLevels( 3, 2, 1 );
-		scheme.setBounds( 0, 0, 0.7, 0.7 );
+		scheme.setContentBounds( 0, 0, 0.7, 0.7 );
 
 		expect( scheme.getTileExists( 0, 0, 0 ) ).toBe( true );
 		expect( scheme.getTileExists( 1, 0, 0 ) ).toBe( true );
@@ -63,7 +63,7 @@ describe( 'TiltingScheme', () => {
 
 		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 0, 0, 4, 2 ] );
 
-		scheme.setBounds( 0.3, 0.3, 0.7, 0.7 );
+		scheme.setContentBounds( 0.3, 0.3, 0.7, 0.7 );
 		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 0, 0, 4, 2 ] );
 
 	} );

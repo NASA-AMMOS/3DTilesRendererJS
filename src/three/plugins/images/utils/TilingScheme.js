@@ -155,7 +155,7 @@ export class TilingScheme {
 	}
 
 	// bounds representing the contentful region of the image
-	setBounds( minX, minY, maxX, maxY ) {
+	setContentBounds( minX, minY, maxX, maxY ) {
 
 		// TODO: rename this to "setContentBounds"
 		this._contentBounds = [ minX, minY, maxX, maxY ];
@@ -246,7 +246,6 @@ export class TilingScheme {
 
 	getContentBounds( normalized = false ) {
 
-		// TODO: rename this to "getContentBounds"
 		const { projection } = this;
 		const bounds = [ ...this.contentBounds ];
 		if ( projection && normalized ) {
