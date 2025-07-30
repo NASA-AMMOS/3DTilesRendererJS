@@ -61,6 +61,7 @@ describe( 'TiltingScheme', () => {
 		scheme.generateLevels( 3, 2, 1 );
 
 		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 0, 0, 4, 2 ] );
+		expect( scheme.getTilesInRange( 0, 0, 1, 1, 2 ) ).toEqual( [ 0, 0, 7, 3 ] );
 
 		scheme.setContentBounds( 0.3, 0.3, 0.7, 0.7 );
 		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 0, 0, 4, 2 ] );
@@ -97,6 +98,51 @@ describe( 'TiltingScheme', () => {
 
 		expect( scheme.getTileAtPoint( - 0.25, - 0.25, 1, true ) ).toEqual( [ - 1, 2 ] );
 		expect( scheme.getTileAtPoint( 0, 0, 1, true ) ).toEqual( [ 0, 1 ] );
+
+	} );
+
+	it( 'should correctly report tile indices relative to level tile bounds.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 4,
+			tileCountY: 4,
+			tileBounds: [ 0.5, 0.5, 1, 1 ],
+		} );
+
+		expect( scheme.getTileAtPoint( 0.5, 0.5, 0 ) ).toEqual( [ 0, 0 ] );
+		expect( scheme.getTileAtPoint( 0.9, 0.75, 0 ) ).toEqual( [ 3, 2 ] );
+		expect( scheme.getTileAtPoint( 1.1, 0, 0 ) ).toEqual( [ 4, - 4 ] );
+		expect( scheme.getTileAtPoint( 1.13, - 0.1, 0 ) ).toEqual( [ 5, - 5 ] );
+
+		scheme.flipY = true;
+		expect( scheme.getTileAtPoint( 0.5, 0.5, 0 ) ).toEqual( [ 0, 3 ] );
+		expect( scheme.getTileAtPoint( 0.9, 0.75, 0 ) ).toEqual( [ 3, 1 ] );
+		expect( scheme.getTileAtPoint( 1.1, 0, 0 ) ).toEqual( [ 4, 7 ] );
+		expect( scheme.getTileAtPoint( 1.13, - 0.1, 0 ) ).toEqual( [ 5, 8 ] );
+
+	} );
+
+	it( 'should correctly report the set of tiles in a range relative to level tile bounds.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 4,
+			tileCountY: 4,
+			tileBounds: [ 0.5, 0.5, 1.5, 1.5 ],
+		} );
+
+		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 0, 0, 0 ] );
+		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.getTilesInRange( 0, 0, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 3, 3 ] );
+
+		scheme.flipY = true;
+		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 3, 0, 3 ] );
+		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 2, 1, 3 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 1, 2, 3 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 3, 3 ] );
 
 	} );
 

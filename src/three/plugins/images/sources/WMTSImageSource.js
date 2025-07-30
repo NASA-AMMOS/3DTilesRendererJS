@@ -94,8 +94,7 @@ export class WMTSImageSource extends TiledImageSource {
 				tilePixelHeight: tileHeight,
 				tileCountX: matrixWidth || tiling.projection.tileCountX * 2 ** i,
 				tileCountY: matrixHeight || tiling.projection.tileCountY * 2 ** i,
-				origin: tm.topLeftCorner,
-				bounds: tm.bounds,
+				tileBounds: tm.bounds,
 			} );
 
 		} );

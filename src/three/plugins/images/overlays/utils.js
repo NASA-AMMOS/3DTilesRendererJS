@@ -17,11 +17,7 @@ export function forEachTileInBounds( range, level, tiling, normalized, callback 
 
 		for ( let y = minY; y <= maxY; y ++ ) {
 
-			if ( tiling.getTileExists( x, y, clampedLevel ) ) {
-
-				callback( x, y, clampedLevel );
-
-			}
+			callback( x, y, clampedLevel );
 
 		}
 

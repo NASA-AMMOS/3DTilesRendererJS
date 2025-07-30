@@ -181,7 +181,7 @@ export class TilingScheme {
 			// TODO: verify this
 			const normalizedBounds = this.toNormalizedRange( tileBounds );
 			bx = MathUtils.mapLinear( bx, normalizedBounds[ 0 ], normalizedBounds[ 2 ], 0, 1 );
-			by = MathUtils.mapLinear( bx, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );
+			by = MathUtils.mapLinear( by, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );
 
 		}
 
@@ -202,8 +202,8 @@ export class TilingScheme {
 	// and return the tile indices for that layer
 	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
-		const minTile = this.getTileAtPoint( minX, minY, level, normalized, false );
-		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized, false );
+		const minTile = this.getTileAtPoint( minX, minY, level, normalized );
+		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized );
 
 		if ( this.flipY ) {
 
