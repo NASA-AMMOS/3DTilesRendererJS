@@ -53,22 +53,6 @@ async function updateCapabilities() {
 	const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
 	capabilities = await new WMTSCapabilitiesLoader().loadAsync( url );
 
-	// update the ui
-	document.getElementById( 'info' ).innerHTML = 'WMTS Demonstration, ' + capabilities.serviceIdentification.title + '<br/>' + capabilities.serviceIdentification.abstract;
-
-	rebuildGUI();
-	rebuildTiles();
-
-}
-
-function rebuildGUI() {
-
-	if ( gui ) {
-
-		gui.destroy();
-
-	}
-
 	// use a default overlay
 	let defaultLayer = 'MODIS_Terra_CorrectedReflectance_TrueColor';
 	if ( ! capabilities.layers.find( l => l.identifier === defaultLayer ) ) {
@@ -84,16 +68,37 @@ function rebuildGUI() {
 		dimensions: {},
 	};
 
+	rebuildGUI( url );
+	rebuildTiles();
+
+}
+
+function rebuildGUI( url ) {
+
+	if ( gui ) {
+
+		gui.destroy();
+
+	}
+
+	params.style = null;
+	params.tileMatrixSet = null;
+	params.dimensions = {};
 
 	const layer = capabilities.layers.find( l => l.identifier === params.layer );
 	params.style = layer.styles.find( s => s.isDefault ).identifier;
 	params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
 
+	// update the ui
+	document.getElementById( 'info' ).innerHTML =
+		'<b>' + capabilities.serviceIdentification.title + '</b><br/>' + capabilities.serviceIdentification.abstract +
+		'<br/>' + layer.title;
+
 
 	gui = new GUI();
 	gui.add( params, 'layer', capabilities.layers.map( l => l.identifier ) ).onChange( () => {
 
-		rebuildGUI();
+		rebuildGUI( url );
 		rebuildTiles();
 
 	} );
@@ -117,6 +122,10 @@ function rebuildGUI() {
 				return tokens;
 
 			} );
+
+			// NOTE: ths is a good full-ranged time to use with a full set of data typically used by GIBs for demos
+			values.push( '2013-06-16' );
+			params.dimensions[ dim.identifier ] = '2013-06-16';
 
 		}
 
