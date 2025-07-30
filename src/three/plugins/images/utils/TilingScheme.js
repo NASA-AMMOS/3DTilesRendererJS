@@ -296,15 +296,18 @@ export class TilingScheme {
 
 		let bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
 
-		if ( projection && ! normalized ) {
-
-			bounds = this.toNormalizedRange( bounds );
-
-		}
-
 		if ( clampToContent ) {
 
 			bounds = this.clampToContentBounds( bounds, true );
+
+		}
+
+		if ( projection && ! normalized ) {
+
+			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
 
 		}
 
