@@ -145,7 +145,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
 		// globe range.
 		// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
-		clampedRange = tiling.clampToContentBounds( [ minLon, minLat, maxLon, maxLat ] );
+		clampedRange = tiling.clampToProjectionBounds( [ minLon, minLat, maxLon, maxLat ] );
 		const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 		uvs.forEach( uv => {
 

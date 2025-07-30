@@ -2,6 +2,11 @@ import { MathUtils } from 'three';
 
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
+
+// Projection Bounds: The full extent of content representable by the projection.
+// Content Bounds: The range within the content bounds contains relevant, loadable, and renderable data.
+// Tile Bounds: The per-layer extent covered by the tiles to be loaded. This range may be larger than
+// both the projection and content bounds.
 export class TilingScheme {
 
 	get levelCount() {
@@ -258,7 +263,7 @@ export class TilingScheme {
 
 	// TODO: this needs to resolve a tile relative to the level origin / bounds but return a bounds
 	// relative to the content bounds & root origin
-	getTileBounds( x, y, level, normalized = false, clampToContent = true ) {
+	getTileBounds( x, y, level, normalized = false, clampToProjection = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
@@ -303,9 +308,9 @@ export class TilingScheme {
 
 		}
 
-		if ( clampToContent ) {
+		if ( clampToProjection ) {
 
-			bounds = this.clampToContentBounds( bounds, true );
+			bounds = this.clampToProjectionBounds( bounds, true );
 
 		}
 
@@ -346,26 +351,80 @@ export class TilingScheme {
 
 	}
 
+	toCartographicPoint( x, y ) {
+
+		const { projection } = this;
+		const result = [ x, y ];
+		if ( this.projection ) {
+
+			result[ 0 ] = projection.convertProjectionToLongitude( result[ 0 ] );
+			result[ 1 ] = projection.convertProjectionToLatitude( result[ 1 ] );
+
+		} else {
+
+			throw new Error( 'TilingScheme: Projection not available.' );
+
+		}
+
+		return result;
+
+	}
+
+	toCartographicRange( range ) {
+
+		return [
+			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
+			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
+		];
+
+	}
+
 	clampToContentBounds( range, normalized = false ) {
 
 		const result = [ ...range ];
 		const { projection } = this;
+		let clampBounds;
 		if ( normalized || ! projection ) {
 
-			result[ 0 ] = MathUtils.clamp( result[ 0 ], 0, 1 );
-			result[ 1 ] = MathUtils.clamp( result[ 1 ], 0, 1 );
-			result[ 2 ] = MathUtils.clamp( result[ 2 ], 0, 1 );
-			result[ 3 ] = MathUtils.clamp( result[ 3 ], 0, 1 );
+			clampBounds = this.toNormalizedRange( projection.getContentBounds() );
 
 		} else {
 
-			const [ minX, minY, maxX, maxY ] = projection.getBounds();
-			result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
-			result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
-			result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
-			result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
+			clampBounds = projection.getContentBounds();
 
 		}
+
+		const [ minX, minY, maxX, maxY ] = clampBounds;
+		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
+		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
+		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
+
+		return result;
+
+	}
+
+	clampToProjectionBounds( range, normalized = false ) {
+
+		const result = [ ...range ];
+		const { projection } = this;
+		let clampBounds;
+
+		if ( normalized || ! projection ) {
+
+			clampBounds = [ 0, 0, 1, 1 ];
+
+		} else {
+
+			clampBounds = projection.getBounds();
+
+		}
+
+		const [ minX, minY, maxX, maxY ] = clampBounds;
+		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
+		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
+		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
 
 		return result;
 
