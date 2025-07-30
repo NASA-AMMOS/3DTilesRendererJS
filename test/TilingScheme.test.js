@@ -146,4 +146,20 @@ describe( 'TiltingScheme', () => {
 
 	} );
 
+	it( 'should correctly report the tile bounds when a levels bounds are larger.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 2,
+			tileCountY: 1,
+			tileBounds: [ 0, 0, 1.5, 1.5 ],
+		} );
+
+		expect( scheme.getTileBounds( 0, 0, 0, false, true ) ).toEqual( [ 0, 0, 0.75, 1 ] );
+		expect( scheme.getTileBounds( 0, 0, 0, false, false ) ).toEqual( [ 0, 0, 0.75, 1.5 ] );
+		expect( scheme.getTileBounds( 1, 0, 0, false, true ) ).toEqual( [ 0.75, 0, 1, 1 ] );
+		expect( scheme.getTileBounds( 1, 0, 0, false, false ) ).toEqual( [ 0.75, 0, 1.5, 1.5 ] );
+
+	} );
+
 } );

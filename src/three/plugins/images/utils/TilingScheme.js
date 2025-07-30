@@ -198,8 +198,6 @@ export class TilingScheme {
 
 	}
 
-	// TODO: this needs to transform the point to the local bounds of the layer (if present)
-	// and return the tile indices for that layer
 	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
 		const minTile = this.getTileAtPoint( minX, minY, level, normalized );
@@ -263,7 +261,7 @@ export class TilingScheme {
 	getTileBounds( x, y, level, normalized = false, clampToContent = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
-		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight } = this.getLevel( level );
+		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
 
 		let tileLeft = tilePixelWidth * x - pixelOverlap;
 		let tileTop = tilePixelHeight * y - pixelOverlap;
@@ -295,6 +293,15 @@ export class TilingScheme {
 		}
 
 		let bounds = [ tileLeft, tileTop, tileRight, tileBottom ];
+		if ( tileBounds ) {
+
+			const normBounds = this.toNormalizedRange( tileBounds );
+			bounds[ 0 ] = MathUtils.mapLinear( bounds[ 0 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
+			bounds[ 2 ] = MathUtils.mapLinear( bounds[ 2 ], 0, 1, normBounds[ 0 ], normBounds[ 2 ] );
+			bounds[ 1 ] = MathUtils.mapLinear( bounds[ 1 ], 0, 1, normBounds[ 1 ], normBounds[ 3 ] );
+			bounds[ 3 ] = MathUtils.mapLinear( bounds[ 3 ], 0, 1, normBounds[ 1 ], normBounds[ 3 ] );
+
+		}
 
 		if ( clampToContent ) {
 
