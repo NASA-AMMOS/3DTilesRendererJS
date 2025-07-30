@@ -37,7 +37,6 @@ export class TMSImageSource extends TiledImageSource {
 				// elements
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
 				const boundingBox = xml.querySelector( 'BoundingBox' );
-				const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
 				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
 
@@ -61,8 +60,11 @@ export class TMSImageSource extends TiledImageSource {
 				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
 
 				// origin in lat / lon
-				const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
-				const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
+				// Note: The "origin" value in TMS is documented but otherwise not used in any data set as
+				// defined by the spec so ignore it here.
+				// const origin = xml.querySelector( 'Origin' );
+				// const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
+				// const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
 
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
@@ -77,7 +79,6 @@ export class TMSImageSource extends TiledImageSource {
 
 				// initialize tiling and projection schemes
 				tiling.setProjection( new ProjectionScheme( srs ) );
-				tiling.setContentOrigin( originX, originY );
 				tiling.setContentBounds( minX, minY, maxX, maxY );
 
 				tileSetList.forEach( ( { order } ) => {

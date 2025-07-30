@@ -1,11 +1,7 @@
+import { MathUtils } from 'three';
+
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
-function clamp( x, min, max ) {
-
-	return Math.min( Math.max( x, min ), max );
-
-}
-
 export class TilingScheme {
 
 	get levelCount() {
@@ -44,14 +40,6 @@ export class TilingScheme {
 
 	}
 
-	// TODO: remove this?
-	get contentOrigin() {
-
-		const bounds = this.contentBounds;
-		return this._contentOrigin ?? [ bounds[ 0 ], bounds[ 1 ] ];
-
-	}
-
 	get aspectRatio() {
 
 		const { pixelWidth, pixelHeight } = this.getLevel( this.maxLevel );
@@ -66,7 +54,6 @@ export class TilingScheme {
 
 		// The origin and bounds
 		this._contentBounds = null;
-		this._contentOrigin = null;
 		this.projection = null;
 
 		this._levels = [];
@@ -88,8 +75,7 @@ export class TilingScheme {
 			tilePixelHeight = 256,
 			tileCountX = 2 ** level,
 			tileCountY = 2 ** level,
-			bounds = null,
-			origin = null,
+			tileBounds = null,
 		} = options;
 
 		const {
@@ -112,14 +98,13 @@ export class TilingScheme {
 			pixelWidth,
 			pixelHeight,
 
-			// Or the total number of tiles tht can be loaded at this level
+			// Or the total number of tiles that can be loaded at this level.
 			tileCountX,
 			tileCountY,
 
-			// The origin is used as the origin at which to start counting tiles. The bounds is
-			// used to describe the range that tiles cover which may be outside the content range.
-			origin,
-			bounds,
+			// The bounds covered by the extent of the tiles at this loaded. The actual content covered by the overall tile set
+			// may be a subset of this range (eg there may be unused space).
+			tileBounds,
 		};
 
 	}
@@ -164,18 +149,9 @@ export class TilingScheme {
 
 	}
 
-	// bounds setters
-	setContentOrigin( x, y ) {
-
-		// TODO: is this necessary? TMS doesn't use it
-		this._contentOrigin = [ x, y ];
-
-	}
-
 	// bounds representing the contentful region of the image
 	setContentBounds( minX, minY, maxX, maxY ) {
 
-		// TODO: rename this to "setContentBounds"
 		this._contentBounds = [ minX, minY, maxX, maxY ];
 
 	}
@@ -189,19 +165,23 @@ export class TilingScheme {
 	// query functions
 	getTileAtPoint( bx, by, level, normalized = false ) {
 
-		// TODO: this needs to transform the point to the local bounds of the layer (if present)
-		// and return the tile indices for that layer
-		// TODO: separate the set of tile-index functions from the root content bounds functions
-		// for clarity
-		const { projection, flipY } = this;
-		const { tileCountX, tileCountY } = this.getLevel( level );
+		const { flipY } = this;
+		const { tileCountX, tileCountY, tileBounds } = this.getLevel( level );
 		const xStride = 1 / tileCountX;
 		const yStride = 1 / tileCountY;
 
-		if ( projection && ! normalized ) {
+		if ( ! normalized ) {
 
-			bx = projection.convertLongitudeToProjection( bx );
-			by = projection.convertLatitudeToProjection( by );
+			[ bx, by ] = this.toNormalizedPoint( bx, by );
+
+		}
+
+		if ( tileBounds ) {
+
+			// TODO: verify this
+			const normalizedBounds = this.toNormalizedRange( tileBounds );
+			bx = MathUtils.mapLinear( bx, normalizedBounds[ 0 ], normalizedBounds[ 2 ], 0, 1 );
+			by = MathUtils.mapLinear( bx, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );
 
 		}
 
@@ -242,10 +222,10 @@ export class TilingScheme {
 		}
 
 		return [
-			clamp( minTileX, 0, tileCountX - 1 ),
-			clamp( minTileY, 0, tileCountY - 1 ),
-			clamp( maxTileX, 0, tileCountX - 1 ),
-			clamp( maxTileY, 0, tileCountY - 1 ),
+			MathUtils.clamp( minTileX, 0, tileCountX - 1 ),
+			MathUtils.clamp( minTileY, 0, tileCountY - 1 ),
+			MathUtils.clamp( maxTileX, 0, tileCountX - 1 ),
+			MathUtils.clamp( maxTileY, 0, tileCountY - 1 ),
 		];
 
 	}
@@ -318,10 +298,7 @@ export class TilingScheme {
 
 		if ( projection && ! normalized ) {
 
-			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
+			bounds = this.toNormalizedRange( bounds );
 
 		}
 
@@ -365,18 +342,18 @@ export class TilingScheme {
 		const { projection } = this;
 		if ( normalized || ! projection ) {
 
-			result[ 0 ] = clamp( result[ 0 ], 0, 1 );
-			result[ 1 ] = clamp( result[ 1 ], 0, 1 );
-			result[ 2 ] = clamp( result[ 2 ], 0, 1 );
-			result[ 3 ] = clamp( result[ 3 ], 0, 1 );
+			result[ 0 ] = MathUtils.clamp( result[ 0 ], 0, 1 );
+			result[ 1 ] = MathUtils.clamp( result[ 1 ], 0, 1 );
+			result[ 2 ] = MathUtils.clamp( result[ 2 ], 0, 1 );
+			result[ 3 ] = MathUtils.clamp( result[ 3 ], 0, 1 );
 
 		} else {
 
 			const [ minX, minY, maxX, maxY ] = projection.getBounds();
-			result[ 0 ] = clamp( result[ 0 ], minX, maxX );
-			result[ 1 ] = clamp( result[ 1 ], minY, maxY );
-			result[ 2 ] = clamp( result[ 2 ], minX, maxX );
-			result[ 3 ] = clamp( result[ 3 ], minY, maxY );
+			result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
+			result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
+			result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+			result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
 
 		}
 

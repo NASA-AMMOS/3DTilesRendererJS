@@ -16,7 +16,6 @@ describe( 'TiltingScheme', () => {
 		expect( scheme.maxLevel ).toBe( 9 );
 		expect( scheme.levelCount ).toBe( 10 );
 		expect( scheme.aspectRatio ).toBe( 0.5 );
-		expect( scheme.contentOrigin ).toEqual( [ 0, 0 ] );
 		expect( scheme.contentBounds ).toEqual( [ 0, 0, 1, 1 ] );
 		expect( scheme.getLevel( 4 ) ).toEqual( null );
 
