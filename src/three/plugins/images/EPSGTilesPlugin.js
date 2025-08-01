@@ -53,7 +53,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 	constructor( options = {} ) {
 
-		// TODO: support WMTS capabilities request xml
 		const {
 			pixelSize = 1e-5,
 			capabilities,

@@ -1,4 +1,6 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector2 } from 'three';
+
+const _uv = /* @__PURE__ */ new Vector2();
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -109,8 +111,31 @@ export class ImageFormatPlugin {
 
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when using batched mesh rendering.
-		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture, transparent: true } ) );
+		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+		const mesh = new Mesh( geometry, new MeshBasicMaterial( { map: texture, transparent: true } ) );
 		mesh.position.set( x, y, z );
+
+		const { uv } = geometry.attributes;
+		const vertCount = uv.count;
+
+		const tiling = this.imageSource.tiling;
+		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( tx, ty, level, true, true );
+		const [ fullMinU, fullMinV, fullMaxU, fullMaxV ] = tiling.getTileBounds( tx, ty, level, true, false );
+		const subRange = [
+			MathUtils.mapLinear( minU, fullMinU, fullMaxU, 0, 1 ),
+			MathUtils.mapLinear( minV, fullMinV, fullMaxV, 0, 1 ),
+			MathUtils.mapLinear( maxU, fullMinU, fullMaxU, 0, 1 ),
+			MathUtils.mapLinear( maxV, fullMinV, fullMaxV, 0, 1 ),
+		];
+
+		for ( let i = 0; i < vertCount; i ++ ) {
+
+			_uv.fromBufferAttribute( uv, i );
+			_uv.x = MathUtils.mapLinear( _uv.x, 0, 1, subRange[ 0 ], subRange[ 2 ] );
+			_uv.y = MathUtils.mapLinear( _uv.y, 0, 1, subRange[ 1 ], subRange[ 3 ] );
+			uv.setXY( i, _uv.x, _uv.y );
+
+		}
 
 		return mesh;
 
