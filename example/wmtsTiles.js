@@ -3,7 +3,7 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 } from 'three';
-import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
+import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
 import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTilesPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
@@ -31,13 +31,7 @@ function init() {
 	// set up cameras and ortho / perspective transition
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
 
-	// create the controls
-	controls = new GlobeControls( scene, camera, renderer.domElement );
-	controls.enableDamping = true;
-	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
-	controls.camera.quaternion.identity();
-	controls.minDistance = 150;
-
+	// update the capabilities file
 	updateCapabilities();
 
 	// events
@@ -61,10 +55,12 @@ async function updateCapabilities() {
 
 	}
 
+	// set up the parameters
 	params = {
 		layer: defaultLayer,
 		style: null,
 		tileMatrixSet: null,
+		planar: false,
 		dimensions: {},
 	};
 
@@ -85,17 +81,20 @@ function rebuildGUI( url ) {
 	params.tileMatrixSet = null;
 	params.dimensions = {};
 
+	// initialize the layer settings
 	const layer = capabilities.layers.find( l => l.identifier === params.layer );
 	params.style = layer.styles.find( s => s.isDefault ).identifier;
 	params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
 
 	// update the ui
+	const abstract = capabilities.serviceIdentification.abstract;
 	document.getElementById( 'info' ).innerHTML =
-		'<b>' + capabilities.serviceIdentification.title + '</b><br/>' + capabilities.serviceIdentification.abstract +
+		'<b>' + capabilities.serviceIdentification.title + '</b>' + ( abstract ? '<br/>' + abstract : '' ) +
 		'<br/>' + layer.title;
 
 
 	gui = new GUI();
+	gui.add( params, 'planar' ).onChange( rebuildTiles );
 	gui.add( params, 'layer', capabilities.layers.map( l => l.identifier ) ).onChange( () => {
 
 		rebuildGUI( url );
@@ -105,6 +104,7 @@ function rebuildGUI( url ) {
 	gui.add( params, 'tileMatrixSet', layer.tileMatrixSets.map( tms => tms.identifier ) ).onChange( rebuildTiles );
 	gui.add( params, 'style', layer.styles.map( s => s.identifier ) ).onChange( rebuildTiles );
 
+	// create the UI for dimensions
 	for ( const key in layer.dimensions ) {
 
 		const dim = layer.dimensions[ key ];
@@ -123,9 +123,13 @@ function rebuildGUI( url ) {
 
 			} );
 
-			// NOTE: ths is a good full-ranged time to use with a full set of data typically used by GIBs for demos
-			values.push( '2013-06-16' );
-			params.dimensions[ dim.identifier ] = '2013-06-16';
+			if ( /^MODIS_Terra/.test( params.layer ) ) {
+
+				// NOTE: this is a good full-ranged time to use with a full set of data typically used by GIBs for demos
+				values.push( '2013-06-16' );
+				params.dimensions[ dim.identifier ] = '2013-06-16';
+
+			}
 
 		}
 
@@ -143,12 +147,21 @@ function rebuildTiles() {
 
 	}
 
+	if ( controls ) {
+
+		controls.dispose();
+		controls = null;
+
+	}
+
 	// tiles
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new WMTSTilesPlugin( {
-		shape: 'ellipsoid',
+		shape: params.planar ? 'planar' : 'ellipsoid',
+		center: true,
+		pixelSize: 0.01,
 		capabilities,
 		...params,
 	} ) );
@@ -156,10 +169,39 @@ function rebuildTiles() {
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
-	// init tiles
-	tiles.group.rotation.x = - Math.PI / 2;
+	if ( params.planar ) {
 
-	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+		// create the controls
+		controls = new EnvironmentControls( scene, camera, renderer.domElement );
+		controls.enableDamping = true;
+		controls.minZoomDistance = 2;
+		controls.minDistance = 0.01;
+		controls.maxDistance = 5000;
+		controls.cameraRadius = 0;
+		controls.fallbackPlane.normal.set( 0, 0, 1 );
+		controls.up.set( 0, 0, 1 );
+		controls.camera.position.set( 0, 0, 2000 );
+		controls.camera.quaternion.identity();
+
+		// reset the camera
+		camera.near = 0.001;
+		camera.far = 10000;
+		camera.updateProjectionMatrix();
+
+	} else {
+
+		// init tiles
+		tiles.group.rotation.x = - Math.PI / 2;
+
+		// create the controls
+		controls = new GlobeControls( scene, camera, renderer.domElement );
+		controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+		controls.enableDamping = true;
+		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
+		controls.camera.quaternion.identity();
+		controls.minDistance = 150;
+
+	}
 
 }
 
@@ -175,8 +217,12 @@ function onWindowResize() {
 
 function render() {
 
-	controls.update();
-	camera.updateMatrixWorld();
+	if ( controls ) {
+
+		controls.update();
+		camera.updateMatrixWorld();
+
+	}
 
 	if ( tiles ) {
 

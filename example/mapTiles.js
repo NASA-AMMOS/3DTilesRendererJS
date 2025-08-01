@@ -91,9 +91,6 @@ function initTiles() {
 
 	if ( params.planar ) {
 
-		// init tiles
-		tiles.errorTarget = 1;
-
 		// create the controls
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );
 		controls.enableDamping = true;
