@@ -55,7 +55,7 @@ describe( 'TiltingScheme', () => {
 
 	} );
 
-	it( 'should report all the tiles in a given range even if they don\'t exist.', () => {
+	it( 'should report only the tiles that exist in a given range.', () => {
 
 		const scheme = new TilingScheme();
 		scheme.generateLevels( 3, 2, 1 );
@@ -64,7 +64,7 @@ describe( 'TiltingScheme', () => {
 		expect( scheme.getTilesInRange( 0, 0, 1, 1, 2 ) ).toEqual( [ 0, 0, 7, 3 ] );
 
 		scheme.setContentBounds( 0.3, 0.3, 0.7, 0.7 );
-		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 0, 0, 4, 2 ] );
+		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 2 ) ).toEqual( [ 2, 1, 4, 2 ] );
 
 	} );
 
@@ -136,13 +136,13 @@ describe( 'TiltingScheme', () => {
 		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 0, 1, 1 ] );
 		expect( scheme.getTilesInRange( 0, 0, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
-		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 3, 3 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 2, 2 ] );
 
 		scheme.flipY = true;
 		expect( scheme.getTilesInRange( 0, 0, 0.5, 0.5, 0 ) ).toEqual( [ 0, 3, 0, 3 ] );
 		expect( scheme.getTilesInRange( 0, 0, 0.75, 0.75, 0 ) ).toEqual( [ 0, 2, 1, 3 ] );
 		expect( scheme.getTilesInRange( 0.5, 0.5, 1, 1, 0 ) ).toEqual( [ 0, 1, 2, 3 ] );
-		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 0, 3, 3 ] );
+		expect( scheme.getTilesInRange( 0.5, 0.5, 2, 2, 0 ) ).toEqual( [ 0, 1, 2, 3 ] );
 
 	} );
 
@@ -159,6 +159,48 @@ describe( 'TiltingScheme', () => {
 		expect( scheme.getTileBounds( 0, 0, 0, false, false ) ).toEqual( [ 0, 0, 0.75, 1.5 ] );
 		expect( scheme.getTileBounds( 1, 0, 0, false, true ) ).toEqual( [ 0.75, 0, 1, 1 ] );
 		expect( scheme.getTileBounds( 1, 0, 0, false, false ) ).toEqual( [ 0.75, 0, 1.5, 1.5 ] );
+
+	} );
+
+	it( 'should correctly report the tile image uv range correctly when a levels bounds are larger.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 2,
+			tileCountY: 1,
+			tileBounds: [ 0, 0, 1.25, 1.25 ],
+		} );
+
+		expect( scheme.getTileContentUVBounds( 1, 0, 0 ) ).toEqual( [ 0, 0, 0.6, 0.8 ] );
+
+	} );
+
+	it( 'should clamp bounds correctly.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setProjection( new ProjectionScheme() );
+		scheme.setContentBounds( 0, 0, Math.PI, Math.PI / 2 );
+
+		expect( scheme.clampToContentBounds( [ - 1, - 1, 2, 2 ], true ) ).toEqual( [ 0.5, 0.5, 1, 1 ] );
+		expect( scheme.clampToContentBounds( [ - 1, - 1, 5, 5 ], false ) ).toEqual( [ 0, 0, Math.PI, Math.PI / 2 ] );
+
+		expect( scheme.clampToProjectionBounds( [ - 1, - 1, 2, 2 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.clampToProjectionBounds( [ - 1, - 1, 5, 5 ], false ) ).toEqual( [ - 1, - 1, Math.PI, Math.PI / 2 ] );
+		expect( scheme.clampToProjectionBounds( [ - 5, - 5, 5, 5 ], false ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
+
+	} );
+
+	it( 'should convert ranges correctly.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setProjection( new ProjectionScheme() );
+		scheme.setContentBounds( 0, 0, Math.PI, Math.PI / 2 );
+
+		expect( scheme.toCartographicRange( [ 0, 0, 1, 1 ] ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
+		expect( scheme.toCartographicRange( [ 0.5, 0.5, 1, 1 ] ) ).toEqual( [ 0, 0, Math.PI, Math.PI / 2 ] );
+
+		expect( scheme.toNormalizedRange( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.toNormalizedRange( [ 0, 0, Math.PI, Math.PI / 2 ] ) ).toEqual( [ 0.5, 0.5, 1, 1 ] );
 
 	} );
 
