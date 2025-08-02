@@ -96,9 +96,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				}
 
 				// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
-				// as much as possible at low LoDs
+				// as much as possible at low LoDs.
 				if ( projection.isMercator && _uv.y !== 0 && _uv.y !== 1 ) {
-
 
 					const latLimit = projection.convertProjectionToLatitude( 1 );
 					const vStep = 1 / yVerts;
@@ -119,16 +118,15 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				}
 
+				// get the position and normal
 				ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 				ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
+				// map from the uvs for the tile into the uv range
+				const u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
+				const v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
+
 				// update the geometry
-				let u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, 0, 1 );
-				let v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, 0, 1 );
-
-				u = MathUtils.mapLinear( u, 0, 1, uvRange[ 0 ], uvRange[ 2 ] );
-				v = MathUtils.mapLinear( v, 0, 1, uvRange[ 1 ], uvRange[ 3 ] );
-
 				uv.setXY( i, u, v );
 				position.setXYZ( i, ..._pos );
 				normal.setXYZ( i, ..._norm );

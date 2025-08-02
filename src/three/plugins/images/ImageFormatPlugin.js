@@ -117,7 +117,7 @@ export class ImageFormatPlugin {
 		mesh.position.set( x, y, z );
 
 		const tiling = imageSource.tiling;
-		const uvRange = tiling.getTileContentUVBounds( x, y, level );
+		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
 		const { uv } = geometry.attributes;
 		for ( let i = 0; i < uv.count; i ++ ) {
 
