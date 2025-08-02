@@ -47,6 +47,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
 
+[WMTS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/wmtsTiles.html)
+
 [Quantized Mesh with Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/quantMeshOverlays.html)
 
 [Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
