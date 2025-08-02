@@ -12,7 +12,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-			pixelSize = 1e-5,
 			levels,
 			tileDimension,
 			projection,
@@ -21,7 +20,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			...rest
 		} = options;
 
-		super( { pixelSize, ...rest } );
+		super( rest );
 
 		this.name = 'XYZ_TILES_PLUGIN';
 		this.imageSource = new XYZImageSource( { url, levels, tileDimension, projection, bounds } );
@@ -54,7 +53,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-			pixelSize = 1e-5,
 			capabilities,
 			layer,
 			tileMatrixSet,
@@ -63,7 +61,7 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			...rest
 		} = options;
 
-		super( { pixelSize, ...rest } );
+		super( rest );
 
 		this.name = 'WTMS_TILES_PLUGIN';
 		this.imageSource = new WMTSImageSource( {

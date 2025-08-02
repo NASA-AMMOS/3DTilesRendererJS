@@ -94,18 +94,17 @@ function initTiles() {
 		// create the controls
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );
 		controls.enableDamping = true;
-		controls.minZoomDistance = 2;
-		controls.minDistance = 0.1;
-		controls.maxDistance = 5000;
+		controls.minDistance = 1e-4;
+		controls.maxDistance = 5;
 		controls.cameraRadius = 0;
 		controls.fallbackPlane.normal.set( 0, 0, 1 );
 		controls.up.set( 0, 0, 1 );
-		controls.camera.position.set( 0, 0, 2000 );
+		controls.camera.position.set( 0, 0, 2 );
 		controls.camera.quaternion.identity();
 
 		// reset the camera
-		camera.near = 0.1;
-		camera.far = 10000;
+		camera.near = 1e-4;
+		camera.far = 10;
 		camera.updateProjectionMatrix();
 
 	} else {

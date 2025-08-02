@@ -18,7 +18,7 @@ export class ImageFormatPlugin {
 	constructor( options = {} ) {
 
 		const {
-			pixelSize = 0.01,
+			pixelSize = null,
 			center = false,
 			useRecommendedSettings = true,
 			imageSource = null,
@@ -34,6 +34,12 @@ export class ImageFormatPlugin {
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
+
+		if ( pixelSize !== null ) {
+
+			console.warn( 'ImageFormatPlugin: "pixelSize" has been deprecated in favor of scaling the tiles root.' );
+
+		}
 
 	}
 
@@ -234,11 +240,21 @@ export class ImageFormatPlugin {
 		}
 
 		// scale the fields
-		centerX *= pixelWidth * pixelSize;
-		extentsX *= pixelWidth * pixelSize;
+		if ( pixelSize ) {
 
-		centerY *= pixelHeight * pixelSize;
-		extentsY *= pixelHeight * pixelSize;
+			centerX *= pixelWidth * pixelSize;
+			extentsX *= pixelWidth * pixelSize;
+
+			centerY *= pixelHeight * pixelSize;
+			extentsY *= pixelHeight * pixelSize;
+
+		} else {
+
+			centerX *= tiling.aspectRatio;
+			extentsX *= tiling.aspectRatio;
+
+		}
+
 
 		// return bounding box
 		return {
@@ -267,7 +283,12 @@ export class ImageFormatPlugin {
 		// the scale ration of the image at this level
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		const geometricError = pixelSize * ( Math.max( pixelWidth / levelWidth, pixelHeight / levelHeight ) - 1 );
+		let geometricError = ( Math.max( 1 / levelWidth - 1 / pixelWidth, 1 / levelHeight - 1 / pixelHeight ) );
+		if ( pixelSize ) {
+
+			geometricError *= pixelSize * Math.max( pixelWidth, pixelHeight );
+
+		}
 
 		// Generate the node
 		return {

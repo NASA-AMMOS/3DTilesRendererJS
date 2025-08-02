@@ -649,9 +649,6 @@ Available options are as follows:
 	// at the top left corner
 	center: false,
 
-	// The scale of a pixel in the image
-	pixelSize: 0.01,
-
 	// If true then the TilesRenderer error target is set to the "devicePixelRatio".
 	useRecommendedSettings: true,
 }

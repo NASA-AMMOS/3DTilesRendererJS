@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added WMTSTilesPlugin for generating a WMTS ellipsoid.
 - WMTSCapabilitiesLoader class for loading and parsing WMTS capabilities xml.
 
+### Changed
+- ImageFormatPlugins: Deprecate "pixelSize" option. The tile group can be scaled, instead.
+
 ## [0.4.13] - 2025.07.27
 ### Added
 - XYZTilesPlugin, XYZImageOverlay: Add support for inverted Y tile order, ability to specify bounds.
