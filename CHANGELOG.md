@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.14] - Unreleased
 ### Added
 - Support for WMTS image overlays.
-- Added WMTSTilesPlugin for generating an ellipsoid.
+- Added WMTSTilesPlugin for generating a WMTS ellipsoid.
+- WMTSCapabilitiesLoader class for loading and parsing WMTS capabilities xml.
 
 ## [0.4.13] - 2025.07.27
 ### Added
