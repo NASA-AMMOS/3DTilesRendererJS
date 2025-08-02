@@ -74,12 +74,13 @@ function initTiles() {
 	}
 
 	// tiles
-	tiles = new TilesRenderer( 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' );
+	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new XYZTilesPlugin( {
 		center: true,
 		shape: params.planar ? 'planar' : 'ellipsoid',
+		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 	} ) );
 
 	tiles.lruCache.minSize = 900;
@@ -89,9 +90,6 @@ function initTiles() {
 	scene.add( tiles.group );
 
 	if ( params.planar ) {
-
-		// init tiles
-		tiles.errorTarget = 1;
 
 		// create the controls
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );

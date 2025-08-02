@@ -1,4 +1,6 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector2 } from 'three';
+
+const _uv = /* @__PURE__ */ new Vector2();
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
@@ -60,11 +62,12 @@ export class ImageFormatPlugin {
 	async loadRootTileSet() {
 
 		const { tiles, imageSource } = this;
-		let url = tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-		await imageSource.init( url );
+		imageSource.url = imageSource.url || tiles.rootURL;
+		tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
+		await imageSource.init();
 
-		return this.getTileset( url );
+		tiles.rootURL = imageSource.url;
+		return this.getTileset( imageSource.url );
 
 	}
 
@@ -77,10 +80,11 @@ export class ImageFormatPlugin {
 		}
 
 		// Construct texture
+		const { imageSource } = this;
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const texture = await this.imageSource.processBufferToTexture( buffer );
+		const texture = await imageSource.processBufferToTexture( buffer );
 
 		// clean up the texture if it's not going to be used.
 		if ( abortSignal.aborted ) {
@@ -91,7 +95,7 @@ export class ImageFormatPlugin {
 
 		}
 
-		this.imageSource.setData( tx, ty, level, texture );
+		imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh
 		let sx = 1, sy = 1;
@@ -108,8 +112,21 @@ export class ImageFormatPlugin {
 
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when using batched mesh rendering.
-		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture, transparent: true } ) );
+		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+		const mesh = new Mesh( geometry, new MeshBasicMaterial( { map: texture, transparent: true } ) );
 		mesh.position.set( x, y, z );
+
+		const tiling = imageSource.tiling;
+		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
+		const { uv } = geometry.attributes;
+		for ( let i = 0; i < uv.count; i ++ ) {
+
+			_uv.fromBufferAttribute( uv, i );
+			_uv.x = MathUtils.mapLinear( _uv.x, 0, 1, uvRange[ 0 ], uvRange[ 2 ] );
+			_uv.y = MathUtils.mapLinear( _uv.y, 0, 1, uvRange[ 1 ], uvRange[ 3 ] );
+			uv.setXY( i, _uv.x, _uv.y );
+
+		}
 
 		return mesh;
 
@@ -204,7 +221,7 @@ export class ImageFormatPlugin {
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
+		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getContentBounds( true ) : tiling.getTileBounds( x, y, level, true );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;

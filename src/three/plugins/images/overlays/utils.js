@@ -17,11 +17,7 @@ export function forEachTileInBounds( range, level, tiling, normalized, callback 
 
 		for ( let y = minY; y <= maxY; y ++ ) {
 
-			if ( tiling.getTileExists( x, y, clampedLevel ) ) {
-
-				callback( x, y, clampedLevel );
-
-			}
+			callback( x, y, clampedLevel );
 
 		}
 
@@ -149,7 +145,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
 		// globe range.
 		// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
-		clampedRange = tiling.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+		clampedRange = tiling.clampToProjectionBounds( [ minLon, minLat, maxLon, maxLat ] );
 		const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
 		uvs.forEach( uv => {
 

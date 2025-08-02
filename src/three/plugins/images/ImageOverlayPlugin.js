@@ -1224,7 +1224,7 @@ export class ImageOverlayPlugin {
 						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 							// draw using normalized bounds since the mercator bounds are non-linear
-							const span = tiling.getTileBounds( tx, ty, tl, true );
+							const span = tiling.getTileBounds( tx, ty, tl, true, false );
 							const tex = imageSource.get( tx, ty, tl );
 							if ( tex && ! ( tex instanceof Promise ) ) {
 
@@ -1263,7 +1263,7 @@ export class ImageOverlayPlugin {
 					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 						// draw using normalized bounds since the mercator bounds are non-linear
-						const span = tiling.getTileBounds( tx, ty, tl, true );
+						const span = tiling.getTileBounds( tx, ty, tl, true, false );
 						const tex = imageSource.get( tx, ty, tl );
 						tileComposer.draw( tex, span );
 						usedTextures.add( tex );
@@ -1456,13 +1456,12 @@ export class XYZTilesOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = new XYZImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-		this.url = options.url;
 
 	}
 
 	init() {
 
-		this._whenReady = this.imageSource.init( this.url );
+		this._whenReady = this.imageSource.init();
 
 		super.init();
 
@@ -1483,13 +1482,12 @@ export class WMTSTilesOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = new WMTSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-		this.url = options.url;
 
 	}
 
 	init() {
 
-		this._whenReady = this.imageSource.init( this.url );
+		this._whenReady = this.imageSource.init();
 
 		super.init();
 
@@ -1516,7 +1514,7 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 	init() {
 
-		this._whenReady = this.imageSource.init( this.url );
+		this._whenReady = this.imageSource.init();
 
 		super.init();
 
@@ -1559,7 +1557,9 @@ export class CesiumIonOverlay extends ImageOverlay {
 					type: 'html',
 					collapsible: att.collapsible,
 				} ) );
-				return this.imageSource.init( json.url );
+
+				this.imageSource.url = json.url;
+				return this.imageSource.init();
 
 			} );
 
@@ -1615,7 +1615,8 @@ export class GoogleMapsOverlay extends ImageOverlay {
 			.then( json => {
 
 				this.imageSource.tileDimension = json.tileWidth;
-				return this.imageSource.init( 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}' );
+				this.imageSource = 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}';
+				return this.imageSource.init();
 
 			} );
 

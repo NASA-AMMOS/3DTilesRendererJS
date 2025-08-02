@@ -22,3 +22,6 @@ export * from './images/EPSGTilesPlugin.js';
 export { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
 export { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
 export { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
+
+// loaders
+export * from './loaders/WMTSCapabilitiesLoader.js';
