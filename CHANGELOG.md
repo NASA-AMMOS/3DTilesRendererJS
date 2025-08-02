@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.4.14] - Unreleased
+### Fixed
+- EnvironmentControls: Fix case where camera can jump when moving the camera and then zoom in.
+
 ### Added
 - Support for WMTS image overlays.
 - Added WMTSTilesPlugin for generating a WMTS ellipsoid.
