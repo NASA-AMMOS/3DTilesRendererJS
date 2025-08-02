@@ -7,6 +7,8 @@ import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-rend
 import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTilesPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
+const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
+
 let controls, scene, renderer;
 let tiles, camera, gui;
 let params, capabilities;
@@ -37,14 +39,13 @@ function init() {
 	// events
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener( 'hashchange', updateCapabilities );
+	window.addEventListener( 'hashchange', () => location.reload() );
 
 }
 
 async function updateCapabilities() {
 
 	// load the capabilities file
-	const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
 	capabilities = await new WMTSCapabilitiesLoader().loadAsync( url );
 
 	// use a default overlay
@@ -64,12 +65,12 @@ async function updateCapabilities() {
 		dimensions: {},
 	};
 
-	rebuildGUI( url );
+	rebuildGUI();
 	rebuildTiles();
 
 }
 
-function rebuildGUI( url ) {
+function rebuildGUI() {
 
 	if ( gui ) {
 
