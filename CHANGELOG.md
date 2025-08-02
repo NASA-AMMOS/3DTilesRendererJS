@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.14] - Unreleased
 ### Fixed
 - EnvironmentControls: Fix case where camera can jump when moving the camera and then zoom in.
+- ImageOverlayPlugin & ImageFormatPlugin not working together when splitting tile geometry.
 
 ### Added
 - Support for WMTS image overlays.
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - ImageFormatPlugins: Deprecate "pixelSize" option. The tile group can be scaled, instead.
+- ImageFormatPlugins: Adjusted the way geometric error was generated so it does not reach 0.
 
 ## [0.4.13] - 2025.07.27
 ### Added
