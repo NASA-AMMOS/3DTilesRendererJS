@@ -6,6 +6,7 @@ import { MathUtils } from 'three';
 const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
+// this CRS84 crs is the same as EPSG:4326 except the order of lat / lon are swapped
 function isCRS84( crs ) {
 
 	return /(:84|:crs84)$/i.test( crs );
@@ -24,12 +25,15 @@ function isWebMercator( crs ) {
 
 }
 
+// parse a series of space-separated numbers
 function parseTuple( tuple ) {
 
 	return tuple.trim().split( /\s+/ ).map( v => parseFloat( v ) );
 
 }
 
+// swap the tuple order to lon, lat if crs is EPSG:4326 since the tiles renderer project
+// expects lon, lat order
 function correctTupleOrder( tuple, crs ) {
 
 	if ( isEPSG4326( crs ) ) {
@@ -40,6 +44,8 @@ function correctTupleOrder( tuple, crs ) {
 
 }
 
+// web mercator specifies bounding boxes etc as meters assuming the width and height of the full image span
+// is aligned to the globe equator circumference.
 function correctTupleUnits( tuple, crs ) {
 
 	if ( isWebMercator( crs ) ) {
@@ -86,6 +92,8 @@ export class WMTSCapabilitiesLoader extends LoaderBase {
 
 		} );
 
+		window.XML = xml
+
 		return {
 			serviceIdentification,
 			tileMatrixSets,
@@ -96,6 +104,7 @@ export class WMTSCapabilitiesLoader extends LoaderBase {
 
 }
 
+// parse <ows:ServiceIdentification> tag
 function parseServiceIdentification( el ) {
 
 	const title = el.querySelector( 'Title' ).textContent;
@@ -112,6 +121,7 @@ function parseServiceIdentification( el ) {
 
 }
 
+// parse <Layers> tag
 function parseLayer( el ) {
 
 	const title = el.querySelector( 'Title' ).textContent;
@@ -158,6 +168,7 @@ function parseLayer( el ) {
 
 }
 
+// parse layer <ResourceURL> tag
 function parseResourceUrl( el ) {
 
 	const template = el.getAttribute( 'template' );
@@ -172,6 +183,7 @@ function parseResourceUrl( el ) {
 
 }
 
+// parse layer <Dimension> tag
 function parseDimension( el ) {
 
 	const identifier = el.querySelector( 'Identifier' ).textContent;
@@ -189,6 +201,7 @@ function parseDimension( el ) {
 
 }
 
+// parse <ows:WGS84BoundingBox> and <BoundingBox> tags
 function parseBoundingBox( el ) {
 
 	if ( ! el ) {
@@ -229,6 +242,7 @@ function parseBoundingBox( el ) {
 
 }
 
+// parse layer <Style> tag
 function parseStyle( el ) {
 
 	const title = el.querySelector( 'Title' ).textContent;
@@ -243,6 +257,7 @@ function parseStyle( el ) {
 
 }
 
+// parse <TileMatrixSet> tag
 function parseTileMatrixSet( el ) {
 
 	let supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
@@ -261,10 +276,8 @@ function parseTileMatrixSet( el ) {
 			const groundHeight = tm.tileHeight * tm.matrixHeight * pixelSpan;
 			let bottomRightCorner;
 
-			// debugger
 			correctTupleOrder( tm.topLeftCorner, supportedCRS );
 
-			// TODO: confirm these calculations
 			if ( isWebMercator( supportedCRS ) ) {
 
 				bottomRightCorner = [
@@ -317,6 +330,7 @@ function parseTileMatrixSet( el ) {
 
 }
 
+// parse tile matrix set <TileMatrix> tag
 function parseTileMatrix( el ) {
 
 	const identifier = el.querySelector( 'Identifier' ).textContent;
@@ -340,6 +354,7 @@ function parseTileMatrix( el ) {
 
 }
 
+// utility for finding immediate children by tag name
 function getChildrenByTag( el, tag ) {
 
 	return [ ...el.children ].filter( c => c.tagName === tag );
