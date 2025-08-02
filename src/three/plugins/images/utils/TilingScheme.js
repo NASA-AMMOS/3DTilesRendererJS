@@ -178,7 +178,6 @@ export class TilingScheme {
 
 		if ( tileBounds ) {
 
-			// TODO: verify this
 			const normalizedBounds = this.toNormalizedRange( tileBounds );
 			bx = MathUtils.mapLinear( bx, normalizedBounds[ 0 ], normalizedBounds[ 2 ], 0, 1 );
 			by = MathUtils.mapLinear( by, normalizedBounds[ 1 ], normalizedBounds[ 3 ], 0, 1 );

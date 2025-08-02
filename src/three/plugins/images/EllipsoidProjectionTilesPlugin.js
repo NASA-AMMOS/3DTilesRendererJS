@@ -10,10 +10,6 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _uv = /* @__PURE__ */ new Vector2();
 const _sphere = /* @__PURE__ */ new Sphere();
 
-// TODO: Understand missing data with arcgisonline datasets
-// TODO: Fix jitter at planar case
-// TODO: Fix overlay case
-
 export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	get projection() {
