@@ -1225,7 +1225,7 @@ export class ImageOverlayPlugin {
 						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 							// draw using normalized bounds since the mercator bounds are non-linear
-							const span = tiling.getTileBounds( tx, ty, tl, true );
+							const span = tiling.getTileBounds( tx, ty, tl, true, false );
 							const tex = imageSource.get( tx, ty, tl );
 							if ( tex && ! ( tex instanceof Promise ) ) {
 
@@ -1264,7 +1264,7 @@ export class ImageOverlayPlugin {
 					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
 						// draw using normalized bounds since the mercator bounds are non-linear
-						const span = tiling.getTileBounds( tx, ty, tl, true );
+						const span = tiling.getTileBounds( tx, ty, tl, true, false );
 						const tex = imageSource.get( tx, ty, tl );
 						tileComposer.draw( tex, span );
 						usedTextures.add( tex );
