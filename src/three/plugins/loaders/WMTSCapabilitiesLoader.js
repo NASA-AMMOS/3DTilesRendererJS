@@ -92,8 +92,6 @@ export class WMTSCapabilitiesLoader extends LoaderBase {
 
 		} );
 
-		window.XML = xml
-
 		return {
 			serviceIdentification,
 			tileMatrixSets,
