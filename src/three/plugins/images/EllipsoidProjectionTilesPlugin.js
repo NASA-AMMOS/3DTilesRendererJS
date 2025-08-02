@@ -62,14 +62,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			const geometry = new PlaneGeometry( 1, 1, xVerts, yVerts );
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
-			const [ fullMinU, fullMinV, fullMaxU, fullMaxV ] = tiling.getTileBounds( x, y, level, true, false );
-
-			const subRange = [
-				MathUtils.mapLinear( minU, fullMinU, fullMaxU, 0, 1 ),
-				MathUtils.mapLinear( minV, fullMinV, fullMaxV, 0, 1 ),
-				MathUtils.mapLinear( maxU, fullMinU, fullMaxU, 0, 1 ),
-				MathUtils.mapLinear( maxV, fullMinV, fullMaxV, 0, 1 ),
-			];
+			const uvRange = tiling.getTileContentUVBounds( x, y, level );
 
 			// adjust the geometry to position it at the region
 			const { position, normal, uv } = geometry.attributes;
@@ -77,12 +70,15 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			tile.cached.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
+				// retrieve attributes
 				_pos.fromBufferAttribute( position, i );
-				_norm.fromBufferAttribute( normal, i );
 				_uv.fromBufferAttribute( uv, i );
 
+				// convert the plane position to lat / lon
 				const lon = projection.convertProjectionToLongitude( MathUtils.mapLinear( _uv.x, 0, 1, minU, maxU ) );
 				let lat = projection.convertProjectionToLatitude( MathUtils.mapLinear( _uv.y, 0, 1, minV, maxV ) );
+
+				// snap the edges to the poles if using mercator projection and end caps are enabled
 				if ( projection.isMercator && this.endCaps ) {
 
 					if ( maxV === 1 && _uv.y === 1 ) {
@@ -99,10 +95,11 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 				}
 
+				// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
+				// as much as possible at low LoDs
 				if ( projection.isMercator && _uv.y !== 0 && _uv.y !== 1 ) {
 
-					// ensure we have an edge loop positioned at the mercator limit
-					// to avoid UV distortion as much as possible at low LoDs
+
 					const latLimit = projection.convertProjectionToLatitude( 1 );
 					const vStep = 1 / yVerts;
 
@@ -129,8 +126,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				let u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, 0, 1 );
 				let v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, 0, 1 );
 
-				u = MathUtils.mapLinear( u, 0, 1, subRange[ 0 ], subRange[ 2 ] );
-				v = MathUtils.mapLinear( v, 0, 1, subRange[ 1 ], subRange[ 3 ] );
+				u = MathUtils.mapLinear( u, 0, 1, uvRange[ 0 ], uvRange[ 2 ] );
+				v = MathUtils.mapLinear( v, 0, 1, uvRange[ 1 ], uvRange[ 3 ] );
 
 				uv.setXY( i, u, v );
 				position.setXYZ( i, ..._pos );

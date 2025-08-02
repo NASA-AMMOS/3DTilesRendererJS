@@ -88,11 +88,6 @@ export class TilingScheme {
 			pixelHeight = tilePixelHeight * tileCountY,
 		} = options;
 
-		// TODO: Can we remove some of these? Or infer them elsewhere? How should tileCountX be interpreted when origin and bounds
-		// are present? Or pixelWidth?
-		// It's possible that we can have "contentTileCount" and an "totalTileCount" for describing the number of tiles in and out
-		// of the local bounds.
-		// TODO: First step is removing or simplifying or understanding any portion of the code that uses this layer tile count.
 		levels[ level ] = {
 			// The pixel resolution of each tile.
 			tilePixelWidth,
@@ -205,6 +200,8 @@ export class TilingScheme {
 
 	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
+		[ minX, minY, maxX, maxY ] = this.clampToContentBounds( [ minX, minY, maxX, maxY ], normalized );
+
 		const minTile = this.getTileAtPoint( minX, minY, level, normalized );
 		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized );
 
@@ -261,8 +258,20 @@ export class TilingScheme {
 
 	}
 
-	// TODO: this needs to resolve a tile relative to the level origin / bounds but return a bounds
-	// relative to the content bounds & root origin
+	// returns the UV range associated with the content in the given tile
+	getTileContentUVBounds( x, y, level ) {
+
+		const [ minU, minV, maxU, maxV ] = this.getTileBounds( x, y, level, true, true );
+		const [ fullMinU, fullMinV, fullMaxU, fullMaxV ] = this.getTileBounds( x, y, level, true, false );
+		return [
+			MathUtils.mapLinear( minU, fullMinU, fullMaxU, 0, 1 ),
+			MathUtils.mapLinear( minV, fullMinV, fullMaxV, 0, 1 ),
+			MathUtils.mapLinear( maxU, fullMinU, fullMaxU, 0, 1 ),
+			MathUtils.mapLinear( maxV, fullMinV, fullMaxV, 0, 1 ),
+		];
+
+	}
+
 	getTileBounds( x, y, level, normalized = false, clampToProjection = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
@@ -382,19 +391,7 @@ export class TilingScheme {
 	clampToContentBounds( range, normalized = false ) {
 
 		const result = [ ...range ];
-		const { projection } = this;
-		let clampBounds;
-		if ( normalized || ! projection ) {
-
-			clampBounds = this.toNormalizedRange( projection.getContentBounds() );
-
-		} else {
-
-			clampBounds = projection.getContentBounds();
-
-		}
-
-		const [ minX, minY, maxX, maxY ] = clampBounds;
+		const [ minX, minY, maxX, maxY ] = this.getContentBounds( normalized );
 		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
 		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
 		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );

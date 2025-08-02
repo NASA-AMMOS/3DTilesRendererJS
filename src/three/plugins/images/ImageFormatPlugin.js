@@ -80,10 +80,11 @@ export class ImageFormatPlugin {
 		}
 
 		// Construct texture
+		const { imageSource } = this;
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const texture = await this.imageSource.processBufferToTexture( buffer );
+		const texture = await imageSource.processBufferToTexture( buffer );
 
 		// clean up the texture if it's not going to be used.
 		if ( abortSignal.aborted ) {
@@ -94,7 +95,7 @@ export class ImageFormatPlugin {
 
 		}
 
-		this.imageSource.setData( tx, ty, level, texture );
+		imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh
 		let sx = 1, sy = 1;
@@ -115,24 +116,14 @@ export class ImageFormatPlugin {
 		const mesh = new Mesh( geometry, new MeshBasicMaterial( { map: texture, transparent: true } ) );
 		mesh.position.set( x, y, z );
 
+		const tiling = imageSource.tiling;
+		const uvRange = tiling.getTileContentUVBounds( x, y, level );
 		const { uv } = geometry.attributes;
-		const vertCount = uv.count;
-
-		const tiling = this.imageSource.tiling;
-		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( tx, ty, level, true, true );
-		const [ fullMinU, fullMinV, fullMaxU, fullMaxV ] = tiling.getTileBounds( tx, ty, level, true, false );
-		const subRange = [
-			MathUtils.mapLinear( minU, fullMinU, fullMaxU, 0, 1 ),
-			MathUtils.mapLinear( minV, fullMinV, fullMaxV, 0, 1 ),
-			MathUtils.mapLinear( maxU, fullMinU, fullMaxU, 0, 1 ),
-			MathUtils.mapLinear( maxV, fullMinV, fullMaxV, 0, 1 ),
-		];
-
-		for ( let i = 0; i < vertCount; i ++ ) {
+		for ( let i = 0; i < uv.count; i ++ ) {
 
 			_uv.fromBufferAttribute( uv, i );
-			_uv.x = MathUtils.mapLinear( _uv.x, 0, 1, subRange[ 0 ], subRange[ 2 ] );
-			_uv.y = MathUtils.mapLinear( _uv.y, 0, 1, subRange[ 1 ], subRange[ 3 ] );
+			_uv.x = MathUtils.mapLinear( _uv.x, 0, 1, uvRange[ 0 ], uvRange[ 2 ] );
+			_uv.y = MathUtils.mapLinear( _uv.y, 0, 1, uvRange[ 1 ], uvRange[ 3 ] );
 			uv.setXY( i, _uv.x, _uv.y );
 
 		}
