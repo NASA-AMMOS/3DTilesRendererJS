@@ -7,7 +7,6 @@ export default ( { mode } ) => {
 	process.env = { ...process.env, ...loadEnv( mode, process.cwd() ) };
 
 	return {
-
 		root: './example/',
 		envDir: '.',
 		base: '',
