@@ -95,7 +95,7 @@ function initTiles() {
 		controls = new EnvironmentControls( scene, camera, renderer.domElement );
 		controls.enableDamping = true;
 		controls.minZoomDistance = 2;
-		controls.minDistance = 0.01;
+		controls.minDistance = 0.1;
 		controls.maxDistance = 5000;
 		controls.cameraRadius = 0;
 		controls.fallbackPlane.normal.set( 0, 0, 1 );
@@ -104,7 +104,7 @@ function initTiles() {
 		controls.camera.quaternion.identity();
 
 		// reset the camera
-		camera.near = 0.001;
+		camera.near = 0.1;
 		camera.far = 10000;
 		camera.updateProjectionMatrix();
 
