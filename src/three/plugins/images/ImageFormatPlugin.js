@@ -283,7 +283,7 @@ export class ImageFormatPlugin {
 		// the scale ration of the image at this level
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		let geometricError = ( Math.max( 1 / levelWidth - 1 / pixelWidth, 1 / levelHeight - 1 / pixelHeight ) );
+		let geometricError = Math.max( 1 / levelWidth, 1 / levelHeight );
 		if ( pixelSize ) {
 
 			geometricError *= pixelSize * Math.max( pixelWidth, pixelHeight );

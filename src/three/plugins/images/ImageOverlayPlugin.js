@@ -131,7 +131,7 @@ export class ImageOverlayPlugin {
 		// plugin needs to run before other plugins that fetch data since content
 		// is handled and loaded in a custom way
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
-		this.priority = - 10;
+		this.priority = - 15;
 
 		// options
 		this.renderer = renderer;

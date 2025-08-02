@@ -177,12 +177,12 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	}
 
-	preprocessNode( tile, ...rest ) {
+	createChild( ...args ) {
 
-		super.preprocessNode( tile, rest );
+		const tile = super.createChild( ...args );
 
 		const { shape, projection, tiling } = this;
-		if ( shape === 'ellipsoid' ) {
+		if ( tile && shape === 'ellipsoid' ) {
 
 			const level = tile[ TILE_LEVEL ];
 			const x = tile[ TILE_X ];
@@ -198,13 +198,10 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
-			const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 			// one pixel width in uv space
 			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
 			const tileVWidth = ( maxV - minV ) / tilePixelHeight;
-			const rootUWidth = 1 / pixelWidth;
-			const rootVWidth = 1 / pixelHeight;
 
 			// calculate the region ranges
 			const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
@@ -219,16 +216,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
-			const tilePixelWidth2 = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
-			const rootPixelWidth = Math.max( rootUWidth * lonFactor * xDeriv, rootVWidth * latFactor * yDeriv );
-			tile.geometricError = tilePixelWidth2 - rootPixelWidth;
-
-			// if this is the root then keep the geometric error high
-			if ( tile.parent === null ) {
-
-				tile.geometricError = 1e50;
-
-			}
+			const projectedPixelWidth = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
+			tile.geometricError = projectedPixelWidth;
 
 		}
 
