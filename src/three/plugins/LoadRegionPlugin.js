@@ -6,6 +6,7 @@ export class LoadRegionPlugin {
 	constructor() {
 
 		this.name = 'LOAD_REGION_PLUGIN';
+		this.priority = - 1000;
 		this.regions = [];
 		this.tiles = null;
 
@@ -55,9 +56,16 @@ export class LoadRegionPlugin {
 		const boundingVolume = tile.cached.boundingVolume;
 		const { regions, tiles } = this;
 
+		let mask = false;
 		let visible = false;
 		let maxError = - Infinity;
 		for ( const region of regions ) {
+
+			if ( region.mask ) {
+
+				mask = true;
+
+			}
 
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			if ( intersects ) {
@@ -72,6 +80,14 @@ export class LoadRegionPlugin {
 		target.inView = visible;
 		target.error = maxError;
 
+		return ( ( ! visible && mask ) ? false : null ); // Returns false if should force mask the tile.
+
+	}
+
+	raycastTile( tile, scene, raycaster, intersects ) {
+
+		return ! tile.__inFrustum;
+
 	}
 
 	dispose() {
@@ -85,9 +101,10 @@ export class LoadRegionPlugin {
 // Definitions of predefined regions
 export class BaseRegion {
 
-	constructor( errorTarget = 10 ) {
+	constructor( errorTarget = 10, mask = false ) {
 
 		this.errorTarget = errorTarget;
+		this.mask = mask;
 
 	}
 
@@ -103,9 +120,9 @@ export class BaseRegion {
 
 export class SphereRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, sphere = new Sphere() ) {
+	constructor( errorTarget = 10, mask = false, sphere = new Sphere() ) {
 
-		super( errorTarget );
+		super( errorTarget, mask );
 		this.sphere = sphere.clone();
 
 	}
@@ -120,9 +137,9 @@ export class SphereRegion extends BaseRegion {
 
 export class RayRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, ray = new Ray() ) {
+	constructor( errorTarget = 10, mask = false, ray = new Ray() ) {
 
-		super( errorTarget );
+		super( errorTarget, mask );
 		this.ray = ray.clone();
 
 	}
@@ -137,9 +154,9 @@ export class RayRegion extends BaseRegion {
 
 export class OBBRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, obb = new OBB() ) {
+	constructor( errorTarget = 10, mask = false, obb = new OBB() ) {
 
-		super( errorTarget );
+		super( errorTarget, mask );
 		this.obb = obb.clone();
 		this.obb.update();
 
