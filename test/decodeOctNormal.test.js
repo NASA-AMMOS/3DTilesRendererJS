@@ -1,4 +1,4 @@
-import { decodeOctNormal } from '../src/core/renderer/utilities/decodeOctNormal';
+import { decodeOctNormal } from '../src/three/renderer/loaders/decodeOctNormal';
 
 const PRECISION = 0.005;
 
