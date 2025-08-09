@@ -22,13 +22,13 @@
     "src/*"
   ],
   "exports": {
-    ".": "./src/index.js",
-    "./plugins": "./src/plugins.js",
-    "./core": "./src/core/renderer/index.js",
-    "./three": "./src/three/renderer/index.js",
-    "./r3f": "./src/r3f/index.jsx",
-    "./core/plugins": "./src/core/plugins/index.js",
-    "./three/plugins": "./src/three/plugins/index.js",
+    ".": "./build/index.js",
+    "./plugins": "./build/index.plugins.js",
+    "./core": "./build/index.core.js",
+    "./three": "./build/index.three.js",
+    "./r3f": "./build/index.r3f.js",
+    "./core/plugins": "./build/index.core-plugins.js",
+    "./three/plugins": "./build/index.three-plugins.js",
     "./src/*": "./src/*"
   },
   "scripts": {
