@@ -32,7 +32,7 @@
     "./src/*": "./src/*"
   },
   "scripts": {
-    "start": "concurrently \"vite --config ./vite.config.js\" \"vite build --config ./vite.lib-config.js --watch\"",
+    "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
