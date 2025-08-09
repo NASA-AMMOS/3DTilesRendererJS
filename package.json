@@ -19,7 +19,8 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "files": [
-    "src/*"
+    "src/*",
+    "build/*"
   ],
   "exports": {
     ".": "./build/index.js",
@@ -36,7 +37,8 @@
     "build-examples": "vite build --config ./vite.config.js",
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-    "test": "tsc --project tsconfig.test.json && jest"
+    "test": "tsc --project tsconfig.test.json && jest",
+    "prepublishOnly": "npm run build-lib"
   },
   "repository": {
     "type": "git",
