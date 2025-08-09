@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-renderer/r3f';
-import { TileFlatteningPlugin as TileFlatteningPluginImpl } from '../../src/three/TileFlatteningPlugin.js';
+import { TileFlatteningPlugin as TileFlatteningPluginImpl } from '3d-tiles-renderer/plugins';
 import { Box3, Group, Matrix4, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
 
