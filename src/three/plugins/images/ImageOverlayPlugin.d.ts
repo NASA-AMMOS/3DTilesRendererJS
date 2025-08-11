@@ -85,7 +85,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		apiToken: string,
 		autoRefreshToken?: boolean,
 		logoUrl?: string,
-		sessionOptions: { mapType: string, language: string, region: string } & { [key: string]: any },
+		sessionOptions: { mapType: string, language: string, region: string, [key: string]: any },
 
 		color: number | Color,
 		opacity: number,
