@@ -344,10 +344,19 @@ The function used to map a [0, 1] value to a color for debug visualizations. By 
 ### constructor
 
 ```js
-constructor( { accessToken : String, autoRefreshToken = false : Boolean, logoUrl = null : String | null, useRecommendedSettings = true : Boolean } )
+constructor( {
+  accessToken : String,
+  autoRefreshToken = false : Boolean,
+  logoUrl = null : String | null,
+  useRecommendedSettings = true : Boolean,
+  sessionOptions = null : null | Object,
+} )
 ```
 
 Takes the Google Cloud access token. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after four hours.
+
+The `sessionOptions` object corresponds to the [set of options passed when starting a 2d maps session](https://developers.google.com/maps/documentation/tile/session_tokens). Setting this to `null` indicates that the Google Photorealistic Tiles API will be used.
+
 This plugin changes below values to be more efficient for the photorealistic tiles if `useRecommendedSettings = true (default)`:
 ```js
 tiles.parseQueue.maxJobs = 10;
