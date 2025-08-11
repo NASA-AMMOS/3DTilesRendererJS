@@ -5,7 +5,7 @@ export class GoogleCloudAuthPlugin {
 		autoRefreshToken?: boolean,
 		logoUrl?: string,
 		useRecommendedSettings?: boolean;
-		sessionOptions: { mapType: string, language: string, region: string, [key: string]: any },
+		sessionOptions?: null | { mapType: string, language: string, region: string, [key: string]: any },
 	} );
 
 }
