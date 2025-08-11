@@ -1615,7 +1615,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 			.then( json => {
 
 				this.imageSource.tileDimension = json.tileWidth;
-				this.imageSource = 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}';
+				this.imageSource.url = 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}';
 				return this.imageSource.init();
 
 			} );
