@@ -1,5 +1,5 @@
 import { TextureLoader, ImageBitmapLoader } from 'three';
-import { PriorityQueue } from '../../../..';
+import { PriorityQueue } from '3d-tiles-renderer';
 
 function canUseImageBitmap() {
 
