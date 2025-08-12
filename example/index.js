@@ -54,7 +54,7 @@ const params = {
 	enableRendererStats: false,
 	orthographic: false,
 
-	errorTarget: 6,
+	errorTarget: 16,
 	maxDepth: 15,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
