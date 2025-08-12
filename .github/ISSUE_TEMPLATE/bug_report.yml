@@ -38,7 +38,7 @@ body:
       description: Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
       value: <!--
         link to the reproduction
-        - tile set template: https://jsfiddle.net/rczqje7s/
+        - tile set template\: https://jsfiddle.net/rczqje7s/
         -->
     validations:
       required: true
