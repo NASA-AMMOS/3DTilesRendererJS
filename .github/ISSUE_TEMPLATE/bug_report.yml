@@ -36,7 +36,10 @@ body:
     attributes:
       label: Live example
       description: Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
-      value: <!-- insert link to the reproduction -->
+      value: <!--
+        link to the reproduction
+        - tile set template: https://jsfiddle.net/rczqje7s/
+        -->
     validations:
       required: true
   - type: textarea
