@@ -23,14 +23,38 @@
     "build/*"
   ],
   "exports": {
-    ".": "./build/index.js",
-    "./plugins": "./build/index.plugins.js",
-    "./core": "./build/index.core.js",
-    "./three": "./build/index.three.js",
-    "./r3f": "./build/index.r3f.js",
-    "./core/plugins": "./build/index.core-plugins.js",
-    "./three/plugins": "./build/index.three-plugins.js",
-    "./src/*": "./src/*"
+    ".": {
+		"import": "./build/index.js",
+		"types": "./build/types/index.d.ts"
+	},
+    "./plugins": {
+		"import": "./build/index.plugins.js",
+		"types": "./build/types/plugins.d.ts"
+	},
+    "./core": {
+		"import": "./build/index.core.js",
+		"types": "./build/types/core/renderer/index.d.ts"
+	},
+    "./three": {
+		"import": "./build/index.three.js",
+		"types": "./build/types/three/renderer/index.d.ts"
+	},
+    "./r3f": {
+		"import": "./build/index.r3f.js",
+		"types": "./build/types/r3f/index.d.ts"
+	},
+    "./core/plugins": {
+		"import": "./build/index.core-plugins.js",
+		"types": "./build/types/core/plugins/index.d.ts"
+	},
+    "./three/plugins": {
+		"import": "./build/index.three-plugins.js",
+		"types": "./build/types/three/plugins/index.d.ts"
+	},
+    "./src/*": {
+		"import": "./src/*",
+		"types": "./src/*.d.ts"
+	}
   },
   "scripts": {
     "start": "vite --config ./vite.config.js",
