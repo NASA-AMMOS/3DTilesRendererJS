@@ -38,10 +38,9 @@ body:
       description: Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
       value: <!--
 
-        - tile set template
-          https://jsfiddle.net/rczqje7s/
-        - globe tile set template
-          https://jsfiddle.net/3gt6m45e/
+        - tile set template - https://jsfiddle.net/rczqje7s/
+
+        - globe tile set template - https://jsfiddle.net/3gt6m45e/
 
         -->
     validations:
