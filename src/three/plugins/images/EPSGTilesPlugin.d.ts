@@ -5,9 +5,10 @@ export class XYZTilesPlugin {
 		center?: boolean,
 		levels?: number,
 		tileDimension?: number,
-		projection?: 'ellipsoid' | 'planar',
+		shape?: 'ellipsoid' | 'planar',
 		bounds?: [ number, number, number, number ],
 		useRecommendedSettings?: boolean,
+		url?: string,
 	} );
 
 }
@@ -16,8 +17,9 @@ export class TMSTilesPlugin {
 
 	constructor( options: {
 		center?: boolean,
-		projection?: 'ellipsoid' | 'planar',
+		shape?: 'ellipsoid' | 'planar',
 		useRecommendedSettings?: boolean,
+		url?: string,
 	} );
 
 }
@@ -28,7 +30,7 @@ export class WMTSTilesPlugin {
 		center?: boolean,
 		levels?: number,
 		tileDimension?: number,
-		projection?: 'ellipsoid' | 'planar',
+		shape?: 'ellipsoid' | 'planar',
 		bounds?: [ number, number, number, number ],
 		useRecommendedSettings?: boolean,
 	} );
