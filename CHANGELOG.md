@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fixed bug introduced when loading GoogleMapsOverlay with ImageOverlayPlugin.
+- ImageFormatPlugin types.
 
 ## [0.4.14] - 2025.08.09
 ### Fixed
