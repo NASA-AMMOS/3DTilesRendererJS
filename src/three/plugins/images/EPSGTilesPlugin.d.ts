@@ -8,6 +8,7 @@ export class XYZTilesPlugin {
 		shape?: 'ellipsoid' | 'planar',
 		bounds?: [ number, number, number, number ],
 		useRecommendedSettings?: boolean,
+		url?: string,
 	} );
 
 }
@@ -18,6 +19,7 @@ export class TMSTilesPlugin {
 		center?: boolean,
 		shape?: 'ellipsoid' | 'planar',
 		useRecommendedSettings?: boolean,
+		url?: string,
 	} );
 
 }
