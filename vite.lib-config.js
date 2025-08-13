@@ -1,30 +1,5 @@
 import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import fs from 'fs';
-import path from 'path';
-
-// helper to copy .d.ts declaration files to build/types folder
-function copyTypesDeclarationFiles( srcDir, destDir ) {
-
-	const entries = fs.readdirSync( srcDir, { withFileTypes: true } );
-	for ( const entry of entries ) {
-
-		const srcPath = path.join( srcDir, entry.name );
-		const destPath = path.join( destDir, entry.name );
-		if ( entry.isDirectory() ) {
-
-			copyTypesDeclarationFiles( srcPath, destPath );
-
-		} else if ( entry.name.endsWith( '.d.ts' ) ) {
-
-			fs.mkdirSync( path.dirname( destPath ), { recursive: true } );
-			fs.copyFileSync( srcPath, destPath );
-
-		}
-
-	}
-
-}
 
 export default ( { mode } ) => {
 
@@ -60,17 +35,7 @@ export default ( { mode } ) => {
 				formats: [ 'es' ],
 			},
 		},
-		plugins: [
-			react(),
-			{
-				name: 'copy-dts-files',
-				closeBundle() {
-
-					copyTypesDeclarationFiles( path.resolve( './src' ), path.resolve( './build/types' ) );
-
-				}
-			}
-		],
+		plugins: [ react() ],
 	};
 
 };
