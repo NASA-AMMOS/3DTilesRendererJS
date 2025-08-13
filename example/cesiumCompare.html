@@ -62,16 +62,19 @@
 				font-size: 13px;
 				background-color: rgba( 0, 0, 0, 0.4 );
 				border-radius: 2px;
+				z-index: 1;
 			}
 
 			.stats>div:before {
-
 				width: 120px;
 				content: attr(name);
 				display: inline-block
-
 			}
 		</style>
+
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.132/Build/CesiumUnminified/Cesium.js"></script>
+	    <link href="https://cesium.com/downloads/cesiumjs/releases/1.132/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
 	</head>
 	<body>
 		<div id="three-container">

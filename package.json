@@ -70,7 +70,6 @@
     "@typescript-eslint/parser": "^7.14.1",
     "@vitejs/plugin-react": "^4.3.2",
     "babel-jest": "^27.5.1",
-    "cesium": "^1.131.0",
     "concurrently": "^6.2.1",
     "eslint": "^8.57.1",
     "eslint-config-mdcs": "^5.0.0",
