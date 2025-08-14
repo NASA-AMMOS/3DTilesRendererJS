@@ -6,7 +6,6 @@ export class LoadRegionPlugin {
 	constructor() {
 
 		this.name = 'LOAD_REGION_PLUGIN';
-		this.priority = - 1000;
 		this.regions = [];
 		this.tiles = null;
 
@@ -89,12 +88,6 @@ export class LoadRegionPlugin {
 
 		target.inView = inView;
 		target.error = inView ? inViewError : maxError;
-
-	}
-
-	raycastTile( tile, scene, raycaster, intersects ) {
-
-		return ! tile.__inFrustum;
 
 	}
 
