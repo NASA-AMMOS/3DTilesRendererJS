@@ -51,36 +51,44 @@ export class LoadRegionPlugin {
 
 	}
 
+	/**
+	 * Returns:
+	 * - true if the tile intersects at least one region (tile shall be traversed)
+	 * - false if the tile doesn't intersect any region (tile will still be rendered if it's in camera frustum)
+	 * - null if the tile doesn't intersect any region and all regions have "mask=true" (tile won't be rendered even if it's in the camera frustum)
+	 */
 	calculateTileViewError( tile, target ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
 		const { regions, tiles } = this;
 
-		let mask = false;
-		let visible = false;
+		let inView = false;
+		let inViewError = - Infinity;
 		let maxError = - Infinity;
 		for ( const region of regions ) {
-
-			if ( region.mask ) {
-
-				mask = true;
-
-			}
 
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			if ( intersects ) {
 
-				visible = true;
-				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+				inView = true;
+				inViewError = Math.max( region.calculateError( tile, tiles ), inViewError );
+
+			} else if ( region.mask ) {
+
+				inView = null || inView; // NB: Watch out with null value in booleans; OR operator in JS returns last value if all are falsy, so operand order is important.
+
+			} else {
+
+				inView = inView || false; // NB: Watch out with null value in booleans; OR operator in JS returns last value if all are falsy, so operand order is important.
 
 			}
 
+			maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+
 		}
 
-		target.inView = visible;
-		target.error = maxError;
-
-		return ( ( ! visible && mask ) ? false : null ); // Returns false if should force mask the tile.
+		target.inView = inView;
+		target.error = inView ? inViewError : maxError;
 
 	}
 

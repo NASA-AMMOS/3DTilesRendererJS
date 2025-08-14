@@ -47,8 +47,8 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenLoaded = false;
 
 		// update tile frustum and error state
-		const shouldForceShowTile = renderer.calculateTileViewError( tile, viewErrorTarget );
-		tile.__inFrustum = shouldForceShowTile === false ? false : viewErrorTarget.inView;
+		renderer.calculateTileViewError( tile, viewErrorTarget );
+		tile.__inFrustum = viewErrorTarget.inView ? true : false; // NB: viewErrorTarget.inView could be null
 		tile.__error = viewErrorTarget.error;
 		tile.__distanceFromCamera = viewErrorTarget.distanceFromCamera;
 

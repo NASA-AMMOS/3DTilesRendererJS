@@ -618,6 +618,9 @@ export class TilesRendererBase {
 
 		// retrieve whether the tile is visible, screen space error, and distance to camera
 		// set "inView", "error", "distance"
+		// "inView=true" means tile shall be traversed
+		// "inView=false" means tile shall be rendered only if in camera frustum
+		// "inView=null" means tile shall not be rendered whether or not in camera frustum
 
 	}
 
