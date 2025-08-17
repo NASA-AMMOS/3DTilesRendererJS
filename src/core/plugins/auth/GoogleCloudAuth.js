@@ -1,4 +1,4 @@
-import { TraverseUtils } from '3d-tiles-renderer/core';
+import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const TILES_MAP_URL = 'https://tile.googleapis.com/v1/createSession';
 
@@ -144,7 +144,7 @@ function getSessionToken( json ) {
 		// is using the 3d tiles api
 		let sessionToken = null;
 		const root = json.root;
-		TraverseUtils.traverseSet( root, tile => {
+		TraversalUtils.traverseSet( root, tile => {
 
 			if ( tile.content && tile.content.uri ) {
 

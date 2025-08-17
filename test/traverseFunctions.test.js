@@ -1,6 +1,6 @@
-import { TraverseUtils } from '3d-tiles-renderer/core';
+import { TraversalUtils } from '3d-tiles-renderer/core';
 
-const { traverseAncestors, traverseSet } = TraverseUtils;
+const { traverseAncestors, traverseSet } = TraversalUtils;
 describe( 'traverseSet', () => {
 
 	function makeTile( name, ...children ) {

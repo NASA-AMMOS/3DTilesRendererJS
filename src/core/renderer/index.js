@@ -9,4 +9,5 @@ export * from './constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';
-export * as TraverseUtils from './utilities/TraversalUtils.js';
+export * as TraversalUtils from './utilities/TraversalUtils.js';
+export * as LoaderUtils from './utilities/LoaderUtils.js';
