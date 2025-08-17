@@ -1,4 +1,4 @@
-import { TraverseUtils  } from '3d-tiles-renderer/core';
+import { TraverseUtils } from '3d-tiles-renderer/core';
 
 const TILES_MAP_URL = 'https://tile.googleapis.com/v1/createSession';
 
