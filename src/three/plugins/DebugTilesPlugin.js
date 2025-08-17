@@ -1,6 +1,7 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { traverseAncestors } from '../../core/renderer/tiles/traverseFunctions.js';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -25,23 +26,6 @@ function getIndexedRandomColor( index ) {
 
 	}
 	return colors[ index ];
-
-}
-
-// Traverses the ancestry of the tile up to the root tile.
-function traverseAncestors( tile, callback ) {
-
-	let current = tile;
-
-	while ( current ) {
-
-		const depth = current.__depth;
-		const parent = current.parent;
-		callback( current, parent, depth );
-
-		current = parent;
-
-	}
 
 }
 

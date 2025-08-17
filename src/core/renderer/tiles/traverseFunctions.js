@@ -509,3 +509,26 @@ export function toggleTiles( tile, renderer ) {
 
 }
 
+
+// Traverses the ancestry of the tile up to the root tile.
+export function traverseAncestors( tile, callback = null ) {
+
+	let current = tile;
+
+	while ( current ) {
+
+		const depth = current.__depth;
+		const parent = current.parent;
+
+		if ( callback ) {
+
+			callback( current, parent, depth );
+
+		}
+
+		current = parent;
+
+	}
+
+
+}

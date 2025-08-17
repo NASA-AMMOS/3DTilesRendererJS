@@ -2,7 +2,9 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium/blob/0a69f67b393ba194eefb7254600811c4b712ddc0/packages/engine/Source/Scene/Implicit3DTileContent.js
  */
-import { LoaderBase } from '../renderer/loaders/LoaderBase.js';
+import { LoaderBase } from '3d-tiles-renderer/core';
+
+// TODO
 import { readMagicBytes } from '../renderer/utilities/readMagicBytes.js';
 import { arrayToString } from '../renderer/utilities/arrayToString.js';
 
