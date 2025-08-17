@@ -1,7 +1,7 @@
 import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
-import { traverseAncestors } from '../../core/renderer/tiles/traverseFunctions.js';
+import { TraverseUtils } from '3d-tiles-renderer/core';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -605,7 +605,7 @@ export class DebugTilesPlugin {
 
 		if ( this.displayParentBounds ) {
 
-			traverseAncestors( tile, current => {
+			TraverseUtils.traverseAncestors( tile, current => {
 
 				if ( current[ PARENT_BOUND_REF_COUNT ] == null ) {
 
