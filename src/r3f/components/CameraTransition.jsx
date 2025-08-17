@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { CameraTransitionManager } from '../../three/renderer/controls/CameraTransitionManager.js';
+import { CameraTransitionManager } from '3d-tiles-renderer/three';
 import { useDeepOptions } from '../utilities/useOptions.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
