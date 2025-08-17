@@ -1,4 +1,4 @@
-import { TilesRendererBase } from '3d-tiles-renderer/core';
+import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';
 import { I3DMLoader } from '../loaders/I3DMLoader.js';
@@ -19,10 +19,6 @@ import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
-// TODO
-import { readMagicBytes } from '../../../core/renderer/utilities/readMagicBytes.js';
-
 
 const _mat = new Matrix4();
 const _euler = new Euler();
@@ -584,7 +580,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cachedTransform = cached.transform;
 		const upRotationMatrix = this._upRotationMatrix;
-		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
+		const fileType = ( LoaderUtils.readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
 
 			case 'b3dm': {

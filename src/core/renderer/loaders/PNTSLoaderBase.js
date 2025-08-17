@@ -3,7 +3,7 @@
 
 import { BatchTable } from '../utilities/BatchTable.js';
 import { FeatureTable } from '../utilities/FeatureTable.js';
-import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { readMagicBytes } from '../utilities/LoaderUtils.js';
 import { LoaderBase } from './LoaderBase.js';
 
 export class PNTSLoaderBase extends LoaderBase {

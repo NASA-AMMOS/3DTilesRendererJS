@@ -1,7 +1,7 @@
 // CMPT File Format
 // https://github.com/CesiumGS/3d-tiles/blob/master/specification/TileFormats/Composite/README.md
 import { LoaderBase } from './LoaderBase.js';
-import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { readMagicBytes } from '../utilities/LoaderUtils.js';
 
 export class CMPTLoaderBase extends LoaderBase {
 

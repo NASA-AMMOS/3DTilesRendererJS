@@ -1,4 +1,4 @@
-import { arrayToString } from './arrayToString.js';
+import { arrayToString } from './LoaderUtils.js';
 
 export function parseBinArray( buffer, arrayStart, count, type, componentType, propertyName ) {
 
