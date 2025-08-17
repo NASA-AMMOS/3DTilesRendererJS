@@ -382,6 +382,7 @@ export class QuantizedMeshPlugin {
 		const y = tile[ TILE_Y ];
 		const available = tile[ TILE_AVAILABLE ];
 
+		// only expand down to the highest level
 		if ( level >= this.tiling.maxLevel ) {
 
 			return;
