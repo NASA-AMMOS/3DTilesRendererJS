@@ -2,9 +2,6 @@ import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color,
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 
-// TODO
-import { traverseAncestors, traverseSet } from '../../core/renderer/tiles/traverseFunctions.js';
-
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
 const HAS_RANDOM_NODE_COLOR = Symbol( 'HAS_RANDOM_NODE_COLOR' );
@@ -16,7 +13,7 @@ const emptyRaycast = () => {};
 const colors = {};
 
 // Return a consistent random color for an index
-export function getIndexedRandomColor( index ) {
+function getIndexedRandomColor( index ) {
 
 	if ( ! colors[ index ] ) {
 
@@ -28,6 +25,23 @@ export function getIndexedRandomColor( index ) {
 
 	}
 	return colors[ index ];
+
+}
+
+// Traverses the ancestry of the tile up to the root tile.
+function traverseAncestors( tile, callback ) {
+
+	let current = tile;
+
+	while ( current ) {
+
+		const depth = current.__depth;
+		const parent = current.parent;
+		callback( current, parent, depth );
+
+		current = parent;
+
+	}
 
 }
 
@@ -141,7 +155,7 @@ export class DebugTilesPlugin {
 			if ( ! v ) {
 
 				// Reset all ref counts
-				traverseSet( this.tiles.root, null, tile => {
+				this.tiles.traverse( tile => {
 
 					tile[ PARENT_BOUND_REF_COUNT ] = null;
 					this._onTileVisibilityChange( tile, tile.__visible );
@@ -363,12 +377,12 @@ export class DebugTilesPlugin {
 
 		// Note that we are not using this.tiles.traverse()
 		// as we don't want to pay the cost of preprocessing tiles.
-		traverseSet( this.tiles.root, null, ( tile, _, depth ) => {
+		this.tiles.traverse( null, ( tile, _, depth ) => {
 
 			maxDepth = Math.max( maxDepth, depth );
 			maxError = Math.max( maxError, tile.geometricError );
 
-		} );
+		}, false );
 
 		this.extremeDebugDepth = maxDepth;
 		this.extremeDebugError = maxError;
