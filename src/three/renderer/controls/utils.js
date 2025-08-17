@@ -1,7 +1,6 @@
 import { Matrix4, Ray, Vector3 } from 'three';
 
 const _matrix = new Matrix4();
-const _ray = new Ray();
 const _vec = new Vector3();
 
 // helper function for constructing a matrix for rotating around a point
