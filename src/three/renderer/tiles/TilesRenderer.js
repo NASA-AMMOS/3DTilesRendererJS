@@ -1,4 +1,4 @@
-import { TilesRendererBase } from '../../../core/renderer/tiles/TilesRendererBase.js';
+import { TilesRendererBase } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';
 import { I3DMLoader } from '../loaders/I3DMLoader.js';
@@ -14,12 +14,15 @@ import {
 	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { readMagicBytes } from '../../../core/renderer/utilities/readMagicBytes.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+// TODO
+import { readMagicBytes } from '../../../core/renderer/utilities/readMagicBytes.js';
+
 
 const _mat = new Matrix4();
 const _euler = new Euler();
