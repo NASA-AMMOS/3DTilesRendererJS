@@ -98,57 +98,6 @@ export class DebugTilesPlugin {
 
 	}
 
-	constructor( options ) {
-
-		options = {
-			displayParentBounds: false,
-			displayBoxBounds: false,
-			displaySphereBounds: false,
-			displayRegionBounds: false,
-			colorMode: NONE,
-			maxDebugDepth: - 1,
-			maxDebugDistance: - 1,
-			maxDebugError: - 1,
-			customColorCallback: null,
-			unlit: false,
-			enabled: true,
-			...options,
-		};
-
-		this.name = 'DEBUG_TILES_PLUGIN';
-		this.tiles = null;
-
-		this._colorMode = null;
-		this._unlit = null;
-		this.materialsNeedUpdate = false;
-
-		this.extremeDebugDepth = - 1;
-		this.extremeDebugError = - 1;
-		this.boxGroup = null;
-		this.sphereGroup = null;
-		this.regionGroup = null;
-
-		// options
-		this._enabled = options.enabled;
-		this._displayParentBounds = options.displayParentBounds;
-		this.displayBoxBounds = options.displayBoxBounds;
-		this.displaySphereBounds = options.displaySphereBounds;
-		this.displayRegionBounds = options.displayRegionBounds;
-		this.colorMode = options.colorMode;
-		this.maxDebugDepth = options.maxDebugDepth;
-		this.maxDebugDistance = options.maxDebugDistance;
-		this.maxDebugError = options.maxDebugError;
-		this.customColorCallback = options.customColorCallback;
-		this.unlit = options.unlit;
-
-		this.getDebugColor = ( value, target ) => {
-
-			target.setRGB( value, value, value );
-
-		};
-
-	}
-
 	get enabled() {
 
 		return this._enabled;
@@ -216,16 +165,61 @@ export class DebugTilesPlugin {
 
 	}
 
+	constructor( options ) {
+
+		options = {
+			displayParentBounds: false,
+			displayBoxBounds: false,
+			displaySphereBounds: false,
+			displayRegionBounds: false,
+			colorMode: NONE,
+			maxDebugDepth: - 1,
+			maxDebugDistance: - 1,
+			maxDebugError: - 1,
+			customColorCallback: null,
+			unlit: false,
+			enabled: true,
+			...options,
+		};
+
+		this.name = 'DEBUG_TILES_PLUGIN';
+		this.tiles = null;
+
+		this._colorMode = null;
+		this._unlit = null;
+		this.materialsNeedUpdate = false;
+
+		this.extremeDebugDepth = - 1;
+		this.extremeDebugError = - 1;
+		this.boxGroup = null;
+		this.sphereGroup = null;
+		this.regionGroup = null;
+
+		// options
+		this._enabled = options.enabled;
+		this._displayParentBounds = options.displayParentBounds;
+		this.displayBoxBounds = options.displayBoxBounds;
+		this.displaySphereBounds = options.displaySphereBounds;
+		this.displayRegionBounds = options.displayRegionBounds;
+		this.colorMode = options.colorMode;
+		this.maxDebugDepth = options.maxDebugDepth;
+		this.maxDebugDistance = options.maxDebugDistance;
+		this.maxDebugError = options.maxDebugError;
+		this.customColorCallback = options.customColorCallback;
+		this.unlit = options.unlit;
+
+		this.getDebugColor = ( value, target ) => {
+
+			target.setRGB( value, value, value );
+
+		};
+
+	}
+
 	// initialize the groups for displaying helpers, register events, and initialize existing tiles
 	init( tiles ) {
 
 		this.tiles = tiles;
-
-		if ( ! this.enabled ) {
-
-			return;
-
-		}
 
 		// initialize groups
 		const tilesGroup = tiles.group;
@@ -925,12 +919,6 @@ export class DebugTilesPlugin {
 	}
 
 	dispose() {
-
-		if ( ! this.enabled ) {
-
-			return;
-
-		}
 
 		const tiles = this.tiles;
 
