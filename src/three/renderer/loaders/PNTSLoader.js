@@ -1,4 +1,4 @@
-import { PNTSLoaderBase } from '../../../core/renderer/loaders/PNTSLoaderBase.js';
+import { PNTSLoaderBase } from '3d-tiles-renderer/core';
 import {
 	Points,
 	PointsMaterial,
@@ -8,7 +8,7 @@ import {
 	Vector3,
 	Color,
 } from 'three';
-import { rgb565torgb } from '../../../core/renderer/utilities/rgb565torgb.js';
+import { rgb565torgb } from './rgb565torgb.js';
 import { decodeOctNormal } from './decodeOctNormal.js';
 
 const DRACO_ATTRIBUTE_MAP = {

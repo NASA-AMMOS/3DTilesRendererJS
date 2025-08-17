@@ -1,12 +1,9 @@
-import { B3DMBaseResult } from '../../../core/renderer/loaders/B3DMLoaderBase.js';
-import { I3DMBaseResult } from '../../../core/renderer/loaders/I3DMLoaderBase.js';
-import { PNTSBaseResult } from '../../../core/renderer/loaders/PNTSLoaderBase.js';
+import { B3DMBaseResult, I3DMBaseResult, PNTSBaseResult, CMPTLoaderBase } from '3d-tiles-renderer/core';
 import { Group, LoadingManager } from 'three';
-import { CMPTLoaderBase } from '../../../core/renderer/loaders/CMPTLoaderBase.js';
 
 export interface CMPTResult {
 
-	tiles : Array< B3DMBaseResult|I3DMBaseResult|PNTSBaseResult >;
+	tiles : Array<B3DMBaseResult|I3DMBaseResult|PNTSBaseResult>;
 	scene : Group;
 
 }

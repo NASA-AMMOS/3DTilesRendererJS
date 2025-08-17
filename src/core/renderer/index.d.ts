@@ -3,11 +3,11 @@ export { TilesRendererBase } from './tiles/TilesRendererBase.js';
 export { Tile } from './tiles/Tile.js';
 export { TileBase } from './tiles/TileBase.js';
 export { Tileset } from './tiles/Tileset.js';
-export { B3DMLoaderBase } from './loaders/B3DMLoaderBase.js';
-export { I3DMLoaderBase } from './loaders/I3DMLoaderBase.js';
-export { PNTSLoaderBase } from './loaders/PNTSLoaderBase.js';
-export { CMPTLoaderBase } from './loaders/CMPTLoaderBase.js';
-export { LoaderBase } from './loaders/LoaderBase.js';
+export * from './loaders/B3DMLoaderBase.js';
+export * from './loaders/I3DMLoaderBase.js';
+export * from './loaders/PNTSLoaderBase.js';
+export * from './loaders/CMPTLoaderBase.js';
+export * from './loaders/LoaderBase.js';
 export * from './constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
