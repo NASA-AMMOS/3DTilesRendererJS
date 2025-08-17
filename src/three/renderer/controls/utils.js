@@ -33,29 +33,6 @@ export function mouseToCoords( clientX, clientY, element, target ) {
 
 }
 
-// Returns an estimate of the closest point on the ellipsoid to the ray. Returns
-// the surface intersection if they collide.
-export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target ) {
-
-	if ( ellipsoid.intersectRay( ray, target ) ) {
-
-		return target;
-
-	} else {
-
-		_matrix.makeScale( ...ellipsoid.radius ).invert();
-		_ray.copy( ray ).applyMatrix4( _matrix );
-
-		_vec.set( 0, 0, 0 );
-		_ray.closestPointToPoint( _vec, target ).normalize();
-
-		_matrix.makeScale( ...ellipsoid.radius );
-		return target.applyMatrix4( _matrix );
-
-	}
-
-}
-
 // find the closest ray on the horizon when the ray passes above the sphere
 export function closestRaySpherePointFromRotation( ray, radius, target ) {
 
