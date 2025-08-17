@@ -61,7 +61,7 @@
     "build-examples": "vite build --config ./vite.config.js",
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-    "test": "tsc --project tsconfig.test.json && jest",
+    "test": "tsc --project tsconfig.test.json && npm run build-lib && jest",
     "prepublishOnly": "npm run build-lib"
   },
   "repository": {
