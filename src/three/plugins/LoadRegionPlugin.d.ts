@@ -1,7 +1,5 @@
-import { TileBoundingVolume } from '../../three/renderer/math/TileBoundingVolume.js';
-import { Tile } from '../../core/renderer/tiles/Tile.js';
-import { TilesRenderer } from '../../three/renderer/tiles/TilesRenderer.js';
-import { OBB } from '../../three/renderer/math/OBB.js';
+import { TileBoundingVolume, TilesRenderer, OBB } from '3d-tiles-renderer/three';
+import { Tile } from '3d-tiles-renderer/core';
 import { Sphere, Ray } from 'three';
 
 declare class BaseRegion {
