@@ -841,7 +841,8 @@ frame = null: Matrix4 | null
 ```
 The frame to use for projecting the image as a planar-projected overlay. If "null" then
 ellipsoidal projection is used. The frame origin represents the bottom left of the
-overlay. Z is up. Frame is specified in the local frame of the tile set.
+overlay. Z is up. Frame is specified in the local frame of the tile set and is expected to
+transform points into the local frame from [ 0, 1 ].
 
 Overlay position will update as frame is adjusted.
 
