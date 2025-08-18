@@ -16,7 +16,7 @@ import {
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
-import { estimateBytesUsed } from './utilities.js';
+import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

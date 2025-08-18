@@ -8,9 +8,7 @@ import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange }
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
-
-// TODO
-import { safeTextureGetByteLength } from '../../renderer/tiles/utilities.js';
+import { MemoryUtils } from '3d-tiles-renderer/three';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -363,7 +361,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += safeTextureGetByteLength( target?.texture );
+				bytes += MemoryUtils.safeTextureGetByteLength( target?.texture );
 
 			}
 
