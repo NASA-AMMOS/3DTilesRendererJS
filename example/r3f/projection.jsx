@@ -38,6 +38,12 @@ function Scene() {
 
 	}, [] );
 
+	const worldToProjectionMatrix = useMemo( () => {
+
+		return new Matrix4();
+
+	}, [] );
+
 	useEffect( () => {
 
 		return () => {
@@ -55,6 +61,7 @@ function Scene() {
 
 			boxMesh.scale.x = overlay.aspectRatio;
 			boxMesh.position.x = overlay.aspectRatio / 2;
+			worldToProjectionMatrix.copy( transformRoot.matrixWorld ).invert();
 
 		}
 
@@ -73,7 +80,7 @@ function Scene() {
 							type={ CesiumIonOverlay }
 							assetId='3954'
 							apiToken={ import.meta.env.VITE_ION_KEY }
-							worldFrame={ transformRoot ? transformRoot.matrixWorld : null }
+							worldToProjection={ worldToProjectionMatrix }
 							ref={ setOverlay }
 						/>
 					</ImageOverlayPlugin>
