@@ -29,6 +29,8 @@ function Scene() {
 	const boxMesh = useMemo( () => {
 
 		const boxGeometry = new BoxGeometry();
+		boxGeometry.translate( 0.5, 0.5, 0.5 );
+
 		const edgesGeometry = new EdgesGeometry( boxGeometry );
 		const linesGeometry = new LineSegmentsGeometry().fromEdgesGeometry( edgesGeometry );
 		const lines = new LineSegments2( linesGeometry );
@@ -60,7 +62,6 @@ function Scene() {
 		if ( overlay && boxMesh ) {
 
 			boxMesh.scale.x = overlay.aspectRatio;
-			boxMesh.position.x = overlay.aspectRatio / 2;
 			worldToProjectionMatrix.copy( transformRoot.matrixWorld ).invert();
 
 		}
@@ -92,7 +93,7 @@ function Scene() {
 			<EnvironmentControls enableDamping={ true } maxDistance={ 1000 } minDistance={ 1 } cameraRadius={ 0 } />
 			<PivotControls scale={ 150 } matrix={ worldMatrix } fixed>
 				<group ref={ setTransformRoot } position-z={ - 1 }>
-					<primitive object={ boxMesh } position={ [ 0.5, 0.5, 0.5 ] } />
+					<primitive object={ boxMesh } />
 				</group>
 			</PivotControls>
 		</>
