@@ -3,18 +3,21 @@ import { createRoot } from 'react-dom/client';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
 import { TilesFadePlugin, CesiumIonOverlay, EnforceNonZeroErrorPlugin } from '3d-tiles-renderer/plugins';
-import { BoxGeometry, EdgesGeometry, Euler, Matrix4, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, EdgesGeometry, Euler, Matrix4, Mesh, MeshNormalMaterial, MeshStandardMaterial, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 import { PivotControls } from '@react-three/drei';
 import { ImageOverlay, ImageOverlayPlugin } from './plugins/ImageOverlayPlugin.jsx';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
+import { useControls } from 'leva';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
 function Scene() {
 
 	const [ transformRoot, setTransformRoot ] = useState( null );
+	const [ projectionRoot, setProjectionRoot ] = useState( null );
 	const [ overlay, setOverlay ] = useState( null );
+	const { perspective } = useControls( { perspective: true } );
 
 	const worldMatrix = useMemo( () => {
 
@@ -29,11 +32,21 @@ function Scene() {
 	const boxMesh = useMemo( () => {
 
 		const boxGeometry = new BoxGeometry();
+		boxGeometry.translate( 0.5, 0.5, 0.5 );
+
+		const mesh = new Mesh( boxGeometry, new MeshNormalMaterial() );
+		mesh.material.opacity = 0.25;
+		mesh.material.transparent = true;
+		mesh.material.depthWrite = false;
+		return mesh;
+
+
 		const edgesGeometry = new EdgesGeometry( boxGeometry );
 		const linesGeometry = new LineSegmentsGeometry().fromEdgesGeometry( edgesGeometry );
 		const lines = new LineSegments2( linesGeometry );
 		lines.material.color.set( 0xffff00 );
 		lines.material.linewidth = 2;
+
 		return lines;
 
 	}, [] );
@@ -55,13 +68,30 @@ function Scene() {
 
 	}, [ boxMesh ] );
 
+	useEffect( () => {
+
+		if ( ! projectionRoot ) {
+
+			return;
+
+		}
+
+		projectionRoot.updateMatrix();
+		projectionRoot.matrixAutoUpdate = false;
+
+		const camera = new PerspectiveCamera();
+		// projectionRoot.matrix.makeScale( 1, 1, 2 ).setPosition( - 0.5, - 0.5, - 0.5 );//.premultiply( camera.projectionMatrixInverse );
+		projectionRoot.matrix.makeScale( 1, 2, 2 ).setPosition( - 1, - 1, - 1 ).premultiply( camera.projectionMatrixInverse );
+
+
+	}, [ projectionRoot ] );
+
 	useFrame( () => {
 
 		if ( overlay && boxMesh ) {
 
-			boxMesh.scale.x = overlay.aspectRatio;
-			boxMesh.position.x = overlay.aspectRatio / 2;
-			worldToProjectionMatrix.copy( transformRoot.matrixWorld ).invert();
+			// boxMesh.scale.x = overlay.aspectRatio;
+			worldToProjectionMatrix.copy( ( perspective ? projectionRoot : transformRoot ).matrixWorld ).invert();
 
 		}
 
@@ -89,12 +119,28 @@ function Scene() {
 			</group>
 
 			{/* Controls */}
-			<EnvironmentControls enableDamping={ true } maxDistance={ 1000 } minDistance={ 1 } cameraRadius={ 0 } />
-			<PivotControls scale={ 150 } matrix={ worldMatrix } fixed>
-				<group ref={ setTransformRoot } position-z={ - 1 }>
-					<primitive object={ boxMesh } position={ [ 0.5, 0.5, 0.5 ] } />
-				</group>
-			</PivotControls>
+			<EnvironmentControls enableDamping={ true } maxDistance={ 1000 } minDistance={ 1 } cameraRadius={ 0 } maxAltitude={ Math.PI } adjustHeight={ false } />
+
+			{
+				! perspective &&
+				<PivotControls scale={ 150 } matrix={ worldMatrix } fixed>
+					<group ref={ setTransformRoot } position-z={ - 1 }>
+						<primitive object={ boxMesh } />
+					</group>
+				</PivotControls>
+			}
+
+			{
+				perspective &&
+				<PivotControls scale={ 150 } matrix={ worldMatrix } fixed>
+					<group ref={ setTransformRoot }>
+						<group ref={ setProjectionRoot }>
+							<primitive object={ boxMesh } />
+						</group>
+					</group>
+				</PivotControls>
+			}
+
 		</>
 	);
 
