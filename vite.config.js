@@ -1,4 +1,4 @@
-import { searchForWorkspaceRoot, loadEnv, optimizeDeps } from 'vite';
+import { searchForWorkspaceRoot, loadEnv } from 'vite';
 import fs from 'fs';
 import react from '@vitejs/plugin-react';
 import path from 'path';
