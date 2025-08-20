@@ -212,9 +212,15 @@ function modifyNodeMaterial( material, params ) {
 
 	material.params = params;
 
-	let FEATURE_FADE = false;
+	let FEATURE_FADE = 0;
 
 	material.defines = {
+
+		get FEATURE_FADE() {
+
+			return FEATURE_FADE;
+
+		},
 
 		set FEATURE_FADE( value ) {
 
