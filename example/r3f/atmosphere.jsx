@@ -182,7 +182,9 @@ createRoot( document.getElementById( 'root' ) ).render(
 			} }
 			flat
 		>
-			<App />
+			<StrictMode>
+				<App />
+			</StrictMode>
 		</Canvas>
 	</StrictMode>,
 );

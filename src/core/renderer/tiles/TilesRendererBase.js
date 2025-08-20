@@ -234,7 +234,6 @@ export class TilesRendererBase {
 				plugin.dispose();
 
 			}
-			plugin[ PLUGIN_REGISTERED ] = false;
 
 			return true;
 

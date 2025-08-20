@@ -116,36 +116,38 @@ function App() {
 			} }
 			flat
 		>
-			<color attach="background" args={ [ 0x111111 ] } />
+			<StrictMode>
+				<color attach="background" args={ [ 0x111111 ] } />
 
-			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
-				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
-				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
-				<TilesPlugin plugin={ TileCompressionPlugin } />
-				<TilesPlugin plugin={ UpdateOnChangePlugin } />
-				<TilesPlugin plugin={ TilesFadePlugin } />
+				<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
+					<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
+					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
+					<TilesPlugin plugin={ TileCompressionPlugin } />
+					<TilesPlugin plugin={ UpdateOnChangePlugin } />
+					<TilesPlugin plugin={ TilesFadePlugin } />
 
-				{/* Controls */}
-				<GlobeControls enableDamping={ true } />
-				<CameraViewTransition mode={ ortho ? 'orthographic' : 'perspective' } />
+					{/* Controls */}
+					<GlobeControls enableDamping={ true } />
+					<CameraViewTransition mode={ ortho ? 'orthographic' : 'perspective' } />
 
-				{/* Attributions */}
-				<TilesAttributionOverlay />
+					{/* Attributions */}
+					<TilesAttributionOverlay />
 
-				{/* Add compass gizmo */}
-				<CompassGizmo />
+					{/* Add compass gizmo */}
+					<CompassGizmo />
 
-				<TilesLoadingBar />
+					<TilesLoadingBar />
 
-				<SettledObjects>{ pins }</SettledObjects>
-			</TilesRenderer>
+					<SettledObjects>{ pins }</SettledObjects>
+				</TilesRenderer>
 
-			{/* other r3f staging */}
-			<Environment
-				preset="sunset"
-				backgroundBlurriness={ 0.9 }
-				environmentIntensity={ 1 }
-			/>
+				{/* other r3f staging */}
+				<Environment
+					preset="sunset"
+					backgroundBlurriness={ 0.9 }
+					environmentIntensity={ 1 }
+				/>
+			</StrictMode>
 		</Canvas>
 	);
 

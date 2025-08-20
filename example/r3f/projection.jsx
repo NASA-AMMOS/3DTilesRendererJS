@@ -124,7 +124,9 @@ function App() {
 
 			} }
 		>
-			<Scene />
+			<StrictMode>
+				<Scene />
+			</StrictMode>
 		</Canvas>
 	);
 

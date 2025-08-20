@@ -36,6 +36,7 @@ export const ImageOverlay = forwardRef( function ImageOverlay( props, ref ) {
 
 	useEffect( () => {
 
+		if( !plugin ) return
 		plugin.addOverlay( overlay, order );
 
 		return () => {
@@ -48,6 +49,7 @@ export const ImageOverlay = forwardRef( function ImageOverlay( props, ref ) {
 
 	useEffect( () => {
 
+		if ( !plugin ) return
 		plugin.setOverlayOrder( overlay, order );
 
 	}, [ overlay, plugin, order ] );

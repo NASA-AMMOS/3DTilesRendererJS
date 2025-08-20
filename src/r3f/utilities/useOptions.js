@@ -50,6 +50,26 @@ function setValueAtPath( object, path, value ) {
 
 }
 
+export function assignDeepOptions( target, options, shallow = false ) {
+
+	for ( const key in options ) {
+
+			if ( isEventName( key ) && target.addEventListener && ! ( key in target ) ) {
+
+				const eventName = getEventName( key );
+				target.addEventListener( eventName, options[ key ] );
+
+			} else {
+
+				const path = shallow ? [ key ] : getPath( key );
+				setValueAtPath( target, path, options[ key ] );
+
+			}
+
+		}
+
+}
+
 // Recursively assigns a set of options to an object, interpreting dashes as periods
 export function useDeepOptions( target, options, shallow = false ) {
 
