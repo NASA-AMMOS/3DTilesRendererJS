@@ -54,19 +54,19 @@ export function assignDeepOptions( target, options, shallow = false ) {
 
 	for ( const key in options ) {
 
-			if ( isEventName( key ) && target.addEventListener && ! ( key in target ) ) {
+		if ( isEventName( key ) && target.addEventListener && ! ( key in target ) ) {
 
-				const eventName = getEventName( key );
-				target.addEventListener( eventName, options[ key ] );
+			const eventName = getEventName( key );
+			target.addEventListener( eventName, options[ key ] );
 
-			} else {
+		} else {
 
-				const path = shallow ? [ key ] : getPath( key );
-				setValueAtPath( target, path, options[ key ] );
-
-			}
+			const path = shallow ? [ key ] : getPath( key );
+			setValueAtPath( target, path, options[ key ] );
 
 		}
+
+	}
 
 }
 

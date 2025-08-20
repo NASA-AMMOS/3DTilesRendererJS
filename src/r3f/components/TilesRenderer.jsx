@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState, useLayoutEffect } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
@@ -145,11 +145,12 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
-	const [instance, setInstance ] = useState( null );
+	const [ instance, setInstance ] = useState( null );
 
 	useLayoutEffect( () => {
-		if( !tiles ) return
-		let instance
+
+		if ( ! tiles ) return;
+		let instance;
 		if ( Array.isArray( args ) ) {
 
 			instance = new plugin( ...args );
@@ -165,11 +166,14 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 		setInstance( instance );
 
 		return () => {
+
 			tiles.unregisterPlugin( instance );
 			setInstance( null );
-		}
+
+		};
 		// we must create a new plugin if the tile set has changed
-	}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
+
+}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
 
 	// assigns any provided options to the plugin
 	useDeepOptions( instance, options );
@@ -187,21 +191,25 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
 
-	const [tiles, setTiles] = useState( null );
+	const [ tiles, setTiles ] = useState( null );
 
 	useEffect( () => {
-		const tiles = new TilesRendererImpl( url )
-		setTiles(tiles)
+
+		const tiles = new TilesRendererImpl( url );
+		setTiles( tiles );
 		return () => {
-				tiles.dispose();
-				setTiles( null );
+
+			tiles.dispose();
+			setTiles( null );
+
 		};
+
 	}, [ url ] );
 
 	// create the tile set
 	useEffect( () => {
 
-		if(! tiles ) return
+		if ( ! tiles ) return;
 		const needsRender = () => invalidate();
 		tiles.addEventListener( 'needs-render', needsRender );
 		tiles.addEventListener( 'needs-update', needsRender );
