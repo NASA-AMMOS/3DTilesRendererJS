@@ -1,12 +1,6 @@
 // Adjusts the provided material to support fading in and out using a bayer pattern. Providing a "previous"
 
-import {
-	Discard, Fn, If,
-	output,
-	reference,
-	screenCoordinate
-} from 'three/tsl';
-import { Node } from 'three/webgpu';
+import { Discard, Fn, If, output, screenCoordinate, uniform } from 'three/tsl';
 
 // before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
 const FADE_PARAMS = Symbol( 'FADE_PARAMS' );
@@ -188,42 +182,35 @@ const bayerDither4x4 = Fn( ( [ v ] ) => {
 	inputs: [ { name: 'v', type: 'vec2' } ]
 } );
 
-class FadeNode extends Node {
+// Define shared uniforms for fadeIn/fadeOut so that "outputNode" can be cached.
+const fadeIn = uniform( 0 ).onObjectUpdate( ( { material } ) => material.params.fadeIn.value );
+const fadeOut = uniform( 0 ).onObjectUpdate( ( { material } ) => material.params.fadeOut.value );
 
-	constructor( params ) {
+const outputNode = Fn( () => {
 
-		super( 'vec4' );
-		this.params = params;
+	const bayerValue = bayerDither4x4( screenCoordinate.xy.mod( 4 ).floor() );
+	const bayerBins = 16;
+	const dither = bayerValue.add( 0.5 ).div( bayerBins );
 
-	}
+	If( dither.greaterThanEqual( fadeIn ), () => {
 
-	setup() {
+		Discard();
 
-		const fadeIn = reference( 'value', 'float', this.params.fadeIn );
-		const fadeOut = reference( 'value', 'float', this.params.fadeOut );
-		const bayerValue = bayerDither4x4( screenCoordinate.xy.mod( 4 ).floor() );
-		const bayerBins = 16;
-		const dither = bayerValue.add( 0.5 ).div( bayerBins );
+	} );
 
-		If( dither.greaterThanEqual( fadeIn ), () => {
+	If( dither.lessThan( fadeOut ), () => {
 
-			Discard();
+		Discard();
 
-		} );
+	} );
 
-		If( dither.lessThan( fadeOut ), () => {
+	return output;
 
-			Discard();
-
-		} );
-
-		return output;
-
-	}
-
-}
+} )();
 
 function modifyNodeMaterial( material, params ) {
+
+	material.params = params;
 
 	let FEATURE_FADE = false;
 
@@ -234,7 +221,7 @@ function modifyNodeMaterial( material, params ) {
 			if ( value != FEATURE_FADE ) {
 
 				FEATURE_FADE = value;
-				material.outputNode = value ? new FadeNode( params ) : null;
+				material.outputNode = value ? outputNode : null;
 
 			}
 
