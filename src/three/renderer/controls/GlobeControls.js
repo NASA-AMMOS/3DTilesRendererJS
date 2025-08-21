@@ -8,7 +8,7 @@ import {
 	Group,
 } from 'three';
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { closestRayEllipsoidSurfacePointEstimate, makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
+import { makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
@@ -115,8 +115,9 @@ export class GlobeControls extends EnvironmentControls {
 		_ray.applyMatrix4( ellipsoidFrameInverse );
 
 		// get the estimated closest point
-		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _vec );
-		_vec.applyMatrix4( ellipsoidFrame );
+		ellipsoid
+			.closestPointToRayEstimate( _ray, _vec )
+			.applyMatrix4( ellipsoidFrame );
 
 		// use the closest point if no pivot was provided or it's closer
 		if (
@@ -721,8 +722,9 @@ export class GlobeControls extends EnvironmentControls {
 		_ray.applyMatrix4( ellipsoidFrameInverse );
 
 		// get the closest point to the ray on the globe in the global coordinate frame
-		closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
-		_pos.applyMatrix4( ellipsoidFrame );
+		ellipsoid
+			.closestPointToRayEstimate( _ray, _pos )
+			.applyMatrix4( ellipsoidFrame );
 
 		// get ortho camera info
 		const orthoHeight = ( camera.top - camera.bottom );

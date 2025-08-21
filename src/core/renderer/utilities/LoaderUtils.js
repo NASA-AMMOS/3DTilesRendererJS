@@ -33,3 +33,10 @@ export function readMagicBytes( bufferOrDataView ) {
 	return magicBytes;
 
 }
+
+const utf8decoder = new TextDecoder();
+export function arrayToString( array ) {
+
+	return utf8decoder.decode( array );
+
+}

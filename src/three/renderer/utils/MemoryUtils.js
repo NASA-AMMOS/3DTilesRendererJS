@@ -12,7 +12,6 @@ export function safeTextureGetByteLength( tex ) {
 
 	}
 
-
 	const { format, type, image } = tex;
 	const { width, height } = image;
 
@@ -20,7 +19,6 @@ export function safeTextureGetByteLength( tex ) {
 	bytes *= tex.generateMipmaps ? 4 / 3 : 1;
 
 	return bytes;
-
 
 }
 

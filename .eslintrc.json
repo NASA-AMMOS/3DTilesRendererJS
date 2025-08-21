@@ -34,7 +34,14 @@
 		"no-unused-vars": [ "error", { "args": "none" } ],
 		"no-throw-literal": [ "error" ],
 		"prefer-const": [ "error", { "destructuring": "any", "ignoreReadBeforeAssign": false } ],
-		"quotes": [ "error", "single" ]
+		"quotes": [ "error", "single" ],
+		"sort-imports": [ "error", {
+			"ignoreCase": true,
+			"ignoreDeclarationSort": true,
+			"ignoreMemberSort": true,
+			"memberSyntaxSortOrder": [ "none", "all", "multiple", "single" ],
+			"allowSeparatedGroups": false
+		} ]
 	},
 	"overrides": [ {
 		"files": [ "*.ts" ],

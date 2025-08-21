@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState, useLayoutEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
-import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
+import { TilesRenderer as TilesRendererImpl, WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 import { useDeepOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
-import { WGS84_ELLIPSOID } from '../../three/renderer/math/GeoConstants.js';
 
 // context for accessing the tile set
 export const TilesRendererContext = createContext( null );

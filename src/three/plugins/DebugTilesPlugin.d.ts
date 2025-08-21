@@ -1,5 +1,5 @@
-import { Tile } from '../../core/renderer/tiles/Tile.js';
 import { Color } from 'three';
+import { Tile } from '3d-tiles-renderer/core';
 
 export enum ColorMode {}
 export const NONE : ColorMode;

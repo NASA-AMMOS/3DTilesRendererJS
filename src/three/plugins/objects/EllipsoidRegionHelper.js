@@ -1,11 +1,11 @@
-import { EllipsoidRegion } from '../../../three/renderer/math/EllipsoidRegion.js';
 import { Mesh, Vector3, MathUtils, BoxGeometry, BufferGeometry, EdgesGeometry, LineSegments, BufferAttribute } from 'three';
+import { EllipsoidRegion } from '3d-tiles-renderer/three';
 
-const _norm = new Vector3();
-const _norm2 = new Vector3();
-const _pos = new Vector3();
-const _vec1 = new Vector3();
-const _vec2 = new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _norm2 = /* @__PURE__ */ new Vector3();
+const _pos = /* @__PURE__ */ new Vector3();
+const _vec1 = /* @__PURE__ */ new Vector3();
+const _vec2 = /* @__PURE__ */ new Vector3();
 
 // Converts a geometry with a given set of groups rendering a smaller set of
 // geometry into a new one with only the relevant triangles.

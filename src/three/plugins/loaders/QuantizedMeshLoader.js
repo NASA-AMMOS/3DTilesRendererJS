@@ -13,8 +13,8 @@ import {
 	UnsignedByteType,
 	Vector3,
 } from 'three';
-import { QuantizedMeshLoaderBase } from '../../../core/plugins/loaders/QuantizedMeshLoaderBase.js';
-import { Ellipsoid } from '../../../three/renderer/math/Ellipsoid.js';
+import { QuantizedMeshLoaderBase } from '3d-tiles-renderer/core/plugins';
+import { Ellipsoid } from '3d-tiles-renderer/three';
 
 const _norm = /* @__PURE__ */ new Vector3();
 const _tri = /* @__PURE__ */ new Triangle();

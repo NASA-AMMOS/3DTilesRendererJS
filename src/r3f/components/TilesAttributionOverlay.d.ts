@@ -1,6 +1,5 @@
 import type { CanvasDOMOverlayProps } from './CanvasDOMOverlay.jsx';
-import type { ReactNode, ForwardRefExoticComponent, RefAttributes } from 'react';
-import type { CSSProperties } from 'react';
+import type { ReactNode, ForwardRefExoticComponent, RefAttributes, CSSProperties } from 'react';
 
 type Attribution = {
     type: 'string' | 'html' | 'image';
