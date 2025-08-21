@@ -186,12 +186,13 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		if ( ! tiles ) {
 
-			return
+			return;
 
 		}
 
 		// Check if we have to register the plugin
 		if ( ! tiles.plugins.includes( instance ) ) {
+
 			// we do, it means either tiles or the plugin instance is new
 
 			// check if this instance of TilesPlugin already have registered a plugin before
