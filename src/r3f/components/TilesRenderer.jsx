@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
-import { assignDeepOptions, useDeepOptions } from '../utilities/useOptions.js';
+import { useDeepOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 import { WGS84_ELLIPSOID } from '../../three/renderer/math/GeoConstants.js';
@@ -145,11 +145,18 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
-	const [ instance, setInstance ] = useState( null );
 
-	useLayoutEffect( () => {
+	const instanceToUnregister = useRef( null );
 
-		if ( ! tiles ) return;
+	// create the instance
+	const instance = useMemo( () => {
+
+		if ( tiles === null ) {
+
+			return null;
+
+		}
+
 		let instance;
 		if ( Array.isArray( args ) ) {
 
@@ -160,26 +167,62 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 			instance = new plugin( args );
 
 		}
-		// assigns any provided options to the plugin
-		assignDeepOptions( instance, options );
-		tiles.registerPlugin( instance );
-		setInstance( instance );
 
-		return () => {
+		return instance;
 
-			tiles.unregisterPlugin( instance );
-			setInstance( null );
-
-		};
 		// we must create a new plugin if the tile set has changed
 
-}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
+	}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
 
 	// assigns any provided options to the plugin
 	useDeepOptions( instance, options );
 
 	// assign ref
 	useApplyRefs( instance, ref );
+
+
+	useLayoutEffect( ()=>{
+
+		// register the instance
+		if ( tiles !== null ) {
+
+			// either tiles or the plugin instance is new, we have to register the plugin
+			if ( ! tiles.plugins.includes( instance ) ) {
+
+				// check if we already have registered the plugin on this tiles instance
+				if ( instanceToUnregister.current !== null ) {
+
+					// we did register the plugin previously, check if tiles changed
+					if ( instanceToUnregister.current[ 0 ] !== tiles ) {
+
+						// if tiles changed, the plugin has already been unregistered from the previous instance and recreated in our useMemo
+						// we can just register it again
+						tiles.registerPlugin( instance );
+						instanceToUnregister.current = [ tiles, instance ];
+
+					} else {
+
+						// tiles did not change, it's a new instance of the plugin
+						// unregister the previous one first and then register this one
+						tiles.unregisterPlugin( instanceToUnregister.current[ 1 ] );
+						tiles.registerPlugin( instance );
+						instanceToUnregister.current = [ tiles, instance ];
+
+					}
+
+				} else {
+
+					// if tiles didn't change, we can just register the plugin
+					tiles.registerPlugin( instance );
+					instanceToUnregister.current = [ tiles, instance ];
+
+				}
+
+			}
+
+		}
+
+	}, [ tiles, instance ] );
 
 	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
@@ -190,21 +233,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
-
-	const [ tiles, setTiles ] = useState( null );
-
-	useEffect( () => {
-
-		const tiles = new TilesRendererImpl( url );
-		setTiles( tiles );
-		return () => {
-
-			tiles.dispose();
-			setTiles( null );
-
-		};
-
-	}, [ url ] );
+	const tiles = useMemo( () => new TilesRendererImpl( url ), [ url ] );
 
 	// create the tile set
 	useEffect( () => {
@@ -262,6 +291,10 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	useDeepOptions( tiles, options );
 
 	return <>
+		{/* react StrictMode compatible hack to only trigger dispose on the previous tiles instance if a new instance have been created
+			it works because r3f call the function dispose only when the arguments change ( when a new instance is created in our case)
+		*/}
+		<group args={ [ tiles ] } dispose={ tiles ? () => tiles.dispose() : undefined } />
 		{ tiles && <primitive object={ tiles.group } { ...group } /> }
 		<TilesRendererContext.Provider value={ tiles }>
 			<TileSetRoot>
