@@ -233,12 +233,16 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
-	const tiles = useMemo( () => new TilesRendererImpl( url ), [ url ] );
+
+	const tiles = useMemo( () => {
+
+		return new TilesRendererImpl( url );
+
+	}, [ url ] );
 
 	// create the tile set
 	useEffect( () => {
 
-		if ( ! tiles ) return;
 		const needsRender = () => invalidate();
 		tiles.addEventListener( 'needs-render', needsRender );
 		tiles.addEventListener( 'needs-update', needsRender );
@@ -292,10 +296,11 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	return <>
 		{/* react StrictMode compatible hack to only trigger dispose on the previous tiles instance if a new instance have been created
-			it works because r3f call the function dispose only when the arguments change ( when a new instance is created in our case)
+			or if the entire components has been unmounted
+			it works because r3f call the function dispose only when the arguments change or when the component is unmounted
 		*/}
 		<group args={ [ tiles ] } dispose={ tiles ? () => tiles.dispose() : undefined } />
-		{ tiles && <primitive object={ tiles.group } { ...group } /> }
+		<primitive object={ tiles.group } { ...group } />
 		<TilesRendererContext.Provider value={ tiles }>
 			<TileSetRoot>
 				{ children }
