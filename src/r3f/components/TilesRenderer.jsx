@@ -181,42 +181,45 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	useApplyRefs( instance, ref );
 
 
+	// register the instance
 	useLayoutEffect( ()=>{
 
-		// register the instance
-		if ( tiles !== null ) {
+		if ( ! tiles ) {
 
-			// either tiles or the plugin instance is new, we have to register the plugin
-			if ( ! tiles.plugins.includes( instance ) ) {
+			return
 
-				// check if we already have registered the plugin on this tiles instance
-				if ( instanceToUnregister.current !== null ) {
+		}
 
-					// we did register the plugin previously, check if tiles changed
-					if ( instanceToUnregister.current[ 0 ] !== tiles ) {
+		// Check if we have to register the plugin
+		if ( ! tiles.plugins.includes( instance ) ) {
+			// we do, it means either tiles or the plugin instance is new
 
-						// if tiles changed, the plugin has already been unregistered from the previous instance and recreated in our useMemo
-						// we can just register it again
-						tiles.registerPlugin( instance );
-						instanceToUnregister.current = [ tiles, instance ];
+			// check if this instance of TilesPlugin already have registered a plugin before
+			if ( instanceToUnregister.current !== null ) {
 
-					} else {
+				// we did register the plugin previously, check if tiles changed
+				if ( instanceToUnregister.current[ 0 ] !== tiles ) {
 
-						// tiles did not change, it's a new instance of the plugin
-						// unregister the previous one first and then register this one
-						tiles.unregisterPlugin( instanceToUnregister.current[ 1 ] );
-						tiles.registerPlugin( instance );
-						instanceToUnregister.current = [ tiles, instance ];
-
-					}
+					// if tiles changed, the plugin has already been unregistered from the previous instance and recreated in our useMemo
+					// we can just register it again
+					tiles.registerPlugin( instance );
+					instanceToUnregister.current = [ tiles, instance ];
 
 				} else {
 
-					// if tiles didn't change, we can just register the plugin
+					// tiles did not change, it's a new instance of the plugin
+					// unregister the previous one first and then register this one
+					tiles.unregisterPlugin( instanceToUnregister.current[ 1 ] );
 					tiles.registerPlugin( instance );
 					instanceToUnregister.current = [ tiles, instance ];
 
 				}
+
+			} else {
+
+				// if tiles didn't change, we can just register the plugin
+				tiles.registerPlugin( instance );
+				instanceToUnregister.current = [ tiles, instance ];
 
 			}
 
