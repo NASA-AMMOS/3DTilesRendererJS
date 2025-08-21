@@ -45,7 +45,7 @@ export class LoaderBase {
 
 		if ( /^[^\\/]/.test( url ) && ! /^http/.test( url ) ) {
 
-			return this.workingPath + '/' + url;
+			return new URL( url, this.workingPath ).href;
 
 		} else {
 
