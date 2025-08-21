@@ -12,7 +12,7 @@ const tilesetUrl2 = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleD
 
 const Tiles = () => {
 
-		const { tileset } = useControls( {
+	const { tileset } = useControls( {
 		tileset: {
 			value: tilesetUrl1,
 			options: {
