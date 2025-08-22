@@ -414,8 +414,6 @@ export class TilesRendererBase {
 
 	dispose() {
 
-		console.log( 'tiles being disposed' );
-
 		// dispose of all the plugins
 		const plugins = [ ...this.plugins ];
 		plugins.forEach( plugin => {
