@@ -73,7 +73,7 @@ function batchIdHighlightShaderMixin( shader ) {
 
 function init() {
 
-	infoEl = document.getElementById( 'info' );
+	infoEl = document.getElementById( 'hover-info' );
 
 	scene = new Scene();
 
