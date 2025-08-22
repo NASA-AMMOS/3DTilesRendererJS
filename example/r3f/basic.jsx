@@ -42,39 +42,37 @@ function App() {
 				top: 0,
 			} }
 		>
-			<StrictMode>
-				{/* 3D Tiles renderer tileset */}
-				<group rotation-x={ Math.PI / 2 }>
-					<TilesRenderer url={ tilesetUrl }>
-						<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
+			{/* 3D Tiles renderer tileset */}
+			<group rotation-x={ Math.PI / 2 }>
+				<TilesRenderer url={ tilesetUrl }>
+					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 
-						{/* add mesh to local frame of the tile set*/}
-						<RotatingMesh position={ [ 0, - 4, - 4 ] } scale={ 2 } />
+					{/* add mesh to local frame of the tile set*/}
+					<RotatingMesh position={ [ 0, - 4, - 4 ] } scale={ 2 } />
 
-					</TilesRenderer>
-				</group>
+				</TilesRenderer>
+			</group>
 
-				{/* Controls */}
-				<EnvironmentControls enableDamping={ true } maxDistance={ 50 } />
+			{/* Controls */}
+			<EnvironmentControls enableDamping={ true } maxDistance={ 50 } />
 
-				{/* other r3f staging */}
-				<Environment
-					preset="sunset" background={ true }
-					backgroundBlurriness={ 0.9 }
-					environmentIntensity={ 1 }
-				/>
-				<GizmoHelper alignment="bottom-right">
-					<GizmoViewport />
-				</GizmoHelper>
-			</StrictMode>
+			{/* other r3f staging */}
+			<Environment
+				preset="sunset" background={ true }
+				backgroundBlurriness={ 0.9 }
+				environmentIntensity={ 1 }
+			/>
+			<GizmoHelper alignment="bottom-right">
+				<GizmoViewport />
+			</GizmoHelper>
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 

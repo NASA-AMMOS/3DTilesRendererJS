@@ -124,17 +124,15 @@ function App() {
 
 			} }
 		>
-			<StrictMode>
-				<Scene />
-			</StrictMode>
+			<Scene />
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 

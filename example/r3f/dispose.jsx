@@ -51,15 +51,12 @@ function App() {
 				top: 0,
 			} }
 		>
-			<StrictMode>
-				<color attach="background" args={ [ 0x222222 ] } />
+			<color attach="background" args={ [ 0x222222 ] } />
 
-				<Tiles />
+			<Tiles />
 
-				{/* Controls */}
-				<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
-
-			</StrictMode>
+			{/* Controls */}
+			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
 		</Canvas>
 	);
 

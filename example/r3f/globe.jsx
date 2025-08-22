@@ -98,49 +98,47 @@ function App() {
 			} }
 			flat
 		>
-			<StrictMode>
-				<color attach="background" args={ [ 0x111111 ] } />
+			<color attach="background" args={ [ 0x111111 ] } />
 
-				<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
-					<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
-					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
-					<TilesPlugin plugin={ TileCompressionPlugin } />
-					<TilesPlugin plugin={ UpdateOnChangePlugin } />
-					<TilesPlugin plugin={ TilesFadePlugin } />
+			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
+				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
+				<TilesPlugin plugin={ TileCompressionPlugin } />
+				<TilesPlugin plugin={ UpdateOnChangePlugin } />
+				<TilesPlugin plugin={ TilesFadePlugin } />
 
-					{/* Controls */}
-					<GlobeControls enableDamping={ true } />
-					<CameraViewTransition mode={ ortho ? 'orthographic' : 'perspective' } />
+				{/* Controls */}
+				<GlobeControls enableDamping={ true } />
+				<CameraViewTransition mode={ ortho ? 'orthographic' : 'perspective' } />
 
-					{/* Attributions */}
-					<TilesAttributionOverlay />
+				{/* Attributions */}
+				<TilesAttributionOverlay />
 
-					{/* Pointer to NASA JPL */}
-					<EastNorthUpFrame lat={ 34.2013 * MathUtils.DEG2RAD } lon={ - 118.1714 * MathUtils.DEG2RAD } height={ 350 }>
-						<Pointer />
-					</EastNorthUpFrame>;
+				{/* Pointer to NASA JPL */}
+				<EastNorthUpFrame lat={ 34.2013 * MathUtils.DEG2RAD } lon={ - 118.1714 * MathUtils.DEG2RAD } height={ 350 }>
+					<Pointer />
+				</EastNorthUpFrame>;
 
-					{/* Add compass gizmo */}
-					<CompassGizmo />
+				{/* Add compass gizmo */}
+				<CompassGizmo />
 
-					<TilesLoadingBar />
-				</TilesRenderer>
+				<TilesLoadingBar />
+			</TilesRenderer>
 
-				{/* other r3f staging */}
-				<Environment
-					preset="sunset"
-					backgroundBlurriness={ 0.9 }
-					environmentIntensity={ 1 }
-				/>
-			</StrictMode>
+			{/* other r3f staging */}
+			<Environment
+				preset="sunset"
+				backgroundBlurriness={ 0.9 }
+				environmentIntensity={ 1 }
+			/>
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 

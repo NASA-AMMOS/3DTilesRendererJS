@@ -24,33 +24,30 @@ function App() {
 				top: 0,
 			} }
 		>
-			<StrictMode>
-				<color attach="background" args={ [ 0x222222 ] } />
+			<color attach="background" args={ [ 0x222222 ] } />
 
-				{/* 3D Tiles renderer tileset */}
-				<group rotation-x={ Math.PI / 2 }>
-					<TilesRenderer url={ tilesetUrl }>
-						<TilesPlugin plugin={ TilesFadePlugin } />
-						<TilesPlugin plugin={ TopoLinesPlugin } args={ { topoLimit: [ 0.01, 1e10 ] } } />
+			{/* 3D Tiles renderer tileset */}
+			<group rotation-x={ Math.PI / 2 }>
+				<TilesRenderer url={ tilesetUrl }>
+					<TilesPlugin plugin={ TilesFadePlugin } />
+					<TilesPlugin plugin={ TopoLinesPlugin } args={ { topoLimit: [ 0.01, 1e10 ] } } />
 
-						{/* Widget for displaying topo lines */}
-						<TopoLineScaleWidget invert />
+					{/* Widget for displaying topo lines */}
+					<TopoLineScaleWidget invert />
 
-					</TilesRenderer>
-				</group>
+				</TilesRenderer>
+			</group>
 
-				{/* Controls */}
-				<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
-
-			</StrictMode>
+			{/* Controls */}
+			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 

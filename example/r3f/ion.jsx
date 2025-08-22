@@ -50,41 +50,39 @@ function App() {
 				top: 0,
 			} }
 		>
-			<StrictMode>
-				{/*
-					3D Tiles renderer tile set
-					Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
-				*/}
-				<TilesRenderer key={ assetId }>
-					<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId } } />
-					<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
-					<TilesPlugin plugin={ ReorientationPlugin } />
-					<TilesPlugin plugin={ UpdateOnChangePlugin } />
+			{/*
+				3D Tiles renderer tile set
+				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
+			*/}
+			<TilesRenderer key={ assetId }>
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId } } />
+				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
+				<TilesPlugin plugin={ ReorientationPlugin } />
+				<TilesPlugin plugin={ UpdateOnChangePlugin } />
 
-					<TilesAttributionOverlay />
-				</TilesRenderer>
+				<TilesAttributionOverlay />
+			</TilesRenderer>
 
-				{/* Controls */}
-				<EnvironmentControls enableDamping={ true } maxDistance={ 5000 } />
+			{/* Controls */}
+			<EnvironmentControls enableDamping={ true } maxDistance={ 5000 } />
 
-				{/* other r3f staging */}
-				<Environment
-					preset="sunset" background={ true }
-					backgroundBlurriness={ 0.9 }
-					environmentIntensity={ 1 }
-				/>
-				<GizmoHelper alignment="bottom-right">
-					<GizmoViewport />
-				</GizmoHelper>
-			</StrictMode>
+			{/* other r3f staging */}
+			<Environment
+				preset="sunset" background={ true }
+				backgroundBlurriness={ 0.9 }
+				environmentIntensity={ 1 }
+			/>
+			<GizmoHelper alignment="bottom-right">
+				<GizmoViewport />
+			</GizmoHelper>
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 
