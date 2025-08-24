@@ -200,6 +200,13 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	// assign ref
 	useApplyRefs( instance, ref );
 
+	// only render out the plugin once the instance and context are ready
+	if ( ! instance ) {
+
+		return;
+
+	}
+
 	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
 } );
@@ -270,7 +277,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	// assign options recursively
 	useDeepOptions( tiles, options );
 
-	// if the tiles have not been created yet then don't render any children
+	// only render out the tiles once the instance and context are ready
 	if ( ! tiles ) {
 
 		return null;
