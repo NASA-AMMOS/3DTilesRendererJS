@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DebugTilesRenderer: fix case where disabling and reenabling the plugin could cause errors.
 - QuantizedMeshPlugin: fix case where quantized mesh could not expand to the lowest levels of detail.
 - Fixed behavior of TilesRenderer and TilesPlugin components in "strict mode" with React 19.
+- Improved performance of extracting url file extensions.
 
 ## [0.4.14] - 2025.08.09
 ### Fixed
