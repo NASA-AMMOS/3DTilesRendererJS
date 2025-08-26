@@ -90,7 +90,7 @@ export class I3DMLoaderBase extends LoaderBase {
 			//Store the gltf working path
 			const uriSplits = externalUri.split( /[\\/]/g );
 			uriSplits.pop();
-			gltfWorkingPath = uriSplits.join( '/' );
+			gltfWorkingPath = uriSplits.join( '/' ) + '/';
 
 			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => {
