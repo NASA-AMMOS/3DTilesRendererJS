@@ -195,7 +195,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		};
 
-	}, [ tiles, instance ] );
+	}, [ instance ] ); // eslint-disable-line
 
 	// assign ref
 	useApplyRefs( instance, ref );
