@@ -203,8 +203,8 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	// assign ref
 	useApplyRefs( instance, ref );
 
-	// only render out the plugin once the instance and context are ready
-	if ( ! instance ) {
+	// only render out the plugin once the instance and context are ready and registered
+	if ( ! instance || ! tiles.plugins.includes( instance ) ) {
 
 		return;
 
