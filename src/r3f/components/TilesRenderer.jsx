@@ -195,6 +195,9 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		};
 
+		// "tiles" is excluded from the dependencies since this would otherwise run once with the
+		// new tiles renderer, resulting in an error when the instance is added to a second renderer.
+
 	}, [ instance ] ); // eslint-disable-line
 
 	// assign ref
@@ -232,6 +235,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 			tiles.removeEventListener( 'needs-render', needsRender );
 			tiles.removeEventListener( 'needs-update', needsRender );
+			tiles.dispose();
 			setTiles( null );
 
 		};
