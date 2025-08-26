@@ -8,17 +8,25 @@ import {
 	PCFSoftShadowMap,
 	Vector3,
 	Quaternion,
+	Raycaster,
+	Vector2,
 	Matrix4,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let camera, controls, scene, renderer;
 let dirLight;
+let raycaster, mouse;
+let infoEl;
 
 init();
 animate();
 
 function init() {
+
+	infoEl = document.getElementById( 'hover-info' );
 
 	scene = new Scene();
 
@@ -60,8 +68,15 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.05 );
 	scene.add( ambLight );
 
-	new I3DMLoader()
-		.loadAsync( 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/1.0/TilesetWithTreeBillboards/tree.i3dm' )
+	const i3dmLoader = new I3DMLoader();
+
+	const dracoLoader = new DRACOLoader();
+	dracoLoader.setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' );
+	const gltfLoader = new GLTFLoader( i3dmLoader.manager );
+	gltfLoader.setDRACOLoader( dracoLoader );
+	i3dmLoader.manager.addHandler( /\.gltf$/, gltfLoader );
+
+	i3dmLoader.loadAsync( 'https://3d.geo.admin.ch/ch.swisstopo.vegetation.3d/v1/20250728/10/200/330.i3dm' )
 		.then( res => {
 
 			let instance = null;
@@ -106,8 +121,80 @@ function init() {
 
 		} );
 
+	raycaster = new Raycaster();
+	mouse = new Vector2();
+
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+
+}
+
+function onMouseMove( e ) {
+
+	const bounds = this.getBoundingClientRect();
+	mouse.x = e.clientX - bounds.x;
+	mouse.y = e.clientY - bounds.y;
+	mouse.x = ( mouse.x / bounds.width ) * 2 - 1;
+	mouse.y = - ( mouse.y / bounds.height ) * 2 + 1;
+
+	raycaster.setFromCamera( mouse, camera );
+
+	// Get the batch table data
+	const intersects = raycaster.intersectObject( scene, true );
+	let hoveredInstanceId = - 1;
+	if ( intersects.length ) {
+
+		const { object, instanceId } = intersects[ 0 ];
+
+		if ( instanceId ) {
+
+			hoveredInstanceId = instanceId;
+
+			// Traverse the parents to find the batch table.
+			let batchTableObject = object;
+			while ( ! batchTableObject.batchTable ) {
+
+				batchTableObject = batchTableObject.parent;
+
+			}
+
+			// Log the batch data
+			const batchTable = batchTableObject.batchTable;
+			const batchData = batchTable.getDataFromId( hoveredInstanceId );
+
+			infoEl.innerText =
+				`_batchid	: ${ hoveredInstanceId }\n`;
+
+			const batchTableKeys = batchTable.getKeys();
+
+			for ( const key of batchTableKeys ) {
+
+				infoEl.innerText +=
+					key + `		: ${ batchData[ key ] }\n`;
+
+			}
+
+			const hierarchyData = batchData[ '3DTILES_batch_table_hierarchy' ];
+
+			for ( const className in hierarchyData ) {
+
+				for ( const instance in hierarchyData[ className ] ) {
+
+					infoEl.innerText +=
+						`${ instance } : ${ hierarchyData[ className ][ instance ] }\n`;
+
+				}
+
+			}
+
+		}
+
+	} else {
+
+		infoEl.innerText = '';
+
+	}
 
 }
 

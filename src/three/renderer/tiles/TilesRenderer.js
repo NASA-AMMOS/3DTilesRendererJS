@@ -573,7 +573,7 @@ export class TilesRenderer extends TilesRendererBase {
 		const cached = tile.cached;
 		const uriSplits = uri.split( /[\\/]/g );
 		uriSplits.pop();
-		const workingPath = uriSplits.join( '/' );
+		const workingPath = uriSplits.join( '/' ) + '/';
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
