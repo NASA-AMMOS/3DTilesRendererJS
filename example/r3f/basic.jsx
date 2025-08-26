@@ -65,15 +65,14 @@ function App() {
 			<GizmoHelper alignment="bottom-right">
 				<GizmoViewport />
 			</GizmoHelper>
-
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 

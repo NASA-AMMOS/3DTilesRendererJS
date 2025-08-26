@@ -25,6 +25,12 @@
 		"./node_modules/eslint-config-mdcs/index.js"
 	],
 
+	"settings": {
+	    "react": {
+			"version": "detect"
+		}
+	},
+
 	"rules": {
 		"no-inner-declarations": "off",
 		"padding-line-between-statements": "off",

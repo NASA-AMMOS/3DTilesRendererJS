@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState, useLayoutEffect } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
@@ -145,13 +145,13 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
+	const [ instance, setInstance ] = useState( null );
 
-	// create the instance
-	const instance = useMemo( () => {
+	useLayoutEffect( () => {
 
 		if ( tiles === null ) {
 
-			return null;
+			return;
 
 		}
 
@@ -166,22 +166,23 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		}
 
-		return instance;
+		setInstance( instance );
 
-		// we must create a new plugin if the tile set has changed
+		return () => {
 
-	}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
+			setInstance( null );
+
+		};
+
+	}, [ plugin, tiles, useObjectDep( args ) ] ); // eslint-disable-line
 
 	// assigns any provided options to the plugin
 	useDeepOptions( instance, options );
 
-	// assign ref
-	useApplyRefs( instance, ref );
-
-	// register the instance
+	// register the plugin
 	useLayoutEffect( () => {
 
-		if ( tiles === null ) {
+		if ( instance === null ) {
 
 			return;
 
@@ -194,7 +195,17 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		};
 
-	}, [ instance, tiles ] );
+	}, [ instance ] ); // eslint-disable-line
+
+	// assign ref
+	useApplyRefs( instance, ref );
+
+	// only render out the plugin once the instance and context are ready
+	if ( ! instance ) {
+
+		return;
+
+	}
 
 	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
@@ -205,25 +216,27 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
-
-	const tiles = useMemo( () => {
-
-		return new TilesRendererImpl( url );
-
-	}, [ url ] );
+	const [ tiles, setTiles ] = useState( null );
 
 	// create the tile set
 	useEffect( () => {
 
-		tiles.addEventListener( 'needs-render', () => invalidate() );
-		tiles.addEventListener( 'needs-update', () => invalidate() );
+		const needsRender = () => invalidate();
+
+		const tiles = new TilesRendererImpl( url );
+		tiles.addEventListener( 'needs-render', needsRender );
+		tiles.addEventListener( 'needs-update', needsRender );
+		setTiles( tiles );
+
 		return () => {
 
-			tiles.dispose();
+			tiles.removeEventListener( 'needs-render', needsRender );
+			tiles.removeEventListener( 'needs-update', needsRender );
+			setTiles( null );
 
 		};
 
-	}, [ tiles, invalidate ] );
+	}, [ url, invalidate ] );
 
 	// update the resolution for the camera
 	useFrame( () => {
@@ -241,7 +254,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	} );
 
 	// add the camera
-	useEffect( () => {
+	useLayoutEffect( () => {
 
 		if ( tiles === null ) {
 
@@ -263,6 +276,13 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	// assign options recursively
 	useDeepOptions( tiles, options );
+
+	// only render out the tiles once the instance and context are ready
+	if ( ! tiles ) {
+
+		return null;
+
+	}
 
 	return <>
 		<primitive object={ tiles.group } { ...group } />
