@@ -13,59 +13,31 @@ export function getUrlExtension( url ) {
 
 	// Find the last occurrence of '?' and '#' to handle query params and fragments
 	let endIndex = url.length;
-	const queryIndex = url.lastIndexOf( '?' );
-	const fragmentIndex = url.lastIndexOf( '#' );
-
+	const queryIndex = url.indexOf( '?' );
+	const fragmentIndex = url.indexOf( '#' );
 	if ( queryIndex !== - 1 ) {
 
 		endIndex = Math.min( endIndex, queryIndex );
 
 	}
+
 	if ( fragmentIndex !== - 1 ) {
 
 		endIndex = Math.min( endIndex, fragmentIndex );
 
 	}
 
-	// If this looks like a URL without a path (just domain), return null
-	// Check if we're dealing with a domain-only URL by looking for protocol
-	if ( url.includes( '://' ) ) {
-
-		const urlAfterProtocol = url.substring( url.indexOf( '://' ) + 3, endIndex );
-		const slashIndex = urlAfterProtocol.indexOf( '/' );
-
-		// If there's no slash after the domain, or the slash is at the very end,
-		// then we're dealing with just a domain name, not a file
-		if ( slashIndex === - 1 || slashIndex === urlAfterProtocol.length - 1 ) {
-
-			return null;
-
-		}
-
-	}
-
-	// Find the last slash to get the filename part
+	// Check if the string is just a hostname or whether the path does not end in an extension
+	const lastPeriodIndex = url.lastIndexOf( '.', endIndex );
 	const lastSlashIndex = url.lastIndexOf( '/', endIndex );
-	const filename = url.substring( lastSlashIndex + 1, endIndex );
-
-	// If there's no filename (empty string or just a slash), return null
-	if ( ! filename ) {
-
-		return null;
-
-	}
-
-	// Find the last dot in the filename
-	const lastDotIndex = filename.lastIndexOf( '.' );
-
-	if ( lastDotIndex === - 1 || lastDotIndex === 0 ) {
+	const protocolIndex = url.indexOf( '://' );
+	const isHostOnly = protocolIndex !== - 1 && protocolIndex + 2 === lastSlashIndex;
+	if ( isHostOnly || lastPeriodIndex === - 1 || lastPeriodIndex < lastSlashIndex ) {
 
 		return null;
 
 	}
 
-	const extension = filename.substring( lastDotIndex + 1 );
-
-	return extension || null;
+	return url.substring( lastPeriodIndex + 1, endIndex ) || null;
 
 }
