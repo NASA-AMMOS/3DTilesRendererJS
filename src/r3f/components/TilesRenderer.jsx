@@ -189,6 +189,8 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		}
 
+		// force the component to rerender after registering the plugin because we don't
+		// include the children until the plugin is added.
 		tiles.registerPlugin( instance );
 		forceUpdate();
 
