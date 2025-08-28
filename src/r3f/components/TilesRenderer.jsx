@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect } from 'react';
+import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useReducer } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
@@ -146,6 +146,7 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
 	const [ instance, setInstance ] = useState( null );
+	const [ , forceUpdate ] = useReducer( x => x + 1, 0 );
 
 	useLayoutEffect( () => {
 
@@ -189,6 +190,8 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 		}
 
 		tiles.registerPlugin( instance );
+		forceUpdate();
+
 		return () => {
 
 			tiles.unregisterPlugin( instance );
