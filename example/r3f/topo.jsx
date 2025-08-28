@@ -40,15 +40,14 @@ function App() {
 
 			{/* Controls */}
 			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
-
 		</Canvas>
 	);
 
 }
 
 createRoot( document.getElementById( 'root' ) ).render(
-	// <StrictMode>
+	<StrictMode>
 		<App />
-	// </StrictMode>,
+	</StrictMode>,
 );
 
