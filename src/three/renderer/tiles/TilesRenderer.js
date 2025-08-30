@@ -980,23 +980,17 @@ export class TilesRenderer extends TilesRendererBase {
 		// check the plugin visibility
 		this.invokeAllPlugins( plugin => {
 
-			if ( plugin !== this && plugin.calculateTileViewError ) {
+			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
-				plugin.calculateTileViewError( tile, viewErrorTarget );
+				// Tile shall be traversed if inView for at least one plugin.
+				inView = inView && viewErrorTarget.inView;
+				maxError = Math.max( maxError, viewErrorTarget.error );
+
 				if ( viewErrorTarget.inView ) {
 
-					// Tile shall be traversed if inView for at least one plugin.
-					inView = true;
 					inViewError = Math.max( inViewError, viewErrorTarget.error );
 
-				} else {
-
-					// Tile will be rendered if it's in the camera frustum, except if viewErrorTarget.inView === null for at least a plugin (assigned based on priority)
-					inView = viewErrorTarget.inView || inView; // NB: Watch out with null value in booleans; OR operator in JS returns last value if all are falsy, so operand order is important.
-
 				}
-
-				maxError = Math.max( maxError, viewErrorTarget.error );
 
 			}
 

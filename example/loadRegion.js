@@ -110,6 +110,31 @@ function init() {
 	gui.add( params, 'region', [ 'SPHERE', 'BOX', 'RAY' ] ).onChange( updateRegion );
 	gui.add( params, 'regionErrorTarget' ).min( 0 ).max( 1 );
 	gui.add( params, 'animate' );
+	gui.add( params, 'mask' ).onChange( v => {
+
+		if ( v ) {
+
+			sphereRegion.mask = true;
+			rayRegion.mask = true;
+			boxRegion.mask = true;
+
+			sphereRegion.errorTarget = 0;
+			rayRegion.errorTarget = 0;
+			boxRegion.errorTarget = 0;
+
+		} else {
+
+			sphereRegion.mask = false;
+			rayRegion.mask = false;
+			boxRegion.mask = false;
+
+			sphereRegion.errorTarget = params.regionErrorTarget;
+			rayRegion.errorTarget = params.regionErrorTarget;
+			boxRegion.errorTarget = params.regionErrorTarget;
+
+		}
+
+	} );
 	gui.add( params, 'regionOnly' ).onChange( v => {
 
 		if ( ! v ) {

@@ -50,44 +50,41 @@ export class LoadRegionPlugin {
 
 	}
 
-	/**
-	 * Returns:
-	 * - true if the tile intersects at least one region (tile shall be traversed)
-	 * - false if the tile doesn't intersect any region (tile will still be rendered if it's in camera frustum)
-	 * - null if the tile doesn't intersect any region and all regions have "mask=true" (tile won't be rendered even if it's in the camera frustum)
-	 */
+	// Calculates shape intersections and associated error values to use. If "mask" shapes are present then
+	// tiles are only loaded if they are within those shapes.
 	calculateTileViewError( tile, target ) {
 
 		const boundingVolume = tile.cached.boundingVolume;
 		const { regions, tiles } = this;
 
-		let inView = false;
-		let inViewError = - Infinity;
+		let inShape = false;
+		let inMask = null;
 		let maxError = - Infinity;
 		for ( const region of regions ) {
 
+			// Check if the tile is intersecting the shape and calculate the
+			// view and error values.
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
-			if ( intersects ) {
+			inShape = inShape || intersects;
+			maxError = Math.max( region.calculateError( tile, tiles ), maxError );
 
-				inView = true;
-				inViewError = Math.max( region.calculateError( tile, tiles ), inViewError );
+			// Store whether the tile is in a "mask" shape if they exist. If "inMask" is
+			// still "null" by the end of the loop then there are no mask elements.
+			if ( region.mask ) {
 
-			} else if ( region.mask ) {
-
-				inView = null || inView; // NB: Watch out with null value in booleans; OR operator in JS returns last value if all are falsy, so operand order is important.
-
-			} else {
-
-				inView = inView || false; // NB: Watch out with null value in booleans; OR operator in JS returns last value if all are falsy, so operand order is important.
+				inMask = inMask || intersects;
 
 			}
 
-			maxError = Math.max( region.calculateError( tile, tiles ), maxError );
-
 		}
 
-		target.inView = inView;
-		target.error = inView ? inViewError : maxError;
+		// A tile should only be visible if it intersects a shape and a mask shape or there
+		// are no masks.
+		target.inView = inShape && inMask !== false;
+		target.error = maxError;
+
+		// Returning "false" indicates "no operation" and all results will be ignored.
+		return target.inView || inMask !== null;
 
 	}
 
