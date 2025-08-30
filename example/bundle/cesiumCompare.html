@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<meta charset="utf-8"/>
+
+		<style>
+			html, body {
+				margin: 0;
+				padding: 0;
+				font-family:Arial, Helvetica, sans-serif;
+				color: white;
+				overflow: hidden;
+			}
+
+			.cesium-widget, canvas {
+				width: 100%;
+				height: 100%;
+			}
+
+			#cesium-container, #three-container {
+				width: 50vw;
+				height: 100vh;
+				float: left;
+				position: relative;
+			}
+
+			.fullscreen #cesium-container, .fullscreen #three-container {
+				width: 100vw;
+				position: absolute;
+				left: 0;
+				top: 0;
+			}
+
+			.fullscreen #cesium-container canvas {
+				opacity: 0.5;
+			}
+
+			.fullscreen #cesium-container .stats {
+				left: 250px;
+			}
+
+			#cesium-container {
+				pointer-events: none;
+			}
+
+			.fullscreen .stats {
+				position: fixed;
+				z-index: 1;
+			}
+
+			.stats::before {
+				content: attr(name);
+				font-size: 16px;
+			}
+
+			.stats {
+				position: absolute;
+				left: 0;
+				padding: 10px;
+				margin: 5px;
+				font-size: 13px;
+				background-color: rgba( 0, 0, 0, 0.4 );
+				border-radius: 2px;
+				z-index: 1;
+			}
+
+			.stats>div:before {
+				width: 120px;
+				content: attr(name);
+				display: inline-block
+			}
+		</style>
+
+		<script src="https://cesium.com/downloads/cesiumjs/releases/1.132/Build/CesiumUnminified/Cesium.js"></script>
+	    <link href="https://cesium.com/downloads/cesiumjs/releases/1.132/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+		<script type="module" crossorigin src="./assets/cesiumCompare-Dv7XGlwR.js"></script>
+		<link rel="modulepreload" crossorigin href="./assets/three.module-D9WYbBBL.js">
+		<link rel="modulepreload" crossorigin href="./assets/GLTFLoader-CFPJuhhp.js">
+		<link rel="modulepreload" crossorigin href="./assets/DRACOLoader-BeOkl6yj.js">
+		<link rel="modulepreload" crossorigin href="./assets/KTX2Loader-0sMb_m5O.js">
+		<link rel="modulepreload" crossorigin href="./assets/Ellipsoid-B6XZinT5.js">
+		<link rel="modulepreload" crossorigin href="./assets/readMagicBytes-COwSia7U.js">
+		<link rel="modulepreload" crossorigin href="./assets/I3DMLoader-CooUph4o.js">
+		<link rel="modulepreload" crossorigin href="./assets/B3DMLoader-BJ-Njuja.js">
+		<link rel="modulepreload" crossorigin href="./assets/PNTSLoader-B2Ku199z.js">
+		<link rel="modulepreload" crossorigin href="./assets/CMPTLoader-DtOw68bb.js">
+		<link rel="modulepreload" crossorigin href="./assets/EllipsoidRegion-CIAkCz3Y.js">
+		<link rel="modulepreload" crossorigin href="./assets/TilesRenderer-BQ6sX2Ys.js">
+		<link rel="modulepreload" crossorigin href="./assets/GLTFExtensionsPlugin-DmHqh9g9.js">
+		<link rel="modulepreload" crossorigin href="./assets/EnvironmentControls-C7YJaexe.js">
+		<link rel="modulepreload" crossorigin href="./assets/GlobeControls-B1mbVabl.js">
+	</head>
+	<body>
+		<div id="three-container">
+			<div class="stats" name="three"></div>
+		</div>
+		<div id="cesium-container">
+			<div class="stats" name="cesium"></div>
+		</div>
+	</body>
+</html>
