@@ -97,7 +97,7 @@ export class FeatureTable {
 
 	getKeys() {
 
-		return Object.keys( this.header );
+		return Object.keys( this.header ).filter( key => key !== 'extensions' );
 
 	}
 

@@ -47,11 +47,7 @@ export class BatchTable extends FeatureTable {
 
 		for ( const key of this.getKeys() ) {
 
-			if ( key !== 'extensions' ) {
-
-				target[ key ] = super.getData( key, this.count )[ id ];
-
-			}
+			target[ key ] = super.getData( key, this.count )[ id ];
 
 		}
 

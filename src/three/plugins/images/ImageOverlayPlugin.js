@@ -1137,7 +1137,7 @@ export class ImageOverlayPlugin {
 		// retrieve the uvs and range for all the meshes
 		if ( overlay.isPlanarProjection ) {
 
-			_matrix.copy( overlay.frame ).invert();
+			_matrix.copy( overlay.frame );
 			if ( scene.parent !== null ) {
 
 				_matrix.multiply( tiles.group.matrixWorldInverse );
