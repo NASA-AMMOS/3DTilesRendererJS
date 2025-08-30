@@ -26,3 +26,10 @@ export function getUrlExtension( url ) {
 	return filename.substring( lastPeriod + 1 ) || null;
 
 }
+
+// Returns a working path with a trailing slash
+export function getWorkingPath( url ) {
+
+	return url.replace( /[\\/][^\\/]+$/, '' ) + '/';
+
+}

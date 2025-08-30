@@ -6,6 +6,7 @@ import { FeatureTable } from '../utilities/FeatureTable.js';
 import { arrayToString } from '../utilities/arrayToString.js';
 import { LoaderBase } from './LoaderBase.js';
 import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { getWorkingPath } from '../utilities/urlExtension.js';
 
 export class I3DMLoaderBase extends LoaderBase {
 
@@ -88,9 +89,7 @@ export class I3DMLoaderBase extends LoaderBase {
 			const externalUri = this.resolveExternalURL( arrayToString( bodyBytes ) );
 
 			//Store the gltf working path
-			const uriSplits = externalUri.split( /[\\/]/g );
-			uriSplits.pop();
-			gltfWorkingPath = uriSplits.join( '/' ) + '/';
+			gltfWorkingPath = getWorkingPath( externalUri );
 
 			promise = fetch( externalUri, this.fetchOptions )
 				.then( res => {
