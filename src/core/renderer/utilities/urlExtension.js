@@ -41,3 +41,10 @@ export function getUrlExtension( url ) {
 	return url.substring( lastPeriodIndex + 1, endIndex ) || null;
 
 }
+
+// Returns a working path with a trailing slash
+export function getWorkingPath( url ) {
+
+	return url.replace( /[\\/][^\\/]+$/, '' ) + '/';
+
+}

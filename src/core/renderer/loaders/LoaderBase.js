@@ -1,3 +1,5 @@
+import { getWorkingPath } from '../utilities/urlExtension.js';
+
 export class LoaderBase {
 
 	constructor() {
@@ -31,7 +33,7 @@ export class LoaderBase {
 
 				if ( this.workingPath === '' ) {
 
-					this.workingPath = this.workingPathForURL( url );
+					this.workingPath = getWorkingPath( url );
 
 				}
 
@@ -43,24 +45,7 @@ export class LoaderBase {
 
 	resolveExternalURL( url ) {
 
-		if ( /^[^\\/]/.test( url ) && ! /^http/.test( url ) ) {
-
-			return this.workingPath + '/' + url;
-
-		} else {
-
-			return url;
-
-		}
-
-	}
-
-	workingPathForURL( url ) {
-
-		const splits = url.split( /[\\/]/g );
-		splits.pop();
-		const workingPath = splits.join( '/' );
-		return workingPath + '/';
+		return new URL( url, this.workingPath ).href;
 
 	}
 

@@ -20,6 +20,7 @@ import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
 import { estimateBytesUsed } from './utilities.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { getWorkingPath } from '../../../core/renderer/utilities/urlExtension.js';
 
 const _mat = new Matrix4();
 const _euler = new Euler();
@@ -571,9 +572,7 @@ export class TilesRenderer extends TilesRendererBase {
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
 		const cached = tile.cached;
-		const uriSplits = uri.split( /[\\/]/g );
-		uriSplits.pop();
-		const workingPath = uriSplits.join( '/' );
+		const workingPath = getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
