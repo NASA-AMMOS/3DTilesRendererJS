@@ -30,6 +30,7 @@ const params = {
 	region: 'SPHERE',
 	regionErrorTarget: 0.1,
 	regionOnly: true,
+	mask: false,
 	displayBoxBounds: false,
 
 };
