@@ -4,8 +4,7 @@
 import { BatchTable } from '../utilities/BatchTable.js';
 import { FeatureTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
-import { readMagicBytes, arrayToString } from '../utilities/LoaderUtils.js';
-import { getWorkingPath } from '../utilities/urlExtension.js';
+import { readMagicBytes, arrayToString, getWorkingPath } from '../utilities/LoaderUtils.js';
 
 export class I3DMLoaderBase extends LoaderBase {
 

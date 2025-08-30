@@ -40,3 +40,10 @@ export function arrayToString( array ) {
 	return utf8decoder.decode( array );
 
 }
+
+// Returns a working path with a trailing slash
+export function getWorkingPath( url ) {
+
+	return url.replace( /[\\/][^\\/]+$/, '' ) + '/';
+
+}
