@@ -166,9 +166,9 @@ function onMouseMove( e ) {
 	raycaster.setFromCamera( mouse, camera );
 
 	// Get the batch table data
-	const intersects = raycaster.intersectObject( scene, true );
+	const intersects = raycaster.intersectObject( scene );
 	let hoveredBatchid = - 1;
-	if ( intersects.length ) {
+	if ( intersects.length > 0 ) {
 
 		const { face, object } = intersects[ 0 ];
 		const batchidAttr = object.geometry.getAttribute( '_batchid' );
@@ -186,21 +186,23 @@ function onMouseMove( e ) {
 			// Log the batch data
 			const batchTable = batchTableObject.batchTable;
 			hoveredBatchid = batchidAttr.getX( face.a );
+
 			const batchData = batchTable.getDataFromId( hoveredBatchid );
-
-			infoEl.innerText =
-				`_batchid : ${ hoveredBatchid }\n` +
-				`Area     : ${ batchData[ 'height' ].toFixed( 3 ) }\n` +
-				`Height   : ${ batchData[ 'height' ].toFixed( 3 ) }\n`;
-
 			const hierarchyData = batchData[ '3DTILES_batch_table_hierarchy' ];
-			for ( const className in hierarchyData ) {
 
+			const batchTableKeys = batchTable.getKeys();
+			infoEl.innerText = `${ '_batchid'.padEnd( 15 ) }: ${ hoveredBatchid }\n`;
+			for ( const key of batchTableKeys ) {
+
+				infoEl.innerText += `${ key.padEnd( 15 ) }: ${ batchData[ key ] }\n`;
+
+			}
+
+			for ( const className in hierarchyData ) {
 
 				for ( const instance in hierarchyData[ className ] ) {
 
-					infoEl.innerText +=
-						`${ instance } : ${ hierarchyData[ className ][ instance ] }\n`;
+					infoEl.innerText += `${ instance.padEnd( 15 ) }: ${ hierarchyData[ className ][ instance ] }\n`;
 
 				}
 
