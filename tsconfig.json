@@ -1,10 +1,7 @@
 {
     "compilerOptions": {
-        "lib": [
-            "dom",
-            "es2015"
-        ],
-        "module": "node16",
+        "lib": [ "dom", "es2017" ],
+        "module": "node20",
         "types": [],
         "strict": true
     },

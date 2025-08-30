@@ -3,9 +3,9 @@
 	"compilerOptions": {
 		"noEmit": true,
 		"target": "esnext",
-		"module": "commonjs",
 		"esModuleInterop": true,
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"types": [ "node" ]
 	},
 	"include": [
 		"test/types/"

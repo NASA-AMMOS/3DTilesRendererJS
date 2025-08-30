@@ -1,15 +1,14 @@
 import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
+import { PriorityQueue } from '3d-tiles-renderer/core';
+import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
-import { CesiumIonAuth } from '../../../core/plugins/auth/CesiumIonAuth.js';
-import { PriorityQueue } from '../../../core/renderer/utilities/PriorityQueue.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
-import { GoogleCloudAuth } from '../../../core/plugins/auth/GoogleCloudAuth.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
-import { safeTextureGetByteLength } from '../../renderer/tiles/utilities.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
+import { MemoryUtils } from '3d-tiles-renderer/three';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -362,7 +361,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += safeTextureGetByteLength( target?.texture );
+				bytes += MemoryUtils.safeTextureGetByteLength( target?.texture );
 
 			}
 

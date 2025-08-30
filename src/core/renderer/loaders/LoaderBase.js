@@ -1,4 +1,4 @@
-import { getWorkingPath } from '../utilities/urlExtension.js';
+import { getWorkingPath } from '../utilities/LoaderUtils.js';
 
 export class LoaderBase {
 

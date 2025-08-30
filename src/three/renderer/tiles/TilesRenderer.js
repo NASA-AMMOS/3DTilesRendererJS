@@ -1,4 +1,4 @@
-import { TilesRendererBase } from '../../../core/renderer/tiles/TilesRendererBase.js';
+import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';
 import { I3DMLoader } from '../loaders/I3DMLoader.js';
@@ -14,13 +14,11 @@ import {
 	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { readMagicBytes } from '../../../core/renderer/utilities/readMagicBytes.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
-import { estimateBytesUsed } from './utilities.js';
+import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { getWorkingPath } from '../../../core/renderer/utilities/urlExtension.js';
 
 const _mat = new Matrix4();
 const _euler = new Euler();
@@ -572,7 +570,7 @@ export class TilesRenderer extends TilesRendererBase {
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
 		const cached = tile.cached;
-		const workingPath = getWorkingPath( uri );
+		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
@@ -580,7 +578,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cachedTransform = cached.transform;
 		const upRotationMatrix = this._upRotationMatrix;
-		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
+		const fileType = ( LoaderUtils.readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
 
 			case 'b3dm': {

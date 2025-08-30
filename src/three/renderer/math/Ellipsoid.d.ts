@@ -1,4 +1,4 @@
-import { Vector3, Matrix4 } from 'three';
+import { Vector3, Matrix4, Ray } from 'three';
 
 export enum Frames {}
 export const ENU_FRAME: Frames;
@@ -24,6 +24,8 @@ export class Ellipsoid {
 	getObjectFrame( lat: number, lon: number, height: number, az: number, el: number, roll: number, target: Matrix4, frame?: Frames ): Matrix4;
 	getCartographicFromObjectFrame( matrix: Matrix4, target: object, frame?: Frames )
 		: { lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number };
+
+	closestPointToRayEstimate( ray: Ray, target: Vector3 ): Vector3;
 
 	// deprecated
 	getAzElRollFromRotationMatrix(

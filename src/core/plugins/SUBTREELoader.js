@@ -2,9 +2,7 @@
  * Structure almost identical to Cesium, also the comments and the names are kept
  * https://github.com/CesiumGS/cesium/blob/0a69f67b393ba194eefb7254600811c4b712ddc0/packages/engine/Source/Scene/Implicit3DTileContent.js
  */
-import { LoaderBase } from '../renderer/loaders/LoaderBase.js';
-import { readMagicBytes } from '../renderer/utilities/readMagicBytes.js';
-import { arrayToString } from '../renderer/utilities/arrayToString.js';
+import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
 function isOctreeSubdivision( tile ) {
 
@@ -96,7 +94,7 @@ export class SUBTREELoader extends LoaderBase {
 		let offset = 0;
 		// 16-byte header
 		// 4 bytes
-		const magic = readMagicBytes( dataView );
+		const magic = LoaderUtils.readMagicBytes( dataView );
 		console.assert( magic === 'subt', 'SUBTREELoader: The magic bytes equal "subt".' );
 		offset += 4;
 		// 4 bytes
@@ -114,7 +112,7 @@ export class SUBTREELoader extends LoaderBase {
 		// 8 bytes
 		const byteLength = dataView.getUint32( offset, true );
 		offset += 8;
-		const subtreeJson = JSON.parse( arrayToString( new Uint8Array( buffer, offset, jsonLength ) ) );
+		const subtreeJson = JSON.parse( LoaderUtils.arrayToString( new Uint8Array( buffer, offset, jsonLength ) ) );
 		offset += jsonLength;
 		const subtreeByte = buffer.slice( offset, offset + byteLength );
 		return {
