@@ -1,4 +1,4 @@
-import { CesiumIonAuth } from '../../core/plugins/auth/CesiumIonAuth.js';
+import { CesiumIonAuth } from '3d-tiles-renderer/core/plugins';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';

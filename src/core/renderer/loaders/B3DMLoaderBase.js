@@ -4,7 +4,7 @@
 import { BatchTable } from '../utilities/BatchTable.js';
 import { FeatureTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
-import { readMagicBytes } from '../utilities/readMagicBytes.js';
+import { readMagicBytes } from '../utilities/LoaderUtils.js';
 
 export class B3DMLoaderBase extends LoaderBase {
 

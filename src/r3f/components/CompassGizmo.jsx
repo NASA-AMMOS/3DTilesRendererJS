@@ -2,7 +2,6 @@ import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';
 import { TilesRendererContext } from './TilesRenderer.jsx';
-import { closestRayEllipsoidSurfacePointEstimate } from '../../three/renderer/controls/utils.js';
 
 // Based in part on @pmndrs/drei's Gizmo component
 
@@ -24,7 +23,7 @@ function getCameraFocusPoint( camera, ellipsoid, tilesGroup, target ) {
 	_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 	// get the closest point to the ray on the globe in the global coordinate frame
-	closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
+	ellipsoid.closestPointToRayEstimate( _ray, _pos );
 	_pos.applyMatrix4( tilesGroup.matrixWorld );
 
 	// get ortho camera info

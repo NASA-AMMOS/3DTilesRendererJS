@@ -370,6 +370,29 @@ export class Ellipsoid {
 
 	}
 
+	// Returns an estimate of the closest point on the ellipsoid to the ray. Returns
+	// the surface intersection if they collide.
+	closestPointToRayEstimate( ray, target ) {
+
+		if ( this.intersectRay( ray, target ) ) {
+
+			return target;
+
+		} else {
+
+			_matrix.makeScale( ...this.radius ).invert();
+			_ray.copy( ray ).applyMatrix4( _matrix );
+
+			_vec.set( 0, 0, 0 );
+			_ray.closestPointToPoint( _vec, target ).normalize();
+
+			_matrix.makeScale( ...this.radius );
+			return target.applyMatrix4( _matrix );
+
+		}
+
+	}
+
 	copy( source ) {
 
 		this.radius.copy( source.radius );

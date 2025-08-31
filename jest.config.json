@@ -10,5 +10,16 @@
 	"testEnvironment": "node",
 	"transform": {
 		"^.+\\.js$": "babel-jest"
+	},
+	"moduleNameMapper": {
+		"^3d-tiles-renderer/r3f$": "<rootDir>/src/r3f/index.jsx",
+		"^3d-tiles-renderer/core$": "<rootDir>/src/core/renderer/index.js",
+		"^3d-tiles-renderer/three$": "<rootDir>/src/three/renderer/index.js",
+
+		"^3d-tiles-renderer/core/plugins$": "<rootDir>/src/core/plugins/index.js",
+		"^3d-tiles-renderer/three/plugins$": "<rootDir>/src/three/plugins/index.js",
+
+		"^3d-tiles-renderer/plugins$": "<rootDir>/src/plugins.js",
+		"^3d-tiles-renderer$": "<rootDir>/src/index.js"
 	}
 }

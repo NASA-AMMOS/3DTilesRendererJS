@@ -1,7 +1,6 @@
 import { forwardRef, useMemo, useEffect, useContext } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { EnvironmentControls as EnvironmentControlsImpl } from '../../three/renderer/controls/EnvironmentControls.js';
-import { GlobeControls as GlobeControlsImpl } from '../../three/renderer/controls/GlobeControls.js';
+import { EnvironmentControls as EnvironmentControlsImpl, GlobeControls as GlobeControlsImpl } from '3d-tiles-renderer/three';
 import { useShallowOptions } from '../utilities/useOptions.js';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';

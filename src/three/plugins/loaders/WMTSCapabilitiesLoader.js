@@ -1,5 +1,4 @@
-import { WGS84_RADIUS } from '../../../core/renderer/constants.js';
-import { LoaderBase } from '../../../core/renderer/loaders/LoaderBase.js';
+import { WGS84_RADIUS, LoaderBase } from '3d-tiles-renderer/core';
 import { ProjectionScheme } from '../images/utils/ProjectionScheme.js';
 import { MathUtils } from 'three';
 
