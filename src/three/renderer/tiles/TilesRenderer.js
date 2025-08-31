@@ -1005,7 +1005,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			target.inView = viewErrorTarget.inView; // NB: viewErrorTarget.inView could be null
+			target.inView = viewErrorTarget.inView;
 			target.error = maxError;
 			target.distanceFromCamera = minDistance;
 
