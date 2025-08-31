@@ -1,4 +1,4 @@
-import { LoaderBase } from '../../renderer/loaders/LoaderBase.js';
+import { LoaderBase } from '3d-tiles-renderer/core';
 
 export function zigZagDecode( value ) {
 

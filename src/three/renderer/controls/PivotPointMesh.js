@@ -1,4 +1,5 @@
 import { Mesh, PlaneGeometry, ShaderMaterial, Vector2 } from 'three';
+
 export class PivotPointMesh extends Mesh {
 
 	constructor() {

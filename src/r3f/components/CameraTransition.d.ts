@@ -1,5 +1,5 @@
 import { Camera } from 'three';
-import { CameraTransitionManager } from '../../three/renderer/controls/CameraTransitionManager.js';
+import { CameraTransitionManager } from '3d-tiles-renderer/three';
 
 interface CameraTransitionProps {
     mode?: 'perspective' | 'orthographic';

@@ -1,5 +1,2 @@
-// core
-export * from './core/renderer/index.js';
-
-// three
-export * from './three/renderer/index.js';
+export * from '3d-tiles-renderer/core';
+export * from '3d-tiles-renderer/three';
