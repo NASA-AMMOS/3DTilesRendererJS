@@ -48,7 +48,7 @@ function resetFrameState( tile, renderer ) {
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
-		tile.__inFrustum = viewErrorTarget.inView ? true : false; // NB: viewErrorTarget.inView could be null
+		tile.__inFrustum = viewErrorTarget.inView;
 		tile.__error = viewErrorTarget.error;
 		tile.__distanceFromCamera = viewErrorTarget.distanceFromCamera;
 

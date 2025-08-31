@@ -99,7 +99,19 @@ export class LoadRegionPlugin {
 // Definitions of predefined regions
 export class BaseRegion {
 
-	constructor( errorTarget = 10, mask = false ) {
+	constructor( options = {} ) {
+
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'LoadRegionPlugin: Region constructor has been changed to take options as an object.' );
+			options = { errorTarget: options };
+
+		}
+
+		const {
+			errorTarget = 10,
+			mask = false,
+		} = options;
 
 		this.errorTarget = errorTarget;
 		this.mask = mask;
@@ -118,9 +130,21 @@ export class BaseRegion {
 
 export class SphereRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, mask = false, sphere = new Sphere() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget, mask );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'SphereRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				sphere: arguments[ 1 ],
+			};
+
+		}
+
+		const { sphere = new Sphere() } = options;
+
+		super( options );
 		this.sphere = sphere.clone();
 
 	}
@@ -135,9 +159,21 @@ export class SphereRegion extends BaseRegion {
 
 export class RayRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, mask = false, ray = new Ray() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget, mask );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				ray: arguments[ 1 ],
+			};
+
+		}
+
+		const { ray = new Ray() } = options;
+
+		super( options );
 		this.ray = ray.clone();
 
 	}
@@ -152,9 +188,21 @@ export class RayRegion extends BaseRegion {
 
 export class OBBRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, mask = false, obb = new OBB() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget, mask );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				obb: arguments[ 1 ],
+			};
+
+		}
+
+		const { obb = new OBB() } = options;
+
+		super( options );
 		this.obb = obb.clone();
 		this.obb.update();
 
