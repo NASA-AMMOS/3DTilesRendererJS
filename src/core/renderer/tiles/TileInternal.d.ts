@@ -1,4 +1,4 @@
-import { Tile } from './Tile';
+import { Tile } from './Tile.js';
 
 /**
  * Internal state used/set by the package.

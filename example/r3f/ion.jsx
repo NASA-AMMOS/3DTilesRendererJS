@@ -75,7 +75,6 @@ function App() {
 			<GizmoHelper alignment="bottom-right">
 				<GizmoViewport />
 			</GizmoHelper>
-
 		</Canvas>
 	);
 

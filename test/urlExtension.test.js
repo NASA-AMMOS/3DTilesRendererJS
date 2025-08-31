@@ -4,6 +4,8 @@ describe( 'getUrlExtension', () => {
 
 	it.each( [
 		'https://nasa.gov/foo/bar.baz/tileset.json',
+		'https://nasa.gov/foo/bar.baz/tileset.json#a.b',
+		'https://nasa.gov/foo/bar.baz/tileset.json#/a.b',
 		'https://nasa.gov/foo/bar.baz/tileset.json?foo=bar',
 		'https://nasa.gov/foo/bar.baz/tileset.json?a.b=c.d',
 		'https://nasa.gov/foo/bar.baz/tileset.json?a.b=query/path/to/file',
@@ -26,6 +28,9 @@ describe( 'getUrlExtension', () => {
 	it.each( [
 		'https://nasa.gov',
 		'https://nasa.gov/',
+		'https://nasa.gov#a.b',
+		'https://nasa.gov#/a.b',
+		'https://nasa.gov/foo/bar.baz/tileset.json/#/a.b',
 		'https://nasa.gov/tileset',
 		'https://nasa.gov/foo/bar.baz/tileset?foo=bar',
 		'https://nasa.gov/foo/bar.baz/tileset?a.b=c.d',

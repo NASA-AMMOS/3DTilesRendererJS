@@ -11,18 +11,40 @@ export function getUrlExtension( url ) {
 
 	}
 
-	const filename = url
-		.replace( /[a-z]+:\/\/[^/]+/i, '' ) 	// remove origin
-		.replace( /\?.*$/i, '' ) 				// remove query
-		.replace( /.*\//g, '' ); 				// remove path
+	// Find the last occurrence of '?' and '#' to handle query params and fragments
+	let endIndex = url.length;
+	const queryIndex = url.indexOf( '?' );
+	const fragmentIndex = url.indexOf( '#' );
+	if ( queryIndex !== - 1 ) {
 
-	const lastPeriod = filename.lastIndexOf( '.' );
-	if ( lastPeriod === - 1 ) {
+		endIndex = Math.min( endIndex, queryIndex );
+
+	}
+
+	if ( fragmentIndex !== - 1 ) {
+
+		endIndex = Math.min( endIndex, fragmentIndex );
+
+	}
+
+	// Check if the string is just a hostname or whether the path does not end in an extension
+	const lastPeriodIndex = url.lastIndexOf( '.', endIndex );
+	const lastSlashIndex = url.lastIndexOf( '/', endIndex );
+	const protocolIndex = url.indexOf( '://' );
+	const isHostOnly = protocolIndex !== - 1 && protocolIndex + 2 === lastSlashIndex;
+	if ( isHostOnly || lastPeriodIndex === - 1 || lastPeriodIndex < lastSlashIndex ) {
 
 		return null;
 
 	}
 
-	return filename.substring( lastPeriod + 1 ) || null;
+	return url.substring( lastPeriodIndex + 1, endIndex ) || null;
+
+}
+
+// Returns a working path with a trailing slash
+export function getWorkingPath( url ) {
+
+	return url.replace( /[\\/][^\\/]+$/, '' ) + '/';
 
 }
