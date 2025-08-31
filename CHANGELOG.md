@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Adjusted the package to export a bundled version of the library.
 - Some execution timing of react components may have changed.
+- LoadRegionPlugin: "Region" constructors have changed to take options as an object rather than individual arguments.
+- TilesRenderer Plugins: Return value for "calculateTileViewError" has been added.
 
 ### Fixed
 - Fixed bug introduced when loading GoogleMapsOverlay with ImageOverlayPlugin.
