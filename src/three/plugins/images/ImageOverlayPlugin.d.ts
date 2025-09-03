@@ -52,7 +52,7 @@ export class WMSTilesOverlay extends ImageOverlay {
 		levels: number,
 		opacity: number,
 		extraHeaders?:{ [key: string]: string}
-		
+
 	} );
 
 }

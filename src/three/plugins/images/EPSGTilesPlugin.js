@@ -78,30 +78,32 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 export class WMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
-    constructor(options = {}) {
-        const {
-            baseUrl,
-            layer,
-            crs,
-            format,
-            tileDimension,
-            styles,
-            version,
-            ...rest
-        } = options;
+	constructor( options = {} ) {
 
-        super(rest);
+		const {
+			baseUrl,
+			layer,
+			crs,
+			format,
+			tileDimension,
+			styles,
+			version,
+			...rest
+		} = options;
 
-        this.name = 'WMS_TILES_PLUGIN';
-        this.imageSource = new WMSImageSource({
-            baseUrl,
-            layer,
-            crs,
-            format,
-            tileDimension,
-            styles,
-            version
-        });
-    }
+		super( rest );
+
+		this.name = 'WMS_TILES_PLUGIN';
+		this.imageSource = new WMSImageSource( {
+			baseUrl,
+			layer,
+			crs,
+			format,
+			tileDimension,
+			styles,
+			version
+		} );
+
+	}
 
 }

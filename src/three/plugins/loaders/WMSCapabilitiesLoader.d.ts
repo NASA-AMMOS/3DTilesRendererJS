@@ -38,4 +38,4 @@ export interface WMSCapabilitiesResult {
 }
 
 export class WMSCapabilitiesLoader<Result = WMSCapabilitiesResult, ParseResult = Result>
-    extends LoaderBase<Result, ParseResult> {}
+	extends LoaderBase<Result, ParseResult> {}
