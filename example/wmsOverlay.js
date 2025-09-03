@@ -12,6 +12,7 @@ import {
 	WMSTilesOverlay,
 	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
+	TilesFadePlugin,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
@@ -71,7 +72,7 @@ function rebuildGUI() {
 	const layer = capabilities.layers.find( ( l ) => l.name === params.layer );
 
 	gui = new GUI();
-	// gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
+	//gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
 	// NOTE: Planar mode is disabled because WMS overlays do not render correctly in planar mode.
 
 	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( updateOverlayParams );
@@ -112,9 +113,12 @@ function rebuildTiles() {
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
+	tiles.registerPlugin( new TilesFadePlugin() );
+
 	// Base map plugin ( XYZ )
 	tiles.registerPlugin(
 		new XYZTilesPlugin( {
+
 			bounds: [ - 180, - 90, 180, 90 ],
 			levels: 18,
 			center: true,
@@ -148,7 +152,7 @@ function rebuildTiles() {
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
-
+		//shape: params.planar ? 'planar' : 'ellipsoid',
 		baseUrl: 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
 		layer: params.layer,
 		crs: params.crs,
@@ -258,7 +262,7 @@ async function updateCapabilities() {
 
 	params = {
 
-		// planar: false, // Disabled: WMS does not work in planar mode
+		planar: false, // Disabled: WMS does not work in planar mode
 		wmsOpacity: 0.7,
 		optimizeWMS: false,
 		layer: defaultLayer.name,
