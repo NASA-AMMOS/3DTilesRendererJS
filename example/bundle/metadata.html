@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta charset="utf-8"/>
+
+        <title>3D Tiles Renderer Metadata Example</title>
+
+        <style>
+			#container {
+				position: absolute;
+				left: 0;
+				top: 0;
+				pointer-events: none;
+				color: white;
+				font-family: monospace;
+				opacity: 0.75;
+				font-size: 12px;
+			}
+
+			#cesium-info, #meshFeatures, #structuralMetadata {
+
+				display: inline-block;
+				background-color: rgba( 0, 0, 0, 0.5 );
+				border-radius: 2px;
+				white-space: pre;
+				margin: 5px;
+				padding: 5px;
+
+			}
+
+			#cesium-info, #cesium-info a {
+
+				white-space: initial;
+				color: white;
+
+			}
+
+			#cesium-info a {
+
+				pointer-events: all;
+
+			}
+
+			#meshFeatures:empty, #structuralMetadata:empty {
+
+				display: none;
+
+			}
+
+        </style>
+      <script type="module" crossorigin src="./assets/metadata-BE5hL9-K.js"></script>
+      <link rel="modulepreload" crossorigin href="./assets/three.module-B9KxNAP1.js">
+      <link rel="modulepreload" crossorigin href="./assets/BatchTable-CRr3zuRk.js">
+      <link rel="modulepreload" crossorigin href="./assets/GLTFLoader-DQ4ypLIk.js">
+      <link rel="modulepreload" crossorigin href="./assets/Ellipsoid-swK_XlpY.js">
+      <link rel="modulepreload" crossorigin href="./assets/I3DMLoader-B_sUbHNq.js">
+      <link rel="modulepreload" crossorigin href="./assets/B3DMLoader-RLzGAf1d.js">
+      <link rel="modulepreload" crossorigin href="./assets/PNTSLoader-Csrzcxbu.js">
+      <link rel="modulepreload" crossorigin href="./assets/CMPTLoader-DNA4KPEu.js">
+      <link rel="modulepreload" crossorigin href="./assets/EllipsoidRegion-CemvK39q.js">
+      <link rel="modulepreload" crossorigin href="./assets/TilesRenderer-BsUNo_RK.js">
+      <link rel="modulepreload" crossorigin href="./assets/EnvironmentControls-BHKVoYn4.js">
+      <link rel="modulepreload" crossorigin href="./assets/GeometryClipper-BMnz8RV9.js">
+      <link rel="modulepreload" crossorigin href="./assets/ImageFormatPlugin-Ct7UqjU_.js">
+      <link rel="modulepreload" crossorigin href="./assets/TiledImageSource-DwJv7aT0.js">
+      <link rel="modulepreload" crossorigin href="./assets/TMSImageSource-CmPyM76K.js">
+      <link rel="modulepreload" crossorigin href="./assets/EPSGTilesPlugin-DXOQaaIp.js">
+      <link rel="modulepreload" crossorigin href="./assets/CesiumIonAuthPlugin-DuSHD61X.js">
+      <link rel="modulepreload" crossorigin href="./assets/GLTFExtensionsPlugin-09_yQ9Bu.js">
+      <link rel="modulepreload" crossorigin href="./assets/lil-gui.module.min-BH_YJbPT.js">
+      <link rel="stylesheet" crossorigin href="./assets/styles-DnDcsTJa.css">
+    </head>
+    <body>
+		<div id="container">
+			<div><div id="cesium-info">
+				Demonstration of displaying glTF Mesh Features and
+				<br/>
+				Structural Metadata properties on mouse-over.
+				<br/>
+				See <a href="https://github.com/CesiumGS/cesium/blob/main/packages/engine/Source/Core/Ion.js#L6-L7">Cesium repo</a> for demo API key.
+			</div></div>
+			<div><div id="meshFeatures"></div></div>
+			<div><div id="structuralMetadata"></div></div>
+		</div>
+
+		<div id="footer">
+			<div id="logos">
+				<img src="./assets/cesiumion-D4KynnCY.png" />
+			</div>
+		</div>
+    </body>
+</html>
