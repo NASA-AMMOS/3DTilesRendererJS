@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
 
-const url = '../data/tileset.json';
+const url = new URLSearchParams( location.search ).get( 'url' ) || '../data/tileset.json';
 const threeContainer = document.getElementById( 'three-container' );
 const cesiumContainer = document.getElementById( 'cesium-container' );
 const threeStats = threeContainer.getElementsByClassName( 'stats' )[ 0 ];
