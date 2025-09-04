@@ -15,6 +15,8 @@ import {
 } from 'three';
 
 let controls, scene, camera, renderer, tiles;
+const useMars = new URLSearchParams( location.search ).has( 'mars' );
+const assetId = useMars ? '3644333' : '2684829';
 
 init();
 animate();
@@ -30,12 +32,11 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2684829', autoRefreshToken: true } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: assetId, autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.group.rotation.x = - Math.PI / 2;
-	tiles.errorTarget = 20;
 	scene.add( tiles.group );
 
 	tiles.setCamera( camera );
@@ -53,7 +54,7 @@ function init() {
 	// scene
 	scene = new Scene();
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 160000000 );
-	camera.position.set( 2620409, 0, - 6249816 );
+	camera.position.set( 2620409, 0, - 6249816 ).multiplyScalar( useMars ? 1.5 : 1 );
 	camera.lookAt( 0, 0, 0 );
 
 	// controls
