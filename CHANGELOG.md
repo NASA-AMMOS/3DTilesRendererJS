@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - LoadRegionPlugin: Added support for "mask" regions that allow for only loading tiles within the shape.
 
+### Fixed
+- GlobeControls: Fix case where camera position could become "NaN" when zooming into the sky.
+
 ## [0.4.15] - 2025.09.03
 ### Changed
 - Adjusted the package to export a bundled version of the library.
