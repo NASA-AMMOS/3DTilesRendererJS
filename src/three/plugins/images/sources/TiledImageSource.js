@@ -50,7 +50,7 @@ export class TiledImageSource extends DataCache {
 		const { format, type, image, generateMipmaps } = tex;
 		const { width, height } = image;
 		const bytes = TextureUtils.getByteLength( width, height, format, type );
-		return generateMipmaps ? bytes * 4 / 3 : bytes;
+		return generateMipmaps ? ( bytes * 4 ) / 3 : bytes;
 
 	}
 
@@ -62,10 +62,9 @@ export class TiledImageSource extends DataCache {
 			signal,
 		};
 		const url = this.getUrl( ...tokens );
-		return this
-			.fetchData( url, fetchOptions )
-			.then( res => res.arrayBuffer() )
-			.then( buffer => this.processBufferToTexture( buffer ) );
+		return this.fetchData( url, fetchOptions )
+			.then( ( res ) => res.arrayBuffer() )
+			.then( ( buffer ) => this.processBufferToTexture( buffer ) );
 
 	}
 
@@ -81,8 +80,6 @@ export class TiledImageSource extends DataCache {
 
 	}
 
-	getUrl( ...args ) {
-
-	}
+	getUrl( ...args ) {}
 
 }
