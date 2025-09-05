@@ -11,7 +11,6 @@ import {
 	WMSTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
 
 
@@ -21,7 +20,7 @@ const url =
 
 
 let controls, scene, renderer;
-let xyzTiles, wmsTiles, camera, gui;
+let wmsTiles, camera, gui;
 let params, capabilities;
 
 init();
@@ -55,7 +54,7 @@ function init() {
 
 async function updateCapabilities() {
 
-	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + "&request=GetCapabilities" );
+	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + '&request=GetCapabilities' );
 
 	const defaultLayer = capabilities.layers[ 0 ];
 	let selectedCRS = 'EPSG:4326';

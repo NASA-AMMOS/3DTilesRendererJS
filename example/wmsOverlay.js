@@ -244,7 +244,7 @@ function moveCameraToLonLat( lon, lat, height = 0, cameraDistance = 1e7 ) {
 async function updateCapabilities() {
 
 	const url =
-	    'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS&REQUEST=GetCapabilities';
+		'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS&REQUEST=GetCapabilities';
 		//'https://geoservizi.regione.liguria.it/geoserver/M2660/wms?REQUEST=GetCapabilities';
 
 	const loader = new WMSCapabilitiesLoader();

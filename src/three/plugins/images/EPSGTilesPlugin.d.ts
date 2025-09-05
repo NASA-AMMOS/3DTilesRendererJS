@@ -36,3 +36,25 @@ export class WMTSTilesPlugin {
 	} );
 
 }
+
+export class WMSTilesPlugin {
+
+	constructor( options: {
+
+		center?: boolean,
+		shape?: 'ellipsoid' | 'planar',
+		useRecommendedSettings?: boolean,
+		baseUrl?: string,
+		layer: string,
+		crs: string,
+		crsParam?: string,
+		format?: string,
+		tileDimension?: number,
+		styles?: string,
+		version?: string,
+		bounds?: [ number, number, number, number ],
+		extraHeaders?:{ [key: string]: string}
+
+	} );
+
+}
