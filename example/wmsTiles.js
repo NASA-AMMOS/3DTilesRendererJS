@@ -14,9 +14,10 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
 
+
 const url =
 	window.location.hash.replace( /^#/, '' ) ||
-	'https://geoservizi.regione.liguria.it/geoserver/M2660/wms?request=GetCapabilities';
+	'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS';
 
 let controls, scene, renderer;
 let xyzTiles, wmsTiles, camera, gui;
@@ -53,7 +54,7 @@ function init() {
 
 async function updateCapabilities() {
 
-	capabilities = await new WMSCapabilitiesLoader().loadAsync( url );
+	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + "&request=GetCapabilities" );
 
 	const defaultLayer = capabilities.layers[ 0 ];
 	let selectedCRS = 'EPSG:4326';
@@ -125,7 +126,7 @@ function rebuildGUI() {
 }
 function rebuildTiles() {
 
-	if ( xyzTiles ) xyzTiles.dispose();
+	//if ( xyzTiles ) xyzTiles.dispose();
 	if ( wmsTiles ) wmsTiles.dispose();
 	if ( controls ) {
 
@@ -135,18 +136,18 @@ function rebuildTiles() {
 	}
 
 	// XYZ base layer
-	xyzTiles = new TilesRenderer();
-	xyzTiles.registerPlugin( new TilesFadePlugin() );
-	xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
-	xyzTiles.registerPlugin(
-		new XYZTilesPlugin( {
-			center: true,
-			shape: params.planar ? 'planar' : 'ellipsoid',
-			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-		} ),
-	);
-	xyzTiles.setCamera( camera );
-	scene.add( xyzTiles.group );
+	// xyzTiles = new TilesRenderer();
+	// xyzTiles.registerPlugin( new TilesFadePlugin() );
+	// xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
+	// xyzTiles.registerPlugin(
+	// 	new XYZTilesPlugin( {
+	// 		center: true,
+	// 		shape: params.planar ? 'planar' : 'ellipsoid',
+	// 		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+	// 	} ),
+	// );
+	// xyzTiles.setCamera( camera );
+	// scene.add( xyzTiles.group );
 
 	// WMS overlay layer
 	wmsTiles = new TilesRenderer();
@@ -170,7 +171,7 @@ function rebuildTiles() {
 
 	scene.add( wmsTiles.group );
 
-	xyzTiles.group.renderOrder = 0;
+	//xyzTiles.group.renderOrder = 0;
 	wmsTiles.group.renderOrder = 1;
 
 	// const marker = addPointerMarker( 8.811, 44.4056 ); // Genoa, Italy
@@ -194,10 +195,10 @@ function rebuildTiles() {
 
 	} else {
 
-		xyzTiles.group.rotation.x = - Math.PI / 2;
+		//xyzTiles.group.rotation.x = - Math.PI / 2;
 		wmsTiles.group.rotation.x = - Math.PI / 2;
 		controls = new GlobeControls( scene, camera, renderer.domElement );
-		controls.setEllipsoid( xyzTiles.ellipsoid, xyzTiles.group );
+		controls.setEllipsoid( wmsTiles.ellipsoid, wmsTiles.group );
 		controls.enableDamping = true;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 		moveCameraToLonLat( 8.9463, 44.4056 );
@@ -227,13 +228,13 @@ function render() {
 		camera.updateMatrixWorld();
 
 	}
-	if ( xyzTiles ) {
+	// if ( xyzTiles ) {
 
-		xyzTiles.setCamera( camera );
-		xyzTiles.setResolutionFromRenderer( camera, renderer );
-		xyzTiles.update();
+	// 	xyzTiles.setCamera( camera );
+	// 	xyzTiles.setResolutionFromRenderer( camera, renderer );
+	// 	xyzTiles.update();
 
-	}
+	// }
 	if ( wmsTiles ) {
 
 		wmsTiles.setCamera( camera );

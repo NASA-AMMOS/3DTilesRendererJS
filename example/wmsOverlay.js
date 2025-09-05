@@ -12,6 +12,7 @@ import {
 	WMSTilesOverlay,
 	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
+	TilesFadePlugin,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
@@ -71,7 +72,7 @@ function rebuildGUI() {
 	const layer = capabilities.layers.find( ( l ) => l.name === params.layer );
 
 	gui = new GUI();
-	// gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
+	//gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
 	// NOTE: Planar mode is disabled because WMS overlays do not render correctly in planar mode.
 
 	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( updateOverlayParams );
@@ -112,9 +113,12 @@ function rebuildTiles() {
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
+	tiles.registerPlugin( new TilesFadePlugin() );
+
 	// Base map plugin ( XYZ )
 	tiles.registerPlugin(
 		new XYZTilesPlugin( {
+
 			bounds: [ - 180, - 90, 180, 90 ],
 			levels: 18,
 			center: true,
@@ -148,8 +152,8 @@ function rebuildTiles() {
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
-
-		baseUrl: 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
+		//shape: params.planar ? 'planar' : 'ellipsoid',
+		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS',
 		layer: params.layer,
 		crs: params.crs,
 		crsParam,
@@ -158,7 +162,7 @@ function rebuildTiles() {
 		//styles: params.styles,
 		version: params.version,
 		bounds: overlayBounds,
-		levels: 10,
+		levels: 18,
 		opacity: params.wmsOpacity,
 		// extraHeaders: {
 		// 	//'Authorization': 'Bearer your_token_here'
@@ -240,7 +244,8 @@ function moveCameraToLonLat( lon, lat, height = 0, cameraDistance = 1e7 ) {
 async function updateCapabilities() {
 
 	const url =
-		'https://geoservizi.regione.liguria.it/geoserver/M2660/wms?REQUEST=GetCapabilities';
+	    'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS&REQUEST=GetCapabilities';
+		//'https://geoservizi.regione.liguria.it/geoserver/M2660/wms?REQUEST=GetCapabilities';
 
 	const loader = new WMSCapabilitiesLoader();
 
@@ -258,7 +263,7 @@ async function updateCapabilities() {
 
 	params = {
 
-		// planar: false, // Disabled: WMS does not work in planar mode
+		planar: false, // Disabled: WMS does not work in planar mode
 		wmsOpacity: 0.7,
 		optimizeWMS: false,
 		layer: defaultLayer.name,
@@ -298,7 +303,7 @@ function updateOverlayParams() {
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
-		baseUrl: 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
+		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS', // 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
 		layer: params.layer,
 		crs: params.crs,
 		crsParam,
