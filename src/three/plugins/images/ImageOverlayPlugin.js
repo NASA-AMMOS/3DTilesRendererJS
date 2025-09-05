@@ -23,7 +23,7 @@ import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { MemoryUtils } from '3d-tiles-renderer/three';
-import { WMSImageSource } from './sources/WMSImageSource.js';
+import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -1550,12 +1550,12 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 }
 
-export class WMSTilesOverlay extends ImageOverlay {
+export class GeoJSONTilesOverlay extends ImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
-		this.imageSource = new WMSImageSource( options );
+		this.imageSource = new GeoJSONImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
 	}
@@ -1570,24 +1570,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 	whenReady() {
 
 		return this._whenReady;
-
-	}
-
-	fetch( url, options = {} ) {
-
-		// Add auth headers if present
-		if ( this.imageSource && this.imageSource.extraHeaders ) {
-
-			const { extraHeaders } = this.imageSource;
-			options.headers = options.headers || {};
-			Object.entries( extraHeaders ).forEach( ( [ key, value ] ) => {
-
-				options.headers[ key ] = value;
-
-			} );
-
-		}
-		return fetch( url, options );
 
 	}
 

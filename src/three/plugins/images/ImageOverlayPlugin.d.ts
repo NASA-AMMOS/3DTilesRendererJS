@@ -38,21 +38,22 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 }
 
-export class WMSTilesOverlay extends ImageOverlay {
+export class GeoJSONTilesOverlay extends ImageOverlay {
 
 	constructor( options: {
-		baseUrl: string,
-		layer: string,
-		crs: string,
-		format: string,
-		tileDimension: number,
-		styles: string,
-		version: string,
-		bounds: [ number, number, number, number ],
-		levels: number,
-		opacity: number,
-		extraHeaders?:{ [key: string]: string}
-
+		// rasterize GeoJSON per tile (forwarded to GeoJSONImageSource)
+		geojson?: any, // FeatureCollection or null (if url provided)
+		url?: string, // optional URL alternative to geojson object
+		tileDimension?: number, // tile size in px (runtime name: tileDimension)
+		levels?: number, // max rasterization zoom
+		bounds?: [ number, number, number, number ],
+		projection?: string, // 'EPSG:3857' or 'EPSG:4326'
+		pointRadius?: number,
+		strokeStyle?: string,
+		fillStyle?: string,
+		color?: number | Color,
+		opacity?: number,
+		frame?: Matrix4 | null,
 	} );
 
 }
