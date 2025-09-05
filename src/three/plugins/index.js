@@ -25,3 +25,4 @@ export { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
+export * from './loaders/WMSCapabilitiesLoader.js';
