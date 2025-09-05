@@ -26,7 +26,7 @@ export default ( { mode } ) => {
 			rollupOptions: {
 				external: ( p ) => {
 
-					return ! /^[./\\]/.test( p );
+					return ! /^[./\\]/.test( p ) && ! /^3d-tiles-renderer/.test( p );
 
 				},
 			},

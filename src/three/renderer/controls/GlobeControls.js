@@ -766,8 +766,10 @@ export class GlobeControls extends EnvironmentControls {
 			const point = ellipsoid.intersectRay( _ray, _vec );
 			if ( point !== null ) {
 
+				point.applyMatrix4( ellipsoidFrame );
 				return {
-					point: point.clone().applyMatrix4( ellipsoidFrame ),
+					point: point.clone(),
+					distance: point.distanceTo( raycaster.ray.origin ),
 				};
 
 			} else {

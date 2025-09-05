@@ -25,6 +25,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Cesium Ion Lunar Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionLunar.html)
 
+[Cesium Ion Martian Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionLunar.html?mars)
+
 [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)
 
 [Google Globe Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsExample.html)

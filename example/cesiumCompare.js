@@ -1,12 +1,12 @@
 
 import { GlobeControls, TilesRenderer, CAMERA_FRAME, EnvironmentControls } from '3d-tiles-renderer';
-import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils, DirectionalLight, AmbientLight } from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils, DirectionalLight, DataTexture, EquirectangularReflectionMapping } from 'three';
 import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
 
-const url = '../data/tileset.json';
+const url = new URLSearchParams( location.search ).get( 'url' ) || '../data/tileset.json';
 const threeContainer = document.getElementById( 'three-container' );
 const cesiumContainer = document.getElementById( 'cesium-container' );
 const threeStats = threeContainer.getElementsByClassName( 'stats' )[ 0 ];
@@ -325,9 +325,13 @@ async function initThree() {
 	// lights
 	const dirLight = new DirectionalLight( 0xffffff, 2 );
 	dirLight.position.set( 1, 2, 3 );
+	scene.add( dirLight );
 
-	const ambLight = new AmbientLight( 0xffffff, 1 );
-	scene.add( dirLight, ambLight );
+	// use environment rather than ambient light since it works for metallic materials
+	scene.environment = new DataTexture( new Uint8Array( 64 * 64 * 4 ).fill( 255 ), 64, 64 );
+	scene.environment.mapping = EquirectangularReflectionMapping;
+	scene.environmentIntensity = 1 / Math.PI;
+	scene.environment.needsUpdate = true;
 
 	// position the camera
 	const lat = 0.5419733570174874;
