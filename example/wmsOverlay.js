@@ -13,6 +13,7 @@ import {
 	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
 	TilesFadePlugin,
+	TilesFadePlugin,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
@@ -152,8 +153,8 @@ function rebuildTiles() {
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
-		//shape: params.planar ? 'planar' : 'ellipsoid',
-		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS',
+
+		baseUrl: 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
 		layer: params.layer,
 		crs: params.crs,
 		crsParam,
