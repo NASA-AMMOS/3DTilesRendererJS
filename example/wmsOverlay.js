@@ -13,7 +13,6 @@ import {
 	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
 	TilesFadePlugin,
-	TilesFadePlugin,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';

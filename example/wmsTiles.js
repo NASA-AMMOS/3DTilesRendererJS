@@ -19,6 +19,7 @@ const url =
 	window.location.hash.replace( /^#/, '' ) ||
 	'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS';
 
+
 let controls, scene, renderer;
 let xyzTiles, wmsTiles, camera, gui;
 let params, capabilities;
