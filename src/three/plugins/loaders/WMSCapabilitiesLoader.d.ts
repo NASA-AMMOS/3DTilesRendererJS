@@ -11,6 +11,9 @@ export interface WMSStyle {
     name: string;
     title: string;
     legendUrl: string;
+	legendFormats?: string[];
+    legendWidth?: number | null;
+    legendHeight?: number | null;
 }
 
 export interface WMSBoundingBox {
@@ -32,9 +35,24 @@ export interface WMSLayer {
     subLayers: WMSLayer[];
 }
 
+export interface WMSDCPType {
+    type: string; // e.g. 'HTTP' or 'UNKNOWN'
+    get: string;
+    post: string;
+}
+
+export interface WMSRequestOperation {
+    formats: string[];
+    dcp: WMSDCPType[];
+}
+
+export type WMSRequestMap = { [operationName: string]: WMSRequestOperation };
+
+
 export interface WMSCapabilitiesResult {
     service: WMSService;
     layers: WMSLayer[];
+	request: WMSRequestMap
 }
 
 export class WMSCapabilitiesLoader<Result = WMSCapabilitiesResult, ParseResult = Result>

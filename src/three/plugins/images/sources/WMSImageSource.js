@@ -12,7 +12,6 @@ export class WMSImageSource extends TiledImageSource {
 		tileDimension = 256,
 		styles = '',
 		version = '1.3.0',
-		bounds = [ - 180, - 90, 180, 90 ],
 		levels = 18,
 		extraHeaders = {},
 	} ) {
@@ -25,7 +24,6 @@ export class WMSImageSource extends TiledImageSource {
 		this.tileDimension = tileDimension;
 		this.styles = styles;
 		this.version = version;
-		this.bounds = bounds;
 		this.levels = levels;
 		this.extraHeaders = extraHeaders;
 
@@ -36,7 +34,8 @@ export class WMSImageSource extends TiledImageSource {
 		const tiling = this.tiling;
 		tiling.setProjection( new ProjectionScheme( this.crs ) );
 		tiling.flipY = true;
-		tiling.setContentBounds( ...this.bounds );
+		tiling.setContentBounds( ...tiling.projection.getBounds() );
+
 		for ( let i = 0; i < this.levels; i ++ ) {
 
 			const tilesX = 2 ** i;
@@ -88,7 +87,7 @@ export class WMSImageSource extends TiledImageSource {
 
 	getUrl( x, y, level ) {
 
-		const bbox = this.tiling.getTileBounds( x, y, level, true, false ); // [minx, miny, maxx, maxy]
+		const bbox = this.tiling.getTileBounds( x, y, level, true, false );
 
 		// Axis order and CRS param name depend on WMS version and CRS
 		const crsParam = this.version === '1.1.1' ? 'SRS' : 'CRS';

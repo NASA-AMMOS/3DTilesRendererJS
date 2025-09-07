@@ -48,7 +48,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 		tileDimension: number,
 		styles: string,
 		version: string,
-		bounds: [ number, number, number, number ],
 		levels: number,
 		opacity: number,
 		extraHeaders?:{ [key: string]: string}

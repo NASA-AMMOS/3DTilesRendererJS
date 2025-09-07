@@ -52,10 +52,6 @@ async function init() {
 		10000,
 	);
 
-	params = {
-		planar: false,
-		wmsOpacity: 0.7,
-	};
 
 	console.log( 'initializing' );
 	await updateCapabilities(); // Wait for capabilities to load
@@ -72,30 +68,30 @@ function rebuildGUI() {
 	const layer = capabilities.layers.find( ( l ) => l.name === params.layer );
 
 	gui = new GUI();
-	//gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
+	gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
 	// NOTE: Planar mode is disabled because WMS overlays do not render correctly in planar mode.
 
-	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( updateOverlayParams );
+	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( rebuildTiles);
 	gui
 		.add(
 			params,
 			'layer',
 			capabilities.layers.map( ( l ) => l.name ),
 		)
-		.onChange( updateOverlayParams );
+		.onChange( rebuildTiles);
 	gui
 		.add(
 			params,
 			'styles',
 			layer.styles.map( ( s ) => s.name ),
 		)
-		.onChange( updateOverlayParams );
-	gui.add( params, 'crs', layer.crs ).onChange( updateOverlayParams );
+		.onChange( rebuildTiles);
+	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles);
 	gui
 		.add( params, 'format', [ 'image/png', 'image/jpeg' ] )
-		.onChange( updateOverlayParams );
-	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( updateOverlayParams );
-	gui.add( params, 'version', [ '1.1.1', '1.3.0' ] ).onChange( updateOverlayParams );
+		.onChange( rebuildTiles);
+	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles);
+	gui.add( params, 'version', [ '1.1.1', '1.3.0' ] ).onChange( rebuildTiles);
 
 }
 
@@ -113,16 +109,16 @@ function rebuildTiles() {
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
 
-	tiles.registerPlugin( new TilesFadePlugin() );
+	//tiles.registerPlugin( new TilesFadePlugin() );
 
 	// Base map plugin ( XYZ )
 	tiles.registerPlugin(
 		new XYZTilesPlugin( {
 
-			bounds: [ - 180, - 90, 180, 90 ],
+			//bounds: [ - 180, - 90, 180, 90 ],
 			levels: 18,
 			center: true,
-			shape: 'ellipsoid', // seems that planar is no working with wms
+			shape: params.planar ? 'planar' : 'ellipsoid',
 			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 		} ),
 	);
@@ -147,23 +143,21 @@ function rebuildTiles() {
 	// const password = 'your_password';
 	// const basicAuth = 'Basic ' + btoa( `${username}:${password}` );
 
-	const overlayBounds = [ - 180, - 90, 180, 90 ];
-
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
 
-		baseUrl: 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
+		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS',
 		layer: params.layer,
 		crs: params.crs,
 		crsParam,
 		format: params.format,
 		tileDimension: params.tileDimension,
-		//styles: params.styles,
 		version: params.version,
-		bounds: overlayBounds,
 		levels: 18,
 		opacity: params.wmsOpacity,
+		center: true
+		//shape: params.planar ? 'planar' : 'ellipsoid',
 		// extraHeaders: {
 		// 	//'Authorization': 'Bearer your_token_here'
 		// 	Authorization: 'Basic ' + btoa( 'your_username:your_password' ),
@@ -175,7 +169,6 @@ function rebuildTiles() {
 
 		overlays: [ wmsOverlay ],
 		renderer,
-		resolution: 256,
 
 	} );
 
@@ -263,15 +256,13 @@ async function updateCapabilities() {
 
 	params = {
 
-		planar: false, // Disabled: WMS does not work in planar mode
+		planar: true, // Disabled: WMS does not work in planar mode
 		wmsOpacity: 0.7,
-		optimizeWMS: false,
 		layer: defaultLayer.name,
 		style: defaultLayer.styles[ 0 ]?.name || '',
 		crs: selectedCRS,
 		format: 'image/png',
 		tileDimension: 256,
-		bounds: defaultLayer.boundingBoxes[ 0 ]?.bounds || [ - 180, - 90, 180, 90 ],
 		version: capabilities.version || '1.3.0',
 		styles: defaultLayer.styles[ 0 ]?.name || '',
 
@@ -299,22 +290,25 @@ function updateOverlayParams() {
 	}
 
 	// Recreate overlay with updated params
-	const overlayBounds = [ - 180, - 90, 180, 90 ];
+
 	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
 
 	wmsOverlay = new WMSTilesOverlay( {
-		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS', // 'https://geoservizi.regione.liguria.it/geoserver/M2660/wms',
-		layer: params.layer,
+		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS', // 
 		crs: params.crs,
 		crsParam,
 		format: params.format,
 		tileDimension: params.tileDimension,
 		version: params.version,
-		bounds: overlayBounds,
-		levels: 10,
+		planar: params.planar,
+		levels: 18,
 		opacity: params.wmsOpacity,
+		layer: params.layer,
+		center: true,
+		
 		// styles: params.styles,
 		// extraHeaders: { ... }
+
 	} );
 
 	overlayPlugin = new ImageOverlayPlugin( {

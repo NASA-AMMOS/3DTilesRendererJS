@@ -55,8 +55,10 @@ function init() {
 async function updateCapabilities() {
 
 	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + '&request=GetCapabilities' );
-
+	console.log('WMS Capabilities:', capabilities);
 	const defaultLayer = capabilities.layers[ 0 ];
+
+	console.log('defaultLayer', defaultLayer);
 	let selectedCRS = 'EPSG:4326';
 	if ( defaultLayer.crs.includes( 'EPSG:3857' ) ) {
 
@@ -73,7 +75,6 @@ async function updateCapabilities() {
 		format: 'image/png',
 		tileDimension: 256,
 		planar: false,
-		bounds: defaultLayer.boundingBoxes[ 0 ]?.bounds || [ - 180, - 90, 180, 90 ],
 		version: capabilities.version || '1.3.0',
 		styles: defaultLayer.styles[ 0 ]?.name || '',
 
@@ -88,15 +89,15 @@ function rebuildGUI() {
 
 	if ( gui ) gui.destroy();
 
-	const layer = capabilities.layers.find( ( l ) => l.name === params.layer );
+	const layer = capabilities.layers.find( ( l ) => l.name === params.layer && l.queryable );
 
 	gui = new GUI();
-	//gui.add( params, 'planar' ).onChange( rebuildTiles ); wms doesn't show up in planar mode
+	gui.add( params, 'planar' ).onChange( rebuildTiles );// wms doesn't show up in planar mode
 	gui
 		.add(
 			params,
 			'layer',
-			capabilities.layers.map( ( l ) => l.name ),
+			capabilities.layers.filter( ( l ) => l.queryable === true ).map( ( l ) => l.name ),
 		)
 		.onChange( () => {
 
@@ -120,7 +121,7 @@ function rebuildGUI() {
 		)
 		.onChange( rebuildTiles );
 	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles );
-	gui.add( params, 'format', [ 'image/png', 'image/jpeg' ] ).onChange( rebuildTiles );
+	gui.add( params, 'format', capabilities.request.GetMap.formats ).onChange( rebuildTiles );
 	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles );
 
 }
@@ -134,20 +135,6 @@ function rebuildTiles() {
 		controls = null;
 
 	}
-
-	// XYZ base layer
-	// xyzTiles = new TilesRenderer();
-	// xyzTiles.registerPlugin( new TilesFadePlugin() );
-	// xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
-	// xyzTiles.registerPlugin(
-	// 	new XYZTilesPlugin( {
-	// 		center: true,
-	// 		shape: params.planar ? 'planar' : 'ellipsoid',
-	// 		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-	// 	} ),
-	// );
-	// xyzTiles.setCamera( camera );
-	// scene.add( xyzTiles.group );
 
 	// WMS overlay layer
 	wmsTiles = new TilesRenderer();
@@ -164,17 +151,15 @@ function rebuildTiles() {
 			tileDimension: params.tileDimension,
 			styles: params.styles,
 			version: params.version,
-			bounds: params.bounds,
+			
+			
 		} ),
 	);
+
+	console.log("params.planar", params.planar)
 	wmsTiles.setCamera( camera );
 
 	scene.add( wmsTiles.group );
-
-	//xyzTiles.group.renderOrder = 0;
-	wmsTiles.group.renderOrder = 1;
-
-	// const marker = addPointerMarker( 8.811, 44.4056 ); // Genoa, Italy
 
 	// Controls setup ( same as before )
 	if ( params.planar ) {
@@ -201,10 +186,7 @@ function rebuildTiles() {
 		controls.setEllipsoid( wmsTiles.ellipsoid, wmsTiles.group );
 		controls.enableDamping = true;
 		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
-		moveCameraToLonLat( 8.9463, 44.4056 );
-
-		//camera.position.copy( marker.getWorldPosition( new THREE.Vector3( 0 ) ) );
-		//controls.camera.quaternion.identity();
+		controls.camera.quaternion.identity();
 		controls.minDistance = 150;
 
 	}
@@ -228,13 +210,7 @@ function render() {
 		camera.updateMatrixWorld();
 
 	}
-	// if ( xyzTiles ) {
 
-	// 	xyzTiles.setCamera( camera );
-	// 	xyzTiles.setResolutionFromRenderer( camera, renderer );
-	// 	xyzTiles.update();
-
-	// }
 	if ( wmsTiles ) {
 
 		wmsTiles.setCamera( camera );
@@ -245,63 +221,3 @@ function render() {
 	renderer.render( scene, camera );
 
 }
-
-// Converts lon, lat, height to Cartesian coordinates on WGS84 ellipsoid
-function lonLatHeightToCartesian( lon, lat, height = 0 ) {
-
-	// Globe radius ( should match your ellipsoid/sphere )
-	const radius = 6378137.0 + height; // meters
-
-	// Convert degrees to radians
-	const lambda = ( lon * Math.PI ) / 180; // longitude
-	const phi = ( lat * Math.PI ) / 180; // latitude
-
-	// Spherical coordinates
-	const x = radius * Math.cos( phi ) * Math.cos( lambda );
-	const y = radius * Math.cos( phi ) * Math.sin( lambda );
-	const z = radius * Math.sin( phi );
-
-	return { x, y, z };
-
-}
-
-function moveCameraToLonLat( lon, lat, height = 0, cameraDistance = 1e7 ) {
-
-	// 1. Get the marker position
-	const { x, y, z } = lonLatHeightToCartesian( lon, lat, height );
-
-	// 2. Apply the same rotation as the globe group
-	const rotationMatrix = new THREE.Matrix4().makeRotationX( - Math.PI / 2 );
-	const rotatedPos = new THREE.Vector3( x, y, z ).applyMatrix4( rotationMatrix );
-
-	// 3. Place camera along the same direction, at a distance
-	const direction = rotatedPos.clone().normalize();
-	camera.position.copy( direction.multiplyScalar( cameraDistance ) );
-
-	// 4. Focus camera on the rotated marker position
-	camera.lookAt( rotatedPos );
-
-}
-
-// Example usage: place a marker at Genoa, Italy ( lon: 8.9463, lat: 44.4056 )
-// function addPointerMarker( lon, lat, height = 0 ) {
-// 	const { x, y, z } = lonLatHeightToCartesian( lon, lat, height );
-
-// 	// Create a small red sphere as a marker
-// 	const geometry = new THREE.SphereGeometry( 5000, 16, 16 ); // radius in meters
-// 	const material = new THREE.MeshBasicMaterial( {
-// 		transparent: true,
-// 		opacitiy: 0.3,
-// 		color: 0xff0000,
-// 	} );
-// 	const marker = new THREE.Mesh( geometry, material );
-
-// 	const group = new THREE.Group();
-// 	group.add( marker );
-// 	marker.position.set( x, y, z );
-// 	group.rotation.x = -Math.PI / 2;
-
-// 	scene.add( group );
-
-// 	return marker;
-// }
