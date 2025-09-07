@@ -180,7 +180,6 @@ function rebuildTiles() {
 
 	} else {
 
-		//xyzTiles.group.rotation.x = - Math.PI / 2;
 		wmsTiles.group.rotation.x = - Math.PI / 2;
 		controls = new GlobeControls( scene, camera, renderer.domElement );
 		controls.setEllipsoid( wmsTiles.ellipsoid, wmsTiles.group );

@@ -13,9 +13,11 @@ import {
 	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
 	TilesFadePlugin,
+	CesiumIonOverlay,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
+import { Matrix4 } from 'cesium';
 
 //import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
@@ -114,8 +116,6 @@ function rebuildTiles() {
 	// Base map plugin ( XYZ )
 	tiles.registerPlugin(
 		new XYZTilesPlugin( {
-
-			//bounds: [ - 180, - 90, 180, 90 ],
 			levels: 18,
 			center: true,
 			shape: params.planar ? 'planar' : 'ellipsoid',
@@ -123,41 +123,27 @@ function rebuildTiles() {
 		} ),
 	);
 
-	// tiles.registerPlugin(
-	// 	new GLTFExtensionsPlugin( {
-	// 		dracoLoader: dracoLoader,
-	// 	} ),
-	//  );
 
-	// google tiles for testing with wms
-	// tiles.registerPlugin(
-	// 	new CesiumIonAuthPlugin( {
-	// 		apiToken: `YOUR_CESIUM_TOKEN_HERE`,
-	// 		assetId: '2275207',
-	// 		autoRefreshToken: true,
-	// 	} ),
-	//  );
-
-	// Example: Add Authorization header for WMS ( Basic Auth )
-	// const username = 'your_username';
-	// const password = 'your_password';
-	// const basicAuth = 'Basic ' + btoa( `${username}:${password}` );
-
-	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
+	 // get from layer; // must be in same units as your plane/tiling
+const [minX, minY, maxX, maxY] =capabilities.layers.find( ( l ) => l.name === params.layer ).boundingBoxes[0].bounds;
+const width = maxX - minX;
+const height = maxY - minY;
+const translate = new THREE.Matrix4().makeTranslation(minX + width / 2, minY + height / 2, 0);
+const scale = new THREE.Matrix4().makeScale(width, height, 1);
+const frame = new THREE.Matrix4().multiplyMatrices( translate, scale );
 
 	wmsOverlay = new WMSTilesOverlay( {
-
-		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS',
+		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer',
 		layer: params.layer,
 		crs: params.crs,
-		crsParam,
 		format: params.format,
 		tileDimension: params.tileDimension,
 		version: params.version,
 		levels: 18,
 		opacity: params.wmsOpacity,
-		center: true
-		//shape: params.planar ? 'planar' : 'ellipsoid',
+		center: true,
+		frame: params.planar ? frame : undefined,
+
 		// extraHeaders: {
 		// 	//'Authorization': 'Bearer your_token_here'
 		// 	Authorization: 'Basic ' + btoa( 'your_username:your_password' ),
@@ -165,8 +151,8 @@ function rebuildTiles() {
 
 	} );
 
-	overlayPlugin = new ImageOverlayPlugin( {
 
+	overlayPlugin = new ImageOverlayPlugin( {
 		overlays: [ wmsOverlay ],
 		renderer,
 
@@ -242,7 +228,7 @@ async function updateCapabilities() {
 
 	const loader = new WMSCapabilitiesLoader();
 
-	capabilities = await loader.load( url );
+	capabilities = await loader.loadAsync( url );
 
 	console.log( 'capabilities:', capabilities );
 

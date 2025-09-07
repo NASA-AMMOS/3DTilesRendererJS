@@ -1,5 +1,6 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
-
+import { ProjectionScheme } from '../images/utils/ProjectionScheme';
+import { MathUtils } from 'three';
 
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
