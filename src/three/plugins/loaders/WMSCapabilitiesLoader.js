@@ -4,93 +4,111 @@ import { MathUtils } from 'three';
 
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
-// helper CR S checks (same logic used in WMTSCapabilitiesLoader)
+// helper CRS checks (same logic used in WMTSCapabilitiesLoader)
 function isCRS84( crs ) {
-    return /(:84|:crs84)$/i.test( crs );
+
+	return /(:84|:crs84)$/i.test( crs );
+
 }
 
 function isEPSG4326( crs ) {
-    return /:4326$/i.test( crs );
+
+	return /:4326$/i.test( crs );
+
 }
 
 function isWebMercator( crs ) {
-    return /:3857$/i.test( crs );
+
+	return /:3857$/i.test( crs );
+
 }
 
 // convert from meters (web mercator) to degrees using the mercator projection helper
 function correctTupleUnits( tuple, crs ) {
 
-    if ( isWebMercator( crs ) ) {
+	if ( isWebMercator( crs ) ) {
 
-        tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
-        tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
+		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
+		tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
 
-        // to degrees
-        tuple[ 0 ] *= MathUtils.RAD2DEG;
-        tuple[ 1 ] *= MathUtils.RAD2DEG;
+		// to degrees
+		tuple[ 0 ] *= MathUtils.RAD2DEG;
+		tuple[ 1 ] *= MathUtils.RAD2DEG;
 
-    }
+	}
 
-    return tuple;
+	return tuple;
 
 }
 
 // swap order when CRS is EPSG:4326 (WMS 1.3 axis order)
 function correctTupleOrder( tuple, crs ) {
-    if ( isEPSG4326( crs ) ) {
-        [ tuple[ 0 ], tuple[ 1 ] ] = [ tuple[ 1 ], tuple[ 0 ] ];
-    }
+
+	if ( isEPSG4326( crs ) ) {
+
+		[ tuple[ 0 ], tuple[ 1 ] ] = [ tuple[ 1 ], tuple[ 0 ] ];
+
+	}
+
 }
 
 // convert degrees to radians in-place
 function tupleToRadians( tuple ) {
-    tuple[ 0 ] *= MathUtils.DEG2RAD;
-    tuple[ 1 ] *= MathUtils.DEG2RAD;
+
+	tuple[ 0 ] *= MathUtils.DEG2RAD;
+	tuple[ 1 ] *= MathUtils.DEG2RAD;
+
 }
 
 
 // parse <BoundingBox> for WMS using same normalization as WMTS (lower/upper corners, unit & order correction)
 function parseBoundingBox( el ) {
 
-    if ( ! el ) return null;
+	if ( ! el ) return null;
 
-    // WMS may use CRS / crs / SRS attribute
-    let crs = el.getAttribute( 'CRS' ) || el.getAttribute( 'crs' ) || el.getAttribute( 'SRS' ) || '';
+	// WMS may use CRS / crs / SRS attribute
+	let crs = el.getAttribute( 'CRS' ) || el.getAttribute( 'crs' ) || el.getAttribute( 'SRS' ) || '';
 
-    const minx = parseFloat( el.getAttribute( 'minx' ) || '0' );
-    const miny = parseFloat( el.getAttribute( 'miny' ) || '0' );
-    const maxx = parseFloat( el.getAttribute( 'maxx' ) || '0' );
-    const maxy = parseFloat( el.getAttribute( 'maxy' ) || '0' );
+	const minx = parseFloat( el.getAttribute( 'minx' ) || '0' );
+	const miny = parseFloat( el.getAttribute( 'miny' ) || '0' );
+	const maxx = parseFloat( el.getAttribute( 'maxx' ) || '0' );
+	const maxy = parseFloat( el.getAttribute( 'maxy' ) || '0' );
 
-    const lowerCorner = [ minx, miny ];
-    const upperCorner = [ maxx, maxy ];
+	const lowerCorner = [ minx, miny ];
+	const upperCorner = [ maxx, maxy ];
 
-    // handle axis order differences (EPSG:4326 in WMS 1.3 uses lat,lon)
-    correctTupleOrder( lowerCorner, crs );
-    correctTupleOrder( upperCorner, crs );
+	// handle axis order differences (EPSG:4326 in WMS 1.3 uses lat,lon)
+	correctTupleOrder( lowerCorner, crs );
+	correctTupleOrder( upperCorner, crs );
 
-    // correct units if web mercator meters were provided
-    correctTupleUnits( lowerCorner, crs );
-    correctTupleUnits( upperCorner, crs );
+	// correct units if web mercator meters were provided
+	correctTupleUnits( lowerCorner, crs );
+	correctTupleUnits( upperCorner, crs );
 
-    // convert degrees to radians for internal consistency with other loaders
-    tupleToRadians( lowerCorner );
-    tupleToRadians( upperCorner );
+	// convert degrees to radians for internal consistency with other loaders
+	tupleToRadians( lowerCorner );
+	tupleToRadians( upperCorner );
 
-    // normalize common CRS names
-    if ( isCRS84( crs ) ) {
-        crs = 'EPSG:4326';
-    } else if ( isWebMercator( crs ) ) {
-        crs = 'EPSG:3857';
-    }
+	// normalize common CRS names
+	if ( isCRS84( crs ) ) {
 
-    // bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
-    return {
-        crs,
-        lowerCorner,
-        upperCorner,
-        bounds: [ ...lowerCorner, ...upperCorner ],
-    };
+		crs = 'EPSG:4326';
+
+	} else if ( isWebMercator( crs ) ) {
+
+		crs = 'EPSG:3857';
+
+	}
+
+	// bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
+	return {
+
+		crs,
+		lowerCorner,
+		upperCorner,
+		bounds: [ ...lowerCorner, ...upperCorner ],
+
+	};
 
 }
 
@@ -115,43 +133,41 @@ function parseEXGeographicBoundingBox( el ) {
 
 function parseStyle( el ) {
 
-    const name = el.querySelector( 'Name' )?.textContent || '';
-    const title = el.querySelector( 'Title' )?.textContent || '';
+	const name = el.querySelector( 'Name' )?.textContent || '';
+	const title = el.querySelector( 'Title' )?.textContent || '';
 
-    const legendEl = el.querySelector( 'LegendURL' );
+	const legendEl = el.querySelector( 'LegendURL' );
 
-    let legendUrl = '';
-    let legendFormats = [];
-    let legendWidth = null;
-    let legendHeight = null;
+	let legendUrl = '';
+	let legendFormats = [];
+	let legendWidth = null;
+	let legendHeight = null;
 
-    if ( legendEl ) {
+	if ( legendEl ) {
 
-        // width/height attrs on LegendURL
-        const w = legendEl.getAttribute( 'width' );
-        const h = legendEl.getAttribute( 'height' );
-        legendWidth = w !== null ? parseInt( w, 10 ) : null;
-        legendHeight = h !== null ? parseInt( h, 10 ) : null;
+		// width/height attrs on LegendURL
+		const w = legendEl.getAttribute( 'width' );
+		const h = legendEl.getAttribute( 'height' );
+		legendWidth = w !== null ? parseInt( w, 10 ) : null;
+		legendHeight = h !== null ? parseInt( h, 10 ) : null;
+		// collect Format elements inside LegendURL
+		legendFormats = Array.from( legendEl.querySelectorAll( 'Format' ) )
+			.map( ( f ) => ( f.textContent || '' ).trim() )
+			.filter( Boolean );
+		// OnlineResource may use xlink namespace
+		const online = legendEl.querySelector( 'OnlineResource' );
+		legendUrl = readOnlineResourceHref( online );
 
-        // collect Format elements inside LegendURL
-        legendFormats = Array.from( legendEl.querySelectorAll( 'Format' ) )
-            .map( ( f ) => ( f.textContent || '' ).trim() )
-            .filter( Boolean );
+	}
 
-        // OnlineResource may use xlink namespace
-        const online = legendEl.querySelector( 'OnlineResource' );
-        legendUrl = readOnlineResourceHref( online );
-
-    }
-
-    return {
-        name,
-        title,
-        legendUrl,
-        legendFormats,
-        legendWidth,
-        legendHeight,
-    };
+	return {
+		name,
+		title,
+		legendUrl,
+		legendFormats,
+		legendWidth,
+		legendHeight,
+	};
 
 }
 
@@ -217,70 +233,64 @@ function parseService( el ) {
 // helper: read OnlineResource href (handles xlink namespace)
 function readOnlineResourceHref( el ) {
 
-    if ( ! el ) return '';
-    return (
-        el.getAttribute( 'xlink:href' ) ||
-        el.getAttributeNS( 'http://www.w3.org/1999/xlink', 'href' ) ||
-        ''
-    ).trim();
+	if ( ! el ) return '';
+	return (
+		el.getAttribute( 'xlink:href' ) ||
+		el.getAttributeNS( 'http://www.w3.org/1999/xlink', 'href' ) ||
+		''
+	).trim();
 
 }
 
 // parse a single operation (e.g. GetMap, GetCapabilities, GetFeatureInfo)
 function parseRequestOperation( opEl ) {
 
-    if ( ! opEl ) return null;
+	if ( ! opEl ) return null;
+	const formats = Array.from( opEl.querySelectorAll( 'Format' ) )
+		.map( ( f ) => ( f.textContent || '' ).trim() )
+		.filter( Boolean );
+	const dcpTypes = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( ( dcp ) => {
 
-    const formats = Array.from( opEl.querySelectorAll( 'Format' ) )
-        .map( ( f ) => ( f.textContent || '' ).trim() )
-        .filter( Boolean );
+		const httpEl = dcp.querySelector( 'HTTP' );
+		if ( ! httpEl ) return { type: 'UNKNOWN', get: '', post: '' };
+		const getEl = httpEl.querySelector( 'Get OnlineResource' ) || httpEl.querySelector( 'Get > OnlineResource' ) || httpEl.querySelector( 'Get' );
+		const postEl = httpEl.querySelector( 'Post OnlineResource' ) || httpEl.querySelector( 'Post > OnlineResource' ) || httpEl.querySelector( 'Post' );
+		const getHref = readOnlineResourceHref( getEl );
+		const postHref = readOnlineResourceHref( postEl );
+		return { type: 'HTTP', get: getHref, post: postHref };
 
-    const dcpTypes = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( ( dcp ) => {
+	} );
+	// fallback: sometimes OnlineResource appears directly under the operation
+	if ( dcpTypes.length === 0 ) {
 
-        const httpEl = dcp.querySelector( 'HTTP' );
-        if ( ! httpEl ) return { type: 'UNKNOWN', get: '', post: '' };
+		const online = opEl.querySelector( 'OnlineResource' );
+		if ( online ) {
 
-        const getEl = httpEl.querySelector( 'Get OnlineResource' ) || httpEl.querySelector( 'Get > OnlineResource' ) || httpEl.querySelector( 'Get' );
-        const postEl = httpEl.querySelector( 'Post OnlineResource' ) || httpEl.querySelector( 'Post > OnlineResource' ) || httpEl.querySelector( 'Post' );
+			dcpTypes.push( { type: 'HTTP', get: readOnlineResourceHref( online ), post: '' } );
 
-        const getHref = readOnlineResourceHref( getEl );
-        const postHref = readOnlineResourceHref( postEl );
+		}
 
-        return { type: 'HTTP', get: getHref, post: postHref };
+	}
 
-    } );
-
-    // fallback: sometimes OnlineResource appears directly under the operation
-    if ( dcpTypes.length === 0 ) {
-
-        const online = opEl.querySelector( 'OnlineResource' );
-        if ( online ) {
-            dcpTypes.push( { type: 'HTTP', get: readOnlineResourceHref( online ), post: '' } );
-        }
-
-    }
-
-    return { formats, dcp: dcpTypes };
+	return { formats, dcp: dcpTypes };
 
 }
 
 // parse the whole Request section, returning an object keyed by operation local name
 function parseRequestSection( el ) {
 
-    if ( ! el ) return {};
+	if ( ! el ) return {};
+	const ops = {};
+	Array.from( el.children ).forEach( ( child ) => {
 
-    const ops = {};
-    Array.from( el.children ).forEach( ( child ) => {
+		// skip non-element nodes just in case
+		if ( child.nodeType !== 1 ) return;
+		const name = child.localName || child.nodeName;
+		const parsed = parseRequestOperation( child );
+		if ( parsed ) ops[ name ] = parsed;
 
-        // skip non-element nodes just in case
-        if ( child.nodeType !== 1 ) return;
-        const name = child.localName || child.nodeName;
-        const parsed = parseRequestOperation( child );
-        if ( parsed ) ops[ name ] = parsed;
-
-    } );
-
-    return ops;
+	} );
+	return ops;
 
 }
 
@@ -296,11 +306,10 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 			? Array.from( capability.querySelectorAll( 'Layer' ) ).map( parseLayer )
 			: [];
 
-
 		const requestEl = capability?.querySelector( 'Request' );
-        const request = parseRequestSection( requestEl );
+		const request = parseRequestSection( requestEl );
 
-		return {service, layers, request}
+		return { service, layers, request };
 
 	}
 

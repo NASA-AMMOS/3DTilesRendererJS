@@ -11,8 +11,6 @@ import {
 	WMSTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import * as THREE from 'three';
-
 
 const url =
 	window.location.hash.replace( /^#/, '' ) ||
@@ -55,10 +53,8 @@ function init() {
 async function updateCapabilities() {
 
 	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + '&request=GetCapabilities' );
-	console.log('WMS Capabilities:', capabilities);
 	const defaultLayer = capabilities.layers[ 0 ];
 
-	console.log('defaultLayer', defaultLayer);
 	let selectedCRS = 'EPSG:4326';
 	if ( defaultLayer.crs.includes( 'EPSG:3857' ) ) {
 
@@ -105,9 +101,6 @@ function rebuildGUI() {
 				( l ) => l.name === params.layer,
 			);
 			params.crs = selectedLayer.crs[ 0 ] || 'EPSG:3857';
-			params.bounds = selectedLayer.boundingBoxes[ 0 ]?.bounds || [
-				- 180, - 90, 180, 90,
-			];
 			params.styles = selectedLayer.styles[ 0 ]?.name || '';
 			rebuildGUI();
 			rebuildTiles();
@@ -151,12 +144,10 @@ function rebuildTiles() {
 			tileDimension: params.tileDimension,
 			styles: params.styles,
 			version: params.version,
-			
-			
+
 		} ),
 	);
 
-	console.log("params.planar", params.planar)
 	wmsTiles.setCamera( camera );
 
 	scene.add( wmsTiles.group );

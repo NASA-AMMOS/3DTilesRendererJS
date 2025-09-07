@@ -6,24 +6,13 @@ import {
 } from '3d-tiles-renderer';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import {
-	//CesiumIonAuthPlugin,
-	//GLTFExtensionsPlugin,
 	ImageOverlayPlugin,
 	WMSTilesOverlay,
-	//WMTSCapabilitiesLoader,
 	WMSCapabilitiesLoader,
-	TilesFadePlugin,
-	CesiumIonOverlay,
 } from '3d-tiles-renderer/plugins';
 import { XYZTilesPlugin } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
-import { Matrix4 } from 'cesium';
 
-//import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-
-// const dracoLoader = new DRACOLoader().setDecoderPath(
-// 	'https://www.gstatic.com/draco/v1/decoders/',
-//  );
 
 let capabilities, controls, scene, renderer, tiles, camera, gui;
 let wmsOverlay, overlayPlugin;
@@ -73,27 +62,27 @@ function rebuildGUI() {
 	gui.add( params, 'planar' ).onChange( rebuildTiles ); // Disabled: WMS does not work in planar mode
 	// NOTE: Planar mode is disabled because WMS overlays do not render correctly in planar mode.
 
-	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( rebuildTiles);
+	gui.add( params, 'wmsOpacity', 0, 1, 0.01 ).onChange( rebuildTiles );
 	gui
 		.add(
 			params,
 			'layer',
 			capabilities.layers.map( ( l ) => l.name ),
 		)
-		.onChange( rebuildTiles);
+		.onChange( rebuildTiles );
 	gui
 		.add(
 			params,
 			'styles',
 			layer.styles.map( ( s ) => s.name ),
 		)
-		.onChange( rebuildTiles);
-	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles);
+		.onChange( rebuildTiles );
+	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles );
 	gui
 		.add( params, 'format', [ 'image/png', 'image/jpeg' ] )
-		.onChange( rebuildTiles);
-	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles);
-	gui.add( params, 'version', [ '1.1.1', '1.3.0' ] ).onChange( rebuildTiles);
+		.onChange( rebuildTiles );
+	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles );
+	gui.add( params, 'version', [ '1.1.1', '1.3.0' ] ).onChange( rebuildTiles );
 
 }
 
@@ -124,13 +113,7 @@ function rebuildTiles() {
 	);
 
 
-	 // get from layer; // must be in same units as your plane/tiling
-const [minX, minY, maxX, maxY] =capabilities.layers.find( ( l ) => l.name === params.layer ).boundingBoxes[0].bounds;
-const width = maxX - minX;
-const height = maxY - minY;
-const translate = new THREE.Matrix4().makeTranslation(minX + width / 2, minY + height / 2, 0);
-const scale = new THREE.Matrix4().makeScale(width, height, 1);
-const frame = new THREE.Matrix4().multiplyMatrices( translate, scale );
+
 
 	wmsOverlay = new WMSTilesOverlay( {
 		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer',
@@ -142,7 +125,7 @@ const frame = new THREE.Matrix4().multiplyMatrices( translate, scale );
 		levels: 18,
 		opacity: params.wmsOpacity,
 		center: true,
-		frame: params.planar ? frame : undefined,
+		frame: params.planar ? new THREE.Matrix4() : undefined,
 
 		// extraHeaders: {
 		// 	//'Authorization': 'Bearer your_token_here'
@@ -256,57 +239,6 @@ async function updateCapabilities() {
 
 	rebuildGUI();
 	rebuildTiles();
-
-}
-
-function updateOverlayParams() {
-
-	// Remove old overlay and plugin
-	if ( overlayPlugin ) {
-
-		tiles.unregisterPlugin( overlayPlugin );
-		overlayPlugin = null;
-
-	}
-	if ( wmsOverlay ) {
-
-		wmsOverlay.dispose?.();
-		wmsOverlay = null;
-
-	}
-
-	// Recreate overlay with updated params
-
-	const crsParam = params.version === '1.1.1' ? 'SRS' : 'CRS';
-
-	wmsOverlay = new WMSTilesOverlay( {
-		baseUrl: 'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS', // 
-		crs: params.crs,
-		crsParam,
-		format: params.format,
-		tileDimension: params.tileDimension,
-		version: params.version,
-		planar: params.planar,
-		levels: 18,
-		opacity: params.wmsOpacity,
-		layer: params.layer,
-		center: true,
-		
-		// styles: params.styles,
-		// extraHeaders: { ... }
-
-	} );
-
-	overlayPlugin = new ImageOverlayPlugin( {
-
-		overlays: [ wmsOverlay ],
-		renderer,
-		resolution: 256,
-
-	} );
-	tiles.registerPlugin( overlayPlugin );
-
-	tiles.update();
 
 }
 
