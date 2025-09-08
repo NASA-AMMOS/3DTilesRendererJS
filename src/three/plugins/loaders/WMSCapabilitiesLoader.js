@@ -60,7 +60,6 @@ function tupleToRadians( tuple ) {
 
 }
 
-
 // parse <BoundingBox> for WMS using same normalization as WMTS (lower/upper corners, unit & order correction)
 function parseBoundingBox( el ) {
 
@@ -112,86 +111,118 @@ function parseBoundingBox( el ) {
 
 function parseEXGeographicBoundingBox( el ) {
 
-	if ( ! el ) return null;
-	const west = parseFloat(
-		el.querySelector( 'westBoundLongitude' )?.textContent || '0',
-	);
-	const east = parseFloat(
-		el.querySelector( 'eastBoundLongitude' )?.textContent || '0',
-	);
-	const south = parseFloat(
-		el.querySelector( 'southBoundLatitude' )?.textContent || '0',
-	);
-	const north = parseFloat(
-		el.querySelector( 'northBoundLatitude' )?.textContent || '0',
-	);
+	const west = parseFloat( el.querySelector( 'westBoundLongitude' ).textContent );
+	const east = parseFloat( el.querySelector( 'eastBoundLongitude' ).textContent );
+	const south = parseFloat( el.querySelector( 'southBoundLatitude' ).textContent );
+	const north = parseFloat( el.querySelector( 'northBoundLatitude' ).textContent );
 	return { bounds: [ west, south, east, north ] };
 
 }
 
 function parseStyle( el ) {
 
-	const name = el.querySelector( 'Name' )?.textContent || '';
-	const title = el.querySelector( 'Title' )?.textContent || '';
-
-	const legendEl = el.querySelector( 'LegendURL' );
-
-	let legendUrl = '';
-	let legendFormats = [];
-	let legendWidth = null;
-	let legendHeight = null;
-
-	if ( legendEl ) {
+	const name = el.querySelector( 'Name' ).textContent;
+	const title = el.querySelector( 'Title' ).textContent;
+	const legends = [ ...el.querySelectorAll( 'LegendURL' ) ].map( legendEl => {
 
 		// width/height attrs on LegendURL
-		const w = legendEl.getAttribute( 'width' );
-		const h = legendEl.getAttribute( 'height' );
-		legendWidth = w !== null ? parseInt( w, 10 ) : null;
-		legendHeight = h !== null ? parseInt( h, 10 ) : null;
+		const width = parseInt( legendEl.getAttribute( 'width' ) );
+		const height = parseInt( legendEl.getAttribute( 'height' ) );
+
 		// collect Format elements inside LegendURL
-		legendFormats = Array.from( legendEl.querySelectorAll( 'Format' ) )
-			.map( ( f ) => ( f.textContent || '' ).trim() )
-			.filter( Boolean );
+		const format = legendEl.querySelector( 'Format' ).textContent;
+
 		// OnlineResource may use xlink namespace
 		const online = legendEl.querySelector( 'OnlineResource' );
-		legendUrl = readOnlineResourceHref( online );
+		const url = readOnlineResourceHref( online );
 
-	}
+		return {
+			width,
+			height,
+			format,
+			url,
+		};
+
+	} );
 
 	return {
 		name,
 		title,
-		legendUrl,
-		legendFormats,
-		legendWidth,
-		legendHeight,
+		legends,
 	};
 
 }
 
+function parseLayer( el, inheritedProperties = {} ) {
 
-function parseLayer( el ) {
+	let {
+		styles = [],
+		crs = [],
+		exGeographicBoundingBox = null,
+		queryable = false,
+		opaque = false,
+	} = inheritedProperties;
 
-	const name = el.querySelector( 'Name' )?.textContent || '';
-	const title = el.querySelector( 'Title' )?.textContent || '';
-	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
-	const queryable = el.getAttribute( 'queryable' ) === '1';
-	const opaque = el.getAttribute( 'opaque' ) === '1';
-	const keywords = Array.from( el.querySelectorAll( 'Keyword' ) ).map(
-		( k ) => k.textContent || '',
-	);
-	const crs = Array.from( el.querySelectorAll( 'CRS' ) ).map(
-		( c ) => c.textContent || '',
-	);
+	const name = el.querySelector( 'Name' )?.textContent;
+	const title = el.querySelector( 'Title' )?.textContent;
+	const abstract = el.querySelector( 'Abstract' )?.textContent;
+	const keywords = Array.from( el.querySelectorAll( 'Keyword' ) ).map( k => k.textContent );
 	const bboxEls = Array.from( el.querySelectorAll( 'BoundingBox' ) );
 	const boundingBoxes = bboxEls.map( parseBoundingBox );
-	const exGeoBBox = parseEXGeographicBoundingBox(
-		el.querySelector( 'EX_GeographicBoundingBox' ),
-	);
-	const styles = Array.from( el.querySelectorAll( 'Style' ) ).map( parseStyle );
+
+	// See section 7.2.4.8 in the specification
+	// Handle added inherited properties
+	crs = [
+		...crs,
+		...Array.from( el.querySelectorAll( 'CRS' ) ).map( c => c.textContent ),
+	];
+	styles = [
+		...styles,
+		...Array.from( el.querySelectorAll( ':scope > Style' ) ).map( el => parseStyle( el ) ),
+	];
+
+	// Handle replaced inherited properties
+	if ( el.hasAttribute( 'queryable' ) ) {
+
+		queryable = el.getAttribute( 'queryable' ) === '1';
+
+	}
+
+	if ( el.hasAttribute( 'opaque' ) ) {
+
+		opaque = el.getAttribute( 'opaque' ) === '1';
+
+	}
+
+	if ( el.querySelector( 'EX_GeographicBoundingBox' ) ) {
+
+		exGeographicBoundingBox = parseEXGeographicBoundingBox( el.querySelector( 'EX_GeographicBoundingBox' ) );
+
+	}
 
 	// Recursively parse sublayers
-	const subLayers = Array.from( el.querySelectorAll( 'Layer' ) ).map( parseLayer );
+	const subLayers = Array.from( el.querySelectorAll( ':scope > Layer' ) ).map( el => {
+
+		return parseLayer( el, {
+			// add
+			styles,
+			crs,
+
+			// replace
+			exGeographicBoundingBox,
+			queryable,
+			opaque,
+		} );
+
+	} );
+
+	// TODO:
+	// - Dimension
+	// - Attribution
+	// - AuthorityURL
+	// - MinScaleDenominator
+	// - MaxScaleDenominator
+	// - cascaded, noSubsets, fixedWidth, fixedHeight attributes
 
 	return {
 		name,
@@ -202,7 +233,7 @@ function parseLayer( el ) {
 		keywords,
 		crs,
 		boundingBoxes,
-		exGeographicBoundingBox: exGeoBBox,
+		exGeographicBoundingBox,
 		styles,
 		subLayers,
 	};
@@ -211,19 +242,11 @@ function parseLayer( el ) {
 
 function parseService( el ) {
 
-	if ( ! el ) return {
-		name: '',
-		title: '',
-		abstract: '',
-		keywords: [],
-	};
 	return {
 		name: el.querySelector( 'Name' )?.textContent || '',
 		title: el.querySelector( 'Title' )?.textContent || '',
 		abstract: el.querySelector( 'Abstract' )?.textContent || '',
-		keywords: Array.from( el.querySelectorAll( 'Keyword' ) ).map(
-			( k ) => k.textContent || '',
-		),
+		keywords: Array.from( el.querySelectorAll( 'Keyword' ) ).map( k => k.textContent ),
 	};
 
 }
@@ -243,14 +266,16 @@ function readOnlineResourceHref( el ) {
 // parse a single operation (e.g. GetMap, GetCapabilities, GetFeatureInfo)
 function parseRequestOperation( opEl ) {
 
-	if ( ! opEl ) return null;
-	const formats = Array.from( opEl.querySelectorAll( 'Format' ) )
-		.map( ( f ) => ( f.textContent || '' ).trim() )
-		.filter( Boolean );
-	const dcpTypes = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( ( dcp ) => {
+	const formats = Array.from( opEl.querySelectorAll( 'Format' ) ).map( f => f.textContent.trim() );
+	const dcp = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( ( dcp ) => {
 
 		const httpEl = dcp.querySelector( 'HTTP' );
-		if ( ! httpEl ) return { type: 'UNKNOWN', get: '', post: '' };
+		if ( ! httpEl ) {
+
+			return { type: 'UNKNOWN', get: '', post: '' };
+
+		}
+
 		const getEl = httpEl.querySelector( 'Get OnlineResource' ) || httpEl.querySelector( 'Get > OnlineResource' ) || httpEl.querySelector( 'Get' );
 		const postEl = httpEl.querySelector( 'Post OnlineResource' ) || httpEl.querySelector( 'Post > OnlineResource' ) || httpEl.querySelector( 'Post' );
 		const getHref = readOnlineResourceHref( getEl );
@@ -258,40 +283,40 @@ function parseRequestOperation( opEl ) {
 		return { type: 'HTTP', get: getHref, post: postHref };
 
 	} );
-	// fallback: sometimes OnlineResource appears directly under the operation
-	if ( dcpTypes.length === 0 ) {
 
-		const online = opEl.querySelector( 'OnlineResource' );
+	// fallback: sometimes OnlineResource appears directly under the operation
+	if ( dcp.length === 0 ) {
+
+		const online = opEl.querySelector( ':scope > OnlineResource' );
 		if ( online ) {
 
-			dcpTypes.push( { type: 'HTTP', get: readOnlineResourceHref( online ), post: '' } );
+			dcp.push( { type: 'HTTP', get: readOnlineResourceHref( online ), post: '' } );
 
 		}
 
 	}
 
-	return { formats, dcp: dcpTypes };
+	return { formats, dcp };
 
 }
 
 // parse the whole Request section, returning an object keyed by operation local name
 function parseRequest( el ) {
 
-	if ( ! el ) return {};
 	const ops = {};
-	Array.from( el.children ).forEach( ( child ) => {
+	Array
+		.from( el.querySelectorAll( ':scope > *' ) )
+		.forEach( ( child ) => {
 
-		// skip non-element nodes just in case
-		if ( child.nodeType !== 1 ) return;
-		const name = child.localName || child.nodeName;
-		const parsed = parseRequestOperation( child );
-		if ( parsed ) ops[ name ] = parsed;
+			const requestType = child.localName;
+			ops[ requestType ] = parseRequestOperation( child );
 
-	} );
+		} );
 	return ops;
 
 }
 
+// Collect all sub layers into a flat array for easier access
 function collectLayers( layers, target = [] ) {
 
 	layers.forEach( l => {
@@ -312,7 +337,7 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 		const str = new TextDecoder( 'utf-8' ).decode( new Uint8Array( buffer ) );
 		const xml = new DOMParser().parseFromString( str, 'text/xml' );
 		const capabilityEl = xml.querySelector( 'Capability' );
-		const service = parseService( capabilityEl.querySelector( ':scope > Service' ) );
+		const service = parseService( xml.querySelector( ':scope > Service' ) );
 		const request = parseRequest( capabilityEl.querySelector( ':scope > Request' ) );
 		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( parseLayer );
 		const layers = collectLayers( rootLayers );
