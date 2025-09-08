@@ -163,9 +163,9 @@ function parseLayer( el, inheritedProperties = {} ) {
 		opaque = false,
 	} = inheritedProperties;
 
-	const name = el.querySelector( 'Name' )?.textContent;
-	const title = el.querySelector( 'Title' )?.textContent;
-	const abstract = el.querySelector( 'Abstract' )?.textContent;
+	const name = el.querySelector( 'Name' )?.textContent || '';
+	const title = el.querySelector( 'Title' )?.textContent || '';
+	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
 	const keywords = Array.from( el.querySelectorAll( 'Keyword' ) ).map( k => k.textContent );
 	const bboxEls = Array.from( el.querySelectorAll( 'BoundingBox' ) );
 	const boundingBoxes = bboxEls.map( parseBoundingBox );
