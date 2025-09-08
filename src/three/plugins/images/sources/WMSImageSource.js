@@ -90,6 +90,7 @@ export class WMSImageSource extends TiledImageSource {
 		const bbox = this.tiling.getTileBounds( x, y, level, true, false );
 
 		// Axis order and CRS param name depend on WMS version and CRS
+		// crsParam: 'SRS' for WMS 1.1.1, 'CRS' for WMS 1.3.0
 		const crsParam = this.version === '1.1.1' ? 'SRS' : 'CRS';
 		let bboxParam;
 
@@ -104,22 +105,31 @@ export class WMSImageSource extends TiledImageSource {
 
 		} else if ( this.crs === 'EPSG:4326' ) {
 
+			const minx = this.convertProjectionToLongitude( bbox[ 0 ] );
+			const miny = this.convertProjectionToLatitude( bbox[ 1 ] );
+			const maxx = this.convertProjectionToLongitude( bbox[ 2 ] );
+			const maxy = this.convertProjectionToLatitude( bbox[ 3 ] );
+
+			/*
+			*
+			v1.1.1
+			Released in Jan 2002
+			Use SRS for 1.1.1
+			In WMS 1.1.1 EPSG:4326 is wrongly defined as having long/lat coordinate axes. See v1.3.0 documentation for details.
+			Docs:  https://docs.foursquare.com/analytics-products/docs/data-formats-wms
+			Topic: https://gis.stackexchange.com/questions/23347/getmap-wms-1-1-1-vs-1-3-0
+			*
+			*
+			*/
+
 			if ( this.version === '1.1.1' ) {
 
 				// WMS 1.1.1: lon/lat order
-				const minx = this.convertProjectionToLongitude( bbox[ 0 ] );
-				const miny = this.convertProjectionToLatitude( bbox[ 1 ] );
-				const maxx = this.convertProjectionToLongitude( bbox[ 2 ] );
-				const maxy = this.convertProjectionToLatitude( bbox[ 3 ] );
 				bboxParam = [ minx, miny, maxx, maxy ]; // lon,lat,lon,lat
 
 			} else {
 
 				// WMS 1.3.0: lat/lon order
-				const minx = this.convertProjectionToLongitude( bbox[ 0 ] );
-				const miny = this.convertProjectionToLatitude( bbox[ 1 ] );
-				const maxx = this.convertProjectionToLongitude( bbox[ 2 ] );
-				const maxy = this.convertProjectionToLatitude( bbox[ 3 ] );
 				bboxParam = [ miny, minx, maxy, maxx ]; // lat,lon,lat,lon
 
 			}
