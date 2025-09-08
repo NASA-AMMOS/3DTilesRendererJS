@@ -102,12 +102,10 @@ function parseBoundingBox( el ) {
 
 	// bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
 	return {
-
 		crs,
 		lowerCorner,
 		upperCorner,
 		bounds: [ ...lowerCorner, ...upperCorner ],
-
 	};
 
 }
@@ -277,7 +275,7 @@ function parseRequestOperation( opEl ) {
 }
 
 // parse the whole Request section, returning an object keyed by operation local name
-function parseRequestSection( el ) {
+function parseRequest( el ) {
 
 	if ( ! el ) return {};
 	const ops = {};
@@ -294,22 +292,34 @@ function parseRequestSection( el ) {
 
 }
 
+function collectLayers( layers, target = [] ) {
+
+	layers.forEach( l => {
+
+		target.push( l );
+		collectLayers( l.subLayers, target );
+
+	} );
+
+	return target;
+
+}
+
 export class WMSCapabilitiesLoader extends LoaderBase {
 
 	parse( buffer ) {
 
 		const str = new TextDecoder( 'utf-8' ).decode( new Uint8Array( buffer ) );
 		const xml = new DOMParser().parseFromString( str, 'text/xml' );
-		const service = parseService( xml.querySelector( 'Service' ) );
-		const capability = xml.querySelector( 'Capability' );
-		const layers = capability
-			? Array.from( capability.querySelectorAll( 'Layer' ) ).map( parseLayer )
-			: [];
+		const capabilityEl = xml.querySelector( 'Capability' );
+		const service = parseService( capabilityEl.querySelector( ':scope > Service' ) );
+		const request = parseRequest( capabilityEl.querySelector( ':scope > Request' ) );
+		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( parseLayer );
+		const layers = collectLayers( rootLayers );
+		const layerMap = {};
+		layers.forEach( l => layerMap[ l.name ] = l );
 
-		const requestEl = capability?.querySelector( 'Request' );
-		const request = parseRequestSection( requestEl );
-
-		return { service, layers, request };
+		return { service, layers, rootLayers, layerMap, request };
 
 	}
 
