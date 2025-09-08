@@ -2,7 +2,6 @@ import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
 import {
 	TilesRenderer,
 	GlobeControls,
-	EnvironmentControls,
 } from '3d-tiles-renderer';
 import {
 	TilesFadePlugin,
@@ -16,13 +15,11 @@ const url =
 	window.location.hash.replace( /^#/, '' ) ||
 	'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS';
 
-
 let controls, scene, renderer;
-let wmsTiles, camera, gui;
+let tiles, camera, gui;
 let params, capabilities;
 
 init();
-render();
 
 function init() {
 
@@ -35,12 +32,7 @@ function init() {
 	document.body.appendChild( renderer.domElement );
 
 	scene = new Scene();
-	camera = new PerspectiveCamera(
-		60,
-		window.innerWidth / window.innerHeight,
-		0.001,
-		10000,
-	);
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight );
 
 	updateCapabilities();
 
@@ -63,7 +55,6 @@ async function updateCapabilities() {
 	}
 
 	params = {
-
 		baseUrl: url, // Remove GetCapabilities params
 		layer: defaultLayer.name,
 		style: defaultLayer.styles[ 0 ]?.name || '',
@@ -73,7 +64,6 @@ async function updateCapabilities() {
 		planar: false,
 		version: capabilities.version || '1.3.0',
 		styles: defaultLayer.styles[ 0 ]?.name || '',
-
 	};
 
 	rebuildGUI();
@@ -85,7 +75,7 @@ function rebuildGUI() {
 
 	if ( gui ) gui.destroy();
 
-	const layer = capabilities.layers.find( ( l ) => l.name === params.layer && l.queryable );
+	const layer = capabilities.layers.find( l => l.name === params.layer && l.queryable );
 
 	gui = new GUI();
 	gui.add( params, 'planar' ).onChange( rebuildTiles );// wms doesn't show up in planar mode
@@ -93,12 +83,12 @@ function rebuildGUI() {
 		.add(
 			params,
 			'layer',
-			capabilities.layers.filter( ( l ) => l.queryable === true ).map( ( l ) => l.name ),
+			capabilities.layers.filter( l => l.queryable === true ).map( l => l.name ),
 		)
 		.onChange( () => {
 
 			const selectedLayer = capabilities.layers.find(
-				( l ) => l.name === params.layer,
+				l => l.name === params.layer,
 			);
 			params.crs = selectedLayer.crs[ 0 ] || 'EPSG:3857';
 			params.styles = selectedLayer.styles[ 0 ]?.name || '';
@@ -106,22 +96,22 @@ function rebuildGUI() {
 			rebuildTiles();
 
 		} );
-	gui
-		.add(
-			params,
-			'styles',
-			layer.styles.map( ( s ) => s.name ),
-		)
-		.onChange( rebuildTiles );
+	gui.add( params, 'styles', layer.styles.map( ( s ) => s.name ) ).onChange( rebuildTiles );
 	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles );
 	gui.add( params, 'format', capabilities.request.GetMap.formats ).onChange( rebuildTiles );
 	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles );
 
 }
+
 function rebuildTiles() {
 
-	//if ( xyzTiles ) xyzTiles.dispose();
-	if ( wmsTiles ) wmsTiles.dispose();
+	if ( tiles ) {
+
+		tiles.dispose();
+		tiles = null;
+
+	}
+
 	if ( controls ) {
 
 		controls.dispose();
@@ -130,10 +120,10 @@ function rebuildTiles() {
 	}
 
 	// WMS overlay layer
-	wmsTiles = new TilesRenderer();
-	wmsTiles.registerPlugin( new TilesFadePlugin() );
-	wmsTiles.registerPlugin( new UpdateOnChangePlugin() );
-	wmsTiles.registerPlugin(
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin(
 		new WMSTilesPlugin( {
 			shape: params.planar ? 'planar' : 'ellipsoid',
 			center: true,
@@ -148,38 +138,16 @@ function rebuildTiles() {
 		} ),
 	);
 
-	wmsTiles.setCamera( camera );
+	tiles.group.rotation.x = - Math.PI / 2;
+	scene.add( tiles.group );
 
-	scene.add( wmsTiles.group );
-
-	// Controls setup ( same as before )
-	if ( params.planar ) {
-
-		controls = new EnvironmentControls( scene, camera, renderer.domElement );
-		controls.enableDamping = true;
-		controls.minDistance = 1e-4;
-		controls.maxDistance = 5;
-		controls.cameraRadius = 0;
-		controls.fallbackPlane.normal.set( 0, 0, 1 );
-		controls.up.set( 0, 0, 1 );
-		controls.camera.position.set( 0, 0, 2 );
-		controls.camera.quaternion.identity();
-
-		camera.near = 1e-4;
-		camera.far = 10;
-		camera.updateProjectionMatrix();
-
-	} else {
-
-		wmsTiles.group.rotation.x = - Math.PI / 2;
-		controls = new GlobeControls( scene, camera, renderer.domElement );
-		controls.setEllipsoid( wmsTiles.ellipsoid, wmsTiles.group );
-		controls.enableDamping = true;
-		controls.camera.position.set( 0, 0, 1.75 * 1e7 );
-		controls.camera.quaternion.identity();
-		controls.minDistance = 150;
-
-	}
+	// init controls
+	controls = new GlobeControls( scene, camera, renderer.domElement );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+	controls.enableDamping = true;
+	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
+	controls.camera.quaternion.identity();
+	controls.minDistance = 150;
 
 }
 
@@ -201,13 +169,14 @@ function render() {
 
 	}
 
-	if ( wmsTiles ) {
+	if ( tiles ) {
 
-		wmsTiles.setCamera( camera );
-		wmsTiles.setResolutionFromRenderer( camera, renderer );
-		wmsTiles.update();
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
+		tiles.update();
 
 	}
+
 	renderer.render( scene, camera );
 
 }
