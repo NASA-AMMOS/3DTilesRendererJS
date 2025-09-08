@@ -81,7 +81,7 @@ export class WMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-			baseUrl,
+			url,
 			layer,
 			crs,
 			format,
@@ -95,7 +95,7 @@ export class WMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 		this.name = 'WMS_TILES_PLUGIN';
 		this.imageSource = new WMSImageSource( {
-			baseUrl,
+			url,
 			layer,
 			crs,
 			format,

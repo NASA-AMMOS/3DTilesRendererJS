@@ -41,7 +41,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 export class WMSTilesOverlay extends ImageOverlay {
 
 	constructor( options: {
-		baseUrl: string,
+		url: string,
 		layer: string,
 		crs: string,
 		format: string,

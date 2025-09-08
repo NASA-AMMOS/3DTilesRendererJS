@@ -5,7 +5,7 @@ import { MathUtils } from 'three';
 export class WMSImageSource extends TiledImageSource {
 
 	constructor( {
-		baseUrl,
+		url,
 		layer,
 		crs = 'EPSG:3857',
 		format = 'image/png',
@@ -17,7 +17,7 @@ export class WMSImageSource extends TiledImageSource {
 	} ) {
 
 		super();
-		this.url = baseUrl;
+		this.url = url;
 		this.layer = layer;
 		this.crs = crs;
 		this.format = format;

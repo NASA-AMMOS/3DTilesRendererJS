@@ -44,7 +44,7 @@ export class WMSTilesPlugin {
 		center?: boolean,
 		shape?: 'ellipsoid' | 'planar',
 		useRecommendedSettings?: boolean,
-		baseUrl?: string,
+		url?: string,
 		layer: string,
 		crs: string,
 		crsParam?: string,

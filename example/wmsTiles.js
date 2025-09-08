@@ -55,7 +55,7 @@ async function updateCapabilities() {
 	}
 
 	params = {
-		baseUrl: url, // Remove GetCapabilities params
+		url: url, // Remove GetCapabilities params
 		layer: defaultLayer.name,
 		style: defaultLayer.styles[ 0 ]?.name || '',
 		crs: selectedCRS,
@@ -127,7 +127,7 @@ function rebuildTiles() {
 		new WMSTilesPlugin( {
 			shape: params.planar ? 'planar' : 'ellipsoid',
 			center: true,
-			baseUrl: url.replace( /\?.*$/, '' ),
+			url: url.replace( /\?.*$/, '' ),
 			layer: params.layer,
 			crs: params.crs,
 			format: params.format,
