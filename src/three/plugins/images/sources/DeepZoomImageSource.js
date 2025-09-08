@@ -15,7 +15,7 @@ export class DeepZoomImageSource extends TiledImageSource {
 
 	getUrl( x, y, level ) {
 
-		return `${this.stem}_files/${level}/${x}_${y}.${this.format}`;
+		return `${ this.stem }_files/${ level }/${ x }_${ y }.${ this.format }`;
 
 	}
 
@@ -27,19 +27,15 @@ export class DeepZoomImageSource extends TiledImageSource {
 		// the target tile level can be immediately 'jumped' to for the entire image and in-view tiles
 		// can be immediately queried without any hierarchy traversal. Due the flexibility of camera
 		// type, rotation, and per-tile error calculation we generate a hierarchy.
-		return this.fetchData( url, this.fetchOptions )
-			.then( ( res ) => res.text() )
-			.then( ( text ) => {
+		return this
+			.fetchData( url, this.fetchOptions )
+			.then( res => res.text() )
+			.then( text => {
 
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
-				if (
-					xml.querySelector( 'DisplayRects' ) ||
-					xml.querySelector( 'Collection' )
-				) {
+				if ( xml.querySelector( 'DisplayRects' ) || xml.querySelector( 'Collection' ) ) {
 
-					throw new Error(
-						'DeepZoomImagesPlugin: DisplayRect and Collection DZI files not supported.',
-					);
+					throw new Error( 'DeepZoomImagesPlugin: DisplayRect and Collection DZI files not supported.' );
 
 				}
 

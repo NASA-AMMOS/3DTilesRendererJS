@@ -71,8 +71,8 @@ export class ProjectionScheme {
 		if ( this.isMercator ) {
 
 			// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-			const mercatorN = Math.log( Math.tan( Math.PI / 4 + lat / 2 ) );
-			return 1 / 2 + ( 1 * mercatorN ) / ( 2 * Math.PI );
+			const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
+			return ( 1 / 2 ) + ( 1 * mercatorN / ( 2 * Math.PI ) );
 
 		} else {
 
@@ -107,12 +107,7 @@ export class ProjectionScheme {
 		if ( this.isMercator ) {
 
 			// TODO: why is this 2 * Math.PI rather than Math.PI?
-			return (
-				Math.abs(
-					this.convertProjectionToLatitude( value ) -
-						this.convertProjectionToLatitude( yp ),
-				) / EPS
-			);
+			return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
 
 		} else {
 
@@ -125,10 +120,8 @@ export class ProjectionScheme {
 	getBounds() {
 
 		return [
-			this.convertProjectionToLongitude( 0 ),
-			this.convertProjectionToLatitude( 0 ),
-			this.convertProjectionToLongitude( 1 ),
-			this.convertProjectionToLatitude( 1 ),
+			this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
+			this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
 		];
 
 	}

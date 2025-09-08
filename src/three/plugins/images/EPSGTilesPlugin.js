@@ -53,27 +53,23 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 	constructor( options = {} ) {
 
 		const {
-
 			capabilities,
 			layer,
 			tileMatrixSet,
 			style,
 			dimensions,
 			...rest
-
 		} = options;
 
 		super( rest );
 
 		this.name = 'WTMS_TILES_PLUGIN';
 		this.imageSource = new WMTSImageSource( {
-
 			capabilities,
 			layer,
 			tileMatrixSet,
 			style,
 			dimensions
-
 		} );
 
 	}
