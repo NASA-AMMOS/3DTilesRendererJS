@@ -52,6 +52,7 @@ export type WMSRequestMap = { [operationName: string]: WMSRequestOperation };
 export interface WMSCapabilitiesResult {
     service: WMSService;
     layers: WMSLayer[];
+    layerMap: { [ key: string ]: WMSLayer };
 	request: WMSRequestMap
 }
 

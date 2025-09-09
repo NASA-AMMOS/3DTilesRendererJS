@@ -163,11 +163,11 @@ function parseLayer( el, inheritedProperties = {} ) {
 		opaque = false,
 	} = inheritedProperties;
 
-	const name = el.querySelector( 'Name' )?.textContent || '';
-	const title = el.querySelector( 'Title' )?.textContent || '';
-	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
-	const keywords = Array.from( el.querySelectorAll( 'Keyword' ) ).map( k => k.textContent );
-	const bboxEls = Array.from( el.querySelectorAll( 'BoundingBox' ) );
+	const name = el.querySelector( ':scope > Name' )?.textContent || null;
+	const title = el.querySelector( ':scope > Title' )?.textContent || '';
+	const abstract = el.querySelector( ':scope > Abstract' )?.textContent || '';
+	const keywords = Array.from( el.querySelectorAll( ':scope > Keyword' ) ).map( k => k.textContent );
+	const bboxEls = Array.from( el.querySelectorAll( ':scope > BoundingBox' ) );
 	const boundingBoxes = bboxEls.map( parseBoundingBox );
 
 	// See section 7.2.4.8 in the specification
@@ -247,6 +247,10 @@ function parseService( el ) {
 		title: el.querySelector( 'Title' )?.textContent || '',
 		abstract: el.querySelector( 'Abstract' )?.textContent || '',
 		keywords: Array.from( el.querySelectorAll( 'Keyword' ) ).map( k => k.textContent ),
+
+		maxWidth: parseFloat( el.querySelector( 'MaxWidth' ) ) || null,
+		maxHeight: parseFloat( el.querySelector( 'MaxHeight' ) ) || null,
+		layerLimit: parseFloat( el.querySelector( 'LayerLimit' ) ) || null,
 	};
 
 }
@@ -267,7 +271,7 @@ function readOnlineResourceHref( el ) {
 function parseRequestOperation( opEl ) {
 
 	const formats = Array.from( opEl.querySelectorAll( 'Format' ) ).map( f => f.textContent.trim() );
-	const dcp = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( ( dcp ) => {
+	const dcp = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( dcp => {
 
 		const httpEl = dcp.querySelector( 'HTTP' );
 		if ( ! httpEl ) {
@@ -296,7 +300,7 @@ function parseRequestOperation( opEl ) {
 
 	}
 
-	return { formats, dcp };
+	return { formats, dcp, href: dcp[ 0 ].get };
 
 }
 
@@ -316,12 +320,17 @@ function parseRequest( el ) {
 
 }
 
-// Collect all sub layers into a flat array for easier access
+// Collect all sub layers with a valid name into a flat array for easier access
 function collectLayers( layers, target = [] ) {
 
 	layers.forEach( l => {
 
-		target.push( l );
+		if ( l.name !== null ) {
+
+			target.push( l );
+
+		}
+
 		collectLayers( l.subLayers, target );
 
 	} );
@@ -344,7 +353,7 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 		const layerMap = {};
 		layers.forEach( l => layerMap[ l.name ] = l );
 
-		return { service, layers, rootLayers, layerMap, request };
+		return { service, layers, layerMap, request };
 
 	}
 

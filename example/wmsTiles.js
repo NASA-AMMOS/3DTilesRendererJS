@@ -75,28 +75,21 @@ function rebuildGUI() {
 
 	if ( gui ) gui.destroy();
 
-	const layer = capabilities.layers.find( l => l.name === params.layer && l.queryable );
+	const layer = capabilities.layerMap[ params.layer ];
 
 	gui = new GUI();
 	gui.add( params, 'planar' ).onChange( rebuildTiles );// wms doesn't show up in planar mode
-	gui
-		.add(
-			params,
-			'layer',
-			capabilities.layers.filter( l => l.queryable === true ).map( l => l.name ),
-		)
+	gui.add( params, 'layer', capabilities.layers.map( l => l.name ) )
 		.onChange( () => {
 
-			const selectedLayer = capabilities.layers.find(
-				l => l.name === params.layer,
-			);
-			params.crs = selectedLayer.crs[ 0 ] || 'EPSG:3857';
+			const selectedLayer = capabilities.layerMap[ params.layer ];
+			params.crs = selectedLayer.crs[ 0 ];
 			params.styles = selectedLayer.styles[ 0 ]?.name || '';
 			rebuildGUI();
 			rebuildTiles();
 
 		} );
-	gui.add( params, 'styles', layer.styles.map( ( s ) => s.name ) ).onChange( rebuildTiles );
+	gui.add( params, 'styles', layer.styles.map( s => s.name ) ).onChange( rebuildTiles );
 	gui.add( params, 'crs', layer.crs ).onChange( rebuildTiles );
 	gui.add( params, 'format', capabilities.request.GetMap.formats ).onChange( rebuildTiles );
 	gui.add( params, 'tileDimension', [ 256, 512 ] ).onChange( rebuildTiles );
@@ -127,14 +120,13 @@ function rebuildTiles() {
 		new WMSTilesPlugin( {
 			shape: params.planar ? 'planar' : 'ellipsoid',
 			center: true,
-			url: url.replace( /\?.*$/, '' ),
+			url: capabilities.request.GetMap.href,
 			layer: params.layer,
 			crs: params.crs,
 			format: params.format,
 			tileDimension: params.tileDimension,
 			styles: params.styles,
 			version: params.version,
-
 		} ),
 	);
 
