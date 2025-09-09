@@ -326,18 +326,6 @@ function parseRequestOperation( opEl ) {
 
 	} );
 
-	// fallback: sometimes OnlineResource appears directly under the operation
-	if ( dcp.length === 0 ) {
-
-		const online = opEl.querySelector( ':scope > OnlineResource' );
-		if ( online ) {
-
-			dcp.push( { type: 'HTTP', get: readOnlineResourceHref( online ), post: '' } );
-
-		}
-
-	}
-
 	return { formats, dcp, href: dcp[ 0 ].get };
 
 }
