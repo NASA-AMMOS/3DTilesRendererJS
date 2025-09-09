@@ -60,18 +60,22 @@ function tupleToRadians( tuple ) {
 
 }
 
-// parse <BoundingBox> for WMS using same normalization as WMTS (lower/upper corners, unit & order correction)
+// parse "BoundingBox" tag for WMS using same normalization as WMTS (lower/upper corners, unit & order correction)
 function parseBoundingBox( el ) {
 
-	if ( ! el ) return null;
+	if ( ! el ) {
+
+		return null;
+
+	}
 
 	// WMS may use CRS / crs / SRS attribute
 	let crs = el.getAttribute( 'CRS' ) || el.getAttribute( 'crs' ) || el.getAttribute( 'SRS' ) || '';
 
-	const minx = parseFloat( el.getAttribute( 'minx' ) || '0' );
-	const miny = parseFloat( el.getAttribute( 'miny' ) || '0' );
-	const maxx = parseFloat( el.getAttribute( 'maxx' ) || '0' );
-	const maxy = parseFloat( el.getAttribute( 'maxy' ) || '0' );
+	const minx = parseFloat( el.getAttribute( 'minx' ) );
+	const miny = parseFloat( el.getAttribute( 'miny' ) );
+	const maxx = parseFloat( el.getAttribute( 'maxx' ) );
+	const maxy = parseFloat( el.getAttribute( 'maxy' ) );
 
 	const lowerCorner = [ minx, miny ];
 	const upperCorner = [ maxx, maxy ];
@@ -93,10 +97,6 @@ function parseBoundingBox( el ) {
 
 		crs = 'EPSG:4326';
 
-	} else if ( isWebMercator( crs ) ) {
-
-		crs = 'EPSG:3857';
-
 	}
 
 	// bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
@@ -115,10 +115,11 @@ function parseEXGeographicBoundingBox( el ) {
 	const east = parseFloat( el.querySelector( 'eastBoundLongitude' ).textContent );
 	const south = parseFloat( el.querySelector( 'southBoundLatitude' ).textContent );
 	const north = parseFloat( el.querySelector( 'northBoundLatitude' ).textContent );
-	return { bounds: [ west, south, east, north ] };
+	return { crs: 'EPSG:4326', bounds: [ west, south, east, north ] };
 
 }
 
+// Parse the "Style" tag along with the associated legend elements
 function parseStyle( el ) {
 
 	const name = el.querySelector( 'Name' ).textContent;
@@ -153,7 +154,16 @@ function parseStyle( el ) {
 
 }
 
+// Parse a <Layer> element in addition to the child layers
 function parseLayer( el, inheritedProperties = {} ) {
+
+	// TODO:
+	// - Dimension
+	// - Attribution
+	// - AuthorityURL
+	// - MinScaleDenominator
+	// - MaxScaleDenominator
+	// - cascaded, noSubsets, fixedWidth, fixedHeight attributes
 
 	let {
 		styles = [],
@@ -166,9 +176,9 @@ function parseLayer( el, inheritedProperties = {} ) {
 	const name = el.querySelector( ':scope > Name' )?.textContent || null;
 	const title = el.querySelector( ':scope > Title' )?.textContent || '';
 	const abstract = el.querySelector( ':scope > Abstract' )?.textContent || '';
-	const keywords = Array.from( el.querySelectorAll( ':scope > Keyword' ) ).map( k => k.textContent );
-	const bboxEls = Array.from( el.querySelectorAll( ':scope > BoundingBox' ) );
-	const boundingBoxes = bboxEls.map( parseBoundingBox );
+	const keywords = [ ...el.querySelectorAll( ':scope > Keyword' ) ].map( k => k.textContent );
+	const boundingBoxEl = [ ...el.querySelectorAll( ':scope > BoundingBox' ) ];
+	const boundingBoxes = boundingBoxEl.map( el => parseBoundingBox( el ) );
 
 	// See section 7.2.4.8 in the specification
 	// Handle added inherited properties
@@ -216,13 +226,22 @@ function parseLayer( el, inheritedProperties = {} ) {
 
 	} );
 
-	// TODO:
-	// - Dimension
-	// - Attribution
-	// - AuthorityURL
-	// - MinScaleDenominator
-	// - MaxScaleDenominator
-	// - cascaded, noSubsets, fixedWidth, fixedHeight attributes
+	// Save the ex bounding box
+	if ( exGeographicBoundingBox ) {
+
+		boundingBoxes.push( exGeographicBoundingBox );
+
+	}
+
+	// Find the most appropriate "bounding box" to serve as canonical
+	let boundingBox = exGeographicBoundingBox;
+	if ( ! boundingBox ) {
+
+		boundingBox =
+			boundingBoxes.find( bb => bb.crs === 'EPSG:4326' ) ||
+			boundingBoxes.find( bb => bb.crs === 'EPSG:3857' );
+
+	}
 
 	return {
 		name,
@@ -232,6 +251,7 @@ function parseLayer( el, inheritedProperties = {} ) {
 		opaque,
 		keywords,
 		crs,
+		boundingBox,
 		boundingBoxes,
 		exGeographicBoundingBox,
 		styles,
@@ -240,6 +260,7 @@ function parseLayer( el, inheritedProperties = {} ) {
 
 }
 
+// Parse the "Service" tag
 function parseService( el ) {
 
 	return {
@@ -258,7 +279,12 @@ function parseService( el ) {
 // helper: read OnlineResource href (handles xlink namespace)
 function readOnlineResourceHref( el ) {
 
-	if ( ! el ) return '';
+	if ( ! el ) {
+
+		return '';
+
+	}
+
 	return (
 		el.getAttribute( 'xlink:href' ) ||
 		el.getAttributeNS( 'http://www.w3.org/1999/xlink', 'href' ) ||
@@ -346,14 +372,13 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 		const str = new TextDecoder( 'utf-8' ).decode( new Uint8Array( buffer ) );
 		const xml = new DOMParser().parseFromString( str, 'text/xml' );
 		const capabilityEl = xml.querySelector( 'Capability' );
+		const version = capabilityEl.getAttribute( 'version' );
 		const service = parseService( xml.querySelector( ':scope > Service' ) );
 		const request = parseRequest( capabilityEl.querySelector( ':scope > Request' ) );
-		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( parseLayer );
+		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( el => parseLayer( el ) );
 		const layers = collectLayers( rootLayers );
-		const layerMap = {};
-		layers.forEach( l => layerMap[ l.name ] = l );
 
-		return { service, layers, layerMap, request };
+		return { version, service, layers, request };
 
 	}
 

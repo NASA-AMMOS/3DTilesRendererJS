@@ -29,8 +29,9 @@ export interface WMSLayer {
     opaque: boolean;
     keywords: string[];
     crs: string[];
+    boundingBox: WMSBoundingBox;
     boundingBoxes: WMSBoundingBox[];
-    exGeographicBoundingBox: { bounds: [number, number, number, number] } | null;
+    exGeographicBoundingBox: WMSBoundingBox | null;
     styles: WMSStyle[];
     subLayers: WMSLayer[];
 }
