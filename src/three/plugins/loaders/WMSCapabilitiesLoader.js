@@ -123,7 +123,24 @@ function parseEXGeographicBoundingBox( el ) {
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
 
-	return { crs: 'EPSG:4326', bounds: [ ...lowerCorner, ...upperCorner ] };
+	return [ ...lowerCorner, ...upperCorner ];
+
+}
+
+function parseLatLonBoundingBox( el ) {
+
+	const west = parseFloat( el.getAttribute( 'minx' ).textContent );
+	const east = parseFloat( el.getAttribute( 'maxx' ).textContent );
+	const south = parseFloat( el.getAttribute( 'miny' ).textContent );
+	const north = parseFloat( el.getAttribute( 'maxy' ).textContent );
+
+	const lowerCorner = [ west, south ];
+	const upperCorner = [ east, north ];
+
+	tupleToRadians( lowerCorner );
+	tupleToRadians( upperCorner );
+
+	return [ ...lowerCorner, ...upperCorner ];
 
 }
 
@@ -176,7 +193,7 @@ function parseLayer( el, version, inheritedProperties = {} ) {
 	let {
 		styles = [],
 		crs = [],
-		exGeographicBoundingBox = null,
+		contentBoundingBox = null,
 		queryable = false,
 		opaque = false,
 	} = inheritedProperties;
@@ -212,9 +229,14 @@ function parseLayer( el, version, inheritedProperties = {} ) {
 
 	}
 
+	// These bounding boxes define the range of data present in the data set in a cartographic range
 	if ( el.querySelector( 'EX_GeographicBoundingBox' ) ) {
 
-		exGeographicBoundingBox = parseEXGeographicBoundingBox( el.querySelector( 'EX_GeographicBoundingBox' ) );
+		contentBoundingBox = parseEXGeographicBoundingBox( el.querySelector( 'EX_GeographicBoundingBox' ) );
+
+	} else if ( el.querySelector( 'LatLonBoundingBox' ) ) {
+
+		contentBoundingBox = parseLatLonBoundingBox( el.querySelector( 'LatLonBoundingBox' ) );
 
 	}
 
@@ -227,29 +249,12 @@ function parseLayer( el, version, inheritedProperties = {} ) {
 			crs,
 
 			// replace
-			exGeographicBoundingBox,
+			contentBoundingBox,
 			queryable,
 			opaque,
 		} );
 
 	} );
-
-	// Save the ex bounding box
-	if ( exGeographicBoundingBox ) {
-
-		boundingBoxes.push( exGeographicBoundingBox );
-
-	}
-
-	// Find the most appropriate "bounding box" to serve as canonical
-	let boundingBox = exGeographicBoundingBox;
-	if ( ! boundingBox ) {
-
-		boundingBox =
-			boundingBoxes.find( bb => bb.crs === 'EPSG:4326' ) ||
-			boundingBoxes.find( bb => bb.crs === 'EPSG:3857' );
-
-	}
 
 	return {
 		name,
@@ -259,9 +264,8 @@ function parseLayer( el, version, inheritedProperties = {} ) {
 		opaque,
 		keywords,
 		crs,
-		boundingBox,
 		boundingBoxes,
-		exGeographicBoundingBox,
+		contentBoundingBox,
 		styles,
 		subLayers,
 	};
@@ -379,7 +383,9 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 
 		const str = new TextDecoder( 'utf-8' ).decode( new Uint8Array( buffer ) );
 		const xml = new DOMParser().parseFromString( str, 'text/xml' );
-		const version = xml.querySelector( 'WMS_Capabilities' ).getAttribute( 'version' );
+		const rootEl = xml.querySelector( 'WMS_Capabilities' ) || xml.querySelector( 'WMT_MS_Capabilities' );
+		const version = rootEl.getAttribute( 'version' );
+
 		const capabilityEl = xml.querySelector( 'Capability' );
 		const service = parseService( xml.querySelector( ':scope > Service' ) );
 		const request = parseRequest( capabilityEl.querySelector( ':scope > Request' ) );

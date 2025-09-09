@@ -49,9 +49,12 @@ export class WMSTilesOverlay extends ImageOverlay {
 		styles: string,
 		version: string,
 		levels: number,
-		opacity: number,
-		extraHeaders?:{ [key: string]: string}
+		contentBoundingBox?: [ number, number, number, number ],
+		extraHeaders?:{ [key: string]: string }
 
+		color: number | Color,
+		opacity: number,
+		frame?: Matrix4 | null,
 	} );
 
 }

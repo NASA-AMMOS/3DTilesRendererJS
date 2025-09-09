@@ -11,8 +11,8 @@ export class WMSImageSource extends TiledImageSource {
 			url = null,
 			layer = null,
 			styles = null,
+			contentBoundingBox = null,
 			version = '1.3.0',
-			contentBounds = [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ],
 			crs = 'EPSG:4326',
 			format = 'image/png',
 			levels = 18,
@@ -29,21 +29,30 @@ export class WMSImageSource extends TiledImageSource {
 		this.styles = styles;
 		this.version = version;
 		this.levels = levels;
-		this.contentBounds = contentBounds;
+		this.contentBoundingBox = contentBoundingBox;
 		this.extraHeaders = extraHeaders;
 
 	}
 
 	init() {
 
-		const { tiling, levels, tileDimension, contentBounds } = this;
+		const { tiling, levels, tileDimension, contentBoundingBox } = this;
 		tiling.setProjection( new ProjectionScheme( this.crs ) );
 		tiling.flipY = true;
-		tiling.setContentBounds( ...contentBounds );
 		tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
 			tilePixelWidth: tileDimension,
 			tilePixelHeight: tileDimension,
 		} );
+
+		if ( contentBoundingBox !== null ) {
+
+			tiling.setContentBounds( ...contentBoundingBox );
+
+		} else {
+
+			tiling.setContentBounds( ...tiling.projection.getBounds() );
+
+		}
 
 		return Promise.resolve();
 
@@ -72,19 +81,6 @@ export class WMSImageSource extends TiledImageSource {
 		const MERCATOR_MIN = - 20037508.342789244;
 		const MERCATOR_MAX = 20037508.342789244;
 		return MathUtils.mapLinear( v, 0, 1, MERCATOR_MIN, MERCATOR_MAX );
-
-	}
-
-	// TODO: Can we just use the ProjectionScheme reference here?
-	convertProjectionToLatitude( v ) {
-
-		return MathUtils.mapLinear( v, 0, 1, - 90, 90 );
-
-	}
-
-	convertProjectionToLongitude( v ) {
-
-		return MathUtils.mapLinear( v, 0, 1, - 180, 180 );
 
 	}
 

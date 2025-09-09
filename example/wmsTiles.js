@@ -109,7 +109,7 @@ function rebuildTiles() {
 			shape: 'ellipsoid',
 			url: capabilities.request.GetMap.href,
 			layer: params.layer,
-			contentBounds: layer.boundingBox.bounds,
+			contentBoundingBox: layer.contentBoundingBox,
 			crs: params.crs,
 			format: params.format,
 			tileDimension: params.tileDimension,

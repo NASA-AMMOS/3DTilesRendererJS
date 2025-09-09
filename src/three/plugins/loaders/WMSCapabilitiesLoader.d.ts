@@ -30,8 +30,7 @@ export interface WMSLayer {
     keywords: string[];
     crs: string[];
     boundingBox: WMSBoundingBox;
-    boundingBoxes: WMSBoundingBox[];
-    exGeographicBoundingBox: WMSBoundingBox | null;
+    contentBoundingBox: [ number, number, number, number ];
     styles: WMSStyle[];
     subLayers: WMSLayer[];
 }
@@ -48,7 +47,6 @@ export interface WMSRequestOperation {
 }
 
 export type WMSRequestMap = { [operationName: string]: WMSRequestOperation };
-
 
 export interface WMSCapabilitiesResult {
     service: WMSService;
