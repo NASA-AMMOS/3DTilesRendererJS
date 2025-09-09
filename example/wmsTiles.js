@@ -15,17 +15,19 @@ init();
 
 function init() {
 
+	// renderer
 	renderer = new WebGLRenderer( { antialias: true } );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x111111 );
 	renderer.setAnimationLoop( render );
-
 	document.body.appendChild( renderer.domElement );
 
+	// set up
 	scene = new Scene();
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight );
 
+	// load the tiles
 	updateCapabilities();
 
 	onWindowResize();
@@ -39,23 +41,12 @@ async function updateCapabilities() {
 	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + '&request=GetCapabilities' );
 	const defaultLayer = capabilities.layers[ 0 ];
 
-	let selectedCRS = 'EPSG:4326';
-	if ( defaultLayer.crs.includes( 'EPSG:3857' ) ) {
-
-		selectedCRS = 'EPSG:3857';
-
-	}
-
 	params = {
-		url: url, // Remove GetCapabilities params
 		layer: defaultLayer.name,
-		style: defaultLayer.styles[ 0 ]?.name || '',
-		crs: selectedCRS,
+		styles: defaultLayer.styles[ 0 ]?.name || '',
+		crs: 'EPSG:4326',
 		format: 'image/png',
 		tileDimension: 256,
-		planar: false,
-		version: capabilities.version || '1.3.0',
-		styles: defaultLayer.styles[ 0 ]?.name || '',
 	};
 
 	rebuildGUI();
@@ -65,16 +56,19 @@ async function updateCapabilities() {
 
 function rebuildGUI() {
 
-	if ( gui ) gui.destroy();
+	if ( gui ) {
 
-	const layer = capabilities.layerMap[ params.layer ];
+		gui.destroy();
+
+	}
+
+	const layer = capabilities.layers.find( l => l.name === params.layer );
 
 	gui = new GUI();
-	gui.add( params, 'planar' ).onChange( rebuildTiles );// wms doesn't show up in planar mode
 	gui.add( params, 'layer', capabilities.layers.map( l => l.name ) )
-		.onChange( () => {
+		.onChange( v => {
 
-			const selectedLayer = capabilities.layerMap[ params.layer ];
+			const selectedLayer = capabilities.layers.find( l => l.name === v );
 			params.crs = selectedLayer.crs[ 0 ];
 			params.styles = selectedLayer.styles[ 0 ]?.name || '';
 			rebuildGUI();
@@ -104,21 +98,23 @@ function rebuildTiles() {
 
 	}
 
+	const layer = capabilities.layers.find( l => l.name === params.layer );
+
 	// WMS overlay layer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin(
 		new WMSTilesPlugin( {
-			shape: params.planar ? 'planar' : 'ellipsoid',
-			center: true,
+			shape: 'ellipsoid',
 			url: capabilities.request.GetMap.href,
 			layer: params.layer,
+			contentBounds: layer.boundingBox.bounds,
 			crs: params.crs,
 			format: params.format,
 			tileDimension: params.tileDimension,
 			styles: params.styles,
-			version: params.version,
+			version: capabilities.version,
 		} ),
 	);
 
