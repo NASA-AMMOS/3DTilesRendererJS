@@ -7,14 +7,21 @@ interface WMTSBoundingBox {
 	bounds: [ number, number, number, number ],
 }
 
-interface WMTSTileMatrixSet {
+interface WMTSServiceIdentification {
+	title: string;
+	abstract: string;
+	serviceType: string;
+	serviceTypeVersion: string;
+}
+
+export interface WMTSTileMatrixSet {
 	title: string;
 	identifier: string;
 	abstract: string;
 	supportedCRS: string;
 }
 
-interface WMTSLayer {
+export interface WMTSLayer {
 	title: string;
 	identifier: string;
 	format: string;
@@ -23,13 +30,6 @@ interface WMTSLayer {
 	styles: Array<{ identifier: string, title: string, isDefault: string }>,
 	resourceUrls: Array<{ template: string, format: string, resourceType: string }>,
 	tileMatrixSets: Array<WMTSTileMatrixSet>,
-}
-
-interface WMTSServiceIdentification {
-	title: string;
-	abstract: string;
-	serviceType: string;
-	serviceTypeVersion: string;
 }
 
 export interface WMTSCapabilitiesResult {

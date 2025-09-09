@@ -26,6 +26,7 @@ function isWebMercator( crs ) {
 // convert from meters (web mercator) to degrees using the mercator projection helper
 function correctTupleUnits( tuple, crs ) {
 
+	// TODO: consolidate this Mercator-units with WMTSLoader / move a helper onto ProjectionScheme?
 	if ( isWebMercator( crs ) ) {
 
 		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );

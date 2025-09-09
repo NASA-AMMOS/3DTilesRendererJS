@@ -1,3 +1,4 @@
+import { WMTSCapabilitiesResult, WMTSLayer, WMTSTileMatrixSet } from '../loaders/WMTSCapabilitiesLoader.js';
 
 export class XYZTilesPlugin {
 
@@ -27,11 +28,14 @@ export class TMSTilesPlugin {
 export class WMTSTilesPlugin {
 
 	constructor( options: {
+		capabilities?: WMTSCapabilitiesResult | null,
+		layer?: WMTSLayer | string | null,
+		tileMatrixSet?: WMTSTileMatrixSet | string | null,
+		style?: string,
+		dimensions?: { [ key: string ]: any } | null,
 		center?: boolean,
 		levels?: number,
-		tileDimension?: number,
 		shape?: 'ellipsoid' | 'planar',
-		bounds?: [ number, number, number, number ],
 		useRecommendedSettings?: boolean,
 	} );
 
