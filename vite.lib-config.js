@@ -1,5 +1,6 @@
 import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { packageAliases } from './vite.config.js';
 
 export default ( { mode } ) => {
 
@@ -19,6 +20,9 @@ export default ( { mode } ) => {
 		root: './',
 		envDir: '.',
 		base: '',
+		resolve: {
+			alias: packageAliases,
+		},
 		build: {
 			sourcemap: true,
 			outDir: './build/',
