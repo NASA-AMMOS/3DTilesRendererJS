@@ -1,14 +1,6 @@
 import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
-import {
-	TilesRenderer,
-	GlobeControls,
-} from '3d-tiles-renderer';
-import {
-	TilesFadePlugin,
-	UpdateOnChangePlugin,
-	WMSCapabilitiesLoader,
-	WMSTilesPlugin,
-} from '3d-tiles-renderer/plugins';
+import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
+import { TilesFadePlugin, UpdateOnChangePlugin, WMSCapabilitiesLoader, WMSTilesPlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const url =
