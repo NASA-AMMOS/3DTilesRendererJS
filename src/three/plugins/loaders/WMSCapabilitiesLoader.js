@@ -42,9 +42,14 @@ function correctTupleUnits( tuple, crs ) {
 }
 
 // swap order when CRS is EPSG:4326 (WMS 1.3 axis order)
-function correctTupleOrder( tuple, crs ) {
+function correctTupleOrder( tuple, crs, version ) {
 
-	if ( isEPSG4326( crs ) ) {
+	// Before WMS 1.3.0 the latitude, longitude order for EPSG:4326 was declared to be in reverse and has
+	// been fixed in later versions. Correct the tuple order for consistency if loading a file from a prior version.
+	// See https://gis.stackexchange.com/questions/23347/getmap-wms-1-1-1-vs-1-3-0
+	const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
+	const shouldFixTupleOrder = major === 1 && minor < 3 || major < 1;
+	if ( isEPSG4326( crs ) && shouldFixTupleOrder ) {
 
 		[ tuple[ 0 ], tuple[ 1 ] ] = [ tuple[ 1 ], tuple[ 0 ] ];
 
@@ -61,7 +66,7 @@ function tupleToRadians( tuple ) {
 }
 
 // parse "BoundingBox" tag for WMS using same normalization as WMTS (lower/upper corners, unit & order correction)
-function parseBoundingBox( el ) {
+function parseBoundingBox( el, version ) {
 
 	if ( ! el ) {
 
@@ -80,9 +85,8 @@ function parseBoundingBox( el ) {
 	const lowerCorner = [ minx, miny ];
 	const upperCorner = [ maxx, maxy ];
 
-	// handle axis order differences (EPSG:4326 in WMS 1.3 uses lat,lon)
-	correctTupleOrder( lowerCorner, crs );
-	correctTupleOrder( upperCorner, crs );
+	correctTupleOrder( lowerCorner, crs, version );
+	correctTupleOrder( upperCorner, crs, version );
 
 	// correct units if web mercator meters were provided
 	correctTupleUnits( lowerCorner, crs );
@@ -155,7 +159,7 @@ function parseStyle( el ) {
 }
 
 // Parse a <Layer> element in addition to the child layers
-function parseLayer( el, inheritedProperties = {} ) {
+function parseLayer( el, version, inheritedProperties = {} ) {
 
 	// TODO:
 	// - Dimension
@@ -178,7 +182,7 @@ function parseLayer( el, inheritedProperties = {} ) {
 	const abstract = el.querySelector( ':scope > Abstract' )?.textContent || '';
 	const keywords = [ ...el.querySelectorAll( ':scope > Keyword' ) ].map( k => k.textContent );
 	const boundingBoxEl = [ ...el.querySelectorAll( ':scope > BoundingBox' ) ];
-	const boundingBoxes = boundingBoxEl.map( el => parseBoundingBox( el ) );
+	const boundingBoxes = boundingBoxEl.map( el => parseBoundingBox( el, version ) );
 
 	// See section 7.2.4.8 in the specification
 	// Handle added inherited properties
@@ -213,7 +217,7 @@ function parseLayer( el, inheritedProperties = {} ) {
 	// Recursively parse sublayers
 	const subLayers = Array.from( el.querySelectorAll( ':scope > Layer' ) ).map( el => {
 
-		return parseLayer( el, {
+		return parseLayer( el, version, {
 			// add
 			styles,
 			crs,
@@ -371,11 +375,11 @@ export class WMSCapabilitiesLoader extends LoaderBase {
 
 		const str = new TextDecoder( 'utf-8' ).decode( new Uint8Array( buffer ) );
 		const xml = new DOMParser().parseFromString( str, 'text/xml' );
+		const version = xml.querySelector( 'WMS_Capabilities' ).getAttribute( 'version' );
 		const capabilityEl = xml.querySelector( 'Capability' );
-		const version = capabilityEl.getAttribute( 'version' );
 		const service = parseService( xml.querySelector( ':scope > Service' ) );
 		const request = parseRequest( capabilityEl.querySelector( ':scope > Request' ) );
-		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( el => parseLayer( el ) );
+		const rootLayers = Array.from( capabilityEl.querySelectorAll( ':scope > Layer' ) ).map( el => parseLayer( el, version ) );
 		const layers = collectLayers( rootLayers );
 
 		return { version, service, layers, request };
