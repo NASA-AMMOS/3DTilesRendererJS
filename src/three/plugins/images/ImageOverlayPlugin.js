@@ -1,24 +1,10 @@
-import {
-	WebGLRenderTarget,
-	Color,
-	SRGBColorSpace,
-	BufferAttribute,
-	Matrix4,
-	Vector3,
-	Box3,
-	Triangle,
-	CanvasTexture,
-} from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import {
-	forEachTileInBounds,
-	getMeshesCartographicRange,
-	getMeshesPlanarRange,
-} from './overlays/utils.js';
+import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
@@ -41,8 +27,8 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 	if ( Array.isArray( overlay ) ) {
 
 		const promises = overlay
-			.map( ( o ) => markOverlayImages( range, level, o, doRelease ) )
-			.filter( ( p ) => p !== null );
+			.map( o => markOverlayImages( range, level, o, doRelease ) )
+			.filter( p => p !== null );
 
 		if ( promises.length === 0 ) {
 
@@ -70,27 +56,21 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 
 		const promises = [];
 		const { imageSource, tiling } = overlay;
-		forEachTileInBounds(
-			range,
-			level,
-			tiling,
-			overlay.isPlanarProjection,
-			( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
-				if ( doRelease ) {
+			if ( doRelease ) {
 
-					imageSource.release( tx, ty, tl );
+				imageSource.release( tx, ty, tl );
 
-				} else {
+			} else {
 
-					promises.push( imageSource.lock( tx, ty, tl ) );
+				promises.push( imageSource.lock( tx, ty, tl ) );
 
-				}
+			}
 
-			},
-		);
+		} );
 
-		const filteredPromises = promises.filter( ( p ) => p instanceof Promise );
+		const filteredPromises = promises.filter( p => p instanceof Promise );
 		if ( filteredPromises.length !== 0 ) {
 
 			return Promise.all( filteredPromises );
@@ -109,17 +89,11 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 function countTilesInRange( range, level, overlay ) {
 
 	let total = 0;
-	forEachTileInBounds(
-		range,
-		level,
-		overlay.tiling,
-		overlay.isPlanarProjection,
-		( x, y, l ) => {
+	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( x, y, l ) => {
 
-			total ++;
+		total ++;
 
-		},
-	);
+	} );
 
 	return total;
 
@@ -181,7 +155,7 @@ export class ImageOverlayPlugin {
 		this._virtualChildResetId = 0;
 		this._bytesUsed = new WeakMap();
 
-		overlays.forEach( ( overlay ) => {
+		overlays.forEach( overlay => {
 
 			this.addOverlay( overlay );
 
@@ -239,7 +213,7 @@ export class ImageOverlayPlugin {
 
 				if (
 					Boolean( overlay.frame ) !== Boolean( info.frame ) ||
-					( overlay.frame && info.frame && ! info.frame.equals( overlay.frame ) )
+					overlay.frame && info.frame && ! info.frame.equals( overlay.frame )
 				) {
 
 					const order = info.order;
@@ -257,7 +231,7 @@ export class ImageOverlayPlugin {
 
 				const maxJobs = processQueue.maxJobs;
 				let count = 0;
-				processQueue.items.forEach( ( info ) => {
+				processQueue.items.forEach( info => {
 
 					if ( tiles.visibleTiles.has( info.tile ) ) {
 
@@ -311,7 +285,7 @@ export class ImageOverlayPlugin {
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
 		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
 
-		this.overlays.forEach( ( overlay ) => {
+		this.overlays.forEach( overlay => {
 
 			this._initOverlay( overlay );
 
@@ -334,19 +308,11 @@ export class ImageOverlayPlugin {
 		}
 
 		// stop any tile loads
-		overlayInfo.forEach( ( { tileInfo }, overlay ) => {
+		overlayInfo.forEach( ( ( { tileInfo }, overlay ) => {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const {
-					meshInfo,
-					range,
-					meshRange,
-					level,
-					target,
-					meshRangeMarked,
-					rangeMarked,
-				} = tileInfo.get( tile );
+				const { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked } = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
@@ -373,10 +339,10 @@ export class ImageOverlayPlugin {
 
 			}
 
-		} );
+		} ) );
 
 		// Remove any items that reference the tile being disposed
-		processQueue.removeByFilter( ( item ) => {
+		processQueue.removeByFilter( item => {
 
 			return item.tile === tile;
 
@@ -442,7 +408,8 @@ export class ImageOverlayPlugin {
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
-		this.expandVirtualChildren( scene, tile ), this._updateLayers( tile );
+		this.expandVirtualChildren( scene, tile ),
+		this._updateLayers( tile );
 
 		this.pendingTiles.delete( tile );
 
@@ -457,7 +424,7 @@ export class ImageOverlayPlugin {
 
 		// dispose of all overlays
 		const overlays = [ ...this.overlays ];
-		overlays.forEach( ( overlay ) => {
+		overlays.forEach( overlay => {
 
 			this.deleteOverlay( overlay );
 
@@ -481,7 +448,7 @@ export class ImageOverlayPlugin {
 
 	getAttributions( target ) {
 
-		this.overlays.forEach( ( overlay ) => {
+		this.overlays.forEach( overlay => {
 
 			if ( overlay.opacity > 0 ) {
 
@@ -510,7 +477,7 @@ export class ImageOverlayPlugin {
 		this._virtualChildResetId ++;
 		const id = this._virtualChildResetId;
 
-		await Promise.all( this.overlays.map( ( o ) => o.whenReady() ) );
+		await Promise.all( this.overlays.map( o => o.whenReady() ) );
 
 		if ( id !== this._virtualChildResetId ) {
 
@@ -533,7 +500,7 @@ export class ImageOverlayPlugin {
 
 		// dispose of the virtual children if this tile would not be split or the spilt could change
 		// under the current overlays used.
-		parents.forEach( ( parent ) => {
+		parents.forEach( parent => {
 
 			if ( parent.parent === null ) {
 
@@ -553,7 +520,7 @@ export class ImageOverlayPlugin {
 
 				// note that we need to remove children from the processing queue in this case
 				// because we are forcibly evicting them from the cache.
-				children.forEach( ( child ) => {
+				children.forEach( child => {
 
 					tiles.processNodeQueue.remove( child );
 					tiles.lruCache.remove( child );
@@ -581,7 +548,7 @@ export class ImageOverlayPlugin {
 
 		function collectChildren( root, target = [] ) {
 
-			root.children.forEach( ( child ) => {
+			root.children.forEach( child => {
 
 				target.push( child );
 				collectChildren( child, target );
@@ -629,7 +596,7 @@ export class ImageOverlayPlugin {
 				}
 
 				// dedupe vectors in the hash
-				const token = `${_normal.x.toFixed( 3 )},${_normal.y.toFixed( 3 )},${_normal.z.toFixed( 3 )}_`;
+				const token = `${ _normal.x.toFixed( 3 ) },${ _normal.y.toFixed( 3 ) },${ _normal.z.toFixed( 3 ) }_`;
 				if ( ! hashTokens.includes( token ) ) {
 
 					hashTokens.push( token );
@@ -707,27 +674,15 @@ export class ImageOverlayPlugin {
 
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
-		clipper.attributeList = ( key ) => ! /^layer_uv_\d+/.test( key );
-		directions.map( ( splitDirection ) => {
+		clipper.attributeList = key => ! /^layer_uv_\d+/.test( key );
+		directions.map( splitDirection => {
 
-			clipper.addSplitOperation(
-				( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
+			clipper.addSplitOperation( ( geometry, i0, i1, i2, barycoord, matrixWorld ) => {
 
-					Triangle.getInterpolatedAttribute(
-						geometry.attributes.position,
-						i0,
-						i1,
-						i2,
-						barycoord,
-						_vec,
-					);
-					return _vec
-						.applyMatrix4( matrixWorld )
-						.sub( _center )
-						.dot( splitDirection );
+				Triangle.getInterpolatedAttribute( geometry.attributes.position, i0, i1, i2, barycoord, _vec );
+				return _vec.applyMatrix4( matrixWorld ).sub( _center ).dot( splitDirection );
 
-				},
-			);
+			} );
 
 		} );
 
@@ -746,7 +701,7 @@ export class ImageOverlayPlugin {
 
 			// collect the meshes
 			const meshes = [];
-			result.traverse( ( c ) => {
+			result.traverse( c => {
 
 				if ( c.isMesh ) {
 
@@ -767,13 +722,7 @@ export class ImageOverlayPlugin {
 
 								const ctx = canvas.getContext( '2d' );
 								ctx.scale( 1, - 1 );
-								ctx.drawImage(
-									value.source.data,
-									0,
-									0,
-									canvas.width,
-									- canvas.height,
-								);
+								ctx.drawImage( value.source.data, 0, 0, canvas.width, - canvas.height );
 
 								const tex = new CanvasTexture( canvas );
 								tex.mapping = value.mapping;
@@ -811,10 +760,7 @@ export class ImageOverlayPlugin {
 			const boundingVolume = {};
 			if ( tile.boundingVolume.region ) {
 
-				boundingVolume.region = getMeshesCartographicRange(
-					meshes,
-					this.tiles.ellipsoid,
-				).region;
+				boundingVolume.region = getMeshesCartographicRange( meshes, this.tiles.ellipsoid ).region;
 
 			}
 
@@ -827,11 +773,13 @@ export class ImageOverlayPlugin {
 				// bounds if a region bounds are present.
 
 				// compute the sphere center
-				_box.setFromObject( result, true ).getCenter( _sphereCenter );
+				_box
+					.setFromObject( result, true )
+					.getCenter( _sphereCenter );
 
 				// calculate the sq radius from all vertices
 				let maxSqRadius = 0;
-				result.traverse( ( c ) => {
+				result.traverse( c => {
 
 					const geometry = c.geometry;
 					if ( geometry ) {
@@ -948,7 +896,7 @@ export class ImageOverlayPlugin {
 			controller.abort();
 
 			// Remove any items that reference the overlay being disposed
-			processQueue.removeByFilter( ( item ) => {
+			processQueue.removeByFilter( item => {
 
 				return item.overlay === overlay;
 
@@ -975,9 +923,7 @@ export class ImageOverlayPlugin {
 			const { resolution } = this;
 			const { tiling } = overlay;
 
-			const normalizedRange = normalized
-				? range
-				: tiling.toNormalizedRange( range );
+			const normalizedRange = normalized ? range : tiling.toNormalizedRange( range );
 			const [ minX, minY, maxX, maxY ] = normalizedRange;
 			const w = maxX - minX;
 			const h = maxY - minY;
@@ -1017,8 +963,9 @@ export class ImageOverlayPlugin {
 		overlay.imageSource.fetchOptions = tiles.fetchOptions;
 		if ( ! overlay.isInitialized ) {
 
-			overlay.imageSource.fetchData = ( ...args ) =>
-				tiles.downloadQueue.add( { priority: - performance.now() }, () => {
+			overlay.imageSource.fetchData = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
 
 					return overlay.fetch( ...args );
 
@@ -1059,14 +1006,11 @@ export class ImageOverlayPlugin {
 	// wrap all materials in the given scene wit the overlay material shader
 	_wrapMaterials( scene ) {
 
-		scene.traverse( ( c ) => {
+		scene.traverse( c => {
 
 			if ( c.material ) {
 
-				const params = wrapOverlaysMaterial(
-					c.material,
-					c.material.onBeforeCompile,
-				);
+				const params = wrapOverlaysMaterial( c.material, c.material.onBeforeCompile );
 				this.meshParams.set( c, params );
 
 			}
@@ -1081,7 +1025,7 @@ export class ImageOverlayPlugin {
 
 		if ( Array.isArray( overlay ) ) {
 
-			overlay.forEach( ( o ) => this._initTileOverlayInfo( tile, o ) );
+			overlay.forEach( o => this._initTileOverlayInfo( tile, o ) );
 			return;
 
 		}
@@ -1107,10 +1051,15 @@ export class ImageOverlayPlugin {
 			meshRangeMarked: false,
 		};
 
-		overlayInfo.get( overlay ).tileInfo.set( tile, info );
+		overlayInfo
+			.get( overlay )
+			.tileInfo
+			.set( tile, info );
 
 		if ( overlay.isPlanarProjection ) {
+
 			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
+
 		} else {
 
 			// If the tile has a region bounding volume then mark the tiles to preload
@@ -1129,7 +1078,9 @@ export class ImageOverlayPlugin {
 
 					} )
 					.catch( () => {
+
 						// the queue throws an error if a task is removed early
+
 					} );
 
 			}
@@ -1143,21 +1094,11 @@ export class ImageOverlayPlugin {
 
 		if ( Array.isArray( overlay ) ) {
 
-			return Promise.all(
-				overlay.map( ( o ) => this._initTileSceneOverlayInfo( scene, tile, o ) ),
-			);
+			return Promise.all( overlay.map( o => this._initTileSceneOverlayInfo( scene, tile, o ) ) );
 
 		}
 
-		const {
-			tiles,
-			overlayInfo,
-			resolution,
-			tileComposer,
-			tileControllers,
-			usedTextures,
-			processQueue,
-		} = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures, processQueue } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -1180,7 +1121,7 @@ export class ImageOverlayPlugin {
 		// find all meshes to project on and ensure matrices are up to date
 		const meshes = [];
 		scene.updateMatrixWorld();
-		scene.traverse( ( c ) => {
+		scene.traverse( c => {
 
 			if ( c.isMesh ) {
 
@@ -1205,11 +1146,7 @@ export class ImageOverlayPlugin {
 			}
 
 			let heightRange;
-			( { range, uvs, heightRange } = getMeshesPlanarRange(
-				meshes,
-				_matrix,
-				tiling,
-			) );
+			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
 			heightInRange = ! ( heightRange[ 0 ] > 1 || heightRange[ 1 ] < 0 );
 
 		} else {
@@ -1221,12 +1158,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange(
-				meshes,
-				ellipsoid,
-				_matrix,
-				tiling,
-			) );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
 			heightInRange = true;
 
 		}
@@ -1245,12 +1177,7 @@ export class ImageOverlayPlugin {
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			info.level = this._calculateLevelFromOverlay(
-				overlay,
-				normalizedRange,
-				tile,
-				true,
-			);
+			info.level = this._calculateLevelFromOverlay( overlay, normalizedRange, tile, true );
 
 		}
 
@@ -1294,26 +1221,20 @@ export class ImageOverlayPlugin {
 						tileComposer.setRenderTarget( target, normalizedRange );
 						tileComposer.clear( 0xffffff, 0 );
 
-						forEachTileInBounds(
-							range,
-							info.level - 1,
-							tiling,
-							overlay.isPlanarProjection,
-							( tx, ty, tl ) => {
+						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
-								// draw using normalized bounds since the mercator bounds are non-linear
-								const span = tiling.getTileBounds( tx, ty, tl, true, false );
-								const tex = imageSource.get( tx, ty, tl );
-								if ( tex && ! ( tex instanceof Promise ) ) {
+							// draw using normalized bounds since the mercator bounds are non-linear
+							const span = tiling.getTileBounds( tx, ty, tl, true, false );
+							const tex = imageSource.get( tx, ty, tl );
+							if ( tex && ! ( tex instanceof Promise ) ) {
 
-									tileComposer.draw( tex, span );
-									usedTextures.add( tex );
-									this._scheduleCleanup();
+								tileComposer.draw( tex, span );
+								usedTextures.add( tex );
+								this._scheduleCleanup();
 
-								}
+							}
 
-							},
-						);
+						} );
 
 						try {
 
@@ -1339,26 +1260,22 @@ export class ImageOverlayPlugin {
 					tileComposer.setRenderTarget( target, normalizedRange );
 					tileComposer.clear( 0xffffff, 0 );
 
-					forEachTileInBounds(
-						range,
-						info.level,
-						tiling,
-						overlay.isPlanarProjection,
-						( tx, ty, tl ) => {
+					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
-							// draw using normalized bounds since the mercator bounds are non-linear
-							const span = tiling.getTileBounds( tx, ty, tl, true, false );
-							const tex = imageSource.get( tx, ty, tl );
-							tileComposer.draw( tex, span );
-							usedTextures.add( tex );
-							this._scheduleCleanup();
+						// draw using normalized bounds since the mercator bounds are non-linear
+						const span = tiling.getTileBounds( tx, ty, tl, true, false );
+						const tex = imageSource.get( tx, ty, tl );
+						tileComposer.draw( tex, span );
+						usedTextures.add( tex );
+						this._scheduleCleanup();
 
-						},
-					);
+					} );
 
 				} )
 				.catch( () => {
+
 					// the queue throws an error if a task is removed early
+
 				} );
 
 		}
@@ -1391,7 +1308,7 @@ export class ImageOverlayPlugin {
 				const params = this.meshParams.get( mesh );
 
 				// assign the new uvs
-				const key = `layer_uv_${i}`;
+				const key = `layer_uv_${ i }`;
 				if ( geometry.getAttribute( key ) !== attribute ) {
 
 					geometry.setAttribute( key, attribute );
@@ -1425,7 +1342,7 @@ export class ImageOverlayPlugin {
 			requestAnimationFrame( () => {
 
 				const { usedTextures } = this;
-				usedTextures.forEach( ( tex ) => {
+				usedTextures.forEach( tex => {
 
 					tex.dispose();
 
@@ -1485,7 +1402,11 @@ class ImageOverlay {
 
 	constructor( options = {} ) {
 
-		const { opacity = 1, color = 0xffffff, frame = null } = options;
+		const {
+			opacity = 1,
+			color = 0xffffff,
+			frame = null,
+		} = options;
 		this.imageSource = null;
 		this.opacity = opacity;
 		this.color = new Color( color );
@@ -1512,9 +1433,13 @@ class ImageOverlay {
 
 	}
 
-	whenReady() {}
+	whenReady() {
 
-	getAttributions( target ) {}
+	}
+
+	getAttributions( target ) {
+
+	}
 
 	dispose() {
 
@@ -1639,7 +1564,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
 		this.imageSource = new TMSImageSource( options );
 
-		this.auth.authURL = `https://api.cesium.com/v1/assets/${assetId}/endpoint`;
+		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._attributions = [];
 
@@ -1647,18 +1572,21 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 	init() {
 
-		this._whenReady = this.auth.refreshToken().then( ( json ) => {
+		this._whenReady = this
+			.auth
+			.refreshToken()
+			.then( json => {
 
-			this._attributions = json.attributions.map( ( att ) => ( {
-				value: att.html,
-				type: 'html',
-				collapsible: att.collapsible,
-			} ) );
+				this._attributions = json.attributions.map( att => ( {
+					value: att.html,
+					type: 'html',
+					collapsible: att.collapsible,
+				} ) );
 
-			this.imageSource.url = json.url;
-			return this.imageSource.init();
+				this.imageSource.url = json.url;
+				return this.imageSource.init();
 
-		} );
+			} );
 
 		super.init();
 
@@ -1692,11 +1620,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 
 		const { apiToken, sessionOptions, autoRefreshToken, logoUrl } = options;
 		this.logoUrl = logoUrl;
-		this.auth = new GoogleCloudAuth( {
-			apiToken,
-			sessionOptions,
-			autoRefreshToken,
-		} );
+		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
 
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
@@ -1710,14 +1634,16 @@ export class GoogleMapsOverlay extends ImageOverlay {
 
 	init() {
 
-		this._whenReady = this.auth.refreshToken().then( ( json ) => {
+		this._whenReady = this
+			.auth
+			.refreshToken()
+			.then( json => {
 
-			this.imageSource.tileDimension = json.tileWidth;
-			this.imageSource.url =
-				'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}';
-			return this.imageSource.init();
+				this.imageSource.tileDimension = json.tileWidth;
+				this.imageSource.url = 'https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}';
+				return this.imageSource.init();
 
-		} );
+			} );
 
 		super.init();
 
