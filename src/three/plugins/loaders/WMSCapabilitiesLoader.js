@@ -1,7 +1,8 @@
-import { LoaderBase } from '3d-tiles-renderer/core';
+import { LoaderBase, WGS84_RADIUS } from '3d-tiles-renderer/core';
 import { ProjectionScheme } from '../images/utils/ProjectionScheme';
 import { MathUtils } from 'three';
 
+const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
 // helper CRS checks (same logic used in WMTSCapabilitiesLoader)
@@ -29,8 +30,8 @@ function correctTupleUnits( tuple, crs ) {
 	// TODO: consolidate this Mercator-units with WMTSLoader / move a helper onto ProjectionScheme?
 	if ( isWebMercator( crs ) ) {
 
-		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
-		tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * mercatorProjection.ellipsoidRadius ) );
+		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
+		tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
 
 		// to degrees
 		tuple[ 0 ] *= MathUtils.RAD2DEG;
@@ -105,12 +106,7 @@ function parseBoundingBox( el, version ) {
 	}
 
 	// bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
-	return {
-		crs,
-		lowerCorner,
-		upperCorner,
-		bounds: [ ...lowerCorner, ...upperCorner ],
-	};
+	return { crs, bounds: [ ...lowerCorner, ...upperCorner ] };
 
 }
 
@@ -120,7 +116,14 @@ function parseEXGeographicBoundingBox( el ) {
 	const east = parseFloat( el.querySelector( 'eastBoundLongitude' ).textContent );
 	const south = parseFloat( el.querySelector( 'southBoundLatitude' ).textContent );
 	const north = parseFloat( el.querySelector( 'northBoundLatitude' ).textContent );
-	return { crs: 'EPSG:4326', bounds: [ west, south, east, north ] };
+
+	const lowerCorner = [ west, south ];
+	const upperCorner = [ east, north ];
+
+	tupleToRadians( lowerCorner );
+	tupleToRadians( upperCorner );
+
+	return { crs: 'EPSG:4326', bounds: [ ...lowerCorner, ...upperCorner ] };
 
 }
 
