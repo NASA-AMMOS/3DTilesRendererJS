@@ -4,12 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.16] - Unreleased
+## [0.4.17] - Unreleased
 ### Added
 - LoadRegionPlugin: Added support for "mask" regions that allow for only loading tiles within the shape.
 
+## [0.4.16] - 2025.09.10
 ### Fixed
 - GlobeControls: Fix case where camera position could become "NaN" when zooming into the sky.
+- Fixed built files possibly not being correctly bundled.
 
 ## [0.4.15] - 2025.09.03
 ### Changed
