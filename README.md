@@ -122,7 +122,6 @@ tilesRenderer.addEventListener( 'load-model', ( { scene } ) => {
 
 		if ( c.material ) {
 
-			c.originalMaterial = c.material;
 			c.material = new MeshBasicMaterial();
 
 		}
