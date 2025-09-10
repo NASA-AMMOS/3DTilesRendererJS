@@ -85,7 +85,6 @@ export class WMSImageSource extends TiledImageSource {
 			version,
 		} = this;
 
-
 		// Axis order and CRS param name depend on WMS version and CRS
 		// crsParam: 'SRS' for WMS 1.1.1, 'CRS' for WMS 1.3.0
 		const crsParam = version === '1.1.1' ? 'SRS' : 'CRS';

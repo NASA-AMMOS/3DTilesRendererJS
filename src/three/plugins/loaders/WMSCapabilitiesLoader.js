@@ -111,6 +111,7 @@ function parseBoundingBox( el, version ) {
 
 }
 
+// EX_GeographicBoundingBox (>= 1.3.0) and LatLonBoundingBox (<= 1.1.1) define the bounds of content
 function parseEXGeographicBoundingBox( el ) {
 
 	const west = parseFloat( el.querySelector( 'westBoundLongitude' ).textContent );
