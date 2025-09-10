@@ -314,11 +314,6 @@ function parseRequestOperation( opEl ) {
 	const dcp = Array.from( opEl.querySelectorAll( 'DCPType' ) ).map( dcp => {
 
 		const httpEl = dcp.querySelector( 'HTTP' );
-		if ( ! httpEl ) {
-
-			return { type: 'UNKNOWN', get: '', post: '' };
-
-		}
 
 		const getEl = httpEl.querySelector( 'Get OnlineResource' ) || httpEl.querySelector( 'Get > OnlineResource' ) || httpEl.querySelector( 'Get' );
 		const postEl = httpEl.querySelector( 'Post OnlineResource' ) || httpEl.querySelector( 'Post > OnlineResource' ) || httpEl.querySelector( 'Post' );
