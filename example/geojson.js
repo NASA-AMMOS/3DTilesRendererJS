@@ -137,20 +137,8 @@ function init() {
 	// geojsonTiles = new TilesRenderer();
 	xyzTiles.registerPlugin( new TilesFadePlugin() );
 	xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
-	// const xyzGeoJsonOverlay = new XYZTilesPlugin( {
-	// 	center: true,
-	// 	shape: 'ellipsoid',
-	// 	imageSource: new GeoJso( {
-	// 		geojson,
-	// 		tileDimension: 256,
-	// 		bounds: [ - 180, - 90, 180, 90 ],
-	// 		levels: 10,
-	// 	} ),
-	// } );
 
 	// Use WebMercator lat clamp for EPSG:3857 tiles
-	const WEBMERCATOR_LAT_LIMIT = 85.0511287798066;
-	const overlayBounds = [ - 180, - WEBMERCATOR_LAT_LIMIT, 180, WEBMERCATOR_LAT_LIMIT ];
 
 	const geojsonOverlay = new GeoJSONTilesOverlay( {
 
@@ -158,10 +146,8 @@ function init() {
 		tileDimension: 256, // tile size in px
 		geojson: geojson, // pass the feature collection directly
 		//url: 'if preferred',
-		bounds: overlayBounds,
 		color: 0xffffff,
 		opacity: 1.0,
-		projection: 'EPSG:3857' // force WebMercator projection to match OSM tiles
 
 	} );
 
@@ -176,8 +162,6 @@ function init() {
 	} );
 
 	xyzTiles.registerPlugin( overlayPlugin );
-
-	xyzTiles.group.renderOrder = 0;
 
 	// Controls
 	xyzTiles.group.rotation.x = - Math.PI / 2;

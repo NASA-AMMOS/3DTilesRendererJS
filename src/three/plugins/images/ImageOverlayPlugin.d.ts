@@ -46,8 +46,6 @@ export class GeoJSONTilesOverlay extends ImageOverlay {
 		url?: string, // optional URL alternative to geojson object
 		tileDimension?: number, // tile size in px (runtime name: tileDimension)
 		levels?: number, // max rasterization zoom
-		bounds?: [ number, number, number, number ],
-		projection?: string, // 'EPSG:3857' or 'EPSG:4326'
 		pointRadius?: number,
 		strokeStyle?: string,
 		fillStyle?: string,
