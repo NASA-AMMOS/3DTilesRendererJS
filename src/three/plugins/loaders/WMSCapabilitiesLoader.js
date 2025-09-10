@@ -6,6 +6,7 @@ const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
 // helper CRS checks (same logic used in WMTSCapabilitiesLoader)
+// TODO: Share these helpers with the WMTSCapabilitiesLoader
 function isCRS84( crs ) {
 
 	return /(:84|:crs84)$/i.test( crs );
@@ -98,7 +99,7 @@ function parseBoundingBox( el, version ) {
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
 
-	// normalize common CRS names
+	// normalize to common CRS names
 	if ( isCRS84( crs ) ) {
 
 		crs = 'EPSG:4326';

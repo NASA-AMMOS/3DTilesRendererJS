@@ -50,7 +50,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 		version: string,
 		levels: number,
 		contentBoundingBox?: [ number, number, number, number ],
-		extraHeaders?:{ [key: string]: string }
 
 		color: number | Color,
 		opacity: number,

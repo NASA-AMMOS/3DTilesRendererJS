@@ -55,7 +55,6 @@ export class WMSTilesPlugin {
 		styles?: string,
 		version?: string,
 		contentBoundingBox?: [ number, number, number, number ],
-		extraHeaders?:{ [key: string]: string}
 	} );
 
 }

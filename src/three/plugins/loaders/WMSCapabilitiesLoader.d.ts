@@ -36,7 +36,7 @@ export interface WMSLayer {
 }
 
 export interface WMSDCPType {
-    type: string; // e.g. 'HTTP' or 'UNKNOWN'
+    type: 'HTTP' | 'UNKNOWN';
     get: string;
     post: string;
 }
@@ -44,15 +44,18 @@ export interface WMSDCPType {
 export interface WMSRequestOperation {
     formats: string[];
     dcp: WMSDCPType[];
+	href: string;
 }
 
-export type WMSRequestMap = { [operationName: string]: WMSRequestOperation };
+export type WMSRequestMap = {
+	[operationName: string]: WMSRequestOperation;
+};
 
 export interface WMSCapabilitiesResult {
     service: WMSService;
     layers: WMSLayer[];
     layerMap: { [ key: string ]: WMSLayer };
-	request: WMSRequestMap
+	request: WMSRequestMap;
 }
 
 export class WMSCapabilitiesLoader<Result = WMSCapabilitiesResult, ParseResult = Result>

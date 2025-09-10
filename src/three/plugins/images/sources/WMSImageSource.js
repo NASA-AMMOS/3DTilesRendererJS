@@ -17,7 +17,6 @@ export class WMSImageSource extends TiledImageSource {
 			format = 'image/png',
 			levels = 18,
 			tileDimension = 256,
-			extraHeaders = {},
 		} = options;
 
 		super();
@@ -30,7 +29,6 @@ export class WMSImageSource extends TiledImageSource {
 		this.version = version;
 		this.levels = levels;
 		this.contentBoundingBox = contentBoundingBox;
-		this.extraHeaders = extraHeaders;
 
 	}
 
@@ -55,15 +53,6 @@ export class WMSImageSource extends TiledImageSource {
 		}
 
 		return Promise.resolve();
-
-	}
-
-	async fetchData( url ) {
-
-		// TODO: remove this
-		const response = await fetch( url, { headers: this.extraHeaders } );
-		if ( ! response.ok ) throw new Error( 'WMS fetch failed' );
-		return await response.blob();
 
 	}
 

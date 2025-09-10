@@ -1498,24 +1498,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 
 	}
 
-	fetch( url, options = {} ) {
-
-		// Add auth headers if present
-		if ( this.imageSource && this.imageSource.extraHeaders ) {
-
-			const { extraHeaders } = this.imageSource;
-			options.headers = options.headers || {};
-			Object.entries( extraHeaders ).forEach( ( [ key, value ] ) => {
-
-				options.headers[ key ] = value;
-
-			} );
-
-		}
-		return fetch( url, options );
-
-	}
-
 }
 
 export class WMTSTilesOverlay extends ImageOverlay {
