@@ -36,7 +36,7 @@ export interface WMSLayer {
 }
 
 export interface WMSDCPType {
-    type: 'HTTP' | 'UNKNOWN';
+    type: 'HTTP';
     get: string;
     post: string;
 }
