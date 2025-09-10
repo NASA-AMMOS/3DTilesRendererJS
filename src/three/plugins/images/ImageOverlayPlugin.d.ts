@@ -38,6 +38,26 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 }
 
+export class WMSTilesOverlay extends ImageOverlay {
+
+	constructor( options: {
+		url: string,
+		layer: string,
+		crs: string,
+		format: string,
+		tileDimension: number,
+		styles: string,
+		version: string,
+		levels: number,
+		contentBoundingBox?: [ number, number, number, number ],
+
+		color: number | Color,
+		opacity: number,
+		frame?: Matrix4 | null,
+	} );
+
+}
+
 export class WMTSTilesOverlay extends ImageOverlay {
 
 	constructor( options: {

@@ -226,6 +226,8 @@ function parseBoundingBox( el ) {
 
 	} else if ( isWebMercator( crs ) ) {
 
+		// Used for detecting "urn:ogc:def:crs:EPSG::3857" and converting it to
+		// a commonly legible CRS string
 		crs = 'EPSG:3857';
 
 	}
