@@ -44,17 +44,20 @@ export class WMTSTilesPlugin {
 export class WMSTilesPlugin {
 
 	constructor( options: {
-		center?: boolean,
-		shape?: 'ellipsoid' | 'planar',
-		useRecommendedSettings?: boolean,
-		url?: string,
 		layer: string,
+		url?: string,
+		levels?: number,
 		crs: string,
 		format?: string,
 		tileDimension?: number,
 		styles?: string,
 		version?: string,
+		transparent?: boolean,
 		contentBoundingBox?: [ number, number, number, number ],
+
+		center?: boolean,
+		shape?: 'ellipsoid' | 'planar',
+		useRecommendedSettings?: boolean,
 	} );
 
 }

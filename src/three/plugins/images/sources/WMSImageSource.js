@@ -15,6 +15,7 @@ export class WMSImageSource extends TiledImageSource {
 			version = '1.3.0',
 			crs = 'EPSG:4326',
 			format = 'image/png',
+			transparent = false,
 			levels = 18,
 			tileDimension = 256,
 		} = options;
@@ -28,6 +29,7 @@ export class WMSImageSource extends TiledImageSource {
 		this.styles = styles;
 		this.version = version;
 		this.levels = levels;
+		this.transparent = transparent;
 		this.contentBoundingBox = contentBoundingBox;
 
 	}
@@ -83,6 +85,7 @@ export class WMSImageSource extends TiledImageSource {
 			tileDimension,
 			styles,
 			version,
+			transparent,
 		} = this;
 
 		// Axis order and CRS param name depend on WMS version and CRS
@@ -143,7 +146,7 @@ export class WMSImageSource extends TiledImageSource {
 			WIDTH: tileDimension,
 			HEIGHT: tileDimension,
 			FORMAT: format,
-			TRANSPARENT: 'TRUE',
+			TRANSPARENT: transparent ? 'TRUE' : 'FALSE',
 		} );
 
 		return new URL( '?' + params.toString(), this.url ).toString();

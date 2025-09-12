@@ -5,7 +5,13 @@ import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const url =
 	window.location.hash.replace( /^#/, '' ) ||
-	'https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer?SERVICE=WMS';
+	'https://basemap.nationalmap.gov/arcgis/services/USGSHydroCached/MapServer/WMSServer?SERVICE=WMS';
+
+if ( ! window.location.hash ) {
+
+	document.getElementById( 'info' ).innerHTML = 'Hydrography data set courtesy of the <a href="https://basemap.nationalmap.gov/arcgis/rest/services">USGS National Map Service</a>.';
+
+}
 
 let controls, scene, renderer;
 let tiles, camera, gui;
@@ -39,8 +45,8 @@ function init() {
 async function updateCapabilities() {
 
 	capabilities = await new WMSCapabilitiesLoader().loadAsync( url + '&request=GetCapabilities' );
-	const defaultLayer = capabilities.layers[ 0 ];
 
+	const defaultLayer = capabilities.layers[ 0 ];
 	params = {
 		layer: defaultLayer.name,
 		styles: defaultLayer.styles[ 0 ]?.name || '',
