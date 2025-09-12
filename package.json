@@ -24,36 +24,36 @@
   ],
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "types": "./src/index.d.ts"
+		"types": "./src/index.d.ts",
+		"import": "./build/index.js"
     },
     "./plugins": {
-      "import": "./build/index.plugins.js",
-      "types": "./src/plugins.d.ts"
+		"types": "./src/plugins.d.ts",
+		"import": "./build/index.plugins.js"
     },
     "./core": {
-      "import": "./build/index.core.js",
-      "types": "./src/core/renderer/index.d.ts"
+		"types": "./src/core/renderer/index.d.ts",
+		"import": "./build/index.core.js"
     },
     "./three": {
-      "import": "./build/index.three.js",
-      "types": "./src/three/renderer/index.d.ts"
+		"types": "./src/three/renderer/index.d.ts",
+		"import": "./build/index.three.js"
     },
     "./r3f": {
-      "import": "./build/index.r3f.js",
-      "types": "./src/r3f/index.d.ts"
+		"types": "./src/r3f/index.d.ts",
+		"import": "./build/index.r3f.js"
     },
     "./core/plugins": {
-      "import": "./build/index.core-plugins.js",
-      "types": "./src/core/plugins/index.d.ts"
+		"types": "./src/core/plugins/index.d.ts",
+		"import": "./build/index.core-plugins.js"
     },
     "./three/plugins": {
-      "import": "./build/index.three-plugins.js",
-      "types": "./src/three/plugins/index.d.ts"
+		"types": "./src/three/plugins/index.d.ts",
+		"import": "./build/index.three-plugins.js"
     },
     "./src/*": {
-      "import": "./src/*",
-      "types": "./src/*.d.ts"
+		"types": "./src/*.d.ts",
+		"import": "./src/*"
     }
   },
   "scripts": {
@@ -61,6 +61,7 @@
     "build-examples": "vite build --config ./vite.config.js",
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
+	"lint-pub": "publint && attw --pack .",
     "test": "tsc -p tsconfig.test.json && jest",
     "prepublishOnly": "npm run build-lib"
   },
@@ -75,6 +76,7 @@
   "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
     "@babel/preset-modules": "^0.1.6",
@@ -103,6 +105,7 @@
     "jest-cli": "^30.0.5",
     "leva": "^0.10.0",
     "postprocessing": "^6.36.4",
+    "publint": "^0.3.12",
     "three": "^0.170.0",
     "ts-jest": "^29.4.1",
     "typescript": "^5.6.0",
