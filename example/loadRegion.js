@@ -30,6 +30,7 @@ const params = {
 	region: 'SPHERE',
 	regionErrorTarget: 0.1,
 	regionOnly: true,
+	mask: false,
 	displayBoxBounds: false,
 
 };
@@ -110,6 +111,7 @@ function init() {
 	gui.add( params, 'region', [ 'SPHERE', 'BOX', 'RAY' ] ).onChange( updateRegion );
 	gui.add( params, 'regionErrorTarget' ).min( 0 ).max( 1 );
 	gui.add( params, 'animate' );
+	gui.add( params, 'mask' );
 	gui.add( params, 'regionOnly' ).onChange( v => {
 
 		if ( ! v ) {
@@ -192,7 +194,8 @@ function animate() {
 		sphereMesh.position.set( Math.sin( time ) * 20, 0, Math.cos( time ) * 20 );
 		sphereMesh.scale.setScalar( sphereRegion.sphere.radius );
 
-		sphereRegion.errorTarget = params.regionErrorTarget;
+		sphereRegion.mask = params.mask;
+		sphereRegion.errorTarget = params.mask ? Infinity : params.regionErrorTarget;
 		sphereRegion.sphere.center
 			.copy( sphereMesh.position )
 			.applyMatrix4( tiles.group.matrixWorldInverse );
@@ -201,7 +204,8 @@ function animate() {
 
 		rayMesh.position.set( Math.sin( time * 2 ) * 20, 50, Math.cos( time * 2 ) * 20 );
 
-		rayRegion.errorTarget = params.regionErrorTarget;
+		rayRegion.mask = params.mask;
+		rayRegion.errorTarget = params.mask ? Infinity : params.regionErrorTarget;
 		rayRegion.ray.direction
 			.set( 0, - 1, 0 )
 			.transformDirection( tiles.group.matrixWorldInverse );
@@ -216,7 +220,8 @@ function animate() {
 		boxMesh.updateMatrixWorld();
 		boxMesh.geometry.computeBoundingBox();
 
-		boxRegion.errorTarget = params.regionErrorTarget;
+		boxRegion.mask = params.mask;
+		boxRegion.errorTarget = params.mask ? Infinity : params.regionErrorTarget;
 		boxRegion.obb.box.copy( boxMesh.geometry.boundingBox );
 		boxRegion.obb.transform.copy( boxMesh.matrixWorld ).premultiply( tiles.group.matrixWorldInverse );
 		boxRegion.obb.update();
