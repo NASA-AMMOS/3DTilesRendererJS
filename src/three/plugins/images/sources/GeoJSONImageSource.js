@@ -70,6 +70,19 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		}
 
+		// If geojson present, compute bounds from data (with padding) and set as content bounds.
+		// Falls back to full projection bounds if no geojson or unable to compute an extent.
+
+		// seems that this approach to optimize rendering by defining bounds
+		// doesn't work if not using a very large offset for the bounds, maybe an error?
+		// const geoBounds = this._geoJSONBounds( 50 );
+		// if ( geoBounds ) {
+		// 	this.tiling.setContentBounds( ...geoBounds );
+		// 	console.log( `GeoJSONImageSource: set content bounds from geojson: ${geoBounds}` );
+		// } else {
+		// 	this.tiling.setContentBounds( ...this.tiling.projection.getBounds() );
+		// }
+
 	}
 
 	// main fetch per tile - > returns .Texture
@@ -640,6 +653,106 @@ export class GeoJSONImageSource extends TiledImageSource {
 		}
 
 		ctx.restore( );
+
+	}
+
+	// Compute geographic bounds [minLon,minLat,maxLon,maxLat] from current geojson.
+	// pad: if 0 < pad < 1 => treated as fraction of width/height; if pad >= 1 => treated as degrees.
+	_geoJSONBounds( pad = 0 ) {
+
+		if ( ! this.geojson ) return null;
+		const features = this._featuresFromGeoJSON();
+		if ( ! features.length ) return null;
+		let minLon = Infinity, minLat = Infinity, maxLon = - Infinity, maxLat = - Infinity;
+		const consider = ( lon, lat ) => {
+
+			if ( typeof lon !== 'number' || typeof lat !== 'number' ) return;
+			minLon = Math.min( minLon, lon );
+			maxLon = Math.max( maxLon, lon );
+			minLat = Math.min( minLat, lat );
+			maxLat = Math.max( maxLat, lat );
+
+		};
+		// iterate all features and their coordinates
+		for ( let i = 0; i < features.length; i ++ ) {
+
+			const f = features[ i ];
+			if ( ! f || ! f.geometry ) continue;
+			const g = f.geometry;
+			const type = g.type;
+			const c = g.coordinates;
+			if ( ! c ) continue;
+
+			if ( type === 'Point' ) {
+
+				consider( c[ 0 ], c[ 1 ] );
+
+			} else if ( type === 'MultiPoint' || type === 'LineString' ) {
+
+				c.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) );
+
+			} else if ( type === 'MultiLineString' || type === 'Polygon' ) {
+
+				c.forEach( ( ring ) => ring.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) ) );
+
+			} else if ( type === 'MultiPolygon' ) {
+
+				c.forEach( ( poly ) => poly.forEach( ( ring ) => ring.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) ) ) );
+
+			} else if ( type === 'GeometryCollection' && Array.isArray( g.geometries ) ) {
+
+				g.geometries.forEach( ( geom ) => {
+
+					// simple recursion for nested geometries
+					const tempFeature = { type: 'Feature', geometry: geom };
+					features.push( tempFeature );
+
+				} );
+
+			}
+
+		}
+		if ( minLon === Infinity ) return null;
+
+		let width = maxLon - minLon;
+		let height = maxLat - minLat;
+		// handle degenerate case
+
+		if ( width === 0 ) {
+
+			width = Math.max( 0.000001, Math.abs( minLon ) * 1e-6 );
+
+		}
+
+		if ( height === 0 ) {
+
+			height = Math.max( 0.000001, Math.abs( minLat ) * 1e-6 );
+
+		}
+
+		let padLon = 0, padLat = 0;
+		if ( pad > 0 && pad < 1 ) {
+
+			padLon = width * pad;
+			padLat = height * pad;
+
+		} else if ( pad >= 1 ) {
+
+			padLon = pad;
+			padLat = pad;
+
+		}
+
+		let outMinLon = minLon - padLon;
+		let outMaxLon = maxLon + padLon;
+		let outMinLat = minLat - padLat;
+		let outMaxLat = maxLat + padLat;
+		// clamp to valid geographic ranges
+		outMinLon = Math.max( - 180, outMinLon );
+		outMaxLon = Math.min( 180, outMaxLon );
+		outMinLat = Math.max( - 90, outMinLat );
+		outMaxLat = Math.min( 90, outMaxLat );
+		return [ outMinLon, outMinLat, outMaxLon, outMaxLat ];
 
 	}
 
