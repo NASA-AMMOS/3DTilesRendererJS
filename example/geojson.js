@@ -75,7 +75,7 @@ const geojson = {
 
 };
 
-let scene, renderer, camera, controls, xyzTiles, geojsonTiles;
+let scene, renderer, camera, controls, tiles, geojsonTiles;
 
 init();
 render();
@@ -99,10 +99,9 @@ function init() {
 	);
 
 	// XYZ base layer
-	xyzTiles = new TilesRenderer();
-	//xyzTiles.registerPlugin( new TilesFadePlugin() );
-	xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
-	xyzTiles.registerPlugin(
+	tiles = new TilesRenderer();
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin(
 		new XYZTilesPlugin( {
 			center: true,
 			shape: 'ellipsoid',
@@ -110,7 +109,7 @@ function init() {
 		} ),
 	);
 
-	xyzTiles.registerPlugin(
+	tiles.registerPlugin(
 		new GLTFExtensionsPlugin( {
 
 			dracoLoader: dracoLoader,
@@ -118,25 +117,11 @@ function init() {
 		} ),
 	);
 
-	// google tiles for testing with wms
-	// xyzTiles.registerPlugin(
+	tiles.setCamera( camera );
+	scene.add( tiles.group );
 
-	// 	new CesiumIonAuthPlugin( {
-
-	// 		apiToken: 'YOUR CESIUM TOKEN',
-	// 		assetId: '2275207',
-	// 		autoRefreshToken: true,
-
-	// 	} ),
-
-	// );
-	xyzTiles.setCamera( camera );
-	scene.add( xyzTiles.group );
-
-	// GeoJSON overlay layer
-	// geojsonTiles = new TilesRenderer();
-	xyzTiles.registerPlugin( new TilesFadePlugin() );
-	xyzTiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
 
 	// Use WebMercator lat clamp for EPSG:3857 tiles
 
@@ -145,7 +130,7 @@ function init() {
 		levels: 14, // choose max zoom to rasterize overlay ( 12- 14 typical )
 		tileDimension: 256, // tile size in px
 		geojson: geojson, // pass the feature collection directly
-		//url: 'if preferred',
+		//url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true", // TODO: it is slow as it is heavy, could this be used to reference for optimization?
 		color: 0xffffff,
 		opacity: 1.0,
 
@@ -161,12 +146,12 @@ function init() {
 
 	} );
 
-	xyzTiles.registerPlugin( overlayPlugin );
+	tiles.registerPlugin( overlayPlugin );
 
 	// Controls
-	xyzTiles.group.rotation.x = - Math.PI / 2;
+	tiles.group.rotation.x = - Math.PI / 2;
 	controls = new GlobeControls( scene, camera, renderer.domElement );
-	controls.setEllipsoid( xyzTiles.ellipsoid, xyzTiles.group );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 	controls.enableDamping = true;
 	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 	moveCameraToLonLat( 8.9463, 44.4056 );
@@ -192,11 +177,11 @@ function render() {
 		camera.updateMatrixWorld();
 
 	}
-	if ( xyzTiles ) {
+	if ( tiles ) {
 
-		xyzTiles.setCamera( camera );
-		xyzTiles.setResolutionFromRenderer( camera, renderer );
-		xyzTiles.update();
+		tiles.setCamera( camera );
+		tiles.setResolutionFromRenderer( camera, renderer );
+		tiles.update();
 
 	}
 	if ( geojsonTiles ) {

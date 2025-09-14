@@ -31,21 +31,18 @@ export class GeoJSONImageSource extends TiledImageSource {
 	async init( ) {
 
 		// configure tiling to content bounds and levels
-		this.tiling.setProjection( new ProjectionScheme( 'EPSG:3857' ) );
+		this.tiling.setProjection( new ProjectionScheme( 'EPSG:4326' ) );
 		this.tiling.setContentBounds( ...this.tiling.projection.getBounds() );
 
-		for ( let i = 0; i < this.levels; i ++ ) {
-
-			const tilesX = 2 ** i;
-			const tilesY = 2 ** i;
-			this.tiling.setLevel( i, {
+		this.tiling.generateLevels(
+			this.levels,
+			this.tiling.projection.tileCountX,
+			this.tiling.projection.tileCountY,
+			{
 				tilePixelWidth: this.tileDimension,
 				tilePixelHeight: this.tileDimension,
-				tileCountX: tilesX,
-				tileCountY: tilesY,
-			} );
-
-		}
+			},
+		);
 
 		// If a URL was provided and no geojson object yet, fetch it now (use fetchData so overlay can inject headers)
 		if ( ! this.geojson && this.url ) {
@@ -61,7 +58,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 				} else if ( res ) {
 
-					this.geojson = res;
+					this.geojson = await res.json();
 
 				}
 
@@ -322,7 +319,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 			const f = features[ i ];
 			if ( ! f || ! f.geometry ) continue;
-			if ( ! this._featureIntersectsTile( f, tileInfo ) ) continue;
+			//if ( ! this._featureIntersectsTile( f, tileInfo ) ) continue;
 			this._drawFeatureOnCanvas( ctx, f, tileInfo, canvas.width, canvas.height );
 
 		}
@@ -346,32 +343,19 @@ export class GeoJSONImageSource extends TiledImageSource {
 		const normYMin = flipY ? 1 - maxy : miny;
 		const normYMax = flipY ? 1 - miny : maxy;
 
-		const MERC_MIN = - 20037508.342789244;
-		const MERC_MAX = 20037508.342789244;
-		const minx_m = MathUtils.mapLinear( minx, 0, 1, MERC_MIN, MERC_MAX );
-		const maxx_m = MathUtils.mapLinear( maxx, 0, 1, MERC_MIN, MERC_MAX );
-		const miny_m = MathUtils.mapLinear(
-			normYMin,
-			0,
-			1,
-			MERC_MIN,
-			MERC_MAX,
-		);
-		const maxy_m = MathUtils.mapLinear(
-			normYMax,
-			0,
-			1,
-			MERC_MIN,
-			MERC_MAX,
-		);
+		// Map normalized coords to geographic degrees
+		const minLon = MathUtils.mapLinear( minx, 0, 1, - 180, 180 );
+		const maxLon = MathUtils.mapLinear( maxx, 0, 1, - 180, 180 );
+		const minLat = MathUtils.mapLinear( normYMin, 0, 1, - 90, 90 );
+		const maxLat = MathUtils.mapLinear( normYMax, 0, 1, - 90, 90 );
 
 		return {
 
-			projection: 'EPSG:3857',
-			minX: minx_m,
-			minY: miny_m,
-			maxX: maxx_m,
-			maxY: maxy_m,
+			projection: 'EPSG:4326',
+			minX: minLon,
+			minY: minLat,
+			maxX: maxLon,
+			maxY: maxLat,
 
 		};
 
