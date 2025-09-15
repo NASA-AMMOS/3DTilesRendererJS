@@ -244,9 +244,9 @@ function parseBoundingBox( el ) {
 // parse layer <Style> tag
 function parseStyle( el ) {
 
-	const title = el.querySelector( 'Title' ).textContent;
+	const title = el.querySelector( 'Title' )?.textContent || null;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
-	const isDefault = el.getAttribute( 'isDefault' ) === 'true';
+	const isDefault = el.getAttribute( 'isDefault' ) === 'true' || null;
 
 	return {
 		title,
