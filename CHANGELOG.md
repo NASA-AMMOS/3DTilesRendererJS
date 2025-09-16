@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added WMSTilesOverlay & WMSTilesPlugin for displaying and overlaying WMS image tiles.
 - I3DMLoader: Add support for quantized position data.
 
+### Fixed
+- Fixed types not being defined correctly in the package.json.
+
 ## [0.4.16] - 2025.09.10
 ### Fixed
 - GlobeControls: Fix case where camera position could become "NaN" when zooming into the sky.
