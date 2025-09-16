@@ -104,40 +104,15 @@ export class I3DMLoader extends I3DMLoaderBase {
 						} );
 
 						// use quantized position if position is missing
-						if ( ! POSITION ) {
+						if ( ! POSITION && POSITION_QUANTIZED ) {
 
-							if ( POSITION_QUANTIZED ) {
+							POSITION = new Float32Array( INSTANCES_LENGTH * 3 );
 
-								if ( ! QUANTIZED_VOLUME_OFFSET || ! QUANTIZED_VOLUME_SCALE ) {
+							for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
 
-									[
-										'QUANTIZED_VOLUME_OFFSET',
-										'QUANTIZED_VOLUME_SCALE',
-									].forEach( feature => {
-
-										if ( ! ( feature in featureTable.header ) ) {
-
-											console.warn( `I3DMLoader: FeatureTable using "POSITION_QUANTIZED" but missing "${ feature }".` );
-
-										}
-
-									} );
-
-								}
-
-								POSITION = new Float32Array( INSTANCES_LENGTH * 3 );
-
-								for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
-
-									POSITION[ i * 3 + 0 ] = QUANTIZED_VOLUME_OFFSET[ 0 ] + ( POSITION_QUANTIZED[ i * 3 + 0 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 0 ];
-									POSITION[ i * 3 + 1 ] = QUANTIZED_VOLUME_OFFSET[ 1 ] + ( POSITION_QUANTIZED[ i * 3 + 1 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 1 ];
-									POSITION[ i * 3 + 2 ] = QUANTIZED_VOLUME_OFFSET[ 2 ] + ( POSITION_QUANTIZED[ i * 3 + 2 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 2 ];
-
-								}
-
-							} else {
-
-								console.warn( 'I3DMLoader: FeatureTable missing "POSITION" and "POSITION_QUANTIZED".' );
+								POSITION[ i * 3 + 0 ] = QUANTIZED_VOLUME_OFFSET[ 0 ] + ( POSITION_QUANTIZED[ i * 3 + 0 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 0 ];
+								POSITION[ i * 3 + 1 ] = QUANTIZED_VOLUME_OFFSET[ 1 ] + ( POSITION_QUANTIZED[ i * 3 + 1 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 1 ];
+								POSITION[ i * 3 + 2 ] = QUANTIZED_VOLUME_OFFSET[ 2 ] + ( POSITION_QUANTIZED[ i * 3 + 2 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 2 ];
 
 							}
 
