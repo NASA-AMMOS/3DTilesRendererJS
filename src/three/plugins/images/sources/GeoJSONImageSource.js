@@ -50,17 +50,24 @@ export class GeoJSONImageSource extends TiledImageSource {
 			try {
 
 				const res = await this.fetchData( this.url );
-				// fetchData should return a Response-like object
-				// allow both Response and plain object (in case overlay fetch returns parsed JSON)
-				if ( res && typeof res.json === 'function' ) {
 
-					this.geojson = await res.json();
+				const geojson = await res.json();
+				// check if it follow geojson spec
+				if ( ! geojson.type ) {
 
-				} else if ( res ) {
-
-					this.geojson = await res.json();
+					throw new Error( 'GeoJSONImageSource: invalid geojson structure' );
 
 				}
+
+				// check if features present
+				const features = this._featuresFromGeoJSON( geojson );
+				if ( ! features.length ) {
+
+					throw new Error( 'GeoJSONImageSource: no valid features found' );
+
+				}
+
+				this.geojson = geojson;
 
 			} catch ( e ) {
 
@@ -88,8 +95,8 @@ export class GeoJSONImageSource extends TiledImageSource {
 	// main fetch per tile - > returns .Texture
 	async fetchItem( tokens, signal ) {
 
-		//return this.drawCanvasImage(tokens);
-		return await this.drawSVGImage( tokens, signal );
+		return this.drawCanvasImage( tokens );
+		//return await this.drawSVGImage( tokens, signal );
 
 	}
 
@@ -109,7 +116,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		const tileInfo = this._tileExtentFromNormalized( boundsNormalized );
 
 		// quick set of features to consider
-		const features = this._featuresFromGeoJSON();
+		const features = this._featuresFromGeoJSON( this.geojson );
 		// helper to map lon/lat to pixel coords for this tile (same math used by canvas path code)
 		const proj = tileInfo.projection;
 		const projectPointPx = ( lon, lat, width, height ) => {
@@ -326,8 +333,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
 		// find features that ( quick bbox ) intersect tile
-		const features = this.geojson && this.geojson.features ? this.geojson.features : [ ];
-
+		const features = this._featuresFromGeoJSON( this.geojson );
 		for ( let i = 0; i < features.length; i ++ ) {
 
 			const f = features[ i ];
@@ -404,8 +410,12 @@ export class GeoJSONImageSource extends TiledImageSource {
 		// canvas y origin is top, projection y increases north -> flip
 		const y = height - MathUtils.mapLinear( pxProjY, minY, maxY, 0, height );
 
+
 		// clamp to finite numbers
-		return [ isFinite( x ) ? x : 0, isFinite( y ) ? y : 0 ];
+		// round to integer to gain performance
+		// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#avoid_floating-point_coordinates_and_use_integers_instead
+
+		return [ isFinite( x ) ? Math.round( x ) : 0, isFinite( y ) ? Math.round( y ) : 0 ];
 
 	}
 
@@ -479,11 +489,10 @@ export class GeoJSONImageSource extends TiledImageSource {
 	}
 
 	// Normalize top-level geojson into an array of Feature objects
-	_featuresFromGeoJSON() {
+	_featuresFromGeoJSON( root ) {
 
-		if ( ! this.geojson ) return [];
+		if ( ! root ) return [];
 
-		const root = this.geojson;
 		const t = String( root.type || '' );
 
 		const geomTypes = new Set( [ 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon' ] );
@@ -661,7 +670,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 	_geoJSONBounds( pad = 0 ) {
 
 		if ( ! this.geojson ) return null;
-		const features = this._featuresFromGeoJSON();
+		const features = this._featuresFromGeoJSON( this.geojson );
 		if ( ! features.length ) return null;
 		let minLon = Infinity, minLat = Infinity, maxLon = - Infinity, maxLat = - Infinity;
 		const consider = ( lon, lat ) => {
