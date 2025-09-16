@@ -81,7 +81,17 @@ export class WMTSImageSource extends TiledImageSource {
 		// generate the tiling scheme
 		tiling.flipY = true;
 		tiling.setProjection( new ProjectionScheme( projection ) );
-		tiling.setContentBounds( ...tiling.projection.getBounds() );
+
+		if ( layer.boundingBox !== null ) {
+
+			tiling.setContentBounds( ...layer.boundingBox.bounds );
+
+		} else {
+
+			tiling.setContentBounds( ...tiling.projection.getBounds() );
+
+		}
+
 		tileMatrixSet.tileMatrices.forEach( ( tm, i ) => {
 
 			// TODO: needs to set tileCountX from matrix width?
