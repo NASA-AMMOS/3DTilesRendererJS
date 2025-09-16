@@ -52,7 +52,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		}
 
-		// If geojson present, compute bounds from data (with padding) and set as content bounds.
+		// TODO: If geojson present, compute bounds from data (with padding) and set as content bounds.
 		// Falls back to full projection bounds if no geojson or unable to compute an extent.
 
 		// seems that this approach to optimize rendering by defining bounds
@@ -77,20 +77,19 @@ export class GeoJSONImageSource extends TiledImageSource {
 	drawCanvasImage( tokens ) {
 
 		// compute tile extent in projection units ( degrees for 4326, meters for 3857 )
+		const { tiling, tileDimension, geojson } = this;
 		const [ x, y, level ] = tokens;
-		const tileInfo = this.tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
+		const tileInfo = tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );
-		canvas.width = this.tileDimension;
-		canvas.height = this.tileDimension;
+		canvas.width = tileDimension;
+		canvas.height = tileDimension;
+
 		const ctx = canvas.getContext( '2d' );
 
-		// clear
-		ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
 		// find features that ( quick bbox ) intersect tile
-		const features = this._featuresFromGeoJSON( this.geojson );
+		const features = this._featuresFromGeoJSON( geojson );
 		for ( let i = 0; i < features.length; i ++ ) {
 
 			const f = features[ i ];
@@ -125,9 +124,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 		if ( maxY === minY ) maxY = minY + 1;
 
 		const x = MathUtils.mapLinear( pxProjX, minX, maxX, 0, width );
+
 		// canvas y origin is top, projection y increases north -> flip
 		const y = height - MathUtils.mapLinear( pxProjY, minY, maxY, 0, height );
-
 
 		// clamp to finite numbers
 		// round to integer to gain performance
@@ -209,56 +208,30 @@ export class GeoJSONImageSource extends TiledImageSource {
 	// Normalize top-level geojson into an array of Feature objects
 	_featuresFromGeoJSON( root ) {
 
-		if ( ! root ) return [];
-
-		const t = String( root.type || '' );
-
+		const type = root.type;
 		const geomTypes = new Set( [ 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon' ] );
 
-		// FeatureCollection: features may be Features or raw geometries — normalize
-		if ( t === 'FeatureCollection' && Array.isArray( root.features ) ) {
+		if ( type === 'FeatureCollection' ) {
 
-			return root.features.map( ( f ) => {
+			return root.features;
 
-				if ( ! f ) return null;
-				if ( f.type === 'Feature' ) return f;
-				// if someone put raw geometry inside features array
-				if ( f.type && geomTypes.has( f.type ) ) return { type: 'Feature', geometry: f, properties: {} };
-				return null;
+		} else if ( type === 'Feature' ) {
 
-			} ).filter( Boolean );
+			return [ root ];
 
-		}
+		} else if ( type === 'GeometryCollection' ) {
 
-		// Single Feature
-		if ( t === 'Feature' ) return [ root ];
+			return root.geometries.map( g => ( { type: 'Feature', geometry: g, properties: {} } ) );
 
-		// GeometryCollection -> convert each geometry to Feature
-		if ( t === 'GeometryCollection' && Array.isArray( root.geometries ) ) {
+		} else if ( geomTypes.has( type ) ) {
 
-			return root.geometries.map( ( g ) => ( { type: 'Feature', geometry: g, properties: {} } ) );
+			return [ { type: 'Feature', geometry: root, properties: {} } ];
+
+		} else {
+
+			return [];
 
 		}
-
-		// Bare geometry -> wrap
-		if ( geomTypes.has( t ) ) return [ { type: 'Feature', geometry: root, properties: {} } ];
-
-		// If user passed an array of mixed items (features or geometries)
-		if ( Array.isArray( root ) ) {
-
-			return root.map( ( item ) => {
-
-				if ( ! item ) return null;
-				if ( item.type === 'Feature' ) return item;
-				if ( item.type && geomTypes.has( item.type ) ) return { type: 'Feature', geometry: item, properties: {} };
-				return null;
-
-			} ).filter( Boolean );
-
-		}
-
-		// Unknown shape
-		return [];
 
 	}
 
