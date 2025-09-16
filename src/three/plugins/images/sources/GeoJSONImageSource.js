@@ -1,16 +1,20 @@
-import { Texture, LinearFilter, CanvasTexture, MathUtils } from 'three';
+import { CanvasTexture, MathUtils } from 'three';
 import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 
+// TODO: Add support for limited bounds
+// TODO: Add support for padding of tiles to avoid clipping "wide" elements
+// TODO: Scale points ellipse radii based on localized lat / lon distortion to preserve a circular appearance
 export class GeoJSONImageSource extends TiledImageSource {
 
 	constructor( {
 		geojson = null,
 		url = null, // URL or GeoJson object can be provided
 		tileDimension = 256,
-		levels = 18,
+		levels = 20,
 		pointRadius = 6,
 		strokeStyle = 'red',
+		strokeWidth = 2,
 		fillStyle = 'rgba( 255,0,0,0.65 )',
 	} = {} ) {
 
@@ -22,6 +26,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		this.pointRadius = pointRadius;
 		this.strokeStyle = strokeStyle;
+		this.strokeWidth = strokeWidth;
 		this.fillStyle = fillStyle;
 
 	}
@@ -76,26 +81,26 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	drawCanvasImage( tokens ) {
 
-		// compute tile extent in projection units ( degrees for 4326, meters for 3857 )
 		const { tiling, tileDimension, geojson } = this;
 		const [ x, y, level ] = tokens;
-		const tileInfo = tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
+		const tileBoundsDeg = tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = tileDimension;
 		canvas.height = tileDimension;
 
+		// draw features
 		const ctx = canvas.getContext( '2d' );
-
-		// find features that ( quick bbox ) intersect tile
 		const features = this._featuresFromGeoJSON( geojson );
 		for ( let i = 0; i < features.length; i ++ ) {
 
-			const f = features[ i ];
-			if ( ! f || ! f.geometry ) continue;
-			//if ( ! this._featureIntersectsTile( f, tileInfo ) ) continue;
-			this._drawFeatureOnCanvas( ctx, f, tileInfo, canvas.width, canvas.height );
+			const feature = features[ i ];
+			if ( this._featureIntersectsTile( feature, tileBoundsDeg ) ) {
+
+				this._drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, canvas.width, canvas.height );
+
+			}
 
 		}
 
@@ -104,8 +109,6 @@ export class GeoJSONImageSource extends TiledImageSource {
 		return tex;
 
 	}
-
-	// - - - projection / mapping helpers - - -
 
 	// Compute pixel from projected coords and tileInfo
 	_projectedToPixel( pxProjX, pxProjY, bounds, width, height ) {
@@ -130,27 +133,30 @@ export class GeoJSONImageSource extends TiledImageSource {
 	}
 
 	// bbox quick test in projected units
-	_featureIntersectsTile( feature, tileInfo ) {
+	_featureIntersectsTile( feature, boundsDeg ) {
 
-		// compute feature bbox ( projected )
-		const geom = feature.geometry;
-		if ( ! geom ) {
+		const featureBoundsDeg = this._getFeatureBounds( feature );
+		if ( ! featureBoundsDeg ) {
 
 			return false;
 
 		}
 
-		const bbox = this._projectedFeatureBBox( geom );
-		if ( ! bbox ) return false;
-		// bbox = [ minX,minY,maxX,maxY ] in projected units
-		const [ fminX, fminY, fmaxX, fmaxY ] = bbox;
-		const { minX, minY, maxX, maxY } = tileInfo;
-		// rectangle intersection
+		// check for intersection between bounds
+		const [ fminX, fminY, fmaxX, fmaxY ] = featureBoundsDeg;
+		const [ minX, minY, maxX, maxY ] = boundsDeg;
 		return ! ( fmaxX < minX || fminX > maxX || fmaxY < minY || fminY > maxY );
 
 	}
 
-	_projectedFeatureBBox( geometry ) {
+	_getFeatureBounds( feature ) {
+
+		const { geometry } = feature;
+		if ( ! geometry ) {
+
+			return null;
+
+		}
 
 		const { type, coordinates } = geometry;
 		let minLon = Infinity;
@@ -230,16 +236,23 @@ export class GeoJSONImageSource extends TiledImageSource {
 	// draw feature on canvas ( assumes intersects already )
 	_drawFeatureOnCanvas( ctx, feature, tileInfo, width, height ) {
 
-		const geom = feature.geometry;
-		const props = feature.properties || {};
-		const stroke = props.stroke || this.strokeStyle;
-		const fill = props.fill || this.fillStyle;
-		const pointRadius = props.pointRadius || this.pointRadius;
+		const { geometry = null, properties = {} } = feature;
+		if ( ! geometry ) {
+
+			// A feature may have null geometry in GeoJSON
+			return;
+
+		}
+
+		const strokeStyle = properties.strokeStyle || this.strokeStyle;
+		const fillStyle = properties.fillStyle || this.fillStyle;
+		const pointRadius = properties.pointRadius || this.pointRadius;
+		const strokeWidth = properties.strokeWidth || this.strokeWidth;
 
 		ctx.save();
-		ctx.strokeStyle = stroke;
-		ctx.fillStyle = fill;
-		ctx.lineWidth = props.strokeWidth || 2;
+		ctx.strokeStyle = strokeStyle;
+		ctx.fillStyle = fillStyle;
+		ctx.lineWidth = strokeWidth;
 
 		const projectPoint = ( lon, lat ) => {
 
@@ -247,23 +260,23 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		};
 
-		const type = geom.type;
+		const type = geometry.type;
 
 		if ( type === 'Point' ) {
 
-			const [ lon, lat ] = geom.coordinates;
+			const [ lon, lat ] = geometry.coordinates;
 			const [ px, py ] = projectPoint( lon, lat );
 			ctx.beginPath();
-			ctx.arc( px, py, pointRadius, 0, Math.PI * 2 );
+			ctx.ellipse( px, py, pointRadius, pointRadius, 0, 0, Math.PI * 2 );
 			ctx.fill();
 
 		} else if ( type === 'MultiPoint' ) {
 
-			geom.coordinates.forEach( ( [ lon, lat ] ) => {
+			geometry.coordinates.forEach( ( [ lon, lat ] ) => {
 
 				const [ px, py ] = projectPoint( lon, lat );
 				ctx.beginPath();
-				ctx.arc( px, py, pointRadius, 0, Math.PI * 2 );
+				ctx.ellipse( px, py, pointRadius, pointRadius, 0, 0, Math.PI * 2 );
 				ctx.fill();
 
 			} );
@@ -272,7 +285,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 			ctx.beginPath();
 
-			geom.coordinates.forEach( ( [ lon, lat ], i ) => {
+			geometry.coordinates.forEach( ( [ lon, lat ], i ) => {
 
 				const [ px, py ] = projectPoint( lon, lat );
 				if ( i === 0 ) ctx.moveTo( px, py );
@@ -284,7 +297,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		} else if ( type === 'MultiLineString' ) {
 
-			geom.coordinates.forEach( ( line ) => {
+			geometry.coordinates.forEach( ( line ) => {
 
 				ctx.beginPath();
 				line.forEach( ( [ lon, lat ], i ) => {
@@ -300,7 +313,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		} else if ( type === 'Polygon' ) {
 
-			geom.coordinates.forEach( ( ring, rIndex ) => {
+			geometry.coordinates.forEach( ( ring, rIndex ) => {
 
 				ctx.beginPath();
 				ring.forEach( ( [ lon, lat ], i ) => {
@@ -319,7 +332,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		} else if ( type === 'MultiPolygon' ) {
 
-			geom.coordinates.forEach( ( polygon ) => {
+			geometry.coordinates.forEach( ( polygon ) => {
 
 				polygon.forEach( ( ring, rIndex ) => {
 
@@ -345,103 +358,27 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	}
 
-	// Compute geographic bounds [minLon,minLat,maxLon,maxLat] from current geojson.
-	// pad: if 0 < pad < 1 => treated as fraction of width/height; if pad >= 1 => treated as degrees.
-	_geoJSONBounds( pad = 0 ) {
+	// Compute geographic bounds in degrees from current geojson.
+	_geoJSONBounds() {
 
-		if ( ! this.geojson ) return null;
+		// TODO: add support for padding the bounding boxes
 		const features = this._featuresFromGeoJSON( this.geojson );
-		if ( ! features.length ) return null;
-		let minLon = Infinity, minLat = Infinity, maxLon = - Infinity, maxLat = - Infinity;
-		const consider = ( lon, lat ) => {
+		let minLon = Infinity;
+		let minLat = Infinity;
+		let maxLon = - Infinity;
+		let maxLat = - Infinity;
 
-			if ( typeof lon !== 'number' || typeof lat !== 'number' ) return;
-			minLon = Math.min( minLon, lon );
-			maxLon = Math.max( maxLon, lon );
-			minLat = Math.min( minLat, lat );
-			maxLat = Math.max( maxLat, lat );
+		features.forEach( feature => {
 
-		};
-		// iterate all features and their coordinates
-		for ( let i = 0; i < features.length; i ++ ) {
+			const [ fMinLon, fMinLat, fMaxLon, fMaxLat ] = this._getFeatureBounds( feature );
+			minLon = Math.min( minLon, fMinLon );
+			minLat = Math.min( minLat, fMinLat );
+			maxLon = Math.max( maxLon, fMaxLon );
+			maxLat = Math.max( maxLat, fMaxLat );
 
-			const f = features[ i ];
-			if ( ! f || ! f.geometry ) continue;
-			const g = f.geometry;
-			const type = g.type;
-			const c = g.coordinates;
-			if ( ! c ) continue;
+		} );
 
-			if ( type === 'Point' ) {
-
-				consider( c[ 0 ], c[ 1 ] );
-
-			} else if ( type === 'MultiPoint' || type === 'LineString' ) {
-
-				c.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) );
-
-			} else if ( type === 'MultiLineString' || type === 'Polygon' ) {
-
-				c.forEach( ( ring ) => ring.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) ) );
-
-			} else if ( type === 'MultiPolygon' ) {
-
-				c.forEach( ( poly ) => poly.forEach( ( ring ) => ring.forEach( ( pt ) => consider( pt[ 0 ], pt[ 1 ] ) ) ) );
-
-			} else if ( type === 'GeometryCollection' && Array.isArray( g.geometries ) ) {
-
-				g.geometries.forEach( ( geom ) => {
-
-					// simple recursion for nested geometries
-					const tempFeature = { type: 'Feature', geometry: geom };
-					features.push( tempFeature );
-
-				} );
-
-			}
-
-		}
-		if ( minLon === Infinity ) return null;
-
-		let width = maxLon - minLon;
-		let height = maxLat - minLat;
-		// handle degenerate case
-
-		if ( width === 0 ) {
-
-			width = Math.max( 0.000001, Math.abs( minLon ) * 1e-6 );
-
-		}
-
-		if ( height === 0 ) {
-
-			height = Math.max( 0.000001, Math.abs( minLat ) * 1e-6 );
-
-		}
-
-		let padLon = 0, padLat = 0;
-		if ( pad > 0 && pad < 1 ) {
-
-			padLon = width * pad;
-			padLat = height * pad;
-
-		} else if ( pad >= 1 ) {
-
-			padLon = pad;
-			padLat = pad;
-
-		}
-
-		let outMinLon = minLon - padLon;
-		let outMaxLon = maxLon + padLon;
-		let outMinLat = minLat - padLat;
-		let outMaxLat = maxLat + padLat;
-		// clamp to valid geographic ranges
-		outMinLon = Math.max( - 180, outMinLon );
-		outMaxLon = Math.min( 180, outMaxLon );
-		outMinLat = Math.max( - 90, outMinLat );
-		outMaxLat = Math.min( 90, outMaxLat );
-		return [ outMinLon, outMinLat, outMaxLon, outMaxLat ];
+		return [ minLon, minLat, maxLon, maxLat ];
 
 	}
 

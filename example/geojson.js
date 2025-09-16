@@ -127,12 +127,8 @@ function init() {
 
 	const geojsonOverlay = new GeoJSONTilesOverlay( {
 
-		levels: 14, // choose max zoom to rasterize overlay ( 12- 14 typical )
-		tileDimension: 256, // tile size in px
 		geojson: geojson, // pass the feature collection directly
 		//url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true", // TODO: it is slow as it is heavy, could this be used to reference for optimization?
-		color: 0xffffff,
-		opacity: 1.0,
 
 	} );
 
