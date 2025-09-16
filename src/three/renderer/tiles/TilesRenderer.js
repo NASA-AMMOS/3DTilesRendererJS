@@ -977,17 +977,17 @@ export class TilesRenderer extends TilesRendererBase {
 		// check the plugin visibility
 		this.invokeAllPlugins( plugin => {
 
-			if ( plugin !== this && plugin.calculateTileViewError ) {
+			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
-				plugin.calculateTileViewError( tile, viewErrorTarget );
+				// Tile shall be traversed if inView for at least one plugin.
+				inView = inView && viewErrorTarget.inView;
+				maxError = Math.max( maxError, viewErrorTarget.error );
+
 				if ( viewErrorTarget.inView ) {
 
-					inView = true;
 					inViewError = Math.max( inViewError, viewErrorTarget.error );
 
 				}
-
-				maxError = Math.max( maxError, viewErrorTarget.error );
 
 			}
 
@@ -1002,7 +1002,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
-			target.inView = false;
+			target.inView = viewErrorTarget.inView;
 			target.error = maxError;
 			target.distanceFromCamera = minDistance;
 
