@@ -1,4 +1,4 @@
-import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils } from 'three';
 import { TilesRenderer, GlobeControls, CAMERA_FRAME } from '3d-tiles-renderer';
 import {
 	GeoJSONTilesOverlay,
@@ -7,7 +7,6 @@ import {
 	UpdateOnChangePlugin,
 	XYZTilesPlugin,
 } from '3d-tiles-renderer/plugins';
-import * as THREE from 'three';
 
 const geojson = {
 	type: 'FeatureCollection',
@@ -130,7 +129,7 @@ function init() {
 	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 
 	tiles.ellipsoid
-		.getObjectFrame( 44.4056 * THREE.MathUtils.DEG2RAD, 8.9463 * THREE.MathUtils.DEG2RAD, 1e7, 0, - Math.PI / 2, 0, camera.matrixWorld, CAMERA_FRAME );
+		.getObjectFrame( 44.4056 * MathUtils.DEG2RAD, 8.9463 * MathUtils.DEG2RAD, 1e7, 0, - Math.PI / 2, 0, camera.matrixWorld, CAMERA_FRAME );
 
 	camera.matrixWorld
 		.premultiply( tiles.group.matrixWorld )
