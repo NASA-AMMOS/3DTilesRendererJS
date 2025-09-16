@@ -1,20 +1,13 @@
 import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
-import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
+import { TilesRenderer, GlobeControls, CAMERA_FRAME } from '3d-tiles-renderer';
 import {
-	//CesiumIonAuthPlugin,
 	GeoJSONTilesOverlay,
-	GLTFExtensionsPlugin,
 	ImageOverlayPlugin,
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
 	XYZTilesPlugin,
 } from '3d-tiles-renderer/plugins';
 import * as THREE from 'three';
-
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-const dracoLoader = new DRACOLoader().setDecoderPath(
-	'https://www.gstatic.com/draco/v1/decoders/',
-);
 
 const geojson = {
 	type: 'FeatureCollection',
@@ -75,7 +68,7 @@ const geojson = {
 
 };
 
-let scene, renderer, camera, controls, tiles, geojsonTiles;
+let scene, renderer, camera, controls, tiles;
 
 init();
 render();
@@ -101,6 +94,7 @@ function init() {
 	// XYZ base layer
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin(
 		new XYZTilesPlugin( {
 			center: true,
@@ -109,48 +103,38 @@ function init() {
 		} ),
 	);
 
-	tiles.registerPlugin(
-		new GLTFExtensionsPlugin( {
-
-			dracoLoader: dracoLoader,
-
-		} ),
-	);
-
 	tiles.setCamera( camera );
+	tiles.group.rotation.x = - Math.PI / 2;
+	tiles.group.updateMatrixWorld();
 	scene.add( tiles.group );
-
-	tiles.registerPlugin( new TilesFadePlugin() );
-	tiles.registerPlugin( new UpdateOnChangePlugin() );
-
-	// Use WebMercator lat clamp for EPSG:3857 tiles
-
-	const geojsonOverlay = new GeoJSONTilesOverlay( {
-
-		geojson: geojson, // pass the feature collection directly
-		//url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true", // TODO: it is slow as it is heavy, could this be used to reference for optimization?
-
-	} );
 
 	// ImageOverlayPlugin must use same resolution as tileDimension for best results
 	const overlayPlugin = new ImageOverlayPlugin( {
+		overlays: [
+			new GeoJSONTilesOverlay( {
+				geojson: geojson, // pass the feature collection directly
 
-		overlays: [ geojsonOverlay ],
+				// TODO: it is slow as it is heavy, could this be used to reference for optimization?
+				// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
+			} )
+		],
 		renderer,
-		resolution: 256,
-		enableTileSplitting: true,
-
 	} );
 
 	tiles.registerPlugin( overlayPlugin );
 
 	// Controls
-	tiles.group.rotation.x = - Math.PI / 2;
 	controls = new GlobeControls( scene, camera, renderer.domElement );
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 	controls.enableDamping = true;
 	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
-	moveCameraToLonLat( 8.9463, 44.4056 );
+
+	tiles.ellipsoid
+		.getObjectFrame( 44.4056 * THREE.MathUtils.DEG2RAD, 8.9463 * THREE.MathUtils.DEG2RAD, 1e7, 0, - Math.PI / 2, 0, camera.matrixWorld, CAMERA_FRAME );
+
+	camera.matrixWorld
+		.premultiply( tiles.group.matrixWorld )
+		.decompose( camera.position, camera.quaternion, camera.scale );
 
 	window.addEventListener( 'resize', onWindowResize, false );
 
@@ -173,6 +157,7 @@ function render() {
 		camera.updateMatrixWorld();
 
 	}
+
 	if ( tiles ) {
 
 		tiles.setCamera( camera );
@@ -180,38 +165,7 @@ function render() {
 		tiles.update();
 
 	}
-	if ( geojsonTiles ) {
-
-		geojsonTiles.setCamera( camera );
-		geojsonTiles.setResolutionFromRenderer( camera, renderer );
-		geojsonTiles.update();
-
-	}
 
 	renderer.render( scene, camera );
-
-}
-
-// Converts lon, lat, height to Cartesian coordinates on WGS84 ellipsoid
-function lonLatHeightToCartesian( lon, lat, height = 0 ) {
-
-	const radius = 6378137.0 + height;
-	const lambda = ( lon * Math.PI ) / 180;
-	const phi = ( lat * Math.PI ) / 180;
-	const x = radius * Math.cos( phi ) * Math.cos( lambda );
-	const y = radius * Math.cos( phi ) * Math.sin( lambda );
-	const z = radius * Math.sin( phi );
-	return { x, y, z };
-
-}
-
-function moveCameraToLonLat( lon, lat, height = 0, cameraDistance = 1e7 ) {
-
-	const { x, y, z } = lonLatHeightToCartesian( lon, lat, height );
-	const rotationMatrix = new THREE.Matrix4().makeRotationX( - Math.PI / 2 );
-	const rotatedPos = new THREE.Vector3( x, y, z ).applyMatrix4( rotationMatrix );
-	const direction = rotatedPos.clone().normalize();
-	camera.position.copy( direction.multiplyScalar( cameraDistance ) );
-	camera.lookAt( rotatedPos );
 
 }
