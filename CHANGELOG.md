@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - LoadRegionPlugin: Added support for "mask" regions that allow for only loading tiles within the shape.
 - Added WMSTilesOverlay & WMSTilesPlugin for displaying and overlaying WMS image tiles.
+- I3DMLoader: Add support for quantized position data.
 
 ## [0.4.16] - 2025.09.10
 ### Fixed
