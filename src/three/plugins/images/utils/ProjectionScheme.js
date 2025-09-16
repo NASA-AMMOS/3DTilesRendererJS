@@ -38,7 +38,7 @@ export class ProjectionScheme {
 				break;
 
 			default:
-				throw new Error();
+				throw new Error( `ProjectionScheme: Unknown projection scheme "${ scheme }"` );
 
 		}
 

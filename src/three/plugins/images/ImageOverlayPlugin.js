@@ -9,7 +9,11 @@ import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { MemoryUtils } from '3d-tiles-renderer/three';
+<<<<<<< HEAD
 import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
+=======
+import { WMSImageSource } from './sources/WMSImageSource.js';
+>>>>>>> origin/master
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -408,7 +412,7 @@ export class ImageOverlayPlugin {
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
 		await this._initTileSceneOverlayInfo( scene, tile );
-		this.expandVirtualChildren( scene, tile ),
+		this.expandVirtualChildren( scene, tile );
 		this._updateLayers( tile );
 
 		this.pendingTiles.delete( tile );
@@ -1481,6 +1485,31 @@ export class GeoJSONTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+	}
+
+	init() {
+
+		this._whenReady = this.imageSource.init();
+		super.init();
+
+	}
+
+	whenReady() {
+
+		return this._whenReady;
+
+	}
+
+}
+
+export class WMSTilesOverlay extends ImageOverlay {
+
+	constructor( options = {} ) {
+
+		super( options );
+		this.imageSource = new WMSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
 	}

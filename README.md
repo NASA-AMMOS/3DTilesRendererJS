@@ -51,6 +51,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [WMTS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/wmtsTiles.html)
 
+[WMS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/wmsTiles.html)
+
 [Quantized Mesh with Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/quantMeshOverlays.html)
 
 [Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
@@ -120,7 +122,6 @@ tilesRenderer.addEventListener( 'load-model', ( { scene } ) => {
 
 		if ( c.material ) {
 
-			c.originalMaterial = c.material;
 			c.material = new MeshBasicMaterial();
 
 		}
