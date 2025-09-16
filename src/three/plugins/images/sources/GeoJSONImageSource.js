@@ -5,6 +5,7 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 // TODO: Add support for limited bounds
 // TODO: Add support for padding of tiles to avoid clipping "wide" elements
 // TODO: Scale points ellipse radii based on localized lat / lon distortion to preserve a circular appearance
+// TODO: Need to clip / fix geojson shapes across the 180 degree boundary
 export class GeoJSONImageSource extends TiledImageSource {
 
 	constructor( {

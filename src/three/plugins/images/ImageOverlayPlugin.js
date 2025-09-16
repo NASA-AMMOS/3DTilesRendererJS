@@ -9,11 +9,8 @@ import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { MemoryUtils } from '3d-tiles-renderer/three';
-<<<<<<< HEAD
 import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
-=======
 import { WMSImageSource } from './sources/WMSImageSource.js';
->>>>>>> origin/master
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
