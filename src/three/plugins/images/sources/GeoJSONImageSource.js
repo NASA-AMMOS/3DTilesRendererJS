@@ -5,7 +5,6 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 export class GeoJSONImageSource extends TiledImageSource {
 
 	constructor( {
-
 		geojson = null,
 		url = null, // URL or GeoJson object can be provided
 		tileDimension = 256,
@@ -13,10 +12,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 		pointRadius = 6,
 		strokeStyle = 'red',
 		fillStyle = 'rgba( 255,0,0,0.65 )',
-
 	} = {} ) {
 
-		super( );
+		super();
 		this.geojson = geojson;
 		this.url = url;
 		this.tileDimension = tileDimension;
@@ -28,19 +26,23 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	}
 
-	async init( ) {
+	async init() {
+
+		const { tiling, levels, tileDimension } = this;
+
 
 		// configure tiling to content bounds and levels
-		this.tiling.setProjection( new ProjectionScheme( 'EPSG:4326' ) );
-		this.tiling.setContentBounds( ...this.tiling.projection.getBounds() );
+		const projection = new ProjectionScheme();
+		tiling.setProjection( projection );
+		tiling.setContentBounds( ...projection.getBounds() );
 
-		this.tiling.generateLevels(
-			this.levels,
-			this.tiling.projection.tileCountX,
-			this.tiling.projection.tileCountY,
+		tiling.generateLevels(
+			levels,
+			projection.tileCountX,
+			projection.tileCountY,
 			{
-				tilePixelWidth: this.tileDimension,
-				tilePixelHeight: this.tileDimension,
+				tilePixelWidth: tileDimension,
+				tilePixelHeight: tileDimension,
 			},
 		);
 
@@ -552,7 +554,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		const stroke = props.stroke || this.strokeStyle;
 		const fill = props.fill || this.fillStyle;
 
-		ctx.save( );
+		ctx.save();
 		ctx.strokeStyle = stroke;
 		ctx.fillStyle = fill;
 		ctx.lineWidth = props.strokeWidth || 2;
@@ -573,24 +575,24 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 			const [ lon, lat ] = geom.coordinates;
 			const [ px, py ] = projectPoint( lon, lat );
-			ctx.beginPath( );
+			ctx.beginPath();
 			ctx.arc( px, py, props.radius || this.pointRadius, 0, Math.PI * 2 );
-			ctx.fill( );
+			ctx.fill();
 
 		} else if ( type === 'MultiPoint' ) {
 
 			geom.coordinates.forEach( ( [ lon, lat ] ) => {
 
 				const [ px, py ] = projectPoint( lon, lat );
-				ctx.beginPath( );
+				ctx.beginPath();
 				ctx.arc( px, py, props.radius || this.pointRadius, 0, Math.PI * 2 );
-				ctx.fill( );
+				ctx.fill();
 
 			} );
 
 		} else if ( type === 'LineString' ) {
 
-			ctx.beginPath( );
+			ctx.beginPath();
 
 			geom.coordinates.forEach( ( [ lon, lat ], i ) => {
 
@@ -600,13 +602,13 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 			} );
 
-			ctx.stroke( );
+			ctx.stroke();
 
 		} else if ( type === 'MultiLineString' ) {
 
 			geom.coordinates.forEach( ( line ) => {
 
-				ctx.beginPath( );
+				ctx.beginPath();
 				line.forEach( ( [ lon, lat ], i ) => {
 
 					const [ px, py ] = projectPoint( lon, lat );
@@ -614,7 +616,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 					else ctx.lineTo( px, py );
 
 				} );
-				ctx.stroke( );
+				ctx.stroke();
 
 			} );
 
@@ -622,7 +624,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 			geom.coordinates.forEach( ( ring, rIndex ) => {
 
-				ctx.beginPath( );
+				ctx.beginPath();
 				ring.forEach( ( [ lon, lat ], i ) => {
 
 					const [ px, py ] = projectPoint( lon, lat );
@@ -630,10 +632,10 @@ export class GeoJSONImageSource extends TiledImageSource {
 					else ctx.lineTo( px, py );
 
 				} );
-				ctx.closePath( );
+				ctx.closePath();
 				// fill only outer ring
-				if ( rIndex === 0 ) ctx.fill( );
-				ctx.stroke( );
+				if ( rIndex === 0 ) ctx.fill();
+				ctx.stroke();
 
 			} );
 
@@ -643,7 +645,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 				polygon.forEach( ( ring, rIndex ) => {
 
-					ctx.beginPath( );
+					ctx.beginPath();
 					ring.forEach( ( [ lon, lat ], i ) => {
 
 						const [ px, py ] = projectPoint( lon, lat );
@@ -651,9 +653,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 						else ctx.lineTo( px, py );
 
 					} );
-					ctx.closePath( );
-					if ( rIndex === 0 ) ctx.fill( );
-					ctx.stroke( );
+					ctx.closePath();
+					if ( rIndex === 0 ) ctx.fill();
+					ctx.stroke();
 
 				} );
 
@@ -661,7 +663,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		}
 
-		ctx.restore( );
+		ctx.restore();
 
 	}
 
