@@ -107,13 +107,6 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	// - - - projection / mapping helpers - - -
 
-	// Convert lon/lat ( degrees ) to projection units used by tileInfo
-	_projectLonLat( lon, lat ) {
-
-		return { x: lon, y: lat };
-
-	}
-
 	// Compute pixel from projected coords and tileInfo
 	_projectedToPixel( pxProjX, pxProjY, bounds, width, height ) {
 
@@ -141,10 +134,13 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		// compute feature bbox ( projected )
 		const geom = feature.geometry;
-		if ( ! geom ) return false;
+		if ( ! geom ) {
 
-		const proj = tileInfo.projection;
-		const bbox = this._projectedFeatureBBox( geom, proj );
+			return false;
+
+		}
+
+		const bbox = this._projectedFeatureBBox( geom );
 		if ( ! bbox ) return false;
 		// bbox = [ minX,minY,maxX,maxY ] in projected units
 		const [ fminX, fminY, fmaxX, fmaxY ] = bbox;
@@ -156,52 +152,48 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	_projectedFeatureBBox( geometry ) {
 
-		const type = geometry.type;
-		if ( ! geometry.coordinates ) return null;
-
-		let minX = Infinity,
-			minY = Infinity,
-			maxX = - Infinity,
-			maxY = - Infinity;
+		const { type, coordinates } = geometry;
+		let minLon = Infinity;
+		let minLat = Infinity;
+		let maxLon = - Infinity;
+		let maxLat = - Infinity;
 
 		const consume = ( lon, lat ) => {
 
-			const p = this._projectLonLat( lon, lat );
-			minX = Math.min( minX, p.x );
-			maxX = Math.max( maxX, p.x );
-			minY = Math.min( minY, p.y );
-			maxY = Math.max( maxY, p.y );
+			minLon = Math.min( minLon, lon );
+			maxLon = Math.max( maxLon, lon );
+			minLat = Math.min( minLat, lat );
+			maxLat = Math.max( maxLat, lat );
 
 		};
 
-		const coords = geometry.coordinates;
-
 		if ( type === 'Point' ) {
 
-			consume( coords[ 0 ], coords[ 1 ] );
+			consume( coordinates[ 0 ], coordinates[ 1 ] );
 
 		} else if ( type === 'MultiPoint' || type === 'LineString' ) {
 
-			coords.forEach( ( c ) => consume( c[ 0 ], c[ 1 ] ) );
+			coordinates.forEach( c => consume( c[ 0 ], c[ 1 ] ) );
 
 		} else if ( type === 'MultiLineString' || type === 'Polygon' ) {
 
-			coords.forEach( ( ring ) => ring.forEach( ( c ) => consume( c[ 0 ], c[ 1 ] ) ) );
+			coordinates.forEach( ring => ring.forEach( c => consume( c[ 0 ], c[ 1 ] ) ) );
 
 		} else if ( type === 'MultiPolygon' ) {
 
-			coords.forEach( ( polygon ) =>
-				polygon.forEach( ( ring ) => ring.forEach( ( c ) => consume( c[ 0 ], c[ 1 ] ) ) ),
+			coordinates.forEach( polygon =>
+				polygon.forEach( ring => ring.forEach( c => consume( c[ 0 ], c[ 1 ] ) ) ),
 			);
 
-		} else {
+		}
+
+		if ( minLon === Infinity ) {
 
 			return null;
 
 		}
 
-		if ( minX === Infinity ) return null;
-		return [ minX, minY, maxX, maxY ];
+		return [ minLon, minLat, maxLon, maxLat ];
 
 	}
 
@@ -242,6 +234,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		const props = feature.properties || {};
 		const stroke = props.stroke || this.strokeStyle;
 		const fill = props.fill || this.fillStyle;
+		const pointRadius = props.pointRadius || this.pointRadius;
 
 		ctx.save();
 		ctx.strokeStyle = stroke;
@@ -250,9 +243,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		const projectPoint = ( lon, lat ) => {
 
-			const p = this._projectLonLat( lon, lat );
-
-			return this._projectedToPixel( p.x, p.y, tileInfo, width, height );
+			return this._projectedToPixel( lon, lat, tileInfo, width, height );
 
 		};
 
@@ -263,7 +254,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 			const [ lon, lat ] = geom.coordinates;
 			const [ px, py ] = projectPoint( lon, lat );
 			ctx.beginPath();
-			ctx.arc( px, py, props.radius || this.pointRadius, 0, Math.PI * 2 );
+			ctx.arc( px, py, pointRadius, 0, Math.PI * 2 );
 			ctx.fill();
 
 		} else if ( type === 'MultiPoint' ) {
@@ -272,7 +263,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 				const [ px, py ] = projectPoint( lon, lat );
 				ctx.beginPath();
-				ctx.arc( px, py, props.radius || this.pointRadius, 0, Math.PI * 2 );
+				ctx.arc( px, py, pointRadius, 0, Math.PI * 2 );
 				ctx.fill();
 
 			} );
