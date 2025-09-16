@@ -246,7 +246,8 @@ function parseStyle( el ) {
 
 	const title = el.querySelector( 'Title' )?.textContent || null;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
-	const isDefault = el.getAttribute( 'isDefault' ) === 'true' || null;
+	const isDefaultAttr = el.getAttribute( 'isDefault' );
+	const isDefault = isDefaultAttr ? isDefaultAttr === 'true' : null;
 
 	return {
 		title,
