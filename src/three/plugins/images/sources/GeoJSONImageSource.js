@@ -76,18 +76,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	drawCanvasImage( tokens ) {
 
-		const [ x, y, level ] = tokens;
-		const boundsNormalized = this.tiling.getTileBounds(
-			x,
-			y,
-			level,
-			true,
-			false
-		); // [ minx,miny,maxx,maxy ] normalized
-
-
 		// compute tile extent in projection units ( degrees for 4326, meters for 3857 )
-		const tileInfo = this._tileExtentFromNormalized( boundsNormalized );
+		const [ x, y, level ] = tokens;
+		const tileInfo = this.tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );
@@ -117,47 +108,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	// - - - projection / mapping helpers - - -
 
-	// Map normalized [ 0..1 ] bounds to either degrees or WebMercator meters
-	_tileExtentFromNormalized( bounds ) {
-
-		const [ minx, miny, maxx, maxy ] = bounds;
-
-		// respect tiling.flipY: some tiling schemes return normalized Y with origin at top
-		const flipY = ! ! ( this.tiling && this.tiling.flipY );
-		// when flipY is true, normalized y=0 is top — invert the Y values so mapping is consistent
-		const normYMin = flipY ? 1 - maxy : miny;
-		const normYMax = flipY ? 1 - miny : maxy;
-
-		// Map normalized coords to geographic degrees
-		const minLon = MathUtils.mapLinear( minx, 0, 1, - 180, 180 );
-		const maxLon = MathUtils.mapLinear( maxx, 0, 1, - 180, 180 );
-		const minLat = MathUtils.mapLinear( normYMin, 0, 1, - 90, 90 );
-		const maxLat = MathUtils.mapLinear( normYMax, 0, 1, - 90, 90 );
-
-		return {
-
-			projection: 'EPSG:4326',
-			minX: minLon,
-			minY: minLat,
-			maxX: maxLon,
-			maxY: maxLat,
-
-		};
-
-	}
-
 	// Convert lon/lat ( degrees ) to projection units used by tileInfo
-	_projectLonLat( lon, lat, projection ) {
+	_projectLonLat( lon, lat ) {
 
-		if ( String( projection ).includes( '3857' ) ) {
-
-			const R = 6378137.0;
-			const x = ( ( lon * Math.PI ) / 180.0 ) * R;
-			const y = R * Math.log( Math.tan( Math.PI / 4 + ( lat * Math.PI ) / 360.0 ) );
-			return { x, y };
-
-		}
-		// EPSG:4326: identity
 		return { x: lon, y: lat };
 
 	}
@@ -165,8 +118,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 	// Compute pixel from projected coords and tileInfo
 	_projectedToPixel( pxProjX, pxProjY, bounds, width, height ) {
 
-		const { minX, minY } = bounds;
-		let { maxX, maxY } = bounds;
+		let [ minX, minY, maxX, maxY ] = bounds;
 
 		// avoid zero-range (prevents division by zero in mapLinear)
 		if ( maxX === minX ) maxX = minX + 1;
@@ -203,7 +155,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	}
 
-	_projectedFeatureBBox( geometry, projection ) {
+	_projectedFeatureBBox( geometry ) {
 
 		const type = geometry.type;
 		if ( ! geometry.coordinates ) return null;
@@ -215,7 +167,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		const consume = ( lon, lat ) => {
 
-			const p = this._projectLonLat( lon, lat, projection );
+			const p = this._projectLonLat( lon, lat );
 			minX = Math.min( minX, p.x );
 			maxX = Math.max( maxX, p.x );
 			minY = Math.min( minY, p.y );
@@ -323,11 +275,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 		ctx.fillStyle = fill;
 		ctx.lineWidth = props.strokeWidth || 2;
 
-		const proj = tileInfo.projection;
-
 		const projectPoint = ( lon, lat ) => {
 
-			const p = this._projectLonLat( lon, lat, proj );
+			const p = this._projectLonLat( lon, lat );
 
 			return this._projectedToPixel( p.x, p.y, tileInfo, width, height );
 
