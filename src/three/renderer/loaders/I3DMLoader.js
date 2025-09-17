@@ -79,7 +79,10 @@ export class I3DMLoader extends I3DMLoaderBase {
 					loader.parse( gltfBuffer, workingPath, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
-						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						let POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const POSITION_QUANTIZED = featureTable.getData( 'POSITION_QUANTIZED', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC3' );
+						const QUANTIZED_VOLUME_OFFSET = featureTable.getData( 'QUANTIZED_VOLUME_OFFSET', 1, 'FLOAT', 'VEC3' );
+						const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', 1, 'FLOAT', 'VEC3' );
 						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
@@ -88,9 +91,6 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
 
 						[
-							'QUANTIZED_VOLUME_OFFSET',
-							'QUANTIZED_VOLUME_SCALE',
-							'POSITION_QUANTIZED',
 							'NORMAL_UP_OCT32P',
 							'NORMAL_RIGHT_OCT32P',
 						].forEach( feature => {
@@ -102,6 +102,21 @@ export class I3DMLoader extends I3DMLoaderBase {
 							}
 
 						} );
+
+						// use quantized position if position is missing
+						if ( ! POSITION && POSITION_QUANTIZED ) {
+
+							POSITION = new Float32Array( INSTANCES_LENGTH * 3 );
+
+							for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
+
+								POSITION[ i * 3 + 0 ] = QUANTIZED_VOLUME_OFFSET[ 0 ] + ( POSITION_QUANTIZED[ i * 3 + 0 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 0 ];
+								POSITION[ i * 3 + 1 ] = QUANTIZED_VOLUME_OFFSET[ 1 ] + ( POSITION_QUANTIZED[ i * 3 + 1 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 1 ];
+								POSITION[ i * 3 + 2 ] = QUANTIZED_VOLUME_OFFSET[ 2 ] + ( POSITION_QUANTIZED[ i * 3 + 2 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 2 ];
+
+							}
+
+						}
 
 						// get the average vector center so we can avoid floating point error due to lower
 						// precision transformation calculations on the GPU

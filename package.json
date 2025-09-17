@@ -24,36 +24,36 @@
   ],
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "types": "./src/index.d.ts"
+      "types": "./src/index.d.ts",
+      "import": "./build/index.js"
     },
     "./plugins": {
-      "import": "./build/index.plugins.js",
-      "types": "./src/plugins.d.ts"
+      "types": "./src/plugins.d.ts",
+      "import": "./build/index.plugins.js"
     },
     "./core": {
-      "import": "./build/index.core.js",
-      "types": "./src/core/renderer/index.d.ts"
+      "types": "./src/core/renderer/index.d.ts",
+      "import": "./build/index.core.js"
     },
     "./three": {
-      "import": "./build/index.three.js",
-      "types": "./src/three/renderer/index.d.ts"
+      "types": "./src/three/renderer/index.d.ts",
+      "import": "./build/index.three.js"
     },
     "./r3f": {
-      "import": "./build/index.r3f.js",
-      "types": "./src/r3f/index.d.ts"
+      "types": "./src/r3f/index.d.ts",
+      "import": "./build/index.r3f.js"
     },
     "./core/plugins": {
-      "import": "./build/index.core-plugins.js",
-      "types": "./src/core/plugins/index.d.ts"
+      "types": "./src/core/plugins/index.d.ts",
+      "import": "./build/index.core-plugins.js"
     },
     "./three/plugins": {
-      "import": "./build/index.three-plugins.js",
-      "types": "./src/three/plugins/index.d.ts"
+      "types": "./src/three/plugins/index.d.ts",
+      "import": "./build/index.three-plugins.js"
     },
     "./src/*": {
-      "import": "./src/*",
-      "types": "./src/*.d.ts"
+      "types": "./src/*.d.ts",
+      "import": "./src/*"
     }
   },
   "scripts": {

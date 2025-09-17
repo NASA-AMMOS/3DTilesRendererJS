@@ -727,6 +727,10 @@ You can define a custom region by providing functions to determine Intersection 
 
 ```js
 {
+	// Indicates whether the region should be considered a "mask". If true then tiles outside the shape will not
+	// be loaded even if they are in the camera view.
+	mask: boolean,
+
 	// Custom function that determines whether a tile's bounding volume intersects this region.
 	intersectsTile: ( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ) => boolean,
 
