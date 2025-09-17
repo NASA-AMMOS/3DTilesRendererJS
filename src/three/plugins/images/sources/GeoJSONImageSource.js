@@ -111,28 +111,6 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 	}
 
-	// Compute pixel from projected coords and tileInfo
-	_projectedToPixel( pxProjX, pxProjY, bounds, width, height ) {
-
-		let [ minX, minY, maxX, maxY ] = bounds;
-
-		// avoid zero-range (prevents division by zero in mapLinear)
-		if ( maxX === minX ) maxX = minX + 1;
-		if ( maxY === minY ) maxY = minY + 1;
-
-		const x = MathUtils.mapLinear( pxProjX, minX, maxX, 0, width );
-
-		// canvas y origin is top, projection y increases north -> flip
-		const y = height - MathUtils.mapLinear( pxProjY, minY, maxY, 0, height );
-
-		// clamp to finite numbers
-		// round to integer to gain performance
-		// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#avoid_floating-point_coordinates_and_use_integers_instead
-
-		return [ isFinite( x ) ? Math.round( x ) : 0, isFinite( y ) ? Math.round( y ) : 0 ];
-
-	}
-
 	// bbox quick test in projected units
 	_featureIntersectsTile( feature, boundsDeg ) {
 
@@ -165,7 +143,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		let maxLon = - Infinity;
 		let maxLat = - Infinity;
 
-		const consume = ( lon, lat ) => {
+		const expandBoundsByPoint = ( lon, lat ) => {
 
 			minLon = Math.min( minLon, lon );
 			maxLon = Math.max( maxLon, lon );
@@ -176,27 +154,21 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		if ( type === 'Point' ) {
 
-			consume( coordinates[ 0 ], coordinates[ 1 ] );
+			expandBoundsByPoint( coordinates[ 0 ], coordinates[ 1 ] );
 
 		} else if ( type === 'MultiPoint' || type === 'LineString' ) {
 
-			coordinates.forEach( c => consume( c[ 0 ], c[ 1 ] ) );
+			coordinates.forEach( c => expandBoundsByPoint( c[ 0 ], c[ 1 ] ) );
 
 		} else if ( type === 'MultiLineString' || type === 'Polygon' ) {
 
-			coordinates.forEach( ring => ring.forEach( c => consume( c[ 0 ], c[ 1 ] ) ) );
+			coordinates.forEach( ring => ring.forEach( c => expandBoundsByPoint( c[ 0 ], c[ 1 ] ) ) );
 
 		} else if ( type === 'MultiPolygon' ) {
 
 			coordinates.forEach( polygon =>
-				polygon.forEach( ring => ring.forEach( c => consume( c[ 0 ], c[ 1 ] ) ) ),
+				polygon.forEach( ring => ring.forEach( c => expandBoundsByPoint( c[ 0 ], c[ 1 ] ) ) ),
 			);
-
-		}
-
-		if ( minLon === Infinity ) {
-
-			return null;
 
 		}
 
@@ -235,7 +207,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 	}
 
 	// draw feature on canvas ( assumes intersects already )
-	_drawFeatureOnCanvas( ctx, feature, tileInfo, width, height ) {
+	_drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, width, height ) {
 
 		const { geometry = null, properties = {} } = feature;
 		if ( ! geometry ) {
@@ -255,9 +227,21 @@ export class GeoJSONImageSource extends TiledImageSource {
 		ctx.fillStyle = fillStyle;
 		ctx.lineWidth = strokeWidth;
 
-		const projectPoint = ( lon, lat ) => {
+		// Compute pixel from cartographic coordinates and tile bounds
+		const arr = new Array( 2 );
+		const projectPoint = ( lon, lat, target = arr ) => {
 
-			return this._projectedToPixel( lon, lat, tileInfo, width, height );
+			const [ minX, minY, maxX, maxY ] = tileBoundsDeg;
+
+			// canvas y origin is top, projection y increases north -> flip
+			const x = MathUtils.mapLinear( lon, minX, maxX, 0, width );
+			const y = height - MathUtils.mapLinear( lat, minY, maxY, 0, height );
+
+			// round to integer to gain performance
+			// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#avoid_floating-point_coordinates_and_use_integers_instead
+			target[ 0 ] = Math.round( x );
+			target[ 1 ] = Math.round( y );
+			return target;
 
 		};
 
