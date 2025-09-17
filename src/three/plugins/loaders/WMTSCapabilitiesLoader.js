@@ -145,7 +145,7 @@ function parseLayer( el ) {
 
 	} );
 
-	let boundingBox = parseBoundingBox( el.querySelector( 'WGS84BoundingBox' ), true );
+	let boundingBox = parseBoundingBox( el.querySelector( 'WGS84BoundingBox' ) );
 	if ( ! boundingBox ) {
 
 		boundingBox = parseBoundingBox( el.querySelector( 'BoundingBox' ) );
@@ -199,7 +199,7 @@ function parseDimension( el ) {
 }
 
 // parse <ows:WGS84BoundingBox> and <BoundingBox> tags
-function parseBoundingBox( el, isWGS84 = false ) {
+function parseBoundingBox( el ) {
 
 	if ( ! el ) {
 
@@ -207,7 +207,7 @@ function parseBoundingBox( el, isWGS84 = false ) {
 
 	}
 
-	let crs = isWGS84 ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
+	let crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
@@ -220,7 +220,7 @@ function parseBoundingBox( el, isWGS84 = false ) {
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
 
-	if ( isWGS84 || isCRS84( crs ) ) {
+	if ( isCRS84( crs ) ) {
 
 		crs = 'EPSG:4326';
 
