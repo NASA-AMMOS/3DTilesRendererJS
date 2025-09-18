@@ -57,6 +57,8 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
 
+[GeoJSON Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/geojson.html)
+
 **React Three Fiber**
 
 See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
