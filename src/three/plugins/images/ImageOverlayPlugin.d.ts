@@ -1,4 +1,5 @@
 import { Color, Matrix4, WebGLRenderer } from 'three';
+import { WMTSCapabilitiesResult, WMTSLayer, WMTSTileMatrixSet } from '../loaders/WMTSCapabilitiesLoader.js';
 
 export class ImageOverlayPlugin {
 
@@ -82,10 +83,12 @@ export class WMSTilesOverlay extends ImageOverlay {
 export class WMTSTilesOverlay extends ImageOverlay {
 
 	constructor( options: {
-		levels: number,
-		dimension: number,
+		dimensions?: { [ key: string ]: any } | null,
 		url: string,
-		bounds?: [ number, number, number, number ],
+		capabilities?: WMTSCapabilitiesResult | null,
+		layer?: WMTSLayer | string | null,
+		tileMatrixSet?: WMTSTileMatrixSet | string | null,
+		style?: string,
 
 		color: number | Color,
 		opacity: number,
