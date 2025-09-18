@@ -84,7 +84,7 @@ function rebuildGUI() {
 
 	// initialize the layer settings
 	const layer = capabilities.layers.find( l => l.identifier === params.layer );
-	params.style = layer.styles.find( s => s.isDefault ).identifier;
+	params.style = layer.styles.find( s => s.isDefault )?.identifier || layer.styles[ 0 ].identifier;
 	params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
 
 	// update the ui
