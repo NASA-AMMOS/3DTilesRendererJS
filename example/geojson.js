@@ -126,10 +126,9 @@ function init() {
 	controls = new GlobeControls( scene, camera, renderer.domElement );
 	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
 	controls.enableDamping = true;
-	controls.camera.position.set( 0, 0, 1.75 * 1e7 );
 
 	tiles.ellipsoid
-		.getObjectFrame( 44.4056 * MathUtils.DEG2RAD, 8.9463 * MathUtils.DEG2RAD, 1e7, 0, - Math.PI / 2, 0, camera.matrixWorld, CAMERA_FRAME );
+		.getObjectFrame( 44.36 * MathUtils.DEG2RAD, 8.85 * MathUtils.DEG2RAD, 2 * 1e4, 0, 0.5 + - Math.PI / 2, 0, camera.matrixWorld, CAMERA_FRAME );
 
 	camera.matrixWorld
 		.premultiply( tiles.group.matrixWorld )
