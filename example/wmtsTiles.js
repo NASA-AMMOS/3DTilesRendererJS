@@ -8,6 +8,7 @@ import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTile
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
+const compatibleCRSList = [ 'EPSG:4326', 'EPSG:3857', 'OGC:1.0:GoogleMapsCompatible', 'urn:ogc:def:crs:CRS::84' ];
 
 let controls, scene, renderer;
 let tiles, camera, gui;
@@ -50,9 +51,12 @@ async function updateCapabilities() {
 
 	// use a default overlay
 	let defaultLayer = 'MODIS_Terra_CorrectedReflectance_TrueColor';
+
 	if ( ! capabilities.layers.find( l => l.identifier === defaultLayer ) ) {
 
-		defaultLayer = capabilities.layers[ 0 ].identifier;
+		defaultLayer = capabilities.layers.find( l =>
+			l.tileMatrixSets.some( tms => compatibleCRSList.includes( tms.supportedCRS ) )
+		).identifier;
 
 	}
 
@@ -85,7 +89,7 @@ function rebuildGUI() {
 	// initialize the layer settings
 	const layer = capabilities.layers.find( l => l.identifier === params.layer );
 	params.style = layer.styles.find( s => s.isDefault )?.identifier || layer.styles[ 0 ].identifier;
-	const compatibleTileMatrixSet = layer.tileMatrixSets.find( tms => tms.supportedCRS === 'EPSG:3857' || tms.supportedCRS === 'EPSG:4326' );
+	const compatibleTileMatrixSet = layer.tileMatrixSets.find( tms => compatibleCRSList.includes( tms.supportedCRS ) );
 	params.tileMatrixSet = compatibleTileMatrixSet ? compatibleTileMatrixSet.identifier : layer.tileMatrixSets[ 0 ].identifier;
 
 	// update the ui
