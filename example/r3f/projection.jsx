@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
-import { TilesFadePlugin, CesiumIonOverlay, EnforceNonZeroErrorPlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, EnforceNonZeroErrorPlugin, GeoJSONOverlay } from '3d-tiles-renderer/plugins';
 import { BoxGeometry, EdgesGeometry, Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { PivotControls } from '@react-three/drei';
 import { ImageOverlay, ImageOverlayPlugin } from './plugins/ImageOverlayPlugin.jsx';
@@ -10,6 +10,26 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
+
+// construct a shape via geojson
+const shape = [];
+for ( let i = 0; i < 100; i ++ ) {
+
+	const x = Math.sin( Math.PI * 2 * i / 100 );
+	const y = Math.cos( Math.PI * 2 * i / 100 );
+	const len = Math.sin( 10 * 2 * Math.PI * i / 100 ) * 10 + 75;
+
+	shape.push( [ x * len, y * len ] );
+
+}
+
+const geojson = {
+	type: 'Feature',
+	geometry: {
+		type: 'Polygon',
+		coordinates: [ shape ],
+	},
+};
 
 function Scene() {
 
@@ -74,13 +94,15 @@ function Scene() {
 
 			{/* 3D Tiles renderer tileset */}
 			<group rotation-x={ Math.PI / 2 }>
-				<TilesRenderer url={ tilesetUrl }>
+				<TilesRenderer url={ tilesetUrl } errorTarget={ 6 }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 					<ImageOverlayPlugin>
 						<ImageOverlay
-							type={ CesiumIonOverlay }
-							assetId='3954'
-							apiToken={ import.meta.env.VITE_ION_KEY }
+							type={ GeoJSONOverlay }
+							geojson={ geojson }
+							color={ 'red' }
+							strokeWidth={ 10 }
+							fillStyle={ 'rgba( 255, 255, 255, 0.25 )' }
 							worldToProjection={ worldToProjectionMatrix }
 							ref={ setOverlay }
 						/>

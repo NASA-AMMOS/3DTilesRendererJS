@@ -1,7 +1,7 @@
 import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils } from 'three';
 import { TilesRenderer, GlobeControls, CAMERA_FRAME } from '3d-tiles-renderer';
 import {
-	GeoJSONTilesOverlay,
+	GeoJSONOverlay,
 	ImageOverlayPlugin,
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
@@ -110,7 +110,7 @@ function init() {
 	// ImageOverlayPlugin must use same resolution as tileDimension for best results
 	const overlayPlugin = new ImageOverlayPlugin( {
 		overlays: [
-			new GeoJSONTilesOverlay( {
+			new GeoJSONOverlay( {
 				geojson: geojson, // pass the feature collection directly
 				color: '#e91e63',
 

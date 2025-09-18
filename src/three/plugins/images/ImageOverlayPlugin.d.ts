@@ -38,7 +38,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 }
 
-export class GeoJSONTilesOverlay extends ImageOverlay {
+export class GeoJSONOverlay extends ImageOverlay {
 
 	constructor( options: {
 		// rasterize GeoJSON per tile (forwarded to GeoJSONImageSource)

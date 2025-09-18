@@ -6,7 +6,6 @@ import { XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
-import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
@@ -72,19 +71,6 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 			style,
 			dimensions
 		} );
-
-	}
-
-}
-
-export class GeoJSONTilesPlugin extends EllipsoidProjectionTilesPlugin {
-
-	constructor( options = {} ) {
-
-		super( options );
-
-		this.name = 'GEOJSON_TILES_PLUGIN';
-		this.imageSource = new GeoJSONImageSource( options );
 
 	}
 

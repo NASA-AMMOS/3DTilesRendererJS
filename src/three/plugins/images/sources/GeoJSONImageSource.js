@@ -17,7 +17,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 		pointRadius = 6,
 		strokeStyle = 'white',
 		strokeWidth = 2,
-		fillStyle = 'rgba( 255, 255, 255, 0.65 )',
+		fillStyle = 'rgba( 255, 255, 255, 0.5 )',
 	} = {} ) {
 
 		super();
