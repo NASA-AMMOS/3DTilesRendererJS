@@ -85,7 +85,8 @@ function rebuildGUI() {
 	// initialize the layer settings
 	const layer = capabilities.layers.find( l => l.identifier === params.layer );
 	params.style = layer.styles.find( s => s.isDefault )?.identifier || layer.styles[ 0 ].identifier;
-	params.tileMatrixSet = layer.tileMatrixSets[ 0 ].identifier;
+	const compatibleTileMatrixSet = layer.tileMatrixSets.find( tms => tms.supportedCRS === 'EPSG:3857' || tms.supportedCRS === 'EPSG:4326' );
+	params.tileMatrixSet = compatibleTileMatrixSet ? compatibleTileMatrixSet.identifier : layer.tileMatrixSets[ 0 ].identifier;
 
 	// update the ui
 	const abstract = capabilities.serviceIdentification.abstract;
