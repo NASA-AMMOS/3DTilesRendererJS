@@ -112,6 +112,7 @@ function init() {
 		overlays: [
 			new GeoJSONTilesOverlay( {
 				geojson: geojson, // pass the feature collection directly
+				color: '#e91e63',
 
 				// TODO: it is slow as it is heavy, could this be used to reference for optimization?
 				// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
