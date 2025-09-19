@@ -308,12 +308,18 @@ export class GeoJSONImageSource extends TiledImageSource {
 		} else if ( type === 'LineString' ) {
 
 			ctx.beginPath();
-
 			geometry.coordinates.forEach( ( [ lon, lat ], i ) => {
 
 				const [ px, py ] = projectPoint( lon, lat );
-				if ( i === 0 ) ctx.moveTo( px, py );
-				else ctx.lineTo( px, py );
+				if ( i === 0 ) {
+
+					ctx.moveTo( px, py );
+
+				} else {
+
+					ctx.lineTo( px, py );
+
+				}
 
 			} );
 
@@ -321,58 +327,78 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		} else if ( type === 'MultiLineString' ) {
 
+			ctx.beginPath();
 			geometry.coordinates.forEach( ( line ) => {
 
-				ctx.beginPath();
 				line.forEach( ( [ lon, lat ], i ) => {
 
 					const [ px, py ] = projectPoint( lon, lat );
-					if ( i === 0 ) ctx.moveTo( px, py );
-					else ctx.lineTo( px, py );
+					if ( i === 0 ) {
+
+						ctx.moveTo( px, py );
+
+					} else {
+
+						ctx.lineTo( px, py );
+
+					}
 
 				} );
-				ctx.stroke();
 
 			} );
+			ctx.stroke();
 
 		} else if ( type === 'Polygon' ) {
 
+			ctx.beginPath();
 			geometry.coordinates.forEach( ( ring, rIndex ) => {
 
-				ctx.beginPath();
 				ring.forEach( ( [ lon, lat ], i ) => {
 
 					const [ px, py ] = projectPoint( lon, lat );
-					if ( i === 0 ) ctx.moveTo( px, py );
-					else ctx.lineTo( px, py );
+					if ( i === 0 ) {
+
+						ctx.moveTo( px, py );
+
+					} else {
+
+						ctx.lineTo( px, py );
+
+					}
 
 				} );
 				ctx.closePath();
-				// fill only outer ring
-				if ( rIndex === 0 ) ctx.fill();
-				ctx.stroke();
 
 			} );
+			ctx.fill( 'evenodd' );
+			ctx.stroke();
 
 		} else if ( type === 'MultiPolygon' ) {
 
 			geometry.coordinates.forEach( ( polygon ) => {
 
+				ctx.beginPath();
 				polygon.forEach( ( ring, rIndex ) => {
 
-					ctx.beginPath();
 					ring.forEach( ( [ lon, lat ], i ) => {
 
 						const [ px, py ] = projectPoint( lon, lat );
-						if ( i === 0 ) ctx.moveTo( px, py );
-						else ctx.lineTo( px, py );
+						if ( i === 0 ) {
+
+							ctx.moveTo( px, py );
+
+						} else {
+
+							ctx.lineTo( px, py );
+
+						}
 
 					} );
 					ctx.closePath();
-					if ( rIndex === 0 ) ctx.fill();
-					ctx.stroke();
 
 				} );
+				ctx.fill( 'evenodd' );
+				ctx.stroke();
 
 			} );
 
