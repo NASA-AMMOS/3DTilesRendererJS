@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - LoadRegionPlugin: Added support for "mask" regions that allow for only loading tiles within the shape.
 - Added WMSTilesOverlay & WMSTilesPlugin for displaying and overlaying WMS image tiles.
 - I3DMLoader: Add support for quantized position data.
-- Added in-progress "GeoJSONTilesPlugin" & "GeoJSONTilesOverlay" for overlaying GeoJSON data.
+- Added in-progress "GeoJSONOverlay" for overlaying GeoJSON data.
 
 ### Fixed
 - Fixed types not being defined correctly in the package.json.
+- ImageOverlays: Fixed case where overlay textures were generated even when no content was present.
 
 ## [0.4.16] - 2025.09.10
 ### Fixed
