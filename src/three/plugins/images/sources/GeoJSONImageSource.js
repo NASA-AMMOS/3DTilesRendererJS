@@ -1,12 +1,32 @@
-import { CanvasTexture, MathUtils } from 'three';
+import { CanvasTexture, MathUtils, Vector3 } from 'three';
 import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
+import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
 // TODO: Add support for limited bounds
 // TODO: Add support for padding of tiles to avoid clipping "wide" elements
-// TODO: Scale points ellipse radii based on localized lat / lon distortion to preserve a circular appearance
 // TODO: Need to clip / fix geojson shapes across the 180 degree boundary
 // TODO: Add support for easy regeneration when colors / styles / geojson change
+// TODO: Consider option to support world-space thickness definitions. Eg world-space point size or line thickness in meters.
+
+// function for calculating the the change in arc length at a given cartographic point
+// in order to preserve a circular look when drawing points
+const _v0 = /* @__PURE__ */ new Vector3();
+const _v1 = /* @__PURE__ */ new Vector3();
+function calculateArcRatioAtPoint( ellipsoid, lat, lon ) {
+
+	const DELTA = 0.01;
+	ellipsoid.getCartographicToPosition( lat, lon, 0, _v0 );
+	ellipsoid.getCartographicToPosition( lat + DELTA, lon, 0, _v1 );
+
+	const latDelta = _v0.distanceTo( _v1 );
+	ellipsoid.getCartographicToPosition( lat, lon + DELTA, 0, _v1 );
+
+	const lonDelta = _v0.distanceTo( _v1 );
+	return lonDelta / latDelta;
+
+}
+
 export class GeoJSONImageSource extends TiledImageSource {
 
 	constructor( {
@@ -218,6 +238,7 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		}
 
+		const [ minLonDeg, minLatDeg, maxLonDeg, maxLatDeg ] = tileBoundsDeg;
 		const strokeStyle = properties.strokeStyle || this.strokeStyle;
 		const fillStyle = properties.fillStyle || this.fillStyle;
 		const pointRadius = properties.pointRadius || this.pointRadius;
@@ -232,11 +253,9 @@ export class GeoJSONImageSource extends TiledImageSource {
 		const arr = new Array( 2 );
 		const projectPoint = ( lon, lat, target = arr ) => {
 
-			const [ minX, minY, maxX, maxY ] = tileBoundsDeg;
-
 			// canvas y origin is top, projection y increases north -> flip
-			const x = MathUtils.mapLinear( lon, minX, maxX, 0, width );
-			const y = height - MathUtils.mapLinear( lat, minY, maxY, 0, height );
+			const x = MathUtils.mapLinear( lon, minLonDeg, maxLonDeg, 0, width );
+			const y = height - MathUtils.mapLinear( lat, minLatDeg, maxLatDeg, 0, height );
 
 			// round to integer to gain performance
 			// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#avoid_floating-point_coordinates_and_use_integers_instead
@@ -246,24 +265,43 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		};
 
-		const type = geometry.type;
+		const calculateAspectRatio = ( lon, lat ) => {
 
+			// calculates the aspect ratio with which to draw points
+			const latRad = lat * MathUtils.DEG2RAD;
+			const lonRad = lon * MathUtils.DEG2RAD;
+			const pxLat = ( maxLatDeg - minLatDeg ) / height;
+			const pxLon = ( maxLonDeg - minLonDeg ) / width;
+			const pixelRatio = pxLon / pxLat;
+
+			// TODO: this should use the ellipsoid defined on the relevant tiles renderer
+			return pixelRatio * calculateArcRatioAtPoint( WGS84_ELLIPSOID, latRad, lonRad );
+
+		};
+
+		const type = geometry.type;
 		if ( type === 'Point' ) {
 
 			const [ lon, lat ] = geometry.coordinates;
 			const [ px, py ] = projectPoint( lon, lat );
+			const drawRatio = calculateAspectRatio( lon, lat );
+
 			ctx.beginPath();
-			ctx.ellipse( px, py, pointRadius, pointRadius, 0, 0, Math.PI * 2 );
+			ctx.ellipse( px, py, pointRadius / drawRatio, pointRadius, 0, 0, Math.PI * 2 );
 			ctx.fill();
+			ctx.stroke();
 
 		} else if ( type === 'MultiPoint' ) {
 
 			geometry.coordinates.forEach( ( [ lon, lat ] ) => {
 
 				const [ px, py ] = projectPoint( lon, lat );
+				const drawRatio = calculateAspectRatio( lon, lat );
+
 				ctx.beginPath();
-				ctx.ellipse( px, py, pointRadius, pointRadius, 0, 0, Math.PI * 2 );
+				ctx.ellipse( px, py, pointRadius / drawRatio, pointRadius, 0, 0, Math.PI * 2 );
 				ctx.fill();
+				ctx.stroke();
 
 			} );
 
