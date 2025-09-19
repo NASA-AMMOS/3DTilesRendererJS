@@ -207,7 +207,7 @@ function parseBoundingBox( el ) {
 
 	}
 
-	let crs = el.getAttribute( 'crs' );
+	let crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
@@ -244,7 +244,7 @@ function parseBoundingBox( el ) {
 // parse layer <Style> tag
 function parseStyle( el ) {
 
-	const title = el.querySelector( 'Title' ).textContent;
+	const title = el.querySelector( 'Title' )?.textContent || null;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const isDefault = el.getAttribute( 'isDefault' ) === 'true';
 
