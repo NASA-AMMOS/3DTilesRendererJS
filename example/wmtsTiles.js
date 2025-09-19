@@ -8,7 +8,7 @@ import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTile
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
-const compatibleCRSList = [ 'EPSG:4326', 'EPSG:3857', 'OGC:1.0:GoogleMapsCompatible', 'urn:ogc:def:crs:CRS::84' ];
+const compatibleCRSList = [ 'EPSG:4326', 'EPSG:3857' ];
 
 let controls, scene, renderer;
 let tiles, camera, gui;
