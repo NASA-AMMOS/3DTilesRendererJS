@@ -64,13 +64,8 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		// seems that this approach to optimize rendering by defining bounds
 		// doesn't work if not using a very large offset for the bounds, maybe an error?
-		// const geoBounds = this._geoJSONBounds( 50 );
-		// if ( geoBounds ) {
-		// 	this.tiling.setContentBounds( ...geoBounds );
-		// 	console.log( `GeoJSONImageSource: set content bounds from geojson: ${geoBounds}` );
-		// } else {
-		// 	this.tiling.setContentBounds( ...this.tiling.projection.getBounds() );
-		// }
+		const geoBounds = this._geoJSONBounds( 50 ).map( v => v * MathUtils.DEG2RAD );
+		this.tiling.setContentBounds( ...geoBounds );
 
 	}
 
