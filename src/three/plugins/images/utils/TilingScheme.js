@@ -1,5 +1,14 @@
 import { MathUtils } from 'three';
 
+function doBoundsIntersect( a, b ) {
+
+	const [ aMinX, aMinY, aMaxX, aMaxY ] = a;
+	const [ bMinX, bMinY, bMaxX, bMaxY ] = b;
+
+	return ! ( aMinX >= bMaxX || aMaxX <= bMinX || aMinY >= bMaxY || aMaxY <= bMinY );
+
+}
+
 // Class for storing and querying a tiling scheme including a bounds, origin, and negative tile indices.
 // Assumes that tiles are split into four child tiles at each level.
 
@@ -199,10 +208,36 @@ export class TilingScheme {
 
 	getTilesInRange( minX, minY, maxX, maxY, level, normalized = false ) {
 
-		[ minX, minY, maxX, maxY ] = this.clampToContentBounds( [ minX, minY, maxX, maxY ], normalized );
+		// check if the range is outside the content bounds
+		const range = [ minX, minY, maxX, maxY ];
+		const contentBounds = this.getContentBounds( normalized );
+		let tileBounds = this.getLevel( level ).tileBounds;
+		if ( ! doBoundsIntersect( range, contentBounds ) ) {
 
-		const minTile = this.getTileAtPoint( minX, minY, level, normalized );
-		const maxTile = this.getTileAtPoint( maxX, maxY, level, normalized );
+			return [ 0, 0, - 1, - 1 ];
+
+		}
+
+		// check if the range is outside the tile bounds
+		if ( tileBounds ) {
+
+			if ( normalized ) {
+
+				tileBounds = this.toNormalizedRange( tileBounds );
+
+			}
+
+			if ( ! doBoundsIntersect( range, contentBounds ) ) {
+
+				return [ 0, 0, - 1, - 1 ];
+
+			}
+
+		}
+
+		const [ clampedMinX, clampedMinY, clampedMaxX, clampedMaxY ] = this.clampToContentBounds( range, normalized );
+		const minTile = this.getTileAtPoint( clampedMinX, clampedMinY, level, normalized );
+		const maxTile = this.getTileAtPoint( clampedMaxX, clampedMaxY, level, normalized );
 
 		if ( this.flipY ) {
 

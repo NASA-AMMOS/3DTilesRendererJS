@@ -1,7 +1,7 @@
 import { TilingScheme } from '../src/three/plugins/images/utils/TilingScheme.js';
 import { ProjectionScheme } from '../src/three/plugins/images/utils/ProjectionScheme.js';
 
-describe( 'TiltingScheme', () => {
+describe( 'TilingScheme', () => {
 
 	it( 'should allow for automatically building levels.', () => {
 
@@ -120,6 +120,38 @@ describe( 'TiltingScheme', () => {
 		expect( scheme.getTileAtPoint( 0.9, 0.75, 0 ) ).toEqual( [ 3, 1 ] );
 		expect( scheme.getTileAtPoint( 1.1, 0, 0 ) ).toEqual( [ 4, 7 ] );
 		expect( scheme.getTileAtPoint( 1.13, - 0.1, 0 ) ).toEqual( [ 5, 8 ] );
+
+	} );
+
+	if ( 'should report an empty set of tiles if the requested range is outside the level tile bounds.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 4,
+			tileCountY: 4,
+			tileBounds: [ 0.5, 0.5, 1.5, 1.5 ],
+		} );
+
+		expect( scheme.getTilesInRange( 0, 0, 0.25, 0.25, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 1.75, 1.75, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 0, 1.75, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 1.75, 0, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+
+	} );
+
+	if ( 'should report an empty set of tiles if the requested range is outside the tiling scheme content bounds.', () => {
+
+		const scheme = new TilingScheme();
+		scheme.setContentBounds( 0.5, 0.5, 1.5, 1.5 );
+		scheme.setLevel( 0, {
+			tileCountX: 4,
+			tileCountY: 4,
+		} );
+
+		expect( scheme.getTilesInRange( 0, 0, 0.25, 0.25, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 1.75, 1.75, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 0, 1.75, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
+		expect( scheme.getTilesInRange( 1.75, 0, 2, 2, 0 ) ).toEqual( [ 0, 0, - 1, - 1 ] );
 
 	} );
 
