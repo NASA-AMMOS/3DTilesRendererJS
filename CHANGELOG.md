@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fixed types not being defined correctly in the package.json.
 - ImageOverlays: Fixed case where overlay textures were generated even when no content was present.
+- TilesRenderer.manager checking for a non existent "preprocessURL" function when transforming a URL.
 
 ## [0.4.16] - 2025.09.10
 ### Fixed
