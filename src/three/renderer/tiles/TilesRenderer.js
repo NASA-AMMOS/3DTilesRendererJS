@@ -97,21 +97,7 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
 
-		const manager = new LoadingManager();
-		manager.setURLModifier( url => {
-
-			if ( this.preprocessURL ) {
-
-				return this.preprocessURL( url );
-
-			} else {
-
-				return url;
-
-			}
-
-		} );
-		this.manager = manager;
+		this.manager = new LoadingManager();
 
 		// saved for event dispatcher functions
 		this._listeners = {};
