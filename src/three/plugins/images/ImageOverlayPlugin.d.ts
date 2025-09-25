@@ -84,7 +84,7 @@ export class WMTSTilesOverlay extends ImageOverlay {
 
 	constructor( options: {
 		dimensions?: { [ key: string ]: any } | null,
-		url: string,
+		url?: string | null,
 		capabilities?: WMTSCapabilitiesResult | null,
 		layer?: WMTSLayer | string | null,
 		tileMatrixSet?: WMTSTileMatrixSet | string | null,
