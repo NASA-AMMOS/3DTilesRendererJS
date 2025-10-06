@@ -1,16 +1,7 @@
 import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import * as THREE from 'three';
+import { TextureUtils } from 'three';
 
 export function safeTextureGetByteLength( tex ) {
-
-	// NOTE: This is for backwards compatibility and should be removed later
-	// deprecated: remove in next major release
-	const { TextureUtils } = THREE;
-	if ( ! TextureUtils || ! tex ) {
-
-		return 0;
-
-	}
 
 	const { format, type, image } = tex;
 	const { width, height } = image;
