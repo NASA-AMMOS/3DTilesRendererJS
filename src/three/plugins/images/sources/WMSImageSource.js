@@ -140,7 +140,6 @@ export class WMSImageSource extends TiledImageSource {
 			REQUEST: 'GetMap',
 			VERSION: version,
 			LAYERS: layer,
-			STYLES: styles,
 			[ crsParam ]: crs,
 			BBOX: bboxParam.join( ',' ),
 			WIDTH: tileDimension,
@@ -148,6 +147,14 @@ export class WMSImageSource extends TiledImageSource {
 			FORMAT: format,
 			TRANSPARENT: transparent ? 'TRUE' : 'FALSE',
 		} );
+
+		// Only add STYLES if it's defined (not null or undefined)
+		// This is a WMS-specific parameter, and giving it an unexpected value can lead to errors
+		if ( styles !== null && styles !== undefined ) {
+
+			params.set( 'STYLES', styles );
+
+		}
 
 		return new URL( '?' + params.toString(), this.url ).toString();
 
