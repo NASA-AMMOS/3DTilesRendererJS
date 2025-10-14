@@ -35,7 +35,7 @@ body:
     id: example
     attributes:
       label: Live example
-      description: Link to [jsfiddle](https://jsfiddle.net/) or [codesandbox](https://codesandbox.io/) demonstrating the bug.
+      description: Link to [jsfiddle](https://jsfiddle.net/) or other sandbox demonstrating the bug.
       value: <!--
 
         - tile set template - https://jsfiddle.net/am1r23pg/
