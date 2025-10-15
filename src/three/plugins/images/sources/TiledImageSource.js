@@ -1,7 +1,6 @@
 import { DataCache } from '../utils/DataCache.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
-import { SRGBColorSpace, Texture } from 'three';
-import * as THREE from 'three';
+import { SRGBColorSpace, Texture, TextureUtils } from 'three';
 
 // TODO: support queries for detail at level - ie projected pixel size for geometric error mapping
 // Goes here or in "TilingScheme"?
@@ -38,14 +37,6 @@ export class TiledImageSource extends DataCache {
 	}
 
 	getMemoryUsage( tex ) {
-
-		// deprecated: remove in next major release
-		const { TextureUtils } = THREE;
-		if ( ! TextureUtils ) {
-
-			return 0;
-
-		}
 
 		const { format, type, image, generateMipmaps } = tex;
 		const { width, height } = image;
