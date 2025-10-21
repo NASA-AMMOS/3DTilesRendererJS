@@ -15,4 +15,4 @@ export * from './math/TileBoundingVolume.js';
 // three.js controls
 export { GlobeControls } from './controls/GlobeControls.js';
 export { EnvironmentControls } from './controls/EnvironmentControls.js';
-export { CameraTransitionManager } from './controls/CameraTransitionManager.js';
+export { CameraTransitionManager, CameraTransitionManagerEventMap } from './controls/CameraTransitionManager.js';
