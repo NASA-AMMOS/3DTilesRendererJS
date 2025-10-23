@@ -961,7 +961,8 @@ export class ImageOverlayPlugin {
 	_initOverlay( overlay ) {
 
 		const { tiles } = this;
-		overlay.imageSource.fetchOptions = tiles.fetchOptions;
+		overlay.imageSource.fetchOptions = overlay.fetchOptions;
+
 		if ( ! overlay.isInitialized ) {
 
 			overlay.imageSource.fetchData = ( ...args ) => tiles
@@ -1407,8 +1408,12 @@ class ImageOverlay {
 			opacity = 1,
 			color = 0xffffff,
 			frame = null,
+			fetchOptions = {},
+			preprocessURL = null,
 		} = options;
 		this.imageSource = null;
+		this.fetchOptions = fetchOptions;
+		this.preprocessURL = preprocessURL;
 		this.opacity = opacity;
 		this.color = new Color( color );
 		this.frame = frame !== null ? frame.clone() : null;
@@ -1428,9 +1433,17 @@ class ImageOverlay {
 
 	}
 
-	fetch( ...args ) {
+	// Apply proxy prefix and merge options
+	fetch( url, options = {} ) {
 
-		return fetch( ...args );
+		if ( this.preprocessURL ) {
+
+			url = this.preprocessURL( url );
+
+		}
+
+		const finalOptions = { ...this.fetchOptions, ...options };
+		return fetch( url, finalOptions );
 
 	}
 
