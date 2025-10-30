@@ -1403,13 +1403,13 @@ class ImageOverlay {
 
 	get fetchOptions() {
 
-		return this.imageSource.fetchOptions; 
+		return this.imageSource.fetchOptions;
 
 	}
 
 	set fetchOptions( v ) {
 
-		this.imageSource.fetchOptions = v; 
+		this.imageSource.fetchOptions = v;
 
 	}
 
@@ -1419,11 +1419,10 @@ class ImageOverlay {
 			opacity = 1,
 			color = 0xffffff,
 			frame = null,
-			fetchOptions = {}, // pass fetchOptions to the image source
 			preprocessURL = null,
 		} = options;
-		this.imageSource = null
-		
+		this.imageSource = null;
+
 		this.preprocessURL = preprocessURL;
 		this.opacity = opacity;
 		this.color = new Color( color );
@@ -1529,10 +1528,9 @@ export class WMSTilesOverlay extends ImageOverlay {
 	constructor( options = {} ) {
 
 		super( options );
-		
 		this.imageSource = new WMSImageSource( options );
 
-		if (options.fetchOptions) {
+		if ( options.fetchOptions ) {
 
 			this.imageSource.fetchOptions = options.fetchOptions;
 
