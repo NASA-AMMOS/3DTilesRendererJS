@@ -961,7 +961,6 @@ export class ImageOverlayPlugin {
 	_initOverlay( overlay ) {
 
 		const { tiles } = this;
-		overlay.imageSource.fetchOptions = overlay.fetchOptions;
 
 		if ( ! overlay.isInitialized ) {
 
@@ -1402,17 +1401,29 @@ class ImageOverlay {
 
 	}
 
+	get fetchOptions() {
+
+		return this.imageSource.fetchOptions; 
+
+	}
+
+	set fetchOptions( v ) {
+
+		this.imageSource.fetchOptions = v; 
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
 			opacity = 1,
 			color = 0xffffff,
 			frame = null,
-			fetchOptions = {},
+			fetchOptions = {}, // pass fetchOptions to the image source
 			preprocessURL = null,
 		} = options;
-		this.imageSource = null;
-		this.fetchOptions = fetchOptions;
+		this.imageSource = null
+		
 		this.preprocessURL = preprocessURL;
 		this.opacity = opacity;
 		this.color = new Color( color );
@@ -1442,8 +1453,7 @@ class ImageOverlay {
 
 		}
 
-		const finalOptions = { ...this.fetchOptions, ...options };
-		return fetch( url, finalOptions );
+		return fetch( url, options );
 
 	}
 
@@ -1519,7 +1529,15 @@ export class WMSTilesOverlay extends ImageOverlay {
 	constructor( options = {} ) {
 
 		super( options );
+		
 		this.imageSource = new WMSImageSource( options );
+
+		if (options.fetchOptions) {
+
+			this.imageSource.fetchOptions = options.fetchOptions;
+
+		}
+
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
 	}
