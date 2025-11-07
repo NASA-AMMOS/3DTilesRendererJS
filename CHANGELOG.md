@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Added and fixed some types.
 - Removed referenced to `TextureUtils` which was causing tree shaking issues.
+- XYZ Tiles Plugins: Removed unused "bounds" argument.
 
 ## [0.4.17] - 2025.09.27
 ### Added
