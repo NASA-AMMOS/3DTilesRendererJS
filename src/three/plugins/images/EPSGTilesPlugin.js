@@ -15,7 +15,6 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		const {
 			levels,
 			tileDimension,
-			bounds,
 			url,
 			...rest
 		} = options;
@@ -23,7 +22,7 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		super( rest );
 
 		this.name = 'XYZ_TILES_PLUGIN';
-		this.imageSource = new XYZImageSource( { url, levels, tileDimension, bounds } );
+		this.imageSource = new XYZImageSource( { url, levels, tileDimension } );
 
 	}
 

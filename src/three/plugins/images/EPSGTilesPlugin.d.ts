@@ -7,7 +7,6 @@ export class XYZTilesPlugin {
 		levels?: number,
 		tileDimension?: number,
 		shape?: 'ellipsoid' | 'planar',
-		bounds?: [ number, number, number, number ],
 		useRecommendedSettings?: boolean,
 		url?: string,
 	} );

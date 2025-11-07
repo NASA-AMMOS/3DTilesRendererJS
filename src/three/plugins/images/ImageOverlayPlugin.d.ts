@@ -30,7 +30,6 @@ export class XYZTilesOverlay extends ImageOverlay {
 		levels: number,
 		dimension: number,
 		url: string,
-		bounds?: [ number, number, number, number ],
 
 		color: number | Color,
 		opacity: number,
