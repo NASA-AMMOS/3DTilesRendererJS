@@ -1529,13 +1529,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 
 		super( options );
 		this.imageSource = new WMSImageSource( options );
-
-		if ( options.fetchOptions ) {
-
-			this.imageSource.fetchOptions = options.fetchOptions;
-
-		}
-
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
 	}

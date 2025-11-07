@@ -7,11 +7,16 @@ import * as THREE from 'three';
 // Goes here or in "TilingScheme"?
 export class TiledImageSource extends DataCache {
 
-	constructor() {
+	constructor( options = {} ) {
 
 		super();
+
+		const {
+			fetchOptions = {}
+		} = options;
+
 		this.tiling = new TilingScheme();
-		this.fetchOptions = {};
+		this.fetchOptions = fetchOptions;
 		this.fetchData = ( ...args ) => fetch( ...args );
 
 	}

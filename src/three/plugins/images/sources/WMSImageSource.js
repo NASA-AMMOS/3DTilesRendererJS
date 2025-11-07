@@ -18,9 +18,10 @@ export class WMSImageSource extends TiledImageSource {
 			transparent = false,
 			levels = 18,
 			tileDimension = 256,
+			...rest
 		} = options;
 
-		super();
+		super( rest );
 		this.url = url;
 		this.layer = layer;
 		this.crs = crs;

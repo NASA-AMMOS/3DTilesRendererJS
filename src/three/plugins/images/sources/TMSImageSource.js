@@ -6,9 +6,12 @@ export class TMSImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
 
-		const { url = null } = options;
+		const {
+			url = null,
+			...rest
+		} = options;
 
-		super();
+		super( rest );
 
 		this.tileSets = null;
 		this.extension = null;
