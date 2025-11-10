@@ -73,23 +73,15 @@ export class BatchedTilesPlugin {
 
 	}
 
-	// init the batched mesh if it's not ready
-	initBatchedMesh( target ) {
+	initTextureArray( target ) {
 
-		if ( this.batchedMesh !== null ) {
+		if ( this.arrayTarget !== null || target.material.map === null ) {
 
 			return;
 
 		}
 
-		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles, renderer, textureSize } = this;
-		const material = this.material ? this.material : new target.material.constructor();
-		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
-		batchedMesh.name = 'BatchTilesPlugin';
-		batchedMesh.frustumCulled = false;
-		tiles.group.add( batchedMesh );
-		batchedMesh.updateMatrixWorld();
+		const { instanceCount, renderer, textureSize, batchedMesh } = this;
 
 		// init the array texture render target
 		const map = target.material.map;
@@ -108,11 +100,45 @@ export class BatchedTilesPlugin {
 		Object.assign( arrayTarget.texture, textureOptions );
 		renderer.initRenderTarget( arrayTarget );
 
-		// init the material
-		material.map = arrayTarget.texture;
-		convertMapToArrayTexture( material );
+		// assign the material
+		batchedMesh.material.map = arrayTarget.texture;
 
 		this.arrayTarget = arrayTarget;
+
+		// once the texture array is initialized we fill in textures for all previously-initialized instances
+		// since they may have been skipped due to not having textures
+		this._tileToInstanceId.forEach( value => {
+
+			value.forEach( id => {
+
+				this.assignTextureToLayer( _whiteTex, id );
+
+			} );
+
+		} );
+
+	}
+
+	// init the batched mesh if it's not ready
+	initBatchedMesh( target ) {
+
+		if ( this.batchedMesh !== null ) {
+
+			return;
+
+		}
+
+		// init the batched mesh
+		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const material = this.material ? this.material : new target.material.constructor();
+		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
+		batchedMesh.name = 'BatchTilesPlugin';
+		batchedMesh.frustumCulled = false;
+		tiles.group.add( batchedMesh );
+		batchedMesh.updateMatrixWorld();
+
+		convertMapToArrayTexture( batchedMesh.material );
+
 		this.batchedMesh = batchedMesh;
 
 	}
@@ -180,6 +206,7 @@ export class BatchedTilesPlugin {
 	// render the given into the given layer
 	assignTextureToLayer( texture, layer ) {
 
+		// if the array target has not been created yet then skip the assignment and expansion
 		if ( ! this.arrayTarget ) {
 
 			return;
@@ -209,12 +236,6 @@ export class BatchedTilesPlugin {
 	expandArrayTargetIfNeeded() {
 
 		const { batchedMesh, arrayTarget, renderer } = this;
-		if ( arrayTarget === null ) {
-
-			return;
-
-		}
-
 		const targetDepth = Math.min( batchedMesh.maxInstanceCount, this.maxInstanceCount );
 		if ( targetDepth > arrayTarget.depth ) {
 
