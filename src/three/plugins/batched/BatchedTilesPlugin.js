@@ -180,6 +180,12 @@ export class BatchedTilesPlugin {
 	// render the given into the given layer
 	assignTextureToLayer( texture, layer ) {
 
+		if ( ! this.arrayTarget ) {
+
+			return;
+
+		}
+
 		this.expandArrayTargetIfNeeded();
 
 		const { renderer } = this;
@@ -203,6 +209,12 @@ export class BatchedTilesPlugin {
 	expandArrayTargetIfNeeded() {
 
 		const { batchedMesh, arrayTarget, renderer } = this;
+		if ( arrayTarget === null ) {
+
+			return;
+
+		}
+
 		const targetDepth = Math.min( batchedMesh.maxInstanceCount, this.maxInstanceCount );
 		if ( targetDepth > arrayTarget.depth ) {
 
@@ -297,9 +309,12 @@ export class BatchedTilesPlugin {
 			scene.updateMatrixWorld();
 
 			const instanceIds = [];
+			this._tileToInstanceId.set( tile, instanceIds );
+
 			meshes.forEach( mesh => {
 
 				this.initBatchedMesh( mesh );
+				this.initTextureArray( mesh );
 
 				const { geometry, material } = mesh;
 				const { batchedMesh, expandPercent } = this;
@@ -333,7 +348,6 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			this._tileToInstanceId.set( tile, instanceIds );
 
 			// discard all data if the option is set
 			// TODO: this would be best done in a more general way
