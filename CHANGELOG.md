@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added and fixed some types.
 - Removed referenced to `TextureUtils` which was causing tree shaking issues.
 - XYZ Tiles Plugins: Removed unused "bounds" argument.
+- BatchedTilesPlugin: Fix case where the plugin would throw an error if a mesh with no texture were encountered first.
 
 ## [0.4.17] - 2025.09.27
 ### Added
