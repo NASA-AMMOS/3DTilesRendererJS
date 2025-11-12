@@ -50,7 +50,7 @@ function resetFrameState( tile, renderer ) {
 		tile.__active = false;
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
-		tile.__allChildrenLoaded = false;
+		tile.__allChildrenReady = false;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -264,7 +264,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
-		let allChildrenLoaded = true;
+		let allChildrenReady = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
@@ -290,15 +290,15 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 				// Only the consider the child ready to display if the geometric error is smaller than
 				// the parent or all of its children are ready
-				isChildReady = childCanDisplay && isChildReady || c.__allChildrenLoaded;
+				isChildReady = childCanDisplay && isChildReady || c.__allChildrenReady;
 
-				allChildrenLoaded = allChildrenLoaded && isChildReady;
+				allChildrenReady = allChildrenReady && isChildReady;
 
 			}
 
 		}
 
-		tile.__allChildrenLoaded = allChildrenLoaded;
+		tile.__allChildrenReady = allChildrenReady;
 
 	}
 
@@ -350,7 +350,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tile set has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenLoaded = tile.__allChildrenLoaded || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
+	const allChildrenReady = tile.__allChildrenReady || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( hasContent && ( meetsSSE || isAdditiveRefine ) ) {
@@ -364,7 +364,7 @@ export function markVisibleTiles( tile, renderer ) {
 	// to display in addition to the children.
 
 	// Skip the tile entirely if there's no content to load
-	if ( meetsSSE && loadedContent && ! allChildrenLoaded || loadedContent && isAdditiveRefine ) {
+	if ( meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine ) {
 
 		if ( tile.__inFrustum ) {
 
@@ -379,7 +379,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenLoaded ) {
+	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenReady ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
