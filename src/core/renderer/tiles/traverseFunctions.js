@@ -219,7 +219,7 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ( tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
+	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -266,17 +266,29 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				// consider a child to be loaded if
+				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
+				// If the error is larger than the parent then we should never display this tile. If it's the geometric error is the same
+				// as the parent and the child has content then we can display it.
+				// See issue NASA-AMMOS/3DTilesRendererJS#1304
+				const childCanDisplay =
+					c.__hasRenderableContent && tile.geometricError >= c.geometricError ||
+					! c.__hasRenderableContent && tile.geometricError > c.geometricError;
+
+				// Consider a child to be ready to be displayed if
 				// - the children's children have been loaded
 				// - the tile content has loaded
 				// - the tile is completely empty - ie has no children and no content
 				// - the child tile set has tried to load but failed
-				const childLoaded =
-					c.__allChildrenLoaded ||
+				let isChildReady =
 					! c.__hasContent ||
 					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
 					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
-				allChildrenLoaded = allChildrenLoaded && childLoaded;
+
+				// Only the consider the child ready to display if the geometric error is smaller than
+				// the parent or all of its children are ready
+				isChildReady = childCanDisplay && isChildReady || c.__allChildrenLoaded;
+
+				allChildrenLoaded = allChildrenLoaded && isChildReady;
 
 			}
 
