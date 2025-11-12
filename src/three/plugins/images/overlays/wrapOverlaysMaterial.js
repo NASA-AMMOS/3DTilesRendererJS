@@ -20,7 +20,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 	material.defines = {
 		...( material.defines || {} ),
 		LAYER_COUNT: 0,
-		Z_EPSILON: 1e-7,
+		W_EPSILON: 1e-7,
 	};
 
 	material.onBeforeCompile = shader => {
@@ -123,8 +123,8 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								// hardware.
 								wDelta = fwidth( layerUV.z );
 								wOpacity =
-									smoothstep( - wDelta, 0.0, layerUV.z + Z_EPSILON ) *
-									smoothstep( 1.0 + wDelta + 1e-7, 1.0, layerUV.z - Z_EPSILON );
+									smoothstep( - wDelta, 0.0, layerUV.z + W_EPSILON ) *
+									smoothstep( 1.0 + wDelta + 1e-7, 1.0, layerUV.z - W_EPSILON );
 
 								// apply tint & opacity
 								tint.rgb *= layerColor[ i ].color;
