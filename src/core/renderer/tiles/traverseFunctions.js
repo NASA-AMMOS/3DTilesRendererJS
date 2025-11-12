@@ -31,6 +31,12 @@ function areChildrenProcessed( tile ) {
 
 }
 
+function canUnconditionallyRefine( tile ) {
+
+	return tile.__hasUnrenderableContent || ( tile.parent && tile.parent.geometricError <= tile.geometricError );
+
+}
+
 // Resets the frame frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
@@ -66,7 +72,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 
 	// don't traverse if the children have not been processed, yet but tile set content
 	// should be considered to be "replaced" by the loaded children so await that here.
-	if ( tile.__hasUnrenderableContent && areChildrenProcessed( tile ) ) {
+	if ( canUnconditionallyRefine( tile ) && areChildrenProcessed( tile ) ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -136,7 +142,7 @@ function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further - if an external tile set is encountered,
 	// though, then continue to refine.
-	if ( tile.__error <= renderer.errorTarget && ! tile.__hasUnrenderableContent ) {
+	if ( tile.__error <= renderer.errorTarget && ! canUnconditionallyRefine( tile ) ) {
 
 		return false;
 
@@ -270,9 +276,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// If the error is larger than the parent then we should never display this tile. If it's the geometric error is the same
 				// as the parent and the child has content then we can display it.
 				// See issue NASA-AMMOS/3DTilesRendererJS#1304
-				const childCanDisplay =
-					c.__hasRenderableContent && tile.geometricError >= c.geometricError ||
-					! c.__hasRenderableContent && tile.geometricError > c.geometricError;
+				const childCanDisplay = ! canUnconditionallyRefine( c );
 
 				// Consider a child to be ready to be displayed if
 				// - the children's children have been loaded
