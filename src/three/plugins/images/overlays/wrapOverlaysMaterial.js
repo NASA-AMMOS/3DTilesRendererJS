@@ -124,7 +124,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								wDelta = fwidth( layerUV.z );
 								wOpacity =
 									smoothstep( - wDelta, 0.0, layerUV.z + W_EPSILON ) *
-									smoothstep( 1.0 + wDelta + 1e-7, 1.0, layerUV.z - W_EPSILON );
+									smoothstep( 1.0 + wDelta, 1.0, layerUV.z - W_EPSILON );
 
 								// apply tint & opacity
 								tint.rgb *= layerColor[ i ].color;
