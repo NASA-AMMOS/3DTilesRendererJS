@@ -37,7 +37,7 @@ function canUnconditionallyRefine( tile ) {
 
 }
 
-// Resets the frame frame information for the given tile
+// Resets the frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
 	if ( tile.__lastFrameVisited !== renderer.frameCount ) {
@@ -273,8 +273,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
 				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
-				// If the error is larger than the parent then we should never display this tile. If it's the geometric error is the same
-				// as the parent and the child has content then we can display it.
+				// If the child's geometric error is less than or equal to the parent's (or it has unrenderable content), we should NOT display the child to avoid holes.
+				// Only display the child if its geometric error is greater than the parent's and it has renderable content.
 				// See issue NASA-AMMOS/3DTilesRendererJS#1304
 				const childCanDisplay = ! canUnconditionallyRefine( c );
 
