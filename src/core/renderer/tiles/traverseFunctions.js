@@ -288,9 +288,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
 					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
 
-				// Only the consider the child ready to display if the geometric error is smaller than
-				// the parent or all of its children are ready
-				isChildReady = childCanDisplay && isChildReady || c.__allChildrenReady;
+				// Consider this child ready if it can be displayed and is ready for display or all of it's children ready to be displayed
+				isChildReady = ( childCanDisplay && isChildReady ) || c.__allChildrenReady;
 
 				allChildrenReady = allChildrenReady && isChildReady;
 
