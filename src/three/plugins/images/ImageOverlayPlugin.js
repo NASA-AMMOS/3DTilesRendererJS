@@ -1443,7 +1443,6 @@ class ImageOverlay {
 
 	}
 
-	// Apply proxy prefix and merge options
 	fetch( url, options = {} ) {
 
 		if ( this.preprocessURL ) {
