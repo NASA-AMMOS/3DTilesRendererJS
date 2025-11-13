@@ -17,7 +17,7 @@ export interface TileInternal extends Tile {
 	__used: boolean;
 
 	// Visibility tracking
-	__allChildrenLoaded: boolean;
+	__allChildrenReady: boolean;
 	__inFrustum: boolean;
 	__wasSetVisible: boolean;
 

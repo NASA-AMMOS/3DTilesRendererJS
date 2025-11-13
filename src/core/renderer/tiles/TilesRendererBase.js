@@ -568,7 +568,7 @@ export class TilesRendererBase {
 
 		tile.__wasSetVisible = false;
 		tile.__visible = false;
-		tile.__allChildrenLoaded = false;
+		tile.__allChildrenReady = false;
 
 		tile.__wasSetActive = false;
 		tile.__active = false;
