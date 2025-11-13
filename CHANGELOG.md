@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update types for GLTFExtensionPlugin.
 - Adjust minimum three.js version to r167 from r166. The project required an import for Matrix2, only available in 167.
 - ImageOverlayPlugin: Fix some platforms displaying untextured triangles in some cases.
+- TilesRenderer: Fixed "removePluginByName" not removing the plugin correctly.
 
 ## [0.4.17] - 2025.09.27
 ### Added
