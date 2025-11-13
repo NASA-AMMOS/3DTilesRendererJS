@@ -20,7 +20,6 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 	material.defines = {
 		...( material.defines || {} ),
 		LAYER_COUNT: 0,
-		W_EPSILON: 1e-7,
 	};
 
 	material.onBeforeCompile = shader => {
@@ -121,10 +120,10 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								// discard texture outside 0, 1 on w - offset the stepped value by an epsilon to avoid cases
 								// where wDelta is near 0 (eg a flat surface) at the w boundary, resulting in artifacts on some
 								// hardware.
-								wDelta = fwidth( layerUV.z );
+								wDelta = max( fwidth( layerUV.z ), 1e-7 );
 								wOpacity =
-									smoothstep( - wDelta, 0.0, layerUV.z + W_EPSILON ) *
-									smoothstep( 1.0 + wDelta, 1.0, layerUV.z - W_EPSILON );
+									smoothstep( - wDelta, 0.0, layerUV.z ) *
+									smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
 
 								// apply tint & opacity
 								tint.rgb *= layerColor[ i ].color;
