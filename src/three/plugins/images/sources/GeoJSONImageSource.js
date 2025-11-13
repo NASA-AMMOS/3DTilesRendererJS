@@ -38,9 +38,10 @@ export class GeoJSONImageSource extends TiledImageSource {
 		strokeStyle = 'white',
 		strokeWidth = 2,
 		fillStyle = 'rgba( 255, 255, 255, 0.5 )',
+		...rest
 	} = {} ) {
 
-		super();
+		super( rest );
 		this.geojson = geojson;
 		this.url = url;
 		this.tileDimension = tileDimension;

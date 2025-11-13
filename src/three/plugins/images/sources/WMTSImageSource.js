@@ -5,8 +5,6 @@ export class WMTSImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
 
-		super();
-
 		const {
 			capabilities = null,
 			layer = null,
@@ -14,7 +12,10 @@ export class WMTSImageSource extends TiledImageSource {
 			style = null,
 			url = null,
 			dimensions = {},
+			...rest
 		} = options;
+
+		super( rest );
 
 		this.capabilities = capabilities;
 		this.layer = layer;

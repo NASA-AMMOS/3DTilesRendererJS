@@ -5,13 +5,14 @@ export class XYZImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
 
-		super();
-
 		const {
 			levels = 20,
 			tileDimension = 256,
 			url = null,
+			...rest
 		} = options;
+
+		super( rest );
 
 		this.tileDimension = tileDimension;
 		this.levels = levels;

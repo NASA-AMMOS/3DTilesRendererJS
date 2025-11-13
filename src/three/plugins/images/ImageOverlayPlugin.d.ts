@@ -21,6 +21,8 @@ export class ImageOverlay {
 	color: number | Color;
 	opacity: number;
 	frame?: Matrix4 | null;
+	proxyUrl?: string;
+	fetchOptions?: any;
 
 }
 
@@ -71,7 +73,6 @@ export class WMSTilesOverlay extends ImageOverlay {
 		levels?: number,
 		transparent?: boolean,
 		contentBoundingBox?: [ number, number, number, number ],
-
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
