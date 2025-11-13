@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - XYZ Tiles Plugins: Removed unused "bounds" argument.
 - BatchedTilesPlugin: Fix case where the plugin would throw an error if a mesh with no texture were encountered first.
 - Update types for GLTFExtensionPlugin.
+- Adjust minimum three.js version to r167 from r166. The project required an import for Matrix2, only available in 167.
 
 ## [0.4.17] - 2025.09.27
 ### Added
