@@ -205,8 +205,8 @@ export function markUsedTiles( tile, renderer ) {
 	// this tile and all children as "used" so they are not disposed, causing an oscillation / flicker in the content.
 	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-		recursivelyMarkUsed( tile, renderer );
 		tile.__inFrustum = false;
+		recursivelyMarkUsed( tile, renderer );
 		return;
 
 	}
