@@ -63,12 +63,12 @@ function resetFrameState( tile, renderer ) {
 }
 
 // Recursively mark tiles used down to the next layer, skipping external tile sets
-function recursivelyMarkUsed( tile, renderer ) {
+function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
-	markUsed( tile, renderer );
+	markUsed( tile, renderer, cacheOnly );
 
 	// don't traverse if the children have not been processed, yet but tile set content
 	// should be considered to be "replaced" by the loaded children so await that here.
@@ -77,7 +77,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], renderer );
+			recursivelyMarkUsed( children[ i ], renderer, cacheOnly );
 
 		}
 
@@ -117,7 +117,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 }
 
 // Mark a tile as being used by current view
-function markUsed( tile, renderer ) {
+function markUsed( tile, renderer, cacheOnly = false ) {
 
 	if ( tile.__used ) {
 
@@ -125,9 +125,14 @@ function markUsed( tile, renderer ) {
 
 	}
 
-	tile.__used = true;
+	if ( ! cacheOnly ) {
+
+		tile.__used = true;
+		renderer.stats.used ++;
+
+	}
+
 	renderer.markTileUsed( tile );
-	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {
 
@@ -201,24 +206,21 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
-	// Disabled for now because this will cause otherwise unused children to be added to the lru cache
-	// if none of the children are in the frustum then this tile shouldn't be displayed.
-	// Otherwise this can cause load oscillation as parents are traversed and loaded and then determined
-	// to not be used because children aren't visible. See #1165.
-	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 && ! tile.__hasUnrenderableContent ) {
+	// If none of the children are visible in the frustum then there should be no reason to display this tile. We still mark
+	// this tile and all children as "used" only in the cache (but not loaded) so they are not disposed, causing an oscillation
+	// / flicker in the content.
+	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-	// 	// TODO: we're not checking tiles with unrenderable content here since external tile sets might look like they're in the frustum,
-	// 	// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
-	// 	// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
-	// 	// sets around even when they're not needed. See issue #741.
+		tile.__inFrustum = false;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-	// 	// TODO: what if we mark the tile as not in the frustum but we _do_ mark it as used? Then we can stop frustum traversal and at least
-	// 	// prevent tiles from rendering unless they're needed.
-	// 	console.log('FAILED')
-	// 	tile.__inFrustum = false;
-	// 	return;
+			recursivelyMarkUsed( children[ i ], renderer, true );
 
-	// }
+		}
+
+		return;
+
+	}
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
@@ -229,8 +231,7 @@ export function markUsedTiles( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			recursivelyMarkUsed( c, renderer );
+			recursivelyMarkUsed( children[ i ], renderer );
 
 		}
 
