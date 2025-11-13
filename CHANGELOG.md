@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.4.18] - Unreleased
+### Added
+- Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate some erroneous data sets.
+
 ### Fixed
 - Added and fixed some types.
 - Removed referenced to `TextureUtils` which was causing tree shaking issues.
