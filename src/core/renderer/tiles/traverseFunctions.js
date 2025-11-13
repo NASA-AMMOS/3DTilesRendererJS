@@ -63,12 +63,12 @@ function resetFrameState( tile, renderer ) {
 }
 
 // Recursively mark tiles used down to the next layer, skipping external tile sets
-function recursivelyMarkUsed( tile, renderer ) {
+function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
-	markUsed( tile, renderer );
+	markUsed( tile, renderer, cacheOnly );
 
 	// don't traverse if the children have not been processed, yet but tile set content
 	// should be considered to be "replaced" by the loaded children so await that here.
@@ -77,7 +77,7 @@ function recursivelyMarkUsed( tile, renderer ) {
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], renderer );
+			recursivelyMarkUsed( children[ i ], renderer, cacheOnly );
 
 		}
 
@@ -117,7 +117,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 }
 
 // Mark a tile as being used by current view
-function markUsed( tile, renderer ) {
+function markUsed( tile, renderer, cacheOnly = false ) {
 
 	if ( tile.__used ) {
 
@@ -125,9 +125,14 @@ function markUsed( tile, renderer ) {
 
 	}
 
-	tile.__used = true;
+	if ( ! cacheOnly ) {
+
+		tile.__used = true;
+		renderer.stats.used ++;
+
+	}
+
 	renderer.markTileUsed( tile );
-	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {
 
@@ -202,11 +207,17 @@ export function markUsedTiles( tile, renderer ) {
 	}
 
 	// If none of the children are visible in the frustum then there should be no reason to display this tile. We still mark
-	// this tile and all children as "used" so they are not disposed, causing an oscillation / flicker in the content.
+	// this tile and all children as "used" only in the cache (but not loaded) so they are not disposed, causing an oscillation
+	// / flicker in the content.
 	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
 		tile.__inFrustum = false;
-		recursivelyMarkUsed( tile, renderer );
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			recursivelyMarkUsed( children[ i ], renderer, true );
+
+		}
+
 		return;
 
 	}
@@ -220,8 +231,7 @@ export function markUsedTiles( tile, renderer ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			recursivelyMarkUsed( c, renderer );
+			recursivelyMarkUsed( children[ i ], renderer );
 
 		}
 
