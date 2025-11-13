@@ -275,6 +275,8 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
 				// If the child's geometric error is less than or equal to the parent's (or it has unrenderable content), we should NOT display the child to avoid holes.
 				// Only display the child if its geometric error is greater than the parent's and it has renderable content.
+				// Note that this behavior is undocumented in the 3d tiles specification and tile sets designed to take advantage of it may not work as expected
+				// in other rendering systems.
 				// See issue NASA-AMMOS/3DTilesRendererJS#1304
 				const childCanDisplay = ! canUnconditionallyRefine( c );
 
