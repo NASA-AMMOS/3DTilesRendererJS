@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
 - A small optimization for tile traversal.
+- ImageOverlays: Added support for a "preprocessUrl" function.
 
 ### Fixed
 - Added and fixed some types.
