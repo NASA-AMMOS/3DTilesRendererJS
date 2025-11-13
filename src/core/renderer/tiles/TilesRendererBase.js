@@ -222,7 +222,7 @@ export class TilesRendererBase {
 		const plugins = this.plugins;
 		if ( typeof plugin === 'string' ) {
 
-			plugin = this.getPluginByName( name );
+			plugin = this.getPluginByName( plugin );
 
 		}
 
