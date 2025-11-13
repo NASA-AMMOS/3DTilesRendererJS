@@ -202,14 +202,14 @@ export function markUsedTiles( tile, renderer ) {
 	}
 
 	// If none of the children are visible in the frustum then there should be no reason to display this tile. We still mark
-	// this tile and all children as "used"
-	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
+	// this tile and all children as "used" so they are not disposed, causing an oscillation / flicker in the content.
+	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-	// 	recursivelyMarkUsed( tile, renderer );
-	// 	tile.__inFrustum = false;
-	// 	return;
+		recursivelyMarkUsed( tile, renderer );
+		tile.__inFrustum = false;
+		return;
 
-	// }
+	}
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
