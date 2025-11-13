@@ -363,7 +363,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += MemoryUtils.safeTextureGetByteLength( target?.texture );
+				bytes += MemoryUtils.getTextureByteLength( target?.texture );
 
 			}
 

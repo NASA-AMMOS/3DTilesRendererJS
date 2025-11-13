@@ -31,7 +31,13 @@ function areChildrenProcessed( tile ) {
 
 }
 
-// Resets the frame frame information for the given tile
+function canUnconditionallyRefine( tile ) {
+
+	return tile.__hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
+
+}
+
+// Resets the frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
 	if ( tile.__lastFrameVisited !== renderer.frameCount ) {
@@ -44,7 +50,7 @@ function resetFrameState( tile, renderer ) {
 		tile.__active = false;
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
-		tile.__allChildrenLoaded = false;
+		tile.__allChildrenReady = false;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -57,21 +63,21 @@ function resetFrameState( tile, renderer ) {
 }
 
 // Recursively mark tiles used down to the next layer, skipping external tile sets
-function recursivelyMarkUsed( tile, renderer ) {
+function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
-	markUsed( tile, renderer );
+	markUsed( tile, renderer, cacheOnly );
 
 	// don't traverse if the children have not been processed, yet but tile set content
 	// should be considered to be "replaced" by the loaded children so await that here.
-	if ( tile.__hasUnrenderableContent && areChildrenProcessed( tile ) ) {
+	if ( canUnconditionallyRefine( tile ) && areChildrenProcessed( tile ) ) {
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], renderer );
+			recursivelyMarkUsed( children[ i ], renderer, cacheOnly );
 
 		}
 
@@ -111,7 +117,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 }
 
 // Mark a tile as being used by current view
-function markUsed( tile, renderer ) {
+function markUsed( tile, renderer, cacheOnly = false ) {
 
 	if ( tile.__used ) {
 
@@ -119,9 +125,14 @@ function markUsed( tile, renderer ) {
 
 	}
 
-	tile.__used = true;
+	if ( ! cacheOnly ) {
+
+		tile.__used = true;
+		renderer.stats.used ++;
+
+	}
+
 	renderer.markTileUsed( tile );
-	renderer.stats.used ++;
 
 	if ( tile.__inFrustum === true ) {
 
@@ -136,7 +147,7 @@ function canTraverse( tile, renderer ) {
 
 	// If we've met the error requirements then don't load further - if an external tile set is encountered,
 	// though, then continue to refine.
-	if ( tile.__error <= renderer.errorTarget && ! tile.__hasUnrenderableContent ) {
+	if ( tile.__error <= renderer.errorTarget && ! canUnconditionallyRefine( tile ) ) {
 
 		return false;
 
@@ -195,36 +206,32 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
-	// Disabled for now because this will cause otherwise unused children to be added to the lru cache
-	// if none of the children are in the frustum then this tile shouldn't be displayed.
-	// Otherwise this can cause load oscillation as parents are traversed and loaded and then determined
-	// to not be used because children aren't visible. See #1165.
-	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 && ! tile.__hasUnrenderableContent ) {
+	// If none of the children are visible in the frustum then there should be no reason to display this tile. We still mark
+	// this tile and all children as "used" only in the cache (but not loaded) so they are not disposed, causing an oscillation
+	// / flicker in the content.
+	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-	// 	// TODO: we're not checking tiles with unrenderable content here since external tile sets might look like they're in the frustum,
-	// 	// load the children, then the children indicate that it's not visible, causing it to be unloaded. Then it will be loaded again.
-	// 	// The impact when including external tile set roots in the check is more significant but can't be used unless we keep external tile
-	// 	// sets around even when they're not needed. See issue #741.
+		tile.__inFrustum = false;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-	// 	// TODO: what if we mark the tile as not in the frustum but we _do_ mark it as used? Then we can stop frustum traversal and at least
-	// 	// prevent tiles from rendering unless they're needed.
-	// 	console.log('FAILED')
-	// 	tile.__inFrustum = false;
-	// 	return;
+			recursivelyMarkUsed( children[ i ], renderer, true );
 
-	// }
+		}
+
+		return;
+
+	}
 
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( anyChildrenUsed && tile.refine === 'REPLACE' && ( tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
+	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			recursivelyMarkUsed( c, renderer );
+			recursivelyMarkUsed( children[ i ], renderer );
 
 		}
 
@@ -258,7 +265,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
-		let allChildrenLoaded = true;
+		let allChildrenReady = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
@@ -266,23 +273,34 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 			if ( isUsedThisFrame( c, frameCount ) ) {
 
-				// consider a child to be loaded if
+				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
+				// If the child's geometric error is less than or equal to the parent's (or it has unrenderable content), we should NOT display the child to avoid holes.
+				// Only display the child if its geometric error is greater than the parent's and it has renderable content.
+				// Note that this behavior is undocumented in the 3d tiles specification and tile sets designed to take advantage of it may not work as expected
+				// in other rendering systems.
+				// See issue NASA-AMMOS/3DTilesRendererJS#1304
+				const childCanDisplay = ! canUnconditionallyRefine( c );
+
+				// Consider a child to be ready to be displayed if
 				// - the children's children have been loaded
 				// - the tile content has loaded
 				// - the tile is completely empty - ie has no children and no content
 				// - the child tile set has tried to load but failed
-				const childLoaded =
-					c.__allChildrenLoaded ||
+				let isChildReady =
 					! c.__hasContent ||
 					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
 					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
-				allChildrenLoaded = allChildrenLoaded && childLoaded;
+
+				// Consider this child ready if it can be displayed and is ready for display or all of it's children ready to be displayed
+				isChildReady = ( childCanDisplay && isChildReady ) || c.__allChildrenReady;
+
+				allChildrenReady = allChildrenReady && isChildReady;
 
 			}
 
 		}
 
-		tile.__allChildrenLoaded = allChildrenLoaded;
+		tile.__allChildrenReady = allChildrenReady;
 
 	}
 
@@ -334,7 +352,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tile set has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenLoaded = tile.__allChildrenLoaded || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
+	const allChildrenReady = tile.__allChildrenReady || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( hasContent && ( meetsSSE || isAdditiveRefine ) ) {
@@ -348,7 +366,7 @@ export function markVisibleTiles( tile, renderer ) {
 	// to display in addition to the children.
 
 	// Skip the tile entirely if there's no content to load
-	if ( meetsSSE && loadedContent && ! allChildrenLoaded || loadedContent && isAdditiveRefine ) {
+	if ( meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine ) {
 
 		if ( tile.__inFrustum ) {
 
@@ -363,7 +381,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenLoaded ) {
+	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenReady ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.

@@ -1,12 +1,9 @@
 import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import * as THREE from 'three';
+import { TextureUtils } from 'three';
 
-export function safeTextureGetByteLength( tex ) {
+export function getTextureByteLength( tex ) {
 
-	// NOTE: This is for backwards compatibility and should be removed later
-	// deprecated: remove in next major release
-	const { TextureUtils } = THREE;
-	if ( ! TextureUtils || ! tex ) {
+	if ( ! tex ) {
 
 		return 0;
 
@@ -47,7 +44,7 @@ export function estimateBytesUsed( object ) {
 				const value = material[ key ];
 				if ( value && value.isTexture && ! dedupeSet.has( value ) ) {
 
-					totalBytes += safeTextureGetByteLength( value );
+					totalBytes += getTextureByteLength( value );
 					dedupeSet.add( value );
 
 				}

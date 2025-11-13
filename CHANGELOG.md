@@ -5,8 +5,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.4.18] - Unreleased
+### Added
+- Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
+- A small optimization for tile traversal.
+
 ### Fixed
 - Added and fixed some types.
+- Removed referenced to `TextureUtils` which was causing tree shaking issues.
+- XYZ Tiles Plugins: Removed unused "bounds" argument.
+- BatchedTilesPlugin: Fix case where the plugin would throw an error if a mesh with no texture were encountered first.
+- Update types for GLTFExtensionPlugin.
+- Adjust minimum three.js version to r167 from r166. The project required an import for Matrix2, only available in 167.
+- ImageOverlayPlugin: Fix some platforms displaying untextured triangles in some cases.
+- TilesRenderer: Fixed "removePluginByName" not removing the plugin correctly.
 
 ## [0.4.17] - 2025.09.27
 ### Added
