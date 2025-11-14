@@ -200,7 +200,7 @@ function parseBoundingBox( el ) {
 
 	}
 
-	let crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
+	const crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
@@ -240,7 +240,7 @@ function parseStyle( el ) {
 // parse <TileMatrixSet> tag
 function parseTileMatrixSet( el ) {
 
-	let supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
+	const supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
 	const title = el.querySelector( 'Title' )?.textContent || '';
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
