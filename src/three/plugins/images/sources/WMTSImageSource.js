@@ -3,7 +3,7 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 
 function isCRS84( crs ) {
 
-	return /(crs:84|:crs84)$/i.test( crs );
+	return /(:84|:crs84)$/i.test( crs );
 
 }
 
