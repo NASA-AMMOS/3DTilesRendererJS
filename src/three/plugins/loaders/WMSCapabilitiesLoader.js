@@ -7,12 +7,6 @@ const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
 // helper CRS checks (same logic used in WMTSCapabilitiesLoader)
 // TODO: Share these helpers with the WMTSCapabilitiesLoader
-function isCRS84( crs ) {
-
-	return /(:84|:crs84)$/i.test( crs );
-
-}
-
 function isEPSG4326( crs ) {
 
 	return /:4326$/i.test( crs );
@@ -78,7 +72,7 @@ function parseBoundingBox( el, version ) {
 	}
 
 	// WMS may use CRS / crs / SRS attribute
-	let crs = el.getAttribute( 'CRS' ) || el.getAttribute( 'crs' ) || el.getAttribute( 'SRS' ) || '';
+	const crs = el.getAttribute( 'CRS' ) || el.getAttribute( 'crs' ) || el.getAttribute( 'SRS' ) || '';
 
 	const minx = parseFloat( el.getAttribute( 'minx' ) );
 	const miny = parseFloat( el.getAttribute( 'miny' ) );
@@ -98,13 +92,6 @@ function parseBoundingBox( el, version ) {
 	// convert degrees to radians for internal consistency with other loaders
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
-
-	// normalize to common CRS names
-	if ( isCRS84( crs ) ) {
-
-		crs = 'EPSG:4326';
-
-	}
 
 	// bounds in order [minLon, minLat, maxLon, maxLat] (in radians)
 	return { crs, bounds: [ ...lowerCorner, ...upperCorner ] };
