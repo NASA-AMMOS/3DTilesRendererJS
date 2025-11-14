@@ -26,6 +26,7 @@ export class ProjectionScheme {
 		switch ( scheme ) {
 
 			// equirect
+			case 'CRS:84':
 			case 'EPSG:4326':
 				this.tileCountX = 2;
 				this.tileCountY = 1;

@@ -5,13 +5,6 @@ import { MathUtils } from 'three';
 const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 
-// this CRS84 crs is the same as EPSG:4326 except the order of lat / lon are swapped
-function isCRS84( crs ) {
-
-	return /(:84|:crs84)$/i.test( crs );
-
-}
-
 function isEPSG4326( crs ) {
 
 	return /:4326$/i.test( crs );
@@ -207,7 +200,7 @@ function parseBoundingBox( el ) {
 
 	}
 
-	let crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
+	const crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
@@ -219,18 +212,6 @@ function parseBoundingBox( el ) {
 
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
-
-	if ( isCRS84( crs ) ) {
-
-		crs = 'EPSG:4326';
-
-	} else if ( isWebMercator( crs ) ) {
-
-		// Used for detecting "urn:ogc:def:crs:EPSG::3857" and converting it to
-		// a commonly legible CRS string
-		crs = 'EPSG:3857';
-
-	}
 
 	return {
 		crs,
@@ -259,7 +240,7 @@ function parseStyle( el ) {
 // parse <TileMatrixSet> tag
 function parseTileMatrixSet( el ) {
 
-	let supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
+	const supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
 	const title = el.querySelector( 'Title' )?.textContent || '';
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
@@ -308,16 +289,6 @@ function parseTileMatrixSet( el ) {
 			tileMatrices.push( tm );
 
 		} );
-
-	if ( isCRS84( supportedCRS ) ) {
-
-		supportedCRS = 'EPSG:4326';
-
-	} else if ( isWebMercator( supportedCRS ) ) {
-
-		supportedCRS = 'EPSG:3857';
-
-	}
 
 	return {
 		title,

@@ -1,6 +1,12 @@
 import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 
+function isCRS84( crs ) {
+
+	return /(:84|:crs84)$/i.test( crs );
+
+}
+
 export class WMTSImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
@@ -77,7 +83,8 @@ export class WMTSImageSource extends TiledImageSource {
 		}
 
 		// determine the projection
-		const projection = tileMatrixSet.supportedCRS.includes( '4326' ) ? 'EPSG:4326' : 'EPSG:3857';
+		const supportedCRS = tileMatrixSet.supportedCRS;
+		const projection = ( supportedCRS.includes( '4326' ) || isCRS84( supportedCRS ) ) ? 'EPSG:4326' : 'EPSG:3857';
 
 		// generate the tiling scheme
 		tiling.flipY = true;
