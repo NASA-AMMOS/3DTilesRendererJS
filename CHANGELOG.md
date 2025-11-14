@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.18] - Unreleased
+## [0.4.18] - 2025.11.14
 ### Added
 - Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
 - A small optimization for tile traversal.
@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Adjust minimum three.js version to r167 from r166. The project required an import for Matrix2, only available in 167.
 - ImageOverlayPlugin: Fix some platforms displaying untextured triangles in some cases.
 - TilesRenderer: Fixed "removePluginByName" not removing the plugin correctly.
+- WMS, WMTS ImageOverlay, TilesPlugin: Plugins now accept CRS definitions like "CRS:84".
+
+### Changed
+- WMTSCapabilitiesLoader, WMSCapabilitiesLoader: Loaders no longer automatically convert CRS tokens to an "EPSG:XXXX" variant.
 
 ## [0.4.17] - 2025.09.27
 ### Added
