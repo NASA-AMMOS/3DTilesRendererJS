@@ -1,7 +1,13 @@
 const OVERLAY_PARAMS = Symbol( 'OVERLAY_PARAMS' );
 
-// before compile can be used to chain shader adjustments. Returns the added uniforms used for fading.
-export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
+export function wrapOverlaysMaterial( material, options ) {
+
+	// Support both old and new call signatures:
+	//   wrapOverlaysMaterial(material, previousOnBeforeCompile)
+	//   wrapOverlaysMaterial(material, { previousOnBeforeCompile, clipOverlay })
+	const previousOnBeforeCompile = typeof options === 'function'
+		? options
+		: options?.previousOnBeforeCompile || options?.onBeforeCompile || null;
 
 	// if the material has already been wrapped then return the params
 	if ( material[ OVERLAY_PARAMS ] ) {
@@ -13,6 +19,13 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 	const params = {
 		layerMaps: { value: [] },
 		layerColor: { value: [] },
+
+		// clip overlay uniforms
+		overlayClipMap: { value: null },
+		overlayClipThreshold: { value: 0.5 },
+		overlayClipInside: { value: 1 }, // 1 = keep inside, 0 = keep outside
+		overlayClipEnabled: { value: 0 }, // 0 = disabled, 1 = enabled
+
 	};
 
 	material[ OVERLAY_PARAMS ] = params;
@@ -22,119 +35,139 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 		LAYER_COUNT: 0,
 	};
 
+
 	material.onBeforeCompile = shader => {
 
-		if ( previousOnBeforeCompile ) {
-
-			previousOnBeforeCompile( shader );
-
-		}
+		if ( previousOnBeforeCompile ) previousOnBeforeCompile( shader );
 
 		shader.uniforms = {
 			...shader.uniforms,
 			...params,
 		};
 
-		shader.vertexShader = shader
-			.vertexShader
-			.replace( /void main\(\s*\)\s*{/, value => /* glsl */`
+		// Toggle the define only when we actually provide the attribute and map.
+		if ( params.overlayClipMap.value ) {
 
-				#pragma unroll_loop_start
-					for ( int i = 0; i < 10; i ++ ) {
+			shader.defines.USE_OVERLAY_CLIP = 1;
 
-						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+		} else {
 
-							attribute vec3 layer_uv_UNROLLED_LOOP_INDEX;
-							varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
+			delete shader.defines.USE_OVERLAY_CLIP;
 
-						#endif
+		}
 
+		shader.vertexShader = shader.vertexShader.replace( /void main\(\s*\)\s*{/, value => /* glsl */`
+			#pragma unroll_loop_start
+			for ( int i = 0; i < 10; i ++ ) {
+				#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+					attribute vec3 layer_uv_UNROLLED_LOOP_INDEX;
+					varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
+				#endif
+			}
+			#pragma unroll_loop_end
 
-					}
-				#pragma unroll_loop_end
+			#ifdef USE_OVERLAY_CLIP
+				attribute vec3 clip_uv;
+				varying vec3 v_clip_uv;
+			#endif
 
-				${ value }
+			${ value }
 
-				#pragma unroll_loop_start
-					for ( int i = 0; i < 10; i ++ ) {
+			#pragma unroll_loop_start
+			for ( int i = 0; i < 10; i ++ ) {
+				#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+					v_layer_uv_UNROLLED_LOOP_INDEX = layer_uv_UNROLLED_LOOP_INDEX;
+				#endif
+			}
+			#pragma unroll_loop_end
 
-						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+			#ifdef USE_OVERLAY_CLIP
+				v_clip_uv = clip_uv;
+			#endif
+		` );
 
-							v_layer_uv_UNROLLED_LOOP_INDEX = layer_uv_UNROLLED_LOOP_INDEX;
-
-						#endif
-
-					}
-				#pragma unroll_loop_end
-
-			` );
-
-		shader.fragmentShader = shader
-			.fragmentShader
+		shader.fragmentShader = shader.fragmentShader
 			.replace( /void main\(/, value => /* glsl */`
-
 				#if LAYER_COUNT != 0
-					struct LayerTint {
-						vec3 color;
-						float opacity;
-					};
-
+					struct LayerTint { vec3 color; float opacity; };
 					uniform sampler2D layerMaps[ LAYER_COUNT ];
 					uniform LayerTint layerColor[ LAYER_COUNT ];
 				#endif
 
 				#pragma unroll_loop_start
-					for ( int i = 0; i < 10; i ++ ) {
-
-						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
-
-							varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
-
-						#endif
-
-					}
+				for ( int i = 0; i < 10; i ++ ) {
+					#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+						varying vec3 v_layer_uv_UNROLLED_LOOP_INDEX;
+					#endif
+				}
 				#pragma unroll_loop_end
 
-				${ value }
+				#ifdef USE_OVERLAY_CLIP
+					uniform sampler2D overlayClipMap;
+					uniform float overlayClipThreshold;
+					uniform int overlayClipInside;
+					uniform int overlayClipEnabled;
+					uniform int overlayClipDebug;
+					varying vec3 v_clip_uv;
+				#endif
 
+				${ value }
+			` )
+			.replace( 'void main() {', /* glsl */`
+                void main() {
+                #ifdef USE_OVERLAY_CLIP
+                    // Optional debug tint: show mask as red (outside) vs keep color (inside)
+                    if ( overlayClipDebug == 1 ) {
+                        float a = texture( overlayClipMap, v_clip_uv.xy ).a;
+                        // fall through; tint will be applied after base color
+                    }
+                #endif
 			` )
 			.replace( /#include <color_fragment>/, value => /* glsl */`
-
 				${ value }
+				#ifdef USE_OVERLAY_CLIP
+				{
+					// Apply discard first (uses w gating).
+					if ( overlayClipEnabled == 1 ) {
+						float wDelta = max( fwidth( v_clip_uv.z ), 1e-7 );
+						float wOpacity =
+							smoothstep( - wDelta, 0.0, v_clip_uv.z ) *
+							smoothstep( 1.0 + wDelta, 1.0, v_clip_uv.z );
+
+						if ( wOpacity > 0.0 ) {
+							float clipAlpha = texture( overlayClipMap, v_clip_uv.xy ).a;
+							bool inside = clipAlpha >= overlayClipThreshold;
+							bool discardFragment = (overlayClipInside == 1) ? (!inside) : inside;
+							if ( discardFragment ) discard;
+
+						}
+					}
+				}
+				#endif
 
 				#if LAYER_COUNT != 0
 				{
 					vec4 tint;
 					vec3 layerUV;
-					float layerOpacity;
 					float wOpacity;
 					float wDelta;
 					#pragma unroll_loop_start
-						for ( int i = 0; i < 10; i ++ ) {
+					for ( int i = 0; i < 10; i ++ ) {
+						#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+							layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
+							tint = texture( layerMaps[ i ], layerUV.xy );
 
-							#if UNROLLED_LOOP_INDEX < LAYER_COUNT
+							wDelta = max( fwidth( layerUV.z ), 1e-7 );
+							wOpacity =
+								smoothstep( - wDelta, 0.0, layerUV.z ) *
+								smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
 
-								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
-								tint = texture( layerMaps[ i ], layerUV.xy );
+							tint.rgb *= layerColor[ i ].color;
+							tint.rgba *= layerColor[ i ].opacity * wOpacity;
 
-								// discard texture outside 0, 1 on w - offset the stepped value by an epsilon to avoid cases
-								// where wDelta is near 0 (eg a flat surface) at the w boundary, resulting in artifacts on some
-								// hardware.
-								wDelta = max( fwidth( layerUV.z ), 1e-7 );
-								wOpacity =
-									smoothstep( - wDelta, 0.0, layerUV.z ) *
-									smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
-
-								// apply tint & opacity
-								tint.rgb *= layerColor[ i ].color;
-								tint.rgba *= layerColor[ i ].opacity * wOpacity;
-
-								// premultiplied alpha equation
-								diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
-
-							#endif
-
-						}
+							diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
+						#endif
+					}
 					#pragma unroll_loop_end
 				}
 				#endif

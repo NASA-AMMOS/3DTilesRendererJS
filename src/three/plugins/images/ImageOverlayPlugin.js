@@ -1298,8 +1298,25 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// update the uvs and texture overlays for each mesh
-		overlays.forEach( ( overlay, i ) => {
+		// separate non-clip overlays and clip overlay
+		const regularOverlays = [];
+		let clipOverlay = null;
+
+		overlays.forEach( overlay => {
+
+			if ( overlay.isClipOverlay ) {
+
+				clipOverlay = overlay;
+
+			} else {
+
+				regularOverlays.push( overlay );
+
+			}
+
+		} );
+
+		regularOverlays.forEach( ( overlay, i ) => {
 
 			const { tileInfo } = overlayInfo.get( overlay );
 			const { meshInfo, target } = tileInfo.get( tile );
@@ -1317,20 +1334,73 @@ export class ImageOverlayPlugin {
 
 				}
 
-				// set the uniform array lengths
-				params.layerMaps.length = overlays.length;
-				params.layerColor.length = overlays.length;
+				// ensure arrays have the right length for regular overlays only
+				params.layerMaps.length = regularOverlays.length;
+				params.layerColor.length = regularOverlays.length;
 
-				// assign the uniforms
+				// assign the uniforms for color overlays
 				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
 				params.layerColor.value[ i ] = overlay;
 
-				material.defines.LAYER_COUNT = overlays.length;
+				material.defines.LAYER_COUNT = regularOverlays.length;
 				material.needsUpdate = true;
 
 			} );
 
 		} );
+
+		// attach clip overlay texture + settings
+		if ( clipOverlay ) {
+
+			const { tileInfo } = overlayInfo.get( clipOverlay );
+			const { meshInfo, target } = tileInfo.get( tile );
+
+			meshInfo.forEach( ( { attribute }, mesh ) => {
+
+				const { geometry } = mesh;
+				const params = this.meshParams.get( mesh );
+
+				if ( geometry.getAttribute( 'clip_uv' ) !== attribute ) {
+
+					geometry.setAttribute( 'clip_uv', attribute );
+					geometry.dispose();
+
+				}
+
+				// TODO: is textures[0] fine?
+				params.overlayClipMap.value = target ? target.textures[ 0 ] : null;
+				params.overlayClipThreshold.value = clipOverlay.clipThreshold ?? 0.5;
+				params.overlayClipInside.value = ( clipOverlay.clipInside ?? true ) ? 1 : 0;
+				params.overlayClipEnabled.value = target ? 1 : 0;
+
+				mesh.material.needsUpdate = true;
+
+			} );
+
+		} else {
+
+			overlays.forEach( overlay => {
+
+				const { tileInfo } = overlayInfo.get( overlay );
+				const { meshInfo } = tileInfo.get( tile );
+				meshInfo.forEach( ( x, mesh ) => {
+
+					console.log( 'x, ', x );
+
+					const params = this.meshParams.get( mesh );
+					if ( params ) {
+
+						params.overlayClipMap.value = null;
+						params.overlayClipEnabled.value = 0;
+
+					}
+					mesh.material.needsUpdate = true;
+
+				} );
+
+			} );
+
+		}
 
 	}
 
@@ -1522,6 +1592,18 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
+export class GeoJSONClipOverlay extends GeoJSONOverlay {
+
+	constructor( options = {} ) {
+
+		super( options );
+		this.isClipOverlay = true;
+		this.clipThreshold = options.clipThreshold ?? 0.5;
+		this.clipInside = options.clipInside ?? true; // true = keep inside, false = keep outside
+
+	}
+
+}
 export class WMSTilesOverlay extends ImageOverlay {
 
 	constructor( options = {} ) {
