@@ -1288,44 +1288,30 @@ export class ImageOverlayPlugin {
 		const { overlayInfo, overlays, tileControllers } = this;
 		const tileController = tileControllers.get( tile );
 
-		// by this point all targets should be present and we can force the memory to update
 		this.tiles.recalculateBytesUsed( tile );
+		if ( ! tileController || tileController.signal.aborted ) return;
 
-		// if the tile has been disposed before this function is called then exit early
-		if ( ! tileController || tileController.signal.aborted ) {
+		// Find a "global" alpha overlay (first match)
+		const globalAlphaOverlay = overlays.find( o =>
+			o && typeof o === 'object' &&
+			o.alphaMode === 'global' &&
+			( o.alphaTest ?? 0 ) > 0
+		);
 
-			return;
-
-		}
-
-		// separate non-clip overlays and clip overlay
-		const regularOverlays = [];
-		let clipOverlay = null;
-
-		overlays.forEach( overlay => {
-
-			if ( overlay.isClipOverlay ) {
-
-				clipOverlay = overlay;
-
-			} else {
-
-				regularOverlays.push( overlay );
-
-			}
-
-		} );
+		// regular color overlays
+		const regularOverlays = overlays.filter( o => ! o?.isClipOverlay );
 
 		regularOverlays.forEach( ( overlay, i ) => {
 
 			const { tileInfo } = overlayInfo.get( overlay );
 			const { meshInfo, target } = tileInfo.get( tile );
+
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
 				const params = this.meshParams.get( mesh );
 
-				// assign the new uvs
+				// layer uvs
 				const key = `layer_uv_${ i }`;
 				if ( geometry.getAttribute( key ) !== attribute ) {
 
@@ -1334,13 +1320,27 @@ export class ImageOverlayPlugin {
 
 				}
 
-				// ensure arrays have the right length for regular overlays only
+				// ensure arrays sized for all regular overlays
 				params.layerMaps.length = regularOverlays.length;
 				params.layerColor.length = regularOverlays.length;
 
-				// assign the uniforms for color overlays
-				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
+				if ( params.layerAlphaTest ) {
+
+					params.layerAlphaTest.length = regularOverlays.length;
+
+				}
+
+				// assign uniforms
+				params.layerMaps.value[ i ] = target ? ( target.texture || target.textures?.[ 0 ] || null ) : null;
 				params.layerColor.value[ i ] = overlay;
+
+				// Apply per-layer hard threshold only for alphaMode 'layer'
+				if ( params.layerAlphaTest ) {
+
+					params.layerAlphaTest.value[ i ] =
+						overlay.alphaMode === 'layer' ? ( overlay.alphaTest ?? 0.0 ) : 0.0;
+
+				}
 
 				material.defines.LAYER_COUNT = regularOverlays.length;
 				material.needsUpdate = true;
@@ -1349,17 +1349,22 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// attach clip overlay texture + settings
-		if ( clipOverlay ) {
+		// Choose which overlay to use for global clipping:
+		// 1) Explicit clip overlay (legacy), otherwise
+		// 2) First overlay with alphaMode='global' and alphaTest>0
+		const chosenGlobal = globalAlphaOverlay;
 
-			const { tileInfo } = overlayInfo.get( clipOverlay );
+		if ( chosenGlobal ) {
+
+			const { tileInfo } = overlayInfo.get( chosenGlobal );
 			const { meshInfo, target } = tileInfo.get( tile );
 
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
-				const { geometry } = mesh;
+				const { geometry, material } = mesh;
 				const params = this.meshParams.get( mesh );
 
+				// bind clip uv
 				if ( geometry.getAttribute( 'clip_uv' ) !== attribute ) {
 
 					geometry.setAttribute( 'clip_uv', attribute );
@@ -1367,31 +1372,44 @@ export class ImageOverlayPlugin {
 
 				}
 
-				// TODO: is textures[0] fine?
-				params.overlayClipMap.value = target ? target.textures[ 0 ] : null;
-				params.overlayClipThreshold.value = clipOverlay.clipThreshold ?? 0.5;
-				params.overlayClipInside.value = ( clipOverlay.clipInside ?? true ) ? 1 : 0;
-				params.overlayClipEnabled.value = target ? 1 : 0;
+				const hasMap = target ? 1 : 0;
+				const texture = target ? ( target.texture || target.textures?.[ 0 ] || null ) : null;
 
-				mesh.material.needsUpdate = true;
+				params.overlayClipMap.value = texture;
+				params.overlayClipThreshold.value = ( chosenGlobal.alphaTest ?? 0.5 );
+
+				// In new API we always keep inside based on alpha; legacy clipOverlay keeps its own setting
+				params.overlayClipInside.value = ( chosenGlobal.alphaInvert ? 0 : 1 );
+
+
+				// Always enable and force define so all tiles take the branch
+				params.overlayClipEnabled.value = 1;
+				if ( 'overlayClipForce' in params ) params.overlayClipForce.value = 1;
+				if ( 'overlayClipHasMap' in params ) params.overlayClipHasMap.value = hasMap;
+				if ( 'overlayClipFallbackAlpha' in params ) params.overlayClipFallbackAlpha.value = 0.0;
+
+				material.needsUpdate = true;
 
 			} );
 
 		} else {
 
+			// clear clip state on meshes
 			overlays.forEach( overlay => {
 
 				const { tileInfo } = overlayInfo.get( overlay );
 				const { meshInfo } = tileInfo.get( tile );
-				meshInfo.forEach( ( x, mesh ) => {
 
-					console.log( 'x, ', x );
+				meshInfo.forEach( ( mesh ) => {
 
 					const params = this.meshParams.get( mesh );
+
 					if ( params ) {
 
 						params.overlayClipMap.value = null;
 						params.overlayClipEnabled.value = 0;
+						if ( 'overlayClipForce' in params ) params.overlayClipForce.value = 0;
+						if ( 'overlayClipHasMap' in params ) params.overlayClipHasMap.value = 0;
 
 					}
 					mesh.material.needsUpdate = true;
@@ -1575,6 +1593,10 @@ export class GeoJSONOverlay extends ImageOverlay {
 		this.imageSource = new GeoJSONImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
+		this.alphaTest = options.alphaTest ?? 0.0; // 0..1, 0 = no hard clip
+		this.alphaMode = options.alphaMode ?? 'layer';
+		this.alphaInvert = options.alphaInvert ?? false;
+
 	}
 
 	init() {
@@ -1592,18 +1614,6 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
-export class GeoJSONClipOverlay extends GeoJSONOverlay {
-
-	constructor( options = {} ) {
-
-		super( options );
-		this.isClipOverlay = true;
-		this.clipThreshold = options.clipThreshold ?? 0.5;
-		this.clipInside = options.clipInside ?? true; // true = keep inside, false = keep outside
-
-	}
-
-}
 export class WMSTilesOverlay extends ImageOverlay {
 
 	constructor( options = {} ) {

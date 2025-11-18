@@ -57,33 +57,15 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 		frame?: Matrix4 | null,
 
-	} );
-
-}
-
-export class GeoJSONClipOverlay extends GeoJSONOverlay {
-
-	constructor( options: {
-
-		isClipOverlay : boolean,
-		clipThreshold : number,
-		clipInside : boolean,
-
-		// rasterize GeoJSON per tile (forwarded to GeoJSONImageSource)
-		geojson?: any, // FeatureCollection or null (if url provided)
-		url?: string, // optional URL alternative to geojson object
-		tileDimension?: number, // tile size in px (runtime name: tileDimension)
-		levels?: number, // max rasterization zoom
-		pointRadius?: number,
-		strokeStyle?: string,
-		fillStyle?: string,
-		color?: number | Color,
-		opacity?: number,
-		frame?: Matrix4 | null,
+		// clip options
+		alphaMode?: 'layer' | 'global',
+		alphaTest?: number, // 0..1, 0 = no hard clip
+		alphaInvert?: boolean, // false = cut inside (keep outside); true = cut outside (keep inside)
 
 	} );
 
 }
+
 
 export class WMSTilesOverlay extends ImageOverlay {
 
