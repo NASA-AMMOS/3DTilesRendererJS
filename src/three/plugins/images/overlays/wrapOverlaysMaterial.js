@@ -12,7 +12,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 	const params = {
 		layerMaps: { value: [] },
-		layerColor: { value: [] },
+		layerInfo: { value: [] },
 	};
 
 	material[ OVERLAY_PARAMS ] = params;
@@ -74,13 +74,17 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 			.replace( /void main\(/, value => /* glsl */`
 
 				#if LAYER_COUNT != 0
-					struct LayerTint {
+					struct LayerInfo {
 						vec3 color;
 						float opacity;
+
+						int alphaMask;
+						float alphaTest;
+						int alphaInvert;
 					};
 
 					uniform sampler2D layerMaps[ LAYER_COUNT ];
-					uniform LayerTint layerColor[ LAYER_COUNT ];
+					uniform LayerInfo layerInfo[ LAYER_COUNT ];
 				#endif
 
 				#pragma unroll_loop_start
@@ -126,11 +130,36 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 									smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
 
 								// apply tint & opacity
-								tint.rgb *= layerColor[ i ].color;
-								tint.rgba *= layerColor[ i ].opacity * wOpacity;
+								tint.rgb *= layerInfo[ i ].color;
+								tint.rgba *= layerInfo[ i ].opacity * wOpacity;
 
-								// premultiplied alpha equation
-								diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
+								// clip the alpha test edges
+								if ( layerInfo[ i ].alphaTest > 0.0 ) {
+
+									float fw = max( fwidth( tint.a ) * 0.5, 1e-7 );
+									float alphaTest = layerInfo[ i ].alphaTest;
+									tint.a = smoothstep( alphaTest - fw, alphaTest + fw, tint.a );
+
+								}
+
+								// invert the alpha
+								if ( layerInfo[ i ].alphaInvert > 0 ) {
+
+									tint.a = 1.0 - tint.a;
+
+								}
+
+								// apply the alpha across all existing layers if alpha mask is true
+								if ( layerInfo[ i ].alphaMask > 0 ) {
+
+									diffuseColor.a *= tint.a;
+
+								} else {
+
+									// premultiplied alpha equation
+									diffuseColor = mix( diffuseColor, tint, tint.a );
+
+								}
 
 							#endif
 
