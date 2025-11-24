@@ -1,12 +1,2 @@
-import { TilesRendererBase } from '3d-tiles-renderer/core';
+export { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 
-export class CesiumIonAuthPlugin {
-
-	constructor( options : {
-		apiToken: string,
-		assetId?: string | null,
-		autoRefreshToken?: boolean,
-		assetTypeHandler?: ( type: string, tiles: TilesRendererBase, asset: object ) => void,
-	} );
-
-}
