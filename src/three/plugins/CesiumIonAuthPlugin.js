@@ -29,7 +29,36 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	constructor( { apiToken, assetId = null, autoRefreshToken = false, useRecommendedSettings = true } ) {
+	constructor( options = {} ) {
+
+		const {
+			apiToken,
+			assetId = null,
+			autoRefreshToken = false,
+			useRecommendedSettings = true,
+			assetTypeHandler = ( type, tiles, info ) => {
+
+				if ( type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
+
+					tiles.registerPlugin( new QuantizedMeshPlugin( {
+						useRecommendedSettings: this.useRecommendedSettings,
+					} ) );
+
+				} else if ( type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
+
+					tiles.registerPlugin( new TMSTilesPlugin( {
+						useRecommendedSettings: this.useRecommendedSettings,
+						shape: 'ellipsoid',
+					} ) );
+
+				} else {
+
+					console.warn( `CesiumIonAuth: Cesium Ion asset type "${ type }" unhandled.` );
+
+				}
+
+			},
+		} = options;
 
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
@@ -37,6 +66,7 @@ export class CesiumIonAuthPlugin {
 		this.assetId = assetId;
 		this.autoRefreshToken = autoRefreshToken;
 		this.useRecommendedSettings = useRecommendedSettings;
+		this.assetTypeHandler = assetTypeHandler;
 		this.tiles = null;
 
 		this._tileSetVersion = - 1;
@@ -140,22 +170,18 @@ export class CesiumIonAuthPlugin {
 
 		} else {
 
-			// GLTF
-			// CZML
-			// KML
-			// GEOJSON
-			if ( json.type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
+			// fire callback for unhandled asset types
+			if ( json.type !== '3DTILES' ) {
 
-				tiles.registerPlugin( new QuantizedMeshPlugin( {
-					useRecommendedSettings: this.useRecommendedSettings,
-				} ) );
+				// Other types include:
+				// - GLTF
+				// - CZML
+				// - KML
+				// - GEOJSON
+				// - TERRAIN (QuantizedMesh)
+				// - IMAGERY (TSM Tiles)
 
-			} else if ( json.type === 'IMAGERY' && tiles.getPluginByName( 'TMS_TILES_PLUGIN' ) === null ) {
-
-				tiles.registerPlugin( new TMSTilesPlugin( {
-					useRecommendedSettings: this.useRecommendedSettings,
-					shape: 'ellipsoid',
-				} ) );
+				this.assetTypeHandler( json.type, tiles, json );
 
 			}
 
