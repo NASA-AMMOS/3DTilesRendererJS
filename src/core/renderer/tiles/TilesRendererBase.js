@@ -250,6 +250,44 @@ export class TilesRendererBase {
 
 	}
 
+	invokeOnePlugin( func ) {
+
+		const plugins = [ ...this.plugins, this ];
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			const result = func( plugins[ i ] );
+			if ( result ) {
+
+				return result;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
+	invokeAllPlugins( func ) {
+
+		const plugins = [ ...this.plugins, this ];
+		const pending = [];
+		for ( let i = 0; i < plugins.length; i ++ ) {
+
+			const result = func( plugins[ i ] );
+			if ( result ) {
+
+				pending.push( result );
+
+			}
+
+		}
+
+		return pending.length === 0 ? null : Promise.all( pending );
+
+	}
+
+	// Public API
 	traverse( beforecb, aftercb, ensureFullyProcessed = true ) {
 
 		if ( ! this.root ) return;
@@ -268,28 +306,13 @@ export class TilesRendererBase {
 
 	}
 
-	queueTileForDownload( tile ) {
+	getAttributions( target = [] ) {
 
-		if ( tile.__loadingState !== UNLOADED || this.lruCache.isFull() ) {
-
-			return;
-
-		}
-
-		this.queuedTiles.push( tile );
+		this.invokeAllPlugins( plugin => plugin !== this && plugin.getAttributions && plugin.getAttributions( target ) );
+		return target;
 
 	}
 
-	markTileUsed( tile ) {
-
-		// save the tile in a separate "used set" so we can mark it as unused
-		// before the next tile set traversal
-		this.usedSet.add( tile );
-		this.lruCache.markUsed( tile );
-
-	}
-
-	// Public API
 	update() {
 
 		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
@@ -460,25 +483,11 @@ export class TilesRendererBase {
 
 	}
 
-	dispatchEvent( e ) {
+	dispatchEvent( e ) {}
 
-		// event to be overriden for dispatching via an event system
+	addEventListener( name, callback ) {}
 
-	}
-
-	addEventListener( name, callback ) {
-
-	}
-
-	removeEventListener( name, callback ) {
-
-	}
-
-	fetchData( url, options ) {
-
-		return fetch( url, options );
-
-	}
+	removeEventListener( name, callback ) {}
 
 	parseTile( buffer, tile, extension ) {
 
@@ -630,6 +639,34 @@ export class TilesRendererBase {
 
 	}
 
+	// Private Functions
+	queueTileForDownload( tile ) {
+
+		if ( tile.__loadingState !== UNLOADED || this.lruCache.isFull() ) {
+
+			return;
+
+		}
+
+		this.queuedTiles.push( tile );
+
+	}
+
+	markTileUsed( tile ) {
+
+		// save the tile in a separate "used set" so we can mark it as unused
+		// before the next tile set traversal
+		this.usedSet.add( tile );
+		this.lruCache.markUsed( tile );
+
+	}
+
+	fetchData( url, options ) {
+
+		return fetch( url, options );
+
+	}
+
 	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
@@ -667,7 +704,6 @@ export class TilesRendererBase {
 
 	}
 
-	// Private Functions
 	// returns the total bytes used for by the given tile as reported by all plugins
 	getBytesUsed( tile ) {
 
@@ -1035,50 +1071,6 @@ export class TilesRendererBase {
 				}
 
 			} );
-
-	}
-
-	getAttributions( target = [] ) {
-
-		this.invokeAllPlugins( plugin => plugin !== this && plugin.getAttributions && plugin.getAttributions( target ) );
-		return target;
-
-	}
-
-	invokeOnePlugin( func ) {
-
-		const plugins = [ ...this.plugins, this ];
-		for ( let i = 0; i < plugins.length; i ++ ) {
-
-			const result = func( plugins[ i ] );
-			if ( result ) {
-
-				return result;
-
-			}
-
-		}
-
-		return null;
-
-	}
-
-	invokeAllPlugins( func ) {
-
-		const plugins = [ ...this.plugins, this ];
-		const pending = [];
-		for ( let i = 0; i < plugins.length; i ++ ) {
-
-			const result = func( plugins[ i ] );
-			if ( result ) {
-
-				pending.push( result );
-
-			}
-
-		}
-
-		return pending.length === 0 ? null : Promise.all( pending );
 
 	}
 
