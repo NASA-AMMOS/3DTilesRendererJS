@@ -1,3 +1,4 @@
+export * from './GoogleCloudAuthPlugin.js';
 export * from './ImplicitTilingPlugin.js';
 export * from './EnforceNonZeroErrorPlugin.js';
 export * from './auth/GoogleCloudAuth.js';
