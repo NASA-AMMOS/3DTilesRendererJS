@@ -466,6 +466,14 @@ export class TilesRendererBase {
 
 	}
 
+	addEventListener( name, callback ) {
+
+	}
+
+	removeEventListener( name, callback ) {
+
+	}
+
 	fetchData( url, options ) {
 
 		return fetch( url, options );
