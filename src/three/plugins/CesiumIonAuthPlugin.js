@@ -36,7 +36,7 @@ export class CesiumIonAuthPlugin {
 			assetId = null,
 			autoRefreshToken = false,
 			useRecommendedSettings = true,
-			assetTypeHandler = ( type, tiles, info ) => {
+			assetTypeHandler = ( type, tiles, asset ) => {
 
 				if ( type === 'TERRAIN' && tiles.getPluginByName( 'QUANTIZED_MESH_PLUGIN' ) === null ) {
 
