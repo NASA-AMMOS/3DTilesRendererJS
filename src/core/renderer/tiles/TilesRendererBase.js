@@ -326,7 +326,7 @@ export class TilesRendererBase {
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
+			this.invokeOnePlugin( plugin => plugin.loadRootTileset && plugin.loadRootTileset() )
 				.then( root => {
 
 					let processedUrl = this.rootURL;
@@ -775,7 +775,7 @@ export class TilesRendererBase {
 
 	}
 
-	loadRootTileSet() {
+	loadRootTileset() {
 
 		// transform the url
 		let processedUrl = this.rootURL;
@@ -809,6 +809,14 @@ export class TilesRendererBase {
 			} );
 
 		return pr;
+
+	}
+
+	// Deprecated: use loadRootTileset instead
+	loadRootTileSet() {
+
+		console.warn( 'TilesRenderer: "loadRootTileSet" has been deprecated. Use "loadRootTileset" instead.' );
+		return this.loadRootTileset();
 
 	}
 

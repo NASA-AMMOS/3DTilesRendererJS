@@ -122,7 +122,7 @@ export class QuantizedMeshPlugin {
 
 	}
 
-	loadRootTileSet() {
+	loadRootTileset() {
 
 		const { tiles } = this;
 
