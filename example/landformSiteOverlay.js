@@ -84,7 +84,7 @@ function init() {
 	tilesParent.rotation.set( Math.PI / 2, 0, 0 );
 	scene.add( tilesParent );
 
-	// load all tile sets
+	// load all tilesets
 	let downloadQueue = null;
 	let parseQueue = null;
 	let lruCache = null;

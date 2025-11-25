@@ -75,7 +75,7 @@ const lruPriorityCallback = ( a, b ) => {
 
 	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
 
-		// dispose of external tile sets last
+		// dispose of external tilesets last
 		return a.__hasUnrenderableContent ? - 1 : 1;
 
 	} else if ( a.__error !== b.__error ) {
@@ -550,7 +550,7 @@ export class TilesRendererBase {
 
 		if ( tile.content?.uri ) {
 
-			// "content" should only indicate loadable meshes, not external tile sets
+			// "content" should only indicate loadable meshes, not external tilesets
 			const extension = getUrlExtension( tile.content.uri );
 
 			tile.__hasContent = true;

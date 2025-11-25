@@ -111,7 +111,7 @@ function init() {
 
 	scene.add( new AmbientLight( 0xffffff, 1.0 ) );
 
-	// create rotation object to orient the tile set
+	// create rotation object to orient the tileset
 	rotationContainer = new Group();
 	rotationContainer.position.y = 40;
 	scene.add( rotationContainer );
@@ -173,7 +173,7 @@ function reinstantiateTiles() {
 	// save the ion access token
 	localStorage.setItem( 'ionApiKey', params.accessToken );
 
-	// create tile set
+	// create tileset
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.accessToken, assetId: params.assetId } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( { metadata: true } ) );

@@ -62,7 +62,7 @@ export function TileFlatteningShape( props ) {
 		direction = null,
 
 		// if true then a projection direction is derived from the shape position
-		// relative to the tile set ellipsoid if "direction" is not present
+		// relative to the tileset ellipsoid if "direction" is not present
 		relativeToEllipsoid = false,
 	} = props;
 
@@ -122,7 +122,7 @@ export function TileFlatteningShape( props ) {
 
 	}, [ tiles, group, direction, relativeToEllipsoid, plugin, threshold, thresholdMode, flattenRange, relativeGroup ] );
 
-	// Add the provided shape to the tile set
+	// Add the provided shape to the tileset
 	useEffect( () => {
 
 		if ( tiles === null || group === null || plugin === null ) {
