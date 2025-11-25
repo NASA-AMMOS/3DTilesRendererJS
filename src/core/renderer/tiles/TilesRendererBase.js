@@ -514,7 +514,7 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null ) {
+	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
 		this.processedTiles.add( tile );
 
@@ -608,13 +608,13 @@ export class TilesRendererBase {
 
 		}
 
-		tile.__basePath = tileSetDir;
+		tile.__basePath = tilesetDir;
 
 		tile.__lastFrameVisited = - 1;
 
 		this.invokeAllPlugins( plugin => {
 
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tileSetDir, parentTile );
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tilesetDir, parentTile );
 
 		} );
 

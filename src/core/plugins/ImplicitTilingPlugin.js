@@ -14,7 +14,7 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile ) {
+	preprocessNode( tile, tilesetDir, parentTile ) {
 
 		if ( tile.implicitTiling ) {
 

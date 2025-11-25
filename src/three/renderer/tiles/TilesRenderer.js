@@ -492,9 +492,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null ) {
+	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
-		super.preprocessNode( tile, tileSetDir, parentTile );
+		super.preprocessNode( tile, tilesetDir, parentTile );
 
 		const transform = new Matrix4();
 		if ( tile.transform ) {
