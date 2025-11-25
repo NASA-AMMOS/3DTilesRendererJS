@@ -209,7 +209,7 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		tiles.preprocessTileSet( tileset, baseUrl );
+		tiles.preprocessTileset( tileset, baseUrl );
 
 		return tileset;
 

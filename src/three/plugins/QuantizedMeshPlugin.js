@@ -208,7 +208,7 @@ export class QuantizedMeshPlugin {
 
 				let baseUrl = tiles.rootURL;
 				tiles.invokeAllPlugins( plugin => baseUrl = plugin.preprocessURL ? plugin.preprocessURL( baseUrl, null ) : baseUrl );
-				tiles.preprocessTileSet( tileset, baseUrl );
+				tiles.preprocessTileset( tileset, baseUrl );
 
 				return tileset;
 

@@ -760,7 +760,15 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessTileSet( json, url, parent = null ) {
+	preprocessTileset( json, url, parent = null ) {
+
+		// check for deprecated function usage
+		const proto = Object.getPrototypeOf( this );
+		if ( Object.hasOwn( proto, 'preprocessTileSet' ) ) {
+
+			console.warn( `${ proto.constructor.name }: Class overrides deprecated "preprocessTileSet" method. Please rename to "preprocessTileset".` );
+
+		}
 
 		const version = json.asset.version;
 		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
@@ -782,6 +790,12 @@ export class TilesRendererBase {
 
 	}
 
+	preprocessTileSet( json, url, parent = null ) {
+
+		console.warn( 'TilesRenderer: "preprocessTileSet" has been deprecated. Use "preprocessTileset" instead.' );
+
+	}
+
 	loadRootTileset() {
 
 		// check for deprecated function usage
@@ -789,7 +803,6 @@ export class TilesRendererBase {
 		if ( Object.hasOwn( proto, 'loadRootTileSet' ) ) {
 
 			console.warn( `${ proto.constructor.name }: Class overrides deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".` );
-			return this.loadRootTileSet();
 
 		}
 
@@ -819,7 +832,7 @@ export class TilesRendererBase {
 			} )
 			.then( root => {
 
-				this.preprocessTileSet( root, processedUrl );
+				this.preprocessTileset( root, processedUrl );
 				return root;
 
 			} );
@@ -988,7 +1001,7 @@ export class TilesRendererBase {
 
 					if ( extension === 'json' && content.root ) {
 
-						this.preprocessTileSet( content, uri, tile );
+						this.preprocessTileset( content, uri, tile );
 						tile.children.push( content.root );
 						externalTileset = content;
 						isExternalTileset = true;
