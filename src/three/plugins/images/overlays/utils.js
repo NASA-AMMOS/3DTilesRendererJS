@@ -1,6 +1,6 @@
 import { Vector3, Matrix4, MathUtils } from 'three';
 
-// iterates over all present tiles in the given tile set at the given level in the given range
+// iterates over all present tiles in the given tileset at the given level in the given range
 export function forEachTileInBounds( range, level, tiling, normalized, callback ) {
 
 	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-8 was chosen since smaller values

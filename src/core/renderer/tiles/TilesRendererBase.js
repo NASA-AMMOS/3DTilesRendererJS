@@ -187,7 +187,7 @@ export class TilesRendererBase {
 
 		if ( plugin[ PLUGIN_REGISTERED ] === true ) {
 
-			throw new Error( 'TilesRendererBase: A plugin can only be registered to a single tile set' );
+			throw new Error( 'TilesRendererBase: A plugin can only be registered to a single tileset' );
 
 		}
 
@@ -376,8 +376,8 @@ export class TilesRendererBase {
 		markVisibleTiles( root, this );
 		toggleTiles( root, this );
 
-		// TODO: This will only sort for one tile set. We may want to store this queue on the
-		// LRUCache so multiple tile sets can use it at once
+		// TODO: This will only sort for one tileset. We may want to store this queue on the
+		// LRUCache so multiple tilesets can use it at once
 		// start the downloads of the tiles as needed
 		const queuedTiles = this.queuedTiles;
 		queuedTiles.sort( lruCache.unloadPriorityCallback );
@@ -655,7 +655,7 @@ export class TilesRendererBase {
 	markTileUsed( tile ) {
 
 		// save the tile in a separate "used set" so we can mark it as unused
-		// before the next tile set traversal
+		// before the next tileset traversal
 		this.usedSet.add( tile );
 		this.lruCache.markUsed( tile );
 
@@ -774,7 +774,7 @@ export class TilesRendererBase {
 		let processedUrl = this.rootURL;
 		this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
-		// load the tile set root
+		// load the tileset root
 		const pr = this
 			.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( processedUrl, this.fetchOptions ) )
 			.then( res => {

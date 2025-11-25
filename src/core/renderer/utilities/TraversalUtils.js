@@ -1,4 +1,4 @@
-// Helper function for traversing a tile set. If `beforeCb` returns `true` then the
+// Helper function for traversing a tileset. If `beforeCb` returns `true` then the
 // traversal will end early.
 export function traverseSet( tile, beforeCb = null, afterCb = null ) {
 

@@ -191,7 +191,7 @@ export class ImageFormatPlugin {
 
 		}
 
-		// generate tile set
+		// generate tileset
 		const tileset = {
 			asset: {
 				version: '1.1'

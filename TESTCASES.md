@@ -311,7 +311,7 @@ Verify that the external tileset does not load but the rest of the tileset conti
 
 Verify all steps happen as written.
 
-## Verify disposing of the tileset removes all sub tile sets
+## Verify disposing of the tileset removes all sub tilesets
 
 #### steps
 
@@ -326,7 +326,7 @@ Verify all steps happen as written.
 
 Verify that the total geometries in the render stats display is still "220".
 
-## Verify tileset raycasting with additive tile sets
+## Verify tileset raycasting with additive tilesets
 
 #### steps
 

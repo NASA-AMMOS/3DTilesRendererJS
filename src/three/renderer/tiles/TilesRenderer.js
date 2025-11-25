@@ -314,7 +314,7 @@ export class TilesRenderer extends TilesRendererBase {
 		return super.loadRootTileSet( ...args )
 			.then( root => {
 
-				// cache the gltf tile set rotation matrix
+				// cache the gltf tileset rotation matrix
 				const { asset, extensions = {} } = root;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
@@ -477,7 +477,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.dispatchEvent( { type: 'update-after' } );
 
-		// check for cameras _after_ base update so we can enable pre-loading the root tile set
+		// check for cameras _after_ base update so we can enable pre-loading the root tileset
 		if ( cameras.length === 0 && this.root ) {
 
 			let found = false;

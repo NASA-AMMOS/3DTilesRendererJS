@@ -9,7 +9,7 @@ const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
 
-// We don't know the height ranges for the tile set on load so assume a large range and
+// We don't know the height ranges for the tileset on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
 const INITIAL_HEIGHT_RANGE = 1e4;
 const _vec = /* @__PURE__ */ new Vector3();
@@ -187,7 +187,7 @@ export class QuantizedMeshPlugin {
 
 				}
 
-				// produce the tile set root
+				// produce the tileset root
 				const tileset = {
 					asset: {
 						version: '1.1'

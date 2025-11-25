@@ -74,7 +74,7 @@ export class CesiumIonAuthPlugin {
 	loadRootTileSet() {
 
 		// ensure we have an up-to-date token and root url, then trigger the internal
-		// root tile set load function
+		// root tileset load function
 		return this
 			.auth
 			.refreshToken()
@@ -142,7 +142,7 @@ export class CesiumIonAuthPlugin {
 			const url = new URL( json.options.url );
 			tiles.rootURL = json.options.url;
 
-			// if the tile set is "external" then assume it's a google API tile set
+			// if the tileset is "external" then assume it's a google API tileset
 			tiles.registerPlugin( new GoogleCloudAuthPlugin( {
 				apiToken: url.searchParams.get( 'key' ),
 				autoRefreshToken: this.autoRefreshToken,
