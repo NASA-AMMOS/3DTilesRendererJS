@@ -198,10 +198,18 @@ export class TilesRendererBase {
 
 		}
 
-		// Warn if plugin implements deprecated loadRootTileSet method
+		// warn if plugin implements deprecated loadRootTileSet method
 		if ( plugin.loadRootTileSet && ! plugin.loadRootTileset ) {
 
 			console.warn( 'TilesRendererBase: Plugin implements deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".' );
+			plugin.loadRootTileset = plugin.loadRootTileSet;
+
+		}
+
+		if ( plugin.preprocessTileSet && ! plugin.preprocessTileset ) {
+
+			console.warn( 'TilesRendererBase: Plugin implements deprecated "preprocessTileSet" method. Please rename to "preprocessTileset".' );
+			plugin.preprocessTileset = plugin.preprocessTileSet;
 
 		}
 
@@ -790,9 +798,10 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessTileSet( json, url, parent = null ) {
+	preprocessTileSet( ...args ) {
 
 		console.warn( 'TilesRenderer: "preprocessTileSet" has been deprecated. Use "preprocessTileset" instead.' );
+		return this.preprocessTileset( ...args );
 
 	}
 
@@ -841,9 +850,10 @@ export class TilesRendererBase {
 
 	}
 
-	loadRootTileSet() {
+	loadRootTileSet( ...args ) {
 
 		console.warn( 'TilesRenderer: "loadRootTileSet" has been deprecated. Use "loadRootTileset" instead.' );
+		return this.loadRootTileSet( ...args );
 
 	}
 
