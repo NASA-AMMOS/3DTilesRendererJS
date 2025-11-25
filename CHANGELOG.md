@@ -162,7 +162,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Change `load-error` event field from `uri` to `url` as documented.
 - Fixed type definitions for some events.
 - B3DM, I3DM, PNTS Loaders: Fixed case where RTC_CENTER feature would not be parsed correctly.
-- Re-add "load-tile-set" event when child tile sets are loaded.
+- Re-add "load-tile-set" event when child tilesets are loaded.
 - Re-add url to "load-tile-set" event.
 - TMSTilesPlugin: Add support for limited bounds.
 
@@ -196,7 +196,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Internal "force-rerender" function renamed to "needs-render".
-- TilesRenderer: Move check for cameras after update traversal to enable loading the root tile set file without a camera defined.
+- TilesRenderer: Move check for cameras after update traversal to enable loading the root tileset file without a camera defined.
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
@@ -207,7 +207,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fixed shift key not working as expected.
 - Fixed error caused by loading a glTF file with no scenes.
 - GLTF Metadata Extensions: Fix case where an error would be thrown when non-mesh nodes are present.
-- Fixed case where tile sets with implicit tiling would not be loaded correctly if an external availability buffer was used.
+- Fixed case where tilesets with implicit tiling would not be loaded correctly if an external availability buffer was used.
 - Asynchronously process child tiles to avoid processing stalls.
 - CesiumIonPlugin: Forward "autoRefreshToken" value to GoogleCloudAuthPlugin.
 
@@ -220,7 +220,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.7] - 2025.03.03
 ### Added
-- GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
+- GlobeControls: If no raycast intersection is fund then fallback to intersecting the tileset globe.
 - EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 - R3F EastNorthUpFrame: Add support for passing the ellipsoid in directly.
 - TilesRenderer.group: Added "matrixWorldInverse" field.
@@ -246,7 +246,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix GLTF Metadata plugin not returning matrix values correctly.
 - TMS, XYZ Plugins: Fix case where texture would be distorted due to incorrect vertex placement when using mercator projection.
 - Case where TilesRenderer.root was not initialized before the "load-tile-set" event was fired.
-- R3F TilesRenderer: Update the tile set when a tile set is loaded.
+- R3F TilesRenderer: Update the tileset when a tileset is loaded.
 - ImageFormatPlugins: Fix plugin so it does not preclude updates incorrectly.
 - R3F TilesRenderer: Prevent reinstantiation of all child plugins, objects on options change.
 - R3F EastNorthUpFrame: Automatically update based on ellipsoid updates.
@@ -270,13 +270,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.4] - 2025.01.24
 ### Added
-- `load-error` events when model, tile set, and API token requests fail to fetch or parse.
+- `load-error` events when model, tileset, and API token requests fail to fetch or parse.
 - CanvasDOMOverlay: Add support for "ref".
 - CameraTransitionManager: Add `easeFunction` setting.
 - CameraTransitionManager: Add option to pass delta time to the update function.
 
 ### Fixed
-- Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tile sets).
+- Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tilesets).
 - Moved the dispatch location of "load-model", "tiles-load-start", and "tiles-load-end" so the behavior is more consistent.
 
 ## [0.4.3] - 2025.01.19
@@ -335,7 +335,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
-- TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
+- TilesFadePlugin: Fading tiles are now present in the tileset root rather than a sub group.
 - TileCompressionPlugin: Change the defaults to not automatically compress normals, uvs to avoid artifacts.
 - GlobeControls: Orthographic "near" margin around the globe has been increased from 10% to 25% of the large ellipsoid radius value.
 
@@ -390,7 +390,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.3.40] - 2024.10.29
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
-- R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
+- R3F TilesRenderer: Added `group` property for passing react properties to the root tileset object.
 - R3F `<CompassGizmo>` component.
 
 ### Changed
@@ -424,7 +424,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve EnvironmentControls momementum thresholds so movement stops sooner.
 
 ### Fixed
-- Case where tile set scale was incorrectly used when computed screenspace error.
+- Case where tileset scale was incorrectly used when computed screenspace error.
 - Case where `setTileVisibility` could get called asymmetrically.
 - Case where `TilesFadePlugin` would hold on to scene geometry after disposal.
 
@@ -453,7 +453,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Added "enableDamping" option for inertial animation.
 - Ellipsoid: Added "getEastNorthUpAxes".
 - Ellipsoid: Added "getAzElRollFromRotationMatrix" and "getRotationMatrixFromAzElRoll"
-- TilesRendererBase: Tiles are now queued and sorted before triggering load to avoid only a single tile set branch loading and filling up the lru cache.
+- TilesRendererBase: Tiles are now queued and sorted before triggering load to avoid only a single tileset branch loading and filling up the lru cache.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
@@ -497,14 +497,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GLTFStructureMetadata extension exits gracefully if no extension is present.
 
 ### Changed
-- CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
+- CesiumIonTilesRenderer: Will immediately load the tileset after resolving credentials.
 - Examples FadeTilesRenderer has been changed to a plugin.
 - Deprecated `GoogleTilesRenderer` and `CesiumIonTilesRenderer` in favor of using the new authentication plugins.
 - Loaders: ".load" function has been renamed to ".loadAsync".
 - Deprecated `onLoadTileset`, `onLoadModel`, `onDisposeModel`, and `onTileVisibilityChange` in favor of their event equivalents.
 - LRUCache: "unloadPriorityCallback" has been changted to take two tile arguments to sort instead of one.
 - DebugTilesRenderer has been deprecated in favor of the "DebugTilesPlugin".
-- LRU Cache unload priority function now unloads deepest tiles first, then least recently used, then non-external tile sets.
+- LRU Cache unload priority function now unloads deepest tiles first, then least recently used, then non-external tilesets.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
@@ -519,7 +519,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.3.33] - 2024.05.31
 ### Fixed
-- Remove logged error when a tile set is aborted.
+- Remove logged error when a tileset is aborted.
 - Adjusted raycast early exit behavior based on three.js r165.
 - EnvironmentControls: fix case where the dragging does not work from below
 - Remote glTF textures failing to load.
@@ -817,7 +817,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.2.1] - 2020-12-15
 ### Added
-- Support for external tile sets.
+- Support for external tilesets.
 - B3DM support for RTC_CENTER.
 
 ### Fixed

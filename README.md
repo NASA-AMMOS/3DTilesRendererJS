@@ -7,11 +7,11 @@
 
 Three.js renderer implementation for the [3D Tiles format](https://github.com/AnalyticalGraphicsInc/3d-tiles/blob/master/specification/). The renderer supports most of the 3D Tiles spec features with a few exceptions. For a list of available data sets and generation tools see the [3d Tiles resources](https://github.com/CesiumGS/3d-tiles/blob/main/RESOURCES.md) list.
 
-If a tile set or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
+If a tileset or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
 **Examples**
 
-[Dingo Gap Mars dataset with multiple tile sets](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mars.html)
+[Dingo Gap Mars dataset with multiple tilesets](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mars.html)
 
 [Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)
 
@@ -73,7 +73,7 @@ npm install 3d-tiles-renderer --save
 
 ## Basic TilesRenderer
 
-Setting up a basic application with a 3D Tile Set.
+Setting up a basic application with a 3D Tileset.
 
 ```js
 import { TilesRenderer } from '3d-tiles-renderer';
@@ -85,7 +85,7 @@ tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
 tilesRenderer.addEventListener( 'load-tile-set', () => {
 
-	// optionally center the tile set in case it's far off center
+	// optionally center the tileset in case it's far off center
 	const sphere = new Sphere();
 	tilesRenderer.getBoundingSphere( sphere );
 	tilesRenderer.group.position.copy( sphere.center ).multiplyScalar( - 1 );
@@ -111,7 +111,7 @@ function renderLoop() {
 
 ## Custom Material
 
-Setting up a 3D Tile Set using a custom material.
+Setting up a 3D Tileset using a custom material.
 
 ```js
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
@@ -246,7 +246,7 @@ fetch( url, { mode: 'cors' } )
 
 ## Render On Change
 
-The tile set and model load callbacks can be used to detect when the data has changed and a new render is necessary.
+The tileset and model load callbacks can be used to detect when the data has changed and a new render is necessary.
 
 ```js
 let needsRerender = true;
@@ -317,7 +317,7 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 ### events
 
 ```js
-// Fired when a new root or child tile set is loaded.
+// Fired when a new root or child tileset is loaded.
 { type: 'load-tile-set', tileSet: Object, url: String }
 
 // Fired when a tile model is loaded.
@@ -330,7 +330,7 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 // Fired when a tile model is disposed.
 { type: 'dispose-model', scene: THREE.Group, tile: Object }
 
-// Fired when the tile set hierarchy is ready for "update to be called
+// Fired when the tileset hierarchy is ready for "update to be called
 // again due to new content having loaded or asynchronous processing finished.
 { type: 'needs-update' }
 
@@ -346,13 +346,13 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 // Fired when tile content begins downloading.
 { type: 'tile-download-start', tile: Object }
 
-// Fired when a tile content or the root tile set fails to load.
+// Fired when a tile content or the root tileset fails to load.
 { type: 'load-error', tile: Object | null, error: Error, url: string | URL }
 
-// Fired when a camera is added to be accounted for when traversing the tile set.
+// Fired when a camera is added to be accounted for when traversing the tileset.
 { type: 'add-camera', camera: Camera }
 
-// Fired when a camera is removed from being accounted for when traversing the tile set.
+// Fired when a camera is removed from being accounted for when traversing the tileset.
 { type: 'delete-camera', camera: Camera }
 
 // Fired when the resolution being rendered to is changed for any tracked camera.
@@ -365,7 +365,7 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 fetchOptions = {} : Object
 ```
 
-Options passed to `fetch` when loading tile set and model data.
+Options passed to `fetch` when loading tileset and model data.
 
 ### .errorTarget
 
@@ -445,7 +445,7 @@ Queue for expanding and initializing tiles for traversal. Max jobs defaults to `
 group : Group
 ```
 
-The container group for the 3d tiles. Add this to the three.js scene in order to render it. The group includes an additional `matrixWorldInverse` field for transforming objects into the local tile set frame.
+The container group for the 3d tiles. Add this to the three.js scene in order to render it. The group includes an additional `matrixWorldInverse` field for transforming objects into the local tileset frame.
 
 ### .manager
 
@@ -469,7 +469,7 @@ Returns the total load progress between `[0, 1]`. Progress is measured since the
 readonly ellipsoid : Ellipsoid
 ```
 
-A definition on the ellipsoid used for the tile set. Defaults to the WGS84 ellipsoid and is modified if the `3DTILES_ELLIPSOID` plugin is present. Specified in the local frame of [TilesRenderer.group](#group).
+A definition on the ellipsoid used for the tileset. Defaults to the WGS84 ellipsoid and is modified if the `3DTILES_ELLIPSOID` plugin is present. Specified in the local frame of [TilesRenderer.group](#group).
 
 ### .constructor
 
@@ -477,7 +477,7 @@ A definition on the ellipsoid used for the tile set. Defaults to the WGS84 ellip
 constructor( url = null : String | null )
 ```
 
-Takes the url of the `tileset.json` for the tile set to be rendered.
+Takes the url of the `tileset.json` for the tileset to be rendered.
 
 ### .update
 
@@ -485,7 +485,7 @@ Takes the url of the `tileset.json` for the tile set to be rendered.
 update() : void
 ```
 
-Updates the tiles to render and kicks off loads for the appropriate tiles in the 3d tile set.
+Updates the tiles to render and kicks off loads for the appropriate tiles in the 3d tileset.
 
 Both `group.matrixWorld` and all cameras world matrices are expected to be up to date before this is called.
 
@@ -503,7 +503,7 @@ If any tiles failed to load due to server or network issues then they will not b
 getBoundingBox( box : Box3 ) : boolean
 ```
 
-Sets `box` to the axis aligned root bounding box of the tile set in the [group](#group) frame. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
+Sets `box` to the axis aligned root bounding box of the tileset in the [group](#group) frame. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
 
 ### .getOrientedBoundingBox
 
@@ -511,7 +511,7 @@ Sets `box` to the axis aligned root bounding box of the tile set in the [group](
 getOrientedBoundingBox( box : Box3, boxTransform : Matrix4 ) : boolean;
 ```
 
-Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tile set. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
+Sets `box` and `boxTransform` to the bounds and matrix that describe the oriented bounding box that encapsulates the root of the tileset. Returns `false` if the tile root is not loaded and the bounding box cannot be set.
 
 ### .getBoundingSphere
 
@@ -519,7 +519,7 @@ Sets `box` and `boxTransform` to the bounds and matrix that describe the oriente
 getBoundingSphere( sphere : Sphere ) : boolean;
 ```
 
-Sets `sphere` to the bounding sphere that encapsulates the root of the tile set. Returns `false` if the tile root is not loaded and the bounding sphere cannot be set.
+Sets `sphere` to the bounding sphere that encapsulates the root of the tileset. Returns `false` if the tile root is not loaded and the bounding sphere cannot be set.
 
 ### .hasCamera
 
@@ -535,7 +535,7 @@ Returns `true` if the camera has already been set on the renderer.
 setCamera( camera : Camera ) : boolean
 ```
 
-Adds the camera to the camera to be accounted for when traversing the tile set. Returns `false` if the camera is already being tracked. Returns `true` otherwise.
+Adds the camera to the camera to be accounted for when traversing the tileset. Returns `false` if the camera is already being tracked. Returns `true` otherwise.
 
 ### .deleteCamera
 
@@ -543,7 +543,7 @@ Adds the camera to the camera to be accounted for when traversing the tile set. 
 deleteCamera( camera : Camera ) : boolean
 ```
 
-Removes the given camera from being accounted for when traversing the tile set. Returns `false` if the camera was not tracked.
+Removes the given camera from being accounted for when traversing the tileset. Returns `false` if the camera was not tracked.
 
 ### .setResolution
 
@@ -568,7 +568,7 @@ Sets the resolution being rendered to for the given camera via renderer which ac
 forEachLoadedModel( callback : ( scene : Object3D, tile : object ) => void ) : void
 ```
 
-Fires the callback for every loaded scene in the hierarchy with the associated tile as the second argument. This can be used to update the materials of all loaded meshes in the tile set.
+Fires the callback for every loaded scene in the hierarchy with the associated tile as the second argument. This can be used to update the materials of all loaded meshes in the tileset.
 
 ### .registerPlugin
 
@@ -603,7 +603,7 @@ getAttributions( target = [] : Array ) : Array<{
 }>
 ```
 
-Returns a list of attributions for the data in the tile set. The list can change when tile visibility changes.
+Returns a list of attributions for the data in the tileset. The list can change when tile visibility changes.
 
 The "type" can be a "string", "html", or "image" depending on the type of attribution. Google Photorealistic Tiles, for example, returns a list of sources as a string.
 

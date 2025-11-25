@@ -579,7 +579,7 @@ Available options are as follows:
 	// is oriented to three.js' +Y up direction. Valid values are positive or negative x, y, or z.
 	up: '+z',
 
-	// Whether or not to recenter the tile set.
+	// Whether or not to recenter the tileset.
 	recenter: true,
 }
 ```
@@ -805,7 +805,7 @@ Constructor takes the following options:
 
 ```js
 {
-	// The WebGLRenderer instanced being used to render the tile set. Used for constructing and
+	// The WebGLRenderer instanced being used to render the tileset. Used for constructing and
 	// rendering to render targets.
 	renderer: WebGLRenderer,
 
@@ -846,7 +846,7 @@ Removes the given overlay.
 
 ## ImageOverlay
 
-Base class for series of classes used to load and overlay tiled images on tile sets.
+Base class for series of classes used to load and overlay tiled images on tilesets.
 
 See the ["ImageOverlayPlugin" types file](./three/images/ImageOverlayPlugin.d.ts) for list of overlay classes and options.
 
@@ -873,7 +873,7 @@ frame = null: Matrix4 | null
 ```
 The frame to use for projecting the image as a planar-projected overlay. If "null" then
 ellipsoidal projection is used. The frame origin represents the bottom left of the
-overlay. Z is up. Frame is specified in the local frame of the tile set and is expected to
+overlay. Z is up. Frame is specified in the local frame of the tileset and is expected to
 transform points into the local frame from [ 0, 1 ].
 
 Overlay position will update as frame is adjusted.

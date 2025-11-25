@@ -17,7 +17,7 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 ```jsx
 import { TilesRenderer } from '3d-tiles-renderer/r3f';
 
-const TILESET_URL = /* your tile set url */;
+const TILESET_URL = /* your tileset url */;
 const cameraPosition = [ x, y, z ]; // Set the camera position so the tiles are visible
 export default function App() {
   return (
@@ -90,7 +90,7 @@ Wrapper for the three.js `TilesRenderer` class. Listening for events are specifi
 	// if false then "update" is not called
 	enabled={ true }
 
-	// pass properties to apply to the tile set root object
+	// pass properties to apply to the tileset root object
 	group={ {
 		position: [ 0, 10, 0 ],
 		rotation: [ Math.PI / 2, 0, 0 ],
@@ -170,7 +170,7 @@ The `GlobeControls` component must be set as a child of the `TilesRenderer` comp
 
 ## EastNorthUpFrame
 
-The `EastNorthUpFrame` creates a root object that is centered on the provided point relative to the tile sets ellipsoid, specified via lat/lon/height and euler angle props and is used to place 3D objects relative to that point. It does not rotate the original tile set and must be a child of a `TilesRenderer` component.
+The `EastNorthUpFrame` creates a root object that is centered on the provided point relative to the tilesets ellipsoid, specified via lat/lon/height and euler angle props and is used to place 3D objects relative to that point. It does not rotate the original tileset and must be a child of a `TilesRenderer` component.
 
 It can be used to place markers on the surface of the ellipsoid, such as a cone for pointing to a location:
 
@@ -204,7 +204,7 @@ It can be used to place markers on the surface of the ellipsoid, such as a cone 
 
 ## TilesAttributionOverlay
 
-The `TilesAttributionOverlay` component must be embedded in a tile set and will automatically display the credits associated with the loaded data set.
+The `TilesAttributionOverlay` component must be embedded in a tileset and will automatically display the credits associated with the loaded data set.
 
 ```jsx
 <TilesRenderer url={ url } { ...props }>
