@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Moved "GoogleCloudAuthlugin" to "3d-tiles-renderer/core/plugins".
 - Moved "CesiumIonAuthPlugin" to "3d-tiles-renderer/core/plugins".
 - CesiumIonAuthPlugin: Auto-registration of QuantizedMesh and TMS plugins has been removed. See "assetTypeHandler" to register the necessary plugins as-needed.
+- TilesRenderer: "load-tile-set" event has been renamed to "load-tileset"
+- TilesRenderer: "load-tileset" payload member "tileSet" has been renamed to "tileset"
+- TilesRenderer: "rootTileSet" member has been renamed "rootTileset"
+- Documentation and other variable names have adjusted any instances of "tile set" to "tileset" to align with the 3D Tiles specification nomenclature.
 
 ### Added
 - Added "assetTypeHandler" to "CesiumIonAuthPlugin" for registering plugins based on loaded asset type.
