@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Added "assetTypeHandler" to "CesiumIonAuthPlugin" for registering plugins based on loaded asset type.
+- Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
 
 ## [0.4.18] - 2025.11.14
 ### Added
