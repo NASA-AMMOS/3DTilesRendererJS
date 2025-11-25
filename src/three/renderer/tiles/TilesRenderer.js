@@ -106,7 +106,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	addEventListener( type, listener ) {
 
-		// Handle deprecated event name
 		if ( type === 'load-tile-set' ) {
 
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
@@ -120,7 +119,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	hasEventListener( type, listener ) {
 
-		// Handle deprecated event name
 		if ( type === 'load-tile-set' ) {
 
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
@@ -134,7 +132,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	removeEventListener( type, listener ) {
 
-		// Handle deprecated event name
 		if ( type === 'load-tile-set' ) {
 
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
@@ -148,7 +145,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 	dispatchEvent( e ) {
 
-		// Add backward compatibility for deprecated 'tileSet' property
 		if ( 'tileset' in e ) {
 
 			Object.defineProperty( e, 'tileSet', {

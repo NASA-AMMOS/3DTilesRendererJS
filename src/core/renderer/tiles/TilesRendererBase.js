@@ -98,7 +98,6 @@ export class TilesRendererBase {
 
 	}
 
-	// Deprecated: use rootTileset instead
 	get rootTileSet() {
 
 		console.warn( 'TilesRenderer: "rootTileSet" has been deprecated. Use "rootTileset" instead.' );

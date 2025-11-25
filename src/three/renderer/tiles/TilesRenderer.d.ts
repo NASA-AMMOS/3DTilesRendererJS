@@ -7,9 +7,9 @@ export interface TilesRendererEventMap {
 	'add-camera': { camera: Camera };
 	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
-	'load-tileset': { tileset: object, /** @deprecated Use tileset instead */ tileSet?: object, url: string };
-	/** @deprecated Use 'load-tileset' instead */
-	'load-tile-set': { tileset: object, /** @deprecated Use tileset instead */ tileSet?: object, url: string };
+	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
+	/* @deprecated Use 'load-tileset' instead */
+	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
 	'tile-download-start': { tile: Tile };
