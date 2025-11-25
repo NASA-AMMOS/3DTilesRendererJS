@@ -369,10 +369,38 @@ tiles.errorTarget = 20;
 ### constructor
 
 ```js
-constructor( { apiToken : String, assetId = null : String | null, autoRefreshToken = false : Boolean } )
+constructor( {
+	apiToken : String,
+	assetId = null : String | null,
+	autoRefreshToken = false : Boolean,
+	assetTypeHandler? : ( type: string, tiles: TilesRenderer, asset: Object ) => void,
+} )
 ```
 
 Takes the CesiumIon access token and optionally the asset id. If the asset id is not provided then the Cesium Ion URL is expected to have been passed into the `TilesRenderer` constructor. If `autoRefreshToken` is set to true then the plugin will automatically perform a new root tile request once the existing token has expired after an hour.
+
+### .assetTypeHandler
+
+```js
+assetTypeHandler: ( type: string, tiles: TilesRenderer, asset: Object ) => void
+```
+
+Callback fired when an asset type other than 3DTiles is encountered. A warning is logged by default but a provided callback can add a plugin to add support for the loaded asset type. If "TERRAIN" is encountered then the handler can add "QuantizedMeshPlugin", for example.
+
+```js
+tilesRenderer.registerPlugin( {
+  // ...
+  assetTypeHandler: ( type, tilesRenderer ) => {
+
+	if ( type === '' ) {
+
+		tilesRenderer.registerPlugin( new QuantizedMeshPlugin() );
+
+	}
+
+  },
+} );
+```
 
 ## TextureOverlayPlugin
 

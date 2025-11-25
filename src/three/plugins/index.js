@@ -1,15 +1,14 @@
 // three.js plugins
-export { CesiumIonAuthPlugin } from './CesiumIonAuthPlugin.js';
-export { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
-export { UpdateOnChangePlugin } from './UpdateOnChangePlugin.js';
-export { TileCompressionPlugin } from './TileCompressionPlugin.js';
-export { GLTFExtensionsPlugin } from './GLTFExtensionsPlugin.js';
-export { ReorientationPlugin } from './ReorientationPlugin.js';
-export { UnloadTilesPlugin } from './UnloadTilesPlugin.js';
-export { TilesFadePlugin } from './fade/TilesFadePlugin.js';
-export { BatchedTilesPlugin } from './batched/BatchedTilesPlugin.js';
-export { TileFlatteningPlugin } from './TileFlatteningPlugin.js';
-export { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
+export * from './CesiumIonAuthPlugin.js';
+export * from './UpdateOnChangePlugin.js';
+export * from './TileCompressionPlugin.js';
+export * from './GLTFExtensionsPlugin.js';
+export * from './ReorientationPlugin.js';
+export * from './UnloadTilesPlugin.js';
+export * from './fade/TilesFadePlugin.js';
+export * from './batched/BatchedTilesPlugin.js';
+export * from './TileFlatteningPlugin.js';
+export * from './QuantizedMeshPlugin.js';
 export * from './images/ImageOverlayPlugin.js';
 export * from './LoadRegionPlugin.js';
 export * from './DebugTilesPlugin.js';
@@ -19,9 +18,9 @@ export * from './images/DeepZoomImagePlugin.js';
 export * from './images/EPSGTilesPlugin.js';
 
 // gltf extensions
-export { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
-export { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
-export { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
+export * from './gltf/GLTFCesiumRTCExtension.js';
+export * from './gltf/GLTFStructuralMetadataExtension.js';
+export * from './gltf/GLTFMeshFeaturesExtension.js';
 
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
