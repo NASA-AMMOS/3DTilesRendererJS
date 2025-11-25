@@ -122,9 +122,25 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	dispatchEvent( ...args ) {
+	dispatchEvent( e ) {
 
-		EventDispatcher.prototype.dispatchEvent.call( this, ...args );
+		// Add backward compatibility for deprecated 'tileSet' property
+		if ( 'tileset' in e ) {
+
+			Object.defineProperty( e, 'tileSet', {
+				get() {
+
+					console.warn( 'TilesRenderer: event.tileSet has been deprecated. Use event.tileset instead.' );
+					return e.tileset;
+
+				},
+				enumerable: false,
+				configurable: true,
+			} );
+
+		}
+
+		EventDispatcher.prototype.dispatchEvent.call( this, e );
 
 	}
 
