@@ -198,6 +198,13 @@ export class TilesRendererBase {
 
 		}
 
+		// Warn if plugin implements deprecated loadRootTileSet method
+		if ( plugin.loadRootTileSet && ! plugin.loadRootTileset ) {
+
+			console.warn( 'TilesRendererBase: Plugin implements deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".' );
+
+		}
+
 		// insert the plugin based on the priority registered on the plugin
 		const plugins = this.plugins;
 		const priority = plugin.priority || 0;
@@ -326,7 +333,7 @@ export class TilesRendererBase {
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
-			this.invokeOnePlugin( plugin => plugin.loadRootTileSet && plugin.loadRootTileSet() )
+			this.invokeOnePlugin( plugin => plugin.loadRootTileset && plugin.loadRootTileset() )
 				.then( root => {
 
 					let processedUrl = this.rootURL;
@@ -753,7 +760,15 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessTileSet( json, url, parent = null ) {
+	preprocessTileset( json, url, parent = null ) {
+
+		// check for deprecated function usage
+		const proto = Object.getPrototypeOf( this );
+		if ( Object.hasOwn( proto, 'preprocessTileSet' ) ) {
+
+			console.warn( `${ proto.constructor.name }: Class overrides deprecated "preprocessTileSet" method. Please rename to "preprocessTileset".` );
+
+		}
 
 		const version = json.asset.version;
 		const [ major, minor ] = version.split( '.' ).map( v => parseInt( v ) );
@@ -775,7 +790,21 @@ export class TilesRendererBase {
 
 	}
 
-	loadRootTileSet() {
+	preprocessTileSet( json, url, parent = null ) {
+
+		console.warn( 'TilesRenderer: "preprocessTileSet" has been deprecated. Use "preprocessTileset" instead.' );
+
+	}
+
+	loadRootTileset() {
+
+		// check for deprecated function usage
+		const proto = Object.getPrototypeOf( this );
+		if ( Object.hasOwn( proto, 'loadRootTileSet' ) ) {
+
+			console.warn( `${ proto.constructor.name }: Class overrides deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".` );
+
+		}
 
 		// transform the url
 		let processedUrl = this.rootURL;
@@ -803,12 +832,18 @@ export class TilesRendererBase {
 			} )
 			.then( root => {
 
-				this.preprocessTileSet( root, processedUrl );
+				this.preprocessTileset( root, processedUrl );
 				return root;
 
 			} );
 
 		return pr;
+
+	}
+
+	loadRootTileSet() {
+
+		console.warn( 'TilesRenderer: "loadRootTileSet" has been deprecated. Use "loadRootTileset" instead.' );
 
 	}
 
@@ -966,7 +1001,7 @@ export class TilesRendererBase {
 
 					if ( extension === 'json' && content.root ) {
 
-						this.preprocessTileSet( content, uri, tile );
+						this.preprocessTileset( content, uri, tile );
 						tile.children.push( content.root );
 						externalTileset = content;
 						isExternalTileset = true;

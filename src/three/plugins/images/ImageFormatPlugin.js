@@ -65,7 +65,7 @@ export class ImageFormatPlugin {
 
 	}
 
-	async loadRootTileSet() {
+	async loadRootTileset() {
 
 		const { tiles, imageSource } = this;
 		imageSource.url = imageSource.url || tiles.rootURL;
@@ -209,7 +209,7 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		tiles.preprocessTileSet( tileset, baseUrl );
+		tiles.preprocessTileset( tileset, baseUrl );
 
 		return tileset;
 

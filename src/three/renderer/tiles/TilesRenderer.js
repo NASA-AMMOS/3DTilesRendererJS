@@ -345,9 +345,9 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Overriden */
-	loadRootTileSet( ...args ) {
+	loadRootTileset( ...args ) {
 
-		return super.loadRootTileSet( ...args )
+		return super.loadRootTileset( ...args )
 			.then( root => {
 
 				// cache the gltf tileset rotation matrix

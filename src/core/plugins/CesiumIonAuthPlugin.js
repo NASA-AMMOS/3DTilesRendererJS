@@ -71,7 +71,7 @@ export class CesiumIonAuthPlugin {
 
 	}
 
-	loadRootTileSet() {
+	loadRootTileset() {
 
 		// ensure we have an up-to-date token and root url, then trigger the internal
 		// root tileset load function
@@ -81,7 +81,7 @@ export class CesiumIonAuthPlugin {
 			.then( json => {
 
 				this._initializeFromAsset( json );
-				return this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.loadRootTileSet && plugin.loadRootTileSet() );
+				return this.tiles.invokeOnePlugin( plugin => plugin !== this && plugin.loadRootTileset && plugin.loadRootTileset() );
 
 			} )
 			.catch( error => {
