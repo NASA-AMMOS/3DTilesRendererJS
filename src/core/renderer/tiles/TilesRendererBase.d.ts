@@ -3,6 +3,8 @@ import { PriorityQueue } from '../utilities/PriorityQueue.js';
 
 export class TilesRendererBase {
 
+	readonly rootTileset : object | null;
+	/** @deprecated Use rootTileset instead */
 	readonly rootTileSet : object | null;
 	readonly root : object | null;
 

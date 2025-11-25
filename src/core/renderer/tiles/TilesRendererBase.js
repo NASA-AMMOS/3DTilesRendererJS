@@ -93,8 +93,16 @@ export class TilesRendererBase {
 
 	get root() {
 
-		const tileset = this.rootTileSet;
+		const tileset = this.rootTileset;
 		return tileset ? tileset.root : null;
+
+	}
+
+	// Deprecated: use rootTileset instead
+	get rootTileSet() {
+
+		console.warn( 'TilesRenderer: "rootTileSet" has been deprecated. Use "rootTileset" instead.' );
+		return this.rootTileset;
 
 	}
 
@@ -124,7 +132,7 @@ export class TilesRendererBase {
 
 		// state
 		this.rootLoadingState = UNLOADED;
-		this.rootTileSet = null;
+		this.rootTileset = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
 		this.plugins = [];
@@ -329,7 +337,7 @@ export class TilesRendererBase {
 
 					}
 					this.rootLoadingState = LOADED;
-					this.rootTileSet = root;
+					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
 					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
@@ -344,7 +352,7 @@ export class TilesRendererBase {
 					this.rootLoadingState = FAILED;
 					console.error( error );
 
-					this.rootTileSet = null;
+					this.rootTileset = null;
 					this.dispatchEvent( {
 						type: 'load-error',
 						tile: null,
