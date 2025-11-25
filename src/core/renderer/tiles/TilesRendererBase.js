@@ -198,6 +198,13 @@ export class TilesRendererBase {
 
 		}
 
+		// Warn if plugin implements deprecated loadRootTileSet method
+		if ( plugin.loadRootTileSet && ! plugin.loadRootTileset ) {
+
+			console.warn( 'TilesRendererBase: Plugin implements deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".' );
+
+		}
+
 		// insert the plugin based on the priority registered on the plugin
 		const plugins = this.plugins;
 		const priority = plugin.priority || 0;
@@ -777,6 +784,15 @@ export class TilesRendererBase {
 
 	loadRootTileset() {
 
+		// check for deprecated function usage
+		const proto = Object.getPrototypeOf( this );
+		if ( Object.hasOwn( proto, 'loadRootTileSet' ) ) {
+
+			console.warn( `${ proto.constructor.name }: Class overrides deprecated "loadRootTileSet" method. Please rename to "loadRootTileset".` );
+			return this.loadRootTileSet();
+
+		}
+
 		// transform the url
 		let processedUrl = this.rootURL;
 		this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
@@ -812,11 +828,9 @@ export class TilesRendererBase {
 
 	}
 
-	// Deprecated: use loadRootTileset instead
 	loadRootTileSet() {
 
 		console.warn( 'TilesRenderer: "loadRootTileSet" has been deprecated. Use "loadRootTileset" instead.' );
-		return this.loadRootTileset();
 
 	}
 
