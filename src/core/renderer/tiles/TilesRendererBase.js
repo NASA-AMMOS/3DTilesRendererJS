@@ -93,8 +93,8 @@ export class TilesRendererBase {
 
 	get root() {
 
-		const tileSet = this.rootTileSet;
-		return tileSet ? tileSet.root : null;
+		const tileset = this.rootTileSet;
+		return tileset ? tileset.root : null;
 
 	}
 
@@ -815,7 +815,7 @@ export class TilesRendererBase {
 
 		}
 
-		let isExternalTileSet = false;
+		let isExternalTileset = false;
 		let externalTileset = null;
 		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
@@ -835,7 +835,7 @@ export class TilesRendererBase {
 			controller.abort();
 
 			// Clear out all tile content
-			if ( isExternalTileSet ) {
+			if ( isExternalTileset ) {
 
 				t.children.length = 0;
 				t.__childrenProcessed = 0;
@@ -962,7 +962,7 @@ export class TilesRendererBase {
 						this.preprocessTileSet( content, uri, tile );
 						tile.children.push( content.root );
 						externalTileset = content;
-						isExternalTileSet = true;
+						isExternalTileset = true;
 						return Promise.resolve();
 
 					} else {
@@ -1006,7 +1006,7 @@ export class TilesRendererBase {
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
 				this.dispatchEvent( { type: 'load-content' } );
-				if ( isExternalTileSet ) {
+				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
 						type: 'load-tile-set',
