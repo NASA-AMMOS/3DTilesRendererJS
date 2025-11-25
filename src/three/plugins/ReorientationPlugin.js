@@ -104,11 +104,11 @@ export class ReorientationPlugin {
 
 			}
 
-			tiles.removeEventListener( 'load-tile-set', this._callback );
+			tiles.removeEventListener( 'load-tileset', this._callback );
 
 		};
 
-		tiles.addEventListener( 'load-tile-set', this._callback );
+		tiles.addEventListener( 'load-tileset', this._callback );
 
 		if ( tiles.root ) {
 
@@ -138,7 +138,7 @@ export class ReorientationPlugin {
 		group.quaternion.identity();
 		group.scale.set( 1, 1, 1 );
 
-		this.tiles.removeEventListener( 'load-tile-set', this._callback );
+		this.tiles.removeEventListener( 'load-tileset', this._callback );
 
 	}
 

@@ -75,7 +75,7 @@ const lruPriorityCallback = ( a, b ) => {
 
 	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
 
-		// dispose of external tile sets last
+		// dispose of external tilesets last
 		return a.__hasUnrenderableContent ? - 1 : 1;
 
 	} else if ( a.__error !== b.__error ) {
@@ -93,8 +93,15 @@ export class TilesRendererBase {
 
 	get root() {
 
-		const tileSet = this.rootTileSet;
-		return tileSet ? tileSet.root : null;
+		const tileset = this.rootTileset;
+		return tileset ? tileset.root : null;
+
+	}
+
+	get rootTileSet() {
+
+		console.warn( 'TilesRenderer: "rootTileSet" has been deprecated. Use "rootTileset" instead.' );
+		return this.rootTileset;
 
 	}
 
@@ -124,7 +131,7 @@ export class TilesRendererBase {
 
 		// state
 		this.rootLoadingState = UNLOADED;
-		this.rootTileSet = null;
+		this.rootTileset = null;
 		this.rootURL = url;
 		this.fetchOptions = {};
 		this.plugins = [];
@@ -329,12 +336,12 @@ export class TilesRendererBase {
 
 					}
 					this.rootLoadingState = LOADED;
-					this.rootTileSet = root;
+					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
 					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
-						type: 'load-tile-set',
-						tileSet: root,
+						type: 'load-tileset',
+						tileset: root,
 						url: processedUrl,
 					} );
 
@@ -344,7 +351,7 @@ export class TilesRendererBase {
 					this.rootLoadingState = FAILED;
 					console.error( error );
 
-					this.rootTileSet = null;
+					this.rootTileset = null;
 					this.dispatchEvent( {
 						type: 'load-error',
 						tile: null,
@@ -514,7 +521,7 @@ export class TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null ) {
+	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
 		this.processedTiles.add( tile );
 
@@ -550,7 +557,7 @@ export class TilesRendererBase {
 
 		if ( tile.content?.uri ) {
 
-			// "content" should only indicate loadable meshes, not external tile sets
+			// "content" should only indicate loadable meshes, not external tilesets
 			const extension = getUrlExtension( tile.content.uri );
 
 			tile.__hasContent = true;
@@ -608,13 +615,13 @@ export class TilesRendererBase {
 
 		}
 
-		tile.__basePath = tileSetDir;
+		tile.__basePath = tilesetDir;
 
 		tile.__lastFrameVisited = - 1;
 
 		this.invokeAllPlugins( plugin => {
 
-			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tileSetDir, parentTile );
+			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tilesetDir, parentTile );
 
 		} );
 
@@ -815,7 +822,7 @@ export class TilesRendererBase {
 
 		}
 
-		let isExternalTileSet = false;
+		let isExternalTileset = false;
 		let externalTileset = null;
 		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
@@ -835,7 +842,7 @@ export class TilesRendererBase {
 			controller.abort();
 
 			// Clear out all tile content
-			if ( isExternalTileSet ) {
+			if ( isExternalTileset ) {
 
 				t.children.length = 0;
 				t.__childrenProcessed = 0;
@@ -962,7 +969,7 @@ export class TilesRendererBase {
 						this.preprocessTileSet( content, uri, tile );
 						tile.children.push( content.root );
 						externalTileset = content;
-						isExternalTileSet = true;
+						isExternalTileset = true;
 						return Promise.resolve();
 
 					} else {
@@ -1006,11 +1013,11 @@ export class TilesRendererBase {
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
 				this.dispatchEvent( { type: 'load-content' } );
-				if ( isExternalTileSet ) {
+				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
-						type: 'load-tile-set',
-						tileSet: externalTileset,
+						type: 'load-tileset',
+						tileset: externalTileset,
 						url: uri,
 					} );
 

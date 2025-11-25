@@ -239,7 +239,7 @@ export class DebugTilesPlugin {
 		this.regionGroup.updateMatrixWorld();
 
 		// register events
-		this._onLoadTileSetCB = () => {
+		this._onLoadTilesetCB = () => {
 
 			this._initExtremes();
 
@@ -269,7 +269,7 @@ export class DebugTilesPlugin {
 
 		};
 
-		tiles.addEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.addEventListener( 'load-tileset', this._onLoadTilesetCB );
 		tiles.addEventListener( 'load-model', this._onLoadModelCB );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.addEventListener( 'update-after', this._onUpdateAfterCB );
@@ -922,7 +922,7 @@ export class DebugTilesPlugin {
 
 		const tiles = this.tiles;
 
-		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.removeEventListener( 'load-tileset', this._onLoadTilesetCB );
 		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );

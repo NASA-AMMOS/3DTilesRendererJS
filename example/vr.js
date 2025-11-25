@@ -81,7 +81,7 @@ function init() {
 	const ambLight = new AmbientLight( 0xffffff, 0.2 );
 	scene.add( ambLight );
 
-	// tile set
+	// tileset
 	box = new Box3();
 	sphere = new Sphere();
 

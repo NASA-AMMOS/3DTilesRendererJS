@@ -107,7 +107,7 @@ Wrapper for the three.js `TilesRenderer` class. Listening for events are specifi
   lruCache-maxBytesSize={ 0.5 * 1e6 }
 
   // event registration
-  onLoadTileSet={ onLoadTileSetCallback }
+  onLoadTileset={ onLoadTilesetCallback }
   onLoadModel={ onLoadModelCallback }
 />
 ```

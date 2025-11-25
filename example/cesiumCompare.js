@@ -264,7 +264,7 @@ async function initThree() {
 	tiles.setCamera( camera );
 
 	let controls;
-	tiles.addEventListener( 'load-tile-set', () => {
+	tiles.addEventListener( 'load-tileset', () => {
 
 		// position the camera based on the model
 		const sphere = new Sphere();
@@ -420,7 +420,7 @@ async function initCesium() {
 	viewer.scene.backgroundColor = Cesium.Color.BLACK.clone();
 	viewer.creditDisplay.container.style.display = 'none';
 
-	// initialize the tile set
+	// initialize the tileset
 	const tileset = await Cesium.Cesium3DTileset.fromUrl( url, {
 		// loadSiblings: true,
 		maximumCacheOverflowBytes: 1e20,

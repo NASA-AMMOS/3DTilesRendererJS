@@ -47,7 +47,7 @@ function App() {
 				<TilesRenderer url={ tilesetUrl }>
 					<TilesPlugin plugin={ TilesFadePlugin } fadeDuration={ 500 } />
 
-					{/* add mesh to local frame of the tile set*/}
+					{/* add mesh to local frame of the tileset*/}
 					<RotatingMesh position={ [ 0, - 4, - 4 ] } scale={ 2 } />
 
 				</TilesRenderer>

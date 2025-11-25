@@ -51,7 +51,7 @@ function App() {
 			} }
 		>
 			{/*
-				3D Tiles renderer tile set
+				3D Tiles renderer tileset
 				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
 			*/}
 			<TilesRenderer key={ assetId }>

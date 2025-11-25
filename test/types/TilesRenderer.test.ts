@@ -5,7 +5,7 @@ import { expect, test } from '@jest/globals';
 function addCamera( event: { camera: Camera } ) { }
 function deleteCamera( event: { camera: Camera } ) { }
 function emptyEvent( event: {} ) { }
-function loadTileset( event: { tileSet: object, url: string } ) { }
+function loadTileset( event: { tileset: object, url: string } ) { }
 function loadModel( event: { scene: Object3D; tile: Tile } ) { }
 function disposeModel( event: { scene: Object3D; tile: Tile; } ) { }
 function tileVisibilityChange( event: { scene: Object3D; tile: Tile; visible: boolean } ) { }
@@ -22,7 +22,7 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'add-camera', addCamera );
 	renderer.addEventListener( 'delete-camera', deleteCamera );
 	renderer.addEventListener( 'camera-resolution-change', emptyEvent );
-	renderer.addEventListener( 'load-tile-set', loadTileset );
+	renderer.addEventListener( 'load-tileset', loadTileset );
 	renderer.addEventListener( 'tiles-load-start', emptyEvent );
 	renderer.addEventListener( 'tiles-load-end', emptyEvent );
 	renderer.addEventListener( 'load-content', emptyEvent );
