@@ -40,9 +40,13 @@ export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 			...options,
 		} );
 
-		console.warn(
-			'CesiumIonAuthPlugin: Plugin has been moved to "3d-tiles-renderer/core/plugins".'
-		);
+		if ( options.__suppress_warning__ ) {
+
+			console.warn(
+				'CesiumIonAuthPlugin: Plugin has been moved to "3d-tiles-renderer/core/plugins".'
+			);
+
+		}
 
 	}
 
