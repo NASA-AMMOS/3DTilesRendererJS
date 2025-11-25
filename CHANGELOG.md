@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: "load-tile-set" event has been renamed to "load-tileset"
 - TilesRenderer: "load-tileset" payload member "tileSet" has been renamed to "tileset"
 - TilesRenderer: "rootTileSet" member has been renamed "rootTileset"
+- TilesRenderer: "loadRootTileSet" function has been renamed to "loadRootTileSet"
+- TilesRenderer: "preprocessTileSet" function has been renamed to "preprocessTileSet"
 - Documentation and other variable names have adjusted any instances of "tile set" to "tileset" to align with the 3D Tiles specification nomenclature.
 
 ### Added
