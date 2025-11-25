@@ -387,6 +387,21 @@ assetTypeHandler: ( type: string, tiles: TilesRenderer, asset: Object ) => void
 
 Callback fired when an asset type other than 3DTiles is encountered. A warning is logged by default but a provided callback can add a plugin to add support for the loaded asset type. If "TERRAIN" is encountered then the handler can add "QuantizedMeshPlugin", for example.
 
+```js
+tilesRenderer.registerPlugin( {
+  // ...
+  assetTypeHandler: ( type, tilesRenderer ) => {
+
+	if ( type === '' ) {
+
+		tilesRenderer.registerPlugin( new QuantizedMeshPlugin() );
+
+	}
+
+  },
+} );
+```
+
 ## TextureOverlayPlugin
 
 _available in the examples directory_
