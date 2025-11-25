@@ -83,7 +83,7 @@ import { TilesRenderer } from '3d-tiles-renderer';
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
-tilesRenderer.addEventListener( 'load-tile-set', () => {
+tilesRenderer.addEventListener( 'load-tileset', () => {
 
 	// optionally center the tileset in case it's far off center
 	const sphere = new Sphere();
@@ -251,7 +251,7 @@ The tileset and model load callbacks can be used to detect when the data has cha
 ```js
 let needsRerender = true;
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
-tilesRenderer.addEventListener( 'load-tile-set', () => needsRerender = true );
+tilesRenderer.addEventListener( 'load-tileset', () => needsRerender = true );
 tilesRenderer.addEventListener( 'load-model', () => needsRerender = true );
 
 function renderLoop() {
@@ -318,7 +318,7 @@ _extends `THREE.EventDispatcher` & [TilesRendererBase](https://github.com/NASA-A
 
 ```js
 // Fired when a new root or child tileset is loaded.
-{ type: 'load-tile-set', tileSet: Object, url: String }
+{ type: 'load-tileset', tileset: Object, url: String }
 
 // Fired when a tile model is loaded.
 { type: 'load-model', scene: THREE.Group, tile: Object }

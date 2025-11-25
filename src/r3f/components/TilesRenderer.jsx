@@ -126,10 +126,10 @@ export function EastNorthUpFrame( props ) {
 
 		}
 
-		tiles.addEventListener( 'load-tile-set', updateCallback );
+		tiles.addEventListener( 'load-tileset', updateCallback );
 		return () => {
 
-			tiles.removeEventListener( 'load-tile-set', updateCallback );
+			tiles.removeEventListener( 'load-tileset', updateCallback );
 
 		};
 

@@ -264,7 +264,7 @@ async function initThree() {
 	tiles.setCamera( camera );
 
 	let controls;
-	tiles.addEventListener( 'load-tile-set', () => {
+	tiles.addEventListener( 'load-tileset', () => {
 
 		// position the camera based on the model
 		const sphere = new Sphere();

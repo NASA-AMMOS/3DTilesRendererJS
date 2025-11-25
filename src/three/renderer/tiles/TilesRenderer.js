@@ -104,21 +104,45 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	addEventListener( ...args ) {
+	addEventListener( type, listener ) {
 
-		EventDispatcher.prototype.addEventListener.call( this, ...args );
+		// Handle deprecated event name
+		if ( type === 'load-tile-set' ) {
+
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
+
+		}
+
+		EventDispatcher.prototype.addEventListener.call( this, type, listener );
 
 	}
 
-	hasEventListener( ...args ) {
+	hasEventListener( type, listener ) {
 
-		EventDispatcher.prototype.hasEventListener.call( this, ...args );
+		// Handle deprecated event name
+		if ( type === 'load-tile-set' ) {
+
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
+
+		}
+
+		return EventDispatcher.prototype.hasEventListener.call( this, type, listener );
 
 	}
 
-	removeEventListener( ...args ) {
+	removeEventListener( type, listener ) {
 
-		EventDispatcher.prototype.removeEventListener.call( this, ...args );
+		// Handle deprecated event name
+		if ( type === 'load-tile-set' ) {
+
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
+
+		}
+
+		EventDispatcher.prototype.removeEventListener.call( this, type, listener );
 
 	}
 
@@ -130,7 +154,7 @@ export class TilesRenderer extends TilesRendererBase {
 			Object.defineProperty( e, 'tileSet', {
 				get() {
 
-					console.warn( 'TilesRenderer: event.tileSet has been deprecated. Use event.tileset instead.' );
+					console.warn( 'TilesRenderer: "event.tileSet" has been deprecated. Use "event.tileset" instead.' );
 					return e.tileset;
 
 				},

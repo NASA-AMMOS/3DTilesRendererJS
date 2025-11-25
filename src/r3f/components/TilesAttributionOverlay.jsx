@@ -41,12 +41,12 @@ export function TilesAttributionOverlay( { children, style, generateAttributions
 		};
 
 		tiles.addEventListener( 'tile-visibility-change', callback );
-		tiles.addEventListener( 'load-tile-set', callback );
+		tiles.addEventListener( 'load-tileset', callback );
 
 		return () => {
 
 			tiles.removeEventListener( 'tile-visibility-change', callback );
-			tiles.removeEventListener( 'load-tile-set', callback );
+			tiles.removeEventListener( 'load-tileset', callback );
 
 		};
 

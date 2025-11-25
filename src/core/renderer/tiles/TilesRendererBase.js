@@ -341,7 +341,7 @@ export class TilesRendererBase {
 					this.dispatchEvent( { type: 'needs-update' } );
 					this.dispatchEvent( { type: 'load-content' } );
 					this.dispatchEvent( {
-						type: 'load-tile-set',
+						type: 'load-tileset',
 						tileset: root,
 						url: processedUrl,
 					} );
@@ -1017,7 +1017,7 @@ export class TilesRendererBase {
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
-						type: 'load-tile-set',
+						type: 'load-tileset',
 						tileset: externalTileset,
 						url: uri,
 					} );

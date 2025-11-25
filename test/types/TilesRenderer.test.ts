@@ -22,7 +22,7 @@ function typecheck( renderer: TilesRenderer ) {
 	renderer.addEventListener( 'add-camera', addCamera );
 	renderer.addEventListener( 'delete-camera', deleteCamera );
 	renderer.addEventListener( 'camera-resolution-change', emptyEvent );
-	renderer.addEventListener( 'load-tile-set', loadTileset );
+	renderer.addEventListener( 'load-tileset', loadTileset );
 	renderer.addEventListener( 'tiles-load-start', emptyEvent );
 	renderer.addEventListener( 'tiles-load-end', emptyEvent );
 	renderer.addEventListener( 'load-content', emptyEvent );
