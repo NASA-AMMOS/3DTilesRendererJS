@@ -6,11 +6,11 @@ import { useDeepOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
-// context for accessing the tile set
+// context for accessing the tileset
 export const TilesRendererContext = createContext( null );
 export const TilesPluginContext = createContext( null );
 
-// group that matches the transform of the tile set root group
+// group that matches the transform of the tileset root group
 function TileSetRoot( { children } ) {
 
 	const tiles = useContext( TilesRendererContext );
@@ -70,7 +70,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ invalidate, tiles, lat, lon, height, az, el, roll, ellipsoid, group, useObjectDep( ellipsoid.radius ) ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// adjust the matrix world update logic if a tile set is present so that we can position the frame
+	// adjust the matrix world update logic if a tileset is present so that we can position the frame
 	// correctly regardless of the parent.
 	useEffect( () => {
 
@@ -117,7 +117,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ updateCallback ] );
 
-	// update the position when a tile set is loaded since it may modify the ellipsoid
+	// update the position when a tileset is loaded since it may modify the ellipsoid
 	useEffect( () => {
 
 		if ( tiles === null ) {
@@ -225,7 +225,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
 	const [ tiles, setTiles ] = useState( null );
 
-	// create the tile set
+	// create the tileset
 	useEffect( () => {
 
 		const needsRender = () => invalidate();

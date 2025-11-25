@@ -111,7 +111,7 @@ export class TilingScheme {
 			tileCountX,
 			tileCountY,
 
-			// The bounds covered by the extent of the tiles at this loaded. The actual content covered by the overall tile set
+			// The bounds covered by the extent of the tiles at this loaded. The actual content covered by the overall tileset
 			// may be a subset of this range (eg there may be unused space).
 			tileBounds,
 		};

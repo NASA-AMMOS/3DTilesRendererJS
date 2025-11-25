@@ -1326,7 +1326,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// sets the "up" axis for the current surface of the tile set
+	// sets the "up" axis for the current surface of the tileset
 	_setFrame( newUp ) {
 
 		const {

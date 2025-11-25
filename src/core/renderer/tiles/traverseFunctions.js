@@ -62,7 +62,7 @@ function resetFrameState( tile, renderer ) {
 
 }
 
-// Recursively mark tiles used down to the next layer, skipping external tile sets
+// Recursively mark tiles used down to the next layer, skipping external tilesets
 function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
@@ -145,7 +145,7 @@ function markUsed( tile, renderer, cacheOnly = false ) {
 // Returns whether the tile can be traversed to the next layer of children by checking the tile metrics
 function canTraverse( tile, renderer ) {
 
-	// If we've met the error requirements then don't load further - if an external tile set is encountered,
+	// If we've met the error requirements then don't load further - if an external tileset is encountered,
 	// though, then continue to refine.
 	if ( tile.__error <= renderer.errorTarget && ! canUnconditionallyRefine( tile ) ) {
 
@@ -276,7 +276,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
 				// If the child's geometric error is less than or equal to the parent's (or it has unrenderable content), we should NOT display the child to avoid holes.
 				// Only display the child if its geometric error is greater than the parent's and it has renderable content.
-				// Note that this behavior is undocumented in the 3d tiles specification and tile sets designed to take advantage of it may not work as expected
+				// Note that this behavior is undocumented in the 3d tiles specification and tilesets designed to take advantage of it may not work as expected
 				// in other rendering systems.
 				// See issue NASA-AMMOS/3DTilesRendererJS#1304
 				const childCanDisplay = ! canUnconditionallyRefine( c );
@@ -285,7 +285,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// - the children's children have been loaded
 				// - the tile content has loaded
 				// - the tile is completely empty - ie has no children and no content
-				// - the child tile set has tried to load but failed
+				// - the child tileset has tried to load but failed
 				let isChildReady =
 					! c.__hasContent ||
 					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
@@ -350,7 +350,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// TODO: the "meetsSSE" field can be removed when the "errorThreshold" field has been removed
 
-	// Don't wait for all children tiles to load if this tile set has empty tiles at the root in order
+	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
 	const allChildrenReady = tile.__allChildrenReady || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
 

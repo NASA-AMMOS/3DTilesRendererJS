@@ -55,7 +55,7 @@ export class ReorientationPlugin {
 				tiles.getBoundingSphere( sphere );
 				if ( sphere.center.length() > minRadii * 0.5 ) {
 
-					// otherwise see if this is possibly a tile set on the surface of the globe based on the positioning
+					// otherwise see if this is possibly a tileset on the surface of the globe based on the positioning
 					const cart = {};
 					ellipsoid.getPositionToCartographic( sphere.center, cart );
 					this.transformLatLonHeightToOrigin( cart.lat, cart.lon, cart.height );
