@@ -7,7 +7,7 @@ const viewErrorTarget = {
 };
 
 // flag guiding the behavior of the traversal to load the siblings at the root of the
-// tile set or not. The spec seems to indicate "true" when using REPLACE define but
+// tileset or not. The spec seems to indicate "true" when using REPLACE define but
 // Cesium's behavior is "false".
 // See CesiumGS/3d-tiles#776
 const LOAD_ROOT_SIBLINGS = true;
@@ -70,7 +70,7 @@ function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer, cacheOnly );
 
-	// don't traverse if the children have not been processed, yet but tile set content
+	// don't traverse if the children have not been processed, yet but tileset content
 	// should be considered to be "replaced" by the loaded children so await that here.
 	if ( canUnconditionallyRefine( tile ) && areChildrenProcessed( tile ) ) {
 

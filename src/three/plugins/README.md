@@ -204,7 +204,7 @@ Plugin that adds support for 3d tiles [implicit tiling](https://github.com/Cesiu
 
 ## DebugTilesPlugin
 
-Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tile set. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
+Plugin TilesRenderer that includes helpers for debugging and visualizing the various tiles in the tileset. Material overrides will not work as expected with this plugin. The plugin includes additional logic and initialization code which can cause performance loss so it's recommended to only use this when needed.
 
 ### .enabled
 
@@ -220,7 +220,7 @@ If true then the debug logic is enabled, which can affect performance. It's reco
 colorMode = NONE : ColorMode
 ```
 
-Which color mode to use when rendering the tile set. The following exported enumerations can be used:
+Which color mode to use when rendering the tileset. The following exported enumerations can be used:
 
 ```js
 // No special color mode. Uses the default materials.
@@ -305,7 +305,7 @@ If true then all the parent bounds of the current leaf tiles will be displayed.
 maxDebugDepth = - 1 : Number
 ```
 
-The depth value that represents white when rendering with `DEPTH` or `RELATIVE_DEPTH` [colorMode](#colorMode). If `maxDebugDepth` is `-1` then the maximum depth of the tile set is used.
+The depth value that represents white when rendering with `DEPTH` or `RELATIVE_DEPTH` [colorMode](#colorMode). If `maxDebugDepth` is `-1` then the maximum depth of the tileset is used.
 
 ### .maxDebugError
 
@@ -313,7 +313,7 @@ The depth value that represents white when rendering with `DEPTH` or `RELATIVE_D
 maxDebugError = - 1 : Number
 ```
 
-The error value that represents white when rendering with `GEOMETRIC_ERROR` [colorMode](#colorMode). If `maxDebugError` is `-1` then the maximum geometric error in the tile set is used.
+The error value that represents white when rendering with `GEOMETRIC_ERROR` [colorMode](#colorMode). If `maxDebugError` is `-1` then the maximum geometric error in the tileset is used.
 
 ### .maxDebugDistance
 
@@ -321,7 +321,7 @@ The error value that represents white when rendering with `GEOMETRIC_ERROR` [col
 maxDebugDistance = - 1 : Number
 ```
 
-The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tile set is used.
+The distance value that represents white when rendering with `DISTANCE` [colorMode](#colorMode). If `maxDebugDistance` is `-1` then the radius of the tileset is used.
 
 ### .constructor
 
@@ -406,7 +406,7 @@ tilesRenderer.registerPlugin( {
 
 _available in the examples directory_
 
-Plugin for loading alternate texture sets and assigning them to geometry in the tile set.
+Plugin for loading alternate texture sets and assigning them to geometry in the tileset.
 
 ### .textureUpdateCallback
 
@@ -556,7 +556,7 @@ Available options are as follows:
 
 ## ReorientationPlugin
 
-Plugin for automatically re-orienting and re-centering the tile set to make it visible near the origin and facing the right direction.
+Plugin for automatically re-orienting and re-centering the tileset to make it visible near the origin and facing the right direction.
 
 ### .constructor
 
@@ -569,13 +569,13 @@ Available options are as follows:
 ```js
 {
 	// The latitude, longitude, and height of the point on the surface to orient to. Lat and lon are in radians. If
-	// no coordinates are provided then the plugin tries to determine if the tile set is a tile set on the globe surface
+	// no coordinates are provided then the plugin tries to determine if the tileset is a tileset on the globe surface
 	// and estimates the coordinates.
 	lat: null,
 	lon: null,
 	height: 0,
 
-	// If a set of lat and lon coordinates cannot be determined then the tile set is simple oriented so the provided axes
+	// If a set of lat and lon coordinates cannot be determined then the tileset is simple oriented so the provided axes
 	// is oriented to three.js' +Y up direction. Valid values are positive or negative x, y, or z.
 	up: '+z',
 
@@ -590,7 +590,7 @@ Available options are as follows:
 transformLatLonHeightToOrigin( lat, lon, height = 0 ) : void
 ```
 
-Transforms the centers the tile set such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
+Transforms the centers the tileset such that the given coordinates and height are positioned at the origin with "X" facing west and "Z" facing north.
 
 ## UnloadTilesPlugin
 
@@ -693,7 +693,7 @@ Available options are as follows:
 
 ## QuantizedMeshPlugin
 
-Plugin for adding support to load and display [quantized mesh](https://github.com/CesiumGS/quantized-mesh) tile sets.
+Plugin for adding support to load and display [quantized mesh](https://github.com/CesiumGS/quantized-mesh) tilesets.
 
 ### .constructor
 
@@ -722,7 +722,7 @@ Available options are as follows:
 
 ## LoadRegionPlugin
 
-Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions or volumes up to a specified geometric error target. Regions take shapes in the local tile set coordinate frame:
+Plugin to enhances the TilesRenderer by enabling selective loading of tiles based on regions or volumes up to a specified geometric error target. Regions take shapes in the local tileset coordinate frame:
 
 ```js
 import { LoadRegionPlugin, RayRegion, SphereRegion, OBBRegion, OBB } from '3d-tiles-renderer/plugins'
@@ -899,7 +899,7 @@ Takes the following options:
 A plugin that takes a shape as a mesh and direction along which to "flatten" vertices to the surface of the shape. Useful for shifting tile geometry to make room for new assets. Not compatible with other plugins that modify geometry such as `BatchedTilesPlugin`.
 
 > [!NOTE]
-> All shapes and directions must be specified in the local coordinate from the tile set.
+> All shapes and directions must be specified in the local coordinate from the tileset.
 
 ### hasShape
 
@@ -945,7 +945,7 @@ Deletes all shapes and resets the tiles.
 
 _available in the examples directory_
 
-Plugin for rendering topographic contour lines on the tile set.
+Plugin for rendering topographic contour lines on the tileset.
 
 ### .constructor
 
