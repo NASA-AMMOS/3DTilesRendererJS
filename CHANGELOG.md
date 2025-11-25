@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.19] - Unreleased
+### Changed
+- Moved "GoogleCloudAuthlugin" to "3d-tiles-renderer/core/plugins".
+- Moved "CesiumIonAuthPlugin" to "3d-tiles-renderer/core/plugins".
+- CesiumIonAuthPlugin: Auto-registration of QuantizedMesh and TMS plugins has been removed. See "assetTypeHandler" to register the necessary plugins as-needed.
+
+### Added
+- Added "assetTypeHandler" to "CesiumIonAuthPlugin" for registering plugins based on loaded asset type.
+
 ## [0.4.18] - 2025.11.14
 ### Added
 - Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
