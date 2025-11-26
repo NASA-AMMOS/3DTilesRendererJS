@@ -131,7 +131,7 @@ export class PointerTracker {
 		delete this.previousPositions[ id ];
 		delete this.startPositions[ id ];
 
-		if ( this.getPointerCount.length === 0 ) {
+		if ( this.getPointerCount() === 0 ) {
 
 			this.buttons = 0;
 			this.pointerType = null;
