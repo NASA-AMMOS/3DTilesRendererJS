@@ -1325,11 +1325,6 @@ export class ImageOverlayPlugin {
 				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
 				params.layerInfo.value[ i ] = overlay;
 
-				// mark per-layer defines
-				material.defines[ `LAYER_${ i }_EXISTS` ] = Number( target !== null );
-				material.defines[ `LAYER_${ i }_ALPHA_INVERT` ] = Number( overlay.alphaInvert );
-				material.defines[ `LAYER_${ i }_ALPHA_MASK` ] = Number( overlay.alphaMask );
-
 				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
 

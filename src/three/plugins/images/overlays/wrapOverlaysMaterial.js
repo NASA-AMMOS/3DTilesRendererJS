@@ -77,6 +77,9 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 					struct LayerInfo {
 						vec3 color;
 						float opacity;
+
+						int alphaMask;
+						int alphaInvert;
 					};
 
 					uniform sampler2D layerMaps[ LAYER_COUNT ];
@@ -109,59 +112,49 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 					float layerOpacity;
 					float wOpacity;
 					float wDelta;
-${
-	// unroll the loops so we can use unique defines per layer
-	new Array( 10 )
-		.fill()
-		.map( ( _, i ) => /* glsl */`
-			#if ${ i } < LAYER_COUNT && LAYER_${ i }_EXISTS
-				{
-					// set INDEX
-					#define INDEX ${ i }
+					#pragma unroll_loop_start
+						for ( int i = 0; i < 10; i ++ ) {
 
-					layerUV = v_layer_uv_${ i };
-					tint = texture( layerMaps[ INDEX ], layerUV.xy );
+							#if UNROLLED_LOOP_INDEX < LAYER_COUNT
 
-					// discard texture outside 0, 1 on w - offset the stepped value by an epsilon to avoid cases
-					// where wDelta is near 0 (eg a flat surface) at the w boundary, resulting in artifacts on some
-					// hardware.
-					wDelta = max( fwidth( layerUV.z ), 1e-7 );
-					wOpacity =
-						smoothstep( - wDelta, 0.0, layerUV.z ) *
-						smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
+								layerUV = v_layer_uv_UNROLLED_LOOP_INDEX;
+								tint = texture( layerMaps[ i ], layerUV.xy );
 
-					// apply tint & opacity
-					tint.rgb *= layerInfo[ INDEX ].color;
-					tint.rgba *= layerInfo[ INDEX ].opacity * wOpacity;
+								// discard texture outside 0, 1 on w - offset the stepped value by an epsilon to avoid cases
+								// where wDelta is near 0 (eg a flat surface) at the w boundary, resulting in artifacts on some
+								// hardware.
+								wDelta = max( fwidth( layerUV.z ), 1e-7 );
+								wOpacity =
+									smoothstep( - wDelta, 0.0, layerUV.z ) *
+									smoothstep( 1.0 + wDelta, 1.0, layerUV.z );
 
-					// invert the alpha
-					#if LAYER_${ i }_ALPHA_INVERT
+								// apply tint & opacity
+								tint.rgb *= layerInfo[ i ].color;
+								tint.rgba *= layerInfo[ i ].opacity * wOpacity;
 
-						tint.a = 1.0 - tint.a;
+								// invert the alpha
+								if ( layerInfo[ i ].alphaInvert > 0 ) {
 
-					#endif
+									tint.a = 1.0 - tint.a;
 
-					// apply the alpha across all existing layers if alpha mask is true
-					#if LAYER_${ i }_ALPHA_MASK
+								}
 
-						diffuseColor.a *= tint.a;
+								// apply the alpha across all existing layers if alpha mask is true
+								if ( layerInfo[ i ].alphaMask > 0 ) {
 
-					#else
+									diffuseColor.a *= tint.a;
 
-						// premultiplied alpha equation
-						diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
+								} else {
 
-					#endif
+									// premultiplied alpha equation
+									diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
 
-					// unset INDEX
-					#undef INDEX
-				}
-			#endif
+								}
 
-		` )
-		.join( ' ' )
-}
+							#endif
 
+						}
+					#pragma unroll_loop_end
 				}
 				#endif
 			` );
