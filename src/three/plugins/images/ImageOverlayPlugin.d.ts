@@ -9,7 +9,6 @@ export class ImageOverlayPlugin {
 		resolution?: number,
 		enableTileSplitting?: boolean,
 		alphaMask?: boolean,			// false = fade to the layer below, true = use only alpha to fade all layers underneath
-		alphaTest?: number, 			// 0..1, 0 = no hard clip
 		alphaInvert?: boolean, 			// false = cut inside (keep outside); true = cut outside (keep inside)
 	} );
 

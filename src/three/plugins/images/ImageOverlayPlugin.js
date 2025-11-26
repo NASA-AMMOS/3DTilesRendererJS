@@ -1421,7 +1421,6 @@ class ImageOverlay {
 			frame = null,
 			preprocessURL = null,
 			alphaMask = false,
-			alphaTest = 0,
 			alphaInvert = false,
 		} = options;
 		this.imageSource = null;
@@ -1431,7 +1430,6 @@ class ImageOverlay {
 		this.color = new Color( color );
 		this.frame = frame !== null ? frame.clone() : null;
 		this.alphaMask = alphaMask;
-		this.alphaTest = alphaTest;
 		this.alphaInvert = alphaInvert;
 
 		this.isReady = false;

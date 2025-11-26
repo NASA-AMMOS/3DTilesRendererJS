@@ -79,7 +79,6 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 						float opacity;
 
 						int alphaMask;
-						float alphaTest;
 						int alphaInvert;
 					};
 
@@ -133,15 +132,6 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								tint.rgb *= layerInfo[ i ].color;
 								tint.rgba *= layerInfo[ i ].opacity * wOpacity;
 
-								// clip the alpha test edges
-								if ( layerInfo[ i ].alphaTest > 0.0 ) {
-
-									float fw = max( fwidth( tint.a ) * 0.5, 1e-7 );
-									float alphaTest = layerInfo[ i ].alphaTest;
-									tint.a = smoothstep( alphaTest - fw, alphaTest + fw, tint.a );
-
-								}
-
 								// invert the alpha
 								if ( layerInfo[ i ].alphaInvert > 0 ) {
 
@@ -157,7 +147,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 								} else {
 
 									// premultiplied alpha equation
-									diffuseColor = mix( diffuseColor, tint, tint.a );
+									diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
 
 								}
 
