@@ -8,6 +8,8 @@ export class ImageOverlayPlugin {
 		renderer: WebGLRenderer,
 		resolution?: number,
 		enableTileSplitting?: boolean,
+		alphaMask?: boolean,			// false = fade to the layer below, true = use only alpha to fade all layers underneath
+		alphaInvert?: boolean, 			// false = cut inside (keep outside); true = cut outside (keep inside)
 	} );
 
 	addOverlay( overlay: ImageOverlay, order?: number ): void;

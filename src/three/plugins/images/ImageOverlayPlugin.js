@@ -1319,11 +1319,11 @@ export class ImageOverlayPlugin {
 
 				// set the uniform array lengths
 				params.layerMaps.length = overlays.length;
-				params.layerColor.length = overlays.length;
+				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
-				params.layerColor.value[ i ] = overlay;
+				params.layerInfo.value[ i ] = overlay;
 
 				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
@@ -1420,6 +1420,8 @@ class ImageOverlay {
 			color = 0xffffff,
 			frame = null,
 			preprocessURL = null,
+			alphaMask = false,
+			alphaInvert = false,
 		} = options;
 		this.imageSource = null;
 
@@ -1427,6 +1429,9 @@ class ImageOverlay {
 		this.opacity = opacity;
 		this.color = new Color( color );
 		this.frame = frame !== null ? frame.clone() : null;
+		this.alphaMask = alphaMask;
+		this.alphaInvert = alphaInvert;
+
 		this.isReady = false;
 		this.isInitialized = false;
 
