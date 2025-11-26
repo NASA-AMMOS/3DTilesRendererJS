@@ -866,6 +866,22 @@ opacity = 1: number
 
 The opacity of the image overlay.
 
+### alphaMask
+
+```js
+alphaMask = false: boolean
+```
+
+If true then the alpha of this layer is used to mask the color of the layers below this one. Can be used to hide only a portion of the texture.
+
+### alphaInvert
+
+```js
+alphaInvert = flalse: boolean
+```
+
+If true it indicates that the alpha value of the layer will be inverted (`1.0 - alpha`). Used in conjunction with `alphaMask` this can be used to cut a hole in terrain surface.
+
 ### frame
 
 ```js
