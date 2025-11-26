@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
 
+### Fixed
+- Controls: Fixed case where pointer state may not have been reset correctly.
+
 ## [0.4.18] - 2025.11.14
 ### Added
 - Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
