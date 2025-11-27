@@ -2,7 +2,7 @@ import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vec
 import { PriorityQueue } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
-import { XYZImageSource } from './sources/XYZImageSource.js';
+import { QuadKeyImageSource, XYZImageSource } from './sources/XYZImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
@@ -964,14 +964,19 @@ export class ImageOverlayPlugin {
 
 		if ( ! overlay.isInitialized ) {
 
-			overlay.imageSource.fetchData = ( ...args ) => tiles
-				.downloadQueue
-				.add( { priority: - performance.now() }, () => {
-
-					return overlay.fetch( ...args );
-
-				} );
 			overlay.init();
+
+			overlay.whenReady().then( () => {
+
+				overlay.imageSource.fetchData = ( ...args ) => tiles
+					.downloadQueue
+					.add( { priority: - performance.now() }, () => {
+
+						return overlay.fetch( ...args );
+
+					} );
+
+			} );
 
 		}
 
@@ -1612,13 +1617,14 @@ export class CesiumIonOverlay extends ImageOverlay {
 		super( options );
 
 		const { apiToken, autoRefreshToken, assetId } = options;
+		this.options = options;
 		this.assetId = assetId;
 		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
-		this.imageSource = new TMSImageSource( options );
 
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this._attributions = [];
+
+		this.externalType = null;
 
 	}
 
@@ -1627,7 +1633,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 		this._whenReady = this
 			.auth
 			.refreshToken()
-			.then( json => {
+			.then( async ( json ) => {
 
 				this._attributions = json.attributions.map( att => ( {
 					value: att.html,
@@ -1635,7 +1641,48 @@ export class CesiumIonOverlay extends ImageOverlay {
 					collapsible: att.collapsible,
 				} ) );
 
-				this.imageSource.url = json.url;
+				if ( json.type !== 'IMAGERY' ) throw new Error( 'Only IMAGERY is supported as overlay type' );
+
+				this.externalType = json.externalType;
+				switch ( json.externalType ) {
+
+					case 'GOOGLE_2D_MAPS':
+						this.imageSource = new XYZImageSource( {
+							...this.options,
+							url: `${json.options.url}/v1/2dtiles/{z}/{x}/{y}?session=${json.options.session}&key=${json.options.key}`,
+							tileDimension: json.options.tileWidth,
+						} );
+						break;
+
+					case 'BING': {
+
+						const response = await fetch(
+							`${json.options.url}/REST/v1/Imagery/Metadata/${json.options.mapStyle}?incl=ImageryProviders&key=${json.options.key}&uriScheme=https`,
+						).then( ( res ) => res.json() );
+						const metadata = response.resourceSets?.[ 0 ]?.resources?.[ 0 ];
+						if ( ! metadata ) throw new Error( 'Could not retrieve Bing Maps metadata' );
+
+						this.imageSource = new QuadKeyImageSource( {
+							...this.options,
+							url: metadata.imageUrl,
+							subdomains: metadata.imageUrlSubdomains,
+							tileDimension: metadata.tileWidth,
+							levels: metadata.zoomMax,
+						} );
+						break;
+
+					}
+
+					default:
+						this.imageSource = new TMSImageSource( {
+							...this.options,
+							url: json.url,
+						} );
+						this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+				}
+
+				// this.imageSource.url = json.url;
 				return this.imageSource.init();
 
 			} );
@@ -1646,7 +1693,8 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 	fetch( ...args ) {
 
-		return this.auth.fetch( ...args );
+		// bypass auth fetch if asset is external type to prevent CORS error due to wrong bearer token
+		return this.externalType ? super.fetch( ...args ) : this.auth.fetch( ...args );
 
 	}
 
