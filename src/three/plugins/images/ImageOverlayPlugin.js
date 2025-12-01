@@ -816,6 +816,11 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
+		// TODO: If a tile is of type "ADD" refine and it has children then it will not be split
+		// as expected since only geometry tiles with no children are split. Instead we'd want
+		// to split this tiles geometry in addition to adding the child tiles.
+		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
 
 	}
