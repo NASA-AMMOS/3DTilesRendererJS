@@ -16,28 +16,17 @@ export class EnforceNonZeroErrorPlugin {
 
 			let parent = tile.parent;
 			let depth = 1;
-
-			let targetDepth = - 1;
-			let targetError = Infinity;
 			while ( parent !== null ) {
 
-				if ( parent.geometricError !== 0 && parent.geometricError < targetError ) {
+				if ( parent.geometricError !== 0 ) {
 
-					targetError = parent.geometricError;
-					targetDepth = depth;
+					tile.geometricError = parent.geometricError * ( 2 ** - depth );
+					break;
 
 				}
 
 				parent = parent.parent;
 				depth ++;
-
-			}
-
-			// find the smallest error in the parent list to avoid grabbing artificially inflated error values
-			// for the sake of forced refinement. Then scale the error by the depth.
-			if ( targetDepth !== - 1 ) {
-
-				tile.geometricError = targetError * ( 2 ** - depth );
 
 			}
 

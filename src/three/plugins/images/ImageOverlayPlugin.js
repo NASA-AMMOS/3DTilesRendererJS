@@ -816,6 +816,8 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
+		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
 
 	}
