@@ -77,9 +77,6 @@ export class QuadKeyImageSource extends XYZImageSource {
 
 	_tileToQuadKey( x, y, level ) {
 
-		// zoom level 0 does not exist for QuadKey
-		if ( level === 0 ) return '0';
-
 		let quadKey = '';
 		for ( let i = level; i > 0; i -- ) {
 
@@ -95,9 +92,10 @@ export class QuadKeyImageSource extends XYZImageSource {
 
 	}
 
-	// Get random subdomain
 	_getSubdomain() {
 
+		// Get random subdomain to circumvent browser URL request limits per domain
+		// https://learn.microsoft.com/en-us/bingmaps/rest-services/directly-accessing-the-bing-maps-tiles
 		return this.subdomains[ Math.floor( Math.random() * this.subdomains.length ) ];
 
 	}

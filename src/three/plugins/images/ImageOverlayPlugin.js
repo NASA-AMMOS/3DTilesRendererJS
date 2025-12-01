@@ -1624,7 +1624,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 		this.auth.authURL = `https://api.cesium.com/v1/assets/${ assetId }/endpoint`;
 		this._attributions = [];
 
-		this.externalType = null;
+		this.externalType = false;
 
 	}
 
@@ -1641,9 +1641,9 @@ export class CesiumIonOverlay extends ImageOverlay {
 					collapsible: att.collapsible,
 				} ) );
 
-				if ( json.type !== 'IMAGERY' ) throw new Error( 'Only IMAGERY is supported as overlay type' );
+				if ( json.type !== 'IMAGERY' ) throw new Error( 'CesiumIonOverlay: Only IMAGERY is supported as overlay type' );
 
-				this.externalType = json.externalType;
+				this.externalType = !! json.externalType;
 				switch ( json.externalType ) {
 
 					case 'GOOGLE_2D_MAPS':
@@ -1651,6 +1651,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 							...this.options,
 							url: `${json.options.url}/v1/2dtiles/{z}/{x}/{y}?session=${json.options.session}&key=${json.options.key}`,
 							tileDimension: json.options.tileWidth,
+							levels: 22, // https://developers.google.com/maps/documentation/tile/2d-tiles-overview
 						} );
 						break;
 
@@ -1659,8 +1660,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 						const response = await fetch(
 							`${json.options.url}/REST/v1/Imagery/Metadata/${json.options.mapStyle}?incl=ImageryProviders&key=${json.options.key}&uriScheme=https`,
 						).then( ( res ) => res.json() );
-						const metadata = response.resourceSets?.[ 0 ]?.resources?.[ 0 ];
-						if ( ! metadata ) throw new Error( 'Could not retrieve Bing Maps metadata' );
+						const metadata = response.resourceSets[ 0 ].resources[ 0 ];
 
 						this.imageSource = new QuadKeyImageSource( {
 							...this.options,
@@ -1678,11 +1678,10 @@ export class CesiumIonOverlay extends ImageOverlay {
 							...this.options,
 							url: json.url,
 						} );
-						this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
 				}
 
-				// this.imageSource.url = json.url;
+				this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 				return this.imageSource.init();
 
 			} );
