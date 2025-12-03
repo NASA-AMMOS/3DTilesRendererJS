@@ -1,4 +1,4 @@
-/* eslint-disable jest/expect-expect */
+/* eslint-disable @vitest/expect-expect */
 import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
 import { EllipsoidRegion } from '../src/three/renderer/math/EllipsoidRegion.js';

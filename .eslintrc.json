@@ -12,19 +12,17 @@
 		"BigInt64Array": "readonly",
 		"BigUInt64Array": "readonly"
 	},
-	"env": {
-		"jest/globals": true
-	},
-
-	"plugins": [ "jest", "react", "react-hooks" ],
+	"plugins": [ "react", "react-hooks", "@vitest/eslint-plugin" ],
 	"extends": [
 		"eslint:recommended",
-		"plugin:jest/recommended",
 		"plugin:react/recommended",
 		"plugin:react-hooks/recommended",
-		"./node_modules/eslint-config-mdcs/index.js"
+		"./node_modules/eslint-config-mdcs/index.js",
+		"plugin:@vitest/legacy-recommended"
 	],
-
+	"env": {
+		"@vitest/env": true
+	},
 	"settings": {
 	    "react": {
 			"version": "detect"
@@ -47,7 +45,14 @@
 			"ignoreMemberSort": true,
 			"memberSyntaxSortOrder": [ "none", "all", "multiple", "single" ],
 			"allowSeparatedGroups": false
-		} ]
+		} ],
+
+		"@vitest/no-disabled-tests": "warn",
+		"@vitest/no-focused-tests": "error",
+		"@vitest/no-identical-title": "error",
+		"@vitest/prefer-to-have-length": "warn",
+		"@vitest/valid-expect": "error",
+		"@vitest/valid-describe-callback": 0
 	},
 	"overrides": [ {
 		"files": [ "*.ts" ],
