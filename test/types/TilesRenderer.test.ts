@@ -1,6 +1,6 @@
 import { Camera, Object3D } from 'three';
 import { Tile, TilesRenderer } from '../../src/index.js';
-import { expect, test } from '@jest/globals';
+import { expect, test } from 'vitest';
 
 function addCamera( event: { camera: Camera } ) { }
 function deleteCamera( event: { camera: Camera } ) { }
