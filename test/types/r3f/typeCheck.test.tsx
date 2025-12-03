@@ -1,4 +1,4 @@
-import { EnvironmentControls } from '../../../src/r3f/index.js';
+import { EnvironmentControls } from '3d-tiles-renderer/r3f';
 import React from 'react';
 
 // EnvironmentControls taking valid props, not expect ts error.

@@ -1,8 +1,5 @@
 import { LRUCache } from '../src/core/renderer/utilities/LRUCache.js';
 
-globalThis.requestAnimationFrame = setTimeout;
-globalThis.cancelAnimationFrame = clearTimeout;
-
 describe( 'LRUCache', () => {
 
 	it( 'should not allow the same object to be added more than once.', () => {
@@ -110,11 +107,11 @@ describe( 'LRUCache', () => {
 
 		}
 
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		cache.maxSize = 3;
 		cache.unloadUnusedContent();
-		expect( cache.itemList.length ).toEqual( 3 );
+		expect( cache.itemList ).toHaveLength( 3 );
 
 	} );
 
@@ -133,12 +130,12 @@ describe( 'LRUCache', () => {
 
 		}
 
-		expect( cache.itemList.length ).toEqual( 7 );
+		expect( cache.itemList ).toHaveLength( 7 );
 		expect( cache.cachedBytes ).toEqual( 28 );
 
 		cache.markAllUnused();
 		cache.unloadUnusedContent();
-		expect( cache.itemList.length ).toEqual( 2 );
+		expect( cache.itemList ).toHaveLength( 2 );
 		expect( cache.cachedBytes ).toEqual( 8 );
 
 	} );
@@ -159,11 +156,11 @@ describe( 'LRUCache', () => {
 		}
 
 		expect( cache.cachedBytes ).toEqual( 10 );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		cache.unloadUnusedContent();
 		expect( cache.cachedBytes ).toEqual( 10 );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		for ( let i = 0; i < 10; i ++ ) {
 
@@ -172,11 +169,11 @@ describe( 'LRUCache', () => {
 		}
 
 		expect( cache.cachedBytes ).toEqual( 40 );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		cache.unloadUnusedContent();
 		expect( cache.cachedBytes ).toEqual( 28 );
-		expect( cache.itemList.length ).toEqual( 7 );
+		expect( cache.itemList ).toHaveLength( 7 );
 
 	} );
 
@@ -202,11 +199,11 @@ describe( 'LRUCache', () => {
 		cache.itemList.forEach( item => cache.setMemoryUsage( item, 1 ) );
 
 		expect( cache.isFull() ).toEqual( true );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		cache.unloadUnusedContent();
 		expect( cache.isFull() ).toEqual( true );
-		expect( cache.itemList.length ).toEqual( 5 );
+		expect( cache.itemList ).toHaveLength( 5 );
 
 	} );
 
@@ -237,11 +234,11 @@ describe( 'LRUCache', () => {
 		} );
 
 		expect( cache.isFull() ).toEqual( true );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 		cache.unloadUnusedContent();
 		expect( cache.isFull() ).toEqual( true );
-		expect( cache.itemList.length ).toEqual( 10 );
+		expect( cache.itemList ).toHaveLength( 10 );
 
 	} );
 

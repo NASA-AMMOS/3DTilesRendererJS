@@ -1,7 +1,5 @@
 import { PriorityQueue } from '../src/core/renderer/utilities/PriorityQueue.js';
 
-// eslint-disable-next-line
-globalThis.requestAnimationFrame = cb => setTimeout( cb );
 const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve ) );
 
 describe( 'PriorityQueue', () => {
@@ -67,7 +65,7 @@ describe( 'PriorityQueue', () => {
 		queue.add( { priority: 8 }, cb );
 		queue.add( { priority: 2 }, cb );
 		queue.add( { priority: 1 }, cb );
-		expect( queue.items.length ).toEqual( queue.callbacks.size );
+		expect( queue.items ).toHaveLength( queue.callbacks.size );
 
 		// We require a new frame to trigger each subsequent task
 		for ( let i = 0; i < 7; i ++ ) {
@@ -77,7 +75,7 @@ describe( 'PriorityQueue', () => {
 		}
 
 		expect( result ).toEqual( [ 8, 6, 4, 3, 2, 1, 0 ] );
-		expect( queue.items.length ).toEqual( queue.callbacks.size );
+		expect( queue.items ).toHaveLength( queue.callbacks.size );
 
 	} );
 
@@ -108,7 +106,7 @@ describe( 'PriorityQueue', () => {
 
 		queue.remove( D );
 		expect( queue.items ).toEqual( [] );
-		expect( queue.items.length ).toEqual( queue.callbacks.size );
+		expect( queue.items ).toHaveLength( queue.callbacks.size );
 
 	} );
 
