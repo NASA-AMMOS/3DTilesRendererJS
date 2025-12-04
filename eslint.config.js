@@ -19,6 +19,12 @@ export default [
 	// recommended
 	js.configs.recommended,
 
+	// ts recommended
+	...tseslint.configs.recommended.map( config => ( {
+		...config,
+		files: [ '**/*.ts', '**/*.tsx' ],
+	} ) ),
+
 	// base rules
 	{
 		name: 'base rules',
@@ -49,12 +55,6 @@ export default [
 		},
 	},
 
-	// ts recommended
-	...tseslint.configs.recommended.map( config => ( {
-		...config,
-		files: [ '**/*.ts', '**/*.tsx' ],
-	} ) ),
-
 	// ts rule overrides
 	{
 		name: 'ts rule overrides',
@@ -66,6 +66,8 @@ export default [
 			indent: [ 'error', 'tab' ],
 			'no-dupe-class-members': 'off',
 			'@typescript-eslint/no-wrapper-object-types': 'error',
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-empty-object-type': 'off',
 		},
 	},
 
@@ -113,11 +115,6 @@ export default [
 		},
 		rules: {
 			...vitest.configs.recommended.rules,
-			'vitest/no-disabled-tests': 'warn',
-			'vitest/no-focused-tests': 'error',
-			'vitest/no-identical-title': 'error',
-			'vitest/prefer-to-have-length': 'warn',
-			'vitest/valid-expect': 'error',
 			'vitest/valid-describe-callback': 0,
 		},
 	},
