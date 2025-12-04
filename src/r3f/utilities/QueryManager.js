@@ -427,7 +427,7 @@ const closestPointLineToLine = ( function () {
 
 		}
 
-		d2 = ( d0232 + d * d3210 ) / d3232; // eslint-disable-line
+		d2 = ( d0232 + d * d3210 ) / d3232;
 
 		result.x = d;
 		result.y = d2;

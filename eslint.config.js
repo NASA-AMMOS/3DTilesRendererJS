@@ -48,6 +48,10 @@ export default [
 				memberSyntaxSortOrder: [ 'none', 'all', 'multiple', 'single' ],
 				allowSeparatedGroups: false,
 			} ],
+			'no-unused-vars': [ 'error', {
+				vars: 'all',
+				args: 'none',
+			} ],
 		},
 	},
 
@@ -67,7 +71,7 @@ export default [
 	// react
 	{
 		name: 'react rules',
-		files: [ '**/*.jsx', '**/*.tsx' ],
+		files: [ '**/*.js', '**/*.jsx', '**/*.tsx' ],
 		plugins: {
 			react,
 			'react-hooks': reactHooks,
