@@ -137,6 +137,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// circular pivot mesh
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
+
 		this.pivotMesh.scale.setScalar( 0.25 );
 
 		// raycaster

@@ -283,6 +283,7 @@ export class TopoLinesPlugin {
 			}
 
 		};
+
 		tiles.group.add( resolutionSampleObject );
 		this._resolutionSampleObject = resolutionSampleObject;
 

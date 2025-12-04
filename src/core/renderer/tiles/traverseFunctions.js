@@ -328,6 +328,7 @@ export function markVisibleTiles( tile, renderer ) {
 				stats.visible ++;
 
 			}
+
 			tile.__active = true;
 			stats.active ++;
 
@@ -374,6 +375,7 @@ export function markVisibleTiles( tile, renderer ) {
 			stats.visible ++;
 
 		}
+
 		tile.__active = true;
 		stats.active ++;
 
@@ -455,6 +457,7 @@ export function toggleTiles( tile, renderer ) {
 			}
 
 		}
+
 		tile.__wasSetActive = setActive;
 		tile.__wasSetVisible = setVisible;
 		tile.__usedLastFrame = isUsed;

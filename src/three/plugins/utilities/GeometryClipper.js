@@ -682,6 +682,7 @@ export function hashVertex( ...args ) {
 		}
 
 	}
+
 	return result;
 
 }

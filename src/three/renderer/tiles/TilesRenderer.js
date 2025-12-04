@@ -290,6 +290,7 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		}
+
 		return false;
 
 	}
@@ -340,6 +341,7 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		}
+
 		return false;
 
 	}

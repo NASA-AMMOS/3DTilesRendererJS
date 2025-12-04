@@ -217,6 +217,7 @@ function animate() {
 		offsetParent.rotation.x = Math.PI / 2;
 
 	}
+
 	offsetParent.updateMatrixWorld( true );
 
 	// update tiles center

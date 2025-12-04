@@ -339,6 +339,7 @@ function onWindowResize() {
 		secondRenderer.domElement.style.display = 'none';
 
 	}
+
 	camera.updateProjectionMatrix();
 	renderer.setPixelRatio( window.devicePixelRatio * params.resolutionScale );
 
@@ -423,6 +424,7 @@ function onPointerUp( e ) {
 			str += `${ name } : ${ val }\n`;
 
 		}
+
 		console.log( str );
 
 	}
@@ -441,6 +443,7 @@ function updateOrthoCamera() {
 		aspect *= 0.5;
 
 	}
+
 	orthoCamera.left = - aspect * scale;
 	orthoCamera.right = aspect * scale;
 	orthoCamera.bottom = - scale;
@@ -615,6 +618,7 @@ function render() {
 		rayIntersect.scale.setScalar( dist * camera.fov / 6000 );
 
 	}
+
 	renderer.render( scene, params.orthographic ? orthoCamera : camera );
 
 	// render secondary view

@@ -23,6 +23,7 @@ function getSubtreeCoordinates( tile, parentTile ) {
 		return [ 0, 0, 0 ];
 
 	}
+
 	const x = 2 * parentTile.__x + ( tile.__subtreeIdx % 2 );
 	const y = 2 * parentTile.__y + ( Math.floor( tile.__subtreeIdx / 2 ) % 2 );
 	const z = isOctreeSubdivision( tile ) ?
@@ -198,12 +199,14 @@ export class SUBTREELoader extends LoaderBase {
 			header = bufferViewHeaders[ tileAvailabilityHeader.bufferView ];
 
 		}
+
 		if ( header ) {
 
 			header.isActive = true;
 			header.bufferHeader.isActive = true;
 
 		}
+
 		const contentAvailabilityHeaders = subtreeJson.contentAvailabilityHeaders;
 		for ( let i = 0; i < contentAvailabilityHeaders.length; i ++ ) {
 
@@ -217,6 +220,7 @@ export class SUBTREELoader extends LoaderBase {
 				header = bufferViewHeaders[ contentAvailabilityHeaders[ i ].bufferView ];
 
 			}
+
 			if ( header ) {
 
 				header.isActive = true;
@@ -225,6 +229,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		header = undefined;
 		const childSubtreeAvailabilityHeader = subtreeJson.childSubtreeAvailability;
 		if ( ! isNaN( childSubtreeAvailabilityHeader.bitstream ) ) {
@@ -236,6 +241,7 @@ export class SUBTREELoader extends LoaderBase {
 			header = bufferViewHeaders[ childSubtreeAvailabilityHeader.bufferView ];
 
 		}
+
 		if ( header ) {
 
 			header.isActive = true;
@@ -290,6 +296,7 @@ export class SUBTREELoader extends LoaderBase {
 							throw new Error( `SUBTREELoader: Failed to load external buffer from ${ bufferHeader.uri } with error code ${ response.status }.` );
 
 						}
+
 						return response.arrayBuffer();
 
 					} )
@@ -304,6 +311,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		const bufferResults = await Promise.all( promises );
 		const buffersU8 = {};
 		for ( let i = 0; i < bufferResults.length; i ++ ) {
@@ -316,6 +324,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		return buffersU8;
 
 	}
@@ -340,12 +349,14 @@ export class SUBTREELoader extends LoaderBase {
 				continue;
 
 			}
+
 			const start = bufferViewHeader.byteOffset;
 			const end = start + bufferViewHeader.byteLength;
 			const buffer = buffersU8[ bufferViewHeader.buffer ];
 			bufferViewsU8[ i ] = buffer.slice( start, end );
 
 		}
+
 		return bufferViewsU8;
 
 	}
@@ -380,6 +391,7 @@ export class SUBTREELoader extends LoaderBase {
 			bufferHeader.isExternal = !! bufferHeader.uri;
 
 		}
+
 		return bufferHeaders;
 
 	}
@@ -417,6 +429,7 @@ export class SUBTREELoader extends LoaderBase {
 			bufferViewHeader.isExternal = bufferViewHeader.bufferHeader.isExternal;
 
 		}
+
 		return bufferViewHeaders;
 
 	}
@@ -453,6 +466,7 @@ export class SUBTREELoader extends LoaderBase {
 			subtree._contentAvailabilityBitstreams.push( bitstream );
 
 		}
+
 		subtree._childSubtreeAvailability = this.parseAvailabilityBitstream(
 			subtreeJson.childSubtreeAvailability,
 			bufferViewsU8,
@@ -485,6 +499,7 @@ export class SUBTREELoader extends LoaderBase {
 			};
 
 		}
+
 		let bufferView;
 		// Check for bitstream first, which is part of the current schema.
 		// bufferView is the name of the bitstream from an older schema.
@@ -497,6 +512,7 @@ export class SUBTREELoader extends LoaderBase {
 			bufferView = bufferViewsU8[ availabilityJson.bufferView ];
 
 		}
+
 		return {
 			bitstream: bufferView,
 			lengthBits: lengthBits
@@ -531,6 +547,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		subtreeRoot.children.push( contentTile );
 		// Creating each leaf inside the current subtree.
 		const bottomRow = this.transcodeSubtreeTiles(
@@ -591,6 +608,7 @@ export class SUBTREELoader extends LoaderBase {
 					continue;
 
 				}
+
 				// Create a tile and add it as a child.
 				const childTile = this.deriveChildTile(
 					subtree,
@@ -602,10 +620,12 @@ export class SUBTREELoader extends LoaderBase {
 				currentRow.push( childTile );
 
 			}
+
 			parentRow = currentRow;
 			currentRow = [];
 
 		}
+
 		return parentRow;
 
 	}
@@ -645,6 +665,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		return subtreeTile;
 
 	}
@@ -665,11 +686,13 @@ export class SUBTREELoader extends LoaderBase {
 			throw new Error( 'Bit index out of bounds.' );
 
 		}
+
 		if ( object.constant !== undefined ) {
 
 			return object.constant;
 
 		}
+
 		// byteIndex is floor(index / 8)
 		const byteIndex = index >> 3;
 		const bitIndex = index % 8;
@@ -715,6 +738,7 @@ export class SUBTREELoader extends LoaderBase {
 				}
 
 			}
+
 			//Also divide the height in the case of octree.
 			if ( isOctreeSubdivision( tile ) ) {
 
@@ -725,9 +749,11 @@ export class SUBTREELoader extends LoaderBase {
 				region[ 5 ] = minZ + sizeZ * ( tile.__z + 1 );	//maximum height
 
 			}
+
 			boundingVolume.region = region;
 
 		}
+
 		if ( this.rootTile.boundingVolume.box ) {
 
 			// 0-2: center of the box
@@ -755,9 +781,11 @@ export class SUBTREELoader extends LoaderBase {
 				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
 
 			}
+
 			boundingVolume.box = box;
 
 		}
+
 		return boundingVolume;
 
 	}
@@ -793,6 +821,7 @@ export class SUBTREELoader extends LoaderBase {
 				continue;
 
 			}
+
 			for ( let j = 0; j < branchingFactor; j ++ ) {
 
 				const index = i * branchingFactor + j;
@@ -808,6 +837,7 @@ export class SUBTREELoader extends LoaderBase {
 			}
 
 		}
+
 		return results;
 
 	}

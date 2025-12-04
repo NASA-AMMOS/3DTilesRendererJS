@@ -259,6 +259,7 @@ function handleTasks() {
 		tasks[ t ]();
 
 	}
+
 	tasks.length = 0;
 
 }

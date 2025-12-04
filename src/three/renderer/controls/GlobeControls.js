@@ -206,6 +206,7 @@ export class GlobeControls extends EnvironmentControls {
 				pivotMesh.visible = false;
 
 			}
+
 			this.scaleZoomOrientationAtEdges = false;
 
 		}
