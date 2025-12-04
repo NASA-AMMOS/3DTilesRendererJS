@@ -5,8 +5,8 @@ import React from 'react';
 <EnvironmentControls enableDamping={ true } />;
 
 // EnvironmentControls taking invalid props, expect ts error. tsc test will fail if ts-expect-error directive failed to capture error.
-//@ts-expect-error
+// @ts-expect-error - enableDamping should be boolean, not string
 <EnvironmentControls enableDamping={ 'incorrect type' }/>;
 
-//@ts-expect-error
+// @ts-expect-error - foo is not a valid prop for EnvironmentControls
 <EnvironmentControls foo={ 'bar' } />;
