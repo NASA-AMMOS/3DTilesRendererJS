@@ -35,15 +35,11 @@ export default [
 			globals: {
 				...globals.browser,
 				...globals.node,
-				BigInt64Array: 'readonly',
-				BigUInt64Array: 'readonly',
 			},
 		},
 		rules: {
 			...mdcs.rules,
 			'no-mixed-spaces-and-tabs': 'error',
-			'no-throw-literal': 'error',
-			'prefer-const': [ 'error', { destructuring: 'any', ignoreReadBeforeAssign: false } ],
 			quotes: [ 'error', 'single' ],
 			'sort-imports': [ 'error', {
 				ignoreCase: true,
@@ -63,9 +59,6 @@ export default [
 			'no-undef': 'off',
 			'no-unused-vars': 'off',
 			'@typescript-eslint/no-unused-vars': [ 'error', { args: 'none' } ],
-			indent: [ 'error', 'tab' ],
-			'no-dupe-class-members': 'off',
-			'@typescript-eslint/no-wrapper-object-types': 'error',
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-empty-object-type': 'off',
 		},
@@ -93,7 +86,8 @@ export default [
 		},
 		rules: {
 			...react.configs.recommended.rules,
-			...reactHooks.configs.recommended.rules,
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 			'react/react-in-jsx-scope': 'off',
 			'react/prop-types': 'off',
 			'react/no-unknown-property': 'off',
