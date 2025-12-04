@@ -22,12 +22,14 @@ export class UpdateOnChangePlugin {
 			this.needsUpdate = true;
 
 		};
+
 		this._onCameraAdd = ( { camera } ) => {
 
 			this.needsUpdate = true;
 			this.cameraMatrices.set( camera, new Matrix4() );
 
 		};
+
 		this._onCameraDelete = ( { camera } ) => {
 
 			this.needsUpdate = true;

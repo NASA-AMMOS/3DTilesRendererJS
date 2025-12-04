@@ -11,6 +11,7 @@ const PARENT_BOUND_REF_COUNT = Symbol( 'PARENT_BOUND_REF_COUNT' );
 
 const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
+
 const colors = {};
 
 // Return a consistent random color for an index
@@ -25,6 +26,7 @@ function getIndexedRandomColor( index ) {
 		colors[ index ] = new Color().setHSL( h, s, l );
 
 	}
+
 	return colors[ index ];
 
 }
@@ -495,6 +497,7 @@ export class DebugTilesPlugin {
 							break;
 
 						}
+
 						case RELATIVE_DEPTH: {
 
 							const val = tile.__depthFromRenderedParent / maxDepth;
@@ -502,6 +505,7 @@ export class DebugTilesPlugin {
 							break;
 
 						}
+
 						case SCREEN_ERROR: {
 
 							const val = tile.__error / errorTarget;
@@ -514,9 +518,11 @@ export class DebugTilesPlugin {
 								this.getDebugColor( val, c.material.color );
 
 							}
+
 							break;
 
 						}
+
 						case GEOMETRIC_ERROR: {
 
 							const val = Math.min( tile.geometricError / maxError, 1 );
@@ -524,6 +530,7 @@ export class DebugTilesPlugin {
 							break;
 
 						}
+
 						case DISTANCE: {
 
 							// We don't update the distance if the geometric error is 0.0 so
@@ -533,6 +540,7 @@ export class DebugTilesPlugin {
 							break;
 
 						}
+
 						case IS_LEAF: {
 
 							if ( ! tile.children || tile.children.length === 0 ) {
@@ -544,9 +552,11 @@ export class DebugTilesPlugin {
 								this.getDebugColor( 0.0, c.material.color );
 
 							}
+
 							break;
 
 						}
+
 						case RANDOM_NODE_COLOR: {
 
 							if ( ! c.material[ HAS_RANDOM_NODE_COLOR ] ) {
@@ -555,9 +565,11 @@ export class DebugTilesPlugin {
 								c.material[ HAS_RANDOM_NODE_COLOR ] = true;
 
 							}
+
 							break;
 
 						}
+
 						case RANDOM_COLOR: {
 
 							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
@@ -566,9 +578,11 @@ export class DebugTilesPlugin {
 								c.material[ HAS_RANDOM_COLOR ] = true;
 
 							}
+
 							break;
 
 						}
+
 						case CUSTOM_COLOR: {
 
 							if ( this.customColorCallback ) {
@@ -580,9 +594,11 @@ export class DebugTilesPlugin {
 								console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
 
 							}
+
 							break;
 
 						}
+
 						case LOAD_ORDER: {
 
 							const value = sortedTiles.indexOf( tile );

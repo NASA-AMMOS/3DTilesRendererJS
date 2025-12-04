@@ -350,6 +350,7 @@ export class TilesRendererBase {
 						this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
 
 					}
+
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
@@ -1067,6 +1068,7 @@ export class TilesRendererBase {
 					} );
 
 				}
+
 				if ( tile.cached.scene ) {
 
 					this.dispatchEvent( {

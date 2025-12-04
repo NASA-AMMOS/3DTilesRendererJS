@@ -131,6 +131,7 @@ function init() {
 				} );
 
 			};
+
 			const plugin = new TextureOverlayPlugin( { textureUpdateCallback } );
 			tiles.registerPlugin( plugin );
 

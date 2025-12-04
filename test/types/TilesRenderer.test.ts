@@ -3,19 +3,26 @@ import { Tile, TilesRenderer } from '../../src/index.js';
 import { expect, test } from 'vitest';
 
 function addCamera( event: { camera: Camera } ) { }
+
 function deleteCamera( event: { camera: Camera } ) { }
+
 function emptyEvent( event: {} ) { }
+
 function loadTileset( event: { tileset: object, url: string } ) { }
+
 function loadModel( event: { scene: Object3D; tile: Tile } ) { }
+
 function disposeModel( event: { scene: Object3D; tile: Tile; } ) { }
+
 function tileVisibilityChange( event: { scene: Object3D; tile: Tile; visible: boolean } ) { }
+
 function loadError( event: { tile: Tile | null, error: Error, url: string | URL } ) { }
 
 function whatever( event: unknown ) { }
 
 // This function is not meant to be executed, but just here to
 // guarantee that the exported types match what is expected.
-// eslint-disable-next-line no-unused-vars
+
 function typecheck( renderer: TilesRenderer ) {
 
 	// Check events emitted by the TilesRenderer

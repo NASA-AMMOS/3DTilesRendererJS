@@ -243,6 +243,7 @@ function updateHash() {
 		urlParams.set( 'batched', 1 );
 
 	}
+
 	window.history.replaceState( undefined, undefined, `#${ urlParams }` );
 
 }

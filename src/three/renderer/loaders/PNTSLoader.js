@@ -108,6 +108,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 						}
 
 					}
+
 					translationOffset.x = QUANTIZED_VOLUME_OFFSET[ 0 ];
 					translationOffset.y = QUANTIZED_VOLUME_OFFSET[ 1 ];
 					translationOffset.z = QUANTIZED_VOLUME_OFFSET[ 2 ];
@@ -172,6 +173,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 						}
 
 					}
+
 					geometry.setAttribute( 'color', new BufferAttribute( color, 3, true ) );
 					material.vertexColors = true;
 

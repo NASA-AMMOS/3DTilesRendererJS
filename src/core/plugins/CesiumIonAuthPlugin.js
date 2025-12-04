@@ -105,6 +105,7 @@ export class CesiumIonAuthPlugin {
 			uri.searchParams.set( 'v', this._tileSetVersion );
 
 		}
+
 		return uri.toString();
 
 	}

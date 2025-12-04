@@ -91,6 +91,7 @@ export class FeatureTable {
 			header = {};
 
 		}
+
 		this.header = header;
 
 	}

@@ -1246,7 +1246,7 @@ export class ImageOverlayPlugin {
 
 							await promise;
 
-						} catch ( e ) {
+						} catch {
 
 							// skip errors since this will throw when aborted
 							return;

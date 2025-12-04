@@ -76,6 +76,7 @@ function getRegionGeometry( ellipsoidRegion, { computeNormals = false } = {} ) {
 			height = heightEnd;
 
 		}
+
 		ellipsoidRegion.getCartographicToPosition( lat, lon, height, _pos );
 		position.setXYZ( i, ..._pos );
 

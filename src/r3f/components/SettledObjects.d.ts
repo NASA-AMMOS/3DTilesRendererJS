@@ -23,9 +23,9 @@ interface SettledObjectsProps {
 }
 
 interface QueryManagerContextType {
-    registerLatLonQuery( lat: number, lon: number, callback: Function ): number;
+    registerLatLonQuery( lat: number, lon: number, callback: ( hit: any ) => void ): number;
     unregisterQuery( index: number ): void;
-    registerRayQuery( ray: Ray, callback: Function ): number;
+    registerRayQuery( ray: Ray, callback: ( hit: any ) => void ): number;
     setScene( scene: any[] ): void;
     addCamera( camera: Camera ): void;
     setEllipsoidFromTilesRenderer( tiles: any ): void;

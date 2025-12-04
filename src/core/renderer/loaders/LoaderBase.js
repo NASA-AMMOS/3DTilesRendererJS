@@ -26,6 +26,7 @@ export class LoaderBase {
 					throw new Error( `Failed to load file "${ url }" with status ${ res.status } : ${ res.statusText }` );
 
 				}
+
 				return res.arrayBuffer();
 
 			} )

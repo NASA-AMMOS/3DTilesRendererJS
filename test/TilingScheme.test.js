@@ -123,7 +123,7 @@ describe( 'TilingScheme', () => {
 
 	} );
 
-	if ( 'should report an empty set of tiles if the requested range is outside the level tile bounds.', () => {
+	it( 'should report an empty set of tiles if the requested range is outside the level tile bounds.', () => {
 
 		const scheme = new TilingScheme();
 		scheme.setLevel( 0, {
@@ -139,7 +139,7 @@ describe( 'TilingScheme', () => {
 
 	} );
 
-	if ( 'should report an empty set of tiles if the requested range is outside the tiling scheme content bounds.', () => {
+	it( 'should report an empty set of tiles if the requested range is outside the tiling scheme content bounds.', () => {
 
 		const scheme = new TilingScheme();
 		scheme.setContentBounds( 0.5, 0.5, 1.5, 1.5 );

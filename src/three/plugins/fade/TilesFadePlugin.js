@@ -216,6 +216,7 @@ export class TilesFadePlugin {
 			this._fadeMaterialManager.prepareScene( scene );
 
 		};
+
 		this._onDisposeModel = ( { tile, scene } ) => {
 
 			if ( this.tiles.visibleTiles.has( tile ) ) {
@@ -231,18 +232,21 @@ export class TilesFadePlugin {
 			this._fadeMaterialManager.deleteScene( scene );
 
 		};
+
 		this._onAddCamera = ( { camera } ) => {
 
 			// track the camera transform
 			this._prevCameraTransforms.set( camera, new Matrix4() );
 
 		};
+
 		this._onDeleteCamera = ( { camera } )=> {
 
 			// remove the camera transform
 			this._prevCameraTransforms.delete( camera );
 
 		};
+
 		this._onTileVisibilityChange = ( { tile, visible } ) => {
 
 			// this function gets fired _after_ all set visible callbacks including the batched meshes
@@ -264,11 +268,13 @@ export class TilesFadePlugin {
 			} );
 
 		};
+
 		this._onUpdateBefore = () => {
 
 			onUpdateBefore.call( this );
 
 		};
+
 		this._onUpdateAfter = () => {
 
 			onUpdateAfter.call( this );
