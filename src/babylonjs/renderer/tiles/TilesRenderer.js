@@ -256,7 +256,7 @@ export class TilesRenderer extends TilesRendererBase {
 		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
 		// get frustums in local space: note tht it seems there's no way to transform to ref in Babylon
-		BABYLON.Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
+		Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
 		const frustumPlanes = _frustumPlanes.map( plane => {
 
 			return plane.transform( _worldToTiles );
