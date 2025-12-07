@@ -17,8 +17,6 @@ export const packageAliases = {
 	'3d-tiles-renderer': path.resolve( './src/index.js' ),
 };
 
-console.log(  path.resolve( './src/babylonjs/renderer/index.js' ) )
-
 export default ( { mode } ) => {
 
 	process.env = { ...process.env, ...loadEnv( mode, process.cwd() ) };
