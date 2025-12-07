@@ -816,6 +816,11 @@ export class ImageOverlayPlugin {
 
 		} );
 
+		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
+		// TODO: If a tile is of type "ADD" refine and it has children then it will not be split
+		// as expected since only geometry tiles with no children are split. Instead we'd want
+		// to split this tiles geometry in addition to adding the child tiles.
+		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
 
 	}
@@ -1329,6 +1334,11 @@ export class ImageOverlayPlugin {
 				// assign the uniforms
 				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
 				params.layerInfo.value[ i ] = overlay;
+
+				// mark per-layer defines
+				material.defines[ `LAYER_${ i }_EXISTS` ] = Number( target !== null );
+				material.defines[ `LAYER_${ i }_ALPHA_INVERT` ] = Number( overlay.alphaInvert );
+				material.defines[ `LAYER_${ i }_ALPHA_MASK` ] = Number( overlay.alphaMask );
 
 				material.defines.LAYER_COUNT = overlays.length;
 				material.needsUpdate = true;
