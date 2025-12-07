@@ -2,7 +2,8 @@ import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vec
 import { PriorityQueue } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
-import { QuadKeyImageSource, XYZImageSource } from './sources/XYZImageSource.js';
+import { XYZImageSource } from './sources/XYZImageSource.js';
+import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
 import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
