@@ -257,9 +257,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// get frustums in local space: note tht it seems there's no way to transform to ref in Babylon
 		BABYLON.Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
-		frustumPlanes = _frustumPlanes.map( plane => {
+		const frustumPlanes = _frustumPlanes.map( plane => {
 
-			return plane.transform( worldToTiles );
+			return plane.transform( _worldToTiles );
 
 		} );
 
@@ -278,7 +278,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// Check frustum intersection
-		const inView = boundingVolume.intersectsFrustum( _frustumPlanes );
+		const inView = boundingVolume.intersectsFrustum( frustumPlanes );
 
 		target.inView = inView;
 		target.error = error;
