@@ -1677,6 +1677,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 						break;
 
 					}
+
 					case 'BING': {
 
 						const { url, mapStyle, key } = json.options;
