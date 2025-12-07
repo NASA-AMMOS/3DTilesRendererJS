@@ -64,6 +64,7 @@ export class QuadKeyImageSource extends XYZImageSource {
 		super( rest );
 
 		this.subdomains = subdomains;
+		this.subDomainIndex = 0;
 
 	}
 
@@ -94,9 +95,10 @@ export class QuadKeyImageSource extends XYZImageSource {
 
 	_getSubdomain() {
 
-		// Get random subdomain to circumvent browser URL request limits per domain
+		// Spread requests among different subdomains to circumvent browser URL request limits per domain
 		// https://learn.microsoft.com/en-us/bingmaps/rest-services/directly-accessing-the-bing-maps-tiles
-		return this.subdomains[ Math.floor( Math.random() * this.subdomains.length ) ];
+		this.subDomainIndex = ( this.subDomainIndex + 1 ) % this.subdomains.length;
+		return this.subdomains[ this.subDomainIndex ];
 
 	}
 

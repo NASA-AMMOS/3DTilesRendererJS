@@ -1651,25 +1651,37 @@ export class CesiumIonOverlay extends ImageOverlay {
 					collapsible: att.collapsible,
 				} ) );
 
-				if ( json.type !== 'IMAGERY' ) throw new Error( 'CesiumIonOverlay: Only IMAGERY is supported as overlay type' );
+				if ( json.type !== 'IMAGERY' ) {
 
-				this.externalType = !! json.externalType;
+					throw new Error( 'CesiumIonOverlay: Only IMAGERY is supported as overlay type.' );
+
+				}
+
+				this.externalType = Boolean( json.externalType );
+
 				switch ( json.externalType ) {
 
-					case 'GOOGLE_2D_MAPS':
+					case 'GOOGLE_2D_MAPS': {
+
+						const { url, session, key, tileWidth } = json.options;
+						const xyzUrl = `${ url }/v1/2dtiles/{z}/{x}/{y}?session=${ session }&key=${ key }`;
 						this.imageSource = new XYZImageSource( {
 							...this.options,
-							url: `${json.options.url}/v1/2dtiles/{z}/{x}/{y}?session=${json.options.session}&key=${json.options.key}`,
-							tileDimension: json.options.tileWidth,
-							levels: 22, // https://developers.google.com/maps/documentation/tile/2d-tiles-overview
+							url: xyzUrl,
+							tileDimension: tileWidth,
+
+							// Google maps tiles have a fixed depth of 22
+							// https://developers.google.com/maps/documentation/tile/2d-tiles-overview
+							levels: 22,
 						} );
 						break;
 
+					}
 					case 'BING': {
 
-						const response = await fetch(
-							`${json.options.url}/REST/v1/Imagery/Metadata/${json.options.mapStyle}?incl=ImageryProviders&key=${json.options.key}&uriScheme=https`,
-						).then( ( res ) => res.json() );
+						const { url, mapStyle, key } = json.options;
+						const metadataUrl = `${ url }/REST/v1/Imagery/Metadata/${ mapStyle }?incl=ImageryProviders&key=${ key }&uriScheme=https`;
+						const response = await fetch( metadataUrl ).then( res => res.json() );
 						const metadata = response.resourceSets[ 0 ].resources[ 0 ];
 
 						this.imageSource = new QuadKeyImageSource( {
@@ -1692,6 +1704,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 				}
 
 				this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
 				return this.imageSource.init();
 
 			} );
