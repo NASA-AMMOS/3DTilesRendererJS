@@ -1,1 +1,1 @@
-export * from './renderer/TilesRenderer.js';
+export * from './tiles/TilesRenderer.js';
