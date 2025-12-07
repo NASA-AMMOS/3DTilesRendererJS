@@ -4,6 +4,11 @@ import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { GLTFLoader } from '../loaders/GLTFLoader.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 
+// Scratch variables to avoid allocations
+const _worldToTiles = /* @__PURE__ */ BABYLON.Matrix.Identity();
+const _cameraPositionInTiles = /* @__PURE__ */ new BABYLON.Vector3();
+const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new BABYLON.Plane( 0, 0, 0, 0 ) );
+
 // TODO: implementation does not support left handed coordinate system
 export class TilesRenderer extends TilesRendererBase {
 
@@ -70,7 +75,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const transformInverse = BABYLON.Matrix.Invert( transform );
+		const transformInverse = BABYLON.Matrix.Identity();
+		transform.invertToRef( transformInverse );
 		const boundingVolume = new TileBoundingVolume();
 		if ( 'sphere' in tile.boundingVolume ) {
 
@@ -115,7 +121,7 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new B3DMLoader( scene );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-				loader.adjustmentTransform = upRotationMatrix.clone();
+				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
 				result = await loader.parse( buffer, uri );
 				break;
@@ -128,7 +134,7 @@ export class TilesRenderer extends TilesRendererBase {
 				const loader = new GLTFLoader( scene );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
-				loader.adjustmentTransform = upRotationMatrix.clone();
+				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
 				result = await loader.parse( buffer, uri );
 				break;
@@ -246,15 +252,16 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// calculate the frustum planes and distances in local tile coordinates
-		const worldToTiles = this.group.getWorldMatrix().clone().invert();
-		const cameraPositionInTiles = BABYLON.Vector3.TransformCoordinates( camera.globalPosition, worldToTiles );
+		this.group.getWorldMatrix().invertToRef( _worldToTiles );
+		BABYLON.Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
-		const distance = boundingVolume.distanceToPoint( cameraPositionInTiles );
-		const frustumPlanes = BABYLON.Frustum.GetPlanes( camera.getTransformationMatrix( true ) ).map( plane => {
+		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
+		const sourceFrustumPlanes = BABYLON.Frustum.GetPlanes( camera.getTransformationMatrix( true ) );
+		for ( let i = 0; i < 6; i ++ ) {
 
-			return plane.transform( worldToTiles );
+			sourceFrustumPlanes[ i ].transform( _worldToTiles, _frustumPlanes[ i ] );
 
-		} );
+		}
 
 		let error;
 		if ( isOrthographic ) {
@@ -269,7 +276,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// Check frustum intersection
-		const inView = boundingVolume.intersectsFrustum( frustumPlanes );
+		const inView = boundingVolume.intersectsFrustum( _frustumPlanes );
 
 		target.inView = inView;
 		target.error = error;

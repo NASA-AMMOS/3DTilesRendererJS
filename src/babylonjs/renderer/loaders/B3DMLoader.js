@@ -1,3 +1,4 @@
+import * as BABYLON from 'babylonjs';
 import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { GLTFLoader } from './GLTFLoader.js';
 
@@ -7,7 +8,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 		super();
 		this.scene = scene;
-		this.adjustmentTransform = null;
+		this.adjustmentTransform = BABYLON.Matrix.Identity();
 
 	}
 
