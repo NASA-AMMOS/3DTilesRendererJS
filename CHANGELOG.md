@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added "assetTypeHandler" to "CesiumIonAuthPlugin" for registering plugins based on loaded asset type.
 - Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
+- CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
 
 ### Fixed
 - Controls: Fixed case where pointer state may not have been reset correctly.
