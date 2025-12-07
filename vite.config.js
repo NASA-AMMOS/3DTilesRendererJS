@@ -3,6 +3,7 @@ import fs from 'fs';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// alias order matters so longer paths are listed first
 export const packageAliases = {
 	'3d-tiles-renderer/core/plugins': path.resolve( './src/core/plugins/index.js' ),
 	'3d-tiles-renderer/three/plugins': path.resolve( './src/three/plugins/index.js' ),
@@ -20,7 +21,6 @@ export default ( { mode } ) => {
 
 	process.env = { ...process.env, ...loadEnv( mode, process.cwd() ) };
 
-	// alias order matters so longer paths are listed first
 	const useBuild = mode === 'use-build';
 
 	return {
