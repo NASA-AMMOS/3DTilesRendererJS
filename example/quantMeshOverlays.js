@@ -26,7 +26,7 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	enableTileSplitting: true,
-	mapBase: false,
+	mapBase: 3954,
 	errorTarget: 2,
 	opacity: 1.0,
 	color: '#ffffff',
@@ -114,7 +114,14 @@ function init() {
 	gui.add( params, 'enableCacheDisplay' );
 	gui.add( params, 'enableRendererStats' );
 	gui.add( params, 'enableTileSplitting' );
-	gui.add( params, 'mapBase' ).name( 'OpenStreetMap' ).onChange( updateBaseOverlay );
+	gui.add( params, 'mapBase', {
+		'Sentinel-2': 3954,
+		OpenStreetMap: 0,
+		'Google Maps Satellite': 3830183,
+		'Google Maps Roadmap': 3830184,
+		'Bing Maps Aerial': 3,
+		'Bing Maps Road': 4,
+	} ).name( 'Base map' ).onChange( updateBaseOverlay );
 	gui.add( params, 'errorTarget', 1, 30, 1 );
 
 	const washingtonFolder = gui.addFolder( 'Washington DC Layer' );
@@ -146,7 +153,7 @@ function updateBaseOverlay() {
 
 	}
 
-	if ( params.mapBase ) {
+	if ( params.mapBase === 0 ) {
 
 		baseOverlay = new XYZTilesOverlay( {
 			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -155,7 +162,7 @@ function updateBaseOverlay() {
 	} else {
 
 		baseOverlay = new CesiumIonOverlay( {
-			assetId: '3954',
+			assetId: params.mapBase,
 			apiToken: import.meta.env.VITE_ION_KEY,
 		} );
 
