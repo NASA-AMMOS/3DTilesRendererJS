@@ -15,8 +15,11 @@ export default defineConfig( {
 			'3d-tiles-renderer/r3f': '/src/r3f/index.jsx',
 			'3d-tiles-renderer/core': '/src/core/renderer/index.js',
 			'3d-tiles-renderer/three': '/src/three/renderer/index.js',
+			'3d-tiles-renderer/babylonjs': '/src/babylonjs/renderer/index.js',
+
 			'3d-tiles-renderer/core/plugins': '/src/core/plugins/index.js',
 			'3d-tiles-renderer/three/plugins': '/src/three/plugins/index.js',
+
 			'3d-tiles-renderer/plugins': '/src/plugins.js',
 			'3d-tiles-renderer': '/src/index.js',
 		},

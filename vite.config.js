@@ -10,6 +10,7 @@ export const packageAliases = {
 	'3d-tiles-renderer/r3f': path.resolve( './src/r3f/index.jsx' ),
 	'3d-tiles-renderer/core': path.resolve( './src/core/renderer/index.js' ),
 	'3d-tiles-renderer/three': path.resolve( './src/three/renderer/index.js' ),
+	'3d-tiles-renderer/babylonjs': path.resolve( './src/babylonjs/renderer/index.js' ),
 
 	'3d-tiles-renderer/plugins': path.resolve( './src/plugins.js' ),
 	'3d-tiles-renderer': path.resolve( './src/index.js' ),
