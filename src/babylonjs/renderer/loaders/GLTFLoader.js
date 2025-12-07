@@ -1,15 +1,15 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
-import * as BABYLON from 'babylonjs';
+import { Matrix, Quaternion, SceneLoader } from 'babylonjs';
 import 'babylonjs-loaders';
 
-const _worldMatrix = /* @__PURE__ */ BABYLON.Matrix.Identity();
+const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
 export class GLTFLoader extends LoaderBase {
 
 	constructor( scene ) {
 
 		super();
 		this.scene = scene;
-		this.adjustmentTransform = BABYLON.Matrix.Identity();
+		this.adjustmentTransform = Matrix.Identity();
 
 	}
 
@@ -27,7 +27,7 @@ export class GLTFLoader extends LoaderBase {
 
 		// Use unique filename to prevent texture caching issues
 		// TODO: What is the correct method for loading gltf files in babylon?
-		const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+		const container = await SceneLoader.LoadAssetContainerAsync(
 			rootUrl,
 			new File( [ buffer ], uri ),
 			scene,
@@ -41,7 +41,7 @@ export class GLTFLoader extends LoaderBase {
 		const root = container.meshes[ 0 ];
 
 		// ensure rotationQuaternion is initialized so we can decompose the matrix
-		root.rotationQuaternion = BABYLON.Quaternion.Identity();
+		root.rotationQuaternion = Quaternion.Identity();
 
 		// adjust the transform the model by the necessary rotation correction
 		const worldMatrix = root.computeWorldMatrix( true );

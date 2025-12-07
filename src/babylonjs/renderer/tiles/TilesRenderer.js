@@ -1,13 +1,13 @@
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
-import * as BABYLON from 'babylonjs';
+import { Matrix, Vector3, Plane, TransformNode, Frustum } from 'babylonjs';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { GLTFLoader } from '../loaders/GLTFLoader.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 
 // Scratch variables to avoid allocations
-const _worldToTiles = /* @__PURE__ */ BABYLON.Matrix.Identity();
-const _cameraPositionInTiles = /* @__PURE__ */ new BABYLON.Vector3();
-const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new BABYLON.Plane( 0, 0, 0, 0 ) );
+const _worldToTiles = /* @__PURE__ */ Matrix.Identity();
+const _cameraPositionInTiles = /* @__PURE__ */ new Vector3();
+const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new Plane( 0, 0, 0, 0 ) );
 
 // TODO: implementation does not support left handed coordinate system
 export class TilesRenderer extends TilesRendererBase {
@@ -17,8 +17,8 @@ export class TilesRenderer extends TilesRendererBase {
 		super( url );
 
 		this.scene = scene;
-		this.group = new BABYLON.TransformNode( 'tiles-root', scene );
-		this._upRotationMatrix = BABYLON.Matrix.Identity();
+		this.group = new TransformNode( 'tiles-root', scene );
+		this._upRotationMatrix = Matrix.Identity();
 
 	}
 
@@ -40,11 +40,11 @@ export class TilesRenderer extends TilesRendererBase {
 				switch ( upAxis.toLowerCase() ) {
 
 					case 'x':
-						BABYLON.Matrix.RotationYToRef( - Math.PI / 2, this._upRotationMatrix );
+						Matrix.RotationYToRef( - Math.PI / 2, this._upRotationMatrix );
 						break;
 
 					case 'y':
-						BABYLON.Matrix.RotationXToRef( Math.PI / 2, this._upRotationMatrix );
+						Matrix.RotationXToRef( Math.PI / 2, this._upRotationMatrix );
 						break;
 
 				}
@@ -60,11 +60,11 @@ export class TilesRenderer extends TilesRendererBase {
 		super.preprocessNode( tile, tilesetDir, parentTile );
 
 		// Build the transform matrix for this tile
-		const transform = BABYLON.Matrix.Identity();
+		const transform = Matrix.Identity();
 		if ( tile.transform ) {
 
 			// 3d tiles uses column major
-			BABYLON.Matrix.FromValuesToRef( ...tile.transform, transform );
+			Matrix.FromValuesToRef( ...tile.transform, transform );
 
 		}
 
@@ -75,7 +75,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const transformInverse = BABYLON.Matrix.Identity();
+		const transformInverse = Matrix.Identity();
 		transform.invertToRef( transformInverse );
 		const boundingVolume = new TileBoundingVolume();
 		if ( 'sphere' in tile.boundingVolume ) {
@@ -253,10 +253,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// calculate the frustum planes and distances in local tile coordinates
 		this.group.getWorldMatrix().invertToRef( _worldToTiles );
-		BABYLON.Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
+		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
 		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
-		const sourceFrustumPlanes = BABYLON.Frustum.GetPlanes( camera.getTransformationMatrix( true ) );
+		const sourceFrustumPlanes = Frustum.GetPlanes( camera.getTransformationMatrix( true ) );
 		for ( let i = 0; i < 6; i ++ ) {
 
 			sourceFrustumPlanes[ i ].transform( _worldToTiles, _frustumPlanes[ i ] );

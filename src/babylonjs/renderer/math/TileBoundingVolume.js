@@ -1,11 +1,11 @@
-import * as BABYLON from 'babylonjs';
+import { Vector3, Matrix, BoundingSphere } from 'babylonjs';
 import { OBB } from './OBB.js';
 
-const _vecX = /* @__PURE__ */ new BABYLON.Vector3();
-const _vecY = /* @__PURE__ */ new BABYLON.Vector3();
-const _vecZ = /* @__PURE__ */ new BABYLON.Vector3();
-const _scale = /* @__PURE__ */ new BABYLON.Vector3();
-const _empty = /* @__PURE__ */ new BABYLON.Vector3();
+const _vecX = /* @__PURE__ */ new Vector3();
+const _vecY = /* @__PURE__ */ new Vector3();
+const _vecZ = /* @__PURE__ */ new Vector3();
+const _scale = /* @__PURE__ */ new Vector3();
+const _empty = /* @__PURE__ */ new Vector3();
 
 export class TileBoundingVolume {
 
@@ -18,10 +18,10 @@ export class TileBoundingVolume {
 
 	setSphereData( x, y, z, radius, transform ) {
 
-		const sphere = new BABYLON.BoundingSphere( _empty, _empty );
+		const sphere = new BoundingSphere( _empty, _empty );
 
 		const center = sphere.centerWorld.set( x, y, z );
-		BABYLON.Vector3.TransformCoordinatesToRef( center, transform, center );
+		Vector3.TransformCoordinatesToRef( center, transform, center );
 
 		transform.decompose( _scale, null, null );
 		sphere.radiusWorld = radius * Math.max( Math.abs( _scale.x ), Math.abs( _scale.y ), Math.abs( _scale.z ) );
@@ -50,26 +50,26 @@ export class TileBoundingVolume {
 		// handle the case where the box has a dimension of 0 in one axis
 		if ( scaleX === 0 ) {
 
-			BABYLON.Vector3.CrossToRef( _vecY, _vecZ, _vecX );
+			Vector3.CrossToRef( _vecY, _vecZ, _vecX );
 
 		}
 
 		if ( scaleY === 0 ) {
 
-			BABYLON.Vector3.CrossToRef( _vecX, _vecZ, _vecY );
+			Vector3.CrossToRef( _vecX, _vecZ, _vecY );
 
 		}
 
 		if ( scaleZ === 0 ) {
 
-			BABYLON.Vector3.CrossToRef( _vecX, _vecY, _vecZ );
+			Vector3.CrossToRef( _vecX, _vecY, _vecZ );
 
 		}
 
 		// create the oriented frame that the box exists in
 		// Note that Babylon seems to take data in column major ordering rather than row-major like three.js
 		// (despite the docs seeming to imply that it's row major) so we transpose afterward
-		obb.transform = BABYLON.Matrix
+		obb.transform = Matrix
 			.FromValues(
 				_vecX.x, _vecY.x, _vecZ.x, data[ 0 ],
 				_vecX.y, _vecY.y, _vecZ.y, data[ 1 ],
@@ -96,7 +96,7 @@ export class TileBoundingVolume {
 
 		if ( sphere ) {
 
-			sphereDistance = BABYLON.Vector3.Distance( point, sphere.centerWorld ) - sphere.radiusWorld;
+			sphereDistance = Vector3.Distance( point, sphere.centerWorld ) - sphere.radiusWorld;
 			sphereDistance = Math.max( sphereDistance, 0 );
 
 		}
