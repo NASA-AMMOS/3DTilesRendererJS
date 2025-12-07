@@ -23,7 +23,6 @@ export default ( { mode } ) => {
 	// alias order matters so longer paths are listed first
 	const useBuild = mode === 'use-build';
 
-
 	return {
 		root: './example/',
 		envDir: '.',
