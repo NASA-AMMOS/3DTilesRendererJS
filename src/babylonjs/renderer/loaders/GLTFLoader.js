@@ -2,6 +2,7 @@ import { LoaderBase } from '3d-tiles-renderer/core';
 import * as BABYLON from 'babylonjs';
 import 'babylonjs-loaders';
 
+const _worldMatrix = /* @__PURE__ */ BABYLON.Matrix.Identity();
 export class GLTFLoader extends LoaderBase {
 
 	constructor( scene ) {
@@ -43,9 +44,9 @@ export class GLTFLoader extends LoaderBase {
 		root.rotationQuaternion = BABYLON.Quaternion.Identity();
 
 		// adjust the transform the model by the necessary rotation correction
-		adjustmentTransform
-			.multiply( root.computeWorldMatrix( true ) )
-			.decompose( root.scaling, root.rotationQuaternion, root.position );
+		const worldMatrix = root.computeWorldMatrix( true );
+		adjustmentTransform.multiplyToRef( worldMatrix, _worldMatrix );
+		_worldMatrix.decompose( root.scaling, root.rotationQuaternion, root.position );
 
 		return {
 			scene: root,

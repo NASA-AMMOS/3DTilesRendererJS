@@ -16,7 +16,7 @@ export class OBB {
 	update() {
 
 		const { min, max, points, transform } = this;
-		this.inverseTransform = BABYLON.Matrix.Invert( transform );
+		transform.invertToRef( this.inverseTransform );
 
 		// update corner points
 		let index = 0;
