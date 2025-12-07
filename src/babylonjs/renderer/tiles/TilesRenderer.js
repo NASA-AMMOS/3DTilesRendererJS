@@ -255,13 +255,15 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group.getWorldMatrix().invertToRef( _worldToTiles );
 		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
+		// get frustums in local space: note tht it seems there's no way to transform to ref in Babylon
+		BABYLON.Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
+		frustumPlanes = _frustumPlanes.map( plane => {
+
+			return plane.transform( worldToTiles );
+
+		} );
+
 		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
-		const sourceFrustumPlanes = Frustum.GetPlanes( camera.getTransformationMatrix( true ) );
-		for ( let i = 0; i < 6; i ++ ) {
-
-			sourceFrustumPlanes[ i ].transform( _worldToTiles, _frustumPlanes[ i ] );
-
-		}
 
 		let error;
 		if ( isOrthographic ) {
