@@ -11,53 +11,53 @@ If a tileset or geometry does not load or render properly please make an issue! 
 
 **Examples**
 
-[Dingo Gap Mars dataset with multiple tilesets](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mars.html)
+[Dingo Gap Mars dataset with multiple tilesets](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/mars.html)
 
-[Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/index.html)
+[Kitchen sink example with all options here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/index.html)
 
-[Rendering in VR example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/vr.html)
+[Rendering in VR example here](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/vr.html)
 
 **External Tiles Providers**
 
 _Personal [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/) required_
 
-[Cesium Ion 3D Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionExample.html)
+[Cesium Ion 3D Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/ionExample.html)
 
-[Cesium Ion Lunar Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionLunar.html)
+[Cesium Ion Lunar Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/ionLunar.html)
 
-[Cesium Ion Martian Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/ionLunar.html?mars)
+[Cesium Ion Martian Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/ionLunar.html?mars)
 
-[Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsAerial.html)
+[Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/googleMapsAerial.html)
 
-[Google Globe Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/googleMapsExample.html)
+[Google Globe Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/googleMapsExample.html)
 
 **Customization**
 
-[Custom material example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/customMaterial.html)
+[Custom material example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/customMaterial.html)
 
-[Rendering shadows from offscreen tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/offscreenShadows.html)
+[Rendering shadows from offscreen tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/offscreenShadows.html)
 
-[Alternate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/landformSiteOverlay.html)
+[Alternate texture overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/landformSiteOverlay.html)
 
 **Plugins**
 
-[Tile Metadata](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/metadata.html)
+[Tile Metadata](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/metadata.html)
 
-[Tile LoD Fade Transition](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/fadingTiles.html)
+[Tile LoD Fade Transition](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/fadingTiles.html)
 
-[Deep Zoom Image Format Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/deepZoom.html)
+[Deep Zoom Image Format Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/deepZoom.html)
 
-[TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/mapTiles.html)
+[TMS, XYZ Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/mapTiles.html)
 
-[WMTS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/wmtsTiles.html)
+[WMTS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/wmtsTiles.html)
 
-[WMS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/wmsTiles.html)
+[WMS Map Tiles Support](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/wmsTiles.html)
 
-[Quantized Mesh with Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/quantMeshOverlays.html)
+[Quantized Mesh with Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/quantMeshOverlays.html)
 
-[Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/loadRegion.html)
+[Loading Tiles in Region Volumes](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/loadRegion.html)
 
-[GeoJSON Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/geojson.html)
+[GeoJSON Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/geojson.html)
 
 **React Three Fiber**
 
