@@ -35,7 +35,7 @@ export default ( { mode } ) => {
 			outDir: './bundle/',
 			rollupOptions: {
 				input: [
-					...fs.readdirSync( './example/' ),
+					...fs.readdirSync( './example/three/' ).map( name => 'three/' + name ),
 					...fs.readdirSync( './example/r3f/' ).map( name => 'r3f/' + name ),
 				]
 					.filter( p => /\.html$/.test( p ) )
