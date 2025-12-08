@@ -53,6 +53,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 		levels?: number, // max rasterization zoom
 		pointRadius?: number,
 		strokeStyle?: string,
+		strokeWidth?: number,
 		fillStyle?: string,
 		color?: number | Color,
 		opacity?: number,
