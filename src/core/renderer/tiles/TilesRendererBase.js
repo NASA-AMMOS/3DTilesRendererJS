@@ -173,6 +173,7 @@ export class TilesRendererBase {
 			visible: 0,
 		};
 		this.frameCount = 0;
+		this.framesSinceLastLoad = 0;
 
 		// callbacks
 		this._dispatchNeedsUpdateEvent = throttle( () => {
@@ -426,6 +427,24 @@ export class TilesRendererBase {
 			this.isLoading = false;
 
 		}
+
+		if (!this.isLoading && !runningTasks) {
+
+			this.framesSinceLastLoad++;
+
+			// If we have gone 2 full frames with zero activity, we are truly settled (one to calculate visibility, one to process potential results).
+			if (this.framesSinceLastLoad === 2) {
+				
+				this.dispatchEvent({ type: 'tiles-settled' });
+			
+			}
+			
+		} else {
+			
+			this.framesSinceLastLoad = 0;
+		
+		}
+		
 
 	}
 
