@@ -5,13 +5,13 @@ const EPSILON = 1e-13;
 const PI = Math.PI;
 const HALF_PI = PI / 2;
 
-const _orthoX = new Vector3();
-const _orthoY = new Vector3();
-const _orthoZ = new Vector3();
-const _vec = new Vector3();
-const _invMatrix = new Matrix4();
-const _box = new Box3();
-const _matrix = new Matrix4();
+const _orthoX = /* @__PURE__*/ new Vector3();
+const _orthoY = /* @__PURE__*/ new Vector3();
+const _orthoZ = /* @__PURE__*/ new Vector3();
+const _vec = /* @__PURE__*/ new Vector3();
+const _invMatrix = /* @__PURE__*/ new Matrix4();
+const _box = /* @__PURE__*/ new Box3();
+const _matrix = /* @__PURE__*/ new Matrix4();
 
 function expandSphereRadiusSquared( vec, target ) {
 
