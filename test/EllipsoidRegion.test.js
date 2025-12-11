@@ -10,18 +10,22 @@ const TEST_REGIONS = [
 	{ latStart: - 0.5, latEnd: - 0.2, lonStart: 1.0, lonEnd: 1.5, heightStart: 0, heightEnd: 0.1 },
 	// Region crossing equator
 	{ latStart: - 0.4, latEnd: 0.4, lonStart: 0, lonEnd: Math.PI / 4, heightStart: - 0.1, heightEnd: 0.1 },
-	// Wide region
+	// Wide region (exactly at PI boundary)
 	{ latStart: - Math.PI / 4, latEnd: Math.PI / 4, lonStart: 0, lonEnd: Math.PI, heightStart: - 0.05, heightEnd: 0.15 },
-	// Very wide region (> PI)
+	// Very wide region (> PI, 1.5*PI)
 	{ latStart: 0, latEnd: Math.PI / 3, lonStart: 0, lonEnd: Math.PI * 1.5, heightStart: 0, heightEnd: 0.05 },
+	// Very wide region (> PI, 1.75*PI)
+	{ latStart: - Math.PI / 6, latEnd: Math.PI / 6, lonStart: 0, lonEnd: Math.PI * 1.75, heightStart: - 0.05, heightEnd: 0.05 },
+	// Nearly full circle (> PI, 1.9*PI)
+	{ latStart: - Math.PI / 4, latEnd: Math.PI / 4, lonStart: 0.1, lonEnd: Math.PI * 1.9 + 0.1, heightStart: 0, heightEnd: 0.1 },
 	// Polar region (northern)
 	{ latStart: Math.PI / 3, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 2, heightStart: - 0.1, heightEnd: 0 },
-	// Polar region (southern)
+	// Polar region (southern) with wide longitude
 	{ latStart: - Math.PI / 2, latEnd: - Math.PI / 3, lonStart: Math.PI, lonEnd: Math.PI * 1.5, heightStart: 0, heightEnd: 0.1 },
 	// Region with negative heights
 	{ latStart: - 0.2, latEnd: 0.2, lonStart: 2.0, lonEnd: 2.5, heightStart: - 0.2, heightEnd: - 0.05 },
-	// Full latitude span
-	{ latStart: - Math.PI / 2, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.05 },
+	// Full latitude span with wide longitude
+	{ latStart: - Math.PI / 2, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI * 1.3, heightStart: 0, heightEnd: 0.05 },
 	// Narrow region
 	{ latStart: 0.5, latEnd: 0.52, lonStart: 1.0, lonEnd: 1.05, heightStart: - 0.01, heightEnd: 0.01 },
 ];
@@ -59,8 +63,6 @@ describe( 'EllipsoidRegion', () => {
 
 							region.getCartographicToPosition( lat, lon, h, point );
 							point.applyMatrix4( invMatrix );
-
-							console.log( config )
 							expect( box.containsPoint( point ) ).toBe( true );
 
 						}
@@ -538,7 +540,6 @@ describe( 'EllipsoidRegion', () => {
 							expect( sphere.containsPoint( point ) ).toBe( true );
 
 							point.applyMatrix4( invMatrix );
-							console.log( ellipsoid, box.distanceToPoint( point ) );
 							expect( box.containsPoint( point ) ).toBe( true );
 
 						}
@@ -586,6 +587,237 @@ describe( 'EllipsoidRegion', () => {
 
 					point.applyMatrix4( invMatrix );
 					expect( box.containsPoint( point ) ).toBe( true );
+
+				}
+
+			}
+
+		} );
+
+	} );
+
+	describe( 'Wide longitude regions (> PI)', () => {
+
+		it( 'should handle longitude span slightly greater than PI.', () => {
+
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+
+			const region = new EllipsoidRegion( 1, 1, 1 );
+			region.latStart = - Math.PI / 4;
+			region.latEnd = Math.PI / 4;
+			region.lonStart = 0;
+			region.lonEnd = Math.PI * 1.1; // Slightly > PI
+			region.heightStart = - 0.05;
+			region.heightEnd = 0.1;
+
+			region.getBoundingBox( box, matrix );
+			region.getBoundingSphere( sphere );
+			invMatrix.copy( matrix ).invert();
+
+			// Test corners and interior points
+			for ( let latStep = 0; latStep <= 4; latStep ++ ) {
+
+				const lat = MathUtils.mapLinear( latStep, 0, 4, region.latStart, region.latEnd );
+
+				for ( let lonStep = 0; lonStep <= 8; lonStep ++ ) {
+
+					const lon = MathUtils.mapLinear( lonStep, 0, 8, region.lonStart, region.lonEnd );
+
+					for ( const h of [ region.heightStart, region.heightEnd ] ) {
+
+						region.getCartographicToPosition( lat, lon, h, point );
+
+						// Test sphere
+						expect( sphere.containsPoint( point ) ).toBe( true );
+
+						// Test box
+						point.applyMatrix4( invMatrix );
+						expect( box.containsPoint( point ) ).toBe( true );
+
+					}
+
+				}
+
+			}
+
+		} );
+
+		it( 'should handle longitude span at 1.5*PI.', () => {
+
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+
+			const region = new EllipsoidRegion( 1, 1, 1 );
+			region.latStart = - Math.PI / 6;
+			region.latEnd = Math.PI / 6;
+			region.lonStart = 0;
+			region.lonEnd = Math.PI * 1.5;
+			region.heightStart = 0;
+			region.heightEnd = 0.1;
+
+			region.getBoundingBox( box, matrix );
+			region.getBoundingSphere( sphere );
+			invMatrix.copy( matrix ).invert();
+
+			// Test a comprehensive grid
+			for ( let latStep = 0; latStep <= 6; latStep ++ ) {
+
+				const lat = MathUtils.mapLinear( latStep, 0, 6, region.latStart, region.latEnd );
+
+				for ( let lonStep = 0; lonStep <= 12; lonStep ++ ) {
+
+					const lon = MathUtils.mapLinear( lonStep, 0, 12, region.lonStart, region.lonEnd );
+
+					for ( const h of [ region.heightStart, region.heightEnd ] ) {
+
+						region.getCartographicToPosition( lat, lon, h, point );
+
+						expect( sphere.containsPoint( point ) ).toBe( true );
+
+						point.applyMatrix4( invMatrix );
+						expect( box.containsPoint( point ) ).toBe( true );
+
+					}
+
+				}
+
+			}
+
+		} );
+
+		it( 'should handle nearly full circle (1.9*PI).', () => {
+
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+
+			const region = new EllipsoidRegion( 1, 1, 1 );
+			region.latStart = - Math.PI / 8;
+			region.latEnd = Math.PI / 8;
+			region.lonStart = 0.1;
+			region.lonEnd = Math.PI * 1.9 + 0.1;
+			region.heightStart = - 0.05;
+			region.heightEnd = 0.05;
+
+			region.getBoundingBox( box, matrix );
+			region.getBoundingSphere( sphere );
+			invMatrix.copy( matrix ).invert();
+
+			// Test many points around the nearly-complete circle
+			for ( let latStep = 0; latStep <= 4; latStep ++ ) {
+
+				const lat = MathUtils.mapLinear( latStep, 0, 4, region.latStart, region.latEnd );
+
+				for ( let lonStep = 0; lonStep <= 20; lonStep ++ ) {
+
+					const lon = MathUtils.mapLinear( lonStep, 0, 20, region.lonStart, region.lonEnd );
+
+					for ( const h of [ region.heightStart, region.heightEnd ] ) {
+
+						region.getCartographicToPosition( lat, lon, h, point );
+
+						expect( sphere.containsPoint( point ) ).toBe( true );
+
+						point.applyMatrix4( invMatrix );
+						expect( box.containsPoint( point ) ).toBe( true );
+
+					}
+
+				}
+
+			}
+
+		} );
+
+		it( 'should handle wide regions with equator crossing.', () => {
+
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+
+			const region = new EllipsoidRegion( 1, 1, 1 );
+			region.latStart = - Math.PI / 3;
+			region.latEnd = Math.PI / 3;
+			region.lonStart = 0;
+			region.lonEnd = Math.PI * 1.6; // > PI and crosses equator
+			region.heightStart = - 0.1;
+			region.heightEnd = 0.1;
+
+			region.getBoundingBox( box, matrix );
+			region.getBoundingSphere( sphere );
+			invMatrix.copy( matrix ).invert();
+
+			// Extra emphasis on equator points
+			for ( let lonStep = 0; lonStep <= 16; lonStep ++ ) {
+
+				const lon = MathUtils.mapLinear( lonStep, 0, 16, region.lonStart, region.lonEnd );
+
+				for ( const h of [ region.heightStart, region.heightEnd ] ) {
+
+					// Test at equator
+					region.getCartographicToPosition( 0, lon, h, point );
+
+					expect( sphere.containsPoint( point ) ).toBe( true );
+
+					point.applyMatrix4( invMatrix );
+					expect( box.containsPoint( point ) ).toBe( true );
+
+				}
+
+			}
+
+		} );
+
+		it( 'should handle wide polar regions.', () => {
+
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+
+			const region = new EllipsoidRegion( 1, 1, 1 );
+			region.latStart = Math.PI / 3;
+			region.latEnd = Math.PI / 2;
+			region.lonStart = 0;
+			region.lonEnd = Math.PI * 1.7; // Wide region at high latitude
+			region.heightStart = 0;
+			region.heightEnd = 0.05;
+
+			region.getBoundingBox( box, matrix );
+			region.getBoundingSphere( sphere );
+			invMatrix.copy( matrix ).invert();
+
+			// Test grid with emphasis on poles
+			for ( let latStep = 0; latStep <= 5; latStep ++ ) {
+
+				const lat = MathUtils.mapLinear( latStep, 0, 5, region.latStart, region.latEnd );
+
+				for ( let lonStep = 0; lonStep <= 12; lonStep ++ ) {
+
+					const lon = MathUtils.mapLinear( lonStep, 0, 12, region.lonStart, region.lonEnd );
+
+					for ( const h of [ region.heightStart, region.heightEnd ] ) {
+
+						region.getCartographicToPosition( lat, lon, h, point );
+
+						expect( sphere.containsPoint( point ) ).toBe( true );
+
+						point.applyMatrix4( invMatrix );
+						expect( box.containsPoint( point ) ).toBe( true );
+
+					}
 
 				}
 
