@@ -1,7 +1,8 @@
 import { Matrix4, Vector3, Box3 } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 
-const EPSILON = 1e-13;
+// bounds are lightly inflated to account for floating point error
+const INFLATE_EPSILON = 1e-13;
 const PI = Math.PI;
 const HALF_PI = PI / 2;
 
@@ -95,7 +96,7 @@ export class EllipsoidRegion extends Ellipsoid {
 			_invMatrix.copy( matrix ).invert();
 
 			// extract x
-			// check the most bowing point near the equator
+			// check the most bowing point near the equator relative to the frame
 			this.getCartographicToPosition( nearEquatorLat, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			max.x = Math.abs( _vec.x );
 			min.x = - max.x;
@@ -116,9 +117,11 @@ export class EllipsoidRegion extends Ellipsoid {
 			min.y = Math.min( _vec.y, min.y );
 
 			// extract z
+			// check center point
 			this.getCartographicToPosition( latMid, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			max.z = _vec.z;
 
+			// check top and bottom reverse points
 			this.getCartographicToPosition( latStart, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
 			min.z = _vec.z;
 
@@ -175,8 +178,8 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		// center the frame
 		box.getCenter( _vec );
-		box.min.sub( _vec ).multiplyScalar( 1 + EPSILON );
-		box.max.sub( _vec ).multiplyScalar( 1 + EPSILON );
+		box.min.sub( _vec ).multiplyScalar( 1 + INFLATE_EPSILON );
+		box.max.sub( _vec ).multiplyScalar( 1 + INFLATE_EPSILON );
 
 		_vec.applyMatrix4( matrix );
 		matrix.setPosition( _vec );
@@ -259,7 +262,7 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		}
 
-		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + EPSILON );
+		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + INFLATE_EPSILON );
 
 	}
 
