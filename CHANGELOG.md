@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Controls: Fixed case where pointer state may not have been reset correctly.
 - ImageOverlayPlugin: "enableTileSplitting" now works with "ADDITIVE" tiles.
 - EnforceNonZeroErrorPlugin: adjusted error is now based on the first parent with geometric error encountered.
-- Fixed up some types
+- Fixed up some types.
+- Improved "Bounding OBB" and "Bounding Sphere" generation for "Region" bounding volumes.
 
 ## [0.4.18] - 2025.11.14
 ### Added
