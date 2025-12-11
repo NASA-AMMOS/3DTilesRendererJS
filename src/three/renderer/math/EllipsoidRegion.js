@@ -1,6 +1,7 @@
 import { Matrix4, Vector3, Box3 } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 
+const EPSILON = 1e-13;
 const PI = Math.PI;
 const HALF_PI = PI / 2;
 
@@ -21,7 +22,7 @@ function expandSphereRadius( vec, target ) {
 export class EllipsoidRegion extends Ellipsoid {
 
 	constructor(
-		x, y, z,
+		x = 1, y = 1, z = 1,
 		latStart = - HALF_PI, latEnd = HALF_PI,
 		lonStart = 0, lonEnd = 2 * PI,
 		heightStart = 0, heightEnd = 0
@@ -161,8 +162,8 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		// center the frame
 		box.getCenter( _vec );
-		box.min.sub( _vec );
-		box.max.sub( _vec );
+		box.min.sub( _vec ).multiplyScalar( 1 + EPSILON );
+		box.max.sub( _vec ).multiplyScalar( 1 + EPSILON );
 
 		_vec.applyMatrix4( matrix );
 		matrix.setPosition( _vec );
@@ -237,7 +238,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec );
 		expandSphereRadius( _vec, sphere );
 
-		sphere.radius = Math.sqrt( sphere.radius );
+		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + EPSILON );
 
 	}
 
