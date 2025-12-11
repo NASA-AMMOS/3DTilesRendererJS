@@ -38,6 +38,88 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
+	// Samples critical points across the region and calls the callback for each point.
+	// This includes corners, midpoints, cardinal axis alignments, and equator crossings.
+	forEachCriticalPoint( callback ) {
+
+		const {
+			latStart, latEnd,
+			lonStart, lonEnd,
+			heightStart, heightEnd,
+		} = this;
+
+		const latMid = ( latStart + latEnd ) * 0.5;
+		const lonMid = ( lonStart + lonEnd ) * 0.5;
+
+		// collect critical longitude values to sample
+		const lonSamples = new Set();
+		lonSamples.add( lonStart );
+		lonSamples.add( lonEnd );
+		lonSamples.add( lonMid );
+
+		// add cardinal axis longitudes if they fall within the longitude range
+		// these are critical for triaxial ellipsoids where axes have different radii
+		const cardinalLongitudes = [ 0, HALF_PI, PI, PI + HALF_PI ];
+		for ( let cardinalLon of cardinalLongitudes ) {
+
+			// normalize longitude to 0-2π range for comparison
+			let normalizedStart = lonStart % ( 2 * PI );
+			let normalizedEnd = lonEnd % ( 2 * PI );
+			if ( normalizedStart < 0 ) {
+
+				normalizedStart += 2 * PI;
+
+			}
+
+			if ( normalizedEnd < 0 ) {
+
+				normalizedEnd += 2 * PI;
+
+			}
+
+			cardinalLon = lonStart + cardinalLon - normalizedStart;
+
+			if ( cardinalLon >= lonStart && cardinalLon <= lonEnd ) {
+
+				lonSamples.add( cardinalLon );
+
+			}
+
+		}
+
+		// check the bowing point at the equator
+		const latSteps = [ latStart, latEnd ];
+		if ( latStart < 0 && latEnd > 0 ) {
+
+			latSteps.splice( 1, 0, 0 );
+
+		}
+
+		// test all longitude samples at critical latitudes
+		const lonArray = Array.from( lonSamples ).sort( ( a, b ) => a - b );
+		for ( let h of [ heightStart, heightEnd ] ) {
+
+			for ( let lat of latSteps ) {
+
+				for ( let lon of lonArray ) {
+
+					callback( lat, lon, h );
+
+				}
+
+			}
+
+		}
+
+		// also test latitude midpoints at all sampled longitudes
+		for ( let lon of lonArray ) {
+
+			callback( latMid, lon, heightEnd );
+
+		}
+
+	}
+
 	getBoundingBox( box, matrix ) {
 
 		const {
@@ -161,26 +243,19 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		}
 
-		for ( const height of [ heightStart, heightEnd ] ) {
+		// sample all critical points to ensure tight fit
+		this.forEachCriticalPoint( ( lat, lon, height ) => {
 
-			for ( const lat of [ latStart, latEnd ] ) {
+			this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
+			min.x = Math.min( _vec.x, min.x );
+			min.y = Math.min( _vec.y, min.y );
+			min.z = Math.min( _vec.z, min.z );
 
-				for ( const lon of [ lonStart, lonEnd ] ) {
+			max.x = Math.max( _vec.x, max.x );
+			max.y = Math.max( _vec.y, max.y );
+			max.z = Math.max( _vec.z, max.z );
 
-					this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
-					min.x = Math.min( _vec.x, min.x );
-					min.y = Math.min( _vec.y, min.y );
-					min.z = Math.min( _vec.z, min.z );
-
-					max.x = Math.max( _vec.x, max.x );
-					max.y = Math.max( _vec.y, max.y );
-					max.z = Math.max( _vec.z, max.z );
-
-				}
-
-			}
-
-		}
+		} );
 
 		// center the frame
 		box.getCenter( _vec );
@@ -195,15 +270,6 @@ export class EllipsoidRegion extends Ellipsoid {
 	getBoundingSphere( sphere, center = null ) {
 
 		// TODO: this could be optimized
-		const {
-			latStart, latEnd,
-			lonStart, lonEnd,
-			heightStart, heightEnd,
-		} = this;
-
-		const latMid = ( latStart + latEnd ) * 0.5;
-		const lonMid = ( lonStart + lonEnd ) * 0.5;
-
 		// if no center provided, compute the geometric center of the region
 		if ( center === null ) {
 
@@ -212,6 +278,13 @@ export class EllipsoidRegion extends Ellipsoid {
 			sphere.center.setFromMatrixPosition( _matrix );
 			sphere.radius = 0;
 
+			if ( this.lonEnd - this.lonStart > Math.PI ) {
+
+				sphere.center.x = 0;
+				sphere.center.y = 0;
+
+			}
+
 		} else {
 
 			sphere.center.copy( center );
@@ -219,46 +292,13 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		}
 
-		// step at 90 degree increments to ensure bowing points are not missed
-		const lonStepCount = Math.ceil( ( lonEnd - lonStart ) / 90 );
-		const lonStep = ( lonEnd - lonStart ) / lonStepCount;
+		// sample all critical points and expand the sphere
+		this.forEachCriticalPoint( ( lat, lon, h ) => {
 
-		// check the bowing point at the equator
-		const latSteps = [ latStart, latEnd ];
-		if ( latStart < 0 && latEnd > 0 ) {
+			this.getCartographicToPosition( lat, lon, h, _vec );
+			expandSphereRadius( _vec, sphere );
 
-			latSteps.splice( 1, 0, 0 );
-
-		}
-
-		// test a sweep of points at the corners and steps
-		for ( let h of [ heightStart, heightEnd ] ) {
-
-			for ( let lat of latSteps ) {
-
-				for ( let i = 0; i <= lonStepCount; i ++ ) {
-
-					this.getCartographicToPosition( lat, lonStart + i * lonStep, h, _vec );
-					expandSphereRadius( _vec, sphere );
-
-				}
-
-			}
-
-		}
-
-		// also include mid points
-		this.getCartographicToPosition( latMid, lonStart, heightEnd, _vec );
-		expandSphereRadius( _vec, sphere );
-
-		this.getCartographicToPosition( latMid, lonEnd, heightEnd, _vec );
-		expandSphereRadius( _vec, sphere );
-
-		this.getCartographicToPosition( latStart, lonMid, heightEnd, _vec );
-		expandSphereRadius( _vec, sphere );
-
-		this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec );
-		expandSphereRadius( _vec, sphere );
+		} );
 
 		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + EPSILON );
 
