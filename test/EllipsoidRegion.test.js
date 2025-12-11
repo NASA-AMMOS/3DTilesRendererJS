@@ -107,7 +107,6 @@ describe( 'EllipsoidRegion', () => {
 			{ latStart: - Math.PI / 2, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.05, name: 'full latitude span' },
 		];
 
-		// Create individual test for each combination
 		ellipsoidConfigs.forEach( ellipsoidConfig => {
 
 			regionConfigs.forEach( regionConfig => {
