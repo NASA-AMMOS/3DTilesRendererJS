@@ -430,7 +430,7 @@ export class TilesRendererBase {
 
 		if ( ! this.isLoading && ! runningTasks ) {
 
-			this.framesSinceLastLoad++;
+			this.framesSinceLastLoad ++;
 
 			// Wait for 2 frames to ensure the update loop has had a chance to queue new downloads.
 			if ( this.framesSinceLastLoad === 2 ) {
