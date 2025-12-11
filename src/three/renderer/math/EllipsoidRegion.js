@@ -68,6 +68,8 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		// measure the extents
 		const { min, max } = box;
+		min.setScalar( Infinity );
+		max.setScalar( - Infinity );
 		if ( lonEnd - lonStart <= PI ) {
 
 			// extract the axes
@@ -110,39 +112,6 @@ export class EllipsoidRegion extends Ellipsoid {
 
 			this.getCartographicToPosition( latEnd, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
 			min.z = Math.min( _vec.z, min.z );
-
-
-
-			for ( const height of [ heightStart, heightEnd ] ) {
-
-				for ( const lat of [ latStart, latEnd ] ) {
-
-					for ( const lon of [ lonStart, lonEnd ] ) {
-
-						this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
-						min.x = Math.min( _vec.x, min.x );
-						min.y = Math.min( _vec.y, min.y );
-						min.z = Math.min( _vec.z, min.z );
-
-						max.x = Math.max( _vec.x, max.x );
-						max.y = Math.max( _vec.y, max.y );
-						max.z = Math.max( _vec.z, max.z );
-
-
-					}
-
-				}
-
-
-			}
-
-
-
-
-
-
-
-
 
 		} else {
 
@@ -189,6 +158,27 @@ export class EllipsoidRegion extends Ellipsoid {
 			// measure the opposite end, which is guaranteed to be at the furthest extents since this lon region extents is > PI
 			this.getCartographicToPosition( nearEquatorLat, lonEnd, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			min.z = _vec.z;
+
+		}
+
+		for ( const height of [ heightStart, heightEnd ] ) {
+
+			for ( const lat of [ latStart, latEnd ] ) {
+
+				for ( const lon of [ lonStart, lonEnd ] ) {
+
+					this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
+					min.x = Math.min( _vec.x, min.x );
+					min.y = Math.min( _vec.y, min.y );
+					min.z = Math.min( _vec.z, min.z );
+
+					max.x = Math.max( _vec.x, max.x );
+					max.y = Math.max( _vec.y, max.y );
+					max.z = Math.max( _vec.z, max.z );
+
+				}
+
+			}
 
 		}
 
