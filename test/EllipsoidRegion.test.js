@@ -112,7 +112,7 @@ describe( 'EllipsoidRegion', () => {
 
 			regionConfigs.forEach( regionConfig => {
 
-				it.only( `should handle ${ellipsoidConfig.name} with ${regionConfig.name}`, () => {
+				it( `should handle ${ellipsoidConfig.name} with ${regionConfig.name}`, () => {
 
 					const matrix = new Matrix4();
 					const invMatrix = new Matrix4();
@@ -153,20 +153,8 @@ describe( 'EllipsoidRegion', () => {
 								// sphere containment
 								expect( sphere.containsPoint( point ) ).toBe( true );
 
-								const p = point.clone();
-
 								// box containment
 								point.applyMatrix4( invMatrix );
-
-
-								if ( ! box.containsPoint( point ) ) {
-
-									console.log( box.distanceToPoint( point ) );
-									console.log( regionConfig );
-
-									console.log(  lat, lon, height )
-
-								}
 								expect( box.containsPoint( point ) ).toBe( true );
 
 							}
