@@ -116,7 +116,7 @@ function init() {
 	scene.add( offsetParent );
 
 	// tiles
-	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
+	const url = window.location.hash.replace( /^#/, '' ) || '../../data/tileset.json';
 	tiles = new TilesRenderer( url );
 	tiles.addEventListener( 'load-model', onLoadModel );
 	tiles.addEventListener( 'dispose-model', onDisposeModel );
