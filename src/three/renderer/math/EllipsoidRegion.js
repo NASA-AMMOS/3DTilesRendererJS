@@ -67,7 +67,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		}
 
 		// measure the extents
-		let minX, maxX, minY, maxY, minZ, maxZ;
+		const { min, max } = box;
 		if ( lonEnd - lonStart <= PI ) {
 
 			// extract the axes
@@ -83,30 +83,66 @@ export class EllipsoidRegion extends Ellipsoid {
 			// extract x
 			// check the most bowing point near the equator
 			this.getCartographicToPosition( nearEquatorLat, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxX = Math.abs( _vec.x );
-			minX = - maxX;
+			max.x = Math.abs( _vec.x );
+			min.x = - max.x;
 
 			// extract y
 			// check corners and mid points for the top
 			this.getCartographicToPosition( latEnd, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxY = _vec.y;
+			max.y = _vec.y;
 
 			this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxY = Math.max( _vec.y, maxY );
+			max.y = Math.max( _vec.y, max.y );
 
 			// check corners and mid points for the bottom
 			this.getCartographicToPosition( latStart, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			minY = _vec.y;
+			min.y = _vec.y;
 
 			this.getCartographicToPosition( latStart, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			minY = Math.min( _vec.y, minY );
+			min.y = Math.min( _vec.y, min.y );
 
 			// extract z
 			this.getCartographicToPosition( latMid, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxZ = _vec.z;
+			max.z = _vec.z;
 
 			this.getCartographicToPosition( latStart, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
-			minZ = _vec.z;
+			min.z = _vec.z;
+
+			this.getCartographicToPosition( latEnd, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
+			min.z = Math.min( _vec.z, min.z );
+
+
+
+			for ( const height of [ heightStart, heightEnd ] ) {
+
+				for ( const lat of [ latStart, latEnd ] ) {
+
+					for ( const lon of [ lonStart, lonEnd ] ) {
+
+						this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
+						min.x = Math.min( _vec.x, min.x );
+						min.y = Math.min( _vec.y, min.y );
+						min.z = Math.min( _vec.z, min.z );
+
+						max.x = Math.max( _vec.x, max.x );
+						max.y = Math.max( _vec.y, max.y );
+						max.z = Math.max( _vec.z, max.z );
+
+
+					}
+
+				}
+
+
+			}
+
+
+
+
+
+
+
+
 
 		} else {
 
@@ -133,32 +169,28 @@ export class EllipsoidRegion extends Ellipsoid {
 			// x extents
 			// find the furthest point rotated 90 degrees from the center of the region
 			this.getCartographicToPosition( nearEquatorLat, lonMid + HALF_PI, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxX = Math.abs( _vec.x );
-			minX = - maxX;
+			max.x = Math.abs( _vec.x );
+			min.x = - max.x;
 
 			// y extents
 			// measure the top of the region, accounting for the diagonal tilt of the edge
 			this.getCartographicToPosition( latEnd, 0, allBelowEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxY = _vec.y;
+			max.y = _vec.y;
 
 			// measure the bottom of the region, accounting for the diagonal tilt of the edge
 			this.getCartographicToPosition( latStart, 0, allAboveEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
-			minY = _vec.y;
+			min.y = _vec.y;
 
 			// z extends
 			// measure the furthest point at the center of the region
 			this.getCartographicToPosition( nearEquatorLat, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			maxZ = _vec.z;
+			max.z = _vec.z;
 
 			// measure the opposite end, which is guaranteed to be at the furthest extents since this lon region extents is > PI
 			this.getCartographicToPosition( nearEquatorLat, lonEnd, heightEnd, _vec ).applyMatrix4( _invMatrix );
-			minZ = _vec.z;
+			min.z = _vec.z;
 
 		}
-
-		// set the box
-		box.min.set( minX, minY, minZ );
-		box.max.set( maxX, maxY, maxZ );
 
 		// center the frame
 		box.getCenter( _vec );

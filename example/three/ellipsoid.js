@@ -28,7 +28,6 @@ const params = {
 
 	displaySphereHelper: false,
 	displayBoxHelper: false,
-	displayPoints: false,
 
 };
 
