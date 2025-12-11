@@ -8,6 +8,7 @@ const HALF_PI = PI / 2;
 const _orthoX = new Vector3();
 const _orthoY = new Vector3();
 const _orthoZ = new Vector3();
+const _vec = new Vector3();
 const _invMatrix = new Matrix4();
 
 let _poolIndex = 0;
@@ -119,49 +120,130 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	getBoundingBox( box, matrix ) {
 
-		resetPool();
-
 		const {
 			latStart, latEnd,
 			lonStart, lonEnd,
+			heightStart, heightEnd,
 		} = this;
 
-		const latRange = latEnd - latStart;
-		if ( latRange < PI / 2 ) {
+		const midLat = ( latStart + latEnd ) * 0.5;
+		const midLon = ( lonStart + lonEnd ) * 0.5;
+		const fullyAboveEquator = latStart > 0.0;
+		const fullyBelowEquator = latEnd < 0.0;
 
-			// get the midway point for the region
-			const midLat = MathUtils.mapLinear( 0.5, 0, 1, latStart, latEnd );
-			const midLon = MathUtils.mapLinear( 0.5, 0, 1, lonStart, lonEnd );
+		let latitudeNearestToEquator;
+		if ( fullyAboveEquator ) {
 
-			// get the frame matrix for the box - works well for smaller regions
-			this.getCartographicToNormal( midLat, midLon, _orthoZ );
-			_orthoY.set( 0, 0, 1 );
-			_orthoX.crossVectors( _orthoY, _orthoZ );
-			_orthoY.crossVectors( _orthoX, _orthoZ );
-			matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+			latitudeNearestToEquator = latStart;
+
+		} else if ( fullyBelowEquator ) {
+
+			latitudeNearestToEquator = latEnd;
 
 		} else {
 
-			_orthoX.set( 1, 0, 0 );
-			_orthoY.set( 0, 1, 0 );
-			_orthoZ.set( 0, 0, 1 );
+			latitudeNearestToEquator = 0;
+
+		}
+
+		// measure the extents
+		let minX, maxX, minY, maxY, minZ, maxZ;
+		if ( lonEnd - lonStart <= PI ) {
+
+			// extract the axes
+			this.getCartographicToNormal( midLat, midLon, _orthoZ );
+			_orthoY.set( 0, 0, 1 );
+			_orthoX.crossVectors( _orthoY, _orthoZ ).normalize();
+			_orthoY.crossVectors( _orthoZ, _orthoX ).normalize();
+
+			// construct the frame
 			matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+			_invMatrix.copy( matrix ).invert();
+
+			// extract x
+			this.getCartographicToPosition( latitudeNearestToEquator, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxX = Math.abs( _vec.x );
+			minX = - maxX;
+
+			// extract y
+			this.getCartographicToPosition( latEnd, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxY = _vec.y;
+
+			this.getCartographicToPosition( latEnd, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxY = Math.max( _vec.y, maxY );
+
+			this.getCartographicToPosition( latStart, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			minY = _vec.y;
+
+			this.getCartographicToPosition( latStart, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			minY = Math.min( _vec.y, minY );
+
+			// extract z
+			this.getCartographicToPosition( midLat, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxZ = _vec.z;
+
+			this.getCartographicToPosition( latStart, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
+			minZ = _vec.z;
+
+		} else {
+
+			// extract a vector towards the middle of the region
+			this.getCartographicToPosition( latitudeNearestToEquator, midLon, heightEnd, _orthoZ );
+			_orthoZ.z = 0;
+			if ( _orthoZ.length() < 1e-10 ) {
+
+				_orthoZ.set( 1, 0, 0 );
+
+			} else {
+
+				_orthoZ.normalize();
+
+			}
+
+			_orthoY.set( 0, 0, 1 );
+			_orthoX.crossVectors( _orthoZ, _orthoY ).normalize();
+
+			// construct the OBB frame
+			matrix.makeBasis( _orthoX, _orthoY, _orthoZ );
+			_invMatrix.copy( matrix ).invert();
+
+			// x extents
+			// find the furthest point rotated 90 degrees from the center of the region
+			this.getCartographicToPosition( latitudeNearestToEquator, midLon + HALF_PI, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxX = Math.abs( _vec.x );
+			minX = - maxX;
+
+			// y extents
+			// measure the top of the region, accounting for the diagonal tilt of the edge
+			this.getCartographicToPosition( latEnd, 0, fullyBelowEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxY = _vec.y;
+
+			// measure the bottom of the region, accounting for the diagonal tilt of the edge
+			this.getCartographicToPosition( latStart, 0, fullyAboveEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
+			minY = _vec.y;
+
+			// z extends
+			// measure the furthest point at the center of the region
+			this.getCartographicToPosition( latitudeNearestToEquator, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			maxZ = _vec.z;
+
+			// measure the opposite end, which is guaranteed to be at the furthest extents since this lon region extents is > PI
+			this.getCartographicToPosition( latitudeNearestToEquator, lonEnd, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			minZ = _vec.z;
 
 		}
 
-		// transform the points into the local frame
-		_invMatrix.copy( matrix ).invert();
+		// set the box
+		box.min.set( minX, minY, minZ );
+		box.max.set( maxX, maxY, maxZ );
 
-		const points = this._getPoints( true );
-		for ( let i = 0, l = points.length; i < l; i ++ ) {
+		// center the frame
+		box.getCenter( _vec );
+		box.min.sub( _vec );
+		box.max.sub( _vec );
 
-			points[ i ].applyMatrix4( _invMatrix );
-
-		}
-
-		// init the box
-		box.makeEmpty();
-		box.setFromPoints( points );
+		_vec.applyMatrix4( matrix );
+		matrix.setPosition( _vec );
 
 	}
 
