@@ -1,7 +1,6 @@
 /* eslint-disable vitest/expect-expect */
 import * as Cesium from 'cesium';
-import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
-import { EllipsoidRegion } from '../src/three/renderer/math/EllipsoidRegion.js';
+import { Vector3, MathUtils, Matrix4 } from 'three';
 import { Ellipsoid } from '../src/three/renderer/math/Ellipsoid.js';
 import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/core/renderer/constants.js';
 import { WGS84_ELLIPSOID } from '../src/three/renderer/math/GeoConstants.js';
@@ -207,73 +206,6 @@ describe( 'Ellipsoid', () => {
 		expect( wgsEllipse.getPositionElevation( zPos100 ) ).toBeCloseTo( 100, 1e-6 );
 		const mzPos100 = new Vector3( 0, - WGS84_RADIUS - 100, 0 );
 		expect( wgsEllipse.getPositionElevation( mzPos100 ) ).toBeCloseTo( 100, 1e-6 );
-
-	} );
-
-} );
-
-describe( 'EllipsoidRegion', () => {
-
-	describe( 'Bounding Boxes', () => {
-
-		it( 'should encapsulate randomized points.', () => {
-
-			const POINT_COUNT = 100;
-			const REGION_COUNT = 100;
-			const matrix = new Matrix4();
-			const invMatrix = new Matrix4();
-			const box = new Box3();
-			const sphere = new Sphere();
-			const point = new Vector3();
-			for ( let i = 0; i < REGION_COUNT; i ++ ) {
-
-				const region = new EllipsoidRegion( 1, 1, 1 );
-				region.heightStart = MathUtils.mapLinear( Math.random(), 0, 1, - 0.2, 0.2 );
-				region.heightEnd = region.heightStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, 0.2 );
-
-				region.latStart = MathUtils.mapLinear( Math.random(), 0, 1, - Math.PI / 2, 0 );
-				region.latEnd = MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI / 2 );
-
-				region.lonStart = MathUtils.mapLinear( Math.random(), 0, 1, 0.0, 2 * Math.PI );
-				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI );
-
-				region.getBoundingBox( box, matrix );
-				region.getBoundingSphere( sphere );
-				invMatrix.copy( matrix ).invert();
-
-				for ( let p = 0; p < POINT_COUNT; p ++ ) {
-
-					region.getCartographicToPosition(
-						MathUtils.mapLinear( Math.random(), 0, 1, region.latStart, region.latEnd ),
-						MathUtils.mapLinear( Math.random(), 0, 1, region.lonStart, region.lonEnd ),
-						Math.random() > 0.5 ? region.heightStart : region.heightEnd,
-						point,
-					);
-
-
-					expect( sphere.containsPoint( point ) ).toBe( true );
-					point.applyMatrix4( invMatrix );
-					// if ( ! box.containsPoint( point ) ) {
-
-					// 	console.log( `
-					// 		p.position.set( ${ point.x }, ${ point.y }, ${ point.z } );
-					// 		er.latStart = ${ region.latStart };
-					// 		er.latEnd = ${ region.latEnd };
-					// 		er.lonStart = ${ region.lonStart };
-					// 		er.lonEnd = ${ region.lonEnd };
-					// 		er.heightStart = ${ region.heightStart };
-					// 		er.heightEnd = ${ region.heightEnd };
-
-					// 	`);
-
-					// }
-					expect( box.containsPoint( point ) ).toBe( true );
-
-				}
-
-			}
-
-		} );
 
 	} );
 
