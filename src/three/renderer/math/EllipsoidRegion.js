@@ -1,5 +1,4 @@
-import { MathUtils, Matrix4 } from 'three';
-import { Vector3 } from 'three';
+import { Matrix4, Vector3, Box3 } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 
 const PI = Math.PI;
@@ -10,31 +9,12 @@ const _orthoY = new Vector3();
 const _orthoZ = new Vector3();
 const _vec = new Vector3();
 const _invMatrix = new Matrix4();
+const _box = new Box3();
+const _matrix = new Matrix4();
 
-let _poolIndex = 0;
-const _pointsPool = [];
-function getVector( usePool = false ) {
+function expandSphereRadius( vec, target ) {
 
-	if ( ! usePool ) {
-
-		return new Vector3();
-
-	}
-
-	if ( ! _pointsPool[ _poolIndex ] ) {
-
-		_pointsPool[ _poolIndex ] = new Vector3();
-
-	}
-
-	_poolIndex ++;
-	return _pointsPool[ _poolIndex - 1 ];
-
-}
-
-function resetPool() {
-
-	_poolIndex = 0;
+	target.radius = Math.max( target.radius, vec.distanceToSquared( target.center ) );
 
 }
 
@@ -57,67 +37,6 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
-	_getPoints( usePool = false ) {
-
-		const {
-			latStart, latEnd,
-			lonStart, lonEnd,
-			heightStart, heightEnd,
-		} = this;
-
-		const midLat = MathUtils.mapLinear( 0.5, 0, 1, latStart, latEnd );
-		const midLon = MathUtils.mapLinear( 0.5, 0, 1, lonStart, lonEnd );
-
-		const lonOffset = Math.floor( lonStart / HALF_PI ) * HALF_PI;
-		const latlon = [
-			[ - PI / 2, 0 ],
-			[ PI / 2, 0 ],
-			[ 0, lonOffset ],
-			[ 0, lonOffset + PI / 2 ],
-			[ 0, lonOffset + PI ],
-			[ 0, lonOffset + 3 * PI / 2 ],
-
-			[ latStart, lonEnd ],
-			[ latEnd, lonEnd ],
-			[ latStart, lonStart ],
-			[ latEnd, lonStart ],
-
-			[ 0, lonStart ],
-			[ 0, lonEnd ],
-
-			[ midLat, midLon ],
-			[ latStart, midLon ],
-			[ latEnd, midLon ],
-			[ midLat, lonStart ],
-			[ midLat, lonEnd ],
-
-		];
-
-		const target = [];
-		const total = latlon.length;
-
-		for ( let z = 0; z <= 1; z ++ ) {
-
-			const height = MathUtils.mapLinear( z, 0, 1, heightStart, heightEnd );
-			for ( let i = 0, l = total; i < l; i ++ ) {
-
-				const [ lat, lon ] = latlon[ i ];
-				if ( lat >= latStart && lat <= latEnd && lon >= lonStart && lon <= lonEnd ) {
-
-					const v = getVector( usePool );
-					target.push( v );
-					this.getCartographicToPosition( lat, lon, height, v );
-
-				}
-
-			}
-
-		}
-
-		return target;
-
-	}
-
 	getBoundingBox( box, matrix ) {
 
 		const {
@@ -126,23 +45,23 @@ export class EllipsoidRegion extends Ellipsoid {
 			heightStart, heightEnd,
 		} = this;
 
-		const midLat = ( latStart + latEnd ) * 0.5;
-		const midLon = ( lonStart + lonEnd ) * 0.5;
-		const fullyAboveEquator = latStart > 0.0;
-		const fullyBelowEquator = latEnd < 0.0;
+		const latMid = ( latStart + latEnd ) * 0.5;
+		const lonMid = ( lonStart + lonEnd ) * 0.5;
+		const allAboveEquator = latStart > 0.0;
+		const allBelowEquator = latEnd < 0.0;
 
-		let latitudeNearestToEquator;
-		if ( fullyAboveEquator ) {
+		let nearEquatorLat;
+		if ( allAboveEquator ) {
 
-			latitudeNearestToEquator = latStart;
+			nearEquatorLat = latStart;
 
-		} else if ( fullyBelowEquator ) {
+		} else if ( allBelowEquator ) {
 
-			latitudeNearestToEquator = latEnd;
+			nearEquatorLat = latEnd;
 
 		} else {
 
-			latitudeNearestToEquator = 0;
+			nearEquatorLat = 0;
 
 		}
 
@@ -151,7 +70,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		if ( lonEnd - lonStart <= PI ) {
 
 			// extract the axes
-			this.getCartographicToNormal( midLat, midLon, _orthoZ );
+			this.getCartographicToNormal( latMid, lonMid, _orthoZ );
 			_orthoY.set( 0, 0, 1 );
 			_orthoX.crossVectors( _orthoY, _orthoZ ).normalize();
 			_orthoY.crossVectors( _orthoZ, _orthoX ).normalize();
@@ -161,25 +80,28 @@ export class EllipsoidRegion extends Ellipsoid {
 			_invMatrix.copy( matrix ).invert();
 
 			// extract x
-			this.getCartographicToPosition( latitudeNearestToEquator, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			// check the most bowing point near the equator
+			this.getCartographicToPosition( nearEquatorLat, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxX = Math.abs( _vec.x );
 			minX = - maxX;
 
 			// extract y
+			// check corners and mid points for the top
 			this.getCartographicToPosition( latEnd, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxY = _vec.y;
 
-			this.getCartographicToPosition( latEnd, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxY = Math.max( _vec.y, maxY );
 
+			// check corners and mid points for the bottom
 			this.getCartographicToPosition( latStart, lonStart, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			minY = _vec.y;
 
-			this.getCartographicToPosition( latStart, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( latStart, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			minY = Math.min( _vec.y, minY );
 
 			// extract z
-			this.getCartographicToPosition( midLat, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( latMid, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxZ = _vec.z;
 
 			this.getCartographicToPosition( latStart, lonStart, heightStart, _vec ).applyMatrix4( _invMatrix );
@@ -188,7 +110,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		} else {
 
 			// extract a vector towards the middle of the region
-			this.getCartographicToPosition( latitudeNearestToEquator, midLon, heightEnd, _orthoZ );
+			this.getCartographicToPosition( nearEquatorLat, lonMid, heightEnd, _orthoZ );
 			_orthoZ.z = 0;
 			if ( _orthoZ.length() < 1e-10 ) {
 
@@ -209,26 +131,26 @@ export class EllipsoidRegion extends Ellipsoid {
 
 			// x extents
 			// find the furthest point rotated 90 degrees from the center of the region
-			this.getCartographicToPosition( latitudeNearestToEquator, midLon + HALF_PI, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( nearEquatorLat, lonMid + HALF_PI, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxX = Math.abs( _vec.x );
 			minX = - maxX;
 
 			// y extents
 			// measure the top of the region, accounting for the diagonal tilt of the edge
-			this.getCartographicToPosition( latEnd, 0, fullyBelowEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( latEnd, 0, allBelowEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxY = _vec.y;
 
 			// measure the bottom of the region, accounting for the diagonal tilt of the edge
-			this.getCartographicToPosition( latStart, 0, fullyAboveEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( latStart, 0, allAboveEquator ? heightStart : heightEnd, _vec ).applyMatrix4( _invMatrix );
 			minY = _vec.y;
 
 			// z extends
 			// measure the furthest point at the center of the region
-			this.getCartographicToPosition( latitudeNearestToEquator, midLon, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( nearEquatorLat, lonMid, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			maxZ = _vec.z;
 
 			// measure the opposite end, which is guaranteed to be at the furthest extents since this lon region extents is > PI
-			this.getCartographicToPosition( latitudeNearestToEquator, lonEnd, heightEnd, _vec ).applyMatrix4( _invMatrix );
+			this.getCartographicToPosition( nearEquatorLat, lonEnd, heightEnd, _vec ).applyMatrix4( _invMatrix );
 			minZ = _vec.z;
 
 		}
@@ -247,13 +169,75 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
-	getBoundingSphere( sphere, center ) {
+	getBoundingSphere( sphere, center = null ) {
 
-		resetPool();
+		// TODO: this could be optimized
+		const {
+			latStart, latEnd,
+			lonStart, lonEnd,
+			heightStart, heightEnd,
+		} = this;
 
-		const points = this._getPoints( true );
-		sphere.makeEmpty();
-		sphere.setFromPoints( points, center );
+		const latMid = ( latStart + latEnd ) * 0.5;
+		const lonMid = ( lonStart + lonEnd ) * 0.5;
+
+		// if no center provided, compute the geometric center of the region
+		if ( center === null ) {
+
+			// use the OBB function to get a reasonable center
+			this.getBoundingBox( _box, _matrix );
+			sphere.center.setFromMatrixPosition( _matrix );
+			sphere.radius = 0;
+
+		} else {
+
+			sphere.center.copy( center );
+			sphere.radius = 0;
+
+		}
+
+		// step at 90 degree increments to ensure bowing points are not missed
+		const lonStepCount = Math.ceil( ( lonEnd - lonStart ) / 90 );
+		const lonStep = ( lonEnd - lonStart ) / lonStepCount;
+
+		// check the bowing point at the equator
+		const latSteps = [ latStart, latEnd ];
+		if ( latStart < 0 && latEnd > 0 ) {
+
+			latSteps.splice( 1, 0, 0 );
+
+		}
+
+		// test a sweep of points at the corners and steps
+		for ( let h of [ heightStart, heightEnd ] ) {
+
+			for ( let lat of latSteps ) {
+
+				for ( let i = 0; i <= lonStepCount; i ++ ) {
+
+					this.getCartographicToPosition( lat, lonStart + i * lonStep, h, _vec );
+					expandSphereRadius( _vec, sphere );
+
+				}
+
+			}
+
+		}
+
+		// also include mid points
+		this.getCartographicToPosition( latMid, lonStart, heightEnd, _vec );
+		expandSphereRadius( _vec, sphere );
+
+		this.getCartographicToPosition( latMid, lonEnd, heightEnd, _vec );
+		expandSphereRadius( _vec, sphere );
+
+		this.getCartographicToPosition( latStart, lonMid, heightEnd, _vec );
+		expandSphereRadius( _vec, sphere );
+
+		this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec );
+		expandSphereRadius( _vec, sphere );
+
+		sphere.radius = Math.sqrt( sphere.radius );
 
 	}
 
