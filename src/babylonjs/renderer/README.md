@@ -9,19 +9,19 @@ Implementation of the TilesRendererBase class for Babylon js.
 # Use
 
 ```js
-import * as BABYLON from 'babylonjs';
+import { Engine, Scene } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 
 // create engine
 const canvas = document.getElementById( 'renderCanvas' );
-const engine = new BABYLON.Engine( canvas, true );
+const engine = new Engine( canvas, true );
 
 // right handed coordinate system is required
-const scene = new BABYLON.Scene( engine );
+const scene = new Scene( engine );
 scene.useRightHandedSystem = true;
 
 // create the babylon tile renderer
-const tiles = new BabylonTilesRenderer( TILESET_URL, scene );
+const tiles = new TilesRenderer( TILESET_URL, scene );
 
 // ... initialize the camera
 
