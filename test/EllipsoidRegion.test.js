@@ -93,66 +93,66 @@ describe( 'EllipsoidRegion', () => {
 
 	describe( 'Edge cases', () => {
 
-		it( 'should handle many combinations of ellipsoid shapes and region configurations.', () => {
+		// Comprehensive ellipsoid shape test configurations
+		const ellipsoidConfigs = [
+			// spheres
+			{ x: 0.5, y: 0.5, z: 0.5, name: 'small sphere (0.5)' },
+			{ x: 1.0, y: 1.0, z: 1.0, name: 'unit sphere (1.0)' },
+			{ x: 2.0, y: 2.0, z: 2.0, name: 'large sphere (2.0)' },
 
-			const matrix = new Matrix4();
-			const invMatrix = new Matrix4();
-			const box = new Box3();
-			const sphere = new Sphere();
-			const point = new Vector3();
+			// oblate (flattened at poles, like Earth)
+			{ x: 1.0, y: 1.0, z: 0.8, name: 'oblate slight (1.0, 1.0, 0.8)' },
+			{ x: 2.0, y: 2.0, z: 1.5, name: 'oblate moderate (2.0, 2.0, 1.5)' },
+			{ x: 1.5, y: 1.5, z: 1.0, name: 'oblate strong (1.5, 1.5, 1.0)' },
 
-			// Comprehensive ellipsoid shape test configurations
-			const ellipsoidConfigs = [
-				// spheres
-				{ x: 0.5, y: 0.5, z: 0.5 },
-				{ x: 1.0, y: 1.0, z: 1.0 },
-				{ x: 2.0, y: 2.0, z: 2.0 },
+			// prolate (elongated at poles)
+			{ x: 0.8, y: 0.8, z: 1.0, name: 'prolate slight (0.8, 0.8, 1.0)' },
+			{ x: 1.0, y: 1.0, z: 1.5, name: 'prolate moderate (1.0, 1.0, 1.5)' },
+			{ x: 1.0, y: 1.0, z: 2.0, name: 'prolate strong (1.0, 1.0, 2.0)' },
 
-				// oblate (flattened at poles, like Earth)
-				{ x: 1.0, y: 1.0, z: 0.8 },
-				{ x: 2.0, y: 2.0, z: 1.5 },
-				{ x: 1.5, y: 1.5, z: 1.0 },
+			// triaxial (all axes different)
+			{ x: 1.0, y: 1.2, z: 0.9, name: 'triaxial (1.0, 1.2, 0.9)' },
+			{ x: 2.0, y: 1.5, z: 1.0, name: 'triaxial (2.0, 1.5, 1.0)' },
+			{ x: 1.5, y: 1.0, z: 1.3, name: 'triaxial (1.5, 1.0, 1.3)' },
+		];
 
-				// prolate (elongated at poles)
-				{ x: 0.8, y: 0.8, z: 1.0 },
-				{ x: 1.0, y: 1.0, z: 1.5 },
-				{ x: 1.0, y: 1.0, z: 2.0 },
+		// Region configurations covering various cases
+		const regionConfigs = [
+			// small
+			{ latStart: 0, latEnd: 0.2, lonStart: 0, lonEnd: 0.3, heightStart: 0, heightEnd: 0.05, name: 'small northern region' },
+			{ latStart: - 0.3, latEnd: - 0.1, lonStart: 1.0, lonEnd: 1.4, heightStart: - 0.05, heightEnd: 0, name: 'small southern region' },
 
-				// triaxial (all axes different)
-				{ x: 1.0, y: 1.2, z: 0.9 },
-				{ x: 2.0, y: 1.5, z: 1.0 },
-				{ x: 1.5, y: 1.0, z: 1.3 },
-			];
+			// mid-size
+			{ latStart: - Math.PI / 6, latEnd: Math.PI / 6, lonStart: 0, lonEnd: Math.PI / 3, heightStart: - 0.1, heightEnd: 0.1, name: 'mid-size equatorial' },
+			{ latStart: 0, latEnd: Math.PI / 4, lonStart: Math.PI, lonEnd: Math.PI * 1.3, heightStart: 0, heightEnd: 0.15, name: 'mid-size with wide longitude' },
 
-			// Region configurations covering various cases
-			const regionConfigs = [
-				// small
-				{ latStart: 0, latEnd: 0.2, lonStart: 0, lonEnd: 0.3, heightStart: 0, heightEnd: 0.05 },
-				{ latStart: - 0.3, latEnd: - 0.1, lonStart: 1.0, lonEnd: 1.4, heightStart: - 0.05, heightEnd: 0 },
+			// equator-crossing
+			{ latStart: - Math.PI / 4, latEnd: Math.PI / 4, lonStart: 0, lonEnd: Math.PI / 2, heightStart: - 0.05, heightEnd: 0.1, name: 'equator-crossing' },
 
-				// mid-size
-				{ latStart: - Math.PI / 6, latEnd: Math.PI / 6, lonStart: 0, lonEnd: Math.PI / 3, heightStart: - 0.1, heightEnd: 0.1 },
-				{ latStart: 0, latEnd: Math.PI / 4, lonStart: Math.PI, lonEnd: Math.PI * 1.3, heightStart: 0, heightEnd: 0.15 },
+			// polar
+			{ latStart: Math.PI / 3, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.08, name: 'north polar' },
+			{ latStart: - Math.PI / 2, latEnd: - Math.PI / 3, lonStart: Math.PI / 2, lonEnd: Math.PI, heightStart: - 0.05, heightEnd: 0.05, name: 'south polar' },
 
-				// equator-crossing
-				{ latStart: - Math.PI / 4, latEnd: Math.PI / 4, lonStart: 0, lonEnd: Math.PI / 2, heightStart: - 0.05, heightEnd: 0.1 },
+			// > PI longitude
+			{ latStart: - Math.PI / 8, latEnd: Math.PI / 8, lonStart: 0, lonEnd: Math.PI * 1.3, heightStart: 0, heightEnd: 0.1, name: 'wide longitude 1.3*PI' },
+			{ latStart: 0, latEnd: Math.PI / 3, lonStart: 0.5, lonEnd: Math.PI * 1.7 + 0.5, heightStart: - 0.1, heightEnd: 0, name: 'wide longitude 1.7*PI' },
 
-				// polar
-				{ latStart: Math.PI / 3, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.08 },
-				{ latStart: - Math.PI / 2, latEnd: - Math.PI / 3, lonStart: Math.PI / 2, lonEnd: Math.PI, heightStart: - 0.05, heightEnd: 0.05 },
+			// large latitude span
+			{ latStart: - Math.PI / 2, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.05, name: 'full latitude span' },
+		];
 
-				// > PI longitude
-				{ latStart: - Math.PI / 8, latEnd: Math.PI / 8, lonStart: 0, lonEnd: Math.PI * 1.3, heightStart: 0, heightEnd: 0.1 },
-				{ latStart: 0, latEnd: Math.PI / 3, lonStart: 0.5, lonEnd: Math.PI * 1.7 + 0.5, heightStart: - 0.1, heightEnd: 0 },
+		// Create individual test for each combination
+		ellipsoidConfigs.forEach( ellipsoidConfig => {
 
-				// large latitude span
-				{ latStart: - Math.PI / 2, latEnd: Math.PI / 2, lonStart: 0, lonEnd: Math.PI / 4, heightStart: 0, heightEnd: 0.05 },
-			];
+			regionConfigs.forEach( regionConfig => {
 
-			// Test each ellipsoid shape with each region configuration
-			ellipsoidConfigs.forEach( ellipsoidConfig => {
+				it( `should handle ${ellipsoidConfig.name} with ${regionConfig.name}`, () => {
 
-				regionConfigs.forEach( regionConfig => {
+					const matrix = new Matrix4();
+					const invMatrix = new Matrix4();
+					const box = new Box3();
+					const sphere = new Sphere();
+					const point = new Vector3();
 
 					const region = new EllipsoidRegion( ellipsoidConfig.x, ellipsoidConfig.y, ellipsoidConfig.z );
 					region.latStart = regionConfig.latStart;
