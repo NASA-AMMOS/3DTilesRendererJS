@@ -428,14 +428,14 @@ export class TilesRendererBase {
 
 		}
 
-		if (!this.isLoading && !runningTasks) {
+		if ( !this.isLoading && !runningTasks ) {
 
 			this.framesSinceLastLoad++;
 
 			// If we have gone 2 full frames with zero activity, we are truly settled (one to calculate visibility, one to process potential results).
-			if (this.framesSinceLastLoad === 2) {
+			if ( this.framesSinceLastLoad === 2 ) {
 				
-				this.dispatchEvent({ type: 'tiles-settled' });
+				this.dispatchEvent( { type: 'tiles-settled' } );
 			
 			}
 			
