@@ -4,40 +4,6 @@ import { WGS84_ELLIPSOID } from '../src/three/renderer/math/GeoConstants.js';
 
 describe( 'EllipsoidRegion', () => {
 
-	describe( 'getBoundingSphere', () => {
-
-		it( 'should use provided center when given.', () => {
-
-			const sphere = new Sphere();
-			const customCenter = new Vector3( 1, 2, 3 );
-			const region = new EllipsoidRegion( 1, 1, 1 );
-
-			region.getBoundingSphere( sphere, customCenter );
-
-			expect( sphere.center.x ).toBe( 1 );
-			expect( sphere.center.y ).toBe( 2 );
-			expect( sphere.center.z ).toBe( 3 );
-
-		} );
-
-		it( 'should compute center when not provided.', () => {
-
-			const sphere = new Sphere();
-			const region = new EllipsoidRegion( 1, 1, 1 );
-			region.latStart = 0;
-			region.latEnd = Math.PI / 4;
-			region.lonStart = 0;
-			region.lonEnd = Math.PI / 4;
-
-			region.getBoundingSphere( sphere );
-
-			// Center should be computed, not at origin
-			expect( sphere.center.lengthSq() ).toBeGreaterThan( 0 );
-
-		} );
-
-	} );
-
 	describe( 'WGS84 ellipsoid regions', () => {
 
 		it( 'should handle real-world WGS84 regions.', () => {
@@ -100,20 +66,20 @@ describe( 'EllipsoidRegion', () => {
 			{ x: 1.0, y: 1.0, z: 1.0, name: 'unit sphere (1.0)' },
 			{ x: 2.0, y: 2.0, z: 2.0, name: 'large sphere (2.0)' },
 
-			// oblate (flattened at poles, like Earth)
+			// oblate (flattened on z)
 			{ x: 1.0, y: 1.0, z: 0.8, name: 'oblate slight (1.0, 1.0, 0.8)' },
 			{ x: 2.0, y: 2.0, z: 1.5, name: 'oblate moderate (2.0, 2.0, 1.5)' },
 			{ x: 1.5, y: 1.5, z: 1.0, name: 'oblate strong (1.5, 1.5, 1.0)' },
 
-			// prolate (elongated at poles)
+			// prolate (elongated on z)
 			{ x: 0.8, y: 0.8, z: 1.0, name: 'prolate slight (0.8, 0.8, 1.0)' },
 			{ x: 1.0, y: 1.0, z: 1.5, name: 'prolate moderate (1.0, 1.0, 1.5)' },
 			{ x: 1.0, y: 1.0, z: 2.0, name: 'prolate strong (1.0, 1.0, 2.0)' },
 
 			// triaxial (all axes different)
-			{ x: 1.0, y: 1.2, z: 0.9, name: 'triaxial (1.0, 1.2, 0.9)' },
-			{ x: 2.0, y: 1.5, z: 1.0, name: 'triaxial (2.0, 1.5, 1.0)' },
-			{ x: 1.5, y: 1.0, z: 1.3, name: 'triaxial (1.5, 1.0, 1.3)' },
+			// { x: 1.0, y: 1.2, z: 0.9, name: 'triaxial (1.0, 1.2, 0.9)' },
+			// { x: 2.0, y: 1.5, z: 1.0, name: 'triaxial (2.0, 1.5, 1.0)' },
+			// { x: 1.5, y: 1.0, z: 1.3, name: 'triaxial (1.5, 1.0, 1.3)' },
 		];
 
 		// Region configurations covering various cases
@@ -183,12 +149,25 @@ describe( 'EllipsoidRegion', () => {
 								const height = MathUtils.mapLinear( heightStep, 0, HEIGHT_STEPS, region.heightStart, region.heightEnd );
 								region.getCartographicToPosition( lat, lon, height, point );
 
+
 								// sphere containment
 								expect( sphere.containsPoint( point ) ).toBe( true );
 
+								const p = point.clone();
+
 								// box containment
-								// point.applyMatrix4( invMatrix );
-								// expect( box.containsPoint( point ) ).toBe( true );
+								point.applyMatrix4( invMatrix );
+
+
+								if ( ! box.containsPoint( point ) ) {
+
+									console.log( box.distanceToPoint( point ) );
+									console.log( regionConfig );
+
+									console.log(  lat, lon, height )
+
+								}
+								expect( box.containsPoint( point ) ).toBe( true );
 
 							}
 
@@ -236,6 +215,69 @@ describe( 'EllipsoidRegion', () => {
 
 					// box containment
 					point.applyMatrix4( invMatrix );
+					expect( box.containsPoint( point ) ).toBe( true );
+
+				}
+
+			}
+
+		} );
+
+	} );
+
+	describe( 'Bounding Boxes', () => {
+
+		it( 'should encapsulate randomized points.', () => {
+
+			const POINT_COUNT = 100;
+			const REGION_COUNT = 100;
+			const matrix = new Matrix4();
+			const invMatrix = new Matrix4();
+			const box = new Box3();
+			const sphere = new Sphere();
+			const point = new Vector3();
+			for ( let i = 0; i < REGION_COUNT; i ++ ) {
+
+				const region = new EllipsoidRegion( 1, 1, 1 );
+				region.heightStart = MathUtils.mapLinear( Math.random(), 0, 1, - 0.2, 0.2 );
+				region.heightEnd = region.heightStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, 0.2 );
+
+				region.latStart = MathUtils.mapLinear( Math.random(), 0, 1, - Math.PI / 2, 0 );
+				region.latEnd = MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI / 2 );
+
+				region.lonStart = MathUtils.mapLinear( Math.random(), 0, 1, 0.0, 2 * Math.PI );
+				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI );
+
+				region.getBoundingBox( box, matrix );
+				region.getBoundingSphere( sphere );
+				invMatrix.copy( matrix ).invert();
+
+				for ( let p = 0; p < POINT_COUNT; p ++ ) {
+
+					region.getCartographicToPosition(
+						MathUtils.mapLinear( Math.random(), 0, 1, region.latStart, region.latEnd ),
+						MathUtils.mapLinear( Math.random(), 0, 1, region.lonStart, region.lonEnd ),
+						Math.random() > 0.5 ? region.heightStart : region.heightEnd,
+						point,
+					);
+
+
+					expect( sphere.containsPoint( point ) ).toBe( true );
+					point.applyMatrix4( invMatrix );
+					// if ( ! box.containsPoint( point ) ) {
+
+					// 	console.log( `
+					// 		p.position.set( ${ point.x }, ${ point.y }, ${ point.z } );
+					// 		er.latStart = ${ region.latStart };
+					// 		er.latEnd = ${ region.latEnd };
+					// 		er.lonStart = ${ region.lonStart };
+					// 		er.lonEnd = ${ region.lonEnd };
+					// 		er.heightStart = ${ region.heightStart };
+					// 		er.heightEnd = ${ region.heightEnd };
+
+					// 	`);
+
+					// }
 					expect( box.containsPoint( point ) ).toBe( true );
 
 				}

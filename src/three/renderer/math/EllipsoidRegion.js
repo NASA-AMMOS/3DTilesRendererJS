@@ -13,9 +13,15 @@ const _invMatrix = new Matrix4();
 const _box = new Box3();
 const _matrix = new Matrix4();
 
-function expandSphereRadius( vec, target ) {
+function expandSphereRadiusSquared( vec, target ) {
 
 	target.radius = Math.max( target.radius, vec.distanceToSquared( target.center ) );
+
+}
+
+function isTriaxial( radii ) {
+
+	return radii.x !== radii.y;
 
 }
 
@@ -38,89 +44,13 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
-	// Samples critical points across the region and calls the callback for each point.
-	// This includes corners, midpoints, cardinal axis alignments, and equator crossings.
-	forEachCriticalPoint( callback ) {
-
-		const {
-			latStart, latEnd,
-			lonStart, lonEnd,
-			heightStart, heightEnd,
-		} = this;
-
-		const latMid = ( latStart + latEnd ) * 0.5;
-		const lonMid = ( lonStart + lonEnd ) * 0.5;
-
-		// collect critical longitude values to sample
-		const lonSamples = new Set();
-		lonSamples.add( lonStart );
-		lonSamples.add( lonEnd );
-		lonSamples.add( lonMid );
-
-		// add cardinal axis longitudes if they fall within the longitude range
-		// these are critical for triaxial ellipsoids where axes have different radii
-		const cardinalLongitudes = [ 0, HALF_PI, PI, PI + HALF_PI ];
-		for ( let cardinalLon of cardinalLongitudes ) {
-
-			// normalize longitude to 0-2π range for comparison
-			let normalizedStart = lonStart % ( 2 * PI );
-			let normalizedEnd = lonEnd % ( 2 * PI );
-			if ( normalizedStart < 0 ) {
-
-				normalizedStart += 2 * PI;
-
-			}
-
-			if ( normalizedEnd < 0 ) {
-
-				normalizedEnd += 2 * PI;
-
-			}
-
-			cardinalLon = lonStart + cardinalLon - normalizedStart;
-
-			if ( cardinalLon >= lonStart && cardinalLon <= lonEnd ) {
-
-				lonSamples.add( cardinalLon );
-
-			}
-
-		}
-
-		// check the bowing point at the equator
-		const latSteps = [ latStart, latEnd ];
-		if ( latStart < 0 && latEnd > 0 ) {
-
-			latSteps.splice( 1, 0, 0 );
-
-		}
-
-		// test all longitude samples at critical latitudes
-		const lonArray = Array.from( lonSamples ).sort( ( a, b ) => a - b );
-		for ( let h of [ heightStart, heightEnd ] ) {
-
-			for ( let lat of latSteps ) {
-
-				for ( let lon of lonArray ) {
-
-					callback( lat, lon, h );
-
-				}
-
-			}
-
-		}
-
-		// also test latitude midpoints at all sampled longitudes
-		for ( let lon of lonArray ) {
-
-			callback( latMid, lon, heightEnd );
-
-		}
-
-	}
-
 	getBoundingBox( box, matrix ) {
+
+		if ( isTriaxial( this.radius ) ) {
+
+			console.warn( 'EllipsoidRegion: Triaxial ellipsoids are not supported.' );
+
+		}
 
 		const {
 			latStart, latEnd,
@@ -243,20 +173,6 @@ export class EllipsoidRegion extends Ellipsoid {
 
 		}
 
-		// sample all critical points to ensure tight fit
-		this.forEachCriticalPoint( ( lat, lon, height ) => {
-
-			this.getCartographicToPosition( lat, lon, height, _vec ).applyMatrix4( _invMatrix );
-			min.x = Math.min( _vec.x, min.x );
-			min.y = Math.min( _vec.y, min.y );
-			min.z = Math.min( _vec.z, min.z );
-
-			max.x = Math.max( _vec.x, max.x );
-			max.y = Math.max( _vec.y, max.y );
-			max.z = Math.max( _vec.z, max.z );
-
-		} );
-
 		// center the frame
 		box.getCenter( _vec );
 		box.min.sub( _vec ).multiplyScalar( 1 + EPSILON );
@@ -267,38 +183,81 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
-	getBoundingSphere( sphere, center = null ) {
+	getBoundingSphere( sphere ) {
 
-		// TODO: this could be optimized
-		// if no center provided, compute the geometric center of the region
-		if ( center === null ) {
+		if ( isTriaxial( this.radius ) ) {
 
-			// use the OBB function to get a reasonable center
-			this.getBoundingBox( _box, _matrix );
-			sphere.center.setFromMatrixPosition( _matrix );
-			sphere.radius = 0;
-
-			if ( this.lonEnd - this.lonStart > Math.PI ) {
-
-				sphere.center.x = 0;
-				sphere.center.y = 0;
-
-			}
-
-		} else {
-
-			sphere.center.copy( center );
-			sphere.radius = 0;
+			console.warn( 'EllipsoidRegion: Triaxial ellipsoids are not supported.' );
 
 		}
 
-		// sample all critical points and expand the sphere
-		this.forEachCriticalPoint( ( lat, lon, h ) => {
+		// TODO: this could be optimized or the OBB could be generated at the same time since
+		// a lot of the the points are reused
 
-			this.getCartographicToPosition( lat, lon, h, _vec );
-			expandSphereRadius( _vec, sphere );
+		// use the OBB function to get a reasonable center
+		this.getBoundingBox( _box, _matrix );
+		sphere.center.setFromMatrixPosition( _matrix );
+		sphere.radius = 0;
 
-		} );
+		const {
+			latStart, latEnd,
+			lonStart, lonEnd,
+			heightStart, heightEnd,
+		} = this;
+
+		const latMid = ( latStart + latEnd ) * 0.5;
+		const lonMid = ( lonStart + lonEnd ) * 0.5;
+		const allAboveEquator = latStart > 0.0;
+		const allBelowEquator = latEnd < 0.0;
+
+		let nearEquatorLat;
+		if ( allAboveEquator ) {
+
+			nearEquatorLat = latStart;
+
+		} else if ( allBelowEquator ) {
+
+			nearEquatorLat = latEnd;
+
+		} else {
+
+			nearEquatorLat = 0;
+
+		}
+
+		// lon start extremity
+		this.getCartographicToPosition( nearEquatorLat, lonStart, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		// check corners and mid points for the top
+		this.getCartographicToPosition( latEnd, lonStart, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		this.getCartographicToPosition( latEnd, lonMid, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		// check corners and mid points for the bottom
+		this.getCartographicToPosition( latStart, lonStart, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		this.getCartographicToPosition( latStart, lonMid, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		// check center extremity
+		this.getCartographicToPosition( latMid, lonMid, heightEnd, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		// check lower height extremity
+		this.getCartographicToPosition( latStart, lonStart, heightStart, _vec );
+		expandSphereRadiusSquared( _vec, sphere );
+
+		// check 90 degree offset if range is larger than PI
+		if ( lonEnd - lonStart > PI ) {
+
+			this.getCartographicToPosition( nearEquatorLat, lonMid + PI, heightEnd, _vec );
+			expandSphereRadiusSquared( _vec, sphere );
+
+		}
 
 		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + EPSILON );
 
