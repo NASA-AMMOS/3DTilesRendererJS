@@ -1,9 +1,9 @@
 /* eslint-disable vitest/expect-expect */
 import * as Cesium from 'cesium';
 import { Vector3, MathUtils, Matrix4 } from 'three';
-import { Ellipsoid } from '../src/three/renderer/math/Ellipsoid.js';
-import { WGS84_HEIGHT, WGS84_RADIUS } from '../src/core/renderer/constants.js';
-import { WGS84_ELLIPSOID } from '../src/three/renderer/math/GeoConstants.js';
+import { Ellipsoid } from '../../src/three/renderer/math/Ellipsoid.js';
+import { WGS84_HEIGHT, WGS84_RADIUS } from '../../src/core/renderer/constants.js';
+import { WGS84_ELLIPSOID } from '../../src/three/renderer/math/GeoConstants.js';
 
 function epsCompare( a, b, EPSILON = 1e-10 ) {
 
