@@ -432,7 +432,7 @@ export class TilesRendererBase {
 
 			this.framesSinceLastLoad++;
 
-			// If we have gone 2 full frames with zero activity, we are truly settled (one to calculate visibility, one to process potential results).
+			// Wait for 2 frames to ensure the update loop has had a chance to queue new downloads.
 			if ( this.framesSinceLastLoad === 2 ) {
 				
 				this.dispatchEvent( { type: 'tiles-settled' } );
