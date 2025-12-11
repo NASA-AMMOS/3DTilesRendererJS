@@ -1,4 +1,4 @@
-import { PriorityQueue } from '../src/core/renderer/utilities/PriorityQueue.js';
+import { PriorityQueue } from '../../src/core/renderer/utilities/PriorityQueue.js';
 
 const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve ) );
 

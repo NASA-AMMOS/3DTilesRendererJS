@@ -1,4 +1,4 @@
-import { LRUCache } from '../src/core/renderer/utilities/LRUCache.js';
+import { LRUCache } from '../../src/core/renderer/utilities/LRUCache.js';
 
 describe( 'LRUCache', () => {
 
