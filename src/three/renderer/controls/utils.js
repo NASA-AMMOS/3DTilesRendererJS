@@ -1,7 +1,7 @@
 import { Matrix4, Ray, Vector3 } from 'three';
 
-const _matrix = new Matrix4();
-const _vec = new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _vec = /* @__PURE__ */ new Vector3();
 
 // helper function for constructing a matrix for rotating around a point
 export function makeRotateAroundPoint( point, quat, target ) {

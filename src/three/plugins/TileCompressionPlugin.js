@@ -1,6 +1,6 @@
 import { Vector3, LinearFilter, BufferAttribute, MathUtils } from 'three';
 
-const _vec = new Vector3();
+const _vec = /* @__PURE__ */ new Vector3();
 function compressAttribute( attribute, arrayType ) {
 
 	if ( attribute.isInterleavedBufferAttribute || attribute.array instanceof arrayType ) {
