@@ -1,4 +1,4 @@
-import { Matrix4, Vector3, Box3 } from 'three';
+import { Matrix4, Vector3, Box3, Ray, Plane } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 
 // bounds are lightly inflated to account for floating point error
@@ -13,6 +13,12 @@ const _vec = /* @__PURE__*/ new Vector3();
 const _invMatrix = /* @__PURE__*/ new Matrix4();
 const _box = /* @__PURE__*/ new Box3();
 const _matrix = /* @__PURE__*/ new Matrix4();
+const _ray = /* @__PURE__*/ new Ray();
+const _scaleMatrix = /* @__PURE__*/ new Matrix4();
+const _point = /* @__PURE__*/ new Vector3();
+const _cartographic = {};
+const _plane = /* @__PURE__*/ new Plane();
+const _planeNormal = /* @__PURE__*/ new Vector3();
 
 function expandSphereRadiusSquared( vec, target ) {
 
@@ -23,6 +29,64 @@ function expandSphereRadiusSquared( vec, target ) {
 function isTriaxial( radii ) {
 
 	return radii.x !== radii.y;
+
+}
+
+// intersects a ray with a cone around the Z-axis at a given latitude
+// the cone is defined by the equation: (x² + y²) = (z * cot(lat))²
+// returns the closest intersection point, or null if no intersection
+function intersectRayWithLatitudeCone( ray, lat, target ) {
+
+	// Extract ray components for clarity
+	const origin = ray.origin;
+	const dir = ray.direction;
+
+	// Cone parameter: k = cot(lat) = cos(lat) / sin(lat)
+	const k = Math.cos( lat ) / Math.sin( lat );
+	const kSq = k * k;
+
+	// Substitute ray equation into cone equation and solve quadratic: a*t² + b*t + c = 0
+	// Ray: (x,y,z) = (ox,oy,oz) + t*(dx,dy,dz)
+	// Cone: x² + y² = (z*k)²
+	// Expanding: (ox + t*dx)² + (oy + t*dy)² = ((oz + t*dz)*k)²
+	const a = dir.x ** 2 + dir.y ** 2 - kSq * ( dir.z ** 2 );
+	const b = 2 * ( origin.x * dir.x + origin.y * dir.y - kSq * origin.z * dir.z );
+	const c = origin.x ** 2 + origin.y ** 2 - kSq * ( origin.z ** 2 );
+	const discriminant = b * b - 4 * a * c;
+
+	// No intersection if discriminant is negative
+	if ( discriminant < 0 ) {
+
+		return null;
+
+	}
+
+	const sqrtDiscriminant = Math.sqrt( discriminant );
+	const t1 = ( - b - sqrtDiscriminant ) / ( 2 * a );
+	const t2 = ( - b + sqrtDiscriminant ) / ( 2 * a );
+
+	// Find the closest non-negative intersection
+	let t;
+	if ( t1 >= 0 && t2 >= 0 ) {
+
+		t = Math.min( t1, t2 );
+
+	} else if ( t1 >= 0 ) {
+
+		t = t1;
+
+	} else if ( t2 >= 0 ) {
+
+		t = t2;
+
+	} else {
+
+		return null;
+
+	}
+
+	// Calculate and return the intersection point
+	return ray.at( t, target );
 
 }
 
@@ -263,6 +327,232 @@ export class EllipsoidRegion extends Ellipsoid {
 		}
 
 		sphere.radius = Math.sqrt( sphere.radius ) * ( 1 + INFLATE_EPSILON );
+
+	}
+
+	intersectsRay( ray, target = new Vector3() ) {
+
+		const scope = this;
+		const { latStart, latEnd, lonStart, lonEnd, heightStart, heightEnd, radius } = this;
+
+		// create scaling matrix to transform ellipsoid to unit sphere
+		_scaleMatrix.makeScale( ...radius ).invert();
+		_ray.copy( ray ).applyMatrix4( _scaleMatrix );
+
+		let closestDistanceSq = Infinity;
+		let foundIntersection = false;
+
+		// test all boundary surfaces
+		intersectCap( heightEnd );
+		intersectCap( heightStart );
+		intersectLatitudeSurface( latStart );
+		intersectLatitudeSurface( latEnd );
+		intersectLongitudeSurface( lonStart );
+		intersectLongitudeSurface( lonEnd );
+
+		return foundIntersection ? target : null;
+
+		// intersects the flat regions formed by the height offsets
+		function intersectCap( height ) {
+
+			// TODO: this doesn't fully seem correct
+			// intersect the scaled ray with a unit sphere at the given height
+			const scaleFactor = 1.0 + height;
+
+			// Ray-sphere intersection using quadratic formula
+			// Sphere centered at origin with radius = scaleFactor
+			const dirDotOrigin = _ray.direction.dot( _ray.origin );
+			const originLengthSq = _ray.origin.lengthSq();
+			const radiusSq = scaleFactor * scaleFactor;
+
+			const discriminant = dirDotOrigin * dirDotOrigin - originLengthSq + radiusSq;
+			if ( discriminant < 0 ) return;
+
+			const sqrtDiscriminant = Math.sqrt( discriminant );
+			const t1 = - dirDotOrigin - sqrtDiscriminant;
+			const t2 = - dirDotOrigin + sqrtDiscriminant;
+
+			// test both intersection points
+			for ( const t of [ t1, t2 ] ) {
+
+				if ( t < 0 ) continue;
+
+				// get the intersection point in world space and extract the cartographic values
+				_ray.at( t, _point ).multiply( radius );
+				const { lat, lon } = scope.getPositionToCartographic( _point, _cartographic );
+
+				// get longitude relative to the region
+				let normalizedLon = normalizeLongitude( lon );
+
+				// check if it's within the bounds
+				const insideLon = normalizedLon >= lonStart && normalizedLon <= lonEnd;
+				const insideLat = lat >= latStart && lat <= latEnd;
+				if ( insideLon && insideLat ) {
+
+					// calculate squared distance from ray origin to intersection point
+					const distanceSq = _point.distanceToSquared( ray.origin );
+					if ( distanceSq < closestDistanceSq ) {
+
+						closestDistanceSq = distanceSq;
+						target.copy( _point );
+						foundIntersection = true;
+
+					}
+
+				}
+
+			}
+
+		}
+
+		// Helper function to intersect with a latitude cone
+		function intersectLatitudeSurface( lat ) {
+
+			// A latitude line on an ellipsoid forms a cone around the Z-axis
+			// For a unit sphere, the cone has half-angle = (PI/2 - lat)
+			// On an ellipsoid, we work in scaled space where it's still a cone
+			const sinLat = Math.sin( lat );
+
+			if ( lat === 0 ) {
+
+				// the equator is a plane
+				_planeNormal.set( 0, 0, 1 );
+				_plane.setFromNormalAndCoplanarPoint( _planeNormal, _vec.set( 0, 0, 0 ) );
+
+				if ( _ray.intersectPlane( _plane, _point ) === null ) {
+
+					return;
+
+				}
+
+				const t = _vec.copy( _point ).sub( _ray.origin ).dot( _ray.direction );
+				if ( t < 0 ) {
+
+					return;
+
+				}
+
+				// back to work space
+				_point.multiply( radius );
+				const { height, lon } = scope.getPositionToCartographic( _point, _cartographic );
+
+				const normalizedLon = normalizeLongitude( lon );
+				const insideHeight = height >= heightStart && height <= heightEnd;
+				const insideLon = normalizedLon >= lonStart && normalizedLon <= lonEnd;
+				if ( insideHeight && insideLon ) {
+
+					// calculate squared distance from ray origin to intersection point
+					const distanceSq = _point.distanceToSquared( ray.origin );
+					if ( distanceSq < closestDistanceSq ) {
+
+						closestDistanceSq = distanceSq;
+						target.copy( _point );
+						foundIntersection = true;
+
+					}
+
+				}
+
+			} else {
+
+				// Intersect with the latitude cone
+				if ( intersectRayWithLatitudeCone( _ray, lat, _point ) === null ) {
+
+					return;
+
+				}
+
+				// Get the intersection point in world space
+				_point.multiply( radius );
+
+				// Get the lat/lon positions
+				const { lon, height } = scope.getPositionToCartographic( _point, _cartographic );
+
+				// Verify we're on the correct side of the cone
+				// (cone has two nappes, we only want one)
+				const pointZ = _point.z / radius.z;
+				const expectedZ = sinLat;
+				if ( Math.sign( pointZ ) !== Math.sign( expectedZ ) ) {
+
+					return;
+
+				}
+
+				const normalizedLon = normalizeLongitude( lon );
+				const insideHeight = height >= heightStart && height <= heightEnd;
+				const insideLon = normalizedLon >= lonStart && normalizedLon <= lonEnd;
+				if ( insideHeight && insideLon ) {
+
+					// calculate squared distance from ray origin to intersection point
+					const distanceSq = _point.distanceToSquared( ray.origin );
+					if ( distanceSq < closestDistanceSq ) {
+
+						closestDistanceSq = distanceSq;
+						target.copy( _point );
+						foundIntersection = true;
+
+					}
+
+				}
+
+			}
+
+		}
+
+		function intersectLongitudeSurface( surfaceLon ) {
+
+			// construct a plane at the given longitude and find the intersection
+			_planeNormal.set( - Math.sin( surfaceLon ), Math.cos( surfaceLon ), 0 );
+			_plane.setFromNormalAndCoplanarPoint( _planeNormal, _vec.set( 0, 0, 0 ) );
+			if ( _ray.intersectPlane( _plane, _point ) === null ) {
+
+				return;
+
+			}
+
+			// get the distance to the point
+			const t = _vec.copy( _point ).sub( _ray.origin ).dot( _ray.direction );
+			if ( t < 0 ) {
+
+				return;
+
+			}
+
+			// back to world space
+			_point.multiply( radius );
+
+			// get the lat/lon positions
+			const { lat, lon, height } = scope.getPositionToCartographic( _point, _cartographic );
+			const normalizedLon = normalizeLongitude( lon );
+			const insideLon = normalizedLon >= lonStart && normalizedLon <= lonEnd;
+			const insideLat = lat >= latStart && lat <= latEnd;
+			const insideHeight = height >= heightStart && height <= heightEnd;
+
+			if ( insideHeight && insideLat && insideLon ) {
+
+				// calculate squared distance from ray origin to intersection point
+				const distanceSq = _point.distanceToSquared( ray.origin );
+				if ( distanceSq < closestDistanceSq ) {
+
+					closestDistanceSq = distanceSq;
+					target.copy( _point );
+					foundIntersection = true;
+
+				}
+
+			}
+
+		}
+
+		function normalizeLongitude( lon ) {
+
+			lon = ( lon - lonStart ) % ( 2 * PI );
+			if ( lon < 0 ) lon += 2 * PI;
+			lon += lonStart;
+
+			return lon;
+
+		}
 
 	}
 
