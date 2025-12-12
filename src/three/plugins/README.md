@@ -717,6 +717,9 @@ Available options are as follows:
 
 	// Whether to generate the tiles as a solid form with bottom faces.
 	solid: false,
+
+	// Whether to generate smooth normals for terrain tiles when the quantized mesh data does not include embedded normals.
+	generateNormals: true,
 }
 ```
 

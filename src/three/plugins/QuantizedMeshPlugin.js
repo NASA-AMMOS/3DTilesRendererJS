@@ -84,8 +84,8 @@ export class QuantizedMeshPlugin {
 			useRecommendedSettings = true,
 			skirtLength = null,
 			smoothSkirtNormals = true,
-			solid = false,
 			generateNormals = true,
+			solid = false,
 		} = options;
 
 		// plugin needs to run before other plugins that fetch data since content
