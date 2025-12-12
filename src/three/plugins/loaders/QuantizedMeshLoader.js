@@ -29,6 +29,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		this.ellipsoid = new Ellipsoid();
 		this.skirtLength = 1000;
 		this.smoothSkirtNormals = true;
+		this.generateNormals = true;
 		this.solid = false;
 
 		// set the range of the tile
@@ -46,6 +47,7 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 			solid,
 			skirtLength,
 			smoothSkirtNormals,
+			generateNormals,
 
 			minLat,
 			maxLat,
@@ -66,7 +68,8 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 		const mesh = new Mesh( geometry, material );
 		mesh.position.set( ...header.center );
 
-		const includeNormals = 'octvertexnormals' in extensions;
+		const hasNormalExtension = 'octvertexnormals' in extensions;
+		const includeNormals = hasNormalExtension || generateNormals;
 		const vertexCount = vertexData.u.length;
 		const positions = [];
 		const uvs = [];
@@ -94,10 +97,36 @@ export class QuantizedMeshLoader extends QuantizedMeshLoaderBase {
 
 		if ( includeNormals ) {
 
-			const extNormals = extensions[ 'octvertexnormals' ].normals;
-			for ( let i = 0, l = extNormals.length; i < l; i ++ ) {
+			if ( hasNormalExtension ) {
 
-				normals.push( extNormals[ i ] );
+				const extNormals = extensions[ 'octvertexnormals' ].normals;
+				for ( let i = 0, l = extNormals.length; i < l; i ++ ) {
+
+					normals.push( extNormals[ i ] );
+
+				}
+
+			} else {
+
+				// generate normals using the positions we just created
+				const tempGeometry = new BufferGeometry();
+				const tempIndexBuffer = indices.length > 21845 ? new Uint32Array( indices ) : new Uint16Array( indices );
+				tempGeometry.setIndex( new BufferAttribute( tempIndexBuffer, 1, false ) );
+				tempGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( positions ), 3, false ) );
+				tempGeometry.computeVertexNormals();
+
+				const normalAttr = tempGeometry.getAttribute( 'normal' );
+				const generatedNormals = normalAttr.array;
+
+				// store in extensions format for consistency
+				extensions[ 'octvertexnormals' ] = { normals: generatedNormals };
+
+				// copy to normals array
+				for ( let i = 0, l = generatedNormals.length; i < l; i ++ ) {
+
+					normals.push( generatedNormals[ i ] );
+
+				}
 
 			}
 
