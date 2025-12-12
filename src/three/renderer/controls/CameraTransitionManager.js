@@ -1,13 +1,13 @@
 import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
-const _forward = new Vector3();
-const _vec = new Vector3();
-const _orthographicCamera = new OrthographicCamera();
-const _targetOffset = new Vector3();
-const _perspOffset = new Vector3();
-const _orthoOffset = new Vector3();
-const _quat = new Quaternion();
-const _targetQuat = new Quaternion();
+const _forward = /* @__PURE__ */ new Vector3();
+const _vec = /* @__PURE__ */ new Vector3();
+const _orthographicCamera = /* @__PURE__ */ new OrthographicCamera();
+const _targetOffset = /* @__PURE__ */ new Vector3();
+const _perspOffset = /* @__PURE__ */ new Vector3();
+const _orthoOffset = /* @__PURE__ */ new Vector3();
+const _quat = /* @__PURE__ */ new Quaternion();
+const _targetQuat = /* @__PURE__ */ new Quaternion();
 
 export class CameraTransitionManager extends EventDispatcher {
 

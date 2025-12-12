@@ -1,6 +1,6 @@
 import { Vector2, MathUtils, Vector3 } from 'three';
 
-const f = new Vector2();
+const f = /* @__PURE__ */ new Vector2();
 
 /**
  * Decode an octahedron-encoded normal (as a pair of 8-bit unsigned numbers) into a Vector3.

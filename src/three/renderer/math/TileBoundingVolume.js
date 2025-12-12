@@ -2,11 +2,11 @@ import { Vector3, Sphere } from 'three';
 import { OBB } from './OBB.js';
 import { EllipsoidRegion } from './EllipsoidRegion.js';
 
-const _vecX = new Vector3();
-const _vecY = new Vector3();
-const _vecZ = new Vector3();
-const _sphereVec = new Vector3();
-const _obbVec = new Vector3();
+const _vecX = /* @__PURE__ */ new Vector3();
+const _vecY = /* @__PURE__ */ new Vector3();
+const _vecZ = /* @__PURE__ */ new Vector3();
+const _sphereVec = /* @__PURE__ */ new Vector3();
+const _obbVec = /* @__PURE__ */ new Vector3();
 
 // TODO: check region more precisely in all functions
 export class TileBoundingVolume {
