@@ -24,7 +24,8 @@ export class TileBoundingVolume {
 	intersectsRay( ray ) {
 
 		const sphere = this.sphere;
-		const obb = this.obb || this.regionObb;
+		const obb = this.obb;
+		const region = this.region;
 
 		// Early out if we don't hit this tile sphere
 		if ( sphere && ! ray.intersectsSphere( sphere ) ) {
@@ -33,8 +34,15 @@ export class TileBoundingVolume {
 
 		}
 
-		// Early out if we don't this this tile box
+		// Early out if we don't hit this tile box
 		if ( obb && ! obb.intersectsRay( ray ) ) {
+
+			return false;
+
+		}
+
+		// Early out if we don't hit this tile region
+		if ( region && ! region.intersectsRay( ray ) ) {
 
 			return false;
 
@@ -47,10 +55,12 @@ export class TileBoundingVolume {
 	intersectRay( ray, target = null ) {
 
 		const sphere = this.sphere;
-		const obb = this.obb || this.regionObb;
+		const obb = this.obb;
+		const region = this.region;
 
 		let sphereDistSq = - Infinity;
 		let obbDistSq = - Infinity;
+		let regionDistSq = - Infinity;
 
 		if ( sphere ) {
 
@@ -72,8 +82,18 @@ export class TileBoundingVolume {
 
 		}
 
+		if ( region ) {
+
+			if ( region.intersectsRay( ray, _sphereVec ) ) {
+
+				regionDistSq = region.containsPoint( ray.origin ) ? 0 : ray.origin.distanceToSquared( _sphereVec );
+
+			}
+
+		}
+
 		// if we didn't hit anything then exit
-		const furthestDist = Math.max( sphereDistSq, obbDistSq );
+		const furthestDist = Math.max( sphereDistSq, obbDistSq, regionDistSq );
 		if ( furthestDist === - Infinity ) {
 
 			return null;
