@@ -14,6 +14,7 @@ const _invMatrix = /* @__PURE__*/ new Matrix4();
 const _box = /* @__PURE__*/ new Box3();
 const _matrix = /* @__PURE__*/ new Matrix4();
 const _ray = /* @__PURE__*/ new Ray();
+const _capRay = /* @__PURE__*/ new Ray();
 const _scaleMatrix = /* @__PURE__*/ new Matrix4();
 const _point = /* @__PURE__*/ new Vector3();
 const _cartographic = {};
@@ -335,7 +336,7 @@ export class EllipsoidRegion extends Ellipsoid {
 		const scope = this;
 		const { latStart, latEnd, lonStart, lonEnd, heightStart, heightEnd, radius } = this;
 
-		// create scaling matrix to transform ellipsoid to unit sphere
+		// Transform ray to unit sphere space (for latitude/longitude boundaries)
 		_scaleMatrix.makeScale( ...radius ).invert();
 		_ray.copy( ray ).applyMatrix4( _scaleMatrix );
 
@@ -355,15 +356,20 @@ export class EllipsoidRegion extends Ellipsoid {
 		// intersects the flat regions formed by the height offsets
 		function intersectCap( height ) {
 
-			// TODO: this doesn't fully seem correct
-			// intersect the scaled ray with a unit sphere at the given height
-			const scaleFactor = 1.0 + height;
+			// Scale the ellipsoid by (1 + height) to account for height offset, then transform to unit sphere
+			// Final radius after height offset: radius * (1 + height)
+			// Transform ray to this scaled space
+			_scaleMatrix.makeScale(
+				radius.x + height,
+				radius.y + height,
+				radius.z + height
+			).invert();
+			_capRay.copy( ray ).applyMatrix4( _scaleMatrix );
 
-			// Ray-sphere intersection using quadratic formula
-			// Sphere centered at origin with radius = scaleFactor
-			const dirDotOrigin = _ray.direction.dot( _ray.origin );
-			const originLengthSq = _ray.origin.lengthSq();
-			const radiusSq = scaleFactor * scaleFactor;
+			// Ray-sphere intersection with unit sphere
+			const dirDotOrigin = _capRay.direction.dot( _capRay.origin );
+			const originLengthSq = _capRay.origin.lengthSq();
+			const radiusSq = 1.0;
 
 			const discriminant = dirDotOrigin * dirDotOrigin - originLengthSq + radiusSq;
 			if ( discriminant < 0 ) return;
@@ -377,8 +383,13 @@ export class EllipsoidRegion extends Ellipsoid {
 
 				if ( t < 0 ) continue;
 
-				// get the intersection point in world space and extract the cartographic values
-				_ray.at( t, _point ).multiply( radius );
+				// get the intersection point in world space
+				_capRay.at( t, _point );
+				_point.x *= radius.x + height;
+				_point.y *= radius.y + height;
+				_point.z *= radius.z + height;
+
+				// extract the cartographic values
 				const { lat, lon } = scope.getPositionToCartographic( _point, _cartographic );
 
 				// get longitude relative to the region
