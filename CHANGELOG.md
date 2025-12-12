@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
 - CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
+- QuantizedMeshLoader, QuantizedMeshPlugin: Added "generateNormals" option for cases where normals are not embedded.
 
 ### Fixed
 - Controls: Fixed case where pointer state may not have been reset correctly.
