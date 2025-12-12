@@ -16,6 +16,9 @@ import {
 	BoxGeometry,
 	LineSegments,
 	EdgesGeometry,
+	Raycaster,
+	Vector2,
+	MeshBasicMaterial,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -23,6 +26,11 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 let camera, controls, scene, renderer, group;
 let dirLight;
 let helper, ghostHelper, edges, boxGroup, sphereGroup;
+let intersectionPoint;
+
+const raycaster = new Raycaster();
+const mouse = new Vector2();
+let isHovering = false;
 
 const params = {
 
@@ -103,14 +111,19 @@ function init() {
 	// add box helper
 	const boxHelper = new LineSegments( new EdgesGeometry( new BoxGeometry() ) );
 	boxHelper.material.color.set( 0xffff00 );
-	// const boxHelper = new Box3Helper( new Box3() );
-
 
 	const boxMesh = new Mesh( new BoxGeometry(), sphereMesh.material );
 	boxGroup = new Group();
 	boxGroup.add( boxHelper, boxMesh, new AxesHelper() );
 
-	group.add( helper, ghostHelper, edges, boxGroup, sphereGroup );
+	// add intersection point visualization
+	intersectionPoint = new Mesh(
+		new SphereGeometry( 0.02 ),
+		new MeshBasicMaterial( { color: 0xffff00 } )
+	);
+	intersectionPoint.visible = false;
+
+	group.add( helper, ghostHelper, edges, boxGroup, sphereGroup, intersectionPoint );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
@@ -147,6 +160,32 @@ function init() {
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener( 'mousemove', onMouseMove, false );
+
+}
+
+function onMouseMove( event ) {
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	raycaster.setFromCamera( mouse, camera );
+
+	// test if the ray intersects the ellipsoid region
+	raycaster.ray.applyMatrix4( group.matrixWorld.clone().invert() );
+	const intersection = helper.ellipsoidRegion.intersectsRay( raycaster.ray );
+	isHovering = intersection !== null;
+
+	// update intersection point visualization
+	if ( intersection ) {
+
+		intersectionPoint.position.copy( intersection );
+		intersectionPoint.visible = true;
+
+	} else {
+
+		intersectionPoint.visible = false;
+
+	}
 
 }
 
@@ -177,9 +216,9 @@ function updateHelper() {
 	box.getCenter( boxGroup.position ).applyMatrix4( boxGroup.matrix );
 	scene.updateMatrixWorld( true );
 
+	camera.position.sub( controls.target );
 	controls.target.set( 0, 0, 0 ).applyMatrix4( boxGroup.matrixWorld );
 	camera.position.add( controls.target );
-
 
 }
 
@@ -203,8 +242,18 @@ function animate() {
 function render() {
 
 	sphereGroup.visible = params.displaySphereHelper;
-
 	boxGroup.visible = params.displayBoxHelper;
+
+	// Change color based on hover state
+	if ( isHovering ) {
+
+		helper.material.color.set( 0xff0000 ); // Red when hovering
+
+	} else {
+
+		helper.material.color.set( 0xffffff ); // White when not hovering
+
+	}
 
 	renderer.render( scene, camera );
 
