@@ -85,6 +85,7 @@ export class QuantizedMeshPlugin {
 			skirtLength = null,
 			smoothSkirtNormals = true,
 			solid = false,
+			generateNormals = true,
 		} = options;
 
 		// plugin needs to run before other plugins that fetch data since content
@@ -98,6 +99,7 @@ export class QuantizedMeshPlugin {
 		this.skirtLength = skirtLength;
 		this.smoothSkirtNormals = smoothSkirtNormals;
 		this.solid = solid;
+		this.generateNormals = generateNormals;
 		this.attribution = null;
 
 		this.tiling = new TilingScheme();
@@ -222,6 +224,7 @@ export class QuantizedMeshPlugin {
 			skirtLength,
 			solid,
 			smoothSkirtNormals,
+			generateNormals,
 			tiles,
 		} = this;
 
@@ -258,6 +261,7 @@ export class QuantizedMeshPlugin {
 			loader.ellipsoid.copy( ellipsoid );
 			loader.solid = solid;
 			loader.smoothSkirtNormals = smoothSkirtNormals;
+			loader.generateNormals = generateNormals;
 			loader.skirtLength = skirtLength === null ? tile.geometricError : skirtLength;
 
 			const [ west, south, east, north ] = tile.boundingVolume.region;
