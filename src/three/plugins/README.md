@@ -719,6 +719,7 @@ Available options are as follows:
 	solid: false,
 
 	// Whether to generate smooth normals for terrain tiles when the quantized mesh data does not include embedded normals.
+	// Normals are always added to the geometry if present in the file.
 	generateNormals: true,
 }
 ```
