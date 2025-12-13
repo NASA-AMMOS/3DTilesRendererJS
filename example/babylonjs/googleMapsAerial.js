@@ -65,6 +65,12 @@ scene.onBeforeRenderObservable.add( () => {
 
 	}
 
+	// update attributions
+	const attributions = tiles.getAttributions();
+	console.log( attributions )
+	const creditsEl = document.getElementById( 'credits' );
+	creditsEl.innerText = attributions[ 0 ]?.value || '';
+
 } );
 
 engine.runRenderLoop( () => {
