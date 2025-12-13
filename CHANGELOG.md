@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.19] - Unreleased
 ### Changed
-- Moved "GoogleCloudAuthlugin" to "3d-tiles-renderer/core/plugins".
+- Moved "GoogleCloudAuthPlugin" to "3d-tiles-renderer/core/plugins".
 - Moved "CesiumIonAuthPlugin" to "3d-tiles-renderer/core/plugins".
 - CesiumIonAuthPlugin: Auto-registration of QuantizedMesh and TMS plugins has been removed. See "assetTypeHandler" to register the necessary plugins as-needed.
 - TilesRenderer: "load-tile-set" event has been renamed to "load-tileset"
@@ -21,11 +21,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
 - CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
+- QuantizedMeshLoader, QuantizedMeshPlugin: Added "generateNormals" option for cases where normals are not embedded.
 
 ### Fixed
 - Controls: Fixed case where pointer state may not have been reset correctly.
 - ImageOverlayPlugin: "enableTileSplitting" now works with "ADDITIVE" tiles.
 - EnforceNonZeroErrorPlugin: adjusted error is now based on the first parent with geometric error encountered.
+- Fixed up some types.
+- Improved "Bounding OBB" and "Bounding Sphere" generation for "Region" bounding volumes.
+- PriorityQueue: fix case where entries were not being moved correctly by "removeByFilter".
+- ImageOverlayPlugin: Fix case where overlay data were not being handled correctly when adjusting frames.
+- ImageOverlayPlugin: Added a more clear error when "renderer" is not provided.
 
 ## [0.4.18] - 2025.11.14
 ### Added

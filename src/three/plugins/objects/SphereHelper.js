@@ -1,6 +1,6 @@
 import { LineSegments, BufferGeometry, Vector3, BufferAttribute, LineBasicMaterial } from 'three';
 
-const _vector = new Vector3();
+const _vector = /* @__PURE__ */ new Vector3();
 const axes = [ 'x', 'y', 'z' ];
 export class SphereHelper extends LineSegments {
 

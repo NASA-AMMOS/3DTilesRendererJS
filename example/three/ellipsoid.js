@@ -1,5 +1,5 @@
-import { SphereHelper } from '../src/three/plugins/objects/SphereHelper.js';
-import { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from '../src/three/plugins/objects/EllipsoidRegionHelper.js';
+import { SphereHelper } from '../../src/three/plugins/objects/SphereHelper.js';
+import { EllipsoidRegionHelper, EllipsoidRegionLineHelper } from '../../src/three/plugins/objects/EllipsoidRegionHelper.js';
 import {
 	Scene,
 	Group,
@@ -8,27 +8,26 @@ import {
 	WebGLRenderer,
 	PerspectiveCamera,
 	MeshPhongMaterial,
-	Box3Helper,
 	Box3,
 	Sphere,
-	SphereGeometry,
+	AxesHelper,
 	Mesh,
+	SphereGeometry,
+	BoxGeometry,
+	LineSegments,
+	EdgesGeometry,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer, group;
 let dirLight;
-let sphereHelper, boxHelper;
-let helper, ghostHelper, edges, boxGroup;
-const pointsArray = [];
-let pointsGroup;
+let helper, ghostHelper, edges, boxGroup, sphereGroup;
 
 const params = {
 
 	displaySphereHelper: false,
 	displayBoxHelper: false,
-	displayPoints: false,
 
 };
 
@@ -56,9 +55,6 @@ function init() {
 	group = new Group();
 	group.rotation.x = - Math.PI / 2;
 	scene.add( group );
-
-	pointsGroup = new Group();
-	group.add( pointsGroup );
 
 	// add ellipsoid helper
 	helper = new EllipsoidRegionHelper();
@@ -89,23 +85,40 @@ function init() {
 	edges.material.color.set( 0x151c1f ).convertSRGBToLinear();
 
 	// add sphere helper
-	sphereHelper = new SphereHelper( new Sphere() );
+	const sphereHelper = new SphereHelper( new Sphere() );
+	sphereHelper.sphere.center.set( 0, 0, 0 );
+	sphereHelper.sphere.radius = 1;
+
+	const sphereMesh = new Mesh( new SphereGeometry(), new MeshPhongMaterial( {
+		transparent: true,
+		depthWrite: false,
+		opacity: 0.35,
+		color: 0xffff00
+	} ) );
+
+	sphereGroup = new Group();
+	sphereGroup.add( sphereMesh, sphereHelper );
+
 
 	// add box helper
+	const boxHelper = new LineSegments( new EdgesGeometry( new BoxGeometry() ) );
+	boxHelper.material.color.set( 0xffff00 );
+	// const boxHelper = new Box3Helper( new Box3() );
+
+
+	const boxMesh = new Mesh( new BoxGeometry(), sphereMesh.material );
 	boxGroup = new Group();
+	boxGroup.add( boxHelper, boxMesh, new AxesHelper() );
 
-	boxHelper = new Box3Helper( new Box3() );
-	boxGroup.add( boxHelper );
-
-	group.add( helper, ghostHelper, edges, sphereHelper, boxGroup );
-
-	updateHelper();
+	group.add( helper, ghostHelper, edges, boxGroup, sphereGroup );
 
 	// controls
 	controls = new OrbitControls( camera, renderer.domElement );
 	controls.screenSpacePanning = false;
-	controls.minDistance = 1;
+	controls.minDistance = 0;
 	controls.maxDistance = 2000;
+
+	updateHelper();
 
 	// lights
 	dirLight = new DirectionalLight( 0xffffff, 1.25 );
@@ -118,7 +131,6 @@ function init() {
 	const gui = new GUI();
 	gui.add( params, 'displayBoxHelper' );
 	gui.add( params, 'displaySphereHelper' );
-	gui.add( params, 'displayPoints' );
 
 	const radiusFolder = gui.addFolder( 'radius' );
 	radiusFolder.add( helper.ellipsoidRegion.radius, 'x', 0.1, 2 ).onChange( updateHelper );
@@ -149,30 +161,25 @@ function updateHelper() {
 	edges.update();
 
 	// update the bounds helpers
-	helper.ellipsoidRegion.getBoundingSphere( sphereHelper.sphere );
-	helper.ellipsoidRegion.getBoundingBox( boxHelper.box, boxGroup.matrix );
+	const sphere = new Sphere();
+	helper.ellipsoidRegion.getBoundingSphere( sphere );
+	sphereGroup.position.copy( sphere.center );
+	sphereGroup.scale.setScalar( sphere.radius );
+
+	const box = new Box3();
+	helper.ellipsoidRegion.getBoundingBox( box, boxGroup.matrix );
 	boxGroup.matrix.decompose(
 		boxGroup.position,
 		boxGroup.quaternion,
 		boxGroup.scale,
 	);
+	box.getSize( boxGroup.scale );
+	box.getCenter( boxGroup.position ).applyMatrix4( boxGroup.matrix );
+	scene.updateMatrixWorld( true );
 
-	const points = helper.ellipsoidRegion._getPoints();
-	pointsArray.forEach( o => o.visible = false );
-	for ( let i = 0; i < points.length; i ++ ) {
+	controls.target.set( 0, 0, 0 ).applyMatrix4( boxGroup.matrixWorld );
+	camera.position.add( controls.target );
 
-		if ( ! pointsArray[ i ] ) {
-
-			pointsArray.push( new Mesh( new SphereGeometry( 0.01 ) ) );
-			pointsArray[ i ].material.color.set( 0xff0000 );
-			pointsGroup.add( pointsArray[ i ] );
-
-		}
-
-		pointsArray[ i ].position.copy( points[ i ] );
-		pointsArray[ i ].visible = true;
-
-	}
 
 }
 
@@ -195,9 +202,10 @@ function animate() {
 
 function render() {
 
-	sphereHelper.visible = params.displaySphereHelper;
-	boxHelper.visible = params.displayBoxHelper;
-	pointsGroup.visible = params.displayPoints;
+	sphereGroup.visible = params.displaySphereHelper;
+
+	boxGroup.visible = params.displayBoxHelper;
+
 	renderer.render( scene, camera );
 
 }

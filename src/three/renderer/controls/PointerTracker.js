@@ -1,7 +1,7 @@
 import { Vector2 } from 'three';
 
-const _vec = new Vector2();
-const _vec2 = new Vector2();
+const _vec = /* @__PURE__ */ new Vector2();
+const _vec2 = /* @__PURE__ */ new Vector2();
 export class PointerTracker {
 
 	constructor() {

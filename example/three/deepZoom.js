@@ -41,7 +41,7 @@ function init() {
 		new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 ),
 		new OrthographicCamera( - 1, 1, 1, - 1, 0, 4000 ),
 	);
-	transition.camera.position.set( 0, 0, 150 );
+	transition.camera.position.set( 0, 0, 1.5 );
 	transition.camera.lookAt( 0, 0, 0 );
 	transition.autoSync = false;
 	transition.addEventListener( 'camera-change', ( { camera, prevCamera } ) => {

@@ -203,7 +203,7 @@ function initTiles() {
 
 	}
 
-	const url = window.location.hash.replace( /^#/, '' ) || '../data/tileset.json';
+	const url = window.location.hash.replace( /^#/, '' ) || '../../data/tileset.json';
 	tiles = new TilesRenderer( url );
 	tiles.errorTarget = 2;
 	tiles.addEventListener( 'load-model', onLoadModel );

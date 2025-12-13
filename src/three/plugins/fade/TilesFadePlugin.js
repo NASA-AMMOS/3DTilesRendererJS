@@ -4,11 +4,11 @@ import { FadeMaterialManager } from './FadeMaterialManager.js';
 import { FadeBatchedMesh } from './FadeBatchedMesh.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
-const _fromPos = new Vector3();
-const _toPos = new Vector3();
-const _fromQuat = new Quaternion();
-const _toQuat = new Quaternion();
-const _scale = new Vector3();
+const _fromPos = /* @__PURE__ */ new Vector3();
+const _toPos = /* @__PURE__ */ new Vector3();
+const _fromQuat = /* @__PURE__ */ new Quaternion();
+const _toQuat = /* @__PURE__ */ new Quaternion();
+const _scale = /* @__PURE__ */ new Vector3();
 
 function onUpdateBefore() {
 

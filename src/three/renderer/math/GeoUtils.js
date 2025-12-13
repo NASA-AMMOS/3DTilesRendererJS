@@ -1,7 +1,7 @@
 import { Spherical, Vector3, MathUtils } from 'three';
 
-const _spherical = new Spherical();
-const _vec = new Vector3();
+const _spherical = /* @__PURE__ */ new Spherical();
+const _vec = /* @__PURE__ */ new Vector3();
 const _geoResults = {};
 
 // Cesium / 3D tiles Spheroid:

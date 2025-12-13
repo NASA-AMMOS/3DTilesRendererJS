@@ -1,22 +1,22 @@
 import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere, Euler } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
-const _spherical = new Spherical();
-const _norm = new Vector3();
-const _vec = new Vector3();
-const _vec2 = new Vector3();
-const _matrix = new Matrix4();
-const _matrix2 = new Matrix4();
-const _matrix3 = new Matrix4();
-const _sphere = new Sphere();
-const _euler = new Euler();
+const _spherical = /* @__PURE__ */ new Spherical();
+const _norm = /* @__PURE__ */ new Vector3();
+const _vec = /* @__PURE__ */ new Vector3();
+const _vec2 = /* @__PURE__ */ new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _matrix2 = /* @__PURE__ */ new Matrix4();
+const _matrix3 = /* @__PURE__ */ new Matrix4();
+const _sphere = /* @__PURE__ */ new Sphere();
+const _euler = /* @__PURE__ */ new Euler();
 
-const _vecX = new Vector3();
-const _vecY = new Vector3();
-const _vecZ = new Vector3();
-const _pos = new Vector3();
+const _vecX = /* @__PURE__ */ new Vector3();
+const _vecY = /* @__PURE__ */ new Vector3();
+const _vecZ = /* @__PURE__ */ new Vector3();
+const _pos = /* @__PURE__ */ new Vector3();
 
-const _ray = new Ray();
+const _ray = /* @__PURE__ */ new Ray();
 
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;

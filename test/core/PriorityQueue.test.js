@@ -1,4 +1,4 @@
-import { PriorityQueue } from '../src/core/renderer/utilities/PriorityQueue.js';
+import { PriorityQueue } from '../../src/core/renderer/utilities/PriorityQueue.js';
 
 const nextFrame = () => new Promise( resolve => requestAnimationFrame( resolve ) );
 
@@ -256,6 +256,23 @@ describe( 'PriorityQueue', () => {
 		await promise;
 
 		expect( thrown ).toEqual( true );
+
+	} );
+
+	it( 'should be able to successfully remove all items by filter.', async () => {
+
+		const queue = new PriorityQueue();
+		queue.priorityCallback = () => 0;
+		queue.autoUpdate = false;
+		queue.maxJobs = 1;
+
+		queue.add( 1, () => {} );
+		queue.add( 2, () => {} );
+		queue.add( 3, () => {} );
+
+		expect( queue.items ).toHaveLength( 3 );
+		queue.removeByFilter( i => true );
+		expect( queue.items ).toHaveLength( 0 );
 
 	} );
 

@@ -1,4 +1,4 @@
-import { TilesRendererBase } from '../src/core/renderer';
+import { TilesRendererBase } from '../../src/core/renderer';
 
 describe( 'TilesRendererBase', () => {
 

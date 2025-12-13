@@ -1,5 +1,5 @@
 import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue } from '3d-tiles-renderer/core';
+import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -168,6 +168,12 @@ export class ImageOverlayPlugin {
 	// plugin functions
 	init( tiles ) {
 
+		if ( ! this.renderer ) {
+
+			throw new Error( 'ImageOverlayPlugin: "renderer" instance must be provided.' );
+
+		}
+
 		const tileComposer = new TiledTextureComposer( this.renderer );
 		const processQueue = new PriorityQueue();
 		processQueue.maxJobs = 10;
@@ -219,7 +225,7 @@ export class ImageOverlayPlugin {
 				) {
 
 					const order = info.order;
-					this.deleteOverlay( overlay, false );
+					this.deleteOverlay( overlay );
 					this.addOverlay( overlay, order );
 
 					overlayChanged = true;
@@ -879,21 +885,37 @@ export class ImageOverlayPlugin {
 
 	}
 
-	deleteOverlay( overlay, forceDispose = true ) {
+	deleteOverlay( overlay ) {
 
 		const { overlays, overlayInfo, processQueue } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
+			// delete tile info explicitly instead of blindly dispose of the full overlay
 			const { tileInfo, controller } = overlayInfo.get( overlay );
-			tileInfo.forEach( ( { meshInfo, target } ) => {
+			tileInfo.forEach( ( { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked }, tile ) => {
+
+				// release the ranges
+				if ( meshRange !== null && meshRangeMarked ) {
+
+					markOverlayImages( meshRange, level, overlay, true );
+
+				}
+
+				if ( range !== null && rangeMarked ) {
+
+					markOverlayImages( range, level, overlay, true );
+
+				}
 
 				if ( target !== null ) {
 
+					// release the render targets
 					target.dispose();
 
 				}
 
+				tileInfo.delete( tile );
 				meshInfo.clear();
 
 			} );
@@ -910,11 +932,6 @@ export class ImageOverlayPlugin {
 			} );
 
 			overlays.splice( index, 1 );
-			if ( forceDispose ) {
-
-				overlay.dispose();
-
-			}
 
 			this._markNeedsUpdate();
 
@@ -1051,7 +1068,6 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const level = tile.__depthFromRenderedParent - 1;
 		const info = {
 			range: null,
 			meshRange: null,
@@ -1086,12 +1102,16 @@ export class ImageOverlayPlugin {
 					.add( { tile, overlay }, () => {
 
 						info.rangeMarked = true;
-						return markOverlayImages( range, level, overlay, false );
+						return markOverlayImages( range, info.level, overlay, false );
 
 					} )
-					.catch( () => {
+					.catch( err => {
 
-						// the queue throws an error if a task is removed early
+						if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+							throw err;
+
+						}
 
 					} );
 
@@ -1284,9 +1304,13 @@ export class ImageOverlayPlugin {
 					} );
 
 				} )
-				.catch( () => {
+				.catch( err => {
 
-					// the queue throws an error if a task is removed early
+					if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+						throw err;
+
+					}
 
 				} );
 
