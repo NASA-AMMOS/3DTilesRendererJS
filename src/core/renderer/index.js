@@ -8,6 +8,6 @@ export * from './loaders/CMPTLoaderBase.js';
 export * from './constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
-export { PriorityQueue } from './utilities/PriorityQueue.js';
+export * from './utilities/PriorityQueue.js';
 export * as TraversalUtils from './utilities/TraversalUtils.js';
 export * as LoaderUtils from './utilities/LoaderUtils.js';
