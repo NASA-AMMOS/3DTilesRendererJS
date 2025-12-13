@@ -901,7 +901,7 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue, processedTiles, tiles } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
