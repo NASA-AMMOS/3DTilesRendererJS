@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnforceNonZeroErrorPlugin: adjusted error is now based on the first parent with geometric error encountered.
 - Fixed up some types.
 - Improved "Bounding OBB" and "Bounding Sphere" generation for "Region" bounding volumes.
+- PriorityQueue: fix case where entries were not being moved correctly by "removeByFilter".
+- ImageOverlayPlugin: Fix case where overlay data were not being handled correctly when adjusting frames.
+- ImageOverlayPlugin: Added a more clear error when "renderer" is not provided.
 
 ## [0.4.18] - 2025.11.14
 ### Added
