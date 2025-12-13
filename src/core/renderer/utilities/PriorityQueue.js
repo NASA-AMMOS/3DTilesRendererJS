@@ -1,4 +1,15 @@
-class PriorityQueue {
+export class PriorityQueueItemRemovedError extends Error {
+
+	constructor() {
+
+		super( 'PriorityQueue: Item removed' );
+		this.name = 'PriorityQueueItemRemovedError';
+
+	}
+
+}
+
+export class PriorityQueue {
 
 	// returns whether tasks are queued or actively running
 	get running() {
@@ -98,8 +109,16 @@ class PriorityQueue {
 			// catch here to handle the case where the promise was never used anywhere
 			// else.
 			const info = callbacks.get( item );
-			info.promise.catch( () => {} );
-			info.reject( new Error( 'PriorityQueue: Item removed.' ) );
+			info.promise.catch( err => {
+
+				if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+					throw err;
+
+				}
+
+			} );
+			info.reject( new PriorityQueueItemRemovedError() );
 
 			items.splice( index, 1 );
 			callbacks.delete( item );
@@ -197,5 +216,3 @@ class PriorityQueue {
 	}
 
 }
-
-export { PriorityQueue };

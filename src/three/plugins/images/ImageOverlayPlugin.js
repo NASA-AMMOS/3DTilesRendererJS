@@ -1,5 +1,5 @@
 import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
-import { PriorityQueue } from '3d-tiles-renderer/core';
+import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
@@ -167,6 +167,12 @@ export class ImageOverlayPlugin {
 
 	// plugin functions
 	init( tiles ) {
+
+		if ( ! this.renderer ) {
+
+			throw new Error( 'ImageOverlayPlugin: "renderer" instance must be provided.' );
+
+		}
 
 		const tileComposer = new TiledTextureComposer( this.renderer );
 		const processQueue = new PriorityQueue();
@@ -1099,9 +1105,13 @@ export class ImageOverlayPlugin {
 						return markOverlayImages( range, info.level, overlay, false );
 
 					} )
-					.catch( () => {
+					.catch( err => {
 
-						// the queue throws an error if a task is removed early
+						if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+							throw err;
+
+						}
 
 					} );
 
@@ -1294,9 +1304,13 @@ export class ImageOverlayPlugin {
 					} );
 
 				} )
-				.catch( () => {
+				.catch( err => {
 
-					// the queue throws an error if a task is removed early
+					if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+						throw err;
+
+					}
 
 				} );
 
