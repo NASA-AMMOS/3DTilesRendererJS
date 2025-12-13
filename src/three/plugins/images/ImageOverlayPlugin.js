@@ -285,9 +285,15 @@ export class ImageOverlayPlugin {
 
 		};
 
-		this._onTileDownloadStart = ( { tile } ) => {
+		this._onTileDownloadStart = ( { tile, uri } ) => {
 
-			this._initTileOverlayInfo( tile );
+			// TODO: it would be better if there were either a separate event or flag indicating that a tile is an external
+			// tileset or not. We won't want to run "init" on tiles that have geometry.
+			if ( ! /\.json$/.test( uri ) ) {
+
+				this._initTileOverlayInfo( tile );
+
+			}
 
 		};
 
@@ -895,7 +901,7 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue, processedTiles } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles, tiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 

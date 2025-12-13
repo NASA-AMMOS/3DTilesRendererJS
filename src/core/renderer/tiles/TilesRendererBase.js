@@ -961,7 +961,7 @@ export class TilesRendererBase {
 			}
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile } );
+			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
 			return res;
 
 		} )
@@ -1075,6 +1075,7 @@ export class TilesRendererBase {
 						type: 'load-model',
 						scene: tile.cached.scene,
 						tile,
+						url: uri,
 					} );
 
 				}
