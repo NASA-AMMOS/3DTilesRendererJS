@@ -23,7 +23,7 @@ class AFManager {
 	// Request animation frame (defer to XR session if present)
 	requestAnimationFrame( cb ) {
 
-		if ( !this.xrsession ) return window.requestAnimationFrame( cb );
+		if ( ! this.xrsession ) return window.requestAnimationFrame( cb );
 
 		return this.xrsession.requestAnimationFrame( cb );
 
@@ -32,7 +32,7 @@ class AFManager {
 	// Cancel animation frame via handle (defer to XR session if present)
 	cancelAnimationFrame( handle ) {
 
-		if ( !this.xrsession ) window.cancelAnimationFrame( handle );
+		if ( ! this.xrsession ) window.cancelAnimationFrame( handle );
 
 		else this.xrsession.cancelAnimationFrame( handle );
 
