@@ -219,7 +219,7 @@ export class ImageOverlayPlugin {
 				) {
 
 					const order = info.order;
-					this.deleteOverlay( overlay, false );
+					this.deleteOverlay( overlay );
 					this.addOverlay( overlay, order );
 
 					overlayChanged = true;
@@ -879,7 +879,7 @@ export class ImageOverlayPlugin {
 
 	}
 
-	deleteOverlay( overlay, forceDispose = true ) {
+	deleteOverlay( overlay ) {
 
 		const { overlays, overlayInfo, processQueue } = this;
 		const index = overlays.indexOf( overlay );
@@ -910,11 +910,7 @@ export class ImageOverlayPlugin {
 			} );
 
 			overlays.splice( index, 1 );
-			if ( forceDispose ) {
-
-				overlay.dispose();
-
-			}
+			overlay.dispose();
 
 			this._markNeedsUpdate();
 
