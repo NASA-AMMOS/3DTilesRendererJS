@@ -885,15 +885,31 @@ export class ImageOverlayPlugin {
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
+			// delete tile info explicitly instead of blindly dispose of the full overlay
 			const { tileInfo, controller } = overlayInfo.get( overlay );
-			tileInfo.forEach( ( { meshInfo, target } ) => {
+			tileInfo.forEach( ( { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked }, tile ) => {
+
+				// release the ranges
+				if ( meshRange !== null && meshRangeMarked ) {
+
+					markOverlayImages( meshRange, level, overlay, true );
+
+				}
+
+				if ( range !== null && rangeMarked ) {
+
+					markOverlayImages( range, level, overlay, true );
+
+				}
 
 				if ( target !== null ) {
 
+					// release the render targets
 					target.dispose();
 
 				}
 
+				tileInfo.delete( tile );
 				meshInfo.clear();
 
 			} );
@@ -910,7 +926,6 @@ export class ImageOverlayPlugin {
 			} );
 
 			overlays.splice( index, 1 );
-			overlay.dispose();
 
 			this._markNeedsUpdate();
 
