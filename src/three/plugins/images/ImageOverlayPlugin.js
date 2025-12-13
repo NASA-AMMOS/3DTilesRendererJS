@@ -150,6 +150,7 @@ export class ImageOverlayPlugin {
 		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
+		this.processedTiles = new Set();
 		this.processQueue = null;
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
@@ -284,9 +285,15 @@ export class ImageOverlayPlugin {
 
 		};
 
-		this._onTileDownloadStart = ( { tile } ) => {
+		this._onTileDownloadStart = ( { tile, url } ) => {
 
-			this._initTileOverlayInfo( tile );
+			// TODO: it would be better if there were either a separate event or flag indicating that a tile is an external
+			// tileset or not. We won't want to run "init" on tiles that have geometry.
+			if ( ! /\.json$/.test( url ) ) {
+
+				this._initTileOverlayInfo( tile );
+
+			}
 
 		};
 
@@ -303,7 +310,9 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayInfo, tileControllers, processQueue, pendingTiles } = this;
+		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
+
+		processedTiles.delete( tile );
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -401,7 +410,9 @@ export class ImageOverlayPlugin {
 
 	async _processTileModel( scene, tile, initialization = false ) {
 
-		this.tileControllers.set( tile, new AbortController() );
+		const { tileControllers, processedTiles, pendingTiles } = this;
+
+		tileControllers.set( tile, new AbortController() );
 
 		if ( ! initialization ) {
 
@@ -409,9 +420,12 @@ export class ImageOverlayPlugin {
 			// overlay is added in the time between when this function starts and after the async
 			// await call. Otherwise the tile could be missed. But if we're initializing the plugin
 			// then we don't need to do this because the tiles are already included in the traversal.
-			this.pendingTiles.set( tile, scene );
+			pendingTiles.set( tile, scene );
 
 		}
+
+		// track which tiles we have been processed and remove them in "disposeTile"
+		processedTiles.add( tile );
 
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
@@ -419,7 +433,7 @@ export class ImageOverlayPlugin {
 		this.expandVirtualChildren( scene, tile );
 		this._updateLayers( tile );
 
-		this.pendingTiles.delete( tile );
+		pendingTiles.delete( tile );
 
 	}
 
@@ -887,13 +901,23 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
 			// delete tile info explicitly instead of blindly dispose of the full overlay
 			const { tileInfo, controller } = overlayInfo.get( overlay );
-			tileInfo.forEach( ( { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked }, tile ) => {
+			processedTiles.forEach( tile => {
+
+				const {
+					meshInfo,
+					range,
+					meshRange,
+					level,
+					target,
+					meshRangeMarked,
+					rangeMarked,
+				} = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
