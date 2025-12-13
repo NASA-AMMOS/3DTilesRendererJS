@@ -117,6 +117,7 @@ class PriorityQueue {
 			if ( filter( item ) ) {
 
 				this.remove( item );
+				i --;
 
 			}
 
