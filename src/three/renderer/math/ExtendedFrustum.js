@@ -1,6 +1,6 @@
 import { Frustum, Matrix3, Vector3 } from 'three';
 
-const _mat3 = new Matrix3();
+const _mat3 = /* @__PURE__ */ new Matrix3();
 
 // Solve a system of equations to find the point where the three planes intersect
 function findIntersectionPoint( plane1, plane2, plane3, target ) {

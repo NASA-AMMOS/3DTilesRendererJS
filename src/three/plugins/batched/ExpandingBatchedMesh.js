@@ -1,7 +1,7 @@
 import { Mesh, Box3, Sphere } from 'three';
 import { ModelViewBatchedMesh } from './ModelViewBatchedMesh.js';
 
-const _raycastMesh = new Mesh();
+const _raycastMesh = /* @__PURE__ */ new Mesh();
 const _batchIntersects = [];
 
 // Implementation of BatchedMesh that automatically expands

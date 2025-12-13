@@ -20,21 +20,21 @@ import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-const _mat = new Matrix4();
-const _euler = new Euler();
+const _mat = /* @__PURE__ */ new Matrix4();
+const _euler = /* @__PURE__ */ new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
-const tempMat = new Matrix4();
-const tempVector = new Vector3();
-const tempVector2 = new Vector2();
+const tempMat = /* @__PURE__ */ new Matrix4();
+const tempVector = /* @__PURE__ */ new Vector3();
+const tempVector2 = /* @__PURE__ */ new Vector2();
 const viewErrorTarget = {
 	inView: false,
 	error: Infinity,
 };
 
-const X_AXIS = new Vector3( 1, 0, 0 );
-const Y_AXIS = new Vector3( 0, 1, 0 );
+const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
+const Y_AXIS = /* @__PURE__ */ new Vector3( 0, 1, 0 );
 
 function updateFrustumCulled( object, toInitialValue ) {
 

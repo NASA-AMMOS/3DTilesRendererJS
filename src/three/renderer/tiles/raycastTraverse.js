@@ -1,8 +1,8 @@
 import { Ray, Vector3 } from 'three';
 
 // In three.js r165 and higher raycast traversal can be ended early
-const _localRay = new Ray();
-const _vec = new Vector3();
+const _localRay = /* @__PURE__ */ new Ray();
+const _vec = /* @__PURE__ */ new Vector3();
 const _hitArray = [];
 
 function distanceSort( a, b ) {
