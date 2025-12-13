@@ -150,7 +150,7 @@ export class ImageOverlayPlugin {
 		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
-		this.tiles = new Set();
+		this.processedTiles = new Set();
 		this.processQueue = null;
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
@@ -304,9 +304,9 @@ export class ImageOverlayPlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayInfo, tileControllers, processQueue, pendingTiles, tiles } = this;
+		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
 
-		tiles.delete( tile );
+		processedTiles.delete( tile );
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -404,7 +404,7 @@ export class ImageOverlayPlugin {
 
 	async _processTileModel( scene, tile, initialization = false ) {
 
-		const { tileControllers, tiles, pendingTiles } = this;
+		const { tileControllers, processedTiles, pendingTiles } = this;
 
 		tileControllers.set( tile, new AbortController() );
 
@@ -419,7 +419,7 @@ export class ImageOverlayPlugin {
 		}
 
 		// track which tiles we have been processed and remove them in "disposeTile"
-		tiles.add( tile );
+		processedTiles.add( tile );
 
 		this._wrapMaterials( scene );
 		this._initTileOverlayInfo( tile );
@@ -895,13 +895,23 @@ export class ImageOverlayPlugin {
 
 	deleteOverlay( overlay ) {
 
-		const { overlays, overlayInfo, processQueue } = this;
+		const { overlays, overlayInfo, processQueue, processedTiles } = this;
 		const index = overlays.indexOf( overlay );
 		if ( index !== - 1 ) {
 
 			// delete tile info explicitly instead of blindly dispose of the full overlay
 			const { tileInfo, controller } = overlayInfo.get( overlay );
-			tileInfo.forEach( ( { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked }, tile ) => {
+			processedTiles.forEach( tile => {
+
+				const {
+					meshInfo,
+					range,
+					meshRange,
+					level,
+					target,
+					meshRangeMarked,
+					rangeMarked,
+				} = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
