@@ -1047,7 +1047,6 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const level = tile.__depthFromRenderedParent - 1;
 		const info = {
 			range: null,
 			meshRange: null,
@@ -1082,7 +1081,7 @@ export class ImageOverlayPlugin {
 					.add( { tile, overlay }, () => {
 
 						info.rangeMarked = true;
-						return markOverlayImages( range, level, overlay, false );
+						return markOverlayImages( range, info.level, overlay, false );
 
 					} )
 					.catch( () => {
