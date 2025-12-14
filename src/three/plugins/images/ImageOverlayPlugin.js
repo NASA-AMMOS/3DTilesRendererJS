@@ -287,10 +287,11 @@ export class ImageOverlayPlugin {
 
 		this._onTileDownloadStart = ( { tile, url } ) => {
 
-			// TODO: it would be better if there were either a separate event or flag indicating that a tile is an external
-			// tileset or not. We won't want to run "init" on tiles that have geometry.
-			if ( ! /\.json$/.test( url ) ) {
+			// TODO: it's not super straight forward to detect whether a tile is "geometry" or not ahead of time. Checking
+			// for "subtree" or "json" are good broad strokes but some cases will still be missed.
+			if ( ! /\.json$/i.test( url ) && ! /\.subtree/i.test( url ) ) {
 
+				this.processedTiles.add( tile );
 				this._initTileOverlayInfo( tile );
 
 			}
