@@ -910,6 +910,14 @@ export class ImageOverlayPlugin {
 			const { tileInfo, controller } = overlayInfo.get( overlay );
 			processedTiles.forEach( tile => {
 
+				if ( ! tileInfo.has( tile ) ) {
+
+					// check for the case where tiles have been added but not properly initialized with the
+					// given overlay, yet
+					return;
+
+				}
+
 				const {
 					meshInfo,
 					range,
