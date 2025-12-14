@@ -113,6 +113,32 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		if ( type === 'load-tileset' ) {
+
+			console.warn( 'TilesRenderer: "load-tileset" event has been deprecated. Use "load-tileset-end" instead.' );
+			type = 'load-tileset-end';
+
+		}
+
+		if ( type === 'load-model' ) {
+
+			console.warn( 'TilesRenderer: "load-model" event has been deprecated. Use "load-model-end" instead.' );
+			type = 'load-model-end';
+
+		}
+
+		if ( type === 'load-content' ) {
+
+			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-tileset" or "load-model" instead.' );
+
+		}
+
+		if ( type === 'tile-download-start' ) {
+
+			console.warn( 'TilesRenderer: "tile-download-start" event has been deprecated. Use "load-tileset-start" or "load-model-start" instead.' );
+
+		}
+
 		EventDispatcher.prototype.addEventListener.call( this, type, listener );
 
 	}
@@ -126,6 +152,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		if ( type === 'load-tileset' ) {
+
+			console.warn( 'TilesRenderer: "load-tileset" event has been deprecated. Use "load-tileset-end" instead.' );
+			type = 'load-tileset-end';
+
+		}
+
+		if ( type === 'load-model' ) {
+
+			console.warn( 'TilesRenderer: "load-model" event has been deprecated. Use "load-model-end" instead.' );
+			type = 'load-model-end';
+
+		}
+
 		return EventDispatcher.prototype.hasEventListener.call( this, type, listener );
 
 	}
@@ -136,6 +176,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
 			type = 'load-tileset';
+
+		}
+
+		if ( type === 'load-tileset' ) {
+
+			console.warn( 'TilesRenderer: "load-tileset" event has been deprecated. Use "load-tileset-end" instead.' );
+			type = 'load-tileset-end';
+
+		}
+
+		if ( type === 'load-model' ) {
+
+			console.warn( 'TilesRenderer: "load-model" event has been deprecated. Use "load-model-end" instead.' );
+			type = 'load-model-end';
 
 		}
 

@@ -354,9 +354,12 @@ export class TilesRendererBase {
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
+
+					// TODO: deprecated
 					this.dispatchEvent( { type: 'load-content' } );
+
 					this.dispatchEvent( {
-						type: 'load-tileset',
+						type: 'load-tileset-end',
 						tileset: root,
 						url: processedUrl,
 					} );
@@ -961,7 +964,22 @@ export class TilesRendererBase {
 			}
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
+
+			// Determine if this is a tileset or model based on extension
+			const isTileset = extension === 'json';
+			if ( isTileset ) {
+
+				this.dispatchEvent( { type: 'load-tileset-start', tile, url: uri } );
+
+			} else {
+
+				this.dispatchEvent( { type: 'load-model-start', tile, url: uri } );
+
+			}
+
+			// TODO: deprecated
+			this.dispatchEvent( { type: 'tile-download-start', tile, url: uri } );
+
 			return res;
 
 		} )
@@ -1058,12 +1076,15 @@ export class TilesRendererBase {
 				// dispatch an event indicating that this model has completed and that a new
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
+
+				// TODO: deprecated
 				this.dispatchEvent( { type: 'load-content' } );
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
-						type: 'load-tileset',
+						type: 'load-tileset-end',
 						tileset: externalTileset,
+						tile,
 						url: uri,
 					} );
 
@@ -1072,7 +1093,7 @@ export class TilesRendererBase {
 				if ( tile.cached.scene ) {
 
 					this.dispatchEvent( {
-						type: 'load-model',
+						type: 'load-model-end',
 						scene: tile.cached.scene,
 						tile,
 						url: uri,
