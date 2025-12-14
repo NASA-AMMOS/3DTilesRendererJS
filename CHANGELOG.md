@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
 - CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
 - QuantizedMeshLoader, QuantizedMeshPlugin: Added "generateNormals" option for cases where normals are not embedded.
+- Added "load-root-tileset" event.
 
 ### Fixed
 - Controls: Fixed case where pointer state may not have been reset correctly.
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PriorityQueue: fix case where entries were not being moved correctly by "removeByFilter".
 - ImageOverlayPlugin: Fix case where overlay data were not being handled correctly when adjusting frames.
 - ImageOverlayPlugin: Added a more clear error when "renderer" is not provided.
+- ImageFormatPlugin: Adjust the plugin to account for aspect ratio in error calculation.
 
 ## [0.4.18] - 2025.11.14
 ### Added
