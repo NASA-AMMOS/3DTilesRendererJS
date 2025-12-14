@@ -360,6 +360,11 @@ export class TilesRendererBase {
 						tileset: root,
 						url: processedUrl,
 					} );
+					this.dispatchEvent( {
+						type: 'load-root-tileset',
+						tileset: root,
+						url: processedUrl,
+					} );
 
 				} )
 				.catch( error => {

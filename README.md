@@ -83,7 +83,7 @@ import { TilesRenderer } from '3d-tiles-renderer';
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
 tilesRenderer.setResolutionFromRenderer( camera, renderer );
-tilesRenderer.addEventListener( 'load-tileset', () => {
+tilesRenderer.addEventListener( 'load-root-tileset', () => {
 
 	// optionally center the tileset in case it's far off center
 	const sphere = new Sphere();
