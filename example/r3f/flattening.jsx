@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { TilesPlugin, TilesRenderer, EnvironmentControls, EastNorthUpFrame } from '3d-tiles-renderer/r3f';
-import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, ReorientationPlugin, GoogleCloudAuthPlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, ReorientationPlugin, CesiumIonAuthPlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins';
 import { TileFlatteningPlugin, TileFlatteningShape } from './plugins/TileFlatteningPlugin.jsx';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import {
@@ -31,7 +31,7 @@ function App() {
 		>
 			{/* 3D Tiles renderer tileset */}
 			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
-				<TilesPlugin plugin={ GoogleCloudAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
+				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
 				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
