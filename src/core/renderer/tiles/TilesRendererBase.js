@@ -173,6 +173,7 @@ export class TilesRendererBase {
 			visible: 0,
 		};
 		this.frameCount = 0;
+		this.framesSinceLastLoad = 0;
 
 		// callbacks
 		this._dispatchNeedsUpdateEvent = throttle( () => {
@@ -431,6 +432,24 @@ export class TilesRendererBase {
 			this.isLoading = false;
 
 		}
+
+		if ( ! this.isLoading && ! runningTasks ) {
+
+			this.framesSinceLastLoad ++;
+
+			// Wait for 2 frames to ensure the update loop has had a chance to queue new downloads.
+			if ( this.framesSinceLastLoad === 2 ) {
+
+				this.dispatchEvent( { type: 'tiles-settled' } );
+
+			}
+
+		} else {
+
+			this.framesSinceLastLoad = 0;
+
+		}
+
 
 	}
 
