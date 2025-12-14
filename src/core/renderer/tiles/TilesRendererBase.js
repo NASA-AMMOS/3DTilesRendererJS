@@ -366,7 +366,7 @@ export class TilesRendererBase {
 					this.dispatchEvent( { type: 'load-content' } );
 
 					this.dispatchEvent( {
-						type: 'load-tileset-end',
+						type: 'load-tileset',
 						tileset: root,
 						url: processedUrl,
 					} );
@@ -1089,7 +1089,7 @@ export class TilesRendererBase {
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
-						type: 'load-tileset-end',
+						type: 'load-tileset',
 						tileset: externalTileset,
 						tile,
 						url: uri,
@@ -1100,7 +1100,7 @@ export class TilesRendererBase {
 				if ( tile.cached.scene ) {
 
 					this.dispatchEvent( {
-						type: 'load-model-end',
+						type: 'load-model',
 						scene: tile.cached.scene,
 						tile,
 						url: uri,

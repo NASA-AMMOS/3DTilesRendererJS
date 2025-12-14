@@ -7,21 +7,17 @@ export interface TilesRendererEventMap {
 	'add-camera': { camera: Camera };
 	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
-	'load-tileset-start': { tile: Tile, url: string };
-	'load-tileset-end': { tileset: object, tile?: Tile, url: string };
-	/** @deprecated Use 'load-tileset-end' instead. */
-	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
-	/* @deprecated Use 'load-tileset-end' instead */
+	'load-tileset-start': { tile: Tile | null, url: string };
+	'load-tileset': { tileset: object, tile?: Tile, url: string, /* @deprecated Use tileset instead */ tileSet?: object };
+	/* @deprecated Use 'load-tileset' instead */
 	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
 	'load-model-start': { tile: Tile, url: string };
-	'load-model-end': { scene: Object3D; tile: Tile, url: string };
-	/** @deprecated Use 'load-model-end' instead. */
 	'load-model': { scene: Object3D; tile: Tile, url: string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
 	/** @deprecated Use 'load-tileset-start' or 'load-model-start' instead. */
 	'tile-download-start': { tile: Tile, url: string };
-	/** @deprecated Use 'load-tileset-end' or 'load-model-end' instead. */
+	/** @deprecated Event provides no useful information. Use 'load-tileset' or 'load-model' instead. */
 	'load-content': {};
 	'dispose-model': { scene: Object3D; tile: Tile };
 	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
