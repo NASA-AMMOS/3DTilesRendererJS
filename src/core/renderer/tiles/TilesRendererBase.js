@@ -341,20 +341,30 @@ export class TilesRendererBase {
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
+
+			let processedUrl = this.rootURL;
+			if ( processedUrl !== null ) {
+
+				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+
+			}
+
+			this.dispatchEvent( {
+				type: 'load-tileset-start',
+				tile: null,
+				url: processedUrl,
+			} );
+
 			this.invokeOnePlugin( plugin => plugin.loadRootTileset && plugin.loadRootTileset() )
 				.then( root => {
-
-					let processedUrl = this.rootURL;
-					if ( processedUrl !== null ) {
-
-						this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
-
-					}
 
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
 					this.dispatchEvent( { type: 'needs-update' } );
+
+					// TODO: deprecated
 					this.dispatchEvent( { type: 'load-content' } );
+
 					this.dispatchEvent( {
 						type: 'load-tileset',
 						tileset: root,
@@ -961,7 +971,22 @@ export class TilesRendererBase {
 			}
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
+
+			// Determine if this is a tileset or model based on extension
+			const isTileset = extension === 'json';
+			if ( isTileset ) {
+
+				this.dispatchEvent( { type: 'load-tileset-start', tile, url: uri } );
+
+			} else {
+
+				this.dispatchEvent( { type: 'load-model-start', tile, url: uri } );
+
+			}
+
+			// TODO: deprecated
+			this.dispatchEvent( { type: 'tile-download-start', tile, url: uri } );
+
 			return res;
 
 		} )
@@ -1058,12 +1083,15 @@ export class TilesRendererBase {
 				// dispatch an event indicating that this model has completed and that a new
 				// call to "update" is needed.
 				this.dispatchEvent( { type: 'needs-update' } );
+
+				// TODO: deprecated
 				this.dispatchEvent( { type: 'load-content' } );
 				if ( isExternalTileset ) {
 
 					this.dispatchEvent( {
 						type: 'load-tileset',
 						tileset: externalTileset,
+						tile,
 						url: uri,
 					} );
 

@@ -113,6 +113,18 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		if ( type === 'load-content' ) {
+
+			console.warn( 'TilesRenderer: "load-content" event has been deprecated. Use "load-tileset" or "load-model" instead.' );
+
+		}
+
+		if ( type === 'tile-download-start' ) {
+
+			console.warn( 'TilesRenderer: "tile-download-start" event has been deprecated. Use "load-tileset-start" or "load-model-start" instead.' );
+
+		}
+
 		EventDispatcher.prototype.addEventListener.call( this, type, listener );
 
 	}

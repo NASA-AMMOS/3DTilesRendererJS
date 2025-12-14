@@ -298,7 +298,7 @@ export class ImageOverlayPlugin {
 		};
 
 		tiles.addEventListener( 'update-after', this._onUpdateAfter );
-		tiles.addEventListener( 'tile-download-start', this._onTileDownloadStart );
+		tiles.addEventListener( 'load-model-start', this._onTileDownloadStart );
 
 		this.overlays.forEach( overlay => {
 
