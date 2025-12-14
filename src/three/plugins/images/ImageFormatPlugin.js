@@ -255,7 +255,6 @@ export class ImageFormatPlugin {
 
 		}
 
-
 		// return bounding box
 		return {
 			box: [
@@ -280,13 +279,16 @@ export class ImageFormatPlugin {
 
 		}
 
-		// the scale ration of the image at this level
-		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
-		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		let geometricError = Math.max( 1 / levelWidth, 1 / levelHeight );
+		// Calculate geometric error: size of one pixel in world space.
+		// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
+		const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+		let geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+
+		// apply deprecated pixelSize scaling if specified
 		if ( pixelSize ) {
 
-			geometricError *= pixelSize * Math.max( pixelWidth, pixelHeight );
+			const maxLevelInfo = tiling.getLevel( tiling.maxLevel );
+			geometricError *= pixelSize * Math.max( maxLevelInfo.pixelWidth, maxLevelInfo.pixelHeight );
 
 		}
 
