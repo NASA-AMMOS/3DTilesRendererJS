@@ -341,15 +341,22 @@ export class TilesRendererBase {
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
+
+			let processedUrl = this.rootURL;
+			if ( processedUrl !== null ) {
+
+				this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
+
+			}
+
+			this.dispatchEvent( {
+				type: 'load-tileset-start',
+				tile: null,
+				url: processedUrl,
+			} );
+
 			this.invokeOnePlugin( plugin => plugin.loadRootTileset && plugin.loadRootTileset() )
 				.then( root => {
-
-					let processedUrl = this.rootURL;
-					if ( processedUrl !== null ) {
-
-						this.invokeAllPlugins( plugin => processedUrl = plugin.preprocessURL ? plugin.preprocessURL( processedUrl, null ) : processedUrl );
-
-					}
 
 					this.rootLoadingState = LOADED;
 					this.rootTileset = root;
