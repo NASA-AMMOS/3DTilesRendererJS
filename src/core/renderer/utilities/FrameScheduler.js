@@ -1,4 +1,4 @@
-class AFManager {
+class FrameScheduler {
 
 	constructor() {
 
@@ -40,4 +40,4 @@ class AFManager {
 
 }
 
-export { AFManager };
+export { FrameScheduler };
