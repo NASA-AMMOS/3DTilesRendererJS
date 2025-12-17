@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import { Environment, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import { TilesPlugin, TilesRenderer, EnvironmentControls, EastNorthUpFrame } from '3d-tiles-renderer/r3f';
-import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, ReorientationPlugin, CesiumIonAuthPlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, GLTFExtensionsPlugin, ReorientationPlugin, CesiumIonAuthPlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins';
 import { TileFlatteningPlugin, TileFlatteningShape } from './plugins/TileFlatteningPlugin.jsx';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import {
@@ -12,6 +12,8 @@ import {
 
 const dracoLoader = new DRACOLoader().setDecoderPath( 'https://www.gstatic.com/draco/v1/decoders/' );
 
+const LAT = 35.3606 * MathUtils.DEG2RAD;
+const LON = 138.7274 * MathUtils.DEG2RAD;
 function App() {
 
 	return (
@@ -33,19 +35,14 @@ function App() {
 			<TilesRenderer group={ { rotation: [ - Math.PI / 2, 0, 0 ] } }>
 				<TilesPlugin plugin={ CesiumIonAuthPlugin } args={ { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } } />
 				<TilesPlugin plugin={ GLTFExtensionsPlugin } dracoLoader={ dracoLoader } />
-				<TilesPlugin plugin={ TileCompressionPlugin } />
 				<TilesPlugin plugin={ UpdateOnChangePlugin } />
 				<TilesPlugin plugin={ TilesFadePlugin } />
-				<TilesPlugin plugin={ ReorientationPlugin } args={ { lat: 35.3606 * MathUtils.DEG2RAD, lon: 138.7274 * MathUtils.DEG2RAD } } />
+				<TilesPlugin plugin={ ReorientationPlugin } args={ { lat: LAT, lon: LON } } />
 				<TileFlatteningPlugin>
-					<TileFlatteningShape relativeToEllipsoid visible={ false } key={ 1001 }>
-						<EastNorthUpFrame
-							lat={ 35.3606 * MathUtils.DEG2RAD }
-							lon={ 138.7274 * MathUtils.DEG2RAD }
-							height={ 1000 }
-						>
-							<mesh scale={ 10000 }>
-								<planeGeometry />
+					<TileFlatteningShape relativeToEllipsoid visible={ false }>
+						<EastNorthUpFrame lat={ LAT } lon={ LON } height={ 1000 }>
+							<mesh scale={ 5000 }>
+								<circleGeometry />
 							</mesh>
 						</EastNorthUpFrame>
 					</TileFlatteningShape>
