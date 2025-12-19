@@ -1315,6 +1315,7 @@ class ImageOverlay {
 			alphaInvert = false,
 		} = options;
 		this.imageSource = null;
+		this.regionImageSource = null;
 
 		this.preprocessURL = preprocessURL;
 		this.opacity = opacity;
@@ -1362,6 +1363,7 @@ class ImageOverlay {
 	dispose() {
 
 		this.imageSource.dispose();
+		this.regionImageSource.dispose();
 
 	}
 
@@ -1394,19 +1396,6 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 	}
 
-	dispose() {
-
-		if ( this.regionImageSource ) {
-
-			this.regionImageSource.dispose();
-			this.regionImageSource = null;
-
-		}
-
-		super.dispose();
-
-	}
-
 }
 
 export class GeoJSONOverlay extends ImageOverlay {
@@ -1416,6 +1405,9 @@ export class GeoJSONOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1442,6 +1434,9 @@ export class WMSTilesOverlay extends ImageOverlay {
 		this.imageSource = new WMSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
+
 	}
 
 	init() {
@@ -1466,6 +1461,9 @@ export class WMTSTilesOverlay extends ImageOverlay {
 		super( options );
 		this.imageSource = new WMTSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1493,6 +1491,9 @@ export class TMSTilesOverlay extends ImageOverlay {
 		this.imageSource = new TMSImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		this.url = options.url;
+
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1598,6 +1599,9 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 				this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
+				// Create region image source that wraps the tiled image source
+				this.regionImageSource = new TiledRegionImageSource( this.imageSource );
+
 				return this.imageSource.init();
 
 			} );
@@ -1639,6 +1643,10 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		this.imageSource = new XYZImageSource();
 
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
+
 		this._logoAttribution = {
 			value: '',
 			type: 'image',
