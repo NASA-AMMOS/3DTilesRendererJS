@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
+import { Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
@@ -126,7 +126,6 @@ export class ImageOverlayPlugin {
 		const {
 			overlays = [],
 			resolution = 256,
-			renderer = null,
 			enableTileSplitting = true,
 		} = options;
 
@@ -136,7 +135,6 @@ export class ImageOverlayPlugin {
 		this.priority = - 15;
 
 		// options
-		this.renderer = renderer;
 		this.resolution = resolution;
 		this._enableTileSplitting = enableTileSplitting;
 		this.overlays = [];
@@ -147,7 +145,6 @@ export class ImageOverlayPlugin {
 		this.tileComposer = null;
 		this.tileControllers = new Map();
 		this.overlayInfo = new Map();
-		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
 		this.processedTiles = new Set();
@@ -169,13 +166,7 @@ export class ImageOverlayPlugin {
 	// plugin functions
 	init( tiles ) {
 
-		if ( ! this.renderer ) {
-
-			throw new Error( 'ImageOverlayPlugin: "renderer" instance must be provided.' );
-
-		}
-
-		const tileComposer = new TiledTextureComposer( this.renderer );
+		const tileComposer = new TiledTextureComposer();
 		const processQueue = new PriorityQueue();
 		processQueue.maxJobs = 10;
 		processQueue.priorityCallback = ( a, b ) => {
@@ -380,7 +371,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += MemoryUtils.getTextureByteLength( target?.texture );
+				bytes += MemoryUtils.getTextureByteLength( target );
 
 			}
 
@@ -1163,7 +1154,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures, processQueue } = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, processQueue } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -1241,12 +1232,13 @@ export class ImageOverlayPlugin {
 		let target = null;
 		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
-			target = new WebGLRenderTarget( resolution, resolution, {
-				depthBuffer: false,
-				stencilBuffer: false,
-				generateMipmaps: false,
-				colorSpace: SRGBColorSpace,
-			} );
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = resolution;
+			canvas.height = resolution;
+
+			target = new CanvasTexture( canvas );
+			target.colorSpace = SRGBColorSpace;
+			target.generateMipmaps = false;
 
 		}
 
@@ -1274,7 +1266,7 @@ export class ImageOverlayPlugin {
 						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
 						// the next set of textures
 						tileComposer.setRenderTarget( target, range );
-						tileComposer.clear( 0xffffff, 0 );
+						tileComposer.clear();
 
 						forEachTileInBounds( range, info.level - 1, tiling, ( tx, ty, tl ) => {
 
@@ -1284,8 +1276,6 @@ export class ImageOverlayPlugin {
 							if ( tex && ! ( tex instanceof Promise ) ) {
 
 								tileComposer.draw( tex, span );
-								usedTextures.add( tex );
-								this._scheduleCleanup();
 
 							}
 
@@ -1313,7 +1303,7 @@ export class ImageOverlayPlugin {
 
 					// draw the textures
 					tileComposer.setRenderTarget( target, range );
-					tileComposer.clear( 0xffffff, 0 );
+					tileComposer.clear();
 
 					forEachTileInBounds( range, info.level, tiling, ( tx, ty, tl ) => {
 
@@ -1321,8 +1311,6 @@ export class ImageOverlayPlugin {
 						const span = tiling.getTileBounds( tx, ty, tl, true, false );
 						const tex = imageSource.get( tx, ty, tl );
 						tileComposer.draw( tex, span );
-						usedTextures.add( tex );
-						this._scheduleCleanup();
 
 					} );
 
@@ -1380,7 +1368,7 @@ export class ImageOverlayPlugin {
 				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
-				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
+				params.layerMaps.value[ i ] = target !== null ? target : null;
 				params.layerInfo.value[ i ] = overlay;
 
 				// mark per-layer defines
@@ -1394,30 +1382,6 @@ export class ImageOverlayPlugin {
 			} );
 
 		} );
-
-	}
-
-	_scheduleCleanup() {
-
-		// clean up textures used for drawing the tile overlays
-		if ( ! this._cleanupScheduled ) {
-
-			this._cleanupScheduled = true;
-			requestAnimationFrame( () => {
-
-				const { usedTextures } = this;
-				usedTextures.forEach( tex => {
-
-					tex.dispose();
-
-				} );
-
-				usedTextures.clear();
-				this._cleanupScheduled = false;
-
-			} );
-
-		}
 
 	}
 

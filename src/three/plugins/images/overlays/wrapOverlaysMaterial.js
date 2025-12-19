@@ -146,7 +146,7 @@ export function wrapOverlaysMaterial( material, previousOnBeforeCompile ) {
 
 								} else {
 
-									// premultiplied alpha equation
+									tint.rgb *= tint.a;
 									diffuseColor = tint + diffuseColor * ( 1.0 - tint.a );
 
 								}
