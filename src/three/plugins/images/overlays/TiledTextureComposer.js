@@ -12,10 +12,10 @@ export class TiledTextureComposer {
 	}
 
 	// set the target render texture and the range that represents the full span
-	setRenderTarget( renderTarget, range ) {
+	setTarget( canvas, range ) {
 
-		this.canvas = renderTarget.image;
-		this.context = renderTarget.image.getContext( '2d' );
+		this.canvas = canvas.image;
+		this.context = canvas.image.getContext( '2d' );
 		this.range = [ ...range ];
 
 	}

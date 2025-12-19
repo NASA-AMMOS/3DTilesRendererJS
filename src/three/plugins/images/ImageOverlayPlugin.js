@@ -431,10 +431,7 @@ export class ImageOverlayPlugin {
 
 	dispose() {
 
-		const { tileComposer, tiles } = this;
-
-		// dispose textures
-		tileComposer.dispose();
+		const { tiles } = this;
 
 		// dispose of all overlays
 		const overlays = [ ...this.overlays ];
@@ -1265,7 +1262,7 @@ export class ImageOverlayPlugin {
 
 						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
 						// the next set of textures
-						tileComposer.setRenderTarget( target, range );
+						tileComposer.setTarget( target, range );
 						tileComposer.clear();
 
 						forEachTileInBounds( range, info.level - 1, tiling, ( tx, ty, tl ) => {
@@ -1302,7 +1299,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// draw the textures
-					tileComposer.setRenderTarget( target, range );
+					tileComposer.setTarget( target, range );
 					tileComposer.clear();
 
 					forEachTileInBounds( range, info.level, tiling, ( tx, ty, tl ) => {
