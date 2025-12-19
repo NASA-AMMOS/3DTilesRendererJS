@@ -1256,9 +1256,9 @@ export class ImageOverlayPlugin {
 			canvas.height = resolution;
 
 			target = new CanvasTexture( canvas );
-			target.flipY = false;
 			target.colorSpace = SRGBColorSpace;
 			target.generateMipmaps = false;
+			target.flipY = false;
 
 		}
 
