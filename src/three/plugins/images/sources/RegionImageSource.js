@@ -1,6 +1,6 @@
 import { forEachTileInBounds } from '../overlays/utils.js';
 import { DataCache } from '../utils/DataCache.js';
-import { WebGLRenderTarget, SRGBColorSpace } from 'three';
+import { SRGBColorSpace, CanvasTexture } from 'three';
 
 export class RegionImageSource extends DataCache {}
 
@@ -15,7 +15,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 		this.tiledImageSource = tiledImageSource;
 		this.tileComposer = null;
 		this.resolution = 256;
-		this.usedTextures = new Set();
 
 	}
 
@@ -25,14 +24,14 @@ export class TiledRegionImageSource extends RegionImageSource {
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
 		const tileComposer = this.tileComposer;
-		const usedTextures = this.usedTextures;
 
-		const target = new WebGLRenderTarget( this.resolution, this.resolution, {
-			depthBuffer: false,
-			stencilBuffer: false,
-			generateMipmaps: false,
-			colorSpace: SRGBColorSpace,
-		} );
+		const canvas = document.createElement( 'canvas' );
+		canvas.width = 256;
+		canvas.height = 256;
+
+		const target = new CanvasTexture( canvas );
+		target.colorSpace = SRGBColorSpace;
+		target.generateMipmaps = false;
 		target.tokens = [ ...range, level ];
 
 		// Start locking tiles for the requested level
@@ -41,7 +40,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		// Progressive loading: if tiles aren't ready yet, draw previous level as placeholder
 		if ( promise ) {
 
-			tileComposer.setRenderTarget( target, range );
+			tileComposer.setTarget( target, range );
 			tileComposer.clear( 0xffffff, 0 );
 
 			// Draw previous level tiles that are already available
@@ -54,7 +53,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 					if ( tex && ! ( tex instanceof Promise ) ) {
 
 						tileComposer.draw( tex, span );
-						usedTextures.add( tex );
 
 					}
 
@@ -74,7 +72,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		}
 
 		// Draw the requested level tiles
-		tileComposer.setRenderTarget( target, range );
+		tileComposer.setTarget( target, range );
 		tileComposer.clear( 0xffffff, 0 );
 
 		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
@@ -83,11 +81,9 @@ export class TiledRegionImageSource extends RegionImageSource {
 			const span = tiling.getTileBounds( tx, ty, tl, true, false );
 			const tex = imageSource.get( tx, ty, tl );
 			tileComposer.draw( tex, span );
-			usedTextures.add( tex );
 
 		} );
 
-		this._scheduleCleanup();
 
 		return target;
 
@@ -145,30 +141,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 		} else {
 
 			return null;
-
-		}
-
-	}
-
-	_scheduleCleanup() {
-
-		// clean up textures used for drawing the tile overlays
-		if ( ! this._cleanupScheduled ) {
-
-			this._cleanupScheduled = true;
-			requestAnimationFrame( () => {
-
-				const { usedTextures } = this;
-				usedTextures.forEach( tex => {
-
-					tex.dispose();
-
-				} );
-
-				usedTextures.clear();
-				this._cleanupScheduled = false;
-
-			} );
 
 		}
 

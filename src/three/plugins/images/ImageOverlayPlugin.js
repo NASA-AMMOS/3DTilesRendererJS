@@ -304,7 +304,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += MemoryUtils.getTextureByteLength( target?.texture );
+				bytes += MemoryUtils.getTextureByteLength( target );
 
 			}
 
@@ -1030,16 +1030,15 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
+		if ( overlay.isReady ) {
 
-		if ( overlay.isPlanarProjection ) {
+			if ( overlay.isPlanarProjection ) {
 
-			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
+				// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
-		} else {
+			} else if ( tile.boundingVolume.region ) {
 
-			// If the tile has a region bounding volume then mark the tiles to preload
-			if ( tile.boundingVolume.region ) {
-
+				// If the tile has a region bounding volume then mark the tiles to preload
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				const range = overlay.tiling.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
@@ -1244,7 +1243,7 @@ export class ImageOverlayPlugin {
 				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
-				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
+				params.layerMaps.value[ i ] = target !== null ? target : null;
 				params.layerInfo.value[ i ] = overlay;
 
 				// mark per-layer defines
