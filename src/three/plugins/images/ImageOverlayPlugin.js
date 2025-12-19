@@ -258,15 +258,13 @@ export class ImageOverlayPlugin {
 
 				const { meshInfo, meshRange, level, meshRangeMarked } = tileInfo.get( tile );
 
-				// release the region via regionImageSource
-				if ( meshRange !== null && meshRangeMarked && overlay.regionImageSource ) {
+				// release the ranges
+				if ( meshRange !== null && meshRangeMarked ) {
 
 					const [ minX, minY, maxX, maxY ] = meshRange;
 					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
 
 				}
-
-				// Note: render targets from regionImageSource are managed by the cache, not disposed here
 
 				tileInfo.delete( tile );
 				meshInfo.clear();
@@ -838,15 +836,13 @@ export class ImageOverlayPlugin {
 					meshRangeMarked,
 				} = tileInfo.get( tile );
 
-				// release the region via regionImageSource
+				// release the ranges
 				if ( meshRange !== null && meshRangeMarked && overlay.regionImageSource ) {
 
 					const [ minX, minY, maxX, maxY ] = meshRange;
 					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
 
 				}
-
-				// Note: render targets from regionImageSource are managed by the cache, not disposed here
 
 				tileInfo.delete( tile );
 				meshInfo.clear();
@@ -873,15 +869,14 @@ export class ImageOverlayPlugin {
 	}
 
 	// internal
-	_calculateLevelFromOverlay( overlay, range, tile, normalized = false ) {
+	_calculateLevelFromOverlay( overlay, range, tile ) {
 
 		if ( overlay.isPlanarProjection ) {
 
 			const { resolution } = this;
 			const { tiling } = overlay;
 
-			const normalizedRange = normalized ? range : tiling.toNormalizedRange( range );
-			const [ minX, minY, maxX, maxY ] = normalizedRange;
+			const [ minX, minY, maxX, maxY ] = range;
 			const w = maxX - minX;
 			const h = maxY - minY;
 
@@ -1021,6 +1016,7 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
+		// if the overlay isn't ready then we can't convert the range correctly, yet
 		if ( overlay.isReady ) {
 
 			if ( overlay.isPlanarProjection ) {
@@ -1130,12 +1126,6 @@ export class ImageOverlayPlugin {
 		let target = null;
 		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
-			if ( ! overlay.regionImageSource ) {
-
-				throw new Error( 'ImageOverlayPlugin: overlay must have a regionImageSource.' );
-
-			}
-
 			const [ minX, minY, maxX, maxY ] = range;
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1175,8 +1165,6 @@ export class ImageOverlayPlugin {
 						throw err;
 
 					}
-
-					return null;
 
 				} );
 
