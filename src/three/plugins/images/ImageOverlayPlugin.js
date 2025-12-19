@@ -933,7 +933,6 @@ export class ImageOverlayPlugin {
 			// Set renderer and resolution on regionImageSource if it exists
 			overlay.regionImageSource.tileComposer = this.tileComposer;
 			overlay.regionImageSource.resolution = this.resolution;
-			overlay.regionImageSource.isPlanarProjection = overlay.isPlanarProjection;
 
 			overlay.whenReady().then( () => {
 
@@ -1051,8 +1050,6 @@ export class ImageOverlayPlugin {
 			}
 
 		}
-
-		// Note: Preloading is now handled by regionImageSource internally when lock() is called
 
 	}
 
