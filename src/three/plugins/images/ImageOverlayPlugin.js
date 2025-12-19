@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
+import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture, RGBAFormat } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
@@ -380,7 +380,7 @@ export class ImageOverlayPlugin {
 
 				const { target } = tileInfo.get( tile );
 				bytes = bytes || 0;
-				bytes += MemoryUtils.getTextureByteLength( target?.texture );
+				bytes += MemoryUtils.getTextureByteLength( target );
 
 			}
 
@@ -1251,12 +1251,14 @@ export class ImageOverlayPlugin {
 		let target = null;
 		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
-			target = new WebGLRenderTarget( resolution, resolution, {
-				depthBuffer: false,
-				stencilBuffer: false,
-				generateMipmaps: false,
-				colorSpace: SRGBColorSpace,
-			} );
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = resolution;
+			canvas.height = resolution;
+
+			target = new CanvasTexture( canvas );
+			target.flipY = false;
+			target.colorSpace = SRGBColorSpace;
+			target.generateMipmaps = false;
 
 		}
 
@@ -1284,7 +1286,7 @@ export class ImageOverlayPlugin {
 						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
 						// the next set of textures
 						tileComposer.setRenderTarget( target, normalizedRange );
-						tileComposer.clear( 0xffffff, 0 );
+						tileComposer.clear();
 
 						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
@@ -1323,7 +1325,7 @@ export class ImageOverlayPlugin {
 
 					// draw the textures
 					tileComposer.setRenderTarget( target, normalizedRange );
-					tileComposer.clear( 0xffffff, 0 );
+					tileComposer.clear();
 
 					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
 
@@ -1390,7 +1392,7 @@ export class ImageOverlayPlugin {
 				params.layerInfo.length = overlays.length;
 
 				// assign the uniforms
-				params.layerMaps.value[ i ] = target !== null ? target.texture : null;
+				params.layerMaps.value[ i ] = target !== null ? target : null;
 				params.layerInfo.value[ i ] = overlay;
 
 				// mark per-layer defines
