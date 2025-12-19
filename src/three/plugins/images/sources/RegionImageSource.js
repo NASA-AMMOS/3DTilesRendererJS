@@ -1,3 +1,4 @@
+import { TiledTextureComposer } from '../overlays/TiledTextureComposer.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
 import { DataCache } from '../utils/DataCache.js';
 import { SRGBColorSpace, CanvasTexture } from 'three';
@@ -13,7 +14,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		super();
 		this.tiledImageSource = tiledImageSource;
-		this.tileComposer = null;
+		this.tileComposer = new TiledTextureComposer();
 		this.resolution = 256;
 
 	}

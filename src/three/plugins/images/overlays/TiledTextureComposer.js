@@ -37,10 +37,6 @@ export class TiledTextureComposer {
 
 			context.drawImage( image, minX, height - minY, imageWidth, - imageHeight );
 
-			context.rect(  minX, height - minY, imageWidth, - imageHeight  );
-			context.fillStyle = "red";
-			context.fill();
-
 		} else {
 
 			context.save();

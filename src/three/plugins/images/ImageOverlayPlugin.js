@@ -933,7 +933,6 @@ export class ImageOverlayPlugin {
 			overlay.whenReady().then( () => {
 
 				// Set renderer and resolution on regionImageSource if it exists
-				overlay.regionImageSource.tileComposer = this.tileComposer;
 				overlay.regionImageSource.resolution = this.resolution;
 
 				const overlayFetch = overlay.fetch.bind( overlay );
