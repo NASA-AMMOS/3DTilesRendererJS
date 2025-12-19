@@ -1361,30 +1361,24 @@ class ImageOverlay {
 
 class TiledImageOverlay extends ImageOverlay {
 
-	get imageSource() {
-
-		return this.regionImageSource.tiledImageSource;
-
-	}
-
-	set imageSource( v ) {
-
-		this.regionImageSource.tiledImageSource = v;
-
-	}
-
 	constructor( options = {} ) {
 
 		const { imageSource = null, ...rest } = options;
 		super( rest );
-		this.regionImageSource = new TiledRegionImageSource( imageSource );
+		this.imageSource = imageSource;
 
 	}
 
 	init() {
 
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 		super.init();
+
+		this.whenReady().then( () => {
+
+			this.regionImageSource = new TiledRegionImageSource( this.imageSource );
+			this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+
+		} );
 
 	}
 
@@ -1415,16 +1409,12 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 }
 
-export class GeoJSONOverlay extends ImageOverlay {
+export class GeoJSONOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1443,16 +1433,12 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
-export class WMSTilesOverlay extends ImageOverlay {
+export class WMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new WMSImageSource( options );
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1471,16 +1457,12 @@ export class WMSTilesOverlay extends ImageOverlay {
 
 }
 
-export class WMTSTilesOverlay extends ImageOverlay {
+export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new WMTSImageSource( options );
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1500,17 +1482,12 @@ export class WMTSTilesOverlay extends ImageOverlay {
 
 }
 
-export class TMSTilesOverlay extends ImageOverlay {
+export class TMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-		this.url = options.url;
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
@@ -1530,7 +1507,7 @@ export class TMSTilesOverlay extends ImageOverlay {
 
 }
 
-export class CesiumIonOverlay extends ImageOverlay {
+export class CesiumIonOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
@@ -1615,10 +1592,6 @@ export class CesiumIonOverlay extends ImageOverlay {
 				}
 
 				this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-				// Create region image source that wraps the tiled image source
-				this.regionImageSource = new TiledRegionImageSource( this.imageSource );
-
 				return this.imageSource.init();
 
 			} );
@@ -1648,7 +1621,7 @@ export class CesiumIonOverlay extends ImageOverlay {
 
 }
 
-export class GoogleMapsOverlay extends ImageOverlay {
+export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
@@ -1658,11 +1631,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		this.logoUrl = logoUrl;
 		this.auth = new GoogleCloudAuth( { apiToken, sessionOptions, autoRefreshToken } );
 		this.imageSource = new XYZImageSource();
-
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 		this._logoAttribution = {
 			value: '',
