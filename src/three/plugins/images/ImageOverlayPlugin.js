@@ -58,7 +58,7 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 
 		const promises = [];
 		const { imageSource, tiling } = overlay;
-		forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
 
 			if ( doRelease ) {
 
@@ -91,7 +91,7 @@ function markOverlayImages( range, level, overlay, doRelease ) {
 function countTilesInRange( range, level, overlay ) {
 
 	let total = 0;
-	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( x, y, l ) => {
+	forEachTileInBounds( range, level, overlay.tiling, ( x, y, l ) => {
 
 		total ++;
 
@@ -973,15 +973,14 @@ export class ImageOverlayPlugin {
 	}
 
 	// internal
-	_calculateLevelFromOverlay( overlay, range, tile, normalized = false ) {
+	_calculateLevelFromOverlay( overlay, range, tile ) {
 
 		if ( overlay.isPlanarProjection ) {
 
 			const { resolution } = this;
 			const { tiling } = overlay;
 
-			const normalizedRange = normalized ? range : tiling.toNormalizedRange( range );
-			const [ minX, minY, maxX, maxY ] = normalizedRange;
+			const [ minX, minY, maxX, maxY ] = range;
 			const w = maxX - minX;
 			const h = maxY - minY;
 
@@ -1117,17 +1116,18 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
-		if ( overlay.isPlanarProjection ) {
+		// if the overlay isn't ready then we can't convert the range correctly, yet
+		if ( overlay.isReady ) {
 
-			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
+			if ( overlay.isPlanarProjection ) {
 
-		} else {
+				// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
 
-			// If the tile has a region bounding volume then mark the tiles to preload
-			if ( tile.boundingVolume.region ) {
+			} else if ( tile.boundingVolume.region ) {
 
+				// If the tile has a region bounding volume then mark the tiles to preload
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = [ minLon, minLat, maxLon, maxLat ];
+				const range = overlay.tiling.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 				info.range = range;
 				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
 
@@ -1224,25 +1224,15 @@ export class ImageOverlayPlugin {
 			}
 
 			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
+			range = tiling.toNormalizedRange( range );
 			heightInRange = true;
-
-		}
-
-		let normalizedRange;
-		if ( ! overlay.isPlanarProjection ) {
-
-			normalizedRange = tiling.toNormalizedRange( range );
-
-		} else {
-
-			normalizedRange = range;
 
 		}
 
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			info.level = this._calculateLevelFromOverlay( overlay, normalizedRange, tile, true );
+			info.level = this._calculateLevelFromOverlay( overlay, range, tile );
 
 		}
 
@@ -1283,10 +1273,10 @@ export class ImageOverlayPlugin {
 
 						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
 						// the next set of textures
-						tileComposer.setRenderTarget( target, normalizedRange );
+						tileComposer.setRenderTarget( target, range );
 						tileComposer.clear( 0xffffff, 0 );
 
-						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+						forEachTileInBounds( range, info.level - 1, tiling, ( tx, ty, tl ) => {
 
 							// draw using normalized bounds since the mercator bounds are non-linear
 							const span = tiling.getTileBounds( tx, ty, tl, true, false );
@@ -1322,10 +1312,10 @@ export class ImageOverlayPlugin {
 					}
 
 					// draw the textures
-					tileComposer.setRenderTarget( target, normalizedRange );
+					tileComposer.setRenderTarget( target, range );
 					tileComposer.clear( 0xffffff, 0 );
 
-					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
+					forEachTileInBounds( range, info.level, tiling, ( tx, ty, tl ) => {
 
 						// draw using normalized bounds since the mercator bounds are non-linear
 						const span = tiling.getTileBounds( tx, ty, tl, true, false );
