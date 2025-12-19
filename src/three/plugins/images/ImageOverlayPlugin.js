@@ -1359,16 +1359,43 @@ class ImageOverlay {
 
 }
 
-export class XYZTilesOverlay extends ImageOverlay {
+class TiledImageOverlay extends ImageOverlay {
+
+	get imageSource() {
+
+		return this.regionImageSource.tiledImageSource;
+
+	}
+
+	set imageSource( v ) {
+
+		this.regionImageSource.tiledImageSource = v;
+
+	}
+
+	constructor( options = {} ) {
+
+		const { imageSource = null, ...rest } = options;
+		super( rest );
+		this.regionImageSource = new TiledRegionImageSource( imageSource );
+
+	}
+
+	init() {
+
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+		super.init();
+
+	}
+
+}
+
+export class XYZTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
-		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		// Create region image source that wraps the tiled image source
-		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
 	}
 
