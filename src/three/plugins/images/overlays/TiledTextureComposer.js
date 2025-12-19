@@ -3,9 +3,8 @@ import { MathUtils } from 'three';
 // Utility for composing a series of tiled textures together onto a target texture in a given range
 export class TiledTextureComposer {
 
-	constructor( renderer ) {
+	constructor() {
 
-		this.renderer = renderer;
 		this.canvas = null;
 		this.context = null;
 		this.range = [ 0, 0, 1, 1 ];
