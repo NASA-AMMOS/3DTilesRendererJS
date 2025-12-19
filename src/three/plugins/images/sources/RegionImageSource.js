@@ -27,8 +27,8 @@ export class TiledRegionImageSource extends RegionImageSource {
 		const tileComposer = this.tileComposer;
 
 		const canvas = document.createElement( 'canvas' );
-		canvas.width = 256;
-		canvas.height = 256;
+		canvas.width = this.resolution;
+		canvas.height = this.resolution;
 
 		const target = new CanvasTexture( canvas );
 		target.colorSpace = SRGBColorSpace;
