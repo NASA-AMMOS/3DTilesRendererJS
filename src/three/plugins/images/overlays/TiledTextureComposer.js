@@ -29,10 +29,7 @@ export class TiledTextureComposer {
 		const minY = Math.round( MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], 0, height ) );
 		const maxX = Math.round( MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], 0, width ) );
 		const maxY = Math.round( MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], 0, height ) );
-
-		context.save();
 		context.drawImage( texture.image, minX, height - minY, maxX - minX, - maxY + minY );
-		context.restore();
 
 	}
 
