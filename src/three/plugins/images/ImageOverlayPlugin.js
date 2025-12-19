@@ -1,17 +1,17 @@
-import { WebGLRenderTarget, Color, SRGBColorSpace, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
+import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
-import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import { forEachTileInBounds, getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
+import { getMeshesCartographicRange, getMeshesPlanarRange, forEachTileInBounds } from './overlays/utils.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { MemoryUtils } from '3d-tiles-renderer/three';
 import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
+import { TiledRegionImageSource } from './sources/RegionImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -21,71 +21,6 @@ const _normal = /* @__PURE__ */ new Vector3();
 const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
-
-// function for marking and releasing images in the given overlay
-function markOverlayImages( range, level, overlay, doRelease ) {
-
-	// return null immediately if possible to allow for drawing without delay where possible
-	if ( Array.isArray( overlay ) ) {
-
-		const promises = overlay
-			.map( o => markOverlayImages( range, level, o, doRelease ) )
-			.filter( p => p !== null );
-
-		if ( promises.length === 0 ) {
-
-			return null;
-
-		} else {
-
-			return Promise.all( promises );
-
-		}
-
-	}
-
-	if ( ! overlay.isReady ) {
-
-		return overlay.whenReady().then( markImages );
-
-	} else {
-
-		return markImages();
-
-	}
-
-	function markImages() {
-
-		const promises = [];
-		const { imageSource, tiling } = overlay;
-		forEachTileInBounds( range, level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
-
-			if ( doRelease ) {
-
-				imageSource.release( tx, ty, tl );
-
-			} else {
-
-				promises.push( imageSource.lock( tx, ty, tl ) );
-
-			}
-
-		} );
-
-		const filteredPromises = promises.filter( p => p instanceof Promise );
-		if ( filteredPromises.length !== 0 ) {
-
-			return Promise.all( filteredPromises );
-
-		} else {
-
-			return null;
-
-		}
-
-	}
-
-}
 
 // returns the total number of tiles that will be drawn for the provided range
 function countTilesInRange( range, level, overlay ) {
@@ -144,17 +79,14 @@ export class ImageOverlayPlugin {
 		// internal
 		this.needsUpdate = false;
 		this.tiles = null;
-		this.tileComposer = null;
 		this.tileControllers = new Map();
 		this.overlayInfo = new Map();
-		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
 		this.processedTiles = new Set();
 		this.processQueue = null;
 		this._onUpdateAfter = null;
 		this._onTileDownloadStart = null;
-		this._cleanupScheduled = false;
 		this._virtualChildResetId = 0;
 		this._bytesUsed = new WeakMap();
 
@@ -175,7 +107,6 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const tileComposer = new TiledTextureComposer( this.renderer );
 		const processQueue = new PriorityQueue();
 		processQueue.maxJobs = 10;
 		processQueue.priorityCallback = ( a, b ) => {
@@ -203,7 +134,6 @@ export class ImageOverlayPlugin {
 
 		// save variables
 		this.tiles = tiles;
-		this.tileComposer = tileComposer;
 		this.processQueue = processQueue;
 
 		// init all existing tiles
@@ -330,27 +260,17 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, range, meshRange, level, target, meshRangeMarked, rangeMarked } = tileInfo.get( tile );
+				const { meshInfo, meshRange, level, meshRangeMarked } = tileInfo.get( tile );
 
-				// release the ranges
-				if ( meshRange !== null && meshRangeMarked ) {
+				// release the region via regionImageSource
+				if ( meshRange !== null && meshRangeMarked && overlay.regionImageSource ) {
 
-					markOverlayImages( meshRange, level, overlay, true );
-
-				}
-
-				if ( range !== null && rangeMarked ) {
-
-					markOverlayImages( range, level, overlay, true );
+					const [ minX, minY, maxX, maxY ] = meshRange;
+					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
 
 				}
 
-				if ( target !== null ) {
-
-					// release the render targets
-					target.dispose();
-
-				}
+				// Note: render targets from regionImageSource are managed by the cache, not disposed here
 
 				tileInfo.delete( tile );
 				meshInfo.clear();
@@ -440,10 +360,7 @@ export class ImageOverlayPlugin {
 
 	dispose() {
 
-		const { tileComposer, tiles } = this;
-
-		// dispose textures
-		tileComposer.dispose();
+		const { tiles } = this;
 
 		// dispose of all overlays
 		const overlays = [ ...this.overlays ];
@@ -920,33 +837,20 @@ export class ImageOverlayPlugin {
 
 				const {
 					meshInfo,
-					range,
 					meshRange,
 					level,
-					target,
 					meshRangeMarked,
-					rangeMarked,
 				} = tileInfo.get( tile );
 
-				// release the ranges
-				if ( meshRange !== null && meshRangeMarked ) {
+				// release the region via regionImageSource
+				if ( meshRange !== null && meshRangeMarked && overlay.regionImageSource ) {
 
-					markOverlayImages( meshRange, level, overlay, true );
-
-				}
-
-				if ( range !== null && rangeMarked ) {
-
-					markOverlayImages( range, level, overlay, true );
+					const [ minX, minY, maxX, maxY ] = meshRange;
+					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
 
 				}
 
-				if ( target !== null ) {
-
-					// release the render targets
-					target.dispose();
-
-				}
+				// Note: render targets from regionImageSource are managed by the cache, not disposed here
 
 				tileInfo.delete( tile );
 				meshInfo.clear();
@@ -1022,6 +926,14 @@ export class ImageOverlayPlugin {
 
 			overlay.init();
 
+			// Set renderer and resolution on regionImageSource if it exists
+			if ( overlay.regionImageSource ) {
+
+				overlay.regionImageSource.renderer = this.renderer;
+				overlay.regionImageSource.resolution = this.resolution;
+
+			}
+
 			overlay.whenReady().then( () => {
 
 				overlay.imageSource.fetchData = ( ...args ) => tiles
@@ -1094,7 +1006,7 @@ export class ImageOverlayPlugin {
 
 		// This function is resilient to multiple calls in case an overlay is added after a tile starts loading
 		// and before it is loaded, meaning this function needs to be called twice to ensure it's initialized.
-		const { overlayInfo, processQueue } = this;
+		const { overlayInfo } = this;
 		if ( overlayInfo.get( overlay ).tileInfo.has( tile ) ) {
 
 			return;
@@ -1117,40 +1029,7 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
-		if ( overlay.isPlanarProjection ) {
-
-			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
-
-		} else {
-
-			// If the tile has a region bounding volume then mark the tiles to preload
-			if ( tile.boundingVolume.region ) {
-
-				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = [ minLon, minLat, maxLon, maxLat ];
-				info.range = range;
-				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
-
-				processQueue
-					.add( { tile, overlay }, () => {
-
-						info.rangeMarked = true;
-						return markOverlayImages( range, info.level, overlay, false );
-
-					} )
-					.catch( err => {
-
-						if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
-
-							throw err;
-
-						}
-
-					} );
-
-			}
-
-		}
+		// Note: Preloading is now handled by regionImageSource internally when lock() is called
 
 	}
 
@@ -1163,7 +1042,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures, processQueue } = this;
+		const { tiles, overlayInfo, tileControllers, processQueue } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -1196,7 +1075,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const { tiling, imageSource } = overlay;
+		const { tiling } = overlay;
 		const info = tileInfo.get( tile );
 		let range, uvs, heightInRange;
 
@@ -1251,12 +1130,55 @@ export class ImageOverlayPlugin {
 		let target = null;
 		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
 
-			target = new WebGLRenderTarget( resolution, resolution, {
-				depthBuffer: false,
-				stencilBuffer: false,
-				generateMipmaps: false,
-				colorSpace: SRGBColorSpace,
-			} );
+			if ( ! overlay.regionImageSource ) {
+
+				throw new Error( 'ImageOverlayPlugin: overlay must have a regionImageSource.' );
+
+			}
+
+			const [ minX, minY, maxX, maxY ] = range;
+			target = await processQueue
+				.add( { tile, overlay }, async () => {
+
+					// check if the overlay has been disposed since starting this function
+					if ( controller.signal.aborted || tileController.signal.aborted ) {
+
+						return null;
+
+					}
+
+					info.meshRangeMarked = true;
+
+					// Lock the region using RegionImageSource
+					const regionTarget = await overlay.regionImageSource.lock( minX, minY, maxX, maxY, info.level );
+
+					// check if the overlay has been disposed since starting this function
+					if ( controller.signal.aborted || tileController.signal.aborted ) {
+
+						if ( regionTarget ) {
+
+							overlay.regionImageSource.release( minX, minY, maxX, maxY, info.level );
+
+						}
+
+						return null;
+
+					}
+
+					return regionTarget;
+
+				} )
+				.catch( err => {
+
+					if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+						throw err;
+
+					}
+
+					return null;
+
+				} );
 
 		}
 
@@ -1270,84 +1192,6 @@ export class ImageOverlayPlugin {
 			info.meshInfo.set( mesh, { attribute } );
 
 		} );
-
-		if ( target !== null ) {
-
-			await processQueue
-				.add( { tile, overlay }, async () => {
-
-					info.meshRangeMarked = true;
-
-					const promise = markOverlayImages( range, info.level, overlay, false );
-					if ( promise ) {
-
-						// if the previous layer is present then draw it as an overlay to fill in any gaps while we wait for
-						// the next set of textures
-						tileComposer.setRenderTarget( target, normalizedRange );
-						tileComposer.clear( 0xffffff, 0 );
-
-						forEachTileInBounds( range, info.level - 1, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
-
-							// draw using normalized bounds since the mercator bounds are non-linear
-							const span = tiling.getTileBounds( tx, ty, tl, true, false );
-							const tex = imageSource.get( tx, ty, tl );
-							if ( tex && ! ( tex instanceof Promise ) ) {
-
-								tileComposer.draw( tex, span );
-								usedTextures.add( tex );
-								this._scheduleCleanup();
-
-							}
-
-						} );
-
-						try {
-
-							await promise;
-
-						} catch {
-
-							// skip errors since this will throw when aborted
-							return;
-
-						}
-
-					}
-
-					// check if the overlay has been disposed since starting this function
-					if ( controller.signal.aborted || tileController.signal.aborted ) {
-
-						return;
-
-					}
-
-					// draw the textures
-					tileComposer.setRenderTarget( target, normalizedRange );
-					tileComposer.clear( 0xffffff, 0 );
-
-					forEachTileInBounds( range, info.level, tiling, overlay.isPlanarProjection, ( tx, ty, tl ) => {
-
-						// draw using normalized bounds since the mercator bounds are non-linear
-						const span = tiling.getTileBounds( tx, ty, tl, true, false );
-						const tex = imageSource.get( tx, ty, tl );
-						tileComposer.draw( tex, span );
-						usedTextures.add( tex );
-						this._scheduleCleanup();
-
-					} );
-
-				} )
-				.catch( err => {
-
-					if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
-
-						throw err;
-
-					}
-
-				} );
-
-		}
 
 	}
 
@@ -1404,30 +1248,6 @@ export class ImageOverlayPlugin {
 			} );
 
 		} );
-
-	}
-
-	_scheduleCleanup() {
-
-		// clean up textures used for drawing the tile overlays
-		if ( ! this._cleanupScheduled ) {
-
-			this._cleanupScheduled = true;
-			requestAnimationFrame( () => {
-
-				const { usedTextures } = this;
-				usedTextures.forEach( tex => {
-
-					tex.dispose();
-
-				} );
-
-				usedTextures.clear();
-				this._cleanupScheduled = false;
-
-			} );
-
-		}
 
 	}
 
@@ -1557,6 +1377,10 @@ export class XYZTilesOverlay extends ImageOverlay {
 		this.imageSource = new XYZImageSource( options );
 		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
 
+		// Create region image source that wraps the tiled image source
+		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
+		this.regionImageSource.isPlanarProjection = false; // XYZ uses Web Mercator
+
 	}
 
 	init() {
@@ -1570,6 +1394,19 @@ export class XYZTilesOverlay extends ImageOverlay {
 	whenReady() {
 
 		return this._whenReady;
+
+	}
+
+	dispose() {
+
+		if ( this.regionImageSource ) {
+
+			this.regionImageSource.dispose();
+			this.regionImageSource = null;
+
+		}
+
+		super.dispose();
 
 	}
 

@@ -17,6 +17,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		this.isPlanarProjection = false;
 		this.tiledImageComposer = null;
 		this.renderer = null;
+		this.resolution = 256;
 		this.usedTextures = new Set();
 
 	}
@@ -30,23 +31,13 @@ export class TiledRegionImageSource extends RegionImageSource {
 		}
 
 		const range = [ minX, minY, maxX, maxY ];
-		await this._markImages( range, level, false );
-
-		const target = new WebGLRenderTarget( 256, 256, {
-			depthBuffer: false,
-			stencilBuffer: false,
-			generateMipmaps: false,
-			colorSpace: SRGBColorSpace,
-		} );
-		target.tokens = [ minX, minY, maxX, maxY, level ];
-
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
 		const tileComposer = this.tiledImageComposer;
 		const isPlanarProjection = this.isPlanarProjection;
 		const usedTextures = this.usedTextures;
 
-		// TODO: how do we handle the normalized range here? Derive it?
+		// Calculate normalized range
 		let normalizedRange;
 		if ( ! isPlanarProjection ) {
 
@@ -58,6 +49,47 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		}
 
+		const target = new WebGLRenderTarget( this.resolution, this.resolution, {
+			depthBuffer: false,
+			stencilBuffer: false,
+			generateMipmaps: false,
+			colorSpace: SRGBColorSpace,
+		} );
+		target.tokens = [ minX, minY, maxX, maxY, level ];
+
+		// Start locking tiles for the requested level
+		const promise = this._markImages( range, level, false );
+
+		// Progressive loading: if tiles aren't ready yet, draw previous level as placeholder
+		if ( promise ) {
+
+			tileComposer.setRenderTarget( target, normalizedRange );
+			tileComposer.clear( 0xffffff, 0 );
+
+			// Draw previous level tiles that are already available
+			if ( level > 0 ) {
+
+				forEachTileInBounds( range, level - 1, tiling, isPlanarProjection, ( tx, ty, tl ) => {
+
+					const span = tiling.getTileBounds( tx, ty, tl, true, false );
+					const tex = imageSource.get( tx, ty, tl );
+					if ( tex && ! ( tex instanceof Promise ) ) {
+
+						tileComposer.draw( tex, span );
+						usedTextures.add( tex );
+
+					}
+
+				} );
+
+			}
+
+			// Wait for current level tiles to load
+			await promise;
+
+		}
+
+		// Draw the requested level tiles
 		tileComposer.setRenderTarget( target, normalizedRange );
 		tileComposer.clear( 0xffffff, 0 );
 
@@ -79,11 +111,10 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	disposeItem( target ) {
 
-		// TODO: we need to "unlock" the the given image tiles which means we need the original items here
-		// can just save it on the target for now?
 		target.dispose();
 
-		const [ minX, minY, maxX, maxY, level ] = this;
+		// Unlock the component tiles using the tokens stored on the target
+		const [ minX, minY, maxX, maxY, level ] = target.tokens;
 		this._markImages( [ minX, minY, maxX, maxY ], level, true );
 
 	}
