@@ -62,7 +62,6 @@ export class ImageOverlayPlugin {
 		const {
 			overlays = [],
 			resolution = 256,
-			renderer = null,
 			enableTileSplitting = true,
 		} = options;
 
@@ -72,7 +71,6 @@ export class ImageOverlayPlugin {
 		this.priority = - 15;
 
 		// options
-		this.renderer = renderer;
 		this.resolution = resolution;
 		this._enableTileSplitting = enableTileSplitting;
 		this.overlays = [];
@@ -103,13 +101,7 @@ export class ImageOverlayPlugin {
 	// plugin functions
 	init( tiles ) {
 
-		if ( ! this.renderer ) {
-
-			throw new Error( 'ImageOverlayPlugin: "renderer" instance must be provided.' );
-
-		}
-
-		const tileComposer = new TiledTextureComposer( this.renderer );
+		const tileComposer = new TiledTextureComposer();
 		const processQueue = new PriorityQueue();
 		processQueue.maxJobs = 10;
 		processQueue.priorityCallback = ( a, b ) => {
