@@ -25,6 +25,7 @@ export class TiledTextureComposer {
 
 		const { canvas, range, context } = this;
 		const { width, height } = canvas;
+		const { image } = texture;
 		const minX = Math.round( MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], 0, width ) );
 		const minY = Math.round( MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], 0, height ) );
 		const maxX = Math.round( MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], 0, width ) );
@@ -32,18 +33,16 @@ export class TiledTextureComposer {
 
 		const imageWidth = maxX - minX;
 		const imageHeight = maxY - minY;
+		if ( ! ( image instanceof ImageBitmap ) ) {
 
-
-		if ( texture.flipY ) {
-
-			context.drawImage( texture.image, minX, height - minY, imageWidth, - imageHeight );
+			context.drawImage( image, minX, height - minY, imageWidth, - imageHeight );
 
 		} else {
 
 			context.save();
 			context.translate( minX, height - minY );
 			context.scale( 1, - 1 );
-			context.drawImage( texture.image, 0, 0, imageWidth, imageHeight );
+			context.drawImage( image, 0, 0, imageWidth, imageHeight );
 			context.restore();
 
 		}
