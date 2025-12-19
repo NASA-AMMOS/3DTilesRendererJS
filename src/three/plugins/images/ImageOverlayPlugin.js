@@ -27,7 +27,7 @@ const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 function countTilesInRange( range, level, overlay ) {
 
 	let total = 0;
-	forEachTileInBounds( range, level, overlay.tiling, true, ( x, y, l ) => {
+	forEachTileInBounds( range, level, overlay.tiling, ( x, y, l ) => {
 
 		total ++;
 
@@ -930,11 +930,11 @@ export class ImageOverlayPlugin {
 
 			overlay.init();
 
-			// Set renderer and resolution on regionImageSource if it exists
-			overlay.regionImageSource.tileComposer = this.tileComposer;
-			overlay.regionImageSource.resolution = this.resolution;
-
 			overlay.whenReady().then( () => {
+
+				// Set renderer and resolution on regionImageSource if it exists
+				overlay.regionImageSource.tileComposer = this.tileComposer;
+				overlay.regionImageSource.resolution = this.resolution;
 
 				const overlayFetch = overlay.fetch.bind( overlay );
 				overlay.fetch = ( ...args ) => tiles

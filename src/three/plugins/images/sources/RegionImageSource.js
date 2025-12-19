@@ -47,7 +47,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 			// Draw previous level tiles that are already available
 			if ( level > 0 ) {
 
-				forEachTileInBounds( range, level - 1, tiling, true, ( tx, ty, tl ) => {
+				forEachTileInBounds( range, level - 1, tiling, ( tx, ty, tl ) => {
 
 					const span = tiling.getTileBounds( tx, ty, tl, true, false );
 					const tex = imageSource.get( tx, ty, tl );
@@ -77,7 +77,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		tileComposer.setRenderTarget( target, range );
 		tileComposer.clear( 0xffffff, 0 );
 
-		forEachTileInBounds( range, level, tiling, true, ( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
 
 			// draw using normalized bounds since the mercator bounds are non-linear
 			const span = tiling.getTileBounds( tx, ty, tl, true, false );
@@ -123,7 +123,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		const tiling = imageSource.tiling;
 
 		const promises = [];
-		forEachTileInBounds( range, level, tiling, true, ( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
 
 			if ( release ) {
 
