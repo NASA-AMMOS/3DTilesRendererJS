@@ -7,7 +7,6 @@ export class RegionImageSource extends DataCache {}
 
 // TODO: how to handle updates to the textures for frames, reload, changing?
 // TODO: how to get the texture before it's been drawn?
-// TODO: how to handle resolutions here?
 export class TiledRegionImageSource extends RegionImageSource {
 
 	constructor( tiledImageSource ) {

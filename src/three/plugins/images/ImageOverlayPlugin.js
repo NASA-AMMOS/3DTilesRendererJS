@@ -927,20 +927,18 @@ export class ImageOverlayPlugin {
 			overlay.init();
 
 			// Set renderer and resolution on regionImageSource if it exists
-			if ( overlay.regionImageSource ) {
-
-				overlay.regionImageSource.renderer = this.renderer;
-				overlay.regionImageSource.resolution = this.resolution;
-
-			}
+			overlay.regionImageSource.renderer = this.renderer;
+			overlay.regionImageSource.resolution = this.resolution;
+			overlay.regionImageSource.isPlanarProjection = overlay.isPlanarProjection;
 
 			overlay.whenReady().then( () => {
 
-				overlay.imageSource.fetchData = ( ...args ) => tiles
+				const overlayFetch = overlay.fetch.bind( overlay );
+				overlay.fetch = ( ...args ) => tiles
 					.downloadQueue
 					.add( { priority: - performance.now() }, () => {
 
-						return overlay.fetch( ...args );
+						return overlayFetch( ...args );
 
 					} );
 
@@ -1379,7 +1377,6 @@ export class XYZTilesOverlay extends ImageOverlay {
 
 		// Create region image source that wraps the tiled image source
 		this.regionImageSource = new TiledRegionImageSource( this.imageSource );
-		this.regionImageSource.isPlanarProjection = false; // XYZ uses Web Mercator
 
 	}
 
