@@ -27,7 +27,7 @@ const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 function countTilesInRange( range, level, overlay ) {
 
 	let total = 0;
-	forEachTileInBounds( range, level, overlay.tiling, overlay.isPlanarProjection, ( x, y, l ) => {
+	forEachTileInBounds( range, level, overlay.tiling, true, ( x, y, l ) => {
 
 		total ++;
 
@@ -1031,6 +1031,27 @@ export class ImageOverlayPlugin {
 			.tileInfo
 			.set( tile, info );
 
+
+		if ( overlay.isPlanarProjection ) {
+
+			// TODO: we could project the shape into the frame, compute 2d bounds, and then mark tiles
+
+		} else {
+
+			// If the tile has a region bounding volume then mark the tiles to preload
+			if ( tile.boundingVolume.region ) {
+
+				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
+				const range = overlay.tiling.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
+
+				info.range = range;
+				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
+				overlay.regionImageSource.lock( ...range, info.level );
+
+			}
+
+		}
+
 		// Note: Preloading is now handled by regionImageSource internally when lock() is called
 
 	}
@@ -1105,25 +1126,15 @@ export class ImageOverlayPlugin {
 			}
 
 			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
+			range = tiling.toNormalizedRange( range );
 			heightInRange = true;
-
-		}
-
-		let normalizedRange;
-		if ( ! overlay.isPlanarProjection ) {
-
-			normalizedRange = tiling.toNormalizedRange( range );
-
-		} else {
-
-			normalizedRange = range;
 
 		}
 
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			info.level = this._calculateLevelFromOverlay( overlay, normalizedRange, tile, true );
+			info.level = this._calculateLevelFromOverlay( overlay, range, tile, true );
 
 		}
 

@@ -13,7 +13,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		super();
 		this.tiledImageSource = tiledImageSource;
-		this.isPlanarProjection = false;
 		this.tileComposer = null;
 		this.resolution = 256;
 		this.usedTextures = new Set();
@@ -26,20 +25,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
 		const tileComposer = this.tileComposer;
-		const isPlanarProjection = this.isPlanarProjection;
 		const usedTextures = this.usedTextures;
-
-		// Calculate normalized range
-		let normalizedRange;
-		if ( ! isPlanarProjection ) {
-
-			normalizedRange = tiling.toNormalizedRange( range );
-
-		} else {
-
-			normalizedRange = range;
-
-		}
 
 		const target = new WebGLRenderTarget( this.resolution, this.resolution, {
 			depthBuffer: false,
@@ -47,7 +33,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 			generateMipmaps: false,
 			colorSpace: SRGBColorSpace,
 		} );
-		target.tokens = [ minX, minY, maxX, maxY, level ];
+		target.tokens = [ ...range, level ];
 
 		// Start locking tiles for the requested level
 		const promise = this._markImages( range, level, false );
@@ -55,13 +41,13 @@ export class TiledRegionImageSource extends RegionImageSource {
 		// Progressive loading: if tiles aren't ready yet, draw previous level as placeholder
 		if ( promise ) {
 
-			tileComposer.setRenderTarget( target, normalizedRange );
+			tileComposer.setRenderTarget( target, range );
 			tileComposer.clear( 0xffffff, 0 );
 
 			// Draw previous level tiles that are already available
 			if ( level > 0 ) {
 
-				forEachTileInBounds( range, level - 1, tiling, isPlanarProjection, ( tx, ty, tl ) => {
+				forEachTileInBounds( range, level - 1, tiling, true, ( tx, ty, tl ) => {
 
 					const span = tiling.getTileBounds( tx, ty, tl, true, false );
 					const tex = imageSource.get( tx, ty, tl );
@@ -88,10 +74,10 @@ export class TiledRegionImageSource extends RegionImageSource {
 		}
 
 		// Draw the requested level tiles
-		tileComposer.setRenderTarget( target, normalizedRange );
+		tileComposer.setRenderTarget( target, range );
 		tileComposer.clear( 0xffffff, 0 );
 
-		forEachTileInBounds( range, level, tiling, isPlanarProjection, ( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, true, ( tx, ty, tl ) => {
 
 			// draw using normalized bounds since the mercator bounds are non-linear
 			const span = tiling.getTileBounds( tx, ty, tl, true, false );
@@ -135,10 +121,9 @@ export class TiledRegionImageSource extends RegionImageSource {
 		// TODO: can we get rid of "planar projection"?
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
-		const isPlanarProjection = this.isPlanarProjection;
 
 		const promises = [];
-		forEachTileInBounds( range, level, tiling, isPlanarProjection, ( tx, ty, tl ) => {
+		forEachTileInBounds( range, level, tiling, true, ( tx, ty, tl ) => {
 
 			if ( release ) {
 
