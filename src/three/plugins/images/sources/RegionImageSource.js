@@ -1,4 +1,3 @@
-import { TiledTextureComposer } from '../overlays/TiledTextureComposer.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
 import { DataCache } from '../utils/DataCache.js';
 import { WebGLRenderTarget, SRGBColorSpace } from 'three';
@@ -7,6 +6,7 @@ export class RegionImageSource extends DataCache {}
 
 // TODO: how to handle updates to the textures for frames, reload, changing?
 // TODO: how to get the texture before it's been drawn?
+// TODO: how can we avoid adding "tileComposer" here?
 export class TiledRegionImageSource extends RegionImageSource {
 
 	constructor( tiledImageSource ) {
@@ -14,8 +14,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 		super();
 		this.tiledImageSource = tiledImageSource;
 		this.isPlanarProjection = false;
-		this.tiledImageComposer = null;
-		this.renderer = null;
+		this.tileComposer = null;
 		this.resolution = 256;
 		this.usedTextures = new Set();
 
@@ -23,16 +22,10 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
 
-		if ( ! this.tiledImageComposer ) {
-
-			this.tiledImageComposer = new TiledTextureComposer( this.renderer );
-
-		}
-
 		const range = [ minX, minY, maxX, maxY ];
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
-		const tileComposer = this.tiledImageComposer;
+		const tileComposer = this.tileComposer;
 		const isPlanarProjection = this.isPlanarProjection;
 		const usedTextures = this.usedTextures;
 
@@ -86,6 +79,12 @@ export class TiledRegionImageSource extends RegionImageSource {
 			// Wait for current level tiles to load
 			await promise;
 
+			if ( signal.aborted ) {
+
+				return null;
+
+			}
+
 		}
 
 		// Draw the requested level tiles
@@ -123,9 +122,9 @@ export class TiledRegionImageSource extends RegionImageSource {
 		super.dispose();
 		this.tiledImageSource.dispose();
 
-		if ( this.tiledImageComposer ) {
+		if ( this.tileComposer ) {
 
-			this.tiledImageComposer.dispose();
+			this.tileComposer.dispose();
 
 		}
 

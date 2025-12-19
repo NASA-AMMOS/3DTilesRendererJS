@@ -12,6 +12,7 @@ import { MemoryUtils } from '3d-tiles-renderer/three';
 import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
 import { TiledRegionImageSource } from './sources/RegionImageSource.js';
+import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -79,6 +80,7 @@ export class ImageOverlayPlugin {
 		// internal
 		this.needsUpdate = false;
 		this.tiles = null;
+		this.tileComposer = null;
 		this.tileControllers = new Map();
 		this.overlayInfo = new Map();
 		this.meshParams = new WeakMap();
@@ -107,6 +109,7 @@ export class ImageOverlayPlugin {
 
 		}
 
+		const tileComposer = new TiledTextureComposer( this.renderer );
 		const processQueue = new PriorityQueue();
 		processQueue.maxJobs = 10;
 		processQueue.priorityCallback = ( a, b ) => {
@@ -134,6 +137,7 @@ export class ImageOverlayPlugin {
 
 		// save variables
 		this.tiles = tiles;
+		this.tileComposer = tileComposer;
 		this.processQueue = processQueue;
 
 		// init all existing tiles
@@ -927,7 +931,7 @@ export class ImageOverlayPlugin {
 			overlay.init();
 
 			// Set renderer and resolution on regionImageSource if it exists
-			overlay.regionImageSource.renderer = this.renderer;
+			overlay.regionImageSource.tileComposer = this.tileComposer;
 			overlay.regionImageSource.resolution = this.resolution;
 			overlay.regionImageSource.isPlanarProjection = overlay.isPlanarProjection;
 
