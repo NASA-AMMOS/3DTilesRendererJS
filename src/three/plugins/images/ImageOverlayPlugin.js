@@ -1314,6 +1314,7 @@ class ImageOverlay {
 		this.alphaMask = alphaMask;
 		this.alphaInvert = alphaInvert;
 
+		this._whenReady = null;
 		this.isReady = false;
 		this.isInitialized = false;
 
@@ -1322,11 +1323,7 @@ class ImageOverlay {
 	init() {
 
 		this.isInitialized = true;
-		this.whenReady().then( () => {
-
-			this.isReady = true;
-
-		} );
+		this._whenReady = this._init().then( () => this.isReady = true );
 
 	}
 
@@ -1343,6 +1340,8 @@ class ImageOverlay {
 	}
 
 	whenReady() {
+
+		return this._whenReady;
 
 	}
 
@@ -1369,16 +1368,22 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	init() {
+	_init() {
 
-		super.init();
+		return this
+			._initImageSource()
+			.then( () => {
 
-		this.whenReady().then( () => {
+				this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+				this.regionImageSource = new TiledRegionImageSource( this.imageSource );
 
-			this.regionImageSource = new TiledRegionImageSource( this.imageSource );
-			this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+			} );
 
-		} );
+	}
+
+	_initImageSource() {
+
+		return this.imageSource.init();
 
 	}
 
@@ -1393,20 +1398,6 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 	}
 
-	init() {
-
-		this._whenReady = this.imageSource.init();
-
-		super.init();
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
-
-	}
-
 }
 
 export class GeoJSONOverlay extends TiledImageOverlay {
@@ -1415,19 +1406,6 @@ export class GeoJSONOverlay extends TiledImageOverlay {
 
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
-
-	}
-
-	init() {
-
-		this._whenReady = this.imageSource.init();
-		super.init();
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
 
 	}
 
@@ -1442,19 +1420,6 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 
 	}
 
-	init() {
-
-		this._whenReady = this.imageSource.init();
-		super.init();
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
-
-	}
-
 }
 
 export class WMTSTilesOverlay extends TiledImageOverlay {
@@ -1466,20 +1431,6 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	}
 
-	init() {
-
-		this._whenReady = this.imageSource.init();
-
-		super.init();
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
-
-	}
-
 }
 
 export class TMSTilesOverlay extends TiledImageOverlay {
@@ -1488,20 +1439,6 @@ export class TMSTilesOverlay extends TiledImageOverlay {
 
 		super( options );
 		this.imageSource = new TMSImageSource( options );
-
-	}
-
-	init() {
-
-		this._whenReady = this.imageSource.init();
-
-		super.init();
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
 
 	}
 
@@ -1525,9 +1462,9 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 	}
 
-	init() {
+	_initImageSource() {
 
-		this._whenReady = this
+		return this
 			.auth
 			.refreshToken()
 			.then( async ( json ) => {
@@ -1596,20 +1533,12 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 			} );
 
-		super.init();
-
 	}
 
 	fetch( ...args ) {
 
 		// bypass auth fetch if asset is external type to prevent CORS error due to wrong bearer token
 		return this.externalType ? super.fetch( ...args ) : this.auth.fetch( ...args );
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
 
 	}
 
@@ -1641,9 +1570,9 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	}
 
-	init() {
+	_initImageSource() {
 
-		this._whenReady = this
+		return this
 			.auth
 			.refreshToken()
 			.then( json => {
@@ -1661,12 +1590,6 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 	fetch( ...args ) {
 
 		return this.auth.fetch( ...args );
-
-	}
-
-	whenReady() {
-
-		return this._whenReady;
 
 	}
 
