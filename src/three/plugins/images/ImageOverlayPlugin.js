@@ -145,7 +145,6 @@ export class ImageOverlayPlugin {
 		this.tileComposer = null;
 		this.tileControllers = new Map();
 		this.overlayInfo = new Map();
-		this.usedTextures = new Set();
 		this.meshParams = new WeakMap();
 		this.pendingTiles = new Map();
 		this.processedTiles = new Set();
@@ -1155,7 +1154,7 @@ export class ImageOverlayPlugin {
 
 		}
 
-		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, usedTextures, processQueue } = this;
+		const { tiles, overlayInfo, resolution, tileComposer, tileControllers, processQueue } = this;
 		const { ellipsoid } = tiles;
 		const { controller, tileInfo } = overlayInfo.get( overlay );
 		const tileController = tileControllers.get( tile );
@@ -1288,8 +1287,6 @@ export class ImageOverlayPlugin {
 							if ( tex && ! ( tex instanceof Promise ) ) {
 
 								tileComposer.draw( tex, span );
-								usedTextures.add( tex );
-								this._scheduleCleanup();
 
 							}
 
@@ -1325,8 +1322,6 @@ export class ImageOverlayPlugin {
 						const span = tiling.getTileBounds( tx, ty, tl, true, false );
 						const tex = imageSource.get( tx, ty, tl );
 						tileComposer.draw( tex, span );
-						usedTextures.add( tex );
-						this._scheduleCleanup();
 
 					} );
 
@@ -1398,30 +1393,6 @@ export class ImageOverlayPlugin {
 			} );
 
 		} );
-
-	}
-
-	_scheduleCleanup() {
-
-		// clean up textures used for drawing the tile overlays
-		if ( ! this._cleanupScheduled ) {
-
-			this._cleanupScheduled = true;
-			requestAnimationFrame( () => {
-
-				const { usedTextures } = this;
-				usedTextures.forEach( tex => {
-
-					tex.dispose();
-
-				} );
-
-				usedTextures.clear();
-				this._cleanupScheduled = false;
-
-			} );
-
-		}
 
 	}
 
