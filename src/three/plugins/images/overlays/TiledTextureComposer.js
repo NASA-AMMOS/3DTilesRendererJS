@@ -25,12 +25,14 @@ export class TiledTextureComposer {
 
 		const { canvas, range, context } = this;
 		const { width, height } = canvas;
-		const minX = MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], 0, width );
-		const minY = MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], 0, height );
-		const maxX = MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], 0, width );
-		const maxY = MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], 0, height );
+		const minX = Math.round( MathUtils.mapLinear( span[ 0 ], range[ 0 ], range[ 2 ], 0, width ) );
+		const minY = Math.round( MathUtils.mapLinear( span[ 1 ], range[ 1 ], range[ 3 ], 0, height ) );
+		const maxX = Math.round( MathUtils.mapLinear( span[ 2 ], range[ 0 ], range[ 2 ], 0, width ) );
+		const maxY = Math.round( MathUtils.mapLinear( span[ 3 ], range[ 1 ], range[ 3 ], 0, height ) );
 
-		context.drawImage( texture.image, minX, minY, maxX - minX, maxY - minY );
+		context.save();
+		context.drawImage( texture.image, minX, height - minY, maxX - minX, - maxY + minY );
+		context.restore();
 
 	}
 
