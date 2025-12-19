@@ -36,7 +36,6 @@ export class TiledImageSource extends DataCache {
 		const texture = new Texture( imageBitmap );
 		texture.generateMipmaps = false;
 		texture.colorSpace = SRGBColorSpace;
-		texture.flipY = false;
 		texture.needsUpdate = true;
 
 		return texture;
