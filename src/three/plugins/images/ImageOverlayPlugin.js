@@ -247,8 +247,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
 
-					const [ minX, minY, maxX, maxY ] = meshRange;
-					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
+					overlay.releaseTexture( meshRange, level );
 
 				}
 
@@ -498,7 +497,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target && overlay.tiling.maxLevel > info.level ) {
+			if ( overlay.shouldSplit( tile, info ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -824,10 +823,9 @@ export class ImageOverlayPlugin {
 				} = tileInfo.get( tile );
 
 				// release the ranges
-				if ( meshRange !== null && meshRangeMarked && overlay.regionImageSource ) {
+				if ( meshRange !== null && meshRangeMarked ) {
 
-					const [ minX, minY, maxX, maxY ] = meshRange;
-					overlay.regionImageSource.release( minX, minY, maxX, maxY, level );
+					overlay.releaseTexture( meshRange, level );
 
 				}
 
@@ -863,46 +861,6 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// internal
-	_calculateLevelFromOverlay( overlay, range, tile ) {
-
-		if ( overlay.isPlanarProjection ) {
-
-			const { resolution } = this;
-			const { tiling } = overlay;
-
-			const [ minX, minY, maxX, maxY ] = range;
-			const w = maxX - minX;
-			const h = maxY - minY;
-
-			let level = 0;
-			const { maxLevel } = tiling;
-			for ( ; level < maxLevel; level ++ ) {
-
-				// the number of pixels per image on each axis
-				const wProj = resolution / w;
-				const hProj = resolution / h;
-
-				const { pixelWidth, pixelHeight } = tiling.getLevel( level );
-				if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
-
-					break;
-
-				}
-
-			}
-
-			// TODO: should this be one layer higher LoD?
-			return level;
-
-		} else {
-
-			return tile.__depthFromRenderedParent - 1;
-
-		}
-
-	}
-
 	// initialize the overlay to use the right fetch options, load all data for existing tiles
 	_initOverlay( overlay ) {
 
@@ -914,8 +872,8 @@ export class ImageOverlayPlugin {
 
 			overlay.whenReady().then( () => {
 
-				// Set renderer and resolution on regionImageSource if it exists
-				overlay.regionImageSource.resolution = this.resolution;
+				// Set resolution on the overlay
+				overlay.setResolution( this.resolution );
 
 				const overlayFetch = overlay.fetch.bind( overlay );
 				overlay.fetch = ( ...args ) => tiles
@@ -1030,8 +988,8 @@ export class ImageOverlayPlugin {
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
 				info.range = range;
-				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
-				overlay.regionImageSource.lock( ...range, info.level );
+				info.level = overlay.calculateLevel( range, tile, this.resolution );
+				overlay.getTexture( range, info.level );
 
 			}
 
@@ -1123,16 +1081,15 @@ export class ImageOverlayPlugin {
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			info.level = this._calculateLevelFromOverlay( overlay, range, tile, true );
+			info.level = overlay.calculateLevel( range, tile, this.resolution );
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.regionImageSource.isDataPresent( ...range, info.level ) ) {
+		if ( heightInRange && overlay.hasTexture( range, info.level ) ) {
 
-			const [ minX, minY, maxX, maxY ] = range;
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
 
@@ -1145,15 +1102,15 @@ export class ImageOverlayPlugin {
 
 					info.meshRangeMarked = true;
 
-					// Lock the region using RegionImageSource
-					const regionTarget = await overlay.regionImageSource.lock( minX, minY, maxX, maxY, info.level );
+					// Get the texture from the overlay
+					const regionTarget = await overlay.getTexture( range, info.level );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
 
 						if ( regionTarget ) {
 
-							overlay.regionImageSource.release( minX, minY, maxX, maxY, info.level );
+							overlay.releaseTexture( range, info.level );
 
 						}
 
@@ -1280,8 +1237,6 @@ class ImageOverlay {
 			alphaMask = false,
 			alphaInvert = false,
 		} = options;
-		this.regionImageSource = null;
-
 		this.preprocessURL = preprocessURL;
 		this.opacity = opacity;
 		this.color = new Color( color );
@@ -1292,6 +1247,39 @@ class ImageOverlay {
 		this._whenReady = null;
 		this.isReady = false;
 		this.isInitialized = false;
+
+	}
+
+	// Texture acquisition API - to be overridden by subclasses
+	calculateLevel( /* range, tile, resolution */ ) {
+
+		return 0;
+
+	}
+
+	hasTexture( /* range, level */ ) {
+
+		return false;
+
+	}
+
+	async getTexture( /* range, level */ ) {
+
+		return null;
+
+	}
+
+	releaseTexture( /* range, level */ ) {
+
+	}
+
+	setResolution( /* resolution */ ) {
+
+	}
+
+	shouldSplit( /* tile, info */ ) {
+
+		return false;
 
 	}
 
@@ -1344,7 +1332,6 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-
 	get aspectRatio() {
 
 		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
@@ -1368,6 +1355,7 @@ class TiledImageOverlay extends ImageOverlay {
 		const { imageSource = null, ...rest } = options;
 		super( rest );
 		this.imageSource = imageSource;
+		this.regionImageSource = null;
 
 	}
 
@@ -1387,6 +1375,83 @@ class TiledImageOverlay extends ImageOverlay {
 	_initImageSource() {
 
 		return this.imageSource.init();
+
+	}
+
+	// Calculate the appropriate level of detail for the given range and tile
+	_calculateLevel( range, tile, resolution ) {
+
+		if ( this.isPlanarProjection ) {
+
+			const [ minX, minY, maxX, maxY ] = range;
+			const w = maxX - minX;
+			const h = maxY - minY;
+
+			let level = 0;
+			const maxLevel = this.tiling.maxLevel;
+			for ( ; level < maxLevel; level ++ ) {
+
+				// the number of pixels per image on each axis
+				const wProj = resolution / w;
+				const hProj = resolution / h;
+
+				const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
+				if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
+
+					break;
+
+				}
+
+			}
+
+			// TODO: should this be one layer higher LoD?
+			return level;
+
+		} else {
+
+			return tile.__depthFromRenderedParent - 1;
+
+		}
+
+	}
+
+	// Texture acquisition API implementations
+	calculateLevel( range, tile, resolution ) {
+
+		return this._calculateLevel( range, tile, resolution );
+
+	}
+
+	hasTexture( range, level ) {
+
+		return this.regionImageSource.isDataPresent( ...range, level );
+
+	}
+
+	async getTexture( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		return await this.regionImageSource.lock( minX, minY, maxX, maxY, level );
+
+	}
+
+	releaseTexture( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		this.regionImageSource.release( minX, minY, maxX, maxY, level );
+
+	}
+
+	setResolution( resolution ) {
+
+		this.regionImageSource.resolution = resolution;
+
+	}
+
+	shouldSplit( _tile, info ) {
+
+		// if the tile has a render target and we haven't reached max level yet, split
+		return info && info.target && this.tiling.maxLevel > info.level;
 
 	}
 
