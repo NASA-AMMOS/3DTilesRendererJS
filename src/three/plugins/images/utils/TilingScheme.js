@@ -1,4 +1,5 @@
 import { MathUtils } from 'three';
+import { ProjectionScheme } from './ProjectionScheme.js';
 
 function doBoundsIntersect( a, b ) {
 
@@ -50,7 +51,7 @@ export class TilingScheme {
 	// prioritize user-set bounds over projection bounds if present
 	get contentBounds() {
 
-		return this._contentBounds ?? this.projection?.getBounds() ?? [ 0, 0, 1, 1 ];
+		return this._contentBounds ?? this.projection.getBounds();
 
 	}
 
@@ -68,7 +69,7 @@ export class TilingScheme {
 
 		// The origin and bounds
 		this._contentBounds = null;
-		this.projection = null;
+		this.projection = new ProjectionScheme( 'none' );
 
 		this._levels = [];
 
@@ -279,7 +280,7 @@ export class TilingScheme {
 
 		const { projection } = this;
 		const bounds = [ ...this.contentBounds ];
-		if ( projection && normalized ) {
+		if ( normalized ) {
 
 			bounds[ 0 ] = projection.convertLongitudeToProjection( bounds[ 0 ] );
 			bounds[ 1 ] = projection.convertLatitudeToProjection( bounds[ 1 ] );
@@ -357,7 +358,7 @@ export class TilingScheme {
 
 		}
 
-		if ( projection && ! normalized ) {
+		if ( ! normalized ) {
 
 			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
 			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
@@ -374,12 +375,8 @@ export class TilingScheme {
 
 		const { projection } = this;
 		const result = [ x, y ];
-		if ( this.projection ) {
-
-			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
-			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
-
-		}
+		result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
+		result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
 
 		return result;
 
@@ -398,16 +395,8 @@ export class TilingScheme {
 
 		const { projection } = this;
 		const result = [ x, y ];
-		if ( this.projection ) {
-
-			result[ 0 ] = projection.convertProjectionToLongitude( result[ 0 ] );
-			result[ 1 ] = projection.convertProjectionToLatitude( result[ 1 ] );
-
-		} else {
-
-			throw new Error( 'TilingScheme: Projection not available.' );
-
-		}
+		result[ 0 ] = projection.convertProjectionToLongitude( result[ 0 ] );
+		result[ 1 ] = projection.convertProjectionToLatitude( result[ 1 ] );
 
 		return result;
 
@@ -441,7 +430,7 @@ export class TilingScheme {
 		const { projection } = this;
 		let clampBounds;
 
-		if ( normalized || ! projection ) {
+		if ( normalized ) {
 
 			clampBounds = [ 0, 0, 1, 1 ];
 
