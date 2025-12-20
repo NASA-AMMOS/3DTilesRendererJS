@@ -57,41 +57,11 @@ export class TiledRegionImageSource extends RegionImageSource {
 		target.tokens = [ ...range, level ];
 
 		// Start locking tiles for the requested level
-		const promise = this._markImages( range, level, false );
+		await this._markImages( range, level, false );
 
-		// Progressive loading: if tiles aren't ready yet, draw previous level as placeholder
-		if ( promise ) {
-
-			tileComposer.setTarget( target, range );
-			tileComposer.clear( 0xffffff, 0 );
-
-			// Draw previous level tiles that are already available
-			if ( level > 0 ) {
-
-				forEachTileInBounds( range, level - 1, tiling, ( tx, ty, tl ) => {
-
-					const span = tiling.getTileBounds( tx, ty, tl, true, false );
-					const tex = imageSource.get( tx, ty, tl );
-					if ( tex && ! ( tex instanceof Promise ) ) {
-
-						tileComposer.draw( tex, span );
-
-					}
-
-				} );
-
-			}
-
-			// Wait for current level tiles to load
-			await promise;
-
-			if ( signal.aborted ) {
-
-				return null;
-
-			}
-
-		}
+		// TODO: we could draw the parent tile data here if it's available just to make sure we
+		// have something to display but the texture is not usable until it returns. Though it
+		// may also have minimal impact. Something to consider for the future.
 
 		// Draw the requested level tiles
 		tileComposer.setTarget( target, range );
