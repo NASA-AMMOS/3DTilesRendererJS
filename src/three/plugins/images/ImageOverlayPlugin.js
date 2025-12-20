@@ -1067,7 +1067,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const { tiling } = overlay;
+		const { tiling, projection } = overlay;
 		const info = tileInfo.get( tile );
 		let range, uvs, heightInRange;
 
@@ -1082,7 +1082,7 @@ export class ImageOverlayPlugin {
 			}
 
 			let heightRange;
-			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, tiling ) );
+			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, tiling.aspectRatio ) );
 			heightInRange = ! ( heightRange[ 0 ] > 1 || heightRange[ 1 ] < 0 );
 
 		} else {
@@ -1094,7 +1094,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, tiling ) );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
 			range = tiling.toNormalizedRange( range );
 			heightInRange = true;
 

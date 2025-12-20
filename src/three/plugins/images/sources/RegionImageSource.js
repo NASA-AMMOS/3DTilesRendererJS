@@ -3,20 +3,6 @@ import { forEachTileInBounds } from '../overlays/utils.js';
 import { DataCache } from '../utils/DataCache.js';
 import { SRGBColorSpace, CanvasTexture } from 'three';
 
-// returns the total number of tiles that will be drawn for the provided range
-function countTilesInRange( range, level, tiling ) {
-
-	let total = 0;
-	forEachTileInBounds( range, level, tiling, () => {
-
-		total ++;
-
-	} );
-
-	return total;
-
-}
-
 export class RegionImageSource extends DataCache {
 
 	isDataPresent( ...tokens ) {}
