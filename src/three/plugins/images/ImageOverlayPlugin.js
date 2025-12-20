@@ -1013,7 +1013,7 @@ export class ImageOverlayPlugin {
 
 				// If the tile has a region bounding volume then mark the tiles to preload
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = overlay.tiling.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
+				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
 				info.range = range;
 				info.level = this._calculateLevelFromOverlay( overlay, range, tile );
@@ -1067,7 +1067,7 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		const { tiling, projection } = overlay;
+		const { aspectRatio, projection } = overlay;
 		const info = tileInfo.get( tile );
 		let range, uvs, heightInRange;
 
@@ -1082,7 +1082,7 @@ export class ImageOverlayPlugin {
 			}
 
 			let heightRange;
-			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, tiling.aspectRatio ) );
+			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, aspectRatio ) );
 			heightInRange = ! ( heightRange[ 0 ] > 1 || heightRange[ 1 ] < 0 );
 
 		} else {
@@ -1095,7 +1095,7 @@ export class ImageOverlayPlugin {
 			}
 
 			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
-			range = tiling.toNormalizedRange( range );
+			range = projection.toNormalizedRange( range );
 			heightInRange = true;
 
 		}
