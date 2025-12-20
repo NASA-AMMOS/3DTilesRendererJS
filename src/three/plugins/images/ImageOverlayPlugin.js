@@ -242,12 +242,18 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, meshRange, level, meshRangeMarked } = tileInfo.get( tile );
+				const { meshInfo, meshRange, level, meshRangeMarked, range, rangeMarked } = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
 
 					overlay.releaseTexture( meshRange, level );
+
+				}
+
+				if ( range !== null && rangeMarked ) {
+
+					overlay.releaseTexture( range, level );
 
 				}
 
@@ -457,9 +463,8 @@ export class ImageOverlayPlugin {
 		// re-expand tiles if needed
 		if ( ! fullDispose ) {
 
-			this.processedTiles.forEach( tile => {
+			tiles.forEachLoadedModel( ( scene, tile ) => {
 
-				const scene = tile.cached.scene;
 				this.expandVirtualChildren( scene, tile );
 
 			} );
@@ -820,12 +825,20 @@ export class ImageOverlayPlugin {
 					meshRange,
 					level,
 					meshRangeMarked,
+					range,
+					rangeMarked,
 				} = tileInfo.get( tile );
 
 				// release the ranges
 				if ( meshRange !== null && meshRangeMarked ) {
 
 					overlay.releaseTexture( meshRange, level );
+
+				}
+
+				if ( range !== null && rangeMarked ) {
+
+					overlay.releaseTexture( range, level );
 
 				}
 
@@ -902,12 +915,12 @@ export class ImageOverlayPlugin {
 
 		};
 
-		this.processedTiles.forEach( tile => {
+		tiles.forEachLoadedModel( ( scene, tile ) => {
 
-			const scene = tile.cached.scene;
 			initTile( scene, tile );
 
 		} );
+
 		this.pendingTiles.forEach( ( scene, tile ) => {
 
 			initTile( scene, tile );
@@ -987,6 +1000,7 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
+				info.rangeMarked = true;
 				info.range = range;
 				info.level = overlay.calculateLevel( range, tile, this.resolution );
 				overlay.getTexture( range, info.level );
