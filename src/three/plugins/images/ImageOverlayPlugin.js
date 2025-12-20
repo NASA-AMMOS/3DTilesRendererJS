@@ -4,7 +4,7 @@ import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
 import { XYZImageSource } from './sources/XYZImageSource.js';
 import { QuadKeyImageSource } from './sources/QuadKeyImageSource.js';
 import { TMSImageSource } from './sources/TMSImageSource.js';
-import { getMeshesCartographicRange, getMeshesPlanarRange, forEachTileInBounds } from './overlays/utils.js';
+import { getMeshesCartographicRange, getMeshesPlanarRange } from './overlays/utils.js';
 import { wrapOverlaysMaterial } from './overlays/wrapOverlaysMaterial.js';
 import { GeometryClipper } from '../utilities/GeometryClipper.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
@@ -1568,8 +1568,6 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 				return this.imageSource.init();
 
 			} );
-
-		super.init();
 
 	}
 
