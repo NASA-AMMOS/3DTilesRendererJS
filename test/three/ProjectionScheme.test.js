@@ -50,13 +50,13 @@ describe( 'ProjectionScheme', () => {
 		expect( degBounds ).toEqual( [ - 180, - 85.051, 180, 85.051 ] );
 
 		// conversions
-		expect( scheme.convertLatitudeToProjection( 0 ) ).toBe( 0.5 );
-		expect( scheme.convertLongitudeToProjection( 0 ) ).toBe( 0.5 );
+		expect( scheme.convertLatitudeToNormalized( 0 ) ).toBe( 0.5 );
+		expect( scheme.convertLongitudeToNormalized( 0 ) ).toBe( 0.5 );
 
 		// derivatives
-		expect( scheme.getLongitudeDerivativeAtProjection( 0.5 ) ).toBe( 2 * Math.PI );
-		expect( scheme.getLatitudeDerivativeAtProjection( 0.5 ) ).toBeCloseTo( 2 * Math.PI );
-		expect( scheme.getLatitudeDerivativeAtProjection( 0 ) ).toBeCloseTo( 0.54204 );
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBe( 2 * Math.PI );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBeCloseTo( 2 * Math.PI );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0 ) ).toBeCloseTo( 0.54204 );
 
 	} );
 
@@ -72,12 +72,55 @@ describe( 'ProjectionScheme', () => {
 		expect( degBounds ).toEqual( [ - 180, - 90, 180, 90 ] );
 
 		// conversions
-		expect( scheme.convertLatitudeToProjection( 0 ) ).toBe( 0.5 );
-		expect( scheme.convertLongitudeToProjection( 0 ) ).toBe( 0.5 );
+		expect( scheme.convertLatitudeToNormalized( 0 ) ).toBe( 0.5 );
+		expect( scheme.convertLongitudeToNormalized( 0 ) ).toBe( 0.5 );
 
 		// derivatives
-		expect( scheme.getLongitudeDerivativeAtProjection( 0.5 ) ).toBe( 2 * Math.PI );
-		expect( scheme.getLatitudeDerivativeAtProjection( 0.5 ) ).toBe( Math.PI );
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBe( 2 * Math.PI );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBe( Math.PI );
+
+	} );
+
+	it( 'should support none projection scheme', () => {
+
+		const scheme = new ProjectionScheme( 'none' );
+		expect( scheme.isMercator ).toBe( false );
+		expect( scheme.tileCountX ).toBe( 1 );
+		expect( scheme.tileCountY ).toBe( 1 );
+
+		// bounds should be identity [0, 0, 1, 1]
+		expect( scheme.getBounds() ).toEqual( [ 0, 0, 1, 1 ] );
+
+		// conversions should act as identity functions
+		expect( scheme.convertLatitudeToNormalized( 0.5 ) ).toBe( 0.5 );
+		expect( scheme.convertLongitudeToNormalized( 0.5 ) ).toBe( 0.5 );
+		expect( scheme.convertLatitudeToNormalized( 0 ) ).toBe( 0 );
+		expect( scheme.convertLongitudeToNormalized( 0 ) ).toBe( 0 );
+		expect( scheme.convertLatitudeToNormalized( 1 ) ).toBe( 1 );
+		expect( scheme.convertLongitudeToNormalized( 1 ) ).toBe( 1 );
+
+		expect( scheme.convertNormalizedToLatitude( 0.5 ) ).toBe( 0.5 );
+		expect( scheme.convertNormalizedToLongitude( 0.5 ) ).toBe( 0.5 );
+		expect( scheme.convertNormalizedToLatitude( 0 ) ).toBe( 0 );
+		expect( scheme.convertNormalizedToLongitude( 0 ) ).toBe( 0 );
+		expect( scheme.convertNormalizedToLatitude( 1 ) ).toBe( 1 );
+		expect( scheme.convertNormalizedToLongitude( 1 ) ).toBe( 1 );
+
+		// derivatives should be 1 (identity derivative)
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0.5 ) ).toBe( 1 );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0.5 ) ).toBe( 1 );
+		expect( scheme.getLongitudeDerivativeAtNormalized( 0 ) ).toBe( 1 );
+		expect( scheme.getLatitudeDerivativeAtNormalized( 0 ) ).toBe( 1 );
+
+		// helper methods should also act as identity
+		expect( scheme.toNormalizedPoint( 0.3, 0.7 ) ).toEqual( [ 0.3, 0.7 ] );
+		expect( scheme.toCartographicPoint( 0.3, 0.7 ) ).toEqual( [ 0.3, 0.7 ] );
+		expect( scheme.toNormalizedRange( [ 0.1, 0.2, 0.8, 0.9 ] ) ).toEqual( [ 0.1, 0.2, 0.8, 0.9 ] );
+		expect( scheme.toCartographicRange( [ 0.1, 0.2, 0.8, 0.9 ] ) ).toEqual( [ 0.1, 0.2, 0.8, 0.9 ] );
+
+		// clamping should work with [0, 0, 1, 1] bounds
+		expect( scheme.clampToBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.clampToBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], false ) ).toEqual( [ 0, 0, 1, 1 ] );
 
 	} );
 

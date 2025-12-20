@@ -25,8 +25,8 @@ function correctTupleUnits( tuple, crs ) {
 	// TODO: consolidate this Mercator-units with WMTSLoader / move a helper onto ProjectionScheme?
 	if ( isWebMercator( crs ) ) {
 
-		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
-		tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
+		tuple[ 0 ] = mercatorProjection.convertNormalizedToLongitude( 0.5 + tuple[ 0 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
+		tuple[ 1 ] = mercatorProjection.convertNormalizedToLatitude( 0.5 + tuple[ 1 ] / ( Math.PI * 2 * EQUATOR_CIRCUMFERENCE ) );
 
 		// to degrees
 		tuple[ 0 ] *= MathUtils.RAD2DEG;
