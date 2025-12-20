@@ -50,7 +50,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertProjectionToLatitude( v ) {
+	convertNormalizedToLatitude( v ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -70,7 +70,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertProjectionToLongitude( v ) {
+	convertNormalizedToLongitude( v ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -84,7 +84,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertLatitudeToProjection( lat ) {
+	convertLatitudeToNormalized( lat ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -104,7 +104,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertLongitudeToProjection( lon ) {
+	convertLongitudeToNormalized( lon ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -118,7 +118,7 @@ export class ProjectionScheme {
 
 	}
 
-	getLongitudeDerivativeAtProjection( value ) {
+	getLongitudeDerivativeAtNormalized( value ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -132,7 +132,7 @@ export class ProjectionScheme {
 
 	}
 
-	getLatitudeDerivativeAtProjection( value ) {
+	getLatitudeDerivativeAtNormalized( value ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -151,7 +151,7 @@ export class ProjectionScheme {
 			if ( this.isMercator ) {
 
 				// TODO: why is this 2 * Math.PI rather than Math.PI?
-				return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
+				return Math.abs( this.convertNormalizedToLatitude( value ) - this.convertNormalizedToLatitude( yp ) ) / EPS;
 
 			} else {
 
@@ -172,8 +172,8 @@ export class ProjectionScheme {
 		} else {
 
 			return [
-				this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
-				this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
+				this.convertNormalizedToLongitude( 0 ), this.convertNormalizedToLatitude( 0 ),
+				this.convertNormalizedToLongitude( 1 ), this.convertNormalizedToLatitude( 1 ),
 			];
 
 		}
@@ -183,8 +183,8 @@ export class ProjectionScheme {
 	toNormalizedPoint( x, y ) {
 
 		const result = [ x, y ];
-		result[ 0 ] = this.convertLongitudeToProjection( result[ 0 ] );
-		result[ 1 ] = this.convertLatitudeToProjection( result[ 1 ] );
+		result[ 0 ] = this.convertLongitudeToNormalized( result[ 0 ] );
+		result[ 1 ] = this.convertLatitudeToNormalized( result[ 1 ] );
 
 		return result;
 
@@ -202,8 +202,8 @@ export class ProjectionScheme {
 	toCartographicPoint( x, y ) {
 
 		const result = [ x, y ];
-		result[ 0 ] = this.convertProjectionToLongitude( result[ 0 ] );
-		result[ 1 ] = this.convertProjectionToLatitude( result[ 1 ] );
+		result[ 0 ] = this.convertNormalizedToLongitude( result[ 0 ] );
+		result[ 1 ] = this.convertNormalizedToLatitude( result[ 1 ] );
 
 		return result;
 
@@ -218,7 +218,7 @@ export class ProjectionScheme {
 
 	}
 
-	clampToProjectionBounds( range, normalized = false ) {
+	clampToNormalizedBounds( range, normalized = false ) {
 
 		const result = [ ...range ];
 		let clampBounds;

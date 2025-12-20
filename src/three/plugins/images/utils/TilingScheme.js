@@ -282,10 +282,10 @@ export class TilingScheme {
 		const bounds = [ ...this.contentBounds ];
 		if ( normalized ) {
 
-			bounds[ 0 ] = projection.convertLongitudeToProjection( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertLatitudeToProjection( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertLongitudeToProjection( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertLatitudeToProjection( bounds[ 3 ] );
+			bounds[ 0 ] = projection.convertLongitudeToNormalized( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertLatitudeToNormalized( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertLongitudeToNormalized( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertLatitudeToNormalized( bounds[ 3 ] );
 
 		}
 
@@ -354,16 +354,16 @@ export class TilingScheme {
 
 		if ( clampToProjection ) {
 
-			bounds = this.clampToProjectionBounds( bounds, true );
+			bounds = this.clampToNormalizedBounds( bounds, true );
 
 		}
 
 		if ( ! normalized ) {
 
-			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
+			bounds[ 0 ] = projection.convertNormalizedToLongitude( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertNormalizedToLatitude( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertNormalizedToLongitude( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertNormalizedToLatitude( bounds[ 3 ] );
 
 		}
 
@@ -408,9 +408,9 @@ export class TilingScheme {
 
 	}
 
-	clampToProjectionBounds( range, normalized = false ) {
+	clampToNormalizedBounds( range, normalized = false ) {
 
-		return this.projection.clampToProjectionBounds( range, normalized );
+		return this.projection.clampToNormalizedBounds( range, normalized );
 
 	}
 
