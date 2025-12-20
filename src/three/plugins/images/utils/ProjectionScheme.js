@@ -180,4 +180,67 @@ export class ProjectionScheme {
 
 	}
 
+	toNormalizedPoint( x, y ) {
+
+		const result = [ x, y ];
+		result[ 0 ] = this.convertLongitudeToProjection( result[ 0 ] );
+		result[ 1 ] = this.convertLatitudeToProjection( result[ 1 ] );
+
+		return result;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		return [
+			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
+			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+		];
+
+	}
+
+	toCartographicPoint( x, y ) {
+
+		const result = [ x, y ];
+		result[ 0 ] = this.convertProjectionToLongitude( result[ 0 ] );
+		result[ 1 ] = this.convertProjectionToLatitude( result[ 1 ] );
+
+		return result;
+
+	}
+
+	toCartographicRange( range ) {
+
+		return [
+			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
+			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
+		];
+
+	}
+
+	clampToProjectionBounds( range, normalized = false ) {
+
+		const result = [ ...range ];
+		let clampBounds;
+
+		if ( normalized ) {
+
+			clampBounds = [ 0, 0, 1, 1 ];
+
+		} else {
+
+			clampBounds = this.getBounds();
+
+		}
+
+		const [ minX, minY, maxX, maxY ] = clampBounds;
+		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
+		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
+		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
+
+		return result;
+
+	}
+
 }
