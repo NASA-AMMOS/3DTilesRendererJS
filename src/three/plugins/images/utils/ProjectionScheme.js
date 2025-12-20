@@ -50,7 +50,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertProjectionToLatitude( v ) {
+	convertNormalizedToLatitude( v ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -70,7 +70,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertProjectionToLongitude( v ) {
+	convertNormalizedToLongitude( v ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -84,7 +84,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertLatitudeToProjection( lat ) {
+	convertLatitudeToNormalized( lat ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -104,7 +104,7 @@ export class ProjectionScheme {
 
 	}
 
-	convertLongitudeToProjection( lon ) {
+	convertLongitudeToNormalized( lon ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -118,7 +118,7 @@ export class ProjectionScheme {
 
 	}
 
-	getLongitudeDerivativeAtProjection( value ) {
+	getLongitudeDerivativeAtNormalized( value ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -132,7 +132,7 @@ export class ProjectionScheme {
 
 	}
 
-	getLatitudeDerivativeAtProjection( value ) {
+	getLatitudeDerivativeAtNormalized( value ) {
 
 		if ( this.scheme === 'none' ) {
 
@@ -151,7 +151,7 @@ export class ProjectionScheme {
 			if ( this.isMercator ) {
 
 				// TODO: why is this 2 * Math.PI rather than Math.PI?
-				return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
+				return Math.abs( this.convertNormalizedToLatitude( value ) - this.convertNormalizedToLatitude( yp ) ) / EPS;
 
 			} else {
 
@@ -172,11 +172,74 @@ export class ProjectionScheme {
 		} else {
 
 			return [
-				this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
-				this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
+				this.convertNormalizedToLongitude( 0 ), this.convertNormalizedToLatitude( 0 ),
+				this.convertNormalizedToLongitude( 1 ), this.convertNormalizedToLatitude( 1 ),
 			];
 
 		}
+
+	}
+
+	toNormalizedPoint( x, y ) {
+
+		const result = [ x, y ];
+		result[ 0 ] = this.convertLongitudeToNormalized( result[ 0 ] );
+		result[ 1 ] = this.convertLatitudeToNormalized( result[ 1 ] );
+
+		return result;
+
+	}
+
+	toNormalizedRange( range ) {
+
+		return [
+			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
+			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
+		];
+
+	}
+
+	toCartographicPoint( x, y ) {
+
+		const result = [ x, y ];
+		result[ 0 ] = this.convertNormalizedToLongitude( result[ 0 ] );
+		result[ 1 ] = this.convertNormalizedToLatitude( result[ 1 ] );
+
+		return result;
+
+	}
+
+	toCartographicRange( range ) {
+
+		return [
+			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
+			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
+		];
+
+	}
+
+	clampToBounds( range, normalized = false ) {
+
+		const result = [ ...range ];
+		let clampBounds;
+
+		if ( normalized ) {
+
+			clampBounds = [ 0, 0, 1, 1 ];
+
+		} else {
+
+			clampBounds = this.getBounds();
+
+		}
+
+		const [ minX, minY, maxX, maxY ] = clampBounds;
+		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
+		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
+		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
+
+		return result;
 
 	}
 
