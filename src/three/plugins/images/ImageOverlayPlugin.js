@@ -1074,7 +1074,13 @@ export class ImageOverlayPlugin {
 		// retrieve the uvs and range for all the meshes
 		if ( overlay.isPlanarProjection ) {
 
-			_matrix.copy( overlay.frame );
+			// construct a matrix transforming _into_ the local frame in which the texture
+			// will be sampled, scaling by the aspect ratio of the overlay so it is scaled
+			// to [0, 1]
+			_matrix
+				.makeScale( 1 / aspectRatio, 1, 1 )
+				.multiply( overlay.frame );
+
 			if ( scene.parent !== null ) {
 
 				_matrix.multiply( tiles.group.matrixWorldInverse );
@@ -1082,7 +1088,7 @@ export class ImageOverlayPlugin {
 			}
 
 			let heightRange;
-			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix, aspectRatio ) );
+			( { range, uvs, heightRange } = getMeshesPlanarRange( meshes, _matrix ) );
 			heightInRange = ! ( heightRange[ 0 ] > 1 || heightRange[ 1 ] < 0 );
 
 		} else {

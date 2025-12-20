@@ -175,7 +175,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 }
 
 // functions for generating UVs for planar-projected UVs
-function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
+function getGeometryPlanarChannel( geometry, meshToFrame ) {
 
 	const _vec = new Vector3();
 	const uv = [];
@@ -189,9 +189,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
 	let maxW = - Infinity;
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
-		// divide U by the aspect to stretch the U dimension to the aspect of the image
 		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( meshToFrame );
-		_vec.x /= aspectRatio;
 
 		uv.push( _vec.x, _vec.y, _vec.z );
 
@@ -216,7 +214,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
 
 }
 
-export function getMeshesPlanarRange( meshes, worldToFrame, aspectRatio ) {
+export function getMeshesPlanarRange( meshes, worldToFrame ) {
 
 	// find the U / V ranges
 	let minU = Infinity;
@@ -238,7 +236,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, aspectRatio ) {
 
 		}
 
-		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix, aspectRatio );
+		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix );
 		uvs.push( uv );
 
 		// save the min and max values
