@@ -218,7 +218,7 @@ export class ProjectionScheme {
 
 	}
 
-	clampToNormalizedBounds( range, normalized = false ) {
+	clampToBounds( range, normalized = false ) {
 
 		const result = [ ...range ];
 		let clampBounds;

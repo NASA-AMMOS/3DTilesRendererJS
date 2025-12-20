@@ -307,7 +307,7 @@ export class TilingScheme {
 
 	}
 
-	getTileBounds( x, y, level, normalized = false, clampToProjection = true ) {
+	getTileBounds( x, y, level, normalized = false, clamp = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
@@ -352,9 +352,9 @@ export class TilingScheme {
 
 		}
 
-		if ( clampToProjection ) {
+		if ( clamp ) {
 
-			bounds = this.clampToNormalizedBounds( bounds, true );
+			bounds = this.clampToBounds( bounds, true );
 
 		}
 

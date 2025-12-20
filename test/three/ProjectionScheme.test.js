@@ -119,8 +119,8 @@ describe( 'ProjectionScheme', () => {
 		expect( scheme.toCartographicRange( [ 0.1, 0.2, 0.8, 0.9 ] ) ).toEqual( [ 0.1, 0.2, 0.8, 0.9 ] );
 
 		// clamping should work with [0, 0, 1, 1] bounds
-		expect( scheme.clampToNormalizedBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
-		expect( scheme.clampToNormalizedBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], false ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.clampToBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.clampToBounds( [ - 0.5, - 0.5, 1.5, 1.5 ], false ) ).toEqual( [ 0, 0, 1, 1 ] );
 
 	} );
 
