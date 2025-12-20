@@ -125,12 +125,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 		super.dispose();
 		this.tiledImageSource.dispose();
 
-		if ( this.tileComposer ) {
-
-			this.tileComposer.dispose();
-
-		}
-
 	}
 
 	_markImages( range, level, release = false ) {

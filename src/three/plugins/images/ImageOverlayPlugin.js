@@ -1244,39 +1244,9 @@ export class ImageOverlayPlugin {
 
 class ImageOverlay {
 
-	get tiling() {
-
-		return this.imageSource.tiling;
-
-	}
-
-	get projection() {
-
-		return this.tiling.projection;
-
-	}
-
 	get isPlanarProjection() {
 
 		return Boolean( this.frame );
-
-	}
-
-	get aspectRatio() {
-
-		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
-
-	}
-
-	get fetchOptions() {
-
-		return this.imageSource.fetchOptions;
-
-	}
-
-	set fetchOptions( v ) {
-
-		this.imageSource.fetchOptions = v;
 
 	}
 
@@ -1290,7 +1260,6 @@ class ImageOverlay {
 			alphaMask = false,
 			alphaInvert = false,
 		} = options;
-		this.imageSource = null;
 		this.regionImageSource = null;
 
 		this.preprocessURL = preprocessURL;
@@ -1313,6 +1282,15 @@ class ImageOverlay {
 
 	}
 
+	whenReady() {
+
+		return this._whenReady;
+
+	}
+
+	// overrideable
+	_init() {}
+
 	fetch( url, options = {} ) {
 
 		if ( this.preprocessURL ) {
@@ -1325,11 +1303,6 @@ class ImageOverlay {
 
 	}
 
-	whenReady() {
-
-		return this._whenReady;
-
-	}
 
 	getAttributions( target ) {
 
@@ -1337,7 +1310,6 @@ class ImageOverlay {
 
 	dispose() {
 
-		this.imageSource.dispose();
 		this.regionImageSource.dispose();
 
 	}
@@ -1345,6 +1317,37 @@ class ImageOverlay {
 }
 
 class TiledImageOverlay extends ImageOverlay {
+
+	get tiling() {
+
+		return this.imageSource.tiling;
+
+	}
+
+	get projection() {
+
+		return this.tiling.projection;
+
+	}
+
+
+	get aspectRatio() {
+
+		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
+
+	}
+
+	get fetchOptions() {
+
+		return this.imageSource.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this.imageSource.fetchOptions = v;
+
+	}
 
 	constructor( options = {} ) {
 
