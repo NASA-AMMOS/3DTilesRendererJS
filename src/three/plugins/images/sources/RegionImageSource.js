@@ -5,13 +5,16 @@ import { SRGBColorSpace, CanvasTexture } from 'three';
 
 export class RegionImageSource extends DataCache {
 
-	isDataPresent( ...tokens ) {}
+	isDataPresent( ...tokens ) {
+
+		return true;
+
+	}
 
 }
 
 // TODO: how to handle updates to the textures for frames, reload, changing?
 // TODO: how to get the texture before it's been drawn?
-// TODO: how can we avoid adding "tileComposer" here?
 export class TiledRegionImageSource extends RegionImageSource {
 
 	constructor( tiledImageSource ) {
