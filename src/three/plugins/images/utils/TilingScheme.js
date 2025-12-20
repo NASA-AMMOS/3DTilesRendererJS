@@ -408,9 +408,9 @@ export class TilingScheme {
 
 	}
 
-	clampToNormalizedBounds( range, normalized = false ) {
+	clampToBounds( range, normalized = false ) {
 
-		return this.projection.clampToNormalizedBounds( range, normalized );
+		return this.projection.clampToBounds( range, normalized );
 
 	}
 
