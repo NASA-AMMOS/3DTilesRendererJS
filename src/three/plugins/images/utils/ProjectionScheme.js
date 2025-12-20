@@ -38,6 +38,11 @@ export class ProjectionScheme {
 				this.tileCountY = 1;
 				break;
 
+			case 'none':
+				this.tileCountX = 1;
+				this.tileCountY = 1;
+				break;
+
 			default:
 				throw new Error( `ProjectionScheme: Unknown projection scheme "${ scheme }"` );
 
@@ -47,7 +52,11 @@ export class ProjectionScheme {
 
 	convertProjectionToLatitude( v ) {
 
-		if ( this.isMercator ) {
+		if ( this.scheme === 'none' ) {
+
+			return v;
+
+		} else if ( this.isMercator ) {
 
 			// https://gis.stackexchange.com/questions/447421/convert-a-point-on-a-flat-2d-web-mercator-map-image-to-a-coordinate
 			const ratio = MathUtils.mapLinear( v, 0, 1, - 1, 1 );
@@ -63,13 +72,25 @@ export class ProjectionScheme {
 
 	convertProjectionToLongitude( v ) {
 
-		return MathUtils.mapLinear( v, 0, 1, - Math.PI, Math.PI );
+		if ( this.scheme === 'none' ) {
+
+			return v;
+
+		} else {
+
+			return MathUtils.mapLinear( v, 0, 1, - Math.PI, Math.PI );
+
+		}
 
 	}
 
 	convertLatitudeToProjection( lat ) {
 
-		if ( this.isMercator ) {
+		if ( this.scheme === 'none' ) {
+
+			return lat;
+
+		} else if ( this.isMercator ) {
 
 			// https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
 			const mercatorN = Math.log( Math.tan( ( Math.PI / 4 ) + ( lat / 2 ) ) );
@@ -85,34 +106,58 @@ export class ProjectionScheme {
 
 	convertLongitudeToProjection( lon ) {
 
-		return ( lon + Math.PI ) / ( 2 * Math.PI );
+		if ( this.scheme === 'none' ) {
+
+			return lon;
+
+		} else {
+
+			return ( lon + Math.PI ) / ( 2 * Math.PI );
+
+		}
 
 	}
 
 	getLongitudeDerivativeAtProjection( value ) {
 
-		return 2 * Math.PI;
+		if ( this.scheme === 'none' ) {
+
+			return 1;
+
+		} else {
+
+			return 2 * Math.PI;
+
+		}
 
 	}
 
 	getLatitudeDerivativeAtProjection( value ) {
 
-		const EPS = 1e-5;
-		let yp = value - EPS;
-		if ( yp < 0 ) {
+		if ( this.scheme === 'none' ) {
 
-			yp = value + EPS;
-
-		}
-
-		if ( this.isMercator ) {
-
-			// TODO: why is this 2 * Math.PI rather than Math.PI?
-			return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
+			return 1;
 
 		} else {
 
-			return Math.PI;
+			const EPS = 1e-5;
+			let yp = value - EPS;
+			if ( yp < 0 ) {
+
+				yp = value + EPS;
+
+			}
+
+			if ( this.isMercator ) {
+
+				// TODO: why is this 2 * Math.PI rather than Math.PI?
+				return Math.abs( this.convertProjectionToLatitude( value ) - this.convertProjectionToLatitude( yp ) ) / EPS;
+
+			} else {
+
+				return Math.PI;
+
+			}
 
 		}
 
@@ -120,10 +165,18 @@ export class ProjectionScheme {
 
 	getBounds() {
 
-		return [
-			this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
-			this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
-		];
+		if ( this.scheme === 'none' ) {
+
+			return [ 0, 0, 1, 1 ];
+
+		} else {
+
+			return [
+				this.convertProjectionToLongitude( 0 ), this.convertProjectionToLatitude( 0 ),
+				this.convertProjectionToLongitude( 1 ), this.convertProjectionToLatitude( 1 ),
+			];
+
+		}
 
 	}
 
