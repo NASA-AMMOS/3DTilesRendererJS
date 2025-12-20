@@ -3,7 +3,25 @@ import { forEachTileInBounds } from '../overlays/utils.js';
 import { DataCache } from '../utils/DataCache.js';
 import { SRGBColorSpace, CanvasTexture } from 'three';
 
-export class RegionImageSource extends DataCache {}
+// returns the total number of tiles that will be drawn for the provided range
+function countTilesInRange( range, level, tiling ) {
+
+	let total = 0;
+	forEachTileInBounds( range, level, tiling, () => {
+
+		total ++;
+
+	} );
+
+	return total;
+
+}
+
+export class RegionImageSource extends DataCache {
+
+	isDataPresent( ...tokens ) {}
+
+}
 
 // TODO: how to handle updates to the textures for frames, reload, changing?
 // TODO: how to get the texture before it's been drawn?
@@ -19,12 +37,26 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	}
 
+	isDataPresent( minX, minY, maxX, maxY, level ) {
+
+		const tiling = this.tiledImageSource.tiling;
+		let total = 0;
+		forEachTileInBounds( [ minX, minY, maxX, maxY ], level, tiling, () => {
+
+			total ++;
+
+		} );
+
+		return total !== 0;
+
+	}
+
 	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
 
 		const range = [ minX, minY, maxX, maxY ];
 		const imageSource = this.tiledImageSource;
-		const tiling = imageSource.tiling;
 		const tileComposer = this.tileComposer;
+		const tiling = imageSource.tiling;
 
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = this.resolution;
@@ -84,7 +116,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 			tileComposer.draw( tex, span );
 
 		} );
-
 
 		return target;
 

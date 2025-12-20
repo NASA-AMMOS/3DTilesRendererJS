@@ -23,20 +23,6 @@ const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 
-// returns the total number of tiles that will be drawn for the provided range
-function countTilesInRange( range, level, overlay ) {
-
-	let total = 0;
-	forEachTileInBounds( range, level, overlay.tiling, ( x, y, l ) => {
-
-		total ++;
-
-	} );
-
-	return total;
-
-}
-
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
 
@@ -1124,7 +1110,7 @@ export class ImageOverlayPlugin {
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && countTilesInRange( range, info.level, overlay ) !== 0 ) {
+		if ( heightInRange && overlay.regionImageSource.isDataPresent( ...range, info.level ) ) {
 
 			const [ minX, minY, maxX, maxY ] = range;
 			target = await processQueue
