@@ -182,7 +182,7 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				tiles.forEachLoadedModel( ( scene, tile ) => {
+				this.processedTiles.forEach( tile => {
 
 					this._updateLayers( tile );
 
@@ -351,7 +351,7 @@ export class ImageOverlayPlugin {
 		} );
 
 		// reset the textures of the meshes
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		this.processedTiles.forEach( tile => {
 
 			this._updateLayers( tile );
 			this.disposeTile( tile );
@@ -408,7 +408,7 @@ export class ImageOverlayPlugin {
 		// collect the tiles split into virtual tiles
 		const { tiles } = this;
 		const parents = new Set();
-		tiles.forEachLoadedModel( ( scene, tile ) => {
+		this.processedTiles.forEach( tile => {
 
 			if ( SPLIT_HASH in tile ) {
 
@@ -458,8 +458,9 @@ export class ImageOverlayPlugin {
 		// re-expand tiles if needed
 		if ( ! fullDispose ) {
 
-			tiles.forEachLoadedModel( ( scene, tile ) => {
+			this.processedTiles.forEach( tile => {
 
+				const scene = tile.cached.scene;
 				this.expandVirtualChildren( scene, tile );
 
 			} );
@@ -935,7 +936,12 @@ export class ImageOverlayPlugin {
 
 		};
 
-		tiles.forEachLoadedModel( initTile );
+		this.processedTiles.forEach( tile => {
+
+			const scene = tile.cached.scene;
+			initTile( scene, tile );
+
+		} );
 		this.pendingTiles.forEach( ( scene, tile ) => {
 
 			initTile( scene, tile );
