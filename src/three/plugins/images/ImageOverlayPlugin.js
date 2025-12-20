@@ -1308,12 +1308,6 @@ class ImageOverlay {
 
 	}
 
-	dispose() {
-
-		this.regionImageSource.dispose();
-
-	}
-
 }
 
 class TiledImageOverlay extends ImageOverlay {
