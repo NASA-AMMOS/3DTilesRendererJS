@@ -847,7 +847,15 @@ export class ImageOverlayPlugin {
 
 			} );
 
+			// remove the overlay
 			overlays.splice( index, 1 );
+
+			// update all tiles to truncate texture arrays and remove references immediately
+			processedTiles.forEach( tile => {
+
+				this._updateLayers( tile );
+
+			} );
 
 			this._markNeedsUpdate();
 
