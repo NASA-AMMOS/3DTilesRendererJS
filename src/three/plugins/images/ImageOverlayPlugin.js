@@ -1514,6 +1514,18 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
+	get geojson() {
+
+		return this.imageSource.geojson;
+
+	}
+
+	set geojson( v ) {
+
+		this.imageSource.geojson = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		super( options );
