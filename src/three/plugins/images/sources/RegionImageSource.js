@@ -5,23 +5,9 @@ import { SRGBColorSpace, CanvasTexture } from 'three';
 
 export class RegionImageSource extends DataCache {
 
-	isDataPresent( ...tokens ) {
+	hasContent( ...tokens ) {
 
 		return true;
-
-	}
-
-	prepare( minX, minY, maxX, maxY, level ) {
-
-		// No-op for base class
-		// Subclasses can override to start preloading data
-
-	}
-
-	unprepare( /* minX, minY, maxX, maxY, level */ ) {
-
-		// No-op for base class
-		// Subclasses can override to release preloaded data
 
 	}
 
@@ -108,37 +94,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		super.dispose();
 		this.tiledImageSource.dispose();
-
-	}
-
-	prepareItem( minX, minY, maxX, maxY, level ) {
-
-		// Preload tiles for this region without allocating a texture
-		// Lock the tiles to trigger downloads and hold them
-		const imageSource = this.tiledImageSource;
-		const tiling = imageSource.tiling;
-		const range = [ minX, minY, maxX, maxY ];
-
-		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
-
-			imageSource.lock( tx, ty, tl );
-
-		} );
-
-	}
-
-	unprepareItem( minX, minY, maxX, maxY, level ) {
-
-		// Release the tiles that were locked by prepare
-		const imageSource = this.tiledImageSource;
-		const tiling = imageSource.tiling;
-		const range = [ minX, minY, maxX, maxY ];
-
-		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
-
-			imageSource.release( tx, ty, tl );
-
-		} );
 
 	}
 

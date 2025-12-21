@@ -1313,14 +1313,6 @@ class ImageOverlay {
 
 	}
 
-	prepareData( range, level ) {
-
-	}
-
-	unprepareData( range, level ) {
-
-	}
-
 }
 
 class TiledImageOverlay extends ImageOverlay {
@@ -1464,23 +1456,6 @@ class TiledImageOverlay extends ImageOverlay {
 
 		// if the tile has a render target and we haven't reached max level yet, split
 		return info && info.target && this.tiling.maxLevel > info.level;
-
-	}
-
-	prepareData( range, level ) {
-
-		// Start downloading tiles for this region without allocating a texture
-		// This is used for preemptive loading when a tile geometry begins to download
-		const [ minX, minY, maxX, maxY ] = range;
-		this.regionImageSource.prepareItem( minX, minY, maxX, maxY, level );
-
-	}
-
-	unprepareData( range, level ) {
-
-		// Release the tiles that were locked by prepareData
-		const [ minX, minY, maxX, maxY ] = range;
-		this.regionImageSource.unprepareItem( minX, minY, maxX, maxY, level );
 
 	}
 
