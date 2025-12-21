@@ -177,8 +177,6 @@ function updateOverlay() {
 
 	}
 
-	window.Plugin = plugin
-
 	plugin.addOverlay( overlay );
 
 }
