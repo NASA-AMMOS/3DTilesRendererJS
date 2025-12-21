@@ -1427,22 +1427,19 @@ class TiledImageOverlay extends ImageOverlay {
 
 	getTexture( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		return this.regionImageSource.get( minX, minY, maxX, maxY, level );
+		return this.regionImageSource.get( ...range, level );
 
 	}
 
 	lockTexture( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		return this.regionImageSource.lock( minX, minY, maxX, maxY, level );
+		return this.regionImageSource.lock( ...range, level );
 
 	}
 
 	releaseTexture( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		this.regionImageSource.release( minX, minY, maxX, maxY, level );
+		this.regionImageSource.release( ...range, level );
 
 	}
 
@@ -1507,22 +1504,25 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	hasContent( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		return this.imageSource.hasContent( minX, minY, maxX, maxY, level );
+		return this.imageSource.hasContent( ...range, level );
 
 	}
 
-	async getTexture( range, level ) {
+	getTexture( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		return await this.imageSource.lock( minX, minY, maxX, maxY, level );
+		return this.imageSource.get( ...range, level );
+
+	}
+
+	lockTexture( range, level ) {
+
+		return this.imageSource.lock( ...range, level );
 
 	}
 
 	releaseTexture( range, level ) {
 
-		const [ minX, minY, maxX, maxY ] = range;
-		this.imageSource.release( minX, minY, maxX, maxY, level );
+		this.imageSource.release( ...range, level );
 
 	}
 
