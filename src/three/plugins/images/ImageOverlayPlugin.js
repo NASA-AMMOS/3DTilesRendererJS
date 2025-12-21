@@ -1264,47 +1264,6 @@ class ImageOverlay {
 
 	}
 
-	// Texture acquisition API - to be overridden by subclasses
-	calculateLevel( /* range, tile, resolution */ ) {
-
-		return 0;
-
-	}
-
-	hasContent( /* range, level */ ) {
-
-		return false;
-
-	}
-
-	async getTexture( /* range, level */ ) {
-
-		return null;
-
-	}
-
-	releaseTexture( /* range, level */ ) {
-
-	}
-
-	setResolution( /* resolution */ ) {
-
-	}
-
-	shouldSplit( /* tile, info */ ) {
-
-		return false;
-
-	}
-
-	prepareData( /* range, level */ ) {
-
-	}
-
-	unprepareData( /* range, level */ ) {
-
-	}
-
 	init() {
 
 		this.isInitialized = true;
@@ -1333,8 +1292,47 @@ class ImageOverlay {
 
 	}
 
-
 	getAttributions( target ) {
+
+	}
+
+	calculateLevel( range, tile, resolution ) {
+
+		return 0;
+
+	}
+
+	hasContent( range, level ) {
+
+		return false;
+
+	}
+
+	async getTexture( range, level ) {
+
+		return null;
+
+	}
+
+	releaseTexture( range, level ) {
+
+	}
+
+	setResolution( resolution ) {
+
+	}
+
+	shouldSplit( tile, info ) {
+
+		return false;
+
+	}
+
+	prepareData( range, level ) {
+
+	}
+
+	unprepareData( range, level ) {
 
 	}
 
