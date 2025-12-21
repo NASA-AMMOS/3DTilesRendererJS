@@ -242,7 +242,7 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, level, range } = tileInfo.get( tile );
+				const { meshInfo, range } = tileInfo.get( tile );
 
 				if ( range !== null ) {
 
@@ -429,8 +429,7 @@ export class ImageOverlayPlugin {
 			const clone = parent.cached.scene.clone();
 			clone.updateMatrixWorld();
 
-			const { hash } = this._getSplitVectors( clone, parent );
-			if ( parent[ SPLIT_HASH ] !== hash || fullDispose ) {
+			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
 
 				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
 				const children = collectChildren( parent );
