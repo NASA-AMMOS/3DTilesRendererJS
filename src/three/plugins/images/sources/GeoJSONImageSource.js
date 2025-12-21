@@ -83,7 +83,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	}
 
-	hasContent( minX, minY, maxX, maxY, level ) {
+	hasContent( minX, minY, maxX, maxY ) {
 
 		return this.geojson !== null;
 

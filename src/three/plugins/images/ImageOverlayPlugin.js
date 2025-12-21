@@ -246,7 +246,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, level );
+					overlay.releaseTexture( range, tile );
 
 				}
 
@@ -495,7 +495,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( overlay.shouldSplit( tile, info ) ) {
+			if ( info && info.target && overlay.shouldSplit( info.range, tile ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -822,7 +822,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, level );
+					overlay.releaseTexture( range, tile );
 
 				}
 
@@ -957,7 +957,6 @@ export class ImageOverlayPlugin {
 
 		const info = {
 			range: null,
-			level: null,
 			target: null,
 			meshInfo: new Map(),
 		};
@@ -981,8 +980,7 @@ export class ImageOverlayPlugin {
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
 				info.range = range;
-				info.level = overlay.calculateLevel( range, tile );
-				overlay.lockTexture( range, info.level );
+				overlay.lockTexture( range, tile );
 
 			}
 
@@ -1034,7 +1032,7 @@ export class ImageOverlayPlugin {
 
 		const { aspectRatio, projection } = overlay;
 		const info = tileInfo.get( tile );
-		let range, level, uvs, heightInRange;
+		let range, uvs, heightInRange;
 
 		// retrieve the uvs and range for all the meshes
 		if ( overlay.isPlanarProjection ) {
@@ -1072,17 +1070,13 @@ export class ImageOverlayPlugin {
 		}
 
 		// calculate the tiling level here if not already created
-		if ( info.level === null ) {
+		if ( info.range === null ) {
 
-			level = overlay.calculateLevel( range, tile );
-
-			info.level = level;
 			info.range = range;
-			overlay.lockTexture( range, info.level );
+			overlay.lockTexture( range, tile );
 
 		} else {
 
-			level = info.level;
 			range = info.range;
 
 		}
@@ -1090,7 +1084,7 @@ export class ImageOverlayPlugin {
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range, level ) ) {
+		if ( heightInRange && overlay.hasContent( range, tile ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1103,7 +1097,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range, level );
+					const regionTarget = await overlay.getTexture( range, tile );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1275,31 +1269,25 @@ class ImageOverlay {
 
 	}
 
-	calculateLevel( range, tile ) {
-
-		return 0;
-
-	}
-
-	hasContent( range, level ) {
+	hasContent( range, tile ) {
 
 		return false;
 
 	}
 
-	async getTexture( range, level ) {
+	async getTexture( range, tile ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range, level ) {
+	async lockTexture( range, tile ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range, level ) {
+	releaseTexture( range, tile ) {
 
 	}
 
@@ -1307,7 +1295,7 @@ class ImageOverlay {
 
 	}
 
-	shouldSplit( tile, info ) {
+	shouldSplit( range, tile ) {
 
 		return false;
 
@@ -1413,27 +1401,27 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	hasContent( range, level ) {
+	hasContent( range, tile ) {
 
-		return this.regionImageSource.hasContent( ...range, level );
-
-	}
-
-	getTexture( range, level ) {
-
-		return this.regionImageSource.get( ...range, level );
+		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range, tile ) );
 
 	}
 
-	lockTexture( range, level ) {
+	getTexture( range, tile ) {
 
-		return this.regionImageSource.lock( ...range, level );
+		return this.regionImageSource.get( ...range, this.calculateLevel( range, tile ) );
 
 	}
 
-	releaseTexture( range, level ) {
+	lockTexture( range, tile ) {
 
-		this.regionImageSource.release( ...range, level );
+		return this.regionImageSource.lock( ...range, this.calculateLevel( range, tile ) );
+
+	}
+
+	releaseTexture( range, tile ) {
+
+		this.regionImageSource.release( ...range, this.calculateLevel( range, tile ) );
 
 	}
 
@@ -1443,10 +1431,10 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( _tile, info ) {
+	shouldSplit( range, tile ) {
 
-		// if the tile has a render target and we haven't reached max level yet, split
-		return info && info.target && this.tiling.maxLevel > info.level;
+		// if we haven't reached the max level yet then continue splitting
+		return this.tiling.maxLevel > this.calculateLevel( range, tile );
 
 	}
 
@@ -1490,33 +1478,27 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	calculateLevel( range, tile ) {
+	hasContent( range ) {
 
-		return 0;
-
-	}
-
-	hasContent( range, level ) {
-
-		return this.imageSource.hasContent( ...range, level );
+		return this.imageSource.hasContent( ...range );
 
 	}
 
-	getTexture( range, level ) {
+	getTexture( range ) {
 
-		return this.imageSource.get( ...range, level );
-
-	}
-
-	lockTexture( range, level ) {
-
-		return this.imageSource.lock( ...range, level );
+		return this.imageSource.get( ...range );
 
 	}
 
-	releaseTexture( range, level ) {
+	lockTexture( range ) {
 
-		this.imageSource.release( ...range, level );
+		return this.imageSource.lock( ...range );
+
+	}
+
+	releaseTexture( range ) {
+
+		this.imageSource.release( ...range );
 
 	}
 
