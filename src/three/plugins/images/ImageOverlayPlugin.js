@@ -1117,7 +1117,7 @@ export class ImageOverlayPlugin {
 					info.meshRangeMarked = true;
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range, info.level );
+					const regionTarget = overlay.lockTexture( range, info.level );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1314,6 +1314,12 @@ class ImageOverlay {
 
 	}
 
+	async lockTexture( range, level ) {
+
+		return null;
+
+	}
+
 	releaseTexture( range, level ) {
 
 	}
@@ -1448,10 +1454,17 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	async getTexture( range, level ) {
+	getTexture( range, level ) {
 
 		const [ minX, minY, maxX, maxY ] = range;
-		return await this.regionImageSource.lock( minX, minY, maxX, maxY, level );
+		return this.regionImageSource.get( minX, minY, maxX, maxY, level );
+
+	}
+
+	lockTexture( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		return this.regionImageSource.lock( minX, minY, maxX, maxY, level );
 
 	}
 
