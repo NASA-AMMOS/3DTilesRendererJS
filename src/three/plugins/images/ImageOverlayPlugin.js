@@ -242,9 +242,9 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, level, range, rangeMarked } = tileInfo.get( tile );
+				const { meshInfo, level, range } = tileInfo.get( tile );
 
-				if ( range !== null && rangeMarked ) {
+				if ( range !== null ) {
 
 					overlay.releaseTexture( range, level );
 
@@ -817,11 +817,10 @@ export class ImageOverlayPlugin {
 					meshInfo,
 					level,
 					range,
-					rangeMarked,
 				} = tileInfo.get( tile );
 
 				// release the ranges
-				if ( range !== null && rangeMarked ) {
+				if ( range !== null ) {
 
 					overlay.releaseTexture( range, level );
 
@@ -961,8 +960,6 @@ export class ImageOverlayPlugin {
 			level: null,
 			target: null,
 			meshInfo: new Map(),
-
-			rangeMarked: false,
 		};
 
 		overlayInfo
@@ -983,7 +980,6 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
-				info.rangeMarked = true;
 				info.range = range;
 				info.level = overlay.calculateLevel( range, tile, this.resolution );
 				overlay.lockTexture( range, info.level );
@@ -1082,7 +1078,6 @@ export class ImageOverlayPlugin {
 
 			info.level = level;
 			info.range = range;
-			info.rangeMarked = true;
 			overlay.lockTexture( range, info.level );
 
 		} else {
