@@ -1466,6 +1466,54 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
+	get pointRadius() {
+
+		return this.imageSource.pointRadius;
+
+	}
+
+	set pointRadius( v ) {
+
+		this.imageSource.pointRadius = v;
+
+	}
+
+	get strokeStyle() {
+
+		return this.imageSource.strokeStyle;
+
+	}
+
+	set strokeStyle( v ) {
+
+		this.imageSource.strokeStyle = v;
+
+	}
+
+	get strokeWidth() {
+
+		return this.imageSource.strokeWidth;
+
+	}
+
+	set strokeWidth( v ) {
+
+		this.imageSource.strokeWidth = v;
+
+	}
+
+	get fillStyle() {
+
+		return this.imageSource.fillStyle;
+
+	}
+
+	set fillStyle( v ) {
+
+		this.imageSource.fillStyle = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		super( options );
