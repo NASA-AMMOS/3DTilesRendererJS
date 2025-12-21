@@ -1,5 +1,5 @@
-import { CanvasTexture, MathUtils, Vector3 } from 'three';
-import { TiledImageSource } from './TiledImageSource.js';
+import { CanvasTexture, MathUtils, Vector3, SRGBColorSpace } from 'three';
+import { RegionImageSource } from './RegionImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
@@ -27,13 +27,12 @@ function calculateArcRatioAtPoint( ellipsoid, lat, lon ) {
 
 }
 
-export class GeoJSONImageSource extends TiledImageSource {
+export class GeoJSONImageSource extends RegionImageSource {
 
 	constructor( {
 		geojson = null,
 		url = null, // URL or GeoJson object can be provided
-		tileDimension = 256,
-		levels = 20,
+		resolution = 256,
 		pointRadius = 6,
 		strokeStyle = 'white',
 		strokeWidth = 2,
@@ -44,33 +43,22 @@ export class GeoJSONImageSource extends TiledImageSource {
 		super( rest );
 		this.geojson = geojson;
 		this.url = url;
-		this.tileDimension = tileDimension;
-		this.levels = levels;
+		this.resolution = resolution;
 
 		this.pointRadius = pointRadius;
 		this.strokeStyle = strokeStyle;
 		this.strokeWidth = strokeWidth;
 		this.fillStyle = fillStyle;
 
+		this.projection = new ProjectionScheme();
+		this.contentBounds = null;
+		this.fetchData = ( ...args ) => fetch( ...args );
+
 	}
 
 	async init() {
 
-		// configure tiling to content bounds and levels
-		const { tiling, levels, tileDimension, geojson, url } = this;
-		const projection = new ProjectionScheme();
-		tiling.setProjection( projection );
-		tiling.setContentBounds( ...projection.getBounds() );
-
-		tiling.generateLevels(
-			levels,
-			projection.tileCountX,
-			projection.tileCountY,
-			{
-				tilePixelWidth: tileDimension,
-				tilePixelHeight: tileDimension,
-			},
-		);
+		const { geojson, url } = this;
 
 		// If a URL was provided and no geojson object yet, fetch it now (use fetchData so overlay can inject headers)
 		if ( ! geojson && url ) {
@@ -80,33 +68,50 @@ export class GeoJSONImageSource extends TiledImageSource {
 
 		}
 
-		// TODO: If geojson present, compute bounds from data (with padding) and set as content bounds.
-		// Falls back to full projection bounds if no geojson or unable to compute an extent.
+		// Compute bounds from GeoJSON data
+		// Falls back to full projection bounds if no geojson or unable to compute an extent
+		if ( this.geojson ) {
 
-		// seems that this approach to optimize rendering by defining bounds
-		// doesn't work if not using a very large offset for the bounds, maybe an error?
-		const geoBounds = this._geoJSONBounds( 50 ).map( v => v * MathUtils.DEG2RAD );
-		this.tiling.setContentBounds( ...geoBounds );
+			const geoBounds = this._geoJSONBounds().map( v => v * MathUtils.DEG2RAD );
+			this.contentBounds = geoBounds;
+
+		} else {
+
+			this.contentBounds = this.projection.getBounds();
+
+		}
 
 	}
 
-	// main fetch per tile - > returns .Texture
+	hasContent( minX, minY, maxX, maxY, level ) {
+
+		return this.geojson !== null;
+
+	}
+
+	// main fetch per region -> returns CanvasTexture
+	// TODO: must be async?
 	async fetchItem( tokens, signal ) {
 
-		return this.drawCanvasImage( tokens );
+		const [ minX, minY, maxX, maxY ] = tokens;
+		const { projection, resolution, geojson } = this;
 
-	}
-
-	drawCanvasImage( tokens ) {
-
-		const { tiling, tileDimension, geojson } = this;
-		const [ x, y, level ] = tokens;
-		const tileBoundsDeg = tiling.getTileBounds( x, y, level, false, false ).map( v => MathUtils.RAD2DEG * v );
+		// Convert normalized range to degrees for rendering
+		const minLonRad = projection.convertNormalizedToLongitude( minX );
+		const minLatRad = projection.convertNormalizedToLatitude( minY );
+		const maxLonRad = projection.convertNormalizedToLongitude( maxX );
+		const maxLatRad = projection.convertNormalizedToLatitude( maxY );
+		const regionBoundsDeg = [
+			minLonRad * MathUtils.RAD2DEG,
+			minLatRad * MathUtils.RAD2DEG,
+			maxLonRad * MathUtils.RAD2DEG,
+			maxLatRad * MathUtils.RAD2DEG,
+		];
 
 		// create canvas
 		const canvas = document.createElement( 'canvas' );
-		canvas.width = tileDimension;
-		canvas.height = tileDimension;
+		canvas.width = resolution;
+		canvas.height = resolution;
 
 		// draw features
 		const ctx = canvas.getContext( '2d' );
@@ -114,17 +119,25 @@ export class GeoJSONImageSource extends TiledImageSource {
 		for ( let i = 0; i < features.length; i ++ ) {
 
 			const feature = features[ i ];
-			if ( this._featureIntersectsTile( feature, tileBoundsDeg ) ) {
+			if ( this._featureIntersectsTile( feature, regionBoundsDeg ) ) {
 
-				this._drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, canvas.width, canvas.height );
+				this._drawFeatureOnCanvas( ctx, feature, regionBoundsDeg, canvas.width, canvas.height );
 
 			}
 
 		}
 
 		const tex = new CanvasTexture( canvas );
+		tex.colorSpace = SRGBColorSpace;
+		tex.generateMipmaps = false;
 		tex.needsUpdate = true;
 		return tex;
+
+	}
+
+	disposeItem( texture ) {
+
+		texture.dispose();
 
 	}
 

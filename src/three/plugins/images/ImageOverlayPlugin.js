@@ -1505,12 +1505,63 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 }
 
-export class GeoJSONOverlay extends TiledImageOverlay {
+export class GeoJSONOverlay extends ImageOverlay {
+
+	get projection() {
+
+		return this.imageSource.projection;
+
+	}
+
+	get aspectRatio() {
+
+		return 2;
+
+	}
 
 	constructor( options = {} ) {
 
 		super( options );
 		this.imageSource = new GeoJSONImageSource( options );
+
+	}
+
+	_init() {
+
+		return this.imageSource.init();
+
+	}
+
+	calculateLevel( range, tile, resolution ) {
+
+		return 0;
+
+	}
+
+	hasContent( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		return this.imageSource.hasContent( minX, minY, maxX, maxY, level );
+
+	}
+
+	async getTexture( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		return await this.imageSource.lock( minX, minY, maxX, maxY, level );
+
+	}
+
+	releaseTexture( range, level ) {
+
+		const [ minX, minY, maxX, maxY ] = range;
+		this.imageSource.release( minX, minY, maxX, maxY, level );
+
+	}
+
+	setResolution( resolution ) {
+
+		this.imageSource.resolution = resolution;
 
 	}
 
