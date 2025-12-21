@@ -977,6 +977,9 @@ export class ImageOverlayPlugin {
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
+				// TODO: locking the texture here causes compositing to happen immediately which can be performance intensive,
+				// particularly in cases like GeoJSON loader. Ideally the compositing / final drw step to "lock" would be deferred
+				// as well, just like the tile image loads.
 				info.range = range;
 				overlay.lockTexture( range, tile );
 
@@ -1503,6 +1506,13 @@ export class GeoJSONOverlay extends ImageOverlay {
 	setResolution( resolution ) {
 
 		this.imageSource.resolution = resolution;
+
+	}
+
+	shouldSplit( range, tile ) {
+
+		// geojson can always split
+		return true;
 
 	}
 
