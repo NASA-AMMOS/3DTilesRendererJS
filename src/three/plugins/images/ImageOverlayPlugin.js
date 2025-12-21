@@ -814,7 +814,6 @@ export class ImageOverlayPlugin {
 
 				const {
 					meshInfo,
-					level,
 					range,
 				} = tileInfo.get( tile );
 
