@@ -11,6 +11,20 @@ export class RegionImageSource extends DataCache {
 
 	}
 
+	prepare( minX, minY, maxX, maxY, level ) {
+
+		// No-op for base class
+		// Subclasses can override to start preloading data
+
+	}
+
+	unprepare( /* minX, minY, maxX, maxY, level */ ) {
+
+		// No-op for base class
+		// Subclasses can override to release preloaded data
+
+	}
+
 }
 
 // TODO: how to handle updates to the textures for frames, reload, changing?
@@ -26,7 +40,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	}
 
-	isDataPresent( minX, minY, maxX, maxY, level ) {
+	hasContent( minX, minY, maxX, maxY, level ) {
 
 		const tiling = this.tiledImageSource.tiling;
 		let total = 0;
@@ -94,6 +108,37 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		super.dispose();
 		this.tiledImageSource.dispose();
+
+	}
+
+	prepareItem( minX, minY, maxX, maxY, level ) {
+
+		// Preload tiles for this region without allocating a texture
+		// Lock the tiles to trigger downloads and hold them
+		const imageSource = this.tiledImageSource;
+		const tiling = imageSource.tiling;
+		const range = [ minX, minY, maxX, maxY ];
+
+		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
+
+			imageSource.lock( tx, ty, tl );
+
+		} );
+
+	}
+
+	unprepareItem( minX, minY, maxX, maxY, level ) {
+
+		// Release the tiles that were locked by prepare
+		const imageSource = this.tiledImageSource;
+		const tiling = imageSource.tiling;
+		const range = [ minX, minY, maxX, maxY ];
+
+		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
+
+			imageSource.release( tx, ty, tl );
+
+		} );
 
 	}
 

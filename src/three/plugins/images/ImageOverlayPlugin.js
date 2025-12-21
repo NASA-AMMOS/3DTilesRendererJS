@@ -253,7 +253,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null && rangeMarked ) {
 
-					overlay.releaseTexture( range, level );
+					overlay.unprepareData( range, level );
 
 				}
 
@@ -838,7 +838,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null && rangeMarked ) {
 
-					overlay.releaseTexture( range, level );
+					overlay.unprepareData( range, level );
 
 				}
 
@@ -1003,7 +1003,7 @@ export class ImageOverlayPlugin {
 				info.rangeMarked = true;
 				info.range = range;
 				info.level = overlay.calculateLevel( range, tile, this.resolution );
-				overlay.getTexture( range, info.level );
+				overlay.prepareData( range, info.level );
 
 			}
 
@@ -1102,7 +1102,7 @@ export class ImageOverlayPlugin {
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasTexture( range, info.level ) ) {
+		if ( heightInRange && overlay.hasContent( range, info.level ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1271,7 +1271,7 @@ class ImageOverlay {
 
 	}
 
-	hasTexture( /* range, level */ ) {
+	hasContent( /* range, level */ ) {
 
 		return false;
 
@@ -1294,6 +1294,14 @@ class ImageOverlay {
 	shouldSplit( /* tile, info */ ) {
 
 		return false;
+
+	}
+
+	prepareData( /* range, level */ ) {
+
+	}
+
+	unprepareData( /* range, level */ ) {
 
 	}
 
@@ -1436,9 +1444,9 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	hasTexture( range, level ) {
+	hasContent( range, level ) {
 
-		return this.regionImageSource.isDataPresent( ...range, level );
+		return this.regionImageSource.hasContent( ...range, level );
 
 	}
 
@@ -1466,6 +1474,23 @@ class TiledImageOverlay extends ImageOverlay {
 
 		// if the tile has a render target and we haven't reached max level yet, split
 		return info && info.target && this.tiling.maxLevel > info.level;
+
+	}
+
+	prepareData( range, level ) {
+
+		// Start downloading tiles for this region without allocating a texture
+		// This is used for preemptive loading when a tile geometry begins to download
+		const [ minX, minY, maxX, maxY ] = range;
+		this.regionImageSource.prepareItem( minX, minY, maxX, maxY, level );
+
+	}
+
+	unprepareData( range, level ) {
+
+		// Release the tiles that were locked by prepareData
+		const [ minX, minY, maxX, maxY ] = range;
+		this.regionImageSource.unprepareItem( minX, minY, maxX, maxY, level );
 
 	}
 
