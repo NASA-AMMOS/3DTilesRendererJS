@@ -1564,6 +1564,12 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
+	redraw() {
+
+		this.imageSource.redraw();
+
+	}
+
 }
 
 export class WMSTilesOverlay extends TiledImageOverlay {

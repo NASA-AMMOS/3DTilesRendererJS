@@ -112,8 +112,16 @@ function init() {
 	scene.add( tiles.group );
 
 	// ImageOverlayPlugin must use same resolution as tileDimension for best results
+	overlay = new GeoJSONOverlay( {
+		geojson: geojson, // pass the feature collection directly
+		color: '#e91e63',
+
+		// TODO: it is slow as it is heavy, could this be used to reference for optimization?
+		// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
+	} );
+
 	tiles.registerPlugin( new ImageOverlayPlugin( {
-		overlays: [],
+		overlays: [ overlay ],
 		renderer,
 	} ) );
 
@@ -140,44 +148,24 @@ function init() {
 
 function updateOverlay() {
 
-	// TODO: adjust this so that settings can be modified immediately
-	const plugin = tiles.getPluginByName( 'IMAGE_OVERLAY_PLUGIN' );
-	if ( overlay ) {
+	overlay.alphaInvert = false;
+	overlay.alphaMask = false;
+	overlay.fillStyle = 'rgba( 255, 255, 255, 0.5 )';
 
-		plugin.deleteOverlay( overlay );
+	if ( params.mode === 'mask' ) {
 
-	}
-
-	if ( params.mode === 'overlay' ) {
-
-		overlay = new GeoJSONOverlay( {
-			geojson: geojson, // pass the feature collection directly
-			color: '#e91e63',
-
-			// TODO: it is slow as it is heavy, could this be used to reference for optimization?
-			// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
-		} );
-
-	} else if ( params.mode === 'mask' ) {
-
-		overlay = new GeoJSONOverlay( {
-			geojson: geojson,
-			alphaMask: true,
-			fillStyle: 'white',
-		} );
+		overlay.alphaMask = true;
+		overlay.fillStyle = 'white';
 
 	} else if ( params.mode === 'invertMask' ) {
 
-		overlay = new GeoJSONOverlay( {
-			geojson: geojson,
-			alphaMask: true,
-			alphaInvert: true,
-			fillStyle: 'white',
-		} );
+		overlay.alphaInvert = true;
+		overlay.alphaMask = true;
+		overlay.fillStyle = 'white';
 
 	}
 
-	plugin.addOverlay( overlay );
+	overlay.redraw();
 
 }
 

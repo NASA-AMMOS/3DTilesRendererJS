@@ -93,8 +93,43 @@ export class GeoJSONImageSource extends RegionImageSource {
 	// TODO: must be async?
 	async fetchItem( tokens, signal ) {
 
+		// create canvas
+		const canvas = document.createElement( 'canvas' );
+		const tex = new CanvasTexture( canvas );
+		tex.colorSpace = SRGBColorSpace;
+		tex.generateMipmaps = false;
+
+		this._drawToCanvas( canvas, tokens );
+		tex.needsUpdate = true;
+
+		return tex;
+
+	}
+
+	disposeItem( texture ) {
+
+		texture.dispose();
+
+	}
+
+	redraw() {
+
+		this.forEachItem( ( tex, args ) => {
+
+			this._drawToCanvas( tex.image, args );
+			tex.needsUpdate = true;
+
+		} );
+
+	}
+
+	_drawToCanvas( canvas, tokens ) {
+
 		const [ minX, minY, maxX, maxY ] = tokens;
 		const { projection, resolution, geojson } = this;
+
+		canvas.width = resolution;
+		canvas.height = resolution;
 
 		// Convert normalized range to degrees for rendering
 		const minLonRad = projection.convertNormalizedToLongitude( minX );
@@ -107,11 +142,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 			maxLonRad * MathUtils.RAD2DEG,
 			maxLatRad * MathUtils.RAD2DEG,
 		];
-
-		// create canvas
-		const canvas = document.createElement( 'canvas' );
-		canvas.width = resolution;
-		canvas.height = resolution;
 
 		// draw features
 		const ctx = canvas.getContext( '2d' );
@@ -126,18 +156,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 			}
 
 		}
-
-		const tex = new CanvasTexture( canvas );
-		tex.colorSpace = SRGBColorSpace;
-		tex.generateMipmaps = false;
-		tex.needsUpdate = true;
-		return tex;
-
-	}
-
-	disposeItem( texture ) {
-
-		texture.dispose();
 
 	}
 
