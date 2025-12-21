@@ -242,18 +242,11 @@ export class ImageOverlayPlugin {
 
 			if ( tileInfo.has( tile ) ) {
 
-				const { meshInfo, meshRange, level, meshRangeMarked, range, rangeMarked } = tileInfo.get( tile );
-
-				// release the ranges
-				if ( meshRange !== null && meshRangeMarked ) {
-
-					overlay.releaseTexture( meshRange, level );
-
-				}
+				const { meshInfo, level, range, rangeMarked } = tileInfo.get( tile );
 
 				if ( range !== null && rangeMarked ) {
 
-					overlay.unprepareData( range, level );
+					overlay.releaseTexture( range, level );
 
 				}
 
@@ -822,23 +815,15 @@ export class ImageOverlayPlugin {
 
 				const {
 					meshInfo,
-					meshRange,
 					level,
-					meshRangeMarked,
 					range,
 					rangeMarked,
 				} = tileInfo.get( tile );
 
 				// release the ranges
-				if ( meshRange !== null && meshRangeMarked ) {
-
-					overlay.releaseTexture( meshRange, level );
-
-				}
-
 				if ( range !== null && rangeMarked ) {
 
-					overlay.unprepareData( range, level );
+					overlay.releaseTexture( range, level );
 
 				}
 
@@ -973,13 +958,11 @@ export class ImageOverlayPlugin {
 
 		const info = {
 			range: null,
-			meshRange: null,
 			level: null,
 			target: null,
 			meshInfo: new Map(),
 
 			rangeMarked: false,
-			meshRangeMarked: false,
 		};
 
 		overlayInfo
@@ -1003,7 +986,7 @@ export class ImageOverlayPlugin {
 				info.rangeMarked = true;
 				info.range = range;
 				info.level = overlay.calculateLevel( range, tile, this.resolution );
-				overlay.prepareData( range, info.level );
+				overlay.lockTexture( range, info.level );
 
 			}
 
@@ -1055,7 +1038,7 @@ export class ImageOverlayPlugin {
 
 		const { aspectRatio, projection } = overlay;
 		const info = tileInfo.get( tile );
-		let range, uvs, heightInRange;
+		let range, level, uvs, heightInRange;
 
 		// retrieve the uvs and range for all the meshes
 		if ( overlay.isPlanarProjection ) {
@@ -1095,14 +1078,24 @@ export class ImageOverlayPlugin {
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			info.level = overlay.calculateLevel( range, tile, this.resolution );
+			level = overlay.calculateLevel( range, tile, this.resolution );
+
+			info.level = level;
+			info.range = range;
+			info.rangeMarked = true;
+			overlay.lockTexture( range, info.level );
+
+		} else {
+
+			level = info.level;
+			range = info.range;
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range, info.level ) ) {
+		if ( heightInRange && overlay.hasContent( range, level ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1114,19 +1107,11 @@ export class ImageOverlayPlugin {
 
 					}
 
-					info.meshRangeMarked = true;
-
 					// Get the texture from the overlay
-					const regionTarget = overlay.lockTexture( range, info.level );
+					const regionTarget = await overlay.getTexture( range, level );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
-
-						if ( regionTarget ) {
-
-							overlay.releaseTexture( range, info.level );
-
-						}
 
 						return null;
 
@@ -1147,7 +1132,6 @@ export class ImageOverlayPlugin {
 
 		}
 
-		info.meshRange = range;
 		info.target = target;
 
 		meshes.forEach( ( mesh, i ) => {
