@@ -117,7 +117,7 @@ function init() {
 		color: '#e91e63',
 
 		// TODO: it is slow as it is heavy, could this be used to reference for optimization?
-		// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
+		// url: "https://raw.githubusercontent.com/openpolis/geojson-italy/refs/heads/master/geojson/limits_IT_municipalities.geojson",
 	} );
 
 	tiles.registerPlugin( new ImageOverlayPlugin( {
