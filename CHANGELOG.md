@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.20] - Unreleased
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
+- ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
+- GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
 
 ## [0.4.19] - 2025.12.19
 ### Changed
