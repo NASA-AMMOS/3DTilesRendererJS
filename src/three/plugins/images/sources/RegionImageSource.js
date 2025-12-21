@@ -13,8 +13,6 @@ export class RegionImageSource extends DataCache {
 
 }
 
-// TODO: how to handle updates to the textures for frames, reload, changing?
-// TODO: how to get the texture before it's been drawn?
 export class TiledRegionImageSource extends RegionImageSource {
 
 	constructor( tiledImageSource ) {
@@ -99,7 +97,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 	_markImages( range, level, release = false ) {
 
-		// TODO: can we get rid of "planar projection"?
 		const imageSource = this.tiledImageSource;
 		const tiling = imageSource.tiling;
 
