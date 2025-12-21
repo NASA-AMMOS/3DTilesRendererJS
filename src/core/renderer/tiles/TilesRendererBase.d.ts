@@ -16,7 +16,6 @@ export class TilesRendererBase {
 	loadProgress: number;
 
 	fetchOptions : RequestInit;
-	preprocessURL : ( ( uri: string | URL ) => string ) | null;
 
 	lruCache : LRUCache;
 	parseQueue : PriorityQueue;
