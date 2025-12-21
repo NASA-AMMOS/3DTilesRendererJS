@@ -981,7 +981,7 @@ export class ImageOverlayPlugin {
 				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
 
 				info.range = range;
-				info.level = overlay.calculateLevel( range, tile, this.resolution );
+				info.level = overlay.calculateLevel( range, tile );
 				overlay.lockTexture( range, info.level );
 
 			}
@@ -1074,7 +1074,7 @@ export class ImageOverlayPlugin {
 		// calculate the tiling level here if not already created
 		if ( info.level === null ) {
 
-			level = overlay.calculateLevel( range, tile, this.resolution );
+			level = overlay.calculateLevel( range, tile );
 
 			info.level = level;
 			info.range = range;
@@ -1275,7 +1275,7 @@ class ImageOverlay {
 
 	}
 
-	calculateLevel( range, tile, resolution ) {
+	calculateLevel( range, tile ) {
 
 		return 0;
 
@@ -1375,8 +1375,8 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	// Calculate the appropriate level of detail for the given range and tile
-	_calculateLevel( range, tile, resolution ) {
+	// Texture acquisition API implementations
+	calculateLevel( range, tile ) {
 
 		if ( this.isPlanarProjection ) {
 
@@ -1385,6 +1385,7 @@ class TiledImageOverlay extends ImageOverlay {
 			const h = maxY - minY;
 
 			let level = 0;
+			const resolution = this.regionImageSource.resolution;
 			const maxLevel = this.tiling.maxLevel;
 			for ( ; level < maxLevel; level ++ ) {
 
@@ -1409,13 +1410,6 @@ class TiledImageOverlay extends ImageOverlay {
 			return tile.__depthFromRenderedParent - 1;
 
 		}
-
-	}
-
-	// Texture acquisition API implementations
-	calculateLevel( range, tile, resolution ) {
-
-		return this._calculateLevel( range, tile, resolution );
 
 	}
 
@@ -1496,7 +1490,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	calculateLevel( range, tile, resolution ) {
+	calculateLevel( range, tile ) {
 
 		return 0;
 
