@@ -11,15 +11,30 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
 
-// construct a shape via geojson
-const shape = [];
-for ( let i = 0; i < 100; i ++ ) {
+// Function to generate animated shape
+function generateShape( rotation, amplitudeScale, target = null ) {
 
-	const x = Math.sin( Math.PI * 2 * i / 100 );
-	const y = Math.cos( Math.PI * 2 * i / 100 );
-	const len = Math.sin( 10 * 2 * Math.PI * i / 100 ) * 10 + 75;
+	if ( target === null ) {
 
-	shape.push( [ x * len, y * len ] );
+		target = new Array( 100 )
+			.fill()
+			.map( () => new Array( 2 ) );
+
+	}
+
+	for ( let i = 0; i < 100; i ++ ) {
+
+		const angle = Math.PI * 2 * i / 100;
+		const x = Math.sin( angle + rotation );
+		const y = Math.cos( angle + rotation );
+		const len = Math.sin( 10 * angle ) * 10 * amplitudeScale + 75;
+
+		target[ i ][ 0 ] = x * len;
+		target[ i ][ 1 ] = y * len;
+
+	}
+
+	return target;
 
 }
 
@@ -27,7 +42,7 @@ const geojson = {
 	type: 'Feature',
 	geometry: {
 		type: 'Polygon',
-		coordinates: [ shape ],
+		coordinates: [ generateShape( 0, 1 ) ],
 	},
 };
 
@@ -77,12 +92,24 @@ function Scene() {
 
 	}, [ boxMesh ] );
 
-	useFrame( () => {
+	useFrame( state => {
 
 		if ( overlay && boxMesh ) {
 
 			boxMesh.scale.x = overlay.aspectRatio;
 			worldToProjectionMatrix.copy( transformRoot.matrixWorld ).invert();
+
+		}
+
+		if ( overlay ) {
+
+			// animate the geojson shape
+			const time = state.clock.getElapsedTime();
+			const rotation = time * Math.PI * 2.0 * 0.1;
+			const amplitudeScale = Math.sin( time * 5 );
+
+			generateShape( rotation, amplitudeScale, geojson.geometry.coordinates[ 0 ] );
+			overlay.imageSource.redraw();
 
 		}
 
@@ -127,7 +154,6 @@ function App() {
 
 	return (
 		<Canvas
-			frameloop='demand'
 			camera={ {
 				position: [ 0, 40, 35 ],
 			} }
