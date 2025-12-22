@@ -48,8 +48,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		this.features = null;
 		this.featureBounds = new WeakMap();
-		this.projection = new ProjectionScheme();
 		this.contentBounds = null;
+
+		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
 
 	}
