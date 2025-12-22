@@ -47,7 +47,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this.fillStyle = fillStyle;
 
 		this.features = null;
-		this.featureBounds = new WeakMap();
+		this.featureBounds = new Map();
 		this.contentBounds = null;
 
 		this.projection = new ProjectionScheme();
@@ -119,14 +119,13 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	_updateCache( force = false ) {
 
-		// TODO: do this lazily rather than all at once? This means we would skip the full content bounds
-		if ( this.features && ! force ) {
+		const { geojson, featureBounds } = this;
+		if ( ! geojson || ( this.features && ! force ) ) {
 
 			return;
 
 		}
 
-		const { geojson, featureBounds } = this;
 		featureBounds.clear();
 
 		let minLon = Infinity;
