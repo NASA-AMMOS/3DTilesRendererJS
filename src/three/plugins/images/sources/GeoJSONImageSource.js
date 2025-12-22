@@ -76,7 +76,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 		// TODO: this won't get "dirtied" - no textures will be generated for those cases
 		// where "false" has already been returned on redraw. How to fix? Return a "false"
 		// target to fill in later if needed?
-		return this.geojson !== null;
+
+		const boundsDeg = [ minX, minY, maxX, maxY ].map( v => v * Math.RAD2DEG );
+		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
 
 	}
 
@@ -201,10 +203,16 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		}
 
+		return this._boundsIntersectBounds( featureBoundsDeg, boundsDeg );
+
+	}
+
+	_boundsIntersectBounds( bounds1, bounds2 ) {
+
 		// check for intersection between bounds
-		const [ featMinX, featMinY, featMaxX, featMaxY ] = featureBoundsDeg;
-		const [ minX, minY, maxX, maxY ] = boundsDeg;
-		return ! ( featMaxX < minX || featMinX > maxX || featMaxY < minY || featMinY > maxY );
+		const [ minX1, minY1, maxX1, maxY1 ] = bounds1;
+		const [ minX2, minY2, maxX2, maxY2 ] = bounds2;
+		return ! ( maxX1 < minX2 || minX1 > maxX2 || maxY1 < minY2 || minY1 > maxY2 );
 
 	}
 
