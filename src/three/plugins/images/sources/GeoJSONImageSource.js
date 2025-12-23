@@ -3,10 +3,6 @@ import { RegionImageSource } from './RegionImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
-// TODO: Add support for limited bounds
-// TODO: Add support for padding of tiles to avoid clipping "wide" elements
-// TODO: Need to clip / fix geojson shapes across the 180 degree boundary
-// TODO: Add support for easy regeneration when colors / styles / geojson change
 // TODO: Consider option to support world-space thickness definitions. Eg world-space point size or line thickness in meters.
 
 // function for calculating the the change in arc length at a given cartographic point
@@ -50,8 +46,11 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this.strokeWidth = strokeWidth;
 		this.fillStyle = fillStyle;
 
-		this.projection = new ProjectionScheme();
+		this.features = null;
+		this.featureBounds = new Map();
 		this.contentBounds = null;
+
+		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
 
 	}
@@ -68,29 +67,23 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		}
 
-		// Compute bounds from GeoJSON data
-		// Falls back to full projection bounds if no geojson or unable to compute an extent
-		if ( this.geojson ) {
-
-			const geoBounds = this._geoJSONBounds().map( v => v * MathUtils.DEG2RAD );
-			this.contentBounds = geoBounds;
-
-		} else {
-
-			this.contentBounds = this.projection.getBounds();
-
-		}
+		this._updateCache( true );
 
 	}
 
 	hasContent( minX, minY, maxX, maxY ) {
 
-		return this.geojson !== null;
+		// TODO: only return true if there are features within the range
+		// TODO: this won't get "dirtied" - no textures will be generated for those cases
+		// where "false" has already been returned on redraw. How to fix? Return a "false"
+		// target to fill in later if needed?
+
+		const boundsDeg = [ minX, minY, maxX, maxY ].map( v => v * Math.RAD2DEG );
+		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
 
 	}
 
 	// main fetch per region -> returns CanvasTexture
-	// TODO: must be async?
 	async fetchItem( tokens, signal ) {
 
 		// create canvas
@@ -114,6 +107,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	redraw() {
 
+		this._updateCache( true );
 		this.forEachItem( ( tex, args ) => {
 
 			this._drawToCanvas( tex.image, args );
@@ -123,10 +117,49 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	}
 
+	_updateCache( force = false ) {
+
+		const { geojson, featureBounds } = this;
+		if ( ! geojson || ( this.features && ! force ) ) {
+
+			return;
+
+		}
+
+		featureBounds.clear();
+
+		let minLon = Infinity;
+		let minLat = Infinity;
+		let maxLon = - Infinity;
+		let maxLat = - Infinity;
+
+		// extract the relevant features
+		this.features = this._featuresFromGeoJSON( geojson );
+		this.features.forEach( feature => {
+
+			// save the feature bounds
+			const bounds = this._getFeatureBounds( feature );
+			featureBounds.set( feature, bounds );
+
+			// expand full content bounds
+			const [ fMinLon, fMinLat, fMaxLon, fMaxLat ] = bounds;
+			minLon = Math.min( minLon, fMinLon );
+			minLat = Math.min( minLat, fMinLat );
+			maxLon = Math.max( maxLon, fMaxLon );
+			maxLat = Math.max( maxLat, fMaxLat );
+
+		} );
+
+		this.contentBounds = [ minLon, minLat, maxLon, maxLat ];
+
+	}
+
 	_drawToCanvas( canvas, tokens ) {
 
+		this._updateCache();
+
 		const [ minX, minY, maxX, maxY ] = tokens;
-		const { projection, resolution, geojson } = this;
+		const { projection, resolution, features } = this;
 
 		canvas.width = resolution;
 		canvas.height = resolution;
@@ -145,9 +178,10 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		// draw features
 		const ctx = canvas.getContext( '2d' );
-		const features = this._featuresFromGeoJSON( geojson );
 		for ( let i = 0; i < features.length; i ++ ) {
 
+			// TODO: Add support for padding of tiles to avoid clipping "wide" elements that may extend beyond
+			// edge of the bounds like stroke, point size.
 			const feature = features[ i ];
 			if ( this._featureIntersectsTile( feature, regionBoundsDeg ) ) {
 
@@ -159,20 +193,26 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	}
 
-	// bbox quick test in projected units
+	// bounding box quick test in projected units
 	_featureIntersectsTile( feature, boundsDeg ) {
 
-		const featureBoundsDeg = this._getFeatureBounds( feature );
+		const featureBoundsDeg = this.featureBounds.get( feature );
 		if ( ! featureBoundsDeg ) {
 
 			return false;
 
 		}
 
+		return this._boundsIntersectBounds( featureBoundsDeg, boundsDeg );
+
+	}
+
+	_boundsIntersectBounds( bounds1, bounds2 ) {
+
 		// check for intersection between bounds
-		const [ fminX, fminY, fmaxX, fmaxY ] = featureBoundsDeg;
-		const [ minX, minY, maxX, maxY ] = boundsDeg;
-		return ! ( fmaxX < minX || fminX > maxX || fmaxY < minY || fminY > maxY );
+		const [ minX1, minY1, maxX1, maxY1 ] = bounds1;
+		const [ minX2, minY2, maxX2, maxY2 ] = bounds2;
+		return ! ( maxX1 < minX2 || minX1 > maxX2 || maxY1 < minY2 || minY1 > maxY2 );
 
 	}
 
@@ -432,30 +472,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 		}
 
 		ctx.restore();
-
-	}
-
-	// Compute geographic bounds in degrees from current geojson.
-	_geoJSONBounds() {
-
-		// TODO: add support for padding the bounding boxes
-		const features = this._featuresFromGeoJSON( this.geojson );
-		let minLon = Infinity;
-		let minLat = Infinity;
-		let maxLon = - Infinity;
-		let maxLat = - Infinity;
-
-		features.forEach( feature => {
-
-			const [ fMinLon, fMinLat, fMaxLon, fMaxLat ] = this._getFeatureBounds( feature );
-			minLon = Math.min( minLon, fMinLon );
-			minLat = Math.min( minLat, fMinLat );
-			maxLon = Math.max( maxLon, fMaxLon );
-			maxLat = Math.max( maxLat, fMaxLat );
-
-		} );
-
-		return [ minLon, minLat, maxLon, maxLat ];
 
 	}
 
