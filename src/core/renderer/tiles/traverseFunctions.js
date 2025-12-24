@@ -85,37 +85,6 @@ function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 }
 
-// Recursively traverses to the next tiles with unloaded renderable content to load them
-function recursivelyLoadNextRenderableTiles( tile, renderer ) {
-
-	renderer.ensureChildrenArePreprocessed( tile );
-
-	// exit the recursion if the tile hasn't been used this frame
-	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
-
-		// queue this tile to download content
-		if ( tile.__hasContent ) {
-
-			renderer.queueTileForDownload( tile );
-
-		}
-
-		if ( areChildrenProcessed( tile ) ) {
-
-			// queue any used child tiles
-			const children = tile.children;
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-				recursivelyLoadNextRenderableTiles( children[ i ], renderer );
-
-			}
-
-		}
-
-	}
-
-}
-
 // Mark a tile as being used by current view
 function markUsed( tile, renderer, cacheOnly = false ) {
 
@@ -225,20 +194,7 @@ export function markUsedTiles( tile, renderer ) {
 	// wait until after the above condition to mark the traversed tile as used or not
 	markUsed( tile, renderer );
 
-	// If this is a tile that needs children loaded to refine then recursively load child
-	// tiles until error is met
-	// With optimizedLoadStrategy, skip loading all siblings to reduce memory usage
-	let shouldLoadSiblings;
-	if ( renderer.optimizedLoadStrategy ) {
-
-		shouldLoadSiblings = false;
-
-	} else {
-
-		shouldLoadSiblings = tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS );
-
-	}
-
+	const shouldLoadSiblings = false;
 	if ( shouldLoadSiblings ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -377,20 +333,7 @@ export function markVisibleTiles( tile, renderer ) {
 	// By this time only tiles that meet the screen space error requirements will be traversed. Only mark this
 	// as visible if it's been loaded and not all children have loaded yet or it's an additive tile, meaning it needs
 	// to display in addition to the children.
-
-	// Skip the tile entirely if there's no content to load
-	// With optimizedLoadStrategy, don't render parent tiles - only render leaves that meet SSE
-	let shouldRenderParent;
-	if ( renderer.optimizedLoadStrategy ) {
-
-		shouldRenderParent = loadedContent && isAdditiveRefine;
-
-	} else {
-
-		shouldRenderParent = meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine;
-
-	}
-
+	const shouldRenderParent = loadedContent && isAdditiveRefine;
 	if ( shouldRenderParent ) {
 
 		if ( tile.__inFrustum ) {
@@ -405,42 +348,9 @@ export function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
-	// at the same rate.
-	// With optimizedLoadStrategy, always traverse to children to load only the tiles at target error
-	let shouldTraverseChildren;
-	if ( renderer.optimizedLoadStrategy ) {
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		shouldTraverseChildren = true;
-
-	} else {
-
-		shouldTraverseChildren = isAdditiveRefine || ! meetsSSE || allChildrenReady;
-
-	}
-
-	if ( ! shouldTraverseChildren ) {
-
-		// load the child content if we've found that we've been loaded so we can move down to the next tile
-		// layer when the data has loaded.
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, renderer.frameCount ) ) {
-
-				recursivelyLoadNextRenderableTiles( c, renderer );
-
-			}
-
-		}
-
-	} else {
-
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			markVisibleTiles( children[ i ], renderer );
-
-		}
+		markVisibleTiles( children[ i ], renderer );
 
 	}
 
