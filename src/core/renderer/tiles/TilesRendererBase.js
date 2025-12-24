@@ -10,7 +10,7 @@ const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
 // priority queue sort function that takes two tiles to compare. Returning 1 means
 // "tile a" is loaded first.
-const priorityCallback = ( a, b ) => {
+const defaultPriorityCallback = ( a, b ) => {
 
 	const aPriority = a.priority || 0;
 	const bPriority = b.priority || 0;
@@ -35,6 +35,42 @@ const priorityCallback = ( a, b ) => {
 		// and finally visible tiles which have equal error (ex: if geometricError === 0)
 		// should prioritize based on distance.
 		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
+
+	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+
+		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
+
+	}
+
+	return 0;
+
+};
+
+// Optimized priority callback - prioritizes distance over error for better user experience
+const optimizedPriorityCallback = ( a, b ) => {
+
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( a.__used !== b.__used ) {
+
+		// load tiles that have been used
+		return a.__used ? 1 : - 1;
+
+	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
+
+		// load closer tiles first
+		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
+
+	} else if ( a.__error !== b.__error ) {
+
+		// load the tile with the higher error
+		return a.__error > b.__error ? 1 : - 1;
 
 	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
 
@@ -127,6 +163,23 @@ export class TilesRendererBase {
 
 	}
 
+	get optimizedLoadStrategy() {
+
+		return this._optimizedLoadStrategy;
+
+	}
+
+	set optimizedLoadStrategy( v ) {
+
+		this._optimizedLoadStrategy = v;
+
+		// Update priority callbacks based on strategy
+		const priorityCallback = v ? optimizedPriorityCallback : defaultPriorityCallback;
+		this.downloadQueue.priorityCallback = priorityCallback;
+		this.parseQueue.priorityCallback = priorityCallback;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -144,11 +197,11 @@ export class TilesRendererBase {
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
-		downloadQueue.priorityCallback = priorityCallback;
+		downloadQueue.priorityCallback = defaultPriorityCallback;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
-		parseQueue.priorityCallback = priorityCallback;
+		parseQueue.priorityCallback = defaultPriorityCallback;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
@@ -186,7 +239,7 @@ export class TilesRendererBase {
 		this._errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
-		this.optimizedLoadStrategy = false;
+		this.optimizedLoadStrategy = true;
 
 	}
 

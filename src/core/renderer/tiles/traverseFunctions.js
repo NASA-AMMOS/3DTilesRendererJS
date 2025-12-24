@@ -227,7 +227,19 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
+	// With optimizedLoadStrategy, skip loading all siblings to reduce memory usage
+	let shouldLoadSiblings;
+	if ( renderer.optimizedLoadStrategy ) {
+
+		shouldLoadSiblings = false;
+
+	} else {
+
+		shouldLoadSiblings = tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS );
+
+	}
+
+	if ( shouldLoadSiblings ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -367,7 +379,19 @@ export function markVisibleTiles( tile, renderer ) {
 	// to display in addition to the children.
 
 	// Skip the tile entirely if there's no content to load
-	if ( meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine ) {
+	// With optimizedLoadStrategy, don't render parent tiles - only render leaves that meet SSE
+	let shouldRenderParent;
+	if ( renderer.optimizedLoadStrategy ) {
+
+		shouldRenderParent = loadedContent && isAdditiveRefine;
+
+	} else {
+
+		shouldRenderParent = meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine;
+
+	}
+
+	if ( shouldRenderParent ) {
 
 		if ( tile.__inFrustum ) {
 
@@ -383,7 +407,19 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
 	// at the same rate.
-	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenReady ) {
+	// With optimizedLoadStrategy, always traverse to children to load only the tiles at target error
+	let shouldTraverseChildren;
+	if ( renderer.optimizedLoadStrategy ) {
+
+		shouldTraverseChildren = true;
+
+	} else {
+
+		shouldTraverseChildren = isAdditiveRefine || ! meetsSSE || allChildrenReady;
+
+	}
+
+	if ( ! shouldTraverseChildren ) {
 
 		// load the child content if we've found that we've been loaded so we can move down to the next tile
 		// layer when the data has loaded.
