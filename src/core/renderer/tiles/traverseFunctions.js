@@ -51,6 +51,8 @@ function resetFrameState( tile, renderer ) {
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
 		tile.__allChildrenReady = false;
+		tile.__allChildrenVisible = false;
+		tile.__kicked = false;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -128,6 +130,31 @@ function canTraverse( tile, renderer ) {
 	}
 
 	return true;
+
+}
+
+function kickActiveChildren( tile, renderer ) {
+
+	const { frameCount } = renderer;
+	const { children } = tile;
+
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+		const c = children[ i ];
+		if ( isUsedThisFrame( c, frameCount ) ) {
+
+			if ( c.__active ) {
+
+				c.__kicked = true;
+				c.__active = false;
+
+			}
+
+			kickActiveChildren( c, renderer );
+
+		}
+
+	}
 
 }
 
@@ -292,9 +319,15 @@ export function markVisibleTiles( tile, renderer ) {
 		const c = children[ i ];
 		markVisibleTiles( c, renderer );
 
-		if ( ! ( c.__active || c.__allChildrenVisible ) && c.__hasContent ) {
+		delete c.___NOT_READY;
+		delete c.__WAS_ACTIVE;
+
+		const childIsVisible = c.__active && c.__hasRenderableContent && isDownloadFinished( c.__loadingState );
+		if ( ! childIsVisible && ! c.__allChildrenVisible ) {
 
 			allChildrenVisible = false;
+			c.___NOT_READY = true;
+			c.__WAS_ACTIVE = c.__active;
 
 		}
 
@@ -304,8 +337,9 @@ export function markVisibleTiles( tile, renderer ) {
 
 	if ( ( ! allChildrenVisible || isAdditiveRefine ) && loadedContent ) {
 
-		// TODO: disable children
-		// tile.__active = true;
+		debugger;
+		tile.__active = true;
+		kickActiveChildren( tile, renderer );
 
 	}
 
@@ -328,7 +362,7 @@ export function toggleTiles( tile, renderer ) {
 		// queue any tiles to load that we need to
 		// TODO: we'll need to ensure any lower level children that were "unmarked" also need to be queued for load. We can mark them as
 		// "kicked" so they can be accounted for later
-		if ( tile.__active && tile.__hasContent ) {
+		if ( ( tile.__active || tile.__kicked ) && tile.__hasContent ) {
 
 			renderer.markTileUsed( tile );
 			renderer.queueTileForDownload( tile );
@@ -344,6 +378,10 @@ export function toggleTiles( tile, renderer ) {
 			renderer.stats.inFrustum ++;
 
 		}
+
+		// TODO: if isLeaf and we can't load any tiles then we need to continue to traverse if
+		// a tile was loaded or was rendered. We can keep track of whether a parent tile is
+		// loaded so we can know whether to traverse or not
 
 	}
 
