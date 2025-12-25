@@ -326,7 +326,8 @@ export function toggleTiles( tile, renderer ) {
 		}
 
 		// queue any tiles to load that we need to
-		// TODO: we'll need to ensure any lower level children that were "unmarked" also need to be queued for load
+		// TODO: we'll need to ensure any lower level children that were "unmarked" also need to be queued for load. We can mark them as
+		// "kicked" so they can be accounted for later
 		if ( tile.__active && tile.__hasContent ) {
 
 			renderer.markTileUsed( tile );
@@ -403,29 +404,6 @@ export function toggleTiles( tile, renderer ) {
 			toggleTiles( c, renderer );
 
 		}
-
-	}
-
-}
-
-function markTileActive( tile, renderer ) {
-
-	const { stats } = renderer.stats;
-	if ( tile.__loadingState === LOADED ) {
-
-		if ( tile.__inFrustum ) {
-
-			tile.__visible = true;
-			stats.visible ++;
-
-		}
-
-		tile.__active = true;
-		stats.active ++;
-
-	} else if ( tile.__hasContent ) {
-
-		renderer.queueTileForDownload( tile );
 
 	}
 
