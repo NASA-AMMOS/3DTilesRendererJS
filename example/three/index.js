@@ -55,7 +55,7 @@ const params = {
 	orthographic: false,
 
 	errorTarget: 6,
-	maxDepth: 15,
+	maxDepth: 16,
 	displayActiveTiles: false,
 	resolutionScale: 1.0,
 
@@ -104,6 +104,8 @@ function reinstantiateTiles() {
 		dracoLoader: dracoLoader,
 		ktxLoader: ktx2loader,
 	} ) );
+	tiles.lruCache.minSize = 0;
+	tiles.maxDepth = 3;
 
 	tiles.fetchOptions.mode = 'cors';
 	geospatialRotationParent.add( tiles.group );
