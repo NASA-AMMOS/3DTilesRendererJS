@@ -550,6 +550,7 @@ export class TilesRendererBase {
 			downloading: 0,
 			failed: 0,
 			inFrustum: 0,
+			traversed: 0,
 			used: 0,
 			active: 0,
 			visible: 0,
