@@ -226,7 +226,7 @@ function updateHtml() {
 
 		const lruCache = tiles.lruCache;
 		const cacheFullness = lruCache.cachedBytes / lruCache.maxBytesSize;
-		str += `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
+		str += `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
 		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( lruCache.cachedBytes / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
