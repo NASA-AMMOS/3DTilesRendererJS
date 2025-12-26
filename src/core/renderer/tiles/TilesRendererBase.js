@@ -108,7 +108,7 @@ export class TilesRendererBase {
 	get loadProgress() {
 
 		const { stats, isLoading } = this;
-		const loading = stats.downloading + stats.parsing;
+		const loading = stats.queued + stats.downloading + stats.parsing;
 		const total = stats.inCacheSinceLoad + ( isLoading ? 1 : 0 );
 		return total === 0 ? 1.0 : 1.0 - loading / total;
 
@@ -165,9 +165,12 @@ export class TilesRendererBase {
 		this.stats = {
 			inCacheSinceLoad: 0,
 			inCache: 0,
-			parsing: 0,
+
+			queued: 0,
 			downloading: 0,
+			parsing: 0,
 			failed: 0,
+
 			inFrustum: 0,
 			used: 0,
 			active: 0,
@@ -496,6 +499,7 @@ export class TilesRendererBase {
 		}
 
 		this.stats = {
+			queued: 0,
 			parsing: 0,
 			downloading: 0,
 			failed: 0,
@@ -949,7 +953,11 @@ export class TilesRendererBase {
 
 			}
 
-			if ( t.__loadingState === LOADING ) {
+			if ( t.__loadingState === QUEUED ) {
+
+				stats.queued --;
+
+			} else if ( t.__loadingState === LOADING ) {
 
 				stats.downloading --;
 
@@ -986,7 +994,7 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete.add( tile );
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
-		stats.downloading ++;
+		stats.queued ++;
 		tile.__loadingState = QUEUED;
 		loadingTiles.add( tile );
 
@@ -1000,6 +1008,8 @@ export class TilesRendererBase {
 			}
 
 			tile.__loadingState = LOADING;
+			stats.downloading ++;
+			stats.queued --;
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
 			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
@@ -1137,7 +1147,11 @@ export class TilesRendererBase {
 					parseQueue.remove( tile );
 					downloadQueue.remove( tile );
 
-					if ( tile.__loadingState === PARSING ) {
+					if ( tile.__loadingState === QUEUED ) {
+
+						stats.queued --;
+
+					} else if ( tile.__loadingState === PARSING ) {
 
 						stats.parsing --;
 
