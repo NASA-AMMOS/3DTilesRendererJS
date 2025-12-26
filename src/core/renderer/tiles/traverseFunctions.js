@@ -312,22 +312,16 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenReady = tile.__allChildrenReady || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
 	let allChildrenVisible = true;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
 		markVisibleTiles( c, renderer );
 
-		delete c.___NOT_READY;
-		delete c.__WAS_ACTIVE;
-
 		const childIsVisible = c.__active && c.__hasRenderableContent && isDownloadFinished( c.__loadingState );
 		if ( ! childIsVisible && ! c.__allChildrenVisible ) {
 
 			allChildrenVisible = false;
-			c.___NOT_READY = true;
-			c.__WAS_ACTIVE = c.__active;
 
 		}
 
@@ -337,7 +331,6 @@ export function markVisibleTiles( tile, renderer ) {
 
 	if ( ( ! allChildrenVisible || isAdditiveRefine ) && loadedContent ) {
 
-		debugger;
 		tile.__active = true;
 		kickActiveChildren( tile, renderer );
 
