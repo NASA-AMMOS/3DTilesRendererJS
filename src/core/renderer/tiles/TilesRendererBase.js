@@ -676,12 +676,10 @@ export class TilesRendererBase {
 
 		const { lruCache, loadingTiles } = this;
 
-		// Collect unused loading tiles
-		// This is much more efficient than iterating over the entire cache
+		// cannot delete items while iterating over a set
 		const toRemove = [];
 		for ( const tile of loadingTiles ) {
 
-			// Remove tiles that are not currently used
 			if ( ! lruCache.isUsed( tile ) ) {
 
 				toRemove.push( tile );
@@ -690,7 +688,6 @@ export class TilesRendererBase {
 
 		}
 
-		// Remove collected tiles (can't modify Set while iterating)
 		for ( let i = 0; i < toRemove.length; i ++ ) {
 
 			lruCache.remove( toRemove[ i ] );
