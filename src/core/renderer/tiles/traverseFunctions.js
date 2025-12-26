@@ -173,7 +173,23 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
+	// determine if there's a renderable tile that's renderable in the parents above
+	// and continue to previously-rendered children here if necessary
+	if ( canUnconditionallyRefine( tile ) ) {
+
+		tile.__hasRenderableParent = tile.parent?.__hasRenderableParent || false;
+
+	} else {
+
+		tile.__hasRenderableParent = tile.__hasRenderableContent && isDownloadFinished( tile.__loadingState );
+
+	}
+
 	if ( ! canTraverse( tile, renderer ) ) {
+
+		// TODO: traverse children that were used last frame and mark them as "used" so they can be considered for next
+		// frame rendering. We'll also only want to traverse children that are already marked as "loaded" or "visible" so
+		// that we don't inadvertently kick off new loads
 
 		markUsed( tile, renderer );
 		return;
