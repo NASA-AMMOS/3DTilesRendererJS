@@ -2,7 +2,7 @@ import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves } from './traverseFunctions.js';
-import { UNLOADED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
+import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
 
@@ -680,7 +680,9 @@ export class TilesRendererBase {
 		const toRemove = [];
 		for ( const tile of loadingTiles ) {
 
-			if ( ! lruCache.isUsed( tile ) ) {
+			// we only remove tiles that are QUEUED to avoid cancelling tiles that may already be nearly downloaded
+			// as the camera moves
+			if ( ! lruCache.isUsed( tile ) && tile.__loadingState === QUEUED ) {
 
 				toRemove.push( tile );
 
@@ -985,7 +987,7 @@ export class TilesRendererBase {
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
 		stats.downloading ++;
-		tile.__loadingState = LOADING;
+		tile.__loadingState = QUEUED;
 		loadingTiles.add( tile );
 
 		// queue the download and parse
@@ -996,6 +998,8 @@ export class TilesRendererBase {
 				return Promise.resolve();
 
 			}
+
+			tile.__loadingState = LOADING;
 
 			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
 			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
