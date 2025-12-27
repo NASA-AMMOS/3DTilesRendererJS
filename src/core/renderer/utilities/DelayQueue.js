@@ -82,7 +82,7 @@ export class DelayQueue {
 			} );
 			data.reject( new DelayQueueItemRemovedError() );
 			items.splice( index, 1 );
-			this.itemSet.delete( item );
+			itemSet.delete( item );
 
 		}
 
