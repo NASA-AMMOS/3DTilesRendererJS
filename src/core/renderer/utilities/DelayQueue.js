@@ -118,6 +118,8 @@ export class DelayQueue {
 
 	_processEntries() {
 
+		this.timeoutId = null;
+
 		const now = performance.now();
 		const { items, delay, itemSet } = this;
 
