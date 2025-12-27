@@ -24,9 +24,15 @@ export class DelayQueue {
 
 	}
 
+	get running() {
+
+		return this.items.length > 0;
+
+	}
+
 	constructor() {
 
-		this._delay = 0;
+		this._delay = 500;
 		this.items = [];
 		this.itemSet = new Set();
 		this.timeoutId = null;
