@@ -51,6 +51,8 @@ function resetFrameState( tile, renderer ) {
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
 		tile.__allChildrenReady = false;
+		tile.__allChildrenVisible = false;
+		tile.__kicked = false;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -85,30 +87,34 @@ function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 }
 
-// Recursively traverses to the next tiles with unloaded renderable content to load them
-function recursivelyLoadNextRenderableTiles( tile, renderer ) {
+// Recursively mark tiles used down to the next layer, skipping external tilesets
+function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 
-	renderer.ensureChildrenArePreprocessed( tile );
+	resetFrameState( tile, renderer );
 
-	// exit the recursion if the tile hasn't been used this frame
-	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
+	if ( tile.__usedLastFrame ) {
 
-		// queue this tile to download content
-		if ( tile.__hasContent ) {
+		markUsed( tile, renderer );
 
-			renderer.queueTileForDownload( tile );
+		// traverse to the next renderable tile
+		if ( canUnconditionallyRefine( tile ) || ! tile.__wasSetActive ) {
 
-		}
+			// don't traverse if the children have not been processed, yet but tileset content
+			// should be considered to be "replaced" by the loaded children so await that here.
+			if ( areChildrenProcessed( tile ) ) {
 
-		if ( areChildrenProcessed( tile ) ) {
+				const children = tile.children;
+				for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			// queue any used child tiles
-			const children = tile.children;
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
+					recursivelyMarkPreviouslyUsed( children[ i ], renderer );
 
-				recursivelyLoadNextRenderableTiles( children[ i ], renderer );
+				}
 
 			}
+
+		} else if ( tile.__wasSetActive ) {
+
+			tile.__active = true;
 
 		}
 
@@ -128,15 +134,6 @@ function markUsed( tile, renderer, cacheOnly = false ) {
 	if ( ! cacheOnly ) {
 
 		tile.__used = true;
-		renderer.stats.used ++;
-
-	}
-
-	renderer.markTileUsed( tile );
-
-	if ( tile.__inFrustum === true ) {
-
-		renderer.stats.inFrustum ++;
 
 	}
 
@@ -171,6 +168,31 @@ function canTraverse( tile, renderer ) {
 
 }
 
+function kickActiveChildren( tile, renderer ) {
+
+	const { frameCount } = renderer;
+	const { children } = tile;
+
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+		const c = children[ i ];
+		if ( isUsedThisFrame( c, frameCount ) ) {
+
+			if ( c.__active ) {
+
+				c.__kicked = true;
+				c.__active = false;
+
+			}
+
+			kickActiveChildren( c, renderer );
+
+		}
+
+	}
+
+}
+
 // Determine which tiles are used by the renderer given the current camera configuration
 export function markUsedTiles( tile, renderer ) {
 
@@ -188,7 +210,12 @@ export function markUsedTiles( tile, renderer ) {
 
 	if ( ! canTraverse( tile, renderer ) ) {
 
-		markUsed( tile, renderer );
+		if ( ! canUnconditionallyRefine( tile ) ) {
+
+			markUsed( tile, renderer );
+
+		}
+
 		return;
 
 	}
@@ -209,31 +236,25 @@ export function markUsedTiles( tile, renderer ) {
 	// If none of the children are visible in the frustum then there should be no reason to display this tile. We still mark
 	// this tile and all children as "used" only in the cache (but not loaded) so they are not disposed, causing an oscillation
 	// / flicker in the content.
-	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
+	// if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
-		tile.__inFrustum = false;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+	// 	tile.__inFrustum = false;
+	// 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], renderer, true );
+	// 		recursivelyMarkUsed( children[ i ], renderer, true );
 
-		}
+	// 	}
 
-		return;
+	// 	return;
 
-	}
+	// }
 
 	// wait until after the above condition to mark the traversed tile as used or not
+	// and then mark any of the sibling child tiles as used
 	markUsed( tile, renderer );
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-	// If this is a tile that needs children loaded to refine then recursively load child
-	// tiles until error is met
-	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.__depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
-
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			recursivelyMarkUsed( children[ i ], renderer );
-
-		}
+		recursivelyMarkUsed( children[ i ], renderer );
 
 	}
 
@@ -310,31 +331,25 @@ export function markUsedSetLeaves( tile, renderer ) {
 // Skip past tiles we consider unrenderable because they are outside the error threshold.
 export function markVisibleTiles( tile, renderer ) {
 
-	const stats = renderer.stats;
 	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		return;
 
 	}
 
-	// Request the tile contents or mark it as visible if we've found a leaf.
+	const hasContent = tile.__hasContent;
+	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
+	const children = tile.children;
 	if ( tile.__isLeaf ) {
 
-		if ( tile.__loadingState === LOADED ) {
+		tile.__active = true;
+		if ( ! loadedContent && hasContent && areChildrenProcessed( tile ) ) {
 
-			if ( tile.__inFrustum ) {
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				tile.__visible = true;
-				stats.visible ++;
+				recursivelyMarkPreviouslyUsed( children[ i ], renderer );
 
 			}
-
-			tile.__active = true;
-			stats.active ++;
-
-		} else if ( tile.__hasContent ) {
-
-			renderer.queueTileForDownload( tile );
 
 		}
 
@@ -342,69 +357,32 @@ export function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	const children = tile.children;
-	const hasContent = tile.__hasContent;
-	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
-	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
-	const meetsSSE = tile.__error <= errorRequirement;
-	const isAdditiveRefine = tile.refine === 'ADD';
 
-	// TODO: the "meetsSSE" field can be removed when the "errorThreshold" field has been removed
+	const isAdditiveRefine = tile.refine === 'ADD';
 
 	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenReady = tile.__allChildrenReady || ( tile.__depth === 0 && ! LOAD_ROOT_SIBLINGS );
+	let allChildrenVisible = children.length > 0;
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-	// If we've met the SSE requirements and we can load content then fire a fetch.
-	if ( hasContent && ( meetsSSE || isAdditiveRefine ) ) {
+		const c = children[ i ];
+		markVisibleTiles( c, renderer );
 
-		renderer.queueTileForDownload( tile );
+		const childIsVisible = c.__active && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
+		if ( ! childIsVisible && ! c.__allChildrenVisible ) {
+
+			allChildrenVisible = false;
+
+		}
 
 	}
 
-	// By this time only tiles that meet the screen space error requirements will be traversed. Only mark this
-	// as visible if it's been loaded and not all children have loaded yet or it's an additive tile, meaning it needs
-	// to display in addition to the children.
+	tile.__allChildrenVisible = allChildrenVisible;
 
-	// Skip the tile entirely if there's no content to load
-	if ( meetsSSE && loadedContent && ! allChildrenReady || loadedContent && isAdditiveRefine ) {
-
-		if ( tile.__inFrustum ) {
-
-			tile.__visible = true;
-			stats.visible ++;
-
-		}
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ( loadedContent || ! tile.__hasContent ) ) {
 
 		tile.__active = true;
-		stats.active ++;
-
-	}
-
-	// If we're additive then don't stop the traversal here because it doesn't matter whether the children load in
-	// at the same rate.
-	if ( ! isAdditiveRefine && meetsSSE && ! allChildrenReady ) {
-
-		// load the child content if we've found that we've been loaded so we can move down to the next tile
-		// layer when the data has loaded.
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			const c = children[ i ];
-			if ( isUsedThisFrame( c, renderer.frameCount ) ) {
-
-				recursivelyLoadNextRenderableTiles( c, renderer );
-
-			}
-
-		}
-
-	} else {
-
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			markVisibleTiles( children[ i ], renderer );
-
-		}
+		kickActiveChildren( tile, renderer );
 
 	}
 
@@ -414,6 +392,42 @@ export function markVisibleTiles( tile, renderer ) {
 export function toggleTiles( tile, renderer ) {
 
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
+	if ( isUsed ) {
+
+		// any internal tileset must be marked as active and loaded
+		if ( tile.__hasUnrenderableContent ) {
+
+			tile.__active = true;
+
+
+		}
+
+		// queue any tiles to load that we need to
+		// TODO: we'll need to ensure any lower level children that were "unmarked" also need to be queued for load. We can mark them as
+		// "kicked" so they can be accounted for later
+		if ( ( tile.__active || tile.__kicked ) && tile.__hasContent ) {
+
+			renderer.markTileUsed( tile );
+			renderer.queueTileForDownload( tile );
+
+		}
+
+		// if the tile is loaded and in frustum we can mark it as visible
+		tile.__visible = tile.__hasRenderableContent && tile.__active && tile.__inFrustum && tile.__loadingState === LOADED;
+		renderer.stats.traversed ++;
+
+		if ( tile.__inFrustum ) {
+
+			renderer.stats.inFrustum ++;
+
+		}
+
+		// TODO: if isLeaf and we can't load any tiles then we need to continue to traverse if
+		// a tile was loaded or was rendered. We can keep track of whether a parent tile is
+		// loaded so we can know whether to traverse or not
+
+	}
+
 	if ( isUsed || tile.__usedLastFrame ) {
 
 		let setActive = false;
@@ -446,12 +460,14 @@ export function toggleTiles( tile, renderer ) {
 
 			if ( tile.__wasSetActive !== setActive ) {
 
+				renderer.stats.active += setActive ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, setActive ) );
 
 			}
 
 			if ( tile.__wasSetVisible !== setVisible ) {
 
+				renderer.stats.visible += setVisible ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
 
 			}
