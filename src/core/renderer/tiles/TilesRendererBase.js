@@ -1,6 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { DelayQueue } from '../utilities/DelayQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
@@ -127,6 +128,18 @@ export class TilesRendererBase {
 
 	}
 
+	get downloadDelay() {
+
+		return this.delayQueue.delay;
+
+	}
+
+	set downloadDelay( value ) {
+
+		this.delayQueue.delay = value;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -141,6 +154,8 @@ export class TilesRendererBase {
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
+
+		const delayQueue = new DelayQueue();
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
@@ -159,6 +174,7 @@ export class TilesRendererBase {
 		this.usedSet = new Set();
 		this.loadingTiles = new Set();
 		this.lruCache = lruCache;
+		this.delayQueue = delayQueue;
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
 		this.processNodeQueue = processNodeQueue;
