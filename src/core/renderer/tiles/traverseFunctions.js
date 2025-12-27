@@ -208,21 +208,14 @@ export function markUsedTiles( tile, renderer ) {
 
 	}
 
-	// determine if there's a renderable tile that's renderable in the parents above
-	// and continue to previously-rendered children here if necessary
-	if ( canUnconditionallyRefine( tile ) ) {
-
-		tile.__hasRenderableParent = tile.parent?.__hasRenderableParent || false;
-
-	} else {
-
-		tile.__hasRenderableParent = tile.__hasRenderableContent && isDownloadFinished( tile.__loadingState );
-
-	}
-
 	if ( ! canTraverse( tile, renderer ) ) {
 
-		markUsed( tile, renderer );
+		if ( ! canUnconditionallyRefine( tile ) ) {
+
+			markUsed( tile, renderer );
+
+		}
+
 		return;
 
 	}
