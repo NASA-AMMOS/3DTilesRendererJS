@@ -12,5 +12,6 @@ export * from './constants.js';
 
 export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';
+export { DelayQueue } from './utilities/DelayQueue.js';
 export { BatchTable } from './utilities/BatchTable.js';
 export { FeatureTable } from './utilities/FeatureTable.js';

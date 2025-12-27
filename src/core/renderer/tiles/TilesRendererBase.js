@@ -1,6 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { DelayQueue } from '../utilities/DelayQueue.js';
 import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
@@ -127,6 +128,18 @@ export class TilesRendererBase {
 
 	}
 
+	get downloadDelay() {
+
+		return this.delayQueue.delay;
+
+	}
+
+	set downloadDelay( value ) {
+
+		this.delayQueue.delay = value;
+
+	}
+
 	constructor( url = null ) {
 
 		// state
@@ -141,6 +154,8 @@ export class TilesRendererBase {
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
+
+		const delayQueue = new DelayQueue();
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
@@ -159,6 +174,7 @@ export class TilesRendererBase {
 		this.usedSet = new Set();
 		this.loadingTiles = new Set();
 		this.lruCache = lruCache;
+		this.delayQueue = delayQueue;
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
 		this.processNodeQueue = processNodeQueue;
@@ -341,7 +357,7 @@ export class TilesRendererBase {
 
 	update() {
 
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
+		const { lruCache, usedSet, stats, root, delayQueue, downloadQueue, parseQueue, processNodeQueue } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -428,7 +444,7 @@ export class TilesRendererBase {
 		lruCache.scheduleUnload();
 
 		// if all tasks have finished and we've been marked as actively loading then fire the completion event
-		const runningTasks = downloadQueue.running || parseQueue.running || processNodeQueue.running;
+		const runningTasks = delayQueue.running || downloadQueue.running || parseQueue.running || processNodeQueue.running;
 		if ( runningTasks === false && this.isLoading === true ) {
 
 			this.cachedSinceLoadComplete.clear();
@@ -678,7 +694,7 @@ export class TilesRendererBase {
 
 	removeUnusedPendingTiles() {
 
-		const { lruCache, loadingTiles } = this;
+		const { lruCache, loadingTiles, delayQueue } = this;
 
 		// cannot delete items while iterating over a set
 		const toRemove = [];
@@ -696,7 +712,9 @@ export class TilesRendererBase {
 
 		for ( let i = 0; i < toRemove.length; i ++ ) {
 
-			lruCache.remove( toRemove[ i ] );
+			const tile = toRemove[ i ];
+			delayQueue.remove( tile );
+			lruCache.remove( tile );
 
 		}
 
@@ -915,6 +933,7 @@ export class TilesRendererBase {
 
 		const stats = this.stats;
 		const lruCache = this.lruCache;
+		const delayQueue = this.delayQueue;
 		const downloadQueue = this.downloadQueue;
 		const parseQueue = this.parseQueue;
 		const loadingTiles = this.loadingTiles;
@@ -999,7 +1018,7 @@ export class TilesRendererBase {
 		loadingTiles.add( tile );
 
 		// queue the download and parse
-		return downloadQueue.add( tile, downloadTile => {
+		return delayQueue.add( tile, () => {
 
 			if ( signal.aborted ) {
 
@@ -1007,13 +1026,23 @@ export class TilesRendererBase {
 
 			}
 
-			tile.__loadingState = LOADING;
-			stats.downloading ++;
-			stats.queued --;
+			return downloadQueue.add( tile, () => {
 
-			const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
-			this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
-			return res;
+				if ( signal.aborted ) {
+
+					return Promise.resolve();
+
+				}
+
+				tile.__loadingState = LOADING;
+				stats.downloading ++;
+				stats.queued --;
+
+				const res = this.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( uri, { ...this.fetchOptions, signal } ) );
+				this.dispatchEvent( { type: 'tile-download-start', tile, uri } );
+				return res;
+
+			} );
 
 		} )
 			.then( res => {

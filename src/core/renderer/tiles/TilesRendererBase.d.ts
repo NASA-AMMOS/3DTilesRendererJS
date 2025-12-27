@@ -12,6 +12,7 @@ export class TilesRendererBase {
 	errorThreshold : number;
 	displayActiveTiles : boolean;
 	maxDepth : number;
+	downloadDelay : number;
 
 	loadProgress: number;
 
