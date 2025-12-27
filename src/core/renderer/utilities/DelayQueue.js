@@ -28,6 +28,7 @@ export class DelayQueue {
 
 		this._delay = 0;
 		this.items = [];
+		this.itemSet = new Set();
 		this.timeoutId = null;
 
 	}
@@ -48,6 +49,7 @@ export class DelayQueue {
 			data.reject = reject;
 
 			this.items.push( data );
+			this.itemSet.add( item );
 			this._scheduleTimeout();
 
 		} );
@@ -58,7 +60,13 @@ export class DelayQueue {
 
 	remove( item ) {
 
-		const { items } = this;
+		const { items, itemSet } = this;
+		if ( ! itemSet.has( item ) ) {
+
+			return;
+
+		}
+
 		const index = items.findIndex( data => data.item === item );
 		if ( index !== - 1 ) {
 
@@ -74,6 +82,7 @@ export class DelayQueue {
 			} );
 			data.reject( new DelayQueueItemRemovedError() );
 			items.splice( index, 1 );
+			this.itemSet.delete( item );
 
 		}
 
@@ -110,7 +119,7 @@ export class DelayQueue {
 	_processEntries() {
 
 		const now = performance.now();
-		const { items, delay } = this;
+		const { items, delay, itemSet } = this;
 
 		let toRemove = 0;
 		for ( let i = 0; i < items.length; i ++ ) {
@@ -124,6 +133,7 @@ export class DelayQueue {
 			}
 
 			toRemove ++;
+			itemSet.delete( item );
 
 			let result;
 			try {
