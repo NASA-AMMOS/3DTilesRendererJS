@@ -337,7 +337,12 @@ export function markVisibleTiles( tile, renderer ) {
 	const children = tile.children;
 	if ( tile.__isLeaf ) {
 
-		tile.__active = true;
+		if ( ! canUnconditionallyRefine( tile ) ) {
+
+			tile.__active = true;
+
+		}
+
 		if ( ! loadedContent && hasContent && areChildrenProcessed( tile ) ) {
 
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -374,7 +379,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	tile.__allChildrenVisible = allChildrenVisible;
 
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ( loadedContent || ! tile.__hasContent ) ) {
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ( loadedContent || ! tile.__hasContent ) && tile.__wasSetActive ) {
 
 		tile.__active = true;
 		kickActiveChildren( tile, renderer );
