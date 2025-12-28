@@ -97,7 +97,6 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 	if ( tile.__usedLastFrame ) {
 
 		markUsed( tile, renderer );
-		tile._SNUCK_IN = true;
 
 		if ( tile.__wasSetActive ) {
 
@@ -118,11 +117,7 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 
 		}
 
-		return true;
-
 	}
-
-	return false;
 
 }
 
@@ -345,18 +340,23 @@ export function markVisibleTiles( tile, renderer ) {
 
 			tile.__active = true;
 
-		}
+			// TODO: tiles should never end at an "unconditionally refine-able tiles" so we can guard this
+			// behind checking if this tile should be "visible" and loaded and if if it's not then we can
+			// continue to load previously active tiles
+			if ( areChildrenProcessed( tile ) && ( ! tile.__hasContent || ! isDownloadFinished( tile.__loadingState ) ) ) {
 
-		if ( areChildrenProcessed( tile ) ) {
+				for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
+					recursivelyMarkPreviouslyUsed( children[ i ], renderer );
 
-				recursivelyMarkPreviouslyUsed( children[ i ], renderer );
+				}
 
 			}
 
 		}
 
+
+		tile.__thisIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 		return;
 
 	}
@@ -374,8 +374,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
-			const childIsVisible = c.__active && ! canUnconditionallyRefine( c ) && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
-			if ( ! childIsVisible && ! c.__allChildrenVisible ) {
+			if ( ! c.__thisIsVisible && ! c.__allChildrenVisible ) {
 
 				allChildrenVisible = false;
 
@@ -386,17 +385,17 @@ export function markVisibleTiles( tile, renderer ) {
 	}
 
 	tile.__allChildrenVisible = allChildrenVisible;
+	tile.__thisIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 
-	const thisTileVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileVisible ) {
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! tile.__thisIsVisible ) {
 
-		if ( tile.__wasSetActive && ( loadedContent || ! canUnconditionallyRefine( tile ) ) ) {
+		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
 
 			tile.__active = true;
+			tile.__thisIsVisible = true;
 			kickActiveChildren( tile, renderer );
 
 		}
-
 
 	}
 
