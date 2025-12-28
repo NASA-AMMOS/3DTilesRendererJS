@@ -386,7 +386,7 @@ export function markVisibleTiles( tile, renderer ) {
 	const thisTileVisible = tile.__active && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileVisible ) {
 
-		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
+		if ( tile.__wasSetActive && ( loadedContent || ! canUnconditionallyRefine( tile ) ) ) {
 
 			tile.__active = true;
 			kickActiveChildren( tile, renderer );
