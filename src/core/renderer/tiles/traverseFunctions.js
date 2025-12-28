@@ -54,6 +54,8 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenVisible = false;
 		tile.__kicked = false;
 
+		tile._SNUCK_IN = false;
+
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
 		tile.__inFrustum = viewErrorTarget.inView;
@@ -95,30 +97,32 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 	if ( tile.__usedLastFrame ) {
 
 		markUsed( tile, renderer );
+		tile._SNUCK_IN = true;
 
-		// traverse to the next renderable tile
-		if ( canUnconditionallyRefine( tile ) || ! tile.__wasSetActive ) {
-
-			// don't traverse if the children have not been processed, yet but tileset content
-			// should be considered to be "replaced" by the loaded children so await that here.
-			if ( areChildrenProcessed( tile ) ) {
-
-				const children = tile.children;
-				for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-					recursivelyMarkPreviouslyUsed( children[ i ], renderer );
-
-				}
-
-			}
-
-		} else if ( tile.__wasSetActive ) {
+		if ( tile.__wasSetActive ) {
 
 			tile.__active = true;
 
 		}
 
+		// don't traverse if the children have not been processed, yet but tileset content
+		// should be considered to be "replaced" by the loaded children so await that here.
+		if ( areChildrenProcessed( tile ) ) {
+
+			const children = tile.children;
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+				recursivelyMarkPreviouslyUsed( children[ i ], renderer );
+
+			}
+
+		}
+
+		return true;
+
 	}
+
+	return false;
 
 }
 
@@ -343,7 +347,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 		}
 
-		if ( ! loadedContent && hasContent && areChildrenProcessed( tile ) ) {
+		if ( areChildrenProcessed( tile ) ) {
 
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -379,10 +383,16 @@ export function markVisibleTiles( tile, renderer ) {
 
 	tile.__allChildrenVisible = allChildrenVisible;
 
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ( loadedContent || ! tile.__hasContent ) && tile.__wasSetActive ) {
+	const thisTileVisible = tile.__active && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileVisible ) {
 
-		tile.__active = true;
-		kickActiveChildren( tile, renderer );
+		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
+
+			tile.__active = true;
+			kickActiveChildren( tile, renderer );
+
+		}
+
 
 	}
 
