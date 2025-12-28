@@ -210,12 +210,7 @@ export function markUsedTiles( tile, renderer ) {
 
 	if ( ! canTraverse( tile, renderer ) ) {
 
-		if ( ! canUnconditionallyRefine( tile ) ) {
-
-			markUsed( tile, renderer );
-
-		}
-
+		markUsed( tile, renderer );
 		return;
 
 	}
