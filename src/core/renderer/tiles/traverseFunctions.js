@@ -6,12 +6,6 @@ const viewErrorTarget = {
 	distanceFromCamera: Infinity,
 };
 
-// flag guiding the behavior of the traversal to load the siblings at the root of the
-// tileset or not. The spec seems to indicate "true" when using REPLACE define but
-// Cesium's behavior is "false".
-// See CesiumGS/3d-tiles#776
-const LOAD_ROOT_SIBLINGS = true;
-
 function isDownloadFinished( value ) {
 
 	return value === LOADED || value === FAILED;
@@ -412,7 +406,6 @@ export function toggleTiles( tile, renderer ) {
 
 			tile.__active = true;
 
-
 		}
 
 		// queue any tiles to load that we need to
@@ -422,6 +415,12 @@ export function toggleTiles( tile, renderer ) {
 
 			renderer.markTileUsed( tile );
 			renderer.queueTileForDownload( tile );
+
+			if ( tile.__loadingState !== LOADED ) {
+
+				tile.__active = false;
+
+			}
 
 		}
 
