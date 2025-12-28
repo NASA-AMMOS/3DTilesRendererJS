@@ -372,10 +372,14 @@ export function markVisibleTiles( tile, renderer ) {
 		const c = children[ i ];
 		markVisibleTiles( c, renderer );
 
-		const childIsVisible = c.__active && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
-		if ( ! childIsVisible && ! c.__allChildrenVisible ) {
+		if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
-			allChildrenVisible = false;
+			const childIsVisible = c.__active && ! canUnconditionallyRefine( c ) && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
+			if ( ! childIsVisible && ! c.__allChildrenVisible ) {
+
+				allChildrenVisible = false;
+
+			}
 
 		}
 
@@ -383,7 +387,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	tile.__allChildrenVisible = allChildrenVisible;
 
-	const thisTileVisible = tile.__active && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
+	const thisTileVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileVisible ) {
 
 		if ( tile.__wasSetActive && ( loadedContent || ! canUnconditionallyRefine( tile ) ) ) {
