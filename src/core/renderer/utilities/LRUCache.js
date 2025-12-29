@@ -35,7 +35,7 @@ class LRUCache {
 	constructor() {
 
 		// options
-		this.minSize = 0;
+		this.minSize = 6000;
 		this.maxSize = 8000;
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
