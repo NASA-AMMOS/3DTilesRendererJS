@@ -34,6 +34,9 @@ const params = {
 
 	orthographic: false,
 
+	optimizedLoadStrategy: false,
+	loadSiblings: true,
+
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
@@ -60,17 +63,22 @@ function reinstantiateTiles() {
 	tiles = new TilesRenderer();
 	tiles.lruCache.minSize = 0;
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
-	// tiles.registerPlugin( new TileCompressionPlugin() );
-	// tiles.registerPlugin( new UpdateOnChangePlugin() );
-	// tiles.registerPlugin( new UnloadTilesPlugin() );
-	// tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new TileCompressionPlugin() );
+	tiles.registerPlugin( new UpdateOnChangePlugin() );
+	tiles.registerPlugin( new UnloadTilesPlugin() );
 	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
+	tiles.optimizedLoadStrategy = params.optimizedLoadStrategy;
 
+	if ( ! params.optimizedLoadStrategy ) {
+
+		tiles.registerPlugin( new TilesFadePlugin() );
+
+	}
 
 	if ( params.useBatchedMesh ) {
 
@@ -156,6 +164,8 @@ function init() {
 	} );
 
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
+	mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
+	mapsOptions.add( params, 'loadSiblings' ).listen();
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
 	mapsOptions.add( params, 'reload' );
 
