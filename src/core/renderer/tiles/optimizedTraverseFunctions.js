@@ -236,7 +236,7 @@ function markUsedTiles( tile, renderer ) {
 	// and then mark any of the sibling child tiles as used
 	markUsed( tile );
 
-	if ( tile.refine === 'REPLACE' && anyChildrenUsed && renderer.loadSiblings !== false ) {
+	if ( tile.refine === 'REPLACE' && anyChildrenUsed && renderer.loadSiblings ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 

@@ -165,23 +165,6 @@ export class TilesRendererBase {
 
 	}
 
-	get optimizedLoadStrategy() {
-
-		return this._optimizedLoadStrategy;
-
-	}
-
-	set optimizedLoadStrategy( v ) {
-
-		this._optimizedLoadStrategy = v;
-
-		// Update priority callbacks based on strategy
-		const priorityCallback = v ? optimizedPriorityCallback : defaultPriorityCallback;
-		this.downloadQueue.priorityCallback = priorityCallback;
-		this.parseQueue.priorityCallback = priorityCallback;
-
-	}
-
 	constructor( url = null ) {
 
 		// state
@@ -247,6 +230,7 @@ export class TilesRendererBase {
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
+		this.loadSiblings = false;
 
 	}
 
@@ -460,6 +444,12 @@ export class TilesRendererBase {
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
 		usedSet.clear();
 
+		// assign the correct callbacks
+		const priorityCallback = optimizedLoadStrategy ? optimizedPriorityCallback : defaultPriorityCallback;
+		downloadQueue.priorityCallback = priorityCallback;
+		parseQueue.priorityCallback = priorityCallback;
+
+		// run traversal
 		if ( optimizedLoadStrategy ) {
 
 			optimizedRunTraversal( root, this );
