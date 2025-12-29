@@ -347,11 +347,7 @@ function markVisibleTiles( tile, renderer ) {
 
 		if ( ! canUnconditionallyRefine( tile ) ) {
 
-			if ( tile.__hasContent ) {
-
-				tile.__active = true;
-
-			}
+			tile.__active = true;
 
 			// TODO: tiles should never end at an "unconditionally refine-able tiles" so we can guard this
 			// behind checking if this tile should be "visible" and loaded and if if it's not then we can
@@ -442,6 +438,10 @@ function toggleTiles( tile, renderer ) {
 				tile.__active = false;
 
 			}
+
+		} else {
+
+			tile.__active = false;
 
 		}
 
