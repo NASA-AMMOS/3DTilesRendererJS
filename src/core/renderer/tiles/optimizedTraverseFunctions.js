@@ -307,6 +307,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
+	// save whether any children are processed
 	let allUsedChildrenProcessed = true;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -366,9 +367,6 @@ export function markVisibleTiles( tile, renderer ) {
 		return;
 
 	}
-
-
-	const isAdditiveRefine = tile.refine === 'ADD';
 
 	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
@@ -516,5 +514,14 @@ export function toggleTiles( tile, renderer ) {
 		}
 
 	}
+
+}
+
+export function runTraversal( tile, renderer ) {
+
+	markUsedTiles( tile, renderer );
+	markUsedSetLeaves( tile, renderer );
+	markVisibleTiles( tile, renderer );
+	toggleTiles( tile, renderer );
 
 }
