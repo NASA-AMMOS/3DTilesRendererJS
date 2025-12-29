@@ -60,15 +60,18 @@ function resetFrameState( tile, renderer ) {
 }
 
 // Recursively mark tiles used down to the next layer, skipping external tilesets
-function recursivelyMarkUsed( tile, renderer, includeCache = false ) {
+function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
-	markUsed( tile );
-	if ( includeCache ) {
+	if ( cacheOnly ) {
 
 		renderer.markTileUsed( tile );
+
+	} else {
+
+		markUsed( tile );
 
 	}
 
@@ -79,7 +82,7 @@ function recursivelyMarkUsed( tile, renderer, includeCache = false ) {
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			recursivelyMarkUsed( children[ i ], renderer, includeCache );
+			recursivelyMarkUsed( children[ i ], renderer, cacheOnly );
 
 		}
 
