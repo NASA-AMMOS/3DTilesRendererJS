@@ -420,7 +420,7 @@ function toggleTiles( tile, renderer ) {
 	if ( isUsed ) {
 
 		// any internal tileset must be marked as active and loaded
-		if ( tile.__hasUnrenderableContent ) {
+		if ( tile.__hasUnrenderableContent || tile.__hasRenderableContent && tile.refine === 'ADD' ) {
 
 			tile.__active = true;
 
