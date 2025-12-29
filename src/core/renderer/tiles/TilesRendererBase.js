@@ -65,22 +65,18 @@ const optimizedPriorityCallback = ( a, b ) => {
 
 	} else if ( a.__inFrustum !== b.__inFrustum ) {
 
-		// load tiles that are in the frustum
+		// load tiles that have are in the frustum
 		return a.__inFrustum ? 1 : - 1;
+
+	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
+
+		// load internal tile sets first
+		return a.__hasUnrenderableContent ? 1 : - 1;
 
 	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
 
 		// load closer tiles first
 		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
-
-	} else if ( a.__error !== b.__error ) {
-
-		// load the tile with the higher error
-		return a.__error > b.__error ? 1 : - 1;
-
-	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
-
-		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
 
 	}
 

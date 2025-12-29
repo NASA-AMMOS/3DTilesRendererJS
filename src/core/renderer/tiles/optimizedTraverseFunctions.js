@@ -328,7 +328,7 @@ function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
-	tile.__allUsedChildrenProcessed = allUsedChildrenProcessed;
+	tile.__allUsedChildrenProcessed = allUsedChildrenProcessed && areChildrenProcessed( tile );
 
 }
 
@@ -433,7 +433,7 @@ function toggleTiles( tile, renderer ) {
 
 			renderer.markTileUsed( tile );
 
-			if ( tile.__allUsedChildrenProcessed ) {
+			if ( tile.__hasUnrenderableContent || tile.__allUsedChildrenProcessed ) {
 
 				renderer.queueTileForDownload( tile );
 
