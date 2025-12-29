@@ -336,6 +336,9 @@ function animate() {
 
 	if ( ! tiles ) return;
 
+	// ensure transforms are up to date for controls update
+	scene.updateMatrixWorld();
+
 	controls.enabled = ! transition.animating;
 	controls.update();
 	transition.update();
