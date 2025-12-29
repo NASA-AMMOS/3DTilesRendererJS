@@ -63,6 +63,11 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load tiles that have been used
 		return a.__used ? 1 : - 1;
 
+	} else if ( a.__inFrustum !== b.__inFrustum ) {
+
+		// load tiles that are in the frustum
+		return a.__inFrustum ? 1 : - 1;
+
 	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
 
 		// load closer tiles first
