@@ -393,6 +393,31 @@ displayActiveTiles = false : Boolean
 
 Active tiles not currently visible in a camera frustum are removed from the scene as an optimization. Setting `displayActiveTiles` to true will keep them in the scene to be rendered from an outside camera view not accounted for by the tiles renderer.
 
+### .optimizedLoadStrategy
+
+```js
+optimizedLoadStrategy = false : Boolean
+```
+
+Enables an **experimental** optimized tile loading strategy that loads only the tiles needed for the current view, reducing memory usage and improving initial load times. Tiles are loaded independently based on screen space error without requiring all parent tiles to load first. Prevents visual gaps and flashing during camera movement.
+
+Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
+
+Default is `false` which uses the previous approach of loading all parent and sibling tiles for guaranteed smooth transitions.
+
+> [!WARN]
+> Setting is currently incompatible with TilesFadePlugin and plugins that split tiles including ImageOverlaysPlugin & QuantizedMeshPlugin.
+
+### .loadSiblings
+
+```js
+loadSiblings = true : Boolean
+```
+
+**Experimental** setting that, when true, causes sibling tiles to together to prevent gaps during camera movement. When false, only visible tiles are loaded, minimizing memory but potentially causing brief gaps during rapid movement.
+
+Only applies when `optimizedLoadStrategy` is enabled.
+
 ### .autoDisableRendererCulling
 
 ```js
