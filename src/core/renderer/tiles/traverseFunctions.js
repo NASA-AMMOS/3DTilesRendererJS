@@ -21,7 +21,7 @@ function isUsedThisFrame( tile, frameCount ) {
 
 function areChildrenProcessed( tile ) {
 
-	return tile.__childrenProcessed === tile.children.length;
+	return tile.__childrenProcessed === tile.children.length && ( ! tile.__hasUnrenderableContent || isDownloadFinished( tile.__loadingState ) );
 
 }
 
@@ -47,8 +47,7 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenReady = false;
 		tile.__allChildrenVisible = false;
 		tile.__kicked = false;
-
-		tile._SNUCK_IN = false;
+		tile.__allUsedChildrenProcessed = false;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -308,6 +307,20 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
+	let allUsedChildrenProcessed = true;
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+		const c = children[ i ];
+		if ( isUsedThisFrame( c, renderer.frameCount ) && ! c.__allUsedChildrenProcessed ) {
+
+			allUsedChildrenProcessed = false;
+
+		}
+
+	}
+
+	tile.__allUsedChildrenProcessed = allUsedChildrenProcessed;
+
 }
 
 // TODO: revisit implementation
@@ -409,7 +422,12 @@ export function toggleTiles( tile, renderer ) {
 		if ( ( tile.__active || tile.__kicked ) && tile.__hasContent ) {
 
 			renderer.markTileUsed( tile );
-			renderer.queueTileForDownload( tile );
+
+			if ( tile.__allUsedChildrenProcessed ) {
+
+				renderer.queueTileForDownload( tile );
+
+			}
 
 			if ( tile.__loadingState !== LOADED ) {
 
