@@ -73,6 +73,7 @@ function reinstantiateTiles() {
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
 	tiles.optimizedLoadStrategy = params.optimizedLoadStrategy;
+	tiles.loadSiblings = params.loadSiblings;
 
 	if ( ! params.optimizedLoadStrategy ) {
 
@@ -367,7 +368,7 @@ function updateHtml() {
 
 		const lruCache = tiles.lruCache;
 		const cacheFullness = lruCache.cachedBytes / lruCache.maxBytesSize;
-		str += `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
+		str += `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Loaded: ${ tiles.stats.loaded }<br/>Visible: ${ tiles.visibleTiles.size } Active: ${ tiles.activeTiles.size }<br/>`;
 		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( lruCache.cachedBytes / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
