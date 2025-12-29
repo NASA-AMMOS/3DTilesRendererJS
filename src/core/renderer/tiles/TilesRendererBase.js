@@ -1,7 +1,7 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
-import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves } from './optimizedTraverseFunctions.js';
+import { runTraversal } from './optimizedTraverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
@@ -457,10 +457,7 @@ export class TilesRendererBase {
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
 		usedSet.clear();
 
-		markUsedTiles( root, this );
-		markUsedSetLeaves( root, this );
-		markVisibleTiles( root, this );
-		toggleTiles( root, this );
+		runTraversal( root, this );
 
 		// remove any tiles that are loading but no longer used
 		this.removeUnusedPendingTiles();
