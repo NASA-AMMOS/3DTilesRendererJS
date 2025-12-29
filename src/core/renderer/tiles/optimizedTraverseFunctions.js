@@ -441,7 +441,7 @@ function toggleTiles( tile, renderer ) {
 
 		// if the tile is loaded and in frustum we can mark it as visible
 		tile.__visible = tile.__hasRenderableContent && tile.__active && tile.__inFrustum && tile.__loadingState === LOADED;
-		renderer.stats.traversed ++;
+		renderer.stats.used ++;
 
 		if ( tile.__inFrustum ) {
 

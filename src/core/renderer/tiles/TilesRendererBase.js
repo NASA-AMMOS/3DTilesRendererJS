@@ -1,7 +1,8 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
-import { runTraversal } from './optimizedTraverseFunctions.js';
+import { runTraversal as optimizedRunTraversal } from './optimizedTraverseFunctions.js';
+import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
@@ -222,6 +223,7 @@ export class TilesRendererBase {
 			queued: 0,
 			downloading: 0,
 			parsing: 0,
+			loaded: 0,
 			failed: 0,
 
 			inFrustum: 0,
@@ -243,7 +245,7 @@ export class TilesRendererBase {
 		this._errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
-		this.optimizedLoadStrategy = true;
+		this.optimizedLoadStrategy = false;
 
 	}
 
@@ -395,7 +397,7 @@ export class TilesRendererBase {
 
 	update() {
 
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -457,7 +459,15 @@ export class TilesRendererBase {
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
 		usedSet.clear();
 
-		runTraversal( root, this );
+		if ( optimizedLoadStrategy ) {
+
+			optimizedRunTraversal( root, this );
+
+		} else {
+
+			runTraversal( root, this );
+
+		}
 
 		// remove any tiles that are loading but no longer used
 		this.removeUnusedPendingTiles();
@@ -1140,6 +1150,7 @@ export class TilesRendererBase {
 				}
 
 				stats.parsing --;
+				stats.loaded ++;
 				tile.__loadingState = LOADED;
 				loadingTiles.delete( tile );
 				lruCache.setLoaded( tile, true );
@@ -1203,13 +1214,17 @@ export class TilesRendererBase {
 
 						stats.queued --;
 
+					} else if ( tile.__loadingState === LOADING ) {
+
+						stats.downloading --;
+
 					} else if ( tile.__loadingState === PARSING ) {
 
 						stats.parsing --;
 
-					} else if ( tile.__loadingState === LOADING ) {
+					} else if ( tile.__loadingState === LOADED ) {
 
-						stats.downloading --;
+						stats.loaded --;
 
 					}
 
