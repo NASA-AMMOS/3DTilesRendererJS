@@ -364,8 +364,6 @@ function markVisibleTiles( tile, renderer ) {
 
 		}
 
-
-		tile.__thisIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 		return;
 
 	}
@@ -380,7 +378,8 @@ function markVisibleTiles( tile, renderer ) {
 
 		if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
-			if ( ! c.__thisIsVisible && ! c.__allChildrenVisible ) {
+			const childIsVisible = c.__active && ! canUnconditionallyRefine( c ) && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
+			if ( ! childIsVisible && ! c.__allChildrenVisible ) {
 
 				allChildrenVisible = false;
 
@@ -391,7 +390,6 @@ function markVisibleTiles( tile, renderer ) {
 	}
 
 	tile.__allChildrenVisible = allChildrenVisible;
-	tile.__thisIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! tile.__thisIsVisible ) {
 
