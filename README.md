@@ -406,7 +406,7 @@ Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-
 Default is `false` which uses the previous approach of loading all parent and sibling tiles for guaranteed smooth transitions.
 
 > [!WARN]
-> Setting is currently incompatible with TilesFadePlugin and plugins that split tiles including ImageOverlaysPlugin & QuantizedMeshPlugin.
+> Setting is currently incompatible with TilesFadePlugin and plugins that split tiles including ImageOverlaysPlugin & QuantizedMeshPlugin. Any tile sets that share caches or queues must use the same setting.
 
 ### .loadSiblings
 
