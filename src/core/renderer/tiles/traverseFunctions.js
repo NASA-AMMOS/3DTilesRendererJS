@@ -172,7 +172,7 @@ function canTraverse( tile, renderer ) {
 }
 
 // Determine which tiles are used by the renderer given the current camera configuration
-export function markUsedTiles( tile, renderer ) {
+function markUsedTiles( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
 	// child tiles has happened here.

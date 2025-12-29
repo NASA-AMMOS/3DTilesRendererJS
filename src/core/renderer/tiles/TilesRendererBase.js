@@ -1027,6 +1027,10 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 
+			} else if ( t.__loadingState === LOADED ) {
+
+				stats.loaded --;
+
 			}
 
 			t.__loadingState = UNLOADED;

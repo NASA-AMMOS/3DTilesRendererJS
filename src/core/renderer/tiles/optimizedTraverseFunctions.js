@@ -234,9 +234,14 @@ function markUsedTiles( tile, renderer ) {
 	// wait until after the above condition to mark the traversed tile as used or not
 	// and then mark any of the sibling child tiles as used
 	markUsed( tile );
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		recursivelyMarkUsed( children[ i ], renderer );
+	if ( tile.refine === 'REPLACE' && anyChildrenUsed ) {
+
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			recursivelyMarkUsed( children[ i ], renderer );
+
+		}
 
 	}
 
