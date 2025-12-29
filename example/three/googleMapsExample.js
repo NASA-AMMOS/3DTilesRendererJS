@@ -164,8 +164,13 @@ function init() {
 	} );
 
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
-	mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
-	mapsOptions.add( params, 'loadSiblings' ).listen();
+	if ( new URLSearchParams( window.location.search ).has( 'showOptimizedSettings' ) ) {
+
+		mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
+		mapsOptions.add( params, 'loadSiblings' ).listen();
+
+	}
+
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
 	mapsOptions.add( params, 'reload' );
 
