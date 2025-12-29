@@ -391,12 +391,12 @@ function markVisibleTiles( tile, renderer ) {
 
 	tile.__allChildrenVisible = allChildrenVisible;
 
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! tile.__thisIsVisible ) {
+	const thisTileIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileIsVisible ) {
 
 		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
 
 			tile.__active = true;
-			tile.__thisIsVisible = true;
 			kickActiveChildren( tile, renderer );
 
 		}
