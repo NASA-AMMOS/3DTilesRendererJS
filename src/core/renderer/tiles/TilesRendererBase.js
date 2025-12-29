@@ -230,7 +230,7 @@ export class TilesRendererBase {
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
-		this.loadSiblings = false;
+		this.loadSiblings = true;
 
 	}
 
