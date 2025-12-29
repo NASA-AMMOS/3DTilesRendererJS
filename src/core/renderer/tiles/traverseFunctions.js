@@ -340,7 +340,11 @@ export function markVisibleTiles( tile, renderer ) {
 
 		if ( ! canUnconditionallyRefine( tile ) ) {
 
-			tile.__active = true;
+			if ( tile.__hasContent ) {
+
+				tile.__active = true;
+
+			}
 
 			// TODO: tiles should never end at an "unconditionally refine-able tiles" so we can guard this
 			// behind checking if this tile should be "visible" and loaded and if if it's not then we can
