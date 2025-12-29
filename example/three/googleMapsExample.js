@@ -135,9 +135,6 @@ function init() {
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 	controls.enableDamping = true;
 
-	// initialize tiles
-	reinstantiateTiles();
-
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 	window.addEventListener( 'hashchange', initFromHash );
@@ -167,6 +164,7 @@ function init() {
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	if ( new URLSearchParams( window.location.search ).has( 'showOptimizedSettings' ) ) {
 
+		params.optimizedLoadStrategy = true;
 		mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
 		mapsOptions.add( params, 'loadSiblings' ).listen();
 
@@ -185,6 +183,10 @@ function init() {
 
 	} );
 
+	// initialize tiles
+	reinstantiateTiles();
+
+	// add stats
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
 
@@ -391,7 +393,7 @@ function updateHtml() {
 
 			} );
 
-			fadePlugin.batchedMesh?._instanceInfo.forEach( info => {
+			fadePlugin?.batchedMesh?._instanceInfo.forEach( info => {
 
 				if ( info.visible && info.active ) tot ++;
 
