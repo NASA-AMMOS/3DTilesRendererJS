@@ -34,6 +34,8 @@ function canUnconditionallyRefine( tile ) {
 // Resets the frame information for the given tile
 function resetFrameState( tile, renderer ) {
 
+	renderer.ensureChildrenArePreprocessed( tile );
+
 	if ( tile.__lastFrameVisited !== renderer.frameCount ) {
 
 		tile.__lastFrameVisited = renderer.frameCount;
@@ -61,8 +63,6 @@ function resetFrameState( tile, renderer ) {
 
 // Recursively mark tiles used down to the next layer, skipping external tilesets
 function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
-
-	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
 	if ( cacheOnly ) {
@@ -188,8 +188,6 @@ function markUsedTiles( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
 	// child tiles has happened here.
-	renderer.ensureChildrenArePreprocessed( tile );
-
 	resetFrameState( tile, renderer );
 
 	if ( ! tile.__inFrustum ) {
