@@ -19,12 +19,14 @@ function isUsedThisFrame( tile, frameCount ) {
 
 }
 
+// Checks whether all children have been processed and are ready to traverse
 function areChildrenProcessed( tile ) {
 
 	return tile.__childrenProcessed === tile.children.length && ( ! tile.__hasUnrenderableContent || isDownloadFinished( tile.__loadingState ) );
 
 }
 
+// Checks whether we can stop at this tile for rendering or not
 function canUnconditionallyRefine( tile ) {
 
 	return tile.__hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
@@ -104,14 +106,18 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 
 		}
 
-		// don't traverse if the children have not been processed, yet but tileset content
-		// should be considered to be "replaced" by the loaded children so await that here.
-		if ( areChildrenProcessed( tile ) ) {
+		if ( ! tile.__active || canUnconditionallyRefine( tile ) ) {
 
-			const children = tile.children;
-			for ( let i = 0, l = children.length; i < l; i ++ ) {
+			// don't traverse if the children have not been processed, yet but tileset content
+			// should be considered to be "replaced" by the loaded children so await that here.
+			if ( areChildrenProcessed( tile ) ) {
 
-				recursivelyMarkPreviouslyUsed( children[ i ], renderer );
+				const children = tile.children;
+				for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+					recursivelyMarkPreviouslyUsed( children[ i ], renderer );
+
+				}
 
 			}
 
@@ -157,6 +163,7 @@ function canTraverse( tile, renderer ) {
 
 }
 
+// Marks "active" children as "kicked" so they are still loaded but not rendered yet
 function kickActiveChildren( tile, renderer ) {
 
 	const { frameCount } = renderer;
@@ -179,6 +186,13 @@ function kickActiveChildren( tile, renderer ) {
 		}
 
 	}
+
+}
+
+// Checks whether this tile is ready to be stopped at for rendering
+function isChildReady( tile ) {
+
+	return ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
 
 }
 
@@ -267,6 +281,7 @@ function markUsedSetLeaves( tile, renderer ) {
 
 	}
 
+	// Traversal
 	if ( ! anyChildrenUsed ) {
 
 		tile.__isLeaf = true;
@@ -313,13 +328,12 @@ function markVisibleTiles( tile, renderer ) {
 	const children = tile.children;
 	if ( tile.__isLeaf ) {
 
+		// if we're allowed to stop at this tile then mark it as active and allow any previously active tiles to
+		// continue to be displayed
 		if ( ! canUnconditionallyRefine( tile ) ) {
 
 			tile.__active = true;
 
-			// TODO: tiles should never end at an "unconditionally refine-able tiles" so we can guard this
-			// behind checking if this tile should be "visible" and loaded and if if it's not then we can
-			// continue to load previously active tiles
 			if ( areChildrenProcessed( tile ) && ( ! tile.__hasContent || ! isDownloadFinished( tile.__loadingState ) ) ) {
 
 				for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -346,8 +360,8 @@ function markVisibleTiles( tile, renderer ) {
 
 		if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
-			const childIsVisible = c.__active && ! canUnconditionallyRefine( c ) && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
-			if ( ! childIsVisible && ! c.__allChildrenReady ) {
+			const childIsReady = c.__active && isChildReady( c );
+			if ( ! childIsReady && ! c.__allChildrenReady ) {
 
 				allChildrenReady = false;
 
@@ -359,7 +373,9 @@ function markVisibleTiles( tile, renderer ) {
 
 	tile.__allChildrenReady = allChildrenReady;
 
-	const thisTileIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
+	// If we find that the subsequent children are not ready such that this tile gap can be filled then
+	// mark all lower tiles as non active and prepare this one to be displayed if possible
+	const thisTileIsVisible = tile.__active && isChildReady( tile );
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
 
 		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
@@ -379,16 +395,15 @@ function toggleTiles( tile, renderer ) {
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed ) {
 
-		// any internal tileset must be marked as active and loaded
+		// any internal tileset and additive tile must be marked as active and loaded
 		if ( tile.__hasUnrenderableContent || tile.__hasRenderableContent && tile.refine === 'ADD' ) {
 
 			tile.__active = true;
 
 		}
 
-		// queue any tiles to load that we need to
-		// TODO: we'll need to ensure any lower level children that were "unmarked" also need to be queued for load. We can mark them as
-		// "kicked" so they can be accounted for later
+		// queue any tiles to load that we need to, and unmark any unloaded or non visible tiles as "active"
+		// TODO: it may be more simple to track a separate variable than "active" here
 		if ( ( tile.__active || tile.__kicked ) && tile.__hasContent ) {
 
 			renderer.markTileUsed( tile );
@@ -420,10 +435,6 @@ function toggleTiles( tile, renderer ) {
 			renderer.stats.inFrustum ++;
 
 		}
-
-		// TODO: if isLeaf and we can't load any tiles then we need to continue to traverse if
-		// a tile was loaded or was rendered. We can keep track of whether a parent tile is
-		// loaded so we can know whether to traverse or not
 
 	}
 
