@@ -40,6 +40,7 @@ const params = {
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	useFadePlugin: true,
 	displayTopoLines: false,
 	errorTarget: 20,
 
@@ -66,7 +67,6 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
-	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
@@ -75,6 +75,12 @@ function reinstantiateTiles() {
 	} ) );
 	tiles.optimizedLoadStrategy = params.optimizedLoadStrategy;
 	tiles.loadSiblings = params.loadSiblings;
+
+	if ( params.useFadePlugin ) {
+
+		tiles.registerPlugin( new TilesFadePlugin() );
+
+	}
 
 	if ( params.useBatchedMesh ) {
 
@@ -162,12 +168,15 @@ function init() {
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	if ( new URLSearchParams( window.location.search ).has( 'showOptimizedSettings' ) ) {
 
+		params.optimizedLoadStrategy = true;
+		tiles.optimizedLoadStrategy = true;
 		mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
 		mapsOptions.add( params, 'loadSiblings' ).listen();
 
 	}
 
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
+	mapsOptions.add( params, 'useFadePlugin' ).listen();
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
