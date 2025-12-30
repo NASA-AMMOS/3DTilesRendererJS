@@ -47,7 +47,6 @@ function resetFrameState( tile, renderer ) {
 		tile.__error = Infinity;
 		tile.__distanceFromCamera = Infinity;
 		tile.__allChildrenReady = false;
-		tile.__allChildrenVisible = false;
 		tile.__kicked = false;
 		tile.__allUsedChildrenProcessed = false;
 
@@ -274,42 +273,11 @@ function markUsedSetLeaves( tile, renderer ) {
 
 	} else {
 
-		let allChildrenReady = true;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			const c = children[ i ];
-			markUsedSetLeaves( c, renderer );
-
-			if ( isUsedThisFrame( c, frameCount ) ) {
-
-				// Compute whether this child is _allowed_ to display by checking the geometric error relative to the parent tile to avoid holes.
-				// If the child's geometric error is less than or equal to the parent's (or it has unrenderable content), we should NOT display the child to avoid holes.
-				// Only display the child if its geometric error is greater than the parent's and it has renderable content.
-				// Note that this behavior is undocumented in the 3d tiles specification and tilesets designed to take advantage of it may not work as expected
-				// in other rendering systems.
-				// See issue NASA-AMMOS/3DTilesRendererJS#1304
-				const childCanDisplay = ! canUnconditionallyRefine( c );
-
-				// Consider a child to be ready to be displayed if
-				// - the children's children have been loaded
-				// - the tile content has loaded
-				// - the tile is completely empty - ie has no children and no content
-				// - the child tileset has tried to load but failed
-				let isChildReady =
-					! c.__hasContent ||
-					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
-					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
-
-				// Consider this child ready if it can be displayed and is ready for display or all of it's children ready to be displayed
-				isChildReady = ( childCanDisplay && isChildReady ) || c.__allChildrenReady;
-
-				allChildrenReady = allChildrenReady && isChildReady;
-
-			}
+			markUsedSetLeaves( children[ i ], renderer );
 
 		}
-
-		tile.__allChildrenReady = allChildrenReady;
 
 	}
 
@@ -370,7 +338,7 @@ function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
-	let allChildrenVisible = children.length > 0;
+	let allChildrenReady = children.length > 0;
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const c = children[ i ];
@@ -379,9 +347,9 @@ function markVisibleTiles( tile, renderer ) {
 		if ( isUsedThisFrame( c, renderer.frameCount ) ) {
 
 			const childIsVisible = c.__active && ! canUnconditionallyRefine( c ) && ( ! c.__hasContent || isDownloadFinished( c.__loadingState ) );
-			if ( ! childIsVisible && ! c.__allChildrenVisible ) {
+			if ( ! childIsVisible && ! c.__allChildrenReady ) {
 
-				allChildrenVisible = false;
+				allChildrenReady = false;
 
 			}
 
@@ -389,10 +357,10 @@ function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	tile.__allChildrenVisible = allChildrenVisible;
+	tile.__allChildrenReady = allChildrenReady;
 
 	const thisTileIsVisible = tile.__active && ! canUnconditionallyRefine( tile ) && ( ! tile.__hasContent || isDownloadFinished( tile.__loadingState ) );
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenVisible && ! thisTileIsVisible ) {
+	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
 
 		if ( tile.__wasSetActive && ( loadedContent || ! tile.__hasContent ) ) {
 
