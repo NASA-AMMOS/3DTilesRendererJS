@@ -66,6 +66,7 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
+	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
@@ -74,12 +75,6 @@ function reinstantiateTiles() {
 	} ) );
 	tiles.optimizedLoadStrategy = params.optimizedLoadStrategy;
 	tiles.loadSiblings = params.loadSiblings;
-
-	if ( ! params.optimizedLoadStrategy ) {
-
-		tiles.registerPlugin( new TilesFadePlugin() );
-
-	}
 
 	if ( params.useBatchedMesh ) {
 
@@ -135,6 +130,9 @@ function init() {
 	controls = new GlobeControls( scene, transition.camera, renderer.domElement, null );
 	controls.enableDamping = true;
 
+	// initialize tiles
+	reinstantiateTiles();
+
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
 	window.addEventListener( 'hashchange', initFromHash );
@@ -164,7 +162,6 @@ function init() {
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
 	if ( new URLSearchParams( window.location.search ).has( 'showOptimizedSettings' ) ) {
 
-		params.optimizedLoadStrategy = true;
 		mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
 		mapsOptions.add( params, 'loadSiblings' ).listen();
 
@@ -182,9 +179,6 @@ function init() {
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
-
-	// initialize tiles
-	reinstantiateTiles();
 
 	// add stats
 	statsContainer = document.createElement( 'div' );
