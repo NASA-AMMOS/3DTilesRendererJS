@@ -173,7 +173,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getAABB( target );
@@ -195,7 +195,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getOBB( targetBox, targetMatrix );
@@ -217,7 +217,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getSphere( target );
@@ -235,7 +235,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.traverse( tile => {
 
-			const scene = tile.cached && tile.cached.scene;
+			const scene = tile.engineData && tile.engineData.scene;
 			if ( scene ) {
 
 				callback( scene, tile );
@@ -548,7 +548,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.premultiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.engineData.transform );
 
 		}
 
@@ -572,18 +572,20 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached.transform = transform;
-		tile.cached.transformInverse = transformInverse;
-		tile.cached.boundingVolume = boundingVolume;
-		tile.cached.geometry = null;
-		tile.cached.materials = null;
-		tile.cached.textures = null;
+		// Extend the base engineData structure with Three.js-specific fields
+		// Base class initializes: scene, metadata, boundingVolume
+		tile.engineData.transform = transform;
+		tile.engineData.transformInverse = transformInverse;
+		tile.engineData.boundingVolume = boundingVolume;
+		tile.engineData.geometry = null;
+		tile.engineData.materials = null;
+		tile.engineData.textures = null;
 
 	}
 
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
-		const cached = tile.cached;
+		const cached = tile.engineData;
 		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
@@ -814,7 +816,7 @@ export class TilesRenderer extends TilesRendererBase {
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
-		const cached = tile.cached;
+		const cached = tile.engineData;
 		if ( cached.scene ) {
 
 			const materials = cached.materials;
@@ -891,7 +893,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const group = this.group;
 
 		if ( visible ) {
@@ -939,7 +941,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateTileViewError( tile, target ) {
 
-		const cached = tile.cached;
+		const cached = tile.engineData;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
 		const boundingVolume = cached.boundingVolume;
