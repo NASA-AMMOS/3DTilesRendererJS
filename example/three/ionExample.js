@@ -68,7 +68,7 @@ function reinstantiateTiles() {
 	localStorage.setItem( 'ionApiKey', params.ionAccessToken );
 
 	tiles = new TilesRenderer();
-	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.ionAccessToken, assetId: params.ionAssetId } ) );
+	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.ionAccessToken, assetId: params.ionAssetId, autoRefreshToken: true, } ) );
 	tiles.addEventListener( 'load-root-tileset', () => {
 
 		// because ion examples typically are positioned on the planet surface we can orient
