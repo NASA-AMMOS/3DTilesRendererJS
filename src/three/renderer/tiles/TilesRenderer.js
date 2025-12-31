@@ -572,22 +572,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached = {
-
-			transform,
-			transformInverse,
-
-			active: false,
-
-			boundingVolume,
-
-			metadata: null,
-			scene: null,
-			geometry: null,
-			materials: null,
-			textures: null,
-
-		};
+		tile.cached.transform = transform;
+		tile.cached.transformInverse = transformInverse;
+		tile.cached.boundingVolume = boundingVolume;
+		tile.cached.geometry = null;
+		tile.cached.materials = null;
+		tile.cached.textures = null;
 
 	}
 

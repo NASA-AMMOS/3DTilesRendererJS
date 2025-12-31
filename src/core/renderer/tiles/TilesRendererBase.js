@@ -649,6 +649,13 @@ export class TilesRendererBase {
 
 		tile.__lastFrameVisited = - 1;
 
+		// Initialize cached data structure with engine-agnostic fields
+		tile.cached = {
+			scene: null,
+			metadata: null,
+			boundingVolume: null,
+		};
+
 		this.invokeAllPlugins( plugin => {
 
 			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tilesetDir, parentTile );
