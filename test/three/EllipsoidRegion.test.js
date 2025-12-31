@@ -1,6 +1,6 @@
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
-import { EllipsoidRegion } from '../src/three/renderer/math/EllipsoidRegion.js';
-import { WGS84_ELLIPSOID } from '../src/three/renderer/math/GeoConstants.js';
+import { EllipsoidRegion } from '../../src/three/renderer/math/EllipsoidRegion.js';
+import { WGS84_ELLIPSOID } from '../../src/three/renderer/math/GeoConstants.js';
 
 describe( 'EllipsoidRegion', () => {
 
