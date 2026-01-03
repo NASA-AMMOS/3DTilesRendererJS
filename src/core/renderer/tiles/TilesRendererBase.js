@@ -616,8 +616,8 @@ export class TilesRendererBase {
 
 		// Initialize traversal data
 		tile.traversal = {
-			depth: parentTile === null ? 0 : parentTile.traversal.depth + 1,
-			depthFromRenderedParent: parentTile === null ? ( tile.__hasRenderableContent ? 1 : 0 ) : parentTile.traversal.depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 ),
+			depth: 0,
+			depthFromRenderedParent: 0,
 			distanceFromCamera: Infinity,
 			error: Infinity,
 			inFrustum: false,
@@ -634,10 +634,15 @@ export class TilesRendererBase {
 
 		if ( parentTile === null ) {
 
+			tile.traversal.depth = 0;
+			tile.traversal.depthFromRenderedParent = ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || 'REPLACE';
 
 		} else {
 
+			// increment the "depth from parent" when we encounter a new tile with content
+			tile.traversal.depth = parentTile.traversal.depth + 1;
+			tile.traversal.depthFromRenderedParent = parentTile.traversal.depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || parentTile.refine;
 
 		}
