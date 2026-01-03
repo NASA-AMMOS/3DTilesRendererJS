@@ -433,7 +433,7 @@ export class ImageOverlayPlugin {
 
 				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
 				const children = collectChildren( parent );
-				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
+				children.sort( ( a, b ) => ( b.traversal.depth || 0 ) - ( a.traversal.depth || 0 ) );
 
 				// note that we need to remove children from the processing queue in this case
 				// because we are forcibly evicting them from the cache.
@@ -1396,7 +1396,7 @@ class TiledImageOverlay extends ImageOverlay {
 
 		} else {
 
-			return tile.__depthFromRenderedParent - 1;
+			return tile.traversal.depthFromRenderedParent - 1;
 
 		}
 

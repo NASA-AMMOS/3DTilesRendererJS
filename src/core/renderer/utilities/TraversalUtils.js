@@ -61,7 +61,7 @@ export function traverseAncestors( tile, callback = null ) {
 
 	while ( current ) {
 
-		const depth = current.__depth;
+		const depth = current.traversal.depth;
 		const parent = current.parent;
 
 		if ( callback ) {

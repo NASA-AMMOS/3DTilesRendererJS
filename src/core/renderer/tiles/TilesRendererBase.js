@@ -20,25 +20,25 @@ const priorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
-	} else if ( a.__used !== b.__used ) {
+	} else if ( a.traversal.used !== b.traversal.used ) {
 
 		// load tiles that have been used
-		return a.__used ? 1 : - 1;
+		return a.traversal.used ? 1 : - 1;
 
-	} else if ( a.__error !== b.__error ) {
+	} else if ( a.traversal.error !== b.traversal.error ) {
 
 		// load the tile with the higher error
-		return a.__error > b.__error ? 1 : - 1;
+		return a.traversal.error > b.traversal.error ? 1 : - 1;
 
-	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
+	} else if ( a.traversal.distanceFromCamera !== b.traversal.distanceFromCamera ) {
 
 		// and finally visible tiles which have equal error (ex: if geometricError === 0)
 		// should prioritize based on distance.
-		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
+		return a.traversal.distanceFromCamera > b.traversal.distanceFromCamera ? - 1 : 1;
 
-	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	} else if ( a.traversal.depthFromRenderedParent !== b.traversal.depthFromRenderedParent ) {
 
-		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? - 1 : 1;
+		return a.traversal.depthFromRenderedParent > b.traversal.depthFromRenderedParent ? - 1 : 1;
 
 	}
 
@@ -58,15 +58,15 @@ const lruPriorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
-	} else if ( a.__lastFrameVisited !== b.__lastFrameVisited ) {
+	} else if ( a.traversal.lastFrameVisited !== b.traversal.lastFrameVisited ) {
 
 		// dispose of least recent tiles first
-		return a.__lastFrameVisited > b.__lastFrameVisited ? - 1 : 1;
+		return a.traversal.lastFrameVisited > b.traversal.lastFrameVisited ? - 1 : 1;
 
-	} else if ( a.__depthFromRenderedParent !== b.__depthFromRenderedParent ) {
+	} else if ( a.traversal.depthFromRenderedParent !== b.traversal.depthFromRenderedParent ) {
 
 		// dispose of deeper tiles first so parents are not disposed before children
-		return a.__depthFromRenderedParent > b.__depthFromRenderedParent ? 1 : - 1;
+		return a.traversal.depthFromRenderedParent > b.traversal.depthFromRenderedParent ? 1 : - 1;
 
 	} else if ( a.__loadingState !== b.__loadingState ) {
 
@@ -78,10 +78,10 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of external tilesets last
 		return a.__hasUnrenderableContent ? - 1 : 1;
 
-	} else if ( a.__error !== b.__error ) {
+	} else if ( a.traversal.error !== b.traversal.error ) {
 
 		// unload the tile with lower error
-		return a.__error > b.__error ? - 1 : 1;
+		return a.traversal.error > b.traversal.error ? - 1 : 1;
 
 	}
 
@@ -535,17 +535,17 @@ export class TilesRendererBase {
 	disposeTile( tile ) {
 
 		// TODO: are these necessary? Are we disposing tiles when they are currently visible?
-		if ( tile.__visible ) {
+		if ( tile.traversal.visible ) {
 
 			this.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, false ) );
-			tile.__visible = false;
+			tile.traversal.visible = false;
 
 		}
 
-		if ( tile.__active ) {
+		if ( tile.traversal.active ) {
 
 			this.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, false ) );
-			tile.__active = false;
+			tile.traversal.active = false;
 
 		}
 
@@ -611,43 +611,36 @@ export class TilesRendererBase {
 
 		}
 
-		tile.__distanceFromCamera = Infinity;
-		tile.__error = Infinity;
-
-		tile.__inFrustum = false;
-		tile.__isLeaf = false;
-
-		tile.__usedLastFrame = false;
-		tile.__used = false;
-
-		tile.__wasSetVisible = false;
-		tile.__visible = false;
-		tile.__allChildrenReady = false;
-
-		tile.__wasSetActive = false;
-		tile.__active = false;
-
 		tile.__loadingState = UNLOADED;
+		tile.__basePath = tilesetDir;
+
+		// Initialize traversal data
+		tile.traversal = {
+			depth: parentTile === null ? 0 : parentTile.traversal.depth + 1,
+			depthFromRenderedParent: parentTile === null ? ( tile.__hasRenderableContent ? 1 : 0 ) : parentTile.traversal.depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 ),
+			distanceFromCamera: Infinity,
+			error: Infinity,
+			inFrustum: false,
+			isLeaf: false,
+			used: false,
+			usedLastFrame: false,
+			visible: false,
+			wasSetVisible: false,
+			active: false,
+			wasSetActive: false,
+			allChildrenReady: false,
+			lastFrameVisited: - 1,
+		};
 
 		if ( parentTile === null ) {
 
-			tile.__depth = 0;
-			tile.__depthFromRenderedParent = ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || 'REPLACE';
 
 		} else {
 
-			// increment the "depth from parent" when we encounter a new tile with content
-			tile.__depth = parentTile.__depth + 1;
-			tile.__depthFromRenderedParent = parentTile.__depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 );
-
 			tile.refine = tile.refine || parentTile.refine;
 
 		}
-
-		tile.__basePath = tilesetDir;
-
-		tile.__lastFrameVisited = - 1;
 
 		this.invokeAllPlugins( plugin => {
 
@@ -736,7 +729,7 @@ export class TilesRendererBase {
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
-			if ( '__depth' in child ) {
+			if ( 'traversal' in child ) {
 
 				// the child has already been processed
 				break;
