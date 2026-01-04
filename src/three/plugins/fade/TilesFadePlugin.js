@@ -409,7 +409,7 @@ export class TilesFadePlugin {
 
 			// if this is a root renderable tile and this is the first time rendering in
 			// then pop it in
-			const isRootRenderableTile = tile.traversal.depthFromRenderedParent === 1;
+			const isRootRenderableTile = tile.internal.depthFromRenderedParent === 1;
 			if ( isRootRenderableTile ) {
 
 				if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {

@@ -27,13 +27,13 @@ function isUsedThisFrame( tile, frameCount ) {
 
 function areChildrenProcessed( tile ) {
 
-	return tile.__childrenProcessed === tile.children.length;
+	return tile.internal.childrenProcessed === tile.children.length;
 
 }
 
 function canUnconditionallyRefine( tile ) {
 
-	return tile.__hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
+	return tile.internal.hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
 
 }
 
@@ -94,7 +94,7 @@ function recursivelyLoadNextRenderableTiles( tile, renderer ) {
 	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
 
 		// queue this tile to download content
-		if ( tile.__hasContent ) {
+		if ( tile.internal.hasContent ) {
 
 			renderer.queueTileForDownload( tile );
 
@@ -154,7 +154,7 @@ function canTraverse( tile, renderer ) {
 	}
 
 	// Early out if we've reached the maximum allowed depth.
-	if ( renderer.maxDepth > 0 && tile.traversal.depth + 1 >= renderer.maxDepth ) {
+	if ( renderer.maxDepth > 0 && tile.internal.depth + 1 >= renderer.maxDepth ) {
 
 		return false;
 
@@ -227,7 +227,7 @@ export function markUsedTiles( tile, renderer ) {
 
 	// If this is a tile that needs children loaded to refine then recursively load child
 	// tiles until error is met
-	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.traversal.depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
+	if ( tile.refine === 'REPLACE' && ( anyChildrenUsed && tile.internal.depth !== 0 || LOAD_ROOT_SIBLINGS ) ) {
 
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
@@ -287,9 +287,9 @@ export function markUsedSetLeaves( tile, renderer ) {
 				// - the tile is completely empty - ie has no children and no content
 				// - the child tileset has tried to load but failed
 				let isChildReady =
-					! c.__hasContent ||
-					( c.__hasRenderableContent && isDownloadFinished( c.__loadingState ) ) ||
-					( c.__hasUnrenderableContent && c.__loadingState === FAILED );
+					! c.internal.hasContent ||
+					( c.internal.hasRenderableContent && isDownloadFinished( c.internal.loadingState ) ) ||
+					( c.internal.hasUnrenderableContent && c.internal.loadingState === FAILED );
 
 				// Consider this child ready if it can be displayed and is ready for display or all of it's children ready to be displayed
 				isChildReady = ( childCanDisplay && isChildReady ) || c.traversal.allChildrenReady;
@@ -320,7 +320,7 @@ export function markVisibleTiles( tile, renderer ) {
 	// Request the tile contents or mark it as visible if we've found a leaf.
 	if ( tile.traversal.isLeaf ) {
 
-		if ( tile.__loadingState === LOADED ) {
+		if ( tile.internal.loadingState === LOADED ) {
 
 			if ( tile.traversal.inFrustum ) {
 
@@ -332,7 +332,7 @@ export function markVisibleTiles( tile, renderer ) {
 			tile.traversal.active = true;
 			stats.active ++;
 
-		} else if ( tile.__hasContent ) {
+		} else if ( tile.internal.hasContent ) {
 
 			renderer.queueTileForDownload( tile );
 
@@ -343,8 +343,8 @@ export function markVisibleTiles( tile, renderer ) {
 	}
 
 	const children = tile.children;
-	const hasContent = tile.__hasContent;
-	const loadedContent = isDownloadFinished( tile.__loadingState ) && hasContent;
+	const hasContent = tile.internal.hasContent;
+	const loadedContent = isDownloadFinished( tile.internal.loadingState ) && hasContent;
 	const errorRequirement = ( renderer.errorTarget + 1 ) * renderer.errorThreshold;
 	const meetsSSE = tile.traversal.error <= errorRequirement;
 	const isAdditiveRefine = tile.refine === 'ADD';
@@ -353,7 +353,7 @@ export function markVisibleTiles( tile, renderer ) {
 
 	// Don't wait for all children tiles to load if this tileset has empty tiles at the root in order
 	// to match Cesium's behavior
-	const allChildrenReady = tile.traversal.allChildrenReady || ( tile.traversal.depth === 0 && ! LOAD_ROOT_SIBLINGS );
+	const allChildrenReady = tile.traversal.allChildrenReady || ( tile.internal.depth === 0 && ! LOAD_ROOT_SIBLINGS );
 
 	// If we've met the SSE requirements and we can load content then fire a fetch.
 	if ( hasContent && ( meetsSSE || isAdditiveRefine ) ) {
@@ -442,7 +442,7 @@ export function toggleTiles( tile, renderer ) {
 		}
 
 		// If the active or visible state changed then call the functions.
-		if ( tile.__hasRenderableContent && tile.__loadingState === LOADED ) {
+		if ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) {
 
 			if ( tile.traversal.wasSetActive !== setActive ) {
 

@@ -336,7 +336,7 @@ export class DebugTilesPlugin {
 				distanceToCamera: targetTile.traversal.distanceFromCamera,
 				geometricError: targetTile.geometricError,
 				screenSpaceError: targetTile.traversal.error,
-				depth: targetTile.traversal.depth,
+				depth: targetTile.internal.depth,
 				isLeaf: targetTile.traversal.isLeaf
 
 			};
@@ -492,7 +492,7 @@ export class DebugTilesPlugin {
 
 						case DEPTH: {
 
-							const val = tile.traversal.depth / maxDepth;
+							const val = tile.internal.depth / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -500,7 +500,7 @@ export class DebugTilesPlugin {
 
 						case RELATIVE_DEPTH: {
 
-							const val = tile.traversal.depthFromRenderedParent / maxDepth;
+							const val = tile.internal.depthFromRenderedParent / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -668,7 +668,7 @@ export class DebugTilesPlugin {
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.traversal.depth ) );
+			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
@@ -686,7 +686,7 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.traversal.depth ) );
+			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
 			cached.sphereHelper = sphereHelper;
 
@@ -702,7 +702,7 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.traversal.depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
 			regionHelper.raycast = emptyRaycast;
 
 			// recenter the geometry to avoid rendering artifacts

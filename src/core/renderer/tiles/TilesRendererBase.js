@@ -36,9 +36,9 @@ const priorityCallback = ( a, b ) => {
 		// should prioritize based on distance.
 		return a.traversal.distanceFromCamera > b.traversal.distanceFromCamera ? - 1 : 1;
 
-	} else if ( a.traversal.depthFromRenderedParent !== b.traversal.depthFromRenderedParent ) {
+	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
 
-		return a.traversal.depthFromRenderedParent > b.traversal.depthFromRenderedParent ? - 1 : 1;
+		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? - 1 : 1;
 
 	}
 
@@ -63,20 +63,20 @@ const lruPriorityCallback = ( a, b ) => {
 		// dispose of least recent tiles first
 		return a.traversal.lastFrameVisited > b.traversal.lastFrameVisited ? - 1 : 1;
 
-	} else if ( a.traversal.depthFromRenderedParent !== b.traversal.depthFromRenderedParent ) {
+	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
 
 		// dispose of deeper tiles first so parents are not disposed before children
-		return a.traversal.depthFromRenderedParent > b.traversal.depthFromRenderedParent ? 1 : - 1;
+		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? 1 : - 1;
 
-	} else if ( a.__loadingState !== b.__loadingState ) {
+	} else if ( a.internal.loadingState !== b.internal.loadingState ) {
 
 		// dispose of tiles that are earlier along in the loading process first
-		return a.__loadingState > b.__loadingState ? - 1 : 1;
+		return a.internal.loadingState > b.internal.loadingState ? - 1 : 1;
 
-	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
+	} else if ( a.internal.hasUnrenderableContent !== b.internal.hasUnrenderableContent ) {
 
 		// dispose of external tilesets last
-		return a.__hasUnrenderableContent ? - 1 : 1;
+		return a.internal.hasUnrenderableContent ? - 1 : 1;
 
 	} else if ( a.traversal.error !== b.traversal.error ) {
 
@@ -459,9 +459,9 @@ export class TilesRendererBase {
 
 		this.traverse( tile => {
 
-			if ( tile.__loadingState === FAILED ) {
+			if ( tile.internal.loadingState === FAILED ) {
 
-				tile.__loadingState = UNLOADED;
+				tile.internal.loadingState = UNLOADED;
 
 			}
 
@@ -585,39 +585,45 @@ export class TilesRendererBase {
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
 
+		// Initialize internal data
+		let hasContent, hasRenderableContent, hasUnrenderableContent;
 		if ( tile.content?.uri ) {
 
 			// "content" should only indicate loadable meshes, not external tilesets
 			const extension = getUrlExtension( tile.content.uri );
 
-			tile.__hasContent = true;
-			tile.__hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
-			tile.__hasRenderableContent = ! tile.__hasUnrenderableContent;
+			hasContent = true;
+			hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
+			hasRenderableContent = ! hasUnrenderableContent;
 
 		} else {
 
-			tile.__hasContent = false;
-			tile.__hasUnrenderableContent = false;
-			tile.__hasRenderableContent = false;
+			hasContent = false;
+			hasUnrenderableContent = false;
+			hasRenderableContent = false;
 
 		}
 
-		// tracker for determining if all the children have been asynchronously
-		// processed and are ready to be traversed
-		tile.__childrenProcessed = 0;
+		tile.internal = {
+			hasContent,
+			hasRenderableContent,
+			hasUnrenderableContent,
+			loadingState: UNLOADED,
+			basePath: tilesetDir,
+			childrenProcessed: 0,
+			depth: parentTile === null ? 0 : parentTile.internal.depth + 1,
+			depthFromRenderedParent: parentTile === null ? ( hasRenderableContent ? 1 : 0 ) : parentTile.internal.depthFromRenderedParent + ( hasRenderableContent ? 1 : 0 ),
+		};
+
+		// Increment parent's children processed counter
 		if ( parentTile ) {
 
-			parentTile.__childrenProcessed ++;
+			parentTile.internal.childrenProcessed ++;
 
 		}
-
-		tile.__loadingState = UNLOADED;
-		tile.__basePath = tilesetDir;
 
 		// Initialize traversal data
 		tile.traversal = {
-			depth: 0,
-			depthFromRenderedParent: 0,
 			distanceFromCamera: Infinity,
 			error: Infinity,
 			inFrustum: false,
@@ -634,15 +640,10 @@ export class TilesRendererBase {
 
 		if ( parentTile === null ) {
 
-			tile.traversal.depth = 0;
-			tile.traversal.depthFromRenderedParent = ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || 'REPLACE';
 
 		} else {
 
-			// increment the "depth from parent" when we encounter a new tile with content
-			tile.traversal.depth = parentTile.traversal.depth + 1;
-			tile.traversal.depthFromRenderedParent = parentTile.traversal.depthFromRenderedParent + ( tile.__hasRenderableContent ? 1 : 0 );
 			tile.refine = tile.refine || parentTile.refine;
 
 		}
@@ -684,7 +685,7 @@ export class TilesRendererBase {
 
 			// we only remove tiles that are QUEUED to avoid cancelling tiles that may already be nearly downloaded
 			// as the camera moves
-			if ( ! lruCache.isUsed( tile ) && tile.__loadingState === QUEUED ) {
+			if ( ! lruCache.isUsed( tile ) && tile.internal.loadingState === QUEUED ) {
 
 				toRemove.push( tile );
 
@@ -703,7 +704,7 @@ export class TilesRendererBase {
 	// Private Functions
 	queueTileForDownload( tile ) {
 
-		if ( tile.__loadingState !== UNLOADED || this.lruCache.isFull() ) {
+		if ( tile.internal.loadingState !== UNLOADED || this.lruCache.isFull() ) {
 
 			return;
 
@@ -743,7 +744,7 @@ export class TilesRendererBase {
 
 				// process the node immediately and make sure we don't double process it
 				this.processNodeQueue.remove( child );
-				this.preprocessNode( child, tile.__basePath, tile );
+				this.preprocessNode( child, tile.internal.basePath, tile );
 
 			} else {
 
@@ -752,7 +753,7 @@ export class TilesRendererBase {
 
 					this.processNodeQueue.add( child, child => {
 
-						this.preprocessNode( child, tile.__basePath, tile );
+						this.preprocessNode( child, tile.internal.basePath, tile );
 						this._dispatchNeedsUpdateEvent();
 
 					} );
@@ -900,7 +901,7 @@ export class TilesRendererBase {
 
 		// If the tile is already being loaded then don't
 		// start it again.
-		if ( tile.__loadingState !== UNLOADED ) {
+		if ( tile.internal.loadingState !== UNLOADED ) {
 
 			return;
 
@@ -908,7 +909,7 @@ export class TilesRendererBase {
 
 		let isExternalTileset = false;
 		let externalTileset = null;
-		let uri = new URL( tile.content.uri, tile.__basePath + '/' ).toString();
+		let uri = new URL( tile.content.uri, tile.internal.basePath + '/' ).toString();
 		this.invokeAllPlugins( plugin => uri = plugin.preprocessURL ? plugin.preprocessURL( uri, tile ) : uri );
 
 		const stats = this.stats;
@@ -930,7 +931,7 @@ export class TilesRendererBase {
 			if ( isExternalTileset ) {
 
 				t.children.length = 0;
-				t.__childrenProcessed = 0;
+				t.internal.childrenProcessed = 0;
 
 			} else {
 
@@ -951,21 +952,21 @@ export class TilesRendererBase {
 
 			}
 
-			if ( t.__loadingState === QUEUED ) {
+			if ( t.internal.loadingState === QUEUED ) {
 
 				stats.queued --;
 
-			} else if ( t.__loadingState === LOADING ) {
+			} else if ( t.internal.loadingState === LOADING ) {
 
 				stats.downloading --;
 
-			} else if ( t.__loadingState === PARSING ) {
+			} else if ( t.internal.loadingState === PARSING ) {
 
 				stats.parsing --;
 
 			}
 
-			t.__loadingState = UNLOADED;
+			t.internal.loadingState = UNLOADED;
 
 			parseQueue.remove( t );
 			downloadQueue.remove( t );
@@ -993,7 +994,7 @@ export class TilesRendererBase {
 		stats.inCacheSinceLoad ++;
 		stats.inCache ++;
 		stats.queued ++;
-		tile.__loadingState = QUEUED;
+		tile.internal.loadingState = QUEUED;
 		loadingTiles.add( tile );
 
 		// queue the download and parse
@@ -1005,7 +1006,7 @@ export class TilesRendererBase {
 
 			}
 
-			tile.__loadingState = LOADING;
+			tile.internal.loadingState = LOADING;
 			stats.downloading ++;
 			stats.queued --;
 
@@ -1048,7 +1049,7 @@ export class TilesRendererBase {
 
 				stats.downloading --;
 				stats.parsing ++;
-				tile.__loadingState = PARSING;
+				tile.internal.loadingState = PARSING;
 
 				return parseQueue.add( tile, parseTile => {
 
@@ -1086,7 +1087,7 @@ export class TilesRendererBase {
 				}
 
 				stats.parsing --;
-				tile.__loadingState = LOADED;
+				tile.internal.loadingState = LOADED;
 				loadingTiles.delete( tile );
 				lruCache.setLoaded( tile, true );
 
@@ -1145,15 +1146,15 @@ export class TilesRendererBase {
 					parseQueue.remove( tile );
 					downloadQueue.remove( tile );
 
-					if ( tile.__loadingState === QUEUED ) {
+					if ( tile.internal.loadingState === QUEUED ) {
 
 						stats.queued --;
 
-					} else if ( tile.__loadingState === PARSING ) {
+					} else if ( tile.internal.loadingState === PARSING ) {
 
 						stats.parsing --;
 
-					} else if ( tile.__loadingState === LOADING ) {
+					} else if ( tile.internal.loadingState === LOADING ) {
 
 						stats.downloading --;
 
@@ -1163,7 +1164,7 @@ export class TilesRendererBase {
 
 					console.error( `TilesRenderer : Failed to load tile at url "${ tile.content.uri }".` );
 					console.error( error );
-					tile.__loadingState = FAILED;
+					tile.internal.loadingState = FAILED;
 					loadingTiles.delete( tile );
 					lruCache.setLoaded( tile, true );
 
