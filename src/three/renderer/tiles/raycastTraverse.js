@@ -36,7 +36,7 @@ function intersectTileSceneFirstHist( tile, raycaster, renderer ) {
 
 function isTileInitialized( tile ) {
 
-	return '__used' in tile;
+	return 'traversal' in tile;
 
 }
 
@@ -59,7 +59,7 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const child = children[ i ];
-		if ( ! isTileInitialized( child ) || ! child.__used ) {
+		if ( ! isTileInitialized( child ) || ! child.traversal.used ) {
 
 			continue;
 
@@ -151,7 +151,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	}
 
 	// exit early if the tile isn't used or the bounding volume is not intersected
-	if ( ! tile.__used || ! boundingVolume.intersectsRay( localRay ) ) {
+	if ( ! tile.traversal.used || ! boundingVolume.intersectsRay( localRay ) ) {
 
 		return;
 

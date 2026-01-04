@@ -457,7 +457,7 @@ export class QuantizedMeshPlugin {
 
 			} );
 			tile.children.length = 0;
-			tile.__childrenProcessed = 0;
+			tile.internal.childrenProcessed = 0;
 
 		}
 
