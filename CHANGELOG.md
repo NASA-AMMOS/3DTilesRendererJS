@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
+- I3DMLoader: Added support for oct-encoded normals.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
