@@ -282,9 +282,9 @@ export class DebugTilesPlugin {
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
 
-			if ( tile.cached.scene ) {
+			if ( tile.engineData.scene ) {
 
-				this._onLoadModel( tile.cached.scene, tile );
+				this._onLoadModel( tile.engineData.scene, tile );
 
 			}
 
@@ -312,7 +312,7 @@ export class DebugTilesPlugin {
 
 			}
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {
@@ -451,7 +451,7 @@ export class DebugTilesPlugin {
 		// update plugins
 		visibleTiles.forEach( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 
 			// create a random color per-tile
 			let h, s, l;
@@ -656,7 +656,7 @@ export class DebugTilesPlugin {
 	_createBoundHelper( tile ) {
 
 		const tiles = this.tiles;
-		const cached = tile.cached;
+		const cached = tile.engineData;
 		const { sphere, obb, region } = cached.boundingVolume;
 		if ( obb ) {
 
@@ -750,7 +750,7 @@ export class DebugTilesPlugin {
 
 	_updateBoundHelper( tile, visible ) {
 
-		const cached = tile.cached;
+		const cached = tile.engineData;
 
 		if ( ! cached ) {
 
@@ -910,7 +910,7 @@ export class DebugTilesPlugin {
 
 	_onDisposeModel( tile ) {
 
-		const cached = tile.cached;
+		const cached = tile.engineData;
 		if ( cached.boxHelperGroup ) {
 
 			cached.boxHelperGroup.children[ 0 ].geometry.dispose();

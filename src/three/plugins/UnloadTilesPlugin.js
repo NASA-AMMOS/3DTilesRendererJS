@@ -68,7 +68,7 @@ export class UnloadTilesPlugin {
 
 		const unloadCallback = tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			const visible = tiles.visibleTiles.has( tile );
 
 			if ( ! visible ) {

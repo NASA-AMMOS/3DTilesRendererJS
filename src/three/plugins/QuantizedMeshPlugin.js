@@ -253,7 +253,7 @@ export class QuantizedMeshPlugin {
 			clipper.minLon = west;
 			clipper.maxLon = east;
 
-			result = clipper.clipToQuadrant( tile.parent.cached.scene, left, bottom );
+			result = clipper.clipToQuadrant( tile.parent.engineData.scene, left, bottom );
 
 		} else if ( extension === 'terrain' ) {
 
@@ -284,7 +284,7 @@ export class QuantizedMeshPlugin {
 		const { minHeight, maxHeight, metadata } = result.userData;
 		tile.boundingVolume.region[ 4 ] = minHeight;
 		tile.boundingVolume.region[ 5 ] = maxHeight;
-		tile.cached.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
+		tile.engineData.boundingVolume.setRegionData( ellipsoid, ...tile.boundingVolume.region );
 
 		// use the geometric error value if it's present
 		if ( metadata ) {

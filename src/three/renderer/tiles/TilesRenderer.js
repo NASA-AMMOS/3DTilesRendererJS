@@ -173,7 +173,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getAABB( target );
@@ -195,7 +195,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getOBB( targetBox, targetMatrix );
@@ -217,7 +217,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getSphere( target );
@@ -235,7 +235,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.traverse( tile => {
 
-			const scene = tile.cached && tile.cached.scene;
+			const scene = tile.engineData && tile.engineData.scene;
 			if ( scene ) {
 
 				callback( scene, tile );
@@ -548,7 +548,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.premultiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.engineData.transform );
 
 		}
 
@@ -572,35 +572,27 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached = {
-
-			transform,
-			transformInverse,
-
-			active: false,
-
-			boundingVolume,
-
-			metadata: null,
-			scene: null,
-			geometry: null,
-			materials: null,
-			textures: null,
-
-		};
+		// Extend the base engineData structure with Three.js-specific fields
+		// Base class initializes: scene, metadata, boundingVolume
+		tile.engineData.transform = transform;
+		tile.engineData.transformInverse = transformInverse;
+		tile.engineData.boundingVolume = boundingVolume;
+		tile.engineData.geometry = null;
+		tile.engineData.materials = null;
+		tile.engineData.textures = null;
 
 	}
 
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
 		let promise = null;
 
-		const cachedTransform = cached.transform;
+		const tileTransform = engineData.transform;
 		const upRotationMatrix = this._upRotationMatrix;
 		const fileType = ( LoaderUtils.readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
@@ -737,7 +729,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
-		scene.matrix.premultiply( cachedTransform );
+		scene.matrix.premultiply( tileTransform );
 		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 
 		// wait for extra processing by plugins if needed
@@ -811,11 +803,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		cached.materials = materials;
-		cached.geometry = geometry;
-		cached.textures = textures;
-		cached.scene = scene;
-		cached.metadata = metadata;
+		engineData.materials = materials;
+		engineData.geometry = geometry;
+		engineData.textures = textures;
+		engineData.scene = scene;
+		engineData.metadata = metadata;
 
 	}
 
@@ -824,18 +816,18 @@ export class TilesRenderer extends TilesRendererBase {
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
-		const cached = tile.cached;
-		if ( cached.scene ) {
+		const engineData = tile.engineData;
+		if ( engineData.scene ) {
 
-			const materials = cached.materials;
-			const geometry = cached.geometry;
-			const textures = cached.textures;
-			const parent = cached.scene.parent;
+			const materials = engineData.materials;
+			const geometry = engineData.geometry;
+			const textures = engineData.textures;
+			const parent = engineData.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
 			// TODO: these are being discarded here to remove the image bitmaps -
 			// can this be handled in another way? Or more generically?
-			cached.scene.traverse( child => {
+			engineData.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
 
@@ -879,21 +871,21 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( parent ) {
 
-				parent.remove( cached.scene );
+				parent.remove( engineData.scene );
 
 			}
 
 			this.dispatchEvent( {
 				type: 'dispose-model',
-				scene: cached.scene,
+				scene: engineData.scene,
 				tile,
 			} );
 
-			cached.scene = null;
-			cached.materials = null;
-			cached.textures = null;
-			cached.geometry = null;
-			cached.metadata = null;
+			engineData.scene = null;
+			engineData.materials = null;
+			engineData.textures = null;
+			engineData.geometry = null;
+			engineData.metadata = null;
 
 		}
 
@@ -901,7 +893,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const group = this.group;
 
 		if ( visible ) {
@@ -949,10 +941,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateTileViewError( tile, target ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
-		const boundingVolume = cached.boundingVolume;
+		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
 		let inViewError = - Infinity;

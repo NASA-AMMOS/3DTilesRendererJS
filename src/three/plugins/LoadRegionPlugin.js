@@ -54,7 +54,7 @@ export class LoadRegionPlugin {
 	// tiles are only loaded if they are within those shapes.
 	calculateTileViewError( tile, target ) {
 
-		const boundingVolume = tile.cached.boundingVolume;
+		const boundingVolume = tile.engineData.boundingVolume;
 		const { regions, tiles } = this;
 
 		let inShape = false;

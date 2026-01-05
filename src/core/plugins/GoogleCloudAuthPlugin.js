@@ -67,7 +67,7 @@ export class GoogleCloudAuthPlugin {
 
 		this._visibilityChangeCallback = ( { tile, visible } ) => {
 
-			const copyright = tile.cached.metadata?.asset?.copyright || '';
+			const copyright = tile.engineData.metadata?.asset?.copyright || '';
 			if ( visible ) {
 
 				this._attributionsManager.addAttributions( copyright );
