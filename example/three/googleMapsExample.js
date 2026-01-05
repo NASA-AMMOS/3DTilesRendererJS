@@ -34,9 +34,13 @@ const params = {
 
 	orthographic: false,
 
+	optimizedLoadStrategy: false,
+	loadSiblings: true,
+
 	enableCacheDisplay: false,
 	enableRendererStats: false,
 	useBatchedMesh: Boolean( new URLSearchParams( window.location.hash.replace( /^#/, '' ) ).get( 'batched' ) ),
+	useFadePlugin: true,
 	displayTopoLines: false,
 	errorTarget: 20,
 
@@ -58,18 +62,25 @@ function reinstantiateTiles() {
 	}
 
 	tiles = new TilesRenderer();
+	tiles.lruCache.minSize = 0;
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: import.meta.env.VITE_ION_KEY, assetId: '2275207', autoRefreshToken: true } ) );
 	tiles.registerPlugin( new TileCompressionPlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new UnloadTilesPlugin() );
-	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new TopoLinesPlugin( { projection: 'ellipsoid' } ) );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
 	} ) );
+	tiles.optimizedLoadStrategy = params.optimizedLoadStrategy;
+	tiles.loadSiblings = params.loadSiblings;
 
+	if ( params.useFadePlugin ) {
+
+		tiles.registerPlugin( new TilesFadePlugin() );
+
+	}
 
 	if ( params.useBatchedMesh ) {
 
@@ -155,7 +166,17 @@ function init() {
 	} );
 
 	const mapsOptions = gui.addFolder( 'Google Photorealistic Tiles' );
+	if ( new URLSearchParams( window.location.search ).has( 'showOptimizedSettings' ) ) {
+
+		params.optimizedLoadStrategy = true;
+		tiles.optimizedLoadStrategy = true;
+		mapsOptions.add( params, 'optimizedLoadStrategy' ).listen();
+		mapsOptions.add( params, 'loadSiblings' ).listen();
+
+	}
+
 	mapsOptions.add( params, 'useBatchedMesh' ).listen();
+	mapsOptions.add( params, 'useFadePlugin' ).listen();
 	mapsOptions.add( params, 'reload' );
 
 	const exampleOptions = gui.addFolder( 'Example Options' );
@@ -168,6 +189,7 @@ function init() {
 
 	} );
 
+	// add stats
 	statsContainer = document.createElement( 'div' );
 	document.getElementById( 'info' ).appendChild( statsContainer );
 
@@ -317,6 +339,9 @@ function animate() {
 
 	if ( ! tiles ) return;
 
+	// ensure transforms are up to date for controls update
+	scene.updateMatrixWorld();
+
 	controls.enabled = ! transition.animating;
 	controls.update();
 	transition.update();
@@ -351,7 +376,7 @@ function updateHtml() {
 
 		const lruCache = tiles.lruCache;
 		const cacheFullness = lruCache.cachedBytes / lruCache.maxBytesSize;
-		str += `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }<br/>`;
+		str += `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Loaded: ${ tiles.stats.loaded }<br/>Visible: ${ tiles.visibleTiles.size } Active: ${ tiles.activeTiles.size }<br/>`;
 		str += `Cache: ${ ( 100 * cacheFullness ).toFixed( 2 ) }% ~${ ( lruCache.cachedBytes / 1000 / 1000 ).toFixed( 2 ) }mb<br/>`;
 
 	}
@@ -374,7 +399,7 @@ function updateHtml() {
 
 			} );
 
-			fadePlugin.batchedMesh?._instanceInfo.forEach( info => {
+			fadePlugin?.batchedMesh?._instanceInfo.forEach( info => {
 
 				if ( info.visible && info.active ) tot ++;
 
