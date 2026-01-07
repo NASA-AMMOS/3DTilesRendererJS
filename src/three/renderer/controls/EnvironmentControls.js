@@ -12,7 +12,7 @@ import {
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
-import { mouseToCoords, makeRotateAroundPoint, setRaycasterFromCamera } from './utils.js';
+import { adjustedPointerToCoords, makeRotateAroundPoint, setRaycasterFromCamera } from './utils.js';
 
 export const NONE = 0;
 export const DRAG = 1;
@@ -271,7 +271,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// the "pointer" for zooming and rotating should be based on the center point
 			pointerTracker.getCenterPoint( _pointer );
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			adjustedPointerToCoords( _pointer, domElement, _pointer );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// prevent the drag distance from getting too severe by limiting the drag point
@@ -988,7 +988,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if ( zoomIntoPoint ) {
 
 				// get the mouse position after zoom
-				mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
+				adjustedPointerToCoords( _pointer, domElement, _mouseAfter );
 				_mouseAfter.unproject( camera );
 
 				// shift the camera on the near plane so the mouse is in the same spot
@@ -1056,7 +1056,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const { domElement, raycaster, camera, zoomDirection, pointerTracker } = this;
 		pointerTracker.getLatestPoint( _pointer );
-		mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
+		adjustedPointerToCoords( _pointer, domElement, _mouseBefore );
 		setRaycasterFromCamera( raycaster, _mouseBefore, camera );
 		zoomDirection.copy( raycaster.ray.direction ).normalize();
 		this.zoomDirectionSet = true;
@@ -1087,7 +1087,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// If using an orthographic camera we have to account for the mouse position when picking the point
 		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _zoomPointPointer ) ) {
 
-			mouseToCoords( _zoomPointPointer.x, _zoomPointPointer.y, domElement, _zoomPointPointer );
+			adjustedPointerToCoords( _zoomPointPointer, domElement, _zoomPointPointer );
 			setRaycasterFromCamera( raycaster, _zoomPointPointer, camera );
 
 		} else {
@@ -1152,7 +1152,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// get the pointer and plane
 			pointerTracker.getCenterPoint( _pointer );
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			adjustedPointerToCoords( _pointer, domElement, _pointer );
 
 			_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
