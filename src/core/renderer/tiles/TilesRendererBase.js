@@ -20,6 +20,10 @@ const priorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
+	} else if ( ! a.traversal || ! b.traversal ) {
+
+		return 0;
+
 	} else if ( a.traversal.used !== b.traversal.used ) {
 
 		// load tiles that have been used
@@ -57,6 +61,10 @@ const lruPriorityCallback = ( a, b ) => {
 
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( ! a.traversal || ! b.traversal ) {
+
+		return 0;
 
 	} else if ( a.traversal.lastFrameVisited !== b.traversal.lastFrameVisited ) {
 
