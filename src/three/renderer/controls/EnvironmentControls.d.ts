@@ -1,4 +1,4 @@
-import { Camera, EventDispatcher, Object3D, Plane, Vector3 } from 'three';
+import { Camera, Clock, EventDispatcher, Object3D, Plane, Vector3 } from 'three';
 import { TilesRenderer } from '../tiles/TilesRenderer.js';
 
 export interface EnvironmentControlsEventMap {
@@ -35,6 +35,7 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	fallbackPlane: Plane;
 	up: Vector3;
 	pivotPoint: Vector3;
+	clock: Clock;
 
 	constructor(
 		scene?: Object3D,
