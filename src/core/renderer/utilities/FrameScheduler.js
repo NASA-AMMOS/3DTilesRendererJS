@@ -30,7 +30,7 @@ class FrameScheduler {
 
 	}
 
-	// Request animation frame (defer to XR session if present)
+	// Request animation frame (defer to XR session if active)
 	requestAnimationFrame( cb ) {
 
 		let handle;
