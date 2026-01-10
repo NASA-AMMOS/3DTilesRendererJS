@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
 - I3DMLoader: Added support for oct-encoded normals.
 - TilesRenderer: Added "optimizedLoadStrategy" and "loadSiblings" options. These are experimental settings and are planned to be the default and only tile load strategy.
+- R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
