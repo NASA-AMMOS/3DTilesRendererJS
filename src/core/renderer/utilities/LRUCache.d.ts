@@ -9,4 +9,6 @@ export class LRUCache {
 
 	unloadPriorityCallback: ( item: any ) => number;
 
+	isUsed( item: any ): boolean;
+
 }

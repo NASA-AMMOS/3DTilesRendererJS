@@ -200,6 +200,12 @@ class LRUCache {
 
 	}
 
+	isUsed( item ) {
+
+		return this.usedSet.has( item );
+
+	}
+
 	// TODO: this should be renamed because it's not necessarily unloading all unused content
 	// Maybe call it "cleanup" or "unloadToMinSize"
 	unloadUnusedContent() {

@@ -1,4 +1,5 @@
 import { MathUtils } from 'three';
+import { ProjectionScheme } from './ProjectionScheme.js';
 
 function doBoundsIntersect( a, b ) {
 
@@ -50,7 +51,7 @@ export class TilingScheme {
 	// prioritize user-set bounds over projection bounds if present
 	get contentBounds() {
 
-		return this._contentBounds ?? this.projection?.getBounds() ?? [ 0, 0, 1, 1 ];
+		return this._contentBounds ?? this.projection.getBounds();
 
 	}
 
@@ -68,7 +69,7 @@ export class TilingScheme {
 
 		// The origin and bounds
 		this._contentBounds = null;
-		this.projection = null;
+		this.projection = new ProjectionScheme( 'none' );
 
 		this._levels = [];
 
@@ -279,12 +280,12 @@ export class TilingScheme {
 
 		const { projection } = this;
 		const bounds = [ ...this.contentBounds ];
-		if ( projection && normalized ) {
+		if ( normalized ) {
 
-			bounds[ 0 ] = projection.convertLongitudeToProjection( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertLatitudeToProjection( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertLongitudeToProjection( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertLatitudeToProjection( bounds[ 3 ] );
+			bounds[ 0 ] = projection.convertLongitudeToNormalized( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertLatitudeToNormalized( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertLongitudeToNormalized( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertLatitudeToNormalized( bounds[ 3 ] );
 
 		}
 
@@ -306,7 +307,7 @@ export class TilingScheme {
 
 	}
 
-	getTileBounds( x, y, level, normalized = false, clampToProjection = true ) {
+	getTileBounds( x, y, level, normalized = false, clamp = true ) {
 
 		const { flipY, pixelOverlap, projection } = this;
 		const { tilePixelWidth, tilePixelHeight, pixelWidth, pixelHeight, tileBounds } = this.getLevel( level );
@@ -351,18 +352,18 @@ export class TilingScheme {
 
 		}
 
-		if ( clampToProjection ) {
+		if ( clamp ) {
 
-			bounds = this.clampToProjectionBounds( bounds, true );
+			bounds = this.clampToBounds( bounds, true );
 
 		}
 
-		if ( projection && ! normalized ) {
+		if ( ! normalized ) {
 
-			bounds[ 0 ] = projection.convertProjectionToLongitude( bounds[ 0 ] );
-			bounds[ 1 ] = projection.convertProjectionToLatitude( bounds[ 1 ] );
-			bounds[ 2 ] = projection.convertProjectionToLongitude( bounds[ 2 ] );
-			bounds[ 3 ] = projection.convertProjectionToLatitude( bounds[ 3 ] );
+			bounds[ 0 ] = projection.convertNormalizedToLongitude( bounds[ 0 ] );
+			bounds[ 1 ] = projection.convertNormalizedToLatitude( bounds[ 1 ] );
+			bounds[ 2 ] = projection.convertNormalizedToLongitude( bounds[ 2 ] );
+			bounds[ 3 ] = projection.convertNormalizedToLatitude( bounds[ 3 ] );
 
 		}
 
@@ -372,53 +373,25 @@ export class TilingScheme {
 
 	toNormalizedPoint( x, y ) {
 
-		const { projection } = this;
-		const result = [ x, y ];
-		if ( this.projection ) {
-
-			result[ 0 ] = projection.convertLongitudeToProjection( result[ 0 ] );
-			result[ 1 ] = projection.convertLatitudeToProjection( result[ 1 ] );
-
-		}
-
-		return result;
+		return this.projection.toNormalizedPoint( x, y );
 
 	}
 
 	toNormalizedRange( range ) {
 
-		return [
-			...this.toNormalizedPoint( range[ 0 ], range[ 1 ] ),
-			...this.toNormalizedPoint( range[ 2 ], range[ 3 ] ),
-		];
+		return this.projection.toNormalizedRange( range );
 
 	}
 
 	toCartographicPoint( x, y ) {
 
-		const { projection } = this;
-		const result = [ x, y ];
-		if ( this.projection ) {
-
-			result[ 0 ] = projection.convertProjectionToLongitude( result[ 0 ] );
-			result[ 1 ] = projection.convertProjectionToLatitude( result[ 1 ] );
-
-		} else {
-
-			throw new Error( 'TilingScheme: Projection not available.' );
-
-		}
-
-		return result;
+		return this.projection.toCartographicPoint( x, y );
 
 	}
 
 	toCartographicRange( range ) {
 
-		return [
-			...this.toCartographicPoint( range[ 0 ], range[ 1 ] ),
-			...this.toCartographicPoint( range[ 2 ], range[ 3 ] ),
-		];
+		return this.projection.toCartographicRange( range );
 
 	}
 
@@ -435,29 +408,9 @@ export class TilingScheme {
 
 	}
 
-	clampToProjectionBounds( range, normalized = false ) {
+	clampToBounds( range, normalized = false ) {
 
-		const result = [ ...range ];
-		const { projection } = this;
-		let clampBounds;
-
-		if ( normalized || ! projection ) {
-
-			clampBounds = [ 0, 0, 1, 1 ];
-
-		} else {
-
-			clampBounds = projection.getBounds();
-
-		}
-
-		const [ minX, minY, maxX, maxY ] = clampBounds;
-		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
-		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
-		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
-		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
-
-		return result;
+		return this.projection.clampToBounds( range, normalized );
 
 	}
 

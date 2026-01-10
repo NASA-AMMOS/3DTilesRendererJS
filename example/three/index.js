@@ -654,7 +654,7 @@ function render() {
 	}
 
 	const cacheFullness = tiles.lruCache.itemList.length / tiles.lruCache.maxSize;
-	let str = `Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
+	let str = `Queued: ${ tiles.stats.queued } Downloading: ${ tiles.stats.downloading } Parsing: ${ tiles.stats.parsing } Visible: ${ tiles.visibleTiles.size }`;
 
 	if ( params.enableCacheDisplay ) {
 

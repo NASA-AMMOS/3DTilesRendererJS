@@ -7,6 +7,7 @@ export interface TilesRendererEventMap {
 	'add-camera': { camera: Camera };
 	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
+	'load-root-tileset': { tileset: object, url: string };
 	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
 	/* @deprecated Use 'load-tileset' instead */
 	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };

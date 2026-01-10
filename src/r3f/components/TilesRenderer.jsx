@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useReducer } from 'react';
+import { createContext, useMemo, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useReducer } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
 import { TilesRenderer as TilesRendererImpl, WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
@@ -9,6 +9,9 @@ import { useApplyRefs } from '../utilities/useApplyRefs.js';
 // context for accessing the tileset
 export const TilesRendererContext = createContext( null );
 export const TilesPluginContext = createContext( null );
+
+// context for accessing just ellipsoid and frame data
+export const EllipsoidContext = createContext( null );
 
 // group that matches the transform of the tileset root group
 function TileSetRoot( { children } ) {
@@ -284,6 +287,16 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	// assign options recursively
 	useDeepOptions( tiles, options );
+	const ellipsoidContextValue = useMemo( () => {
+
+		if ( ! tiles ) return null;
+
+		return {
+			ellipsoid: tiles.ellipsoid,
+			frame: tiles.group,
+		};
+
+	}, [ tiles?.ellipsoid, tiles?.group ] );
 
 	// only render out the tiles once the instance and context are ready
 	if ( ! tiles ) {
@@ -295,9 +308,11 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	return <>
 		<primitive object={ tiles.group } { ...group } />
 		<TilesRendererContext.Provider value={ tiles }>
-			<TileSetRoot>
-				{ children }
-			</TileSetRoot>
+			<EllipsoidContext.Provider value={ ellipsoidContextValue }>
+				<TileSetRoot>
+					{ children }
+				</TileSetRoot>
+			</EllipsoidContext.Provider>
 		</TilesRendererContext.Provider>
 	</>;
 

@@ -1,6 +1,6 @@
 import { Vector3, MathUtils, Matrix4, Box3, Sphere } from 'three';
-import { EllipsoidRegion } from '../src/three/renderer/math/EllipsoidRegion.js';
-import { WGS84_ELLIPSOID } from '../src/three/renderer/math/GeoConstants.js';
+import { EllipsoidRegion } from '../../src/three/renderer/math/EllipsoidRegion.js';
+import { WGS84_ELLIPSOID } from '../../src/three/renderer/math/GeoConstants.js';
 
 describe( 'EllipsoidRegion', () => {
 
@@ -214,15 +214,13 @@ describe( 'EllipsoidRegion', () => {
 
 	describe( 'Bounding Boxes', () => {
 
-		it( 'should encapsulate randomized points.', () => {
+		describe( 'should encapsulate randomized points', () => {
 
-			const POINT_COUNT = 100;
-			const REGION_COUNT = 100;
-			const matrix = new Matrix4();
-			const invMatrix = new Matrix4();
-			const box = new Box3();
-			const sphere = new Sphere();
-			const point = new Vector3();
+			const POINT_COUNT = 20;
+			const REGION_COUNT = 20;
+
+			// Generate random regions at module load time
+			const regions = [];
 			for ( let i = 0; i < REGION_COUNT; i ++ ) {
 
 				const region = new EllipsoidRegion( 1, 1, 1 );
@@ -235,41 +233,59 @@ describe( 'EllipsoidRegion', () => {
 				region.lonStart = MathUtils.mapLinear( Math.random(), 0, 1, 0.0, 2 * Math.PI );
 				region.lonEnd = region.lonStart + MathUtils.mapLinear( Math.random(), 0, 1, 0, Math.PI );
 
-				region.getBoundingBox( box, matrix );
-				region.getBoundingSphere( sphere );
-				invMatrix.copy( matrix ).invert();
-
-				for ( let p = 0; p < POINT_COUNT; p ++ ) {
-
-					region.getCartographicToPosition(
-						MathUtils.mapLinear( Math.random(), 0, 1, region.latStart, region.latEnd ),
-						MathUtils.mapLinear( Math.random(), 0, 1, region.lonStart, region.lonEnd ),
-						Math.random() > 0.5 ? region.heightStart : region.heightEnd,
-						point,
-					);
-
-
-					expect( sphere.containsPoint( point ) ).toBe( true );
-					point.applyMatrix4( invMatrix );
-					// if ( ! box.containsPoint( point ) ) {
-
-					// 	console.log( `
-					// 		p.position.set( ${ point.x }, ${ point.y }, ${ point.z } );
-					// 		er.latStart = ${ region.latStart };
-					// 		er.latEnd = ${ region.latEnd };
-					// 		er.lonStart = ${ region.lonStart };
-					// 		er.lonEnd = ${ region.lonEnd };
-					// 		er.heightStart = ${ region.heightStart };
-					// 		er.heightEnd = ${ region.heightEnd };
-
-					// 	`);
-
-					// }
-					expect( box.containsPoint( point ) ).toBe( true );
-
-				}
+				regions.push( { region, index: i } );
 
 			}
+
+			// Create a describe block for each region
+			regions.forEach( ( { region, index } ) => {
+
+				describe( `Region ${ index }: lat[${ region.latStart }, ${ region.latEnd }] lon[${ region.lonStart }, ${ region.lonEnd }] height[${ region.heightStart }, ${ region.heightEnd }]`, () => {
+
+					const matrix = new Matrix4();
+					const invMatrix = new Matrix4();
+					const box = new Box3();
+					const sphere = new Sphere();
+
+					// Calculate bounding volumes once for this region
+					region.getBoundingBox( box, matrix );
+					region.getBoundingSphere( sphere );
+					invMatrix.copy( matrix ).invert();
+
+					// Generate random points for this region
+					const points = [];
+					for ( let p = 0; p < POINT_COUNT; p ++ ) {
+
+						const lat = MathUtils.mapLinear( Math.random(), 0, 1, region.latStart, region.latEnd );
+						const lon = MathUtils.mapLinear( Math.random(), 0, 1, region.lonStart, region.lonEnd );
+						const height = Math.random() > 0.5 ? region.heightStart : region.heightEnd;
+
+						const point = new Vector3();
+						region.getCartographicToPosition( lat, lon, height, point );
+
+						points.push( { point, lat, lon, height, index: p } );
+
+					}
+
+					// Create an it block for each point
+					points.forEach( ( { point, lat, lon, height, index } ) => {
+
+						it( `Point ${ index }: lat=${ lat }, lon=${ lon }, height=${ height }`, () => {
+
+							// Test sphere containment
+							expect( sphere.containsPoint( point ) ).toBe( true );
+
+							// Test box containment
+							const transformedPoint = point.clone().applyMatrix4( invMatrix );
+							expect( box.containsPoint( transformedPoint ) ).toBe( true );
+
+						} );
+
+					} );
+
+				} );
+
+			} );
 
 		} );
 

@@ -1,7 +1,7 @@
 import { Vector3, Matrix4, MathUtils } from 'three';
 
 // iterates over all present tiles in the given tileset at the given level in the given range
-export function forEachTileInBounds( range, level, tiling, normalized, callback ) {
+export function forEachTileInBounds( range, level, tiling, callback ) {
 
 	// pull the bounds in a bit to avoid loading unnecessary tiles. 1e-8 was chosen since smaller values
 	// are not larger enough and cause extra tiles to load in cases where 1-to-1 tile-to-image should occur
@@ -12,7 +12,7 @@ export function forEachTileInBounds( range, level, tiling, normalized, callback 
 	maxLon -= 1e-8;
 
 	const clampedLevel = Math.max( Math.min( level, tiling.maxLevel ), tiling.minLevel );
-	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel, normalized );
+	const [ minX, minY, maxX, maxY ] = tiling.getTilesInRange( minLon, minLat, maxLon, maxLat, clampedLevel, true );
 	for ( let x = minX; x <= maxX; x ++ ) {
 
 		for ( let y = minY; y <= maxY; y ++ ) {
@@ -98,7 +98,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, tiling = null ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -136,7 +136,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 	} );
 
 	let clampedRange = [ minLon, minLat, maxLon, maxLat ];
-	if ( tiling !== null ) {
+	if ( projection !== null ) {
 
 		// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
 		// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
@@ -145,8 +145,8 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
 		// globe range.
 		// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
-		clampedRange = tiling.clampToProjectionBounds( [ minLon, minLat, maxLon, maxLat ] );
-		const [ minU, minV, maxU, maxV ] = tiling.toNormalizedRange( clampedRange );
+		clampedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+		const [ minU, minV, maxU, maxV ] = projection.toNormalizedRange( clampedRange );
 		uvs.forEach( uv => {
 
 			for ( let i = 0, l = uv.length; i < l; i += 3 ) {
@@ -155,7 +155,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 				const lat = uv[ i + 1 ];
 				const h = uv[ i + 2 ];
 
-				const [ u, v ] = tiling.toNormalizedPoint( lon, lat );
+				const [ u, v ] = projection.toNormalizedPoint( lon, lat );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 				uv[ i + 2 ] = MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );
@@ -175,7 +175,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 }
 
 // functions for generating UVs for planar-projected UVs
-function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
+function getGeometryPlanarChannel( geometry, meshToFrame ) {
 
 	const _vec = new Vector3();
 	const uv = [];
@@ -189,9 +189,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
 	let maxW = - Infinity;
 	for ( let i = 0; i < posAttr.count; i ++ ) {
 
-		// divide U by the aspect to stretch the U dimension to the aspect of the image
 		_vec.fromBufferAttribute( posAttr, i ).applyMatrix4( meshToFrame );
-		_vec.x /= aspectRatio;
 
 		uv.push( _vec.x, _vec.y, _vec.z );
 
@@ -216,7 +214,7 @@ function getGeometryPlanarChannel( geometry, meshToFrame, aspectRatio ) {
 
 }
 
-export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
+export function getMeshesPlanarRange( meshes, worldToFrame ) {
 
 	// find the U / V ranges
 	let minU = Infinity;
@@ -238,7 +236,7 @@ export function getMeshesPlanarRange( meshes, worldToFrame, tiling ) {
 
 		}
 
-		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix, tiling.aspectRatio );
+		const { uv, range, heightRange } = getGeometryPlanarChannel( mesh.geometry, _matrix );
 		uvs.push( uv );
 
 		// save the min and max values

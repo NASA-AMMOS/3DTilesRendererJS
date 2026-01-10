@@ -70,6 +70,7 @@ export class DataCache {
 				result: null,
 				count: 1,
 				bytes: 0,
+				args,
 			};
 
 			this.active ++;
@@ -140,6 +141,22 @@ export class DataCache {
 		const { cache } = this;
 		const key = hash( ...args );
 		return key in cache;
+
+	}
+
+	forEachItem( cb ) {
+
+		const { cache } = this;
+		for ( const key in cache ) {
+
+			const info = cache[ key ];
+			if ( ! ( info.result instanceof Promise ) ) {
+
+				cb( info.result, info.args );
+
+			}
+
+		}
 
 	}
 
