@@ -792,7 +792,7 @@ export class TilesRendererBase {
 			if ( '__depth' in child ) {
 
 				// the child has already been processed
-				break;
+				continue;
 
 			} else if ( immediate ) {
 
