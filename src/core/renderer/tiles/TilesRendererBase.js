@@ -190,6 +190,30 @@ export class TilesRendererBase {
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
+		processNodeQueue.priorityCallback = ( a, b ) => {
+
+			const aParent = a.parent;
+			const bParent = b.parent;
+			if ( aParent === bParent ) {
+
+				return 0;
+
+			} else if ( ! aParent ) {
+
+				return 1;
+
+			} else if ( ! bParent ) {
+
+				return - 1;
+
+			} else {
+
+				// fall back to the priority used for tile loads and parsing
+				return downloadQueue.priorityCallback( aParent, bParent );
+
+			}
+
+		};
 
 		this.processedTiles = new WeakSet();
 		this.visibleTiles = new Set();
