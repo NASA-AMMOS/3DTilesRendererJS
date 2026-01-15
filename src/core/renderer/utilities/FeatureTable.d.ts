@@ -7,7 +7,10 @@ interface FeatureTableHeader {
 
 export class FeatureTable {
 
-	header: FeatureTableHeader;
+	buffer : ArrayBuffer;
+	binOffset : number;
+	binLength : number;
+	header : FeatureTableHeader;
 
 	constructor(
 		buffer : ArrayBuffer,
