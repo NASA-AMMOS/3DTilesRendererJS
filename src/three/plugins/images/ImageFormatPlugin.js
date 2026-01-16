@@ -316,11 +316,12 @@ export class ImageFormatPlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		for ( let cx = 0; cx < 2; cx ++ ) {
+		const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
+		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
-			for ( let cy = 0; cy < 2; cy ++ ) {
+			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
 
-				const child = this.createChild( 2 * x + cx, 2 * y + cy, level + 1 );
+				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
 
 					tile.children.push( child );

@@ -223,6 +223,12 @@ export class DebugTilesPlugin {
 
 		this.tiles = tiles;
 
+		if ( ! this.enabled ) {
+
+			return;
+
+		}
+
 		// initialize groups
 		const tilesGroup = tiles.group;
 		this.boxGroup = new Group();
