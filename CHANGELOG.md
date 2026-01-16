@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fix mouse offset in Controls.
+- Fixed case where DebugTilesPlugin could throw an error when toggling "enabled".
 
 ## [0.4.19] - 2025.12.19
 ### Changed
