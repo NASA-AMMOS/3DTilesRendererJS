@@ -810,6 +810,12 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
+		if ( tile.__childrenProcessed === children.length ) {
+
+			return;
+
+		}
+
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
