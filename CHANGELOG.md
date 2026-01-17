@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
 - ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
 - GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
+- Renamed the "cached" tile subfield to "engineData".
 
 ### Fixed
 - Fix mouse offset in Controls.
