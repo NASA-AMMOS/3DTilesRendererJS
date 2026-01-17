@@ -172,7 +172,7 @@ function canTraverse( tile, renderer ) {
 }
 
 // Determine which tiles are used by the renderer given the current camera configuration
-export function markUsedTiles( tile, renderer ) {
+function markUsedTiles( tile, renderer ) {
 
 	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
 	// child tiles has happened here.
@@ -240,7 +240,7 @@ export function markUsedTiles( tile, renderer ) {
 }
 
 // Traverse and mark the tiles that are at the leaf nodes of the "used" tree.
-export function markUsedSetLeaves( tile, renderer ) {
+function markUsedSetLeaves( tile, renderer ) {
 
 	const frameCount = renderer.frameCount;
 	if ( ! isUsedThisFrame( tile, frameCount ) ) {
@@ -308,7 +308,7 @@ export function markUsedSetLeaves( tile, renderer ) {
 
 // TODO: revisit implementation
 // Skip past tiles we consider unrenderable because they are outside the error threshold.
-export function markVisibleTiles( tile, renderer ) {
+function markVisibleTiles( tile, renderer ) {
 
 	const stats = renderer.stats;
 	if ( ! isUsedThisFrame( tile, renderer.frameCount ) ) {
@@ -411,7 +411,7 @@ export function markVisibleTiles( tile, renderer ) {
 }
 
 // Final traverse to toggle tile visibility.
-export function toggleTiles( tile, renderer ) {
+function toggleTiles( tile, renderer ) {
 
 	const isUsed = isUsedThisFrame( tile, renderer.frameCount );
 	if ( isUsed || tile.traversal?.usedLastFrame ) {
@@ -473,3 +473,13 @@ export function toggleTiles( tile, renderer ) {
 	}
 
 }
+
+export function runTraversal( tile, renderer ) {
+
+	markUsedTiles( tile, renderer );
+	markUsedSetLeaves( tile, renderer );
+	markVisibleTiles( tile, renderer );
+	toggleTiles( tile, renderer );
+
+}
+

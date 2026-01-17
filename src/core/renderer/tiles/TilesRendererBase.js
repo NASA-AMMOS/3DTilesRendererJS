@@ -1,7 +1,8 @@
 import { getUrlExtension } from '../utilities/urlExtension.js';
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
-import { markUsedTiles, toggleTiles, markVisibleTiles, markUsedSetLeaves } from './traverseFunctions.js';
+import { runTraversal as optimizedRunTraversal } from './optimizedTraverseFunctions.js';
+import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
@@ -10,7 +11,7 @@ const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
 // priority queue sort function that takes two tiles to compare. Returning 1 means
 // "tile a" is loaded first.
-const priorityCallback = ( a, b ) => {
+const defaultPriorityCallback = ( a, b ) => {
 
 	const aPriority = a.priority || 0;
 	const bPriority = b.priority || 0;
@@ -43,6 +44,43 @@ const priorityCallback = ( a, b ) => {
 	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
 
 		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? - 1 : 1;
+
+	}
+
+	return 0;
+
+};
+
+// Optimized priority callback - prioritizes distance over error for better user experience
+const optimizedPriorityCallback = ( a, b ) => {
+
+	const aPriority = a.priority || 0;
+	const bPriority = b.priority || 0;
+
+	if ( aPriority !== bPriority ) {
+
+		// lower priority value sorts first
+		return aPriority > bPriority ? 1 : - 1;
+
+	} else if ( a.__used !== b.__used ) {
+
+		// load tiles that have been used
+		return a.__used ? 1 : - 1;
+
+	} else if ( a.__inFrustum !== b.__inFrustum ) {
+
+		// load tiles that have are in the frustum
+		return a.__inFrustum ? 1 : - 1;
+
+	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
+
+		// load internal tile sets first
+		return a.__hasUnrenderableContent ? 1 : - 1;
+
+	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
+
+		// load closer tiles first
+		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
 
 	}
 
@@ -152,14 +190,38 @@ export class TilesRendererBase {
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
-		downloadQueue.priorityCallback = priorityCallback;
+		downloadQueue.priorityCallback = defaultPriorityCallback;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
-		parseQueue.priorityCallback = priorityCallback;
+		parseQueue.priorityCallback = defaultPriorityCallback;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
+		processNodeQueue.priorityCallback = ( a, b ) => {
+
+			const aParent = a.parent;
+			const bParent = b.parent;
+			if ( aParent === bParent ) {
+
+				return 0;
+
+			} else if ( ! aParent ) {
+
+				return 1;
+
+			} else if ( ! bParent ) {
+
+				return - 1;
+
+			} else {
+
+				// fall back to the priority used for tile loads and parsing
+				return downloadQueue.priorityCallback( aParent, bParent );
+
+			}
+
+		};
 
 		this.processedTiles = new WeakSet();
 		this.visibleTiles = new Set();
@@ -177,6 +239,7 @@ export class TilesRendererBase {
 			queued: 0,
 			downloading: 0,
 			parsing: 0,
+			loaded: 0,
 			failed: 0,
 
 			inFrustum: 0,
@@ -198,6 +261,8 @@ export class TilesRendererBase {
 		this._errorThreshold = Infinity;
 		this.displayActiveTiles = false;
 		this.maxDepth = Infinity;
+		this.optimizedLoadStrategy = false;
+		this.loadSiblings = true;
 
 	}
 
@@ -349,7 +414,7 @@ export class TilesRendererBase {
 
 	update() {
 
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -411,10 +476,21 @@ export class TilesRendererBase {
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
 		usedSet.clear();
 
-		markUsedTiles( root, this );
-		markUsedSetLeaves( root, this );
-		markVisibleTiles( root, this );
-		toggleTiles( root, this );
+		// assign the correct callbacks
+		const priorityCallback = optimizedLoadStrategy ? optimizedPriorityCallback : defaultPriorityCallback;
+		downloadQueue.priorityCallback = priorityCallback;
+		parseQueue.priorityCallback = priorityCallback;
+
+		// run traversal
+		if ( optimizedLoadStrategy ) {
+
+			optimizedRunTraversal( root, this );
+
+		} else {
+
+			runTraversal( root, this );
+
+		}
 
 		// remove any tiles that are loading but no longer used
 		this.removeUnusedPendingTiles();
@@ -512,6 +588,7 @@ export class TilesRendererBase {
 			downloading: 0,
 			failed: 0,
 			inFrustum: 0,
+			traversed: 0,
 			used: 0,
 			active: 0,
 			visible: 0,
@@ -656,6 +733,29 @@ export class TilesRendererBase {
 
 		}
 
+		tile.__basePath = tilesetDir;
+
+		tile.__lastFrameVisited = - 1;
+
+		// Initialize engineData data structure with engine-agnostic fields
+		tile.engineData = {
+			scene: null,
+			metadata: null,
+			boundingVolume: null,
+		};
+
+		// Backwards compatibility: cached is an alias for engineData
+		Object.defineProperty( tile, 'cached', {
+			get() {
+
+				console.warn( 'TilesRenderer: "tile.cached" field has been renamed to "tile.engineData".' );
+				return this.engineData;
+
+			},
+			enumerable: false,
+			configurable: true,
+		} );
+
 		this.invokeAllPlugins( plugin => {
 
 			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tilesetDir, parentTile );
@@ -740,13 +840,19 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
+		if ( tile.__childrenProcessed === children.length ) {
+
+			return;
+
+		}
+
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const child = children[ i ];
 			if ( 'traversal' in child ) {
 
 				// the child has already been processed
-				break;
+				continue;
 
 			} else if ( immediate ) {
 
@@ -782,7 +888,7 @@ export class TilesRendererBase {
 
 			if ( plugin.calculateBytesUsed ) {
 
-				bytes += plugin.calculateBytesUsed( tile, tile.cached.scene ) || 0;
+				bytes += plugin.calculateBytesUsed( tile, tile.engineData.scene ) || 0;
 
 			}
 
@@ -972,6 +1078,10 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 
+			} else if ( t.__loadingState === LOADED ) {
+
+				stats.loaded --;
+
 			}
 
 			t.internal.loadingState = UNLOADED;
@@ -1095,6 +1205,7 @@ export class TilesRendererBase {
 				}
 
 				stats.parsing --;
+				stats.loaded ++;
 				tile.internal.loadingState = LOADED;
 				loadingTiles.delete( tile );
 				lruCache.setLoaded( tile, true );
@@ -1128,11 +1239,11 @@ export class TilesRendererBase {
 
 				}
 
-				if ( tile.cached.scene ) {
+				if ( tile.engineData.scene ) {
 
 					this.dispatchEvent( {
 						type: 'load-model',
-						scene: tile.cached.scene,
+						scene: tile.engineData.scene,
 						tile,
 						url: uri,
 					} );
@@ -1158,13 +1269,17 @@ export class TilesRendererBase {
 
 						stats.queued --;
 
+					} else if ( tile.internal.loadingState === LOADING ) {
+
+						stats.downloading --;
+
 					} else if ( tile.internal.loadingState === PARSING ) {
 
 						stats.parsing --;
 
-					} else if ( tile.internal.loadingState === LOADING ) {
+					} else if ( tile.internal.loadingState === LOADED ) {
 
-						stats.downloading --;
+						stats.loaded --;
 
 					}
 

@@ -8,11 +8,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
+- I3DMLoader: Added support for oct-encoded normals.
+- TilesRenderer: Added "optimizedLoadStrategy" and "loadSiblings" options. These are experimental settings and are planned to be the default and only tile load strategy.
+- R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
+- Export FeatureTable, BatchTable classes.
+- TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
+- XYZImageFormat: add "projection" option and ability to set tile settings per-level.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
 - ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
 - GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
+- Renamed the "cached" tile subfield to "engineData".
+
+### Fixed
+- Fix mouse offset in Controls.
+- Fixed case where DebugTilesPlugin could throw an error when toggling "enabled".
+- DebugTilesPlugin: Fixed case where "enabled" was not resepected if set to false on creation.
 
 ## [0.4.19] - 2025.12.19
 ### Changed
