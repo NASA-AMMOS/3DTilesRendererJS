@@ -62,25 +62,25 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
-	} else if ( a.__used !== b.__used ) {
+	} else if ( a.traversal.used !== b.traversal.used ) {
 
 		// load tiles that have been used
-		return a.__used ? 1 : - 1;
+		return a.traversal.used ? 1 : - 1;
 
-	} else if ( a.__inFrustum !== b.__inFrustum ) {
+	} else if ( a.traversal.inFrustum !== b.traversal.inFrustum ) {
 
 		// load tiles that have are in the frustum
-		return a.__inFrustum ? 1 : - 1;
+		return a.traversal.inFrustum ? 1 : - 1;
 
-	} else if ( a.__hasUnrenderableContent !== b.__hasUnrenderableContent ) {
+	} else if ( a.internal.hasUnrenderableContent !== b.internal.hasUnrenderableContent ) {
 
 		// load internal tile sets first
-		return a.__hasUnrenderableContent ? 1 : - 1;
+		return a.internal.hasUnrenderableContent ? 1 : - 1;
 
-	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
+	} else if ( a.traversal.distanceFromCamera !== b.traversal.distanceFromCamera ) {
 
 		// load closer tiles first
-		return a.__distanceFromCamera > b.__distanceFromCamera ? - 1 : 1;
+		return a.traversal.distanceFromCamera > b.traversal.distanceFromCamera ? - 1 : 1;
 
 	}
 
@@ -733,10 +733,6 @@ export class TilesRendererBase {
 
 		}
 
-		tile.__basePath = tilesetDir;
-
-		tile.__lastFrameVisited = - 1;
-
 		// Initialize engineData data structure with engine-agnostic fields
 		tile.engineData = {
 			scene: null,
@@ -840,7 +836,7 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
-		if ( tile.__childrenProcessed === children.length ) {
+		if ( tile.internal.childrenProcessed === children.length ) {
 
 			return;
 
@@ -1078,7 +1074,7 @@ export class TilesRendererBase {
 
 				stats.parsing --;
 
-			} else if ( t.__loadingState === LOADED ) {
+			} else if ( t.internal.loadingState === LOADED ) {
 
 				stats.loaded --;
 
