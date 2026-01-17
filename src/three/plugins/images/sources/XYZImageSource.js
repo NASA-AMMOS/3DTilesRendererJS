@@ -8,6 +8,7 @@ export class XYZImageSource extends TiledImageSource {
 		const {
 			levels = 20,
 			tileDimension = 256,
+			projection = 'EPSG:4326',
 			url = null,
 			...rest
 		} = options;
@@ -16,6 +17,7 @@ export class XYZImageSource extends TiledImageSource {
 
 		this.tileDimension = tileDimension;
 		this.levels = levels;
+		this.projection = projection;
 		this.url = url;
 
 	}
@@ -32,10 +34,10 @@ export class XYZImageSource extends TiledImageSource {
 	init() {
 
 		// transform the url
-		const { tiling, tileDimension, levels, url } = this;
+		const { tiling, tileDimension, levels, url, projection } = this;
 
 		tiling.flipY = ! /{\s*reverseY|-\s*y\s*}/g.test( url );
-		tiling.setProjection( new ProjectionScheme( 'EPSG:3857' ) );
+		tiling.setProjection( new ProjectionScheme( projection ) );
 		tiling.setContentBounds( ...tiling.projection.getBounds() );
 		tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
 			tilePixelWidth: tileDimension,
