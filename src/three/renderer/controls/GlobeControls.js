@@ -8,7 +8,7 @@ import {
 	Group,
 } from 'three';
 import { DRAG, ZOOM, EnvironmentControls, NONE } from './EnvironmentControls.js';
-import { makeRotateAroundPoint, mouseToCoords, setRaycasterFromCamera } from './utils.js';
+import { makeRotateAroundPoint, adjustedPointerToCoords, setRaycasterFromCamera } from './utils.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
@@ -427,7 +427,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// get the pointer and ray
 			pointerTracker.getCenterPoint( _pointer );
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			adjustedPointerToCoords( _pointer, domElement, _pointer );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// transform to ellipsoid frame

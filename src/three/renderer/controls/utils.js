@@ -18,11 +18,11 @@ export function makeRotateAroundPoint( point, quat, target ) {
 
 }
 
-// get the three.js pointer coords from an event
-export function mouseToCoords( clientX, clientY, element, target ) {
+// get the three.js pointer coords from an adjusted pointer (via PointerTracker)
+export function adjustedPointerToCoords( pointer, element, target ) {
 
-	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
-	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
+	target.x = ( pointer.x / element.clientWidth ) * 2 - 1;
+	target.y = - ( pointer.y / element.clientHeight ) * 2 + 1;
 
 	if ( target.isVector3 ) {
 

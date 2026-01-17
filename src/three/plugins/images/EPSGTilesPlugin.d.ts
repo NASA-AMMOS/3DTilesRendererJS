@@ -4,7 +4,7 @@ export class XYZTilesPlugin {
 
 	constructor( options: {
 		center?: boolean,
-		levels?: number,
+		levels?: number|Array<object>,
 		tileDimension?: number,
 		shape?: 'ellipsoid' | 'planar',
 		useRecommendedSettings?: boolean,

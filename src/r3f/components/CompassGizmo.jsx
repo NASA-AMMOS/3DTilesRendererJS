@@ -1,7 +1,7 @@
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';
-import { TilesRendererContext } from './TilesRenderer.jsx';
+import { EllipsoidContext } from './TilesRenderer.jsx';
 
 // Based in part on @pmndrs/drei's Gizmo component
 
@@ -152,7 +152,7 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, visible = true, ...rest } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );
-	const tiles = useContext( TilesRendererContext );
+	const ellipsoidContext = useContext( EllipsoidContext );
 	const groupRef = useRef( null );
 	const scene = useMemo( () => {
 
@@ -175,22 +175,24 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 	useFrame( () => {
 
-		if ( tiles === null || groupRef.current === null ) {
+		const ellipsoid = ellipsoidContext?.ellipsoid;
+		const frame = ellipsoidContext?.frame;
+
+		if ( ( ! ellipsoid || ! frame ) || groupRef.current === null ) {
 
 			return null;
 
 		}
 
-		const { ellipsoid } = tiles;
 		const group = groupRef.current;
 
 		// get the ENU frame in world space
-		getCameraFocusPoint( defaultCamera, ellipsoid, tiles.group, _pos ).applyMatrix4( tiles.group.matrixWorldInverse );
+		getCameraFocusPoint( defaultCamera, ellipsoid, frame, _pos ).applyMatrix4( frame.matrixWorldInverse );
 		ellipsoid.getPositionToCartographic( _pos, _cart );
 
 		ellipsoid
 			.getEastNorthUpFrame( _cart.lat, _cart.lon, 0, _enuMatrix )
-			.premultiply( tiles.group.matrixWorld );
+			.premultiply( frame.matrixWorld );
 
 		// get the camera orientation in the local ENU frame
 		_enuMatrix.invert();
