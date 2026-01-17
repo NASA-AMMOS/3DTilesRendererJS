@@ -35,14 +35,33 @@ export class XYZImageSource extends TiledImageSource {
 
 		// transform the url
 		const { tiling, tileDimension, levels, url, projection } = this;
-
 		tiling.flipY = ! /{\s*reverseY|-\s*y\s*}/g.test( url );
 		tiling.setProjection( new ProjectionScheme( projection ) );
 		tiling.setContentBounds( ...tiling.projection.getBounds() );
-		tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
-			tilePixelWidth: tileDimension,
-			tilePixelHeight: tileDimension,
-		} );
+		if ( Array.isArray( levels ) ) {
+
+			levels.forEach( ( info, level ) => {
+
+				if ( info !== null ) {
+
+					tiling.setLevel( level, {
+						tilePixelWidth: tileDimension,
+						tilePixelHeight: tileDimension,
+						...info
+					} );
+
+				}
+
+			} );
+
+		} else {
+
+			tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
+				tilePixelWidth: tileDimension,
+				tilePixelHeight: tileDimension,
+			} );
+
+		}
 
 		this.url = url;
 
