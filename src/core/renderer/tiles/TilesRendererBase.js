@@ -62,6 +62,10 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// lower priority value sorts first
 		return aPriority > bPriority ? 1 : - 1;
 
+	} else if ( ! a.traversal || ! b.traversal ) {
+
+		return 0;
+
 	} else if ( a.traversal.used !== b.traversal.used ) {
 
 		// load tiles that have been used
@@ -671,39 +675,45 @@ export class TilesRendererBase {
 		tile.children = tile.children || [];
 
 		// Initialize internal data
-		let hasContent, hasRenderableContent, hasUnrenderableContent;
+		tile.internal = {
+			hasContent: false,
+			hasRenderableContent: false,
+			hasUnrenderableContent: false,
+			loadingState: UNLOADED,
+			basePath: tilesetDir,
+			childrenProcessed: 0,
+			depth: - 1,
+			depthFromRenderedParent: - 1,
+		};
+
 		if ( tile.content?.uri ) {
 
 			// "content" should only indicate loadable meshes, not external tilesets
 			const extension = getUrlExtension( tile.content.uri );
-
-			hasContent = true;
-			hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
-			hasRenderableContent = ! hasUnrenderableContent;
+			const hasUnrenderableContent = Boolean( extension && /json$/.test( extension ) );
+			tile.internal.hasContent = true;
+			tile.internal.hasUnrenderableContent = hasUnrenderableContent;
+			tile.internal.hasRenderableContent = ! hasUnrenderableContent;
 
 		} else {
 
-			hasContent = false;
-			hasUnrenderableContent = false;
-			hasRenderableContent = false;
+			tile.internal.hasContent = false;
+			tile.internal.hasUnrenderableContent = false;
+			tile.internal.hasRenderableContent = false;
 
 		}
-
-		tile.internal = {
-			hasContent,
-			hasRenderableContent,
-			hasUnrenderableContent,
-			loadingState: UNLOADED,
-			basePath: tilesetDir,
-			childrenProcessed: 0,
-			depth: parentTile === null ? 0 : parentTile.internal.depth + 1,
-			depthFromRenderedParent: parentTile === null ? ( hasRenderableContent ? 1 : 0 ) : parentTile.internal.depthFromRenderedParent + ( hasRenderableContent ? 1 : 0 ),
-		};
 
 		// Increment parent's children processed counter
 		if ( parentTile ) {
 
 			parentTile.internal.childrenProcessed ++;
+			tile.internal.depth = parentTile.internal.depth + 1,
+			tile.internal.depthFromRenderedParent = parentTile.internal.depthFromRenderedParent + ( tile.internal.hasRenderableContent ? 1 : 0 );
+
+		} else {
+
+			tile.internal.depth = 0;
+			tile.internal.depthFromRenderedParent = tile.internal.hasRenderableContent ? 1 : 0;
 
 		}
 

@@ -21,7 +21,7 @@ function isDownloadFinished( value ) {
 // Checks whether this tile was last used on the given frame.
 function isUsedThisFrame( tile, frameCount ) {
 
-	return tile.traversal.lastFrameVisited === frameCount && tile.traversal.used;
+	return tile.traversal && tile.traversal.lastFrameVisited === frameCount && tile.traversal.used;
 
 }
 

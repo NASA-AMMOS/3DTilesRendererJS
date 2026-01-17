@@ -15,7 +15,7 @@ function isDownloadFinished( value ) {
 // Checks whether this tile was last used on the given frame.
 function isUsedThisFrame( tile, frameCount ) {
 
-	return tile.traversal.lastFrameVisited === frameCount && tile.traversal.used;
+	return tile.traversal && tile.traversal.lastFrameVisited === frameCount && tile.traversal.used;
 
 }
 
@@ -438,7 +438,7 @@ function toggleTiles( tile, renderer ) {
 
 	}
 
-	if ( isUsed || tile.traversal.usedLastFrame ) {
+	if ( isUsed || tile.traversal?.usedLastFrame ) {
 
 		let setActive = false;
 		let setVisible = false;
