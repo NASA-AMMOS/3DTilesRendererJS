@@ -737,6 +737,7 @@ export class TilesRendererBase {
 		Object.defineProperty( tile, 'cached', {
 			get() {
 
+				console.warn( 'TilesRenderer: "tile.cached" field has been renamed to "tile.engineData".' );
 				return this.engineData;
 
 			},
