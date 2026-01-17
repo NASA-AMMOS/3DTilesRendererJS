@@ -426,7 +426,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			const clone = parent.cached.scene.clone();
+			const clone = parent.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
 			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
@@ -613,7 +613,7 @@ export class ImageOverlayPlugin {
 
 			// remove the parent transform because it will be multiplied back in after the fact
 			result.matrix
-				.premultiply( tile.cached.transformInverse )
+				.premultiply( tile.engineData.transformInverse )
 				.decompose( result.position, result.quaternion, result.scale );
 
 			// collect the meshes

@@ -145,7 +145,7 @@ export class BatchedTilesPlugin {
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		if ( visible ) {
 
 			// Add tileset to the batched mesh if it hasn't been added already
@@ -374,7 +374,7 @@ export class BatchedTilesPlugin {
 			// TODO: this would be best done in a more general way
 			if ( this.discardOriginalContent ) {
 
-				tile.cached.textures.forEach( tex => {
+				tile.engineData.textures.forEach( tex => {
 
 					if ( tex.image instanceof ImageBitmap ) {
 
@@ -384,10 +384,10 @@ export class BatchedTilesPlugin {
 
 				} );
 
-				tile.cached.scene = null;
-				tile.cached.materials = [];
-				tile.cached.geometries = [];
-				tile.cached.textures = [];
+				tile.engineData.scene = null;
+				tile.engineData.materials = [];
+				tile.engineData.geometries = [];
+				tile.engineData.textures = [];
 
 			}
 

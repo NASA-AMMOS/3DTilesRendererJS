@@ -726,6 +726,25 @@ export class TilesRendererBase {
 
 		tile.__lastFrameVisited = - 1;
 
+		// Initialize engineData data structure with engine-agnostic fields
+		tile.engineData = {
+			scene: null,
+			metadata: null,
+			boundingVolume: null,
+		};
+
+		// Backwards compatibility: cached is an alias for engineData
+		Object.defineProperty( tile, 'cached', {
+			get() {
+
+				console.warn( 'TilesRenderer: "tile.cached" field has been renamed to "tile.engineData".' );
+				return this.engineData;
+
+			},
+			enumerable: false,
+			configurable: true,
+		} );
+
 		this.invokeAllPlugins( plugin => {
 
 			plugin !== this && plugin.preprocessNode && plugin.preprocessNode( tile, tilesetDir, parentTile );
@@ -858,7 +877,7 @@ export class TilesRendererBase {
 
 			if ( plugin.calculateBytesUsed ) {
 
-				bytes += plugin.calculateBytesUsed( tile, tile.cached.scene ) || 0;
+				bytes += plugin.calculateBytesUsed( tile, tile.engineData.scene ) || 0;
 
 			}
 
@@ -1209,11 +1228,11 @@ export class TilesRendererBase {
 
 				}
 
-				if ( tile.cached.scene ) {
+				if ( tile.engineData.scene ) {
 
 					this.dispatchEvent( {
 						type: 'load-model',
-						scene: tile.cached.scene,
+						scene: tile.engineData.scene,
 						tile,
 						url: uri,
 					} );

@@ -288,9 +288,9 @@ export class DebugTilesPlugin {
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
 
-			if ( tile.cached.scene ) {
+			if ( tile.engineData.scene ) {
 
-				this._onLoadModel( tile.cached.scene, tile );
+				this._onLoadModel( tile.engineData.scene, tile );
 
 			}
 
@@ -318,7 +318,7 @@ export class DebugTilesPlugin {
 
 			}
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {
@@ -457,7 +457,7 @@ export class DebugTilesPlugin {
 		// update plugins
 		visibleTiles.forEach( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 
 			// create a random color per-tile
 			let h, s, l;
@@ -662,8 +662,8 @@ export class DebugTilesPlugin {
 	_createBoundHelper( tile ) {
 
 		const tiles = this.tiles;
-		const cached = tile.cached;
-		const { sphere, obb, region } = cached.boundingVolume;
+		const engineData = tile.engineData;
+		const { sphere, obb, region } = engineData.boundingVolume;
 		if ( obb ) {
 
 			// Create debug bounding box
@@ -678,7 +678,7 @@ export class DebugTilesPlugin {
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			cached.boxHelperGroup = boxHelperGroup;
+			engineData.boxHelperGroup = boxHelperGroup;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -694,7 +694,7 @@ export class DebugTilesPlugin {
 			// Create debug bounding sphere
 			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.__depth ) );
 			sphereHelper.raycast = emptyRaycast;
-			cached.sphereHelper = sphereHelper;
+			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
 
@@ -719,7 +719,7 @@ export class DebugTilesPlugin {
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
 
-			cached.regionHelper = regionHelper;
+			engineData.regionHelper = regionHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayRegionBounds ) {
 
@@ -756,9 +756,9 @@ export class DebugTilesPlugin {
 
 	_updateBoundHelper( tile, visible ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 
-		if ( ! cached ) {
+		if ( ! engineData ) {
 
 			return;
 
@@ -768,15 +768,15 @@ export class DebugTilesPlugin {
 		const boxGroup = this.boxGroup;
 		const regionGroup = this.regionGroup;
 
-		if ( visible && ( cached.boxHelperGroup == null && cached.sphereHelper == null && cached.regionHelper == null ) ) {
+		if ( visible && ( engineData.boxHelperGroup == null && engineData.sphereHelper == null && engineData.regionHelper == null ) ) {
 
 			this._createBoundHelper( tile );
 
 		}
 
-		const boxHelperGroup = cached.boxHelperGroup;
-		const sphereHelper = cached.sphereHelper;
-		const regionHelper = cached.regionHelper;
+		const boxHelperGroup = engineData.boxHelperGroup;
+		const sphereHelper = engineData.sphereHelper;
+		const regionHelper = engineData.regionHelper;
 
 		if ( ! visible ) {
 
@@ -916,25 +916,25 @@ export class DebugTilesPlugin {
 
 	_onDisposeModel( tile ) {
 
-		const cached = tile.cached;
-		if ( cached?.boxHelperGroup ) {
+		const engineData = tile.engineData;
+		if ( engineData?.boxHelperGroup ) {
 
-			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
-			delete cached.boxHelperGroup;
-
-		}
-
-		if ( cached?.sphereHelper ) {
-
-			cached.sphereHelper.geometry.dispose();
-			delete cached.sphereHelper;
+			engineData.boxHelperGroup.children[ 0 ].geometry.dispose();
+			delete engineData.boxHelperGroup;
 
 		}
 
-		if ( cached?.regionHelper ) {
+		if ( engineData?.sphereHelper ) {
 
-			cached.regionHelper.geometry.dispose();
-			delete cached.regionHelper;
+			engineData.sphereHelper.geometry.dispose();
+			delete engineData.sphereHelper;
+
+		}
+
+		if ( engineData?.regionHelper ) {
+
+			engineData.regionHelper.geometry.dispose();
+			delete engineData.regionHelper;
 
 		}
 
