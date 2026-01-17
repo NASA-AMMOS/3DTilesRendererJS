@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
 - Export FeatureTable, BatchTable classes.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
+- XYZImageFormat: add "projection" option and ability to set tile settings per-level.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
