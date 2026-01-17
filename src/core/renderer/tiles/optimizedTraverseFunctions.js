@@ -51,6 +51,8 @@ function resetFrameState( tile, renderer ) {
 		tile.__allChildrenReady = false;
 		tile.__kicked = false;
 		tile.__allUsedChildrenProcessed = false;
+		tile.__coverage = 0.0;
+		tile.__visibleCoverage = 0.0;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewError( tile, viewErrorTarget );
@@ -489,12 +491,56 @@ function toggleTiles( tile, renderer ) {
 		tile.__usedLastFrame = isUsed;
 
 		const children = tile.children;
+		let coverage = 0;
+		let coverageChildren = 0;
+		let visibleCoverageChildren = 0;
+		let visibleCoverage = 0;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			toggleTiles( c, renderer );
+			coverage += c.__coverage || 0;
+			coverageChildren += c.__coverageChildren || 1;
+
+			if ( c.__inFrustum ) {
+
+				visibleCoverageChildren += c.__visibleCoverageChildren || 1;
+				visibleCoverage += c.__visibleCoverage || 0;
+
+			}
 
 		}
+
+		// TODO: it may be more simple to keep non-content tiles marked as "active" and fire "setVisible" and "setActive"
+		// so plugins etc can react to empty tile visibility if desired
+		if ( tile.__active && ! canUnconditionallyRefine( tile ) || tile.__refine === 'ADD' || tile.__isLeaf ) {
+
+			if ( tile.__isLeaf && tile.__hasContent && ! isDownloadFinished( tile.__loadingState ) ) {
+
+				tile.__coverage = 0;
+				tile.__visibleCoverage = 0;
+
+			} else {
+
+				tile.__coverage = 1.0;
+				tile.__visibleCoverage = tile.__inFrustum ? 1.0 : 0.0;
+
+			}
+
+			tile.__coverageChildren = 1;
+			tile.__visibleCoverageChildren = 1;
+
+		} else {
+
+			tile.__coverageChildren = coverageChildren;
+			tile.__visibleCoverageChildren = visibleCoverageChildren;
+			tile.__coverage = coverage;
+			tile.__visibleCoverage = visibleCoverage;
+
+		}
+
+		tile.__finalCoverage = tile.__coverage / tile.__coverageChildren || 0;
+		tile.__finalVisibleCoverage = tile.__visibleCoverage / tile.__visibleCoverageChildren || 0;
 
 	}
 

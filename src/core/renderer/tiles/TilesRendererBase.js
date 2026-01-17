@@ -73,6 +73,11 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load internal tile sets first
 		return a.__hasUnrenderableContent ? 1 : - 1;
 
+	} else if ( a.__coverage !== b.__coverage ) {
+
+		// load tiles with less coverage first
+		return a.__coverage < b.__coverage ? 1 : - 1;
+
 	} else if ( a.__distanceFromCamera !== b.__distanceFromCamera ) {
 
 		// load closer tiles first
