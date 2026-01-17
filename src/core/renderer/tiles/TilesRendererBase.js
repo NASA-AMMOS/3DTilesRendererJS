@@ -707,7 +707,7 @@ export class TilesRendererBase {
 		if ( parentTile ) {
 
 			parentTile.internal.childrenProcessed ++;
-			tile.internal.depth = parentTile.internal.depth + 1,
+			tile.internal.depth = parentTile.internal.depth + 1;
 			tile.internal.depthFromRenderedParent = parentTile.internal.depthFromRenderedParent + ( tile.internal.hasRenderableContent ? 1 : 0 );
 
 		} else {
@@ -730,6 +730,8 @@ export class TilesRendererBase {
 			active: false,
 			wasSetActive: false,
 			allChildrenReady: false,
+			kicked: false,
+			allUsedChildrenProcessed: false,
 			lastFrameVisited: - 1,
 		};
 
