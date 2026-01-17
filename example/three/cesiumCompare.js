@@ -135,7 +135,7 @@ function render() {
 	shallowTilesLoaded = 0;
 	traverse( threeViewer.root, t => {
 
-		if ( t.__hasRenderableContent && t.__loadingState !== 0 ) {
+		if ( t.internal && t.internal.hasRenderableContent && t.internal.loadingState !== 0 ) {
 
 			shallowTilesLoaded ++;
 			return true;
@@ -147,7 +147,7 @@ function render() {
 	allLoadedTiles = 0;
 	traverse( threeViewer.root, ( t, d ) => {
 
-		if ( t.__hasContent && t.__loadingState !== 0 ) {
+		if ( t.internal && t.internal.hasContent && t.internal.loadingState !== 0 ) {
 
 			allLoadedTiles ++;
 

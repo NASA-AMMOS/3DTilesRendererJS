@@ -144,7 +144,7 @@ export class DebugTilesPlugin {
 				this.tiles.traverse( tile => {
 
 					tile[ PARENT_BOUND_REF_COUNT ] = null;
-					this._onTileVisibilityChange( tile, tile.__visible );
+					this._onTileVisibilityChange( tile, tile.traversal.visible );
 
 				} );
 
@@ -153,7 +153,7 @@ export class DebugTilesPlugin {
 				// Initialize ref count for existing tiles
 				this.tiles.traverse( tile => {
 
-					if ( tile.__visible ) {
+					if ( tile.traversal.visible ) {
 
 						this._onTileVisibilityChange( tile, true );
 
@@ -339,11 +339,11 @@ export class DebugTilesPlugin {
 
 			return {
 
-				distanceToCamera: targetTile.__distanceFromCamera,
+				distanceToCamera: targetTile.traversal.distanceFromCamera,
 				geometricError: targetTile.geometricError,
-				screenSpaceError: targetTile.__error,
-				depth: targetTile.__depth,
-				isLeaf: targetTile.__isLeaf
+				screenSpaceError: targetTile.traversal.error,
+				depth: targetTile.internal.depth,
+				isLeaf: targetTile.traversal.isLeaf
 
 			};
 
@@ -498,7 +498,7 @@ export class DebugTilesPlugin {
 
 						case DEPTH: {
 
-							const val = tile.__depth / maxDepth;
+							const val = tile.internal.depth / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -506,7 +506,7 @@ export class DebugTilesPlugin {
 
 						case RELATIVE_DEPTH: {
 
-							const val = tile.__depthFromRenderedParent / maxDepth;
+							const val = tile.internal.depthFromRenderedParent / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -514,7 +514,7 @@ export class DebugTilesPlugin {
 
 						case SCREEN_ERROR: {
 
-							const val = tile.__error / errorTarget;
+							const val = tile.traversal.error / errorTarget;
 							if ( val > 1.0 ) {
 
 								c.material.color.setRGB( 1.0, 0.0, 0.0 );
@@ -541,7 +541,7 @@ export class DebugTilesPlugin {
 
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
-							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
+							const val = Math.min( tile.traversal.distanceFromCamera / maxDistance, 1 );
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -674,7 +674,7 @@ export class DebugTilesPlugin {
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.__depth ) );
+			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
@@ -692,7 +692,7 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.__depth ) );
+			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
 			engineData.sphereHelper = sphereHelper;
 
@@ -708,7 +708,7 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.__depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
 			regionHelper.raycast = emptyRaycast;
 
 			// recenter the geometry to avoid rendering artifacts
@@ -734,7 +734,7 @@ export class DebugTilesPlugin {
 
 	_updateHelperMaterial( tile, material ) {
 
-		if ( tile.__visible || ! this.displayParentBounds ) {
+		if ( tile.traversal.visible || ! this.displayParentBounds ) {
 
 			material.opacity = 1;
 
