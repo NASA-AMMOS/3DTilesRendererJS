@@ -8,7 +8,7 @@ export class XYZImageSource extends TiledImageSource {
 		const {
 			levels = 20,
 			tileDimension = 256,
-			projection = 'EPSG:4326',
+			projection = 'EPSG:3857',
 			url = null,
 			...rest
 		} = options;
