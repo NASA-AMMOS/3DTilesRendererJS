@@ -86,10 +86,15 @@ export class TilingScheme {
 		}
 
 		const {
+			tileSplitX = 2,
+			tileSplitY = 2,
+		} = options;
+
+		const {
 			tilePixelWidth = 256,
 			tilePixelHeight = 256,
-			tileCountX = 2 ** level,
-			tileCountY = 2 ** level,
+			tileCountX = tileSplitX ** level,
+			tileCountY = tileSplitY ** level,
 			tileBounds = null,
 		} = options;
 
@@ -111,6 +116,10 @@ export class TilingScheme {
 			// Or the total number of tiles that can be loaded at this level.
 			tileCountX,
 			tileCountY,
+
+			// The number of tiles that the tiles at this layer split in to
+			tileSplitX,
+			tileSplitY,
 
 			// The bounds covered by the extent of the tiles at this loaded. The actual content covered by the overall tileset
 			// may be a subset of this range (eg there may be unused space).

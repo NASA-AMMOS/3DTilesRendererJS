@@ -223,6 +223,12 @@ export class DebugTilesPlugin {
 
 		this.tiles = tiles;
 
+		if ( ! this.enabled ) {
+
+			return;
+
+		}
+
 		// initialize groups
 		const tilesGroup = tiles.group;
 		this.boxGroup = new Group();
@@ -911,21 +917,21 @@ export class DebugTilesPlugin {
 	_onDisposeModel( tile ) {
 
 		const cached = tile.cached;
-		if ( cached.boxHelperGroup ) {
+		if ( cached?.boxHelperGroup ) {
 
 			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
 			delete cached.boxHelperGroup;
 
 		}
 
-		if ( cached.sphereHelper ) {
+		if ( cached?.sphereHelper ) {
 
 			cached.sphereHelper.geometry.dispose();
 			delete cached.sphereHelper;
 
 		}
 
-		if ( cached.regionHelper ) {
+		if ( cached?.regionHelper ) {
 
 			cached.regionHelper.geometry.dispose();
 			delete cached.regionHelper;
@@ -958,7 +964,7 @@ export class DebugTilesPlugin {
 
 			this._onDisposeModel( tile );
 
-		} );
+		}, null, false );
 
 		this.boxGroup?.removeFromParent();
 		this.sphereGroup?.removeFromParent();
