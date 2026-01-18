@@ -527,15 +527,10 @@ function toggleTiles( tile, renderer ) {
 
 			}
 
-			tile.__coverageChildren = 1;
-			tile.__visibleCoverageChildren = 1;
-
 		} else {
 
-			tile.__coverageChildren = coverageChildren;
-			tile.__visibleCoverageChildren = visibleCoverageChildren;
-			tile.__coverage = coverage;
-			tile.__visibleCoverage = visibleCoverage;
+			tile.__coverage = coverage / coverageChildren;
+			tile.__visibleCoverage = visibleCoverage / visibleCoverageChildren;
 
 		}
 
