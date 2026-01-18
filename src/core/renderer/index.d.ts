@@ -6,6 +6,7 @@ export { Tileset } from './tiles/Tileset.js';
 export * from './loaders/B3DMLoaderBase.js';
 export * from './loaders/I3DMLoaderBase.js';
 export * from './loaders/PNTSLoaderBase.js';
+export * from './loaders/MVTLoaderBase.js';
 export * from './loaders/CMPTLoaderBase.js';
 export * from './loaders/LoaderBase.js';
 export * from './constants.js';
