@@ -513,12 +513,21 @@ function toggleTiles( tile, renderer ) {
 
 		// TODO: it may be more simple to keep non-content tiles marked as "active" and fire "setVisible" and "setActive"
 		// so plugins etc can react to empty tile visibility if desired
-		if ( tile.__active && ! canUnconditionallyRefine( tile ) || tile.__refine === 'ADD' || tile.__isLeaf ) {
+		if ( tile.__hasContent && ! canUnconditionallyRefine( tile ) || tile.__isLeaf ) {
 
-			if ( tile.__isLeaf && tile.__hasContent && ! isDownloadFinished( tile.__loadingState ) ) {
+			if ( tile.__hasContent && ! isDownloadFinished( tile.__loadingState ) ) {
 
-				tile.__coverage = 0;
-				tile.__visibleCoverage = 0;
+				if ( tile.__active ) {
+
+					tile.__coverage = 0;
+					tile.__visibleCoverage = 0;
+
+				} else {
+
+					tile.__coverage = coverage / coverageChildren;
+					tile.__visibleCoverage = visibleCoverage / visibleCoverageChildren;
+
+				}
 
 			} else {
 
@@ -527,15 +536,18 @@ function toggleTiles( tile, renderer ) {
 
 			}
 
+
+		} else if ( tile.__refine === 'ADD' ) {
+
+			tile.__coverage = 1.0;
+			tile.__visibleCoverage = tile.__inFrustum ? 1.0 : 0.0;
+
 		} else {
 
 			tile.__coverage = coverage / coverageChildren;
 			tile.__visibleCoverage = visibleCoverage / visibleCoverageChildren;
 
 		}
-
-		tile.__finalCoverage = tile.__coverage / tile.__coverageChildren || 0;
-		tile.__finalVisibleCoverage = tile.__visibleCoverage / tile.__visibleCoverageChildren || 0;
 
 	}
 
