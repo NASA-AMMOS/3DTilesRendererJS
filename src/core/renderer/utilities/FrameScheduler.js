@@ -50,9 +50,7 @@ class FrameScheduler {
 
 			return handle;
 
-		}
-		// XR session
-		else {
+		} else { // XR session
 
 			handle = this.xrsession.requestAnimationFrame( ()=>{
 
@@ -73,15 +71,13 @@ class FrameScheduler {
 	// Cancel animation frame via handle (defer to XR session if active)
 	cancelAnimationFrame( handle ) {
 
-    	this.pending.delete( handle );
+		this.pending.delete( handle );
 
 		if ( ! this.xrsession ) {
 
 			window.cancelAnimationFrame( handle );
 
-		}
-
-		else {
+		} else {
 
 			this.xrsession.cancelAnimationFrame( handle );
 
@@ -94,7 +90,7 @@ class FrameScheduler {
 
 		this.pending.forEach( ( cb, handle )=>{
 
-    		this.cancelAnimationFrame( handle );
+			this.cancelAnimationFrame( handle );
 
 		} );
 
@@ -111,8 +107,7 @@ class FrameScheduler {
 
 				cb();
 
-			}
-			else {
+			} else {
 
 				window.cancelAnimationFrame( handle );
 
