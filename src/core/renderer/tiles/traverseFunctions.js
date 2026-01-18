@@ -33,7 +33,7 @@ function areChildrenProcessed( tile ) {
 
 function canUnconditionallyRefine( tile ) {
 
-	return tile.__hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
+	return tile.__hasUnrenderableContent || tile.geometricError > 1e90 || ( tile.parent && tile.parent.geometricError < tile.geometricError );
 
 }
 
