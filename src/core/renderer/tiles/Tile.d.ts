@@ -1,50 +1,68 @@
 import { TileBase } from './TileBase.js';
 
 /**
- * Documented 3d-tile state managed by the TilesRenderer* / used/usable in priority / traverseFunctions!
+ * Internal implementation details for tile management
  */
-export interface Tile extends TileBase {
+export interface TileInternalData {
+	hasContent: boolean;
+	hasRenderableContent: boolean;
+	hasUnrenderableContent: boolean;
+	loadingState: number;
+	basePath: string;
+	childrenProcessed: number;
+	depth: number;
+	depthFromRenderedParent: number;
+}
 
-	parent: Tile;
-
+/**
+ * Traversal state data updated during each frame's tile traversal
+ */
+export interface TileTraversalData {
 	/**
-	 * Hierarchy Depth from the TileGroup
+	 * How far this tile's bounds are from the nearest active camera.
+	 * Expected to be filled in during calculateError implementations.
 	 */
-	__depth : number;
+	distanceFromCamera: number;
 	/**
 	 * The screen space error for this tile
 	 */
-	__error : number;
+	error: number;
 	/**
-	 * How far is this tiles bounds from the nearest active Camera.
-	 * Expected to be filled in during calculateError implementations.
+	 * Whether or not the tile was within the frustum on the last update run
 	 */
-	__distanceFromCamera : number;
+	inFrustum: boolean;
 	/**
-	 * This tile is currently active if:
-	 *  1: Tile content is loaded and ready to be made visible if needed
+	 * Whether this tile is a leaf node in the used tree
 	 */
-	__active : boolean;
+	isLeaf: boolean;
+	/**
+	 * Whether or not the tile was visited during the last update run
+	 */
+	used: boolean;
+	/**
+	 * Whether or not the tile was used in the previous frame
+	 */
+	usedLastFrame: boolean;
 	/**
 	 * This tile is currently visible if:
 	 *  1: Tile content is loaded
 	 *  2: Tile is within a camera frustum
 	 *  3: Tile meets the SSE requirements
 	 */
-	__visible : boolean;
-	/**
-	 * Whether or not the tile was visited during the last update run.
-	 */
-	__used : boolean;
+	visible: boolean;
+}
 
-	/**
-	 * Whether or not the tile was within the frustum on the last update run.
-	 */
-	__inFrustum : boolean;
+/**
+ * Documented 3d-tile state managed by the TilesRenderer* / used/usable in priority / traverseFunctions!
+ */
+export interface Tile extends TileBase {
 
-	/**
-	 * The depth of the tiles that increments only when a child with geometry content is encountered
-	 */
-	__depthFromRenderedParent : number;
+	parent: Tile;
+
+	// Internal implementation details for tile management
+	internal: TileInternalData;
+
+	// Traversal state data updated during each frame's tile traversal
+	traversal: TileTraversalData;
 
 }

@@ -33,6 +33,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 	constructor( options: {
 		levels: number,
 		dimension: number,
+		projection: string;
 		url: string,
 
 		color: number | Color,

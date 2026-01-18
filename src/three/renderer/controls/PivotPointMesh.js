@@ -52,7 +52,6 @@ class PivotMaterial extends ShaderMaterial {
 
 			vertexShader: /* glsl */`
 
-				uniform float pixelRatio;
 				uniform float size;
 				uniform float thickness;
 				uniform vec2 resolution;

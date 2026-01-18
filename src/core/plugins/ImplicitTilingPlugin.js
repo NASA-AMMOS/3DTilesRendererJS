@@ -18,8 +18,8 @@ export class ImplicitTilingPlugin {
 
 		if ( tile.implicitTiling ) {
 
-			tile.__hasUnrenderableContent = true;
-			tile.__hasRenderableContent = false;
+			tile.internal.hasUnrenderableContent = true;
+			tile.internal.hasRenderableContent = false;
 
 			// Declare some properties
 			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
@@ -34,8 +34,8 @@ export class ImplicitTilingPlugin {
 		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
 			// Handling content uri pointing to a subtree file
-			tile.__hasUnrenderableContent = true;
-			tile.__hasRenderableContent = false;
+			tile.internal.hasUnrenderableContent = true;
+			tile.internal.hasRenderableContent = false;
 
 		}
 
@@ -46,7 +46,7 @@ export class ImplicitTilingPlugin {
 		if ( /^subtree$/i.test( extension ) ) {
 
 			const loader = new SUBTREELoader( tile );
-			loader.workingPath = tile.__basePath;
+			loader.workingPath = tile.internal.basePath;
 			loader.fetchOptions = this.tiles.fetchOptions;
 			return loader.parse( buffer );
 
@@ -64,7 +64,7 @@ export class ImplicitTilingPlugin {
 				.replace( '{y}', tile.__y )
 				.replace( '{z}', tile.__z );
 
-			return new URL( implicitUri, tile.__basePath + '/' ).toString();
+			return new URL( implicitUri, tile.internal.basePath + '/' ).toString();
 
 		}
 
@@ -84,7 +84,7 @@ export class ImplicitTilingPlugin {
 
 			} );
 			tile.children.length = 0;
-			tile.__childrenProcessed = 0;
+			tile.internal.childrenProcessed = 0;
 
 		}
 
