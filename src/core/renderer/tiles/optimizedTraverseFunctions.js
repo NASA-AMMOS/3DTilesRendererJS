@@ -419,6 +419,7 @@ function toggleTiles( tile, renderer ) {
 			if ( tile.__loadingState !== LOADED ) {
 
 				tile.__active = false;
+				tile.__kicked = true;
 
 			}
 

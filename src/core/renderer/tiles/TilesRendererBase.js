@@ -63,6 +63,10 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load tiles that have been used
 		return a.__used ? 1 : - 1;
 
+	} else if ( a.__kicked !== b.__kicked ) {
+
+		return a.__kicked ? 1 : - 1;
+
 	} else if ( a.__inFrustum !== b.__inFrustum ) {
 
 		// load tiles that have are in the frustum
