@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImplicitTilingPlugin: Moved implicit tiling fields onto a new "implicitTilingData" object.
 - DebugTilesPlugin: Replaced "getTileInformationFromActiveObject" function with "getTileFromObject3D".
 - DebugTilesPlugin: Add transparent mesh to box helper visualization.
+- TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
+- Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
 
 ### Fixed
 - Fix mouse offset in Controls.
