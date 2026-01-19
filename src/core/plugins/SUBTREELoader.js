@@ -16,22 +16,21 @@ function getBoundsDivider( tile ) {
 
 }
 
-function getSubtreeCoordinates( tile, parentTile, subtreeIdx ) {
+function getSubtreeCoordinates( parent, subtreeIdx ) {
 
-	if ( ! parentTile ) {
+	if ( ! parent ) {
 
 		return [ 0, 0, 0 ];
 
 	}
 
-	const parentX = parentTile.implicitTilingData.x;
-	const parentY = parentTile.implicitTilingData.y;
-	const parentZ = parentTile.implicitTilingData.z;
+	const parentX = parent.implicitTilingData.x;
+	const parentY = parent.implicitTilingData.y;
+	const parentZ = parent.implicitTilingData.z;
 
 	const x = 2 * parentX + ( subtreeIdx % 2 );
 	const y = 2 * parentY + ( Math.floor( subtreeIdx / 2 ) % 2 );
-	const z = isOctreeSubdivision( parentTile ) ?
-		2 * parentZ + ( Math.floor( subtreeIdx / 4 ) % 2 ) : 0;
+	const z = isOctreeSubdivision( parent ) ? 2 * parentZ + ( Math.floor( subtreeIdx / 4 ) % 2 ) : 0;
 	return [ x, y, z ];
 
 }
@@ -45,7 +44,7 @@ class SubtreeTile {
 		this.geometricError = 0;
 		this.boundingVolume = null;
 
-		const [ x, y, z ] = getSubtreeCoordinates( this, parentTile, childMortonIndex );
+		const [ x, y, z ] = getSubtreeCoordinates( parentTile, childMortonIndex );
 		this.implicitTilingData = {
 			level: parentTile.implicitTilingData.level + 1,
 			root: parentTile.implicitTilingData.root,
