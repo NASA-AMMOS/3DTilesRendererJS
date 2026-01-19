@@ -55,7 +55,7 @@ class SubtreeTile {
 
 	}
 
-	static copy( tile ) {
+	static clone( tile ) {
 
 		return {
 			parent: tile.parent,
@@ -541,7 +541,7 @@ export class SUBTREELoader extends LoaderBase {
 	expandSubtree( subtreeRoot, subtree ) {
 
 		// TODO If multiple contents were supported then this tile could contain both renderable and un renderable content.
-		const contentTile = SubtreeTile.copy( subtreeRoot );
+		const contentTile = SubtreeTile.clone( subtreeRoot );
 		// If the subtree root tile has content, then create a placeholder child with cloned parameters
 		// Todo Multiple contents not handled, keep the first content found
 		for ( let i = 0; subtree && i < subtree._contentAvailabilityBitstreams.length; i ++ ) {
