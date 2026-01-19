@@ -144,7 +144,7 @@ export class DebugTilesPlugin {
 				this.tiles.traverse( tile => {
 
 					tile[ PARENT_BOUND_REF_COUNT ] = null;
-					this._onTileVisibilityChange( tile, tile.__visible );
+					this._onTileVisibilityChange( tile, tile.traversal.visible );
 
 				} );
 
@@ -153,7 +153,7 @@ export class DebugTilesPlugin {
 				// Initialize ref count for existing tiles
 				this.tiles.traverse( tile => {
 
-					if ( tile.__visible ) {
+					if ( tile.traversal.visible ) {
 
 						this._onTileVisibilityChange( tile, true );
 
@@ -288,9 +288,9 @@ export class DebugTilesPlugin {
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
 
-			if ( tile.cached.scene ) {
+			if ( tile.engineData.scene ) {
 
-				this._onLoadModel( tile.cached.scene, tile );
+				this._onLoadModel( tile.engineData.scene, tile );
 
 			}
 
@@ -318,7 +318,7 @@ export class DebugTilesPlugin {
 
 			}
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {
@@ -339,11 +339,11 @@ export class DebugTilesPlugin {
 
 			return {
 
-				distanceToCamera: targetTile.__distanceFromCamera,
+				distanceToCamera: targetTile.traversal.distanceFromCamera,
 				geometricError: targetTile.geometricError,
-				screenSpaceError: targetTile.__error,
-				depth: targetTile.__depth,
-				isLeaf: targetTile.__isLeaf
+				screenSpaceError: targetTile.traversal.error,
+				depth: targetTile.internal.depth,
+				isLeaf: targetTile.traversal.isLeaf
 
 			};
 
@@ -457,7 +457,7 @@ export class DebugTilesPlugin {
 		// update plugins
 		visibleTiles.forEach( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 
 			// create a random color per-tile
 			let h, s, l;
@@ -498,7 +498,7 @@ export class DebugTilesPlugin {
 
 						case DEPTH: {
 
-							const val = tile.__depth / maxDepth;
+							const val = tile.internal.depth / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -506,7 +506,7 @@ export class DebugTilesPlugin {
 
 						case RELATIVE_DEPTH: {
 
-							const val = tile.__depthFromRenderedParent / maxDepth;
+							const val = tile.internal.depthFromRenderedParent / maxDepth;
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -514,7 +514,7 @@ export class DebugTilesPlugin {
 
 						case SCREEN_ERROR: {
 
-							const val = tile.__error / errorTarget;
+							const val = tile.traversal.error / errorTarget;
 							if ( val > 1.0 ) {
 
 								c.material.color.setRGB( 1.0, 0.0, 0.0 );
@@ -541,7 +541,7 @@ export class DebugTilesPlugin {
 
 							// We don't update the distance if the geometric error is 0.0 so
 							// it will always be black.
-							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
+							const val = Math.min( tile.traversal.distanceFromCamera / maxDistance, 1 );
 							this.getDebugColor( val, c.material.color );
 							break;
 
@@ -662,8 +662,8 @@ export class DebugTilesPlugin {
 	_createBoundHelper( tile ) {
 
 		const tiles = this.tiles;
-		const cached = tile.cached;
-		const { sphere, obb, region } = cached.boundingVolume;
+		const engineData = tile.engineData;
+		const { sphere, obb, region } = engineData.boundingVolume;
 		if ( obb ) {
 
 			// Create debug bounding box
@@ -674,11 +674,11 @@ export class DebugTilesPlugin {
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.__depth ) );
+			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			cached.boxHelperGroup = boxHelperGroup;
+			engineData.boxHelperGroup = boxHelperGroup;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -692,9 +692,9 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.__depth ) );
+			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
-			cached.sphereHelper = sphereHelper;
+			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
 
@@ -708,7 +708,7 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.__depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
 			regionHelper.raycast = emptyRaycast;
 
 			// recenter the geometry to avoid rendering artifacts
@@ -719,7 +719,7 @@ export class DebugTilesPlugin {
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
 
-			cached.regionHelper = regionHelper;
+			engineData.regionHelper = regionHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayRegionBounds ) {
 
@@ -734,7 +734,7 @@ export class DebugTilesPlugin {
 
 	_updateHelperMaterial( tile, material ) {
 
-		if ( tile.__visible || ! this.displayParentBounds ) {
+		if ( tile.traversal.visible || ! this.displayParentBounds ) {
 
 			material.opacity = 1;
 
@@ -756,9 +756,9 @@ export class DebugTilesPlugin {
 
 	_updateBoundHelper( tile, visible ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 
-		if ( ! cached ) {
+		if ( ! engineData ) {
 
 			return;
 
@@ -768,15 +768,15 @@ export class DebugTilesPlugin {
 		const boxGroup = this.boxGroup;
 		const regionGroup = this.regionGroup;
 
-		if ( visible && ( cached.boxHelperGroup == null && cached.sphereHelper == null && cached.regionHelper == null ) ) {
+		if ( visible && ( engineData.boxHelperGroup == null && engineData.sphereHelper == null && engineData.regionHelper == null ) ) {
 
 			this._createBoundHelper( tile );
 
 		}
 
-		const boxHelperGroup = cached.boxHelperGroup;
-		const sphereHelper = cached.sphereHelper;
-		const regionHelper = cached.regionHelper;
+		const boxHelperGroup = engineData.boxHelperGroup;
+		const sphereHelper = engineData.sphereHelper;
+		const regionHelper = engineData.regionHelper;
 
 		if ( ! visible ) {
 
@@ -916,25 +916,25 @@ export class DebugTilesPlugin {
 
 	_onDisposeModel( tile ) {
 
-		const cached = tile.cached;
-		if ( cached?.boxHelperGroup ) {
+		const engineData = tile.engineData;
+		if ( engineData?.boxHelperGroup ) {
 
-			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
-			delete cached.boxHelperGroup;
-
-		}
-
-		if ( cached?.sphereHelper ) {
-
-			cached.sphereHelper.geometry.dispose();
-			delete cached.sphereHelper;
+			engineData.boxHelperGroup.children[ 0 ].geometry.dispose();
+			delete engineData.boxHelperGroup;
 
 		}
 
-		if ( cached?.regionHelper ) {
+		if ( engineData?.sphereHelper ) {
 
-			cached.regionHelper.geometry.dispose();
-			delete cached.regionHelper;
+			engineData.sphereHelper.geometry.dispose();
+			delete engineData.sphereHelper;
+
+		}
+
+		if ( engineData?.regionHelper ) {
+
+			engineData.regionHelper.geometry.dispose();
+			delete engineData.regionHelper;
 
 		}
 

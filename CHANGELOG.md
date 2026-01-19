@@ -13,11 +13,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
 - Export FeatureTable, BatchTable classes.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
+- XYZImageFormat: add "projection" option and ability to set tile settings per-level.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
 - ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
 - GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
+- Renamed the "cached" tile subfield to "engineData".
+- Moved a number of tile fields into "traversal" and "internal" subfields on "tile" object.
 
 ### Fixed
 - Fix mouse offset in Controls.

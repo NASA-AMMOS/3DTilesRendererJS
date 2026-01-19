@@ -426,14 +426,14 @@ export class ImageOverlayPlugin {
 
 			}
 
-			const clone = parent.cached.scene.clone();
+			const clone = parent.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
 			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
 
 				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
 				const children = collectChildren( parent );
-				children.sort( ( a, b ) => ( b.__depth || 0 ) - ( a.__depth || 0 ) );
+				children.sort( ( a, b ) => ( b.internal.depth || 0 ) - ( a.internal.depth || 0 ) );
 
 				// note that we need to remove children from the processing queue in this case
 				// because we are forcibly evicting them from the cache.
@@ -446,7 +446,7 @@ export class ImageOverlayPlugin {
 				} );
 
 				parent.children.length = 0;
-				parent.__childrenProcessed = 0;
+				parent.internal.childrenProcessed = 0;
 
 			}
 
@@ -613,7 +613,7 @@ export class ImageOverlayPlugin {
 
 			// remove the parent transform because it will be multiplied back in after the fact
 			result.matrix
-				.premultiply( tile.cached.transformInverse )
+				.premultiply( tile.engineData.transformInverse )
 				.decompose( result.position, result.quaternion, result.scale );
 
 			// collect the meshes
@@ -1396,7 +1396,7 @@ class TiledImageOverlay extends ImageOverlay {
 
 		} else {
 
-			return tile.__depthFromRenderedParent - 1;
+			return tile.internal.depthFromRenderedParent - 1;
 
 		}
 
