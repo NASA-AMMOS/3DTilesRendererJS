@@ -31,10 +31,12 @@ export class PriorityQueue {
 
 		this.priorityCallback = null;
 
+		this.framescheduler = null;
+
 		// Customizable scheduling callback. Default using requestAnimationFrame()
 		this.schedulingCallback = func => {
 
-			requestAnimationFrame( func );
+			if ( this.framescheduler ) this.framescheduler.requestAnimationFrame( func );
 
 		};
 

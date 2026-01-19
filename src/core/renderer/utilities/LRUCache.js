@@ -56,6 +56,8 @@ class LRUCache {
 
 		this._unloadPriorityCallback = null;
 
+		this.framescheduler = null;
+
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
 
@@ -344,9 +346,9 @@ class LRUCache {
 
 		}
 
-		if ( needsRerun ) {
+		if ( needsRerun && this.framescheduler ) {
 
-			this.unloadingHandle = requestAnimationFrame( () => this.scheduleUnload() );
+			this.unloadingHandle = this.framescheduler.requestAnimationFrame( () => this.scheduleUnload() );
 
 		}
 
@@ -354,7 +356,7 @@ class LRUCache {
 
 	scheduleUnload() {
 
-		cancelAnimationFrame( this.unloadingHandle );
+		if ( this.framescheduler ) this.framescheduler.cancelAnimationFrame( this.unloadingHandle );
 
 		if ( ! this.scheduled ) {
 

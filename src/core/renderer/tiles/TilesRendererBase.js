@@ -6,6 +6,7 @@ import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
+import { FrameScheduler } from '../utilities/FrameScheduler.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 
@@ -189,19 +190,26 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
+		// FrameScheduler referenced by LRUCache, PriorityQueue
+		this.framescheduler = new FrameScheduler();
+
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
+		lruCache.framescheduler = this.framescheduler;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
 		downloadQueue.priorityCallback = defaultPriorityCallback;
+		downloadQueue.framescheduler = this.framescheduler;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
 		parseQueue.priorityCallback = defaultPriorityCallback;
+		parseQueue.framescheduler = this.framescheduler;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
+		processNodeQueue.framescheduler = this.framescheduler;
 		processNodeQueue.priorityCallback = ( a, b ) => {
 
 			const aParent = a.parent;
@@ -258,7 +266,7 @@ export class TilesRendererBase {
 
 			this.dispatchEvent( { type: 'needs-update' } );
 
-		} );
+		}, this.framescheduler );
 
 		// options
 		this.errorTarget = 16.0;
@@ -267,6 +275,22 @@ export class TilesRendererBase {
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
 		this.loadSiblings = true;
+
+	}
+
+	setXRSession( xrsession ) {
+
+		if ( ! this.framescheduler ) return;
+
+		this.framescheduler.setXRSession( xrsession );
+
+	}
+
+	removeXRSession() {
+
+		if ( ! this.framescheduler ) return;
+
+		this.framescheduler.removeXRSession();
 
 	}
 
