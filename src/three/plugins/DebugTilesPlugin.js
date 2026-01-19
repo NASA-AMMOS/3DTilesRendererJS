@@ -124,7 +124,6 @@ export class DebugTilesPlugin {
 
 		}
 
-		this._enabled = v;
 
 	}
 
@@ -269,7 +268,7 @@ export class DebugTilesPlugin {
 
 		this._onUpdateAfterCB = () => {
 
-			this._onUpdateAfter();
+			this.update();
 
 		};
 
@@ -306,15 +305,15 @@ export class DebugTilesPlugin {
 
 	}
 
-	getTileInformationFromActiveObject( object ) {
+	getTileFromObject3D( object ) {
 
 		// Find which tile this scene is associated with. This is slow and
 		// intended for debug purposes only.
-		let targetTile = null;
+		let result = null;
 		const activeTiles = this.tiles.activeTiles;
 		activeTiles.forEach( tile => {
 
-			if ( targetTile ) {
+			if ( result ) {
 
 				return true;
 
@@ -327,7 +326,7 @@ export class DebugTilesPlugin {
 
 					if ( c === object ) {
 
-						targetTile = tile;
+						result = tile;
 
 					}
 
@@ -337,23 +336,7 @@ export class DebugTilesPlugin {
 
 		} );
 
-		if ( targetTile ) {
-
-			return {
-
-				distanceToCamera: targetTile.traversal.distanceFromCamera,
-				geometricError: targetTile.geometricError,
-				screenSpaceError: targetTile.traversal.error,
-				depth: targetTile.internal.depth,
-				isLeaf: targetTile.traversal.isLeaf
-
-			};
-
-		} else {
-
-			return null;
-
-		}
+		return result;
 
 	}
 
@@ -383,7 +366,7 @@ export class DebugTilesPlugin {
 
 	}
 
-	_onUpdateAfter() {
+	update() {
 
 		const { tiles, colorMode } = this;
 
