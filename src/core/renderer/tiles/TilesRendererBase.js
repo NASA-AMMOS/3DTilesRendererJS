@@ -71,10 +71,6 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load tiles that have been used
 		return a.traversal.used ? 1 : - 1;
 
-	} else if ( a.traversal.kicked !== b.traversal.kicked ) {
-
-		return a.traversal.kicked ? 1 : - 1;
-
 	} else if ( a.traversal.inFrustum !== b.traversal.inFrustum ) {
 
 		// load tiles that have are in the frustum
@@ -84,6 +80,11 @@ const optimizedPriorityCallback = ( a, b ) => {
 
 		// load internal tile sets first
 		return a.internal.hasUnrenderableContent ? 1 : - 1;
+
+	} else if ( a.traversal.kicked !== b.traversal.kicked ) {
+
+		// kicked means that a tile should be visible but isn't ready yet
+		return a.traversal.kicked ? 1 : - 1;
 
 	} else if ( a.traversal.coverage !== b.traversal.coverage ) {
 
