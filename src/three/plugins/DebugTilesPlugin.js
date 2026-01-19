@@ -110,6 +110,8 @@ export class DebugTilesPlugin {
 
 		if ( v !== this._enabled && this.tiles !== null ) {
 
+			this._enabled = v;
+
 			if ( v ) {
 
 				this.init( this.tiles );
