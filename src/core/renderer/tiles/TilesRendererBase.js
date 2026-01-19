@@ -418,6 +418,7 @@ export class TilesRendererBase {
 
 	update() {
 
+		// load root
 		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
@@ -471,6 +472,40 @@ export class TilesRendererBase {
 
 		}
 
+		// check if the plugins that can block the tile updates require it
+		let needsUpdate = null;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin.doTilesNeedUpdate ) {
+
+				const res = plugin.doTilesNeedUpdate();
+				if ( needsUpdate === null ) {
+
+					needsUpdate = res;
+
+				} else {
+
+					needsUpdate = Boolean( needsUpdate || res );
+
+				}
+
+			}
+
+		} );
+
+		if ( needsUpdate === false ) {
+
+			this.dispatchEvent( { type: 'update-before' } );
+			this.dispatchEvent( { type: 'update-after' } );
+			return;
+
+		}
+
+		// follow through with the update
+		this.dispatchEvent( { type: 'update-before' } );
+
+		//
+
 		stats.inFrustum = 0;
 		stats.used = 0;
 		stats.active = 0;
@@ -484,6 +519,9 @@ export class TilesRendererBase {
 		const priorityCallback = optimizedLoadStrategy ? optimizedPriorityCallback : defaultPriorityCallback;
 		downloadQueue.priorityCallback = priorityCallback;
 		parseQueue.priorityCallback = priorityCallback;
+
+		// prepare for traversal
+		this.prepareForTraversal();
 
 		// run traversal
 		if ( optimizedLoadStrategy ) {
@@ -526,6 +564,8 @@ export class TilesRendererBase {
 			this.isLoading = false;
 
 		}
+
+		this.dispatchEvent( { type: 'update-after' } );
 
 	}
 
@@ -620,6 +660,8 @@ export class TilesRendererBase {
 		return null;
 
 	}
+
+	prepareForTraversal() {}
 
 	disposeTile( tile ) {
 

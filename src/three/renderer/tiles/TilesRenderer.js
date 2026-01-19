@@ -391,39 +391,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	update() {
-
-		// check if the plugins that can block the tile updates require it
-		let needsUpdate = null;
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin.doTilesNeedUpdate ) {
-
-				const res = plugin.doTilesNeedUpdate();
-				if ( needsUpdate === null ) {
-
-					needsUpdate = res;
-
-				} else {
-
-					needsUpdate = Boolean( needsUpdate || res );
-
-				}
-
-			}
-
-		} );
-
-		if ( needsUpdate === false ) {
-
-			this.dispatchEvent( { type: 'update-before' } );
-			this.dispatchEvent( { type: 'update-after' } );
-			return;
-
-		}
-
-		// follow through with the update
-		this.dispatchEvent( { type: 'update-before' } );
+	prepareForTraversal() {
 
 		const group = this.group;
 		const cameras = this.cameras;
@@ -511,12 +479,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+	}
+
+	update() {
+
 		super.update();
 
-		this.dispatchEvent( { type: 'update-after' } );
-
 		// check for cameras _after_ base update so we can enable pre-loading the root tileset
-		if ( cameras.length === 0 && this.root ) {
+		if ( this.cameras.length === 0 && this.root ) {
 
 			let found = false;
 			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
