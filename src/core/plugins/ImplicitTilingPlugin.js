@@ -21,15 +21,18 @@ export class ImplicitTilingPlugin {
 			tile.internal.hasUnrenderableContent = true;
 			tile.internal.hasRenderableContent = false;
 
-			// Declare some properties
-			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
-			tile.__implicitRoot = tile;	// Keep this tile as an Implicit Root Tile
+			tile.implicitTilingInternal = {
+				// Keep this tile as an Implicit Root Tile
+				implicitRoot: tile,
+				// Idx of the tile in its subtree
+				subtreeIdx: 0,
 
-			// Coords of the tile
-			tile.__x = 0;
-			tile.__y = 0;
-			tile.__z = 0;
-			tile.__level = 0;
+				// Coords of the tile
+				x: 0,
+				y: 0,
+				z: 0,
+				level: 0,
+			};
 
 		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
@@ -59,10 +62,10 @@ export class ImplicitTilingPlugin {
 		if ( tile && tile.implicitTiling ) {
 
 			const implicitUri = tile.implicitTiling.subtrees.uri
-				.replace( '{level}', tile.__level )
-				.replace( '{x}', tile.__x )
-				.replace( '{y}', tile.__y )
-				.replace( '{z}', tile.__z );
+				.replace( '{level}', tile.implicitTiling.internal.level )
+				.replace( '{x}', tile.implicitTiling.internal.x )
+				.replace( '{y}', tile.implicitTiling.internal.y )
+				.replace( '{z}', tile.implicitTiling.internal.z );
 
 			return new URL( implicitUri, tile.internal.basePath + '/' ).toString();
 
