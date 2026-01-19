@@ -21,7 +21,7 @@ export class ImplicitTilingPlugin {
 			tile.internal.hasUnrenderableContent = true;
 			tile.internal.hasRenderableContent = false;
 
-			tile.internal.implicitTiling = {
+			tile.implicitTilingData = {
 				// Keep this tile as an Implicit Root Tile
 				root: tile,
 
@@ -63,10 +63,10 @@ export class ImplicitTilingPlugin {
 		if ( tile && tile.implicitTiling ) {
 
 			const implicitUri = tile.implicitTiling.subtrees.uri
-				.replace( '{level}', tile.implicitTiling.internal.level )
-				.replace( '{x}', tile.implicitTiling.internal.x )
-				.replace( '{y}', tile.implicitTiling.internal.y )
-				.replace( '{z}', tile.implicitTiling.internal.z );
+				.replace( '{level}', tile.implicitTilingData.level )
+				.replace( '{x}', tile.implicitTilingData.x )
+				.replace( '{y}', tile.implicitTilingData.y )
+				.replace( '{z}', tile.implicitTilingData.z );
 
 			return new URL( implicitUri, tile.internal.basePath + '/' ).toString();
 
