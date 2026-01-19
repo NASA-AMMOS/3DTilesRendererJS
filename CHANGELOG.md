@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export FeatureTable, BatchTable classes.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
 - XYZImageFormat: add "projection" option and ability to set tile settings per-level.
+- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles 
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Renamed the "cached" tile subfield to "engineData".
 - Moved a number of tile fields into "traversal" and "internal" subfields on "tile" object.
 - ImplicitTilingPlugin: Moved implicit tiling fields onto a new "implicitTilingData" object.
+- DebugTilesPlugin: Replaced "getTileInformationFromActiveObject" function with "getTileFromObject3D".
+- DebugTilesPlugin: Add transparent mesh to box helper visualization.
 
 ### Fixed
 - Fix mouse offset in Controls.
