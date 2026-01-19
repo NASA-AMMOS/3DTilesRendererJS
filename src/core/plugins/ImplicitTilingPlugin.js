@@ -21,9 +21,10 @@ export class ImplicitTilingPlugin {
 			tile.internal.hasUnrenderableContent = true;
 			tile.internal.hasRenderableContent = false;
 
-			tile.implicitTilingInternal = {
+			tile.internal.implicitTiling = {
 				// Keep this tile as an Implicit Root Tile
-				implicitRoot: tile,
+				root: tile,
+
 				// Idx of the tile in its subtree
 				subtreeIdx: 0,
 

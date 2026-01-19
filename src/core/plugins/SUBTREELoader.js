@@ -6,7 +6,7 @@ import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
 function isOctreeSubdivision( tile ) {
 
-	return tile.implicitTilingInternal.implicitRoot.implicitTiling.subdivisionScheme === 'OCTREE';
+	return tile.internal.implicitTiling.root.implicitTiling.subdivisionScheme === 'OCTREE';
 
 }
 
@@ -24,10 +24,10 @@ function getSubtreeCoordinates( tile, parentTile ) {
 
 	}
 
-	const x = 2 * parentTile.implicitTilingInternal.x + ( tile.implicitTilingInternal.subtreeIdx % 2 );
-	const y = 2 * parentTile.implicitTilingInternal.y + ( Math.floor( tile.implicitTilingInternal.subtreeIdx / 2 ) % 2 );
+	const x = 2 * parentTile.internal.implicitTiling.x + ( tile.internal.implicitTiling.subtreeIdx % 2 );
+	const y = 2 * parentTile.internal.implicitTiling.y + ( Math.floor( tile.internal.implicitTiling.subtreeIdx / 2 ) % 2 );
 	const z = isOctreeSubdivision( tile ) ?
-		2 * parentTile.implicitTilingInternal.z + ( Math.floor( tile.implicitTilingInternal.subtreeIdx / 4 ) % 2 ) : 0;
+		2 * parentTile.internal.implicitTiling.z + ( Math.floor( tile.internal.implicitTiling.subtreeIdx / 4 ) % 2 ) : 0;
 	return [ x, y, z ];
 
 }
@@ -38,11 +38,11 @@ class SubtreeTile {
 
 		this.parent = parentTile;
 		this.children = [];
-		this.implicitTilingInternal.level = parentTile.implicitTilingInternal.level + 1;
-		this.implicitTilingInternal.implicitRoot = parentTile.implicitTilingInternal.implicitRoot;
+		this.internal.implicitTiling.level = parentTile.internal.implicitTiling.level + 1;
+		this.internal.implicitTiling.root = parentTile.internal.implicitTiling.root;
 		// Index inside the tree
-		this.implicitTilingInternal.subtreeIdx = childMortonIndex;
-		[ this.implicitTilingInternal.x, this.implicitTilingInternal.y, this.implicitTilingInternal.z ] = getSubtreeCoordinates( this, parentTile );
+		this.internal.implicitTiling.subtreeIdx = childMortonIndex;
+		[ this.internal.implicitTiling.x, this.internal.implicitTiling.y, this.internal.implicitTiling.z ] = getSubtreeCoordinates( this, parentTile );
 
 	}
 
@@ -50,11 +50,11 @@ class SubtreeTile {
 
 		const copyTile = {};
 		copyTile.children = [];
-		copyTile.implicitTilingInternal.level = tile.implicitTilingInternal.level;
-		copyTile.implicitTilingInternal.implicitRoot = tile.implicitTilingInternal.implicitRoot;
+		copyTile.internal.implicitTiling.level = tile.internal.implicitTiling.level;
+		copyTile.internal.implicitTiling.root = tile.internal.implicitTiling.root;
 		// Index inside the tree
-		copyTile.implicitTilingInternal.subtreeIdx = tile.implicitTilingInternal.subtreeIdx;
-		[ copyTile.implicitTilingInternal.x, copyTile.implicitTilingInternal.y, copyTile.implicitTilingInternal.z ] = [ tile.implicitTilingInternal.x, tile.implicitTilingInternal.y, tile.implicitTilingInternal.z ];
+		copyTile.internal.implicitTiling.subtreeIdx = tile.internal.implicitTiling.subtreeIdx;
+		[ copyTile.internal.implicitTiling.x, copyTile.internal.implicitTiling.y, copyTile.internal.implicitTiling.z ] = [ tile.internal.implicitTiling.x, tile.internal.implicitTiling.y, tile.internal.implicitTiling.z ];
 		copyTile.boundingVolume = tile.boundingVolume;
 		copyTile.geometricError = tile.geometricError;
 		return copyTile;
@@ -69,7 +69,7 @@ export class SUBTREELoader extends LoaderBase {
 
 		super();
 		this.tile = tile;
-		this.rootTile = tile.implicitTilingInternal.implicitRoot;	// The implicit root tile
+		this.rootTile = tile.internal.implicitTiling.root;	// The implicit root tile
 		this.workingPath = null;
 
 	}
@@ -718,12 +718,12 @@ export class SUBTREELoader extends LoaderBase {
 			const maxX = region[ 2 ];
 			const minY = region[ 1 ];
 			const maxY = region[ 3 ];
-			const sizeX = ( maxX - minX ) / Math.pow( 2, tile.implicitTilingInternal.level );
-			const sizeY = ( maxY - minY ) / Math.pow( 2, tile.implicitTilingInternal.level );
-			region[ 0 ] = minX + sizeX * tile.implicitTilingInternal.x;	//west
-			region[ 2 ] = minX + sizeX * ( tile.implicitTilingInternal.x + 1 );	//east
-			region[ 1 ] = minY + sizeY * tile.implicitTilingInternal.y;	//south
-			region[ 3 ] = minY + sizeY * ( tile.implicitTilingInternal.y + 1 );	//north
+			const sizeX = ( maxX - minX ) / Math.pow( 2, tile.internal.implicitTiling.level );
+			const sizeY = ( maxY - minY ) / Math.pow( 2, tile.internal.implicitTiling.level );
+			region[ 0 ] = minX + sizeX * tile.internal.implicitTiling.x;	//west
+			region[ 2 ] = minX + sizeX * ( tile.internal.implicitTiling.x + 1 );	//east
+			region[ 1 ] = minY + sizeY * tile.internal.implicitTiling.y;	//south
+			region[ 3 ] = minY + sizeY * ( tile.internal.implicitTiling.y + 1 );	//north
 			for ( let k = 0; k < 4; k ++ ) {
 
 				const coord = region[ k ];
@@ -744,9 +744,9 @@ export class SUBTREELoader extends LoaderBase {
 
 				const minZ = region[ 4 ];
 				const maxZ = region[ 5 ];
-				const sizeZ = ( maxZ - minZ ) / Math.pow( 2, tile.implicitTilingInternal.level );
-				region[ 4 ] = minZ + sizeZ * tile.implicitTilingInternal.z;	//minimum height
-				region[ 5 ] = minZ + sizeZ * ( tile.implicitTilingInternal.z + 1 );	//maximum height
+				const sizeZ = ( maxZ - minZ ) / Math.pow( 2, tile.internal.implicitTiling.level );
+				region[ 4 ] = minZ + sizeZ * tile.internal.implicitTiling.z;	//minimum height
+				region[ 5 ] = minZ + sizeZ * ( tile.internal.implicitTiling.z + 1 );	//maximum height
 
 			}
 
@@ -761,8 +761,8 @@ export class SUBTREELoader extends LoaderBase {
 			// 6-8: y axis direction and half length
 			// 9-11: z axis direction and half length
 			const box = [ ...this.rootTile.boundingVolume.box ];
-			const cellSteps = 2 ** tile.implicitTilingInternal.level - 1;
-			const scale = Math.pow( 2, - tile.implicitTilingInternal.level );
+			const cellSteps = 2 ** tile.internal.implicitTiling.level - 1;
+			const scale = Math.pow( 2, - tile.internal.implicitTiling.level );
 			const axisNumber = isOctreeSubdivision( tile ) ? 3 : 2;
 			for ( let i = 0; i < axisNumber; i ++ ) {
 
@@ -775,7 +775,7 @@ export class SUBTREELoader extends LoaderBase {
 				const y = box[ 3 + i * 3 + 1 ];
 				const z = box[ 3 + i * 3 + 2 ];
 				// adjust the center by the x, y and z axes
-				const axisOffset = i === 0 ? tile.implicitTilingInternal.x : ( i === 1 ? tile.implicitTilingInternal.y : tile.implicitTilingInternal.z );
+				const axisOffset = i === 0 ? tile.internal.implicitTiling.x : ( i === 1 ? tile.internal.implicitTiling.y : tile.internal.implicitTiling.z );
 				box[ 0 ] += 2 * x * ( - 0.5 * cellSteps + axisOffset );
 				box[ 1 ] += 2 * y * ( - 0.5 * cellSteps + axisOffset );
 				box[ 2 ] += 2 * z * ( - 0.5 * cellSteps + axisOffset );
@@ -797,7 +797,7 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	getGeometricError( tile ) {
 
-		return this.rootTile.geometricError / Math.pow( 2, tile.implicitTilingInternal.level );
+		return this.rootTile.geometricError / Math.pow( 2, tile.internal.implicitTiling.level );
 
 	}
 
@@ -856,10 +856,10 @@ export class SUBTREELoader extends LoaderBase {
 	 */
 	parseImplicitURI( tile, uri ) {
 
-		uri = uri.replace( '{level}', tile.implicitTilingInternal.level );
-		uri = uri.replace( '{x}', tile.implicitTilingInternal.x );
-		uri = uri.replace( '{y}', tile.implicitTilingInternal.y );
-		uri = uri.replace( '{z}', tile.implicitTilingInternal.z );
+		uri = uri.replace( '{level}', tile.internal.implicitTiling.level );
+		uri = uri.replace( '{x}', tile.internal.implicitTiling.x );
+		uri = uri.replace( '{y}', tile.internal.implicitTiling.y );
+		uri = uri.replace( '{z}', tile.internal.implicitTiling.z );
 		return uri;
 
 	}
