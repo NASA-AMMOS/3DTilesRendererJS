@@ -506,13 +506,13 @@ function toggleTiles( tile, renderer ) {
 
 			const c = children[ i ];
 			toggleTiles( c, renderer );
-			coverage += c.traversal.coverage || 0;
-			coverageChildren += c.traversal.coverageChildren || 1;
+			coverage += c.traversal?.coverage || 0;
+			coverageChildren ++;
 
-			if ( c.traversal.inFrustum ) {
+			if ( c.traversal?.inFrustum ) {
 
-				visibleCoverageChildren += c.traversal.visibleCoverageChildren || 1;
-				visibleCoverage += c.traversal.visibleCoverage || 0;
+				visibleCoverageChildren ++;
+				visibleCoverage += c.traversal?.visibleCoverage || 0;
 
 			}
 
@@ -551,8 +551,8 @@ function toggleTiles( tile, renderer ) {
 
 		} else {
 
-			tile.traversal.coverage = coverage / coverageChildren;
-			tile.traversal.visibleCoverage = visibleCoverage / visibleCoverageChildren;
+			tile.traversal.coverage = coverage / coverageChildren || 0;
+			tile.traversal.visibleCoverage = visibleCoverage / visibleCoverageChildren || 0;
 
 		}
 
