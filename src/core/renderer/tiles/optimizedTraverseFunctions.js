@@ -241,6 +241,8 @@ function markUsedTiles( tile, renderer ) {
 	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
 		tile.traversal.inFrustum = false;
+
+		renderer.markTileUsed( tile );
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			recursivelyMarkUsed( children[ i ], renderer, true );
