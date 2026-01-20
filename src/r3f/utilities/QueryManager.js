@@ -9,6 +9,7 @@ import {
 } from 'three';
 import { SceneObserver } from './SceneObserver.js';
 import { Ellipsoid } from '3d-tiles-renderer/three';
+import { FrameScheduler } from '../../core/renderer/utilities/FrameScheduler.js';
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _line0 = /* @__PURE__ */ new Line3();
@@ -44,7 +45,7 @@ export class QueryManager extends EventDispatcher {
 		this.cameras = new Set();
 
 		// FrameScheduler
-		this.framescheduler = null;
+		this.frameScheduler = new FrameScheduler();
 
 		// register to mark items as dirty
 		const queueAll = ( () => {
@@ -201,10 +202,10 @@ export class QueryManager extends EventDispatcher {
 
 	_scheduleRun() {
 
-		if ( this.autoRun && ! this.scheduled && this.framescheduler ) {
+		if ( this.autoRun && ! this.scheduled ) {
 
 			this.scheduled = true;
-			this.framescheduler.requestAnimationFrame( () => {
+			this.frameScheduler.requestAnimationFrame( () => {
 
 				this.scheduled = false;
 				this._runJobs();

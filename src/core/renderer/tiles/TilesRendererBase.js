@@ -190,26 +190,26 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
-		// FrameScheduler referenced by LRUCache, PriorityQueue
-		this.framescheduler = new FrameScheduler();
+		// FrameScheduler referenced by LRUCache, PriorityQueue, throttle
+		this.frameScheduler = new FrameScheduler();
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
-		lruCache.framescheduler = this.framescheduler;
+		lruCache.frameScheduler = this.frameScheduler;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
 		downloadQueue.priorityCallback = defaultPriorityCallback;
-		downloadQueue.framescheduler = this.framescheduler;
+		downloadQueue.frameScheduler = this.frameScheduler;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
 		parseQueue.priorityCallback = defaultPriorityCallback;
-		parseQueue.framescheduler = this.framescheduler;
+		parseQueue.frameScheduler = this.frameScheduler;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
-		processNodeQueue.framescheduler = this.framescheduler;
+		processNodeQueue.frameScheduler = this.frameScheduler;
 		processNodeQueue.priorityCallback = ( a, b ) => {
 
 			const aParent = a.parent;
@@ -266,7 +266,7 @@ export class TilesRendererBase {
 
 			this.dispatchEvent( { type: 'needs-update' } );
 
-		}, this.framescheduler );
+		}, this.frameScheduler );
 
 		// options
 		this.errorTarget = 16.0;
@@ -280,17 +280,15 @@ export class TilesRendererBase {
 
 	setXRSession( xrsession ) {
 
-		if ( ! this.framescheduler ) return;
-
-		this.framescheduler.setXRSession( xrsession );
+		this.frameScheduler.setXRSession( xrsession );
 
 	}
 
 	removeXRSession() {
 
-		if ( ! this.framescheduler ) return;
+		if ( ! this.frameScheduler ) return;
 
-		this.framescheduler.removeXRSession();
+		this.frameScheduler.removeXRSession();
 
 	}
 

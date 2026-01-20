@@ -1,3 +1,5 @@
+import { FrameScheduler } from './FrameScheduler.js';
+
 const GIGABYTE_BYTES = 2 ** 30;
 
 class LRUCache {
@@ -56,7 +58,7 @@ class LRUCache {
 
 		this._unloadPriorityCallback = null;
 
-		this.framescheduler = null;
+		this.frameScheduler = new FrameScheduler();
 
 		const itemSet = this.itemSet;
 		this.defaultPriorityCallback = item => itemSet.get( item );
@@ -346,9 +348,9 @@ class LRUCache {
 
 		}
 
-		if ( needsRerun && this.framescheduler ) {
+		if ( needsRerun ) {
 
-			this.unloadingHandle = this.framescheduler.requestAnimationFrame( () => this.scheduleUnload() );
+			this.unloadingHandle = this.frameScheduler.requestAnimationFrame( () => this.scheduleUnload() );
 
 		}
 
@@ -356,7 +358,7 @@ class LRUCache {
 
 	scheduleUnload() {
 
-		if ( this.framescheduler ) this.framescheduler.cancelAnimationFrame( this.unloadingHandle );
+		this.frameScheduler.cancelAnimationFrame( this.unloadingHandle );
 
 		if ( ! this.scheduled ) {
 

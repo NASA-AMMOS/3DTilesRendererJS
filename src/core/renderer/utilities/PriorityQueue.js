@@ -1,3 +1,5 @@
+import { FrameScheduler } from './FrameScheduler.js';
+
 export class PriorityQueueItemRemovedError extends Error {
 
 	constructor() {
@@ -31,12 +33,12 @@ export class PriorityQueue {
 
 		this.priorityCallback = null;
 
-		this.framescheduler = null;
+		this.frameScheduler = new FrameScheduler();
 
 		// Customizable scheduling callback. Default using requestAnimationFrame()
 		this.schedulingCallback = func => {
 
-			if ( this.framescheduler ) this.framescheduler.requestAnimationFrame( func );
+			this.frameScheduler.requestAnimationFrame( func );
 
 		};
 
