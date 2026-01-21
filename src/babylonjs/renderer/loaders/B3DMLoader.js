@@ -1,4 +1,4 @@
-import { Matrix } from 'babylonjs';
+import { Matrix } from '@babylonjs/core';
 import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { GLTFLoader } from './GLTFLoader.js';
 

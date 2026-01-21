@@ -1,7 +1,8 @@
-import { Scene, Engine, Vector3, ArcRotateCamera } from '@babylonjs/core';
+import { Scene, Engine, GeospatialCamera } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
+import { Vector3 } from 'three';
 
 const GOOGLE_TILES_ASSET_ID = 2275207;
 
@@ -24,22 +25,39 @@ engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // scene
 const scene = new Scene( engine );
-scene.useRightHandedSystem = true;
+// Note: GeospatialCamera uses left-handed internally, don't override
+// scene.useRightHandedSystem = true;
 
 // camera
-const camera = new ArcRotateCamera(
-	'camera',
-	- Math.PI / 2,
-	Math.PI / 3,
-	100000,
-	new Vector3( 0, 0, 0 ),
-	scene,
-);
-camera.attachControl( canvas, true );
+const camera = new GeospatialCamera( 'geo', scene, { planetRadius: 6378137 } );
+
+camera.attachControl( true );
 camera.minZ = 1;
 camera.maxZ = 1e7;
-camera.wheelPrecision = 0.25;
-camera.setPosition( new Vector3( 500, 300, - 500 ) );
+camera.radius = 6378137 / 10;
+// Tokyo Tower
+camera.center = new Vector3( 0, - 6370877.772522855 - 150, 20246.934953993885 );
+camera.checkCollisions = true;
+scene.collisionsEnabled = true;
+camera.limits.radiusMin = 50;
+camera.limits.pitchMax = Math.PI / 2 - .02;
+camera.limits.pitchMin = 0;
+camera.movement.zoomSpeed = 2;
+
+
+// const camera = new ArcRotateCamera(
+// 	'camera',
+// 	- Math.PI / 2,
+// 	Math.PI / 3,
+// 	100000,
+// 	new Vector3( 0, 0, 0 ),
+// 	scene,
+// );
+// camera.attachControl( canvas, true );
+// camera.minZ = 1;
+// camera.maxZ = 1e7;
+// camera.wheelPrecision = 0.25;
+// camera.setPosition( new Vector3( 500, 300, - 500 ) );
 
 // tiles
 const tiles = new TilesRenderer( null, scene );
@@ -50,9 +68,9 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 } ) );
 tiles.errorTarget = params.errorTarget;
 
-// position so Tokyo Tower is visible
-tiles.group.rotation.set( - 0.6223599766516501, 8.326672684688674e-17, - 0.8682210177215869 );
-tiles.group.position.set( 0, - 6370877.772522855 - 150, 20246.934953993885 );
+// // position so Tokyo Tower is visible
+// tiles.group.rotation.set( - 0.6223599766516501, 8.326672684688674e-17, - 0.8682210177215869 );
+//tiles.group.position.set( 0, - 6370877.772522855 - 150, 20246.934953993885 );
 
 // Babylon render loop
 scene.onBeforeRenderObservable.add( () => {
