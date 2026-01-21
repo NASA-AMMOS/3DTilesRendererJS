@@ -920,8 +920,8 @@ export class TilesRenderer extends TilesRendererBase {
 		let inView = false;
 		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = 0;
-		let minDistance = Infinity;
+		let maxCameraError = 0;
+		let minCameraDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -956,33 +956,38 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			maxError = Math.max( maxError, error );
-			minDistance = Math.min( minDistance, distance );
+			maxCameraError = Math.max( maxCameraError, error );
+			minCameraDistance = Math.min( minCameraDistance, distance );
 
 		}
 
 		// check the plugin visibility
-		let regionInView = true;
-		let regionError = 0;
-		let regionDistance = Infinity;
+		let inRegion = null;
+		let inRegionError = 0;
+		let inRegionDistance = Infinity;
 		this.invokeAllPlugins( plugin => {
 
-			viewErrorTarget.inView = true;
-			viewErrorTarget.error = 0;
-			viewErrorTarget.distance = Infinity;
+			if ( plugin !== this && plugin.calculateTileViewError ) {
 
-			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
+				viewErrorTarget.inView = true;
+				viewErrorTarget.error = 0;
+				viewErrorTarget.distance = Infinity;
+				if ( plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
-				// TODO: this only seems to be handling the "mask" case?
-				// Plugins can set "inView" to false in order to mask the visible tiles
-				regionInView = regionInView && viewErrorTarget.regionInView;
-				minDistance = Math.min( minDistance, viewErrorTarget.distance );
-				maxError = Math.max( maxError, viewErrorTarget.error );
+					if ( inRegion === null ) {
 
-				if ( viewErrorTarget.inView ) {
+						inRegion = true;
 
-					regionDistance = Math.min( regionDistance, viewErrorTarget.distance );
-					regionError = Math.max( regionError, viewErrorTarget.error );
+					}
+
+					// Plugins can set "inView" to false in order to mask the visible tiles
+					inRegion = inRegion && viewErrorTarget.inView;
+					if ( viewErrorTarget.inView ) {
+
+						inRegionDistance = Math.min( inRegionDistance, viewErrorTarget.distance );
+						inRegionError = Math.max( inRegionError, viewErrorTarget.error );
+
+					}
 
 				}
 
@@ -990,23 +995,27 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		inView = regionInView && inView;
-		inViewError = Math.max( inView, regionError );
-		inViewDistance = Math.min( inViewDistance, regionDistance );
+		if ( inView && inRegion !== false ) {
 
-		// If the tiles are out of view then use the global distance and error calculated
-		if ( inView ) {
-
+			// if the tile is in camera view and we haven't encountered a region (null) or
+			// the region is in view (true). regionInView === false means the tile is masked out.
 			target.inView = true;
-			target.error = inViewError;
-			target.distanceFromCamera = inViewDistance;
+			target.error = Math.max( inViewError, inRegionError );
+			target.distanceFromCamera = Math.min( inViewDistance, inRegionDistance );
+
+		} else if ( inRegion ) {
+
+			// if the tile is in a region then display it
+			target.inView = true;
+			target.error = inRegionError;
+			target.distanceFromCamera = inRegionDistance;
 
 		} else {
 
-			// TODO: this is only respecting the last plugin's write
-			target.inView = viewErrorTarget.inView;
-			target.error = maxError;
-			target.distanceFromCamera = minDistance;
+			// otherwise write variables for load priority
+			target.inView = false;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
 
 		}
 
