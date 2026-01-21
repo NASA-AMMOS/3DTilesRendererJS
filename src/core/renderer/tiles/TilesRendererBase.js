@@ -8,6 +8,11 @@ import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
 
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
+const regionErrorTarget = {
+	inView: true,
+	error: 0,
+	distance: Infinity,
+};
 
 // priority queue sort function that takes two tiles to compare. Returning 1 means
 // "tile a" is loaded first.
@@ -596,6 +601,72 @@ export class TilesRendererBase {
 		}, null, false );
 
 		stats.failed = 0;
+
+	}
+
+	calculateTileViewErrorWithPlugin( tile, target ) {
+
+		// calculate camera view error
+		this.calculateTileViewError( tile, target );
+
+		// TODO: this logic is extremely complex. It may be more simple to have the plugin
+		// return a "should mask" field that indicates its "false" values should be respected
+		// rather than the function returning a "no-op" boolean.
+		// check the plugin visibility - each plugin will mask between themselves
+		let inRegion = null;
+		let inRegionError = 0;
+		let inRegionDistance = Infinity;
+		this.invokeAllPlugins( plugin => {
+
+			if ( plugin !== this && plugin.calculateTileViewError ) {
+
+				// if function returns false it means "no operation"
+				regionErrorTarget.inView = true;
+				regionErrorTarget.error = 0;
+				regionErrorTarget.distance = Infinity;
+				if ( plugin.calculateTileViewError( tile, regionErrorTarget ) ) {
+
+					if ( inRegion === null ) {
+
+						inRegion = true;
+
+					}
+
+					// Plugins can set "inView" to false in order to mask the visible tiles
+					inRegion = inRegion && regionErrorTarget.inView;
+					if ( regionErrorTarget.inView ) {
+
+						inRegionDistance = Math.min( inRegionDistance, regionErrorTarget.distance );
+						inRegionError = Math.max( inRegionError, regionErrorTarget.error );
+
+					}
+
+				}
+
+			}
+
+		} );
+
+		if ( target.inView && inRegion !== false ) {
+
+			// if the tile is in camera view and we haven't encountered a region (null) or
+			// the region is in view (true). regionInView === false means the tile is masked out.
+			target.error = Math.max( target.error, inRegionError );
+			target.distanceFromCamera = Math.min( target.distanceFromCamera, inRegionDistance );
+
+		} else if ( inRegion ) {
+
+			// if the tile is in a region then display it
+			target.inView = true;
+			target.error = inRegionError;
+			target.distanceFromCamera = inRegionDistance;
+
+		} else {
+
+			// otherwise write variables for load priority
+			target.inView = false;
+
+		}
 
 	}
 
