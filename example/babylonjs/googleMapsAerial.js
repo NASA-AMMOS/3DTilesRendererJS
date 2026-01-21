@@ -1,10 +1,24 @@
-import { Scene, Engine, GeospatialCamera } from '@babylonjs/core';
+import { Scene, Engine, GeospatialCamera, Vector3 } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
-import { Vector3 } from 'three';
 
 const GOOGLE_TILES_ASSET_ID = 2275207;
+
+const PLANET_RADIUS = 6378137;
+
+/**
+ * Dynamically adjust near/far planes based on camera altitude
+ * to prevent clipping while maintaining depth precision
+ */
+function updateCameraClipPlanes( camera ) {
+
+	// radius IS the altitude above surface for GeospatialCamera
+	const altitude = Math.max( 1, camera.radius );
+	const horizonDist = Math.sqrt( 2 * PLANET_RADIUS * altitude );
+	camera.maxZ = Math.max( horizonDist * 2, altitude * 10 );
+
+}
 
 // gui
 const params = {
@@ -20,26 +34,28 @@ gui.add( params, 'errorTarget', 1, 100 );
 
 // engine
 const canvas = document.getElementById( 'renderCanvas' );
-const engine = new Engine( canvas, true );
+const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // scene
 const scene = new Scene( engine );
-// Note: GeospatialCamera uses left-handed internally, don't override
-// scene.useRightHandedSystem = true;
+// 3D Tiles data uses right-handed coordinate system
+scene.useRightHandedSystem = true;
 
 // camera
-const camera = new GeospatialCamera( 'geo', scene, { planetRadius: 6378137 } );
+const camera = new GeospatialCamera( 'geo', scene, { planetRadius: PLANET_RADIUS } );
 
 camera.attachControl( true );
 camera.minZ = 1;
 camera.maxZ = 1e7;
-camera.radius = 6378137 / 10;
-// Tokyo Tower
+
+// Start at ~1000m altitude above surface
+camera.radius = 1000;
+// Set center to Tokyo Tower location (ECEF coordinates)
 camera.center = new Vector3( 0, - 6370877.772522855 - 150, 20246.934953993885 );
 camera.checkCollisions = true;
 scene.collisionsEnabled = true;
-camera.limits.radiusMin = 50;
+camera.limits.radiusMin = 10; // minimum 10m above surface
 camera.limits.pitchMax = Math.PI / 2 - .02;
 camera.limits.pitchMin = 0;
 camera.movement.zoomSpeed = 2;
@@ -73,7 +89,28 @@ tiles.errorTarget = params.errorTarget;
 //tiles.group.position.set( 0, - 6370877.772522855 - 150, 20246.934953993885 );
 
 // Babylon render loop
+let frameCount = 0;
 scene.onBeforeRenderObservable.add( () => {
+
+	// Dynamically adjust clip planes based on camera altitude
+	updateCameraClipPlanes( camera );
+
+	// Debug: log camera position every 60 frames
+	if ( frameCount ++ % 60 === 0 ) {
+
+		console.log( 'camera.globalPosition:', camera.globalPosition?.toString() );
+		console.log( 'camera.position:', camera.position?.toString() );
+		console.log( 'camera.radius:', camera.radius );
+		console.log( 'camera.center:', camera.center?.toString() );
+		console.log( 'tiles.group position:', tiles.group.position?.toString() );
+		console.log( 'visibleTiles:', tiles.visibleTiles.size, 'activeTiles:', tiles.activeTiles.size );
+		if ( tiles.root ) {
+
+			console.log( 'root tile geometricError:', tiles.root.geometricError );
+		
+		}
+
+	}
 
 	if ( params.enabled ) {
 

@@ -107,6 +107,20 @@ export class TileBoundingVolume {
 
 		}
 
+		// DEBUG: log suspicious distances
+		if ( ! TileBoundingVolume._distLogCount ) TileBoundingVolume._distLogCount = 0;
+		const result = sphereDistance > obbDistance ? sphereDistance : obbDistance;
+		if ( result < 0.001 && TileBoundingVolume._distLogCount++ % 200 === 0 ) {
+			console.log( 'Near-zero distance debug:', {
+				point: point.toString(),
+				sphereCenter: sphere ? sphere.centerWorld.toString() : 'none',
+				sphereRadius: sphere ? sphere.radiusWorld : 'none', 
+				sphereDistance,
+				obbDistance,
+				result,
+			} );
+		}
+
 		// return the further distance of the two volumes
 		return sphereDistance > obbDistance ? sphereDistance : obbDistance;
 

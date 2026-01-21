@@ -234,19 +234,30 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const group = cached.group;
+		
+		// DEBUG: track visibility calls
+		if ( ! this._visStats ) {
+			this._visStats = { calls: 0, noGroup: 0, shown: 0, hidden: 0 };
+			setInterval( () => {
+				console.log( 'Visibility stats:', this._visStats );
+				this._visStats = { calls: 0, noGroup: 0, shown: 0, hidden: 0 };
+			}, 2000 );
+		}
+		this._visStats.calls++;
+		
 		if ( ! group ) {
-
+			this._visStats.noGroup++;
 			return;
 
 		}
 
 		if ( visible ) {
-
+			this._visStats.shown++;
 			group.parent = this.group;
 			group.setEnabled( true );
 
 		} else {
-
+			this._visStats.hidden++;
 			group.parent = null;
 			group.setEnabled( false );
 
@@ -302,15 +313,33 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group.getWorldMatrix().invertToRef( _worldToTiles );
 		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
-		// get frustums in local space: note tht it seems there's no way to transform to ref in Babylon
+		// get frustum from camera transformation matrix
 		Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
+		
+		// Transform frustum planes to tiles local space
 		const frustumPlanes = _frustumPlanes.map( plane => {
-
 			return plane.transform( _worldToTiles );
-
 		} );
+		
+		// DEBUG: log frustum planes once
+		if ( ! this._frustumLogged ) {
+			this._frustumLogged = true;
+			console.log( 'Frustum planes:', _frustumPlanes.map( p => `(${p.normal.x.toFixed(3)}, ${p.normal.y.toFixed(3)}, ${p.normal.z.toFixed(3)}, d=${p.d.toFixed(1)})` ) );
+			console.log( 'Camera position in tiles:', _cameraPositionInTiles.toString() );
+		}
 
 		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
+
+		// DEBUG: track stats
+		if ( ! this._debugStats ) {
+			this._debugStats = { total: 0, inView: 0, closeAndInView: 0, depthCounts: {} };
+			// Reset every 2 seconds
+			setInterval( () => {
+				console.log( 'Tile stats:', this._debugStats );
+				this._debugStats = { total: 0, inView: 0, closeAndInView: 0, depthCounts: {} };
+			}, 2000 );
+		}
+		this._debugStats.total++;
 
 		let error;
 		if ( isOrthographic ) {
@@ -326,6 +355,42 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// Check frustum intersection
 		const inView = boundingVolume.intersectsFrustum( frustumPlanes );
+
+		// DEBUG: track stats
+		if ( inView ) {
+			this._debugStats.inView++;
+			if ( distance < 1000 ) {
+				this._debugStats.closeAndInView++;
+			}
+		}
+		
+		// Track by depth
+		const depth = tile.__depth || 0;
+		if ( ! this._debugStats.depthCounts[ depth ] ) {
+			this._debugStats.depthCounts[ depth ] = { total: 0, inView: 0 };
+		}
+		this._debugStats.depthCounts[ depth ].total++;
+		if ( inView ) {
+			this._debugStats.depthCounts[ depth ].inView++;
+		}
+		
+		// DEBUG: log very high/low errors (throttled)
+		if ( ! this._errorLogCount ) this._errorLogCount = 0;
+		if ( inView && distance < 100 && tile.geometricError > 1000 && this._errorLogCount++ % 500 === 0 ) {
+			const calcError = tile.geometricError / ( distance * sseDenominator );
+			const bv = cached.boundingVolume;
+			console.log( 'Close tile error calc:', { 
+				distance, 
+				geometricError: tile.geometricError, 
+				calcError, 
+				errorTarget: this.errorTarget,
+				hasChildren: tile.children?.length || 0,
+				depth: tile.__depth,
+				hasSphere: !!bv.sphere,
+				hasOBB: !!bv.obb,
+				boundingVolume: tile.boundingVolume,
+			} );
+		}
 
 		target.inView = inView;
 		target.error = error;
