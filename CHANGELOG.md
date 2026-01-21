@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export FeatureTable, BatchTable classes.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
 - XYZImageFormat: add "projection" option and ability to set tile settings per-level.
-- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles 
+- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
