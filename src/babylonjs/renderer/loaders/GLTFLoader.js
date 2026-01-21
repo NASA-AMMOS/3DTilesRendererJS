@@ -1,8 +1,11 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
-import { Matrix, Quaternion, SceneLoader } from 'babylonjs';
-import 'babylonjs-loaders';
+import { Matrix, Quaternion, ImportMeshAsync } from '@babylonjs/core';
+import '@babylonjs/loaders/glTF/2.0';
 
+// GLB magic bytes: "glTF" in ASCII (0x67, 0x6C, 0x54, 0x46)
+const GLB_MAGIC = 0x46546C67;
 const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
+
 export class GLTFLoader extends LoaderBase {
 
 	constructor( scene ) {
@@ -10,6 +13,58 @@ export class GLTFLoader extends LoaderBase {
 		super();
 		this.scene = scene;
 		this.adjustmentTransform = Matrix.Identity();
+
+	}
+
+	/**
+	 * Detect if buffer contains GLB binary data by checking magic bytes
+	 * @param {ArrayBuffer|Uint8Array} buffer - The file buffer
+	 * @returns {boolean} True if GLB format
+	 */
+	isGLB( buffer ) {
+
+		// Handle both ArrayBuffer and typed arrays (e.g., Uint8Array)
+		const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : buffer.buffer;
+		const byteOffset = buffer instanceof ArrayBuffer ? 0 : buffer.byteOffset;
+		const byteLength = buffer.byteLength;
+
+		if ( byteLength < 4 ) {
+
+			return false;
+
+		}
+
+		const view = new DataView( arrayBuffer, byteOffset, byteLength );
+		const magic = view.getUint32( 0, true ); // little-endian
+		return magic === GLB_MAGIC;
+
+	}
+
+	/**
+	 * Detect file extension from URI or buffer content
+	 * @param {ArrayBuffer} buffer - The file buffer
+	 * @param {string} uri - The file URI
+	 * @returns {string} '.glb' or '.gltf'
+	 */
+	detectExtension( buffer, uri ) {
+
+		// First check magic bytes in buffer (most reliable)
+		if ( this.isGLB( buffer ) ) {
+
+			return '.glb';
+
+		}
+
+		// Fallback to URI extension
+		const lowerUri = uri.toLowerCase();
+		if ( lowerUri.endsWith( '.glb' ) ) {
+
+			return '.glb';
+
+		}
+
+		// Default to gltf
+		return '.gltf';
 
 	}
 
@@ -25,17 +80,14 @@ export class GLTFLoader extends LoaderBase {
 
 		}
 
+		// Detect format from buffer magic bytes or URI extension
+		const pluginExtension = this.detectExtension( buffer, uri );
 		// Use unique filename to prevent texture caching issues
-		// TODO: What is the correct method for loading gltf files in babylon?
-		const container = await SceneLoader.LoadAssetContainerAsync(
-			rootUrl,
+		const container = await ImportMeshAsync(
 			new File( [ buffer ], uri ),
 			scene,
-			null,
-			'.glb',
+			{ pluginExtension }
 		);
-
-		container.addAllToScene();
 
 		// retrieve the primary scene
 		const root = container.meshes[ 0 ];

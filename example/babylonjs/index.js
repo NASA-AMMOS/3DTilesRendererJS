@@ -1,4 +1,4 @@
-import * as BABYLON from 'babylonjs';
+import { Engine, Scene, ArcRotateCamera, Vector3 } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import GUI from 'lil-gui';
 
@@ -16,21 +16,21 @@ gui.add( params, 'visibleTiles' ).listen().disable();
 
 // init engine
 const canvas = document.getElementById( 'renderCanvas' );
-const engine = new BABYLON.Engine( canvas, true );
+const engine = new Engine( canvas, true );
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // TODO: Babylon uses left handed coordinate system but our data is in a right handed one.
 // The coordinate system flag may need to be accounted for when parsing the data
-const scene = new BABYLON.Scene( engine );
+const scene = new Scene( engine );
 scene.useRightHandedSystem = true;
 
 // Camera controls
-const camera = new BABYLON.ArcRotateCamera(
+const camera = new ArcRotateCamera(
 	'camera',
 	- Math.PI / 2,
 	Math.PI / 2.5,
 	50,
-	new BABYLON.Vector3( 0, 0, 0 ),
+	new Vector3( 0, 0, 0 ),
 	scene,
 );
 camera.attachControl( canvas, true );
@@ -40,6 +40,9 @@ camera.maxZ = 1000;
 // instantiate tiles renderer and orient the group so it's Z+ down
 const tiles = new TilesRenderer( TILESET_URL, scene );
 tiles.group.rotation.x = Math.PI / 2;
+tiles.addEventListener('load-tileset', ( tileset ) => {
+	console.log('tileset loaded!');
+});
 
 // render
 scene.onBeforeRenderObservable.add( () => {

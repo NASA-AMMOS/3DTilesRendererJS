@@ -1,4 +1,4 @@
-import * as BABYLON from 'babylonjs';
+import { Scene, Engine, Vector3, ArcRotateCamera } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
@@ -19,27 +19,27 @@ gui.add( params, 'errorTarget', 1, 100 );
 
 // engine
 const canvas = document.getElementById( 'renderCanvas' );
-const engine = new BABYLON.Engine( canvas, true );
+const engine = new Engine( canvas, true );
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // scene
-const scene = new BABYLON.Scene( engine );
+const scene = new Scene( engine );
 scene.useRightHandedSystem = true;
 
 // camera
-const camera = new BABYLON.ArcRotateCamera(
+const camera = new ArcRotateCamera(
 	'camera',
 	- Math.PI / 2,
 	Math.PI / 3,
 	100000,
-	new BABYLON.Vector3( 0, 0, 0 ),
+	new Vector3( 0, 0, 0 ),
 	scene,
 );
 camera.attachControl( canvas, true );
 camera.minZ = 1;
 camera.maxZ = 1e7;
 camera.wheelPrecision = 0.25;
-camera.setPosition( new BABYLON.Vector3( 500, 300, - 500 ) );
+camera.setPosition( new Vector3( 500, 300, - 500 ) );
 
 // tiles
 const tiles = new TilesRenderer( null, scene );

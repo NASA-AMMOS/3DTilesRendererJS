@@ -91,8 +91,8 @@
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitest/eslint-plugin": "^1.5.1",
-    "babylonjs": "^7.0.0",
-    "babylonjs-loaders": "^7.0.0",
+    "@babylonjs/core": "^8.45.1",
+    "@babylonjs/loaders": "^8.45.1",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
     "eslint": "^9.0.0",
@@ -111,8 +111,8 @@
   },
   "peerDependencies": {
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
-    "babylonjs": "^7.0.0",
-    "babylonjs-loaders": "^7.0.0",
+    "@babylonjs/core": ">=8.45.1",
+    "@babylonjs/loaders": ">=8.45.1",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0"
