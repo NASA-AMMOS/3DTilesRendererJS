@@ -59,7 +59,7 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.allChildrenReady = false;
 
 		// update tile frustum and error state
-		renderer.calculateTileViewError( tile, viewErrorTarget );
+		renderer.calculateTileViewErrorWithPlugin( tile, viewErrorTarget );
 		tile.traversal.inFrustum = viewErrorTarget.inView;
 		tile.traversal.error = viewErrorTarget.error;
 		tile.traversal.distanceFromCamera = viewErrorTarget.distanceFromCamera;
