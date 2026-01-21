@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DebugTilesPlugin: Add transparent mesh to box helper visualization.
 - TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
 - Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
+- TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
 
 ### Fixed
 - Fix mouse offset in Controls.
