@@ -176,6 +176,7 @@ function updateThreeStats() {
 	writeStats( threeStats, 'load end', ( loadDelta < 0 ? '--' : loadEnd.toFixed( 0 ) + ' ms' ) );
 	writeStats( threeStats, 'load delta', ( loadDelta < 0 ? '--' : loadDelta.toFixed( 0 ) + ' ms' ) );
 	writeStats( threeStats, 'total load time', threeViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
+	writeStats( threeStats, 'perf', ( 100 * threeViewer.totalLoadTime / cesiumViewer.totalLoadTime ).toFixed( 2 ) + '%' );
 
 }
 
