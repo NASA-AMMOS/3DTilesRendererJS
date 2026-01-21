@@ -961,7 +961,28 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// check the plugin visibility
+		if ( inView ) {
+
+			// write the in-camera error and distance parameters
+			target.inView = true;
+			target.error = inViewError;
+			target.distanceFromCamera = inViewDistance;
+
+		} else {
+
+			// otherwise write variables for load priority
+			target.inView = false;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
+
+		}
+
+		//
+
+		// TODO: this logic is extremely complex. It may be more simple to have the plugin
+		// return a "should mask" field that indicates its "false" values should be respected
+		// rather than the function returning a "no-op" boolean.
+		// check the plugin visibility - each plugin will mask between themselves
 		let inRegion = null;
 		let inRegionError = 0;
 		let inRegionDistance = Infinity;
@@ -969,6 +990,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( plugin !== this && plugin.calculateTileViewError ) {
 
+				// if function returns false it means "no operation"
 				viewErrorTarget.inView = true;
 				viewErrorTarget.error = 0;
 				viewErrorTarget.distance = Infinity;
@@ -995,13 +1017,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		if ( inView && inRegion !== false ) {
+		if ( target.inView && inRegion !== false ) {
 
 			// if the tile is in camera view and we haven't encountered a region (null) or
 			// the region is in view (true). regionInView === false means the tile is masked out.
-			target.inView = true;
-			target.error = Math.max( inViewError, inRegionError );
-			target.distanceFromCamera = Math.min( inViewDistance, inRegionDistance );
+			target.error = Math.max( target.error, inRegionError );
+			target.distanceFromCamera = Math.min( target.distanceFromCamera, inRegionDistance );
 
 		} else if ( inRegion ) {
 
@@ -1014,8 +1035,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			// otherwise write variables for load priority
 			target.inView = false;
-			target.error = maxCameraError;
-			target.distanceFromCamera = minCameraDistance;
 
 		}
 
