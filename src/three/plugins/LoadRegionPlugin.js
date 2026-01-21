@@ -64,6 +64,7 @@ export class LoadRegionPlugin {
 		let inShape = false;
 		let inMask = null;
 		let maxError = 0;
+		let minDistance = Infinity;
 		for ( const region of regions ) {
 
 			// TODO: we should only set the error if it is "intersected".
@@ -76,6 +77,7 @@ export class LoadRegionPlugin {
 			if ( intersects ) {
 
 				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+				minDistance = Math.min( region.calculateDistance( boundingVolume, tile, tiles ) );
 
 			}
 
@@ -93,6 +95,7 @@ export class LoadRegionPlugin {
 		// are no masks.
 		target.inView = inShape && inMask !== false;
 		target.error = maxError;
+		target.distance = minDistance;
 
 		// Returning "false" indicates "no operation" and all results will be ignored.
 		return target.inView || inMask !== null;
