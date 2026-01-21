@@ -135,6 +135,12 @@ export class BaseRegion {
 
 	}
 
+	calculateDistance( boundingVolume, tile, tiles ) {
+
+		return Infinity;
+
+	}
+
 	calculateError( tile, tilesRenderer ) {
 
 		return tile.geometricError - this.errorTarget + tilesRenderer.errorTarget;

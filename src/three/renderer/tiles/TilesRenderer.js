@@ -29,8 +29,9 @@ const tempMat = /* @__PURE__ */ new Matrix4();
 const tempVector = /* @__PURE__ */ new Vector3();
 const tempVector2 = /* @__PURE__ */ new Vector2();
 const viewErrorTarget = {
-	inView: false,
-	error: Infinity,
+	inView: true,
+	error: 0,
+	distance: Infinity,
 };
 
 const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
@@ -963,17 +964,24 @@ export class TilesRenderer extends TilesRendererBase {
 		// check the plugin visibility
 		let regionInView = true;
 		let regionError = 0;
+		let regionDistance = Infinity;
 		this.invokeAllPlugins( plugin => {
+
+			viewErrorTarget.inView = true;
+			viewErrorTarget.error = 0;
+			viewErrorTarget.distance = Infinity;
 
 			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
 				// TODO: this only seems to be handling the "mask" case?
 				// Plugins can set "inView" to false in order to mask the visible tiles
 				regionInView = regionInView && viewErrorTarget.regionInView;
+				minDistance = Math.min( minDistance, viewErrorTarget.distance );
 				maxError = Math.max( maxError, viewErrorTarget.error );
 
 				if ( viewErrorTarget.inView ) {
 
+					regionDistance = Math.min( regionDistance, viewErrorTarget.distance );
 					regionError = Math.max( regionError, viewErrorTarget.error );
 
 				}
@@ -984,6 +992,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		inView = regionInView && inView;
 		inViewError = Math.max( inView, regionError );
+		inViewDistance = Math.min( inViewDistance, regionDistance );
 
 		// If the tiles are out of view then use the global distance and error calculated
 		if ( inView ) {
