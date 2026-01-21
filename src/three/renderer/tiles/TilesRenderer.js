@@ -29,8 +29,9 @@ const tempMat = /* @__PURE__ */ new Matrix4();
 const tempVector = /* @__PURE__ */ new Vector3();
 const tempVector2 = /* @__PURE__ */ new Vector2();
 const viewErrorTarget = {
-	inView: false,
-	error: Infinity,
+	inView: true,
+	error: 0,
+	distance: Infinity,
 };
 
 const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
@@ -917,10 +918,10 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
-		let inViewError = - Infinity;
+		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = - Infinity;
-		let minDistance = Infinity;
+		let maxCameraError = 0;
+		let minCameraDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -955,23 +956,60 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			maxError = Math.max( maxError, error );
-			minDistance = Math.min( minDistance, distance );
+			maxCameraError = Math.max( maxCameraError, error );
+			minCameraDistance = Math.min( minCameraDistance, distance );
 
 		}
 
-		// check the plugin visibility
+		if ( inView ) {
+
+			// write the in-camera error and distance parameters
+			target.inView = true;
+			target.error = inViewError;
+			target.distanceFromCamera = inViewDistance;
+
+		} else {
+
+			// otherwise write variables for load priority
+			target.inView = false;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
+
+		}
+
+		//
+
+		// TODO: this logic is extremely complex. It may be more simple to have the plugin
+		// return a "should mask" field that indicates its "false" values should be respected
+		// rather than the function returning a "no-op" boolean.
+		// check the plugin visibility - each plugin will mask between themselves
+		let inRegion = null;
+		let inRegionError = 0;
+		let inRegionDistance = Infinity;
 		this.invokeAllPlugins( plugin => {
 
-			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
+			if ( plugin !== this && plugin.calculateTileViewError ) {
 
-				// Tile shall be traversed if inView for at least one plugin.
-				inView = inView && viewErrorTarget.inView;
-				maxError = Math.max( maxError, viewErrorTarget.error );
+				// if function returns false it means "no operation"
+				viewErrorTarget.inView = true;
+				viewErrorTarget.error = 0;
+				viewErrorTarget.distance = Infinity;
+				if ( plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
-				if ( viewErrorTarget.inView ) {
+					if ( inRegion === null ) {
 
-					inViewError = Math.max( inViewError, viewErrorTarget.error );
+						inRegion = true;
+
+					}
+
+					// Plugins can set "inView" to false in order to mask the visible tiles
+					inRegion = inRegion && viewErrorTarget.inView;
+					if ( viewErrorTarget.inView ) {
+
+						inRegionDistance = Math.min( inRegionDistance, viewErrorTarget.distance );
+						inRegionError = Math.max( inRegionError, viewErrorTarget.error );
+
+					}
 
 				}
 
@@ -979,18 +1017,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} );
 
-		// If the tiles are out of view then use the global distance and error calculated
-		if ( inView ) {
+		if ( target.inView && inRegion !== false ) {
 
+			// if the tile is in camera view and we haven't encountered a region (null) or
+			// the region is in view (true). regionInView === false means the tile is masked out.
+			target.error = Math.max( target.error, inRegionError );
+			target.distanceFromCamera = Math.min( target.distanceFromCamera, inRegionDistance );
+
+		} else if ( inRegion ) {
+
+			// if the tile is in a region then display it
 			target.inView = true;
-			target.error = inViewError;
-			target.distanceFromCamera = inViewDistance;
+			target.error = inRegionError;
+			target.distanceFromCamera = inRegionDistance;
 
 		} else {
 
-			target.inView = viewErrorTarget.inView;
-			target.error = maxError;
-			target.distanceFromCamera = minDistance;
+			// otherwise write variables for load priority
+			target.inView = false;
 
 		}
 
