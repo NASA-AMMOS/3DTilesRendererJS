@@ -6,6 +6,8 @@ const _vecY = /* @__PURE__ */ new Vector3();
 const _vecZ = /* @__PURE__ */ new Vector3();
 const _scale = /* @__PURE__ */ new Vector3();
 const _empty = /* @__PURE__ */ new Vector3();
+const _min = /* @__PURE__ */ new Vector3();
+const _max = /* @__PURE__ */ new Vector3();
 
 export class TileBoundingVolume {
 
@@ -69,7 +71,7 @@ export class TileBoundingVolume {
 		// create the oriented frame that the box exists in
 		// Note that Babylon seems to take data in column major ordering rather than row-major like three.js
 		// (despite the docs seeming to imply that it's row major) so we transpose afterward
-		obb.transform = Matrix
+		const obbTransform = Matrix
 			.FromValues(
 				_vecX.x, _vecY.x, _vecZ.x, data[ 0 ],
 				_vecX.y, _vecY.y, _vecZ.y, data[ 1 ],
@@ -79,10 +81,11 @@ export class TileBoundingVolume {
 			.transpose()
 			.multiply( transform );
 
-		// scale the box by the extents
-		obb.min.set( - scaleX, - scaleY, - scaleZ );
-		obb.max.set( scaleX, scaleY, scaleZ );
-		obb.update();
+		// Set up the OBB using Babylon's BoundingBox with the world matrix
+		_min.set( - scaleX, - scaleY, - scaleZ );
+		_max.set( scaleX, scaleY, scaleZ );
+		obb.setFromMinMax( _min, _max, obbTransform );
+
 		this.obb = obb;
 
 	}
@@ -105,20 +108,6 @@ export class TileBoundingVolume {
 
 			obbDistance = obb.distanceToPoint( point );
 
-		}
-
-		// DEBUG: log suspicious distances
-		if ( ! TileBoundingVolume._distLogCount ) TileBoundingVolume._distLogCount = 0;
-		const result = sphereDistance > obbDistance ? sphereDistance : obbDistance;
-		if ( result < 0.001 && TileBoundingVolume._distLogCount++ % 200 === 0 ) {
-			console.log( 'Near-zero distance debug:', {
-				point: point.toString(),
-				sphereCenter: sphere ? sphere.centerWorld.toString() : 'none',
-				sphereRadius: sphere ? sphere.radiusWorld : 'none', 
-				sphereDistance,
-				obbDistance,
-				result,
-			} );
 		}
 
 		// return the further distance of the two volumes

@@ -89,28 +89,10 @@ tiles.errorTarget = params.errorTarget;
 //tiles.group.position.set( 0, - 6370877.772522855 - 150, 20246.934953993885 );
 
 // Babylon render loop
-let frameCount = 0;
 scene.onBeforeRenderObservable.add( () => {
 
 	// Dynamically adjust clip planes based on camera altitude
 	updateCameraClipPlanes( camera );
-
-	// Debug: log camera position every 60 frames
-	if ( frameCount ++ % 60 === 0 ) {
-
-		console.log( 'camera.globalPosition:', camera.globalPosition?.toString() );
-		console.log( 'camera.position:', camera.position?.toString() );
-		console.log( 'camera.radius:', camera.radius );
-		console.log( 'camera.center:', camera.center?.toString() );
-		console.log( 'tiles.group position:', tiles.group.position?.toString() );
-		console.log( 'visibleTiles:', tiles.visibleTiles.size, 'activeTiles:', tiles.activeTiles.size );
-		if ( tiles.root ) {
-
-			console.log( 'root tile geometricError:', tiles.root.geometricError );
-		
-		}
-
-	}
 
 	if ( params.enabled ) {
 
