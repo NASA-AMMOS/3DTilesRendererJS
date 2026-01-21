@@ -63,7 +63,7 @@ export class LoadRegionPlugin {
 		// "maxError" is the maximum error from the shapes.
 		let inShape = false;
 		let inMask = null;
-		let maxError = - Infinity;
+		let maxError = 0;
 		for ( const region of regions ) {
 
 			// TODO: we should only set the error if it is "intersected".
@@ -72,7 +72,12 @@ export class LoadRegionPlugin {
 			// view and error values.
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			inShape = inShape || intersects;
-			maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+
+			if ( intersects ) {
+
+				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+
+			}
 
 			// Store whether the tile is in a "mask" shape if they exist. If "inMask" is
 			// still "null" by the end of the loop then there are no mask elements.

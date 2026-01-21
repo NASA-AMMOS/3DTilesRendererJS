@@ -961,24 +961,29 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// check the plugin visibility
+		let regionInView = true;
+		let regionError = 0;
 		this.invokeAllPlugins( plugin => {
 
 			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
 				// TODO: this only seems to be handling the "mask" case?
 				// Plugins can set "inView" to false in order to mask the visible tiles
-				inView = inView && viewErrorTarget.inView;
+				regionInView = regionInView && viewErrorTarget.regionInView;
 				maxError = Math.max( maxError, viewErrorTarget.error );
 
 				if ( viewErrorTarget.inView ) {
 
-					inViewError = Math.max( inViewError, viewErrorTarget.error );
+					regionError = Math.max( regionError, viewErrorTarget.error );
 
 				}
 
 			}
 
 		} );
+
+		inView = regionInView && inView;
+		inViewError = Math.max( inView, regionError );
 
 		// If the tiles are out of view then use the global distance and error calculated
 		if ( inView ) {
