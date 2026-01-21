@@ -779,6 +779,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO: call this "disposeTileModel"?
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
@@ -841,12 +842,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			this.dispatchEvent( {
-				type: 'dispose-model',
-				scene: engineData.scene,
-				tile,
-			} );
-
 			engineData.scene = null;
 			engineData.materials = null;
 			engineData.textures = null;
@@ -882,13 +877,6 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		super.setTileVisible( tile, visible );
-
-		this.dispatchEvent( {
-			type: 'tile-visibility-change',
-			scene,
-			tile,
-			visible,
-		} );
 
 	}
 

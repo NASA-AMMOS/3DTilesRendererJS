@@ -751,6 +751,17 @@ export class TilesRendererBase {
 
 		}
 
+		const { scene } = tile.engineData;
+		if ( scene ) {
+
+			this.dispatchEvent( {
+				type: 'dispose-model',
+				scene,
+				tile,
+			} );
+
+		}
+
 	}
 
 	preprocessNode( tile, tilesetDir, parentTile = null ) {
@@ -894,6 +905,14 @@ export class TilesRendererBase {
 	setTileVisible( tile, visible ) {
 
 		visible ? this.visibleTiles.add( tile ) : this.visibleTiles.delete( tile );
+
+		this.dispatchEvent( {
+			type: 'tile-visibility-change',
+			scene: tile.engineData.scene,
+			tile,
+			visible,
+		} );
+
 
 	}
 
