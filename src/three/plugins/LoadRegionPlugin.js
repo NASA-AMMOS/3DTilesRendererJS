@@ -57,10 +57,16 @@ export class LoadRegionPlugin {
 		const boundingVolume = tile.engineData.boundingVolume;
 		const { regions, tiles } = this;
 
+		// "inShape" indicates whether the tile intersects the given shape.
+		// "inMask" indicates whether the tile is _within_ a mask if boolean, if
+		// null then it is ignored.
+		// "maxError" is the maximum error from the shapes.
 		let inShape = false;
 		let inMask = null;
 		let maxError = - Infinity;
 		for ( const region of regions ) {
+
+			// TODO: we should only set the error if it is "intersected".
 
 			// Check if the tile is intersecting the shape and calculate the
 			// view and error values.
@@ -118,7 +124,11 @@ export class BaseRegion {
 
 	}
 
-	intersectsTile() {}
+	intersectsTile( boundingVolume, tile, tiles ) {
+
+		return false;
+
+	}
 
 	calculateError( tile, tilesRenderer ) {
 

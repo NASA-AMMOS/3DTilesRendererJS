@@ -917,9 +917,9 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
-		let inViewError = - Infinity;
+		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = - Infinity;
+		let maxError = 0;
 		let minDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
@@ -965,7 +965,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
 
-				// Tile shall be traversed if inView for at least one plugin.
+				// TODO: this only seems to be handling the "mask" case?
+				// Plugins can set "inView" to false in order to mask the visible tiles
 				inView = inView && viewErrorTarget.inView;
 				maxError = Math.max( maxError, viewErrorTarget.error );
 
@@ -988,6 +989,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		} else {
 
+			// TODO: this is only respecting the last plugin's write
 			target.inView = viewErrorTarget.inView;
 			target.error = maxError;
 			target.distanceFromCamera = minDistance;
