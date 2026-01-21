@@ -175,7 +175,7 @@ function updateThreeStats() {
 	writeStats( threeStats, 'load start', loadStart.toFixed( 0 ) + ' ms' );
 	writeStats( threeStats, 'load end', ( loadDelta < 0 ? '--' : loadEnd.toFixed( 0 ) + ' ms' ) );
 	writeStats( threeStats, 'load delta', ( loadDelta < 0 ? '--' : loadDelta.toFixed( 0 ) + ' ms' ) );
-	writeStats( threeStats, 'load load time', threeViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
+	writeStats( threeStats, 'total load time', threeViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
 
 }
 
@@ -235,7 +235,7 @@ function updateCesiumStats() {
 	writeStats( cesiumStats, 'load start', loadStart.toFixed( 0 ) + ' ms' );
 	writeStats( cesiumStats, 'load end', ( loadDelta < 0 ? '--' : loadEnd.toFixed( 0 ) + ' ms' ) );
 	writeStats( cesiumStats, 'load delta', ( loadDelta < 0 ? '--' : loadDelta.toFixed( 0 ) + ' ms' ) );
-	writeStats( cesiumStats, 'load load time', cesiumViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
+	writeStats( cesiumStats, 'total load time', cesiumViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
 
 }
 
