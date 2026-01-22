@@ -127,7 +127,7 @@ export class TileBoundingVolume {
 
 	}
 
-	intersectsFrustum( frustumPlanes, cameraPosition ) {
+	intersectsFrustum( frustumPlanes ) {
 
 		const { sphereInfo, obb } = this;
 
@@ -138,7 +138,7 @@ export class TileBoundingVolume {
 
 		}
 
-		if ( obb && ! obb.intersectsFrustum( frustumPlanes, cameraPosition ) ) {
+		if ( obb && ! obb.intersectsFrustum( frustumPlanes ) ) {
 
 			return false;
 

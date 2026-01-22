@@ -105,10 +105,9 @@ export class OBB {
 	 * Check if this OBB intersects the frustum.
 	 * Uses Babylon's built-in frustum check which respects large world mode.
 	 * @param {Plane[]} frustumPlanes - Array of 6 frustum planes
-	 * @param {Vector3} cameraPosition - Camera position (unused, kept for API compatibility)
 	 * @returns {boolean}
 	 */
-	intersectsFrustum( frustumPlanes, cameraPosition ) {
+	intersectsFrustum( frustumPlanes ) {
 
 		if ( ! this.boundingInfo ) return true;
 
