@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Export FeatureTable, BatchTable classes.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
 - XYZImageFormat: add "projection" option and ability to set tile settings per-level.
+- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
@@ -21,6 +23,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
 - Renamed the "cached" tile subfield to "engineData".
 - Moved a number of tile fields into "traversal" and "internal" subfields on "tile" object.
+- ImplicitTilingPlugin: Moved implicit tiling fields onto a new "implicitTilingData" object.
+- DebugTilesPlugin: Replaced "getTileInformationFromActiveObject" function with "getTileFromObject3D".
+- DebugTilesPlugin: Add transparent mesh to box helper visualization.
+- TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
+- Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
+- TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
 
 ### Fixed
 - Fix mouse offset in Controls.

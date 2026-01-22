@@ -1,4 +1,4 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
 import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
 import { TraversalUtils } from '3d-tiles-renderer/core';
@@ -110,6 +110,8 @@ export class DebugTilesPlugin {
 
 		if ( v !== this._enabled && this.tiles !== null ) {
 
+			this._enabled = v;
+
 			if ( v ) {
 
 				this.init( this.tiles );
@@ -122,7 +124,6 @@ export class DebugTilesPlugin {
 
 		}
 
-		this._enabled = v;
 
 	}
 
@@ -267,7 +268,7 @@ export class DebugTilesPlugin {
 
 		this._onUpdateAfterCB = () => {
 
-			this._onUpdateAfter();
+			this.update();
 
 		};
 
@@ -304,15 +305,15 @@ export class DebugTilesPlugin {
 
 	}
 
-	getTileInformationFromActiveObject( object ) {
+	getTileFromObject3D( object ) {
 
 		// Find which tile this scene is associated with. This is slow and
 		// intended for debug purposes only.
-		let targetTile = null;
+		let result = null;
 		const activeTiles = this.tiles.activeTiles;
 		activeTiles.forEach( tile => {
 
-			if ( targetTile ) {
+			if ( result ) {
 
 				return true;
 
@@ -325,7 +326,7 @@ export class DebugTilesPlugin {
 
 					if ( c === object ) {
 
-						targetTile = tile;
+						result = tile;
 
 					}
 
@@ -335,23 +336,7 @@ export class DebugTilesPlugin {
 
 		} );
 
-		if ( targetTile ) {
-
-			return {
-
-				distanceToCamera: targetTile.traversal.distanceFromCamera,
-				geometricError: targetTile.geometricError,
-				screenSpaceError: targetTile.traversal.error,
-				depth: targetTile.internal.depth,
-				isLeaf: targetTile.traversal.isLeaf
-
-			};
-
-		} else {
-
-			return null;
-
-		}
+		return result;
 
 	}
 
@@ -381,7 +366,7 @@ export class DebugTilesPlugin {
 
 	}
 
-	_onUpdateAfter() {
+	update() {
 
 		const { tiles, colorMode } = this;
 
@@ -673,12 +658,23 @@ export class DebugTilesPlugin {
 			boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
+			engineData.boxHelperGroup = boxHelperGroup;
 
 			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			engineData.boxHelperGroup = boxHelperGroup;
+			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			obb.box.getSize( mesh.scale );
+			mesh.raycast = emptyRaycast;
+			boxHelperGroup.add( mesh );
+
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -732,25 +728,36 @@ export class DebugTilesPlugin {
 
 	}
 
-	_updateHelperMaterial( tile, material ) {
+	_updateHelperMaterials( tile, group ) {
 
-		if ( tile.traversal.visible || ! this.displayParentBounds ) {
+		group.traverse( c => {
 
-			material.opacity = 1;
+			const { material } = c;
+			if ( ! material ) {
 
-		} else {
+				return;
 
-			material.opacity = 0.2;
+			}
 
-		}
+			if ( tile.traversal.visible || ! this.displayParentBounds ) {
 
-		const transparent = material.transparent;
-		material.transparent = material.opacity < 1;
-		if ( material.transparent !== transparent ) {
+				material.opacity = c.isMesh ? 0.05 : 1;
 
-			material.needsUpdate = true;
+			} else {
 
-		}
+				material.opacity = c.isMesh ? 0.01 : 0.2;
+
+			}
+
+			const transparent = material.transparent;
+			material.transparent = material.opacity < 1;
+			if ( material.transparent !== transparent ) {
+
+				material.needsUpdate = true;
+
+			}
+
+		} );
 
 	}
 
@@ -806,7 +813,7 @@ export class DebugTilesPlugin {
 				boxGroup.add( boxHelperGroup );
 				boxHelperGroup.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, boxHelperGroup.children[ 0 ].material );
+				this._updateHelperMaterials( tile, boxHelperGroup );
 
 			}
 
@@ -815,7 +822,7 @@ export class DebugTilesPlugin {
 				sphereGroup.add( sphereHelper );
 				sphereHelper.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, sphereHelper.material );
+				this._updateHelperMaterials( tile, sphereHelper );
 
 			}
 
@@ -824,7 +831,7 @@ export class DebugTilesPlugin {
 				regionGroup.add( regionHelper );
 				regionHelper.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, regionHelper.material );
+				this._updateHelperMaterials( tile, regionHelper );
 
 			}
 

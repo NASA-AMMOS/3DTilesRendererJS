@@ -59,7 +59,7 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.allUsedChildrenProcessed = false;
 
 		// update tile frustum and error state
-		renderer.calculateTileViewError( tile, viewErrorTarget );
+		renderer.calculateTileViewErrorWithPlugin( tile, viewErrorTarget );
 		tile.traversal.inFrustum = viewErrorTarget.inView;
 		tile.traversal.error = viewErrorTarget.error;
 		tile.traversal.distanceFromCamera = viewErrorTarget.distanceFromCamera;
@@ -241,6 +241,8 @@ function markUsedTiles( tile, renderer ) {
 	if ( tile.refine === 'REPLACE' && ! anyChildrenInFrustum && children.length !== 0 ) {
 
 		tile.traversal.inFrustum = false;
+
+		renderer.markTileUsed( tile );
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			recursivelyMarkUsed( children[ i ], renderer, true );

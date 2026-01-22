@@ -28,10 +28,6 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = /* @__PURE__ */ new Matrix4();
 const tempVector = /* @__PURE__ */ new Vector3();
 const tempVector2 = /* @__PURE__ */ new Vector2();
-const viewErrorTarget = {
-	inView: false,
-	error: Infinity,
-};
 
 const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
 const Y_AXIS = /* @__PURE__ */ new Vector3( 0, 1, 0 );
@@ -391,39 +387,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	update() {
-
-		// check if the plugins that can block the tile updates require it
-		let needsUpdate = null;
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin.doTilesNeedUpdate ) {
-
-				const res = plugin.doTilesNeedUpdate();
-				if ( needsUpdate === null ) {
-
-					needsUpdate = res;
-
-				} else {
-
-					needsUpdate = Boolean( needsUpdate || res );
-
-				}
-
-			}
-
-		} );
-
-		if ( needsUpdate === false ) {
-
-			this.dispatchEvent( { type: 'update-before' } );
-			this.dispatchEvent( { type: 'update-after' } );
-			return;
-
-		}
-
-		// follow through with the update
-		this.dispatchEvent( { type: 'update-before' } );
+	prepareForTraversal() {
 
 		const group = this.group;
 		const cameras = this.cameras;
@@ -511,12 +475,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+	}
+
+	update() {
+
 		super.update();
 
-		this.dispatchEvent( { type: 'update-after' } );
-
 		// check for cameras _after_ base update so we can enable pre-loading the root tileset
-		if ( cameras.length === 0 && this.root ) {
+		if ( this.cameras.length === 0 && this.root ) {
 
 			let found = false;
 			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
@@ -813,6 +779,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	disposeTile( tile ) {
 
+		// TODO: call this "disposeTileModel"?
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
@@ -875,12 +842,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			this.dispatchEvent( {
-				type: 'dispose-model',
-				scene: engineData.scene,
-				tile,
-			} );
-
 			engineData.scene = null;
 			engineData.materials = null;
 			engineData.textures = null;
@@ -917,13 +878,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.setTileVisible( tile, visible );
 
-		this.dispatchEvent( {
-			type: 'tile-visibility-change',
-			scene,
-			tile,
-			visible,
-		} );
-
 	}
 
 	calculateBytesUsed( tile, scene ) {
@@ -947,10 +901,10 @@ export class TilesRenderer extends TilesRendererBase {
 		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
-		let inViewError = - Infinity;
+		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = - Infinity;
-		let minDistance = Infinity;
+		let maxCameraError = 0;
+		let minCameraDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -985,42 +939,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			maxError = Math.max( maxError, error );
-			minDistance = Math.min( minDistance, distance );
+			maxCameraError = Math.max( maxCameraError, error );
+			minCameraDistance = Math.min( minCameraDistance, distance );
 
 		}
 
-		// check the plugin visibility
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
-
-				// Tile shall be traversed if inView for at least one plugin.
-				inView = inView && viewErrorTarget.inView;
-				maxError = Math.max( maxError, viewErrorTarget.error );
-
-				if ( viewErrorTarget.inView ) {
-
-					inViewError = Math.max( inViewError, viewErrorTarget.error );
-
-				}
-
-			}
-
-		} );
-
-		// If the tiles are out of view then use the global distance and error calculated
 		if ( inView ) {
 
+			// write the in-camera error and distance parameters
 			target.inView = true;
 			target.error = inViewError;
 			target.distanceFromCamera = inViewDistance;
 
 		} else {
 
-			target.inView = viewErrorTarget.inView;
-			target.error = maxError;
-			target.distanceFromCamera = minDistance;
+			// otherwise write variables for load priority
+			target.inView = false;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
 
 		}
 
