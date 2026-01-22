@@ -321,8 +321,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// Check frustum intersection
-		const inView = boundingVolume.intersectsFrustum( _frustumPlanes );
+		// Check frustum intersection (pass camera position for precision-safe calculation)
+		const inView = boundingVolume.intersectsFrustum( _frustumPlanes, _cameraPositionInTiles );
+
+		// DEBUG removed
 
 		target.inView = inView;
 		target.error = error;

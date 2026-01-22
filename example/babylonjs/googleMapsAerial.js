@@ -49,31 +49,24 @@ camera.attachControl( true );
 camera.minZ = 1;
 camera.maxZ = 1e7;
 
-// Start at ~1000m altitude above surface
-camera.radius = 1000;
+// Start farther out, then fly in once tiles are loaded
+camera.radius = 50000;
+
 // Set center to Tokyo Tower location (ECEF coordinates)
-camera.center = new Vector3( 0, - 6370877.772522855 - 150, 20246.934953993885 );
+// Tokyo Tower: 35.6586° N, 139.7454° E
+camera.center = new Vector3( - 3959611.825621192, 3352599.0363458656, 3697549.0362687325 );
+camera.pitch = 1.167625429373872;
+camera.yaw = - 0.2513281792775774;
+
 camera.checkCollisions = true;
 scene.collisionsEnabled = true;
-camera.limits.radiusMin = 10; // minimum 10m above surface
+camera.limits.radiusMin = 10;
 camera.limits.pitchMax = Math.PI / 2 - .02;
 camera.limits.pitchMin = 0;
 camera.movement.zoomSpeed = 2;
 
-
-// const camera = new ArcRotateCamera(
-// 	'camera',
-// 	- Math.PI / 2,
-// 	Math.PI / 3,
-// 	100000,
-// 	new Vector3( 0, 0, 0 ),
-// 	scene,
-// );
-// camera.attachControl( canvas, true );
-// camera.minZ = 1;
-// camera.maxZ = 1e7;
-// camera.wheelPrecision = 0.25;
-// camera.setPosition( new Vector3( 500, 300, - 500 ) );
+// Fly to close view once tiles load
+let hasZoomedIn = false;
 
 // tiles
 const tiles = new TilesRenderer( null, scene );
@@ -83,10 +76,6 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 	autoRefreshToken: true,
 } ) );
 tiles.errorTarget = params.errorTarget;
-
-// // position so Tokyo Tower is visible
-// tiles.group.rotation.set( - 0.6223599766516501, 8.326672684688674e-17, - 0.8682210177215869 );
-//tiles.group.position.set( 0, - 6370877.772522855 - 150, 20246.934953993885 );
 
 // Babylon render loop
 scene.onBeforeRenderObservable.add( () => {
@@ -99,6 +88,15 @@ scene.onBeforeRenderObservable.add( () => {
 		tiles.errorTarget = params.errorTarget;
 		tiles.update();
 		params.visibleTiles = tiles.visibleTiles.size;
+
+
+		// Once we have some tiles visible, fly in to target
+		if ( ! hasZoomedIn && tiles.visibleTiles.size > 5 ) {
+
+			hasZoomedIn = true;
+			camera.flyToAsync( undefined, undefined, 300, undefined, 2000 );
+
+		}
 
 	}
 

@@ -1,32 +1,23 @@
-import { Vector3, BoundingBox, Matrix } from '@babylonjs/core';
+import { Vector3, BoundingInfo, Matrix } from '@babylonjs/core';
 
-// Scratch vectors for precision-safe distance calculation
-const _toPoint = /* @__PURE__ */ new Vector3();
-const _closestOnBox = /* @__PURE__ */ new Vector3();
-const _axisX = /* @__PURE__ */ new Vector3();
-const _axisY = /* @__PURE__ */ new Vector3();
-const _axisZ = /* @__PURE__ */ new Vector3();
-const _tempVec = /* @__PURE__ */ new Vector3();
+const _min = /* @__PURE__ */ new Vector3();
+const _max = /* @__PURE__ */ new Vector3();
 
 /**
- * Oriented Bounding Box with precision-safe distance calculation.
- * Stores OBB data directly rather than relying on Babylon's BoundingBox,
- * which stores AABB extents rather than OBB extents.
+ * Oriented Bounding Box using Babylon.js BoundingInfo.
+ * With useLargeWorldRendering enabled, Babylon uses double precision
+ * internally for all coordinate calculations.
  */
 export class OBB {
 
 	constructor() {
 
-		// Store OBB properties directly for correct calculations
-		this.center = new Vector3();
-		this.halfExtents = new Vector3( 1, 1, 1 );
-		this.axes = [
-			new Vector3( 1, 0, 0 ),
-			new Vector3( 0, 1, 0 ),
-			new Vector3( 0, 0, 1 ),
-		];
-		// Corner points for frustum checks
-		this._points = new Array( 8 ).fill( null ).map( () => new Vector3() );
+		// BoundingInfo provides both bounding box and bounding sphere
+		this.boundingInfo = null;
+
+		// Store the world matrix for distance calculations
+		this._worldMatrix = Matrix.Identity();
+		this._worldMatrixInverse = Matrix.Identity();
 
 	}
 
@@ -38,58 +29,23 @@ export class OBB {
 	 */
 	setFromMinMax( min, max, worldMatrix ) {
 
-		// Compute local center and half-extents
-		const localCenterX = ( min.x + max.x ) * 0.5;
-		const localCenterY = ( min.y + max.y ) * 0.5;
-		const localCenterZ = ( min.z + max.z ) * 0.5;
+		// Store the world matrix
+		this._worldMatrix.copyFrom( worldMatrix );
+		worldMatrix.invertToRef( this._worldMatrixInverse );
 
-		this.halfExtents.set(
-			( max.x - min.x ) * 0.5,
-			( max.y - min.y ) * 0.5,
-			( max.z - min.z ) * 0.5
-		);
-
-		// Transform center to world space
-		_tempVec.set( localCenterX, localCenterY, localCenterZ );
-		Vector3.TransformCoordinatesToRef( _tempVec, worldMatrix, this.center );
-
-		// Extract axes from the matrix (columns 0, 1, 2)
-		const m = worldMatrix.m;
-		this.axes[ 0 ].set( m[ 0 ], m[ 1 ], m[ 2 ] );
-		this.axes[ 1 ].set( m[ 4 ], m[ 5 ], m[ 6 ] );
-		this.axes[ 2 ].set( m[ 8 ], m[ 9 ], m[ 10 ] );
-
-		// Compute the 8 corner points in world space for frustum checks
-		this._updateCornerPoints();
+		// Create BoundingInfo with the world matrix - Babylon handles the transform
+		this.boundingInfo = new BoundingInfo( min, max, worldMatrix );
 
 	}
 
 	/**
-	 * Update the 8 corner points based on center, halfExtents, and axes
+	 * Get the center of the OBB in world space
+	 * @returns {Vector3}
 	 */
-	_updateCornerPoints() {
+	get center() {
 
-		const { center, halfExtents, axes, _points } = this;
-
-		let index = 0;
-		for ( let x = - 1; x <= 1; x += 2 ) {
-
-			for ( let y = - 1; y <= 1; y += 2 ) {
-
-				for ( let z = - 1; z <= 1; z += 2 ) {
-
-					_points[ index ]
-						.copyFrom( center )
-						.addInPlace( axes[ 0 ].scale( x * halfExtents.x ) )
-						.addInPlace( axes[ 1 ].scale( y * halfExtents.y ) )
-						.addInPlace( axes[ 2 ].scale( z * halfExtents.z ) );
-					index ++;
-
-				}
-
-			}
-
-		}
+		if ( ! this.boundingInfo ) return Vector3.Zero();
+		return this.boundingInfo.boundingBox.centerWorld;
 
 	}
 
@@ -99,73 +55,66 @@ export class OBB {
 	 */
 	get points() {
 
-		return this._points;
+		if ( ! this.boundingInfo ) return [];
+		return this.boundingInfo.boundingBox.vectorsWorld;
 
 	}
 
 	/**
-	 * Precision-safe distance calculation from a point to this OBB.
-	 * Uses axis projections instead of matrix transforms to avoid floating-point
-	 * precision loss with large ECEF coordinates.
+	 * Calculate distance from a point to this OBB.
+	 * Uses Babylon's internal calculations which respect large world mode.
 	 * @param {Vector3} point - The point to measure distance from
 	 * @returns {number} Distance from point to closest point on OBB surface (0 if inside)
 	 */
 	distanceToPoint( point ) {
 
-		const { center, halfExtents, axes } = this;
+		if ( ! this.boundingInfo ) return Infinity;
 
-		// Compute vector from OBB center to the point
-		// This subtraction keeps values small even with large ECEF coordinates
-		_toPoint.copyFrom( point ).subtractInPlace( center );
+		const bb = this.boundingInfo.boundingBox;
 
-		// Normalize axes for projection (they may have scale baked in)
-		const len0 = axes[ 0 ].length();
-		const len1 = axes[ 1 ].length();
-		const len2 = axes[ 2 ].length();
+		// Transform point to local space of the OBB
+		Vector3.TransformCoordinatesToRef( point, this._worldMatrixInverse, _min );
 
-		_axisX.copyFrom( axes[ 0 ] );
-		_axisY.copyFrom( axes[ 1 ] );
-		_axisZ.copyFrom( axes[ 2 ] );
-		if ( len0 > 0 ) _axisX.scaleInPlace( 1 / len0 );
-		if ( len1 > 0 ) _axisY.scaleInPlace( 1 / len1 );
-		if ( len2 > 0 ) _axisZ.scaleInPlace( 1 / len2 );
+		// In local space, the box is axis-aligned from bb.minimum to bb.maximum
+		const localMin = bb.minimum;
+		const localMax = bb.maximum;
 
-		// Project point-to-center vector onto each axis
-		let projX = Vector3.Dot( _toPoint, _axisX );
-		let projY = Vector3.Dot( _toPoint, _axisY );
-		let projZ = Vector3.Dot( _toPoint, _axisZ );
+		// Clamp point to box in local space
+		_max.set(
+			Math.max( localMin.x, Math.min( localMax.x, _min.x ) ),
+			Math.max( localMin.y, Math.min( localMax.y, _min.y ) ),
+			Math.max( localMin.z, Math.min( localMax.z, _min.z ) )
+		);
 
-		// Half-extents scaled by axis lengths
-		const extentX = halfExtents.x * len0;
-		const extentY = halfExtents.y * len1;
-		const extentZ = halfExtents.z * len2;
+		// Distance in local space
+		const localDist = Vector3.Distance( _min, _max );
 
-		// Clamp projections to box extents
-		projX = Math.max( - extentX, Math.min( extentX, projX ) );
-		projY = Math.max( - extentY, Math.min( extentY, projY ) );
-		projZ = Math.max( - extentZ, Math.min( extentZ, projZ ) );
+		// For OBB, we need to account for any scale in the world matrix
+		// Get the average scale factor
+		const m = this._worldMatrix.m;
+		const scaleX = Math.sqrt( m[ 0 ] * m[ 0 ] + m[ 1 ] * m[ 1 ] + m[ 2 ] * m[ 2 ] );
+		const scaleY = Math.sqrt( m[ 4 ] * m[ 4 ] + m[ 5 ] * m[ 5 ] + m[ 6 ] * m[ 6 ] );
+		const scaleZ = Math.sqrt( m[ 8 ] * m[ 8 ] + m[ 9 ] * m[ 9 ] + m[ 10 ] * m[ 10 ] );
+		const avgScale = ( scaleX + scaleY + scaleZ ) / 3;
 
-		// Build closest point on box surface (relative to center)
-		_closestOnBox.copyFrom( _axisX ).scaleInPlace( projX );
-		_tempVec.copyFrom( _axisY ).scaleInPlace( projY );
-		_closestOnBox.addInPlace( _tempVec );
-		_tempVec.copyFrom( _axisZ ).scaleInPlace( projZ );
-		_closestOnBox.addInPlace( _tempVec );
-
-		// Distance is from closest point to the original toPoint vector
-		return Vector3.Distance( _closestOnBox, _toPoint );
+		return localDist * avgScale;
 
 	}
 
 	/**
-	 * Check if this OBB intersects the given frustum planes
+	 * Check if this OBB intersects the frustum.
+	 * Uses Babylon's built-in frustum check which respects large world mode.
 	 * @param {Plane[]} frustumPlanes - Array of 6 frustum planes
+	 * @param {Vector3} cameraPosition - Camera position (unused, kept for API compatibility)
 	 * @returns {boolean}
 	 */
-	intersectsFrustum( frustumPlanes ) {
+	intersectsFrustum( frustumPlanes, cameraPosition ) {
 
-		// Use Babylon's built-in frustum check with world-space corner points
-		return BoundingBox.IsInFrustum( this._points, frustumPlanes );
+		if ( ! this.boundingInfo ) return true;
+
+		// Use Babylon's built-in frustum check
+		// This respects useLargeWorldRendering and uses double precision
+		return this.boundingInfo.isInFrustum( frustumPlanes );
 
 	}
 
