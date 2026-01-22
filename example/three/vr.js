@@ -248,7 +248,7 @@ function handleCamera() {
 
 			xrSession = null;
 
-			tiles.removeXRSession();
+			tiles.setXRSession( null );
 
 		}
 

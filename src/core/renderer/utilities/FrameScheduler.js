@@ -15,17 +15,6 @@ class FrameScheduler {
 	setXRSession( xrsession ) {
 
 		this.xrsession = xrsession;
-
-		this.flushPending();
-
-	}
-
-	// Remove XR session (exit)
-	// To be called when exiting XR
-	removeXRSession() {
-
-		this.xrsession = null;
-
 		this.flushPending();
 
 	}
@@ -33,87 +22,56 @@ class FrameScheduler {
 	// Request animation frame (defer to XR session if active)
 	requestAnimationFrame( cb ) {
 
+		const { xrsession, pending } = this;
 		let handle;
 
-		// Standard AF
-		if ( ! this.xrsession ) {
+		const func = () => {
 
-			handle = window.requestAnimationFrame( ()=>{
+			pending.delete( handle );
+			cb();
 
-				this.pending.delete( handle );
+		};
 
-				cb();
+		if ( ! xrsession ) {
 
-			} );
+			handle = requestAnimationFrame( func );
 
-			this.pending.set( handle, cb );
+		} else {
 
-			return handle;
-
-		} else { // XR session
-
-			handle = this.xrsession.requestAnimationFrame( ()=>{
-
-				this.pending.delete( handle );
-
-				cb();
-
-			} );
-
-			this.pending.set( handle, cb );
-
-			return handle;
+			handle = xrsession.requestAnimationFrame( func );
 
 		}
+
+		pending.set( handle, cb );
+
+		return handle;
 
 	}
 
 	// Cancel animation frame via handle (defer to XR session if active)
 	cancelAnimationFrame( handle ) {
 
-		this.pending.delete( handle );
+		const { pending, xrsession } = this;
+		pending.delete( handle );
 
-		if ( ! this.xrsession ) {
+		if ( ! xrsession ) {
 
-			window.cancelAnimationFrame( handle );
+			cancelAnimationFrame( handle );
 
 		} else {
 
-			this.xrsession.cancelAnimationFrame( handle );
+			xrsession.cancelAnimationFrame( handle );
 
 		}
-
-	}
-
-	// Cancel all pending AFs
-	cancelAllPending() {
-
-		this.pending.forEach( ( cb, handle )=>{
-
-			this.cancelAnimationFrame( handle );
-
-		} );
 
 	}
 
 	// Flush and complete pending AFs (defer to XR session if active)
 	flushPending() {
 
-		this.pending.forEach( ( cb, handle )=>{
+		this.pending.forEach( ( cb, handle ) => {
 
-			if ( this.xrsession ) {
-
-				this.xrsession.cancelAnimationFrame( handle );
-
-				cb();
-
-			} else {
-
-				window.cancelAnimationFrame( handle );
-
-				cb();
-
-			}
+			this.cancelAnimationFrame( handle );
 
 		} );
 

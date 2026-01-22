@@ -289,14 +289,6 @@ export class TilesRendererBase {
 
 	}
 
-	removeXRSession() {
-
-		if ( ! this.frameScheduler ) return;
-
-		this.frameScheduler.removeXRSession();
-
-	}
-
 	// Plugins
 	registerPlugin( plugin ) {
 
