@@ -44,7 +44,7 @@ export class QueryManager extends EventDispatcher {
 		// cameras for sorting
 		this.cameras = new Set();
 
-		// FrameScheduler
+		// frame scheduler
 		this.frameScheduler = new FrameScheduler();
 
 		// register to mark items as dirty
