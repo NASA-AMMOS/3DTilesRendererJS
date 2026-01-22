@@ -195,26 +195,25 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
-		// FrameScheduler referenced by LRUCache, PriorityQueue, throttle
-		this.frameScheduler = new FrameScheduler();
+		const frameScheduler = new FrameScheduler();
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
-		lruCache.frameScheduler = this.frameScheduler;
+		lruCache.frameScheduler = frameScheduler;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
 		downloadQueue.priorityCallback = defaultPriorityCallback;
-		downloadQueue.frameScheduler = this.frameScheduler;
+		downloadQueue.frameScheduler = frameScheduler;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
 		parseQueue.priorityCallback = defaultPriorityCallback;
-		parseQueue.frameScheduler = this.frameScheduler;
+		parseQueue.frameScheduler = frameScheduler;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
-		processNodeQueue.frameScheduler = this.frameScheduler;
+		processNodeQueue.frameScheduler = frameScheduler;
 		processNodeQueue.priorityCallback = ( a, b ) => {
 
 			const aParent = a.parent;
@@ -249,6 +248,7 @@ export class TilesRendererBase {
 		this.downloadQueue = downloadQueue;
 		this.parseQueue = parseQueue;
 		this.processNodeQueue = processNodeQueue;
+		this.frameScheduler = frameScheduler;
 		this.stats = {
 			inCacheSinceLoad: 0,
 			inCache: 0,
