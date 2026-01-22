@@ -7,16 +7,16 @@ const GOOGLE_TILES_ASSET_ID = 2275207;
 
 const PLANET_RADIUS = 6378137;
 
-/**
- * Dynamically adjust near/far planes based on camera altitude
- * to prevent clipping while maintaining depth precision
- */
 function updateCameraClipPlanes( camera ) {
 
-	// radius IS the altitude above surface for GeospatialCamera
 	const altitude = Math.max( 1, camera.radius );
-	const horizonDist = Math.sqrt( 2 * PLANET_RADIUS * altitude );
-	camera.maxZ = Math.max( horizonDist * 2, altitude * 10 );
+
+	// Keep minZ small to avoid frustum clipping issues when pitched
+	camera.minZ = 1;
+
+	// Far plane: see to the horizon and beyond
+	const horizonDist = Math.sqrt( 2 * PLANET_RADIUS * altitude + altitude * altitude );
+	camera.maxZ = horizonDist + PLANET_RADIUS * 0.1;
 
 }
 
@@ -41,14 +41,16 @@ engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 const scene = new Scene( engine );
 // 3D Tiles data uses right-handed coordinate system
 scene.useRightHandedSystem = true;
+// Use logarithmic depth buffer for better precision across huge distance ranges
+scene.useLogarithmicDepth = true;
 
 // camera
 const camera = new GeospatialCamera( 'geo', scene, { planetRadius: PLANET_RADIUS } );
 
 camera.attachControl( true );
 camera.minZ = 1;
-camera.maxZ = 1e7;
-
+camera.maxZ = 1e8; // Can use larger maxZ with logarithmic depth
+camera.checkCollisions = true;
 // Start farther out, then fly in once tiles are loaded
 camera.radius = 50000;
 
