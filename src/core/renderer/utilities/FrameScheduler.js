@@ -14,8 +14,14 @@ class FrameScheduler {
 	// To be called when entering XR
 	setXRSession( xrsession ) {
 
-		this.xrsession = xrsession;
-		this.flushPending();
+		// call "flush" before assigning xr session to ensure callbacks are
+		// cancelled on the previous handle
+		if ( xrsession !== this.xrsession ) {
+
+			this.flushPending();
+			this.xrsession = xrsession;
+
+		}
 
 	}
 
@@ -71,6 +77,7 @@ class FrameScheduler {
 
 		this.pending.forEach( ( cb, handle ) => {
 
+			cb();
 			this.cancelAnimationFrame( handle );
 
 		} );
