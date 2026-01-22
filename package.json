@@ -79,6 +79,7 @@
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
     "@eslint/js": "^9.0.0",
+    "@mapbox/vector-tile": "^2.0.3",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@types/node": "^24.3.0",
@@ -89,6 +90,7 @@
     "@vitest/eslint-plugin": "^1.5.1",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
+    "earcut": "^3.0.2",
     "eslint": "^9.0.0",
     "eslint-config-mdcs": "^5.0.0",
     "eslint-plugin-react": "^7.37.1",
@@ -106,7 +108,9 @@
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
-    "three": ">=0.167.0"
+    "three": ">=0.167.0",
+    "@mapbox/vector-tile": "^2.0.3",
+    "earcut": "^3.0.2"
   },
   "peerDependenciesMeta": {
     "@react-three/fiber": {
@@ -116,6 +120,12 @@
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "@mapbox/vector-tile": {
+      "optional": true
+    },
+    "earcut": {
       "optional": true
     }
   }
