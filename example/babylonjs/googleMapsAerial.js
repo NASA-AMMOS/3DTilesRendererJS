@@ -47,7 +47,6 @@ gui.add( params, 'maxZ' ).name( 'Camera MaxZ' ).listen().disable();
 // engine
 const canvas = document.getElementById( 'renderCanvas' );
 const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
-engine.useReverseDepthBuffer = true;
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // scene
@@ -91,14 +90,10 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 tiles.errorTarget = params.errorTarget;
 
 // Babylon render loop
-scene.onAfterRenderObservable.add( () => {
-
-	updateCameraClipPlanes( camera );
-
-} );
 
 scene.onBeforeRenderObservable.add( () => {
 
+	updateCameraClipPlanes( camera );
 
 	if ( params.enabled ) {
 
