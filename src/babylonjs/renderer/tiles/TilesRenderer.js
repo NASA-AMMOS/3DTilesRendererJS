@@ -299,14 +299,17 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		// calculate the frustum planes and camera position
-		// Note: if tiles.group has no transform, _worldToTiles is identity
+	// calculate the frustum planes and distances in local tile coordinates
 		this.group.getWorldMatrix().invertToRef( _worldToTiles );
 		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
-		// get frustum from camera transformation matrix
+		// get frustums in local space: note tht it seems there's no way to transform to ref in Babylon
 		Frustum.GetPlanesToRef( camera.getTransformationMatrix( true ), _frustumPlanes );
+		const frustumPlanes = _frustumPlanes.map( plane => {
 
+			return plane.transform( _worldToTiles );
+
+		} );
 		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
 
 		let error;
@@ -322,10 +325,7 @@ export class TilesRenderer extends TilesRendererBase {
 		}
 
 		// Check frustum intersection
-		const inView = boundingVolume.intersectsFrustum( _frustumPlanes );
-
-		// DEBUG removed
-
+		const inView = boundingVolume.intersectsFrustum( frustumPlanes );
 		target.inView = inView;
 		target.error = error;
 		target.distanceFromCamera = distance;
