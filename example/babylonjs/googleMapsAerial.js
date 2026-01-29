@@ -8,7 +8,6 @@ const GOOGLE_TILES_ASSET_ID = 2275207;
 
 const PLANET_RADIUS = 6378137;
 
-
 // gui
 const params = {
 	enabled: true,
