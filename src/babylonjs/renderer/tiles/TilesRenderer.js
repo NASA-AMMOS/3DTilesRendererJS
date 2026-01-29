@@ -299,7 +299,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-	// calculate the frustum planes and distances in local tile coordinates
+		// calculate the frustum planes and distances in local tile coordinates
 		this.group.getWorldMatrix().invertToRef( _worldToTiles );
 		Vector3.TransformCoordinatesToRef( camera.globalPosition, _worldToTiles, _cameraPositionInTiles );
 
@@ -310,6 +310,7 @@ export class TilesRenderer extends TilesRendererBase {
 			return plane.transform( _worldToTiles );
 
 		} );
+
 		const distance = boundingVolume.distanceToPoint( _cameraPositionInTiles );
 
 		let error;
@@ -326,6 +327,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// Check frustum intersection
 		const inView = boundingVolume.intersectsFrustum( frustumPlanes );
+
 		target.inView = inView;
 		target.error = error;
 		target.distanceFromCamera = distance;
