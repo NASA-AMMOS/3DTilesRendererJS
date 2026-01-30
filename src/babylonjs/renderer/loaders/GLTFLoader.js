@@ -29,10 +29,24 @@ export class GLTFLoader extends LoaderBase {
 
 		// load the file
 		const pluginExtension = extension === 'gltf' ? '.gltf' : '.glb';
+		let metadata = null;
 		const container = await ImportMeshAsync(
 			new File( [ buffer ], uri ),
 			scene,
-			{ pluginExtension, rootUrl }
+			{
+				pluginExtension,
+				rootUrl,
+				pluginOptions: {
+					'gltf': {
+						onParsed: ( loaderData ) => {
+
+							// loaderData.json contains the full glTF JSON
+							metadata = loaderData.json;
+
+						}
+					}
+				}
+			}
 		);
 
 		// retrieve the primary scene
@@ -49,6 +63,7 @@ export class GLTFLoader extends LoaderBase {
 		return {
 			scene: root,
 			container,
+			metadata,
 		};
 
 	}
