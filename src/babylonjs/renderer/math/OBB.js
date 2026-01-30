@@ -1,4 +1,4 @@
-import { Vector3, Matrix, BoundingBox } from 'babylonjs';
+import { Vector3, Matrix, BoundingBox } from '@babylonjs/core';
 
 const _vec = /* @__PURE__ */ new Vector3();
 export class OBB {

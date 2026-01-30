@@ -1,5 +1,5 @@
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
-import { Matrix, Vector3, Plane, TransformNode, Frustum } from 'babylonjs';
+import { TransformNode, Matrix, Vector3, Frustum, Observable, Plane } from '@babylonjs/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { GLTFLoader } from '../loaders/GLTFLoader.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
@@ -20,14 +20,48 @@ export class TilesRenderer extends TilesRendererBase {
 		this.group = new TransformNode( 'tiles-root', scene );
 		this._upRotationMatrix = Matrix.Identity();
 
+		// Babylon.js Observables for events
+		this._observables = new Map();
+
 	}
 
-	// TODO: implement these with Babylon constructs
-	addEventListener() {}
+	addEventListener( type, listener ) {
 
-	removeEventListener() {}
+		if ( ! this._observables.has( type ) ) {
 
-	dispatchEvent() {}
+			this._observables.set( type, new Observable() );
+
+		}
+
+		this._observables.get( type ).add( listener );
+
+	}
+
+	removeEventListener( type, listener ) {
+
+		if ( ! this._observables.has( type ) ) {
+
+			return;
+
+		}
+
+		const observable = this._observables.get( type );
+		observable.removeCallback( listener );
+
+	}
+
+	dispatchEvent( event ) {
+
+		if ( ! this._observables.has( event.type ) ) {
+
+			return;
+
+		}
+
+		const observable = this._observables.get( event.type );
+		observable.notifyObservers( event );
+
+	}
 
 	loadRootTileset( ...args ) {
 
@@ -136,7 +170,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
-				result = await loader.parse( buffer, uri );
+				result = await loader.parse( buffer, uri, extension );
 				break;
 
 			}
@@ -187,6 +221,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		const cached = tile.cached;
 		const group = cached.group;
+
 		if ( ! group ) {
 
 			return;

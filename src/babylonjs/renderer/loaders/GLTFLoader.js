@@ -1,8 +1,9 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
-import { Matrix, Quaternion, SceneLoader } from 'babylonjs';
-import 'babylonjs-loaders';
+import { Matrix, Quaternion, ImportMeshAsync } from '@babylonjs/core';
+import '@babylonjs/loaders/glTF/2.0';
 
 const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
+
 export class GLTFLoader extends LoaderBase {
 
 	constructor( scene ) {
@@ -13,7 +14,8 @@ export class GLTFLoader extends LoaderBase {
 
 	}
 
-	async parse( buffer, uri ) {
+
+	async parse( buffer, uri, extension ) {
 
 		const { scene, workingPath, adjustmentTransform } = this;
 
@@ -25,17 +27,13 @@ export class GLTFLoader extends LoaderBase {
 
 		}
 
-		// Use unique filename to prevent texture caching issues
-		// TODO: What is the correct method for loading gltf files in babylon?
-		const container = await SceneLoader.LoadAssetContainerAsync(
-			rootUrl,
+		// load the file
+		const pluginExtension = extension === 'gltf' ? '.gltf' : '.glb';
+		const container = await ImportMeshAsync(
 			new File( [ buffer ], uri ),
 			scene,
-			null,
-			'.glb',
+			{ pluginExtension, rootUrl }
 		);
-
-		container.addAllToScene();
 
 		// retrieve the primary scene
 		const root = container.meshes[ 0 ];
