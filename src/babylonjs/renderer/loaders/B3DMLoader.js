@@ -35,6 +35,7 @@ export class B3DMLoader extends B3DMLoaderBase {
 			...b3dm,
 			scene: gltfScene,
 			container: result.container,
+			metadata: result.metadata,
 		};
 
 	}
