@@ -105,7 +105,7 @@ export class TilesRenderer extends TilesRendererBase {
 		if ( parentTile ) {
 
 			// parentTransform * transform
-			transform.multiplyToRef( parentTile.cached.transform, transform );
+			transform.multiplyToRef( parentTile.engineData.transform, transform );
 
 		}
 
@@ -124,25 +124,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached = {
-			transform,
-			transformInverse,
-			boundingVolume,
-			active: false,
-			group: null,
-			container: null,
-		};
+		tile.engineData.transform = transform;
+		tile.engineData.transformInverse = transformInverse;
+		tile.engineData.boundingVolume = boundingVolume;
+		tile.engineData.active = false;
+		tile.engineData.group = null;
+		tile.engineData.container = null;
 
 	}
 
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const scene = this.scene;
 		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
-		const tileTransform = cached.transform;
+		const tileTransform = engineData.transform;
 		const upRotationMatrix = this._upRotationMatrix;
 
 		let result = null;
@@ -197,8 +195,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		cached.group = group;
-		cached.container = result.container;
+		engineData.group = group;
+		engineData.container = result.container;
 
 	}
 
@@ -206,12 +204,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.disposeTile( tile );
 
-		const cached = tile.cached;
-		if ( cached.container ) {
+		const engineData = tile.engineData;
+		if ( engineData.container ) {
 
-			cached.container.dispose();
-			cached.container = null;
-			cached.group = null;
+			engineData.container.dispose();
+			engineData.container = null;
+			engineData.group = null;
 
 		}
 
@@ -219,8 +217,8 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const cached = tile.cached;
-		const group = cached.group;
+		const engineData = tile.engineData;
+		const group = engineData.group;
 
 		if ( ! group ) {
 
@@ -256,8 +254,8 @@ export class TilesRenderer extends TilesRendererBase {
 		// TODO: cache frustum planes etc to improve performance
 		const { scene } = this;
 
-		const cached = tile.cached;
-		const boundingVolume = cached.boundingVolume;
+		const engineData = tile.engineData;
+		const boundingVolume = engineData.boundingVolume;
 		const camera = scene.activeCamera;
 
 		// get the render resolution
