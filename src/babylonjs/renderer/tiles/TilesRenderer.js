@@ -25,12 +25,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	/**
-	 * Get or create an observable for the given event type
-	 * @param {string} type - Event type name
-	 * @returns {Observable} The observable for this event type
-	 */
-	getObservable( type ) {
+	addEventListener( type, listener ) {
 
 		if ( ! this._observables.has( type ) ) {
 
@@ -38,15 +33,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		return this._observables.get( type );
-
-	}
-
-	// Event handling - adapter for TilesRendererBase using Babylon Observables
-	addEventListener( type, listener ) {
-
-		const observable = this.getObservable( type );
-		observable.add( listener );
+		this._observables.get( type ).add( listener );
 
 	}
 
@@ -183,7 +170,7 @@ export class TilesRenderer extends TilesRendererBase {
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
 
-				result = await loader.parse( buffer, uri );
+				result = await loader.parse( buffer, uri, extension );
 				break;
 
 			}

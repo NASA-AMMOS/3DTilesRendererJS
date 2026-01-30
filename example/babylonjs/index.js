@@ -3,6 +3,8 @@ import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import GUI from 'lil-gui';
 
 const TILESET_URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
+// Sample GLTF tileset
+// 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
 
 // gui
 const params = {
@@ -16,7 +18,7 @@ gui.add( params, 'visibleTiles' ).listen().disable();
 
 // init engine
 const canvas = document.getElementById( 'renderCanvas' );
-const engine = new Engine( canvas, true );
+const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // TODO: Babylon uses left handed coordinate system but our data is in a right handed one.
@@ -40,9 +42,11 @@ camera.maxZ = 1000;
 // instantiate tiles renderer and orient the group so it's Z+ down
 const tiles = new TilesRenderer( TILESET_URL, scene );
 tiles.group.rotation.x = Math.PI / 2;
-tiles.addEventListener('load-tileset', ( tileset ) => {
-	console.log('tileset loaded!');
-});
+tiles.addEventListener( 'load-tileset', ( tileset ) => {
+
+	console.log( 'tileset loaded!' );
+
+} );
 
 // render
 scene.onBeforeRenderObservable.add( () => {

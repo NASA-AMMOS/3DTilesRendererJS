@@ -6,6 +6,12 @@ Implementation of the TilesRendererBase class for Babylon js.
 
 [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/googleMapsAerial.html)
 
+The current implementation has the below limitations that will be addressed over time:
+- Only supports scenes in right-handed mode (scene.useRightHandedSystem = true)
+- BoundingBox + Frustum checks are using axis-aligned bounding boxes (rather than Oriented Bounding Boxes), causing false positives 
+- Does not yet support the 3DTile boundingRegion 
+- Limited caching of tiles
+
 # Use
 
 ```js
