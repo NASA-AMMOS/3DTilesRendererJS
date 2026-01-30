@@ -121,10 +121,10 @@
     "@react-three/fiber": {
       "optional": true
     },
-    "babylonjs": {
+    "@babylonjs/core": {
       "optional": true
     },
-    "babylonjs-loaders": {
+    "@babylonjs/loaders": {
       "optional": true
     },
     "react": {
