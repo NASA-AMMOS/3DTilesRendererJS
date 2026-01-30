@@ -143,7 +143,7 @@ function createFilter( preset ) {
 
 	}
 
-	return function( feature, layerName ) {
+	return function ( feature, layerName ) {
 
 		const key = layerNameToKey[ layerName ];
 
