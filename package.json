@@ -111,8 +111,8 @@
   },
   "peerDependencies": {
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
-    "@babylonjs/core": ">=8.47.2",
-    "@babylonjs/loaders": ">=8.47.2",
+    "@babylonjs/core": ">=8.0.0",
+    "@babylonjs/loaders": ">=8.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0"
