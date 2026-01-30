@@ -3,8 +3,6 @@ import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import GUI from 'lil-gui';
 
 const TILESET_URL = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
-// Sample GLTF tileset
-// 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_structural_metadata/PropertyAttributesPointCloud/tileset.json';
 
 // gui
 const params = {
