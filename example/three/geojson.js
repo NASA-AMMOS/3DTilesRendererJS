@@ -60,7 +60,7 @@ const geojson = {
 				],
 			},
 
-			properties: { name: 'Berlin Polygon' },
+			properties: { name: 'Genoa Polygon' },
 
 		}
 

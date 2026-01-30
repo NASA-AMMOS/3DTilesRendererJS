@@ -17,6 +17,9 @@ export * from './DebugTilesPlugin.js';
 // other formats
 export * from './images/DeepZoomImagePlugin.js';
 export * from './images/EPSGTilesPlugin.js';
+export * from './images/PMTilesPlugin.js';
+export * from './MVTTilesMeshPlugin.js';
+export * from './PMTilesMeshPlugin.js';
 
 // gltf extensions
 export * from './gltf/GLTFCesiumRTCExtension.js';
