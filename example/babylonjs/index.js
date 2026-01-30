@@ -40,11 +40,6 @@ camera.maxZ = 1000;
 // instantiate tiles renderer and orient the group so it's Z+ down
 const tiles = new TilesRenderer( TILESET_URL, scene );
 tiles.group.rotation.x = Math.PI / 2;
-tiles.addEventListener( 'load-tileset', ( tileset ) => {
-
-	console.log( 'tileset loaded!' );
-
-} );
 
 // render
 scene.onBeforeRenderObservable.add( () => {
