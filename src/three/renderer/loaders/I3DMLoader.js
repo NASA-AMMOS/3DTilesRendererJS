@@ -17,6 +17,32 @@ const tempEnuFrame = /* @__PURE__ */ new Matrix4();
 const tempLocalQuat = /* @__PURE__ */ new Quaternion();
 const tempLatLon = {};
 
+// Oct-encoding helper functions
+// Decode oct-encoded normal from unsigned [0, rangeMax] to normalized vector
+// Based on CesiumJS's AttributeCompression.octDecodeInRange
+function octDecodeInRange( x, y, rangeMax, result ) {
+
+	// Map from unsigned [0, rangeMax] to signed normalized [-1.0, 1.0]
+	x = ( x / rangeMax ) * 2.0 - 1.0;
+	y = ( y / rangeMax ) * 2.0 - 1.0;
+
+	result.x = x;
+	result.y = y;
+	result.z = 1.0 - Math.abs( x ) - Math.abs( y );
+
+	if ( result.z < 0.0 ) {
+
+		const oldX = result.x;
+		result.x = ( 1.0 - Math.abs( result.y ) ) * ( oldX >= 0.0 ? 1.0 : - 1.0 );
+		result.y = ( 1.0 - Math.abs( oldX ) ) * ( result.y >= 0.0 ? 1.0 : - 1.0 );
+
+	}
+
+	result.normalize();
+	return result;
+
+}
+
 export class I3DMLoader extends I3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -85,23 +111,12 @@ export class I3DMLoader extends I3DMLoaderBase {
 						const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', 1, 'FLOAT', 'VEC3' );
 						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_UP_OCT32P = featureTable.getData( 'NORMAL_UP_OCT32P', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC2' );
+						const NORMAL_RIGHT_OCT32P = featureTable.getData( 'NORMAL_RIGHT_OCT32P', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC2' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 						const RTC_CENTER = featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' );
 						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
-
-						[
-							'NORMAL_UP_OCT32P',
-							'NORMAL_RIGHT_OCT32P',
-						].forEach( feature => {
-
-							if ( feature in featureTable.header ) {
-
-								console.warn( `I3DMLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
-
-							}
-
-						} );
 
 						// use quantized position if position is missing
 						if ( ! POSITION && POSITION_QUANTIZED ) {
@@ -173,7 +188,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							// account for EAST_NORTH_UP per-instance below
 
-							if ( NORMAL_UP ) {
+							// Use NORMAL_UP and NORMAL_RIGHT if available (higher precision)
+							// Otherwise fall back to oct-encoded normals
+							if ( NORMAL_UP && NORMAL_RIGHT ) {
 
 								tempUp.set(
 									NORMAL_UP[ i * 3 + 0 ],
@@ -185,6 +202,34 @@ export class I3DMLoader extends I3DMLoaderBase {
 									NORMAL_RIGHT[ i * 3 + 0 ],
 									NORMAL_RIGHT[ i * 3 + 1 ],
 									NORMAL_RIGHT[ i * 3 + 2 ],
+								);
+
+								tempFwd.crossVectors( tempRight, tempUp )
+									.normalize();
+
+								tempMat.makeBasis(
+									tempRight,
+									tempUp,
+									tempFwd,
+								);
+
+								tempQuat.setFromRotationMatrix( tempMat );
+
+							} else if ( NORMAL_UP_OCT32P && NORMAL_RIGHT_OCT32P ) {
+
+								// Decode oct-encoded normals
+								octDecodeInRange(
+									NORMAL_UP_OCT32P[ i * 2 + 0 ],
+									NORMAL_UP_OCT32P[ i * 2 + 1 ],
+									65535,
+									tempUp
+								);
+
+								octDecodeInRange(
+									NORMAL_RIGHT_OCT32P[ i * 2 + 0 ],
+									NORMAL_RIGHT_OCT32P[ i * 2 + 1 ],
+									65535,
+									tempRight
 								);
 
 								tempFwd.crossVectors( tempRight, tempUp )

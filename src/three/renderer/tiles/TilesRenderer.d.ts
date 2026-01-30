@@ -7,14 +7,15 @@ export interface TilesRendererEventMap {
 	'add-camera': { camera: Camera };
 	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
+	'load-root-tileset': { tileset: object, url: string };
 	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
 	/* @deprecated Use 'load-tileset' instead */
 	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
 	'tiles-load-start': {};
 	'tiles-load-end': {};
-	'tile-download-start': { tile: Tile };
+	'tile-download-start': { tile: Tile, url: string };
 	'load-content': {};
-	'load-model': { scene: Object3D; tile: Tile };
+	'load-model': { scene: Object3D; tile: Tile, url: string };
 	'dispose-model': { scene: Object3D; tile: Tile };
 	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
 	'update-before': {};

@@ -255,7 +255,6 @@ export class ImageFormatPlugin {
 
 		}
 
-
 		// return bounding box
 		return {
 			box: [
@@ -280,13 +279,16 @@ export class ImageFormatPlugin {
 
 		}
 
-		// the scale ration of the image at this level
-		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
-		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		let geometricError = Math.max( 1 / levelWidth, 1 / levelHeight );
+		// Calculate geometric error: size of one pixel in world space.
+		// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
+		const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+		let geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+
+		// apply deprecated pixelSize scaling if specified
 		if ( pixelSize ) {
 
-			geometricError *= pixelSize * Math.max( pixelWidth, pixelHeight );
+			const maxLevelInfo = tiling.getLevel( tiling.maxLevel );
+			geometricError *= pixelSize * Math.max( maxLevelInfo.pixelWidth, maxLevelInfo.pixelHeight );
 
 		}
 
@@ -314,11 +316,12 @@ export class ImageFormatPlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		for ( let cx = 0; cx < 2; cx ++ ) {
+		const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
+		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
-			for ( let cy = 0; cy < 2; cy ++ ) {
+			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
 
-				const child = this.createChild( 2 * x + cx, 2 * y + cy, level + 1 );
+				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
 
 					tile.children.push( child );

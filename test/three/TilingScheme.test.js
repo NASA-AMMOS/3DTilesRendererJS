@@ -216,9 +216,9 @@ describe( 'TilingScheme', () => {
 		expect( scheme.clampToContentBounds( [ - 1, - 1, 2, 2 ], true ) ).toEqual( [ 0.5, 0.5, 1, 1 ] );
 		expect( scheme.clampToContentBounds( [ - 1, - 1, 5, 5 ], false ) ).toEqual( [ 0, 0, Math.PI, Math.PI / 2 ] );
 
-		expect( scheme.clampToProjectionBounds( [ - 1, - 1, 2, 2 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
-		expect( scheme.clampToProjectionBounds( [ - 1, - 1, 5, 5 ], false ) ).toEqual( [ - 1, - 1, Math.PI, Math.PI / 2 ] );
-		expect( scheme.clampToProjectionBounds( [ - 5, - 5, 5, 5 ], false ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
+		expect( scheme.clampToBounds( [ - 1, - 1, 2, 2 ], true ) ).toEqual( [ 0, 0, 1, 1 ] );
+		expect( scheme.clampToBounds( [ - 1, - 1, 5, 5 ], false ) ).toEqual( [ - 1, - 1, Math.PI, Math.PI / 2 ] );
+		expect( scheme.clampToBounds( [ - 5, - 5, 5, 5 ], false ) ).toEqual( [ - Math.PI, - Math.PI / 2, Math.PI, Math.PI / 2 ] );
 
 	} );
 

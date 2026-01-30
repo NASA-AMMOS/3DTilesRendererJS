@@ -45,6 +45,7 @@ canvas {
 	display: flex;
 	padding: 5px;
 	box-sizing: border-box;
+	pointer-events: none;
 }
 
 #credits {

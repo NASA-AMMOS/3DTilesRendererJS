@@ -26,6 +26,7 @@ export class TiledImageSource extends DataCache {
 	// helper for processing the buffer into a texture
 	async processBufferToTexture( buffer ) {
 
+		// pre-flip the y axis
 		const blob = new Blob( [ buffer ] );
 		const imageBitmap = await createImageBitmap( blob, {
 			premultiplyAlpha: 'none',

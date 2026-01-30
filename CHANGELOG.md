@@ -4,7 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.19] - Unreleased
+## [0.4.20] - Unreleased
+### Added
+- TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
+- TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
+- I3DMLoader: Added support for oct-encoded normals.
+- TilesRenderer: Added "optimizedLoadStrategy" and "loadSiblings" options. These are experimental settings and are planned to be the default and only tile load strategy.
+- R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
+- Export FeatureTable, BatchTable classes.
+- TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
+- XYZImageFormat: add "projection" option and ability to set tile settings per-level.
+- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting
+
+### Changed
+- ImageOverlayPlugin: Textures are now assumed to be straight alpha.
+- ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
+- GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
+- Renamed the "cached" tile subfield to "engineData".
+- Moved a number of tile fields into "traversal" and "internal" subfields on "tile" object.
+- ImplicitTilingPlugin: Moved implicit tiling fields onto a new "implicitTilingData" object.
+- DebugTilesPlugin: Replaced "getTileInformationFromActiveObject" function with "getTileFromObject3D".
+- DebugTilesPlugin: Add transparent mesh to box helper visualization.
+- TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
+- Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
+- TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
+
+### Fixed
+- Fix mouse offset in Controls.
+- Fixed case where DebugTilesPlugin could throw an error when toggling "enabled".
+- DebugTilesPlugin: Fixed case where "enabled" was not resepected if set to false on creation.
+
+## [0.4.19] - 2025.12.19
 ### Changed
 - Moved "GoogleCloudAuthPlugin" to "3d-tiles-renderer/core/plugins".
 - Moved "CesiumIonAuthPlugin" to "3d-tiles-renderer/core/plugins".
@@ -22,6 +53,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ImageOverlay: Added "alphaMask", "alphaInvert" options.
 - CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
 - QuantizedMeshLoader, QuantizedMeshPlugin: Added "generateNormals" option for cases where normals are not embedded.
+- Added "load-root-tileset" event.
 
 ### Fixed
 - Controls: Fixed case where pointer state may not have been reset correctly.
@@ -32,6 +64,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - PriorityQueue: fix case where entries were not being moved correctly by "removeByFilter".
 - ImageOverlayPlugin: Fix case where overlay data were not being handled correctly when adjusting frames.
 - ImageOverlayPlugin: Added a more clear error when "renderer" is not provided.
+- ImageFormatPlugin: Adjust the plugin to account for aspect ratio in error calculation.
 
 ## [0.4.18] - 2025.11.14
 ### Added

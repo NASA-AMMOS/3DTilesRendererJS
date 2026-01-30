@@ -28,10 +28,6 @@ const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
 const tempMat = /* @__PURE__ */ new Matrix4();
 const tempVector = /* @__PURE__ */ new Vector3();
 const tempVector2 = /* @__PURE__ */ new Vector2();
-const viewErrorTarget = {
-	inView: false,
-	error: Infinity,
-};
 
 const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
 const Y_AXIS = /* @__PURE__ */ new Vector3( 0, 1, 0 );
@@ -173,7 +169,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getAABB( target );
@@ -195,7 +191,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getOBB( targetBox, targetMatrix );
@@ -217,7 +213,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getSphere( target );
@@ -235,7 +231,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.traverse( tile => {
 
-			const scene = tile.cached && tile.cached.scene;
+			const scene = tile.engineData && tile.engineData.scene;
 			if ( scene ) {
 
 				callback( scene, tile );
@@ -391,39 +387,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	update() {
-
-		// check if the plugins that can block the tile updates require it
-		let needsUpdate = null;
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin.doTilesNeedUpdate ) {
-
-				const res = plugin.doTilesNeedUpdate();
-				if ( needsUpdate === null ) {
-
-					needsUpdate = res;
-
-				} else {
-
-					needsUpdate = Boolean( needsUpdate || res );
-
-				}
-
-			}
-
-		} );
-
-		if ( needsUpdate === false ) {
-
-			this.dispatchEvent( { type: 'update-before' } );
-			this.dispatchEvent( { type: 'update-after' } );
-			return;
-
-		}
-
-		// follow through with the update
-		this.dispatchEvent( { type: 'update-before' } );
+	prepareForTraversal() {
 
 		const group = this.group;
 		const cameras = this.cameras;
@@ -511,12 +475,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+	}
+
+	update() {
+
 		super.update();
 
-		this.dispatchEvent( { type: 'update-after' } );
-
 		// check for cameras _after_ base update so we can enable pre-loading the root tileset
-		if ( cameras.length === 0 && this.root ) {
+		if ( this.cameras.length === 0 && this.root ) {
 
 			let found = false;
 			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
@@ -548,7 +514,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.premultiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.engineData.transform );
 
 		}
 
@@ -572,35 +538,27 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached = {
-
-			transform,
-			transformInverse,
-
-			active: false,
-
-			boundingVolume,
-
-			metadata: null,
-			scene: null,
-			geometry: null,
-			materials: null,
-			textures: null,
-
-		};
+		// Extend the base engineData structure with Three.js-specific fields
+		// Base class initializes: scene, metadata, boundingVolume
+		tile.engineData.transform = transform;
+		tile.engineData.transformInverse = transformInverse;
+		tile.engineData.boundingVolume = boundingVolume;
+		tile.engineData.geometry = null;
+		tile.engineData.materials = null;
+		tile.engineData.textures = null;
 
 	}
 
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
 		let promise = null;
 
-		const cachedTransform = cached.transform;
+		const tileTransform = engineData.transform;
 		const upRotationMatrix = this._upRotationMatrix;
 		const fileType = ( LoaderUtils.readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
@@ -737,7 +695,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
-		scene.matrix.premultiply( cachedTransform );
+		scene.matrix.premultiply( tileTransform );
 		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 
 		// wait for extra processing by plugins if needed
@@ -811,31 +769,32 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		cached.materials = materials;
-		cached.geometry = geometry;
-		cached.textures = textures;
-		cached.scene = scene;
-		cached.metadata = metadata;
+		engineData.materials = materials;
+		engineData.geometry = geometry;
+		engineData.textures = textures;
+		engineData.scene = scene;
+		engineData.metadata = metadata;
 
 	}
 
 	disposeTile( tile ) {
 
+		// TODO: call this "disposeTileModel"?
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
-		const cached = tile.cached;
-		if ( cached.scene ) {
+		const engineData = tile.engineData;
+		if ( engineData.scene ) {
 
-			const materials = cached.materials;
-			const geometry = cached.geometry;
-			const textures = cached.textures;
-			const parent = cached.scene.parent;
+			const materials = engineData.materials;
+			const geometry = engineData.geometry;
+			const textures = engineData.textures;
+			const parent = engineData.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
 			// TODO: these are being discarded here to remove the image bitmaps -
 			// can this be handled in another way? Or more generically?
-			cached.scene.traverse( child => {
+			engineData.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
 
@@ -879,21 +838,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( parent ) {
 
-				parent.remove( cached.scene );
+				parent.remove( engineData.scene );
 
 			}
 
-			this.dispatchEvent( {
-				type: 'dispose-model',
-				scene: cached.scene,
-				tile,
-			} );
-
-			cached.scene = null;
-			cached.materials = null;
-			cached.textures = null;
-			cached.geometry = null;
-			cached.metadata = null;
+			engineData.scene = null;
+			engineData.materials = null;
+			engineData.textures = null;
+			engineData.geometry = null;
+			engineData.metadata = null;
 
 		}
 
@@ -901,7 +854,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const group = this.group;
 
 		if ( visible ) {
@@ -925,13 +878,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.setTileVisible( tile, visible );
 
-		this.dispatchEvent( {
-			type: 'tile-visibility-change',
-			scene,
-			tile,
-			visible,
-		} );
-
 	}
 
 	calculateBytesUsed( tile, scene ) {
@@ -949,16 +895,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateTileViewError( tile, target ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
-		const boundingVolume = cached.boundingVolume;
+		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
-		let inViewError = - Infinity;
+		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = - Infinity;
-		let minDistance = Infinity;
+		let maxCameraError = 0;
+		let minCameraDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -993,42 +939,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			maxError = Math.max( maxError, error );
-			minDistance = Math.min( minDistance, distance );
+			maxCameraError = Math.max( maxCameraError, error );
+			minCameraDistance = Math.min( minCameraDistance, distance );
 
 		}
 
-		// check the plugin visibility
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin !== this && plugin.calculateTileViewError && plugin.calculateTileViewError( tile, viewErrorTarget ) ) {
-
-				// Tile shall be traversed if inView for at least one plugin.
-				inView = inView && viewErrorTarget.inView;
-				maxError = Math.max( maxError, viewErrorTarget.error );
-
-				if ( viewErrorTarget.inView ) {
-
-					inViewError = Math.max( inViewError, viewErrorTarget.error );
-
-				}
-
-			}
-
-		} );
-
-		// If the tiles are out of view then use the global distance and error calculated
 		if ( inView ) {
 
+			// write the in-camera error and distance parameters
 			target.inView = true;
 			target.error = inViewError;
 			target.distanceFromCamera = inViewDistance;
 
 		} else {
 
-			target.inView = viewErrorTarget.inView;
-			target.error = maxError;
-			target.distanceFromCamera = minDistance;
+			// otherwise write variables for load priority
+			target.inView = false;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
 
 		}
 

@@ -7,6 +7,7 @@ import {
 	UpdateOnChangePlugin,
 	XYZTilesPlugin,
 } from '3d-tiles-renderer/plugins';
+import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const geojson = {
 	type: 'FeatureCollection',
@@ -67,7 +68,10 @@ const geojson = {
 
 };
 
-let scene, renderer, camera, controls, tiles;
+let scene, renderer, camera, controls, tiles, gui, overlay;
+const params = {
+	mode: 'overlay',
+};
 
 init();
 render();
@@ -108,20 +112,18 @@ function init() {
 	scene.add( tiles.group );
 
 	// ImageOverlayPlugin must use same resolution as tileDimension for best results
-	const overlayPlugin = new ImageOverlayPlugin( {
-		overlays: [
-			new GeoJSONOverlay( {
-				geojson: geojson, // pass the feature collection directly
-				color: '#e91e63',
+	overlay = new GeoJSONOverlay( {
+		geojson: geojson, // pass the feature collection directly
+		color: '#e91e63',
 
-				// TODO: it is slow as it is heavy, could this be used to reference for optimization?
-				// url: "https://github.com/openpolis/geojson-italy/blob/master/geojson/limits_IT_municipalities.geojson?raw=true",
-			} )
-		],
-		renderer,
+		// TODO: it is slow as it is heavy, could this be used to reference for optimization?
+		// url: "https://raw.githubusercontent.com/openpolis/geojson-italy/refs/heads/master/geojson/limits_IT_municipalities.geojson",
 	} );
 
-	tiles.registerPlugin( overlayPlugin );
+	tiles.registerPlugin( new ImageOverlayPlugin( {
+		overlays: [ overlay ],
+		renderer,
+	} ) );
 
 	// Controls
 	controls = new GlobeControls( scene, camera, renderer.domElement );
@@ -136,6 +138,34 @@ function init() {
 		.decompose( camera.position, camera.quaternion, camera.scale );
 
 	window.addEventListener( 'resize', onWindowResize, false );
+
+	gui = new GUI();
+	gui.add( params, 'mode', [ 'overlay', 'mask', 'invertMask' ] ).onChange( updateOverlay );
+
+	updateOverlay();
+
+}
+
+function updateOverlay() {
+
+	overlay.alphaInvert = false;
+	overlay.alphaMask = false;
+	overlay.fillStyle = 'rgba( 255, 255, 255, 0.5 )';
+
+	if ( params.mode === 'mask' ) {
+
+		overlay.alphaMask = true;
+		overlay.fillStyle = 'white';
+
+	} else if ( params.mode === 'invertMask' ) {
+
+		overlay.alphaInvert = true;
+		overlay.alphaMask = true;
+		overlay.fillStyle = 'white';
+
+	}
+
+	overlay.redraw();
 
 }
 

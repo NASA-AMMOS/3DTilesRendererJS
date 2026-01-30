@@ -10,6 +10,8 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 
 [Google Photorealistic Tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/globe.html)
 
+[Tile Flattening Plugin example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/flattening.html)
+
 # Use
 
 ## Simple
