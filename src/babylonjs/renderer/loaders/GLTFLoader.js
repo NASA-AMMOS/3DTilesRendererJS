@@ -27,25 +27,13 @@ export class GLTFLoader extends LoaderBase {
 
 		}
 
-		let container = null;
-		if ( extension === 'gltf' ) {
-
-			// TODO: Fix so that we are not re-loading the file
-			container = await ImportMeshAsync(
-				uri,
-				scene,
-				{ pluginExtension: '.gltf' }
-			);
-
-		} else {
-
-			container = await ImportMeshAsync(
-				new File( [ buffer ], uri ),
-				scene,
-				{ pluginExtension: '.glb' }
-			);
-
-		}
+		// load the file
+		const pluginExtension = extension === 'gltf' ? '.gltf' : '.glb';
+		const container = await ImportMeshAsync(
+			new File( [ buffer ], uri ),
+			scene,
+			{ pluginExtension, rootUrl }
+		);
 
 		// retrieve the primary scene
 		const root = container.meshes[ 0 ];
