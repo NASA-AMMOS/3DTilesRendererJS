@@ -103,20 +103,20 @@ describe( 'traverseSet', () => {
 
 describe( 'traverseAncestors', () => {
 
-	function makeTile( name, parent = undefined ) {
+	function makeTile( name, parent = undefined, depth = 0 ) {
 
-		return { name, parent };
+		return { name, parent, internal: { depth } };
 
 	}
 
 	it( 'visit all ancestry chain', () => {
 
-		const root = makeTile( 'root' );
+		const root = makeTile( 'root', undefined, 0 );
 
-		const lod1 = makeTile( '1', root );
-		const lod2 = makeTile( '2', lod1 );
-		const lod3 = makeTile( '3', lod2 );
-		const lod4 = makeTile( '4', lod3 );
+		const lod1 = makeTile( '1', root, 1 );
+		const lod2 = makeTile( '2', lod1, 2 );
+		const lod3 = makeTile( '3', lod2, 3 );
+		const lod4 = makeTile( '4', lod3, 4 );
 
 		const visited = [];
 

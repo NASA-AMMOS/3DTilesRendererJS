@@ -63,7 +63,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// adjust the geometry to position it at the region
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
-			tile.cached.boundingVolume.getSphere( _sphere );
+			tile.engineData.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
 				// retrieve attributes

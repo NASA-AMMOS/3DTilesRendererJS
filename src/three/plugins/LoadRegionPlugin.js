@@ -54,19 +54,32 @@ export class LoadRegionPlugin {
 	// tiles are only loaded if they are within those shapes.
 	calculateTileViewError( tile, target ) {
 
-		const boundingVolume = tile.cached.boundingVolume;
+		const boundingVolume = tile.engineData.boundingVolume;
 		const { regions, tiles } = this;
 
+		// "inShape" indicates whether the tile intersects the given shape.
+		// "inMask" indicates whether the tile is _within_ a mask if boolean, if
+		// null then it is ignored.
+		// "maxError" is the maximum error from the shapes.
 		let inShape = false;
 		let inMask = null;
-		let maxError = - Infinity;
+		let maxError = 0;
+		let minDistance = Infinity;
 		for ( const region of regions ) {
+
+			// TODO: we should only set the error if it is "intersected".
 
 			// Check if the tile is intersecting the shape and calculate the
 			// view and error values.
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
 			inShape = inShape || intersects;
-			maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+
+			if ( intersects ) {
+
+				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+				minDistance = Math.min( region.calculateDistance( boundingVolume, tile, tiles ) );
+
+			}
 
 			// Store whether the tile is in a "mask" shape if they exist. If "inMask" is
 			// still "null" by the end of the loop then there are no mask elements.
@@ -82,6 +95,7 @@ export class LoadRegionPlugin {
 		// are no masks.
 		target.inView = inShape && inMask !== false;
 		target.error = maxError;
+		target.distance = minDistance;
 
 		// Returning "false" indicates "no operation" and all results will be ignored.
 		return target.inView || inMask !== null;
@@ -118,7 +132,17 @@ export class BaseRegion {
 
 	}
 
-	intersectsTile() {}
+	intersectsTile( boundingVolume, tile, tiles ) {
+
+		return false;
+
+	}
+
+	calculateDistance( boundingVolume, tile, tiles ) {
+
+		return Infinity;
+
+	}
 
 	calculateError( tile, tilesRenderer ) {
 

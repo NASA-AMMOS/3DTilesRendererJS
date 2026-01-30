@@ -93,10 +93,16 @@ function render() {
 
 	cesiumViewer.update();
 
+	updateThreeStats();
+	updateCesiumStats();
+
+}
+
+function updateThreeStats() {
+
 	let shallowTilesLoaded, loadedGeometryTiles, allLoadedTiles;
 	let textureBytes, geometryBytes;
 
-	// update three stats
 	loadedGeometryTiles = 0;
 	textureBytes = 0;
 	geometryBytes = 0;
@@ -135,7 +141,7 @@ function render() {
 	shallowTilesLoaded = 0;
 	traverse( threeViewer.root, t => {
 
-		if ( t.__hasRenderableContent && t.__loadingState !== 0 ) {
+		if ( t.internal && t.internal.hasRenderableContent && t.internal.loadingState !== 0 ) {
 
 			shallowTilesLoaded ++;
 			return true;
@@ -147,7 +153,7 @@ function render() {
 	allLoadedTiles = 0;
 	traverse( threeViewer.root, ( t, d ) => {
 
-		if ( t.__hasContent && t.__loadingState !== 0 ) {
+		if ( t.internal && t.internal.hasContent && t.internal.loadingState !== 0 ) {
 
 			allLoadedTiles ++;
 
@@ -155,6 +161,8 @@ function render() {
 
 	} );
 
+	const { loadStart, loadEnd } = threeViewer;
+	const loadDelta = loadEnd - loadStart;
 	clearStats( threeStats );
 	writeStats( threeStats, 'visible tiles', threeViewer.tiles.visibleTiles.size );
 	writeStats( threeStats, 'loaded tiles', allLoadedTiles );
@@ -164,8 +172,18 @@ function render() {
 	writeStats( threeStats, 'total memory', ( threeViewer.tiles.lruCache.cachedBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( threeStats, 'geometry memory', ( geometryBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( threeStats, 'texture memory', ( textureBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( threeStats, 'load start', loadStart.toFixed( 0 ) + ' ms' );
+	writeStats( threeStats, 'load end', ( loadDelta < 0 ? '--' : loadEnd.toFixed( 0 ) + ' ms' ) );
+	writeStats( threeStats, 'load delta', ( loadDelta < 0 ? '--' : loadDelta.toFixed( 0 ) + ' ms' ) );
+	writeStats( threeStats, 'total load time', threeViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
+	writeStats( threeStats, 'perf', ( 100 * threeViewer.totalLoadTime / cesiumViewer.totalLoadTime ).toFixed( 2 ) + '%' );
 
-	// update cesium stats
+}
+
+function updateCesiumStats() {
+
+	let shallowTilesLoaded, allLoadedTiles;
+	let textureBytes, geometryBytes;
 
 	shallowTilesLoaded = 0;
 	traverse( cesiumViewer.root, t => {
@@ -204,6 +222,8 @@ function render() {
 
 	} );
 
+	const { loadStart, loadEnd } = cesiumViewer;
+	const loadDelta = loadEnd - loadStart;
 	clearStats( cesiumStats );
 	writeStats( cesiumStats, 'visible tiles', cesiumViewer.tiles.statistics.selected );
 	writeStats( cesiumStats, 'loaded tiles', allLoadedTiles );
@@ -213,6 +233,10 @@ function render() {
 	writeStats( cesiumStats, 'total memory', ( cesiumViewer.tiles.totalMemoryUsageInBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( cesiumStats, 'geometry memory', ( geometryBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
 	writeStats( cesiumStats, 'texture memory', ( textureBytes * 1e-6 ).toFixed( 3 ) + ' MB' );
+	writeStats( cesiumStats, 'load start', loadStart.toFixed( 0 ) + ' ms' );
+	writeStats( cesiumStats, 'load end', ( loadDelta < 0 ? '--' : loadEnd.toFixed( 0 ) + ' ms' ) );
+	writeStats( cesiumStats, 'load delta', ( loadDelta < 0 ? '--' : loadDelta.toFixed( 0 ) + ' ms' ) );
+	writeStats( cesiumStats, 'total load time', cesiumViewer.totalLoadTime.toFixed( 0 ) + ' ms' );
 
 }
 
@@ -320,6 +344,25 @@ async function initThree() {
 
 	} );
 
+	let start = 0;
+	tiles.addEventListener( 'tiles-load-start', e => {
+
+		start = performance.now();
+		if ( performance.now() - threeViewer.loadEnd > 100 ) {
+
+			threeViewer.loadStart = start;
+
+		}
+
+	} );
+
+	tiles.addEventListener( 'tiles-load-end', e => {
+
+		threeViewer.loadEnd = performance.now();
+		threeViewer.totalLoadTime += performance.now() - start;
+
+	} );
+
 	scene.add( tiles.group );
 
 	// lights
@@ -359,6 +402,9 @@ async function initThree() {
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	threeViewer = {
+		totalLoadTime: 0,
+		loadStart: 0,
+		loadEnd: 0,
 		tiles,
 		camera,
 		renderer,
@@ -447,7 +493,35 @@ async function initCesium() {
 	// 	height,
 	// } );
 
+	let loading = false;
+	let start = 0;
+	tileset.loadProgress.addEventListener( ( pending, processing ) => {
+
+		const total = pending + processing;
+		if ( total !== 0 && ! loading ) {
+
+			loading = true;
+			start = performance.now();
+			if ( start - threeViewer.loadEnd > 100 ) {
+
+				cesiumViewer.loadStart = start;
+
+			}
+
+		} else if ( total === 0 && loading ) {
+
+			loading = false;
+			cesiumViewer.loadEnd = performance.now();
+			cesiumViewer.totalLoadTime += performance.now() - start;
+
+		}
+
+	} );
+
 	cesiumViewer = {
+		totalLoadTime: 0,
+		loadStart: 0,
+		loadEnd: 0,
 		tiles: tileset,
 		viewer,
 		camera,

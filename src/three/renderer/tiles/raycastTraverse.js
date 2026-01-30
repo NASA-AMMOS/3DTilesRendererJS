@@ -13,7 +13,7 @@ function distanceSort( a, b ) {
 
 function intersectTileScene( tile, raycaster, renderer, intersects ) {
 
-	const { scene } = tile.cached;
+	const { scene } = tile.engineData;
 	const didRaycast = renderer.invokeOnePlugin( plugin => plugin.raycastTile && plugin.raycastTile( tile, scene, raycaster, intersects ) );
 	if ( ! didRaycast ) {
 
@@ -36,7 +36,7 @@ function intersectTileSceneFirstHist( tile, raycaster, renderer ) {
 
 function isTileInitialized( tile ) {
 
-	return '__used' in tile;
+	return 'traversal' in tile;
 
 }
 
@@ -59,14 +59,14 @@ export function raycastTraverseFirstHit( renderer, tile, raycaster, localRay = n
 	for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 		const child = children[ i ];
-		if ( ! isTileInitialized( child ) || ! child.__used ) {
+		if ( ! isTileInitialized( child ) || ! child.traversal.used ) {
 
 			continue;
 
 		}
 
 		// track the tile and hit distance for sorting
-		const boundingVolume = child.cached.boundingVolume;
+		const boundingVolume = child.engineData.boundingVolume;
 		if ( boundingVolume.intersectRay( localRay, _vec ) !== null ) {
 
 			_vec.applyMatrix4( group.matrixWorld );
@@ -140,7 +140,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	}
 
 	const { group, activeTiles } = renderer;
-	const { boundingVolume } = tile.cached;
+	const { boundingVolume } = tile.engineData;
 
 	// get the ray in the local group frame
 	if ( localRay === null ) {
@@ -151,7 +151,7 @@ export function raycastTraverse( renderer, tile, raycaster, intersects, localRay
 	}
 
 	// exit early if the tile isn't used or the bounding volume is not intersected
-	if ( ! tile.__used || ! boundingVolume.intersectsRay( localRay ) ) {
+	if ( ! tile.traversal.used || ! boundingVolume.intersectsRay( localRay ) ) {
 
 		return;
 

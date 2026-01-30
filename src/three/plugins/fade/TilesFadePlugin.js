@@ -59,17 +59,17 @@ function onUpdateAfter() {
 
 			// if a tile is fading out then it may not be traversed and thus will not have
 			// the frustum flag set correctly.
-			const scene = t.cached.scene;
+			const scene = t.engineData.scene;
 			if ( scene ) {
 
-				scene.visible = t.__inFrustum;
+				scene.visible = t.traversal.inFrustum;
 
 			}
 
 			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, t.__inFrustum );
-				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
+				batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
+				plugin.batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
 
 			} );
 
@@ -124,7 +124,7 @@ function onUpdateAfter() {
 	fadeManager.forEachObject( ( tile, { fadeIn, fadeOut } ) => {
 
 		// prevent faded tiles from being unloaded
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const isFadingOut = fadeManager.isFadingOut( tile );
 		tiles.markTileUsed( tile );
 		if ( scene ) {
@@ -252,7 +252,7 @@ export class TilesFadePlugin {
 			// this function gets fired _after_ all set visible callbacks including the batched meshes
 
 			// revert the scene and fade to the initial state when toggling
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.visible = true;
@@ -308,7 +308,7 @@ export class TilesFadePlugin {
 		fadeManager.onFadeComplete = ( tile, visible ) => {
 
 			// mark the fade as finished and reset the fade parameters
-			this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
+			this._fadeMaterialManager.setFade( tile.engineData.scene, 0, 0 );
 
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
@@ -409,7 +409,7 @@ export class TilesFadePlugin {
 
 			// if this is a root renderable tile and this is the first time rendering in
 			// then pop it in
-			const isRootRenderableTile = tile.__depthFromRenderedParent === 1;
+			const isRootRenderableTile = tile.internal.depthFromRenderedParent === 1;
 			if ( isRootRenderableTile ) {
 
 				if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {

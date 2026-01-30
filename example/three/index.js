@@ -97,7 +97,6 @@ function reinstantiateTiles() {
 	ktx2loader.detectSupport( renderer );
 
 	tiles = new TilesRenderer( url );
-	tiles.registerPlugin( new DebugTilesPlugin() );
 	tiles.registerPlugin( new ImplicitTilingPlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		rtc: true,
@@ -109,9 +108,11 @@ function reinstantiateTiles() {
 	geospatialRotationParent.add( tiles.group );
 
 	// Used with CUSTOM_COLOR
-	tiles.customColorCallback = ( tile, object ) => {
+	const debugPlugin = new DebugTilesPlugin();
+	tiles.registerPlugin( debugPlugin );
+	debugPlugin.customColorCallback = ( tile, object ) => {
 
-		const depthIsEven = tile.__depth % 2 === 0;
+		const depthIsEven = tile.internal.depth % 2 === 0;
 		const hex = depthIsEven ? 0xff0000 : 0xffffff;
 		object.traverse( c => {
 
