@@ -13,7 +13,22 @@ export const LAYER_COLORS = {
 	'transportation': 0x444444,
 
 	// Boundaries & Background
-	'admin': 0x444545,
+	'boundaries': 0x444545,
 	'background': 0x111111,
 	'default': 0x222222
 };
+
+/* Default layer ordering for vector tiles (bottom to top) */
+export const DEFAULT_LAYER_ORDER = [
+	'landuse',
+	'landuse_overlay',
+	'park',
+	'water',
+	'waterway',
+	'transportation',
+	'road',
+	'building',
+	'boundaries',
+	'poi',
+	'place_label'
+];

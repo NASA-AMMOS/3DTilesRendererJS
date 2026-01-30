@@ -12,42 +12,98 @@ import {
 import {
 	UpdateOnChangePlugin,
 	MVTTilesPlugin,
-	MVTTilesMeshPlugin
+	MVTTilesMeshPlugin,
+	PMTilesPlugin,
+	PMTilesMeshPlugin
 } from '3d-tiles-renderer/plugins';
 
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let scene, renderer, camera, controls, tiles, gui;
+let layersFolder = null;
+let colorsFolder = null;
 
-const apiKey = localStorage.getItem( 'mapbox_key' ) || prompt( 'Enter Mapbox API Key' );
-if ( apiKey ) localStorage.setItem( 'mapbox_key', apiKey );
-
-// --- Dynamic Filter State ---
-const state = {
-	pluginType: 'Mesh',
-	// Layer Toggles
-	showWater: true,
-	showBuildings: false,
-	showRoads: false,
-	showTransit: false,
-	showLanduse: false,
-	showAdmin: true,
-	showLabels: true,
-	// Property Filters
-	maxAdminLevel: 1,
-	maxSymbolRank: 3,
-	colors: {
-		water: '#201f20',
-		landuse: '#caedc1',
-		building: '#eeeeee',
-		road: '#444444',
-		admin: '#ff0000',
-		poi: '#ffcc00',
-		default: '#222222'
+// --- Source Presets ---
+// Each provider has different layer names and styling conventions
+const SOURCE_PRESETS = {
+	PMTiles: {
+		name: 'Protomaps PMTiles',
+		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		requiresApiKey: false,
+		// Protomaps layer names (v4 basemap)
+		layers: {
+			water: { name: 'water', enabled: true, color: '#4a90d9' },
+			earth: { name: 'earth', enabled: true, color: '#f2efe9' },
+			landuse: { name: 'landuse', enabled: false, color: '#e8e4d8' },
+			landcover: { name: 'landcover', enabled: false, color: '#d4e8c2' },
+			natural: { name: 'natural', enabled: false, color: '#c8d9af' },
+			roads: { name: 'roads', enabled: false, color: '#ffffff' },
+			buildings: { name: 'buildings', enabled: false, color: '#d9d0c9' },
+			transit: { name: 'transit', enabled: false, color: '#888888' },
+			boundaries: { name: 'boundaries', enabled: true, color: '#ff6b6b' },
+			places: { name: 'places', enabled: true, color: '#333333' },
+			pois: { name: 'pois', enabled: false, color: '#7d4e24' },
+		},
+		defaultColor: '#cccccc'
+	},
+	MVT: {
+		name: 'Mapbox Streets',
+		urlTemplate: 'https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/{z}/{x}/{y}.vector.pbf?access_token=',
+		requiresApiKey: true,
+		// Mapbox Streets v8 layer names
+		layers: {
+			water: { name: 'water', enabled: true, color: '#4a90d9' },
+			waterway: { name: 'waterway', enabled: true, color: '#4a90d9' },
+			landuse: { name: 'landuse', enabled: false, color: '#e8e4d8' },
+			landuse_overlay: { name: 'landuse_overlay', enabled: false, color: '#d4e8c2' },
+			park: { name: 'park', enabled: false, color: '#c8d9af' },
+			natural_label: { name: 'natural_label', enabled: false, color: '#5d8a3e' },
+			road: { name: 'road', enabled: false, color: '#ffffff' },
+			building: { name: 'building', enabled: false, color: '#d9d0c9' },
+			transit: { name: 'transit', enabled: false, color: '#888888' },
+			boundaries: { name: 'admin', enabled: true, color: '#ff6b6b' },
+			place_label: { name: 'place_label', enabled: true, color: '#333333' },
+			poi_label: { name: 'poi_label', enabled: false, color: '#7d4e24' },
+		},
+		defaultColor: '#cccccc'
 	}
 };
 
-const MVT_URL = `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/{z}/{x}/{y}.vector.pbf?access_token=${apiKey}`;
+// Mapbox API key - stored in localStorage for convenience
+let apiKey = localStorage.getItem( 'mapbox_key' ) || '';
+
+// --- Application State ---
+const state = {
+	sourceType: 'PMTiles',
+	renderMode: 'Texture',
+	// Layer visibility (populated from preset)
+	layers: {},
+	// Layer colors (populated from preset)
+	colors: {},
+	// Filter settings
+	maxSymbolRank: 3,
+};
+
+// Initialize state from default preset
+function initStateFromPreset( presetName ) {
+
+	const preset = SOURCE_PRESETS[ presetName ];
+	state.layers = {};
+	state.colors = {};
+
+	for ( const key in preset.layers ) {
+
+		const layer = preset.layers[ key ];
+		state.layers[ key ] = layer.enabled;
+		state.colors[ layer.name ] = layer.color;
+
+	}
+
+	state.colors.default = preset.defaultColor;
+
+}
+
+initStateFromPreset( state.sourceType );
 
 init();
 setupGUI();
@@ -78,36 +134,31 @@ function init() {
 
 }
 
-function mvtFilter( feature, layerName ) {
+function createFilter( preset ) {
 
-	const props = feature.properties;
+	const layerNameToKey = {};
+	for ( const key in preset.layers ) {
 
-	// 1. Layer Visibility Checks
-	if ( layerName === 'water' && ! state.showWater ) return false;
-	if ( layerName === 'building' && ! state.showBuildings ) return false;
-	if ( layerName === 'road' && ! state.showRoads ) return false;
-	if ( layerName === 'transit' && ! state.showTransit ) return false;
-	if ( layerName === 'landuse' && ! state.showLanduse ) return false;
-
-	// 2. Advanced Admin Filtering
-	if ( layerName === 'admin' ) {
-
-		if ( ! state.showAdmin ) return false;
-		return props.admin_level <= state.maxAdminLevel;
+		layerNameToKey[ preset.layers[ key ].name ] = key;
 
 	}
 
-	// 3. Label Filtering
-	if ( layerName === 'place_label' ) {
+	return function( feature, layerName ) {
 
-		if ( ! state.showLabels ) return false;
-		return props.symbolrank <= state.maxSymbolRank;
+		const key = layerNameToKey[ layerName ];
 
-	}
+		// If layer is known, check if enabled
+		if ( key !== undefined ) {
 
-	// Default: Only return true if it's one of our toggled layers
-	const activeLayers = [ 'water', 'building', 'road', 'transit', 'landuse' ];
-	return activeLayers.includes( layerName ) && state[ `show${layerName.charAt( 0 ).toUpperCase() + layerName.slice( 1 )}` ];
+			return state.layers[ key ] === true;
+
+		}
+
+		// Unknown layers: hide by default (log for debugging)
+		console.log( 'Unknown layer:', layerName );
+		return false;
+
+	};
 
 }
 
@@ -120,6 +171,29 @@ function recreateTiles() {
 
 	}
 
+	const preset = SOURCE_PRESETS[ state.sourceType ];
+
+	// Check if API key is needed
+	if ( preset.requiresApiKey && ! apiKey ) {
+
+		apiKey = prompt( `Enter API Key for ${preset.name}:` );
+		if ( apiKey ) {
+
+			localStorage.setItem( 'mapbox_key', apiKey );
+
+		} else {
+
+			// Fall back to PMTiles if no key provided
+			state.sourceType = 'PMTiles';
+			initStateFromPreset( 'PMTiles' );
+			rebuildGUI();
+			recreateTiles();
+			return;
+
+		}
+
+	}
+
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 
@@ -128,18 +202,38 @@ function recreateTiles() {
 		shape: 'ellipsoid',
 		levels: 15,
 		tileDimension: 512,
-		url: MVT_URL,
 		styles: state.colors,
-		filter: mvtFilter
+		filter: createFilter( preset )
 	};
 
-	if ( state.pluginType === 'Mesh' ) {
+	// Select plugin based on source type and render mode
+	if ( state.sourceType === 'PMTiles' ) {
 
-		tiles.registerPlugin( new MVTTilesMeshPlugin( pluginOptions ) );
+		pluginOptions.url = preset.url;
+
+		if ( state.renderMode === 'Mesh' ) {
+
+			tiles.registerPlugin( new PMTilesMeshPlugin( pluginOptions ) );
+
+		} else {
+
+			tiles.registerPlugin( new PMTilesPlugin( pluginOptions ) );
+
+		}
 
 	} else {
 
-		tiles.registerPlugin( new MVTTilesPlugin( pluginOptions ) );
+		pluginOptions.url = preset.urlTemplate + apiKey;
+
+		if ( state.renderMode === 'Mesh' ) {
+
+			tiles.registerPlugin( new MVTTilesMeshPlugin( pluginOptions ) );
+
+		} else {
+
+			tiles.registerPlugin( new MVTTilesPlugin( pluginOptions ) );
+
+		}
 
 	}
 
@@ -151,39 +245,71 @@ function recreateTiles() {
 
 }
 
+function rebuildGUI() {
+
+	// Remove old folders if they exist
+	if ( layersFolder ) {
+
+		layersFolder.destroy();
+		layersFolder = null;
+
+	}
+
+	if ( colorsFolder ) {
+
+		colorsFolder.destroy();
+		colorsFolder = null;
+
+	}
+
+	const preset = SOURCE_PRESETS[ state.sourceType ];
+
+	// Rebuild layers folder
+	layersFolder = gui.addFolder( 'Layers' );
+	for ( const key in preset.layers ) {
+
+		const layer = preset.layers[ key ];
+		layersFolder.add( state.layers, key )
+			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
+			.onChange( recreateTiles );
+
+	}
+
+	// Rebuild colors folder
+	colorsFolder = gui.addFolder( 'Colors' );
+	for ( const key in preset.layers ) {
+
+		const layer = preset.layers[ key ];
+		colorsFolder.addColor( state.colors, layer.name )
+			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
+			.onChange( recreateTiles );
+
+	}
+
+}
+
 function setupGUI() {
 
 	gui = new GUI();
 
-	// Plugin Toggle
-	gui.add( state, 'pluginType', [ 'Mesh', 'Texture' ] ).name( 'Renderer Mode' ).onChange( recreateTiles );
+	// Source & Renderer Settings
+	const sourceFolder = gui.addFolder( 'Source & Renderer' );
+	sourceFolder.add( state, 'sourceType', Object.keys( SOURCE_PRESETS ) )
+		.name( 'Data Source' )
+		.onChange( ( value ) => {
 
-	// Layers Folder
-	const layers = gui.addFolder( 'Layers' );
-	const trigger = () => recreateTiles();
+			initStateFromPreset( value );
+			rebuildGUI();
+			recreateTiles();
 
-	layers.add( state, 'showWater' ).name( 'Water' ).onChange( trigger );
-	layers.add( state, 'showBuildings' ).name( 'Buildings' ).onChange( trigger );
-	layers.add( state, 'showRoads' ).name( 'Roads' ).onChange( trigger );
-	layers.add( state, 'showTransit' ).name( 'Transit' ).onChange( trigger );
-	layers.add( state, 'showLanduse' ).name( 'Landuse' ).onChange( trigger );
-	layers.add( state, 'showAdmin' ).name( 'Admin Borders' ).onChange( trigger );
-	layers.add( state, 'showLabels' ).name( 'Labels' ).onChange( trigger );
+		} );
+	sourceFolder.add( state, 'renderMode', [ 'Mesh', 'Texture' ] )
+		.name( 'Render Mode' )
+		.onChange( recreateTiles );
+	sourceFolder.open();
 
-	// Details Folder
-	const details = gui.addFolder( 'Filter Settings' );
-	details.add( state, 'maxAdminLevel', 0, 4, 1 ).name( 'Admin Detail' ).onChange( trigger );
-	details.add( state, 'maxSymbolRank', 1, 10, 1 ).name( 'Label Density' ).onChange( trigger );
-
-	// Style Folder
-	const styleFolder = gui.addFolder( 'Map Styles' );
-	for ( let key in state.colors ) {
-
-		styleFolder.addColor( state.colors, key )
-			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
-			.onChange( () => recreateTiles() );
-
-	}
+	// Initial layer and color folders
+	rebuildGUI();
 
 }
 

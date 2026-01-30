@@ -98,6 +98,7 @@
     "globals": "^16.5.0",
     "leva": "^0.10.0",
     "postprocessing": "^6.36.4",
+    "pmtiles": "^4.3.2",
     "three": "^0.170.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.48.1",
@@ -105,12 +106,13 @@
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
+    "@mapbox/vector-tile": "^2.0.3",
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
+    "earcut": "^3.0.2",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0",
-    "@mapbox/vector-tile": "^2.0.3",
-    "earcut": "^3.0.2"
+    "pmtiles": "^4.3.2"
   },
   "peerDependenciesMeta": {
     "@react-three/fiber": {
@@ -126,6 +128,9 @@
       "optional": true
     },
     "earcut": {
+      "optional": true
+    },
+    "pmtiles": {
       "optional": true
     }
   }
