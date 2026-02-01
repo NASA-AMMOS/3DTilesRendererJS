@@ -1,4 +1,4 @@
-import { Scene, Engine, GeospatialCamera, Vector3 } from '@babylonjs/core';
+import { Scene, Engine, GeospatialCamera, Vector3, Color4 } from '@babylonjs/core';
 import { GeospatialClippingBehavior } from '@babylonjs/core/Behaviors/Cameras';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
@@ -31,6 +31,8 @@ engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
 // scene
 const scene = new Scene( engine );
+scene.clearColor = new Color4( 0.05, 0.05, 0.05, 1 );
+
 // 3D Tiles data uses right-handed coordinate system
 scene.useRightHandedSystem = true;
 

@@ -1,4 +1,4 @@
-import { Engine, Scene, ArcRotateCamera, Vector3 } from '@babylonjs/core';
+import { Engine, Scene, ArcRotateCamera, Vector3, Color4 } from '@babylonjs/core';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import GUI from 'lil-gui';
 
@@ -19,9 +19,9 @@ const canvas = document.getElementById( 'renderCanvas' );
 const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
 engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
 
-// TODO: Babylon uses left handed coordinate system but our data is in a right handed one.
-// The coordinate system flag may need to be accounted for when parsing the data
+// scene
 const scene = new Scene( engine );
+scene.clearColor = new Color4( 0.05, 0.05, 0.05, 1 );
 scene.useRightHandedSystem = true;
 
 // Camera controls
