@@ -61,7 +61,7 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 **React Three Fiber**
 
-See the [dedicated documentation](./src/r3f/README.md) for information on using the project with `@react-three/fiber`.
+See the dedicated documentation for information on using the project with [@react-three/fiber](./src/r3f/README.md) and [babylonjs](./src/babylonjs/README.md).
 
 # Use
 
