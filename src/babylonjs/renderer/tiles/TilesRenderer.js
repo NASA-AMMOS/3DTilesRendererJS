@@ -128,7 +128,7 @@ export class TilesRenderer extends TilesRendererBase {
 		tile.engineData.transformInverse = transformInverse;
 		tile.engineData.boundingVolume = boundingVolume;
 		tile.engineData.active = false;
-		tile.engineData.group = null;
+		tile.engineData.scene = null;
 		tile.engineData.container = null;
 
 	}
@@ -136,7 +136,7 @@ export class TilesRenderer extends TilesRendererBase {
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
 		const engineData = tile.engineData;
-		const scene = this.scene;
+		const rootScene = this.scene;
 		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
@@ -150,7 +150,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			case 'b3dm': {
 
-				const loader = new B3DMLoader( scene );
+				const loader = new B3DMLoader( rootScene );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
@@ -163,7 +163,7 @@ export class TilesRenderer extends TilesRendererBase {
 			case 'gltf':
 			case 'glb': {
 
-				const loader = new GLTFLoader( scene );
+				const loader = new GLTFLoader( rootScene );
 				loader.workingPath = workingPath;
 				loader.fetchOptions = fetchOptions;
 				loader.adjustmentTransform.copyFrom( upRotationMatrix );
@@ -178,14 +178,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const group = result.scene;
-		group.setEnabled( false );
+		const scene = result.scene;
+		scene.setEnabled( false );
 
 		// apply the tile's cached transform to the loaded scene
-		group
+		scene
 			.computeWorldMatrix( true )
 			.multiply( tileTransform )
-			.decompose( group.scaling, group.rotationQuaternion, group.position );
+			.decompose( scene.scaling, scene.rotationQuaternion, scene.position );
 
 		// exit early if a new request has already started
 		if ( abortSignal.aborted ) {
@@ -195,7 +195,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		engineData.group = group;
+		engineData.scene = scene;
 		engineData.container = result.container;
 		engineData.metadata = result.metadata || null;
 
@@ -210,7 +210,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 			engineData.container.dispose();
 			engineData.container = null;
-			engineData.group = null;
+			engineData.scene = null;
 			engineData.metadata = null;
 
 		}
@@ -220,9 +220,9 @@ export class TilesRenderer extends TilesRendererBase {
 	setTileVisible( tile, visible ) {
 
 		const engineData = tile.engineData;
-		const group = engineData.group;
+		const scene = engineData.scene;
 
-		if ( ! group ) {
+		if ( ! scene ) {
 
 			return;
 
@@ -230,13 +230,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( visible ) {
 
-			group.parent = this.group;
-			group.setEnabled( true );
+			scene.parent = this.group;
+			scene.setEnabled( true );
 
 		} else {
 
-			group.parent = null;
-			group.setEnabled( false );
+			scene.parent = null;
+			scene.setEnabled( false );
 
 		}
 
