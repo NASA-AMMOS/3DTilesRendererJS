@@ -43,6 +43,10 @@
       "types": "./src/r3f/index.d.ts",
       "import": "./build/index.r3f.js"
     },
+    "./babylonjs": {
+      "types": "./src/babylonjs/index.d.ts",
+      "import": "./build/index.babylonjs.js"
+    },
     "./core/plugins": {
       "types": "./src/core/plugins/index.d.ts",
       "import": "./build/index.core-plugins.js"
@@ -87,6 +91,8 @@
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitest/eslint-plugin": "^1.5.1",
+    "@babylonjs/core": "^8.47.2",
+    "@babylonjs/loaders": "^8.47.2",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
     "eslint": "^9.0.0",
@@ -95,6 +101,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^16.5.0",
     "leva": "^0.10.0",
+    "lil-gui": "^0.21.0",
     "postprocessing": "^6.36.4",
     "three": "^0.170.0",
     "typescript": "^5.6.0",
@@ -104,6 +111,8 @@
   },
   "peerDependencies": {
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
+    "@babylonjs/core": ">=8.0.0",
+    "@babylonjs/loaders": ">=8.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "three": ">=0.167.0"
@@ -112,10 +121,19 @@
     "@react-three/fiber": {
       "optional": true
     },
+    "@babylonjs/core": {
+      "optional": true
+    },
+    "@babylonjs/loaders": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "three": {
       "optional": true
     }
   }
