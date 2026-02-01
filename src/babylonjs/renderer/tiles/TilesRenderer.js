@@ -197,6 +197,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		engineData.group = group;
 		engineData.container = result.container;
+		engineData.metadata = result.metadata || null;
 
 	}
 
@@ -210,6 +211,7 @@ export class TilesRenderer extends TilesRendererBase {
 			engineData.container.dispose();
 			engineData.container = null;
 			engineData.group = null;
+			engineData.metadata = null;
 
 		}
 
