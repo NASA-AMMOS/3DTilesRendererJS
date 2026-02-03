@@ -1000,6 +1000,7 @@ export class TilesRendererBase {
 
 		};
 
+		// process children immediately up to a max number of tiles during traversal
 		if ( forceImmediate ) {
 
 			this.processNodeQueue.remove( tile );
