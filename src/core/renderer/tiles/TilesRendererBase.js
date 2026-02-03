@@ -255,6 +255,8 @@ export class TilesRendererBase {
 			used: 0,
 			active: 0,
 			visible: 0,
+
+			tilesProcessed: 0,
 		};
 		this.frameCount = 0;
 
@@ -272,6 +274,7 @@ export class TilesRendererBase {
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
 		this.loadSiblings = true;
+		this.processChildrenCap = 250;
 
 	}
 
@@ -515,6 +518,7 @@ export class TilesRendererBase {
 		stats.used = 0;
 		stats.active = 0;
 		stats.visible = 0;
+		stats.tilesProcessed = 0;
 		this.frameCount ++;
 
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
@@ -767,6 +771,7 @@ export class TilesRendererBase {
 	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
 		this.processedTiles.add( tile );
+		this.stats.tilesProcessed ++;
 
 		if ( tile.content ) {
 
@@ -975,7 +980,7 @@ export class TilesRendererBase {
 
 	}
 
-	ensureChildrenArePreprocessed( tile, immediate = false ) {
+	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.processChildrenCap ) {
 
 		const children = tile.children;
 		if ( children.length === 0 || children[ 0 ].internal ) {
@@ -995,7 +1000,7 @@ export class TilesRendererBase {
 
 		};
 
-		if ( immediate ) {
+		if ( forceImmediate ) {
 
 			this.processNodeQueue.remove( tile );
 			processChildren( children );
