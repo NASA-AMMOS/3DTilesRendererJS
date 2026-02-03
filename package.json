@@ -44,7 +44,7 @@
       "import": "./build/index.r3f.js"
     },
     "./babylonjs": {
-      "types": "./src/babylonjs/index.d.ts",
+      "types": "./src/babylonjs/renderer/index.d.ts",
       "import": "./build/index.babylonjs.js"
     },
     "./core/plugins": {
