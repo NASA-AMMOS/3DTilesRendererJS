@@ -28,7 +28,7 @@ function isProcessed( tile ) {
 // Checks whether all children have been processed and are ready to traverse
 function areChildrenProcessed( tile ) {
 
-	return tile.internal.childrenProcessed === tile.children.length && ( ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState ) );
+	return tile.children.length !== 0 && Boolean( tile.children[ 0 ].internal ) && ( ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState ) );
 
 }
 

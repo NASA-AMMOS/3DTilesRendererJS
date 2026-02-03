@@ -805,7 +805,6 @@ export class TilesRendererBase {
 			hasUnrenderableContent: false,
 			loadingState: UNLOADED,
 			basePath: tilesetDir,
-			childrenProcessed: 0,
 			depth: - 1,
 			depthFromRenderedParent: - 1,
 		};
@@ -830,7 +829,6 @@ export class TilesRendererBase {
 		// Increment parent's children processed counter
 		if ( parentTile ) {
 
-			parentTile.internal.childrenProcessed ++;
 			tile.internal.depth = parentTile.internal.depth + 1;
 			tile.internal.depthFromRenderedParent = parentTile.internal.depthFromRenderedParent + ( tile.internal.hasRenderableContent ? 1 : 0 );
 
@@ -980,43 +978,44 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, immediate = false ) {
 
 		const children = tile.children;
-		if ( tile.internal.childrenProcessed === children.length ) {
+		if ( children.length === 0 || children[ 0 ].internal ) {
 
 			return;
 
 		}
 
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+		const processChildren = children => {
 
-			const child = children[ i ];
-			if ( 'traversal' in child ) {
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				// the child has already been processed
-				continue;
+				this.preprocessNode( children[ i ], tile.internal.basePath, tile );
 
-			} else if ( immediate ) {
 
-				// process the node immediately and make sure we don't double process it
-				this.processNodeQueue.remove( child );
-				this.preprocessNode( child, tile.internal.basePath, tile );
+			}
 
-			} else {
+		};
 
-				// queue the node for processing if it hasn't been already
-				if ( ! this.processNodeQueue.has( child ) ) {
+		if ( immediate ) {
 
-					this.processNodeQueue.add( child, child => {
+			this.processNodeQueue.remove( tile );
+			processChildren( children );
 
-						this.preprocessNode( child, tile.internal.basePath, tile );
-						this._dispatchNeedsUpdateEvent();
+		} else {
 
-					} );
 
-				}
+			if ( ! this.processNodeQueue.has( tile ) ) {
+
+				this.processNodeQueue.add( tile, tile => {
+
+					processChildren( tile.children );
+					this._dispatchNeedsUpdateEvent();
+
+				} );
 
 			}
 
 		}
+
 
 	}
 
@@ -1185,7 +1184,6 @@ export class TilesRendererBase {
 			if ( isExternalTileset ) {
 
 				t.children.length = 0;
-				t.internal.childrenProcessed = 0;
 
 			} else {
 
