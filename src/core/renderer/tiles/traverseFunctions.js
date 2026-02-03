@@ -33,6 +33,7 @@ function isProcessed( tile ) {
 
 function areChildrenProcessed( tile ) {
 
+	// all children are processed at once
 	return tile.children.length === 0 || Boolean( tile.children[ 0 ].internal );
 
 }

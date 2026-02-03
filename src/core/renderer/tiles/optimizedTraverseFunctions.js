@@ -28,6 +28,7 @@ function isProcessed( tile ) {
 // Checks whether all children have been processed and are ready to traverse
 function areChildrenProcessed( tile ) {
 
+	// all children are processed at once
 	const childrenReady = tile.children.length === 0 || Boolean( tile.children[ 0 ].internal );
 	const contentReady = ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState );
 	return childrenReady && contentReady;
