@@ -426,6 +426,14 @@ autoDisableRendererCulling = true : Boolean
 
 If true then all tile meshes automatically have their [frustumCulled](https://threejs.org/docs/index.html#api/en/core/Object3D.frustumCulled) field set to false. This is useful particularly when using one camera because the tiles renderer automatically performs it's own frustum culling on visible tiles. If [displayActiveTiles](#displayActiveTiles) is true or multiple cameras are being used then you may consider setting this to false.
 
+### .maxProcessedTiles
+
+```js
+maxProcessedTiles = 250 : Number
+```
+
+The number of tiles to process up to immediately when traversing the tile set to determine what to render. Lower numbers prevent frame hiccups caused by processing too many tiles at once when a new tile set is available while higher values will process tiles more tiles immediately allowing data to be downloaded and data to be displayed sooner.
+
 ### .lruCache
 
 ```js
