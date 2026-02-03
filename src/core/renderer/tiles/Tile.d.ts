@@ -9,7 +9,6 @@ export interface TileInternalData {
 	hasUnrenderableContent: boolean;
 	loadingState: number;
 	basePath: string;
-	childrenProcessed: number;
 	depth: number;
 	depthFromRenderedParent: number;
 }

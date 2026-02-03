@@ -255,6 +255,8 @@ export class TilesRendererBase {
 			used: 0,
 			active: 0,
 			visible: 0,
+
+			tilesProcessed: 0,
 		};
 		this.frameCount = 0;
 
@@ -272,6 +274,7 @@ export class TilesRendererBase {
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
 		this.loadSiblings = true;
+		this.maxTilesProcessed = 250;
 
 	}
 
@@ -515,6 +518,7 @@ export class TilesRendererBase {
 		stats.used = 0;
 		stats.active = 0;
 		stats.visible = 0;
+		stats.tilesProcessed = 0;
 		this.frameCount ++;
 
 		usedSet.forEach( tile => lruCache.markUnused( tile ) );
@@ -767,6 +771,7 @@ export class TilesRendererBase {
 	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
 		this.processedTiles.add( tile );
+		this.stats.tilesProcessed ++;
 
 		if ( tile.content ) {
 
@@ -805,7 +810,6 @@ export class TilesRendererBase {
 			hasUnrenderableContent: false,
 			loadingState: UNLOADED,
 			basePath: tilesetDir,
-			childrenProcessed: 0,
 			depth: - 1,
 			depthFromRenderedParent: - 1,
 		};
@@ -830,7 +834,6 @@ export class TilesRendererBase {
 		// Increment parent's children processed counter
 		if ( parentTile ) {
 
-			parentTile.internal.childrenProcessed ++;
 			tile.internal.depth = parentTile.internal.depth + 1;
 			tile.internal.depthFromRenderedParent = parentTile.internal.depthFromRenderedParent + ( tile.internal.hasRenderableContent ? 1 : 0 );
 
@@ -977,46 +980,48 @@ export class TilesRendererBase {
 
 	}
 
-	ensureChildrenArePreprocessed( tile, immediate = false ) {
+	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
 
 		const children = tile.children;
-		if ( tile.internal.childrenProcessed === children.length ) {
+		if ( children.length === 0 || children[ 0 ].internal ) {
 
 			return;
 
 		}
 
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
+		const processChildren = children => {
 
-			const child = children[ i ];
-			if ( 'traversal' in child ) {
+			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				// the child has already been processed
-				continue;
+				this.preprocessNode( children[ i ], tile.internal.basePath, tile );
 
-			} else if ( immediate ) {
 
-				// process the node immediately and make sure we don't double process it
-				this.processNodeQueue.remove( child );
-				this.preprocessNode( child, tile.internal.basePath, tile );
+			}
 
-			} else {
+		};
 
-				// queue the node for processing if it hasn't been already
-				if ( ! this.processNodeQueue.has( child ) ) {
+		// process children immediately up to a max number of tiles during traversal
+		if ( forceImmediate ) {
 
-					this.processNodeQueue.add( child, child => {
+			this.processNodeQueue.remove( tile );
+			processChildren( children );
 
-						this.preprocessNode( child, tile.internal.basePath, tile );
-						this._dispatchNeedsUpdateEvent();
+		} else {
 
-					} );
 
-				}
+			if ( ! this.processNodeQueue.has( tile ) ) {
+
+				this.processNodeQueue.add( tile, tile => {
+
+					processChildren( tile.children );
+					this._dispatchNeedsUpdateEvent();
+
+				} );
 
 			}
 
 		}
+
 
 	}
 
@@ -1185,7 +1190,6 @@ export class TilesRendererBase {
 			if ( isExternalTileset ) {
 
 				t.children.length = 0;
-				t.internal.childrenProcessed = 0;
 
 			} else {
 
