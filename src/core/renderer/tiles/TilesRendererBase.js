@@ -274,7 +274,7 @@ export class TilesRendererBase {
 		this.maxDepth = Infinity;
 		this.optimizedLoadStrategy = false;
 		this.loadSiblings = true;
-		this.maxProcessedTiles = 250;
+		this.maxTilesProcessed = 250;
 
 	}
 
@@ -980,7 +980,7 @@ export class TilesRendererBase {
 
 	}
 
-	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxProcessedTiles ) {
+	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
 
 		const children = tile.children;
 		if ( children.length === 0 || children[ 0 ].internal ) {

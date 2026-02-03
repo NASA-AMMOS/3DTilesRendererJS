@@ -14,7 +14,7 @@ export class TilesRendererBase {
 	maxDepth : number;
 	loadSiblings : boolean;
 	optimizedLoadStrategy : boolean;
-	maxProcessedTiles : number;
+	maxTilesProcessed : number;
 
 	loadProgress: number;
 
