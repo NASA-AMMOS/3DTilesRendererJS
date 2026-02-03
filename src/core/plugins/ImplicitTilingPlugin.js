@@ -88,7 +88,6 @@ export class ImplicitTilingPlugin {
 
 			} );
 			tile.children.length = 0;
-			tile.internal.childrenProcessed = 0;
 
 		}
 

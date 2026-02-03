@@ -446,7 +446,6 @@ export class ImageOverlayPlugin {
 				} );
 
 				parent.children.length = 0;
-				parent.internal.childrenProcessed = 0;
 
 			}
 

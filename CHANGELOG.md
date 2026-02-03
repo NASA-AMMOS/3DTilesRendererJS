@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.20] - Unreleased
+## [0.4.20] - 2026-02-03
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
 - XYZImageFormat: add "projection" option and ability to set tile settings per-level.
 - DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
-- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting.
+- TilesRenderer: Added "maxTilesProcessed" field to adjust how much time is spent per frame processing tiles during traversal.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
 - Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
 - TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
+- Simplified handling of processed children, removed `internal.processedChildren`.
 
 ### Fixed
 - Fix mouse offset in Controls.
