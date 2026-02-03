@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.21] - 2026-02-04
+### Fixed
+- Fixed path for babylonjs typescript definitions.
+
 ## [0.4.20] - 2026-02-03
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
