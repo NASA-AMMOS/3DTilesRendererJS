@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.20] - Unreleased
+## [0.4.20] - 2026-02-03
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
