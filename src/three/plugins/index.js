@@ -22,6 +22,10 @@ export * from './gltf/GLTFCesiumRTCExtension.js';
 export * from './gltf/GLTFStructuralMetadataExtension.js';
 export * from './gltf/GLTFMeshFeaturesExtension.js';
 
+// gltf metadata classes
+export * from './gltf/metadata/classes/MeshFeatures.js';
+export * from './gltf/metadata/classes/StructuralMetadata.js';
+
 // loaders
 export * from './loaders/WMTSCapabilitiesLoader.js';
 export * from './loaders/WMSCapabilitiesLoader.js';
