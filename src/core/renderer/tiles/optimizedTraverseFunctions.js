@@ -38,7 +38,7 @@ function areChildrenProcessed( tile ) {
 // Checks whether we can stop at this tile for rendering or not
 function canUnconditionallyRefine( tile ) {
 
-	return tile.internal.hasUnrenderableContent || ( tile.parent && tile.parent.geometricError < tile.geometricError );
+	return tile.internal.hasUnrenderableContent || tile.geometricError > 1e90 || ( tile.parent && tile.parent.geometricError < tile.geometricError );
 
 }
 
@@ -60,6 +60,8 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.allChildrenReady = false;
 		tile.traversal.kicked = false;
 		tile.traversal.allUsedChildrenProcessed = false;
+		tile.traversal.coverage = 0.0;
+		tile.traversal.visibleCoverage = 0.0;
 
 		// update tile frustum and error state
 		renderer.calculateTileViewErrorWithPlugin( tile, viewErrorTarget );
@@ -428,6 +430,7 @@ function toggleTiles( tile, renderer ) {
 			if ( tile.internal.loadingState !== LOADED ) {
 
 				tile.traversal.active = false;
+				tile.traversal.kicked = true;
 
 			}
 
@@ -500,10 +503,61 @@ function toggleTiles( tile, renderer ) {
 		tile.traversal.usedLastFrame = isUsed;
 
 		const children = tile.children;
+		let coverage = 0;
+		let coverageChildren = 0;
+		let visibleCoverageChildren = 0;
+		let visibleCoverage = 0;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 			const c = children[ i ];
 			toggleTiles( c, renderer );
+			coverage += c.traversal?.coverage || 0;
+			coverageChildren ++;
+
+			if ( c.traversal?.inFrustum ) {
+
+				visibleCoverageChildren ++;
+				visibleCoverage += c.traversal?.visibleCoverage || 0;
+
+			}
+
+		}
+
+		// TODO: it may be more simple to keep non-content tiles marked as "active" and fire "setVisible" and "setActive"
+		// so plugins etc can react to empty tile visibility if desired
+		if ( tile.internal.hasContent && ! canUnconditionallyRefine( tile ) || tile.traversal.isLeaf ) {
+
+			if ( tile.internal.hasContent && ! isDownloadFinished( tile.internal.loadingState ) ) {
+
+				if ( tile.traversal.active ) {
+
+					tile.traversal.coverage = 0;
+					tile.traversal.visibleCoverage = 0;
+
+				} else {
+
+					tile.traversal.coverage = coverage / coverageChildren;
+					tile.traversal.visibleCoverage = visibleCoverage / visibleCoverageChildren;
+
+				}
+
+			} else {
+
+				tile.traversal.coverage = 1.0;
+				tile.traversal.visibleCoverage = tile.traversal.inFrustum ? 1.0 : 0.0;
+
+			}
+
+
+		} else if ( tile.refine === 'ADD' ) {
+
+			tile.traversal.coverage = 1.0;
+			tile.traversal.visibleCoverage = tile.traversal.inFrustum ? 1.0 : 0.0;
+
+		} else {
+
+			tile.traversal.coverage = coverage / coverageChildren || 0;
+			tile.traversal.visibleCoverage = visibleCoverage / visibleCoverageChildren || 0;
 
 		}
 
