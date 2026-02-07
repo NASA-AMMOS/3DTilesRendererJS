@@ -59,7 +59,7 @@ _Personal [Google Tiles API Key](https://developers.google.com/maps/documentatio
 
 [GeoJSON Overlays](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/three/geojson.html)
 
-**React Three Fiber**
+**React Three Fiber & Babylonjs**
 
 See the dedicated documentation for information on using the project with [@react-three/fiber](./src/r3f/README.md) and [babylonjs](./src/babylonjs/renderer/README.md).
 

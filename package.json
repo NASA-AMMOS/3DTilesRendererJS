@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.20",
+  "version": "0.4.21",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -44,7 +44,7 @@
       "import": "./build/index.r3f.js"
     },
     "./babylonjs": {
-      "types": "./src/babylonjs/index.d.ts",
+      "types": "./src/babylonjs/renderer/index.d.ts",
       "import": "./build/index.babylonjs.js"
     },
     "./core/plugins": {
