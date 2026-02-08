@@ -1,0 +1,2 @@
+import{B as a,F as p}from"./lil-gui.esm-B6p285Hr.js";import"./TilesRendererBase-CFsQu8zV.js";import"./constants-JFoaxC9y.js";import"./BatchTable-CRr3zuRk.js";import"./B3DMLoaderBase-w5mdSgm-.js";class c{constructor(){this.supportCascades=!1}loadCubeData(){throw".env not supported in Cube."}loadData(e,t,s){const o=new Uint8Array(e.buffer,e.byteOffset,e.byteLength),r=a(o);s(r.width,r.height,t.generateMipMaps,!1,()=>{p(t,o)})}}export{c as _TGATextureLoader};
+//# sourceMappingURL=tgaTextureLoader-Cssr9_AL.js.map
