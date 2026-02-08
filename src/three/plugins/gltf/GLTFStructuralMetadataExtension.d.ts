@@ -1,4 +1,4 @@
-import { Vector3, Texture } from 'three';
+import { Vector3, Texture, Object3D } from 'three';
 import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class GLTFStructuralMetadataExtension implements GLTFLoaderPlugin {
@@ -8,6 +8,8 @@ export class GLTFStructuralMetadataExtension implements GLTFLoaderPlugin {
 }
 
 export class StructuralMetadata {
+
+	constructor( definition: any, textures: Array<Texture | null>, buffers: Array<ArrayBuffer>, nodeMetadata?: any, object?: Object3D | null );
 
 	textures: Array<Texture | null>;
 
