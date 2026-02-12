@@ -62,6 +62,7 @@ typings/
 
 # IDEs and editors
 /.idea
+.vscode/settings.json
 
 example/local-data
 example/dev-bundle
