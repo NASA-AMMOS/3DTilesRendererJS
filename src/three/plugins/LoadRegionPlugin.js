@@ -77,7 +77,7 @@ export class LoadRegionPlugin {
 			if ( intersects ) {
 
 				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
-				minDistance = Math.min( region.calculateDistance( boundingVolume, tile, tiles ) );
+				minDistance = Math.min( region.calculateDistance( boundingVolume, tile, tiles ), minDistance );
 
 			}
 
