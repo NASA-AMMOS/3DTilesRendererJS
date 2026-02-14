@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Types for gltf metadata extensions.
 
+### Fixed
+- LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
+
 ## [0.4.21] - 2026-02-04
 ### Fixed
 - Fixed path for babylonjs typescript definitions.

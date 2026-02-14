@@ -8,6 +8,7 @@ declare class BaseRegion {
 	mask: boolean;
 	constructor( options?: { errorTarget?: number, mask?: boolean } );
 	intersectsTile( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): boolean
+	calculateDistance( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): number
 	calculateError( tile: Tile, tilesRenderer: TilesRenderer ): number
 
 }
