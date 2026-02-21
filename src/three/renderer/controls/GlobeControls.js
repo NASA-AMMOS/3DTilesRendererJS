@@ -498,7 +498,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	_updateZoom() {
 
-		const { zoomDelta, ellipsoid, zoomSpeed, zoomPoint, camera, maxZoom, state } = this;
+		const { zoomDelta, zoomSpeed, zoomPoint, camera, maxZoom, state } = this;
 
 		if ( state !== ZOOM && zoomDelta === 0 ) {
 
