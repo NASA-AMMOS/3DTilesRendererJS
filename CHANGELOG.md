@@ -4,12 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.22] - 2026-02-08
+## [0.4.22] - Unreleased
 ### Added
 - Types for gltf metadata extensions.
 
 ### Fixed
 - LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
+- GlobeContorls: Account for ellipsoid frame scale when calculating max zoom out distance.
 
 ## [0.4.21] - 2026-02-04
 ### Fixed
