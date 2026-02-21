@@ -240,7 +240,7 @@ export class GlobeControls extends EnvironmentControls {
 		super.adjustCamera( camera );
 
 		const { ellipsoidFrame, ellipsoidFrameInverse, ellipsoid, nearMargin, farMargin } = this;
-		const maxRadius = Math.max( ...ellipsoid.radius );
+		const maxRadius = this._getMaxWorldRadius();
 		if ( camera.isPerspectiveCamera ) {
 
 			// adjust the clip planes
@@ -562,7 +562,7 @@ export class GlobeControls extends EnvironmentControls {
 
 			// calculate zoom in a similar way to environment controls so
 			// the zoom speeds are comparable
-			const dist = this.getDistanceToCenter() - ellipsoid.radius.x;
+			const dist = this.getDistanceToCenter() - this._getMaxWorldRadius();
 			const scale = zoomDelta * dist * zoomSpeed * 0.0025;
 			const clampedScale = Math.max( scale, Math.min( this.getDistanceToCenter() - maxDistance, 0 ) );
 
@@ -628,7 +628,7 @@ export class GlobeControls extends EnvironmentControls {
 	// returns the perspective camera transition distance can move to based on globe size and fov
 	_getPerspectiveTransitionDistance() {
 
-		const { camera, ellipsoid } = this;
+		const { camera } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
 			throw new Error();
@@ -636,7 +636,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// When the smallest fov spans 65% of the ellipsoid then we use the near controls
-		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = this._getMaxWorldRadius();
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
 		const distVert = ellipsoidRadius / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
 		const distHoriz = ellipsoidRadius / Math.tan( fovHoriz * 0.5 );
@@ -649,7 +649,7 @@ export class GlobeControls extends EnvironmentControls {
 	// returns the max distance the perspective camera can move to based on globe size and fov
 	_getMaxPerspectiveDistance() {
 
-		const { camera, ellipsoid } = this;
+		const { camera } = this;
 		if ( ! camera.isPerspectiveCamera ) {
 
 			throw new Error();
@@ -657,7 +657,7 @@ export class GlobeControls extends EnvironmentControls {
 		}
 
 		// allow for zooming out such that the ellipsoid is half the size of the largest fov
-		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = this._getMaxWorldRadius();
 		const fovHoriz = 2 * Math.atan( Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 ) * camera.aspect );
 		const distVert = ellipsoidRadius / Math.tan( MathUtils.DEG2RAD * camera.fov * 0.5 );
 		const distHoriz = ellipsoidRadius / Math.tan( fovHoriz * 0.5 );
@@ -670,7 +670,7 @@ export class GlobeControls extends EnvironmentControls {
 	// returns the transition threshold for orthographic zoom based on the globe size and camera settings
 	_getOrthographicTransitionZoom() {
 
-		const { camera, ellipsoid } = this;
+		const { camera } = this;
 		if ( ! camera.isOrthographicCamera ) {
 
 			throw new Error();
@@ -680,7 +680,7 @@ export class GlobeControls extends EnvironmentControls {
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
 		const orthoSize = Math.max( orthoHeight, orthoWidth );
-		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = this._getMaxWorldRadius();
 		const ellipsoidDiameter = 2 * ellipsoidRadius;
 		return 2 * orthoSize / ellipsoidDiameter;
 
@@ -689,7 +689,7 @@ export class GlobeControls extends EnvironmentControls {
 	// returns the minimum allowed orthographic zoom based on the globe size and camera settings
 	_getMinOrthographicZoom() {
 
-		const { camera, ellipsoid } = this;
+		const { camera } = this;
 		if ( ! camera.isOrthographicCamera ) {
 
 			throw new Error();
@@ -699,7 +699,7 @@ export class GlobeControls extends EnvironmentControls {
 		const orthoHeight = ( camera.top - camera.bottom );
 		const orthoWidth = ( camera.right - camera.left );
 		const orthoSize = Math.min( orthoHeight, orthoWidth );
-		const ellipsoidRadius = Math.max( ...ellipsoid.radius );
+		const ellipsoidRadius = this._getMaxWorldRadius();
 		const ellipsoidDiameter = 2 * ellipsoidRadius;
 		return 0.7 * orthoSize / ellipsoidDiameter;
 
@@ -785,6 +785,13 @@ export class GlobeControls extends EnvironmentControls {
 			return result;
 
 		}
+
+	}
+
+	_getMaxWorldRadius() {
+
+		const { ellipsoid, ellipsoidFrame } = this;
+		return Math.max( ...ellipsoid.radius ) * ellipsoidFrame.getMaxScaleOnAxis();
 
 	}
 
