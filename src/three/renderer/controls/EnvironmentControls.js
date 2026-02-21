@@ -104,6 +104,9 @@ export class EnvironmentControls extends EventDispatcher {
 		this.adjustHeight = true;
 		this.enableDamping = false;
 		this.dampingFactor = 0.15;
+		this.enableDoubleTapZoom = true;
+		this.doubleTapZoomScale = 2.0;
+		this.doubleTapAnimationDuration = 0.3;
 
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
 		this.useFallbackPlane = true;
@@ -126,6 +129,17 @@ export class EnvironmentControls extends EventDispatcher {
 		this.zoomDirection = new Vector3();
 		this.zoomPoint = new Vector3();
 		this.zoomDelta = 0;
+
+		// double-tap state
+		this._lastTapTime = 0;
+		this._lastTapPoint = new Vector2();
+		this._doubleTapAnim = {
+			active: false,
+			elapsed: 0,
+			startValue: 0,
+			targetValue: 0,
+			zoomPoint: new Vector3(),
+		};
 
 		// fields used for inertia
 		this.rotationInertiaPivot = new Vector3();
@@ -247,6 +261,14 @@ export class EnvironmentControls extends EventDispatcher {
 			// init the pointer
 			pointerTracker.addPointer( e );
 			this.needsUpdate = true;
+
+			// Cancel any ongoing double-tap zoom animation
+			if ( this._doubleTapAnim.active ) {
+
+				this._doubleTapAnim.active = false;
+				this.dispatchEvent( _endEvent );
+
+			}
 
 			// handle cases where we need to capture the pointer or
 			// reset state when we have too many pointers
@@ -431,6 +453,16 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
+			// Check for double-tap before deleting pointer
+			const isTouch = pointerTracker.getPointerType() === 'touch';
+			const isSingleTouch = pointerTracker.getPointerCount() === 1;
+
+			if ( this.enableDoubleTapZoom && isTouch && isSingleTouch ) {
+
+				this._detectDoubleTap( pointerTracker );
+
+			}
+
 			pointerTracker.deletePointer( e );
 
 			if (
@@ -443,6 +475,7 @@ export class EnvironmentControls extends EventDispatcher {
 			}
 
 			this.resetState();
+
 			this.needsUpdate = true;
 
 		};
@@ -687,14 +720,18 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// update the actions
 		const inertiaNeedsUpdate = this._inertiaNeedsUpdate();
-		const adjustCameraRotation = this.needsUpdate || inertiaNeedsUpdate;
-		if ( this.needsUpdate || inertiaNeedsUpdate ) {
+		const doubleTapNeedsUpdate = this._updateDoubleTapAnimation( deltaTime );
+		const adjustCameraRotation = this.needsUpdate || inertiaNeedsUpdate || doubleTapNeedsUpdate;
+		if ( this.needsUpdate || inertiaNeedsUpdate || doubleTapNeedsUpdate ) {
 
 			const zoomDelta = this.zoomDelta;
+
+			// Don't process normal zoom/position/rotation while animating double-tap
 
 			this._updateZoom();
 			this._updatePosition( deltaTime );
 			this._updateRotation( deltaTime );
+
 
 			if ( state === DRAG || state === ROTATE ) {
 
@@ -707,7 +744,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			}
 
-			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate ) {
+			if ( state !== NONE || zoomDelta !== 0 || inertiaNeedsUpdate || doubleTapNeedsUpdate ) {
 
 				this.dispatchEvent( _changeEvent );
 
@@ -1111,6 +1148,111 @@ export class EnvironmentControls extends EventDispatcher {
 		}
 
 		return false;
+
+	}
+
+	_detectDoubleTap( pointerTracker ) {
+
+		pointerTracker.getLatestPoint( _pointer );
+
+		const now = performance.now();
+		const timeSinceLastTap = now - this._lastTapTime;
+		const tapMoveThreshold = 10;
+		const doubleTapTimeThreshold = 300;
+
+		const isDoubleTap = timeSinceLastTap < doubleTapTimeThreshold &&
+			_pointer.distanceTo( this._lastTapPoint ) < tapMoveThreshold;
+
+		if ( isDoubleTap ) {
+
+			this._startDoubleTapZoom( _pointer );
+			this._lastTapTime = 0; // prevent triple-tap
+
+		} else {
+
+			this._lastTapTime = now;
+			this._lastTapPoint.copy( _pointer );
+
+		}
+
+	}
+
+	_startDoubleTapZoom( tapPoint ) {
+
+		const { camera, domElement, raycaster } = this;
+
+		// Find zoom target point
+		_pointer.copy( tapPoint );
+		adjustedPointerToCoords( _pointer, domElement, _pointer );
+		setRaycasterFromCamera( raycaster, _pointer, camera );
+		const hit = this._raycast( raycaster );
+		const zoomPoint = hit ? hit.point.clone() : camera.position.clone().addScaledVector( raycaster.ray.direction, 100 );
+
+		// Setup animation state
+		const isOrtho = camera.isOrthographicCamera;
+		const startValue = isOrtho ? camera.zoom : camera.position.distanceTo( zoomPoint );
+		let targetValue = isOrtho ? startValue * this.doubleTapZoomScale : startValue / this.doubleTapZoomScale;
+
+		// Clamp target value
+		targetValue = MathUtils.clamp(
+			targetValue,
+			isOrtho ? this.minZoom : this.minDistance,
+			isOrtho ? this.maxZoom : this.maxDistance
+		);
+
+		this._doubleTapAnim.active = true;
+		this._doubleTapAnim.elapsed = 0;
+		this._doubleTapAnim.startValue = startValue;
+		this._doubleTapAnim.targetValue = targetValue;
+		this._doubleTapAnim.zoomPoint.copy( zoomPoint );
+
+		// Reset inertia and dispatch event
+		this.rotationInertia.set( 0, 0 );
+		this.dragInertia.set( 0, 0, 0 );
+		this.dispatchEvent( _startEvent );
+
+	}
+
+	_updateDoubleTapAnimation( deltaTime ) {
+
+		if ( ! this._doubleTapAnim.active ) return false;
+
+		const { camera } = this;
+		const anim = this._doubleTapAnim;
+		const { startValue, targetValue, zoomPoint } = anim;
+		const duration = this.doubleTapAnimationDuration;
+
+		// Increment elapsed time
+		anim.elapsed += deltaTime;
+
+		// Ease-out cubic: t = 1 - (1-t)³
+		const progress = Math.min( anim.elapsed / duration, 1 );
+		const t = 1 - Math.pow( 1 - progress, 3 );
+		const currentValue = MathUtils.lerp( startValue, targetValue, t );
+
+		if ( camera.isOrthographicCamera ) {
+
+			camera.zoom = currentValue;
+			camera.updateProjectionMatrix();
+
+		} else {
+
+			_vec.subVectors( camera.position, zoomPoint ).normalize();
+			camera.position.copy( zoomPoint ).addScaledVector( _vec, currentValue );
+			camera.updateMatrixWorld();
+
+		}
+
+		// Check completion
+		if ( progress >= 1 ) {
+
+			this._doubleTapAnim.active = false;
+			this.dispatchEvent( _endEvent );
+			return false;
+
+		}
+
+		return true;
 
 	}
 
