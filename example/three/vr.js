@@ -230,6 +230,8 @@ function handleCamera() {
 
 			xrSession = renderer.xr.getSession();
 
+			tiles.setXRSession( xrSession );
+
 		}
 
 	} else {
@@ -245,6 +247,8 @@ function handleCamera() {
 			camera.position.set( 0, 1, 0 );
 
 			xrSession = null;
+
+			tiles.setXRSession( null );
 
 		}
 
