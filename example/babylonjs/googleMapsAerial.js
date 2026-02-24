@@ -306,14 +306,14 @@ coordMode.addEventListener( 'change', () => {
 		latlonInputs.style.display = 'flex';
 		ecefInputs.style.display = 'none';
 		ecefRadiusRow.style.display = 'none';
-		const [ lat, lon, alt ] = ecefToLatLonAlt(
+		const [ lat, lon ] = ecefToLatLonAlt(
 			parseFloat( ecefX.value ),
 			parseFloat( ecefY.value ),
 			parseFloat( ecefZ.value )
 		);
 		latInput.value = lat.toFixed( 6 );
 		lonInput.value = lon.toFixed( 6 );
-		altInput.value = alt.toFixed( 1 );
+		altInput.value = ecefRadius.value; // Use radius value, not computed alt (which is 0 for surface point)
 
 	} else {
 
@@ -323,7 +323,7 @@ coordMode.addEventListener( 'change', () => {
 		const [ x, y, z ] = latLonAltToEcef(
 			parseFloat( latInput.value ),
 			parseFloat( lonInput.value ),
-			parseFloat( altInput.value )
+			0 // Convert surface point (altitude=0), since camera.center is at surface
 		);
 		ecefX.value = x.toFixed( 2 );
 		ecefY.value = y.toFixed( 2 );
