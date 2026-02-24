@@ -8,127 +8,6 @@ const GOOGLE_TILES_ASSET_ID = 2275207;
 
 const PLANET_RADIUS = 6378137;
 
-// gui
-const params = {
-	enabled: true,
-	visibleTiles: 0,
-	errorTarget: 20,
-	minZ: 0,
-	maxZ: 0,
-};
-
-const gui = new GUI();
-gui.add( params, 'enabled' );
-gui.add( params, 'visibleTiles' ).name( 'Visible Tiles' ).listen().disable();
-gui.add( params, 'errorTarget', 1, 100 );
-gui.add( params, 'minZ' ).name( 'Camera MinZ' ).listen().disable();
-gui.add( params, 'maxZ' ).name( 'Camera MaxZ' ).listen().disable();
-
-// engine
-const canvas = document.getElementById( 'renderCanvas' );
-const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
-engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
-
-// scene
-const scene = new Scene( engine );
-scene.clearColor = new Color4( 0.05, 0.05, 0.05, 1 );
-
-// 3D Tiles data uses right-handed coordinate system
-scene.useRightHandedSystem = true;
-
-// camera
-const camera = new GeospatialCamera( 'geo', scene, { planetRadius: PLANET_RADIUS } );
-
-camera.attachControl( true );
-const clippingBehavior = new GeospatialClippingBehavior();
-camera.addBehavior( clippingBehavior );
-
-// Start farther out, then fly in once tiles are loaded
-camera.radius = 50000;
-
-// Set center to Tokyo Tower location (ECEF coordinates)
-// Tokyo Tower: 35.6586° N, 139.7454° E
-camera.center = new Vector3( - 3959611.825621192, 3352599.0363458656, 3697549.0362687325 );
-camera.radius = 600;
-camera.pitch = 1.167625429373872;
-camera.yaw = - 0.2513281792775774;
-camera.limits.radiusMin = 25;
-
-camera.checkCollisions = true;
-scene.collisionsEnabled = true;
-
-// Fly to close view once tiles load
-let hasZoomedIn = false;
-
-// tiles
-const tiles = new TilesRenderer( null, scene );
-tiles.registerPlugin( new CesiumIonAuthPlugin( {
-	apiToken: import.meta.env.VITE_ION_KEY,
-	assetId: GOOGLE_TILES_ASSET_ID,
-	autoRefreshToken: true,
-} ) );
-tiles.errorTarget = params.errorTarget;
-
-// Babylon render loop
-
-scene.onBeforeRenderObservable.add( () => {
-
-	if ( params.enabled ) {
-
-		tiles.errorTarget = params.errorTarget;
-		tiles.update();
-		params.visibleTiles = tiles.visibleTiles.size;
-		params.minZ = camera.minZ;
-		params.maxZ = camera.maxZ;
-
-
-		// Once we have some tiles visible, fly in to target
-		if ( ! hasZoomedIn && tiles.visibleTiles.size > 5 ) {
-
-			hasZoomedIn = true;
-			camera.flyToAsync( undefined, undefined, 400, undefined, 2000 );
-
-		}
-
-	}
-
-	// update attributions
-	const attributions = tiles.getAttributions();
-	const creditsEl = document.getElementById( 'credits' );
-	creditsEl.innerText = attributions[ 0 ]?.value || '';
-
-} );
-
-engine.runRenderLoop( () => {
-
-	scene.render();
-
-} );
-
-// Handle window resize
-window.addEventListener( 'resize', () => {
-
-	engine.resize();
-
-} );
-
-// --- Place search functionality ---
-const placeSearch = document.getElementById( 'place-search' );
-const searchBtn = document.getElementById( 'search-btn' );
-const searchResult = document.getElementById( 'search-result' );
-const searchResultText = document.getElementById( 'search-result-text' );
-const coordMode = document.getElementById( 'coord-mode' );
-const latlonInputs = document.getElementById( 'latlon-inputs' );
-const ecefInputs = document.getElementById( 'ecef-inputs' );
-const latInput = document.getElementById( 'lat' );
-const lonInput = document.getElementById( 'lon' );
-const altInput = document.getElementById( 'alt' );
-const ecefX = document.getElementById( 'ecef-x' );
-const ecefY = document.getElementById( 'ecef-y' );
-const ecefZ = document.getElementById( 'ecef-z' );
-const jumpBtn = document.getElementById( 'jump-btn' );
-
-
 // WGS84 geodetic (lat/lon/alt) to ECEF conversion
 // Once upstreamed to Babylon.js, these can be removed
 const WGS84_A = 6378137;
@@ -173,6 +52,179 @@ function ecefToLatLonAlt( x, y, z ) {
 	return [ ( lat * 180 ) / Math.PI, ( lon * 180 ) / Math.PI, alt ];
 
 }
+
+// gui
+const params = {
+	enabled: true,
+	visibleTiles: 0,
+	errorTarget: 20,
+	minZ: 0,
+	maxZ: 0,
+};
+
+const gui = new GUI();
+gui.add( params, 'enabled' );
+gui.add( params, 'visibleTiles' ).name( 'Visible Tiles' ).listen().disable();
+gui.add( params, 'errorTarget', 1, 100 );
+gui.add( params, 'minZ' ).name( 'Camera MinZ' ).listen().disable();
+gui.add( params, 'maxZ' ).name( 'Camera MaxZ' ).listen().disable();
+
+// engine
+const canvas = document.getElementById( 'renderCanvas' );
+const engine = new Engine( canvas, true, { useLargeWorldRendering: true } );
+engine.setHardwareScalingLevel( 1 / window.devicePixelRatio );
+
+// scene
+const scene = new Scene( engine );
+scene.clearColor = new Color4( 0.05, 0.05, 0.05, 1 );
+
+// 3D Tiles data uses right-handed coordinate system
+scene.useRightHandedSystem = true;
+
+// camera
+const camera = new GeospatialCamera( 'geo', scene, { planetRadius: PLANET_RADIUS } );
+
+camera.attachControl( true );
+const clippingBehavior = new GeospatialClippingBehavior();
+camera.addBehavior( clippingBehavior );
+
+// Parse URL hash for initial coordinates (#lat=40.7&lon=-73.9&alt=500)
+const hashParams = new URLSearchParams( window.location.hash.substring( 1 ) );
+const urlLat = hashParams.get( 'lat' );
+const urlLon = hashParams.get( 'lon' );
+const urlAlt = hashParams.get( 'alt' );
+
+let initialLat = 40.782773; // Central Park, NYC
+let initialLon = - 73.965363;
+let initialAlt = 600;
+let initialRadius = initialAlt;
+
+if ( urlLat && urlLon ) {
+
+	initialLat = parseFloat( urlLat );
+	initialLon = parseFloat( urlLon );
+	initialAlt = urlAlt ? parseFloat( urlAlt ) : 300;
+	initialRadius = initialAlt;
+
+}
+
+const [ initialX, initialY, initialZ ] = latLonAltToEcef( initialLat, initialLon, 0 );
+
+// Start farther out, then fly in once tiles are loaded
+camera.radius = initialRadius;
+
+// Set center to initial location (ECEF coordinates)
+camera.center = new Vector3( initialX, initialY, initialZ );
+camera.pitch = 1.167625429373872;
+camera.yaw = - 0.2513281792775774;
+camera.limits.radiusMin = 25;
+
+camera.checkCollisions = true;
+scene.collisionsEnabled = true;
+
+// Fly to close view once tiles load
+let hasZoomedIn = false;
+
+// tiles
+const tiles = new TilesRenderer( null, scene );
+tiles.registerPlugin( new CesiumIonAuthPlugin( {
+	apiToken: import.meta.env.VITE_ION_KEY,
+	assetId: GOOGLE_TILES_ASSET_ID,
+	autoRefreshToken: true,
+} ) );
+tiles.errorTarget = params.errorTarget;
+
+// Babylon render loop
+
+scene.onBeforeRenderObservable.add( () => {
+
+	if ( params.enabled ) {
+
+		tiles.errorTarget = params.errorTarget;
+		tiles.update();
+		params.visibleTiles = tiles.visibleTiles.size;
+		params.minZ = camera.minZ;
+		params.maxZ = camera.maxZ;
+
+
+		// Once we have some tiles visible, fly in to target
+		if ( ! hasZoomedIn && tiles.visibleTiles.size > 5 ) {
+
+			hasZoomedIn = true;
+			// camera.flyToAsync( undefined, undefined, 400, undefined, 2000 );
+
+		}
+
+	}
+
+	// update attributions
+	const attributions = tiles.getAttributions();
+	const creditsEl = document.getElementById( 'credits' );
+	creditsEl.innerText = attributions[ 0 ]?.value || '';
+
+} );
+
+engine.runRenderLoop( () => {
+
+	scene.render();
+
+} );
+
+// Handle window resize
+window.addEventListener( 'resize', () => {
+
+	engine.resize();
+
+} );
+
+// --- Place search functionality ---
+const placeSearch = document.getElementById( 'place-search' );
+const searchBtn = document.getElementById( 'search-btn' );
+const searchResult = document.getElementById( 'search-result' );
+const searchResultText = document.getElementById( 'search-result-text' );
+const togglePanelBtn = document.getElementById( 'toggle-panel' );
+const panelContent = document.getElementById( 'panel-content' );
+
+// Toggle panel collapse
+togglePanelBtn.addEventListener( 'click', () => {
+
+	if ( panelContent.style.display === 'none' ) {
+
+		panelContent.style.display = 'block';
+		togglePanelBtn.textContent = '−';
+
+	} else {
+
+		panelContent.style.display = 'none';
+		togglePanelBtn.textContent = '+';
+
+	}
+
+} );
+const coordMode = document.getElementById( 'coord-mode' );
+const latlonInputs = document.getElementById( 'latlon-inputs' );
+const ecefInputs = document.getElementById( 'ecef-inputs' );
+const ecefRadiusRow = document.getElementById( 'ecef-radius-row' );
+const latInput = document.getElementById( 'lat' );
+const lonInput = document.getElementById( 'lon' );
+const altInput = document.getElementById( 'alt' );
+const ecefX = document.getElementById( 'ecef-x' );
+const ecefY = document.getElementById( 'ecef-y' );
+const ecefZ = document.getElementById( 'ecef-z' );
+const ecefRadius = document.getElementById( 'ecef-radius' );
+const jumpBtn = document.getElementById( 'jump-btn' );
+
+// Initialize input fields with the actual starting coordinates
+latInput.value = initialLat.toFixed( 6 );
+lonInput.value = initialLon.toFixed( 6 );
+altInput.value = initialAlt.toFixed( 0 );
+
+const [ initEcefX, initEcefY, initEcefZ ] = latLonAltToEcef( initialLat, initialLon, 0 );
+ecefX.value = initEcefX.toFixed( 2 );
+ecefY.value = initEcefY.toFixed( 2 );
+ecefZ.value = initEcefZ.toFixed( 2 );
+ecefRadius.value = initialAlt.toFixed( 0 );
+
 
 // place search via Nominatim
 searchBtn.addEventListener( 'click', async () => {
@@ -253,6 +305,7 @@ coordMode.addEventListener( 'change', () => {
 
 		latlonInputs.style.display = 'flex';
 		ecefInputs.style.display = 'none';
+		ecefRadiusRow.style.display = 'none';
 		const [ lat, lon, alt ] = ecefToLatLonAlt(
 			parseFloat( ecefX.value ),
 			parseFloat( ecefY.value ),
@@ -266,6 +319,7 @@ coordMode.addEventListener( 'change', () => {
 
 		latlonInputs.style.display = 'none';
 		ecefInputs.style.display = 'flex';
+		ecefRadiusRow.style.display = 'flex';
 		const [ x, y, z ] = latLonAltToEcef(
 			parseFloat( latInput.value ),
 			parseFloat( lonInput.value ),
@@ -274,6 +328,7 @@ coordMode.addEventListener( 'change', () => {
 		ecefX.value = x.toFixed( 2 );
 		ecefY.value = y.toFixed( 2 );
 		ecefZ.value = z.toFixed( 2 );
+		ecefRadius.value = altInput.value;
 
 	}
 
@@ -282,30 +337,30 @@ coordMode.addEventListener( 'change', () => {
 // jump to location
 jumpBtn.addEventListener( 'click', () => {
 
-	let lat, lon, alt;
+	let centerX, centerY, centerZ, radius;
 
 	if ( coordMode.value === 'latlon' ) {
 
-		lat = parseFloat( latInput.value );
-		lon = parseFloat( lonInput.value );
-		alt = parseFloat( altInput.value ) || 300;
+		const lat = parseFloat( latInput.value );
+		const lon = parseFloat( lonInput.value );
+		const alt = parseFloat( altInput.value ) || 300;
+
+		// Calculate surface point in ECEF
+		[ centerX, centerY, centerZ ] = latLonAltToEcef( lat, lon, 0 );
+		radius = alt;
 
 	} else {
 
-		// Convert ECEF to lat/lon/alt
-		const x = parseFloat( ecefX.value );
-		const y = parseFloat( ecefY.value );
-		const z = parseFloat( ecefZ.value );
-		[ lat, lon, alt ] = ecefToLatLonAlt( x, y, z );
+		// Use ECEF coordinates directly
+		centerX = parseFloat( ecefX.value );
+		centerY = parseFloat( ecefY.value );
+		centerZ = parseFloat( ecefZ.value );
+		radius = parseFloat( ecefRadius.value ) || 300;
 
 	}
 
-	// Calculate camera position: surface + altitude in direction of surface normal
-	const [ surfaceX, surfaceY, surfaceZ ] = latLonAltToEcef( lat, lon, 0 );
-	const surfacePoint = new Vector3( surfaceX, surfaceY, surfaceZ );
-
-	// Set camera center and radius, maintaining current pitch
-	camera.center = surfacePoint;
-	camera.radius = alt;
+	// Set camera center and radius
+	camera.center = new Vector3( centerX, centerY, centerZ );
+	camera.radius = radius;
 
 } );
