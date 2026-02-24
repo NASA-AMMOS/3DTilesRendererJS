@@ -49,8 +49,10 @@ camera.radius = 50000;
 // Set center to Tokyo Tower location (ECEF coordinates)
 // Tokyo Tower: 35.6586° N, 139.7454° E
 camera.center = new Vector3( - 3959611.825621192, 3352599.0363458656, 3697549.0362687325 );
+camera.radius = 600;
 camera.pitch = 1.167625429373872;
 camera.yaw = - 0.2513281792775774;
+camera.limits.radiusMin = 25;
 
 camera.checkCollisions = true;
 scene.collisionsEnabled = true;
@@ -84,7 +86,7 @@ scene.onBeforeRenderObservable.add( () => {
 		if ( ! hasZoomedIn && tiles.visibleTiles.size > 5 ) {
 
 			hasZoomedIn = true;
-			camera.flyToAsync( undefined, undefined, 300, undefined, 2000 );
+			camera.flyToAsync( undefined, undefined, 400, undefined, 2000 );
 
 		}
 
@@ -107,5 +109,203 @@ engine.runRenderLoop( () => {
 window.addEventListener( 'resize', () => {
 
 	engine.resize();
+
+} );
+
+// --- Place search functionality ---
+const placeSearch = document.getElementById( 'place-search' );
+const searchBtn = document.getElementById( 'search-btn' );
+const searchResult = document.getElementById( 'search-result' );
+const searchResultText = document.getElementById( 'search-result-text' );
+const coordMode = document.getElementById( 'coord-mode' );
+const latlonInputs = document.getElementById( 'latlon-inputs' );
+const ecefInputs = document.getElementById( 'ecef-inputs' );
+const latInput = document.getElementById( 'lat' );
+const lonInput = document.getElementById( 'lon' );
+const altInput = document.getElementById( 'alt' );
+const ecefX = document.getElementById( 'ecef-x' );
+const ecefY = document.getElementById( 'ecef-y' );
+const ecefZ = document.getElementById( 'ecef-z' );
+const jumpBtn = document.getElementById( 'jump-btn' );
+
+
+// WGS84 geodetic (lat/lon/alt) to ECEF conversion
+// Once upstreamed to Babylon.js, these can be removed
+const WGS84_A = 6378137;
+const WGS84_F = 1 / 298.257223563;
+const WGS84_E2 = 2 * WGS84_F - WGS84_F * WGS84_F;
+
+function latLonAltToEcef( latDeg, lonDeg, alt ) {
+
+	const lat = ( latDeg * Math.PI ) / 180;
+	const lon = ( lonDeg * Math.PI ) / 180;
+	const sinLat = Math.sin( lat );
+	const cosLat = Math.cos( lat );
+	const sinLon = Math.sin( lon );
+	const cosLon = Math.cos( lon );
+	const N = WGS84_A / Math.sqrt( 1 - WGS84_E2 * sinLat * sinLat );
+
+	const x = ( N + alt ) * cosLat * cosLon;
+	const y = ( N + alt ) * cosLat * sinLon;
+	const z = ( N * ( 1 - WGS84_E2 ) + alt ) * sinLat;
+
+	return [ x, y, z ];
+
+}
+
+function ecefToLatLonAlt( x, y, z ) {
+
+	const lon = Math.atan2( y, x );
+	const p = Math.sqrt( x * x + y * y );
+	let lat = Math.atan2( z, p * ( 1 - WGS84_E2 ) );
+	for ( let i = 0; i < 5; i ++ ) {
+
+		const sinLat = Math.sin( lat );
+		const N = WGS84_A / Math.sqrt( 1 - WGS84_E2 * sinLat * sinLat );
+		lat = Math.atan2( z + WGS84_E2 * N * sinLat, p );
+
+	}
+
+	const sinLat = Math.sin( lat );
+	const N = WGS84_A / Math.sqrt( 1 - WGS84_E2 * sinLat * sinLat );
+	const alt = p / Math.cos( lat ) - N;
+
+	return [ ( lat * 180 ) / Math.PI, ( lon * 180 ) / Math.PI, alt ];
+
+}
+
+// place search via Nominatim
+searchBtn.addEventListener( 'click', async () => {
+
+	const query = placeSearch.value.trim();
+	if ( ! query ) return;
+
+	searchBtn.textContent = '...';
+	searchResultText.textContent = '';
+	searchResult.style.display = 'none';
+
+	try {
+
+		const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${ encodeURIComponent( query ) }&format=json&limit=1`;
+		const url = `https://corsproxy.io/?${ encodeURIComponent( nominatimUrl ) }`;
+		const res = await fetch( url );
+
+		if ( ! res.ok ) {
+
+			console.error( 'Search failed:', res.status, res.statusText );
+			throw new Error( `HTTP ${ res.status }: ${ res.statusText }` );
+
+		}
+
+		const data = await res.json();
+
+		if ( data.length === 0 ) {
+
+			searchResultText.textContent = 'No results found.';
+			searchResult.style.display = 'flex';
+			return;
+
+		}
+
+		const place = data[ 0 ];
+		const lat = parseFloat( place.lat );
+		const lon = parseFloat( place.lon );
+
+		latInput.value = lat.toFixed( 6 );
+		lonInput.value = lon.toFixed( 6 );
+
+		const [ x, y, z ] = latLonAltToEcef( lat, lon, 0 );
+		ecefX.value = x.toFixed( 2 );
+		ecefY.value = y.toFixed( 2 );
+		ecefZ.value = z.toFixed( 2 );
+
+		coordMode.value = 'latlon';
+		latlonInputs.style.display = 'flex';
+		ecefInputs.style.display = 'none';
+
+		searchResultText.textContent = place.display_name;
+		searchResult.style.display = 'flex';
+
+	} catch ( e ) {
+
+		console.error( 'Search error:', e );
+		searchResultText.textContent = `Error: ${ e.message }`;
+		searchResult.style.display = 'flex';
+
+	} finally {
+
+		searchBtn.textContent = 'Search';
+
+	}
+
+} );
+
+placeSearch.addEventListener( 'keydown', ( e ) => {
+
+	if ( e.key === 'Enter' ) searchBtn.click();
+
+} );
+
+// toggle coordinate mode
+coordMode.addEventListener( 'change', () => {
+
+	if ( coordMode.value === 'latlon' ) {
+
+		latlonInputs.style.display = 'flex';
+		ecefInputs.style.display = 'none';
+		const [ lat, lon, alt ] = ecefToLatLonAlt(
+			parseFloat( ecefX.value ),
+			parseFloat( ecefY.value ),
+			parseFloat( ecefZ.value )
+		);
+		latInput.value = lat.toFixed( 6 );
+		lonInput.value = lon.toFixed( 6 );
+		altInput.value = alt.toFixed( 1 );
+
+	} else {
+
+		latlonInputs.style.display = 'none';
+		ecefInputs.style.display = 'flex';
+		const [ x, y, z ] = latLonAltToEcef(
+			parseFloat( latInput.value ),
+			parseFloat( lonInput.value ),
+			parseFloat( altInput.value )
+		);
+		ecefX.value = x.toFixed( 2 );
+		ecefY.value = y.toFixed( 2 );
+		ecefZ.value = z.toFixed( 2 );
+
+	}
+
+} );
+
+// jump to location
+jumpBtn.addEventListener( 'click', () => {
+
+	let lat, lon, alt;
+
+	if ( coordMode.value === 'latlon' ) {
+
+		lat = parseFloat( latInput.value );
+		lon = parseFloat( lonInput.value );
+		alt = parseFloat( altInput.value ) || 300;
+
+	} else {
+
+		// Convert ECEF to lat/lon/alt
+		const x = parseFloat( ecefX.value );
+		const y = parseFloat( ecefY.value );
+		const z = parseFloat( ecefZ.value );
+		[ lat, lon, alt ] = ecefToLatLonAlt( x, y, z );
+
+	}
+
+	// Calculate camera position: surface + altitude in direction of surface normal
+	const [ surfaceX, surfaceY, surfaceZ ] = latLonAltToEcef( lat, lon, 0 );
+	const surfacePoint = new Vector3( surfaceX, surfaceY, surfaceZ );
+
+	// Set camera center and radius, maintaining current pitch
+	camera.center = surfacePoint;
+	camera.radius = alt;
 
 } );

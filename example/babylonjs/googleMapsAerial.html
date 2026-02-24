@@ -3,8 +3,89 @@
 
 <head>
     <title>Google Maps Aerial - Babylon.js 3D Tiles</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="../styles.css">
+    <style>
+        #search-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #e6e6e6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 13px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            z-index: 10;
+            min-width: 300px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .search-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .search-row input,
+        .search-row select {
+            flex: 1;
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #1a1a1a;
+            color: #e6e6e6;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .search-row input[type="number"] {
+            width: 90px;
+        }
+
+        .input-label {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            font-size: 11px;
+            color: #9ca3af;
+            gap: 2px;
+        }
+
+        .search-row button {
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .search-row button:hover {
+            background: #1d4ed8;
+        }
+
+        #search-btn {
+            background: #059669;
+        }
+
+        #search-btn:hover {
+            background: #047857;
+        }
+
+        #search-result {
+            color: #9ca3af;
+            font-size: 12px;
+            padding: 2px 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -13,6 +94,37 @@
             Tokyo Tower example using <a href="https://cloud.google.com/blog/products/maps-platform/create-immersive-3d-map-experiences-photorealistic-3d-tiles">Googles Photorealistic 3D Tiles</a> & <a href="https://ion.cesium.com/">Cesium Ion</a>
             <br/>
             Google Cloud or Cesium Ion API token required
+        </div>
+    </div>
+
+    <div id="search-panel">
+        <div class="search-row">
+            <input id="place-search" type="text" placeholder="Search place (e.g. Eiffel Tower)" />
+            <button id="search-btn" type="button">Search</button>
+        </div>
+        <div id="search-result" class="search-row" style="display:none;">
+            <span id="search-result-text"></span>
+        </div>
+        <div class="search-row">
+            <label>
+                <select id="coord-mode">
+                    <option value="latlon">Lat / Lon / Alt</option>
+                    <option value="ecef">ECEF (X / Y / Z)</option>
+                </select>
+            </label>
+        </div>
+        <div class="search-row" id="latlon-inputs">
+            <label class="input-label">Lat (°)<input id="lat" type="number" step="any" value="35.6586" /></label>
+            <label class="input-label">Lon (°)<input id="lon" type="number" step="any" value="139.7454" /></label>
+            <label class="input-label">Alt (m)<input id="alt" type="number" step="any" value="300" /></label>
+        </div>
+        <div class="search-row" id="ecef-inputs" style="display:none;">
+            <label class="input-label">X<input id="ecef-x" type="number" step="any" value="-3959611.83" /></label>
+            <label class="input-label">Y<input id="ecef-y" type="number" step="any" value="3352599.04" /></label>
+            <label class="input-label">Z<input id="ecef-z" type="number" step="any" value="3697549.04" /></label>
+        </div>
+        <div class="search-row">
+            <button id="jump-btn" type="button" style="width: 100%;">Jump To</button>
         </div>
     </div>
 
