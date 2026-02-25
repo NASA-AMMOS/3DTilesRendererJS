@@ -58,16 +58,12 @@ const params = {
 	enabled: true,
 	visibleTiles: 0,
 	errorTarget: 12, // Lower value = more detail, less LOD overlap/z-fighting
-	minZ: 0,
-	maxZ: 0,
 };
 
 const gui = new GUI();
 gui.add( params, 'enabled' );
 gui.add( params, 'visibleTiles' ).name( 'Visible Tiles' ).listen().disable();
 gui.add( params, 'errorTarget', 1, 100 );
-gui.add( params, 'minZ' ).name( 'Camera MinZ' ).listen().disable();
-gui.add( params, 'maxZ' ).name( 'Camera MaxZ' ).listen().disable();
 
 // engine
 const canvas = document.getElementById( 'renderCanvas' );
@@ -143,8 +139,6 @@ scene.onBeforeRenderObservable.add( () => {
 		tiles.errorTarget = params.errorTarget;
 		tiles.update();
 		params.visibleTiles = tiles.visibleTiles.size;
-		params.minZ = camera.minZ;
-		params.maxZ = camera.maxZ;
 
 
 		// Once we have some tiles visible, fly in to target
@@ -177,64 +171,28 @@ window.addEventListener( 'resize', () => {
 
 } );
 
-// --- Place search functionality ---
-const placeSearch = document.getElementById( 'place-search' );
-const searchBtn = document.getElementById( 'search-btn' );
-const searchResult = document.getElementById( 'search-result' );
-const searchResultText = document.getElementById( 'search-result-text' );
-const togglePanelBtn = document.getElementById( 'toggle-panel' );
-const panelContent = document.getElementById( 'panel-content' );
+// --- Navigation panel via lil-gui ---
+const navParams = {
+	placeSearch: '',
+	coordMode: 'Lat / Lon / Alt',
+	lat: initialLat,
+	lon: initialLon,
+	alt: initialAlt,
+	ecefX: initialX,
+	ecefY: initialY,
+	ecefZ: initialZ,
+	ecefRadius: initialAlt,
+};
 
-// Toggle panel collapse
-togglePanelBtn.addEventListener( 'click', () => {
+const navFolder = gui.addFolder( 'Navigation' );
 
-	if ( panelContent.style.display === 'none' ) {
+async function doSearch() {
 
-		panelContent.style.display = 'block';
-		togglePanelBtn.textContent = '−';
-
-	} else {
-
-		panelContent.style.display = 'none';
-		togglePanelBtn.textContent = '+';
-
-	}
-
-} );
-const coordMode = document.getElementById( 'coord-mode' );
-const latlonInputs = document.getElementById( 'latlon-inputs' );
-const ecefInputs = document.getElementById( 'ecef-inputs' );
-const ecefRadiusRow = document.getElementById( 'ecef-radius-row' );
-const latInput = document.getElementById( 'lat' );
-const lonInput = document.getElementById( 'lon' );
-const altInput = document.getElementById( 'alt' );
-const ecefX = document.getElementById( 'ecef-x' );
-const ecefY = document.getElementById( 'ecef-y' );
-const ecefZ = document.getElementById( 'ecef-z' );
-const ecefRadius = document.getElementById( 'ecef-radius' );
-const jumpBtn = document.getElementById( 'jump-btn' );
-
-// Initialize input fields with the actual starting coordinates
-latInput.value = initialLat.toFixed( 6 );
-lonInput.value = initialLon.toFixed( 6 );
-altInput.value = initialAlt.toFixed( 0 );
-
-const [ initEcefX, initEcefY, initEcefZ ] = latLonAltToEcef( initialLat, initialLon, 0 );
-ecefX.value = initEcefX.toFixed( 2 );
-ecefY.value = initEcefY.toFixed( 2 );
-ecefZ.value = initEcefZ.toFixed( 2 );
-ecefRadius.value = initialAlt.toFixed( 0 );
-
-
-// place search via Nominatim
-searchBtn.addEventListener( 'click', async () => {
-
-	const query = placeSearch.value.trim();
+	const query = navParams.placeSearch.trim();
 	if ( ! query ) return;
 
-	searchBtn.textContent = '...';
-	searchResultText.textContent = '';
-	searchResult.style.display = 'none';
+	navParams.searchResult = 'Searching...';
+	setResult( 'Searching...' );
 
 	try {
 
@@ -244,7 +202,6 @@ searchBtn.addEventListener( 'click', async () => {
 
 		if ( ! res.ok ) {
 
-			console.error( 'Search failed:', res.status, res.statusText );
 			throw new Error( `HTTP ${ res.status }: ${ res.statusText }` );
 
 		}
@@ -253,114 +210,146 @@ searchBtn.addEventListener( 'click', async () => {
 
 		if ( data.length === 0 ) {
 
-			searchResultText.textContent = 'No results found.';
-			searchResult.style.display = 'flex';
+			navParams.searchResult = 'No results found.';
+			setResult( 'No results found.' );
 			return;
 
 		}
 
 		const place = data[ 0 ];
-		const lat = parseFloat( place.lat );
-		const lon = parseFloat( place.lon );
+		navParams.lat = parseFloat( place.lat );
+		navParams.lon = parseFloat( place.lon );
 
-		latInput.value = lat.toFixed( 6 );
-		lonInput.value = lon.toFixed( 6 );
+		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
+		navParams.ecefX = x;
+		navParams.ecefY = y;
+		navParams.ecefZ = z;
 
-		const [ x, y, z ] = latLonAltToEcef( lat, lon, 0 );
-		ecefX.value = x.toFixed( 2 );
-		ecefY.value = y.toFixed( 2 );
-		ecefZ.value = z.toFixed( 2 );
+		navParams.coordMode = 'Lat / Lon / Alt';
+		updateCoordVisibility();
 
-		coordMode.value = 'latlon';
-		latlonInputs.style.display = 'flex';
-		ecefInputs.style.display = 'none';
+		navParams.searchResult = place.display_name;
+		setResult( place.display_name );
 
-		searchResultText.textContent = place.display_name;
-		searchResult.style.display = 'flex';
+		// Auto-jump to the found location
+		camera.center = new Vector3( x, y, z );
+		camera.radius = navParams.alt || 300;
 
 	} catch ( e ) {
 
-		console.error( 'Search error:', e );
-		searchResultText.textContent = `Error: ${ e.message }`;
-		searchResult.style.display = 'flex';
-
-	} finally {
-
-		searchBtn.textContent = 'Search';
+		navParams.searchResult = `Error: ${ e.message }`;
+		setResult( navParams.searchResult );
 
 	}
 
-} );
+}
 
-placeSearch.addEventListener( 'keydown', ( e ) => {
+navFolder.add( navParams, 'placeSearch' ).name( 'Place' ).onFinishChange( doSearch );
+navFolder.add( { search: doSearch }, 'search' ).name( 'Search' );
 
-	if ( e.key === 'Enter' ) searchBtn.click();
+const resultEl = document.createElement( 'div' );
+resultEl.style.cssText = 'padding: 3px 8px 3px 8px; color: #a2db3c; font-size: 11px; line-height: 1.5; word-wrap: break-word; display: none;';
+navFolder.$children.appendChild( resultEl );
 
-} );
+function setResult( text ) {
 
-// toggle coordinate mode
-coordMode.addEventListener( 'change', () => {
+	resultEl.textContent = text;
+	resultEl.style.display = text ? 'block' : 'none';
 
-	if ( coordMode.value === 'latlon' ) {
+}
 
-		latlonInputs.style.display = 'flex';
-		ecefInputs.style.display = 'none';
-		ecefRadiusRow.style.display = 'none';
-		const [ lat, lon ] = ecefToLatLonAlt(
-			parseFloat( ecefX.value ),
-			parseFloat( ecefY.value ),
-			parseFloat( ecefZ.value )
-		);
-		latInput.value = lat.toFixed( 6 );
-		lonInput.value = lon.toFixed( 6 );
-		altInput.value = ecefRadius.value; // Use radius value, not computed alt (which is 0 for surface point)
+const coordFolder = navFolder.addFolder( 'Coordinates' );
+coordFolder.close();
+
+const coordModeCtrl = coordFolder.add( navParams, 'coordMode', [ 'Lat / Lon / Alt', 'ECEF (X / Y / Z)' ] ).name( 'Mode' );
+
+const latCtrl = coordFolder.add( navParams, 'lat' ).name( 'Lat (°)' ).listen();
+const lonCtrl = coordFolder.add( navParams, 'lon' ).name( 'Lon (°)' ).listen();
+const altCtrl = coordFolder.add( navParams, 'alt' ).name( 'Alt (m)' ).listen();
+
+const ecefXCtrl = coordFolder.add( navParams, 'ecefX' ).name( 'X' ).listen().hide();
+const ecefYCtrl = coordFolder.add( navParams, 'ecefY' ).name( 'Y' ).listen().hide();
+const ecefZCtrl = coordFolder.add( navParams, 'ecefZ' ).name( 'Z' ).listen().hide();
+const ecefRadiusCtrl = coordFolder.add( navParams, 'ecefRadius' ).name( 'Radius (m)' ).listen().hide();
+
+function updateCoordVisibility() {
+
+	if ( navParams.coordMode === 'Lat / Lon / Alt' ) {
+
+		latCtrl.show();
+		lonCtrl.show();
+		altCtrl.show();
+		ecefXCtrl.hide();
+		ecefYCtrl.hide();
+		ecefZCtrl.hide();
+		ecefRadiusCtrl.hide();
 
 	} else {
 
-		latlonInputs.style.display = 'none';
-		ecefInputs.style.display = 'flex';
-		ecefRadiusRow.style.display = 'flex';
-		const [ x, y, z ] = latLonAltToEcef(
-			parseFloat( latInput.value ),
-			parseFloat( lonInput.value ),
-			0 // Convert surface point (altitude=0), since camera.center is at surface
-		);
-		ecefX.value = x.toFixed( 2 );
-		ecefY.value = y.toFixed( 2 );
-		ecefZ.value = z.toFixed( 2 );
-		ecefRadius.value = altInput.value;
+		latCtrl.hide();
+		lonCtrl.hide();
+		altCtrl.hide();
+		ecefXCtrl.show();
+		ecefYCtrl.show();
+		ecefZCtrl.show();
+		ecefRadiusCtrl.show();
 
 	}
 
-} );
+}
 
-// jump to location
-jumpBtn.addEventListener( 'click', () => {
+coordModeCtrl.onChange( ( val ) => {
 
-	let centerX, centerY, centerZ, radius;
+	if ( val === 'Lat / Lon / Alt' ) {
 
-	if ( coordMode.value === 'latlon' ) {
-
-		const lat = parseFloat( latInput.value );
-		const lon = parseFloat( lonInput.value );
-		const alt = parseFloat( altInput.value ) || 300;
-
-		// Calculate surface point in ECEF
-		[ centerX, centerY, centerZ ] = latLonAltToEcef( lat, lon, 0 );
-		radius = alt;
+		const [ lat, lon ] = ecefToLatLonAlt( navParams.ecefX, navParams.ecefY, navParams.ecefZ );
+		navParams.lat = parseFloat( lat.toFixed( 6 ) );
+		navParams.lon = parseFloat( lon.toFixed( 6 ) );
+		navParams.alt = navParams.ecefRadius;
 
 	} else {
 
-		// Use ECEF coordinates directly
-		centerX = parseFloat( ecefX.value );
-		centerY = parseFloat( ecefY.value );
-		centerZ = parseFloat( ecefZ.value );
-		radius = parseFloat( ecefRadius.value ) || 300;
+		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
+		navParams.ecefX = parseFloat( x.toFixed( 2 ) );
+		navParams.ecefY = parseFloat( y.toFixed( 2 ) );
+		navParams.ecefZ = parseFloat( z.toFixed( 2 ) );
+		navParams.ecefRadius = navParams.alt;
 
 	}
 
-	// Set camera center and radius
-	camera.center = new Vector3( centerX, centerY, centerZ );
-	camera.radius = radius;
+	updateCoordVisibility();
 
 } );
+
+coordFolder.add( {
+	jumpTo() {
+
+		let centerX, centerY, centerZ, radius;
+
+		if ( navParams.coordMode === 'Lat / Lon / Alt' ) {
+
+			const alt = navParams.alt || 300;
+			[ centerX, centerY, centerZ ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
+			radius = alt;
+
+		} else {
+
+			centerX = navParams.ecefX;
+			centerY = navParams.ecefY;
+			centerZ = navParams.ecefZ;
+			radius = navParams.ecefRadius || 300;
+
+		}
+
+		camera.center = new Vector3( centerX, centerY, centerZ );
+		camera.radius = radius;
+
+	}
+}, 'jumpTo' ).name( 'Jump To' );
+
+const controlsFolder = navFolder.addFolder( 'Map Controls' );
+controlsFolder.close();
+const controlsInfo = { pan: 'Left-click + drag', rotate: 'Right-click + drag', zoom: 'Scroll wheel' };
+controlsFolder.add( controlsInfo, 'pan' ).name( 'Pan' ).disable();
+controlsFolder.add( controlsInfo, 'rotate' ).name( 'Rotate' ).disable();
+controlsFolder.add( controlsInfo, 'zoom' ).name( 'Zoom' ).disable();
