@@ -206,7 +206,7 @@ export class TilesRenderer extends TilesRendererBase {
 		super.disposeTile( tile );
 
 		const engineData = tile.engineData;
-		if ( engineData.container ) {
+		if ( engineData.container && typeof engineData.container.dispose === 'function' ) {
 
 			engineData.container.dispose();
 			engineData.container = null;

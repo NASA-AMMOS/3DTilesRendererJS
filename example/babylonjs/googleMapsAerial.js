@@ -2,6 +2,7 @@ import { Scene, Engine, GeospatialCamera, Vector3, Color4 } from '@babylonjs/cor
 import { GeospatialClippingBehavior } from '@babylonjs/core/Behaviors/Cameras';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
+import { TilesFadePlugin } from '../../src/babylonjs/plugins/fade/TilesFadePlugin.js';
 import GUI from 'lil-gui';
 
 const GOOGLE_TILES_ASSET_ID = 2275207;
@@ -57,7 +58,7 @@ function ecefToLatLonAlt( x, y, z ) {
 const params = {
 	enabled: true,
 	visibleTiles: 0,
-	errorTarget: 20,
+	errorTarget: 12, // Lower value = more detail, less LOD overlap/z-fighting
 	minZ: 0,
 	maxZ: 0,
 };
@@ -132,6 +133,7 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 	assetId: GOOGLE_TILES_ASSET_ID,
 	autoRefreshToken: true,
 } ) );
+tiles.registerPlugin( new TilesFadePlugin() );
 tiles.errorTarget = params.errorTarget;
 
 // Babylon render loop
