@@ -1,5 +1,6 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
-import { Matrix, Quaternion, ImportMeshAsync } from '@babylonjs/core';
+import { Matrix, Quaternion } from '@babylonjs/core/Maths/math.vector';
+import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader';
 import '@babylonjs/loaders/glTF/2.0';
 
 const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
