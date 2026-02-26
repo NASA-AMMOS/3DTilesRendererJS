@@ -9,6 +9,8 @@
     "b3dm",
     "gltf",
     "threejs",
+    "babylonjs",
+    "r3f",
     "rendering",
     "geometry",
     "terrain",
