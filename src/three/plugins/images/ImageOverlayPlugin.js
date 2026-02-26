@@ -1135,7 +1135,7 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( tile ) {
 
-		const { overlayInfo, overlays, tileControllers } = this;
+		const { overlayInfo, overlays, tileControllers, meshParams } = this;
 		const tileController = tileControllers.get( tile );
 
 		// by this point all targets should be present and we can force the memory to update
@@ -1143,6 +1143,34 @@ export class ImageOverlayPlugin {
 
 		// if the tile has been disposed before this function is called then exit early
 		if ( ! tileController || tileController.signal.aborted ) {
+
+			return;
+
+		}
+
+		// handle the case where all overlays have been removed - we need to reset
+		// the materials to have no layers
+		if ( overlays.length === 0 ) {
+
+			const scene = tile.engineData && tile.engineData.scene;
+			if ( scene ) {
+
+				scene.traverse( c => {
+
+					if ( c.material && meshParams.has( c ) ) {
+
+						const params = meshParams.get( c );
+						params.layerMaps.length = 0;
+						params.layerInfo.length = 0;
+
+						c.material.defines.LAYER_COUNT = 0;
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
+
+			}
 
 			return;
 
@@ -1156,7 +1184,7 @@ export class ImageOverlayPlugin {
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
-				const params = this.meshParams.get( mesh );
+				const params = meshParams.get( mesh );
 
 				// assign the new uvs
 				const key = `layer_uv_${ i }`;
