@@ -4,7 +4,8 @@ import { GeospatialCamera } from '@babylonjs/core/Cameras/geospatialCamera';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color4 } from '@babylonjs/core/Maths/math.color';
 import { GeospatialClippingBehavior } from '@babylonjs/core/Behaviors/Cameras/geospatialClippingBehavior';
-import '@babylonjs/core/Animations/animatable';
+import '@babylonjs/core/Animations/animatable'; // Needed for flyTo animation
+import '@babylonjs/core/Collisions/collisionCoordinator'; // Needed to enable collisions on the camera
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
@@ -58,7 +59,6 @@ camera.pitch = 1.167625429373872;
 camera.yaw = - 0.2513281792775774;
 
 camera.checkCollisions = true;
-scene.collisionsEnabled = true;
 
 // Fly to close view once tiles load
 let hasZoomedIn = false;
