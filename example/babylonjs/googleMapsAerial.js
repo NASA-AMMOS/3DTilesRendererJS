@@ -115,11 +115,6 @@ camera.pitch = 1.167625429373872;
 camera.yaw = - 0.2513281792775774;
 camera.limits.radiusMin = 25;
 
-camera.checkCollisions = true;
-scene.collisionsEnabled = true;
-
-// Fly to close view once tiles load
-let hasZoomedIn = false;
 
 // tiles
 const tiles = new TilesRenderer( null, scene );
@@ -130,6 +125,24 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 } ) );
 tiles.errorTarget = params.errorTarget;
 
+camera.checkCollisions = true;
+// Enable collisions on tile meshes as they load
+tiles.addEventListener( 'load-model', ( event ) => {
+
+	const tileScene = event?.scene;
+	if ( tileScene ) {
+
+		const meshes = tileScene.getChildMeshes?.() ?? [];
+		for ( const mesh of meshes ) {
+
+			mesh.checkCollisions = true;
+
+		}
+
+	}
+
+} );
+
 // Babylon render loop
 
 scene.onBeforeRenderObservable.add( () => {
@@ -139,15 +152,6 @@ scene.onBeforeRenderObservable.add( () => {
 		tiles.errorTarget = params.errorTarget;
 		tiles.update();
 		params.visibleTiles = tiles.visibleTiles.size;
-
-
-		// Once we have some tiles visible, fly in to target
-		if ( ! hasZoomedIn && tiles.visibleTiles.size > 5 ) {
-
-			hasZoomedIn = true;
-			// camera.flyToAsync( undefined, undefined, 400, undefined, 2000 );
-
-		}
 
 	}
 
@@ -196,8 +200,7 @@ async function doSearch() {
 
 	try {
 
-		const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${ encodeURIComponent( query ) }&format=json&limit=1`;
-		const url = `https://corsproxy.io/?${ encodeURIComponent( nominatimUrl ) }`;
+		const url = `https://nominatim.openstreetmap.org/search?q=${ encodeURIComponent( query ) }&format=json&limit=1`;
 		const res = await fetch( url );
 
 		if ( ! res.ok ) {
@@ -220,7 +223,27 @@ async function doSearch() {
 		navParams.lat = parseFloat( place.lat );
 		navParams.lon = parseFloat( place.lon );
 
-		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
+		// Fetch terrain elevation at this location
+		let elevation = 0;
+		try {
+
+			const elevUrl = `https://api.open-elevation.com/api/v1/lookup?locations=${ navParams.lat },${ navParams.lon }`;
+			const elevRes = await fetch( elevUrl );
+			if ( elevRes.ok ) {
+
+				const elevData = await elevRes.json();
+				elevation = elevData.results?.[ 0 ]?.elevation ?? 0;
+
+			}
+
+		} catch {
+
+			// Fall back to 0 elevation if API is unavailable
+			elevation = 0;
+
+		}
+
+		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, elevation + 200 );
 		navParams.ecefX = x;
 		navParams.ecefY = y;
 		navParams.ecefZ = z;
