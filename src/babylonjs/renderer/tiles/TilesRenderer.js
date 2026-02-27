@@ -192,7 +192,7 @@ export class TilesRenderer extends TilesRendererBase {
 			.decompose( scene.scaling, scene.rotationQuaternion, scene.position );
 
 		// exit early if a new request has already started
-		if ( abortSignal.aborted && typeof result.container.dispose === 'function' ) {
+		if ( abortSignal.aborted ) {
 
 			result.container.dispose();
 			return;
