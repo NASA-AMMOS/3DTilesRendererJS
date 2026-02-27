@@ -4,6 +4,7 @@ import { GeospatialCamera } from '@babylonjs/core/Cameras/geospatialCamera';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Color4 } from '@babylonjs/core/Maths/math.color';
 import { GeospatialClippingBehavior } from '@babylonjs/core/Behaviors/Cameras/geospatialClippingBehavior';
+import '@babylonjs/core/Animations/animatable';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 import GUI from 'lil-gui';
