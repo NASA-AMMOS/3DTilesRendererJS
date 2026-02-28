@@ -33,6 +33,19 @@ function getIndexedRandomColor( index ) {
 
 }
 
+// Return white for structural leaf tiles, depth-based color otherwise
+function getBoundHelperColor( tile ) {
+
+	if ( ! tile.children || tile.children.length === 0 ) {
+
+		return _white;
+
+	}
+
+	return getIndexedRandomColor( tile.internal.depth );
+
+}
+
 // color modes
 const NONE = 0;
 const SCREEN_ERROR = 1;
@@ -662,12 +675,12 @@ export class DebugTilesPlugin {
 			boxHelperGroup.matrixAutoUpdate = false;
 			engineData.boxHelperGroup = boxHelperGroup;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
+			const boxHelper = new Box3Helper( obb.box, getBoundHelperColor( tile ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
 			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
-				color: getIndexedRandomColor( tile.internal.depth ),
+				color: getBoundHelperColor( tile ),
 				transparent: true,
 				depthWrite: false,
 				opacity: 0.05,
@@ -690,7 +703,7 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
+			const sphereHelper = new SphereHelper( sphere, getBoundHelperColor( tile ) );
 			sphereHelper.raycast = emptyRaycast;
 			engineData.sphereHelper = sphereHelper;
 
@@ -706,7 +719,7 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getBoundHelperColor( tile ) );
 			regionHelper.raycast = emptyRaycast;
 
 			// recenter the geometry to avoid rendering artifacts
@@ -748,16 +761,6 @@ export class DebugTilesPlugin {
 			} else {
 
 				material.opacity = c.isMesh ? 0.01 : 0.2;
-
-			}
-
-			if ( ! tile.children || tile.children.length === 0 ) {
-
-				material.color.copy( _white );
-
-			} else {
-
-				material.color.copy( getIndexedRandomColor( tile.internal.depth ) );
 
 			}
 
