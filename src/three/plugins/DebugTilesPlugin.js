@@ -12,6 +12,8 @@ const PARENT_BOUND_REF_COUNT = Symbol( 'PARENT_BOUND_REF_COUNT' );
 const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
 
+const _white = /* @__PURE__ */ new Color( 0xffffff );
+
 const colors = {};
 
 // Return a consistent random color for an index
@@ -746,6 +748,16 @@ export class DebugTilesPlugin {
 			} else {
 
 				material.opacity = c.isMesh ? 0.01 : 0.2;
+
+			}
+
+			if ( ! tile.children || tile.children.length === 0 ) {
+
+				material.color.copy( _white );
+
+			} else {
+
+				material.color.copy( getIndexedRandomColor( tile.internal.depth ) );
 
 			}
 
