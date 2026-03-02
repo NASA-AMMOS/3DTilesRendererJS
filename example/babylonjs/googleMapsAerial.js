@@ -32,27 +32,6 @@ function latLonAltToEcef( latDeg, lonDeg, alt ) {
 
 }
 
-function ecefToLatLonAlt( x, y, z ) {
-
-	const lon = Math.atan2( y, x );
-	const p = Math.sqrt( x * x + y * y );
-	let lat = Math.atan2( z, p * ( 1 - WGS84_E2 ) );
-	for ( let i = 0; i < 5; i ++ ) {
-
-		const sinLat = Math.sin( lat );
-		const N = WGS84_A / Math.sqrt( 1 - WGS84_E2 * sinLat * sinLat );
-		lat = Math.atan2( z + WGS84_E2 * N * sinLat, p );
-
-	}
-
-	const sinLat = Math.sin( lat );
-	const N = WGS84_A / Math.sqrt( 1 - WGS84_E2 * sinLat * sinLat );
-	const alt = p / Math.cos( lat ) - N;
-
-	return [ ( lat * 180 ) / Math.PI, ( lon * 180 ) / Math.PI, alt ];
-
-}
-
 // gui
 const params = {
 	enabled: true,
@@ -178,14 +157,9 @@ window.addEventListener( 'resize', () => {
 // --- Navigation panel via lil-gui ---
 const navParams = {
 	placeSearch: '',
-	coordMode: 'Lat / Lon / Alt',
 	lat: initialLat,
 	lon: initialLon,
 	alt: initialAlt,
-	ecefX: initialX,
-	ecefY: initialY,
-	ecefZ: initialZ,
-	ecefRadius: initialAlt,
 };
 
 const navFolder = gui.addFolder( 'Navigation' );
@@ -244,12 +218,6 @@ async function doSearch() {
 		}
 
 		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, elevation + 200 );
-		navParams.ecefX = x;
-		navParams.ecefY = y;
-		navParams.ecefZ = z;
-
-		navParams.coordMode = 'Lat / Lon / Alt';
-		updateCoordVisibility();
 
 		navParams.searchResult = place.display_name;
 		setResult( place.display_name );
@@ -280,99 +248,3 @@ function setResult( text ) {
 	resultEl.style.display = text ? 'block' : 'none';
 
 }
-
-const coordFolder = navFolder.addFolder( 'Coordinates' );
-coordFolder.close();
-
-const coordModeCtrl = coordFolder.add( navParams, 'coordMode', [ 'Lat / Lon / Alt', 'ECEF (X / Y / Z)' ] ).name( 'Mode' );
-
-const latCtrl = coordFolder.add( navParams, 'lat' ).name( 'Lat (°)' ).listen();
-const lonCtrl = coordFolder.add( navParams, 'lon' ).name( 'Lon (°)' ).listen();
-const altCtrl = coordFolder.add( navParams, 'alt' ).name( 'Alt (m)' ).listen();
-
-const ecefXCtrl = coordFolder.add( navParams, 'ecefX' ).name( 'X' ).listen().hide();
-const ecefYCtrl = coordFolder.add( navParams, 'ecefY' ).name( 'Y' ).listen().hide();
-const ecefZCtrl = coordFolder.add( navParams, 'ecefZ' ).name( 'Z' ).listen().hide();
-const ecefRadiusCtrl = coordFolder.add( navParams, 'ecefRadius' ).name( 'Radius (m)' ).listen().hide();
-
-function updateCoordVisibility() {
-
-	if ( navParams.coordMode === 'Lat / Lon / Alt' ) {
-
-		latCtrl.show();
-		lonCtrl.show();
-		altCtrl.show();
-		ecefXCtrl.hide();
-		ecefYCtrl.hide();
-		ecefZCtrl.hide();
-		ecefRadiusCtrl.hide();
-
-	} else {
-
-		latCtrl.hide();
-		lonCtrl.hide();
-		altCtrl.hide();
-		ecefXCtrl.show();
-		ecefYCtrl.show();
-		ecefZCtrl.show();
-		ecefRadiusCtrl.show();
-
-	}
-
-}
-
-coordModeCtrl.onChange( ( val ) => {
-
-	if ( val === 'Lat / Lon / Alt' ) {
-
-		const [ lat, lon ] = ecefToLatLonAlt( navParams.ecefX, navParams.ecefY, navParams.ecefZ );
-		navParams.lat = parseFloat( lat.toFixed( 6 ) );
-		navParams.lon = parseFloat( lon.toFixed( 6 ) );
-		navParams.alt = navParams.ecefRadius;
-
-	} else {
-
-		const [ x, y, z ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
-		navParams.ecefX = parseFloat( x.toFixed( 2 ) );
-		navParams.ecefY = parseFloat( y.toFixed( 2 ) );
-		navParams.ecefZ = parseFloat( z.toFixed( 2 ) );
-		navParams.ecefRadius = navParams.alt;
-
-	}
-
-	updateCoordVisibility();
-
-} );
-
-coordFolder.add( {
-	jumpTo() {
-
-		let centerX, centerY, centerZ, radius;
-
-		if ( navParams.coordMode === 'Lat / Lon / Alt' ) {
-
-			const alt = navParams.alt || 300;
-			[ centerX, centerY, centerZ ] = latLonAltToEcef( navParams.lat, navParams.lon, 0 );
-			radius = alt;
-
-		} else {
-
-			centerX = navParams.ecefX;
-			centerY = navParams.ecefY;
-			centerZ = navParams.ecefZ;
-			radius = navParams.ecefRadius || 300;
-
-		}
-
-		camera.center = new Vector3( centerX, centerY, centerZ );
-		camera.radius = radius;
-
-	}
-}, 'jumpTo' ).name( 'Jump To' );
-
-const controlsFolder = navFolder.addFolder( 'Map Controls' );
-controlsFolder.close();
-const controlsInfo = { pan: 'Left-click + drag', rotate: 'Right-click + drag', zoom: 'Scroll wheel' };
-controlsFolder.add( controlsInfo, 'pan' ).name( 'Pan' ).disable();
-controlsFolder.add( controlsInfo, 'rotate' ).name( 'Rotate' ).disable();
-controlsFolder.add( controlsInfo, 'zoom' ).name( 'Zoom' ).disable();
