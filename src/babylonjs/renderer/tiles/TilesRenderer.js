@@ -1,5 +1,9 @@
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
-import { TransformNode, Matrix, Vector3, Frustum, Observable, Plane } from '@babylonjs/core';
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
+import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Frustum } from '@babylonjs/core/Maths/math.frustum';
+import { Observable } from '@babylonjs/core/Misc/observable';
+import { Plane } from '@babylonjs/core/Maths/math.plane';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { GLTFLoader } from '../loaders/GLTFLoader.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
