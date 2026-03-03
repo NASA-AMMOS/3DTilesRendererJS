@@ -111,22 +111,7 @@ tiles.registerPlugin( new CesiumIonAuthPlugin( {
 tiles.errorTarget = params.errorTarget;
 
 camera.checkCollisions = true;
-// Enable collisions on tile meshes as they load
-tiles.addEventListener( 'load-model', ( event ) => {
-
-	const tileScene = event?.scene;
-	if ( tileScene ) {
-
-		const meshes = tileScene.getChildMeshes?.() ?? [];
-		for ( const mesh of meshes ) {
-
-			mesh.checkCollisions = true;
-
-		}
-
-	}
-
-} );
+tiles.checkCollisions = true;
 
 // Babylon render loop
 
