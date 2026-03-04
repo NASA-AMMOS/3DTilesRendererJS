@@ -2,6 +2,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataExtension.js';
 import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
 import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
+import { registerSparkLoader } from '@ludicon/spark.js/three-gltf';
 
 export class GLTFExtensionsPlugin {
 
@@ -17,6 +18,8 @@ export class GLTFExtensionsPlugin {
 			ktxLoader: null,
 			meshoptDecoder: null,
 			autoDispose: true,
+			spark: null,
+			sparkOptions: null,
 			...options,
 		};
 
@@ -29,6 +32,8 @@ export class GLTFExtensionsPlugin {
 		this.dracoLoader = options.dracoLoader;
 		this.ktxLoader = options.ktxLoader;
 		this.meshoptDecoder = options.meshoptDecoder;
+		this.spark = options.spark;
+		this.sparkOptions = options.sparkOptions;
 		this._gltfRegex = /\.(gltf|glb)$/g;
 		this._dracoRegex = /\.drc$/g;
 		this._loader = null;
@@ -54,6 +59,12 @@ export class GLTFExtensionsPlugin {
 		if ( this.meshoptDecoder ) {
 
 			loader.setMeshoptDecoder( this.meshoptDecoder );
+
+		}
+
+		if ( this.spark ) {
+
+			registerSparkLoader( loader, this.spark, this.sparkOptions );
 
 		}
 
