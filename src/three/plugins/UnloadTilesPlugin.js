@@ -206,7 +206,12 @@ class DeferCallbackManager {
 
 		} else {
 
-			map.set( tile, setTimeout( () => this.callback( tile ), delay ) );
+			map.set( tile, setTimeout( () => {
+
+				this.callback( tile );
+				map.delete( tile );
+
+			}, delay ) );
 
 		}
 
