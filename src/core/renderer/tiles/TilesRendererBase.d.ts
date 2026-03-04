@@ -7,6 +7,8 @@ export class TilesRendererBase {
 	/** @deprecated Use rootTileset instead */
 	readonly rootTileSet : object | null;
 	readonly root : object | null;
+	readonly visibleTiles: Set<object>;
+	readonly activeTiles: Set<object>;
 
 	errorTarget : number;
 	errorThreshold : number;
@@ -35,6 +37,9 @@ export class TilesRendererBase {
 		afterCb : ( ( tile : object, parent : object, depth : number ) => boolean ) | null
 	) : void;
 	getAttributions( target? : Array<{ type: string, value: any }> ) : Array<{ type: string, value: any }>;
+
+	addEventListener( name: string, callback: ( event: any ) => void ): void;
+	removeEventListener( name: string, callback: ( event: any ) => void ): void;
 
 	dispose() : void;
 	resetFailedTiles() : void;
