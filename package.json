@@ -85,6 +85,7 @@
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
     "@eslint/js": "^9.0.0",
+    "@ludicon/spark.js": "^0.1.0",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@types/node": "^24.3.0",
@@ -105,7 +106,7 @@
     "leva": "^0.10.0",
     "lil-gui": "^0.21.0",
     "postprocessing": "^6.36.4",
-    "three": "^0.170.0",
+    "three": "^0.182.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.48.1",
     "vite": "^6.2.2",
@@ -117,7 +118,7 @@
     "@babylonjs/loaders": ">=8.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
-    "three": ">=0.167.0"
+    "three": ">=0.182.0"
   },
   "peerDependenciesMeta": {
     "@react-three/fiber": {
