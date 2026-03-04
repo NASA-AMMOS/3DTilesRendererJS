@@ -66,6 +66,7 @@ const params = {
 	displaySphereBounds: false,
 	displayRegionBounds: false,
 	colorMode: urlParams.get( 'colorMode' ) in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ urlParams.get( 'colorMode' ) ] : DebugTilesPlugin.ColorModes.NONE,
+	boundsColorMode: DebugTilesPlugin.ColorModes.NONE,
 	unlit: Boolean( urlParams.get( 'unlit' ) ),
 	showThirdPerson: false,
 	showSecondView: false,
@@ -269,6 +270,7 @@ function init() {
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
+	debug.add( params, 'boundsColorMode', DebugTilesPlugin.ColorModes );
 	debug.add( params, 'unlit' );
 	debug.open();
 
@@ -472,6 +474,7 @@ function animate() {
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );
+	plugin.boundsColorMode = parseFloat( params.boundsColorMode );
 	plugin.unlit = params.unlit;
 
 	if ( params.orthographic ) {
