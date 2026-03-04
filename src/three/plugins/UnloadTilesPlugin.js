@@ -59,20 +59,15 @@ export class UnloadTilesPlugin {
 		this.tiles = tiles;
 
 		const { lruCache, deferCallbacks } = this;
-		deferCallbacks.callback = tile => {
-
-			lruCache.markUnused( tile );
-			lruCache.scheduleUnload( false );
-
-		};
 
 		const unloadCallback = tile => {
 
+			// trigger a tile unload from the GPU if it's not currently visible
 			const scene = tile.engineData.scene;
 			const visible = tiles.visibleTiles.has( tile );
-
 			if ( ! visible ) {
 
+				// extra visible check in case another plugin or system has forced it to be visible
 				tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( scene, tile ) );
 
 			}
@@ -84,10 +79,16 @@ export class UnloadTilesPlugin {
 			// update lruCache in "update" in case the callback values change
 			lruCache.unloadPriorityCallback = tiles.lruCache.unloadPriorityCallback;
 			lruCache.computeMemoryUsageCallback = tiles.lruCache.computeMemoryUsageCallback;
+
+			// adjust the settings so we don't reject tiles added
 			lruCache.minSize = Infinity;
 			lruCache.maxSize = Infinity;
 			lruCache.maxBytesSize = Infinity;
+
+			// unload all tiles possible at once
 			lruCache.unloadPercent = 1;
+
+			// do not run without an explicit call
 			lruCache.autoMarkUnused = false;
 
 		};
@@ -96,18 +97,29 @@ export class UnloadTilesPlugin {
 
 			if ( visible ) {
 
+				// if the tile is visible then do not trigger disposal
 				lruCache.add( tile, unloadCallback );
 				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 
 			} else {
 
+				// mark the tile as unused in our cache and trigger an unload after the delay
 				deferCallbacks.run( tile );
 
 			}
 
 		};
 
+		deferCallbacks.callback = tile => {
+
+			// try to unload the tile up to our limit
+			lruCache.markUnused( tile );
+			lruCache.scheduleUnload( false );
+
+		};
+
+		// initialize all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			const visible = tiles.visibleTiles.has( tile );
@@ -124,6 +136,8 @@ export class UnloadTilesPlugin {
 
 		if ( scene ) {
 
+			// disposes of all GPU memory and materials associated with the tile but does not
+			// close any image bitmaps so we can reupload them as needed
 			scene.traverse( c => {
 
 				if ( c.material ) {
