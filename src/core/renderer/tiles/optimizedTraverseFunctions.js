@@ -437,6 +437,14 @@ function toggleTiles( tile, renderer ) {
 
 		}
 
+		// keep tiles with virtual children retained in the LRU cache so the content is
+		// available to regenerate virtual children if the overlay configuration changes.
+		if ( tile.virtualChildCount > 0 && tile.internal.hasContent ) {
+
+			renderer.markTileUsed( tile );
+
+		}
+
 		// if the tile is loaded and in frustum we can mark it as visible
 		tile.traversal.visible = tile.internal.hasRenderableContent && tile.traversal.active && tile.traversal.inFrustum && tile.internal.loadingState === LOADED;
 		renderer.stats.used ++;
