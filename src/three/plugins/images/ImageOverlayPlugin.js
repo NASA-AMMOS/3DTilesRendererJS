@@ -457,12 +457,6 @@ export class ImageOverlayPlugin {
 		// under the current overlays used.
 		parents.forEach( parent => {
 
-			if ( parent.parent === null ) {
-
-				return;
-
-			}
-
 			const clone = parent.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
@@ -588,8 +582,9 @@ export class ImageOverlayPlugin {
 		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality.
 		//   REPLACE tiles that already have children are already refined by their children so splitting is unnecessary.
 		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
+		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
 		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
-		if ( this.enableTileSplitting === false || ! shouldSplit ) {
+		if ( this.enableTileSplitting === false || ! shouldSplit || tile.virtualChildCount !== 0 ) {
 
 			return;
 
@@ -601,7 +596,6 @@ export class ImageOverlayPlugin {
 
 		// get the directions to split on
 		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
-		tile[ SPLIT_HASH ] = hash;
 
 		// if there are no directions to split on then exit early
 		if ( directions.length === 0 ) {
@@ -609,6 +603,8 @@ export class ImageOverlayPlugin {
 			return;
 
 		}
+
+		tile[ SPLIT_HASH ] = hash;
 
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
