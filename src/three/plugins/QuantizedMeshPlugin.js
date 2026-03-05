@@ -454,7 +454,9 @@ export class QuantizedMeshPlugin {
 		if ( TILE_AVAILABLE in tile ) {
 
 			const { virtualChildCount } = tile;
-			for ( let i = tile.children.length - virtualChildCount; i < tile.children.length; i ++ ) {
+			const len = tile.children.length;
+			const start = len - virtualChildCount;
+			for ( let i = start; i < len; i ++ ) {
 
 				tiles.processNodeQueue.remove( tile.children[ i ] );
 

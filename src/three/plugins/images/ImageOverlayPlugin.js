@@ -403,20 +403,24 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// collect the tiles split into virtual tiles
+		// collect the tiles split into virtual tiles, sorted deepest-first so nested virtual tiles
+		// are cleaned up before their parents when iterating
 		const { tiles } = this;
-		const parents = new Set();
+		const parents = [];
 		this.processedTiles.forEach( tile => {
 
 			if ( SPLIT_HASH in tile ) {
 
-				parents.add( tile );
+				parents.push( tile );
 
 			}
 
 		} );
 
-		// dispose of the virtual children if this tile would not be split or the spilt could change
+		// ensure we clean depth first
+		parents.sort( ( a, b ) => b.internal.depth - a.internal.depth );
+
+		// dispose of the virtual children if this tile would not be split or the split could change
 		// under the current overlays used.
 		parents.forEach( parent => {
 
@@ -431,19 +435,20 @@ export class ImageOverlayPlugin {
 
 			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
 
-				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
-				const children = collectChildren( parent );
-				children.sort( ( a, b ) => ( b.internal.depth || 0 ) - ( a.internal.depth || 0 ) );
-
 				// note that we need to remove children from the processing queue in this case
-				// because we are forcibly evicting them from the cache.
-				children.forEach( child => {
+				// because we are forcibly evicting them from the cache. Since parents is sorted
+				// deepest-first, nested virtual tiles are already cleaned up before we reach
+				// their parent here.
+				const len = parent.children.length;
+				const start = len - parent.virtualChildCount;
+				for ( let i = start; i < len; i ++ ) {
 
+					const child = parent.children[ i ];
 					tiles.processNodeQueue.remove( child );
 					tiles.lruCache.remove( child );
 					child.parent = null;
 
-				} );
+				}
 
 				parent.children.length -= parent.virtualChildCount;
 				parent.virtualChildCount = 0;
@@ -460,22 +465,6 @@ export class ImageOverlayPlugin {
 				this.expandVirtualChildren( scene, tile );
 
 			} );
-
-		}
-
-		function collectChildren( root, target = [] ) {
-
-			root.children.forEach( child => {
-
-				if ( child.isVirtual ) {
-
-					target.push( child );
-					collectChildren( child, target );
-
-				}
-
-			} );
-			return target;
 
 		}
 
