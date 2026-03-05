@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GlobeContorls: Account for ellipsoid frame scale when calculating max zoom out distance.
 - Babylon TilesRenderer: Adjusted imports to support treeshaking.
 - ImageOverlayPlugin: Fix case where removing all overlays does not clear overlay textures correctly.
+- UnloadTilesPlugin: Fix case where the plugin would incorrectly retain tiles references, resulting in a memory leak.
 
 ## [0.4.21] - 2026-02-04
 ### Fixed
