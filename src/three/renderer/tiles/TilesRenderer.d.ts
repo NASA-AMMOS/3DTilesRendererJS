@@ -3,14 +3,10 @@ import { Tile, TilesRendererBase, TilesRendererBaseEventMap } from '3d-tiles-ren
 import { TilesGroup } from './TilesGroup.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
-export interface TilesRendererEventMap extends TilesRendererBaseEventMap {
+export interface TilesRendererEventMap extends TilesRendererBaseEventMap<Object3D> {
 	'add-camera': { camera : Camera };
 	'delete-camera': { camera : Camera };
 	'camera-resolution-change': {};
-	// Override scene-typed events with the three.js-specific Object3D type
-	'load-model': { scene : Object3D; tile : Tile, url : string };
-	'dispose-model': { scene : Object3D; tile : Tile };
-	'tile-visibility-change': { scene : Object3D; tile : Tile; visible : boolean };
 }
 
 export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase<TEventMap> {

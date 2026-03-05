@@ -4,7 +4,7 @@ import { Tile } from './Tile.js';
 import { Tileset } from './Tileset.js';
 
 // Events dispatched by TilesRendererBase, available across all renderer implementations.
-export interface TilesRendererBaseEventMap {
+export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
 	'load-content': {};
 	'load-tileset': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
@@ -14,9 +14,9 @@ export interface TilesRendererBaseEventMap {
 	'tiles-load-start': {};
 	'tiles-load-end': {};
 	'tile-download-start': { tile : Tile, uri : string };
-	'load-model': { scene : unknown, tile : Tile, url : string };
-	'dispose-model': { scene : unknown, tile : Tile };
-	'tile-visibility-change': { scene : unknown, tile : Tile, visible : boolean };
+	'load-model': { scene : TScene, tile : Tile, url : string };
+	'dispose-model': { scene : TScene, tile : Tile };
+	'tile-visibility-change': { scene : TScene, tile : Tile, visible : boolean };
 	'update-before': {};
 	'update-after': {};
 	'load-error': { tile : Tile | null, error : Error, url : string | URL };
