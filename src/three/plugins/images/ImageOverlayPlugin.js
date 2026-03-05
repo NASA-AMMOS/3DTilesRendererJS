@@ -579,8 +579,8 @@ export class ImageOverlayPlugin {
 		const { refine } = tile;
 
 		// Only split tiles that would benefit from it:
-		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality.
-		//   REPLACE tiles that already have children are already refined by their children so splitting is unnecessary.
+		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality. REPLACE tiles
+		// that already have children are already refined by their children so splitting is unnecessary.
 		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
 		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
 		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';

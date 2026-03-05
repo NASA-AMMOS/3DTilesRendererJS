@@ -361,7 +361,6 @@ export class QuantizedMeshPlugin {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
-			internal: { isVirtual: true },
 			refine: 'REPLACE',
 			geometricError: geometricError,
 			boundingVolume: { region },
@@ -400,7 +399,6 @@ export class QuantizedMeshPlugin {
 			for ( let cy = 0; cy < 2; cy ++ ) {
 
 				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, available );
-				tile.internal.virtualChildCount ++;
 				if ( child.content !== null ) {
 
 					tile.children.push( child );
@@ -408,8 +406,11 @@ export class QuantizedMeshPlugin {
 
 				} else {
 
-					tile.children.push( child );
+					// mark the child as "virtual" since it relies on the parent geometry
 					child.content = { uri: `tile.quantized_tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.internal = { isVirtual: true };
+					tile.internal.virtualChildCount ++;
+					tile.children.push( child );
 
 				}
 
