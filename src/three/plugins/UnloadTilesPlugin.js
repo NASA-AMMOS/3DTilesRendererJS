@@ -92,13 +92,14 @@ export class UnloadTilesPlugin {
 
 		};
 
-		this._onVisibilityChangeCallback = ( { tile, visible } ) => {
+		this._onVisibilityChangeCallback = ( { tile, scene, visible } ) => {
 
 			if ( visible ) {
 
-				// if the tile is visible then do not trigger disposal
+				// if the tile is visible then do not trigger disposal - for the tile to have at least 1 byte of
+				// memory usage to ensure the lru cache will always remove the item to reduce memory pressure
 				lruCache.add( tile, unloadCallback );
-				lruCache.setMemoryUsage( tile, tiles.lruCache.getMemoryUsage( tile ) );
+				lruCache.setMemoryUsage( tile, tiles.calculateBytesUsed( tile, scene ) || 1 );
 				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 
