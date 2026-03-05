@@ -22,6 +22,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		this.scene = scene;
 		this.group = new TransformNode( 'tiles-root', scene );
+		this.checkCollisions = false;
 		this._upRotationMatrix = Matrix.Identity();
 
 		// Babylon.js Observables for events
@@ -196,6 +197,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 			result.container.dispose();
 			return;
+
+		}
+
+		if ( this.checkCollisions ) {
+
+			for ( const mesh of scene.getChildMeshes() ) {
+
+				mesh.checkCollisions = true;
+
+			}
 
 		}
 
