@@ -22,6 +22,7 @@ const _normal = /* @__PURE__ */ new Vector3();
 const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
+const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
@@ -221,11 +222,45 @@ export class ImageOverlayPlugin {
 
 	}
 
+	_removeVirtualChildren( tile ) {
+
+		// remove the virtual children associated with the given tile
+		if ( ! ( ORIGINAL_REFINE in tile ) ) {
+
+			return;
+
+		}
+
+		const { tiles } = this;
+		const { virtualChildCount } = tile;
+		const len = tile.children.length;
+		const start = len - virtualChildCount;
+		for ( let i = start; i < len; i ++ ) {
+
+			const child = tile.children[ i ];
+			tiles.processNodeQueue.remove( child );
+			tiles.lruCache.remove( child );
+			child.parent = null;
+
+		}
+
+		tile.children.length -= virtualChildCount;
+		tile.virtualChildCount = 0;
+		tile.refine = tile[ ORIGINAL_REFINE ];
+		delete tile[ ORIGINAL_REFINE ];
+		delete tile[ SPLIT_HASH ];
+
+	}
+
 	disposeTile( tile ) {
 
 		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
 
 		processedTiles.delete( tile );
+
+		// remove any virtual children since they depend on this tile being loaded for regeneration.
+		// they will be recreated with fresh split configuration when the tile is reloaded.
+		this._removeVirtualChildren( tile );
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -354,8 +389,6 @@ export class ImageOverlayPlugin {
 			this._updateLayers( tile );
 			this.disposeTile( tile );
 
-			delete tile[ SPLIT_HASH ];
-
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -439,19 +472,7 @@ export class ImageOverlayPlugin {
 				// because we are forcibly evicting them from the cache. Since parents is sorted
 				// deepest-first, nested virtual tiles are already cleaned up before we reach
 				// their parent here.
-				const len = parent.children.length;
-				const start = len - parent.virtualChildCount;
-				for ( let i = start; i < len; i ++ ) {
-
-					const child = parent.children[ i ];
-					tiles.processNodeQueue.remove( child );
-					tiles.lruCache.remove( child );
-					child.parent = null;
-
-				}
-
-				parent.children.length -= parent.virtualChildCount;
-				parent.virtualChildCount = 0;
+				this._removeVirtualChildren( parent );
 
 			}
 
@@ -561,7 +582,14 @@ export class ImageOverlayPlugin {
 
 	async expandVirtualChildren( scene, tile ) {
 
-		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
+		const { refine } = tile;
+
+		// Only split tiles that would benefit from it:
+		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality.
+		//   REPLACE tiles that already have children are already refined by their children so splitting is unnecessary.
+		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
+		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
+		if ( this.enableTileSplitting === false || ! shouldSplit ) {
 
 			return;
 
@@ -726,10 +754,10 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
-		// TODO: If a tile is of type "ADD" refine and it has children then it will not be split
-		// as expected since only geometry tiles with no children are split. Instead we'd want
-		// to split this tiles geometry in addition to adding the child tiles.
+		// force the tile "refine" mode to be set to "REPLACE" so that the virtual children
+		// replace this tile's geometry display. Save the original mode so it can be restored
+		// if virtual children are later removed.
+		tile[ ORIGINAL_REFINE ] = tile.refine;
 		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
 		tile.virtualChildCount += children.length;
