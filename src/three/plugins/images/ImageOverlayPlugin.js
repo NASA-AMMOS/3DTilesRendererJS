@@ -445,7 +445,8 @@ export class ImageOverlayPlugin {
 
 				} );
 
-				parent.children.length = 0;
+				parent.children.length -= parent.virtualChildCount;
+				parent.virtualChildCount = 0;
 
 			}
 
@@ -466,8 +467,12 @@ export class ImageOverlayPlugin {
 
 			root.children.forEach( child => {
 
-				target.push( child );
-				collectChildren( child, target );
+				if ( child.isVirtual ) {
+
+					target.push( child );
+					collectChildren( child, target );
+
+				}
 
 			} );
 			return target;
@@ -738,6 +743,7 @@ export class ImageOverlayPlugin {
 		// to split this tiles geometry in addition to adding the child tiles.
 		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
+		tile.virtualChildCount += children.length;
 
 	}
 
