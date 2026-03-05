@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.22] - Unreleased
 ### Added
 - Types for gltf metadata extensions.
+- Event and other types to TilesRendererBase for use in thee.js and Babylon.js.
 
 ### Fixed
 - LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
