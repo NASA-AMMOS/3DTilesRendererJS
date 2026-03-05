@@ -816,7 +816,7 @@ export class TilesRendererBase {
 			virtualChildCount: 0,
 
 			// preserve any pre-seeded fields
-			...( tile.internal || {} ),
+			...tile.internal,
 		};
 
 		if ( tile.content?.uri ) {
