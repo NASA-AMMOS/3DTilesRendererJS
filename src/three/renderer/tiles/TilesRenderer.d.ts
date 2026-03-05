@@ -4,8 +4,8 @@ import { TilesGroup } from './TilesGroup.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
 export interface TilesRendererEventMap extends TilesRendererBaseEventMap<Object3D> {
-	'add-camera': { camera : Camera };
-	'delete-camera': { camera : Camera };
+	'add-camera': { camera: Camera };
+	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
 }
 
