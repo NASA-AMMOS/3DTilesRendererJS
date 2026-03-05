@@ -1,27 +1,16 @@
 import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager, Sphere, EventListener, EventDispatcher, BaseEvent } from 'three';
-import { Tile, TilesRendererBase } from '3d-tiles-renderer/core';
+import { Tile, TilesRendererBase, TilesRendererBaseEventMap } from '3d-tiles-renderer/core';
 import { TilesGroup } from './TilesGroup.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
-export interface TilesRendererEventMap {
-	'add-camera': { camera: Camera };
-	'delete-camera': { camera: Camera };
+export interface TilesRendererEventMap extends TilesRendererBaseEventMap {
+	'add-camera': { camera : Camera };
+	'delete-camera': { camera : Camera };
 	'camera-resolution-change': {};
-	'load-root-tileset': { tileset: object, url: string };
-	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
-	/* @deprecated Use 'load-tileset' instead */
-	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
-	'tiles-load-start': {};
-	'tiles-load-end': {};
-	'tile-download-start': { tile: Tile, url: string };
-	'load-content': {};
-	'load-model': { scene: Object3D; tile: Tile, url: string };
-	'dispose-model': { scene: Object3D; tile: Tile };
-	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
-	'update-before': {};
-	'update-after': {};
-	'needs-update': {};
-	'load-error': { tile: Tile | null, error: Error, url: string | URL };
+	// Override scene-typed events with the three.js-specific Object3D type
+	'load-model': { scene : Object3D; tile : Tile, url : string };
+	'dispose-model': { scene : Object3D; tile : Tile };
+	'tile-visibility-change': { scene : Object3D; tile : Tile; visible : boolean };
 }
 
 export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase implements EventDispatcher<TEventMap> {

@@ -1,14 +1,35 @@
 import { LRUCache } from '../utilities/LRUCache.js';
 import { PriorityQueue } from '../utilities/PriorityQueue.js';
+import { Tile } from './Tile.js';
+import { Tileset } from './Tileset.js';
+
+// Events dispatched by TilesRendererBase, available across all renderer implementations.
+export interface TilesRendererBaseEventMap {
+	'needs-update': {};
+	'load-content': {};
+	'load-tileset': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
+	/* @deprecated Use 'load-tileset' instead */
+	'load-tile-set': { tileset : Tileset, /* @deprecated Use tileset instead */ tileSet? : Tileset, url : string };
+	'load-root-tileset': { tileset : Tileset, url : string };
+	'tiles-load-start': {};
+	'tiles-load-end': {};
+	'tile-download-start': { tile : Tile, uri : string };
+	'load-model': { scene : unknown, tile : Tile, url : string };
+	'dispose-model': { scene : unknown, tile : Tile };
+	'tile-visibility-change': { scene : unknown, tile : Tile, visible : boolean };
+	'update-before': {};
+	'update-after': {};
+	'load-error': { tile : Tile | null, error : Error, url : string | URL };
+}
 
 export class TilesRendererBase {
 
-	readonly rootTileset : object | null;
+	readonly rootTileset : Tileset | null;
 	/** @deprecated Use rootTileset instead */
-	readonly rootTileSet : object | null;
-	readonly root : object | null;
-	readonly visibleTiles: Set<object>;
-	readonly activeTiles: Set<object>;
+	readonly rootTileSet : Tileset | null;
+	readonly root : Tile | null;
+	readonly visibleTiles : Set<Tile>;
+	readonly activeTiles : Set<Tile>;
 
 	errorTarget : number;
 	errorThreshold : number;
@@ -18,7 +39,7 @@ export class TilesRendererBase {
 	optimizedLoadStrategy : boolean;
 	maxTilesProcessed : number;
 
-	loadProgress: number;
+	readonly loadProgress : number;
 
 	fetchOptions : RequestInit;
 
@@ -38,8 +59,17 @@ export class TilesRendererBase {
 	) : void;
 	getAttributions( target? : Array<{ type: string, value: any }> ) : Array<{ type: string, value: any }>;
 
-	addEventListener( name: string, callback: ( event: any ) => void ): void;
-	removeEventListener( name: string, callback: ( event: any ) => void ): void;
+	addEventListener<T extends keyof TilesRendererBaseEventMap>(
+		name : T,
+		callback : ( event : TilesRendererBaseEventMap[ T ] & { type : T } ) => void
+	) : void;
+	addEventListener( name : string, callback : ( event : any ) => void ) : void;
+
+	removeEventListener<T extends keyof TilesRendererBaseEventMap>(
+		name : T,
+		callback : ( event : TilesRendererBaseEventMap[ T ] & { type : T } ) => void
+	) : void;
+	removeEventListener( name : string, callback : ( event : any ) => void ) : void;
 
 	dispose() : void;
 	resetFailedTiles() : void;
