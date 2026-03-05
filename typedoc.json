@@ -4,6 +4,7 @@
   "readme": "README.md",
   "out": "docs/api",
   "customCss": "docs/custom.css",
+  "customJs": "docs/custom.js",
   "entryPoints": [
     "src/core/renderer/index.d.ts",
     "src/three/renderer/index.d.ts",
