@@ -802,6 +802,7 @@ export class TilesRendererBase {
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
+		tile.isVirtual = tile.isVirtual || false;
 
 		// Initialize internal data
 		tile.internal = {

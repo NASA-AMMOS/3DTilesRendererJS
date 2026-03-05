@@ -361,6 +361,7 @@ export class QuantizedMeshPlugin {
 			[ TILE_LEVEL ]: level,
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
+			isVirtual: true,
 			refine: 'REPLACE',
 			geometricError: geometricError,
 			boundingVolume: { region },

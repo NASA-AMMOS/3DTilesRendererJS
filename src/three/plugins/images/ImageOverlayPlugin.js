@@ -721,6 +721,7 @@ export class ImageOverlayPlugin {
 			}
 
 			children.push( {
+				isVirtual: true,
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
 				boundingVolume: boundingVolume,
