@@ -988,7 +988,7 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
 
 		const children = tile.children;
-		if ( children.length === 0 || children[ 0 ].internal ) {
+		if ( children.length === 0 || children[ 0 ].traversal ) {
 
 			return;
 
@@ -999,7 +999,6 @@ export class TilesRendererBase {
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				this.preprocessNode( children[ i ], tile.internal.basePath, tile );
-
 
 			}
 

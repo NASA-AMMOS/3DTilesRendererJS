@@ -21,6 +21,8 @@ function isUsedThisFrame( tile, frameCount ) {
 
 function isProcessed( tile ) {
 
+	// TODO: here "traversal" is used to determine whether a tile has been initialized. We should
+	// move these to tiles utils
 	return Boolean( tile.traversal );
 
 }
@@ -29,7 +31,7 @@ function isProcessed( tile ) {
 function areChildrenProcessed( tile ) {
 
 	// all children are processed at once
-	const childrenReady = tile.children.length === 0 || Boolean( tile.children[ 0 ].internal );
+	const childrenReady = tile.children.length === 0 || isProcessed( tile.children[ 0 ] );
 	const contentReady = ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState );
 	return childrenReady && contentReady;
 
