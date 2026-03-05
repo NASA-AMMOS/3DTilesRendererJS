@@ -68,4 +68,7 @@ example/local-data
 example/dev-bundle
 build
 
+# Generated documentation (built by CI)
+docs/api
+
 pnpm-lock.yaml

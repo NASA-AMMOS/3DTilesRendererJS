@@ -1,8 +1,12 @@
-interface FeatureTableHeader {
-
+/**
+ * Header structure for feature table data.
+ * @internal
+ */
+export interface FeatureTableHeader {
+	/** Optional extensions object */
 	extensions?: object;
+	/** Optional extra data */
 	extras?: any;
-
 }
 
 export class FeatureTable {
