@@ -5,7 +5,7 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [master]
+    branches: [master, improve-JSDoc]
     paths:
       - 'src/**/*.d.ts'
       - 'typedoc.json'
