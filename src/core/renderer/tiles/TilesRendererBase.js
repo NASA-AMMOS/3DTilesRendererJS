@@ -802,8 +802,6 @@ export class TilesRendererBase {
 
 		tile.parent = parentTile;
 		tile.children = tile.children || [];
-		tile.isVirtual = tile.isVirtual || false;
-		tile.virtualChildCount = 0;
 
 		// Initialize internal data
 		tile.internal = {
@@ -814,6 +812,11 @@ export class TilesRendererBase {
 			basePath: tilesetDir,
 			depth: - 1,
 			depthFromRenderedParent: - 1,
+			isVirtual: false,
+			virtualChildCount: 0,
+
+			// preserve any pre-seeded fields
+			...( tile.internal || {} ),
 		};
 
 		if ( tile.content?.uri ) {
