@@ -22,7 +22,7 @@ export interface TilesRendererBaseEventMap {
 	'load-error': { tile : Tile | null, error : Error, url : string | URL };
 }
 
-export class TilesRendererBase {
+export class TilesRendererBase<TEventMap extends TilesRendererBaseEventMap = TilesRendererBaseEventMap> {
 
 	readonly rootTileset : Tileset | null;
 	/** @deprecated Use rootTileset instead */
@@ -59,17 +59,26 @@ export class TilesRendererBase {
 	) : void;
 	getAttributions( target? : Array<{ type: string, value: any }> ) : Array<{ type: string, value: any }>;
 
-	addEventListener<T extends keyof TilesRendererBaseEventMap>(
+	addEventListener<T extends keyof TEventMap>(
 		name : T,
-		callback : ( event : TilesRendererBaseEventMap[ T ] & { type : T } ) => void
+		callback : ( event : TEventMap[ T ] & { type : T } ) => void
 	) : void;
 	addEventListener( name : string, callback : ( event : any ) => void ) : void;
 
-	removeEventListener<T extends keyof TilesRendererBaseEventMap>(
+	removeEventListener<T extends keyof TEventMap>(
 		name : T,
-		callback : ( event : TilesRendererBaseEventMap[ T ] & { type : T } ) => void
+		callback : ( event : TEventMap[ T ] & { type : T } ) => void
 	) : void;
 	removeEventListener( name : string, callback : ( event : any ) => void ) : void;
+
+	hasEventListener<T extends keyof TEventMap>(
+		name : T,
+		callback : ( event : TEventMap[ T ] & { type : T } ) => void
+	) : boolean;
+	hasEventListener( name : string, callback : ( event : any ) => void ) : boolean;
+
+	dispatchEvent<T extends keyof TEventMap>( event : TEventMap[ T ] & { type : T } ) : void;
+	dispatchEvent( event : { type : string } ) : void;
 
 	dispose() : void;
 	resetFailedTiles() : void;
