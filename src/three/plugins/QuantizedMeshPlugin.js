@@ -400,6 +400,7 @@ export class QuantizedMeshPlugin {
 			for ( let cy = 0; cy < 2; cy ++ ) {
 
 				const child = this.createChild( level + 1, 2 * x + cx, 2 * y + cy, available );
+				tile.virtualChildCount ++;
 				if ( child.content !== null ) {
 
 					tile.children.push( child );
@@ -418,7 +419,8 @@ export class QuantizedMeshPlugin {
 
 		if ( ! hasChildren ) {
 
-			tile.children.length = 0;
+			tile.children.length -= tile.virtualChildCount;
+			tile.virtualChildCount = 0;
 
 		}
 
@@ -437,27 +439,29 @@ export class QuantizedMeshPlugin {
 
 	disposeTile( tile ) {
 
+		const { tiles, layer } = this;
+
 		// dispose of the available array since we will get it again if this tile is loaded
-		if ( getTileHasMetadata( tile, this.layer ) ) {
+		if ( getTileHasMetadata( tile, layer ) ) {
 
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
-		// Note: we remove all children always because child tiles can rely on splitting parent tiles
-		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
-		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
-		// we just remove all children and generate them again one the parent is loaded.
-		// Only get rid of the children if this plugin was responsible for them.
+		// Remove virtual children when the parent is disposed since they depend on the parent's
+		// loaded scene for clipping and cannot be rendered or re-generated without it. They will
+		// be re-created once the parent is loaded again.
 		if ( TILE_AVAILABLE in tile ) {
 
-			tile.children.forEach( child => {
+			const { virtualChildCount } = tile;
+			for ( let i = tile.children.length - virtualChildCount; i < tile.children.length; i ++ ) {
 
-				// TODO: there should be a reliable way for removing children like this.
-				this.tiles.processNodeQueue.remove( child );
+				tiles.processNodeQueue.remove( tile.children[ i ] );
 
-			} );
-			tile.children.length = 0;
+			}
+
+			tile.children.length -= virtualChildCount;
+			tile.virtualChildCount = 0;
 
 		}
 
