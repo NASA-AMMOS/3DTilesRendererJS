@@ -232,7 +232,7 @@ export class ImageOverlayPlugin {
 		}
 
 		const { tiles } = this;
-		const { virtualChildCount } = tile;
+		const { virtualChildCount } = tile.internal;
 		const len = tile.children.length;
 		const start = len - virtualChildCount;
 		for ( let i = start; i < len; i ++ ) {
@@ -245,7 +245,7 @@ export class ImageOverlayPlugin {
 		}
 
 		tile.children.length -= virtualChildCount;
-		tile.virtualChildCount = 0;
+		tile.internal.virtualChildCount = 0;
 		tile.refine = tile[ ORIGINAL_REFINE ];
 		delete tile[ ORIGINAL_REFINE ];
 		delete tile[ SPLIT_HASH ];
@@ -584,7 +584,7 @@ export class ImageOverlayPlugin {
 		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
 		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
 		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
-		if ( this.enableTileSplitting === false || ! shouldSplit || tile.virtualChildCount !== 0 ) {
+		if ( this.enableTileSplitting === false || ! shouldSplit || tile.internal.virtualChildCount !== 0 ) {
 
 			return;
 
@@ -739,7 +739,7 @@ export class ImageOverlayPlugin {
 			}
 
 			children.push( {
-				isVirtual: true,
+				internal: { isVirtual: true },
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
 				boundingVolume: boundingVolume,
@@ -756,7 +756,7 @@ export class ImageOverlayPlugin {
 		tile[ ORIGINAL_REFINE ] = tile.refine;
 		tile.refine = 'REPLACE';
 		tile.children.push( ...children );
-		tile.virtualChildCount += children.length;
+		tile.internal.virtualChildCount += children.length;
 
 	}
 

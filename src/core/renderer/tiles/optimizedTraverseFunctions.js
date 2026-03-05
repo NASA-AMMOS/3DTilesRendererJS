@@ -439,7 +439,7 @@ function toggleTiles( tile, renderer ) {
 
 		// keep tiles with virtual children retained in the LRU cache so the content is
 		// available to regenerate virtual children if the overlay configuration changes.
-		if ( tile.virtualChildCount > 0 && tile.internal.hasContent ) {
+		if ( tile.internal.virtualChildCount > 0 && tile.internal.hasContent ) {
 
 			renderer.markTileUsed( tile );
 
