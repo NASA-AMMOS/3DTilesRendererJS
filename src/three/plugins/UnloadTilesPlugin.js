@@ -184,6 +184,7 @@ export class UnloadTilesPlugin {
 
 		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
 		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 		deferCallbacks.cancelAll();
 
 		// clear the lru cache
