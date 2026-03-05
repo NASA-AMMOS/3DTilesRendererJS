@@ -111,11 +111,18 @@ export class UnloadTilesPlugin {
 
 		};
 
+		this._onDisposeModel = ( { tile } ) => {
+
+			lruCache.remove( tile );
+			deferCallbacks.cancel( tile );
+
+		};
+
 		deferCallbacks.callback = tile => {
 
 			// try to unload the tile up to our limit
 			lruCache.markUnused( tile );
-			lruCache.scheduleUnload( false );
+			lruCache.scheduleUnload();
 
 		};
 
@@ -123,12 +130,13 @@ export class UnloadTilesPlugin {
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			const visible = tiles.visibleTiles.has( tile );
-			this._onVisibilityChangeCallback( { scene, visible } );
+			this._onVisibilityChangeCallback( { tile, visible } );
 
 		} );
 
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
 		tiles.addEventListener( 'update-before', this._onUpdateBefore );
+		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 
 	}
 
@@ -172,9 +180,18 @@ export class UnloadTilesPlugin {
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
-		this.tiles.removeEventListener( 'update-before', this._onUpdateBefore );
-		this.deferCallbacks.cancelAll();
+		const { lruCache, tiles, deferCallbacks } = this;
+
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
+		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
+		deferCallbacks.cancelAll();
+
+		// clear the lru cache
+		lruCache.minBytesSize = 0;
+		lruCache.minSize = 0;
+		lruCache.maxSize = 0;
+		lruCache.markAllUnused();
+		lruCache.scheduleUnload();
 
 	}
 
