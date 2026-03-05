@@ -78,7 +78,6 @@ export class UnloadTilesPlugin {
 
 			// update lruCache in "update" in case the callback values change
 			lruCache.unloadPriorityCallback = tiles.lruCache.unloadPriorityCallback;
-			lruCache.computeMemoryUsageCallback = tiles.lruCache.computeMemoryUsageCallback;
 
 			// adjust the settings so we don't reject tiles added
 			lruCache.minSize = Infinity;
@@ -88,7 +87,7 @@ export class UnloadTilesPlugin {
 			// unload all tiles possible at once
 			lruCache.unloadPercent = 1;
 
-			// do not run without an explicit call
+			// do not run mark unused without an explicit call
 			lruCache.autoMarkUnused = false;
 
 		};
@@ -99,6 +98,7 @@ export class UnloadTilesPlugin {
 
 				// if the tile is visible then do not trigger disposal
 				lruCache.add( tile, unloadCallback );
+				lruCache.setMemoryUsage( tile, tiles.lruCache.getMemoryUsage( tile ) );
 				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 
