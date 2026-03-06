@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Types for gltf metadata extensions.
 - Event and other types to TilesRendererBase for use in thee.js and Babylon.js.
 - ImageOverlayPlugin: Add support for splitting "ADD" refinement tiles.
+- Babylon TilesRenderer: Added "checkCollisions" option.
 
 ### Fixed
 - LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
