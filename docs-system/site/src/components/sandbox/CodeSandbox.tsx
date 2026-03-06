@@ -18,9 +18,6 @@ interface CodeSandboxProps {
 
 export function CodeSandbox({
   initialCode,
-  title,
-  description,
-  dependencies = [],
 }: CodeSandboxProps) {
   const [code, setCode] = useState(initialCode);
   const [isRunning, setIsRunning] = useState(false);

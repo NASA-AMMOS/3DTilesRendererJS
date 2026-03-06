@@ -40,7 +40,7 @@ export function useSandbox() {
     }));
   }, []);
 
-  const run = useCallback((code: string, dependencies: Record<string, string> = {}) => {
+  const run = useCallback((_code: string, _dependencies: Record<string, string> = {}) => {
     runIdRef.current += 1;
     
     setState({
