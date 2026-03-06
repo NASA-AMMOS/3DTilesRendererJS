@@ -1,0 +1,2 @@
+function y(n,t){return n.x*t.x+n.y*t.y+n.z*t.z}function x(n,t){const o=t.x-n.x,c=t.y-n.y,r=t.z-n.z;return o*o+c*c+r*r}function z(n,t){return Math.sqrt(x(n,t))}function e(n,t,o){return o.x=n.x-t.x,o.y=n.y-t.y,o.z=n.z-t.z,o}function f(n,t){return t.x=n.x,t.y=n.y,t.z=n.z,t}function i(n,t){return n.x*t.x+n.y*t.y+n.z*t.z+n.w*t.w}export{z as V,f as a,e as b,y as c,i as d};
+//# sourceMappingURL=math.vector.functions-DM3m4qhu.js.map
