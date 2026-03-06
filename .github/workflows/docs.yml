@@ -50,7 +50,9 @@ jobs:
         working-directory: docs-system
 
       - name: Copy examples to docs output
-        run: cp -r example/bundle docs-system/site/dist/example/bundle
+        run: |
+          mkdir -p docs-system/site/dist/example
+          cp -r example/bundle docs-system/site/dist/example/bundle
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
