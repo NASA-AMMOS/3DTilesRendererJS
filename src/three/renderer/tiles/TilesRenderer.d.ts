@@ -234,7 +234,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * }
 	 * ```
 	 */
-	getBoundingBox(box: Box3): boolean;
+	getBoundingBox( box: Box3 ): boolean;
 
 	/**
 	 * Computes the oriented bounding box of the tileset.
@@ -243,7 +243,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param matrix - Matrix4 to store the box orientation and position
 	 * @returns `true` if computed successfully, `false` if tileset not loaded
 	 */
-	getOrientedBoundingBox(box: Box3, matrix: Matrix4): boolean;
+	getOrientedBoundingBox( box: Box3, matrix: Matrix4 ): boolean;
 
 	/**
 	 * Computes the bounding sphere of the tileset.
@@ -251,7 +251,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param sphere - Sphere to store the result
 	 * @returns `true` if computed successfully, `false` if tileset not loaded
 	 */
-	getBoundingSphere(sphere: Sphere): boolean;
+	getBoundingSphere( sphere: Sphere ): boolean;
 
 	/**
 	 * Checks if a camera is registered with the renderer.
@@ -259,7 +259,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param camera - The camera to check
 	 * @returns `true` if the camera is registered
 	 */
-	hasCamera(camera: Camera): boolean;
+	hasCamera( camera: Camera ): boolean;
 
 	/**
 	 * Registers a camera for LOD calculations.
@@ -280,7 +280,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @see {@link setResolution}
 	 * @see {@link setResolutionFromRenderer}
 	 */
-	setCamera(camera: Camera): boolean;
+	setCamera( camera: Camera ): boolean;
 
 	/**
 	 * Unregisters a camera from the renderer.
@@ -288,7 +288,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param camera - The camera to remove
 	 * @returns `true` if the camera was removed, `false` if not found
 	 */
-	deleteCamera(camera: Camera): boolean;
+	deleteCamera( camera: Camera ): boolean;
 
 	/**
 	 * Sets the render resolution for a camera.
@@ -301,7 +301,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param y - Height in pixels
 	 * @returns `true` if the resolution was set, `false` if camera not found
 	 */
-	setResolution(camera: Camera, x: number, y: number): boolean;
+	setResolution( camera: Camera, x: number, y: number ): boolean;
 
 	/**
 	 * Sets the render resolution for a camera using a Vector2.
@@ -310,7 +310,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * @param resolution - Resolution as Vector2 (width, height)
 	 * @returns `true` if the resolution was set, `false` if camera not found
 	 */
-	setResolution(camera: Camera, resolution: Vector2): boolean;
+	setResolution( camera: Camera, resolution: Vector2 ): boolean;
 
 	/**
 	 * Sets the render resolution for a camera from a WebGLRenderer.
@@ -330,7 +330,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * });
 	 * ```
 	 */
-	setResolutionFromRenderer(camera: Camera, renderer: WebGLRenderer): boolean;
+	setResolutionFromRenderer( camera: Camera, renderer: WebGLRenderer ): boolean;
 
 	/**
 	 * Iterates over all loaded models in the tileset.
@@ -349,7 +349,7 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	 * });
 	 * ```
 	 */
-	forEachLoadedModel(callback: (scene: Object3D, tile: Tile) => void): void;
+	forEachLoadedModel( callback: ( scene: Object3D, tile: Tile ) => void ): void;
 
 	/**
 	 * Adds a listener to an event type.

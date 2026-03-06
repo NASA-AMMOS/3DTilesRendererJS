@@ -198,7 +198,7 @@ export class TilesRendererBase {
 	 * renderer.registerPlugin(new CesiumIonAuthPlugin({ apiToken: 'token', assetId: '123' }));
 	 * ```
 	 */
-	constructor(url?: string);
+	constructor( url?: string );
 
 	/**
 	 * Updates the tile loading and rendering state.
@@ -238,7 +238,7 @@ export class TilesRendererBase {
 	 * @see {@link unregisterPlugin}
 	 * @see {@link getPluginByName}
 	 */
-	registerPlugin(plugin: object): void;
+	registerPlugin( plugin: object ): void;
 
 	/**
 	 * Unregisters a previously registered plugin.
@@ -255,7 +255,7 @@ export class TilesRendererBase {
 	 * renderer.unregisterPlugin('DebugTilesPlugin');
 	 * ```
 	 */
-	unregisterPlugin(plugin: object | string): boolean;
+	unregisterPlugin( plugin: object | string ): boolean;
 
 	/**
 	 * Retrieves a registered plugin by name.
@@ -271,7 +271,7 @@ export class TilesRendererBase {
 	 * }
 	 * ```
 	 */
-	getPluginByName(plugin: object | string): object;
+	getPluginByName( plugin: object | string ): object;
 
 	/**
 	 * Traverses all tiles in the tileset hierarchy.
@@ -296,8 +296,8 @@ export class TilesRendererBase {
 	 * ```
 	 */
 	traverse(
-		beforeCb: ((tile: object, parent: object, depth: number) => boolean) | null,
-		afterCb: ((tile: object, parent: object, depth: number) => boolean) | null
+		beforeCb: ( ( tile: object, parent: object, depth: number ) => boolean ) | null,
+		afterCb: ( ( tile: object, parent: object, depth: number ) => boolean ) | null
 	): void;
 
 	/**
@@ -316,7 +316,7 @@ export class TilesRendererBase {
 	 * });
 	 * ```
 	 */
-	getAttributions(target?: Array<{ type: string, value: any }>): Array<{ type: string, value: any }>;
+	getAttributions( target?: Array<{ type: string, value: any }> ): Array<{ type: string, value: any }>;
 
 	/**
 	 * Disposes of all resources held by the renderer.

@@ -60,6 +60,6 @@ export class PNTSLoader<Result extends PNTSResult = PNTSResult, ParseResult = Pr
 	 *
 	 * @param manager - Optional Three.js LoadingManager for tracking load progress
 	 */
-	constructor(manager: LoadingManager);
+	constructor( manager: LoadingManager );
 
 }

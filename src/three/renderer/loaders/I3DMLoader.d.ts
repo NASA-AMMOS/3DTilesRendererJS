@@ -64,6 +64,6 @@ export class I3DMLoader<Result extends I3DMResult = I3DMResult, ParseResult = Pr
 	 *
 	 * @param manager - Optional Three.js LoadingManager for tracking load progress
 	 */
-	constructor(manager: LoadingManager);
+	constructor( manager: LoadingManager );
 
 }

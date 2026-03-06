@@ -44,14 +44,14 @@ export class ImageOverlayPlugin {
 	 * @param options.alphaMask - If true, use alpha channel as mask; if false, fade to layer below
 	 * @param options.alphaInvert - If true, cut outside (keep inside); if false, cut inside (keep outside)
 	 */
-	constructor(options: {
+	constructor( options: {
 		overlays: Array<ImageOverlay>,
 		renderer: WebGLRenderer,
 		resolution?: number,
 		enableTileSplitting?: boolean,
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
-	});
+	} );
 
 	/**
 	 * Adds an overlay to the plugin.
@@ -59,7 +59,7 @@ export class ImageOverlayPlugin {
 	 * @param overlay - The overlay to add
 	 * @param order - Optional z-order for the overlay (higher = on top)
 	 */
-	addOverlay(overlay: ImageOverlay, order?: number): void;
+	addOverlay( overlay: ImageOverlay, order?: number ): void;
 
 	/**
 	 * Changes the z-order of an existing overlay.
@@ -67,14 +67,14 @@ export class ImageOverlayPlugin {
 	 * @param overlay - The overlay to reorder
 	 * @param order - New z-order value
 	 */
-	setOverlayOrder(overlay: ImageOverlay, order?: number): void;
+	setOverlayOrder( overlay: ImageOverlay, order?: number ): void;
 
 	/**
 	 * Removes an overlay from the plugin.
 	 *
 	 * @param overlay - The overlay to remove
 	 */
-	deleteOverlay(overlay: ImageOverlay): void;
+	deleteOverlay( overlay: ImageOverlay ): void;
 
 }
 
@@ -115,7 +115,7 @@ export class ImageOverlay {
 	 * Function to preprocess tile URLs before fetching.
 	 * Return null to skip loading the tile.
 	 */
-	preprocessURL: (url: string) => string | null;
+	preprocessURL: ( url: string ) => string | null;
 
 }
 
@@ -153,7 +153,7 @@ export class XYZTilesOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		levels: number,
 		dimension: number,
 		projection: string;
@@ -161,8 +161,8 @@ export class XYZTilesOverlay extends ImageOverlay {
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }
 
@@ -224,7 +224,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 	 * @param options.opacity - Opacity (0-1)
 	 * @param options.frame - Optional coordinate frame transformation
 	 */
-	constructor(options: {
+	constructor( options: {
 		geojson?: any,
 		url?: string,
 		tileDimension?: number,
@@ -236,7 +236,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 		color?: number | Color,
 		opacity?: number,
 		frame?: Matrix4 | null,
-	});
+	} );
 
 }
 
@@ -280,7 +280,7 @@ export class WMSTilesOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		url: string,
 		layer: string,
 		crs?: string,
@@ -294,8 +294,8 @@ export class WMSTilesOverlay extends ImageOverlay {
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }
 
@@ -333,7 +333,7 @@ export class WMTSTilesOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		dimensions?: { [key: string]: any } | null,
 		url?: string | null,
 		capabilities?: WMTSCapabilitiesResult | null,
@@ -343,8 +343,8 @@ export class WMTSTilesOverlay extends ImageOverlay {
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }
 
@@ -374,13 +374,13 @@ export class TMSTilesOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		url: string,
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }
 
@@ -415,15 +415,15 @@ export class CesiumIonOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		assetId: number | string,
 		apiToken: string,
 		autoRefreshToken?: boolean,
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }
 
@@ -466,7 +466,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 	 * @param options.frame - Optional coordinate frame transformation
 	 * @param options.preprocessURL - Optional URL preprocessing function
 	 */
-	constructor(options: {
+	constructor( options: {
 		apiToken: string,
 		autoRefreshToken?: boolean,
 		logoUrl?: string,
@@ -474,7 +474,7 @@ export class GoogleMapsOverlay extends ImageOverlay {
 		color: number | Color,
 		opacity: number,
 		frame?: Matrix4 | null,
-		preprocessURL?: (url: string) => string | null;
-	});
+		preprocessURL?: ( url: string ) => string | null;
+	} );
 
 }

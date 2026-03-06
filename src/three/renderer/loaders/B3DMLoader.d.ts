@@ -64,6 +64,6 @@ export class B3DMLoader<Result extends B3DMResult = B3DMResult, ParseResult = Pr
 	 *
 	 * @param manager - Optional Three.js LoadingManager for tracking load progress
 	 */
-	constructor(manager: LoadingManager);
+	constructor( manager: LoadingManager );
 
 }
