@@ -1,0 +1,22 @@
+{
+  "name": "@3d-tiles-renderer/docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "./parser",
+    "./site"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build:data": "tsx scripts/build-docs.ts",
+    "dev": "npm run build:data && npm run dev:site",
+    "dev:site": "npm run dev -w site",
+    "build": "npm run build:data && npm run build:site",
+    "build:site": "npm run build -w site",
+    "preview": "npm run preview -w site"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0"
+  }
+}

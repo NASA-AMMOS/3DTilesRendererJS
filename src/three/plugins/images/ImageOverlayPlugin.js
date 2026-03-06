@@ -23,9 +23,69 @@ const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 
-// Plugin for overlaying tiled image data on top of 3d tiles geometry.
+/**
+ * Plugin for overlaying tiled image data on top of 3D Tiles geometry.
+ *
+ * Supports multiple overlay types including XYZ, WMS, WMTS, TMS, GeoJSON,
+ * Cesium Ion imagery, and Google Maps tiles. Overlays can be layered with
+ * configurable opacity, color tinting, and z-ordering.
+ *
+ * @category Plugins
+ *
+ * @example <caption>Basic Usage with XYZ Tiles</caption>
+ * ```js
+ * import { TilesRenderer } from '3d-tiles-renderer';
+ * import { ImageOverlayPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+ *
+ * // Create an OpenStreetMap overlay
+ * const osmOverlay = new XYZTilesOverlay({
+ *   url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+ *   levels: 19,
+ *   opacity: 0.8
+ * });
+ *
+ * // Create the plugin and register it
+ * const plugin = new ImageOverlayPlugin({
+ *   overlays: [osmOverlay],
+ *   resolution: 256
+ * });
+ *
+ * tilesRenderer.registerPlugin(plugin);
+ * ```
+ *
+ * @example <caption>Multiple Overlays with Z-ordering</caption>
+ * ```js
+ * const baseLayer = new XYZTilesOverlay({ url: '...', opacity: 1.0 });
+ * const labelLayer = new XYZTilesOverlay({ url: '...', opacity: 0.7 });
+ *
+ * const plugin = new ImageOverlayPlugin();
+ * plugin.addOverlay(baseLayer, 0);  // Bottom layer
+ * plugin.addOverlay(labelLayer, 1); // Top layer
+ *
+ * tilesRenderer.registerPlugin(plugin);
+ * ```
+ *
+ * @example <caption>WMTS Overlay</caption>
+ * ```js
+ * import { WMTSTilesOverlay } from '3d-tiles-renderer/plugins';
+ *
+ * const wmtsOverlay = new WMTSTilesOverlay({
+ *   url: 'https://example.com/wmts',
+ *   layer: 'imagery',
+ *   style: 'default',
+ *   tileMatrixSetId: 'EPSG:3857'
+ * });
+ *
+ * plugin.addOverlay(wmtsOverlay);
+ * ```
+ */
 export class ImageOverlayPlugin {
 
+	/**
+	 * Whether to split tiles for better overlay alignment at higher zoom levels.
+	 * When enabled, tiles are subdivided to match overlay resolution more closely.
+	 * @type {boolean}
+	 */
 	get enableTileSplitting() {
 
 		return this._enableTileSplitting;
@@ -43,6 +103,14 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Creates a new ImageOverlayPlugin.
+	 *
+	 * @param {Object} [options={}] - Plugin configuration options
+	 * @param {Array<ImageOverlay>} [options.overlays=[]] - Initial overlays to add
+	 * @param {number} [options.resolution=256] - Texture resolution for overlay rendering (pixels)
+	 * @param {boolean} [options.enableTileSplitting=true] - Enable tile subdivision for better overlay alignment
+	 */
 	constructor( options = {} ) {
 
 		const {
@@ -51,29 +119,69 @@ export class ImageOverlayPlugin {
 			enableTileSplitting = true,
 		} = options;
 
-		// plugin needs to run before other plugins that fetch data since content
-		// is handled and loaded in a custom way
+		/**
+		 * Plugin identifier.
+		 * @type {string}
+		 * @readonly
+		 */
 		this.name = 'IMAGE_OVERLAY_PLUGIN';
+
+		/**
+		 * Plugin priority (lower runs first).
+		 * @type {number}
+		 * @readonly
+		 */
 		this.priority = - 15;
 
-		// options
+		/**
+		 * Texture resolution for overlay rendering.
+		 * @type {number}
+		 */
 		this.resolution = resolution;
+
+		/** @private */
 		this._enableTileSplitting = enableTileSplitting;
+
+		/**
+		 * Array of registered overlays.
+		 * @type {Array<ImageOverlay>}
+		 * @readonly
+		 */
 		this.overlays = [];
 
-		// internal
+		/**
+		 * Whether the plugin needs to update overlays.
+		 * @type {boolean}
+		 */
 		this.needsUpdate = false;
+
+		/**
+		 * Reference to the TilesRenderer instance.
+		 * @type {TilesRenderer|null}
+		 */
 		this.tiles = null;
+
+		/** @private */
 		this.tileComposer = null;
+		/** @private */
 		this.tileControllers = new Map();
+		/** @private */
 		this.overlayInfo = new Map();
+		/** @private */
 		this.meshParams = new WeakMap();
+		/** @private */
 		this.pendingTiles = new Map();
+		/** @private */
 		this.processedTiles = new Set();
+		/** @private */
 		this.processQueue = null;
+		/** @private */
 		this._onUpdateAfter = null;
+		/** @private */
 		this._onTileDownloadStart = null;
+		/** @private */
 		this._virtualChildResetId = 0;
+		/** @private */
 		this._bytesUsed = new WeakMap();
 
 		overlays.forEach( overlay => {
@@ -84,7 +192,13 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// plugin functions
+	/**
+	 * Initializes the plugin with the TilesRenderer.
+	 * Called automatically when the plugin is registered.
+	 *
+	 * @param {TilesRenderer} tiles - The TilesRenderer instance
+	 * @internal
+	 */
 	init( tiles ) {
 
 		const tileComposer = new TiledTextureComposer();
@@ -221,6 +335,13 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Cleans up resources associated with a tile when it's disposed.
+	 * Cancels ongoing tasks, releases textures, and removes from processing queues.
+	 *
+	 * @param {Object} tile - The tile being disposed
+	 * @internal
+	 */
 	disposeTile( tile ) {
 
 		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
@@ -266,6 +387,13 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Calculates the memory usage (in bytes) for overlay textures associated with a tile.
+	 *
+	 * @param {Object} tile - The tile to calculate memory usage for
+	 * @returns {number} Total bytes used by overlay textures for this tile
+	 * @internal
+	 */
 	calculateBytesUsed( tile ) {
 
 		const { overlayInfo } = this;
@@ -301,6 +429,15 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Processes a tile's 3D model to apply image overlays.
+	 * Wraps materials and sets up texture compositing for the tile's meshes.
+	 *
+	 * @param {Object} scene - The scene containing the tile's model
+	 * @param {Object} tile - The tile being processed
+	 * @returns {Promise<void>} Resolves when processing is complete
+	 * @internal
+	 */
 	processTileModel( scene, tile ) {
 
 		return this._processTileModel( scene, tile );
@@ -336,6 +473,10 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Disposes of the plugin and releases all resources.
+	 * Removes all overlays and cleans up event listeners.
+	 */
 	dispose() {
 
 		const { tiles } = this;
@@ -364,6 +505,11 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Collects attribution information from all visible overlays.
+	 *
+	 * @param {Array<Object>} target - Array to append attribution objects to
+	 */
 	getAttributions( target ) {
 
 		this.overlays.forEach( overlay => {
@@ -378,6 +524,16 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Parses tile data into mesh geometry. Handles special case for split tiles.
+	 *
+	 * @param {ArrayBuffer} buffer - The tile data buffer
+	 * @param {Object} tile - The tile being parsed
+	 * @param {string} extension - File extension of the tile data
+	 * @param {string} uri - URI of the tile resource
+	 * @returns {Object|undefined} Parsed mesh data for split tiles, undefined otherwise
+	 * @internal
+	 */
 	parseToMesh( buffer, tile, extension, uri ) {
 
 		if ( extension === 'image_overlay_tile_split' ) {
@@ -388,6 +544,14 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Resets all virtual child tiles created for tile splitting.
+	 * Called when overlays change or tile splitting settings are modified.
+	 *
+	 * @param {boolean} [fullDispose=false] - Whether to fully dispose of split tile data
+	 * @returns {Promise<void>} Resolves when reset is complete
+	 * @internal
+	 */
 	async resetVirtualChildren( fullDispose = false ) {
 
 		// only run this if all the overlays are ready and tile targets have been generated, etc
@@ -565,6 +729,15 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Splits a tile into virtual children for better overlay resolution alignment.
+	 * Creates subdivided geometry when overlays require higher detail than the tile provides.
+	 *
+	 * @param {Object} scene - The scene containing the tile's geometry
+	 * @param {Object} tile - The tile to potentially split
+	 * @returns {Promise<void>} Resolves when splitting is complete
+	 * @internal
+	 */
 	async expandVirtualChildren( scene, tile ) {
 
 		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
@@ -740,6 +913,15 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Intercepts tile data fetching to handle virtual split tiles.
+	 * Returns empty data for split tile markers, allowing normal fetch for real tiles.
+	 *
+	 * @param {string} uri - The URI of the resource to fetch
+	 * @param {Object} options - Fetch options
+	 * @returns {ArrayBuffer|undefined} Empty buffer for split tiles, undefined for normal tiles
+	 * @internal
+	 */
 	fetchData( uri, options ) {
 
 		// if this is our custom url indicating a tile split then return fake response
@@ -751,7 +933,21 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// public
+	/**
+	 * Adds an overlay to the plugin.
+	 *
+	 * @param {ImageOverlay} overlay - The overlay to add (XYZTilesOverlay, WMSTilesOverlay, etc.)
+	 * @param {number|null} [order=null] - Z-order for rendering (higher values render on top).
+	 *                                      If null, overlay is added on top of existing overlays.
+	 *
+	 * @example
+	 * ```js
+	 * const overlay = new XYZTilesOverlay({
+	 *   url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+	 * });
+	 * plugin.addOverlay(overlay);
+	 * ```
+	 */
 	addOverlay( overlay, order = null ) {
 
 		const { tiles, overlays, overlayInfo } = this;
@@ -781,6 +977,12 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Changes the z-order of an existing overlay.
+	 *
+	 * @param {ImageOverlay} overlay - The overlay to reorder
+	 * @param {number} order - New z-order value (higher values render on top)
+	 */
 	setOverlayOrder( overlay, order ) {
 
 		const index = this.overlays.indexOf( overlay );
@@ -793,6 +995,11 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Removes an overlay from the plugin and releases its resources.
+	 *
+	 * @param {ImageOverlay} overlay - The overlay to remove
+	 */
 	deleteOverlay( overlay ) {
 
 		const { overlays, overlayInfo, processQueue, processedTiles } = this;
@@ -1206,14 +1413,39 @@ export class ImageOverlayPlugin {
 
 }
 
+/**
+ * Base class for all image overlays.
+ *
+ * Provides common functionality for opacity, color, and projection handling.
+ * Extend this class to create custom overlay types.
+ *
+ * @abstract
+ * @category Overlays
+ */
 class ImageOverlay {
 
+	/**
+	 * Whether this overlay uses planar projection (has a frame).
+	 * @type {boolean}
+	 * @readonly
+	 */
 	get isPlanarProjection() {
 
 		return Boolean( this.frame );
 
 	}
 
+	/**
+	 * Creates a new ImageOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {number} [options.opacity=1] - Overlay opacity (0-1)
+	 * @param {number|string|Color} [options.color=0xffffff] - Color tint applied to tiles
+	 * @param {Box2|null} [options.frame=null] - Bounding frame for planar projection
+	 * @param {Function|null} [options.preprocessURL=null] - URL preprocessing function
+	 * @param {boolean} [options.alphaMask=false] - Use alpha as mask
+	 * @param {boolean} [options.alphaInvert=false] - Invert alpha mask
+	 */
 	constructor( options = {} ) {
 
 		const {
@@ -1224,15 +1456,58 @@ class ImageOverlay {
 			alphaMask = false,
 			alphaInvert = false,
 		} = options;
+
+		/**
+		 * Function to preprocess tile URLs before fetching.
+		 * @type {Function|null}
+		 */
 		this.preprocessURL = preprocessURL;
+
+		/**
+		 * Overlay opacity (0-1).
+		 * @type {number}
+		 */
 		this.opacity = opacity;
+
+		/**
+		 * Color tint applied to the overlay.
+		 * @type {Color}
+		 */
 		this.color = new Color( color );
+
+		/**
+		 * Bounding frame for planar projection.
+		 * @type {Box2|null}
+		 */
 		this.frame = frame !== null ? frame.clone() : null;
+
+		/**
+		 * Whether to use alpha channel as a mask.
+		 * @type {boolean}
+		 */
 		this.alphaMask = alphaMask;
+
+		/**
+		 * Whether to invert the alpha mask.
+		 * @type {boolean}
+		 */
 		this.alphaInvert = alphaInvert;
 
+		/** @private */
 		this._whenReady = null;
+
+		/**
+		 * Whether the overlay is ready for rendering.
+		 * @type {boolean}
+		 * @readonly
+		 */
 		this.isReady = false;
+
+		/**
+		 * Whether the overlay has been initialized.
+		 * @type {boolean}
+		 * @readonly
+		 */
 		this.isInitialized = false;
 
 	}
@@ -1303,26 +1578,55 @@ class ImageOverlay {
 
 }
 
+/**
+ * Base class for tiled image overlays (XYZ, WMS, WMTS, TMS, etc.).
+ *
+ * Handles tile loading, caching, and level-of-detail management.
+ * Extend this class for custom tile-based overlay sources.
+ *
+ * @extends ImageOverlay
+ * @abstract
+ * @category Overlays
+ */
 class TiledImageOverlay extends ImageOverlay {
 
+	/**
+	 * The tiling scheme used by this overlay.
+	 * @type {TilingScheme}
+	 * @readonly
+	 */
 	get tiling() {
 
 		return this.imageSource.tiling;
 
 	}
 
+	/**
+	 * The projection used by this overlay's tiles.
+	 * @type {ProjectionScheme}
+	 * @readonly
+	 */
 	get projection() {
 
 		return this.tiling.projection;
 
 	}
 
+	/**
+	 * The aspect ratio of the overlay (width/height).
+	 * @type {number}
+	 * @readonly
+	 */
 	get aspectRatio() {
 
 		return this.tiling && this.isReady ? this.tiling.aspectRatio : 1;
 
 	}
 
+	/**
+	 * Fetch options passed to tile requests.
+	 * @type {Object}
+	 */
 	get fetchOptions() {
 
 		return this.imageSource.fetchOptions;
@@ -1335,11 +1639,28 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
+	/**
+	 * Creates a new TiledImageOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {TiledImageSource|null} [options.imageSource=null] - Custom image source
+	 */
 	constructor( options = {} ) {
 
 		const { imageSource = null, ...rest } = options;
 		super( rest );
+
+		/**
+		 * The image source providing tiles.
+		 * @type {TiledImageSource|null}
+		 */
 		this.imageSource = imageSource;
+
+		/**
+		 * Region-specific image source for bounded areas.
+		 * @type {TiledRegionImageSource|null}
+		 * @private
+		 */
 		this.regionImageSource = null;
 
 	}
@@ -1440,8 +1761,47 @@ class TiledImageOverlay extends ImageOverlay {
 
 }
 
+/**
+ * Overlay for XYZ tile services (e.g., OpenStreetMap, Mapbox, etc.).
+ *
+ * XYZ tiles use a simple URL pattern with {z}/{x}/{y} placeholders
+ * for zoom level and tile coordinates.
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * // OpenStreetMap tiles
+ * const overlay = new XYZTilesOverlay({
+ *   url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+ *   levels: 19,
+ *   opacity: 1.0
+ * });
+ * ```
+ *
+ * @example
+ * ```js
+ * // Mapbox satellite tiles
+ * const overlay = new XYZTilesOverlay({
+ *   url: 'https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.png?access_token=YOUR_TOKEN',
+ *   levels: 22,
+ *   projection: 'EPSG:3857'
+ * });
+ * ```
+ */
 export class XYZTilesOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new XYZTilesOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {string} options.url - URL template with {z}, {x}, {y} placeholders
+	 * @param {number} [options.levels=20] - Maximum zoom level
+	 * @param {string} [options.projection='EPSG:3857'] - Tile projection
+	 * @param {number} [options.opacity=1.0] - Layer opacity (0-1)
+	 * @param {number|string} [options.color=0xffffff] - Color tint
+	 */
 	constructor( options = {} ) {
 
 		super( options );
@@ -1451,6 +1811,34 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay for rendering GeoJSON data as an image layer.
+ *
+ * Supports Point, LineString, Polygon, and their Multi- variants.
+ * Features are rendered to a canvas and displayed as an overlay.
+ *
+ * @extends ImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * const overlay = new GeoJSONOverlay({
+ *   geojson: {
+ *     type: 'FeatureCollection',
+ *     features: [
+ *       {
+ *         type: 'Feature',
+ *         geometry: { type: 'Point', coordinates: [-122.4, 37.8] },
+ *         properties: { name: 'San Francisco' }
+ *       }
+ *     ]
+ *   },
+ *   strokeStyle: '#ff0000',
+ *   fillStyle: 'rgba(255, 0, 0, 0.3)',
+ *   pointRadius: 5
+ * });
+ * ```
+ */
 export class GeoJSONOverlay extends ImageOverlay {
 
 	get projection() {
@@ -1583,8 +1971,39 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
+/**
+ * Overlay for WMS (Web Map Service) tile services.
+ *
+ * Supports OGC WMS 1.1.1 and 1.3.0 specifications.
+ * Can be combined with WMSCapabilitiesLoader to automatically configure.
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * const overlay = new WMSTilesOverlay({
+ *   url: 'https://example.com/wms',
+ *   layer: 'imagery',
+ *   crs: 'EPSG:4326',
+ *   format: 'image/png',
+ *   version: '1.3.0'
+ * });
+ * ```
+ */
 export class WMSTilesOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new WMSTilesOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {string} options.url - WMS service URL
+	 * @param {string} options.layer - Layer name to request
+	 * @param {string} [options.crs='EPSG:4326'] - Coordinate reference system
+	 * @param {string} [options.format='image/png'] - Image format
+	 * @param {string} [options.version='1.1.1'] - WMS version
+	 * @param {string} [options.styles=''] - Style name
+	 */
 	constructor( options = {} ) {
 
 		super( options );
@@ -1594,8 +2013,52 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay for WMTS (Web Map Tile Service) tile services.
+ *
+ * Supports OGC WMTS 1.0 specification.
+ * Use with WMTSCapabilitiesLoader for automatic configuration.
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * // Manual configuration
+ * const overlay = new WMTSTilesOverlay({
+ *   url: 'https://example.com/wmts',
+ *   layer: 'imagery',
+ *   style: 'default',
+ *   tileMatrixSetId: 'EPSG:3857'
+ * });
+ * ```
+ *
+ * @example
+ * ```js
+ * // Using capabilities loader
+ * const capabilities = await new WMTSCapabilitiesLoader().loadAsync(url);
+ * const layer = capabilities.layers[0];
+ *
+ * const overlay = new WMTSTilesOverlay({
+ *   capabilities,
+ *   layer: layer.identifier,
+ *   style: layer.styles[0].identifier,
+ *   tileMatrixSet: layer.tileMatrixSets[0].identifier
+ * });
+ * ```
+ */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new WMTSTilesOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {string} options.url - WMTS service URL
+	 * @param {string} options.layer - Layer identifier
+	 * @param {string} [options.style='default'] - Style identifier
+	 * @param {string} options.tileMatrixSetId - Tile matrix set identifier
+	 * @param {Object} [options.capabilities] - Parsed WMTS capabilities object
+	 */
 	constructor( options = {} ) {
 
 		super( options );
@@ -1605,8 +2068,31 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay for TMS (Tile Map Service) tile services.
+ *
+ * TMS uses an inverted Y-axis compared to XYZ tiles (origin at bottom-left).
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * const overlay = new TMSTilesOverlay({
+ *   url: 'https://example.com/tms/{z}/{x}/{y}.png',
+ *   levels: 18
+ * });
+ * ```
+ */
 export class TMSTilesOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new TMSTilesOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {string} options.url - TMS URL template
+	 * @param {number} [options.levels=20] - Maximum zoom level
+	 */
 	constructor( options = {} ) {
 
 		super( options );
@@ -1616,8 +2102,43 @@ export class TMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay for Cesium Ion imagery assets.
+ *
+ * Requires a Cesium Ion account and API token.
+ * Supports various underlying imagery providers (TMS, Bing, Google 2D).
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * const overlay = new CesiumIonOverlay({
+ *   assetId: 2,          // Bing Maps Aerial
+ *   apiToken: 'YOUR_CESIUM_ION_TOKEN'
+ * });
+ * ```
+ *
+ * @example
+ * ```js
+ * // With auto token refresh
+ * const overlay = new CesiumIonOverlay({
+ *   assetId: 3954,       // Sentinel-2 imagery
+ *   apiToken: 'YOUR_TOKEN',
+ *   autoRefreshToken: true
+ * });
+ * ```
+ */
 export class CesiumIonOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new CesiumIonOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {number} options.assetId - Cesium Ion asset ID
+	 * @param {string} options.apiToken - Cesium Ion API token
+	 * @param {boolean} [options.autoRefreshToken=false] - Auto-refresh authentication token
+	 */
 	constructor( options = {} ) {
 
 		super( options );
@@ -1722,8 +2243,50 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay for Google Maps 2D tiles.
+ *
+ * Requires a Google Cloud API key with the Map Tiles API enabled.
+ * Supports session tokens for proper attribution and usage tracking.
+ *
+ * @extends TiledImageOverlay
+ * @category Overlays
+ *
+ * @example
+ * ```js
+ * const overlay = new GoogleMapsOverlay({
+ *   apiToken: 'YOUR_GOOGLE_MAPS_API_KEY',
+ *   sessionOptions: {
+ *     mapType: 'satellite',
+ *     language: 'en-US',
+ *     region: 'US'
+ *   }
+ * });
+ * ```
+ *
+ * @example
+ * ```js
+ * // With logo attribution
+ * const overlay = new GoogleMapsOverlay({
+ *   apiToken: 'YOUR_API_KEY',
+ *   logoUrl: 'https://maps.google.com/mapfiles/api-3/images/powered-by-google.png'
+ * });
+ * ```
+ */
 export class GoogleMapsOverlay extends TiledImageOverlay {
 
+	/**
+	 * Creates a new GoogleMapsOverlay.
+	 *
+	 * @param {Object} [options={}] - Configuration options
+	 * @param {string} options.apiToken - Google Cloud API key
+	 * @param {Object} [options.sessionOptions] - Session configuration
+	 * @param {string} [options.sessionOptions.mapType='roadmap'] - Map type (roadmap, satellite, terrain, hybrid)
+	 * @param {string} [options.sessionOptions.language] - Language code (e.g., 'en-US')
+	 * @param {string} [options.sessionOptions.region] - Region code (e.g., 'US')
+	 * @param {boolean} [options.autoRefreshToken=false] - Auto-refresh session token
+	 * @param {string} [options.logoUrl] - URL for Google attribution logo
+	 */
 	constructor( options = {} ) {
 
 		super( options );

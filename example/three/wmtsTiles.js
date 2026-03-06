@@ -1,3 +1,8 @@
+// @title: WMTS Capabilities & Tiles
+// @description: Load and display WMTS (Web Map Tile Service) layers with capabilities parsing
+// @category: plugins
+// @deps: three, 3d-tiles-renderer
+
 import {
 	Scene,
 	WebGLRenderer,

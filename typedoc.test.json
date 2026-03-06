@@ -1,0 +1,26 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "3DTilesRendererJS (JS Test)",
+  "readme": "README.md",
+  "out": "docs/api-test",
+  "customCss": "docs/custom.css",
+  "customJs": "docs/custom.js",
+  "entryPoints": [
+    "src/three/plugins/images/ImageOverlayPlugin.js"
+  ],
+  "entryPointStrategy": "resolve",
+  "tsconfig": "tsconfig.jsdoc.json",
+  "exclude": ["**/node_modules/**"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/NASA-AMMOS/3DTilesRendererJS"
+  },
+  "navigation": {
+    "includeCategories": false,
+    "includeGroups": false,
+    "includeFolders": false
+  },
+  "sort": ["source-order", "alphabetical"]
+}

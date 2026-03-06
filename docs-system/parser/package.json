@@ -1,0 +1,19 @@
+{
+  "name": "@3d-tiles-renderer/docs-parser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "dependencies": {
+    "@babel/parser": "^7.23.0",
+    "@babel/traverse": "^7.23.0",
+    "doctrine": "^3.0.0",
+    "glob": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.20.0",
+    "@types/doctrine": "^0.0.9",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
