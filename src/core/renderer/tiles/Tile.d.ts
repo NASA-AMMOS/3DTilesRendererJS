@@ -12,7 +12,7 @@ export interface TileInternalData {
 	depth: number;
 	depthFromRenderedParent: number;
 	/**
-	 * Whether this tile was synthetically created by a plugin rather than loaded from a tileset.
+	 * Whether this tile was synthetically based on loaded parent tile state.
 	 */
 	isVirtual: boolean;
 	/**
