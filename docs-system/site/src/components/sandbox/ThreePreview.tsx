@@ -1,129 +1,141 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 
 interface ThreePreviewProps {
   code: string;
   isRunning: boolean;
   runId: number;
-  onConsole: (method: 'log' | 'warn' | 'error' | 'info', args: any[]) => void;
+  onConsole: (method: 'log' | 'warn' | 'error' | 'info', args: string[]) => void;
   onError: (error: Error) => void;
+  htmlElements?: string[];
 }
 
-const SANDBOX_HTML = `
-<!DOCTYPE html>
+function buildSandboxHTML(code: string, htmlElements: string[] = []): string {
+  const envProcessed = code.replace(
+    /import\.meta\.env\.(\w+)/g,
+    '(window.__ENV__?.["$1"] ?? "")'
+  );
+
+  const domElements = htmlElements
+    .map(id => `<div id="${id}"></div>`)
+    .join('\n    ');
+
+  return `<!DOCTYPE html>
 <html>
 <head>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { overflow: hidden; background: #1a1a2e; }
-    canvas { display: block; width: 100%; height: 100%; }
-    #container { width: 100vw; height: 100vh; }
+    * { margin: 0; padding: 0; }
+    html, body {
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      user-select: none;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      outline: none;
+    }
+    #info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      padding: 5px;
+      pointer-events: none;
+      line-height: 1.5em;
+    }
+    #info, #info a { color: white; }
+    #info a { pointer-events: all; }
+    #footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      padding: 5px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #credits {
+      flex: 1;
+      color: white;
+      font-size: 12px;
+      opacity: 0.5;
+      padding: 5px;
+      line-height: 1.25em;
+      overflow: hidden;
+      white-space: pre;
+      text-overflow: ellipsis;
+      padding-right: 25px;
+    }
+    .lil-gui { --width: 250px; }
   </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/": "https://unpkg.com/three@0.170.0/",
+      "3d-tiles-renderer": "https://esm.sh/3d-tiles-renderer@0.4.21",
+      "3d-tiles-renderer/plugins": "https://esm.sh/3d-tiles-renderer@0.4.21/plugins"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div id="container">
-    <canvas id="canvas"></canvas>
-  </div>
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    ${domElements}
+    <div id="footer"><div id="credits"></div></div>
+
   <script>
-    // Override console to send messages to parent
-    const originalConsole = { ...console };
-    ['log', 'warn', 'error', 'info'].forEach(method => {
-      console[method] = (...args) => {
-        originalConsole[method](...args);
+    window.__ENV__ = {};
+
+    var originalConsole = { log: console.log, warn: console.warn, error: console.error, info: console.info };
+    ['log', 'warn', 'error', 'info'].forEach(function(method) {
+      console[method] = function() {
+        var args = Array.prototype.slice.call(arguments);
+        originalConsole[method].apply(console, args);
         try {
-          parent.postMessage({ 
-            type: 'console', 
-            method, 
-            args: args.map(arg => {
+          parent.postMessage({
+            type: 'console',
+            method: method,
+            args: args.map(function(arg) {
               if (arg instanceof Error) return arg.message;
               if (typeof arg === 'object') {
                 try { return JSON.stringify(arg); }
-                catch { return String(arg); }
+                catch(e) { return String(arg); }
               }
-              return arg;
+              return String(arg);
             })
           }, '*');
         } catch (e) {}
       };
     });
 
-    // Error handler
-    window.onerror = (msg, url, line, col, error) => {
-      parent.postMessage({ 
-        type: 'error', 
-        message: msg,
-        stack: error?.stack
+    window.onerror = function(msg, url, line, col, error) {
+      parent.postMessage({
+        type: 'error',
+        message: String(msg),
+        stack: error ? error.stack : ''
       }, '*');
       return true;
     };
 
-    window.onunhandledrejection = (e) => {
-      parent.postMessage({ 
-        type: 'error', 
-        message: e.reason?.message || String(e.reason),
-        stack: e.reason?.stack
+    window.onunhandledrejection = function(e) {
+      parent.postMessage({
+        type: 'error',
+        message: e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled rejection',
+        stack: e.reason ? e.reason.stack : ''
       }, '*');
     };
+  </script>
 
-    // Setup Three.js globals
-    const canvas = document.getElementById('canvas');
-    const container = document.getElementById('container');
-    
-    const renderer = new THREE.WebGLRenderer({ 
-      canvas, 
-      antialias: true,
-      alpha: true
-    });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    // Resize handler
-    window.addEventListener('resize', () => {
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    });
-
-    // Mock module system - libraries are loaded via script tags
-    const mockModules = {
-      'three': THREE,
-      'THREE': THREE,
-    };
-
-    // Receive code from parent
-    window.addEventListener('message', async (event) => {
-      if (event.data.type === 'run') {
-        try {
-          // Preprocess code: remove/transform import statements
-          let code = event.data.code;
-          
-          // Remove import statements (libraries loaded via script tags)
-          code = code.replace(/^\\s*import\\s+.*?from\\s+['"][^'"]+['"];?\\s*$/gm, '');
-          code = code.replace(/^\\s*import\\s+['"][^'"]+['"];?\\s*$/gm, '');
-          code = code.replace(/^\\s*import\\s*\\{[^}]*\\}\\s*from\\s*['"][^'"]+['"];?\\s*$/gm, '');
-          code = code.replace(/^\\s*import\\s+\\*\\s+as\\s+\\w+\\s+from\\s+['"][^'"]+['"];?\\s*$/gm, '');
-          
-          // Remove export statements
-          code = code.replace(/^\\s*export\\s+(default\\s+)?/gm, '');
-          
-          // Create async function to allow await
-          const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-          const fn = new AsyncFunction('THREE', 'renderer', 'canvas', 'container', code);
-          await fn(THREE, renderer, canvas, container);
-        } catch (error) {
-          parent.postMessage({ 
-            type: 'error', 
-            message: error.message,
-            stack: error.stack
-          }, '*');
-        }
-      }
-    });
-
-    // Signal ready
-    parent.postMessage({ type: 'ready' }, '*');
+  <script type="module">
+${envProcessed}
   </script>
 </body>
-</html>
-`;
+</html>`;
+}
 
 export function ThreePreview({
   code,
@@ -131,26 +143,14 @@ export function ThreePreview({
   runId,
   onConsole,
   onError,
+  htmlElements,
 }: ThreePreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const readyRef = useRef(false);
 
-  // Handle messages from iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (!event.data?.type) return;
-
       switch (event.data.type) {
-        case 'ready':
-          readyRef.current = true;
-          // Run code if we're supposed to be running
-          if (isRunning && iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(
-              { type: 'run', code },
-              '*'
-            );
-          }
-          break;
         case 'console':
           onConsole(event.data.method, event.data.args);
           break;
@@ -162,24 +162,13 @@ export function ThreePreview({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [code, isRunning, onConsole, onError]);
+  }, [onConsole, onError]);
 
-  // Run code when isRunning changes or runId changes
-  useEffect(() => {
-    if (isRunning && readyRef.current && iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        { type: 'run', code },
-        '*'
-      );
-    }
-  }, [isRunning, runId]);
-
-  // Reset iframe when stopped
-  useEffect(() => {
-    if (!isRunning) {
-      readyRef.current = false;
-    }
-  }, [isRunning]);
+  const sandboxDoc = useMemo(
+    () => (isRunning ? buildSandboxHTML(code, htmlElements) : ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isRunning, runId],
+  );
 
   return (
     <div className="w-full h-full relative">
@@ -187,16 +176,16 @@ export function ThreePreview({
         <iframe
           ref={iframeRef}
           key={runId}
-          srcDoc={SANDBOX_HTML}
+          srcDoc={sandboxDoc}
           className="w-full h-full border-0"
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-same-origin"
           title="Three.js Preview"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-[#1a1a2e] text-gray-400">
           <div className="text-center">
-            <div className="text-4xl mb-2">▶</div>
-            <div>Click "Run" to start preview</div>
+            <div className="text-4xl mb-2">&#9654;</div>
+            <div>Click &quot;Run&quot; to start preview</div>
           </div>
         </div>
       )}

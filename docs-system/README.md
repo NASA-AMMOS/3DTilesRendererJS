@@ -53,7 +53,7 @@ This will:
 npm run build
 ```
 
-Output will be in `docs/api/`.
+Output will be in `docs-system/site/dist/`.
 
 ### Other Commands
 

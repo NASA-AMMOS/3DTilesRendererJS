@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { CodeBlock } from '@/components/docs/CodeBlock';
+
 export function QuickStartPage() {
   return (
     <div className="max-w-4xl">
@@ -19,19 +22,13 @@ export function QuickStartPage() {
       {/* Installation */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Installation</h2>
-        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
-          <pre className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg overflow-x-auto">
-            <code>npm install 3d-tiles-renderer --save</code>
-          </pre>
-        </div>
+        <CodeBlock code="npm install 3d-tiles-renderer --save" language="bash" />
       </section>
 
       {/* Basic Usage */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">Basic Usage</h2>
-        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
-          <pre className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg overflow-x-auto text-sm leading-relaxed">
-            <code>{`import { TilesRenderer } from '3d-tiles-renderer';
+        <CodeBlock code={`import { TilesRenderer } from '3d-tiles-renderer';
 
 const tilesRenderer = new TilesRenderer( './path/to/tileset.json' );
 tilesRenderer.setCamera( camera );
@@ -45,9 +42,7 @@ function animate() {
   requestAnimationFrame( animate );
   tilesRenderer.update();
   renderer.render( scene, camera );
-}`}</code>
-          </pre>
-        </div>
+}`} language="javascript" />
       </section>
 
       {/* Framework Guides */}
@@ -55,7 +50,7 @@ function animate() {
         <h2 className="text-2xl font-semibold mb-4">Framework Guides</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a
-            href="https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/USAGE.md"
+            href="https://github.com/NASA-AMMOS/3DTilesRendererJS/tree/master/example"
             target="_blank"
             rel="noopener noreferrer"
             className="group block p-5 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
@@ -124,8 +119,8 @@ function animate() {
       <section className="border-t border-[var(--color-border)] pt-8">
         <h2 className="text-xl font-semibold mb-4">Next Steps</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <a
-            href="/api"
+          <Link
+            to="/api"
             className="group block p-4 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
           >
             <span className="font-medium group-hover:text-[var(--color-primary)] transition-colors">
@@ -134,9 +129,9 @@ function animate() {
             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
               Explore the complete API documentation.
             </p>
-          </a>
-          <a
-            href="/examples"
+          </Link>
+          <Link
+            to="/examples"
             className="group block p-4 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors"
           >
             <span className="font-medium group-hover:text-[var(--color-primary)] transition-colors">
@@ -145,7 +140,7 @@ function animate() {
             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
               Interactive demos and use cases.
             </p>
-          </a>
+          </Link>
         </div>
       </section>
     </div>

@@ -70,5 +70,6 @@ build
 
 # Generated documentation (built by CI)
 docs/api
+docs-system/site/dist
 
 pnpm-lock.yaml

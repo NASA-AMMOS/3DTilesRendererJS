@@ -118,7 +118,7 @@ Wrapper for the three.js `TilesRenderer` class. Listening for events are specifi
 
 Plugins can be set as children of the TilesRenderer component to add additional functionality. TilePlugin components must be nested inside a TilesRenderer component. Constructor arguments are passed via the `args` parameter while local members can be passed via the regular properties. But note that depending on the plugin some properties cannot be changed after construction and initialization.
 
-See the [PLUGINS documentation](https://github.com/NASA-AMMOS/3DTilesRendererJS/blob/master/PLUGINS.md) for docs on all avilable plugins.
+See the [documentation site](https://nasa-ammos.github.io/3DTilesRendererJS/) for API Reference and Plugins.
 
 ```jsx
 <TilesRenderer url={ tilesetUrl }>

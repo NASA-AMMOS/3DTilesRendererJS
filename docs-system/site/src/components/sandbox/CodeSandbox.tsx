@@ -5,19 +5,24 @@ import { ThreePreview } from './ThreePreview';
 
 interface ConsoleLog {
   method: 'log' | 'warn' | 'error' | 'info';
-  args: any[];
+  args: string[];
   timestamp: number;
 }
 
 interface CodeSandboxProps {
   initialCode: string;
-  title?: string;
-  description?: string;
-  dependencies?: string[];
+  hasLocalImports?: boolean;
+  htmlElements?: string[];
+  deployedUrl?: string;
+  autoRun?: boolean;
 }
 
 export function CodeSandbox({
   initialCode,
+  hasLocalImports,
+  htmlElements,
+  deployedUrl,
+  autoRun = false,
 }: CodeSandboxProps) {
   const [code, setCode] = useState(initialCode);
   const [isRunning, setIsRunning] = useState(false);
@@ -25,11 +30,20 @@ export function CodeSandbox({
   const [error, setError] = useState<Error | null>(null);
   const [activeTab, setActiveTab] = useState<'preview' | 'console'>('preview');
   const runIdRef = useRef(0);
+  const hasAutoRun = useRef(false);
 
-  // Reset code when initialCode changes
   useEffect(() => {
     setCode(initialCode);
+    hasAutoRun.current = false;
   }, [initialCode]);
+
+  useEffect(() => {
+    if (autoRun && !hasAutoRun.current && initialCode && !hasLocalImports) {
+      hasAutoRun.current = true;
+      runIdRef.current += 1;
+      setIsRunning(true);
+    }
+  }, [autoRun, initialCode, hasLocalImports]);
 
   const handleRun = useCallback(() => {
     runIdRef.current += 1;
@@ -49,7 +63,7 @@ export function CodeSandbox({
     setIsRunning(false);
   }, [initialCode]);
 
-  const handleConsole = useCallback((method: ConsoleLog['method'], args: any[]) => {
+  const handleConsole = useCallback((method: ConsoleLog['method'], args: string[]) => {
     setConsoleLogs(prev => [...prev, { method, args, timestamp: Date.now() }]);
   }, []);
 
@@ -70,8 +84,26 @@ export function CodeSandbox({
 
   return (
     <div className="sandbox-container" onKeyDown={handleKeyDown}>
-      {/* Editor panel */}
       <div className="sandbox-editor">
+        {hasLocalImports && (
+          <div className="px-3 py-2 text-xs bg-amber-500/10 text-amber-400 border-b border-amber-500/20">
+            This example uses local imports that cannot run in the sandbox.
+            {deployedUrl && (
+              <>
+                {' '}
+                <a
+                  href={deployedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-amber-300"
+                >
+                  View deployed version
+                </a>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="editor-toolbar">
           <button
             onClick={handleRun}
@@ -79,20 +111,20 @@ export function CodeSandbox({
             className="btn-run"
             title="Run (Ctrl+Enter)"
           >
-            ▶ Run
+            &#9654; Run
           </button>
           <button
             onClick={handleStop}
             disabled={!isRunning}
             className="btn-stop"
           >
-            ⏹ Stop
+            &#9209; Stop
           </button>
           <button onClick={handleReset} className="btn-reset">
-            ↺ Reset
+            &#8634; Reset
           </button>
           <span className="ml-auto text-xs text-[var(--color-text-secondary)]">
-            {isRunning ? '🟢 Running' : '⚪ Stopped'}
+            {isRunning ? 'Running' : 'Stopped'}
           </span>
         </div>
 
@@ -105,7 +137,6 @@ export function CodeSandbox({
         </div>
       </div>
 
-      {/* Preview panel */}
       <div className="sandbox-preview">
         <div className="flex border-b border-[var(--color-border)]">
           <button
@@ -143,6 +174,7 @@ export function CodeSandbox({
               runId={runIdRef.current}
               onConsole={handleConsole}
               onError={handleError}
+              htmlElements={htmlElements}
             />
           ) : (
             <ConsolePanel logs={consoleLogs} error={error} />

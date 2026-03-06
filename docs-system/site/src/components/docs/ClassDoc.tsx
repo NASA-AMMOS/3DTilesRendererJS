@@ -1,7 +1,54 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { ParamTable } from './ParamTable';
 import { TypeBadge } from './TypeBadge';
 import { TableOfContents } from './TableOfContents';
+import { CodeBlock } from './CodeBlock';
+
+const GITHUB_REPO = 'https://github.com/NASA-AMMOS/3DTilesRendererJS';
+const GITHUB_BRANCH = 'master';
+
+const THREE_JS_CLASS_CATEGORIES: Record<string, string> = {
+  EventDispatcher: 'core',
+  Object3D: 'core',
+  BufferGeometry: 'core',
+  Raycaster: 'core',
+  LineSegments: 'objects',
+  Mesh: 'objects',
+  Group: 'objects',
+  BatchedMesh: 'objects',
+  InstancedMesh: 'objects',
+  Sprite: 'objects',
+  Points: 'objects',
+  Line: 'objects',
+  LOD: 'objects',
+  DataTexture: 'textures',
+  Texture: 'textures',
+  CompressedTexture: 'textures',
+  Frustum: 'math',
+  Vector3: 'math',
+  Matrix4: 'math',
+  Box3: 'math',
+  Sphere: 'math',
+  Quaternion: 'math',
+  Euler: 'math',
+  ShaderMaterial: 'materials',
+  Material: 'materials',
+  MeshBasicMaterial: 'materials',
+  MeshStandardMaterial: 'materials',
+  Scene: 'scenes',
+  Camera: 'cameras',
+  PerspectiveCamera: 'cameras',
+  OrthographicCamera: 'cameras',
+  WebGLRenderer: 'renderers',
+  Loader: 'loaders',
+};
+
+export function getThreeJsDocsUrl(className: string): string | null {
+  const category = THREE_JS_CLASS_CATEGORIES[className];
+  if (!category) return null;
+  return `https://threejs.org/docs/#api/en/${category}/${className}`;
+}
 
 interface ParsedClass {
   name: string;
@@ -18,9 +65,31 @@ interface ParsedClass {
 
 interface ClassDocProps {
   data: ParsedClass;
+  allClassNames?: string[];
 }
 
-export function ClassDoc({ data }: ClassDocProps) {
+function getGitHubSourceUrl(sourceFile: string, line: number): string {
+  let filePath = sourceFile.replace(/\\/g, '/');
+  // Strip absolute path prefix up to and including project root
+  const srcIdx = filePath.indexOf('/src/');
+  if (srcIdx !== -1) {
+    filePath = filePath.substring(srcIdx + 1);
+  }
+  filePath = filePath.replace(/^\.\//, '');
+  return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${filePath}#L${line}`;
+}
+
+function getSourceDisplayPath(sourceFile: string, line: number): string {
+  let filePath = sourceFile.replace(/\\/g, '/');
+  const srcIdx = filePath.indexOf('/src/');
+  if (srcIdx !== -1) {
+    filePath = filePath.substring(srcIdx + 1);
+  }
+  filePath = filePath.replace(/^\.\//, '');
+  return `${filePath}:${line}`;
+}
+
+export function ClassDoc({ data, allClassNames = [] }: ClassDocProps) {
   const tocItems = useMemo(() => {
     const items: { id: string; label: string }[] = [];
 
@@ -57,14 +126,42 @@ export function ClassDoc({ data }: ClassDocProps) {
           </div>
           {data.extends && (
             <div className="text-sm text-[var(--color-text-secondary)] mb-4">
-              extends <TypeBadge type={data.extends} />
+              extends{' '}
+              {allClassNames.includes(data.extends) ? (
+                <Link
+                  to={`/api/${data.extends}`}
+                  className="text-[var(--color-primary)] hover:underline font-mono"
+                >
+                  {data.extends}
+                </Link>
+              ) : getThreeJsDocsUrl(data.extends) ? (
+                <a
+                  href={getThreeJsDocsUrl(data.extends)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--color-primary)] hover:underline font-mono"
+                  title="View Three.js documentation"
+                >
+                  {data.extends}
+                </a>
+              ) : (
+                <span className="font-mono">{data.extends}</span>
+              )}
             </div>
           )}
           <p className="text-[var(--color-text-secondary)]">
             {data.description || 'No description available.'}
           </p>
           <div className="mt-2 text-xs text-[var(--color-text-secondary)]">
-            Source: <code>{data.sourceFile}:{data.line}</code>
+            Source:{' '}
+            <a
+              href={getGitHubSourceUrl(data.sourceFile, data.line)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--color-primary)] hover:underline font-mono"
+            >
+              {getSourceDisplayPath(data.sourceFile, data.line)}
+            </a>
           </div>
         </header>
 
@@ -153,12 +250,11 @@ export function ClassDoc({ data }: ClassDocProps) {
 
                   {method.examples?.map((example: any, i: number) => (
                     <div key={i} className="mt-4">
-                      {example.title && (
-                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">{example.title}</div>
-                      )}
-                      <pre className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg overflow-x-auto text-sm">
-                        <code>{example.code}</code>
-                      </pre>
+                      <CodeBlock
+                        code={example.code}
+                        title={example.title}
+                        language="javascript"
+                      />
                     </div>
                   ))}
                 </div>

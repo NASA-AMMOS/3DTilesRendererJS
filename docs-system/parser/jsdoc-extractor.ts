@@ -1,10 +1,18 @@
 import * as fs from 'fs';
+import * as nodePath from 'path';
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 import * as doctrine from 'doctrine';
 
 // Handle ESM/CJS interop for @babel/traverse
 const traverse = (_traverse as any).default || _traverse;
+
+function toProjectRelativePath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/');
+  const srcMatch = normalized.match(/(src\/.+)$/);
+  if (srcMatch) return srcMatch[1];
+  return nodePath.basename(filePath);
+}
 import type {
   ParsedClass,
   ParsedMethod,
@@ -91,7 +99,7 @@ function extractClassDoc(path: any, filePath: string): ParsedClass | null {
     examples,
     properties: [],
     methods: [],
-    sourceFile: filePath,
+    sourceFile: toProjectRelativePath(filePath),
     line: node.loc?.start.line || 0,
   };
 

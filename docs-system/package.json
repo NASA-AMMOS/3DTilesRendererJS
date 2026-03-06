@@ -14,9 +14,11 @@
     "dev:site": "npm run dev -w site",
     "build": "npm run build:data && npm run build:site",
     "build:site": "npm run build -w site",
-    "preview": "npm run preview -w site"
+    "preview": "npm run preview -w site",
+    "capture:thumbnails": "tsx scripts/capture-thumbnails.ts"
   },
   "devDependencies": {
+    "puppeteer": "^24.38.0",
     "tsx": "^4.7.0"
   }
 }

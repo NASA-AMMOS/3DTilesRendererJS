@@ -68,7 +68,10 @@
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
-    "prepublishOnly": "npm run build-lib"
+    "prepublishOnly": "npm run build-lib",
+    "docs:dev": "npm run dev --prefix docs-system",
+    "docs:build": "npm run build --prefix docs-system",
+    "docs:preview": "npm run build --prefix docs-system && npm run preview --prefix docs-system"
   },
   "repository": {
     "type": "git",

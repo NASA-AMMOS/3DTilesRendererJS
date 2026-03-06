@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAPIData } from '@/hooks/useAPIData';
-import { ClassDoc } from '@/components/docs/ClassDoc';
+import { ClassDoc, getThreeJsDocsUrl } from '@/components/docs/ClassDoc';
 
 function APIOverview() {
   const { data, loading, error } = useAPIData();
@@ -47,7 +47,26 @@ function APIOverview() {
                 </Link>
                 {cls.extends && (
                   <span className="text-xs text-[var(--color-text-secondary)] ml-2">
-                    extends {cls.extends}
+                    extends{' '}
+                    {data?.classes.some(c => c.name === cls.extends) ? (
+                      <Link
+                        to={`/api/${cls.extends}`}
+                        className="text-[var(--color-primary)] hover:underline"
+                      >
+                        {cls.extends}
+                      </Link>
+                    ) : getThreeJsDocsUrl(cls.extends) ? (
+                      <a
+                        href={getThreeJsDocsUrl(cls.extends)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--color-primary)] hover:underline"
+                      >
+                        {cls.extends}
+                      </a>
+                    ) : (
+                      <span>{cls.extends}</span>
+                    )}
                   </span>
                 )}
 
@@ -89,7 +108,7 @@ function APIOverview() {
 
 export function APIPage() {
   const { className } = useParams();
-  const { classData, loading, error } = useAPIData(className);
+  const { data, classData, loading, error } = useAPIData(className);
 
   if (!className) {
     return <APIOverview />;
@@ -121,5 +140,7 @@ export function APIPage() {
     );
   }
 
-  return <ClassDoc data={classData} />;
+  const allClassNames = data?.classes.map(c => c.name) || [];
+
+  return <ClassDoc data={classData} allClassNames={allClassNames} />;
 }

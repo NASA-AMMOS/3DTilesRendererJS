@@ -1,6 +1,6 @@
 {
   "version": "0.4.21",
-  "generatedAt": "2026-03-06T11:22:58.371Z",
+  "generatedAt": "2026-03-06T13:03:05.560Z",
   "classes": [
     {
       "name": "CesiumIonAuthPlugin",
@@ -76,7 +76,7 @@
           "line": 128
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\CesiumIonAuthPlugin.js",
+      "sourceFile": "src/core/plugins/CesiumIonAuthPlugin.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -87,168 +87,6 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 30
-      }
-    },
-    {
-      "name": "SceneObserver",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "observe",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 73
-        },
-        {
-          "name": "unobserve",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 81
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 89
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\SceneObserver.js",
-      "line": 19,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 21
-      }
-    },
-    {
-      "name": "QueryManager",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "addCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 241
-        },
-        {
-          "name": "deleteCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 249
-        },
-        {
-          "name": "runIfNeeded",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 257
-        },
-        {
-          "name": "setScene",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 272
-        },
-        {
-          "name": "setEllipsoidFromTilesRenderer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 283
-        },
-        {
-          "name": "registerRayQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 315
-        },
-        {
-          "name": "registerLatLonQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 332
-        },
-        {
-          "name": "unregisterQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 356
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 372
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\QueryManager.js",
-      "line": 19,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 21
       }
     },
     {
@@ -298,7 +136,7 @@
           "line": 86
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\UpdateOnChangePlugin.js",
+      "sourceFile": "src/three/plugins/UpdateOnChangePlugin.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -373,7 +211,7 @@
           "line": 159
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\UnloadTilesPlugin.js",
+      "sourceFile": "src/three/plugins/UnloadTilesPlugin.js",
       "line": 7,
       "constructor": {
         "name": "constructor",
@@ -423,7 +261,7 @@
           "line": 213
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\UnloadTilesPlugin.js",
+      "sourceFile": "src/three/plugins/UnloadTilesPlugin.js",
       "line": 170,
       "constructor": {
         "name": "constructor",
@@ -523,7 +361,7 @@
           "line": 331
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\TileFlatteningPlugin.js",
+      "sourceFile": "src/three/plugins/TileFlatteningPlugin.js",
       "line": 38,
       "constructor": {
         "name": "constructor",
@@ -553,7 +391,7 @@
           "line": 137
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\TileCompressionPlugin.js",
+      "sourceFile": "src/three/plugins/TileCompressionPlugin.js",
       "line": 106,
       "constructor": {
         "name": "constructor",
@@ -603,7 +441,7 @@
           "line": 134
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\ReorientationPlugin.js",
+      "sourceFile": "src/three/plugins/ReorientationPlugin.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -703,7 +541,7 @@
           "line": 437
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\QuantizedMeshPlugin.js",
+      "sourceFile": "src/three/plugins/QuantizedMeshPlugin.js",
       "line": 79,
       "constructor": {
         "name": "constructor",
@@ -793,7 +631,7 @@
           "line": 105
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\LoadRegionPlugin.js",
+      "sourceFile": "src/three/plugins/LoadRegionPlugin.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -843,7 +681,7 @@
           "line": 147
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\LoadRegionPlugin.js",
+      "sourceFile": "src/three/plugins/LoadRegionPlugin.js",
       "line": 114,
       "constructor": {
         "name": "constructor",
@@ -874,7 +712,7 @@
           "line": 176
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\LoadRegionPlugin.js",
+      "sourceFile": "src/three/plugins/LoadRegionPlugin.js",
       "line": 155,
       "constructor": {
         "name": "constructor",
@@ -905,7 +743,7 @@
           "line": 205
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\LoadRegionPlugin.js",
+      "sourceFile": "src/three/plugins/LoadRegionPlugin.js",
       "line": 184,
       "constructor": {
         "name": "constructor",
@@ -936,7 +774,7 @@
           "line": 235
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\LoadRegionPlugin.js",
+      "sourceFile": "src/three/plugins/LoadRegionPlugin.js",
       "line": 213,
       "constructor": {
         "name": "constructor",
@@ -996,7 +834,7 @@
           "line": 111
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\GoogleCloudAuthPlugin.js",
+      "sourceFile": "src/core/plugins/GoogleCloudAuthPlugin.js",
       "line": 6,
       "constructor": {
         "name": "constructor",
@@ -1036,7 +874,7 @@
           "line": 81
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\GLTFExtensionsPlugin.js",
+      "sourceFile": "src/three/plugins/GLTFExtensionsPlugin.js",
       "line": 6,
       "constructor": {
         "name": "constructor",
@@ -1137,7 +975,7 @@
           "line": 950
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\DebugTilesPlugin.js",
+      "sourceFile": "src/three/plugins/DebugTilesPlugin.js",
       "line": 61,
       "constructor": {
         "name": "constructor",
@@ -1167,7 +1005,7 @@
           "line": 57
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\SUBTREELoader.js",
+      "sourceFile": "src/core/plugins/SUBTREELoader.js",
       "line": 38,
       "constructor": {
         "name": "constructor",
@@ -1300,7 +1138,7 @@
           "line": 887
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\SUBTREELoader.js",
+      "sourceFile": "src/core/plugins/SUBTREELoader.js",
       "line": 73,
       "constructor": {
         "name": "constructor",
@@ -1370,7 +1208,7 @@
           "line": 79
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\ImplicitTilingPlugin.js",
+      "sourceFile": "src/core/plugins/ImplicitTilingPlugin.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -1420,7 +1258,7 @@
           "line": 46
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\GoogleAttributionsManager.js",
+      "sourceFile": "src/core/plugins/GoogleAttributionsManager.js",
       "line": 1,
       "constructor": {
         "name": "constructor",
@@ -1450,7 +1288,7 @@
           "line": 11
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\EnforceNonZeroErrorPlugin.js",
+      "sourceFile": "src/core/plugins/EnforceNonZeroErrorPlugin.js",
       "line": 1,
       "constructor": {
         "name": "constructor",
@@ -1461,6 +1299,168 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 3
+      }
+    },
+    {
+      "name": "SceneObserver",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "observe",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 73
+        },
+        {
+          "name": "unobserve",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 81
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 89
+        }
+      ],
+      "sourceFile": "src/r3f/utilities/SceneObserver.js",
+      "line": 19,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 21
+      }
+    },
+    {
+      "name": "QueryManager",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "addCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 241
+        },
+        {
+          "name": "deleteCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 249
+        },
+        {
+          "name": "runIfNeeded",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 257
+        },
+        {
+          "name": "setScene",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 272
+        },
+        {
+          "name": "setEllipsoidFromTilesRenderer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 283
+        },
+        {
+          "name": "registerRayQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 315
+        },
+        {
+          "name": "registerLatLonQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 332
+        },
+        {
+          "name": "unregisterQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 356
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 372
+        }
+      ],
+      "sourceFile": "src/r3f/utilities/QueryManager.js",
+      "line": 19,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 21
       }
     },
     {
@@ -1738,7 +1738,7 @@
           "line": 988
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\tiles\\TilesRenderer.js",
+      "sourceFile": "src/three/renderer/tiles/TilesRenderer.js",
       "line": 45,
       "constructor": {
         "name": "constructor",
@@ -1789,7 +1789,7 @@
           "line": 94
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\tiles\\TilesGroup.js",
+      "sourceFile": "src/three/renderer/tiles/TilesGroup.js",
       "line": 7,
       "constructor": {
         "name": "constructor",
@@ -1800,6 +1800,140 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 9
+      }
+    },
+    {
+      "name": "PNTSLoader",
+      "description": "",
+      "extends": "PNTSLoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 28
+        }
+      ],
+      "sourceFile": "src/three/renderer/loaders/PNTSLoader.js",
+      "line": 19,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 21
+      }
+    },
+    {
+      "name": "I3DMLoader",
+      "description": "",
+      "extends": "I3DMLoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "resolveExternalURL",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 57
+        },
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 63
+        }
+      ],
+      "sourceFile": "src/three/renderer/loaders/I3DMLoader.js",
+      "line": 46,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 48
+      }
+    },
+    {
+      "name": "CMPTLoader",
+      "description": "",
+      "extends": "CMPTLoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 19
+        }
+      ],
+      "sourceFile": "src/three/renderer/loaders/CMPTLoader.js",
+      "line": 8,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 10
+      }
+    },
+    {
+      "name": "B3DMLoader",
+      "description": "",
+      "extends": "B3DMLoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 15
+        }
+      ],
+      "sourceFile": "src/three/renderer/loaders/B3DMLoader.js",
+      "line": 5,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 7
       }
     },
     {
@@ -2019,7 +2153,7 @@
           "line": 251
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PointerTracker.js",
+      "sourceFile": "src/three/renderer/controls/PointerTracker.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -2070,7 +2204,7 @@
           "line": 25
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
+      "sourceFile": "src/three/renderer/controls/PivotPointMesh.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -2090,7 +2224,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
+      "sourceFile": "src/three/renderer/controls/PivotPointMesh.js",
       "line": 34,
       "constructor": {
         "name": "constructor",
@@ -2236,7 +2370,7 @@
           "line": 297
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\GlobeControls.js",
+      "sourceFile": "src/three/renderer/controls/GlobeControls.js",
       "line": 33,
       "constructor": {
         "name": "constructor",
@@ -2396,7 +2530,7 @@
           "line": 800
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\EnvironmentControls.js",
+      "sourceFile": "src/three/renderer/controls/EnvironmentControls.js",
       "line": 55,
       "constructor": {
         "name": "constructor",
@@ -2480,7 +2614,7 @@
           "line": 159
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\CameraTransitionManager.js",
+      "sourceFile": "src/three/renderer/controls/CameraTransitionManager.js",
       "line": 12,
       "constructor": {
         "name": "constructor",
@@ -2620,7 +2754,7 @@
           "line": 294
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\math\\TileBoundingVolume.js",
+      "sourceFile": "src/three/renderer/math/TileBoundingVolume.js",
       "line": 12,
       "constructor": {
         "name": "constructor",
@@ -2788,7 +2922,7 @@
           "line": 157
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\math\\OBB.js",
+      "sourceFile": "src/three/renderer/math/OBB.js",
       "line": 8,
       "constructor": {
         "name": "constructor",
@@ -2829,7 +2963,7 @@
           "line": 42
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\math\\ExtendedFrustum.js",
+      "sourceFile": "src/three/renderer/math/ExtendedFrustum.js",
       "line": 25,
       "constructor": {
         "name": "constructor",
@@ -2870,7 +3004,7 @@
           "line": 189
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\math\\EllipsoidRegion.js",
+      "sourceFile": "src/three/renderer/math/EllipsoidRegion.js",
       "line": 29,
       "constructor": {
         "name": "constructor",
@@ -3090,7 +3224,7 @@
           "line": 403
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\math\\Ellipsoid.js",
+      "sourceFile": "src/three/renderer/math/Ellipsoid.js",
       "line": 28,
       "constructor": {
         "name": "constructor",
@@ -3101,140 +3235,6 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 30
-      }
-    },
-    {
-      "name": "PNTSLoader",
-      "description": "",
-      "extends": "PNTSLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 28
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\loaders\\PNTSLoader.js",
-      "line": 19,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 21
-      }
-    },
-    {
-      "name": "I3DMLoader",
-      "description": "",
-      "extends": "I3DMLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "resolveExternalURL",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 57
-        },
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 63
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\loaders\\I3DMLoader.js",
-      "line": 46,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 48
-      }
-    },
-    {
-      "name": "CMPTLoader",
-      "description": "",
-      "extends": "CMPTLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 19
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\loaders\\CMPTLoader.js",
-      "line": 8,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 10
-      }
-    },
-    {
-      "name": "B3DMLoader",
-      "description": "",
-      "extends": "B3DMLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 15
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\loaders\\B3DMLoader.js",
-      "line": 5,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 7
       }
     },
     {
@@ -3265,7 +3265,7 @@
           "line": 262
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\utilities\\QuantizedMeshClipper.js",
+      "sourceFile": "src/three/plugins/utilities/QuantizedMeshClipper.js",
       "line": 18,
       "constructor": {
         "name": "constructor",
@@ -3365,7 +3365,7 @@
           "line": 279
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\utilities\\GeometryClipper.js",
+      "sourceFile": "src/three/plugins/utilities/GeometryClipper.js",
       "line": 11,
       "constructor": {
         "name": "constructor",
@@ -3405,7 +3405,7 @@
           "line": 441
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\utilities\\GeometryClipper.js",
+      "sourceFile": "src/three/plugins/utilities/GeometryClipper.js",
       "line": 417,
       "constructor": {
         "name": "constructor",
@@ -3485,7 +3485,7 @@
           "line": 626
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\utilities\\GeometryClipper.js",
+      "sourceFile": "src/three/plugins/utilities/GeometryClipper.js",
       "line": 451,
       "constructor": {
         "name": "constructor",
@@ -3516,7 +3516,7 @@
           "line": 46
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\objects\\SphereHelper.js",
+      "sourceFile": "src/three/plugins/objects/SphereHelper.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -3557,7 +3557,7 @@
           "line": 141
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\objects\\EllipsoidRegionHelper.js",
+      "sourceFile": "src/three/plugins/objects/EllipsoidRegionHelper.js",
       "line": 122,
       "constructor": {
         "name": "constructor",
@@ -3598,7 +3598,7 @@
           "line": 184
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\objects\\EllipsoidRegionHelper.js",
+      "sourceFile": "src/three/plugins/objects/EllipsoidRegionHelper.js",
       "line": 150,
       "constructor": {
         "name": "constructor",
@@ -3609,6 +3609,79 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 152
+      }
+    },
+    {
+      "name": "WMTSCapabilitiesLoader",
+      "description": "",
+      "extends": "LoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 67
+        }
+      ],
+      "sourceFile": "src/three/plugins/loaders/WMTSCapabilitiesLoader.js",
+      "line": 65
+    },
+    {
+      "name": "WMSCapabilitiesLoader",
+      "description": "",
+      "extends": "LoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 354
+        }
+      ],
+      "sourceFile": "src/three/plugins/loaders/WMSCapabilitiesLoader.js",
+      "line": 352
+    },
+    {
+      "name": "QuantizedMeshLoader",
+      "description": "",
+      "extends": "QuantizedMeshLoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 43
+        }
+      ],
+      "sourceFile": "src/three/plugins/loaders/QuantizedMeshLoader.js",
+      "line": 23,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 25
       }
     },
     {
@@ -3741,7 +3814,7 @@
           "line": 1003
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 82,
       "constructor": {
         "name": "constructor",
@@ -3900,7 +3973,7 @@
           "line": 1573
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 1425,
       "constructor": {
         "name": "constructor",
@@ -4075,7 +4148,7 @@
           "line": 1755
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 1591,
       "constructor": {
         "name": "constructor",
@@ -4122,7 +4195,7 @@
       ],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 1793,
       "constructor": {
         "name": "constructor",
@@ -4319,7 +4392,7 @@
           "line": 1966
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 1842,
       "constructor": {
         "name": "constructor",
@@ -4346,7 +4419,7 @@
       ],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 1994,
       "constructor": {
         "name": "constructor",
@@ -4426,7 +4499,7 @@
       ],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 2050,
       "constructor": {
         "name": "constructor",
@@ -4492,7 +4565,7 @@
       ],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 2087,
       "constructor": {
         "name": "constructor",
@@ -4566,7 +4639,7 @@
           "line": 2238
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 2132,
       "constructor": {
         "name": "constructor",
@@ -4646,7 +4719,7 @@
           "line": 2329
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageOverlayPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageOverlayPlugin.js",
       "line": 2276,
       "constructor": {
         "name": "constructor",
@@ -4827,7 +4900,7 @@
           "line": 313
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\ImageFormatPlugin.js",
+      "sourceFile": "src/three/plugins/images/ImageFormatPlugin.js",
       "line": 10,
       "constructor": {
         "name": "constructor",
@@ -4847,7 +4920,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\EPSGTilesPlugin.js",
+      "sourceFile": "src/three/plugins/images/EPSGTilesPlugin.js",
       "line": 11,
       "constructor": {
         "name": "constructor",
@@ -4867,7 +4940,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\EPSGTilesPlugin.js",
+      "sourceFile": "src/three/plugins/images/EPSGTilesPlugin.js",
       "line": 36,
       "constructor": {
         "name": "constructor",
@@ -4887,7 +4960,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\EPSGTilesPlugin.js",
+      "sourceFile": "src/three/plugins/images/EPSGTilesPlugin.js",
       "line": 51,
       "constructor": {
         "name": "constructor",
@@ -4907,7 +4980,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\EPSGTilesPlugin.js",
+      "sourceFile": "src/three/plugins/images/EPSGTilesPlugin.js",
       "line": 79,
       "constructor": {
         "name": "constructor",
@@ -4967,7 +5040,7 @@
           "line": 180
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\EllipsoidProjectionTilesPlugin.js",
+      "sourceFile": "src/three/plugins/images/EllipsoidProjectionTilesPlugin.js",
       "line": 13,
       "constructor": {
         "name": "constructor",
@@ -4987,7 +5060,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\DeepZoomImagePlugin.js",
+      "sourceFile": "src/three/plugins/images/DeepZoomImagePlugin.js",
       "line": 8,
       "constructor": {
         "name": "constructor",
@@ -5001,67 +5074,24 @@
       }
     },
     {
-      "name": "WMTSCapabilitiesLoader",
+      "name": "GLTFStructuralMetadataExtension",
       "description": "",
-      "extends": "LoaderBase",
       "examples": [],
       "properties": [],
       "methods": [
         {
-          "name": "parse",
+          "name": "afterRoot",
           "description": "",
           "params": [],
           "examples": [],
-          "isAsync": false,
+          "isAsync": true,
           "isStatic": false,
           "isPrivate": false,
-          "line": 67
+          "line": 79
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMTSCapabilitiesLoader.js",
-      "line": 65
-    },
-    {
-      "name": "WMSCapabilitiesLoader",
-      "description": "",
-      "extends": "LoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 354
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMSCapabilitiesLoader.js",
-      "line": 352
-    },
-    {
-      "name": "QuantizedMeshLoader",
-      "description": "",
-      "extends": "QuantizedMeshLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 43
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\QuantizedMeshLoader.js",
-      "line": 23,
+      "sourceFile": "src/three/plugins/gltf/GLTFStructuralMetadataExtension.js",
+      "line": 70,
       "constructor": {
         "name": "constructor",
         "description": "",
@@ -5070,85 +5100,28 @@
         "isAsync": false,
         "isStatic": false,
         "isPrivate": false,
-        "line": 25
+        "line": 72
       }
     },
     {
-      "name": "TilesFadePlugin",
+      "name": "GLTFMeshFeaturesExtension",
       "description": "",
       "examples": [],
-      "properties": [
-        {
-          "name": "fadeDuration",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 164
-        },
-        {
-          "name": "fadingTiles",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 176
-        }
-      ],
+      "properties": [],
       "methods": [
         {
-          "name": "init",
+          "name": "afterRoot",
           "description": "",
           "params": [],
           "examples": [],
-          "isAsync": false,
+          "isAsync": true,
           "isStatic": false,
           "isPrivate": false,
-          "line": 210
-        },
-        {
-          "name": "initBatchedMesh",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 352
-        },
-        {
-          "name": "setTileVisible",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 390
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 459
-        },
-        {
-          "name": "forEachBatchIds",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 492
+          "line": 39
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\TilesFadePlugin.js",
-      "line": 162,
+      "sourceFile": "src/three/plugins/gltf/GLTFMeshFeaturesExtension.js",
+      "line": 30,
       "constructor": {
         "name": "constructor",
         "description": "",
@@ -5157,28 +5130,28 @@
         "isAsync": false,
         "isStatic": false,
         "isPrivate": false,
-        "line": 182
+        "line": 32
       }
     },
     {
-      "name": "PassThroughBatchedMesh",
+      "name": "GLTFCesiumRTCExtension",
       "description": "",
       "examples": [],
       "properties": [],
       "methods": [
         {
-          "name": "syncInstances",
+          "name": "afterRoot",
           "description": "",
           "params": [],
           "examples": [],
           "isAsync": false,
           "isStatic": false,
           "isPrivate": false,
-          "line": 92
+          "line": 9
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\PassThroughBatchedMesh.js",
-      "line": 5,
+      "sourceFile": "src/three/plugins/gltf/GLTFCesiumRTCExtension.js",
+      "line": 1,
       "constructor": {
         "name": "constructor",
         "description": "",
@@ -5187,250 +5160,8 @@
         "isAsync": false,
         "isStatic": false,
         "isPrivate": false,
-        "line": 7
+        "line": 3
       }
-    },
-    {
-      "name": "FadeMaterialManager",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "setFade",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 14
-        },
-        {
-          "name": "prepareScene",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 51
-        },
-        {
-          "name": "deleteScene",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 66
-        },
-        {
-          "name": "prepareMaterial",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 93
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\FadeMaterialManager.js",
-      "line": 4,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 6
-      }
-    },
-    {
-      "name": "FadeManager",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "deleteObject",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 20
-        },
-        {
-          "name": "guaranteeState",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 34
-        },
-        {
-          "name": "completeFade",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 57
-        },
-        {
-          "name": "completeAllFades",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 87
-        },
-        {
-          "name": "forEachObject",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 97
-        },
-        {
-          "name": "fadeIn",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 108
-        },
-        {
-          "name": "fadeOut",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 137
-        },
-        {
-          "name": "isFading",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 166
-        },
-        {
-          "name": "isFadingOut",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 172
-        },
-        {
-          "name": "update",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 180
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\FadeManager.js",
-      "line": 4,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 6
-      }
-    },
-    {
-      "name": "FadeBatchedMesh",
-      "description": "",
-      "extends": "PassThroughBatchedMesh",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "setFadeAt",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 26
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 70
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\FadeBatchedMesh.js",
-      "line": 6,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 8
-      }
-    },
-    {
-      "name": "InstanceDataTexture",
-      "description": "",
-      "extends": "DataTexture",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "setValueAt",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 85
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\FadeBatchedMesh.js",
-      "line": 83
     },
     {
       "name": "ModelViewBatchedMesh",
@@ -5500,7 +5231,7 @@
           "line": 140
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ModelViewBatchedMesh.js",
+      "sourceFile": "src/three/plugins/batched/ModelViewBatchedMesh.js",
       "line": 6,
       "constructor": {
         "name": "constructor",
@@ -5571,7 +5302,7 @@
           "line": 181
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ExpandingBatchedMesh.js",
+      "sourceFile": "src/three/plugins/batched/ExpandingBatchedMesh.js",
       "line": 8,
       "constructor": {
         "name": "constructor",
@@ -5711,7 +5442,7 @@
           "line": 440
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\BatchedTilesPlugin.js",
+      "sourceFile": "src/three/plugins/batched/BatchedTilesPlugin.js",
       "line": 10,
       "constructor": {
         "name": "constructor",
@@ -5725,84 +5456,81 @@
       }
     },
     {
-      "name": "GLTFStructuralMetadataExtension",
+      "name": "TilesFadePlugin",
       "description": "",
       "examples": [],
-      "properties": [],
-      "methods": [
+      "properties": [
         {
-          "name": "afterRoot",
+          "name": "fadeDuration",
+          "type": "any",
           "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": true,
-          "isStatic": false,
+          "readonly": true,
           "isPrivate": false,
-          "line": 79
+          "line": 164
+        },
+        {
+          "name": "fadingTiles",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 176
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFStructuralMetadataExtension.js",
-      "line": 70,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 72
-      }
-    },
-    {
-      "name": "GLTFMeshFeaturesExtension",
-      "description": "",
-      "examples": [],
-      "properties": [],
       "methods": [
         {
-          "name": "afterRoot",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": true,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 39
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFMeshFeaturesExtension.js",
-      "line": 30,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 32
-      }
-    },
-    {
-      "name": "GLTFCesiumRTCExtension",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "afterRoot",
+          "name": "init",
           "description": "",
           "params": [],
           "examples": [],
           "isAsync": false,
           "isStatic": false,
           "isPrivate": false,
-          "line": 9
+          "line": 210
+        },
+        {
+          "name": "initBatchedMesh",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 352
+        },
+        {
+          "name": "setTileVisible",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 390
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 459
+        },
+        {
+          "name": "forEachBatchIds",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 492
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFCesiumRTCExtension.js",
-      "line": 1,
+      "sourceFile": "src/three/plugins/fade/TilesFadePlugin.js",
+      "line": 162,
       "constructor": {
         "name": "constructor",
         "description": "",
@@ -5811,8 +5539,280 @@
         "isAsync": false,
         "isStatic": false,
         "isPrivate": false,
-        "line": 3
+        "line": 182
       }
+    },
+    {
+      "name": "PassThroughBatchedMesh",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "syncInstances",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 92
+        }
+      ],
+      "sourceFile": "src/three/plugins/fade/PassThroughBatchedMesh.js",
+      "line": 5,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 7
+      }
+    },
+    {
+      "name": "FadeMaterialManager",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "setFade",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 14
+        },
+        {
+          "name": "prepareScene",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 51
+        },
+        {
+          "name": "deleteScene",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 66
+        },
+        {
+          "name": "prepareMaterial",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 93
+        }
+      ],
+      "sourceFile": "src/three/plugins/fade/FadeMaterialManager.js",
+      "line": 4,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 6
+      }
+    },
+    {
+      "name": "FadeManager",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "deleteObject",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 20
+        },
+        {
+          "name": "guaranteeState",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 34
+        },
+        {
+          "name": "completeFade",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 57
+        },
+        {
+          "name": "completeAllFades",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 87
+        },
+        {
+          "name": "forEachObject",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 97
+        },
+        {
+          "name": "fadeIn",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 108
+        },
+        {
+          "name": "fadeOut",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 137
+        },
+        {
+          "name": "isFading",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 166
+        },
+        {
+          "name": "isFadingOut",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 172
+        },
+        {
+          "name": "update",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 180
+        }
+      ],
+      "sourceFile": "src/three/plugins/fade/FadeManager.js",
+      "line": 4,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 6
+      }
+    },
+    {
+      "name": "FadeBatchedMesh",
+      "description": "",
+      "extends": "PassThroughBatchedMesh",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "setFadeAt",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 26
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 70
+        }
+      ],
+      "sourceFile": "src/three/plugins/fade/FadeBatchedMesh.js",
+      "line": 6,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 8
+      }
+    },
+    {
+      "name": "InstanceDataTexture",
+      "description": "",
+      "extends": "DataTexture",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "setValueAt",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 85
+        }
+      ],
+      "sourceFile": "src/three/plugins/fade/FadeBatchedMesh.js",
+      "line": 83
     },
     {
       "name": "PriorityQueueItemRemovedError",
@@ -5821,7 +5821,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\PriorityQueue.js",
+      "sourceFile": "src/core/renderer/utilities/PriorityQueue.js",
       "line": 1,
       "constructor": {
         "name": "constructor",
@@ -5920,7 +5920,7 @@
           "line": 206
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\PriorityQueue.js",
+      "sourceFile": "src/core/renderer/utilities/PriorityQueue.js",
       "line": 12,
       "constructor": {
         "name": "constructor",
@@ -6079,7 +6079,7 @@
           "line": 355
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\LRUCache.js",
+      "sourceFile": "src/core/renderer/utilities/LRUCache.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -6129,7 +6129,7 @@
           "line": 153
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\FeatureTable.js",
+      "sourceFile": "src/core/renderer/utilities/FeatureTable.js",
       "line": 75,
       "constructor": {
         "name": "constructor",
@@ -6159,7 +6159,7 @@
           "line": 81
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\BatchTableHierarchyExtension.js",
+      "sourceFile": "src/core/renderer/utilities/BatchTableHierarchyExtension.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -6219,7 +6219,7 @@
           "line": 71
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\utilities\\BatchTable.js",
+      "sourceFile": "src/core/renderer/utilities/BatchTable.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -6612,7 +6612,7 @@
           "line": 1159
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\tiles\\TilesRendererBase.js",
+      "sourceFile": "src/core/renderer/tiles/TilesRendererBase.js",
       "line": 147,
       "constructor": {
         "name": "constructor",
@@ -6643,7 +6643,7 @@
           "line": 11
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\loaders\\PNTSLoaderBase.js",
+      "sourceFile": "src/core/renderer/loaders/PNTSLoaderBase.js",
       "line": 9
     },
     {
@@ -6693,7 +6693,7 @@
           "line": 53
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\loaders\\LoaderBase.js",
+      "sourceFile": "src/core/renderer/loaders/LoaderBase.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -6724,7 +6724,7 @@
           "line": 11
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\loaders\\I3DMLoaderBase.js",
+      "sourceFile": "src/core/renderer/loaders/I3DMLoaderBase.js",
       "line": 9
     },
     {
@@ -6745,7 +6745,7 @@
           "line": 8
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\loaders\\CMPTLoaderBase.js",
+      "sourceFile": "src/core/renderer/loaders/CMPTLoaderBase.js",
       "line": 6
     },
     {
@@ -6766,7 +6766,7 @@
           "line": 11
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\renderer\\loaders\\B3DMLoaderBase.js",
+      "sourceFile": "src/core/renderer/loaders/B3DMLoaderBase.js",
       "line": 9
     },
     {
@@ -6797,7 +6797,7 @@
           "line": 32
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\loaders\\QuantizedMeshLoaderBase.js",
+      "sourceFile": "src/core/plugins/loaders/QuantizedMeshLoaderBase.js",
       "line": 9,
       "constructor": {
         "name": "constructor",
@@ -6846,7 +6846,7 @@
           "line": 83
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\auth\\GoogleCloudAuth.js",
+      "sourceFile": "src/core/plugins/auth/GoogleCloudAuth.js",
       "line": 7,
       "constructor": {
         "name": "constructor",
@@ -6886,7 +6886,7 @@
           "line": 45
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\auth\\CesiumIonAuth.js",
+      "sourceFile": "src/core/plugins/auth/CesiumIonAuth.js",
       "line": 2,
       "constructor": {
         "name": "constructor",
@@ -6917,7 +6917,7 @@
           "line": 18
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\babylonjs\\renderer\\loaders\\GLTFLoader.js",
+      "sourceFile": "src/babylonjs/renderer/loaders/GLTFLoader.js",
       "line": 7,
       "constructor": {
         "name": "constructor",
@@ -7148,7 +7148,7 @@
           "line": 420
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\utils\\TilingScheme.js",
+      "sourceFile": "src/three/plugins/images/utils/TilingScheme.js",
       "line": 20,
       "constructor": {
         "name": "constructor",
@@ -7307,7 +7307,7 @@
           "line": 221
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\utils\\ProjectionScheme.js",
+      "sourceFile": "src/three/plugins/images/utils/ProjectionScheme.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -7437,7 +7437,7 @@
           "line": 181
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\utils\\DataCache.js",
+      "sourceFile": "src/three/plugins/images/utils/DataCache.js",
       "line": 9,
       "constructor": {
         "name": "constructor",
@@ -7478,7 +7478,7 @@
           "line": 34
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\XYZImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/XYZImageSource.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -7519,7 +7519,7 @@
           "line": 44
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\WMTSImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/WMTSImageSource.js",
       "line": 10,
       "constructor": {
         "name": "constructor",
@@ -7580,7 +7580,7 @@
           "line": 79
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\WMSImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/WMSImageSource.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -7621,7 +7621,7 @@
           "line": 29
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\TMSImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/TMSImageSource.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -7702,7 +7702,7 @@
           "line": 81
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\TiledImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/TiledImageSource.js",
       "line": 7,
       "constructor": {
         "name": "constructor",
@@ -7733,7 +7733,7 @@
           "line": 8
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\RegionImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/RegionImageSource.js",
       "line": 6
     },
     {
@@ -7784,7 +7784,7 @@
           "line": 91
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\RegionImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/RegionImageSource.js",
       "line": 16,
       "constructor": {
         "name": "constructor",
@@ -7815,7 +7815,7 @@
           "line": 21
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\QuadKeyImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/QuadKeyImageSource.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -7886,7 +7886,7 @@
           "line": 108
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\GeoJSONImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/GeoJSONImageSource.js",
       "line": 26,
       "constructor": {
         "name": "constructor",
@@ -7927,7 +7927,7 @@
           "line": 22
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\sources\\DeepZoomImageSource.js",
+      "sourceFile": "src/three/plugins/images/sources/DeepZoomImageSource.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -7977,7 +7977,7 @@
           "line": 53
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\images\\overlays\\TiledTextureComposer.js",
+      "sourceFile": "src/three/plugins/images/overlays/TiledTextureComposer.js",
       "line": 4,
       "constructor": {
         "name": "constructor",
@@ -7988,6 +7988,66 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 6
+      }
+    },
+    {
+      "name": "_TextureReadUtility",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "increaseSizeTo",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 53
+        },
+        {
+          "name": "readDataAsync",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 60
+        },
+        {
+          "name": "readData",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 68
+        },
+        {
+          "name": "renderPixelToTarget",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 77
+        }
+      ],
+      "sourceFile": "src/three/plugins/gltf/metadata/utilities/TextureReadUtility.js",
+      "line": 7,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 9
       }
     },
     {
@@ -8077,7 +8137,7 @@
           "line": 194
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\StructuralMetadata.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/StructuralMetadata.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -8108,7 +8168,7 @@
           "line": 32
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyTextureAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyTextureAccessor.js",
       "line": 18,
       "constructor": {
         "name": "constructor",
@@ -8179,7 +8239,7 @@
           "line": 224
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyTextureAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyTextureAccessor.js",
       "line": 50,
       "constructor": {
         "name": "constructor",
@@ -8220,7 +8280,7 @@
           "line": 46
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyTableAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyTableAccessor.js",
       "line": 12,
       "constructor": {
         "name": "constructor",
@@ -8261,7 +8321,7 @@
           "line": 152
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyTableAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyTableAccessor.js",
       "line": 69,
       "constructor": {
         "name": "constructor",
@@ -8311,7 +8371,7 @@
           "line": 30
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertySetAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertySetAccessor.js",
       "line": 3,
       "constructor": {
         "name": "constructor",
@@ -8331,7 +8391,7 @@
       "examples": [],
       "properties": [],
       "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyAttributeAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyAttributeAccessor.js",
       "line": 5,
       "constructor": {
         "name": "constructor",
@@ -8372,7 +8432,7 @@
           "line": 43
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\PropertyAttributeAccessor.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/PropertyAttributeAccessor.js",
       "line": 17,
       "constructor": {
         "name": "constructor",
@@ -8442,7 +8502,7 @@
           "line": 195
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\MeshFeatures.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/MeshFeatures.js",
       "line": 28,
       "constructor": {
         "name": "constructor",
@@ -8522,7 +8582,7 @@
           "line": 135
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\classes\\ClassProperty.js",
+      "sourceFile": "src/three/plugins/gltf/metadata/classes/ClassProperty.js",
       "line": 11,
       "constructor": {
         "name": "constructor",
@@ -8533,66 +8593,6 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 13
-      }
-    },
-    {
-      "name": "_TextureReadUtility",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "increaseSizeTo",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 53
-        },
-        {
-          "name": "readDataAsync",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 60
-        },
-        {
-          "name": "readData",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 68
-        },
-        {
-          "name": "renderPixelToTarget",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 77
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\utilities\\TextureReadUtility.js",
-      "line": 7,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 9
       }
     }
   ]

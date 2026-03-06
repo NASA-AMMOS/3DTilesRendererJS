@@ -87,6 +87,10 @@ export interface ExampleFile {
   category: string;
   dependencies: string[];
   sourceFile: string;
+  framework: 'three' | 'r3f' | 'babylonjs';
+  hasLocalImports: boolean;
+  htmlElements: string[];
+  thumbnail?: string;
 }
 
 /**

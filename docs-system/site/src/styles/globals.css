@@ -111,11 +111,17 @@ pre code {
     }
   }
 
+  .example-detail-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--header-height) - 4rem);
+  }
+
   .sandbox-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    height: 500px;
+    height: 100%;
+    min-height: 400px;
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     overflow: hidden;

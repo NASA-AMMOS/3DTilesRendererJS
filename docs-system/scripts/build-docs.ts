@@ -57,6 +57,26 @@ async function main() {
       console.log('Copied examples.json to site/public/');
     }
 
+    // Copy thumbnail images to site/public/thumbnails/
+    const screenshotsDir = path.join(rootDir, 'example', 'screenshots');
+    const thumbsPublicDir = path.join(publicDir, 'thumbnails');
+    if (fs.existsSync(screenshotsDir)) {
+      if (!fs.existsSync(thumbsPublicDir)) {
+        fs.mkdirSync(thumbsPublicDir, { recursive: true });
+      }
+      const thumbFiles = fs.readdirSync(screenshotsDir)
+        .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f));
+      for (const f of thumbFiles) {
+        fs.copyFileSync(
+          path.join(screenshotsDir, f),
+          path.join(thumbsPublicDir, f),
+        );
+      }
+      if (thumbFiles.length > 0) {
+        console.log(`Copied ${thumbFiles.length} thumbnails to site/public/thumbnails/`);
+      }
+    }
+
     console.log('\n✅ Documentation build complete!');
     console.log('\nNext steps:');
     console.log('  1. cd docs-system/site');

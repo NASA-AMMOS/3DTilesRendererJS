@@ -13,7 +13,7 @@ If a tileset or geometry does not load or render properly please make an issue! 
 
 The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/googleMapsAerial.html).
 
-See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/babylonjs/renderer/README.md) for setup details with each engine.
+See the [documentation site](https://nasa-ammos.github.io/3DTilesRendererJS/) or [Babylon.js usage guide](./src/babylonjs/renderer/README.md) for setup details with each engine.
 
 | Example | Description |
 | --- | --- |
@@ -55,15 +55,9 @@ npm install 3d-tiles-renderer --save
 
 ## Usage
 
-- [Three.js](./USAGE.md): Three.js renderer setup examples, custom materials, DRACO, Cesium Ion, and more
+- [Documentation](https://nasa-ammos.github.io/3DTilesRendererJS/): Guide, API Reference, Examples, and Plugins
 - [Babylon.js](./src/babylonjs/renderer/README.md): Babylon.js renderer setup, usage, and limitations
-- [React Three Fiber](./src/r3f/README.md): R3F components for 3D Tiles 
-
-## API 
-See [API Reference](./API.md): TilesRenderer, PriorityQueue, LRUCache, and BatchTable API docs
-
-## Plugins
-See [Plugins](./PLUGINS.md): GLTFLoader extension plugins, TilesRenderer plugins, and extra classes
+- [React Three Fiber](./src/r3f/README.md): R3F components for 3D Tiles
 
 
 

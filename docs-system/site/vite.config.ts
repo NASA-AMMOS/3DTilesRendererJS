@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../../docs/api',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {

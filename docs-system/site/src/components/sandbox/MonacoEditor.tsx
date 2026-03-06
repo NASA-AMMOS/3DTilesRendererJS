@@ -1,44 +1,31 @@
-import Editor from '@monaco-editor/react';
-import { useEffect, useState } from 'react';
+import { useRef, useCallback } from 'react';
+import Editor, { OnMount } from '@monaco-editor/react';
 
 interface MonacoEditorProps {
   value: string;
   onChange: (value: string) => void;
   language?: string;
-  readOnly?: boolean;
 }
 
-export function MonacoEditor({
-  value,
-  onChange,
-  language = 'javascript',
-  readOnly = false,
-}: MonacoEditorProps) {
-  const [isDark, setIsDark] = useState(false);
+export function MonacoEditor({ value, onChange, language = 'javascript' }: MonacoEditorProps) {
+  const editorRef = useRef<any>(null);
 
-  useEffect(() => {
-    const checkTheme = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
+  const handleMount: OnMount = useCallback((editor) => {
+    editorRef.current = editor;
   }, []);
+
+  const handleChange = useCallback((val: string | undefined) => {
+    onChange(val ?? '');
+  }, [onChange]);
 
   return (
     <Editor
       height="100%"
       language={language}
       value={value}
-      onChange={(v) => onChange(v || '')}
-      theme={isDark ? 'vs-dark' : 'light'}
+      theme="vs-dark"
+      onChange={handleChange}
+      onMount={handleMount}
       options={{
         minimap: { enabled: false },
         fontSize: 13,
@@ -47,11 +34,16 @@ export function MonacoEditor({
         automaticLayout: true,
         tabSize: 2,
         wordWrap: 'on',
-        readOnly,
-        padding: { top: 12, bottom: 12 },
+        padding: { top: 8 },
+        renderLineHighlight: 'line',
+        folding: true,
+        glyphMargin: false,
+        lineDecorationsWidth: 0,
+        lineNumbersMinChars: 3,
+        overviewRulerBorder: false,
         scrollbar: {
-          vertical: 'auto',
-          horizontal: 'auto',
+          verticalScrollbarSize: 8,
+          horizontalScrollbarSize: 8,
         },
       }}
     />
