@@ -224,13 +224,13 @@ export class ImageOverlayPlugin {
 
 	_removeVirtualChildren( tile ) {
 
-		// remove the virtual children associated with the given tile
 		if ( ! ( ORIGINAL_REFINE in tile ) ) {
 
 			return;
 
 		}
 
+		// remove the virtual children associated with the given tile
 		const { tiles } = this;
 		const { virtualChildCount } = tile.internal;
 		const len = tile.children.length;
@@ -439,34 +439,34 @@ export class ImageOverlayPlugin {
 		// collect the tiles split into virtual tiles, sorted deepest-first so nested virtual tiles
 		// are cleaned up before their parents when iterating
 		const { tiles } = this;
-		const parents = [];
+		const splitTiles = [];
 		this.processedTiles.forEach( tile => {
 
 			if ( SPLIT_HASH in tile ) {
 
-				parents.push( tile );
+				splitTiles.push( tile );
 
 			}
 
 		} );
 
 		// ensure we clean depth first
-		parents.sort( ( a, b ) => b.internal.depth - a.internal.depth );
+		splitTiles.sort( ( a, b ) => b.internal.depth - a.internal.depth );
 
 		// dispose of the virtual children if this tile would not be split or the split could change
 		// under the current overlays used.
-		parents.forEach( parent => {
+		splitTiles.forEach( tile => {
 
-			const clone = parent.engineData.scene.clone();
+			const clone = tile.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
-			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
+			if ( fullDispose || tile[ SPLIT_HASH ] !== this._getSplitVectors( clone, tile ).hash ) {
 
 				// note that we need to remove children from the processing queue in this case
 				// because we are forcibly evicting them from the cache. Since parents is sorted
 				// deepest-first, nested virtual tiles are already cleaned up before we reach
 				// their parent here.
-				this._removeVirtualChildren( parent );
+				this._removeVirtualChildren( tile );
 
 			}
 
@@ -584,7 +584,8 @@ export class ImageOverlayPlugin {
 		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
 		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
 		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
-		if ( this.enableTileSplitting === false || ! shouldSplit || tile.internal.virtualChildCount !== 0 ) {
+		const alreadySplit = tile.internal.virtualChildCount !== 0;
+		if ( this.enableTileSplitting === false || ! shouldSplit || alreadySplit ) {
 
 			return;
 
@@ -594,10 +595,8 @@ export class ImageOverlayPlugin {
 		const clone = scene.clone();
 		clone.updateMatrixWorld();
 
-		// get the directions to split on
+		// get the directions to split on & if there are no directions to split on then exit early
 		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
-
-		// if there are no directions to split on then exit early
 		if ( directions.length === 0 ) {
 
 			return;
@@ -622,7 +621,7 @@ export class ImageOverlayPlugin {
 
 		// run the clipping operations by performing every permutation of sides
 		// defined by the split directions
-		const children = [];
+		const splitChildren = [];
 		clipper.forEachSplitPermutation( () => {
 
 			// clip the object itself
@@ -738,7 +737,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			children.push( {
+			splitChildren.push( {
 				internal: { isVirtual: true },
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
@@ -755,8 +754,8 @@ export class ImageOverlayPlugin {
 		// if virtual children are later removed.
 		tile[ ORIGINAL_REFINE ] = tile.refine;
 		tile.refine = 'REPLACE';
-		tile.children.push( ...children );
-		tile.internal.virtualChildCount += children.length;
+		tile.children.push( ...splitChildren );
+		tile.internal.virtualChildCount += splitChildren.length;
 
 	}
 
