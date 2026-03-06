@@ -33,7 +33,7 @@ export function useAPIData(className?: string) {
       return;
     }
 
-    fetch('/api.json')
+    fetch(`${import.meta.env.BASE_URL}api.json`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to load API data');
         return res.json();

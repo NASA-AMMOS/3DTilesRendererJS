@@ -18,7 +18,7 @@ export function ExamplesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/examples.json')
+    fetch(`${import.meta.env.BASE_URL}examples.json`)
       .then(res => res.json())
       .then(data => {
         setExamples(data.examples || []);
