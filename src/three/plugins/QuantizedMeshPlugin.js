@@ -314,6 +314,8 @@ export class QuantizedMeshPlugin {
 		// data is ready for clipping. It's possible that this child data gets to the parse stage
 		// first, otherwise, while the parent is still downloading.
 		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		// Assign the scene value preemptively to ensure it's available for splitting.
+		tile.engineData.scene = result;
 		this.expandChildren( tile );
 
 		return result;
