@@ -1,6 +1,6 @@
 {
   "version": "0.4.21",
-  "generatedAt": "2026-03-06T10:14:46.454Z",
+  "generatedAt": "2026-03-06T11:22:58.371Z",
   "classes": [
     {
       "name": "CesiumIonAuthPlugin",
@@ -87,6 +87,168 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 30
+      }
+    },
+    {
+      "name": "SceneObserver",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "observe",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 73
+        },
+        {
+          "name": "unobserve",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 81
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 89
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\SceneObserver.js",
+      "line": 19,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 21
+      }
+    },
+    {
+      "name": "QueryManager",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "addCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 241
+        },
+        {
+          "name": "deleteCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 249
+        },
+        {
+          "name": "runIfNeeded",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 257
+        },
+        {
+          "name": "setScene",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 272
+        },
+        {
+          "name": "setEllipsoidFromTilesRenderer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 283
+        },
+        {
+          "name": "registerRayQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 315
+        },
+        {
+          "name": "registerLatLonQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 332
+        },
+        {
+          "name": "unregisterQuery",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 356
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 372
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\QueryManager.js",
+      "line": 19,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 21
       }
     },
     {
@@ -1302,168 +1464,6 @@
       }
     },
     {
-      "name": "SceneObserver",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "observe",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 73
-        },
-        {
-          "name": "unobserve",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 81
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 89
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\SceneObserver.js",
-      "line": 19,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 21
-      }
-    },
-    {
-      "name": "QueryManager",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "addCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 241
-        },
-        {
-          "name": "deleteCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 249
-        },
-        {
-          "name": "runIfNeeded",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 257
-        },
-        {
-          "name": "setScene",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 272
-        },
-        {
-          "name": "setEllipsoidFromTilesRenderer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 283
-        },
-        {
-          "name": "registerRayQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 315
-        },
-        {
-          "name": "registerLatLonQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 332
-        },
-        {
-          "name": "unregisterQuery",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 356
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 372
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\r3f\\utilities\\QueryManager.js",
-      "line": 19,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 21
-      }
-    },
-    {
       "name": "TilesRenderer",
       "description": "",
       "extends": "TilesRendererBase",
@@ -1800,6 +1800,697 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 9
+      }
+    },
+    {
+      "name": "PointerTracker",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "reset",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 22
+        },
+        {
+          "name": "updateFrame",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 39
+        },
+        {
+          "name": "setHoverEvent",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 50
+        },
+        {
+          "name": "getLatestPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 61
+        },
+        {
+          "name": "getAdjustedPointer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 82
+        },
+        {
+          "name": "addPointer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 92
+        },
+        {
+          "name": "updatePointer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 111
+        },
+        {
+          "name": "deletePointer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 125
+        },
+        {
+          "name": "getPointerCount",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 143
+        },
+        {
+          "name": "getCenterPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 149
+        },
+        {
+          "name": "getPreviousCenterPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 175
+        },
+        {
+          "name": "getStartCenterPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 181
+        },
+        {
+          "name": "getMoveDistance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 187
+        },
+        {
+          "name": "getTouchPointerDistance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 196
+        },
+        {
+          "name": "getPreviousTouchPointerDistance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 215
+        },
+        {
+          "name": "getStartTouchPointerDistance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 221
+        },
+        {
+          "name": "getPointerType",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 227
+        },
+        {
+          "name": "isPointerTouch",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 233
+        },
+        {
+          "name": "getPointerButtons",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 239
+        },
+        {
+          "name": "isLeftClicked",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 245
+        },
+        {
+          "name": "isRightClicked",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 251
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PointerTracker.js",
+      "line": 5,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 7
+      }
+    },
+    {
+      "name": "PivotPointMesh",
+      "description": "",
+      "extends": "Mesh",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "onBeforeRender",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 12
+        },
+        {
+          "name": "updateMatrixWorld",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 19
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 25
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
+      "line": 3,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 5
+      }
+    },
+    {
+      "name": "PivotMaterial",
+      "description": "",
+      "extends": "ShaderMaterial",
+      "examples": [],
+      "properties": [],
+      "methods": [],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
+      "line": 34,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 36
+      }
+    },
+    {
+      "name": "GlobeControls",
+      "description": "",
+      "extends": "EnvironmentControls",
+      "examples": [],
+      "properties": [
+        {
+          "name": "tilesGroup",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 35
+        },
+        {
+          "name": "ellipsoidFrame",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 42
+        },
+        {
+          "name": "ellipsoidFrameInverse",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 48
+        }
+      ],
+      "methods": [
+        {
+          "name": "setTilesRenderer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 87
+        },
+        {
+          "name": "setEllipsoid",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 98
+        },
+        {
+          "name": "getPivotPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 105
+        },
+        {
+          "name": "getVectorToCenter",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 137
+        },
+        {
+          "name": "getDistanceToCenter",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 147
+        },
+        {
+          "name": "getUpDirection",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 155
+        },
+        {
+          "name": "getCameraUpDirection",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 166
+        },
+        {
+          "name": "update",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 186
+        },
+        {
+          "name": "adjustCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 238
+        },
+        {
+          "name": "setState",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 297
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\GlobeControls.js",
+      "line": 33,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 57
+      }
+    },
+    {
+      "name": "EnvironmentControls",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 57
+        }
+      ],
+      "methods": [
+        {
+          "name": "setScene",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 166
+        },
+        {
+          "name": "setCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 172
+        },
+        {
+          "name": "setTilesRenderer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 184
+        },
+        {
+          "name": "attach",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 197
+        },
+        {
+          "name": "detach",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 533
+        },
+        {
+          "name": "getUpDirection",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 548
+        },
+        {
+          "name": "getCameraUpDirection",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 554
+        },
+        {
+          "name": "getPivotPoint",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 561
+        },
+        {
+          "name": "resetState",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 612
+        },
+        {
+          "name": "setState",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 628
+        },
+        {
+          "name": "update",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 656
+        },
+        {
+          "name": "adjustCamera",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 777
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 800
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\EnvironmentControls.js",
+      "line": 55,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 82
+      }
+    },
+    {
+      "name": "CameraTransitionManager",
+      "description": "",
+      "extends": "EventDispatcher",
+      "examples": [],
+      "properties": [
+        {
+          "name": "animating",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 14
+        },
+        {
+          "name": "alpha",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 20
+        },
+        {
+          "name": "camera",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 27
+        },
+        {
+          "name": "mode",
+          "type": "any",
+          "description": "",
+          "readonly": true,
+          "isPrivate": false,
+          "line": 35
+        }
+      ],
+      "methods": [
+        {
+          "name": "toggle",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 88
+        },
+        {
+          "name": "update",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 98
+        },
+        {
+          "name": "syncCameras",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 159
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\CameraTransitionManager.js",
+      "line": 12,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 66
       }
     },
     {
@@ -2547,697 +3238,6 @@
       }
     },
     {
-      "name": "PointerTracker",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "reset",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 22
-        },
-        {
-          "name": "updateFrame",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 39
-        },
-        {
-          "name": "setHoverEvent",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 50
-        },
-        {
-          "name": "getLatestPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 61
-        },
-        {
-          "name": "getAdjustedPointer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 82
-        },
-        {
-          "name": "addPointer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 92
-        },
-        {
-          "name": "updatePointer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 111
-        },
-        {
-          "name": "deletePointer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 125
-        },
-        {
-          "name": "getPointerCount",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 143
-        },
-        {
-          "name": "getCenterPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 149
-        },
-        {
-          "name": "getPreviousCenterPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 175
-        },
-        {
-          "name": "getStartCenterPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 181
-        },
-        {
-          "name": "getMoveDistance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 187
-        },
-        {
-          "name": "getTouchPointerDistance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 196
-        },
-        {
-          "name": "getPreviousTouchPointerDistance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 215
-        },
-        {
-          "name": "getStartTouchPointerDistance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 221
-        },
-        {
-          "name": "getPointerType",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 227
-        },
-        {
-          "name": "isPointerTouch",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 233
-        },
-        {
-          "name": "getPointerButtons",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 239
-        },
-        {
-          "name": "isLeftClicked",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 245
-        },
-        {
-          "name": "isRightClicked",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 251
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PointerTracker.js",
-      "line": 5,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 7
-      }
-    },
-    {
-      "name": "PivotPointMesh",
-      "description": "",
-      "extends": "Mesh",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "onBeforeRender",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 12
-        },
-        {
-          "name": "updateMatrixWorld",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 19
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 25
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
-      "line": 3,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 5
-      }
-    },
-    {
-      "name": "PivotMaterial",
-      "description": "",
-      "extends": "ShaderMaterial",
-      "examples": [],
-      "properties": [],
-      "methods": [],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\PivotPointMesh.js",
-      "line": 34,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 36
-      }
-    },
-    {
-      "name": "GlobeControls",
-      "description": "",
-      "extends": "EnvironmentControls",
-      "examples": [],
-      "properties": [
-        {
-          "name": "tilesGroup",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 35
-        },
-        {
-          "name": "ellipsoidFrame",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 42
-        },
-        {
-          "name": "ellipsoidFrameInverse",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 48
-        }
-      ],
-      "methods": [
-        {
-          "name": "setTilesRenderer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 87
-        },
-        {
-          "name": "setEllipsoid",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 98
-        },
-        {
-          "name": "getPivotPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 105
-        },
-        {
-          "name": "getVectorToCenter",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 137
-        },
-        {
-          "name": "getDistanceToCenter",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 147
-        },
-        {
-          "name": "getUpDirection",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 155
-        },
-        {
-          "name": "getCameraUpDirection",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 166
-        },
-        {
-          "name": "update",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 186
-        },
-        {
-          "name": "adjustCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 238
-        },
-        {
-          "name": "setState",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 297
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\GlobeControls.js",
-      "line": 33,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 57
-      }
-    },
-    {
-      "name": "EnvironmentControls",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [
-        {
-          "name": "enabled",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 57
-        }
-      ],
-      "methods": [
-        {
-          "name": "setScene",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 166
-        },
-        {
-          "name": "setCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 172
-        },
-        {
-          "name": "setTilesRenderer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 184
-        },
-        {
-          "name": "attach",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 197
-        },
-        {
-          "name": "detach",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 533
-        },
-        {
-          "name": "getUpDirection",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 548
-        },
-        {
-          "name": "getCameraUpDirection",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 554
-        },
-        {
-          "name": "getPivotPoint",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 561
-        },
-        {
-          "name": "resetState",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 612
-        },
-        {
-          "name": "setState",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 628
-        },
-        {
-          "name": "update",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 656
-        },
-        {
-          "name": "adjustCamera",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 777
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 800
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\EnvironmentControls.js",
-      "line": 55,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 82
-      }
-    },
-    {
-      "name": "CameraTransitionManager",
-      "description": "",
-      "extends": "EventDispatcher",
-      "examples": [],
-      "properties": [
-        {
-          "name": "animating",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 14
-        },
-        {
-          "name": "alpha",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 20
-        },
-        {
-          "name": "camera",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 27
-        },
-        {
-          "name": "mode",
-          "type": "any",
-          "description": "",
-          "readonly": true,
-          "isPrivate": false,
-          "line": 35
-        }
-      ],
-      "methods": [
-        {
-          "name": "toggle",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 88
-        },
-        {
-          "name": "update",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 98
-        },
-        {
-          "name": "syncCameras",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 159
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\renderer\\controls\\CameraTransitionManager.js",
-      "line": 12,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 66
-      }
-    },
-    {
       "name": "QuantizedMeshClipper",
       "description": "",
       "extends": "GeometryClipper",
@@ -3609,79 +3609,6 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 152
-      }
-    },
-    {
-      "name": "WMTSCapabilitiesLoader",
-      "description": "",
-      "extends": "LoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 67
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMTSCapabilitiesLoader.js",
-      "line": 65
-    },
-    {
-      "name": "WMSCapabilitiesLoader",
-      "description": "",
-      "extends": "LoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 354
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMSCapabilitiesLoader.js",
-      "line": 352
-    },
-    {
-      "name": "QuantizedMeshLoader",
-      "description": "",
-      "extends": "QuantizedMeshLoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 43
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\QuantizedMeshLoader.js",
-      "line": 23,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 25
       }
     },
     {
@@ -5074,84 +5001,67 @@
       }
     },
     {
-      "name": "GLTFStructuralMetadataExtension",
+      "name": "WMTSCapabilitiesLoader",
       "description": "",
+      "extends": "LoaderBase",
       "examples": [],
       "properties": [],
       "methods": [
         {
-          "name": "afterRoot",
+          "name": "parse",
           "description": "",
           "params": [],
           "examples": [],
-          "isAsync": true,
+          "isAsync": false,
           "isStatic": false,
           "isPrivate": false,
-          "line": 79
+          "line": 67
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFStructuralMetadataExtension.js",
-      "line": 70,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 72
-      }
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMTSCapabilitiesLoader.js",
+      "line": 65
     },
     {
-      "name": "GLTFMeshFeaturesExtension",
+      "name": "WMSCapabilitiesLoader",
       "description": "",
+      "extends": "LoaderBase",
       "examples": [],
       "properties": [],
       "methods": [
         {
-          "name": "afterRoot",
+          "name": "parse",
           "description": "",
           "params": [],
           "examples": [],
-          "isAsync": true,
+          "isAsync": false,
           "isStatic": false,
           "isPrivate": false,
-          "line": 39
+          "line": 354
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFMeshFeaturesExtension.js",
-      "line": 30,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 32
-      }
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\WMSCapabilitiesLoader.js",
+      "line": 352
     },
     {
-      "name": "GLTFCesiumRTCExtension",
+      "name": "QuantizedMeshLoader",
       "description": "",
+      "extends": "QuantizedMeshLoaderBase",
       "examples": [],
       "properties": [],
       "methods": [
         {
-          "name": "afterRoot",
+          "name": "parse",
           "description": "",
           "params": [],
           "examples": [],
           "isAsync": false,
           "isStatic": false,
           "isPrivate": false,
-          "line": 9
+          "line": 43
         }
       ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFCesiumRTCExtension.js",
-      "line": 1,
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\loaders\\QuantizedMeshLoader.js",
+      "line": 23,
       "constructor": {
         "name": "constructor",
         "description": "",
@@ -5160,299 +5070,7 @@
         "isAsync": false,
         "isStatic": false,
         "isPrivate": false,
-        "line": 3
-      }
-    },
-    {
-      "name": "ModelViewBatchedMesh",
-      "description": "",
-      "extends": "BatchedMesh",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "setMatrixAt",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 21
-        },
-        {
-          "name": "setInstanceCount",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 39
-        },
-        {
-          "name": "onBeforeRender",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 52
-        },
-        {
-          "name": "onAfterRender",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 126
-        },
-        {
-          "name": "onAfterShadow",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 134
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 140
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ModelViewBatchedMesh.js",
-      "line": 6,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 8
-      }
-    },
-    {
-      "name": "ExpandingBatchedMesh",
-      "description": "",
-      "extends": "ModelViewBatchedMesh",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "findFreeId",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 23
-        },
-        {
-          "name": "addGeometry",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 70
-        },
-        {
-          "name": "addInstance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 153
-        },
-        {
-          "name": "deleteInstance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 167
-        },
-        {
-          "name": "raycastInstance",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 181
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ExpandingBatchedMesh.js",
-      "line": 8,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 10
-      }
-    },
-    {
-      "name": "BatchedTilesPlugin",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "init",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 62
-        },
-        {
-          "name": "initTextureArray",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 76
-        },
-        {
-          "name": "initBatchedMesh",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 123
-        },
-        {
-          "name": "setTileVisible",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 146
-        },
-        {
-          "name": "unloadTileFromGPU",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 193
-        },
-        {
-          "name": "assignTextureToLayer",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 207
-        },
-        {
-          "name": "expandArrayTargetIfNeeded",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 236
-        },
-        {
-          "name": "removeSceneFromBatchedMesh",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 268
-        },
-        {
-          "name": "addSceneToBatchedMesh",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 284
-        },
-        {
-          "name": "raycastTile",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 399
-        },
-        {
-          "name": "dispose",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 418
-        },
-        {
-          "name": "getTileBatchIds",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 440
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\BatchedTilesPlugin.js",
-      "line": 10,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 12
+        "line": 25
       }
     },
     {
@@ -5813,6 +5431,388 @@
       ],
       "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\fade\\FadeBatchedMesh.js",
       "line": 83
+    },
+    {
+      "name": "ModelViewBatchedMesh",
+      "description": "",
+      "extends": "BatchedMesh",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "setMatrixAt",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 21
+        },
+        {
+          "name": "setInstanceCount",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 39
+        },
+        {
+          "name": "onBeforeRender",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 52
+        },
+        {
+          "name": "onAfterRender",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 126
+        },
+        {
+          "name": "onAfterShadow",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 134
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 140
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ModelViewBatchedMesh.js",
+      "line": 6,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 8
+      }
+    },
+    {
+      "name": "ExpandingBatchedMesh",
+      "description": "",
+      "extends": "ModelViewBatchedMesh",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "findFreeId",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 23
+        },
+        {
+          "name": "addGeometry",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 70
+        },
+        {
+          "name": "addInstance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 153
+        },
+        {
+          "name": "deleteInstance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 167
+        },
+        {
+          "name": "raycastInstance",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 181
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\ExpandingBatchedMesh.js",
+      "line": 8,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 10
+      }
+    },
+    {
+      "name": "BatchedTilesPlugin",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "init",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 62
+        },
+        {
+          "name": "initTextureArray",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 76
+        },
+        {
+          "name": "initBatchedMesh",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 123
+        },
+        {
+          "name": "setTileVisible",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 146
+        },
+        {
+          "name": "unloadTileFromGPU",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 193
+        },
+        {
+          "name": "assignTextureToLayer",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 207
+        },
+        {
+          "name": "expandArrayTargetIfNeeded",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 236
+        },
+        {
+          "name": "removeSceneFromBatchedMesh",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 268
+        },
+        {
+          "name": "addSceneToBatchedMesh",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 284
+        },
+        {
+          "name": "raycastTile",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 399
+        },
+        {
+          "name": "dispose",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 418
+        },
+        {
+          "name": "getTileBatchIds",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 440
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\batched\\BatchedTilesPlugin.js",
+      "line": 10,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 12
+      }
+    },
+    {
+      "name": "GLTFStructuralMetadataExtension",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "afterRoot",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": true,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 79
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFStructuralMetadataExtension.js",
+      "line": 70,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 72
+      }
+    },
+    {
+      "name": "GLTFMeshFeaturesExtension",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "afterRoot",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": true,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 39
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFMeshFeaturesExtension.js",
+      "line": 30,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 32
+      }
+    },
+    {
+      "name": "GLTFCesiumRTCExtension",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "afterRoot",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 9
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\GLTFCesiumRTCExtension.js",
+      "line": 1,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 3
+      }
     },
     {
       "name": "PriorityQueueItemRemovedError",
@@ -6770,6 +6770,47 @@
       "line": 9
     },
     {
+      "name": "QuantizedMeshLoaderBase",
+      "description": "",
+      "extends": "LoaderBase",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "loadAsync",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 21
+        },
+        {
+          "name": "parse",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 32
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\loaders\\QuantizedMeshLoaderBase.js",
+      "line": 9,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 11
+      }
+    },
+    {
       "name": "GoogleCloudAuth",
       "description": "",
       "examples": [],
@@ -6856,47 +6897,6 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 4
-      }
-    },
-    {
-      "name": "QuantizedMeshLoaderBase",
-      "description": "",
-      "extends": "LoaderBase",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "loadAsync",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 21
-        },
-        {
-          "name": "parse",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 32
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\core\\plugins\\loaders\\QuantizedMeshLoaderBase.js",
-      "line": 9,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 11
       }
     },
     {
@@ -7991,66 +7991,6 @@
       }
     },
     {
-      "name": "_TextureReadUtility",
-      "description": "",
-      "examples": [],
-      "properties": [],
-      "methods": [
-        {
-          "name": "increaseSizeTo",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 53
-        },
-        {
-          "name": "readDataAsync",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 60
-        },
-        {
-          "name": "readData",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 68
-        },
-        {
-          "name": "renderPixelToTarget",
-          "description": "",
-          "params": [],
-          "examples": [],
-          "isAsync": false,
-          "isStatic": false,
-          "isPrivate": false,
-          "line": 77
-        }
-      ],
-      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\utilities\\TextureReadUtility.js",
-      "line": 7,
-      "constructor": {
-        "name": "constructor",
-        "description": "",
-        "params": [],
-        "examples": [],
-        "isAsync": false,
-        "isStatic": false,
-        "isPrivate": false,
-        "line": 9
-      }
-    },
-    {
       "name": "StructuralMetadata",
       "description": "",
       "examples": [],
@@ -8593,6 +8533,66 @@
         "isStatic": false,
         "isPrivate": false,
         "line": 13
+      }
+    },
+    {
+      "name": "_TextureReadUtility",
+      "description": "",
+      "examples": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "increaseSizeTo",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 53
+        },
+        {
+          "name": "readDataAsync",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 60
+        },
+        {
+          "name": "readData",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 68
+        },
+        {
+          "name": "renderPixelToTarget",
+          "description": "",
+          "params": [],
+          "examples": [],
+          "isAsync": false,
+          "isStatic": false,
+          "isPrivate": false,
+          "line": 77
+        }
+      ],
+      "sourceFile": "D:\\my\\code\\3DTilesRendererJS\\src\\three\\plugins\\gltf\\metadata\\utilities\\TextureReadUtility.js",
+      "line": 7,
+      "constructor": {
+        "name": "constructor",
+        "description": "",
+        "params": [],
+        "examples": [],
+        "isAsync": false,
+        "isStatic": false,
+        "isPrivate": false,
+        "line": 9
       }
     }
   ]
