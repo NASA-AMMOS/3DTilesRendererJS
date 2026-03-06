@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 
 interface MonacoEditorProps {
@@ -13,6 +13,13 @@ export function MonacoEditor({ value, onChange, language = 'javascript' }: Monac
   const handleMount: OnMount = useCallback((editor) => {
     editorRef.current = editor;
   }, []);
+
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.revealLine(1);
+      editorRef.current.setPosition({ lineNumber: 1, column: 1 });
+    }
+  }, [value]);
 
   const handleChange = useCallback((val: string | undefined) => {
     onChange(val ?? '');

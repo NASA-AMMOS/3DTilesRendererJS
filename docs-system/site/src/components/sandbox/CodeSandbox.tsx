@@ -84,89 +84,80 @@ export function CodeSandbox({
 
   return (
     <div className="sandbox-container" onKeyDown={handleKeyDown}>
-      <div className="sandbox-editor">
-        {hasLocalImports && (
-          <div className="px-3 py-2 text-xs bg-amber-500/10 text-amber-400 border-b border-amber-500/20">
-            This example uses local imports that cannot run in the sandbox.
-            {deployedUrl && (
-              <>
-                {' '}
-                <a
-                  href={deployedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-amber-300"
-                >
-                  View deployed version
-                </a>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="editor-toolbar">
-          <button
-            onClick={handleRun}
-            disabled={isRunning}
-            className="btn-run"
-            title="Run (Ctrl+Enter)"
-          >
-            &#9654; Run
-          </button>
-          <button
-            onClick={handleStop}
-            disabled={!isRunning}
-            className="btn-stop"
-          >
-            &#9209; Stop
-          </button>
-          <button onClick={handleReset} className="btn-reset">
-            &#8634; Reset
-          </button>
-          <span className="ml-auto text-xs text-[var(--color-text-secondary)]">
-            {isRunning ? 'Running' : 'Stopped'}
-          </span>
+      {hasLocalImports && (
+        <div className="px-3 py-2 text-xs bg-amber-500/10 text-amber-400 border-b border-amber-500/20 col-span-full">
+          This example uses local imports that cannot run in the sandbox.
+          {deployedUrl && (
+            <>
+              {' '}
+              <a
+                href={deployedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-amber-300"
+              >
+                View deployed version
+              </a>
+            </>
+          )}
         </div>
+      )}
 
-        <div className="flex-1 min-h-0">
-          <MonacoEditor
-            value={code}
-            onChange={setCode}
-            language="javascript"
-          />
-        </div>
-      </div>
+      <div className="sandbox-toolbar">
+        <button
+          onClick={handleRun}
+          disabled={isRunning}
+          className="btn-run"
+          title="Run (Ctrl+Enter)"
+        >
+          &#9654; Run
+        </button>
+        <button
+          onClick={handleStop}
+          disabled={!isRunning}
+          className="btn-stop"
+        >
+          &#9209; Stop
+        </button>
+        <button onClick={handleReset} className="btn-reset">
+          &#8634; Reset
+        </button>
 
-      <div className="sandbox-preview">
-        <div className="flex border-b border-[var(--color-border)]">
+        <div className="sandbox-tabs">
           <button
             onClick={() => setActiveTab('preview')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'preview'
-                ? 'text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]'
-                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
-            }`}
+            className={`sandbox-tab ${activeTab === 'preview' ? 'active' : ''}`}
           >
             Preview
           </button>
           <button
             onClick={() => setActiveTab('console')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'console'
-                ? 'text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]'
-                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
-            }`}
+            className={`sandbox-tab ${activeTab === 'console' ? 'active' : ''}`}
           >
             Console
             {consoleLogs.length > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 text-xs bg-[var(--color-border)] rounded-full">
+              <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[var(--color-border)] rounded-full">
                 {consoleLogs.length}
               </span>
             )}
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 relative">
+        <span className="ml-auto text-xs text-[var(--color-text-secondary)]">
+          {isRunning ? 'Running' : 'Stopped'}
+        </span>
+      </div>
+
+      <div className="sandbox-body">
+        <div className="sandbox-editor">
+          <MonacoEditor
+            value={code}
+            onChange={setCode}
+            language="javascript"
+          />
+        </div>
+
+        <div className="sandbox-preview">
           {activeTab === 'preview' ? (
             <ThreePreview
               code={code}
