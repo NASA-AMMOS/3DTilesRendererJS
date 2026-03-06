@@ -314,6 +314,8 @@ export class QuantizedMeshPlugin {
 		// data is ready for clipping. It's possible that this child data gets to the parse stage
 		// first, otherwise, while the parent is still downloading.
 		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		// Assign the scene value preemptively to ensure it's available for splitting.
+		tile.engineData.scene = result;
 		this.expandChildren( tile );
 
 		return result;
@@ -406,8 +408,11 @@ export class QuantizedMeshPlugin {
 
 				} else {
 
-					tile.children.push( child );
+					// mark the child as "virtual" since it relies on the parent geometry
 					child.content = { uri: `tile.quantized_tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.internal = { isVirtual: true };
+					tile.internal.virtualChildCount ++;
+					tile.children.push( child );
 
 				}
 
@@ -417,7 +422,8 @@ export class QuantizedMeshPlugin {
 
 		if ( ! hasChildren ) {
 
-			tile.children.length = 0;
+			tile.children.length -= tile.internal.virtualChildCount;
+			tile.internal.virtualChildCount = 0;
 
 		}
 
@@ -436,27 +442,31 @@ export class QuantizedMeshPlugin {
 
 	disposeTile( tile ) {
 
+		const { tiles, layer } = this;
+
 		// dispose of the available array since we will get it again if this tile is loaded
-		if ( getTileHasMetadata( tile, this.layer ) ) {
+		if ( getTileHasMetadata( tile, layer ) ) {
 
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
-		// Note: we remove all children always because child tiles can rely on splitting parent tiles
-		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
-		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
-		// we just remove all children and generate them again one the parent is loaded.
-		// Only get rid of the children if this plugin was responsible for them.
+		// Remove virtual children when the parent is disposed since they depend on the parent's
+		// loaded scene for clipping and cannot be rendered or re-generated without it. They will
+		// be re-created once the parent is loaded again.
 		if ( TILE_AVAILABLE in tile ) {
 
-			tile.children.forEach( child => {
+			const { virtualChildCount } = tile.internal;
+			const len = tile.children.length;
+			const start = len - virtualChildCount;
+			for ( let i = start; i < len; i ++ ) {
 
-				// TODO: there should be a reliable way for removing children like this.
-				this.tiles.processNodeQueue.remove( child );
+				tiles.processNodeQueue.remove( tile.children[ i ] );
 
-			} );
-			tile.children.length = 0;
+			}
+
+			tile.children.length -= virtualChildCount;
+			tile.internal.virtualChildCount = 0;
 
 		}
 

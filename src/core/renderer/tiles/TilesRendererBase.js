@@ -812,6 +812,11 @@ export class TilesRendererBase {
 			basePath: tilesetDir,
 			depth: - 1,
 			depthFromRenderedParent: - 1,
+			isVirtual: false,
+			virtualChildCount: 0,
+
+			// preserve any pre-seeded fields
+			...tile.internal,
 		};
 
 		if ( tile.content?.uri ) {
@@ -983,7 +988,7 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
 
 		const children = tile.children;
-		if ( children.length === 0 || children[ 0 ].internal ) {
+		if ( children.length === 0 || children[ 0 ].traversal ) {
 
 			return;
 
@@ -994,7 +999,6 @@ export class TilesRendererBase {
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
 				this.preprocessNode( children[ i ], tile.internal.basePath, tile );
-
 
 			}
 
