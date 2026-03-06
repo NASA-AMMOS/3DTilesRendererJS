@@ -68,10 +68,7 @@
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
-    "prepublishOnly": "npm run build-lib",
-    "docs": "typedoc",
-    "docs:watch": "typedoc --watch",
-    "docs:json": "typedoc --json docs/api.json"
+    "prepublishOnly": "npm run build-lib"
   },
   "repository": {
     "type": "git",
@@ -109,8 +106,6 @@
     "lil-gui": "^0.21.0",
     "postprocessing": "^6.36.4",
     "three": "^0.170.0",
-    "typedoc": "^0.28.17",
-    "typedoc-plugin-markdown": "^4.10.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.48.1",
     "vite": "^6.2.2",
