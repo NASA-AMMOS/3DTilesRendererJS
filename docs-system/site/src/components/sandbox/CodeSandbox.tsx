@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { MonacoEditor } from './MonacoEditor';
-import { ConsolePanel } from './ConsolePanel';
 import { ThreePreview } from './ThreePreview';
 
 interface ConsoleLog {
@@ -17,6 +16,13 @@ interface CodeSandboxProps {
   autoRun?: boolean;
 }
 
+const METHOD_COLORS: Record<string, string> = {
+  log: 'text-gray-300',
+  info: 'text-blue-400',
+  warn: 'text-yellow-400',
+  error: 'text-red-400',
+};
+
 export function CodeSandbox({
   initialCode,
   hasLocalImports,
@@ -27,10 +33,10 @@ export function CodeSandbox({
   const [code, setCode] = useState(initialCode);
   const [isRunning, setIsRunning] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  const [activeTab, setActiveTab] = useState<'preview' | 'console'>('preview');
+  const [consoleOpen, setConsoleOpen] = useState(false);
   const runIdRef = useRef(0);
   const hasAutoRun = useRef(false);
+  const consoleEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setCode(initialCode);
@@ -45,10 +51,15 @@ export function CodeSandbox({
     }
   }, [autoRun, initialCode, hasLocalImports]);
 
+  useEffect(() => {
+    if (consoleOpen && consoleEndRef.current) {
+      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [consoleLogs, consoleOpen]);
+
   const handleRun = useCallback(() => {
     runIdRef.current += 1;
     setConsoleLogs([]);
-    setError(null);
     setIsRunning(true);
   }, []);
 
@@ -59,7 +70,6 @@ export function CodeSandbox({
   const handleReset = useCallback(() => {
     setCode(initialCode);
     setConsoleLogs([]);
-    setError(null);
     setIsRunning(false);
   }, [initialCode]);
 
@@ -68,7 +78,6 @@ export function CodeSandbox({
   }, []);
 
   const handleError = useCallback((err: Error) => {
-    setError(err);
     setConsoleLogs(prev => [
       ...prev,
       { method: 'error', args: [err.message], timestamp: Date.now() }
@@ -82,10 +91,13 @@ export function CodeSandbox({
     }
   }, [handleRun]);
 
+  const errorCount = consoleLogs.filter(l => l.method === 'error').length;
+  const warnCount = consoleLogs.filter(l => l.method === 'warn').length;
+
   return (
     <div className="sandbox-container" onKeyDown={handleKeyDown}>
       {hasLocalImports && (
-        <div className="px-3 py-2 text-xs bg-amber-500/10 text-amber-400 border-b border-amber-500/20 col-span-full">
+        <div className="px-3 py-2 text-xs bg-amber-500/10 text-amber-400 border-b border-amber-500/20">
           This example uses local imports that cannot run in the sandbox.
           {deployedUrl && (
             <>
@@ -122,29 +134,8 @@ export function CodeSandbox({
         <button onClick={handleReset} className="btn-reset">
           &#8634; Reset
         </button>
-
-        <div className="sandbox-tabs">
-          <button
-            onClick={() => setActiveTab('preview')}
-            className={`sandbox-tab ${activeTab === 'preview' ? 'active' : ''}`}
-          >
-            Preview
-          </button>
-          <button
-            onClick={() => setActiveTab('console')}
-            className={`sandbox-tab ${activeTab === 'console' ? 'active' : ''}`}
-          >
-            Console
-            {consoleLogs.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-[var(--color-border)] rounded-full">
-                {consoleLogs.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        <span className="ml-auto text-xs text-[var(--color-text-secondary)]">
-          {isRunning ? 'Running' : 'Stopped'}
+        <span className={`ml-2 text-xs ${isRunning ? 'text-green-400' : 'text-[var(--color-text-secondary)]'}`}>
+          {isRunning ? 'Running' : ''}
         </span>
       </div>
 
@@ -157,8 +148,8 @@ export function CodeSandbox({
           />
         </div>
 
-        <div className="sandbox-preview">
-          {activeTab === 'preview' ? (
+        <div className="sandbox-preview-wrapper">
+          <div className={`sandbox-preview ${consoleOpen ? 'with-console' : ''}`}>
             <ThreePreview
               code={code}
               isRunning={isRunning}
@@ -167,9 +158,75 @@ export function CodeSandbox({
               onError={handleError}
               htmlElements={htmlElements}
             />
-          ) : (
-            <ConsolePanel logs={consoleLogs} error={error} />
-          )}
+          </div>
+
+          <div className={`sandbox-console ${consoleOpen ? 'open' : ''}`}>
+            <div
+              className="sandbox-console-header"
+              onClick={() => setConsoleOpen(!consoleOpen)}
+            >
+              <div className="flex items-center gap-2">
+                <svg
+                  className={`w-3 h-3 transition-transform ${consoleOpen ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+                <span className="font-medium">Console</span>
+                {consoleLogs.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-border)]">
+                    {consoleLogs.length}
+                  </span>
+                )}
+                {errorCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                    {errorCount} error{errorCount > 1 ? 's' : ''}
+                  </span>
+                )}
+                {warnCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
+                    {warnCount} warn{warnCount > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              {consoleOpen && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConsoleLogs([]); }}
+                    className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--color-border)] transition-colors"
+                    title="Clear console"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConsoleOpen(false); }}
+                    className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--color-border)] transition-colors"
+                    title="Minimize"
+                  >
+                    Minimize
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {consoleOpen && (
+              <div className="sandbox-console-body">
+                {consoleLogs.length === 0 ? (
+                  <div className="text-gray-500 italic text-[11px] px-3 py-2">No console output.</div>
+                ) : (
+                  consoleLogs.map((log, i) => (
+                    <div
+                      key={i}
+                      className={`px-3 py-0.5 text-[11px] font-mono border-b border-[#2a2a3a] ${METHOD_COLORS[log.method]}`}
+                    >
+                      {log.args.join(' ')}
+                    </div>
+                  ))
+                )}
+                <div ref={consoleEndRef} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -191,10 +191,56 @@ pre code {
     overflow: hidden;
   }
 
-  .sandbox-preview {
-    background-color: var(--color-bg-secondary);
+  .sandbox-preview-wrapper {
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+  }
+
+  .sandbox-preview {
+    flex: 1;
+    min-height: 0;
     position: relative;
+    overflow: hidden;
+  }
+
+  .sandbox-console {
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-border);
+    background-color: #1a1a2e;
+  }
+
+  .sandbox-console.open {
+    flex-shrink: 1;
+    flex-basis: 50%;
+    max-height: 50%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sandbox-console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6875rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    background-color: #161625;
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .sandbox-console-header:hover {
+    background-color: #1e1e32;
+  }
+
+  .sandbox-console-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 
   .btn-run {
