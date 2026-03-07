@@ -125,12 +125,12 @@ export function ClassDoc({ data, allClassNames = [] }: ClassDocProps) {
             )}
           </div>
           {data.extends && (
-            <div className="text-sm text-[var(--color-text-secondary)] mb-4">
-              extends{' '}
+            <div className="text-sm font-mono mb-4">
+              <span className="text-purple-400/80 italic">extends</span>{' '}
               {allClassNames.includes(data.extends) ? (
                 <Link
                   to={`/api/${data.extends}`}
-                  className="text-[var(--color-primary)] hover:underline font-mono"
+                  className="text-emerald-400 hover:underline hover:text-emerald-300"
                 >
                   {data.extends}
                 </Link>
@@ -139,13 +139,13 @@ export function ClassDoc({ data, allClassNames = [] }: ClassDocProps) {
                   href={getThreeJsDocsUrl(data.extends)!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[var(--color-primary)] hover:underline font-mono"
+                  className="text-emerald-400 hover:underline hover:text-emerald-300"
                   title="View Three.js documentation"
                 >
                   {data.extends}
                 </a>
               ) : (
-                <span className="font-mono">{data.extends}</span>
+                <span className="text-emerald-400/70">{data.extends}</span>
               )}
             </div>
           )}

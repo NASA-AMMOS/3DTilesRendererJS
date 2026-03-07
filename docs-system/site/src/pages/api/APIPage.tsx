@@ -46,12 +46,12 @@ function APIOverview() {
                   {cls.name}
                 </Link>
                 {cls.extends && (
-                  <span className="text-xs text-[var(--color-text-secondary)] ml-2">
-                    extends{' '}
+                  <span className="text-xs ml-2 font-mono">
+                    <span className="text-purple-400/80 italic">extends</span>{' '}
                     {data?.classes.some(c => c.name === cls.extends) ? (
                       <Link
                         to={`/api/${cls.extends}`}
-                        className="text-[var(--color-primary)] hover:underline"
+                        className="text-emerald-400 hover:underline hover:text-emerald-300"
                       >
                         {cls.extends}
                       </Link>
@@ -60,12 +60,12 @@ function APIOverview() {
                         href={getThreeJsDocsUrl(cls.extends)!}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[var(--color-primary)] hover:underline"
+                        className="text-emerald-400 hover:underline hover:text-emerald-300"
                       >
                         {cls.extends}
                       </a>
                     ) : (
-                      <span>{cls.extends}</span>
+                      <span className="text-emerald-400/70">{cls.extends}</span>
                     )}
                   </span>
                 )}
