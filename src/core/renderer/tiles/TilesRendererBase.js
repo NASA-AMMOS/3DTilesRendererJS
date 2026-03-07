@@ -86,6 +86,16 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load internal tile sets first
 		return a.internal.hasUnrenderableContent ? 1 : - 1;
 
+	} else if ( a.traversal.kicked !== b.traversal.kicked ) {
+
+		// kicked means that a tile should be visible but isn't ready yet
+		return a.traversal.kicked ? 1 : - 1;
+
+	} else if ( a.traversal.coverage !== b.traversal.coverage ) {
+
+		// load tiles with less coverage first
+		return a.traversal.coverage < b.traversal.coverage ? 1 : - 1;
+
 	} else if ( a.traversal.distanceFromCamera !== b.traversal.distanceFromCamera ) {
 
 		// load closer tiles first
