@@ -12,6 +12,8 @@ const PARENT_BOUND_REF_COUNT = Symbol( 'PARENT_BOUND_REF_COUNT' );
 const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
 
+const _white = /* @__PURE__ */ new Color( 0xffffff );
+
 const colors = {};
 
 // Return a consistent random color for an index
@@ -28,6 +30,19 @@ function getIndexedRandomColor( index ) {
 	}
 
 	return colors[ index ];
+
+}
+
+// Return white for structural leaf tiles, depth-based color otherwise
+function getBoundHelperColor( tile ) {
+
+	if ( ! tile.children || tile.children.length === 0 ) {
+
+		return _white;
+
+	}
+
+	return getIndexedRandomColor( tile.internal.depth );
 
 }
 
@@ -660,12 +675,12 @@ export class DebugTilesPlugin {
 			boxHelperGroup.matrixAutoUpdate = false;
 			engineData.boxHelperGroup = boxHelperGroup;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
+			const boxHelper = new Box3Helper( obb.box, getBoundHelperColor( tile ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
 			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
-				color: getIndexedRandomColor( tile.internal.depth ),
+				color: getBoundHelperColor( tile ),
 				transparent: true,
 				depthWrite: false,
 				opacity: 0.05,
@@ -688,7 +703,7 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
+			const sphereHelper = new SphereHelper( sphere, getBoundHelperColor( tile ) );
 			sphereHelper.raycast = emptyRaycast;
 			engineData.sphereHelper = sphereHelper;
 
@@ -704,7 +719,7 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getBoundHelperColor( tile ) );
 			regionHelper.raycast = emptyRaycast;
 
 			// recenter the geometry to avoid rendering artifacts
