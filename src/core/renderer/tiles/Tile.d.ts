@@ -11,6 +11,14 @@ export interface TileInternalData {
 	basePath: string;
 	depth: number;
 	depthFromRenderedParent: number;
+	/**
+	 * Whether this tile was synthetically based on loaded parent tile state.
+	 */
+	isVirtual: boolean;
+	/**
+	 * The number of virtual children appended to this tile's children array by plugins.
+	 */
+	virtualChildCount: number;
 }
 
 /**

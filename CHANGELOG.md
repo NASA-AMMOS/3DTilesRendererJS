@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.22] - Unreleased
+## [0.4.22] - 2026-03-06
 ### Added
 - Types for gltf metadata extensions.
+- Event and other types to TilesRendererBase for use in thee.js and Babylon.js.
+- ImageOverlayPlugin: Add support for splitting "ADD" refinement tiles.
+- Babylon TilesRenderer: Added "checkCollisions" option.
 
 ### Fixed
 - LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
@@ -14,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Babylon TilesRenderer: Adjusted imports to support treeshaking.
 - ImageOverlayPlugin: Fix case where removing all overlays does not clear overlay textures correctly.
 - UnloadTilesPlugin: Fix case where the plugin would incorrectly retain tiles references, resulting in a memory leak.
+- OptimizedLoadStrategy Option: Add compatibility for QuantizedMeshPlugin, ImageOverlayPlugin.enableTileSplitting.
 
 ## [0.4.21] - 2026-02-04
 ### Fixed
