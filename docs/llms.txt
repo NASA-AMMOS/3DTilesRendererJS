@@ -1,7 +1,0 @@
-# 3DTilesRendererJS Documentation
-
-> A JavaScript library for rendering 3D Tiles.
-
-## API Documentation
-
-- [WMTSImageSource](pages/pages\WMTSImageSource.html.md)
