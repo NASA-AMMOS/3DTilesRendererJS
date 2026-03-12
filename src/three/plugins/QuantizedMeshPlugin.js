@@ -76,6 +76,39 @@ function getContentUrl( x, y, level, version, layer ) {
 
 }
 
+function collectSceneResources( scene, target ) {
+
+	const { geometry, materials, textures } = target;
+	scene.traverse( c => {
+
+		if ( c.geometry ) {
+
+			geometry.push( c.geometry );
+
+		}
+
+		if ( c.material ) {
+
+			const material = c.material;
+			materials.push( material );
+
+			for ( const key in material ) {
+
+				const value = material[ key ];
+				if ( value && value.isTexture ) {
+
+					textures.push( value );
+
+				}
+
+			}
+
+		}
+
+	} );
+
+}
+
 export class QuantizedMeshPlugin {
 
 	constructor( options = {} ) {
@@ -315,6 +348,10 @@ export class QuantizedMeshPlugin {
 		// first, otherwise, while the parent is still downloading.
 		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
 		// Assign the scene value preemptively to ensure it's available for splitting.
+		tile.engineData.geometry = [];
+		tile.engineData.materials = [];
+		tile.engineData.textures = [];
+		collectSceneResources( result, tile.engineData );
 		tile.engineData.scene = result;
 		this.expandChildren( tile );
 

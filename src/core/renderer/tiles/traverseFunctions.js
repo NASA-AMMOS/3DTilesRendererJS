@@ -33,8 +33,18 @@ function isProcessed( tile ) {
 
 function areChildrenProcessed( tile ) {
 
-	// all children are processed at once
-	return tile.children.length === 0 || isProcessed( tile.children[ 0 ] );
+	const children = tile.children;
+	for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+		if ( ! isProcessed( children[ i ] ) ) {
+
+			return false;
+
+		}
+
+	}
+
+	return true;
 
 }
 

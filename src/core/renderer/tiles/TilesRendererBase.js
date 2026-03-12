@@ -988,7 +988,25 @@ export class TilesRendererBase {
 	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
 
 		const children = tile.children;
-		if ( children.length === 0 || children[ 0 ].traversal ) {
+		if ( children.length === 0 ) {
+
+			return;
+
+		}
+
+		let childrenNeedProcessing = false;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			if ( children[ i ] && ! children[ i ].traversal ) {
+
+				childrenNeedProcessing = true;
+				break;
+
+			}
+
+		}
+
+		if ( ! childrenNeedProcessing ) {
 
 			return;
 
@@ -998,7 +1016,12 @@ export class TilesRendererBase {
 
 			for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-				this.preprocessNode( children[ i ], tile.internal.basePath, tile );
+				const child = children[ i ];
+				if ( child && ! child.traversal ) {
+
+					this.preprocessNode( child, tile.internal.basePath, tile );
+
+				}
 
 			}
 
