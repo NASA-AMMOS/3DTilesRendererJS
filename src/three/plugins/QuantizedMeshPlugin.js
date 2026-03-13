@@ -254,6 +254,9 @@ export class QuantizedMeshPlugin {
 			clipper.minLon = west;
 			clipper.maxLon = east;
 
+			// There is a short async gap between the parent tile finishing parse and TilesRenderer
+			// assigning engineData.scene. Split children can be processed during that gap, so keep a
+			// temporary reference to the parsed parent scene for clipping.
 			const scene = tile.parent.engineData.scene || tile.parent[ TILE_SPLIT_SOURCE_SCENE ];
 			result = clipper.clipToQuadrant( scene, left, bottom );
 
@@ -312,6 +315,9 @@ export class QuantizedMeshPlugin {
 
 		}
 
+		// Store the parsed scene separately until TilesRenderer finishes registering the tile model.
+		// Because parseTile is async, split children may be processed before the parent scene has
+		// been assigned on engineData and still need access to the parsed parent scene for clipping.
 		tile[ TILE_SPLIT_SOURCE_SCENE ] = result;
 		this.expandChildren( tile );
 
