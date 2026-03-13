@@ -34,17 +34,7 @@ function isProcessed( tile ) {
 function areChildrenProcessed( tile ) {
 
 	const children = tile.children;
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-		if ( ! isProcessed( children[ i ] ) ) {
-
-			return false;
-
-		}
-
-	}
-
-	return true;
+	return children.length === 0 || isProcessed( children[ children.length - 1 ] );
 
 }
 

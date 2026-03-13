@@ -8,6 +8,7 @@ const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
+const TILE_SPLIT_SOURCE_SCENE = Symbol( 'TILE_SPLIT_SOURCE_SCENE' );
 
 // We don't know the height ranges for the tileset on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
@@ -73,39 +74,6 @@ function getContentUrl( x, y, level, version, layer ) {
 		.replace( /{\s*x\s*}/g, x )
 		.replace( /{\s*y\s*}/g, y )
 		.replace( /{\s*version\s*}/g, version );
-
-}
-
-function collectSceneResources( scene, target ) {
-
-	const { geometry, materials, textures } = target;
-	scene.traverse( c => {
-
-		if ( c.geometry ) {
-
-			geometry.push( c.geometry );
-
-		}
-
-		if ( c.material ) {
-
-			const material = c.material;
-			materials.push( material );
-
-			for ( const key in material ) {
-
-				const value = material[ key ];
-				if ( value && value.isTexture ) {
-
-					textures.push( value );
-
-				}
-
-			}
-
-		}
-
-	} );
 
 }
 
@@ -286,7 +254,8 @@ export class QuantizedMeshPlugin {
 			clipper.minLon = west;
 			clipper.maxLon = east;
 
-			result = clipper.clipToQuadrant( tile.parent.engineData.scene, left, bottom );
+			const scene = tile.parent.engineData.scene || tile.parent[ TILE_SPLIT_SOURCE_SCENE ];
+			result = clipper.clipToQuadrant( scene, left, bottom );
 
 		} else if ( extension === 'terrain' ) {
 
@@ -343,16 +312,7 @@ export class QuantizedMeshPlugin {
 
 		}
 
-		// NOTE: we expand children only once the parent mesh data is loaded to ensure the mesh
-		// data is ready for clipping. It's possible that this child data gets to the parse stage
-		// first, otherwise, while the parent is still downloading.
-		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
-		// Assign the scene value preemptively to ensure it's available for splitting.
-		tile.engineData.geometry = [];
-		tile.engineData.materials = [];
-		tile.engineData.textures = [];
-		collectSceneResources( result, tile.engineData );
-		tile.engineData.scene = result;
+		tile[ TILE_SPLIT_SOURCE_SCENE ] = result;
 		this.expandChildren( tile );
 
 		return result;
@@ -480,6 +440,7 @@ export class QuantizedMeshPlugin {
 	disposeTile( tile ) {
 
 		const { tiles, layer } = this;
+		delete tile[ TILE_SPLIT_SOURCE_SCENE ];
 
 		// dispose of the available array since we will get it again if this tile is loaded
 		if ( getTileHasMetadata( tile, layer ) ) {
@@ -502,7 +463,7 @@ export class QuantizedMeshPlugin {
 
 			}
 
-			tile.children.length -= virtualChildCount;
+			tile.children.length = 0;
 			tile.internal.virtualChildCount = 0;
 
 		}

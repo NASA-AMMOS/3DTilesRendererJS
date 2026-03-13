@@ -994,19 +994,7 @@ export class TilesRendererBase {
 
 		}
 
-		let childrenNeedProcessing = false;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			if ( children[ i ] && ! children[ i ].traversal ) {
-
-				childrenNeedProcessing = true;
-				break;
-
-			}
-
-		}
-
-		if ( ! childrenNeedProcessing ) {
+		if ( children.length === 0 || children[ children.length - 1 ].traversal ) {
 
 			return;
 

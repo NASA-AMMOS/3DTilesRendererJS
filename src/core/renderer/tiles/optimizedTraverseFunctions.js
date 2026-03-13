@@ -31,17 +31,7 @@ function isProcessed( tile ) {
 function areChildrenProcessed( tile ) {
 
 	const { children } = tile;
-	let childrenReady = true;
-	for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-		if ( ! isProcessed( children[ i ] ) ) {
-
-			childrenReady = false;
-			break;
-
-		}
-
-	}
+	const childrenReady = children.length === 0 || isProcessed( children[ children.length - 1 ] );
 
 	const contentReady = ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState );
 	return childrenReady && contentReady;
