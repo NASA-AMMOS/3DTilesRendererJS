@@ -1,98 +1,160 @@
-import { TiledImageSource } from './TiledImageSource.js';
+import { TiledImageSource } from '../sources/TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
+import { MathUtils } from 'three';
 
-function isCRS84( crs ) {
+/**
+ * @typedef {Object} WMTSTileMatrix
+ * @property {string} identifier - TileMatrix identifier (e.g., 'Level0', 'EPSG:3857:0').
+ * @property {number} matrixWidth - Number of tile columns at this level.
+ * @property {number} matrixHeight - Number of tile rows at this level.
+ * @property {number} [tileWidth] - Tile width in pixels (defaults to tileDimension).
+ * @property {number} [tileHeight] - Tile height in pixels (defaults to tileDimension).
+ */
 
-	return /(:84|:crs84)$/i.test( crs );
+/**
+ * @typedef {Object} WMTSImageSourceOptions
+ * @property {string} url - WMTS service URL. For KVP mode, this is the base endpoint.
+ *   For RESTful mode, include template variables: `{TileMatrixSet}`, `{TileMatrix}`,
+ *   `{TileRow}`, `{TileCol}`, `{Style}`, `{s}`.
+ * @property {string} layer - WMTS layer identifier.
+ * @property {string} tileMatrixSet - TileMatrixSet identifier (e.g., 'GoogleMapsCompatible', 'EPSG:3857').
+ * @property {string} [style='default'] - Style identifier.
+ * @property {string} [format='image/jpeg'] - Output image format (e.g., 'image/png', 'image/jpeg').
+ * @property {Object<string, string>|null} [dimensions=null] - WMTS dimension values
+ *   (e.g., `{ TIME: '2024-01-01' }`). Used in both KVP and RESTful modes.
+ * @property {string[]|null} [tileMatrixLabels=null] - Custom TileMatrix identifiers per level
+ *   (Tier 2). If provided, these labels replace numeric level indices in requests.
+ * @property {WMTSTileMatrix[]|null} [tileMatrices=null] - Explicit per-level tile matrix definitions
+ *   (Tier 3). When provided, `levels` and `tileMatrixLabels` are ignored.
+ * @property {string|null} [projection=null] - Projection identifier ('EPSG:3857' or 'EPSG:4326').
+ *   Defaults to 'EPSG:3857' if not specified.
+ * @property {number} [levels=20] - Number of zoom levels (Tier 1 & 2). Ignored if `tileMatrices` is provided.
+ * @property {number} [tileDimension=256] - Default tile width and height in pixels.
+ * @property {string|string[]} [subdomains='abc'] - Subdomains for `{s}` placeholder rotation.
+ *   Can be a string (each character is a subdomain) or an array of strings.
+ * @property {number[]|null} [contentBoundingBox=null] - Content bounding box in degrees
+ *   `[west, south, east, north]`. If null, uses full projection bounds.
+ */
 
-}
-
+/**
+ * Redesigned WMTS (Web Map Tile Service) image source.
+ *
+ * All configuration is via literal values -- no capabilities dependency,
+ * following Cesium's WebMapTileServiceImageryProvider pattern.
+ *
+ * Three tiers of configuration complexity:
+ *
+ * Tier 1 - Standard grid (~80% of services):
+ *   Just `url`, `layer`, `tileMatrixSet`, `projection`, and optionally `levels`.
+ *   Assumes standard power-of-two doubling grid.
+ *
+ * Tier 2 - Standard grid with custom labels (~15%):
+ *   Adds `tileMatrixLabels` (string[]) to map zoom levels to non-numeric
+ *   TileMatrix identifiers (e.g., 'EPSG:3857:0', 'EPSG:3857:1', ...).
+ *
+ * Tier 3 - Non-standard grid (~5%):
+ *   Uses explicit `tileMatrices` array with per-level definitions including
+ *   `identifier`, `matrixWidth`, `matrixHeight`, and optional `tileWidth`/`tileHeight`.
+ *   When provided, `levels` and `tileMatrixLabels` are ignored.
+ *
+ * Supports both KVP and RESTful request modes with automatic detection.
+ * If the URL contains template variables (besides `{s}`), RESTful mode is used;
+ * otherwise KVP query parameters are appended.
+ *
+ * Note: `contentBoundingBox` is specified in degrees `[west, south, east, north]`
+ * and converted to radians internally.
+ *
+ * @extends TiledImageSource
+ */
 export class WMTSImageSource extends TiledImageSource {
 
+	/**
+	 * @param {WMTSImageSourceOptions} options - Configuration options.
+	 */
 	constructor( options = {} ) {
 
 		const {
-			capabilities = null,
 			layer = null,
 			tileMatrixSet = null,
-			style = null,
+			style = 'default',
 			url = null,
-			dimensions = {},
+			format = 'image/jpeg',
+			dimensions = null,
+			tileMatrixLabels = null,
+			tileMatrices = null,
+			projection = null,
+			levels = 20,
+			tileDimension = 256,
+			subdomains = 'abc',
+			contentBoundingBox = null,
 			...rest
 		} = options;
 
 		super( rest );
 
-		this.capabilities = capabilities;
 		this.layer = layer;
 		this.tileMatrixSet = tileMatrixSet;
 		this.style = style;
-		this.dimensions = dimensions;
 		this.url = url;
+		this.format = format;
+		this.dimensions = dimensions;
+		this.tileMatrixLabels = tileMatrixLabels;
+		this.tileMatrices = tileMatrices;
+		this.projection = projection;
+		this.levels = levels;
+		this.tileDimension = tileDimension;
+		this.subdomains = Array.isArray( subdomains ) ? subdomains.slice() : subdomains.split( '' );
+		this.contentBoundingBox = contentBoundingBox;
+
+		this._useKvp = false;
 
 	}
 
-	getUrl( x, y, level ) {
+	/**
+	 * Detects whether the URL uses KVP or RESTful mode.
+	 * If the URL contains no template variables (or only `{s}` for subdomains),
+	 * it is considered a KVP endpoint.
+	 */
+	_detectRequestMode( url ) {
 
-		return this.url
-			.replace( /{\s*TileMatrix\s*}/gi, level )
-			.replace( /{\s*TileCol\s*}/gi, x )
-			.replace( /{\s*TileRow\s*}/gi, y );
+		const bracketMatch = url.match( /\{/g );
+		if ( ! bracketMatch || ( bracketMatch.length === 1 && /\{s\}/.test( url ) ) ) {
+
+			return true; // KVP
+
+		}
+
+		return false; // RESTful
 
 	}
 
 	init() {
 
-		const { tiling, dimensions, capabilities } = this;
-		let { layer, tileMatrixSet, style, url } = this;
+		const {
+			tiling, tileDimension, levels, dimensions, contentBoundingBox,
+			tileMatrices,
+		} = this;
+		let { url, style, tileMatrixSet } = this;
 
-		// extract the layer to use
-		if ( ! layer ) {
+		const tileMatrixSetId = typeof tileMatrixSet === 'string' ? tileMatrixSet : 'default';
+		const resolvedStyle = style || 'default';
 
-			layer = capabilities.layers[ 0 ];
+		// Determine projection
+		const projectionScheme = this.projection || 'EPSG:3857';
 
-		} else if ( typeof layer === 'string' ) {
-
-			layer = capabilities.layers.find( l => l.identifier === layer );
-
-		}
-
-		// extract the tile matrix set
-		if ( ! tileMatrixSet ) {
-
-			tileMatrixSet = layer.tileMatrixSets[ 0 ];
-
-		} else if ( typeof tileMatrixSet === 'string' ) {
-
-			tileMatrixSet = layer.tileMatrixSets.find( tms => tms.identifier === tileMatrixSet );
-
-		}
-
-		// extract the style
-		if ( ! style ) {
-
-			style = layer.styles.find( style => style.isDefault ).identifier;
-
-		}
-
-		// extract the url template
-		if ( ! url ) {
-
-			url = layer.resourceUrls[ 0 ].template;
-
-		}
-
-		// determine the projection
-		const supportedCRS = tileMatrixSet.supportedCRS;
-		const projection = ( supportedCRS.includes( '4326' ) || isCRS84( supportedCRS ) ) ? 'EPSG:4326' : 'EPSG:3857';
-
-		// generate the tiling scheme
+		// Setup tiling
 		tiling.flipY = true;
-		tiling.setProjection( new ProjectionScheme( projection ) );
+		tiling.setProjection( new ProjectionScheme( projectionScheme ) );
 
-		if ( layer.boundingBox !== null ) {
+		if ( contentBoundingBox !== null ) {
 
-			tiling.setContentBounds( ...layer.boundingBox.bounds );
+			// contentBoundingBox is in degrees [west, south, east, north]; convert to radians
+			tiling.setContentBounds(
+				contentBoundingBox[ 0 ] * MathUtils.DEG2RAD,
+				contentBoundingBox[ 1 ] * MathUtils.DEG2RAD,
+				contentBoundingBox[ 2 ] * MathUtils.DEG2RAD,
+				contentBoundingBox[ 3 ] * MathUtils.DEG2RAD,
+			);
 
 		} else {
 
@@ -100,44 +162,180 @@ export class WMTSImageSource extends TiledImageSource {
 
 		}
 
-		tileMatrixSet.tileMatrices.forEach( ( tm, i ) => {
+		// Tiered initialization
+		if ( tileMatrices !== null && tileMatrices.length > 0 ) {
 
-			// TODO: needs to set tileCountX from matrix width?
-			// TODO: How does bounds and tile count work together here?
-			// Can one typically be generated from the other?
+			// Tier 3: Explicit per-level tile matrix definitions.
+			// Auto-compute tileBounds for levels where the tile grid extends beyond
+			// the content bounds (common for EPSG:4326 services like NASA GIBS).
+			const projection = tiling.projection;
+			const refIdx = tileMatrices.length - 1;
+			const refTm = tileMatrices[ refIdx ];
+			const refTw = refTm.tileWidth || tileDimension;
+			const refTh = refTm.tileHeight || tileDimension;
+			const refPixelW = refTw * refTm.matrixWidth;
+			const refPixelH = refTh * refTm.matrixHeight;
 
-			const { tileWidth, tileHeight, matrixWidth, matrixHeight } = tm;
-			tiling.setLevel( i, {
-				tilePixelWidth: tileWidth,
-				tilePixelHeight: tileHeight,
-				tileCountX: matrixWidth || tiling.projection.tileCountX * 2 ** i,
-				tileCountY: matrixHeight || tiling.projection.tileCountY * 2 ** i,
-				tileBounds: tm.bounds,
+			tileMatrices.forEach( ( tm, i ) => {
+
+				const tw = tm.tileWidth || tileDimension;
+				const th = tm.tileHeight || tileDimension;
+
+				const scaleFactor = 2 ** ( refIdx - i );
+				const normW = tw * tm.matrixWidth * scaleFactor / refPixelW;
+				const normH = th * tm.matrixHeight * scaleFactor / refPixelH;
+
+				let tileBounds = null;
+				if ( Math.abs( normW - 1 ) > 1e-6 || Math.abs( normH - 1 ) > 1e-6 ) {
+
+					tileBounds = projection.toCartographicRange( [
+						0, 1 - normH,
+						normW, 1,
+					] );
+
+				}
+
+				tiling.setLevel( i, {
+					tilePixelWidth: tw,
+					tilePixelHeight: th,
+					tileCountX: tm.matrixWidth,
+					tileCountY: tm.matrixHeight,
+					tileBounds,
+				} );
+
 			} );
 
-		} );
+		} else {
 
-		// construct the url
-		url = url
-			.replace( /{\s*TileMatrixSet\s*}/g, tileMatrixSet.identifier )
-			.replace( /{\s*Style\s*}/g, style );
-
-		// fill in the dimension values
-		for ( const key in dimensions ) {
-
-			url = url.replace( new RegExp( `{\\s*${ key }\\s*}` ), dimensions[ key ] );
+			// Tier 1 & 2: Standard power-of-two doubling grid
+			tiling.generateLevels(
+				levels,
+				tiling.projection.tileCountX,
+				tiling.projection.tileCountY,
+				{
+					tilePixelWidth: tileDimension,
+					tilePixelHeight: tileDimension,
+				},
+			);
 
 		}
 
-		layer.dimensions.forEach( dim => {
+		// Detect request mode
+		this._useKvp = this._detectRequestMode( url );
 
-			url = url.replace( new RegExp( `{\\s*${ dim.identifier }\\s*}` ), dim.defaultValue );
+		if ( ! this._useKvp ) {
 
-		} );
+			// RESTful: pre-fill static template values
+			url = url
+				.replace( /{\s*TileMatrixSet\s*}/gi, tileMatrixSetId )
+				.replace( /{\s*Style\s*}/gi, resolvedStyle );
+
+			if ( dimensions ) {
+
+				for ( const key in dimensions ) {
+
+					url = url.replace( new RegExp( `{\\s*${ key }\\s*}`, 'gi' ), dimensions[ key ] );
+
+				}
+
+			}
+
+		}
 
 		this.url = url;
 
 		return Promise.resolve();
+
+	}
+
+	getUrl( x, y, level ) {
+
+		const { tileMatrices, tileMatrixLabels } = this;
+
+		// Determine the TileMatrix identifier for this level (tier priority: 3 > 2 > 1)
+		let tileMatrix;
+		if ( tileMatrices !== null && tileMatrices.length > 0 ) {
+
+			tileMatrix = tileMatrices[ level ].identifier;
+
+		} else if ( tileMatrixLabels ) {
+
+			tileMatrix = tileMatrixLabels[ level ];
+
+		} else {
+
+			tileMatrix = level.toString();
+
+		}
+
+		if ( this._useKvp ) {
+
+			return this._buildKvpUrl( x, y, tileMatrix, level );
+
+		}
+
+		return this._buildRestfulUrl( x, y, tileMatrix, level );
+
+	}
+
+	_buildRestfulUrl( x, y, tileMatrix, level ) {
+
+		const { subdomains } = this;
+		let url = this.url;
+
+		url = url
+			.replace( /{\s*TileMatrix\s*}/gi, tileMatrix )
+			.replace( /{\s*TileCol\s*}/gi, x )
+			.replace( /{\s*TileRow\s*}/gi, y );
+
+		if ( subdomains.length > 0 ) {
+
+			const index = ( x + y + level ) % subdomains.length;
+			url = url.replace( /{\s*s\s*}/gi, subdomains[ index ] );
+
+		}
+
+		return url;
+
+	}
+
+	_buildKvpUrl( x, y, tileMatrix, level ) {
+
+		const { subdomains, dimensions, format } = this;
+		let baseUrl = this.url;
+
+		if ( subdomains.length > 0 ) {
+
+			const index = ( x + y + level ) % subdomains.length;
+			baseUrl = baseUrl.replace( /{\s*s\s*}/gi, subdomains[ index ] );
+
+		}
+
+		const params = new URLSearchParams( {
+			SERVICE: 'WMTS',
+			VERSION: '1.0.0',
+			REQUEST: 'GetTile',
+			LAYER: this.layer,
+			STYLE: this.style || 'default',
+			TILEMATRIXSET: this.tileMatrixSet || 'default',
+			TILEMATRIX: tileMatrix,
+			TILEROW: y,
+			TILECOL: x,
+			FORMAT: format,
+		} );
+
+		if ( dimensions ) {
+
+			for ( const key in dimensions ) {
+
+				params.set( key, dimensions[ key ] );
+
+			}
+
+		}
+
+		const separator = baseUrl.includes( '?' ) ? '&' : '?';
+		return baseUrl + separator + params.toString();
 
 	}
 
