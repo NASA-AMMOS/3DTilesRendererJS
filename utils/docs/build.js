@@ -22,6 +22,7 @@ const ENTRY_POINTS = [
 		title: '3d-tiles-renderer/core',
 		sources: [
 			'src/core/renderer/loaders',
+			'src/core/renderer/utilities',
 		],
 	},
 	// {
@@ -66,7 +67,8 @@ for ( const ep of ENTRY_POINTS ) {
 		d.undocumented !== true &&
 		d.kind !== 'package' &&
 		d.access !== 'private' &&
-		d.inherited !== true
+		d.inherited !== true &&
+		d.deprecated !== true
 	);
 
 	// Sort classes so base classes appear before subclasses

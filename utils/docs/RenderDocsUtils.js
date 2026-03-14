@@ -166,11 +166,14 @@ export function renderClass( classDoc, members ) {
 	}
 
 	const visible = members.filter( m => m.access !== 'private' );
+	// Treat function doclets that carry an explicit @type tag as properties
+	// (e.g. arrow-function assignments like `this.schedulingCallback = func => ...`)
+	const isProperty = m => m.kind === 'member' || ( m.kind === 'function' && m.type );
 	const properties = visible
-		.filter( m => m.kind === 'member' )
+		.filter( isProperty )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
 	const methods = visible
-		.filter( m => m.kind === 'function' )
+		.filter( m => m.kind === 'function' && ! m.type )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
 
 	for ( const member of properties ) {
