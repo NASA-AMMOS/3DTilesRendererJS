@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { renderClass } from './RenderDocsUtils.js';
+import { renderClass, renderTypedef } from './RenderDocsUtils.js';
 
 const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
 const rootDir = path.resolve( __dirname, '../..' );
@@ -21,8 +21,7 @@ const ENTRY_POINTS = [
 		output: 'src/core/renderer/API_TEST.md',
 		title: '3d-tiles-renderer/core',
 		sources: [
-			'src/core/renderer/loaders',
-			'src/core/renderer/utilities',
+			'src/core/renderer',
 		],
 	},
 	// {
@@ -46,7 +45,7 @@ function runJsDoc( sources ) {
 
 	const args = sources.map( s => `"${s}"` ).join( ' ' );
 	const result = execSync(
-		`npx jsdoc -X ${args}`,
+		`npx jsdoc -X -r ${args}`,
 		{ cwd: rootDir }
 	).toString();
 	return JSON.parse( result );
@@ -83,6 +82,20 @@ for ( const ep of ENTRY_POINTS ) {
 			return a.name.localeCompare( b.name );
 
 		} );
+
+	// Sort typedefs so plain-object bases appear before derived types
+	const typedefs = documented
+		.filter( d => d.kind === 'typedef' )
+		.sort( ( a, b ) => {
+
+			const aIsBase = ! a.type || a.type.names[ 0 ] === 'Object';
+			const bIsBase = ! b.type || b.type.names[ 0 ] === 'Object';
+			if ( aIsBase && ! bIsBase ) return - 1;
+			if ( ! aIsBase && bIsBase ) return 1;
+			return a.name.localeCompare( b.name );
+
+		} );
+
 	const membersByClass = {};
 	for ( const doc of documented ) {
 
@@ -100,6 +113,12 @@ for ( const ep of ENTRY_POINTS ) {
 	for ( const cls of classes ) {
 
 		sections.push( renderClass( cls, membersByClass[ cls.name ] || [] ) );
+
+	}
+
+	for ( const typedef of typedefs ) {
+
+		sections.push( renderTypedef( typedef ) );
 
 	}
 

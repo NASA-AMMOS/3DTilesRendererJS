@@ -144,6 +144,53 @@ export function renderMethod( doc ) {
 
 }
 
+export function renderTypedef( typeDoc ) {
+
+	const lines = [];
+
+	lines.push( `## ${typeDoc.name}` );
+	lines.push( '' );
+
+	// If the typedef's base type is not plain Object, treat it as an extension
+	const baseType = typeDoc.type && typeDoc.type.names && typeDoc.type.names[ 0 ];
+	if ( baseType && baseType !== 'Object' ) {
+
+		lines.push( `_extends \`${baseType}\`_` );
+		lines.push( '' );
+
+	}
+
+	if ( typeDoc.description ) {
+
+		lines.push( typeDoc.description );
+		lines.push( '' );
+
+	}
+
+	for ( const prop of ( typeDoc.properties || [] ) ) {
+
+		const type = formatType( prop.type );
+		const optional = prop.optional ? '?' : '';
+		lines.push( `### .${prop.name}` );
+		lines.push( '' );
+		lines.push( '```js' );
+		lines.push( `${prop.name}${optional}: ${type}` );
+		lines.push( '```' );
+		lines.push( '' );
+
+		if ( prop.description ) {
+
+			lines.push( prop.description );
+			lines.push( '' );
+
+		}
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
 export function renderClass( classDoc, members ) {
 
 	const lines = [];
