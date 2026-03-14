@@ -7,8 +7,8 @@ import { renderClass } from './RenderDocsUtils.js';
 const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
 const rootDir = path.resolve( __dirname, '../..' );
 
-// Entry point definitions — source files to scan and where to write output.
-// Add source files here as JSDoc comments are added to each entry point.
+// Entry point definitions — directories (or individual files) to scan and where to write output.
+// JSDoc will process all .js files found in each listed directory.
 const ENTRY_POINTS = [
 	{
 		output: 'src/three/plugins/API_TEST.md',
@@ -17,12 +17,13 @@ const ENTRY_POINTS = [
 			'src/three/plugins/images/sources/WMTSImageSource.js',
 		],
 	},
-	// Uncomment and populate as JSDoc coverage grows:
-	// {
-	// 	output: 'src/core/renderer/API_TEST.md',
-	// 	title: '3d-tiles-renderer/core',
-	// 	sources: [],
-	// },
+	{
+		output: 'src/core/renderer/API_TEST.md',
+		title: '3d-tiles-renderer/core',
+		sources: [
+			'src/core/renderer/loaders',
+		],
+	},
 	// {
 	// 	output: 'src/three/renderer/API_TEST.md',
 	// 	title: '3d-tiles-renderer/three',
@@ -64,10 +65,22 @@ for ( const ep of ENTRY_POINTS ) {
 	const documented = json.filter( d =>
 		d.undocumented !== true &&
 		d.kind !== 'package' &&
-		d.access !== 'private'
+		d.access !== 'private' &&
+		d.inherited !== true
 	);
 
-	const classes = documented.filter( d => d.kind === 'class' );
+	// Sort classes so base classes appear before subclasses
+	const classes = documented
+		.filter( d => d.kind === 'class' )
+		.sort( ( a, b ) => {
+
+			const aIsBase = ! a.augments || a.augments.length === 0;
+			const bIsBase = ! b.augments || b.augments.length === 0;
+			if ( aIsBase && ! bIsBase ) return - 1;
+			if ( ! aIsBase && bIsBase ) return 1;
+			return a.name.localeCompare( b.name );
+
+		} );
 	const membersByClass = {};
 	for ( const doc of documented ) {
 
