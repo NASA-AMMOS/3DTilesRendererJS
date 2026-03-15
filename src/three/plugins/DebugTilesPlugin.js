@@ -43,6 +43,7 @@ const RANDOM_COLOR = 7;
 const RANDOM_NODE_COLOR = 8;
 const CUSTOM_COLOR = 9;
 const LOAD_ORDER = 10;
+const INDEXED_COLOR = 11;
 
 const ColorModes = Object.freeze( {
 	NONE,
@@ -111,12 +112,7 @@ export class DebugTilesPlugin {
 		if ( v !== this._boundsColorMode ) {
 
 			this._boundsColorMode = v;
-
-			if ( v === NONE ) {
-
-				this._resetBoundsColors();
-
-			}
+			this.materialsNeedUpdate = true;
 
 		}
 
@@ -598,6 +594,15 @@ export class DebugTilesPlugin {
 
 				}
 
+				case INDEXED_COLOR: {
+
+					child.material.color.copy( getIndexedRandomColor( tile.internal.depth ) );
+					delete child.material[ HAS_RANDOM_COLOR ];
+					delete child.material[ HAS_RANDOM_NODE_COLOR ];
+					break;
+
+				}
+
 			}
 
 		};
@@ -638,18 +643,26 @@ export class DebugTilesPlugin {
 		} );
 
 		// update bounds helper colors
-		if ( boundsColorMode !== NONE ) {
+		const effectiveBoundsColorMode = boundsColorMode === NONE ? INDEXED_COLOR : boundsColorMode;
+		const groups = [ this.boxGroup, this.sphereGroup, this.regionGroup ];
+		for ( const group of groups ) {
 
-			const groups = [ this.boxGroup, this.sphereGroup, this.regionGroup ];
-			for ( const group of groups ) {
+			for ( const helper of group.children ) {
 
-				for ( const helper of group.children ) {
+				const tile = helper.userData.tile;
 
-					const tile = helper.userData.tile;
-					if ( ! tile ) continue;
+				let h, s, l;
+				if ( effectiveBoundsColorMode === RANDOM_COLOR ) {
 
-					let h, s, l;
-					if ( boundsColorMode === RANDOM_COLOR ) {
+					h = Math.random();
+					s = 0.5 + Math.random() * 0.5;
+					l = 0.375 + Math.random() * 0.25;
+
+				}
+
+				helper.traverse( c => {
+
+					if ( effectiveBoundsColorMode === RANDOM_NODE_COLOR ) {
 
 						h = Math.random();
 						s = 0.5 + Math.random() * 0.5;
@@ -657,56 +670,9 @@ export class DebugTilesPlugin {
 
 					}
 
-					helper.traverse( c => {
-
-						if ( boundsColorMode === RANDOM_NODE_COLOR ) {
-
-							h = Math.random();
-							s = 0.5 + Math.random() * 0.5;
-							l = 0.375 + Math.random() * 0.25;
-
-						}
-
-						if ( c.material ) {
-
-							applyColor( boundsColorMode, tile, c, h, s, l );
-
-						}
-
-					} );
-
-				}
-
-			}
-
-		}
-
-	}
-
-	_resetBoundsColors() {
-
-		if ( ! this.boxGroup ) {
-
-			return;
-
-		}
-
-		const groups = [ this.boxGroup, this.sphereGroup, this.regionGroup ];
-		for ( const group of groups ) {
-
-			for ( const helper of group.children ) {
-
-				const tile = helper.userData.tile;
-				if ( ! tile ) continue;
-
-				const defaultColor = getIndexedRandomColor( tile.internal.depth );
-				helper.traverse( c => {
-
 					if ( c.material ) {
 
-						c.material.color.copy( defaultColor );
-						delete c.material[ HAS_RANDOM_COLOR ];
-						delete c.material[ HAS_RANDOM_NODE_COLOR ];
+						applyColor( effectiveBoundsColorMode, tile, c, h, s, l );
 
 					}
 
