@@ -144,6 +144,38 @@ export function renderMethod( doc ) {
 
 }
 
+export function renderConstants( constants ) {
+
+	if ( constants.length === 0 ) return '';
+
+	const lines = [];
+
+	lines.push( '## Constants' );
+	lines.push( '' );
+
+	for ( const c of constants ) {
+
+		const type = formatType( c.type ) || 'number';
+		lines.push( `### ${c.name}` );
+		lines.push( '' );
+		lines.push( '```js' );
+		lines.push( `${c.name}: ${type}` );
+		lines.push( '```' );
+		lines.push( '' );
+
+		if ( c.description ) {
+
+			lines.push( c.description );
+			lines.push( '' );
+
+		}
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
 export function renderTypedef( typeDoc ) {
 
 	const lines = [];

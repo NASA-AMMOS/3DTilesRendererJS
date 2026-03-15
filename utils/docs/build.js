@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { renderClass, renderTypedef } from './RenderDocsUtils.js';
+import { renderClass, renderTypedef, renderConstants } from './RenderDocsUtils.js';
 
 const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
 const rootDir = path.resolve( __dirname, '../..' );
@@ -67,7 +67,7 @@ for ( const ep of ENTRY_POINTS ) {
 		d.kind !== 'package' &&
 		d.access !== 'private' &&
 		d.inherited !== true &&
-		d.deprecated !== true
+		! d.deprecated
 	);
 
 	// Sort classes so base classes appear before subclasses
@@ -96,6 +96,11 @@ for ( const ep of ENTRY_POINTS ) {
 
 		} );
 
+	// Sort constants by source line order
+	const constants = documented
+		.filter( d => d.kind === 'constant' && ! d.memberof )
+		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+
 	const membersByClass = {};
 	for ( const doc of documented ) {
 
@@ -109,6 +114,9 @@ for ( const ep of ENTRY_POINTS ) {
 	}
 
 	const sections = [ `# ${ep.title}`, '' ];
+
+	const constantsSection = renderConstants( constants );
+	if ( constantsSection ) sections.push( constantsSection );
 
 	for ( const cls of classes ) {
 
