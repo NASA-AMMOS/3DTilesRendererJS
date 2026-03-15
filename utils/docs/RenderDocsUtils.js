@@ -1,3 +1,10 @@
+// Converts a heading name to its GitHub Markdown anchor id.
+export function toAnchor( name ) {
+
+	return name.toLowerCase().replace( /[^a-z0-9]+/g, '' );
+
+}
+
 // Formats a callback typedef into an inline arrow-function type string.
 // e.g. "( a: any, b: any ) => number"
 function formatCallbackType( callbackDoc, callbackMap ) {
@@ -201,7 +208,7 @@ export function renderConstants( constants, callbackMap = {} ) {
 
 }
 
-export function renderTypedef( typeDoc, callbackMap = {} ) {
+export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 	const lines = [];
 
@@ -212,7 +219,9 @@ export function renderTypedef( typeDoc, callbackMap = {} ) {
 	const baseType = typeDoc.type && typeDoc.type.names && typeDoc.type.names[ 0 ];
 	if ( baseType && baseType !== 'Object' ) {
 
-		lines.push( `_extends \`${baseType}\`_` );
+		const link = resolveLink && resolveLink( baseType );
+		const ref = link ? `[\`${baseType}\`](${link})` : `\`${baseType}\``;
+		lines.push( `_extends ${ref}_` );
 		lines.push( '' );
 
 	}
@@ -248,7 +257,7 @@ export function renderTypedef( typeDoc, callbackMap = {} ) {
 
 }
 
-export function renderClass( classDoc, members, callbackMap = {} ) {
+export function renderClass( classDoc, members, callbackMap = {}, resolveLink = null ) {
 
 	const lines = [];
 
@@ -257,7 +266,10 @@ export function renderClass( classDoc, members, callbackMap = {} ) {
 
 	if ( classDoc.augments && classDoc.augments.length > 0 ) {
 
-		lines.push( `_extends \`${classDoc.augments[ 0 ]}\`_` );
+		const base = classDoc.augments[ 0 ];
+		const link = resolveLink && resolveLink( base );
+		const ref = link ? `[\`${base}\`](${link})` : `\`${base}\``;
+		lines.push( `_extends ${ref}_` );
 		lines.push( '' );
 
 	}
@@ -279,6 +291,57 @@ export function renderClass( classDoc, members, callbackMap = {} ) {
 	const methods = visible
 		.filter( m => m.kind === 'function' && ! m.type )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+	const events = visible
+		.filter( m => m.kind === 'event' )
+		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+
+	if ( events.length > 0 ) {
+
+		lines.push( '### events' );
+		lines.push( '' );
+		lines.push( '```js' );
+
+		for ( let i = 0; i < events.length; i ++ ) {
+
+			const event = events[ i ];
+
+			if ( event.description ) {
+
+				for ( const descLine of event.description.split( '\n' ) ) {
+
+					lines.push( `// ${ descLine }` );
+
+				}
+
+			}
+
+			const props = event.properties || [];
+			const propStr = props.map( p => {
+
+				const type = formatType( p.type, callbackMap );
+				const optional = p.optional ? '?' : '';
+				return `${ p.name }${ optional }: ${ type }`;
+
+			} ).join( ', ' );
+
+			if ( propStr ) {
+
+				lines.push( `{ type: '${ event.name }', ${ propStr } }` );
+
+			} else {
+
+				lines.push( `{ type: '${ event.name }' }` );
+
+			}
+
+			if ( i < events.length - 1 ) lines.push( '' );
+
+		}
+
+		lines.push( '```' );
+		lines.push( '' );
+
+	}
 
 	for ( const member of properties ) {
 

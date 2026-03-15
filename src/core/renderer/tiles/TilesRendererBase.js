@@ -164,6 +164,8 @@ const lruPriorityCallback = ( a, b ) => {
 
 };
 
+// Internal Tile Type Definitions
+
 /**
  * Internal renderer state added to each tile during preprocessing.
  * @typedef {Object} TileInternalData
@@ -217,6 +219,95 @@ const lruPriorityCallback = ( a, b ) => {
  * @property {Object} [properties] - Metadata about per-feature properties.
  * @property {Object} [extensions] - Extension-specific objects.
  * @property {Object} [extras] - Extra application-specific data.
+ */
+
+//
+
+// TilesRendererBase Event Definitions
+
+/**
+ * Fired when the renderer determines a new render is required — e.g. after a tile loads.
+ * @event TilesRendererBase#needs-update
+ */
+
+/**
+ * Fired when any tile content (model or external tileset) finishes loading.
+ * @event TilesRendererBase#load-content
+ */
+
+/**
+ * Fired when any tileset JSON finishes loading.
+ * @event TilesRendererBase#load-tileset
+ * @property {Tileset} tileset - The loaded tileset object.
+ * @property {string} url - The URL from which the tileset was loaded.
+ */
+
+/**
+ * Fired when the root tileset JSON finishes loading.
+ * @event TilesRendererBase#load-root-tileset
+ * @property {Tileset} tileset - The loaded root tileset object.
+ * @property {string} url - The URL from which the tileset was loaded.
+ */
+
+/**
+ * Fired when tile downloads begin after a period of inactivity.
+ * @event TilesRendererBase#tiles-load-start
+ */
+
+/**
+ * Fired when all pending tile downloads and parses have completed.
+ * @event TilesRendererBase#tiles-load-end
+ */
+
+/**
+ * Fired when a tile content download begins.
+ * @event TilesRendererBase#tile-download-start
+ * @property {Tile} tile - The tile being downloaded.
+ * @property {string} uri - The URI being fetched.
+ */
+
+/**
+ * Fired when a tile's renderable content (model/scene) is created.
+ * The `scene` type is engine-specific (e.g. `THREE.Group` in three.js).
+ * @event TilesRendererBase#load-model
+ * @property {Object} scene - The engine-specific scene object created for this tile.
+ * @property {Tile} tile - The tile the scene belongs to.
+ * @property {string} url - The URL the content was loaded from.
+ */
+
+/**
+ * Fired when a tile's renderable content is about to be removed and destroyed.
+ * The `scene` type is engine-specific (e.g. `THREE.Group` in three.js).
+ * @event TilesRendererBase#dispose-model
+ * @property {Object} scene - The engine-specific scene object being disposed.
+ * @property {Tile} tile - The tile the scene belonged to.
+ */
+
+/**
+ * Fired when a tile transitions between visible and hidden.
+ * The `scene` type is engine-specific (e.g. `THREE.Group` in three.js).
+ * @event TilesRendererBase#tile-visibility-change
+ * @property {Object} scene - The engine-specific scene object.
+ * @property {Tile} tile - The tile whose visibility changed.
+ * @property {boolean} visible - Whether the tile is now visible.
+ */
+
+/**
+ * Fired at the start of each `update()` call, before traversal begins.
+ * @event TilesRendererBase#update-before
+ */
+
+/**
+ * Fired at the end of each `update()` call, after traversal completes.
+ * @event TilesRendererBase#update-after
+ */
+
+/**
+ * Fired when a tile or tileset fails to load.
+ * @event TilesRendererBase#load-error
+ * @property {Tile|null} tile - The tile that failed, or null if a root tileset failed.
+ * @property {Error} error - The error that occurred.
+ * @property {string|URL} url - The URL that failed to load.
  */
 
 /**

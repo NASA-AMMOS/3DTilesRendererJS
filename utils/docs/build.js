@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { renderClass, renderTypedef, renderConstants } from './RenderDocsUtils.js';
+import { renderClass, renderTypedef, renderConstants, toAnchor } from './RenderDocsUtils.js';
 
 const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
 const rootDir = path.resolve( __dirname, '../..' );
@@ -52,23 +52,82 @@ function runJsDoc( sources ) {
 
 }
 
-for ( const ep of ENTRY_POINTS ) {
+function filterDocumented( json ) {
 
-	if ( ep.sources.length === 0 ) {
-
-		console.log( `Skipping ${ep.output}: no sources configured` );
-		continue;
-
-	}
-
-	const json = runJsDoc( ep.sources );
-	const documented = json.filter( d =>
+	return json.filter( d =>
 		d.undocumented !== true &&
 		d.kind !== 'package' &&
 		d.access !== 'private' &&
 		d.inherited !== true &&
 		! d.deprecated
 	);
+
+}
+
+// Pass 1: run JSDoc for all entry points and cache results.
+const results = [];
+for ( const ep of ENTRY_POINTS ) {
+
+	if ( ep.sources.length === 0 ) {
+
+		results.push( null );
+		continue;
+
+	}
+
+	const json = runJsDoc( ep.sources );
+	results.push( { ep, documented: filterDocumented( json ) } );
+
+}
+
+// Build a global registry mapping documented type names to the output file that defines them.
+// Only classes and non-callback typedefs get sections (and therefore anchors) in the output.
+const typeRegistry = {}; // name -> output path
+for ( const result of results ) {
+
+	if ( ! result ) continue;
+	const { ep, documented } = result;
+
+	for ( const d of documented ) {
+
+		const isSection =
+			d.kind === 'class' ||
+			( d.kind === 'typedef' && ! ( d.type && d.type.names[ 0 ] === 'function' ) );
+
+		if ( isSection ) typeRegistry[ d.name ] = ep.output;
+
+	}
+
+}
+
+// Pass 2: render each entry point.
+for ( const result of results ) {
+
+	if ( ! result ) {
+
+		const ep = ENTRY_POINTS[ results.indexOf( result ) ];
+		console.log( `Skipping ${ep.output}: no sources configured` );
+		continue;
+
+	}
+
+	const { ep, documented } = result;
+
+	// resolveLink returns the URL for a given type name:
+	//   - same-file types → "#anchor"
+	//   - cross-file types → "relative/path/to/file.md#anchor"
+	//   - unknown types   → null (no link rendered)
+	const resolveLink = name => {
+
+		const targetOutput = typeRegistry[ name ];
+		if ( ! targetOutput ) return null;
+		const anchor = `#${ toAnchor( name ) }`;
+		if ( targetOutput === ep.output ) return anchor;
+		const from = path.dirname( path.join( rootDir, ep.output ) );
+		const to = path.join( rootDir, targetOutput );
+		return path.relative( from, to ).replace( /\\/g, '/' ) + anchor;
+
+	};
 
 	// Sort classes so base classes appear before subclasses
 	const classes = documented
@@ -132,13 +191,13 @@ for ( const ep of ENTRY_POINTS ) {
 
 	for ( const cls of classes ) {
 
-		sections.push( renderClass( cls, membersByClass[ cls.name ] || [], callbackMap ) );
+		sections.push( renderClass( cls, membersByClass[ cls.name ] || [], callbackMap, resolveLink ) );
 
 	}
 
 	for ( const typedef of typedefs ) {
 
-		sections.push( renderTypedef( typedef, callbackMap ) );
+		sections.push( renderTypedef( typedef, callbackMap, resolveLink ) );
 
 	}
 
