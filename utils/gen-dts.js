@@ -4,12 +4,13 @@
  * Steps:
  *   1. Delete stale .d.ts files so tsc generates fresh declarations
  *   2. tsc emits per-file .d.ts into a temp directory
- *   3. rollup-plugin-dts bundles them into a single declaration file
- *   4. A transform strips any underscore-prefixed members from the output
+ *   3. Type alias imports are rewritten to avoid a rollup-plugin-dts bug with invalid identifiers
+ *   4. rollup-plugin-dts bundles them into a single declaration file
+ *   5. A transform strips any underscore-prefixed members from the output
  */
 
 import { execSync } from 'child_process';
-import { existsSync, mkdtempSync, readdirSync, rmSync, unlinkSync } from 'fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { rollup } from 'rollup';
@@ -49,6 +50,9 @@ try {
 		`npx tsc -p tsconfig.core-plugins.json --declarationDir ${ tmpDir }`,
 		{ cwd: ROOT, stdio: 'inherit' },
 	);
+
+	// Fix any invalid namespace imports tsc emitted (e.g. `import * as 3d_...`)
+	fixTypeAliasImportsInDir( tmpDir );
 
 	// Step 3+4: bundle with rollup-dts and strip _ members
 	const entry = join( tmpDir, 'core/plugins/index.d.ts' );
@@ -97,6 +101,37 @@ function resolveDtsExtensions( tmpDir ) {
 
 		},
 	};
+
+}
+
+/**
+ * Walks a directory and rewrites .d.ts files, converting tsc's `export type X = import("pkg").X`
+ * aliases to `import type { X } from "pkg"`. This avoids rollup-plugin-dts generating namespace
+ * imports for packages whose names are invalid JS identifiers (e.g. '3d-tiles-renderer/core').
+ */
+function fixTypeAliasImportsInDir( dir ) {
+
+	for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+
+		const full = join( dir, entry.name );
+		if ( entry.isDirectory() ) {
+
+			fixTypeAliasImportsInDir( full );
+
+		} else if ( entry.name.endsWith( '.d.ts' ) ) {
+
+			const code = readFileSync( full, 'utf8' );
+			const result = code.replace(
+				/^export type (\w+) = import\(["']([^"']+)["']\)\.(\w+);$/gm,
+				( _, local, pkg, exported ) => local === exported
+					? `import type { ${ local } } from "${ pkg }";`
+					: `import type { ${ exported } as ${ local } } from "${ pkg }";`,
+			);
+			if ( result !== code ) writeFileSync( full, result, 'utf8' );
+
+		}
+
+	}
 
 }
 

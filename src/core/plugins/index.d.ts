@@ -1,4 +1,4 @@
-import { LoaderBase } from '3d-tiles-renderer/core';
+import { TilesRendererBase, LoaderBase } from '3d-tiles-renderer/core';
 
 /**
  * @classdesc
@@ -35,6 +35,9 @@ declare class CesiumIonAuth {
     refreshToken(options: any): any;
 }
 
+/**
+ * @typedef {import('3d-tiles-renderer/core').TilesRendererBase} TilesRendererBase
+ */
 /**
  * @callback AssetTypeHandlerCallback
  * @param {string} type - The Cesium Ion asset type (e.g. `'TERRAIN'`, `'GLTF'`, `'CZML'`).
@@ -95,6 +98,7 @@ declare class CesiumIonAuthPlugin {
     fetchData(uri: any, options: any): Promise<Response>;
     getAttributions(target: any): void;
 }
+
 type AssetTypeHandlerCallback = (type: string, tiles: TilesRendererBase, asset: any) => any;
 
 /**
@@ -107,12 +111,17 @@ declare class GoogleCloudAuth {
     /**
      * @param {Object} [options={}]
      * @param {string} options.apiToken
-     * @param {Object|null} [options.sessionOptions=null]
+     * @param {{ mapType?: string, language?: string, region?: string, [key: string]: any }|null} [options.sessionOptions=null]
      * @param {boolean} [options.autoRefreshToken=false]
      */
     constructor(options?: {
         apiToken: string;
-        sessionOptions?: any | null;
+        sessionOptions?: {
+            mapType?: string;
+            language?: string;
+            region?: string;
+            [key: string]: any;
+        } | null;
         autoRefreshToken?: boolean;
     });
     get isMapTilesSession(): boolean;
@@ -138,9 +147,14 @@ declare class GoogleCloudAuth {
     sessionToken: string | null;
     /**
      * Session options passed as the POST body when creating a Map Tiles session.
-     * @type {Object|null}
+     * @type {{ mapType?: string, language?: string, region?: string, [key: string]: any }|null}
      */
-    sessionOptions: any | null;
+    sessionOptions: {
+        mapType?: string;
+        language?: string;
+        region?: string;
+        [key: string]: any;
+    } | null;
     fetch(url: any, options: any): Promise<any>;
     refreshToken(options: any): any;
 }

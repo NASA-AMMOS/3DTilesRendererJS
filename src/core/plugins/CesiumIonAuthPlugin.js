@@ -2,6 +2,10 @@ import { CesiumIonAuth } from './auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 
 /**
+ * @typedef {import('3d-tiles-renderer/core').TilesRendererBase} TilesRendererBase
+ */
+
+/**
  * @callback AssetTypeHandlerCallback
  * @param {string} type - The Cesium Ion asset type (e.g. `'TERRAIN'`, `'GLTF'`, `'CZML'`).
  * @param {TilesRendererBase} tiles - The tiles renderer instance.
