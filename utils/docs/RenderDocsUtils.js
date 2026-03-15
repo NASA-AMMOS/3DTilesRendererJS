@@ -45,15 +45,14 @@ export function formatType( typeObj, callbackMap = {} ) {
 export function formatParam( param, callbackMap = {} ) {
 
 	const type = formatType( param.type, callbackMap );
-	const hasDefault = param.defaultvalue !== undefined;
 
-	if ( hasDefault ) {
+	if ( param.defaultvalue !== undefined ) {
 
-		return `${param.name} = ${param.defaultvalue}: ${type}`;
+		return `${ param.name } = ${ param.defaultvalue }: ${ type }`;
 
 	}
 
-	return `${param.name}: ${type}`;
+	return `${ param.name }: ${ type }`;
 
 }
 
@@ -69,7 +68,7 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 	lines.push( '### .constructor' );
 	lines.push( '' );
 	lines.push( '```js' );
-	lines.push( `constructor( ${sig} )` );
+	lines.push( `constructor( ${ sig } )` );
 	lines.push( '```' );
 	lines.push( '' );
 
@@ -88,9 +87,8 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 
 			const name = param.name.split( '.' ).pop();
 			const type = formatType( param.type, callbackMap );
-			const hasDefault = param.defaultvalue !== undefined;
-			const defStr = hasDefault ? ` = ${param.defaultvalue}` : '';
-			lines.push( `- \`${name}${defStr}: ${type}\` — ${param.description}` );
+			const defStr = param.defaultvalue !== undefined ? ` = ${ param.defaultvalue }` : '';
+			lines.push( `- \`${ name }${ defStr }: ${ type }\` — ${ param.description }` );
 
 		}
 
@@ -106,13 +104,13 @@ export function renderMember( doc, callbackMap = {} ) {
 
 	const lines = [];
 
-	lines.push( `### .${doc.name}` );
+	lines.push( `### .${ doc.name }` );
 	lines.push( '' );
 	lines.push( '```js' );
 
 	const type = formatType( doc.type, callbackMap );
 	const readonly = doc.readonly ? 'readonly ' : '';
-	lines.push( `${readonly}${doc.name}: ${type}` );
+	lines.push( `${ readonly }${ doc.name }: ${ type }` );
 
 	lines.push( '```' );
 	lines.push( '' );
@@ -132,7 +130,7 @@ export function renderMethod( doc, callbackMap = {} ) {
 
 	const lines = [];
 
-	lines.push( `### .${doc.name}` );
+	lines.push( `### .${ doc.name }` );
 	lines.push( '' );
 	lines.push( '```js' );
 
@@ -142,19 +140,19 @@ export function renderMethod( doc, callbackMap = {} ) {
 		: 'void';
 
 	const singleLine = params.length
-		? `${doc.name}( ${params.join( ', ' )} ): ${ret}`
-		: `${doc.name}(): ${ret}`;
+		? `${ doc.name }( ${ params.join( ', ' ) } ): ${ ret }`
+		: `${ doc.name }(): ${ ret }`;
 
 	if ( singleLine.length > 80 ) {
 
-		lines.push( `${doc.name}(` );
+		lines.push( `${ doc.name }(` );
 		params.forEach( ( p, i ) => {
 
 			const comma = i < params.length - 1 ? ',' : '';
-			lines.push( `\t${p}${comma}` );
+			lines.push( `\t${ p }${ comma }` );
 
 		} );
-		lines.push( `): ${ret}` );
+		lines.push( `): ${ ret }` );
 
 	} else {
 
@@ -188,10 +186,10 @@ export function renderConstants( constants, callbackMap = {} ) {
 	for ( const c of constants ) {
 
 		const type = formatType( c.type, callbackMap ) || 'number';
-		lines.push( `### ${c.name}` );
+		lines.push( `### ${ c.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
-		lines.push( `${c.name}: ${type}` );
+		lines.push( `${ c.name }: ${ type }` );
 		lines.push( '```' );
 		lines.push( '' );
 
@@ -212,7 +210,7 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 	const lines = [];
 
-	lines.push( `## ${typeDoc.name}` );
+	lines.push( `## ${ typeDoc.name }` );
 	lines.push( '' );
 
 	// If the typedef's base type is not plain Object, treat it as an extension
@@ -220,8 +218,8 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 	if ( baseType && baseType !== 'Object' ) {
 
 		const link = resolveLink && resolveLink( baseType );
-		const ref = link ? `[\`${baseType}\`](${link})` : `\`${baseType}\``;
-		lines.push( `_extends ${ref}_` );
+		const ref = link ? `[\`${ baseType }\`](${ link })` : `\`${ baseType }\``;
+		lines.push( `_extends ${ ref }_` );
 		lines.push( '' );
 
 	}
@@ -237,10 +235,10 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 		const type = formatType( prop.type, callbackMap );
 		const optional = prop.optional ? '?' : '';
-		lines.push( `### .${prop.name}` );
+		lines.push( `### .${ prop.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
-		lines.push( `${prop.name}${optional}: ${type}` );
+		lines.push( `${ prop.name }${ optional }: ${ type }` );
 		lines.push( '```' );
 		lines.push( '' );
 
@@ -257,19 +255,71 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 }
 
+export function renderEvents( events, callbackMap = {} ) {
+
+	const lines = [];
+
+	lines.push( '### events' );
+	lines.push( '' );
+	lines.push( '```js' );
+
+	for ( let i = 0; i < events.length; i ++ ) {
+
+		const event = events[ i ];
+
+		if ( event.description ) {
+
+			for ( const descLine of event.description.split( '\n' ) ) {
+
+				lines.push( `// ${ descLine }` );
+
+			}
+
+		}
+
+		const props = event.properties || [];
+		const propStr = props.map( p => {
+
+			const type = formatType( p.type, callbackMap );
+			const optional = p.optional ? '?' : '';
+			return `${ p.name }${ optional }: ${ type }`;
+
+		} ).join( ', ' );
+
+		if ( propStr ) {
+
+			lines.push( `{ type: '${ event.name }', ${ propStr } }` );
+
+		} else {
+
+			lines.push( `{ type: '${ event.name }' }` );
+
+		}
+
+		if ( i < events.length - 1 ) lines.push( '' );
+
+	}
+
+	lines.push( '```' );
+	lines.push( '' );
+
+	return lines.join( '\n' );
+
+}
+
 export function renderClass( classDoc, members, callbackMap = {}, resolveLink = null ) {
 
 	const lines = [];
 
-	lines.push( `## ${classDoc.name}` );
+	lines.push( `## ${ classDoc.name }` );
 	lines.push( '' );
 
 	if ( classDoc.augments && classDoc.augments.length > 0 ) {
 
 		const base = classDoc.augments[ 0 ];
 		const link = resolveLink && resolveLink( base );
-		const ref = link ? `[\`${base}\`](${link})` : `\`${base}\``;
-		lines.push( `_extends ${ref}_` );
+		const ref = link ? `[\`${ base }\`](${ link })` : `\`${ base }\``;
+		lines.push( `_extends ${ ref }_` );
 		lines.push( '' );
 
 	}
@@ -297,49 +347,7 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 
 	if ( events.length > 0 ) {
 
-		lines.push( '### events' );
-		lines.push( '' );
-		lines.push( '```js' );
-
-		for ( let i = 0; i < events.length; i ++ ) {
-
-			const event = events[ i ];
-
-			if ( event.description ) {
-
-				for ( const descLine of event.description.split( '\n' ) ) {
-
-					lines.push( `// ${ descLine }` );
-
-				}
-
-			}
-
-			const props = event.properties || [];
-			const propStr = props.map( p => {
-
-				const type = formatType( p.type, callbackMap );
-				const optional = p.optional ? '?' : '';
-				return `${ p.name }${ optional }: ${ type }`;
-
-			} ).join( ', ' );
-
-			if ( propStr ) {
-
-				lines.push( `{ type: '${ event.name }', ${ propStr } }` );
-
-			} else {
-
-				lines.push( `{ type: '${ event.name }' }` );
-
-			}
-
-			if ( i < events.length - 1 ) lines.push( '' );
-
-		}
-
-		lines.push( '```' );
-		lines.push( '' );
+		lines.push( renderEvents( events, callbackMap ) );
 
 	}
 
