@@ -65,8 +65,6 @@ See [API Reference](./API.md): TilesRenderer, PriorityQueue, LRUCache, and Batch
 ## Plugins
 See [Plugins](./PLUGINS.md): GLTFLoader extension plugins, TilesRenderer plugins, and extra classes
 
-
-
 # LICENSE
 
 The software is available under the [Apache V2.0 license](LICENSE).
