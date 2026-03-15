@@ -7,6 +7,26 @@ import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
 
+/**
+ * @callback TileBeforeCallback
+ * @param {Tile} tile
+ * @param {Tile|null} parent
+ * @param {number} depth
+ * @returns {boolean}
+ */
+
+/**
+ * @callback TileAfterCallback
+ * @param {Tile} tile
+ * @param {Tile|null} parent
+ * @param {number} depth
+ */
+
+/**
+ * @callback EventCallback
+ * @param {Object} event
+ */
+
 const PLUGIN_REGISTERED = Symbol( 'PLUGIN_REGISTERED' );
 const regionErrorTarget = {
 	inView: true,
@@ -145,19 +165,6 @@ const lruPriorityCallback = ( a, b ) => {
 };
 
 /**
- * Raw 3D Tiles tile as defined by the spec. Populated directly from the tileset JSON.
- * @typedef {Object} TileBase
- * @property {Object} boundingVolume - Bounding volume. Has either a `box` (12-element array) or `sphere` (4-element array) field.
- * @property {number} geometricError - Error in meters introduced if this tile is not rendered.
- * @property {TileBase[]} [children] - Child tiles.
- * @property {{ uri: string }} [content] - Loadable content URI reference.
- * @property {'REPLACE'|'ADD'} [refine] - Refinement strategy; inherited from the parent if omitted.
- * @property {number[]} [transform] - Optional 4x4 column-major transform matrix.
- * @property {Object} [extensions] - Extension-specific objects.
- * @property {Object} [extras] - Extra application-specific data.
- */
-
-/**
  * Internal renderer state added to each tile during preprocessing.
  * @typedef {Object} TileInternalData
  * @property {boolean} hasContent - Whether the tile has a content URI.
@@ -184,10 +191,17 @@ const lruPriorityCallback = ( a, b ) => {
  */
 
 /**
- * A preprocessed 3D Tiles tile with renderer state attached. Extends the raw
- * TileBase spec fields with renderer-managed state added by the traversal system.
- * @typedef {TileBase} Tile
+ * A 3D Tiles tile with both spec fields (from tileset JSON) and renderer-managed state.
+ * @typedef {Object} Tile
+ * @property {Object} boundingVolume - Bounding volume. Has either a `box` (12-element array) or `sphere` (4-element array) field.
+ * @property {number} geometricError - Error in meters introduced if this tile is not rendered.
  * @property {Tile|null} parent - Parent tile, or null for the root.
+ * @property {Tile[]} [children] - Child tiles.
+ * @property {Object} [content] - Loadable content URI reference.
+ * @property {'REPLACE'|'ADD'} [refine] - Refinement strategy; inherited from the parent if omitted.
+ * @property {number[]} [transform] - Optional 4x4 column-major transform matrix.
+ * @property {Object} [extensions] - Extension-specific objects.
+ * @property {Object} [extras] - Extra application-specific data.
  * @property {TileInternalData} internal - Internal renderer state.
  * @property {TileTraversalData} traversal - Per-frame traversal state.
  */
@@ -197,7 +211,7 @@ const lruPriorityCallback = ( a, b ) => {
  * @typedef {Object} Tileset
  * @property {Object} asset - Metadata about the tileset. Contains `version` (string) and optional `tilesetVersion` (string).
  * @property {number} geometricError - Error in meters for the entire tileset.
- * @property {TileBase} root - The root tile.
+ * @property {Tile} root - The root tile.
  * @property {string[]} [extensionsUsed] - Names of extensions used somewhere in the tileset.
  * @property {string[]} [extensionsRequired] - Names of extensions required to load the tileset.
  * @property {Object} [properties] - Metadata about per-feature properties.
@@ -590,8 +604,8 @@ export class TilesRendererBase {
 	 * Iterates over all tiles in the loaded hierarchy. `beforecb` is called before
 	 * descending into a tile's children; returning true from it skips the subtree.
 	 * `aftercb` is called after all children have been visited.
-	 * @param {Function|null} beforecb
-	 * @param {Function|null} aftercb
+	 * @param {TileBeforeCallback|null} [beforecb]
+	 * @param {TileAfterCallback|null} [aftercb]
 	 */
 	traverse( beforecb, aftercb, ensureFullyProcessed = true ) {
 
@@ -944,14 +958,14 @@ export class TilesRendererBase {
 	/**
 	 * Registers a listener for the given event type.
 	 * @param {string} name
-	 * @param {Function} callback
+	 * @param {EventCallback} callback
 	 */
 	addEventListener( name, callback ) {}
 
 	/**
 	 * Removes a previously registered event listener.
 	 * @param {string} name
-	 * @param {Function} callback
+	 * @param {EventCallback} callback
 	 */
 	removeEventListener( name, callback ) {}
 

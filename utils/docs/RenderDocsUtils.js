@@ -1,18 +1,43 @@
+// Formats a callback typedef into an inline arrow-function type string.
+// e.g. "( a: any, b: any ) => number"
+function formatCallbackType( callbackDoc, callbackMap ) {
+
+	const params = ( callbackDoc.params || [] ).map( p => {
+
+		const type = formatType( p.type, callbackMap );
+		return `${ p.name }: ${ type }`;
+
+	} );
+
+	const ret = ( callbackDoc.returns && callbackDoc.returns[ 0 ] )
+		? formatType( callbackDoc.returns[ 0 ].type, callbackMap )
+		: 'void';
+
+	return `( ${ params.join( ', ' ) } ) => ${ ret }`;
+
+}
+
 // Formats a JSDoc type object into a type string, e.g. "string | Object | null".
 // Strips JSDoc's dot-generic syntax: Promise.<void> -> Promise<void>
-export function formatType( typeObj ) {
+// Substitutes @callback typedef names with their inline arrow-function signature.
+export function formatType( typeObj, callbackMap = {} ) {
 
 	if ( ! typeObj || ! typeObj.names || typeObj.names.length === 0 ) return '';
 	return typeObj.names
-		.map( t => t.replace( /\.</g, '<' ) )
+		.map( t => {
+
+			if ( callbackMap[ t ] ) return formatCallbackType( callbackMap[ t ], callbackMap );
+			return t.replace( /\.</g, '<' );
+
+		} )
 		.join( ' | ' );
 
 }
 
 // Formats a single param into the inline signature style: "name = default: Type"
-export function formatParam( param ) {
+export function formatParam( param, callbackMap = {} ) {
 
-	const type = formatType( param.type );
+	const type = formatType( param.type, callbackMap );
 	const hasDefault = param.defaultvalue !== undefined;
 
 	if ( hasDefault ) {
@@ -25,14 +50,14 @@ export function formatParam( param ) {
 
 }
 
-export function renderConstructor( classDoc ) {
+export function renderConstructor( classDoc, callbackMap = {} ) {
 
 	const lines = [];
 
 	const topLevel = ( classDoc.params || [] ).filter( p => ! p.name.includes( '.' ) );
 	const options = ( classDoc.params || [] ).filter( p => p.name.includes( '.' ) );
 
-	const sig = topLevel.map( formatParam ).join( ', ' );
+	const sig = topLevel.map( p => formatParam( p, callbackMap ) ).join( ', ' );
 
 	lines.push( '### .constructor' );
 	lines.push( '' );
@@ -55,7 +80,7 @@ export function renderConstructor( classDoc ) {
 		for ( const param of options ) {
 
 			const name = param.name.split( '.' ).pop();
-			const type = formatType( param.type );
+			const type = formatType( param.type, callbackMap );
 			const hasDefault = param.defaultvalue !== undefined;
 			const defStr = hasDefault ? ` = ${param.defaultvalue}` : '';
 			lines.push( `- \`${name}${defStr}: ${type}\` — ${param.description}` );
@@ -70,7 +95,7 @@ export function renderConstructor( classDoc ) {
 
 }
 
-export function renderMember( doc ) {
+export function renderMember( doc, callbackMap = {} ) {
 
 	const lines = [];
 
@@ -78,7 +103,7 @@ export function renderMember( doc ) {
 	lines.push( '' );
 	lines.push( '```js' );
 
-	const type = formatType( doc.type );
+	const type = formatType( doc.type, callbackMap );
 	const readonly = doc.readonly ? 'readonly ' : '';
 	lines.push( `${readonly}${doc.name}: ${type}` );
 
@@ -96,7 +121,7 @@ export function renderMember( doc ) {
 
 }
 
-export function renderMethod( doc ) {
+export function renderMethod( doc, callbackMap = {} ) {
 
 	const lines = [];
 
@@ -104,9 +129,9 @@ export function renderMethod( doc ) {
 	lines.push( '' );
 	lines.push( '```js' );
 
-	const params = ( doc.params || [] ).map( formatParam );
+	const params = ( doc.params || [] ).map( p => formatParam( p, callbackMap ) );
 	const ret = ( doc.returns && doc.returns[ 0 ] )
-		? formatType( doc.returns[ 0 ].type )
+		? formatType( doc.returns[ 0 ].type, callbackMap )
 		: 'void';
 
 	const singleLine = params.length
@@ -144,7 +169,7 @@ export function renderMethod( doc ) {
 
 }
 
-export function renderConstants( constants ) {
+export function renderConstants( constants, callbackMap = {} ) {
 
 	if ( constants.length === 0 ) return '';
 
@@ -155,7 +180,7 @@ export function renderConstants( constants ) {
 
 	for ( const c of constants ) {
 
-		const type = formatType( c.type ) || 'number';
+		const type = formatType( c.type, callbackMap ) || 'number';
 		lines.push( `### ${c.name}` );
 		lines.push( '' );
 		lines.push( '```js' );
@@ -176,7 +201,7 @@ export function renderConstants( constants ) {
 
 }
 
-export function renderTypedef( typeDoc ) {
+export function renderTypedef( typeDoc, callbackMap = {} ) {
 
 	const lines = [];
 
@@ -201,7 +226,7 @@ export function renderTypedef( typeDoc ) {
 
 	for ( const prop of ( typeDoc.properties || [] ) ) {
 
-		const type = formatType( prop.type );
+		const type = formatType( prop.type, callbackMap );
 		const optional = prop.optional ? '?' : '';
 		lines.push( `### .${prop.name}` );
 		lines.push( '' );
@@ -223,7 +248,7 @@ export function renderTypedef( typeDoc ) {
 
 }
 
-export function renderClass( classDoc, members ) {
+export function renderClass( classDoc, members, callbackMap = {} ) {
 
 	const lines = [];
 
@@ -257,20 +282,20 @@ export function renderClass( classDoc, members ) {
 
 	for ( const member of properties ) {
 
-		lines.push( renderMember( member ) );
+		lines.push( renderMember( member, callbackMap ) );
 
 	}
 
 	// Constructor before other methods
 	if ( classDoc.params && classDoc.params.length > 0 ) {
 
-		lines.push( renderConstructor( classDoc ) );
+		lines.push( renderConstructor( classDoc, callbackMap ) );
 
 	}
 
 	for ( const method of methods ) {
 
-		lines.push( renderMethod( method ) );
+		lines.push( renderMethod( method, callbackMap ) );
 
 	}
 

@@ -1,11 +1,28 @@
 const GIGABYTE_BYTES = 2 ** 30;
 
 /**
+ * @callback UnloadPriorityCallback
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
+
+/**
+ * @callback RemoveCallback
+ * @param {any} item
+ */
+
+/**
  * Least-recently-used cache for managing tile content lifecycle. Tracks which items
  * are in use each frame and evicts unused items when the cache exceeds its size limits.
  */
 class LRUCache {
 
+	/**
+	 * Comparator used to determine eviction order. Items that sort last are evicted first.
+	 * Defaults to `null` (eviction order is by last-used time).
+	 * @type {UnloadPriorityCallback|null}
+	 */
 	get unloadPriorityCallback() {
 
 		return this._unloadPriorityCallback;
@@ -137,7 +154,7 @@ class LRUCache {
 	/**
 	 * Adds an item to the cache. Returns false if the item already exists or the cache is full.
 	 * @param {any} item
-	 * @param {Function} removeCb - Called with the item when it is evicted
+	 * @param {RemoveCallback} removeCb - Called with the item when it is evicted
 	 * @returns {boolean}
 	 */
 	add( item, removeCb ) {

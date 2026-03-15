@@ -83,9 +83,21 @@ for ( const ep of ENTRY_POINTS ) {
 
 		} );
 
-	// Sort typedefs so plain-object bases appear before derived types
+	// Collect @callback typedefs into a map for inline substitution — not rendered as sections
+	const callbackMap = {};
+	for ( const d of documented ) {
+
+		if ( d.kind === 'typedef' && d.type && d.type.names[ 0 ] === 'function' ) {
+
+			callbackMap[ d.name ] = d;
+
+		}
+
+	}
+
+	// Sort typedefs so plain-object bases appear before derived types; exclude @callback entries
 	const typedefs = documented
-		.filter( d => d.kind === 'typedef' )
+		.filter( d => d.kind === 'typedef' && ! ( d.type && d.type.names[ 0 ] === 'function' ) )
 		.sort( ( a, b ) => {
 
 			const aIsBase = ! a.type || a.type.names[ 0 ] === 'Object';
@@ -115,18 +127,18 @@ for ( const ep of ENTRY_POINTS ) {
 
 	const sections = [ `# ${ep.title}`, '' ];
 
-	const constantsSection = renderConstants( constants );
+	const constantsSection = renderConstants( constants, callbackMap );
 	if ( constantsSection ) sections.push( constantsSection );
 
 	for ( const cls of classes ) {
 
-		sections.push( renderClass( cls, membersByClass[ cls.name ] || [] ) );
+		sections.push( renderClass( cls, membersByClass[ cls.name ] || [], callbackMap ) );
 
 	}
 
 	for ( const typedef of typedefs ) {
 
-		sections.push( renderTypedef( typedef ) );
+		sections.push( renderTypedef( typedef, callbackMap ) );
 
 	}
 

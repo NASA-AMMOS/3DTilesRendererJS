@@ -16,6 +16,30 @@ export class PriorityQueueItemRemovedError extends Error {
 }
 
 /**
+ * @callback PriorityCallback
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
+
+/**
+ * @callback SchedulingCallback
+ * @param {Function} func
+ */
+
+/**
+ * @callback ItemCallback
+ * @param {any} item
+ * @returns {Promise<any>|any}
+ */
+
+/**
+ * @callback FilterCallback
+ * @param {any} item
+ * @returns {boolean}
+ */
+
+/**
  * Priority queue for scheduling async work with a concurrency limit. Items are
  * sorted by `priorityCallback` and dispatched up to `maxJobs` at a time.
  */
@@ -49,14 +73,14 @@ export class PriorityQueue {
 
 		/**
 		 * Comparator used to sort queued items. Higher-priority items should sort last
-		 * (i.e. return positive when `itemA` should run before `itemB`).
-		 * @type {Function | null}
+		 * (i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+		 * @type {PriorityCallback|null}
 		 */
 		this.priorityCallback = null;
 
 		/**
 		 * Callback used to schedule a deferred job run. Defaults to `requestAnimationFrame`.
-		 * @type {Function}
+		 * @type {SchedulingCallback}
 		 */
 		this.schedulingCallback = func => {
 
@@ -103,7 +127,7 @@ export class PriorityQueue {
 	 * Adds an item to the queue and returns a Promise that resolves when the item's
 	 * callback completes, or rejects if the item is removed before running.
 	 * @param {any} item
-	 * @param {Function} callback - Invoked with `item` when it is dequeued; may return a Promise
+	 * @param {ItemCallback} callback - Invoked with `item` when it is dequeued; may return a Promise
 	 * @returns {Promise<any>}
 	 */
 	add( item, callback ) {
@@ -174,7 +198,7 @@ export class PriorityQueue {
 
 	/**
 	 * Removes all queued items for which `filter` returns true.
-	 * @param {Function} filter - Called with each item; return true to remove
+	 * @param {FilterCallback} filter - Called with each item; return true to remove
 	 */
 	removeByFilter( filter ) {
 
