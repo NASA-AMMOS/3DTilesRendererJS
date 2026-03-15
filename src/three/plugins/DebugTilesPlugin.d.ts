@@ -21,6 +21,7 @@ export class DebugTilesPlugin {
 		displaySphereBounds?: boolean,
 		displayRegionBounds?: boolean,
 		colorMode?: ColorMode,
+		boundsColorMode?: ColorMode,
 		maxDebugDepth?: number,
 		maxDebugDistance?: number,
 		maxDebugError?: number,
@@ -37,6 +38,7 @@ export class DebugTilesPlugin {
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;
 	colorMode : ColorMode;
+	boundsColorMode : ColorMode;
 	unlit: boolean;
 	maxDebugDepth : number;
 	maxDebugDistance : number;
