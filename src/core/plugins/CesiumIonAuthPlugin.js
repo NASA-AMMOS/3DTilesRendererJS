@@ -1,6 +1,12 @@
 import { CesiumIonAuth } from './auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 
+/**
+ * @classdesc
+ * Plugin for authenticating requests to Cesium Ion. Handles token refresh, asset endpoint
+ * resolution, and attribution collection. Automatically registers a GoogleCloudAuthPlugin
+ * when the resolved asset is an external Google photorealistic tileset.
+ */
 export class CesiumIonAuthPlugin {
 
 	get apiToken() {
@@ -27,6 +33,14 @@ export class CesiumIonAuthPlugin {
 
 	}
 
+	/**
+	 * @param {Object} options
+	 * @param {string} options.apiToken - Cesium Ion access token.
+	 * @param {number|null} [options.assetId=null] - Asset ID to load. If set, overrides `rootURL` on init.
+	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the token on 4xx errors.
+	 * @param {boolean} [options.useRecommendedSettings=true] - Whether to apply recommended renderer settings for Cesium Ion assets.
+	 * @param {Function} [options.assetTypeHandler] - Callback invoked when the resolved asset type is not `3DTILES`.
+	 */
 	constructor( options = {} ) {
 
 		const {
@@ -44,10 +58,30 @@ export class CesiumIonAuthPlugin {
 		this.name = 'CESIUM_ION_AUTH_PLUGIN';
 		this.auth = new CesiumIonAuth( { apiToken, autoRefreshToken } );
 
+		/**
+		 * The Cesium Ion asset ID to load, or null if using an explicit root URL.
+		 * @type {number|null}
+		 */
 		this.assetId = assetId;
+		/**
+		 * Whether to automatically refresh the token on 4xx errors.
+		 * @type {boolean}
+		 */
 		this.autoRefreshToken = autoRefreshToken;
+		/**
+		 * Whether to apply recommended renderer settings for Cesium Ion assets.
+		 * @type {boolean}
+		 */
 		this.useRecommendedSettings = useRecommendedSettings;
+		/**
+		 * Callback invoked when the resolved Cesium Ion asset type is not `3DTILES`.
+		 * @type {Function}
+		 */
 		this.assetTypeHandler = assetTypeHandler;
+		/**
+		 * The TilesRenderer instance this plugin is registered with.
+		 * @type {Object|null}
+		 */
 		this.tiles = null;
 
 		this._tileSetVersion = - 1;

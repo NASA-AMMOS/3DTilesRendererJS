@@ -36,6 +36,13 @@ const ENTRY_POINTS = [
 			'src/babylonjs/renderer',
 		],
 	},
+	{
+		output: 'src/core/plugins/API.md',
+		title: '3d-tiles-renderer/core/plugins',
+		sources: [
+			'src/core/plugins',
+		],
+	},
 	// {
 	// 	output: 'src/r3f/API.md',
 	// 	title: '3d-tiles-renderer/r3f',

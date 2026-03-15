@@ -1,11 +1,33 @@
-// Class for making fetches to Cesium Ion, refreshing the token if needed.
+/**
+ * @classdesc
+ * Authentication helper for Cesium Ion. Fetches and caches a bearer token from the
+ * Cesium Ion endpoint and injects it into outgoing requests. Supports optional
+ * automatic token refresh on 4xx responses.
+ */
 export class CesiumIonAuth {
 
+	/**
+	 * @param {Object} [options={}]
+	 * @param {string} options.apiToken - Cesium Ion access token.
+	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the token on 4xx errors.
+	 */
 	constructor( options = {} ) {
 
 		const { apiToken, autoRefreshToken = false } = options;
+		/**
+		 * The Cesium Ion access token.
+		 * @type {string}
+		 */
 		this.apiToken = apiToken;
+		/**
+		 * Whether to automatically refresh the token on 4xx errors.
+		 * @type {boolean}
+		 */
 		this.autoRefreshToken = autoRefreshToken;
+		/**
+		 * The endpoint URL used to fetch the bearer token.
+		 * @type {string|null}
+		 */
 		this.authURL = null;
 		this._tokenRefreshPromise = null;
 		this._bearerToken = null;

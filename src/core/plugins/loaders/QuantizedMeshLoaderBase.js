@@ -1,11 +1,24 @@
 import { LoaderBase } from '3d-tiles-renderer/core';
 
+/**
+ * Decodes a zig-zag encoded integer back to its original signed value.
+ * @param {number} value - The zig-zag encoded unsigned integer.
+ * @returns {number} The decoded signed integer.
+ */
 export function zigZagDecode( value ) {
 
 	return ( value >> 1 ) ^ ( - ( value & 1 ) );
 
 }
 
+/**
+ * @classdesc
+ * Base loader for quantized-mesh terrain tiles. Parses the binary quantized-mesh format
+ * into structured vertex, index, edge, and extension data. Sets the required `Accept`
+ * header automatically. Subclasses should implement geometry construction from the
+ * parsed result.
+ * @augments LoaderBase
+ */
 export class QuantizedMeshLoaderBase extends LoaderBase {
 
 	constructor( ...args ) {
