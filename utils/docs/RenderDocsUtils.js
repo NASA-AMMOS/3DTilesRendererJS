@@ -84,6 +84,7 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 			lines.push( `\t${ name }${ defStr }${ optional }: ${ type },` );
 
 		}
+
 		lines.push( '} )' );
 
 	} else {
