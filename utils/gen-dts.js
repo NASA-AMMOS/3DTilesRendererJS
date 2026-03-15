@@ -15,7 +15,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, globSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, globSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve, sep } from 'path';
 import { rollup } from 'rollup';
@@ -58,14 +58,7 @@ const rootDirAbs = resolve( ROOT, rootDir );
 // Step 1: scan all source files for @event ClassName#event-name annotations
 const eventsByClass = parseEventsByClass( resolvedFiles );
 
-// Step 2: delete stale .d.ts files from each module directory
-for ( const indexFile of indexFiles ) {
-
-	deleteDtsFiles( dirname( indexFile ) );
-
-}
-
-// Step 3: emit .d.ts for all files to a temp directory in one tsc pass
+// Step 2: emit .d.ts for all files to a temp directory in one tsc pass
 const tmpDir = mkdtempSync( join( tmpdir(), 'dts-' ) );
 try {
 
@@ -92,7 +85,7 @@ try {
 				stripUnderscoreMembers(),
 				injectEventMaps( eventsByClass ),
 			],
-			external: [ /^3d-tiles-renderer/ ],
+			external: id => ! id.startsWith( '.' ) && ! id.startsWith( '/' ),
 		} );
 
 		await bundle.write( { file: outFile, format: 'es' } );
@@ -108,29 +101,6 @@ try {
 }
 
 // --- Helpers ---
-
-
-/**
- * Deletes all .d.ts files recursively under a directory.
- */
-function deleteDtsFiles( dir ) {
-
-	for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
-
-		const full = join( dir, entry.name );
-		if ( entry.isDirectory() ) {
-
-			deleteDtsFiles( full );
-
-		} else if ( entry.name.endsWith( '.d.ts' ) ) {
-
-			unlinkSync( full );
-
-		}
-
-	}
-
-}
 
 /**
  * Resolves .js imports inside the temp directory to their .d.ts counterparts.
@@ -162,25 +132,16 @@ function resolveDtsExtensions( tmpDir ) {
  */
 function fixTypeAliasImportsInDir( dir ) {
 
-	for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+	for ( const full of globSync( `${ dir }/**/*.d.ts` ) ) {
 
-		const full = join( dir, entry.name );
-		if ( entry.isDirectory() ) {
-
-			fixTypeAliasImportsInDir( full );
-
-		} else if ( entry.name.endsWith( '.d.ts' ) ) {
-
-			const code = readFileSync( full, 'utf8' );
-			const result = code.replace(
-				/^export type (\w+) = import\(["']([^"']+)["']\)\.(\w+);$/gm,
-				( _, local, pkg, exported ) => local === exported
-					? `import type { ${ local } } from "${ pkg }";`
-					: `import type { ${ exported } as ${ local } } from "${ pkg }";`,
-			);
-			if ( result !== code ) writeFileSync( full, result, 'utf8' );
-
-		}
+		const code = readFileSync( full, 'utf8' );
+		const result = code.replace(
+			/^export type (\w+) = import\(["']([^"']+)["']\)\.(\w+);$/gm,
+			( _, local, pkg, exported ) => local === exported
+				? `import type { ${ local } } from "${ pkg }";`
+				: `import type { ${ exported } as ${ local } } from "${ pkg }";`,
+		);
+		if ( result !== code ) writeFileSync( full, result, 'utf8' );
 
 	}
 
