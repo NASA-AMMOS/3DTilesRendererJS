@@ -253,9 +253,9 @@ declare class EnforceNonZeroErrorPlugin {
  * parsed result.
  * @augments LoaderBase
  */
-declare class QuantizedMeshLoaderBase extends LoaderBase<any, Promise<any>> {
+declare class QuantizedMeshLoaderBase extends LoaderBase {
     constructor(...args: any[]);
-    loadAsync(...args: any[]): Promise<any>;
+    loadAsync(...args: any[]): Promise<void>;
     parse(buffer: any): {
         header: {
             center: number[];
