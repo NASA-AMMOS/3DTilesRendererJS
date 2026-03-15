@@ -18,9 +18,9 @@ export class GoogleCloudAuth {
 
 	/**
 	 * @param {Object} [options={}]
-	 * @param {string} options.apiToken - Google Cloud API key.
-	 * @param {Object|null} [options.sessionOptions=null] - Session options for the 2D Map Tiles API POST body. When set, the Map Tiles session endpoint is used instead of the 3D Tiles endpoint.
-	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the session token on 4xx errors.
+	 * @param {string} options.apiToken
+	 * @param {Object|null} [options.sessionOptions=null]
+	 * @param {boolean} [options.autoRefreshToken=false]
 	 */
 	constructor( options = {} ) {
 

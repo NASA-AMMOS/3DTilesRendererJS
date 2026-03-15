@@ -8,8 +8,8 @@ export class CesiumIonAuth {
 
 	/**
 	 * @param {Object} [options={}]
-	 * @param {string} options.apiToken - Cesium Ion access token.
-	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the token on 4xx errors.
+	 * @param {string} options.apiToken
+	 * @param {boolean} [options.autoRefreshToken=false]
 	 */
 	constructor( options = {} ) {
 

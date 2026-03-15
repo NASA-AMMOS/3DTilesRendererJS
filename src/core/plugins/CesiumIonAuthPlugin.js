@@ -42,11 +42,11 @@ export class CesiumIonAuthPlugin {
 
 	/**
 	 * @param {Object} options
-	 * @param {string} options.apiToken - Cesium Ion access token.
-	 * @param {number|null} [options.assetId=null] - Asset ID to load. If set, overrides `rootURL` on init.
-	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the token on 4xx errors.
-	 * @param {boolean} [options.useRecommendedSettings=true] - Whether to apply recommended renderer settings for Cesium Ion assets.
-	 * @param {AssetTypeHandlerCallback} [options.assetTypeHandler] - Callback invoked when the resolved asset type is not `3DTILES`.
+	 * @param {string} options.apiToken
+	 * @param {number|null} [options.assetId=null]
+	 * @param {boolean} [options.autoRefreshToken=false]
+	 * @param {boolean} [options.useRecommendedSettings=true]
+	 * @param {AssetTypeHandlerCallback} [options.assetTypeHandler]
 	 */
 	constructor( options = {} ) {
 

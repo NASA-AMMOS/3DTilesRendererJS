@@ -13,11 +13,11 @@ export class GoogleCloudAuthPlugin {
 
 	/**
 	 * @param {Object} options
-	 * @param {string} options.apiToken - Google Cloud API key.
-	 * @param {Object|null} [options.sessionOptions=null] - Session options for the 2D Map Tiles API POST body. When set, the Map Tiles session endpoint is used.
-	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the session token on 4xx errors.
-	 * @param {string|null} [options.logoUrl=null] - URL of a logo image to include in attribution output.
-	 * @param {boolean} [options.useRecommendedSettings=true] - Whether to apply recommended renderer settings for photorealistic tiles.
+	 * @param {string} options.apiToken
+	 * @param {Object|null} [options.sessionOptions=null]
+	 * @param {boolean} [options.autoRefreshToken=false]
+	 * @param {string|null} [options.logoUrl=null]
+	 * @param {boolean} [options.useRecommendedSettings=true]
 	 */
 	constructor( {
 		apiToken,
