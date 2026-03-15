@@ -29,11 +29,13 @@ const ENTRY_POINTS = [
 	// 	title: '3d-tiles-renderer/three',
 	// 	sources: [],
 	// },
-	// {
-	// 	output: 'src/babylonjs/renderer/API_TEST.md',
-	// 	title: '3d-tiles-renderer/babylonjs',
-	// 	sources: [],
-	// },
+	{
+		output: 'src/babylonjs/renderer/API_TEST.md',
+		title: '3d-tiles-renderer/babylonjs',
+		sources: [
+			'src/babylonjs/renderer',
+		],
+	},
 	// {
 	// 	output: 'src/r3f/API_TEST.md',
 	// 	title: '3d-tiles-renderer/r3f',
