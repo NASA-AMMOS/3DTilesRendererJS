@@ -11,33 +11,33 @@ const rootDir = path.resolve( __dirname, '../..' );
 // JSDoc will process all .js files found in each listed directory.
 const ENTRY_POINTS = [
 	{
-		output: 'src/three/plugins/API_TEST.md',
+		output: 'src/three/plugins/API.md',
 		title: '3d-tiles-renderer/three/plugins',
 		sources: [
 			'src/three/plugins/images/sources/WMTSImageSource.js',
 		],
 	},
 	{
-		output: 'src/core/renderer/API_TEST.md',
+		output: 'src/core/renderer/API.md',
 		title: '3d-tiles-renderer/core',
 		sources: [
 			'src/core/renderer',
 		],
 	},
 	// {
-	// 	output: 'src/three/renderer/API_TEST.md',
+	// 	output: 'src/three/renderer/API.md',
 	// 	title: '3d-tiles-renderer/three',
 	// 	sources: [],
 	// },
 	{
-		output: 'src/babylonjs/renderer/API_TEST.md',
+		output: 'src/babylonjs/renderer/API.md',
 		title: '3d-tiles-renderer/babylonjs',
 		sources: [
 			'src/babylonjs/renderer',
 		],
 	},
 	// {
-	// 	output: 'src/r3f/API_TEST.md',
+	// 	output: 'src/r3f/API.md',
 	// 	title: '3d-tiles-renderer/r3f',
 	// 	sources: [],
 	// },
