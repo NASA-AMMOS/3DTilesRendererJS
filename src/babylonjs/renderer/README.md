@@ -2,9 +2,9 @@
 
 Implementation of the TilesRendererBase class for Babylon js.
 
-[Dingo Gap Mars dataset](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/mars.html)
+[Dingo Gap Mars dataset](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html)
 
-[Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/googleMapsAerial.html)
+[Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html)
 
 [Google Photorealistic Tiles + Geospatial Camera Demo](https://demos.babylonjs.com/3d-tiles/)
 
@@ -21,8 +21,8 @@ The current implementation has the below limitations:
 
 | Link | Description |
 | --- | --- |
-| [Dingo Gap Mars](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/mars.html) | Uses ArcRotate camera. Example code in example/babylonjs/index.js |
-| [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/babylonjs/googleMapsAerial.html) | Uses GeospatialCamera. Example code in example/babylonjs/googleMapsAerial.js |
+| [Dingo Gap Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) | Uses ArcRotate camera. Example code in example/babylonjs/index.js |
+| [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html) | Uses GeospatialCamera. Example code in example/babylonjs/googleMapsAerial.js |
 
 
 
