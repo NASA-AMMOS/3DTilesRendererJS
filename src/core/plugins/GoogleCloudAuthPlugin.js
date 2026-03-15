@@ -3,8 +3,22 @@ import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 
 const TILES_3D_API = 'https://tile.googleapis.com/v1/3dtiles/root.json';
 
+/**
+ * @classdesc
+ * Plugin for authenticating requests to the Google Cloud Maps APIs, including the
+ * Photorealistic 3D Tiles and 2D Map Tiles APIs. Handles session-token management,
+ * per-tile attribution collection, and optional logo attribution.
+ */
 export class GoogleCloudAuthPlugin {
 
+	/**
+	 * @param {Object} options
+	 * @param {string} options.apiToken
+	 * @param {Object|null} [options.sessionOptions=null]
+	 * @param {boolean} [options.autoRefreshToken=false]
+	 * @param {string|null} [options.logoUrl=null]
+	 * @param {boolean} [options.useRecommendedSettings=true]
+	 */
 	constructor( {
 		apiToken,
 		sessionOptions = null,
@@ -15,11 +29,27 @@ export class GoogleCloudAuthPlugin {
 
 		this.name = 'GOOGLE_CLOUD_AUTH_PLUGIN';
 
+		/**
+		 * The Google Cloud API key.
+		 * @type {string}
+		 */
 		this.apiToken = apiToken;
+		/**
+		 * Whether to apply recommended renderer settings for photorealistic tiles.
+		 * @type {boolean}
+		 */
 		this.useRecommendedSettings = useRecommendedSettings;
+		/**
+		 * URL of a logo image to include in attribution output, or null if not set.
+		 * @type {string|null}
+		 */
 		this.logoUrl = logoUrl;
 
 		this.auth = new GoogleCloudAuth( { apiToken, autoRefreshToken, sessionOptions } );
+		/**
+		 * The TilesRenderer instance this plugin is registered with.
+		 * @type {Object|null}
+		 */
 		this.tiles = null;
 
 		this._visibilityChangeCallback = null;

@@ -20,7 +20,8 @@ function formatCallbackType( callbackDoc, callbackMap ) {
 		? formatType( callbackDoc.returns[ 0 ].type, callbackMap )
 		: 'void';
 
-	return `( ${ params.join( ', ' ) } ) => ${ ret }`;
+	const sig = params.length > 0 ? ` ${ params.join( ', ' ) } ` : '';
+	return `(${ sig }) => ${ ret }`;
 
 }
 
@@ -63,12 +64,36 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 	const topLevel = ( classDoc.params || [] ).filter( p => ! p.name.includes( '.' ) );
 	const options = ( classDoc.params || [] ).filter( p => p.name.includes( '.' ) );
 
-	const sig = topLevel.map( p => formatParam( p, callbackMap ) ).join( ', ' );
+	// When there is exactly one top-level param and nested option fields, render the
+	// options inline as a destructured object rather than as a separate bullet list.
+	const isOptionsObject = topLevel.length === 1 && options.length > 0;
 
 	lines.push( '### .constructor' );
 	lines.push( '' );
 	lines.push( '```js' );
-	lines.push( `constructor( ${ sig } )` );
+
+	if ( isOptionsObject ) {
+
+		lines.push( 'constructor( {' );
+		for ( const param of options ) {
+
+			const name = param.name.split( '.' ).pop();
+			const type = formatType( param.type, callbackMap );
+			const defStr = param.defaultvalue !== undefined ? ` = ${ param.defaultvalue }` : '';
+			const optional = param.optional && param.defaultvalue === undefined ? '?' : '';
+			lines.push( `\t${ name }${ defStr }${ optional }: ${ type },` );
+
+		}
+
+		lines.push( '} )' );
+
+	} else {
+
+		const sig = topLevel.map( p => formatParam( p, callbackMap ) ).join( ', ' );
+		lines.push( `constructor( ${ sig } )` );
+
+	}
+
 	lines.push( '```' );
 	lines.push( '' );
 
@@ -80,8 +105,8 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 
 	}
 
-	// Render nested options (e.g. options.layer, options.url) as a list
-	if ( options.length > 0 ) {
+	// Bullet list only used for the non-options-object case (e.g. mixed positional + nested params)
+	if ( ! isOptionsObject && options.length > 0 ) {
 
 		for ( const param of options ) {
 

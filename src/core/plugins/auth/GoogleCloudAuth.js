@@ -2,8 +2,12 @@ import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const TILES_MAP_URL = 'https://tile.googleapis.com/v1/createSession';
 
-// Class for making fetches to Google Cloud, refreshing the token if needed.
-// Supports both the 2d map tiles API in addition to 3d tiles.
+/**
+ * @classdesc
+ * Authentication helper for Google Cloud Maps APIs. Manages session-token creation and
+ * renewal for both the Photorealistic 3D Tiles API and the 2D Map Tiles API, injecting
+ * the API key and session token into outgoing requests.
+ */
 export class GoogleCloudAuth {
 
 	get isMapTilesSession() {
@@ -12,13 +16,39 @@ export class GoogleCloudAuth {
 
 	}
 
+	/**
+	 * @param {Object} [options={}]
+	 * @param {string} options.apiToken
+	 * @param {Object|null} [options.sessionOptions=null]
+	 * @param {boolean} [options.autoRefreshToken=false]
+	 */
 	constructor( options = {} ) {
 
 		const { apiToken, sessionOptions = null, autoRefreshToken = false } = options;
+		/**
+		 * The Google Cloud API key.
+		 * @type {string}
+		 */
 		this.apiToken = apiToken;
+		/**
+		 * Whether to automatically refresh the session token on 4xx errors.
+		 * @type {boolean}
+		 */
 		this.autoRefreshToken = autoRefreshToken;
+		/**
+		 * The endpoint URL used to create or refresh the session token.
+		 * @type {string}
+		 */
 		this.authURL = TILES_MAP_URL;
+		/**
+		 * The current session token, or null if not yet established.
+		 * @type {string|null}
+		 */
 		this.sessionToken = null;
+		/**
+		 * Session options passed as the POST body when creating a Map Tiles session.
+		 * @type {Object|null}
+		 */
 		this.sessionOptions = sessionOptions;
 		this._tokenRefreshPromise = null;
 

@@ -813,7 +813,7 @@ export class SUBTREELoader extends LoaderBase {
 	 *
 	 * @param {Object} subtree The subtree for looking up availability.
 	 * @param {Array} bottomRow The bottom row of tiles in a transcoded subtree.
-	 * @returns {[]} A list of identifiers for the child subtrees.
+	 * @returns {Array} A list of identifiers for the child subtrees.
 	 * @private
 	 */
 	listChildSubtrees( subtree, bottomRow ) {
