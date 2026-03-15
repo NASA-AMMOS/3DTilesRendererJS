@@ -2,6 +2,13 @@ import { CesiumIonAuth } from './auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 
 /**
+ * @callback AssetTypeHandlerCallback
+ * @param {string} type - The Cesium Ion asset type (e.g. `'TERRAIN'`, `'GLTF'`, `'CZML'`).
+ * @param {TilesRendererBase} tiles - The tiles renderer instance.
+ * @param {Object} asset - The full asset endpoint JSON response.
+ */
+
+/**
  * @classdesc
  * Plugin for authenticating requests to Cesium Ion. Handles token refresh, asset endpoint
  * resolution, and attribution collection. Automatically registers a GoogleCloudAuthPlugin
@@ -39,7 +46,7 @@ export class CesiumIonAuthPlugin {
 	 * @param {number|null} [options.assetId=null] - Asset ID to load. If set, overrides `rootURL` on init.
 	 * @param {boolean} [options.autoRefreshToken=false] - Whether to automatically refresh the token on 4xx errors.
 	 * @param {boolean} [options.useRecommendedSettings=true] - Whether to apply recommended renderer settings for Cesium Ion assets.
-	 * @param {Function} [options.assetTypeHandler] - Callback invoked when the resolved asset type is not `3DTILES`.
+	 * @param {AssetTypeHandlerCallback} [options.assetTypeHandler] - Callback invoked when the resolved asset type is not `3DTILES`.
 	 */
 	constructor( options = {} ) {
 
@@ -75,7 +82,7 @@ export class CesiumIonAuthPlugin {
 		this.useRecommendedSettings = useRecommendedSettings;
 		/**
 		 * Callback invoked when the resolved Cesium Ion asset type is not `3DTILES`.
-		 * @type {Function}
+		 * @type {AssetTypeHandlerCallback}
 		 */
 		this.assetTypeHandler = assetTypeHandler;
 		/**
