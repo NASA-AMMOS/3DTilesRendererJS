@@ -15,7 +15,6 @@ const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => ne
 
 // TODO: implementation does not support left handed coordinate system
 /**
- * @classdesc
  * Babylon.js implementation of the 3D Tiles renderer. Manages tile loading, caching, traversal,
  * and scene management using the Babylon.js scene graph and camera APIs. Dispatches all events
  * defined by TilesRendererBase via Babylon.js Observables.

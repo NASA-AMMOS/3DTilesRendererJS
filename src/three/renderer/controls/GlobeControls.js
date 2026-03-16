@@ -33,8 +33,6 @@ const MIN_ELEVATION = 2550;
 /**
  * Camera controls for navigating a globe-shaped tileset. Extends EnvironmentControls with
  * ellipsoid-aware rotation, globe inertia, and automatic near/far plane adjustment.
- * @classdesc Camera controls for navigating a globe-shaped tileset. Extends EnvironmentControls
- * with ellipsoid-aware rotation, globe inertia, and automatic near/far plane adjustment.
  * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
  * @param {Camera} [camera=null] - The camera to control.
  * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.
@@ -48,12 +46,22 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
+	/**
+	 * The world matrix of `ellipsoidGroup`, representing the ellipsoid's coordinate frame.
+	 * @type {Matrix4}
+	 * @readonly
+	 */
 	get ellipsoidFrame() {
 
 		return this.ellipsoidGroup.matrixWorld;
 
 	}
 
+	/**
+	 * The inverse of `ellipsoidFrame`.
+	 * @type {Matrix4}
+	 * @readonly
+	 */
 	get ellipsoidFrameInverse() {
 
 		const { ellipsoidGroup, ellipsoidFrame, _ellipsoidFrameInverse } = this;
@@ -179,7 +187,7 @@ export class GlobeControls extends EnvironmentControls {
 	/**
 	 * Returns the vector from the camera to the center of the ellipsoid in world space.
 	 * @param {Vector3} target
-	 * @returns {Vector3}
+	 * @return {Vector3}
 	 */
 	getVectorToCenter( target ) {
 
@@ -193,7 +201,7 @@ export class GlobeControls extends EnvironmentControls {
 	// get the distance to the center of the globe
 	/**
 	 * Returns the distance from the camera to the center of the ellipsoid.
-	 * @returns {number}
+	 * @return {number}
 	 */
 	getDistanceToCenter() {
 

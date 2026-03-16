@@ -120,10 +120,12 @@ export default [
 				tagNamePreference: {
 					returns: 'return',
 					extends: 'augments',
+					classdesc: false,
 				},
 			},
 		},
 		rules: {
+			'jsdoc/check-tag-names': 'error',
 			'jsdoc/check-types': 'error',
 			'jsdoc/require-param-type': 'error',
 			'jsdoc/require-returns-type': 'error',

@@ -55,9 +55,6 @@ const _endEvent = { type: 'end' };
 /**
  * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
  * right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
- * @classdesc Camera controls for exploring a 3D environment. Supports drag-to-pan,
- * scroll-to-zoom, right-click-to-rotate, and optional damping/inertia. Works with any
- * Three.js scene.
  * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
  * @param {Camera} [camera=null] - The camera to control.
  * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.
@@ -670,7 +667,7 @@ export class EnvironmentControls extends EventDispatcher {
 	/**
 	 * Returns the current drag or rotation pivot point in world space.
 	 * @param {Vector3} target - Target vector to write the result into.
-	 * @returns {Vector3|null} The target vector, or null if no pivot is active.
+	 * @return {Vector3|null} The target vector, or null if no pivot is active.
 	 */
 	getPivotPoint( target ) {
 

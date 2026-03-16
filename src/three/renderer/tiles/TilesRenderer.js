@@ -46,9 +46,6 @@ function updateFrustumCulled( object, toInitialValue ) {
  * Three.js implementation of the 3D Tiles renderer. Manages camera registration,
  * tile loading, and raycasting. The `group` property must be added to the Three.js
  * scene to display loaded tiles.
- * @classdesc Three.js implementation of the 3D Tiles renderer. Manages camera registration,
- * tile loading, and raycasting. The `group` property must be added to the Three.js
- * scene to display loaded tiles.
  * @param {string} [url] - URL of the root tileset JSON file.
  */
 export class TilesRenderer extends TilesRendererBase {
@@ -198,7 +195,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/**
 	 * Returns the axis-aligned bounding box of the root tile in the group's local space.
 	 * @param {Box3} target - Target box to write into.
-	 * @returns {boolean} Whether the tileset is loaded and a bounding box is available.
+	 * @return {boolean} Whether the tileset is loaded and a bounding box is available.
 	 */
 	getBoundingBox( target ) {
 
@@ -226,7 +223,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * Returns the oriented bounding box and transform of the root tile.
 	 * @param {Box3} targetBox - Target box to write into (in local OBB space).
 	 * @param {Matrix4} targetMatrix - Transform from OBB local space to group local space.
-	 * @returns {boolean} Whether the tileset is loaded and an OBB is available.
+	 * @return {boolean} Whether the tileset is loaded and an OBB is available.
 	 */
 	getOrientedBoundingBox( targetBox, targetMatrix ) {
 
@@ -253,7 +250,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/**
 	 * Returns the bounding sphere of the root tile in the group's local space.
 	 * @param {Sphere} target - Target sphere to write into.
-	 * @returns {boolean} Whether the tileset is loaded and a bounding sphere is available.
+	 * @return {boolean} Whether the tileset is loaded and a bounding sphere is available.
 	 */
 	getBoundingSphere( target ) {
 
@@ -330,7 +327,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/**
 	 * Returns whether the given camera is registered with this renderer.
 	 * @param {Camera} camera
-	 * @returns {boolean}
+	 * @return {boolean}
 	 */
 	hasCamera( camera ) {
 
@@ -342,7 +339,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * Registers a camera with the renderer so it is used for tile selection and screen-space error
 	 * calculation. Use `setResolution` or `setResolutionFromRenderer` to provide the camera's resolution.
 	 * @param {Camera} camera
-	 * @returns {boolean} Whether the camera was newly added.
+	 * @return {boolean} Whether the camera was newly added.
 	 */
 	setCamera( camera ) {
 
@@ -367,7 +364,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * @param {Camera} camera - A previously registered camera.
 	 * @param {number|Vector2} xOrVec - Render width in pixels, or a Vector2 containing width and height.
 	 * @param {number} [y] - Render height in pixels when `xOrVec` is a number.
-	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 * @return {boolean} Whether the camera is registered and the resolution was updated.
 	 */
 	setResolution( camera, xOrVec, y ) {
 
@@ -397,7 +394,7 @@ export class TilesRenderer extends TilesRendererBase {
 	 * Sets the render resolution for a camera by reading the current size from a WebGLRenderer.
 	 * @param {Camera} camera - A previously registered camera.
 	 * @param {WebGLRenderer} renderer
-	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 * @return {boolean} Whether the camera is registered and the resolution was updated.
 	 */
 	setResolutionFromRenderer( camera, renderer ) {
 
@@ -410,7 +407,7 @@ export class TilesRenderer extends TilesRendererBase {
 	/**
 	 * Unregisters a camera from the renderer.
 	 * @param {Camera} camera
-	 * @returns {boolean} Whether the camera was found and removed.
+	 * @return {boolean} Whether the camera was found and removed.
 	 */
 	deleteCamera( camera ) {
 

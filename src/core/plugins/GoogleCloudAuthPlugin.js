@@ -4,7 +4,6 @@ import { GoogleAttributionsManager } from './GoogleAttributionsManager.js';
 const TILES_3D_API = 'https://tile.googleapis.com/v1/3dtiles/root.json';
 
 /**
- * @classdesc
  * Plugin for authenticating requests to the Google Cloud Maps APIs, including the
  * Photorealistic 3D Tiles and 2D Map Tiles APIs. Handles session-token management,
  * per-tile attribution collection, and optional logo attribution.

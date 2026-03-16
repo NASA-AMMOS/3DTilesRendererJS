@@ -1,5 +1,4 @@
 /**
- * @classdesc
  * Authentication helper for Cesium Ion. Fetches and caches a bearer token from the
  * Cesium Ion endpoint and injects it into outgoing requests. Supports optional
  * automatic token refresh on 4xx responses.

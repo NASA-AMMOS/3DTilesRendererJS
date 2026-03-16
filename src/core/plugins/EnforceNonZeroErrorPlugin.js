@@ -1,5 +1,4 @@
 /**
- * @classdesc
  * Plugin that ensures every tile has a non-zero geometric error. Tiles with a geometric
  * error of zero are assigned a derived value based on the nearest ancestor with a non-zero
  * error, halved once per level of depth below that ancestor.
