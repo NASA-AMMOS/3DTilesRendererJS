@@ -19,7 +19,7 @@ export class GoogleCloudAuth {
 	/**
 	 * @param {Object} [options={}]
 	 * @param {string} options.apiToken
-	 * @param {Object|null} [options.sessionOptions=null]
+	 * @param {{ mapType?: string, language?: string, region?: string, [key: string]: any }|null} [options.sessionOptions=null]
 	 * @param {boolean} [options.autoRefreshToken=false]
 	 */
 	constructor( options = {} ) {
@@ -47,7 +47,7 @@ export class GoogleCloudAuth {
 		this.sessionToken = null;
 		/**
 		 * Session options passed as the POST body when creating a Map Tiles session.
-		 * @type {Object|null}
+		 * @type {{ mapType?: string, language?: string, region?: string, [key: string]: any }|null}
 		 */
 		this.sessionOptions = sessionOptions;
 		this._tokenRefreshPromise = null;
