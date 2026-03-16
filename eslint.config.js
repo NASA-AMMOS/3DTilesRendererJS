@@ -118,8 +118,8 @@ export default [
 					String: 'string',
 				},
 				tagNamePreference: {
-					returns: 'return',
-					extends: 'augments',
+					return: 'returns',
+					augments: 'extends',
 					classdesc: false,
 				},
 			},
