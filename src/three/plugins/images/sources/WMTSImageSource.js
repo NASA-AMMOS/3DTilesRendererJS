@@ -8,6 +8,8 @@ import { ProjectionScheme } from '../utils/ProjectionScheme.js';
  * @property {number} matrixHeight - Number of tile rows at this level.
  * @property {number} [tileWidth] - Tile width in pixels (defaults to tileDimension).
  * @property {number} [tileHeight] - Tile height in pixels (defaults to tileDimension).
+ * @property {number[]|null} [tileBounds=null] - Explicit tile grid bounds in radians
+ *   `[west, south, east, north]`. If null, bounds are auto-computed from the grid dimensions.
  */
 
 /**
@@ -163,17 +165,21 @@ export class WMTSImageSource extends TiledImageSource {
 				const tw = tm.tileWidth || tileDimension;
 				const th = tm.tileHeight || tileDimension;
 
-				const scaleFactor = 2 ** ( refIdx - i );
-				const normW = tw * tm.matrixWidth * scaleFactor / refPixelW;
-				const normH = th * tm.matrixHeight * scaleFactor / refPixelH;
+				let tileBounds = tm.tileBounds || null;
+				if ( ! tileBounds ) {
 
-				let tileBounds = null;
-				if ( Math.abs( normW - 1 ) > 1e-6 || Math.abs( normH - 1 ) > 1e-6 ) {
+					const scaleFactor = 2 ** ( refIdx - i );
+					const normW = tw * tm.matrixWidth * scaleFactor / refPixelW;
+					const normH = th * tm.matrixHeight * scaleFactor / refPixelH;
 
-					tileBounds = projection.toCartographicRange( [
-						0, 1 - normH,
-						normW, 1,
-					] );
+					if ( Math.abs( normW - 1 ) > 1e-6 || Math.abs( normH - 1 ) > 1e-6 ) {
+
+						tileBounds = projection.toCartographicRange( [
+							0, 1 - normH,
+							normW, 1,
+						] );
+
+					}
 
 				}
 
