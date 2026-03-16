@@ -4,6 +4,17 @@ import { CameraTransitionManager } from '3d-tiles-renderer/three';
 import { useDeepOptions } from '../utilities/useOptions.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
+/**
+ * Manages transitions between perspective and orthographic cameras. Wraps CameraTransitionManager
+ * and integrates with R3F's camera state. All CameraTransitionManager properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {string} [props.mode='perspective'] - Active camera mode: `'perspective'` or `'orthographic'`.
+ * @param {PerspectiveCamera} [props.perspectiveCamera] - Override the internal perspective camera.
+ * @param {OrthographicCamera} [props.orthographicCamera] - Override the internal orthographic camera.
+ * @param {Function} [props.onBeforeToggle] - Called before the camera mode switches, with the manager
+ * and target camera as arguments. Defaults to syncing via active controls if present.
+ */
 export const CameraTransition = forwardRef( function CameraTransition( props, ref ) {
 
 	const {

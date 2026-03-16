@@ -8,6 +8,16 @@ function randomID() {
 
 }
 
+/**
+ * Displays attributions collected from the loaded tileset. Must be a child of TilesRenderer.
+ * Remaining props are passed to the underlying CanvasDOMOverlay element.
+ * @component
+ * @param {Object} props
+ * @param {Function} [props.generateAttributions] - Custom function to generate attribution elements.
+ * Receives the attributions array and the overlay element's unique id. Defaults to built-in rendering.
+ * @param {Object} [props.style] - Style overrides applied to the overlay container.
+ * @param {ReactNode} [props.children] - Additional content rendered above the attributions.
+ */
 // Overlay for displaying tile data set attributions
 export function TilesAttributionOverlay( { children, style, generateAttributions, ...rest } ) {
 

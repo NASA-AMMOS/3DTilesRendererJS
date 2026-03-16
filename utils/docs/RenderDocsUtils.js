@@ -332,6 +332,71 @@ export function renderEvents( events, callbackMap = {} ) {
 
 }
 
+export function renderComponent( doc, callbackMap = {} ) {
+
+	const lines = [];
+
+	lines.push( `## ${ doc.name }` );
+	lines.push( '' );
+
+	if ( doc.description ) {
+
+		lines.push( doc.description );
+		lines.push( '' );
+
+	}
+
+	const props = ( doc.params || [] ).filter( p => p.name.includes( '.' ) );
+
+	if ( props.length > 0 ) {
+
+		lines.push( '### Props' );
+		lines.push( '' );
+		lines.push( '```jsx' );
+		lines.push( `<${ doc.name }` );
+
+		for ( const prop of props ) {
+
+			const name = prop.name.split( '.' ).pop();
+			const type = formatType( prop.type, callbackMap );
+			const optional = prop.optional ? '?' : '';
+			const defStr = prop.defaultvalue !== undefined ? ` = ${ prop.defaultvalue }` : '';
+			lines.push( `\t${ name }${ optional }: ${ type }${ defStr }` );
+
+		}
+
+		lines.push( '/>' );
+		lines.push( '```' );
+		lines.push( '' );
+
+		for ( const prop of props ) {
+
+			const name = prop.name.split( '.' ).pop();
+			const type = formatType( prop.type, callbackMap );
+			const optional = prop.optional ? '?' : '';
+			const defStr = prop.defaultvalue !== undefined ? ` = ${ prop.defaultvalue }` : '';
+			lines.push( `### .${ name }` );
+			lines.push( '' );
+			lines.push( '```jsx' );
+			lines.push( `${ name }${ optional }: ${ type }${ defStr }` );
+			lines.push( '```' );
+			lines.push( '' );
+
+			if ( prop.description ) {
+
+				lines.push( prop.description );
+				lines.push( '' );
+
+			}
+
+		}
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
 export function renderClass( classDoc, members, callbackMap = {}, resolveLink = null ) {
 
 	const lines = [];
