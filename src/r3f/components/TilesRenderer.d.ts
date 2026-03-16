@@ -40,8 +40,8 @@ export declare const TilesPlugin: <
 ) => JSX.Element;
 
 // dynamically mapping keys of TilesRendererEventMap to onCamelCased
-type CamelCase<S extends string> = S extends `${infer T}-${infer U}`
-	? `${T}${Capitalize<CamelCase<U>>}`
+type CamelCase<S extends string> = S extends `${ infer T }-${ infer U }`
+	? `${ T }${ Capitalize<CamelCase<U>> }`
 	: S;
 
 type EventHandler<K extends keyof TilesRendererEventMap> = (
@@ -49,7 +49,7 @@ type EventHandler<K extends keyof TilesRendererEventMap> = (
 ) => void;
 
 type TilesRendererEventMapForR3f = {
-	[K in keyof TilesRendererEventMap as `on${Capitalize<CamelCase<K>>}`]?: EventHandler<K>;
+	[K in keyof TilesRendererEventMap as `on${ Capitalize<CamelCase<K>> }`]?: EventHandler<K>;
 };
 
 interface TilesRendererProps

@@ -111,7 +111,7 @@ describe( 'EllipsoidRegion', () => {
 
 			regionConfigs.forEach( regionConfig => {
 
-				it( `should handle ${ellipsoidConfig.name} with ${regionConfig.name}`, () => {
+				it( `should handle ${ ellipsoidConfig.name } with ${ regionConfig.name }`, () => {
 
 					const matrix = new Matrix4();
 					const invMatrix = new Matrix4();

@@ -1634,7 +1634,7 @@ export class TilesRendererBase {
 
 				} else {
 
-					throw new Error( `Failed to load model with error code ${res.status}` );
+					throw new Error( `Failed to load model with error code ${ res.status }` );
 
 				}
 

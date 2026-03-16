@@ -53,6 +53,7 @@ export default [
 				vars: 'all',
 				args: 'none',
 			} ],
+			'template-curly-spacing': [ 'error', 'always' ],
 		},
 	},
 

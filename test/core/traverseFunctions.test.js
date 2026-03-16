@@ -42,7 +42,7 @@ describe( 'traverseSet', () => {
 
 		const visited = [];
 
-		traverseSet( root, null, ( tile, parent, depth ) => visited.push( `${tile.name}-${depth}-${parent?.name ?? 'none'}` ) );
+		traverseSet( root, null, ( tile, parent, depth ) => visited.push( `${ tile.name }-${ depth }-${ parent?.name ?? 'none' }` ) );
 
 		expect( visited ).toHaveLength( 11 );
 		expect( visited ).toEqual( [ 'root-0-none', 'a-1-root', 'd-2-a', 'e-2-a', 'f-2-a', 'b-1-root', 'c-1-root', 'g-2-c', 'h-3-g', 'i-3-g', 'j-3-g' ] );
