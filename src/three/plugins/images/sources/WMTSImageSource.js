@@ -222,7 +222,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 		const {
 			tiling, tileDimension, levels, dimensions, contentBoundingBox,
-			tileMatrices, style, tileMatrixSet
+			tileMatrices, style, tileMatrixSet,
 		} = this;
 		let { url } = this;
 
@@ -324,7 +324,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 				for ( const key in dimensions ) {
 
-					url = url.replace( new RegExp( `{\\s*${ key }\\s*}`, 'gi' ), dimensions[ key ] );
+					url = url.replace( new RegExp( `{\\s*${key}\\s*}`, 'gi' ), dimensions[ key ] );
 
 				}
 
