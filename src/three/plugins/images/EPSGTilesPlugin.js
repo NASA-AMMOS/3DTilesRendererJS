@@ -54,10 +54,18 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 		const {
 			capabilities,
+			url,
 			layer,
 			tileMatrixSet,
 			style,
+			format,
 			dimensions,
+			tileMatrixLabels,
+			tileMatrices,
+			projection,
+			levels,
+			tileDimension,
+			contentBoundingBox,
 			...rest
 		} = options;
 
@@ -66,10 +74,18 @@ export class WMTSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 		this.name = 'WTMS_TILES_PLUGIN';
 		this.imageSource = new WMTSImageSource( {
 			capabilities,
+			url,
 			layer,
 			tileMatrixSet,
 			style,
-			dimensions
+			format,
+			dimensions,
+			tileMatrixLabels,
+			tileMatrices,
+			projection,
+			levels,
+			tileDimension,
+			contentBoundingBox,
 		} );
 
 	}
