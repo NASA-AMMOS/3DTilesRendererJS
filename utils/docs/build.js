@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { renderClass, renderTypedef, renderConstants, toAnchor } from './RenderDocsUtils.js';
+import { renderClass, renderComponent, renderTypedef, renderConstants, toAnchor } from './RenderDocsUtils.js';
 import { findRootDir } from '../CommandUtils.js';
 
 const ROOT_DIR = findRootDir();
@@ -32,11 +32,11 @@ const ENTRY_POINTS = [
 		title: '3d-tiles-renderer/core/plugins',
 		source: 'src/core/plugins',
 	},
-	// {
-	// 	output: 'src/r3f/API.md',
-	// 	title: '3d-tiles-renderer/r3f',
-	// 	source: null,
-	// },
+	{
+		output: 'src/r3f/API.md',
+		title: '3d-tiles-renderer/r3f',
+		source: 'src/r3f/components',
+	},
 ];
 
 // Run JSDoc for all entry points and build a global type registry for cross-file links
@@ -45,15 +45,20 @@ const results = ENTRY_POINTS.map( entry => ( {
 	jsdoc: filterDocumented( runJsDoc( path.resolve( ROOT_DIR, entry.source ) ) )
 } ) );
 
-// Only classes and non-callback typedefs get sections (and therefore anchors) in the output.
+// Doclet type predicates
+const isClass = d => d.kind === 'class';
+const isObjectTypedef = d => d.kind === 'typedef' && d.type.names[ 0 ] !== 'function';
+const isCallbackTypedef = d => d.kind === 'typedef' && d.type.names[ 0 ] === 'function';
+const isReactComponent = d => ( d.kind === 'function' || d.kind === 'constant' ) && d.tags && d.tags.some( t => t.title === 'component' );
+const isConstant = d => d.kind === 'constant' && ! d.memberof && ! isReactComponent( d );
+
+// Only classes, non-callback typedefs, and React components get sections (and therefore anchors) in the output.
 const typeRegistry = {}; // name -> output path
 for ( const { entry, jsdoc } of results ) {
 
 	for ( const d of jsdoc ) {
 
-		const isClass = d.kind === 'class';
-		const isObjectTypedef = ( d.kind === 'typedef' && d.type.names[ 0 ] !== 'function' );
-		if ( isClass || isObjectTypedef ) {
+		if ( isClass( d ) || isObjectTypedef( d ) || isReactComponent( d ) ) {
 
 			typeRegistry[ d.name ] = entry.output;
 
@@ -94,7 +99,7 @@ for ( const { entry, jsdoc } of results ) {
 
 	// Sort classes so base classes appear before subclasses
 	const classes = jsdoc
-		.filter( d => d.kind === 'class' )
+		.filter( d => isClass( d ) )
 		.sort( ( a, b ) => {
 
 			const aIsBase = ! a.augments || a.augments.length === 0;
@@ -109,7 +114,7 @@ for ( const { entry, jsdoc } of results ) {
 	const callbackMap = {};
 	for ( const d of jsdoc ) {
 
-		if ( d.kind === 'typedef' && d.type.names[ 0 ] === 'function' ) {
+		if ( isCallbackTypedef( d ) ) {
 
 			callbackMap[ d.name ] = d;
 
@@ -119,7 +124,7 @@ for ( const { entry, jsdoc } of results ) {
 
 	// Sort typedefs so plain-object bases appear before derived types; exclude @callback entries
 	const typedefs = jsdoc
-		.filter( d => d.kind === 'typedef' && d.type.names[ 0 ] !== 'function' )
+		.filter( d => isObjectTypedef( d ) )
 		.sort( ( a, b ) => {
 
 			const aIsBase = a.type.names[ 0 ] === 'Object';
@@ -130,9 +135,14 @@ for ( const { entry, jsdoc } of results ) {
 
 		} );
 
+	// sort components by source line order
+	const components = jsdoc
+		.filter( d => isReactComponent( d ) )
+		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+
 	// sort constants by source line order
 	const constants = jsdoc
-		.filter( d => d.kind === 'constant' && ! d.memberof )
+		.filter( d => isConstant( d ) )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
 
 	// cache all fields by associated class name
@@ -157,6 +167,12 @@ for ( const { entry, jsdoc } of results ) {
 	const sections = [ `# ${ entry.title }`, '' ];
 
 	sections.push( renderConstants( constants, callbackMap ) );
+
+	for ( const component of components ) {
+
+		sections.push( renderComponent( component, callbackMap ) );
+
+	}
 
 	for ( const cls of classes ) {
 

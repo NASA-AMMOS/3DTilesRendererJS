@@ -12,6 +12,14 @@ const QueryManagerContext = createContext( null );
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _ray = /* @__PURE__ */ new Ray();
 
+/**
+ * A SettledObject that smoothly interpolates its position as the query result updates.
+ * Must be a descendant of SettledObjects.
+ * @component
+ * @param {Object} props
+ * @param {number} [props.interpolationFactor=0.025] - Controls interpolation speed. Smaller values produce slower, smoother movement.
+ * @param {Function} [props.onQueryUpdate] - Called with the raycast hit result each time the query updates.
+ */
 export const AnimatedSettledObject = forwardRef( function AnimatedSettledObject( props, ref ) {
 
 	const {
@@ -115,6 +123,18 @@ export const AnimatedSettledObject = forwardRef( function AnimatedSettledObject(
 
 } );
 
+/**
+ * Positions a component on the surface of the tileset at a lat/lon coordinate or along a ray.
+ * Must be a descendant of SettledObjects.
+ * @component
+ * @param {Object} props
+ * @param {ReactNode} [props.component=<group/>] - The element to clone and position on the surface.
+ * @param {number} [props.lat=null] - Latitude in radians. Use with `lon` for geographic positioning.
+ * @param {number} [props.lon=null] - Longitude in radians. Use with `lat` for geographic positioning.
+ * @param {Vector3} [props.rayorigin=null] - Ray origin for arbitrary ray-based positioning.
+ * @param {Vector3} [props.raydirection=null] - Ray direction for arbitrary ray-based positioning.
+ * @param {Function} [props.onQueryUpdate] - Called with the raycast hit result each time the query updates.
+ */
 // Object that updates its "settled" state
 export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
@@ -184,6 +204,14 @@ export const SettledObject = forwardRef( function SettledObject( props, ref ) {
 
 } );
 
+/**
+ * Manages raycasting queries against the tileset for positioning child SettledObject components.
+ * Must be a child of TilesRenderer. All QueryManager properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {Object3D|Array} [props.scene] - Scene(s) to raycast against. Defaults to the R3F scene.
+ * @param {ReactNode} [props.children] - SettledObject or AnimatedSettledObject components.
+ */
 export const SettledObjects = forwardRef( function SettledObjects( props, ref ) {
 
 	const threeScene = useThree( ( { scene } ) => scene );

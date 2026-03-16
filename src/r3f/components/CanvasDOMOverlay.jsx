@@ -2,6 +2,13 @@ import { useMemo, useEffect, StrictMode, forwardRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useThree } from '@react-three/fiber';
 
+/**
+ * Creates a DOM overlay positioned absolutely over the canvas. Children are rendered into a
+ * separate React root. Remaining props are passed to the root div element.
+ * @component
+ * @param {Object} props
+ * @param {ReactNode} [props.children] - DOM content to render in the overlay.
+ */
 // Utility class for overlaying dom elements on top of the canvas
 export const CanvasDOMOverlay = forwardRef( function CanvasDOMOverlay( { children, ...rest }, ref ) {
 
