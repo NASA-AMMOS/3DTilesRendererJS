@@ -239,7 +239,7 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 	lines.push( '' );
 
 	// If the typedef's base type is not plain Object, treat it as an extension
-	const baseType = typeDoc.type && typeDoc.type.names && typeDoc.type.names[ 0 ];
+	const baseType = typeDoc.type.names[ 0 ];
 	if ( baseType && baseType !== 'Object' ) {
 
 		const link = resolveLink && resolveLink( baseType );

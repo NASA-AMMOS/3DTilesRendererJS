@@ -1,62 +1,186 @@
 import { execSync } from 'child_process';
-import { writeFileSync } from 'fs';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 import path from 'path';
 import { renderClass, renderTypedef, renderConstants, toAnchor } from './RenderDocsUtils.js';
+import { findRootDir } from '../CommandUtils.js';
 
-const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
-const rootDir = path.resolve( __dirname, '../..' );
+const ROOT_DIR = findRootDir();
 
-// Entry point definitions — directories (or individual files) to scan and where to write output.
-// JSDoc will process all .js files found in each listed directory.
 const ENTRY_POINTS = [
 	{
 		output: 'src/three/plugins/API.md',
 		title: '3d-tiles-renderer/three/plugins',
-		sources: [
-			'src/three/plugins/images/sources/WMTSImageSource.js',
-		],
+		source: 'src/three/plugins/images/sources/WMTSImageSource.js',
 	},
 	{
 		output: 'src/core/renderer/API.md',
 		title: '3d-tiles-renderer/core',
-		sources: [
-			'src/core/renderer',
-		],
+		source: 'src/core/renderer',
 	},
 	// {
 	// 	output: 'src/three/renderer/API.md',
 	// 	title: '3d-tiles-renderer/three',
-	// 	sources: [],
+	// 	source: null,
 	// },
 	{
 		output: 'src/babylonjs/renderer/API.md',
 		title: '3d-tiles-renderer/babylonjs',
-		sources: [
-			'src/babylonjs/renderer',
-		],
+		source: 'src/babylonjs/renderer',
 	},
 	{
 		output: 'src/core/plugins/API.md',
 		title: '3d-tiles-renderer/core/plugins',
-		sources: [
-			'src/core/plugins',
-		],
+		source: 'src/core/plugins',
 	},
 	// {
 	// 	output: 'src/r3f/API.md',
 	// 	title: '3d-tiles-renderer/r3f',
-	// 	sources: [],
+	// 	source: null,
 	// },
 ];
 
-function runJsDoc( sources ) {
+// Run JSDoc for all entry points and build a global type registry for cross-file links
+const results = ENTRY_POINTS.map( entry => ( {
+	entry,
+	jsdoc: filterDocumented( runJsDoc( path.resolve( ROOT_DIR, entry.source ) ) )
+} ) );
 
-	const args = sources.map( s => `"${s}"` ).join( ' ' );
-	const result = execSync(
-		`npx jsdoc -X -r ${args}`,
-		{ cwd: rootDir }
-	).toString();
+// Only classes and non-callback typedefs get sections (and therefore anchors) in the output.
+const typeRegistry = {}; // name -> output path
+for ( const { entry, jsdoc } of results ) {
+
+	for ( const d of jsdoc ) {
+
+		const isClass = d.kind === 'class';
+		const isObjectTypedef = ( d.kind === 'typedef' && d.type.names[ 0 ] !== 'function' );
+		if ( isClass || isObjectTypedef ) {
+
+			typeRegistry[ d.name ] = entry.output;
+
+		}
+
+	}
+
+}
+
+// Pass 2: render each entry point.
+for ( const { entry, jsdoc } of results ) {
+
+	const resolveLink = name => {
+
+		// no link
+		const targetFile = typeRegistry[ name ];
+		if ( ! targetFile ) {
+
+			return null;
+
+		}
+
+		const anchor = `#${ toAnchor( name ) }`;
+		if ( targetFile === entry.output ) {
+
+			// anchor is in the same file
+			return anchor;
+
+		}
+
+		// relative path + anchor for a different file
+		const fromDir = path.dirname( path.join( ROOT_DIR, entry.output ) );
+		const toFile = path.join( ROOT_DIR, targetFile );
+		const relativePath = path.relative( fromDir, toFile ).replace( /\\/g, '/' );
+		return relativePath + anchor;
+
+	};
+
+	// Sort classes so base classes appear before subclasses
+	const classes = jsdoc
+		.filter( d => d.kind === 'class' )
+		.sort( ( a, b ) => {
+
+			const aIsBase = ! a.augments || a.augments.length === 0;
+			const bIsBase = ! b.augments || b.augments.length === 0;
+			if ( aIsBase && ! bIsBase ) return - 1;
+			if ( ! aIsBase && bIsBase ) return 1;
+			return a.name.localeCompare( b.name );
+
+		} );
+
+	// collect @callback typedefs into a map for inline substitution
+	const callbackMap = {};
+	for ( const d of jsdoc ) {
+
+		if ( d.kind === 'typedef' && d.type.names[ 0 ] === 'function' ) {
+
+			callbackMap[ d.name ] = d;
+
+		}
+
+	}
+
+	// Sort typedefs so plain-object bases appear before derived types; exclude @callback entries
+	const typedefs = jsdoc
+		.filter( d => d.kind === 'typedef' && d.type.names[ 0 ] !== 'function' )
+		.sort( ( a, b ) => {
+
+			const aIsBase = a.type.names[ 0 ] === 'Object';
+			const bIsBase = b.type.names[ 0 ] === 'Object';
+			if ( aIsBase && ! bIsBase ) return - 1;
+			if ( ! aIsBase && bIsBase ) return 1;
+			return a.name.localeCompare( b.name );
+
+		} );
+
+	// sort constants by source line order
+	const constants = jsdoc
+		.filter( d => d.kind === 'constant' && ! d.memberof )
+		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+
+	// cache all fields by associated class name
+	const classMembers = {};
+	for ( const doc of jsdoc ) {
+
+		if ( doc.memberof && doc.kind !== 'class' ) {
+
+			if ( ! classMembers[ doc.memberof ] ) {
+
+				classMembers[ doc.memberof ] = [];
+
+			}
+
+			classMembers[ doc.memberof ].push( doc );
+
+		}
+
+	}
+
+	// construct the readme files
+	const sections = [ `# ${ entry.title }`, '' ];
+
+	sections.push( renderConstants( constants, callbackMap ) );
+
+	for ( const cls of classes ) {
+
+		sections.push( renderClass( cls, classMembers[ cls.name ] || [], callbackMap, resolveLink ) );
+
+	}
+
+	for ( const typedef of typedefs ) {
+
+		sections.push( renderTypedef( typedef, callbackMap, resolveLink ) );
+
+	}
+
+	const output = sections.join( '\n' );
+	fs.writeFileSync( path.join( ROOT_DIR, entry.output ), output );
+	console.log( `Written: ${ entry.output }` );
+
+}
+
+//
+
+function runJsDoc( source ) {
+
+	const result = execSync( `npx jsdoc -X -r "${ source }"` ).toString();
 	return JSON.parse( result );
 
 }
@@ -70,148 +194,5 @@ function filterDocumented( json ) {
 		d.inherited !== true &&
 		! d.deprecated
 	);
-
-}
-
-// Pass 1: run JSDoc for all entry points and cache results.
-const results = [];
-for ( const ep of ENTRY_POINTS ) {
-
-	if ( ep.sources.length === 0 ) {
-
-		results.push( null );
-		continue;
-
-	}
-
-	const json = runJsDoc( ep.sources );
-	results.push( { ep, documented: filterDocumented( json ) } );
-
-}
-
-// Build a global registry mapping documented type names to the output file that defines them.
-// Only classes and non-callback typedefs get sections (and therefore anchors) in the output.
-const typeRegistry = {}; // name -> output path
-for ( const result of results ) {
-
-	if ( ! result ) continue;
-	const { ep, documented } = result;
-
-	for ( const d of documented ) {
-
-		const isSection =
-			d.kind === 'class' ||
-			( d.kind === 'typedef' && ! ( d.type && d.type.names[ 0 ] === 'function' ) );
-
-		if ( isSection ) typeRegistry[ d.name ] = ep.output;
-
-	}
-
-}
-
-// Pass 2: render each entry point.
-for ( const result of results ) {
-
-	if ( ! result ) {
-
-		const ep = ENTRY_POINTS[ results.indexOf( result ) ];
-		console.log( `Skipping ${ep.output}: no sources configured` );
-		continue;
-
-	}
-
-	const { ep, documented } = result;
-
-	// resolveLink returns the URL for a given type name:
-	//   - same-file types → "#anchor"
-	//   - cross-file types → "relative/path/to/file.md#anchor"
-	//   - unknown types   → null (no link rendered)
-	const resolveLink = name => {
-
-		const targetOutput = typeRegistry[ name ];
-		if ( ! targetOutput ) return null;
-		const anchor = `#${ toAnchor( name ) }`;
-		if ( targetOutput === ep.output ) return anchor;
-		const from = path.dirname( path.join( rootDir, ep.output ) );
-		const to = path.join( rootDir, targetOutput );
-		return path.relative( from, to ).replace( /\\/g, '/' ) + anchor;
-
-	};
-
-	// Sort classes so base classes appear before subclasses
-	const classes = documented
-		.filter( d => d.kind === 'class' )
-		.sort( ( a, b ) => {
-
-			const aIsBase = ! a.augments || a.augments.length === 0;
-			const bIsBase = ! b.augments || b.augments.length === 0;
-			if ( aIsBase && ! bIsBase ) return - 1;
-			if ( ! aIsBase && bIsBase ) return 1;
-			return a.name.localeCompare( b.name );
-
-		} );
-
-	// Collect @callback typedefs into a map for inline substitution — not rendered as sections
-	const callbackMap = {};
-	for ( const d of documented ) {
-
-		if ( d.kind === 'typedef' && d.type && d.type.names[ 0 ] === 'function' ) {
-
-			callbackMap[ d.name ] = d;
-
-		}
-
-	}
-
-	// Sort typedefs so plain-object bases appear before derived types; exclude @callback entries
-	const typedefs = documented
-		.filter( d => d.kind === 'typedef' && ! ( d.type && d.type.names[ 0 ] === 'function' ) )
-		.sort( ( a, b ) => {
-
-			const aIsBase = ! a.type || a.type.names[ 0 ] === 'Object';
-			const bIsBase = ! b.type || b.type.names[ 0 ] === 'Object';
-			if ( aIsBase && ! bIsBase ) return - 1;
-			if ( ! aIsBase && bIsBase ) return 1;
-			return a.name.localeCompare( b.name );
-
-		} );
-
-	// Sort constants by source line order
-	const constants = documented
-		.filter( d => d.kind === 'constant' && ! d.memberof )
-		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
-
-	const membersByClass = {};
-	for ( const doc of documented ) {
-
-		if ( doc.memberof && doc.kind !== 'class' ) {
-
-			if ( ! membersByClass[ doc.memberof ] ) membersByClass[ doc.memberof ] = [];
-			membersByClass[ doc.memberof ].push( doc );
-
-		}
-
-	}
-
-	const sections = [ `# ${ep.title}`, '' ];
-
-	const constantsSection = renderConstants( constants, callbackMap );
-	if ( constantsSection ) sections.push( constantsSection );
-
-	for ( const cls of classes ) {
-
-		sections.push( renderClass( cls, membersByClass[ cls.name ] || [], callbackMap, resolveLink ) );
-
-	}
-
-	for ( const typedef of typedefs ) {
-
-		sections.push( renderTypedef( typedef, callbackMap, resolveLink ) );
-
-	}
-
-	const output = sections.join( '\n' );
-	writeFileSync( path.join( rootDir, ep.output ), output );
-	console.log( `Written: ${ep.output}` );
 
 }
