@@ -1,4 +1,4 @@
-import { TiledImageSource } from '../sources/TiledImageSource.js';
+import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { MathUtils } from 'three';
 
