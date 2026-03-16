@@ -1,6 +1,5 @@
 import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
-import { MathUtils } from 'three';
 
 /**
  * @typedef {Object} WMTSTileMatrix
@@ -30,7 +29,7 @@ import { MathUtils } from 'three';
  *   Defaults to 'EPSG:3857' if not specified.
  * @property {number} [levels=20] - Number of zoom levels (Tier 1 & 2). Ignored if `tileMatrices` is provided.
  * @property {number} [tileDimension=256] - Default tile width and height in pixels.
- * @property {number[]|null} [contentBoundingBox=null] - Content bounding box in degrees
+ * @property {number[]|null} [contentBoundingBox=null] - Content bounding box in radians
  *   `[west, south, east, north]`. If null, uses full projection bounds.
  */
 
@@ -59,8 +58,7 @@ import { MathUtils } from 'three';
  * If the URL contains template variables, RESTful mode is used;
  * otherwise KVP query parameters are appended.
  *
- * Note: `contentBoundingBox` is specified in degrees `[west, south, east, north]`
- * and converted to radians internally.
+ * Note: `contentBoundingBox` is specified in radians `[west, south, east, north]`.
  *
  * @extends TiledImageSource
  */
@@ -136,12 +134,11 @@ export class WMTSImageSource extends TiledImageSource {
 
 		if ( contentBoundingBox !== null ) {
 
-			// contentBoundingBox is in degrees [west, south, east, north]; convert to radians
 			tiling.setContentBounds(
-				contentBoundingBox[ 0 ] * MathUtils.DEG2RAD,
-				contentBoundingBox[ 1 ] * MathUtils.DEG2RAD,
-				contentBoundingBox[ 2 ] * MathUtils.DEG2RAD,
-				contentBoundingBox[ 3 ] * MathUtils.DEG2RAD,
+				contentBoundingBox[ 0 ],
+				contentBoundingBox[ 1 ],
+				contentBoundingBox[ 2 ],
+				contentBoundingBox[ 3 ],
 			);
 
 		} else {
