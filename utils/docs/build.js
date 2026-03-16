@@ -206,6 +206,7 @@ function filterDocumented( json ) {
 
 	return json.filter( d =>
 		d.undocumented !== true &&
+		d.ignore !== true &&
 		d.kind !== 'package' &&
 		d.access !== 'private' &&
 		d.inherited !== true &&
