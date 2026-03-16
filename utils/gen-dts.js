@@ -48,7 +48,7 @@ const resolvedFiles = include.flatMap( p => globSync( `${ resolve( ROOT, p ) }/*
 const indexFiles = resolvedFiles.filter( f => f.endsWith( `${ sep }index.js` ) );
 if ( ! indexFiles.length ) {
 
-	console.error( `No index.js found under include paths` );
+	console.error( 'No index.js found under include paths' );
 	process.exit( 1 );
 
 }
@@ -241,6 +241,7 @@ function fixTscEmittedImports( code ) {
 		byPkg.get( pkg ).add( name );
 
 	}
+
 	for ( const [ pkg, names ] of byPkg ) {
 
 		const importLine = `// @import type { ${ [ ...names ].join( ', ' ) } } from "${ pkg }";`;
@@ -301,10 +302,10 @@ function stripUnderscoreMembers() {
 
 			let result = out.join( '\n' );
 
-		// Strip untyped event listener stubs — they shadow typed overloads from the base class
-		result = result.replace( /^[ \t]*(addEventListener|removeEventListener|hasEventListener|dispatchEvent)\([^)]*\bany\b[^)]*\):.*;\n/gm, '' );
+			// Strip untyped event listener stubs — they shadow typed overloads from the base class
+			result = result.replace( /^[ \t]*(addEventListener|removeEventListener|hasEventListener|dispatchEvent)\([^)]*\bany\b[^)]*\):.*;\n/gm, '' );
 
-		return { code: result, map: null };
+			return { code: result, map: null };
 
 		},
 	};
@@ -395,7 +396,7 @@ function buildEventMapInterface( mapName, events ) {
 
 	for ( const event of events ) {
 
-		if ( event.deprecated ) lines.push( `\t/** @deprecated */` );
+		if ( event.deprecated ) lines.push( '\t/** @deprecated */' );
 
 		const propStr = event.props.map( p => {
 
@@ -409,7 +410,7 @@ function buildEventMapInterface( mapName, events ) {
 
 	}
 
-	lines.push( `}` );
+	lines.push( '}' );
 	return lines.join( '\n' );
 
 }
@@ -419,23 +420,23 @@ function buildEventMapInterface( mapName, events ) {
  */
 function buildEventListenerOverloads() {
 
-	const T = `T extends keyof TEventMap`;
-	const typedCallback = `callback: ( event: TEventMap[ T ] & { type: T } ) => void`;
-	const anyCallback = `callback: ( event: any ) => void`;
-	const typedEvent = `event: TEventMap[ T ] & { type: T }`;
+	const T = 'T extends keyof TEventMap';
+	const typedCallback = 'callback: ( event: TEventMap[ T ] & { type: T } ) => void';
+	const anyCallback = 'callback: ( event: any ) => void';
+	const typedEvent = 'event: TEventMap[ T ] & { type: T }';
 
 	return [
 		`\taddEventListener<${ T }>( name: T, ${ typedCallback } ): void;`,
 		`\taddEventListener( name: string, ${ anyCallback } ): void;`,
-		``,
+		'',
 		`\tremoveEventListener<${ T }>( name: T, ${ typedCallback } ): void;`,
 		`\tremoveEventListener( name: string, ${ anyCallback } ): void;`,
-		``,
+		'',
 		`\thasEventListener<${ T }>( name: T, ${ typedCallback } ): boolean;`,
 		`\thasEventListener( name: string, ${ anyCallback } ): boolean;`,
-		``,
+		'',
 		`\tdispatchEvent<${ T }>( ${ typedEvent } ): void;`,
-		`\tdispatchEvent( event: { type: string } ): void;`,
+		'\tdispatchEvent( event: { type: string } ): void;',
 	].join( '\n' );
 
 }
@@ -514,11 +515,11 @@ function removeMethodDeclarations( code, methodNames ) {
 function replaceEventMethodsInClass( code, classStart ) {
 
 	const openBrace = code.indexOf( '{', classStart );
-	if ( openBrace === -1 ) return code;
+	if ( openBrace === - 1 ) return code;
 
 	// Find the matching closing brace of the class
 	let depth = 0;
-	let classEnd = -1;
+	let classEnd = - 1;
 	for ( let i = openBrace; i < code.length; i ++ ) {
 
 		const ch = code[ i ];
@@ -537,7 +538,7 @@ function replaceEventMethodsInClass( code, classStart ) {
 
 	}
 
-	if ( classEnd === -1 ) return code;
+	if ( classEnd === - 1 ) return code;
 
 	const before = code.slice( 0, openBrace + 1 );
 	let body = code.slice( openBrace + 1, classEnd );
