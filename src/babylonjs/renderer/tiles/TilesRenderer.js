@@ -1,3 +1,4 @@
+/** @typedef {import('@babylonjs/core/scene').Scene} Scene */
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector';

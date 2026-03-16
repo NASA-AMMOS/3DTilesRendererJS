@@ -55,8 +55,9 @@ if ( ! indexFiles.length ) {
 
 const rootDirAbs = resolve( ROOT, rootDir );
 
-// Step 1: scan all source files for @event ClassName#event-name annotations
+// Step 1: scan all source files for @event and @typedef annotations
 const eventsByClass = parseEventsByClass( resolvedFiles );
+const typedefImports = parseTypedefImports( resolvedFiles );
 
 // Step 2: emit .d.ts for all files to a temp directory in one tsc pass
 const tmpDir = mkdtempSync( join( tmpdir(), 'dts-' ) );
@@ -67,8 +68,18 @@ try {
 		{ cwd: ROOT, stdio: 'inherit' },
 	);
 
-	// Fix any invalid namespace imports tsc emitted (e.g. `import * as 3d_...`)
-	fixTypeAliasImportsInDir( tmpDir );
+	// Step 3: fix invalid tsc-emitted imports on disk before rollup reads them
+	for ( const srcFile of resolvedFiles ) {
+
+		const rel = relative( rootDirAbs, srcFile ).replace( /\.js$/, '.d.ts' );
+		const tmpFile = join( tmpDir, rel );
+		if ( ! existsSync( tmpFile ) ) continue;
+
+		const original = readFileSync( tmpFile, 'utf8' );
+		const fixed = fixTscEmittedImports( original );
+		if ( fixed !== original ) writeFileSync( tmpFile, fixed );
+
+	}
 
 	// Step 4: rollup-bundle each index.js into its own index.d.ts
 	for ( const indexFile of indexFiles ) {
@@ -90,6 +101,14 @@ try {
 
 		await bundle.write( { file: outFile, format: 'es' } );
 		await bundle.close();
+
+		// Uncomment any // @import lines left by fixTscEmittedImports, then inject
+		// missing imports for @typedef {import('pkg').Type} Name annotations in sources
+		let out = readFileSync( outFile, 'utf8' );
+		out = out.replace( /^\/\/ @import /gm, 'import ' );
+		out = injectTypedefImports( out, typedefImports );
+		writeFileSync( outFile, out );
+
 		console.log( `Written: ${ outFile }` );
 
 	}
@@ -101,6 +120,64 @@ try {
 }
 
 // --- Helpers ---
+
+/**
+ * Scans source files for @typedef {import('pkg').Export} LocalName annotations.
+ * Returns an array of { pkg, exportedName, localName } objects.
+ */
+function parseTypedefImports( sourceFiles ) {
+
+	const results = [];
+	const seen = new Set();
+
+	for ( const filePath of sourceFiles ) {
+
+		const source = readFileSync( filePath, 'utf8' );
+		for ( const [ , pkg, exportedName, localName ] of source.matchAll(
+			/@typedef\s+\{import\(['"]([^'"]+)['"]\)\.(\w+)\}\s+(\w+)/g,
+		) ) {
+
+			const key = `${ pkg }:${ exportedName }:${ localName }`;
+			if ( ! seen.has( key ) ) {
+
+				seen.add( key );
+				results.push( { pkg, exportedName, localName } );
+
+			}
+
+		}
+
+	}
+
+	return results;
+
+}
+
+/**
+ * For each typedef import whose localName appears in the bundle but has no import,
+ * prepends the appropriate import type statement.
+ */
+function injectTypedefImports( code, typedefImports ) {
+
+	for ( const { pkg, exportedName, localName } of typedefImports ) {
+
+		// Skip if already imported
+		const alreadyImported = new RegExp( `from ['"]${ pkg.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }['"]` ).test( code );
+		if ( alreadyImported ) continue;
+
+		// Only inject if the localName is actually used in the bundle
+		if ( ! new RegExp( `\\b${ localName }\\b` ).test( code ) ) continue;
+
+		const importLine = exportedName === localName
+			? `import type { ${ localName } } from '${ pkg }';`
+			: `import type { ${ exportedName } as ${ localName } } from '${ pkg }';`;
+		code = importLine + '\n' + code;
+
+	}
+
+	return code;
+
+}
 
 /**
  * Resolves .js imports inside the temp directory to their .d.ts counterparts.
@@ -126,24 +203,53 @@ function resolveDtsExtensions( tmpDir ) {
 }
 
 /**
- * Walks a directory and rewrites .d.ts files, converting tsc's `export type X = import("pkg").X`
- * aliases to `import type { X } from "pkg"`. This avoids rollup-plugin-dts generating namespace
- * imports for packages whose names are invalid JS identifiers (e.g. '3d-tiles-renderer/core').
+ * Fixes tsc emission patterns that cause rollup-plugin-dts to fail on packages whose names
+ * are invalid JS identifiers (e.g. '3d-tiles-renderer/core'). Applied directly to .d.ts
+ * files on disk before rollup reads them.
+ *
+ *   1. tsc re-export aliases: `export type X = import("pkg").X` → `// @import type { X } from "pkg"`
+ *   2. tsc namespace imports with invalid identifiers: `import * as 3d_foo from "pkg"` →
+ *      `// @import type { X, Y } from "pkg"` with inline references de-qualified
+ *   3. inline import expressions: `import("pkg").TypeName` → `TypeName` with hoisted import added
  */
-function fixTypeAliasImportsInDir( dir ) {
+function fixTscEmittedImports( code ) {
 
-	for ( const full of globSync( `${ dir }/**/*.d.ts` ) ) {
+	// Fix 1: re-export alias pattern
+	code = code.replace(
+		/^export type (\w+) = import\(["']([^"']+)["']\)\.(\w+);$/gm,
+		( _, local, pkg, exported ) => local === exported
+			? `// @import type { ${ local } } from "${ pkg }";`
+			: `// @import type { ${ exported } as ${ local } } from "${ pkg }";`,
+	);
 
-		const code = readFileSync( full, 'utf8' );
-		const result = code.replace(
-			/^export type (\w+) = import\(["']([^"']+)["']\)\.(\w+);$/gm,
-			( _, local, pkg, exported ) => local === exported
-				? `import type { ${ local } } from "${ pkg }";`
-				: `import type { ${ exported } as ${ local } } from "${ pkg }";`,
-		);
-		if ( result !== code ) writeFileSync( full, result, 'utf8' );
+	// Fix 2: namespace imports whose alias starts with a digit (invalid identifier)
+	for ( const [ fullMatch, alias, pkg ] of code.matchAll( /^import \* as (\d\w*) from "([^"]+)";$/gm ) ) {
+
+		const usedNames = [ ...new Set(
+			[ ...code.matchAll( new RegExp( `\\b${ alias }\\.(\\w+)`, 'g' ) ) ].map( m => m[ 1 ] ),
+		) ];
+		code = code.replace( fullMatch, `// @import type { ${ usedNames.join( ', ' ) } } from "${ pkg }";` );
+		code = code.replace( new RegExp( `\\b${ alias }\\.(\\w+)`, 'g' ), '$1' );
 
 	}
+
+	// Fix 3: inline import("pkg").TypeName expressions — hoist to import statements
+	const byPkg = new Map();
+	for ( const [ , pkg, name ] of code.matchAll( /import\(["']([^"']+)["']\)\.(\w+)/g ) ) {
+
+		if ( ! byPkg.has( pkg ) ) byPkg.set( pkg, new Set() );
+		byPkg.get( pkg ).add( name );
+
+	}
+	for ( const [ pkg, names ] of byPkg ) {
+
+		const importLine = `// @import type { ${ [ ...names ].join( ', ' ) } } from "${ pkg }";`;
+		code = importLine + '\n' + code;
+		code = code.replace( new RegExp( `import\\(["']${ pkg.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }["']\\)\\.(\\w+)`, 'g' ), '$1' );
+
+	}
+
+	return code;
 
 }
 
@@ -193,7 +299,12 @@ function stripUnderscoreMembers() {
 
 			}
 
-			return { code: out.join( '\n' ), map: null };
+			let result = out.join( '\n' );
+
+		// Strip untyped event listener stubs — they shadow typed overloads from the base class
+		result = result.replace( /^[ \t]*(addEventListener|removeEventListener|hasEventListener|dispatchEvent)\([^)]*\bany\b[^)]*\):.*;\n/gm, '' );
+
+		return { code: result, map: null };
 
 		},
 	};
@@ -280,7 +391,7 @@ function jsDocTypeToTs( type ) {
  */
 function buildEventMapInterface( mapName, events ) {
 
-	const lines = [ `interface ${ mapName }<TScene = unknown> {` ];
+	const lines = [ `export interface ${ mapName }<TScene = unknown> {` ];
 
 	for ( const event of events ) {
 

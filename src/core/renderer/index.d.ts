@@ -1,3 +1,4 @@
+import type { TilesRendererBase } from '3d-tiles-renderer/core';
 type UnloadPriorityCallback = (a: any, b: any) => number;
 type RemoveCallback = (item: any) => any;
 /**
@@ -367,7 +368,7 @@ type FilterCallback = (item: any) => boolean;
  * and a plugin system for extending rendering behavior. Engine-specific renderers
  * extend this class to add camera projection, scene management, and tile display.
  */
-interface TilesRendererBaseEventMap<TScene = unknown> {
+export interface TilesRendererBaseEventMap<TScene = unknown> {
 	'needs-update': {};
 	'load-content': {};
 	'load-tileset': { tileset: Tileset; url: string };

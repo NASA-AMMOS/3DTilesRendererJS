@@ -1,4 +1,4 @@
-import { TilesRendererBase, LoaderBase } from '3d-tiles-renderer/core';
+import { LoaderBase } from '3d-tiles-renderer/core';
 
 /**
  * @classdesc
@@ -35,8 +35,9 @@ declare class CesiumIonAuth {
     refreshToken(options: any): any;
 }
 
+import type { TilesRendererBase } from "3d-tiles-renderer/core";
 /**
- * @typedef {import('3d-tiles-renderer/core').TilesRendererBase} TilesRendererBase
+ * @typedef {TilesRendererBase} TilesRendererBase
  */
 /**
  * @callback AssetTypeHandlerCallback
@@ -98,7 +99,7 @@ declare class CesiumIonAuthPlugin {
     fetchData(uri: any, options: any): Promise<Response>;
     getAttributions(target: any): void;
 }
-
+import type { TilesRendererBase } from "3d-tiles-renderer/core";
 type AssetTypeHandlerCallback = (type: string, tiles: TilesRendererBase, asset: any) => any;
 
 /**
@@ -255,7 +256,7 @@ declare class EnforceNonZeroErrorPlugin {
  */
 declare class QuantizedMeshLoaderBase extends LoaderBase {
     constructor(...args: any[]);
-    loadAsync(...args: any[]): Promise<void>;
+    loadAsync(...args: any[]): Promise<any>;
     parse(buffer: any): {
         header: {
             center: number[];
