@@ -118,9 +118,9 @@ export class WMTSImageSource extends TiledImageSource {
 
 		const {
 			tiling, tileDimension, levels, dimensions, contentBoundingBox,
-			tileMatrices,
+			tileMatrices, style, tileMatrixSet
 		} = this;
-		let { url, style, tileMatrixSet } = this;
+		let { url } = this;
 
 		// Determine projection
 		const projectionScheme = this.projection || 'EPSG:3857';
@@ -145,7 +145,7 @@ export class WMTSImageSource extends TiledImageSource {
 		}
 
 		// Tiered initialization
-		if ( tileMatrices !== null && tileMatrices.length > 0 ) {
+		if ( Array.isArray( tileMatrices ) ) {
 
 			// Tier 3: Explicit per-level tile matrix definitions.
 			// Auto-compute tileBounds for levels where the tile grid extends beyond
