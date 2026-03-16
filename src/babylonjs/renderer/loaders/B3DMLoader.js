@@ -5,7 +5,7 @@ import { GLTFLoader } from './GLTFLoader.js';
 /**
  * Babylon.js loader for B3DM (Batched 3D Model) tile content. Parses the B3DM binary
  * structure and delegates embedded GLB loading to GLTFLoader.
- * @augments B3DMLoaderBase
+ * @extends B3DMLoaderBase
  */
 export class B3DMLoader extends B3DMLoaderBase {
 

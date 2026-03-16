@@ -8,7 +8,7 @@ const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
 /**
  * Babylon.js loader for GLTF and GLB tile content. Loads a buffer into a Babylon.js scene
  * and applies an optional adjustment transform for coordinate-system correction.
- * @augments LoaderBase
+ * @extends LoaderBase
  */
 export class GLTFLoader extends LoaderBase {
 

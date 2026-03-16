@@ -73,7 +73,7 @@ export class Ellipsoid {
 	 * intersection exists. Writes the result into `target`.
 	 * @param {Ray} ray
 	 * @param {Vector3} target
-	 * @return {Vector3|null}
+	 * @returns {Vector3|null}
 	 */
 	intersectRay( ray, target ) {
 
@@ -103,7 +103,7 @@ export class Ellipsoid {
 	 * @param {number} lon Longitude in radians.
 	 * @param {number} height Height above the ellipsoid surface in meters.
 	 * @param {Matrix4} target
-	 * @return {Matrix4}
+	 * @returns {Matrix4}
 	 */
 	getEastNorthUpFrame( lat, lon, height, target ) {
 
@@ -132,7 +132,7 @@ export class Ellipsoid {
 	 * @param {number} el Elevation in radians, measured from the horizon upward.
 	 * @param {number} roll Roll in radians around the north axis.
 	 * @param {Matrix4} target
-	 * @return {Matrix4}
+	 * @returns {Matrix4}
 	 */
 	getOrientedEastNorthUpFrame( lat, lon, height, az, el, roll, target ) {
 
@@ -153,7 +153,7 @@ export class Ellipsoid {
 	 * @param {number} roll Roll in radians around the north axis.
 	 * @param {Matrix4} target
 	 * @param {Frames} [frame=OBJECT_FRAME]
-	 * @return {Matrix4}
+	 * @returns {Matrix4}
 	 */
 	getObjectFrame( lat, lon, height, az, el, roll, target, frame = OBJECT_FRAME ) {
 
@@ -191,7 +191,7 @@ export class Ellipsoid {
 	 * @param {Matrix4} matrix
 	 * @param {Object} target
 	 * @param {Frames} [frame=OBJECT_FRAME]
-	 * @return {{ lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number }}
+	 * @returns {{ lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number }}
 	 */
 	getCartographicFromObjectFrame( matrix, target, frame = OBJECT_FRAME ) {
 
@@ -255,7 +255,7 @@ export class Ellipsoid {
 	 * @param {Matrix4} rotationMatrix
 	 * @param {Object} target
 	 * @param {Frames} frame
-	 * @return {{ azimuth: number, elevation: number, roll: number }}
+	 * @returns {{ azimuth: number, elevation: number, roll: number }}
 	 */
 	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
 
@@ -282,7 +282,7 @@ export class Ellipsoid {
 	 * @param {number} roll
 	 * @param {Matrix4} target
 	 * @param {Frames} frame
-	 * @return {Matrix4}
+	 * @returns {Matrix4}
 	 */
 	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
 
@@ -304,7 +304,7 @@ export class Ellipsoid {
 	 * @param {number} height
 	 * @param {Matrix4} target
 	 * @param {Frames} frame
-	 * @return {Matrix4}
+	 * @returns {Matrix4}
 	 */
 	getFrame( lat, lon, az, el, roll, height, target, frame = ENU_FRAME ) {
 
@@ -320,7 +320,7 @@ export class Ellipsoid {
 	 * @param {number} lon Longitude in radians.
 	 * @param {number} height Height above the ellipsoid surface in meters.
 	 * @param {Vector3} target
-	 * @return {Vector3}
+	 * @returns {Vector3}
 	 */
 	getCartographicToPosition( lat, lon, height, target ) {
 
@@ -346,7 +346,7 @@ export class Ellipsoid {
 	 * result into `target` and returns it.
 	 * @param {Vector3} pos
 	 * @param {Object} target
-	 * @return {{ lat: number, lon: number, height: number }}
+	 * @returns {{ lat: number, lon: number, height: number }}
 	 */
 	getPositionToCartographic( pos, target ) {
 
@@ -370,7 +370,7 @@ export class Ellipsoid {
 	 * @param {number} lat Latitude in radians.
 	 * @param {number} lon Longitude in radians.
 	 * @param {Vector3} target
-	 * @return {Vector3}
+	 * @returns {Vector3}
 	 */
 	getCartographicToNormal( lat, lon, target ) {
 
@@ -388,7 +388,7 @@ export class Ellipsoid {
 	 * result into `target` and returns it.
 	 * @param {Vector3} pos
 	 * @param {Vector3} target
-	 * @return {Vector3}
+	 * @returns {Vector3}
 	 */
 	getPositionToNormal( pos, target ) {
 
@@ -408,7 +408,7 @@ export class Ellipsoid {
 	 * Returns null if the position is at or near the center. Writes the result into `target`.
 	 * @param {Vector3} pos
 	 * @param {Vector3} target
-	 * @return {Vector3|null}
+	 * @returns {Vector3|null}
 	 */
 	getPositionToSurfacePoint( pos, target ) {
 
@@ -495,7 +495,7 @@ export class Ellipsoid {
 	 * the ellipsoid surface.
 	 * @param {number} latitude Latitude in degrees.
 	 * @param {number} elevation Height above the ellipsoid surface in meters.
-	 * @return {number}
+	 * @returns {number}
 	 */
 	calculateHorizonDistance( latitude, elevation ) {
 
@@ -510,7 +510,7 @@ export class Ellipsoid {
 	 * Returns the prime vertical radius of curvature (distance from the center of the ellipsoid
 	 * to the surface along the normal) at the given latitude.
 	 * @param {number} latitude Latitude in degrees.
-	 * @return {number}
+	 * @returns {number}
 	 */
 	calculateEffectiveRadius( latitude ) {
 
@@ -531,7 +531,7 @@ export class Ellipsoid {
 	/**
 	 * Returns the height of the given 3D position above (or below) the ellipsoid surface.
 	 * @param {Vector3} pos
-	 * @return {number}
+	 * @returns {number}
 	 */
 	getPositionElevation( pos ) {
 
@@ -548,7 +548,7 @@ export class Ellipsoid {
 	 * Returns the exact surface intersection point if the ray intersects the ellipsoid.
 	 * @param {Ray} ray
 	 * @param {Vector3} target
-	 * @return {Vector3}
+	 * @returns {Vector3}
 	 */
 	closestPointToRayEstimate( ray, target ) {
 
@@ -574,7 +574,7 @@ export class Ellipsoid {
 	/**
 	 * Copies the radius from the given ellipsoid into this one.
 	 * @param {Ellipsoid} source
-	 * @return {this}
+	 * @returns {this}
 	 */
 	copy( source ) {
 
@@ -585,7 +585,7 @@ export class Ellipsoid {
 
 	/**
 	 * Returns a new Ellipsoid with the same radius as this one.
-	 * @return {Ellipsoid}
+	 * @returns {Ellipsoid}
 	 */
 	clone() {
 

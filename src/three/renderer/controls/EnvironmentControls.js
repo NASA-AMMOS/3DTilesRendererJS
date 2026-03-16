@@ -667,7 +667,7 @@ export class EnvironmentControls extends EventDispatcher {
 	/**
 	 * Returns the current drag or rotation pivot point in world space.
 	 * @param {Vector3} target - Target vector to write the result into.
-	 * @return {Vector3|null} The target vector, or null if no pivot is active.
+	 * @returns {Vector3|null} The target vector, or null if no pivot is active.
 	 */
 	getPivotPoint( target ) {
 

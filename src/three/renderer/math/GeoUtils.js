@@ -57,7 +57,7 @@ export function swapToThreeFrame( target ) {
  * Converts a three.js spherical phi angle (polar angle from +Y axis, in radians) to a
  * geographic latitude (angle from the equator, in radians).
  * @param {number} phi
- * @return {number}
+ * @returns {number}
  * @ignore
  */
 export function sphericalPhiToLatitude( phi ) {
@@ -70,7 +70,7 @@ export function sphericalPhiToLatitude( phi ) {
  * Converts a geographic latitude (angle from the equator, in radians) to a three.js
  * spherical phi angle (polar angle from +Y axis, in radians).
  * @param {number} latitude
- * @return {number}
+ * @returns {number}
  * @ignore
  */
 export function latitudeToSphericalPhi( latitude ) {
