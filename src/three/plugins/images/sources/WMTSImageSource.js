@@ -15,7 +15,7 @@ import { MathUtils } from 'three';
  * @typedef {Object} WMTSImageSourceOptions
  * @property {string} url - WMTS service URL. For KVP mode, this is the base endpoint.
  *   For RESTful mode, include template variables: `{TileMatrixSet}`, `{TileMatrix}`,
- *   `{TileRow}`, `{TileCol}`, `{Style}`, `{s}`.
+ *   `{TileRow}`, `{TileCol}`, `{Style}`.
  * @property {string} layer - WMTS layer identifier.
  * @property {string} tileMatrixSet - TileMatrixSet identifier (e.g., 'GoogleMapsCompatible', 'EPSG:3857').
  * @property {string} [style='default'] - Style identifier.
@@ -30,8 +30,6 @@ import { MathUtils } from 'three';
  *   Defaults to 'EPSG:3857' if not specified.
  * @property {number} [levels=20] - Number of zoom levels (Tier 1 & 2). Ignored if `tileMatrices` is provided.
  * @property {number} [tileDimension=256] - Default tile width and height in pixels.
- * @property {string|string[]} [subdomains='abc'] - Subdomains for `{s}` placeholder rotation.
- *   Can be a string (each character is a subdomain) or an array of strings.
  * @property {number[]|null} [contentBoundingBox=null] - Content bounding box in degrees
  *   `[west, south, east, north]`. If null, uses full projection bounds.
  */
@@ -58,7 +56,7 @@ import { MathUtils } from 'three';
  *   When provided, `levels` and `tileMatrixLabels` are ignored.
  *
  * Supports both KVP and RESTful request modes with automatic detection.
- * If the URL contains template variables (besides `{s}`), RESTful mode is used;
+ * If the URL contains template variables, RESTful mode is used;
  * otherwise KVP query parameters are appended.
  *
  * Note: `contentBoundingBox` is specified in degrees `[west, south, east, north]`
@@ -85,7 +83,6 @@ export class WMTSImageSource extends TiledImageSource {
 			projection = null,
 			levels = 20,
 			tileDimension = 256,
-			subdomains = 'abc',
 			contentBoundingBox = null,
 			...rest
 		} = options;
@@ -103,7 +100,6 @@ export class WMTSImageSource extends TiledImageSource {
 		this.projection = projection;
 		this.levels = levels;
 		this.tileDimension = tileDimension;
-		this.subdomains = Array.isArray( subdomains ) ? subdomains.slice() : subdomains.split( '' );
 		this.contentBoundingBox = contentBoundingBox;
 
 		this._useKvp = false;
@@ -112,19 +108,11 @@ export class WMTSImageSource extends TiledImageSource {
 
 	/**
 	 * Detects whether the URL uses KVP or RESTful mode.
-	 * If the URL contains no template variables (or only `{s}` for subdomains),
-	 * it is considered a KVP endpoint.
+	 * If the URL contains no template variables, it is considered a KVP endpoint.
 	 */
 	_detectRequestMode( url ) {
 
-		const bracketMatch = url.match( /\{/g );
-		if ( ! bracketMatch || ( bracketMatch.length === 1 && /\{s\}/.test( url ) ) ) {
-
-			return true; // KVP
-
-		}
-
-		return false; // RESTful
+		return ! /\{/.test( url );
 
 	}
 
@@ -270,46 +258,27 @@ export class WMTSImageSource extends TiledImageSource {
 
 		if ( this._useKvp ) {
 
-			return this._buildKvpUrl( x, y, tileMatrix, level );
+			return this._buildKvpUrl( x, y, tileMatrix );
 
 		}
 
-		return this._buildRestfulUrl( x, y, tileMatrix, level );
+		return this._buildRestfulUrl( x, y, tileMatrix );
 
 	}
 
-	_buildRestfulUrl( x, y, tileMatrix, level ) {
+	_buildRestfulUrl( x, y, tileMatrix ) {
 
-		const { subdomains } = this;
-		let url = this.url;
-
-		url = url
+		return this.url
 			.replace( /{\s*TileMatrix\s*}/gi, tileMatrix )
 			.replace( /{\s*TileCol\s*}/gi, x )
 			.replace( /{\s*TileRow\s*}/gi, y );
 
-		if ( subdomains.length > 0 ) {
-
-			const index = ( x + y + level ) % subdomains.length;
-			url = url.replace( /{\s*s\s*}/gi, subdomains[ index ] );
-
-		}
-
-		return url;
-
 	}
 
-	_buildKvpUrl( x, y, tileMatrix, level ) {
+	_buildKvpUrl( x, y, tileMatrix ) {
 
-		const { subdomains, dimensions, format } = this;
-		let baseUrl = this.url;
-
-		if ( subdomains.length > 0 ) {
-
-			const index = ( x + y + level ) % subdomains.length;
-			baseUrl = baseUrl.replace( /{\s*s\s*}/gi, subdomains[ index ] );
-
-		}
+		const { dimensions, format } = this;
+		const baseUrl = this.url;
 
 		const params = new URLSearchParams( {
 			SERVICE: 'WMTS',
