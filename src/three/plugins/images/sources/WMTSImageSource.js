@@ -1,6 +1,12 @@
 import { TiledImageSource } from './TiledImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 
+function isCRS84( crs ) {
+
+	return /(:84|:crs84)$/i.test( crs );
+
+}
+
 /**
  * @typedef {Object} WMTSTileMatrix
  * @property {string} identifier - TileMatrix identifier (e.g., 'Level0', 'EPSG:3857:0').
@@ -72,6 +78,7 @@ export class WMTSImageSource extends TiledImageSource {
 	constructor( options = {} ) {
 
 		const {
+			capabilities = null,
 			layer = null,
 			tileMatrixSet = 'default',
 			style = 'default',
@@ -89,6 +96,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 		super( rest );
 
+		this.capabilities = capabilities;
 		this.layer = layer;
 		this.tileMatrixSet = tileMatrixSet;
 		this.style = style;
@@ -116,7 +124,101 @@ export class WMTSImageSource extends TiledImageSource {
 
 	}
 
+	/**
+	 * @deprecated Resolves legacy capabilities-based options into literal fields.
+	 */
+	_resolveCapabilities() {
+
+		const capabilities = this.capabilities;
+		if ( ! capabilities ) return;
+
+		console.warn( 'WMTSImageSource: The "capabilities" option has been deprecated. Use literal options instead.' );
+
+		let layer = this.layer;
+		if ( ! layer ) {
+
+			layer = capabilities.layers[ 0 ];
+
+		} else if ( typeof layer === 'string' ) {
+
+			layer = capabilities.layers.find( l => l.identifier === layer );
+
+		}
+
+		let tileMatrixSet = this.tileMatrixSet;
+		if ( ! tileMatrixSet || tileMatrixSet === 'default' ) {
+
+			tileMatrixSet = layer.tileMatrixSets[ 0 ];
+
+		} else if ( typeof tileMatrixSet === 'string' ) {
+
+			tileMatrixSet = layer.tileMatrixSets.find( tms => tms.identifier === tileMatrixSet );
+
+		}
+
+		if ( ! this.style || this.style === 'default' ) {
+
+			const defaultStyle = layer.styles.find( s => s.isDefault );
+			if ( defaultStyle ) this.style = defaultStyle.identifier;
+
+		}
+
+		if ( ! this.url ) {
+
+			this.url = layer.resourceUrls[ 0 ].template;
+
+		}
+
+		const supportedCRS = tileMatrixSet.supportedCRS;
+		if ( ! this.projection ) {
+
+			this.projection = ( supportedCRS.includes( '4326' ) || isCRS84( supportedCRS ) )
+				? 'EPSG:4326' : 'EPSG:3857';
+
+		}
+
+		if ( ! this.contentBoundingBox && layer.boundingBox ) {
+
+			this.contentBoundingBox = layer.boundingBox.bounds;
+
+		}
+
+		if ( ! this.tileMatrices ) {
+
+			this.tileMatrices = tileMatrixSet.tileMatrices.map( tm => ( {
+				identifier: tm.identifier,
+				matrixWidth: tm.matrixWidth,
+				matrixHeight: tm.matrixHeight,
+				tileWidth: tm.tileWidth,
+				tileHeight: tm.tileHeight,
+				tileBounds: tm.bounds,
+			} ) );
+
+		}
+
+		const mergedDimensions = {};
+		layer.dimensions.forEach( dim => {
+
+			mergedDimensions[ dim.identifier ] = dim.defaultValue;
+
+		} );
+
+		if ( this.dimensions ) {
+
+			Object.assign( mergedDimensions, this.dimensions );
+
+		}
+
+		this.dimensions = mergedDimensions;
+		this.tileMatrixSet = tileMatrixSet.identifier;
+		this.layer = layer.identifier;
+		this.capabilities = null;
+
+	}
+
 	init() {
+
+		this._resolveCapabilities();
 
 		const {
 			tiling, tileDimension, levels, dimensions, contentBoundingBox,
