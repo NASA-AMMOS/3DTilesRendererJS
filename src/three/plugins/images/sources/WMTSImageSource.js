@@ -14,8 +14,9 @@ function isCRS84( crs ) {
  * @property {number} matrixHeight - Number of tile rows at this level.
  * @property {number} [tileWidth] - Tile width in pixels (defaults to tileDimension).
  * @property {number} [tileHeight] - Tile height in pixels (defaults to tileDimension).
- * @property {number[]|null} [tileBounds=null] - Explicit tile grid bounds in radians
- *   `[west, south, east, north]`. If null, bounds are auto-computed from the grid dimensions.
+ * @property {number[]} tileBounds - Tile grid bounds in radians `[west, south, east, north]`.
+ *   Required because the actual coverage depends on TopLeftCorner and ScaleDenominator
+ *   from the capabilities XML and cannot be computed from grid dimensions alone.
  */
 
 /**
@@ -252,45 +253,17 @@ export class WMTSImageSource extends TiledImageSource {
 		if ( Array.isArray( tileMatrices ) ) {
 
 			// Tier 3: Explicit per-level tile matrix definitions.
-			// Auto-compute tileBounds for levels where the tile grid extends beyond
-			// the content bounds (common for EPSG:4326 services like NASA GIBS).
-			const projection = tiling.projection;
-			const refIdx = tileMatrices.length - 1;
-			const refTm = tileMatrices[ refIdx ];
-			const refTw = refTm.tileWidth || tileDimension;
-			const refTh = refTm.tileHeight || tileDimension;
-			const refPixelW = refTw * refTm.matrixWidth;
-			const refPixelH = refTh * refTm.matrixHeight;
-
 			tileMatrices.forEach( ( tm, i ) => {
 
 				const tw = tm.tileWidth || tileDimension;
 				const th = tm.tileHeight || tileDimension;
-
-				let tileBounds = tm.tileBounds || null;
-				if ( ! tileBounds ) {
-
-					const scaleFactor = 2 ** ( refIdx - i );
-					const normW = tw * tm.matrixWidth * scaleFactor / refPixelW;
-					const normH = th * tm.matrixHeight * scaleFactor / refPixelH;
-
-					if ( Math.abs( normW - 1 ) > 1e-6 || Math.abs( normH - 1 ) > 1e-6 ) {
-
-						tileBounds = projection.toCartographicRange( [
-							0, 1 - normH,
-							normW, 1,
-						] );
-
-					}
-
-				}
 
 				tiling.setLevel( i, {
 					tilePixelWidth: tw,
 					tilePixelHeight: th,
 					tileCountX: tm.matrixWidth,
 					tileCountY: tm.matrixHeight,
-					tileBounds,
+					tileBounds: tm.tileBounds,
 				} );
 
 			} );
