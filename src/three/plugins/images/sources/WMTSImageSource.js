@@ -71,7 +71,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 		const {
 			layer = null,
-			tileMatrixSet = null,
+			tileMatrixSet = 'default',
 			style = 'default',
 			url = null,
 			format = 'image/jpeg',
@@ -121,9 +121,6 @@ export class WMTSImageSource extends TiledImageSource {
 			tileMatrices,
 		} = this;
 		let { url, style, tileMatrixSet } = this;
-
-		const tileMatrixSetId = typeof tileMatrixSet === 'string' ? tileMatrixSet : 'default';
-		const resolvedStyle = style || 'default';
 
 		// Determine projection
 		const projectionScheme = this.projection || 'EPSG:3857';
@@ -212,8 +209,8 @@ export class WMTSImageSource extends TiledImageSource {
 
 			// RESTful: pre-fill static template values
 			url = url
-				.replace( /{\s*TileMatrixSet\s*}/gi, tileMatrixSetId )
-				.replace( /{\s*Style\s*}/gi, resolvedStyle );
+				.replace( /{\s*TileMatrixSet\s*}/gi, tileMatrixSet )
+				.replace( /{\s*Style\s*}/gi, style );
 
 			if ( dimensions ) {
 
@@ -282,8 +279,8 @@ export class WMTSImageSource extends TiledImageSource {
 			VERSION: '1.0.0',
 			REQUEST: 'GetTile',
 			LAYER: this.layer,
-			STYLE: this.style || 'default',
-			TILEMATRIXSET: this.tileMatrixSet || 'default',
+			STYLE: this.style,
+			TILEMATRIXSET: this.tileMatrixSet,
 			TILEMATRIX: tileMatrix,
 			TILEROW: y,
 			TILECOL: x,
