@@ -9,14 +9,33 @@ const _orthoOffset = /* @__PURE__ */ new Vector3();
 const _quat = /* @__PURE__ */ new Quaternion();
 const _targetQuat = /* @__PURE__ */ new Quaternion();
 
+/**
+ * Manages an animated transition between a perspective and an orthographic camera.
+ * During the transition a blended `transitionCamera` is used. Fires events for the
+ * transition lifecycle and the active camera change.
+ * @classdesc Manages an animated transition between a perspective and an orthographic camera.
+ * During the transition a blended `transitionCamera` is used.
+ * @param {PerspectiveCamera} [perspectiveCamera] - Perspective camera to use. Defaults to a new PerspectiveCamera.
+ * @param {OrthographicCamera} [orthographicCamera] - Orthographic camera to use. Defaults to a new OrthographicCamera.
+ */
 export class CameraTransitionManager extends EventDispatcher {
 
+	/**
+	 * Whether a transition animation is currently in progress.
+	 * @type {boolean}
+	 * @readonly
+	 */
 	get animating() {
 
 		return this._alpha !== 0 && this._alpha !== 1;
 
 	}
 
+	/**
+	 * Transition progress from 0 (at perspective) to 1 (at orthographic).
+	 * @type {number}
+	 * @readonly
+	 */
 	get alpha() {
 
 		// the transition alpha towards the target camera
@@ -24,6 +43,12 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	/**
+	 * The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
+	 * blended `transitionCamera` depending on the current transition state.
+	 * @type {Camera}
+	 * @readonly
+	 */
 	get camera() {
 
 		if ( this._alpha === 0 ) return this.perspectiveCamera;
@@ -32,6 +57,11 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	/**
+	 * The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
+	 * animation. Use `toggle()` to animate the transition.
+	 * @type {string}
+	 */
 	get mode() {
 
 		return this._target === 0 ? 'perspective' : 'orthographic';
@@ -72,11 +102,41 @@ export class CameraTransitionManager extends EventDispatcher {
 		this.transitionCamera = new PerspectiveCamera();
 
 		// settings
+
+		/**
+		 * When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+		 * @type {boolean}
+		 */
 		this.orthographicPositionalZoom = true;
+
+		/**
+		 * Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+		 * @type {number}
+		 */
 		this.orthographicOffset = 50;
+
+		/**
+		 * World-space point that remains visually fixed during the transition.
+		 * @type {Vector3}
+		 */
 		this.fixedPoint = new Vector3();
+
+		/**
+		 * Duration of the animated transition in milliseconds. Default is 200.
+		 * @type {number}
+		 */
 		this.duration = 200;
+
+		/**
+		 * When true, cameras are synced automatically before each `update` call. Default is true.
+		 * @type {boolean}
+		 */
 		this.autoSync = true;
+
+		/**
+		 * Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+		 * @type {Function}
+		 */
 		this.easeFunction = x => x;
 
 		this._target = 0;
@@ -85,6 +145,9 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	/**
+	 * Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
+	 */
 	toggle() {
 
 		// reset the clock for cases where we're not calling "update" every frame
@@ -95,6 +158,10 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	/**
+	 * Advances the transition animation and updates the active camera. Must be called each frame.
+	 * @param {number} [deltaTime] - Time in seconds since the last frame. Defaults to the clock delta, capped at 64ms.
+	 */
 	update( deltaTime = Math.min( this._clock.getDelta(), 64 / 1000 ) ) {
 
 		// update transforms
@@ -156,6 +223,10 @@ export class CameraTransitionManager extends EventDispatcher {
 
 	}
 
+	/**
+	 * Synchronises the non-active camera so that both cameras represent the same viewpoint.
+	 * Called automatically by `update` when `autoSync` is true.
+	 */
 	syncCameras() {
 
 		const fromCamera = this._getFromCamera();
