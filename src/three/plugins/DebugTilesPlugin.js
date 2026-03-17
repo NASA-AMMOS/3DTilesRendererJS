@@ -59,6 +59,25 @@ const ColorModes = Object.freeze( {
 	LOAD_ORDER,
 } );
 
+/**
+ * Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
+ * helpers (box, sphere, region), tile color modes based on depth/error/distance/load
+ * order, and an unlit rendering mode. Color modes are available via the static
+ * `ColorModes` property.
+ * @param {Object} [options]
+ * @param {boolean} [options.displayBoxBounds=false] Show OBB bounding-box helpers.
+ * @param {boolean} [options.displaySphereBounds=false] Show bounding-sphere helpers.
+ * @param {boolean} [options.displayRegionBounds=false] Show bounding-region helpers.
+ * @param {boolean} [options.displayParentBounds=false] Also show ancestor bounding volumes for visible tiles.
+ * @param {number} [options.colorMode=ColorModes.NONE] Initial tile color mode.
+ * @param {number} [options.boundsColorMode=ColorModes.NONE] Color mode applied to bounding-volume helpers.
+ * @param {number} [options.maxDebugDepth=-1] Maximum tree depth for depth-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugDistance=-1] Maximum distance for distance-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugError=-1] Maximum error for error-based coloring (`-1` = auto).
+ * @param {Function|null} [options.customColorCallback=null] Callback `( tile, mesh )` used when `colorMode` is `CUSTOM_COLOR`.
+ * @param {boolean} [options.unlit=false] Replace tile materials with unlit `MeshBasicMaterial`.
+ * @param {boolean} [options.enabled=true] Whether the plugin is active on init.
+ */
 export class DebugTilesPlugin {
 
 	static get ColorModes() {
@@ -232,6 +251,12 @@ export class DebugTilesPlugin {
 		this.customColorCallback = options.customColorCallback;
 		this.unlit = options.unlit;
 
+		/**
+		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
+		 * a black-to-white gradient. Replace with a custom function to use a different color
+		 * ramp.
+		 * @type {( val: number, target: Color ) => void}
+		 */
 		this.getDebugColor = ( value, target ) => {
 
 			target.setRGB( value, value, value );

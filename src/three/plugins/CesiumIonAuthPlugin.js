@@ -2,6 +2,18 @@ import { CesiumIonAuthPlugin as CesiumIonAuthPluginImpl } from '3d-tiles-rendere
 import { TMSTilesPlugin } from './images/EPSGTilesPlugin.js';
 import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
 
+/**
+ * Plugin for authenticating requests to Cesium Ion. Handles token refresh, asset
+ * endpoint resolution, and attribution collection. Auto-registration of terrain and
+ * imagery plugins via `assetTypeHandler` is deprecated — provide a custom handler
+ * instead.
+ * @param {Object} [options]
+ * @param {string} [options.apiToken] Cesium Ion API token.
+ * @param {string|null} [options.assetId=null] Cesium Ion asset ID, or `null` when using an explicit root URL.
+ * @param {boolean} [options.autoRefreshToken=false] Automatically refresh the token on 4xx errors.
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended renderer settings for Cesium Ion assets.
+ * @param {Function} [options.assetTypeHandler] Callback `(type, tiles, asset)` invoked for non-3DTILES asset types.
+ */
 export class CesiumIonAuthPlugin extends CesiumIonAuthPluginImpl {
 
 	constructor( options = {} ) {
