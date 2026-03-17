@@ -10,7 +10,7 @@ const ENTRY_POINTS = [
 	{
 		output: 'src/three/plugins/API.md',
 		title: '3d-tiles-renderer/three/plugins',
-		source: 'src/three/plugins/images/sources/WMTSImageSource.js',
+		source: 'src/three/plugins',
 	},
 	{
 		output: 'src/core/renderer/API.md',
