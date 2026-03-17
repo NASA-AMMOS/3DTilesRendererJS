@@ -52,8 +52,20 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
+/**
+ * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
+ * right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
+ * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
+ * @param {Camera} [camera=null] - The camera to control.
+ * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.
+ */
 export class EnvironmentControls extends EventDispatcher {
 
+	/**
+	 * Whether the controls are active. When set to false, all input is ignored
+	 * and inertia is cleared.
+	 * @type {boolean}
+	 */
 	get enabled() {
 
 		return this._enabled;
@@ -92,20 +104,89 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// settings
 		this._enabled = true;
+
+		/**
+		 * Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+		 * @type {number}
+		 */
 		this.cameraRadius = 5;
+
+		/**
+		 * Rotation sensitivity multiplier. Default is 1.
+		 * @type {number}
+		 */
 		this.rotationSpeed = 1;
+
+		/**
+		 * Minimum camera angle above the horizon in radians. Default is 0.
+		 * @type {number}
+		 */
 		this.minAltitude = 0;
+
+		/**
+		 * Maximum camera angle above the horizon in radians. Default is 0.45π.
+		 * @type {number}
+		 */
 		this.maxAltitude = 0.45 * Math.PI;
+
+		/**
+		 * Minimum zoom distance in world units. Default is 10.
+		 * @type {number}
+		 */
 		this.minDistance = 10;
+
+		/**
+		 * Maximum zoom distance in world units. Default is Infinity.
+		 * @type {number}
+		 */
 		this.maxDistance = Infinity;
+
+		/**
+		 * Minimum orthographic zoom level. Default is 0.
+		 * @type {number}
+		 */
 		this.minZoom = 0;
+
+		/**
+		 * Maximum orthographic zoom level. Default is Infinity.
+		 * @type {number}
+		 */
 		this.maxZoom = Infinity;
+
+		/**
+		 * Zoom sensitivity multiplier. Default is 1.
+		 * @type {number}
+		 */
 		this.zoomSpeed = 1;
+
+		/**
+		 * When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+		 * @type {boolean}
+		 */
 		this.adjustHeight = true;
+
+		/**
+		 * When true, camera movements decelerate gradually after input ends. Default is false.
+		 * @type {boolean}
+		 */
 		this.enableDamping = false;
+
+		/**
+		 * Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+		 * @type {number}
+		 */
 		this.dampingFactor = 0.15;
 
+		/**
+		 * Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+		 * @type {Plane}
+		 */
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
+
+		/**
+		 * When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+		 * @type {boolean}
+		 */
 		this.useFallbackPlane = true;
 
 		// settings for GlobeControls
@@ -163,12 +244,20 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Sets the scene to raycast against for surface-based interaction.
+	 * @param {Object3D} scene
+	 */
 	setScene( scene ) {
 
 		this.scene = scene;
 
 	}
 
+	/**
+	 * Sets the camera to control.
+	 * @param {Camera} camera
+	 */
 	setCamera( camera ) {
 
 		this.camera = camera;
@@ -194,6 +283,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Attaches the controls to a DOM element, registering all pointer and keyboard event listeners.
+	 * @param {HTMLElement} domElement
+	 */
 	attach( domElement ) {
 
 		if ( this.domElement ) {
@@ -530,6 +623,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Detaches the controls from the DOM element, removing all event listeners.
+	 */
 	detach() {
 
 		this.domElement = null;
@@ -545,12 +641,22 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// override-able functions for retrieving the up direction at a point
+	/**
+	 * Returns the local up direction at a world-space point. Override to provide terrain-aware
+	 * up vectors (e.g. ellipsoid normals). Default returns the controls' `up` vector.
+	 * @param {Vector3} point - World-space point to query.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 */
 	getUpDirection( point, target ) {
 
 		target.copy( this.up );
 
 	}
 
+	/**
+	 * Returns the local up direction at the camera's current position.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 */
 	getCameraUpDirection( target ) {
 
 		this.getUpDirection( this.camera.position, target );
@@ -558,6 +664,11 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// returns the active / last used pivot point for the scene
+	/**
+	 * Returns the current drag or rotation pivot point in world space.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 * @returns {Vector3|null} The target vector, or null if no pivot is active.
+	 */
 	getPivotPoint( target ) {
 
 		let result = null;
@@ -609,6 +720,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Clears the current interaction state, cancelling any active drag, rotate, or zoom.
+	 */
 	resetState() {
 
 		if ( this.state !== NONE ) {
@@ -625,6 +739,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Sets the current control state (e.g. `NONE`, `DRAG`, `ROTATE`, `ZOOM`).
+	 * @param {number} [state] - One of the exported state constants. Defaults to current state.
+	 * @param {boolean} [fireEvent=true] - Whether to dispatch `'start'` and `'end'` events.
+	 */
 	setState( state = this.state, fireEvent = true ) {
 
 		if ( this.state === state ) {
@@ -653,6 +772,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Applies pending input and inertia to the camera. Must be called each frame.
+	 * @param {number} [deltaTime] - Time in seconds since the last frame. Defaults to the clock delta, capped at 64ms.
+	 */
 	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
@@ -774,6 +897,11 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	// updates the camera to position it based on the constraints of the controls
+	/**
+	 * Adjusts the camera to satisfy altitude and distance constraints. Called automatically by `update`.
+	 * Override in subclasses to add custom camera adjustment behaviour (e.g. near/far plane updates).
+	 * @param {Camera} camera
+	 */
 	adjustCamera( camera ) {
 
 		const { adjustHeight, cameraRadius } = this;
@@ -797,6 +925,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Disposes of event listeners and internal resources. Calls `detach` if currently attached.
+	 */
 	dispose() {
 
 		this.detach();

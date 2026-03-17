@@ -17,11 +17,11 @@ const ENTRY_POINTS = [
 		title: '3d-tiles-renderer/core',
 		source: 'src/core/renderer',
 	},
-	// {
-	// 	output: 'src/three/renderer/API.md',
-	// 	title: '3d-tiles-renderer/three',
-	// 	source: null,
-	// },
+	{
+		output: 'src/three/renderer/API.md',
+		title: '3d-tiles-renderer/three',
+		source: 'src/three/renderer',
+	},
 	{
 		output: 'src/babylonjs/renderer/API.md',
 		title: '3d-tiles-renderer/babylonjs',
@@ -196,7 +196,8 @@ for ( const { entry, jsdoc } of results ) {
 
 function runJsDoc( source ) {
 
-	const result = execSync( `npx jsdoc -X -r "${ source }"` ).toString();
+	// Default maxBuffer is 1 MB; large source directories can exceed that, so raise it to 32 MB.
+	const result = execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString();
 	return JSON.parse( result );
 
 }
@@ -205,6 +206,7 @@ function filterDocumented( json ) {
 
 	return json.filter( d =>
 		d.undocumented !== true &&
+		d.ignore !== true &&
 		d.kind !== 'package' &&
 		d.access !== 'private' &&
 		d.inherited !== true &&
