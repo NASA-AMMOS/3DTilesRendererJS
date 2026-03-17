@@ -183,7 +183,6 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	// get the vector to the center of the provided globe
 	/**
 	 * Returns the vector from the camera to the center of the ellipsoid in world space.
 	 * @param {Vector3} target
@@ -198,7 +197,6 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	// get the distance to the center of the globe
 	/**
 	 * Returns the distance from the camera to the center of the ellipsoid.
 	 * @returns {number}

@@ -4,7 +4,6 @@ import { DeepZoomImageSource } from './sources/DeepZoomImageSource.js';
 // Support for Deep Zoom Image format
 // https://openseadragon.github.io/
 
-// https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)
 /**
  * Plugin that renders a Deep Zoom Image (DZI) as a 3D Tiles-compatible tiled texture.
  * Only a single embedded "Image" is supported. Pass the `.dzi` XML file URL as the

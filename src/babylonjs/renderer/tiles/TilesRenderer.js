@@ -13,12 +13,12 @@ const _worldToTiles = /* @__PURE__ */ Matrix.Identity();
 const _cameraPositionInTiles = /* @__PURE__ */ new Vector3();
 const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new Plane( 0, 0, 0, 0 ) );
 
-// TODO: implementation does not support left handed coordinate system
 /**
  * Babylon.js implementation of the 3D Tiles renderer. Manages tile loading, caching, traversal,
  * and scene management using the Babylon.js scene graph and camera APIs. Dispatches all events
  * defined by TilesRendererBase via Babylon.js Observables.
  * @extends TilesRendererBase
+ * @warn Left-handed coordinate systems are not currently supported.
  */
 export class TilesRenderer extends TilesRendererBase {
 

@@ -640,7 +640,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// override-able functions for retrieving the up direction at a point
 	/**
 	 * Returns the local up direction at a world-space point. Override to provide terrain-aware
 	 * up vectors (e.g. ellipsoid normals). Default returns the controls' `up` vector.
@@ -663,7 +662,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// returns the active / last used pivot point for the scene
 	/**
 	 * Returns the current drag or rotation pivot point in world space.
 	 * @param {Vector3} target - Target vector to write the result into.
@@ -896,7 +894,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// updates the camera to position it based on the constraints of the controls
 	/**
 	 * Adjusts the camera to satisfy altitude and distance constraints. Called automatically by `update`.
 	 * Override in subclasses to add custom camera adjustment behaviour (e.g. near/far plane updates).

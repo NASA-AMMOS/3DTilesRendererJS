@@ -7,10 +7,9 @@ import { TMSImageSource } from './sources/TMSImageSource.js';
 import { WMTSImageSource } from './sources/WMTSImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
 
-// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 /**
  * Plugin that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) projected onto
- * 3D tile geometry.
+ * 3D tile geometry. See the {@link https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames Slippy map tilenames specification}.
  * @param {Object} [options]
  * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
  * @param {number} [options.levels] Number of zoom levels.
@@ -38,14 +37,12 @@ export class XYZTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 }
 
-// Support for TMS tiles
-// https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification
-// NOTE: Most, if not all, TMS generation implementations do not correctly support the Origin tag
-// and tile index offsets, including CesiumJS and Ion.
 /**
  * Plugin that renders TMS (Tile Map Service) image tiles projected onto 3D tile geometry.
+ * See the {@link https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification TMS specification}.
  * @param {Object} [options]
  * @param {string} [options.url] URL to the TMS `tilemapresource.xml` descriptor or tile template.
+ * @note Most TMS generation implementations (including CesiumJS and Ion) do not correctly support the Origin tag and tile index offsets.
  */
 export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
@@ -61,7 +58,6 @@ export class TMSTilesPlugin extends EllipsoidProjectionTilesPlugin {
 
 }
 
-// Support for WMTS tiles via a url template
 /**
  * Plugin that renders WMTS (Web Map Tile Service) image tiles projected onto 3D tile
  * geometry. Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide

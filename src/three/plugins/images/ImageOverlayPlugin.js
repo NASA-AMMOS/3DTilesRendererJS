@@ -24,7 +24,6 @@ const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
-// Plugin for overlaying tiled image data on top of 3d tiles geometry.
 /**
  * Plugin that composites one or more tiled image overlays onto 3D tile geometry by
  * generating per-tile textures from image sources (XYZ, TMS, WMTS, WMS, GeoJSON, etc.).
@@ -780,7 +779,6 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// public
 	/**
 	 * Adds an image overlay source to the plugin. The `order` parameter controls the draw
 	 * order among overlays; lower values are drawn first. If omitted, the overlay is appended

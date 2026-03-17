@@ -234,7 +234,6 @@ export class TileFlatteningPlugin {
 
 	}
 
-	// API for updating and shapes to flatten the vertices
 	/**
 	 * Returns whether the given object has already been added as a shape.
 	 * @param {Object3D} mesh
