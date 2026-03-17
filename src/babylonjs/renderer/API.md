@@ -1,3 +1,4 @@
+<!-- This file is generated automatically. Do not edit it directly. -->
 # 3d-tiles-renderer/babylonjs
 
 

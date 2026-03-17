@@ -186,7 +186,8 @@ for ( const { entry, jsdoc } of results ) {
 
 	}
 
-	const output = resolveLinks( sections.join( '\n' ) );
+	const header = '<!-- This file is generated automatically. Do not edit it directly. -->\n';
+	const output = header + resolveLinks( sections.join( '\n' ) );
 	fs.writeFileSync( path.join( ROOT_DIR, entry.output ), output );
 	console.log( `Written: ${ entry.output }` );
 

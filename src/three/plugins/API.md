@@ -1,3 +1,4 @@
+<!-- This file is generated automatically. Do not edit it directly. -->
 # 3d-tiles-renderer/three/plugins
 
 
@@ -129,6 +130,8 @@ constructor( parser: Object )
 
 ## GLTFStructuralMetadataExtension
 
+> [!NOTE]
+> 64-bit integer types are not fully supported.
 
 ### .constructor
 
