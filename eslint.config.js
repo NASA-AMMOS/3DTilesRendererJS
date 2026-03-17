@@ -110,6 +110,7 @@ export default [
 		},
 		settings: {
 			jsdoc: {
+				definedTags: [ 'component', 'warn', 'note' ],
 				preferredTypes: {
 					Any: 'any',
 					Boolean: 'boolean',
