@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.23] - Unreleased
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
+- Auto-generated documenttion via JSDoc.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
