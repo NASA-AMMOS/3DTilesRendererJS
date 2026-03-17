@@ -375,9 +375,7 @@ export class BatchedTilesPlugin {
 
 		} );
 
-		let activeInstanceCount = 0;
-		this._tileToInstanceId.forEach( ids => activeInstanceCount += ids.length );
-		const canAddMeshes = ! this.batchedMesh || activeInstanceCount + meshes.length <= this.maxInstanceCount;
+		const canAddMeshes = ! this.batchedMesh || this.batchedMesh.instanceCount + meshes.length <= this.maxInstanceCount;
 		if ( hasCorrectAttributes && canAddMeshes ) {
 
 			scene.updateMatrixWorld();
