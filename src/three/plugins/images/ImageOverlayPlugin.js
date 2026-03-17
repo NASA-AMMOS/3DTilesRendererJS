@@ -22,6 +22,7 @@ const _normal = /* @__PURE__ */ new Vector3();
 const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
+const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
 // Plugin for overlaying tiled image data on top of 3d tiles geometry.
 export class ImageOverlayPlugin {
@@ -221,11 +222,45 @@ export class ImageOverlayPlugin {
 
 	}
 
+	_removeVirtualChildren( tile ) {
+
+		if ( ! ( ORIGINAL_REFINE in tile ) ) {
+
+			return;
+
+		}
+
+		// remove the virtual children associated with the given tile
+		const { tiles } = this;
+		const { virtualChildCount } = tile.internal;
+		const len = tile.children.length;
+		const start = len - virtualChildCount;
+		for ( let i = start; i < len; i ++ ) {
+
+			const child = tile.children[ i ];
+			tiles.processNodeQueue.remove( child );
+			tiles.lruCache.remove( child );
+			child.parent = null;
+
+		}
+
+		tile.children.length -= virtualChildCount;
+		tile.internal.virtualChildCount = 0;
+		tile.refine = tile[ ORIGINAL_REFINE ];
+		delete tile[ ORIGINAL_REFINE ];
+		delete tile[ SPLIT_HASH ];
+
+	}
+
 	disposeTile( tile ) {
 
 		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
 
 		processedTiles.delete( tile );
+
+		// remove any virtual children since they depend on this tile being loaded for regeneration.
+		// they will be recreated with fresh split configuration when the tile is reloaded.
+		this._removeVirtualChildren( tile );
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -354,8 +389,6 @@ export class ImageOverlayPlugin {
 			this._updateLayers( tile );
 			this.disposeTile( tile );
 
-			delete tile[ SPLIT_HASH ];
-
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -403,49 +436,37 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// collect the tiles split into virtual tiles
+		// collect the tiles split into virtual tiles, sorted deepest-first so nested virtual tiles
+		// are cleaned up before their parents when iterating
 		const { tiles } = this;
-		const parents = new Set();
+		const splitTiles = [];
 		this.processedTiles.forEach( tile => {
 
 			if ( SPLIT_HASH in tile ) {
 
-				parents.add( tile );
+				splitTiles.push( tile );
 
 			}
 
 		} );
 
-		// dispose of the virtual children if this tile would not be split or the spilt could change
+		// ensure we clean depth first
+		splitTiles.sort( ( a, b ) => b.internal.depth - a.internal.depth );
+
+		// dispose of the virtual children if this tile would not be split or the split could change
 		// under the current overlays used.
-		parents.forEach( parent => {
+		splitTiles.forEach( tile => {
 
-			if ( parent.parent === null ) {
-
-				return;
-
-			}
-
-			const clone = parent.engineData.scene.clone();
+			const clone = tile.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
-			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
-
-				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
-				const children = collectChildren( parent );
-				children.sort( ( a, b ) => ( b.internal.depth || 0 ) - ( a.internal.depth || 0 ) );
+			if ( fullDispose || tile[ SPLIT_HASH ] !== this._getSplitVectors( clone, tile ).hash ) {
 
 				// note that we need to remove children from the processing queue in this case
-				// because we are forcibly evicting them from the cache.
-				children.forEach( child => {
-
-					tiles.processNodeQueue.remove( child );
-					tiles.lruCache.remove( child );
-					child.parent = null;
-
-				} );
-
-				parent.children.length = 0;
+				// because we are forcibly evicting them from the cache. Since parents is sorted
+				// deepest-first, nested virtual tiles are already cleaned up before we reach
+				// their parent here.
+				this._removeVirtualChildren( tile );
 
 			}
 
@@ -459,18 +480,6 @@ export class ImageOverlayPlugin {
 				this.expandVirtualChildren( scene, tile );
 
 			} );
-
-		}
-
-		function collectChildren( root, target = [] ) {
-
-			root.children.forEach( child => {
-
-				target.push( child );
-				collectChildren( child, target );
-
-			} );
-			return target;
 
 		}
 
@@ -567,7 +576,16 @@ export class ImageOverlayPlugin {
 
 	async expandVirtualChildren( scene, tile ) {
 
-		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
+		const { refine } = tile;
+
+		// Only split tiles that would benefit from it:
+		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality. REPLACE tiles
+		// that already have children are already refined by their children so splitting is unnecessary.
+		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
+		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
+		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
+		const alreadySplit = tile.internal.virtualChildCount !== 0;
+		if ( this.enableTileSplitting === false || ! shouldSplit || alreadySplit ) {
 
 			return;
 
@@ -577,16 +595,15 @@ export class ImageOverlayPlugin {
 		const clone = scene.clone();
 		clone.updateMatrixWorld();
 
-		// get the directions to split on
+		// get the directions to split on & if there are no directions to split on then exit early
 		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
-		tile[ SPLIT_HASH ] = hash;
-
-		// if there are no directions to split on then exit early
 		if ( directions.length === 0 ) {
 
 			return;
 
 		}
+
+		tile[ SPLIT_HASH ] = hash;
 
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
@@ -604,7 +621,7 @@ export class ImageOverlayPlugin {
 
 		// run the clipping operations by performing every permutation of sides
 		// defined by the split directions
-		const children = [];
+		const splitChildren = [];
 		clipper.forEachSplitPermutation( () => {
 
 			// clip the object itself
@@ -720,7 +737,8 @@ export class ImageOverlayPlugin {
 
 			}
 
-			children.push( {
+			splitChildren.push( {
+				internal: { isVirtual: true },
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
 				boundingVolume: boundingVolume,
@@ -731,12 +749,13 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
-		// TODO: If a tile is of type "ADD" refine and it has children then it will not be split
-		// as expected since only geometry tiles with no children are split. Instead we'd want
-		// to split this tiles geometry in addition to adding the child tiles.
+		// force the tile "refine" mode to be set to "REPLACE" so that the virtual children
+		// replace this tile's geometry display. Save the original mode so it can be restored
+		// if virtual children are later removed.
+		tile[ ORIGINAL_REFINE ] = tile.refine;
 		tile.refine = 'REPLACE';
-		tile.children.push( ...children );
+		tile.children.push( ...splitChildren );
+		tile.internal.virtualChildCount += splitChildren.length;
 
 	}
 
@@ -1135,7 +1154,7 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( tile ) {
 
-		const { overlayInfo, overlays, tileControllers } = this;
+		const { overlayInfo, overlays, tileControllers, meshParams } = this;
 		const tileController = tileControllers.get( tile );
 
 		// by this point all targets should be present and we can force the memory to update
@@ -1143,6 +1162,34 @@ export class ImageOverlayPlugin {
 
 		// if the tile has been disposed before this function is called then exit early
 		if ( ! tileController || tileController.signal.aborted ) {
+
+			return;
+
+		}
+
+		// handle the case where all overlays have been removed - we need to reset
+		// the materials to have no layers
+		if ( overlays.length === 0 ) {
+
+			const scene = tile.engineData && tile.engineData.scene;
+			if ( scene ) {
+
+				scene.traverse( c => {
+
+					if ( c.material && meshParams.has( c ) ) {
+
+						const params = meshParams.get( c );
+						params.layerMaps.length = 0;
+						params.layerInfo.length = 0;
+
+						c.material.defines.LAYER_COUNT = 0;
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
+
+			}
 
 			return;
 
@@ -1156,7 +1203,7 @@ export class ImageOverlayPlugin {
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
-				const params = this.meshParams.get( mesh );
+				const params = meshParams.get( mesh );
 
 				// assign the new uvs
 				const key = `layer_uv_${ i }`;

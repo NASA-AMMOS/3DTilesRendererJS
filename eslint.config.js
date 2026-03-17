@@ -5,6 +5,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import mdcs from 'eslint-config-mdcs';
+import jsdoc from 'eslint-plugin-jsdoc';
 
 export default [
 	// files to ignore
@@ -30,7 +31,7 @@ export default [
 		name: 'base rules',
 		files: [ '**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx' ],
 		languageOptions: {
-			ecmaVersion: 2020,
+			ecmaVersion: 2022,
 			sourceType: 'module',
 			globals: {
 				...globals.browser,
@@ -52,6 +53,7 @@ export default [
 				vars: 'all',
 				args: 'none',
 			} ],
+			'template-curly-spacing': [ 'error', 'always' ],
 		},
 	},
 
@@ -96,6 +98,38 @@ export default [
 			'react/prop-types': 'off',
 			'react/no-unknown-property': 'off',
 			'react/jsx-curly-spacing': [ 'error', { when: 'always' } ],
+		},
+	},
+
+	// jsdoc
+	{
+		name: 'jsdoc rules',
+		files: [ '**/*.js', '**/*.jsx' ],
+		plugins: {
+			jsdoc,
+		},
+		settings: {
+			jsdoc: {
+				preferredTypes: {
+					Any: 'any',
+					Boolean: 'boolean',
+					Number: 'number',
+					object: 'Object',
+					String: 'string',
+				},
+				tagNamePreference: {
+					returns: 'return',
+					extends: 'augments',
+				},
+			},
+		},
+		rules: {
+			'jsdoc/check-types': 'error',
+			'jsdoc/require-param-type': 'error',
+			'jsdoc/require-returns-type': 'error',
+			'jsdoc/require-returns': 'off',
+			'jsdoc/require-param-description': 'off',
+			'jsdoc/require-returns-description': 'off',
 		},
 	},
 

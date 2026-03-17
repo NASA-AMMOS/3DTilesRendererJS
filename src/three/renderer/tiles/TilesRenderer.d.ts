@@ -1,30 +1,15 @@
-import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager, Sphere, EventListener, EventDispatcher, BaseEvent } from 'three';
-import { Tile, TilesRendererBase } from '3d-tiles-renderer/core';
+import { Box3, Camera, Vector2, Matrix4, WebGLRenderer, Object3D, LoadingManager, Sphere } from 'three';
+import { Tile, TilesRendererBase, TilesRendererBaseEventMap } from '3d-tiles-renderer/core';
 import { TilesGroup } from './TilesGroup.js';
 import { Ellipsoid } from '../math/Ellipsoid.js';
 
-export interface TilesRendererEventMap {
+export interface TilesRendererEventMap extends TilesRendererBaseEventMap<Object3D> {
 	'add-camera': { camera: Camera };
 	'delete-camera': { camera: Camera };
 	'camera-resolution-change': {};
-	'load-root-tileset': { tileset: object, url: string };
-	'load-tileset': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
-	/* @deprecated Use 'load-tileset' instead */
-	'load-tile-set': { tileset: object, /* @deprecated Use tileset instead */ tileSet?: object, url: string };
-	'tiles-load-start': {};
-	'tiles-load-end': {};
-	'tile-download-start': { tile: Tile, url: string };
-	'load-content': {};
-	'load-model': { scene: Object3D; tile: Tile, url: string };
-	'dispose-model': { scene: Object3D; tile: Tile };
-	'tile-visibility-change': { scene: Object3D; tile: Tile; visible: boolean };
-	'update-before': {};
-	'update-after': {};
-	'needs-update': {};
-	'load-error': { tile: Tile | null, error: Error, url: string | URL };
 }
 
-export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase implements EventDispatcher<TEventMap> {
+export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRendererEventMap> extends TilesRendererBase<TEventMap> {
 
 	ellipsoid: Ellipsoid;
 	cameras: Camera[];
@@ -48,55 +33,5 @@ export class TilesRenderer<TEventMap extends TilesRendererEventMap = TilesRender
 	setResolutionFromRenderer( camera : Camera, renderer : WebGLRenderer ) : boolean;
 
 	forEachLoadedModel( callback : ( scene : Object3D, tile : Tile ) => void ) : void;
-
-	/**
-	 * Adds a listener to an event type.
-	 * @param type The type of event to listen to.
-	 * @param listener The function that gets called when the event is fired.
-	 */
-	addEventListener<T extends Extract<keyof TEventMap, string>>(
-		type: T,
-		listener: EventListener<TEventMap[T], T, this>
-	): void;
-	addEventListener<T extends string>(
-		type: T,
-		listener: EventListener<{}, T, this>
-	): void;
-
-	/**
-	 * Checks if listener is added to an event type.
-	 * @param type The type of event to listen to.
-	 * @param listener The function that gets called when the event is fired.
-	 */
-	hasEventListener<T extends Extract<keyof TEventMap, string>>(
-		type: T,
-		listener: EventListener<TEventMap[T], T, this>
-	): boolean;
-	hasEventListener<T extends string>(
-		type: T,
-		listener: EventListener<{}, T, this>
-	): boolean;
-
-	/**
-	 * Removes a listener from an event type.
-	 * @param type The type of the listener that gets removed.
-	 * @param listener The listener function that gets removed.
-	 */
-	removeEventListener<T extends Extract<keyof TEventMap, string>>(
-		type: T,
-		listener: EventListener<TEventMap[T], T, this>
-	): void;
-	removeEventListener<T extends string>(
-		type: T,
-		listener: EventListener<{}, T, this>
-	): void;
-
-	/**
-	 * Fire an event type.
-	 * @param event The event that gets fired.
-	 */
-	dispatchEvent<T extends Extract<keyof TEventMap, string>>(
-		event: BaseEvent<T> & TEventMap[T]
-	): void;
 
 }

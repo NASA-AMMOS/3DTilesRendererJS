@@ -8,6 +8,7 @@ const TILE_X = Symbol( 'TILE_X' );
 const TILE_Y = Symbol( 'TILE_Y' );
 const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 const TILE_AVAILABLE = Symbol( 'TILE_AVAILABLE' );
+const TILE_SPLIT_SOURCE_SCENE = Symbol( 'TILE_SPLIT_SOURCE_SCENE' );
 
 // We don't know the height ranges for the tileset on load so assume a large range and
 // adjust it once the tiles have actually loaded based on the min and max height
@@ -253,7 +254,11 @@ export class QuantizedMeshPlugin {
 			clipper.minLon = west;
 			clipper.maxLon = east;
 
-			result = clipper.clipToQuadrant( tile.parent.engineData.scene, left, bottom );
+			// There is a short async gap between the parent tile finishing parse and TilesRenderer
+			// assigning engineData.scene. Split children can be processed during that gap, so keep a
+			// temporary reference to the parsed parent scene for clipping.
+			const scene = tile.parent.engineData.scene || tile.parent[ TILE_SPLIT_SOURCE_SCENE ];
+			result = clipper.clipToQuadrant( scene, left, bottom );
 
 		} else if ( extension === 'terrain' ) {
 
@@ -310,10 +315,10 @@ export class QuantizedMeshPlugin {
 
 		}
 
-		// NOTE: we expand children only once the parent mesh data is loaded to ensure the mesh
-		// data is ready for clipping. It's possible that this child data gets to the parse stage
-		// first, otherwise, while the parent is still downloading.
-		// Ideally we would be able to guarantee parents are loaded first but this is an odd case.
+		// Store the parsed scene separately until TilesRenderer finishes registering the tile model.
+		// Because parseTile is async, split children may be processed before the parent scene has
+		// been assigned on engineData and still need access to the parsed parent scene for clipping.
+		tile[ TILE_SPLIT_SOURCE_SCENE ] = result;
 		this.expandChildren( tile );
 
 		return result;
@@ -406,8 +411,11 @@ export class QuantizedMeshPlugin {
 
 				} else {
 
-					tile.children.push( child );
+					// mark the child as "virtual" since it relies on the parent geometry
 					child.content = { uri: `tile.quantized_tile_split?bottom=${ cy === 0 }&left=${ cx === 0 }` };
+					child.internal = { isVirtual: true };
+					tile.internal.virtualChildCount ++;
+					tile.children.push( child );
 
 				}
 
@@ -417,7 +425,8 @@ export class QuantizedMeshPlugin {
 
 		if ( ! hasChildren ) {
 
-			tile.children.length = 0;
+			tile.children.length -= tile.internal.virtualChildCount;
+			tile.internal.virtualChildCount = 0;
 
 		}
 
@@ -436,27 +445,32 @@ export class QuantizedMeshPlugin {
 
 	disposeTile( tile ) {
 
+		const { tiles, layer } = this;
+		delete tile[ TILE_SPLIT_SOURCE_SCENE ];
+
 		// dispose of the available array since we will get it again if this tile is loaded
-		if ( getTileHasMetadata( tile, this.layer ) ) {
+		if ( getTileHasMetadata( tile, layer ) ) {
 
 			tile[ TILE_AVAILABLE ] = null;
 
 		}
 
-		// Note: we remove all children always because child tiles can rely on splitting parent tiles
-		// and we can find ourselves in a situation where a child tile is ready first but the parent tile
-		// hasn't loaded, causing a stall / race condition in the parsing queue. To avoid this dependency
-		// we just remove all children and generate them again one the parent is loaded.
-		// Only get rid of the children if this plugin was responsible for them.
+		// Remove virtual children when the parent is disposed since they depend on the parent's
+		// loaded scene for clipping and cannot be rendered or re-generated without it. They will
+		// be re-created once the parent is loaded again.
 		if ( TILE_AVAILABLE in tile ) {
 
-			tile.children.forEach( child => {
+			const { virtualChildCount } = tile.internal;
+			const len = tile.children.length;
+			const start = len - virtualChildCount;
+			for ( let i = start; i < len; i ++ ) {
 
-				// TODO: there should be a reliable way for removing children like this.
-				this.tiles.processNodeQueue.remove( child );
+				tiles.processNodeQueue.remove( tile.children[ i ] );
 
-			} );
+			}
+
 			tile.children.length = 0;
+			tile.internal.virtualChildCount = 0;
 
 		}
 

@@ -14,14 +14,38 @@ const _cameraPositionInTiles = /* @__PURE__ */ new Vector3();
 const _frustumPlanes = /* @__PURE__ */ new Array( 6 ).fill( null ).map( () => new Plane( 0, 0, 0, 0 ) );
 
 // TODO: implementation does not support left handed coordinate system
+/**
+ * @classdesc
+ * Babylon.js implementation of the 3D Tiles renderer. Manages tile loading, caching, traversal,
+ * and scene management using the Babylon.js scene graph and camera APIs. Dispatches all events
+ * defined by TilesRendererBase via Babylon.js Observables.
+ * @augments TilesRendererBase
+ */
 export class TilesRenderer extends TilesRendererBase {
 
+	/**
+	 * @param {string} url - URL of the root tileset JSON.
+	 * @param {Scene} scene - The Babylon.js scene to render tiles into.
+	 */
 	constructor( url, scene ) {
 
 		super( url );
 
+		/**
+		 * The Babylon.js scene tiles are rendered into.
+		 * @type {Scene}
+		 */
 		this.scene = scene;
+		/**
+		 * Root node that all loaded tile scenes are parented to.
+		 * @type {TransformNode}
+		 */
 		this.group = new TransformNode( 'tiles-root', scene );
+		/**
+		 * Whether to enable collision checking on loaded tile meshes.
+		 * @type {boolean}
+		 */
+		this.checkCollisions = false;
 		this._upRotationMatrix = Matrix.Identity();
 
 		// Babylon.js Observables for events
@@ -199,6 +223,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+		if ( this.checkCollisions ) {
+
+			for ( const mesh of scene.getChildMeshes() ) {
+
+				mesh.checkCollisions = true;
+
+			}
+
+		}
+
 		engineData.scene = scene;
 		engineData.container = result.container;
 		engineData.metadata = result.metadata || null;
@@ -325,6 +359,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Disposes the renderer, releasing all loaded tile content and the root transform node.
+	 * @returns {void}
+	 */
 	dispose() {
 
 		super.dispose();

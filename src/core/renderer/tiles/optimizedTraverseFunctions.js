@@ -21,6 +21,8 @@ function isUsedThisFrame( tile, frameCount ) {
 
 function isProcessed( tile ) {
 
+	// TODO: here "traversal" is used to determine whether a tile has been initialized. We should
+	// move these to tiles utils
 	return Boolean( tile.traversal );
 
 }
@@ -28,8 +30,9 @@ function isProcessed( tile ) {
 // Checks whether all children have been processed and are ready to traverse
 function areChildrenProcessed( tile ) {
 
-	// all children are processed at once
-	const childrenReady = tile.children.length === 0 || Boolean( tile.children[ 0 ].internal );
+	const { children } = tile;
+	const childrenReady = children.length === 0 || isProcessed( children[ children.length - 1 ] );
+
 	const contentReady = ! tile.internal.hasUnrenderableContent || isDownloadFinished( tile.internal.loadingState );
 	return childrenReady && contentReady;
 
@@ -434,6 +437,14 @@ function toggleTiles( tile, renderer ) {
 		} else {
 
 			tile.traversal.active = false;
+
+		}
+
+		// keep tiles with virtual children retained in the LRU cache so the content is
+		// available to regenerate virtual children if the overlay configuration changes.
+		if ( tile.internal.virtualChildCount > 0 && tile.internal.hasContent ) {
+
+			renderer.markTileUsed( tile );
 
 		}
 

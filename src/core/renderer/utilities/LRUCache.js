@@ -1,7 +1,28 @@
 const GIGABYTE_BYTES = 2 ** 30;
 
+/**
+ * @callback UnloadPriorityCallback
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
+
+/**
+ * @callback RemoveCallback
+ * @param {any} item
+ */
+
+/**
+ * Least-recently-used cache for managing tile content lifecycle. Tracks which items
+ * are in use each frame and evicts unused items when the cache exceeds its size limits.
+ */
 class LRUCache {
 
+	/**
+	 * Comparator used to determine eviction order. Items that sort last are evicted first.
+	 * Defaults to `null` (eviction order is by last-used time).
+	 * @type {UnloadPriorityCallback|null}
+	 */
 	get unloadPriorityCallback() {
 
 		return this._unloadPriorityCallback;
@@ -34,12 +55,40 @@ class LRUCache {
 
 	constructor() {
 
-		// options
+		/**
+		 * Minimum number of items to keep in the cache after eviction.
+		 * @type {number}
+		 */
 		this.minSize = 6000;
+
+		/**
+		 * Maximum number of items before eviction is triggered.
+		 * @type {number}
+		 */
 		this.maxSize = 8000;
+
+		/**
+		 * Minimum total bytes to retain after eviction.
+		 * @type {number}
+		 */
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
+
+		/**
+		 * Maximum total bytes before eviction is triggered.
+		 * @type {number}
+		 */
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
+
+		/**
+		 * Fraction of excess items/bytes to unload per eviction pass.
+		 * @type {number}
+		 */
 		this.unloadPercent = 0.05;
+
+		/**
+		 * If true, items are automatically marked as unused at the start of each eviction pass.
+		 * @type {boolean}
+		 */
 		this.autoMarkUnused = true;
 
 		// "itemSet" doubles as both the list of the full set of items currently
@@ -61,19 +110,32 @@ class LRUCache {
 
 	}
 
-	// Returns whether or not the cache has reached the maximum size
+	/**
+	 * Returns whether the cache has reached its maximum item count or byte size.
+	 * @returns {boolean}
+	 */
 	isFull() {
 
 		return this.itemSet.size >= this.maxSize || this.cachedBytes >= this.maxBytesSize;
 
 	}
 
+	/**
+	 * Returns the byte size registered for the given item, or 0 if not tracked.
+	 * @param {any} item
+	 * @returns {number}
+	 */
 	getMemoryUsage( item ) {
 
 		return this.bytesMap.get( item ) || 0;
 
 	}
 
+	/**
+	 * Sets the byte size for the given item, updating the total `cachedBytes` count.
+	 * @param {any} item
+	 * @param {number} bytes
+	 */
 	setMemoryUsage( item, bytes ) {
 
 		const { bytesMap, itemSet } = this;
@@ -89,6 +151,12 @@ class LRUCache {
 
 	}
 
+	/**
+	 * Adds an item to the cache. Returns false if the item already exists or the cache is full.
+	 * @param {any} item
+	 * @param {RemoveCallback} removeCb - Called with the item when it is evicted
+	 * @returns {boolean}
+	 */
 	add( item, removeCb ) {
 
 		const itemSet = this.itemSet;
@@ -116,12 +184,23 @@ class LRUCache {
 
 	}
 
+	/**
+	 * Returns whether the given item is in the cache.
+	 * @param {any} item
+	 * @returns {boolean}
+	 */
 	has( item ) {
 
 		return this.itemSet.has( item );
 
 	}
 
+	/**
+	 * Removes an item from the cache immediately, invoking its removal callback.
+	 * Returns false if the item was not in the cache.
+	 * @param {any} item
+	 * @returns {boolean}
+	 */
 	remove( item ) {
 
 		const usedSet = this.usedSet;
@@ -153,9 +232,12 @@ class LRUCache {
 
 	}
 
-	// Marks whether tiles in the cache have been completely loaded or not. Tiles that have not been completely
-	// loaded are subject to being disposed early if the cache is full above its max size limits, even if they
-	// are marked as used.
+	/**
+	 * Marks whether an item has finished loading. Unloaded items may be evicted early
+	 * when the cache is over its max size limits, even if they are marked as used.
+	 * @param {any} item
+	 * @param {boolean} value
+	 */
 	setLoaded( item, value ) {
 
 		const { itemSet, loadedSet } = this;
@@ -175,6 +257,10 @@ class LRUCache {
 
 	}
 
+	/**
+	 * Marks an item as used in the current frame, preventing it from being evicted.
+	 * @param {any} item
+	 */
 	markUsed( item ) {
 
 		const itemSet = this.itemSet;
@@ -188,24 +274,40 @@ class LRUCache {
 
 	}
 
+	/**
+	 * Marks an item as unused, making it eligible for eviction.
+	 * @param {any} item
+	 */
 	markUnused( item ) {
 
 		this.usedSet.delete( item );
 
 	}
 
+	/**
+	 * Marks all items in the cache as unused.
+	 */
 	markAllUnused() {
 
 		this.usedSet.clear();
 
 	}
 
+	/**
+	 * Returns whether the given item is currently marked as used.
+	 * @param {any} item
+	 * @returns {boolean}
+	 */
 	isUsed( item ) {
 
 		return this.usedSet.has( item );
 
 	}
 
+	/**
+	 * Evicts unused items until the cache is within its min size and byte limits.
+	 * Items are sorted by `unloadPriorityCallback` before eviction.
+	 */
 	// TODO: this should be renamed because it's not necessarily unloading all unused content
 	// Maybe call it "cleanup" or "unloadToMinSize"
 	unloadUnusedContent() {
@@ -352,6 +454,9 @@ class LRUCache {
 
 	}
 
+	/**
+	 * Schedules `unloadUnusedContent` to run asynchronously via microtask.
+	 */
 	scheduleUnload() {
 
 		cancelAnimationFrame( this.unloadingHandle );
