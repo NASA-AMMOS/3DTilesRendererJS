@@ -297,7 +297,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 				for ( const key in dimensions ) {
 
-					url = url.replace( new RegExp( `{\\s*${key}\\s*}`, 'gi' ), dimensions[ key ] );
+					url = url.replace( new RegExp( `{\\s*${ key }\\s*}`, 'gi' ), dimensions[ key ] );
 
 				}
 
