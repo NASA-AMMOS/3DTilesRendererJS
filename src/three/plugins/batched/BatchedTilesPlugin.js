@@ -237,7 +237,7 @@ export class BatchedTilesPlugin {
 
 	disposeTile( tile ) {
 
-		this.removeSceneFromBatchedMesh( null, tile );
+		this.removeSceneFromBatchedMesh( tile );
 
 	}
 
@@ -245,7 +245,7 @@ export class BatchedTilesPlugin {
 
 		if ( ! this.discardOriginalContent && this._tileToInstanceId.has( tile ) ) {
 
-			this.removeSceneFromBatchedMesh( scene, tile );
+			this.removeSceneFromBatchedMesh( tile );
 			return true;
 
 		}
@@ -316,7 +316,7 @@ export class BatchedTilesPlugin {
 
 	}
 
-	removeSceneFromBatchedMesh( scene, tile ) {
+	removeSceneFromBatchedMesh( tile ) {
 
 		if ( this._tileToInstanceId.has( tile ) ) {
 
