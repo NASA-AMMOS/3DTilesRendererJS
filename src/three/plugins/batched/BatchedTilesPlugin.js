@@ -7,6 +7,27 @@ const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
 _whiteTex.needsUpdate = true;
 
+/**
+ * Plugin that uses three.js `BatchedMesh` to limit the number of draw calls required and
+ * improve performance. The `BatchedMesh` geometry and instance size are automatically resized
+ * and optimized as new geometry is added and removed. Note that the `renderer` field is
+ * required. Requires Three.js r170 or later.
+ *
+ * @warn All tile geometry rendered with `BatchedMesh` will use the same material and only a single
+ * material map is supported. Only tile geometry containing a single mesh is supported. Not
+ * compatible with plugins that modify mesh materials or rely on bespoke mesh data (e.g.
+ * `TilesFadePlugin`, `DebugTilesPlugin`, GLTF Metadata extensions).
+ * @param {Object} options
+ * @param {WebGLRenderer} options.renderer The renderer used to generate a `WebGLArrayRenderTarget`.
+ * @param {number} [options.instanceCount=500] Initial number of instances in the batched mesh.
+ * @param {number} [options.vertexCount=1000] Minimum vertex space to reserve per tile geometry added.
+ * @param {number} [options.indexCount=1000] Minimum index space to reserve per tile geometry added.
+ * @param {number} [options.expandPercent=0.25] Fraction by which to grow the mesh when capacity is exceeded.
+ * @param {number} [options.maxInstanceCount=Infinity] Hard cap on instance count (clamped to GPU limits).
+ * @param {boolean} [options.discardOriginalContent=true] Free the original tile scene after batching. Set to `false` when used with `UnloadTilesPlugin`.
+ * @param {number|null} [options.textureSize=null] Override width/height for the texture array; defaults to the first tile's texture size.
+ * @param {Material|null} [options.material=null] Custom material for the batched mesh; defaults to the first tile's material type.
+ */
 export class BatchedTilesPlugin {
 
 	constructor( options = {} ) {
@@ -47,6 +68,8 @@ export class BatchedTilesPlugin {
 		this.renderer = options.renderer;
 		this.discardOriginalContent = options.discardOriginalContent;
 		this.textureSize = options.textureSize;
+
+		console.log( gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
 
 		// local variables
 		this.batchedMesh = null;

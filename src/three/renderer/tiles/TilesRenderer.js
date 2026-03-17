@@ -42,8 +42,20 @@ function updateFrustumCulled( object, toInitialValue ) {
 
 }
 
+/**
+ * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+ * camera management, three.js scene integration, and GPU-accelerated tile loading.
+ * Add `tiles.group` to your scene and call `tiles.update()` each frame.
+ * @extends TilesRendererBase
+ */
 export class TilesRenderer extends TilesRendererBase {
 
+	/**
+	 * If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
+	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
+	 * multiple cameras are being used, consider setting this to `false`.
+	 * @type {boolean}
+	 */
 	get autoDisableRendererCulling() {
 
 		return this._autoDisableRendererCulling;
@@ -81,8 +93,27 @@ export class TilesRenderer extends TilesRendererBase {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		/**
+		 * The container `Group` for the 3D tiles. Add this to the three.js scene. The group
+		 * also exposes a `matrixWorldInverse` field for transforming objects into the local
+		 * tileset frame.
+		 * @type {Group}
+		 */
 		this.group = new TilesGroup( this );
+
+		/**
+		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
+		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
+		 * `TilesRenderer.group`.
+		 * @type {Ellipsoid}
+		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
+
+		/**
+		 * Array of cameras registered with this renderer.
+		 * @type {Camera[]}
+		 */
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
@@ -93,6 +124,10 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
 
+		/**
+		 * The `LoadingManager` used when loading tile geometry.
+		 * @type {LoadingManager}
+		 */
 		this.manager = new LoadingManager();
 
 		// saved for event dispatcher functions
@@ -161,6 +196,12 @@ export class TilesRenderer extends TilesRendererBase {
 	}
 
 	/* Public API */
+
+	/**
+	 * Returns the axis-aligned bounding box of the root tile in the group's local space.
+	 * @param {Box3} target - Target box to write into.
+	 * @returns {boolean} Whether the tileset is loaded and a bounding box is available.
+	 */
 	getBoundingBox( target ) {
 
 		if ( ! this.root ) {
@@ -183,6 +224,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns the oriented bounding box and transform of the root tile.
+	 * @param {Box3} targetBox - Target box to write into (in local OBB space).
+	 * @param {Matrix4} targetMatrix - Transform from OBB local space to group local space.
+	 * @returns {boolean} Whether the tileset is loaded and an OBB is available.
+	 */
 	getOrientedBoundingBox( targetBox, targetMatrix ) {
 
 		if ( ! this.root ) {
@@ -205,6 +252,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns the bounding sphere of the root tile in the group's local space.
+	 * @param {Sphere} target - Target sphere to write into.
+	 * @returns {boolean} Whether the tileset is loaded and a bounding sphere is available.
+	 */
 	getBoundingSphere( target ) {
 
 		if ( ! this.root ) {
@@ -227,6 +279,10 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Iterates over all currently loaded tile scenes.
+	 * @param {Function} callback - Called with `( scene: Object3D, tile: object )` for each loaded tile.
+	 */
 	forEachLoadedModel( callback ) {
 
 		this.traverse( tile => {
@@ -242,6 +298,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Performs a raycast against all loaded tile scenes. Compatible with Three.js raycasting.
+	 * Supports `raycaster.firstHitOnly` for early termination.
+	 * @param {Raycaster} raycaster
+	 * @param {Array} intersects - Array to push intersection results into.
+	 */
 	raycast( raycaster, intersects ) {
 
 		if ( ! this.root ) {
@@ -267,12 +329,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns whether the given camera is registered with this renderer.
+	 * @param {Camera} camera
+	 * @returns {boolean}
+	 */
 	hasCamera( camera ) {
 
 		return this.cameraMap.has( camera );
 
 	}
 
+	/**
+	 * Registers a camera with the renderer so it is used for tile selection and screen-space error
+	 * calculation. Use `setResolution` or `setResolutionFromRenderer` to provide the camera's resolution.
+	 * @param {Camera} camera
+	 * @returns {boolean} Whether the camera was newly added.
+	 */
 	setCamera( camera ) {
 
 		const cameras = this.cameras;
@@ -291,6 +364,13 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Sets the render resolution for a registered camera, used for screen-space error calculation.
+	 * @param {Camera} camera - A previously registered camera.
+	 * @param {number|Vector2} xOrVec - Render width in pixels, or a Vector2 containing width and height.
+	 * @param {number} [y] - Render height in pixels when `xOrVec` is a number.
+	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 */
 	setResolution( camera, xOrVec, y ) {
 
 		const cameraMap = this.cameraMap;
@@ -315,6 +395,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Sets the render resolution for a camera by reading the current size from a WebGLRenderer.
+	 * @param {Camera} camera - A previously registered camera.
+	 * @param {WebGLRenderer} renderer
+	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 */
 	setResolutionFromRenderer( camera, renderer ) {
 
 		renderer.getSize( tempVector2 );
@@ -323,6 +409,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Unregisters a camera from the renderer.
+	 * @param {Camera} camera
+	 * @returns {boolean} Whether the camera was found and removed.
+	 */
 	deleteCamera( camera ) {
 
 		const cameras = this.cameras;

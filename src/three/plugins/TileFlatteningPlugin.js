@@ -35,6 +35,11 @@ function calculateSphere( object, target ) {
 
 }
 
+/**
+ * Plugin that flattens tile geometry vertices onto the surface of one or more mesh
+ * "shapes", useful for placing flat terrain overlays or cutting roads into terrain.
+ * Shapes are added via `addShape()` and removed via `deleteShape()` or `clearShapes()`.
+ */
 export class TileFlatteningPlugin {
 
 	constructor() {
@@ -229,13 +234,25 @@ export class TileFlatteningPlugin {
 
 	}
 
-	// API for updating and shapes to flatten the vertices
+	/**
+	 * Returns whether the given object has already been added as a shape.
+	 * @param {Object3D} mesh
+	 * @returns {boolean}
+	 */
 	hasShape( mesh ) {
 
 		return this.shapes.has( mesh );
 
 	}
 
+	/**
+	 * Adds the given mesh as a flattening shape. All coordinates must be in the tileset's local
+	 * frame. Throws if the shape has already been added.
+	 * @param {Object3D} mesh The shape mesh to flatten tile vertices onto.
+	 * @param {Vector3} [direction] Direction to cast rays when flattening (default downward along -Z).
+	 * @param {Object} [options]
+	 * @param {number} [options.threshold=Infinity] Maximum distance from the shape surface within which vertices are flattened. `Infinity` always flattens; `0` never flattens.
+	 */
 	addShape( mesh, direction = new Vector3( 0, 0, - 1 ), options = {} ) {
 
 		if ( this.hasShape( mesh ) ) {
@@ -289,6 +306,11 @@ export class TileFlatteningPlugin {
 
 	}
 
+	/**
+	 * Notifies the plugin that a shape's geometry or transform has changed and tile
+	 * flattening needs to be regenerated.
+	 * @param {Object3D} mesh
+	 */
 	updateShape( mesh ) {
 
 		if ( ! this.hasShape( mesh ) ) {
@@ -307,6 +329,11 @@ export class TileFlatteningPlugin {
 
 	}
 
+	/**
+	 * Removes the given shape and triggers tile regeneration.
+	 * @param {Object3D} mesh
+	 * @returns {boolean} `true` if the shape was found and removed.
+	 */
 	deleteShape( mesh ) {
 
 		this.needsUpdate = true;
@@ -314,6 +341,9 @@ export class TileFlatteningPlugin {
 
 	}
 
+	/**
+	 * Removes all shapes and resets flattened tiles to their original positions.
+	 */
 	clearShapes() {
 
 		if ( this.shapes.size === 0 ) {

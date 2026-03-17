@@ -25,6 +25,23 @@ function getMaxBarycoordIndex( barycoord ) {
 
 }
 
+/**
+ * @typedef {Object} FeatureInfo
+ * @property {string|null} label
+ * @property {string|null} propertyTable
+ * @property {number|null} nullFeatureId
+ * @property {{texCoord: number, channels: Array<number>}} [texture]
+ */
+
+/**
+ * Provides access to `EXT_mesh_features` feature ID data for a single mesh primitive.
+ * Instances are created by `GLTFMeshFeaturesExtension` and attached to
+ * `mesh.userData.meshFeatures`. Use `getFeatures()` or `getFeaturesAsync()` to read
+ * feature IDs at a point on the mesh surface.
+ * @param {BufferGeometry} geometry The primitive's buffer geometry.
+ * @param {Array<Texture>} textures All GLTF textures (indexed by feature texture index).
+ * @param {Object} data The raw `EXT_mesh_features` extension object for this primitive.
+ */
 export class MeshFeatures {
 
 	constructor( geometry, textures, data ) {
@@ -61,21 +78,32 @@ export class MeshFeatures {
 
 	}
 
-	// returns list of textures
+	/**
+	 * Returns an indexed list of all textures used by features in the extension.
+	 * @returns {Array<Texture>}
+	 */
 	getTextures() {
 
 		return this.textures;
 
 	}
 
-	// returns a set of info for each feature
+	/**
+	 * Returns the feature ID info for each feature set defined on this primitive.
+	 * @returns {Array<FeatureInfo>}
+	 */
 	getFeatureInfo() {
 
 		return this.featureIds;
 
 	}
 
-	// performs texture data read back asynchronously
+	/**
+	 * Performs the same function as `getFeatures` but reads texture data asynchronously.
+	 * @param {number} triangle Triangle index from a raycast hit.
+	 * @param {Vector3} barycoord Barycentric coordinate of the hit point.
+	 * @returns {Promise<Array<number|null>>}
+	 */
 	getFeaturesAsync( ...args ) {
 
 		this._asyncRead = true;
@@ -85,7 +113,14 @@ export class MeshFeatures {
 
 	}
 
-	// returns all features for the given point on the given triangle
+	/**
+	 * Returns the list of feature IDs at the given point on the mesh. Takes the triangle
+	 * index from a raycast result and a barycentric coordinate. Results are indexed in the
+	 * same order as the feature info returned by `getFeatureInfo()`.
+	 * @param {number} triangle Triangle index from a raycast hit.
+	 * @param {Vector3} barycoord Barycentric coordinate of the hit point.
+	 * @returns {Array<number|null>}
+	 */
 	getFeatures( triangle, barycoord ) {
 
 		const { geometry, textures, featureIds } = this;
@@ -191,7 +226,9 @@ export class MeshFeatures {
 
 	}
 
-	// dispose all of the texture data used
+	/**
+	 * Disposes all textures used by this instance.
+	 */
 	dispose() {
 
 		this.textures.forEach( texture => {

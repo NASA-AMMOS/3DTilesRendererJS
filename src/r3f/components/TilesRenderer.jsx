@@ -32,6 +32,20 @@ function TileSetRoot( { children } ) {
 
 }
 
+/**
+ * Creates a group positioned and oriented at a geographic coordinate on the tileset ellipsoid.
+ * Must be a child of TilesRenderer. Does not modify the tileset transform.
+ * @component
+ * @param {Object} props
+ * @param {number} [props.lat=0] - Latitude in radians.
+ * @param {number} [props.lon=0] - Longitude in radians.
+ * @param {number} [props.height=0] - Height above the ellipsoid in meters.
+ * @param {number} [props.az=0] - Azimuth rotation in radians, applied first.
+ * @param {number} [props.el=0] - Elevation rotation in radians, applied second.
+ * @param {number} [props.roll=0] - Roll rotation in radians, applied third.
+ * @param {Ellipsoid} [props.ellipsoid] - Ellipsoid to use when no TilesRenderer parent is present.
+ * @param {ReactNode} [props.children] - Children positioned relative to the east-north-up frame.
+ */
 export function EastNorthUpFrame( props ) {
 
 	const {
@@ -142,6 +156,16 @@ export function EastNorthUpFrame( props ) {
 
 }
 
+/**
+ * Registers a plugin on the nearest parent TilesRenderer. Must be a child of TilesRenderer.
+ * All properties on the plugin instance can be set as props directly. Note that some plugin
+ * properties cannot be changed after construction.
+ * @component
+ * @param {Object} props
+ * @param {Function} props.plugin - The plugin class to instantiate.
+ * @param {Object|Array} [props.args] - Constructor arguments: an object (single arg) or array (spread as multiple args).
+ * @param {ReactNode} [props.children] - Children rendered once the plugin is registered.
+ */
 // component for registering a plugin
 export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
@@ -221,6 +245,17 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 } );
 
+/**
+ * Wrapper for the three.js TilesRenderer class. All properties on the TilesRenderer instance can
+ * be set as props using dot-notation for nested properties (e.g. `lruCache-minSize`). Events are
+ * registered with a camel-cased `on` prefix (e.g. `onLoadModel`).
+ * @component
+ * @param {Object} props
+ * @param {string} [props.url] - URL of the tileset to load.
+ * @param {boolean} [props.enabled=true] - If false, `update` is not called on the renderer each frame.
+ * @param {Object} [props.group] - Props applied to the root Three.js group of the tileset.
+ * @param {ReactNode} [props.children] - Child components such as TilesPlugin, GlobeControls, etc.
+ */
 // component for adding a TilesRenderer to the scene
 export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 

@@ -62,6 +62,23 @@ function tupleToRadians( tuple ) {
 
 }
 
+/**
+ * Loader that fetches and parses a WMTS `GetCapabilities` XML document into a structured
+ * JavaScript object. The result can be passed directly to `WMTSTilesPlugin`.
+ *
+ * The parsed result has the shape:
+ * ```
+ * {
+ *   serviceIdentification: { title, abstract, serviceType, serviceTypeVersion },
+ *   tileMatrixSets: [ { identifier, title, abstract, supportedCRS, tileMatrices } ],
+ *   layers: [ { title, identifier, format, boundingBox, dimensions, styles,
+ *               resourceUrls, tileMatrixSetLinks, tileMatrixSets } ],
+ * }
+ * ```
+ * Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order in radians.
+ * @extends LoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class WMTSCapabilitiesLoader extends LoaderBase {
 
 	parse( buffer ) {

@@ -43,6 +43,13 @@ function octDecodeInRange( x, y, rangeMax, result ) {
 
 }
 
+/**
+ * Loader for the legacy 3D Tiles Instanced 3D Model (i3dm) format. Parses the i3dm
+ * container and returns instanced meshes with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @extends I3DMLoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class I3DMLoader extends I3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -60,6 +67,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 	}
 
+	/**
+	 * Parses an i3dm buffer and resolves to a GLTF result object where the scene's
+	 * meshes have been replaced with `InstancedMesh` objects (one per GLTF mesh), with
+	 * metadata attached to both `model` and `model.scene`.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		return super

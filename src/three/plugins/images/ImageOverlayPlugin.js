@@ -24,7 +24,16 @@ const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
 const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
-// Plugin for overlaying tiled image data on top of 3d tiles geometry.
+/**
+ * Plugin that composites one or more tiled image overlays onto 3D tile geometry by
+ * generating per-tile textures from image sources (XYZ, TMS, WMTS, WMS, GeoJSON, etc.).
+ * Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
+ * @param {Object} [options]
+ * @param {WebGLRenderer} options.renderer The renderer used for constructing and rendering to render targets.
+ * @param {Array} [options.overlays=[]] Initial image overlay sources to add.
+ * @param {number} [options.resolution=256] Resolution of each generated tile texture in pixels.
+ * @param {boolean} [options.enableTileSplitting=true] Allow tiles to be split to match image tile boundaries.
+ */
 export class ImageOverlayPlugin {
 
 	get enableTileSplitting() {
@@ -770,7 +779,13 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// public
+	/**
+	 * Adds an image overlay source to the plugin. The `order` parameter controls the draw
+	 * order among overlays; lower values are drawn first. If omitted, the overlay is appended
+	 * after all existing overlays.
+	 * @param {Object} overlay An image source object (e.g. `XYZImageSource`, `WMTSImageSource`).
+	 * @param {number|null} [order=null] Draw order for this overlay.
+	 */
 	addOverlay( overlay, order = null ) {
 
 		const { tiles, overlays, overlayInfo } = this;
@@ -800,6 +815,11 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Updates the draw order for the given overlay.
+	 * @param {Object} overlay The overlay to reorder.
+	 * @param {number} order New draw order value.
+	 */
 	setOverlayOrder( overlay, order ) {
 
 		const index = this.overlays.indexOf( overlay );
@@ -812,6 +832,10 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Removes the given overlay from the plugin.
+	 * @param {Object} overlay The overlay to remove.
+	 */
 	deleteOverlay( overlay ) {
 
 		const { overlays, overlayInfo, processQueue, processedTiles } = this;

@@ -1,4 +1,4 @@
-import { TileBase } from './TileBase.js';
+import { Tile } from './Tile.js';
 
 /**
  * A 3d-tiles tileset.
@@ -37,7 +37,7 @@ export interface Tileset {
 	/**
 	 * The root tile.
 	 */
-	root: TileBase;
+	root: Tile;
 
 	// optional properties
 

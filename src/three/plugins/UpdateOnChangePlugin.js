@@ -1,6 +1,12 @@
 import { Matrix4 } from 'three';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
+
+/**
+ * Plugin that skips `TilesRenderer.update()` calls when nothing has changed — no camera
+ * movement, no new tiles loaded, and no explicit `needsUpdate` flag set. Useful for
+ * event-driven renderers that only render on demand.
+ */
 export class UpdateOnChangePlugin {
 
 	constructor() {

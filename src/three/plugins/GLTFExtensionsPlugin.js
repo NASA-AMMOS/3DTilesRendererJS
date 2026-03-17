@@ -3,6 +3,19 @@ import { GLTFStructuralMetadataExtension } from './gltf/GLTFStructuralMetadataEx
 import { GLTFMeshFeaturesExtension } from './gltf/GLTFMeshFeaturesExtension.js';
 import { GLTFCesiumRTCExtension } from './gltf/GLTFCesiumRTCExtension.js';
 
+/**
+ * Plugin for automatically adding common extensions and loaders for 3D Tiles to the
+ * `GLTFLoader` used for parsing tile geometry. A `DRACOLoader` can be provided to
+ * support loading Draco-compressed point cloud files.
+ * @param {Object} [options]
+ * @param {boolean} [options.metadata=true] Enable the `EXT_structural_metadata` and `EXT_mesh_features` extensions.
+ * @param {boolean} [options.rtc=true] Enable the `CESIUM_RTC` extension.
+ * @param {Array} [options.plugins=[]] Additional GLTF loader plugins to pass to `GLTFLoader.register`.
+ * @param {Object} [options.dracoLoader=null] A `DRACOLoader` instance for Draco-compressed geometry.
+ * @param {Object} [options.ktxLoader=null] A `KTX2Loader` instance for KTX2-compressed textures.
+ * @param {Object} [options.meshoptDecoder=null] A `MeshoptDecoder` for Meshopt-compressed meshes.
+ * @param {boolean} [options.autoDispose=true] Automatically dispose the DRACO and KTX loaders on `dispose()`.
+ */
 export class GLTFExtensionsPlugin {
 
 	constructor( options ) {
