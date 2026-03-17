@@ -16,6 +16,12 @@ const DRACO_ATTRIBUTE_MAP = {
 	POSITION: 'position',
 };
 
+/**
+ * Loader for the legacy 3D Tiles Point Cloud (pnts) format. Parses the pnts container
+ * and returns a three.js Points object with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @param {LoadingManager} [manager]
+ */
 export class PNTSLoader extends PNTSLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {

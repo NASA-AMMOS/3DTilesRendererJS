@@ -118,12 +118,14 @@ export default [
 					String: 'string',
 				},
 				tagNamePreference: {
-					returns: 'return',
-					extends: 'augments',
+					return: 'returns',
+					augments: 'extends',
+					classdesc: false,
 				},
 			},
 		},
 		rules: {
+			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note' ] } ],
 			'jsdoc/check-types': 'error',
 			'jsdoc/require-param-type': 'error',
 			'jsdoc/require-returns-type': 'error',

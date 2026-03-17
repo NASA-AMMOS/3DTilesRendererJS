@@ -414,9 +414,9 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 
 	}
 
-	if ( classDoc.classdesc ) {
+	if ( classDoc.description ) {
 
-		lines.push( classDoc.classdesc );
+		lines.push( classDoc.description );
 		lines.push( '' );
 
 	}

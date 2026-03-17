@@ -2,6 +2,12 @@ import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+/**
+ * Loader for the legacy 3D Tiles Batched 3D Model (b3dm) format. Parses the b3dm
+ * container and returns a GLTF result with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @param {LoadingManager} [manager]
+ */
 export class B3DMLoader extends B3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
