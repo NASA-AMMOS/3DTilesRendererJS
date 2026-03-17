@@ -9,6 +9,30 @@ JavaScript renderer implementation for the [3D Tiles format](https://github.com/
 
 If a tileset or geometry does not load or render properly please make an issue! Example data is needed for adding and testing features. See the [Feature Complete Milestone](https://github.com/NASA-AMMOS/3DTilesRendererJS/milestone/1) for information on which features are not yet implemented.
 
+# Getting Started
+
+## Installation
+
+```
+npm install 3d-tiles-renderer --save
+```
+
+## API
+
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
+| `3d-tiles-renderer/three` | [Usage Guide](./USAGE.md) · [API Reference](./src/three/renderer/API.md) |
+| `3d-tiles-renderer/babylonjs` | [Usage Guide](./src/babylonjs/renderer/README.md) · [API Reference](./src/babylonjs/renderer/API.md) |
+| `3d-tiles-renderer/r3f` | [Usage Guide](./src/r3f/README.md) · [API Reference](./src/r3f/API.md) |
+
+## Plugins
+
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
+| `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
+
 # Examples
 
 The following examples use **Three.js**. Babylon.js demos are also available for [Mars](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html) and [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html).
@@ -43,31 +67,6 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [GeoJSON](https://nasa-ammos.github.io/3DTilesRendererJS/three/geojson.html) | GeoJSON overlays |
 
 ¹ Requires a [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/)
-
-
-# Getting Started
-
-## Installation
-
-```
-npm install 3d-tiles-renderer --save
-```
-
-## API
-
-| Package | Reference |
-| --- | --- |
-| `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
-| `3d-tiles-renderer/three` | [Usage Guide](./USAGE.md) · [API Reference](./src/three/renderer/API.md) |
-| `3d-tiles-renderer/babylonjs` | [Usage Guide](./src/babylonjs/renderer/README.md) · [API Reference](./src/babylonjs/renderer/API.md) |
-| `3d-tiles-renderer/r3f` | [Usage Guide](./src/r3f/README.md) · [API Reference](./src/r3f/API.md) |
-
-## Plugins
-
-| Package | Reference |
-| --- | --- |
-| `3d-tiles-renderer/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
-| `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
 
 # LICENSE
 
