@@ -26,6 +26,14 @@ function getMaxBarycoordIndex( barycoord ) {
 }
 
 /**
+ * @typedef {Object} FeatureInfo
+ * @property {string|null} label
+ * @property {string|null} propertyTable
+ * @property {number|null} nullFeatureId
+ * @property {{texCoord: number, channels: Array<number>}} [texture]
+ */
+
+/**
  * Provides access to `EXT_mesh_features` feature ID data for a single mesh primitive.
  * Instances are created by `GLTFMeshFeaturesExtension` and attached to
  * `mesh.userData.meshFeatures`. Use `getFeatures()` or `getFeaturesAsync()` to read
@@ -82,7 +90,7 @@ export class MeshFeatures {
 
 	/**
 	 * Returns the feature ID info for each feature set defined on this primitive.
-	 * @returns {Array<{label: string|null, propertyTable: string|null, nullFeatureId: number|null, texture?: {texCoord: number, channels: Array<number>}}>}
+	 * @returns {Array<FeatureInfo>}
 	 */
 	getFeatureInfo() {
 

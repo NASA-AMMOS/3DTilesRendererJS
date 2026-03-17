@@ -60,6 +60,12 @@ const ColorModes = Object.freeze( {
 } );
 
 /**
+ * @callback GetDebugColorCallback
+ * @param {number} val Normalized [0, 1] value.
+ * @param {Color} target Color to write the result into.
+ */
+
+/**
  * Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
  * helpers (box, sphere, region), tile color modes based on depth/error/distance/load
  * order, and an unlit rendering mode. Color modes are available via the static
@@ -255,7 +261,7 @@ export class DebugTilesPlugin {
 		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
 		 * a black-to-white gradient. Replace with a custom function to use a different color
 		 * ramp.
-		 * @type {( val: number, target: Color ) => void}
+		 * @type {GetDebugColorCallback}
 		 */
 		this.getDebugColor = ( value, target ) => {
 
