@@ -27,6 +27,12 @@ function forEachPrimitiveExtension( scene, parser, callback ) {
 
 }
 
+/**
+ * GLTF loader plugin that parses the `EXT_mesh_features` extension and attaches a
+ * `MeshFeatures` instance to `mesh.userData.meshFeatures` on each primitive. Register
+ * with a `GLTFLoader` via `loader.register( () => new GLTFMeshFeaturesExtension() )`.
+ * @param {Object} parser The GLTF parser instance provided by the loader.
+ */
 export class GLTFMeshFeaturesExtension {
 
 	constructor( parser ) {

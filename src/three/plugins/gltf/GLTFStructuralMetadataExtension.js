@@ -67,6 +67,13 @@ function getRelevantBuffers( parser, propertyTables = [] ) {
 
 }
 
+/**
+ * GLTF loader plugin that parses the `EXT_structural_metadata` extension and attaches
+ * a `StructuralMetadata` instance to `scene.userData.structuralMetadata` (and to each
+ * primitive mesh). Register with a `GLTFLoader` via
+ * `loader.register( () => new GLTFStructuralMetadataExtension() )`.
+ * @param {Object} parser The GLTF parser instance provided by the loader.
+ */
 export class GLTFStructuralMetadataExtension {
 
 	constructor( parser ) {

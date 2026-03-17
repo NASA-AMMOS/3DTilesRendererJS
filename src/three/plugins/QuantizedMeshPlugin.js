@@ -77,6 +77,17 @@ function getContentUrl( x, y, level, version, layer ) {
 
 }
 
+/**
+ * Plugin that adds support for the Cesium quantized-mesh terrain format. Fetches the
+ * `layer.json` descriptor from the tileset root and dynamically generates 3D Tiles
+ * tile content from quantized-mesh buffers.
+ * @param {Object} [options]
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended error and fetch settings for terrain.
+ * @param {number|null} [options.skirtLength=null] Override skirt length in metres; defaults to tile geometric error.
+ * @param {boolean} [options.smoothSkirtNormals=true] Blend skirt normals with tile surface for smoother edges.
+ * @param {boolean} [options.generateNormals=true] Compute vertex normals for the terrain mesh.
+ * @param {boolean} [options.solid=false] Generate a solid closed mesh (adds a bottom cap).
+ */
 export class QuantizedMeshPlugin {
 
 	constructor( options = {} ) {

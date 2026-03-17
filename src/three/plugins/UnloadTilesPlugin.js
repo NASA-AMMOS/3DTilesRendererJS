@@ -4,6 +4,16 @@ import { LRUCache } from '3d-tiles-renderer/core';
 
 // TODO:
 // - abstract the "tile visible" callback so fade tiles can call it when tiles are _actually_ marked as non-visible
+
+/**
+ * Plugin that unloads geometry, textures, and materials of any given tile when its
+ * visibility changes to non-visible, freeing GPU memory. The model data still exists on
+ * the CPU until it is completely removed from the cache, allowing it to be re-uploaded
+ * without re-fetching.
+ * @param {Object} [options]
+ * @param {number} [options.delay=0] Milliseconds to wait after a tile is hidden before freeing its GPU data. Useful to avoid thrashing when the camera is moving.
+ * @param {number} [options.bytesTarget=0] Target GPU byte budget to unload down to. `0` means unload with no budget limit.
+ */
 export class UnloadTilesPlugin {
 
 	set delay( v ) {
@@ -30,6 +40,12 @@ export class UnloadTilesPlugin {
 
 	}
 
+	/**
+	 * The number of bytes currently uploaded to the GPU for rendering. Compare to
+	 * `lruCache.cachedBytes` which reports all downloaded bytes including those not
+	 * yet on the GPU.
+	 * @type {number}
+	 */
 	get estimatedGpuBytes() {
 
 		return this.lruCache.cachedBytes;

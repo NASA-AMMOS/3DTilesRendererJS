@@ -43,16 +43,16 @@ function updateFrustumCulled( object, toInitialValue ) {
 }
 
 /**
- * Three.js implementation of the 3D Tiles renderer. Manages camera registration,
- * tile loading, and raycasting. The `group` property must be added to the Three.js
- * scene to display loaded tiles.
- * @param {string} [url] - URL of the root tileset JSON file.
+ * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+ * camera management, three.js scene integration, and GPU-accelerated tile loading.
+ * Add `tiles.group` to your scene and call `tiles.update()` each frame.
  */
 export class TilesRenderer extends TilesRendererBase {
 
 	/**
-	 * When true, disables Three.js frustum culling on loaded tile scenes so the tiles renderer
-	 * handles culling itself. Defaults to true.
+	 * If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
+	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
+	 * multiple cameras are being used, consider setting this to `false`.
 	 * @type {boolean}
 	 */
 	get autoDisableRendererCulling() {
@@ -94,13 +94,17 @@ export class TilesRenderer extends TilesRendererBase {
 		super( ...args );
 
 		/**
-		 * The Three.js group containing all visible tile scenes. Add to the scene to display tiles.
-		 * @type {TilesGroup}
+		 * The container `Group` for the 3D tiles. Add this to the three.js scene. The group
+		 * also exposes a `matrixWorldInverse` field for transforming objects into the local
+		 * tileset frame.
+		 * @type {Group}
 		 */
 		this.group = new TilesGroup( this );
 
 		/**
-		 * The ellipsoid used for geographic calculations. Updated from the tileset's `3DTILES_ellipsoid` extension when loaded.
+		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
+		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
+		 * `TilesRenderer.group`.
 		 * @type {Ellipsoid}
 		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
@@ -120,7 +124,7 @@ export class TilesRenderer extends TilesRendererBase {
 		this._autoDisableRendererCulling = true;
 
 		/**
-		 * Three.js LoadingManager used for loading tile assets.
+		 * The `LoadingManager` used when loading tile geometry.
 		 * @type {LoadingManager}
 		 */
 		this.manager = new LoadingManager();

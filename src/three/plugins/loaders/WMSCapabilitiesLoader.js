@@ -349,6 +349,24 @@ function collectLayers( layers, target = [] ) {
 
 }
 
+/**
+ * Loader that fetches and parses a WMS `GetCapabilities` XML document into a structured
+ * JavaScript object. The result can be passed to `WMSTilesPlugin`.
+ *
+ * The parsed result has the shape:
+ * ```
+ * {
+ *   version: string,
+ *   service: { name, title, abstract, keywords, maxWidth, maxHeight, layerLimit },
+ *   layers: [ { name, title, abstract, queryable, opaque, keywords, crs,
+ *               boundingBoxes, contentBoundingBox, styles, subLayers } ],
+ *   request: { [operationName]: { formats, dcp, href } },
+ * }
+ * ```
+ * `contentBoundingBox` and `boundingBoxes[].bounds` are `[ minLon, minLat, maxLon, maxLat ]`
+ * in radians.
+ * @param {LoadingManager} [manager]
+ */
 export class WMSCapabilitiesLoader extends LoaderBase {
 
 	parse( buffer ) {
