@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { renderClass, renderComponent, renderTypedef, renderConstants, toAnchor } from './RenderDocsUtils.js';
+import { renderClass, renderComponent, renderTypedef, renderConstants, toAnchor, resolveLinks } from './RenderDocsUtils.js';
 import { findRootDir } from '../CommandUtils.js';
 
 const ROOT_DIR = findRootDir();
@@ -186,7 +186,7 @@ for ( const { entry, jsdoc } of results ) {
 
 	}
 
-	const output = sections.join( '\n' );
+	const output = resolveLinks( sections.join( '\n' ) );
 	fs.writeFileSync( path.join( ROOT_DIR, entry.output ), output );
 	console.log( `Written: ${ entry.output }` );
 

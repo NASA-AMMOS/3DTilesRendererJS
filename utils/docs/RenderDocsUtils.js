@@ -1,5 +1,5 @@
 // Converts {@link url text} inline tags in a string to Markdown [text](url) links.
-function resolveLinks( str ) {
+export function resolveLinks( str ) {
 
 	if ( ! str ) return str;
 	return str.replace( /\{@link\s+(\S+?)(?:\s+([^}]*?))?\}/g, ( _, url, text ) => {
@@ -20,7 +20,7 @@ function renderAlertTags( doc ) {
 
 			const type = tag.title === 'warn' ? 'WARN' : 'NOTE';
 			lines.push( `> [!${ type }]` );
-			for ( const line of resolveLinks( tag.value ).split( '\n' ) ) {
+			for ( const line of tag.value.split( '\n' ) ) {
 
 				lines.push( `> ${ line }` );
 
@@ -138,7 +138,7 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 	// Constructor description (JSDoc puts it in `description`, not `classdesc`)
 	if ( classDoc.description ) {
 
-		lines.push( resolveLinks( classDoc.description ) );
+		lines.push( classDoc.description );
 		lines.push( '' );
 
 	}
@@ -151,7 +151,7 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 			const name = param.name.split( '.' ).pop();
 			const type = formatType( param.type, callbackMap );
 			const defStr = param.defaultvalue !== undefined ? ` = ${ param.defaultvalue }` : '';
-			lines.push( `- \`${ name }${ defStr }: ${ type }\` — ${ resolveLinks( param.description ) }` );
+			lines.push( `- \`${ name }${ defStr }: ${ type }\` — ${ param.description }` );
 
 		}
 
@@ -180,7 +180,7 @@ export function renderMember( doc, callbackMap = {} ) {
 
 	if ( doc.description ) {
 
-		lines.push( resolveLinks( doc.description ) );
+		lines.push( doc.description );
 		lines.push( '' );
 
 	}
@@ -230,7 +230,7 @@ export function renderMethod( doc, callbackMap = {} ) {
 
 	if ( doc.description ) {
 
-		lines.push( resolveLinks( doc.description ) );
+		lines.push( doc.description );
 		lines.push( '' );
 
 	}
@@ -262,7 +262,7 @@ export function renderConstants( constants, callbackMap = {} ) {
 
 		if ( c.description ) {
 
-			lines.push( resolveLinks( c.description ) );
+			lines.push( c.description );
 			lines.push( '' );
 
 		}
@@ -293,7 +293,7 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 	if ( typeDoc.description ) {
 
-		lines.push( resolveLinks( typeDoc.description ) );
+		lines.push( typeDoc.description );
 		lines.push( '' );
 
 	}
@@ -313,7 +313,7 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 		if ( prop.description ) {
 
-			lines.push( resolveLinks( prop.description ) );
+			lines.push( prop.description );
 			lines.push( '' );
 
 		}
@@ -385,7 +385,7 @@ export function renderComponent( doc, callbackMap = {} ) {
 
 	if ( doc.description ) {
 
-		lines.push( resolveLinks( doc.description ) );
+		lines.push( doc.description );
 		lines.push( '' );
 
 	}
@@ -460,7 +460,7 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 
 	if ( classDoc.description ) {
 
-		lines.push( resolveLinks( classDoc.description ) );
+		lines.push( classDoc.description );
 		lines.push( '' );
 
 	}
