@@ -84,7 +84,7 @@ export class SUBTREELoader extends LoaderBase {
 	/**
 	 * A helper object for storing the two parts of the subtree binary
 	 *
-	 * @typedef {object} Subtree
+	 * @typedef {Object} Subtree
 	 * @property {number} version
 	 * @property {JSON} subtreeJson
 	 * @property {ArrayBuffer} subtreeByte
@@ -93,7 +93,7 @@ export class SUBTREELoader extends LoaderBase {
 
 	/**
 	 *
-	 * @param buffer
+	 * @param {ArrayBuffer} buffer
 	 * @return {Subtree}
 	 */
 	parseBuffer( buffer ) {
@@ -272,7 +272,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * </p>
 	 * @param {BufferHeader[]} bufferHeaders The preprocessed buffer headers
 	 * @param {ArrayBuffer} internalBuffer The binary chunk of the subtree file
-	 * @returns {object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
+	 * @returns {Object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
 	 * @private
 	 */
 	async requestActiveBuffers( bufferHeaders, internalBuffer ) {
@@ -341,8 +341,8 @@ export class SUBTREELoader extends LoaderBase {
 	 * extract a subarray from one of the active buffers.
 	 *
 	 * @param {BufferViewHeader[]} bufferViewHeaders
-	 * @param {object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
-	 * @returns {object} A dictionary of buffer view index to a Uint8Array of its contents.
+	 * @param {Object} buffersU8 A dictionary of buffer index to a Uint8Array of its contents.
+	 * @returns {Object} A dictionary of buffer view index to a Uint8Array of its contents.
 	 * @private
 	 */
 	parseActiveBufferViews( bufferViewHeaders, buffersU8 ) {
@@ -375,7 +375,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * Buffers are assumed inactive until explicitly marked active. This is used
 	 * to avoid fetching unneeded buffers.
 	 *
-	 * @typedef {object} BufferHeader
+	 * @typedef {Object} BufferHeader
 	 * @property {boolean} isActive Whether this buffer is currently used.
 	 * @property {string} [uri] The URI of the buffer (external buffers only)
 	 * @property {number} byteLength The byte length of the buffer, including any padding contained within.
@@ -407,7 +407,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * A buffer view header is the JSON header from the subtree JSON chunk plus
 	 * the isActive flag and a reference to the header for the underlying buffer.
 	 *
-	 * @typedef {object} BufferViewHeader
+	 * @typedef {Object} BufferViewHeader
 	 * @property {BufferHeader} bufferHeader A reference to the header for the underlying buffer
 	 * @property {boolean} isActive Whether this bufferView is currently used.
 	 * @property {number} buffer The index of the underlying buffer.
@@ -489,7 +489,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * @param {Object} availabilityJson A JSON object representing the availability.
 	 * @param {Object} bufferViewsU8 A dictionary of buffer view index to its Uint8Array contents.
 	 * @param {number} lengthBits The length of the availability bitstream in bits.
-	 * @returns {object}
+	 * @returns {Object}
 	 * @private
 	 */
 	parseAvailabilityBitstream(
@@ -813,7 +813,7 @@ export class SUBTREELoader extends LoaderBase {
 	 *
 	 * @param {Object} subtree The subtree for looking up availability.
 	 * @param {Array} bottomRow The bottom row of tiles in a transcoded subtree.
-	 * @returns {[]} A list of identifiers for the child subtrees.
+	 * @returns {Array} A list of identifiers for the child subtrees.
 	 * @private
 	 */
 	listChildSubtrees( subtree, bottomRow ) {

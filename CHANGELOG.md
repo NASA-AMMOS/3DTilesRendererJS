@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.23] - Unreleased
+### Added
+- DebugTilesPlugin: Added support for "boundsColorMode".
+
+### Fixed
+- QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
+- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
+- ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+
 ## [0.4.22] - 2026-03-06
 ### Added
 - Types for gltf metadata extensions.
