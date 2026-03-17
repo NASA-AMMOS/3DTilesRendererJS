@@ -45,6 +45,7 @@ export class DebugTilesPlugin {
 	maxDebugDistance : number;
 	maxDebugError : number;
 
+	update : () => void;
 	getDebugColor : ( val: number, target: Color ) => void;
 	customColorCallback : ( tile: Tile, object: Object3D ) => void;
 
