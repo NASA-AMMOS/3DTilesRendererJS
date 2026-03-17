@@ -46,6 +46,7 @@ export class BatchedTilesPlugin {
 			maxInstanceCount: Infinity,
 			discardOriginalContent: true,
 			textureSize: null,
+			debug: false,
 
 			material: null,
 			renderer: null,
@@ -69,19 +70,51 @@ export class BatchedTilesPlugin {
 		this.discardOriginalContent = options.discardOriginalContent;
 		this.textureSize = options.textureSize;
 
-		console.log( gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
-
 		// local variables
 		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
 		this._tileToInstanceId = new Map();
+		this._debugDiv = null;
+
+		if ( options.debug ) {
+
+			this.enableDebug();
+
+		}
 
 	}
 
 	init( tiles ) {
 
 		this.tiles = tiles;
+
+		if ( this._debugDiv ) {
+
+			tiles.addEventListener( 'update-after', () => this._updateDebugDiv() );
+
+		}
+
+	}
+
+	enableDebug() {
+
+		const div = document.createElement( 'div' );
+		div.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:rgba(0,0,0,0.7);color:white;font:12px monospace;padding:4px 8px;';
+		document.body.appendChild( div );
+		this._debugDiv = div;
+
+	}
+
+	_updateDebugDiv() {
+
+		if ( ! this._debugDiv ) return;
+
+		const stats = this.getStats();
+		this._debugDiv.innerHTML =
+			`<b>BatchedTiles</b><br>` +
+			`active: ${ stats.activeInstances } / ${ stats.maxInstances }<br>` +
+			`free geometries: ${ stats.freeGeometries }`;
 
 	}
 
@@ -452,6 +485,21 @@ export class BatchedTilesPlugin {
 			batchedMesh.removeFromParent();
 
 		}
+
+		if ( this._debugDiv ) this._debugDiv.remove();
+
+	}
+
+	getStats() {
+
+		let activeCount = 0;
+		this._tileToInstanceId.forEach( ids => activeCount += ids.length );
+
+		return {
+			activeInstances: activeCount,
+			maxInstances: this.maxInstanceCount,
+			freeGeometries: this.batchedMesh ? this.batchedMesh._freeGeometryIds.length : 0,
+		};
 
 	}
 
