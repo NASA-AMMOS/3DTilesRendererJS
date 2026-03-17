@@ -1,8 +1,12 @@
-Documentation for plugins and extensions provided by the `3d-tiles-renderer/plugins` export.
+# 3d-tiles-renderer/plugins
+
+Plugins and extensions for the 3D Tiles renderer.
 
 See the [API reference](./API.md) for full class and method documentation.
 
-# GLTF Plugins
+# Use
+
+## GLTF Plugins
 
 Set of three.js GLTFLoader plugins to be registered via `GLTFLoader.register`. To use with the TilesRenderer:
 
@@ -36,9 +40,9 @@ if ( hit ) {
 }
 ```
 
-# TilesRenderer Plugins
+## TilesRenderer Plugins
 
-Plugins to register to the TilesRenderer instance to modify behavior.
+Plugins to register to the TilesRenderer instance to modify behavior:
 
 ```js
 const tiles = new TilesRenderer( url );
@@ -46,7 +50,7 @@ tiles.registerPlugin( new TileCompressionPlugin() );
 tiles.registerPlugin( new TilesFadePlugin() );
 ```
 
-## CesiumIonAuthPlugin
+## Cesium Ion Authentication Plugin
 
 The `assetTypeHandler` callback is fired when an asset type other than 3DTiles is encountered. Use it to register additional plugins for supported types:
 
