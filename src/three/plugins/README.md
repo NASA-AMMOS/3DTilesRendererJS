@@ -15,11 +15,7 @@ loader.register( () => new GLTFCesiumRTCExtension() );
 tiles.manager.addHandler( /(gltf|glb)$/g, loader );
 ```
 
-## GLTFMeshFeaturesExtension
-
-Plugin that adds support for the [EXT_mesh_features](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features) extension. Adds a `Object3D.userData.meshFeatures` to each object with the extension.
-
-To retrieve feature IDs at a raycasted hit point:
+To retrieve feature IDs at a raycasted hit point using `GLTFMeshFeaturesExtension`:
 
 ```js
 const barycoord = new Vector3();
@@ -39,16 +35,6 @@ if ( hit ) {
 
 }
 ```
-
-## GLTFStructuralMetadataExtension
-
-Plugin that adds support for the [EXT_structural_metadata](https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata) extension. Adds a `Object3D.userData.structuralMetadata` to each object with the extension.
-
-_Note that 64 bit integer types are not fully supported._
-
-## GLTFCesiumRTCExtension
-
-Plugin that adds support for the [CESIUM_RTC](https://github.com/KhronosGroup/glTF/blob/main/extensions/1.0/Vendor/CESIUM_RTC/README.md) extension.
 
 # TilesRenderer Plugins
 
