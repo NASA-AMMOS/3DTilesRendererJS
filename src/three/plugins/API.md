@@ -71,6 +71,18 @@ constructor( {
 } )
 ```
 
+### .update
+
+```js
+update(): void
+```
+
+Applies the current plugin field values to all visible tile geometry. Call this
+after modifying properties such as `colorMode`, `displayBoxBounds`, or
+`displayParentBounds` when `TilesRenderer.update` is not being called every frame
+so changes can be reflected.
+
+
 ## DeepZoomImagePlugin
 
 
