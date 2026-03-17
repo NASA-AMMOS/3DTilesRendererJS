@@ -59,11 +59,22 @@ npm install 3d-tiles-renderer --save
 - [Babylon.js](./src/babylonjs/renderer/README.md): Babylon.js renderer setup, usage, and limitations
 - [React Three Fiber](./src/r3f/README.md): R3F components for 3D Tiles 
 
-## API 
-See [API Reference](./API.md): TilesRenderer, PriorityQueue, LRUCache, and BatchTable API docs
+## API
+
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
+| `3d-tiles-renderer/three` | [API Reference](./src/three/renderer/API.md) |
+| `3d-tiles-renderer/babylonjs` | [API Reference](./src/babylonjs/renderer/API.md) |
+| `3d-tiles-renderer/r3f` | [API Reference](./src/r3f/API.md) |
 
 ## Plugins
-See [Plugins](./PLUGINS.md): GLTFLoader extension plugins, TilesRenderer plugins, and extra classes
+
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/plugins` | [Plugin Reference](./src/three/plugins/README.md) |
+| `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
+| `3d-tiles-renderer/three/plugins` | [API Reference](./src/three/plugins/API.md) |
 
 # LICENSE
 
