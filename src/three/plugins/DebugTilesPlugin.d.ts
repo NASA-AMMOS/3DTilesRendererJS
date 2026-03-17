@@ -37,6 +37,7 @@ export class DebugTilesPlugin {
 	displayBoxBounds : boolean;
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;
+	displayParentBounds : boolean;
 	colorMode : ColorMode;
 	boundsColorMode : ColorMode;
 	unlit: boolean;
@@ -45,6 +46,6 @@ export class DebugTilesPlugin {
 	maxDebugError : number;
 
 	getDebugColor : ( val: number, target: Color ) => void;
-	customColorCallback : ( val: Tile, target: Color ) => void;
+	customColorCallback : ( tile: Tile, object: Object3D ) => void;
 
 }
