@@ -14,6 +14,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { SparkGL } from '@ludicon/spark.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { createSparkPlugins } from '@ludicon/spark.js/three-gltf';
 
 let camera, controls, scene, renderer, tiles;
 let spark;
@@ -50,8 +51,7 @@ function reinstantiateTiles() {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
 		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' ),
-		spark: params.enableSpark ? spark : undefined,
-		sparkOptions: { preferLowQuality: params.preferLowQuality, generateMipmaps: params.generateMipmaps },
+		plugins: params.enableSpark ? createSparkPlugins( spark, { preferLowQuality: params.preferLowQuality, generateMipmaps: params.generateMipmaps } ) : []
 	} ) );
 	tiles.registerPlugin( new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } ) );
 
