@@ -2,6 +2,8 @@
 
 Implementation of the TilesRendererBase class for Babylon js.
 
+See the [API reference](./API.md) for full class and method documentation.
+
 [Dingo Gap Mars dataset](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/mars.html)
 
 [Google Photorealistic Tiles](https://nasa-ammos.github.io/3DTilesRendererJS/babylonjs/googleMapsAerial.html)
