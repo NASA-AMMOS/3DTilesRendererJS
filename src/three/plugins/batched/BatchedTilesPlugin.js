@@ -75,23 +75,12 @@ export class BatchedTilesPlugin {
 		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
-		this._onLoadModel = null;
-		this._onDisposeModel = null;
-		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
 
 	}
 
 	init( tiles ) {
 
-		this._onDisposeModel = ( { scene, tile } ) => {
-
-			this.removeSceneFromBatchedMesh( scene, tile );
-
-		};
-
-		// register events
-		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		this.tiles = tiles;
 
 	}
@@ -210,6 +199,12 @@ export class BatchedTilesPlugin {
 		}
 
 		return false;
+
+	}
+
+	disposeTile( tile ) {
+
+		this.removeSceneFromBatchedMesh( null, tile );
 
 	}
 
@@ -440,7 +435,7 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		const { arrayTarget, tiles, batchedMesh } = this;
+		const { arrayTarget, batchedMesh } = this;
 		if ( arrayTarget ) {
 
 			arrayTarget.dispose();
@@ -455,8 +450,6 @@ export class BatchedTilesPlugin {
 			batchedMesh.removeFromParent();
 
 		}
-
-		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
 	}
 
