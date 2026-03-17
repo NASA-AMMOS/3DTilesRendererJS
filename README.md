@@ -53,17 +53,21 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 npm install 3d-tiles-renderer --save
 ```
 
-## Usage
+## API
 
-- [Three.js](./USAGE.md): Three.js renderer setup examples, custom materials, DRACO, Cesium Ion, and more
-- [Babylon.js](./src/babylonjs/renderer/README.md): Babylon.js renderer setup, usage, and limitations
-- [React Three Fiber](./src/r3f/README.md): R3F components for 3D Tiles 
-
-## API 
-See [API Reference](./API.md): TilesRenderer, PriorityQueue, LRUCache, and BatchTable API docs
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/core` | [API Reference](./src/core/renderer/API.md) |
+| `3d-tiles-renderer/three` | [Usage Guide](./USAGE.md) · [API Reference](./src/three/renderer/API.md) |
+| `3d-tiles-renderer/babylonjs` | [Usage Guide](./src/babylonjs/renderer/README.md) · [API Reference](./src/babylonjs/renderer/API.md) |
+| `3d-tiles-renderer/r3f` | [Usage Guide](./src/r3f/README.md) · [API Reference](./src/r3f/API.md) |
 
 ## Plugins
-See [Plugins](./PLUGINS.md): GLTFLoader extension plugins, TilesRenderer plugins, and extra classes
+
+| Package | Reference |
+| --- | --- |
+| `3d-tiles-renderer/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
+| `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
 
 # LICENSE
 

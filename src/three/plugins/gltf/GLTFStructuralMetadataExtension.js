@@ -1,5 +1,3 @@
-// https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata
-
 import { FileLoader } from 'three';
 import { StructuralMetadata } from './metadata/classes/StructuralMetadata.js';
 
@@ -68,10 +66,11 @@ function getRelevantBuffers( parser, propertyTables = [] ) {
 }
 
 /**
- * GLTF loader plugin that parses the `EXT_structural_metadata` extension and attaches
- * a `StructuralMetadata` instance to `scene.userData.structuralMetadata` (and to each
- * primitive mesh). Register with a `GLTFLoader` via
+ * GLTF loader plugin that parses the {@link https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_structural_metadata EXT_structural_metadata}
+ * extension and attaches a `StructuralMetadata` instance to `scene.userData.structuralMetadata`
+ * (and to each primitive mesh). Register with a `GLTFLoader` via
  * `loader.register( () => new GLTFStructuralMetadataExtension() )`.
+ * @note 64-bit integer types are not fully supported.
  * @param {Object} parser The GLTF parser instance provided by the loader.
  */
 export class GLTFStructuralMetadataExtension {

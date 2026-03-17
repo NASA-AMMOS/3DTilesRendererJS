@@ -1,7 +1,8 @@
 /**
- * GLTF loader plugin that applies the `CESIUM_RTC` extension, which offsets the scene
- * position by the RTC center defined in the GLTF JSON. Register with a `GLTFLoader`
- * via `loader.register( () => new GLTFCesiumRTCExtension() )`.
+ * GLTF loader plugin that applies the {@link https://github.com/KhronosGroup/glTF/blob/main/extensions/1.0/Vendor/CESIUM_RTC/README.md CESIUM_RTC}
+ * extension, which offsets the scene position by the RTC center defined in the GLTF
+ * JSON. Register with a `GLTFLoader` via
+ * `loader.register( () => new GLTFCesiumRTCExtension() )`.
  */
 export class GLTFCesiumRTCExtension {
 
