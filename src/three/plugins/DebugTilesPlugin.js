@@ -43,6 +43,7 @@ const RANDOM_COLOR = 7;
 const RANDOM_NODE_COLOR = 8;
 const CUSTOM_COLOR = 9;
 const LOAD_ORDER = 10;
+const INDEXED_COLOR = 11;
 
 const ColorModes = Object.freeze( {
 	NONE,
@@ -94,6 +95,23 @@ export class DebugTilesPlugin {
 		if ( v !== this._colorMode ) {
 
 			this._colorMode = v;
+			this.materialsNeedUpdate = true;
+
+		}
+
+	}
+
+	get boundsColorMode() {
+
+		return this._boundsColorMode;
+
+	}
+
+	set boundsColorMode( v ) {
+
+		if ( v !== this._boundsColorMode ) {
+
+			this._boundsColorMode = v;
 			this.materialsNeedUpdate = true;
 
 		}
@@ -176,6 +194,7 @@ export class DebugTilesPlugin {
 			displaySphereBounds: false,
 			displayRegionBounds: false,
 			colorMode: NONE,
+			boundsColorMode: NONE,
 			maxDebugDepth: - 1,
 			maxDebugDistance: - 1,
 			maxDebugError: - 1,
@@ -189,6 +208,7 @@ export class DebugTilesPlugin {
 		this.tiles = null;
 
 		this._colorMode = null;
+		this._boundsColorMode = null;
 		this._unlit = null;
 		this.materialsNeedUpdate = false;
 
@@ -205,6 +225,7 @@ export class DebugTilesPlugin {
 		this.displaySphereBounds = options.displaySphereBounds;
 		this.displayRegionBounds = options.displayRegionBounds;
 		this.colorMode = options.colorMode;
+		this.boundsColorMode = options.boundsColorMode;
 		this.maxDebugDepth = options.maxDebugDepth;
 		this.maxDebugDistance = options.maxDebugDistance;
 		this.maxDebugError = options.maxDebugError;
@@ -368,7 +389,7 @@ export class DebugTilesPlugin {
 
 	update() {
 
-		const { tiles, colorMode } = this;
+		const { tiles, colorMode, boundsColorMode } = this;
 
 		if ( ! tiles.root ) {
 
@@ -429,7 +450,7 @@ export class DebugTilesPlugin {
 
 		const { errorTarget, visibleTiles } = tiles;
 		let sortedTiles;
-		if ( colorMode === LOAD_ORDER ) {
+		if ( colorMode === LOAD_ORDER || boundsColorMode === LOAD_ORDER ) {
 
 			sortedTiles = Array.from( visibleTiles ).sort( ( a, b ) => {
 
@@ -439,7 +460,154 @@ export class DebugTilesPlugin {
 
 		}
 
-		// update plugins
+		// Set the color on the material based on the given color mode
+		const applyColor = ( mode, tile, child, h, s, l ) => {
+
+			if ( mode !== RANDOM_COLOR ) {
+
+				delete child.material[ HAS_RANDOM_COLOR ];
+
+			}
+
+			if ( mode !== RANDOM_NODE_COLOR ) {
+
+				delete child.material[ HAS_RANDOM_NODE_COLOR ];
+
+			}
+
+			switch ( mode ) {
+
+				case DEPTH: {
+
+					const val = tile.internal.depth / maxDepth;
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case RELATIVE_DEPTH: {
+
+					const val = tile.internal.depthFromRenderedParent / maxDepth;
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case SCREEN_ERROR: {
+
+					const val = tile.traversal.error / errorTarget;
+					if ( val > 1.0 ) {
+
+						child.material.color.setRGB( 1.0, 0.0, 0.0 );
+
+					} else {
+
+						this.getDebugColor( val, child.material.color );
+
+					}
+
+					break;
+
+				}
+
+				case GEOMETRIC_ERROR: {
+
+					const val = Math.min( tile.geometricError / maxError, 1 );
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case DISTANCE: {
+
+					// We don't update the distance if the geometric error is 0.0 so
+					// it will always be black.
+					const val = Math.min( tile.traversal.distanceFromCamera / maxDistance, 1 );
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case IS_LEAF: {
+
+					if ( ! tile.children || tile.children.length === 0 ) {
+
+						this.getDebugColor( 1.0, child.material.color );
+
+					} else {
+
+						this.getDebugColor( 0.0, child.material.color );
+
+					}
+
+					break;
+
+				}
+
+				case RANDOM_NODE_COLOR: {
+
+					if ( ! child.material[ HAS_RANDOM_NODE_COLOR ] ) {
+
+						child.material.color.setHSL( h, s, l );
+						child.material[ HAS_RANDOM_NODE_COLOR ] = true;
+
+					}
+
+					break;
+
+				}
+
+				case RANDOM_COLOR: {
+
+					if ( ! child.material[ HAS_RANDOM_COLOR ] ) {
+
+						child.material.color.setHSL( h, s, l );
+						child.material[ HAS_RANDOM_COLOR ] = true;
+
+					}
+
+					break;
+
+				}
+
+				case CUSTOM_COLOR: {
+
+					if ( this.customColorCallback ) {
+
+						this.customColorCallback( tile, child );
+
+					} else {
+
+						console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
+
+					}
+
+					break;
+
+				}
+
+				case LOAD_ORDER: {
+
+					const value = sortedTiles.indexOf( tile );
+					this.getDebugColor( value / ( sortedTiles.length - 1 ), child.material.color );
+					break;
+
+				}
+
+				case INDEXED_COLOR: {
+
+					child.material.color.copy( getIndexedRandomColor( tile.internal.depth ) );
+					delete child.material[ HAS_RANDOM_COLOR ];
+					delete child.material[ HAS_RANDOM_NODE_COLOR ];
+					break;
+
+				}
+
+			}
+
+		};
+
+		// update tile materials
 		visibleTiles.forEach( tile => {
 
 			const scene = tile.engineData.scene;
@@ -466,145 +634,53 @@ export class DebugTilesPlugin {
 
 				if ( c.material ) {
 
-					if ( colorMode !== RANDOM_COLOR ) {
-
-						delete c.material[ HAS_RANDOM_COLOR ];
-
-					}
-
-					if ( colorMode !== RANDOM_NODE_COLOR ) {
-
-						delete c.material[ HAS_RANDOM_NODE_COLOR ];
-
-					}
-
-					// Set the color on the basic material
-					switch ( colorMode ) {
-
-						case DEPTH: {
-
-							const val = tile.internal.depth / maxDepth;
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-
-						case RELATIVE_DEPTH: {
-
-							const val = tile.internal.depthFromRenderedParent / maxDepth;
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-
-						case SCREEN_ERROR: {
-
-							const val = tile.traversal.error / errorTarget;
-							if ( val > 1.0 ) {
-
-								c.material.color.setRGB( 1.0, 0.0, 0.0 );
-
-							} else {
-
-								this.getDebugColor( val, c.material.color );
-
-							}
-
-							break;
-
-						}
-
-						case GEOMETRIC_ERROR: {
-
-							const val = Math.min( tile.geometricError / maxError, 1 );
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-
-						case DISTANCE: {
-
-							// We don't update the distance if the geometric error is 0.0 so
-							// it will always be black.
-							const val = Math.min( tile.traversal.distanceFromCamera / maxDistance, 1 );
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-
-						case IS_LEAF: {
-
-							if ( ! tile.children || tile.children.length === 0 ) {
-
-								this.getDebugColor( 1.0, c.material.color );
-
-							} else {
-
-								this.getDebugColor( 0.0, c.material.color );
-
-							}
-
-							break;
-
-						}
-
-						case RANDOM_NODE_COLOR: {
-
-							if ( ! c.material[ HAS_RANDOM_NODE_COLOR ] ) {
-
-								c.material.color.setHSL( h, s, l );
-								c.material[ HAS_RANDOM_NODE_COLOR ] = true;
-
-							}
-
-							break;
-
-						}
-
-						case RANDOM_COLOR: {
-
-							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
-
-								c.material.color.setHSL( h, s, l );
-								c.material[ HAS_RANDOM_COLOR ] = true;
-
-							}
-
-							break;
-
-						}
-
-						case CUSTOM_COLOR: {
-
-							if ( this.customColorCallback ) {
-
-								this.customColorCallback( tile, c );
-
-							} else {
-
-								console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
-
-							}
-
-							break;
-
-						}
-
-						case LOAD_ORDER: {
-
-							const value = sortedTiles.indexOf( tile );
-							this.getDebugColor( value / ( sortedTiles.length - 1 ), c.material.color );
-							break;
-
-						}
-
-					}
+					applyColor( colorMode, tile, c, h, s, l );
 
 				}
 
 			} );
 
 		} );
+
+		// update bounds helper colors
+		const effectiveBoundsColorMode = boundsColorMode === NONE ? INDEXED_COLOR : boundsColorMode;
+		const groups = [ this.boxGroup, this.sphereGroup, this.regionGroup ];
+		for ( const group of groups ) {
+
+			for ( const helper of group.children ) {
+
+				const tile = helper.userData.tile;
+
+				let h, s, l;
+				if ( effectiveBoundsColorMode === RANDOM_COLOR ) {
+
+					h = Math.random();
+					s = 0.5 + Math.random() * 0.5;
+					l = 0.375 + Math.random() * 0.25;
+
+				}
+
+				helper.traverse( c => {
+
+					if ( effectiveBoundsColorMode === RANDOM_NODE_COLOR ) {
+
+						h = Math.random();
+						s = 0.5 + Math.random() * 0.5;
+						l = 0.375 + Math.random() * 0.25;
+
+					}
+
+					if ( c.material ) {
+
+						applyColor( effectiveBoundsColorMode, tile, c, h, s, l );
+
+					}
+
+				} );
+
+			}
+
+		}
 
 	}
 
@@ -658,6 +734,7 @@ export class DebugTilesPlugin {
 			boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
+			boxHelperGroup.userData.tile = tile;
 			engineData.boxHelperGroup = boxHelperGroup;
 
 			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
@@ -690,6 +767,7 @@ export class DebugTilesPlugin {
 			// Create debug bounding sphere
 			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
+			sphereHelper.userData.tile = tile;
 			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
@@ -706,6 +784,7 @@ export class DebugTilesPlugin {
 			// Create debug bounding region
 			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
 			regionHelper.raycast = emptyRaycast;
+			regionHelper.userData.tile = tile;
 
 			// recenter the geometry to avoid rendering artifacts
 			const sphere = new Sphere();
@@ -959,6 +1038,7 @@ export class DebugTilesPlugin {
 
 		// reset all materials
 		this.colorMode = NONE;
+		this.boundsColorMode = NONE;
 		this.unlit = false;
 		tiles.forEachLoadedModel( scene => {
 

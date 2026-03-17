@@ -149,6 +149,19 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
 }
 
+/**
+ * Renders a compass overlay that rotates to indicate north based on the camera orientation relative
+ * to the tileset ellipsoid. Must be a child of TilesRenderer. Remaining props are passed to the
+ * root group element.
+ * @component
+ * @param {Object} props
+ * @param {string} [props.mode='3d'] - Rotation mode: `'3d'` tracks full camera orientation, `'2d'` tracks yaw only.
+ * @param {number} [props.scale=35] - Size of the compass in pixels.
+ * @param {number|Array} [props.margin=10] - Margin from the bottom-right corner in pixels. Pass `[x, y]` to set each axis independently.
+ * @param {boolean} [props.visible=true] - Whether the compass is rendered.
+ * @param {boolean} [props.overrideRenderLoop] - If true, renders the main scene before drawing the compass overlay.
+ * @param {ReactNode} [props.children] - Custom compass graphic replacing the default. Should fit within a -0.5 to 0.5 unit cube with +Y pointing north and +X pointing east.
+ */
 export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, visible = true, ...rest } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );

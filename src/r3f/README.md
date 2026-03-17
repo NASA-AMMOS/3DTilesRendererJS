@@ -4,13 +4,13 @@ Set of components for loading and rendering 3D Tiles in [@react-three/fiber](htt
 
 **Examples**
 
-[Basic example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/basic.html)
+[Basic example](https://nasa-ammos.github.io/3DTilesRendererJS/r3f/basic.html)
 
-[Cesium Ion example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/ion.html)
+[Cesium Ion example](https://nasa-ammos.github.io/3DTilesRendererJS/r3f/ion.html)
 
-[Google Photorealistic Tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/globe.html)
+[Google Photorealistic Tiles example](https://nasa-ammos.github.io/3DTilesRendererJS/r3f/globe.html)
 
-[Tile Flattening Plugin example](https://nasa-ammos.github.io/3DTilesRendererJS/example/bundle/r3f/flattening.html)
+[Tile Flattening Plugin example](https://nasa-ammos.github.io/3DTilesRendererJS/r3f/flattening.html)
 
 # Use
 
