@@ -79,7 +79,10 @@ export class PriorityQueue {
 		this.priorityCallback = null;
 
 		/**
-		 * Callback used to schedule a deferred job run. Defaults to `requestAnimationFrame`.
+		 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
+		 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
+		 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
+		 * running in WebXR.
 		 * @type {SchedulingCallback}
 		 */
 		this.schedulingCallback = func => {

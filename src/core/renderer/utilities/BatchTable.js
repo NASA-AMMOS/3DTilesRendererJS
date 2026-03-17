@@ -67,7 +67,9 @@ export class BatchTable extends FeatureTable {
 	}
 
 	/**
-	 * Returns all batch table properties for the given feature id as an object.
+	 * Returns an object with all properties of the batch table and its extensions for the
+	 * given feature id. A `target` object can be specified to store the result. Throws if
+	 * `id` is out of bounds.
 	 * @param {number} id - Feature index (0 to count - 1)
 	 * @param {Object} [target={}] - Optional object to write properties into
 	 * @returns {Object}
@@ -104,9 +106,10 @@ export class BatchTable extends FeatureTable {
 	}
 
 	/**
-	 * Returns the full typed array of values for the given property key across all features.
+	 * Returns the array of values for the given property key across all features. Returns
+	 * `null` if the key is not in the table.
 	 * @param {string} key
-	 * @returns {number | string | ArrayBufferView}
+	 * @returns {Array | TypedArray | null}
 	 */
 	getPropertyArray( key ) {
 

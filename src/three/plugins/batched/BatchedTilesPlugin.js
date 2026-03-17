@@ -13,10 +13,10 @@ _whiteTex.needsUpdate = true;
  * and optimized as new geometry is added and removed. Note that the `renderer` field is
  * required. Requires Three.js r170 or later.
  *
- * **Warning:** All tile geometry rendered with `BatchedMesh` will use the same material and
- * only a single material map is supported. Only tile geometry containing a single mesh is
- * supported. Not compatible with plugins that modify mesh materials or rely on bespoke mesh
- * data (e.g. `TilesFadePlugin`, `DebugTilesPlugin`, GLTF Metadata extensions).
+ * @warn All tile geometry rendered with `BatchedMesh` will use the same material and only a single
+ * material map is supported. Only tile geometry containing a single mesh is supported. Not
+ * compatible with plugins that modify mesh materials or rely on bespoke mesh data (e.g.
+ * `TilesFadePlugin`, `DebugTilesPlugin`, GLTF Metadata extensions).
  * @param {Object} options
  * @param {WebGLRenderer} options.renderer The renderer used to generate a `WebGLArrayRenderTarget`.
  * @param {number} [options.instanceCount=500] Initial number of instances in the batched mesh.

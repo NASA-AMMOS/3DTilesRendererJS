@@ -1,3 +1,29 @@
+// Renders any @warn / @note custom tags from a doclet as GFM alert blocks.
+function renderAlertTags( doc ) {
+
+	const lines = [];
+	for ( const tag of ( doc.tags || [] ) ) {
+
+		if ( tag.title === 'warn' || tag.title === 'note' ) {
+
+			const type = tag.title === 'warn' ? 'WARN' : 'NOTE';
+			lines.push( `> [!${ type }]` );
+			for ( const line of tag.value.split( '\n' ) ) {
+
+				lines.push( `> ${ line }` );
+
+			}
+
+			lines.push( '' );
+
+		}
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
 // Converts a heading name to its GitHub Markdown anchor id.
 export function toAnchor( name ) {
 
@@ -147,6 +173,8 @@ export function renderMember( doc, callbackMap = {} ) {
 
 	}
 
+	lines.push( renderAlertTags( doc ) );
+
 	return lines.join( '\n' );
 
 }
@@ -194,6 +222,8 @@ export function renderMethod( doc, callbackMap = {} ) {
 		lines.push( '' );
 
 	}
+
+	lines.push( renderAlertTags( doc ) );
 
 	return lines.join( '\n' );
 
@@ -255,6 +285,8 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 		lines.push( '' );
 
 	}
+
+	lines.push( renderAlertTags( typeDoc ) );
 
 	for ( const prop of ( typeDoc.properties || [] ) ) {
 
@@ -420,6 +452,8 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 		lines.push( '' );
 
 	}
+
+	lines.push( renderAlertTags( classDoc ) );
 
 	const visible = members.filter( m => m.access !== 'private' );
 	// Treat function doclets that carry an explicit @type tag as properties

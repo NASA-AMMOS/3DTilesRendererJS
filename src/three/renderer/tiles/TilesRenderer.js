@@ -42,8 +42,19 @@ function updateFrustumCulled( object, toInitialValue ) {
 
 }
 
+/**
+ * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+ * camera management, three.js scene integration, and GPU-accelerated tile loading.
+ * Add `tiles.group` to your scene and call `tiles.update()` each frame.
+ */
 export class TilesRenderer extends TilesRendererBase {
 
+	/**
+	 * If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
+	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
+	 * multiple cameras are being used, consider setting this to `false`.
+	 * @type {boolean}
+	 */
 	get autoDisableRendererCulling() {
 
 		return this._autoDisableRendererCulling;
@@ -81,7 +92,21 @@ export class TilesRenderer extends TilesRendererBase {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		/**
+		 * The container `Group` for the 3D tiles. Add this to the three.js scene. The group
+		 * also exposes a `matrixWorldInverse` field for transforming objects into the local
+		 * tileset frame.
+		 * @type {Group}
+		 */
 		this.group = new TilesGroup( this );
+
+		/**
+		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
+		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
+		 * `TilesRenderer.group`.
+		 * @type {Ellipsoid}
+		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
 		this.cameras = [];
 		this.cameraMap = new Map();
@@ -93,6 +118,10 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
 
+		/**
+		 * The `LoadingManager` used when loading tile geometry.
+		 * @type {LoadingManager}
+		 */
 		this.manager = new LoadingManager();
 
 		// saved for event dispatcher functions
