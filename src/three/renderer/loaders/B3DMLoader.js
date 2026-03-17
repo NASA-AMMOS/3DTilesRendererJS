@@ -19,6 +19,12 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 	}
 
+	/**
+	 * Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
+	 * tile metadata. Both `model` and `model.scene` receive the extra fields.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		const b3dm = super.parse( buffer );

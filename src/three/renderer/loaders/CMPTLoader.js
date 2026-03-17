@@ -23,6 +23,12 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 	}
 
+	/**
+	 * Parses a cmpt buffer and resolves to an object containing a `Group` with all
+	 * sub-tile scenes added as children, and the individual sub-tile results.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, tiles: Array }>}
+	 */
 	parse( buffer ) {
 
 		const result = super.parse( buffer );

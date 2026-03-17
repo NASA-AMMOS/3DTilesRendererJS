@@ -276,6 +276,18 @@ _extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
 constructor( manager: LoadingManager )
 ```
 
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable}>
+```
+
+Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
+tile metadata. Both `model` and `model.scene` receive the extra fields.
+
+
 ## CameraTransitionManager
 
 _extends `EventDispatcher`_
@@ -417,6 +429,16 @@ _extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
 ```js
 constructor( manager: LoadingManager )
 ```
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Promise<{scene: Group, tiles: Array}>
+```
+
+Parses a cmpt buffer and resolves to an object containing a `Group` with all
+sub-tile scenes added as children, and the individual sub-tile results.
+
 
 ## EnvironmentControls
 
@@ -796,6 +818,19 @@ _extends [`I3DMLoaderBase`](../../core/renderer/API.md#i3dmloaderbase)_
 constructor( manager: LoadingManager )
 ```
 
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{scene: Group, batchTable: BatchTable, featureTable: FeatureTable}>
+```
+
+Parses an i3dm buffer and resolves to a GLTF result object where the scene's
+meshes have been replaced with `InstancedMesh` objects (one per GLTF mesh), with
+metadata attached to both `model` and `model.scene`.
+
+
 ## PNTSLoader
 
 _extends [`PNTSLoaderBase`](../../core/renderer/API.md#pntsloaderbase)_
@@ -806,6 +841,18 @@ _extends [`PNTSLoaderBase`](../../core/renderer/API.md#pntsloaderbase)_
 ```js
 constructor( manager: LoadingManager )
 ```
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{scene: Points, batchTable: BatchTable, featureTable: FeatureTable}>
+```
+
+Parses a pnts buffer and resolves to a result object containing a constructed
+three.js `Points` scene with metadata attached.
+
 
 ## TilesRenderer
 

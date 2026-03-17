@@ -67,6 +67,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 	}
 
+	/**
+	 * Parses an i3dm buffer and resolves to a GLTF result object where the scene's
+	 * meshes have been replaced with `InstancedMesh` objects (one per GLTF mesh), with
+	 * metadata attached to both `model` and `model.scene`.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		return super

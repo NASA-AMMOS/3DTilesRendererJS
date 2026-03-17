@@ -32,6 +32,12 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 	}
 
+	/**
+	 * Parses a pnts buffer and resolves to a result object containing a constructed
+	 * three.js `Points` scene with metadata attached.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Points, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		return super.parse( buffer ).then( async ( result ) => {
