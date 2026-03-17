@@ -110,7 +110,6 @@ export default [
 		},
 		settings: {
 			jsdoc: {
-				definedTags: [ 'component', 'warn', 'note' ],
 				preferredTypes: {
 					Any: 'any',
 					Boolean: 'boolean',
@@ -126,7 +125,7 @@ export default [
 			},
 		},
 		rules: {
-			'jsdoc/check-tag-names': 'error',
+			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note' ] } ],
 			'jsdoc/check-types': 'error',
 			'jsdoc/require-param-type': 'error',
 			'jsdoc/require-returns-type': 'error',

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
  * Walks up the directory hierarchy from the given path or file URL until a package.json is found.
  * Throws if no package.json is found before reaching the filesystem root.
  * @param {string} urlOrPath - Directory path or file URL (e.g. import.meta.url) to start searching from
- * @return {string}
+ * @returns {string}
  */
 export function findRootDir( urlOrPath = import.meta.url ) {
 
