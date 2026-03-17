@@ -516,7 +516,7 @@ export class TilesRendererBase {
 		/**
 		 * Target screen-space error in pixels to aim for when updating the geometry. Tiles will
 		 * not render if they are below this level of screen-space error. See the
-		 * [geometric error section](https://github.com/CesiumGS/3d-tiles/tree/master/specification#geometric-error)
+		 * {@link https://github.com/CesiumGS/3d-tiles/tree/master/specification#geometric-error geometric error section}
 		 * of the 3D Tiles specification for more information.
 		 * @type {number}
 		 */
@@ -545,7 +545,7 @@ export class TilesRendererBase {
 		 * Tiles are loaded independently based on screen-space error without requiring all parent
 		 * tiles to load first. Prevents visual gaps and flashing during camera movement.
 		 *
-		 * Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html).
+		 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
 		 *
 		 * Default is `false`, which uses the previous approach of loading all parent and sibling
 		 * tiles for guaranteed smooth transitions.
