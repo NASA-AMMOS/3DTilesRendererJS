@@ -7,6 +7,7 @@ import { QuantizedMeshPlugin } from './QuantizedMeshPlugin.js';
  * endpoint resolution, and attribution collection. Auto-registration of terrain and
  * imagery plugins via `assetTypeHandler` is deprecated — provide a custom handler
  * instead.
+ * @extends CesiumIonAuthPlugin
  * @param {Object} [options]
  * @param {string} [options.apiToken] Cesium Ion API token.
  * @param {string|null} [options.assetId=null] Cesium Ion asset ID, or `null` when using an explicit root URL.

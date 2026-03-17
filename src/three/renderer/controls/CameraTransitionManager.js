@@ -13,6 +13,7 @@ const _targetQuat = /* @__PURE__ */ new Quaternion();
  * Manages an animated transition between a perspective and an orthographic camera.
  * During the transition a blended `transitionCamera` is used. Fires events for the
  * transition lifecycle and the active camera change.
+ * @extends EventDispatcher
  * @param {PerspectiveCamera} [perspectiveCamera] - Perspective camera to use. Defaults to a new PerspectiveCamera.
  * @param {OrthographicCamera} [orthographicCamera] - Orthographic camera to use. Defaults to a new OrthographicCamera.
  */

@@ -55,6 +55,7 @@ const _endEvent = { type: 'end' };
 /**
  * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
  * right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
+ * @extends EventDispatcher
  * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
  * @param {Camera} [camera=null] - The camera to control.
  * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.

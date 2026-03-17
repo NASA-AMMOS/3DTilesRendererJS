@@ -9,6 +9,7 @@ import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
  * Loader for the legacy 3D Tiles Composite (cmpt) format. Parses a cmpt container
  * that bundles multiple b3dm, i3dm, and pnts tiles, returning a scene Group containing
  * all sub-tile scenes.
+ * @extends CMPTLoaderBase
  * @param {LoadingManager} [manager]
  */
 export class CMPTLoader extends CMPTLoaderBase {

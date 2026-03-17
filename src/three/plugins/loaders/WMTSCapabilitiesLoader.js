@@ -76,6 +76,7 @@ function tupleToRadians( tuple ) {
  * }
  * ```
  * Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order in radians.
+ * @extends LoaderBase
  * @param {LoadingManager} [manager]
  */
 export class WMTSCapabilitiesLoader extends LoaderBase {

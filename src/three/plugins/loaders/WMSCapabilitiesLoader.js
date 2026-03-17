@@ -365,6 +365,7 @@ function collectLayers( layers, target = [] ) {
  * ```
  * `contentBoundingBox` and `boundingBoxes[].bounds` are `[ minLon, minLat, maxLon, maxLat ]`
  * in radians.
+ * @extends LoaderBase
  * @param {LoadingManager} [manager]
  */
 export class WMSCapabilitiesLoader extends LoaderBase {

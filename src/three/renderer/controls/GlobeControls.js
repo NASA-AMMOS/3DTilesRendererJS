@@ -33,6 +33,7 @@ const MIN_ELEVATION = 2550;
 /**
  * Camera controls for navigating a globe-shaped tileset. Extends EnvironmentControls with
  * ellipsoid-aware rotation, globe inertia, and automatic near/far plane adjustment.
+ * @extends EnvironmentControls
  * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
  * @param {Camera} [camera=null] - The camera to control.
  * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.

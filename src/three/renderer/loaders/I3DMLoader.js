@@ -47,6 +47,7 @@ function octDecodeInRange( x, y, rangeMax, result ) {
  * Loader for the legacy 3D Tiles Instanced 3D Model (i3dm) format. Parses the i3dm
  * container and returns instanced meshes with `batchTable` and `featureTable` attached
  * to the resolved scene object.
+ * @extends I3DMLoaderBase
  * @param {LoadingManager} [manager]
  */
 export class I3DMLoader extends I3DMLoaderBase {

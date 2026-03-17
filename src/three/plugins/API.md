@@ -38,21 +38,6 @@ constructor( {
 } )
 ```
 
-## CesiumIonAuthPlugin
-
-
-### .constructor
-
-```js
-constructor( {
-	apiToken?: string,
-	assetId = null: string | null,
-	autoRefreshToken = false: boolean,
-	useRecommendedSettings = true: boolean,
-	assetTypeHandler?: function,
-} )
-```
-
 ## DebugTilesPlugin
 
 
@@ -562,15 +547,6 @@ constructor( {
 ## UpdateOnChangePlugin
 
 
-## WMSCapabilitiesLoader
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
 ## WMSTilesPlugin
 
 
@@ -586,15 +562,6 @@ constructor( {
 	styles?: string,
 	version?: string,
 } )
-```
-
-## WMTSCapabilitiesLoader
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
 ```
 
 ## WMTSTilesPlugin
@@ -624,6 +591,45 @@ constructor( {
 	tileDimension?: number,
 	projection?: string,
 } )
+```
+
+## CesiumIonAuthPlugin
+
+_extends [`CesiumIonAuthPlugin`](../../core/plugins/API.md#cesiumionauthplugin)_
+
+
+### .constructor
+
+```js
+constructor( {
+	apiToken?: string,
+	assetId = null: string | null,
+	autoRefreshToken = false: boolean,
+	useRecommendedSettings = true: boolean,
+	assetTypeHandler?: function,
+} )
+```
+
+## WMSCapabilitiesLoader
+
+_extends [`LoaderBase`](../../core/renderer/API.md#loaderbase)_
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+## WMTSCapabilitiesLoader
+
+_extends [`LoaderBase`](../../core/renderer/API.md#loaderbase)_
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
 ```
 
 ## WMTSImageSource

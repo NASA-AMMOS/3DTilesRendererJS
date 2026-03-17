@@ -30,153 +30,6 @@ OBJECT_FRAME: Frames
 Frame constant for an object-convention frame relative to the ENU frame, oriented with
 "+Y" up and "+Z" forward (matching three.js object conventions).
 
-## B3DMLoader
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
-## CameraTransitionManager
-
-
-### .animating
-
-```js
-readonly animating: boolean
-```
-
-Whether a transition animation is currently in progress.
-
-
-### .alpha
-
-```js
-readonly alpha: number
-```
-
-Transition progress from 0 (at perspective) to 1 (at orthographic).
-
-
-### .camera
-
-```js
-readonly camera: Camera
-```
-
-The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
-blended `transitionCamera` depending on the current transition state.
-
-
-### .mode
-
-```js
-mode: string
-```
-
-The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
-animation. Use `toggle()` to animate the transition.
-
-
-### .orthographicPositionalZoom
-
-```js
-orthographicPositionalZoom: boolean
-```
-
-When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
-
-
-### .orthographicOffset
-
-```js
-orthographicOffset: number
-```
-
-Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
-
-
-### .fixedPoint
-
-```js
-fixedPoint: Vector3
-```
-
-World-space point that remains visually fixed during the transition.
-
-
-### .duration
-
-```js
-duration: number
-```
-
-Duration of the animated transition in milliseconds. Default is 200.
-
-
-### .autoSync
-
-```js
-autoSync: boolean
-```
-
-When true, cameras are synced automatically before each `update` call. Default is true.
-
-
-### .easeFunction
-
-```js
-easeFunction: function
-```
-
-Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
-
-
-### .constructor
-
-```js
-constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
-```
-
-### .toggle
-
-```js
-toggle(): void
-```
-
-Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
-
-
-### .update
-
-```js
-update( deltaTime: number ): void
-```
-
-Advances the transition animation and updates the active camera. Must be called each frame.
-
-
-### .syncCameras
-
-```js
-syncCameras(): void
-```
-
-Synchronises the non-active camera so that both cameras represent the same viewpoint.
-Called automatically by `update` when `autoSync` is true.
-
-
-## CMPTLoader
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
 ## Ellipsoid
 
 
@@ -412,7 +265,162 @@ clone(): Ellipsoid
 Returns a new Ellipsoid with the same radius as this one.
 
 
+## B3DMLoader
+
+_extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+## CameraTransitionManager
+
+_extends `EventDispatcher`_
+
+
+### .animating
+
+```js
+readonly animating: boolean
+```
+
+Whether a transition animation is currently in progress.
+
+
+### .alpha
+
+```js
+readonly alpha: number
+```
+
+Transition progress from 0 (at perspective) to 1 (at orthographic).
+
+
+### .camera
+
+```js
+readonly camera: Camera
+```
+
+The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
+blended `transitionCamera` depending on the current transition state.
+
+
+### .mode
+
+```js
+mode: string
+```
+
+The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
+animation. Use `toggle()` to animate the transition.
+
+
+### .orthographicPositionalZoom
+
+```js
+orthographicPositionalZoom: boolean
+```
+
+When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+
+
+### .orthographicOffset
+
+```js
+orthographicOffset: number
+```
+
+Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+
+
+### .fixedPoint
+
+```js
+fixedPoint: Vector3
+```
+
+World-space point that remains visually fixed during the transition.
+
+
+### .duration
+
+```js
+duration: number
+```
+
+Duration of the animated transition in milliseconds. Default is 200.
+
+
+### .autoSync
+
+```js
+autoSync: boolean
+```
+
+When true, cameras are synced automatically before each `update` call. Default is true.
+
+
+### .easeFunction
+
+```js
+easeFunction: function
+```
+
+Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+
+
+### .constructor
+
+```js
+constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
+```
+
+### .toggle
+
+```js
+toggle(): void
+```
+
+Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
+
+
+### .update
+
+```js
+update( deltaTime: number ): void
+```
+
+Advances the transition animation and updates the active camera. Must be called each frame.
+
+
+### .syncCameras
+
+```js
+syncCameras(): void
+```
+
+Synchronises the non-active camera so that both cameras represent the same viewpoint.
+Called automatically by `update` when `autoSync` is true.
+
+
+## CMPTLoader
+
+_extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
 ## EnvironmentControls
+
+_extends `EventDispatcher`_
 
 
 ### .enabled
@@ -669,6 +677,8 @@ Disposes of event listeners and internal resources. Calls `detach` if currently 
 
 ## GlobeControls
 
+_extends [`EnvironmentControls`](../../r3f/API.md#environmentcontrols)_
+
 
 ### .ellipsoidFrame
 
@@ -777,6 +787,8 @@ Returns the distance from the camera to the center of the ellipsoid.
 
 ## I3DMLoader
 
+_extends [`I3DMLoaderBase`](../../core/renderer/API.md#i3dmloaderbase)_
+
 
 ### .constructor
 
@@ -786,6 +798,8 @@ constructor( manager: LoadingManager )
 
 ## PNTSLoader
 
+_extends [`PNTSLoaderBase`](../../core/renderer/API.md#pntsloaderbase)_
+
 
 ### .constructor
 
@@ -794,6 +808,8 @@ constructor( manager: LoadingManager )
 ```
 
 ## TilesRenderer
+
+_extends [`TilesRendererBase`](../../core/renderer/API.md#tilesrendererbase)_
 
 
 ### .autoDisableRendererCulling

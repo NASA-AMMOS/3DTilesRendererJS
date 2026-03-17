@@ -46,6 +46,7 @@ function updateFrustumCulled( object, toInitialValue ) {
  * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
  * camera management, three.js scene integration, and GPU-accelerated tile loading.
  * Add `tiles.group` to your scene and call `tiles.update()` each frame.
+ * @extends TilesRendererBase
  */
 export class TilesRenderer extends TilesRendererBase {
 
