@@ -1,6 +1,6 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, DoubleSide } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
 import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
@@ -367,7 +367,7 @@ export class DebugTilesPlugin {
 
 			if ( result ) {
 
-				return true;
+				return;
 
 			}
 
@@ -778,17 +778,17 @@ export class DebugTilesPlugin {
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
+			// Create partially transparent mesh
+			const fillMesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
 				color: getIndexedRandomColor( tile.internal.depth ),
 				transparent: true,
 				depthWrite: false,
 				opacity: 0.05,
 				side: DoubleSide,
 			} ) );
-			obb.box.getSize( mesh.scale );
-			mesh.raycast = emptyRaycast;
-			boxHelperGroup.add( mesh );
-
+			obb.box.getSize( fillMesh.scale );
+			fillMesh.raycast = emptyRaycast;
+			boxHelperGroup.add( fillMesh );
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -805,6 +805,18 @@ export class DebugTilesPlugin {
 			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
 			sphereHelper.userData.tile = tile;
+
+			// Create partially transparent mesh
+			const sphereFillMesh = new Mesh( new SphereGeometry( 1 ), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			sphereFillMesh.raycast = emptyRaycast;
+			sphereHelper.add( sphereFillMesh );
+
 			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
@@ -823,6 +835,15 @@ export class DebugTilesPlugin {
 			regionHelper.raycast = emptyRaycast;
 			regionHelper.userData.tile = tile;
 
+			// create partially transparent mesh
+			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			regionFillMesh.material.transparent = true;
+			regionFillMesh.material.depthWrite = false;
+			regionFillMesh.material.opacity = 0.05;
+			regionFillMesh.material.side = DoubleSide;
+			regionFillMesh.raycast = emptyRaycast;
+			regionHelper.add( regionFillMesh );
+
 			// recenter the geometry to avoid rendering artifacts
 			const sphere = new Sphere();
 			region.getBoundingSphere( sphere );
@@ -830,6 +851,7 @@ export class DebugTilesPlugin {
 
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
+			regionFillMesh.geometry.translate( ...sphere.center );
 
 			engineData.regionHelper = regionHelper;
 
@@ -1042,21 +1064,48 @@ export class DebugTilesPlugin {
 		const engineData = tile.engineData;
 		if ( engineData?.boxHelperGroup ) {
 
-			engineData.boxHelperGroup.children[ 0 ].geometry.dispose();
+			engineData.boxHelperGroup.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.boxHelperGroup;
 
 		}
 
 		if ( engineData?.sphereHelper ) {
 
-			engineData.sphereHelper.geometry.dispose();
+			engineData.sphereHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.sphereHelper;
 
 		}
 
 		if ( engineData?.regionHelper ) {
 
-			engineData.regionHelper.geometry.dispose();
+			engineData.regionHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.regionHelper;
 
 		}
