@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.23] - 2026-03-18
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
-- Auto-generated documenttion via JSDoc.
+- Auto-generated documentation via JSDoc.
 - DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
 
 ### Fixed
