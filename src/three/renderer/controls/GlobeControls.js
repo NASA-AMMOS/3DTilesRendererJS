@@ -1,3 +1,4 @@
+/** @import { Object3D, Camera } from 'three' */
 import {
 	Matrix4,
 	Quaternion,

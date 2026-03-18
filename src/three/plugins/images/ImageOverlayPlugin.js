@@ -1,3 +1,4 @@
+/** @import { WebGLRenderer } from 'three' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
