@@ -46,7 +46,6 @@ export class BatchedTilesPlugin {
 			maxInstanceCount: Infinity,
 			discardOriginalContent: true,
 			textureSize: null,
-
 			material: null,
 			renderer: null,
 			...options
@@ -69,29 +68,16 @@ export class BatchedTilesPlugin {
 		this.discardOriginalContent = options.discardOriginalContent;
 		this.textureSize = options.textureSize;
 
-		console.log( gl.getParameter( gl.MAX_3D_TEXTURE_SIZE ) );
-
 		// local variables
 		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
-		this._onLoadModel = null;
-		this._onDisposeModel = null;
-		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
 
 	}
 
 	init( tiles ) {
 
-		this._onDisposeModel = ( { scene, tile } ) => {
-
-			this.removeSceneFromBatchedMesh( scene, tile );
-
-		};
-
-		// register events
-		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		this.tiles = tiles;
 
 	}
@@ -213,11 +199,17 @@ export class BatchedTilesPlugin {
 
 	}
 
+	disposeTile( tile ) {
+
+		this.removeSceneFromBatchedMesh( tile );
+
+	}
+
 	unloadTileFromGPU( scene, tile ) {
 
 		if ( ! this.discardOriginalContent && this._tileToInstanceId.has( tile ) ) {
 
-			this.removeSceneFromBatchedMesh( scene, tile );
+			this.removeSceneFromBatchedMesh( tile );
 			return true;
 
 		}
@@ -288,7 +280,7 @@ export class BatchedTilesPlugin {
 
 	}
 
-	removeSceneFromBatchedMesh( scene, tile ) {
+	removeSceneFromBatchedMesh( tile ) {
 
 		if ( this._tileToInstanceId.has( tile ) ) {
 
@@ -440,7 +432,7 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		const { arrayTarget, tiles, batchedMesh } = this;
+		const { arrayTarget, batchedMesh } = this;
 		if ( arrayTarget ) {
 
 			arrayTarget.dispose();
@@ -455,8 +447,6 @@ export class BatchedTilesPlugin {
 			batchedMesh.removeFromParent();
 
 		}
-
-		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
 	}
 
