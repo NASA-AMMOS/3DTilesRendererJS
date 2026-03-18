@@ -399,6 +399,12 @@ export class TilesFadePlugin {
 	// callback for fading to prevent tiles from being removed until the fade effect has completed
 	setTileVisible( tile, visible ) {
 
+		if ( ! tile.engineData.scene ) {
+
+			return false;
+
+		}
+
 		const fadeManager = this._fadeManager;
 
 		// track the fade state

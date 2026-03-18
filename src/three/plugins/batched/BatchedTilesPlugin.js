@@ -169,6 +169,12 @@ export class BatchedTilesPlugin {
 	setTileVisible( tile, visible ) {
 
 		const scene = tile.engineData.scene;
+		if ( ! scene ) {
+
+			return false;
+
+		}
+
 		if ( visible ) {
 
 			// Add tileset to the batched mesh if it hasn't been added already

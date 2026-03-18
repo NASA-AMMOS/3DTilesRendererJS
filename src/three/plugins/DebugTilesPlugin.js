@@ -324,7 +324,7 @@ export class DebugTilesPlugin {
 
 		};
 
-		this._onTileVisibilityChangeCB = ( { scene, tile, visible } ) => {
+		this._onTileVisibilityChangeCB = ( { tile, visible } ) => {
 
 			this._onTileVisibilityChange( tile, visible );
 
@@ -367,7 +367,7 @@ export class DebugTilesPlugin {
 
 			if ( result ) {
 
-				return true;
+				return;
 
 			}
 
@@ -647,7 +647,12 @@ export class DebugTilesPlugin {
 		// update tile materials
 		visibleTiles.forEach( tile => {
 
-			const scene = tile.engineData.scene;
+			const { scene } = tile.engineData;
+			if ( ! scene ) {
+
+				return;
+
+			}
 
 			// create a random color per-tile
 			let h, s, l;
