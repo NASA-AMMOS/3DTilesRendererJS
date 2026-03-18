@@ -127,6 +127,15 @@ export default [
 		rules: {
 			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note' ] } ],
 			'jsdoc/check-types': 'error',
+			'jsdoc/no-undefined-types': [ 'error', {
+				definedTypes: [
+					'ArrayBufferView',
+					'RequestInit',
+					'TypedArray',
+					'TypedArrayConstructor',
+					'WGS84_ELLIPSOID',
+				],
+			} ],
 			'jsdoc/require-param-type': 'error',
 			'jsdoc/require-returns-type': 'error',
 			'jsdoc/require-returns': 'off',

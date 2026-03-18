@@ -24,23 +24,22 @@ const CENTER_EPS = 0.1;
 /**
  * Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
  * Y pointing north, and Z pointing up (away from the ellipsoid surface).
- * @type {Frames}
  */
 export const ENU_FRAME = 0;
 
 /**
  * Frame constant for a camera-convention frame relative to the ENU frame, oriented with
  * "+Y" up and "-Z" forward (matching three.js camera conventions).
- * @type {Frames}
  */
 export const CAMERA_FRAME = 1;
 
 /**
  * Frame constant for an object-convention frame relative to the ENU frame, oriented with
  * "+Y" up and "+Z" forward (matching three.js object conventions).
- * @type {Frames}
  */
 export const OBJECT_FRAME = 2;
+
+/** @typedef { typeof ENU_FRAME | typeof CAMERA_FRAME | typeof OBJECT_FRAME } Frames */
 
 /**
  * Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale

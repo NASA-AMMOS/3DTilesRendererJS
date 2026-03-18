@@ -1,3 +1,4 @@
+/** @import { WebGLRenderer, Material } from 'three' */
 import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';

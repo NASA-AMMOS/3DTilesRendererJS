@@ -1,3 +1,4 @@
+/** @import { Texture, Object3D, Vector3 } from 'three' */
 import { PropertyAttributeAccessor } from './PropertyAttributeAccessor.js';
 import { PropertyTableAccessor } from './PropertyTableAccessor.js';
 import { PropertyTextureAccessor } from './PropertyTextureAccessor.js';
