@@ -1,6 +1,6 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, DoubleSide } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
 import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
@@ -367,7 +367,7 @@ export class DebugTilesPlugin {
 
 			if ( result ) {
 
-				return true;
+				return;
 
 			}
 
@@ -789,7 +789,6 @@ export class DebugTilesPlugin {
 			mesh.raycast = emptyRaycast;
 			boxHelperGroup.add( mesh );
 
-
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
 				this.boxGroup.add( boxHelperGroup );
@@ -805,6 +804,17 @@ export class DebugTilesPlugin {
 			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
 			sphereHelper.userData.tile = tile;
+
+			const sphereFillMesh = new Mesh( new SphereGeometry( 1 ), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			sphereFillMesh.raycast = emptyRaycast;
+			sphereHelper.add( sphereFillMesh );
+
 			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
@@ -830,6 +840,15 @@ export class DebugTilesPlugin {
 
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
+
+			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			regionFillMesh.material.transparent = true;
+			regionFillMesh.material.depthWrite = false;
+			regionFillMesh.material.opacity = 0.05;
+			regionFillMesh.material.side = DoubleSide;
+			regionFillMesh.raycast = emptyRaycast;
+			regionFillMesh.geometry.translate( ...sphere.center );
+			regionHelper.add( regionFillMesh );
 
 			engineData.regionHelper = regionHelper;
 
@@ -1050,6 +1069,7 @@ export class DebugTilesPlugin {
 		if ( engineData?.sphereHelper ) {
 
 			engineData.sphereHelper.geometry.dispose();
+			engineData.sphereHelper.children[ 0 ].geometry.dispose();
 			delete engineData.sphereHelper;
 
 		}
@@ -1057,6 +1077,7 @@ export class DebugTilesPlugin {
 		if ( engineData?.regionHelper ) {
 
 			engineData.regionHelper.geometry.dispose();
+			engineData.regionHelper.children[ 0 ].geometry.dispose();
 			delete engineData.regionHelper;
 
 		}
