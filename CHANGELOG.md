@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
 - Auto-generated documenttion via JSDoc.
+- DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
 - QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
 - ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+- BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
 
 ## [0.4.22] - 2026-03-06
 ### Added
