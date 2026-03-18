@@ -133,7 +133,6 @@ export default [
 					'RequestInit',
 					'TypedArray',
 					'TypedArrayConstructor',
-					'WGS84_ELLIPSOID',
 				],
 			} ],
 			'jsdoc/require-param-type': 'error',

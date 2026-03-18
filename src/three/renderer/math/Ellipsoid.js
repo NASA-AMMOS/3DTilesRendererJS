@@ -1,3 +1,4 @@
+/** @import { WGS84_ELLIPSOID } from './GeoConstants.js' */
 import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere, Euler } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
