@@ -778,16 +778,17 @@ export class DebugTilesPlugin {
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
+			// Create partially transparent mesh
+			const fillMesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
 				color: getIndexedRandomColor( tile.internal.depth ),
 				transparent: true,
 				depthWrite: false,
 				opacity: 0.05,
 				side: DoubleSide,
 			} ) );
-			obb.box.getSize( mesh.scale );
-			mesh.raycast = emptyRaycast;
-			boxHelperGroup.add( mesh );
+			obb.box.getSize( fillMesh.scale );
+			fillMesh.raycast = emptyRaycast;
+			boxHelperGroup.add( fillMesh );
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -805,6 +806,7 @@ export class DebugTilesPlugin {
 			sphereHelper.raycast = emptyRaycast;
 			sphereHelper.userData.tile = tile;
 
+			// Create partially transparent mesh
 			const sphereFillMesh = new Mesh( new SphereGeometry( 1 ), new MeshBasicMaterial( {
 				color: getIndexedRandomColor( tile.internal.depth ),
 				transparent: true,
@@ -833,6 +835,15 @@ export class DebugTilesPlugin {
 			regionHelper.raycast = emptyRaycast;
 			regionHelper.userData.tile = tile;
 
+			// create partially transparent mesh
+			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			regionFillMesh.material.transparent = true;
+			regionFillMesh.material.depthWrite = false;
+			regionFillMesh.material.opacity = 0.05;
+			regionFillMesh.material.side = DoubleSide;
+			regionFillMesh.raycast = emptyRaycast;
+			regionHelper.add( regionFillMesh );
+
 			// recenter the geometry to avoid rendering artifacts
 			const sphere = new Sphere();
 			region.getBoundingSphere( sphere );
@@ -840,15 +851,7 @@ export class DebugTilesPlugin {
 
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
-
-			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
-			regionFillMesh.material.transparent = true;
-			regionFillMesh.material.depthWrite = false;
-			regionFillMesh.material.opacity = 0.05;
-			regionFillMesh.material.side = DoubleSide;
-			regionFillMesh.raycast = emptyRaycast;
 			regionFillMesh.geometry.translate( ...sphere.center );
-			regionHelper.add( regionFillMesh );
 
 			engineData.regionHelper = regionHelper;
 
