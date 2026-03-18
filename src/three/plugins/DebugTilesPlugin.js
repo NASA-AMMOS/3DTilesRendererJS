@@ -1061,23 +1061,48 @@ export class DebugTilesPlugin {
 		const engineData = tile.engineData;
 		if ( engineData?.boxHelperGroup ) {
 
-			engineData.boxHelperGroup.children[ 0 ].geometry.dispose();
+			engineData.boxHelperGroup.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.boxHelperGroup;
 
 		}
 
 		if ( engineData?.sphereHelper ) {
 
-			engineData.sphereHelper.geometry.dispose();
-			engineData.sphereHelper.children[ 0 ].geometry.dispose();
+			engineData.sphereHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.sphereHelper;
 
 		}
 
 		if ( engineData?.regionHelper ) {
 
-			engineData.regionHelper.geometry.dispose();
-			engineData.regionHelper.children[ 0 ].geometry.dispose();
+			engineData.regionHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.regionHelper;
 
 		}
