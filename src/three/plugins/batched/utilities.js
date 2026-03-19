@@ -1,3 +1,31 @@
+import { ShaderMaterial } from 'three';
+import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+
+// Quad for copying individual layers between array textures via rendering.
+// Avoids copyTexSubImage3D which has driver issues on some mobile GPUs.
+export const layerCopyQuad = new FullScreenQuad( new ShaderMaterial( {
+	uniforms: {
+		srcTexture: { value: null },
+		layer: { value: 0 },
+	},
+	vertexShader: /* glsl */`
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}
+	`,
+	fragmentShader: /* glsl */`
+		precision highp sampler2DArray;
+		uniform sampler2DArray srcTexture;
+		uniform float layer;
+		varying vec2 vUv;
+		void main() {
+			gl_FragColor = texture( srcTexture, vec3( vUv, layer ) );
+		}
+	`,
+} ) );
+
 // Returns whether the passed color is white or not
 export function isColorWhite( color ) {
 
