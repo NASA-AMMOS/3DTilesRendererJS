@@ -2,7 +2,7 @@
 import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, REVISION } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
-import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
+import { convertMapToArrayTexture, isColorWhite, layerCopyQuad } from './utilities.js';
 
 const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
@@ -28,6 +28,9 @@ _whiteTex.needsUpdate = true;
  * @param {boolean} [options.discardOriginalContent=true] Free the original tile scene after batching. Set to `false` when used with `UnloadTilesPlugin`.
  * @param {number|null} [options.textureSize=null] Override width/height for the texture array; defaults to the first tile's texture size.
  * @param {Material|null} [options.material=null] Custom material for the batched mesh; defaults to the first tile's material type.
+ * @param {boolean} [options.useShaderCopy=false] Use a render-based shader copy when expanding the texture array instead of
+ * `copyTextureToTexture`. Enable this on devices with mobile GPUs (e.g. Adreno, Mali) that have broken `copyTexSubImage3D`
+ * implementations which cause all texture array layers to read from layer 0 after expansion.
  */
 export class BatchedTilesPlugin {
 
@@ -49,6 +52,7 @@ export class BatchedTilesPlugin {
 			textureSize: null,
 			material: null,
 			renderer: null,
+			useShaderCopy: false,
 			...options
 		};
 
@@ -68,6 +72,7 @@ export class BatchedTilesPlugin {
 		this.renderer = options.renderer;
 		this.discardOriginalContent = options.discardOriginalContent;
 		this.textureSize = options.textureSize;
+		this.useShaderCopy = options.useShaderCopy;
 
 		// local variables
 		this.batchedMesh = null;
@@ -244,7 +249,13 @@ export class BatchedTilesPlugin {
 		// reset state
 		renderer.setRenderTarget( currentRenderTarget );
 		_textureRenderQuad.material.map = null;
-		texture.dispose();
+
+		// don't dispose the shared white fallback texture
+		if ( texture !== _whiteTex ) {
+
+			texture.dispose();
+
+		}
 
 	}
 
@@ -267,10 +278,34 @@ export class BatchedTilesPlugin {
 
 			const newArrayTarget = new WebGLArrayRenderTarget( arrayTarget.width, arrayTarget.height, targetDepth );
 			Object.assign( newArrayTarget.texture, textureOptions );
-
-			// copy the contents
 			renderer.initRenderTarget( newArrayTarget );
-			renderer.copyTextureToTexture( arrayTarget.texture, newArrayTarget.texture );
+
+			if ( this.useShaderCopy ) {
+
+				// copy each layer from the old array to the new one via rendering.
+				// avoids copyTextureToTexture / copyTexSubImage3D which has driver
+				// issues on some mobile GPUs causing all layers to read from layer 0.
+				const currentRenderTarget = renderer.getRenderTarget();
+				const material = layerCopyQuad.material;
+				material.uniforms.srcTexture.value = arrayTarget.texture;
+
+				for ( let i = 0; i < arrayTarget.depth; i ++ ) {
+
+					material.uniforms.layer.value = i;
+					renderer.setRenderTarget( newArrayTarget, i );
+					layerCopyQuad.render( renderer );
+
+				}
+
+				material.uniforms.srcTexture.value = null;
+				renderer.setRenderTarget( currentRenderTarget );
+
+			} else {
+
+				// fast GPU-to-GPU copy via copyTexSubImage3D
+				renderer.copyTextureToTexture( arrayTarget.texture, newArrayTarget.texture );
+
+			}
 
 			// replace the old array target
 			arrayTarget.dispose();
