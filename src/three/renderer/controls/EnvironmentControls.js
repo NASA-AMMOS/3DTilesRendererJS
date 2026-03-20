@@ -102,6 +102,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.domElement = null;
 		this.camera = null;
 		this.scene = null;
+		this.pivotScene = null;
 		this.tilesRenderer = null;
 
 		// settings
@@ -257,6 +258,16 @@ export class EnvironmentControls extends EventDispatcher {
 	}
 
 	/**
+	 * Sets the scene for the pivot mesh.
+	 * @param {Object3D} pivotScene
+	 */
+	setPivotScene( pivotScene ) {
+
+		this.pivotScene = pivotScene;
+
+	}
+
+	/**
 	 * Sets the camera to control.
 	 * @param {Camera} camera
 	 */
@@ -335,6 +346,7 @@ export class EnvironmentControls extends EventDispatcher {
 				pivotMesh,
 				pointerTracker,
 				scene,
+				pivotScene,
 				pivotPoint,
 				enabled,
 			} = this;
@@ -396,7 +408,7 @@ export class EnvironmentControls extends EventDispatcher {
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.visible = pointerTracker.isPointerTouch() ? false : enabled;
 					pivotMesh.updateMatrixWorld();
-					scene.add( pivotMesh );
+					( pivotScene || scene ).add( pivotMesh );
 
 				} else if ( pointerTracker.isLeftClicked() ) {
 
@@ -406,7 +418,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.updateMatrixWorld();
-					scene.add( pivotMesh );
+					( pivotScene || scene ).add( pivotMesh );
 
 				}
 
