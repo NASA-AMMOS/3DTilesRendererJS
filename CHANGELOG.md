@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.24] - Unreleased
+### Changed
+- EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
+
 ## [0.4.23] - 2026-03-18
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
