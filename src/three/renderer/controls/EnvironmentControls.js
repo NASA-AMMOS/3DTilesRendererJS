@@ -390,23 +390,23 @@ export class EnvironmentControls extends EventDispatcher {
 					pointerTracker.isLeftClicked() && e.shiftKey
 				) {
 
-					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
-
 					pivotPoint.copy( hit.point );
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.visible = pointerTracker.isPointerTouch() ? false : enabled;
 					pivotMesh.updateMatrixWorld();
 					scene.add( pivotMesh );
 
+					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
+
 				} else if ( pointerTracker.isLeftClicked() ) {
 
-					// if the clicked point is coming from below the plane then don't perform the drag
-					this.setState( DRAG );
 					pivotPoint.copy( hit.point );
-
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.updateMatrixWorld();
 					scene.add( pivotMesh );
+
+					// if the clicked point is coming from below the plane then don't perform the drag
+					this.setState( DRAG );
 
 				}
 
