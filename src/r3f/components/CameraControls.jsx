@@ -9,7 +9,7 @@ import { useApplyRefs } from '../utilities/useApplyRefs.js';
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
-	const { controlsConstructor, domElement, scene, pivotScene, camera, ellipsoid, ellipsoidFrame, ...rest } = props;
+	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, ...rest } = props;
 
 	const [ defaultCamera ] = useThree( state => [ state.camera ] );
 	const [ gl ] = useThree( state => [ state.gl ] );
@@ -21,7 +21,6 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	const ellipsoidContext = useContext( EllipsoidContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
-	const appliedPivotScene = pivotScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
 	const appliedEllipsoid = ellipsoid || ellipsoidContext?.ellipsoid || null;
 	const appliedEllipsoidFrame = ellipsoidFrame || ellipsoidContext?.frame || null;
@@ -66,13 +65,6 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 		controls.setScene( appliedScene );
 
 	}, [ controls, appliedScene ] );
-
-	// assign the pivot scene
-	useEffect( () => {
-
-		controls.setPivotScene( appliedPivotScene );
-
-	}, [ controls, appliedPivotScene ] );
 
 	// assign the tiles renderer
 	useEffect( () => {

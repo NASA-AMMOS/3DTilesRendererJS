@@ -6,7 +6,6 @@ import type { TilesRenderer } from './TilesRenderer.jsx';
 interface ControlsBaseProps {
 	domElement?: HTMLCanvasElement | null;
 	scene?: Object3D | null;
-	pivotScene?: Object3D | null;
 	camera?: Camera | null;
 	tilesRenderer?: typeof TilesRenderer | null;
 }

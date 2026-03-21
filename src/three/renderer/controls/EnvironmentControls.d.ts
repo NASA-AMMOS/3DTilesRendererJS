@@ -14,7 +14,6 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	readonly domElement: HTMLElement;
 	readonly camera: Camera;
 	readonly scene: Object3D;
-	readonly pivotScene: Object3D | null;
 	readonly tilesRenderer: TilesRenderer;
 
 	// settings
@@ -44,7 +43,6 @@ export class EnvironmentControls extends EventDispatcher<EnvironmentControlsEven
 	);
 
 	setScene ( scene: Object3D | null ): void;
-	setPivotScene ( pivotScene: Object3D | null ): void;
 	setCamera ( camera: Camera | null ): void;
 	setTilesRenderer( tilesRenderer: TilesRenderer | null ): void;
 
