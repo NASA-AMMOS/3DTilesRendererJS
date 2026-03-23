@@ -30,7 +30,7 @@ npm install 3d-tiles-renderer --save
 
 | Package | Reference |
 | --- | --- |
-| `3d-tiles-renderer/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
+| `3d-tiles-renderer/three/plugins` | [Plugin Guide](./src/three/plugins/README.md) · [API Reference](./src/three/plugins/API.md) |
 | `3d-tiles-renderer/core/plugins` | [API Reference](./src/core/plugins/API.md) |
 
 # Examples
