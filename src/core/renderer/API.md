@@ -127,6 +127,66 @@ parse( buffer: ArrayBuffer ): any
 Parses a raw buffer into a tile result object. Must be implemented by subclasses.
 
 
+## CMPTLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the CMPT (Composite) tile format. Parses the CMPT binary structure
+and returns the individual inner tile buffers with their format types. Extend this
+class to integrate CMPT loading into a specific rendering engine.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Object
+```
+
+Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
+
+
+## I3DMLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the I3DM (Instanced 3D Model) tile format. Parses the I3DM binary
+structure and extracts the embedded GLB bytes (or fetches an external GLTF) along
+with batch and feature tables. Extend this class to integrate I3DM loading into a
+specific rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
+```
+
+Parses an I3DM buffer and returns the raw tile data.
+
+
+## PNTSLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the PNTS (Point Cloud) tile format. Parses the PNTS binary
+structure and extracts the feature and batch tables containing point positions,
+colors, and normals. Extend this class to integrate PNTS loading into a specific
+rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
+```
+
+Parses a PNTS buffer and returns the raw tile data.
+
+
 ## B3DMLoaderBase
 
 _extends [`LoaderBase`](#loaderbase)_
@@ -277,45 +337,6 @@ getPropertyArray( key: string ): Array | TypedArray | null
 
 Returns the array of values for the given property key across all features. Returns
 `null` if the key is not in the table.
-
-
-## CMPTLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-Base loader for the CMPT (Composite) tile format. Parses the CMPT binary structure
-and returns the individual inner tile buffers with their format types. Extend this
-class to integrate CMPT loading into a specific rendering engine.
-
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Object
-```
-
-Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
-
-
-## I3DMLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-Base loader for the I3DM (Instanced 3D Model) tile format. Parses the I3DM binary
-structure and extracts the embedded GLB bytes (or fetches an external GLTF) along
-with batch and feature tables. Extend this class to integrate I3DM loading into a
-specific rendering engine.
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
-```
-
-Parses an I3DM buffer and returns the raw tile data.
 
 
 ## LRUCache
@@ -510,27 +531,6 @@ scheduleUnload(): void
 ```
 
 Schedules `unloadUnusedContent` to run asynchronously via microtask.
-
-
-## PNTSLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-Base loader for the PNTS (Point Cloud) tile format. Parses the PNTS binary
-structure and extracts the feature and batch tables containing point positions,
-colors, and normals. Extend this class to integrate PNTS loading into a specific
-rendering engine.
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
-```
-
-Parses a PNTS buffer and returns the raw tile data.
 
 
 ## PriorityQueue

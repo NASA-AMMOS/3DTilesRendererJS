@@ -18,6 +18,63 @@ constructor(
 )
 ```
 
+## OBBRegion
+
+_extends [`BaseRegion`](#baseregion)_
+
+An oriented bounding-box load region. Only tiles that intersect `obb` are loaded.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		obb?: OBB,
+		errorTarget = 10: number,
+		mask = false: boolean,
+	}
+)
+```
+
+## RayRegion
+
+_extends [`BaseRegion`](#baseregion)_
+
+A ray-based load region. Only tiles that intersect `ray` are loaded.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		ray?: Ray,
+		errorTarget = 10: number,
+		mask = false: boolean,
+	}
+)
+```
+
+## SphereRegion
+
+_extends [`BaseRegion`](#baseregion)_
+
+A spherical load region. Only tiles that intersect `sphere` are loaded.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		sphere?: Sphere,
+		errorTarget = 10: number,
+		mask = false: boolean,
+	}
+)
+```
+
 ## BatchedTilesPlugin
 
 Plugin that uses three.js `BatchedMesh` to limit the number of draw calls required and
@@ -144,25 +201,6 @@ constructor(
 )
 ```
 
-## DeepZoomImagePlugin
-
-_extends [`ImageFormatPlugin`](#imageformatplugin)_
-
-Plugin that renders a Deep Zoom Image (DZI) as a 3D Tiles-compatible tiled texture.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		center = false: boolean,
-		useRecommendedSettings = true: boolean,
-	}
-)
-```
-
 ## EllipsoidProjectionTilesPlugin
 
 _extends [`ImageFormatPlugin`](#imageformatplugin)_
@@ -179,6 +217,112 @@ constructor(
 	{
 		shape = 'planar': string,
 		endCaps = true: boolean,
+	}
+)
+```
+
+## TMSTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
+Plugin that renders TMS (Tile Map Service) image tiles projected onto 3D tile geometry.
+See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification).
+
+> [!NOTE]
+> Most TMS generation implementations (including CesiumJS and Ion) do not correctly support the Origin tag and tile index offsets.
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+	}
+)
+```
+
+## WMSTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
+Plugin that renders WMS (Web Map Service) image tiles projected onto 3D tile geometry.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		layer?: string,
+		crs?: string,
+		format?: string,
+		tileDimension?: number,
+		styles?: string,
+		version?: string,
+	}
+)
+```
+
+## WMTSTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
+Plugin that renders WMTS (Web Map Tile Service) image tiles projected onto 3D tile
+geometry. Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide
+a URL template directly.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		capabilities?: Object,
+		layer?: string,
+		tileMatrixSet?: string,
+		style?: string,
+		dimensions?: Object,
+	}
+)
+```
+
+## XYZTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
+Plugin that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) projected onto
+3D tile geometry. See the [Slippy map tilenames specification](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		levels?: number,
+		tileDimension?: number,
+		projection?: string,
+	}
+)
+```
+
+## DeepZoomImagePlugin
+
+_extends [`ImageFormatPlugin`](#imageformatplugin)_
+
+Plugin that renders a Deep Zoom Image (DZI) as a 3D Tiles-compatible tiled texture.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		center = false: boolean,
+		useRecommendedSettings = true: boolean,
 	}
 )
 ```
@@ -365,25 +509,6 @@ dispose(): void
 Disposes all textures used by this instance.
 
 
-## OBBRegion
-
-_extends [`BaseRegion`](#baseregion)_
-
-An oriented bounding-box load region. Only tiles that intersect `obb` are loaded.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		obb?: OBB,
-		errorTarget = 10: number,
-		mask = false: boolean,
-	}
-)
-```
-
 ## QuantizedMeshPlugin
 
 Plugin that adds support for the Cesium quantized-mesh terrain format. Fetches the
@@ -401,25 +526,6 @@ constructor(
 		smoothSkirtNormals = true: boolean,
 		generateNormals = true: boolean,
 		solid = false: boolean,
-	}
-)
-```
-
-## RayRegion
-
-_extends [`BaseRegion`](#baseregion)_
-
-A ray-based load region. Only tiles that intersect `ray` are loaded.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		ray?: Ray,
-		errorTarget = 10: number,
-		mask = false: boolean,
 	}
 )
 ```
@@ -466,25 +572,6 @@ transformLatLonHeightToOrigin(
 Centers the tileset such that the given coordinates are positioned at the origin
 with X facing west and Z facing north.
 
-
-## SphereRegion
-
-_extends [`BaseRegion`](#baseregion)_
-
-A spherical load region. Only tiles that intersect `sphere` are loaded.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		sphere?: Sphere,
-		errorTarget = 10: number,
-		mask = false: boolean,
-	}
-)
-```
 
 ## StructuralMetadata
 
@@ -700,26 +787,6 @@ constructor(
 )
 ```
 
-## TMSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders TMS (Tile Map Service) image tiles projected onto 3D tile geometry.
-See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification).
-
-> [!NOTE]
-> Most TMS generation implementations (including CesiumJS and Ion) do not correctly support the Origin tag and tile index offsets.
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-	}
-)
-```
-
 ## UnloadTilesPlugin
 
 Plugin that unloads geometry, textures, and materials of any given tile when its
@@ -782,29 +849,6 @@ in radians.
 
 ```js
 constructor( manager: LoadingManager )
-```
-
-## WMSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders WMS (Web Map Service) image tiles projected onto 3D tile geometry.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		layer?: string,
-		crs?: string,
-		format?: string,
-		tileDimension?: number,
-		styles?: string,
-		version?: string,
-	}
-)
 ```
 
 ## WMTSCapabilitiesLoader
@@ -936,50 +980,6 @@ This method:
 - Configures the tiling scheme with proper bounds and tile sizes
 - Constructs the final URL template
 
-
-## WMTSTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders WMTS (Web Map Tile Service) image tiles projected onto 3D tile
-geometry. Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide
-a URL template directly.
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		capabilities?: Object,
-		layer?: string,
-		tileMatrixSet?: string,
-		style?: string,
-		dimensions?: Object,
-	}
-)
-```
-
-## XYZTilesPlugin
-
-_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
-
-Plugin that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) projected onto
-3D tile geometry. See the [Slippy map tilenames specification](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		url?: string,
-		levels?: number,
-		tileDimension?: number,
-		projection?: string,
-	}
-)
-```
 
 ## FeatureInfo
 
