@@ -6,7 +6,7 @@
 ### ENU_FRAME
 
 ```js
-ENU_FRAME: Frames
+ENU_FRAME: number
 ```
 
 Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
@@ -15,7 +15,7 @@ Y pointing north, and Z pointing up (away from the ellipsoid surface).
 ### CAMERA_FRAME
 
 ```js
-CAMERA_FRAME: Frames
+CAMERA_FRAME: number
 ```
 
 Frame constant for a camera-convention frame relative to the ENU frame, oriented with
@@ -24,13 +24,204 @@ Frame constant for a camera-convention frame relative to the ENU frame, oriented
 ### OBJECT_FRAME
 
 ```js
-OBJECT_FRAME: Frames
+OBJECT_FRAME: number
 ```
 
 Frame constant for an object-convention frame relative to the ENU frame, oriented with
 "+Y" up and "+Z" forward (matching three.js object conventions).
 
+## B3DMLoader
+
+_extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
+
+Loader for the legacy 3D Tiles Batched 3D Model (b3dm) format. Parses the b3dm
+container and returns a GLTF result with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable}>
+```
+
+Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
+tile metadata. Both `model` and `model.scene` receive the extra fields.
+
+
+## CameraTransitionManager
+
+_extends `EventDispatcher`_
+
+Manages an animated transition between a perspective and an orthographic camera.
+During the transition a blended `transitionCamera` is used. Fires events for the
+transition lifecycle and the active camera change.
+
+
+### .animating
+
+```js
+readonly animating: boolean
+```
+
+Whether a transition animation is currently in progress.
+
+
+### .alpha
+
+```js
+readonly alpha: number
+```
+
+Transition progress from 0 (at perspective) to 1 (at orthographic).
+
+
+### .camera
+
+```js
+readonly camera: Camera
+```
+
+The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
+blended `transitionCamera` depending on the current transition state.
+
+
+### .mode
+
+```js
+mode: string
+```
+
+The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
+animation. Use `toggle()` to animate the transition.
+
+
+### .orthographicPositionalZoom
+
+```js
+orthographicPositionalZoom: boolean
+```
+
+When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
+
+
+### .orthographicOffset
+
+```js
+orthographicOffset: number
+```
+
+Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
+
+
+### .fixedPoint
+
+```js
+fixedPoint: Vector3
+```
+
+World-space point that remains visually fixed during the transition.
+
+
+### .duration
+
+```js
+duration: number
+```
+
+Duration of the animated transition in milliseconds. Default is 200.
+
+
+### .autoSync
+
+```js
+autoSync: boolean
+```
+
+When true, cameras are synced automatically before each `update` call. Default is true.
+
+
+### .easeFunction
+
+```js
+easeFunction: function
+```
+
+Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
+
+
+### .constructor
+
+```js
+constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
+```
+
+### .toggle
+
+```js
+toggle(): void
+```
+
+Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
+
+
+### .update
+
+```js
+update( deltaTime: number ): void
+```
+
+Advances the transition animation and updates the active camera. Must be called each frame.
+
+
+### .syncCameras
+
+```js
+syncCameras(): void
+```
+
+Synchronises the non-active camera so that both cameras represent the same viewpoint.
+Called automatically by `update` when `autoSync` is true.
+
+
+## CMPTLoader
+
+_extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
+
+Loader for the legacy 3D Tiles Composite (cmpt) format. Parses a cmpt container
+that bundles multiple b3dm, i3dm, and pnts tiles, returning a scene Group containing
+all sub-tile scenes.
+
+
+### .constructor
+
+```js
+constructor( manager: LoadingManager )
+```
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Promise<{scene: Group, tiles: Array}>
+```
+
+Parses a cmpt buffer and resolves to an object containing a `Group` with all
+sub-tile scenes added as children, and the individual sub-tile results.
+
+
 ## Ellipsoid
+
+Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale
+surfaces such as the Earth (see [WGS84_ELLIPSOID](WGS84_ELLIPSOID)). All geographic coordinates use
+latitude and longitude in radians.
 
 
 ### .name
@@ -265,184 +456,12 @@ clone(): Ellipsoid
 Returns a new Ellipsoid with the same radius as this one.
 
 
-## B3DMLoader
-
-_extends [`B3DMLoaderBase`](../../core/renderer/API.md#b3dmloaderbase)_
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable}>
-```
-
-Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
-tile metadata. Both `model` and `model.scene` receive the extra fields.
-
-
-## CameraTransitionManager
-
-_extends `EventDispatcher`_
-
-
-### .animating
-
-```js
-readonly animating: boolean
-```
-
-Whether a transition animation is currently in progress.
-
-
-### .alpha
-
-```js
-readonly alpha: number
-```
-
-Transition progress from 0 (at perspective) to 1 (at orthographic).
-
-
-### .camera
-
-```js
-readonly camera: Camera
-```
-
-The currently active camera. Returns `perspectiveCamera`, `orthographicCamera`, or the
-blended `transitionCamera` depending on the current transition state.
-
-
-### .mode
-
-```js
-mode: string
-```
-
-The target camera mode. Set to `'perspective'` or `'orthographic'` to jump instantly without
-animation. Use `toggle()` to animate the transition.
-
-
-### .orthographicPositionalZoom
-
-```js
-orthographicPositionalZoom: boolean
-```
-
-When true, the orthographic camera position is offset backwards along the view direction so it does not clip into terrain. Default is true.
-
-
-### .orthographicOffset
-
-```js
-orthographicOffset: number
-```
-
-Distance the orthographic camera is pushed back when `orthographicPositionalZoom` is true. Default is 50.
-
-
-### .fixedPoint
-
-```js
-fixedPoint: Vector3
-```
-
-World-space point that remains visually fixed during the transition.
-
-
-### .duration
-
-```js
-duration: number
-```
-
-Duration of the animated transition in milliseconds. Default is 200.
-
-
-### .autoSync
-
-```js
-autoSync: boolean
-```
-
-When true, cameras are synced automatically before each `update` call. Default is true.
-
-
-### .easeFunction
-
-```js
-easeFunction: function
-```
-
-Easing function applied to the raw transition alpha. Receives and returns a value in [0, 1]. Default is the identity function.
-
-
-### .constructor
-
-```js
-constructor( perspectiveCamera: PerspectiveCamera, orthographicCamera: OrthographicCamera )
-```
-
-### .toggle
-
-```js
-toggle(): void
-```
-
-Begins an animated transition to the opposite camera mode. Dispatches a `'toggle'` event.
-
-
-### .update
-
-```js
-update( deltaTime: number ): void
-```
-
-Advances the transition animation and updates the active camera. Must be called each frame.
-
-
-### .syncCameras
-
-```js
-syncCameras(): void
-```
-
-Synchronises the non-active camera so that both cameras represent the same viewpoint.
-Called automatically by `update` when `autoSync` is true.
-
-
-## CMPTLoader
-
-_extends [`CMPTLoaderBase`](../../core/renderer/API.md#cmptloaderbase)_
-
-
-### .constructor
-
-```js
-constructor( manager: LoadingManager )
-```
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Promise<{scene: Group, tiles: Array}>
-```
-
-Parses a cmpt buffer and resolves to an object containing a `Group` with all
-sub-tile scenes added as children, and the individual sub-tile results.
-
-
 ## EnvironmentControls
 
 _extends `EventDispatcher`_
+
+Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
+right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
 
 
 ### .enabled
@@ -701,6 +720,9 @@ Disposes of event listeners and internal resources. Calls `detach` if currently 
 
 _extends [`EnvironmentControls`](../../r3f/API.md#environmentcontrols)_
 
+Camera controls for navigating a globe-shaped tileset. Extends EnvironmentControls with
+ellipsoid-aware rotation, globe inertia, and automatic near/far plane adjustment.
+
 
 ### .ellipsoidFrame
 
@@ -811,6 +833,10 @@ Returns the distance from the camera to the center of the ellipsoid.
 
 _extends [`I3DMLoaderBase`](../../core/renderer/API.md#i3dmloaderbase)_
 
+Loader for the legacy 3D Tiles Instanced 3D Model (i3dm) format. Parses the i3dm
+container and returns instanced meshes with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
 
 ### .constructor
 
@@ -835,6 +861,10 @@ metadata attached to both `model` and `model.scene`.
 
 _extends [`PNTSLoaderBase`](../../core/renderer/API.md#pntsloaderbase)_
 
+Loader for the legacy 3D Tiles Point Cloud (pnts) format. Parses the pnts container
+and returns a three.js Points object with `batchTable` and `featureTable` attached
+to the resolved scene object.
+
 
 ### .constructor
 
@@ -857,6 +887,10 @@ three.js `Points` scene with metadata attached.
 ## TilesRenderer
 
 _extends [`TilesRendererBase`](../../core/renderer/API.md#tilesrendererbase)_
+
+Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+camera management, three.js scene integration, and GPU-accelerated tile loading.
+Add `tiles.group` to your scene and call `tiles.update()` each frame.
 
 
 ### .autoDisableRendererCulling
@@ -1000,4 +1034,24 @@ deleteCamera( camera: Camera ): boolean
 ```
 
 Unregisters a camera from the renderer.
+
+
+## Frames
+
+_extends `ENU_FRAME`_
+
+
+## Functions
+
+### decodeOctNormal
+
+```js
+decodeOctNormal( x: number, y: number, target: Vector3 ): void
+```
+
+Decode an octahedron-encoded normal (as a pair of 8-bit unsigned numbers) into a Vector3.
+
+Resources:
+- https://stackoverflow.com/a/74745666/2704779
+- https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 

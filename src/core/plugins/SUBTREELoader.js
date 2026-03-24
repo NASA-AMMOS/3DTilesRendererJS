@@ -5,9 +5,9 @@
 import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
 /** @typedef { {
- * 	constant?: boolean,
+ * 	constant: boolean=,
  * 	lengthBits: number,
- * 	bitstream?: Uint8Array
+ * 	bitstream: Uint8Array=
  * } } ParsedBitstream
  * */
 

@@ -77,7 +77,78 @@ WGS84_HEIGHT: number
 
 WGS84 ellipsoid height offset (difference between equatorial and polar radii) in meters.
 
+## LoaderBase
+
+Base class for all 3D Tiles content loaders. Handles fetching and parsing tile content.
+
+
+### .fetchOptions
+
+```js
+fetchOptions: Object
+```
+
+Options passed to `fetch` when loading tile content.
+
+
+### .workingPath
+
+```js
+workingPath: string
+```
+
+Base URL used to resolve relative external URLs.
+
+
+### .loadAsync
+
+```js
+loadAsync( url: string ): Promise<any>
+```
+
+Fetches and parses content from the given URL.
+
+
+### .resolveExternalURL
+
+```js
+resolveExternalURL( url: string ): string
+```
+
+Resolves a relative URL against `workingPath`.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): any
+```
+
+Parses a raw buffer into a tile result object. Must be implemented by subclasses.
+
+
+## B3DMLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the B3DM (Batched 3D Model) tile format. Parses the B3DM binary
+structure and extracts the embedded GLB bytes along with batch and feature tables.
+Extend this class to integrate B3DM loading into a specific rendering engine.
+
+
+### .parse
+
+```js
+parse( buffer: ArrayBuffer ): Object
+```
+
+Parses a B3DM buffer and returns the raw tile data.
+
+
 ## FeatureTable
+
+Parses a 3D Tiles feature table from a binary buffer, providing access to
+per-feature properties stored as JSON scalars or typed binary arrays.
 
 
 ### .buffer
@@ -155,55 +226,102 @@ getBuffer( byteOffset: number, byteLength: number ): ArrayBuffer
 Returns a slice of the binary body at the given offset and length.
 
 
-## LoaderBase
+## BatchTable
+
+_extends [`FeatureTable`](#featuretable)_
+
+Extends FeatureTable to provide indexed access to per-feature batch properties,
+as found in B3DM and PNTS tiles.
 
 
-### .fetchOptions
-
-```js
-fetchOptions: Object
-```
-
-Options passed to `fetch` when loading tile content.
-
-
-### .workingPath
+### .count
 
 ```js
-workingPath: string
+count: number
 ```
 
-Base URL used to resolve relative external URLs.
+Total number of features in the batch.
 
 
-### .loadAsync
+### .extensions
 
 ```js
-loadAsync( url: string ): Promise<any>
+extensions: Object
 ```
 
-Fetches and parses content from the given URL.
+Parsed extension objects keyed by extension name.
 
 
-### .resolveExternalURL
+### .constructor
 
 ```js
-resolveExternalURL( url: string ): string
+constructor( buffer: ArrayBuffer, count: number, start: number, headerLength: number, binLength: number )
 ```
 
-Resolves a relative URL against `workingPath`.
+### .getDataFromId
+
+```js
+getDataFromId( id: number, target = {}: Object ): Object
+```
+
+Returns an object with all properties of the batch table and its extensions for the
+given feature id. A `target` object can be specified to store the result. Throws if
+`id` is out of bounds.
+
+
+### .getPropertyArray
+
+```js
+getPropertyArray( key: string ): Array | TypedArray | null
+```
+
+Returns the array of values for the given property key across all features. Returns
+`null` if the key is not in the table.
+
+
+## CMPTLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the CMPT (Composite) tile format. Parses the CMPT binary structure
+and returns the individual inner tile buffers with their format types. Extend this
+class to integrate CMPT loading into a specific rendering engine.
 
 
 ### .parse
 
 ```js
-parse( buffer: ArrayBuffer ): any
+parse( buffer: ArrayBuffer ): Object
 ```
 
-Parses a raw buffer into a tile result object. Must be implemented by subclasses.
+Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
+
+
+## I3DMLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the I3DM (Instanced 3D Model) tile format. Parses the I3DM binary
+structure and extracts the embedded GLB bytes (or fetches an external GLTF) along
+with batch and feature tables. Extend this class to integrate I3DM loading into a
+specific rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
+```
+
+Parses an I3DM buffer and returns the raw tile data.
 
 
 ## LRUCache
+
+Least-recently-used cache for managing tile content lifecycle. Tracks which items
+are in use each frame and evicts unused items when the cache exceeds its size limits.
 
 
 ### .unloadPriorityCallback
@@ -394,7 +512,31 @@ scheduleUnload(): void
 Schedules `unloadUnusedContent` to run asynchronously via microtask.
 
 
+## PNTSLoaderBase
+
+_extends [`LoaderBase`](#loaderbase)_
+
+Base loader for the PNTS (Point Cloud) tile format. Parses the PNTS binary
+structure and extracts the feature and batch tables containing point positions,
+colors, and normals. Extend this class to integrate PNTS loading into a specific
+rendering engine.
+
+
+### .parse
+
+```js
+parse(
+	buffer: ArrayBuffer
+): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
+```
+
+Parses a PNTS buffer and returns the raw tile data.
+
+
 ## PriorityQueue
+
+Priority queue for scheduling async work with a concurrency limit. Items are
+sorted by `priorityCallback` and dispatched up to `maxJobs` at a time.
 
 
 ### .maxJobs
@@ -501,7 +643,19 @@ scheduleJobRun(): void
 Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
 
 
+## PriorityQueueItemRemovedError
+
+_extends `Error`_
+
+Error thrown when a queued item's promise is rejected because the item was removed
+before its callback could run.
+
+
 ## TilesRendererBase
+
+Base class for 3D Tiles renderers. Manages tile loading, caching, traversal,
+and a plugin system for extending rendering behavior. Engine-specific renderers
+extend this class to add camera projection, scene management, and tile display.
 
 
 ### events
@@ -717,7 +871,7 @@ Based in part on [Cesium Native tile selection](https://cesium.com/learn/cesium-
 Default is `false`, which uses the previous approach of loading all parent and sibling
 tiles for guaranteed smooth transitions.
 
-> [!WARN]
+> [!WARNING]
 > Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
 > dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
 > `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
@@ -865,121 +1019,6 @@ removeEventListener( name: string, callback: ( event: Object ) => void ): void
 ```
 
 Removes a previously registered event listener.
-
-
-## B3DMLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Object
-```
-
-Parses a B3DM buffer and returns the raw tile data.
-
-
-## BatchTable
-
-_extends [`FeatureTable`](#featuretable)_
-
-
-### .count
-
-```js
-count: number
-```
-
-Total number of features in the batch.
-
-
-### .extensions
-
-```js
-extensions: Object
-```
-
-Parsed extension objects keyed by extension name.
-
-
-### .constructor
-
-```js
-constructor( buffer: ArrayBuffer, count: number, start: number, headerLength: number, binLength: number )
-```
-
-### .getDataFromId
-
-```js
-getDataFromId( id: number, target = {}: Object ): Object
-```
-
-Returns an object with all properties of the batch table and its extensions for the
-given feature id. A `target` object can be specified to store the result. Throws if
-`id` is out of bounds.
-
-
-### .getPropertyArray
-
-```js
-getPropertyArray( key: string ): Array | TypedArray | null
-```
-
-Returns the array of values for the given property key across all features. Returns
-`null` if the key is not in the table.
-
-
-## CMPTLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse( buffer: ArrayBuffer ): Object
-```
-
-Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
-
-
-## I3DMLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string}>
-```
-
-Parses an I3DM buffer and returns the raw tile data.
-
-
-## PNTSLoaderBase
-
-_extends [`LoaderBase`](#loaderbase)_
-
-
-### .parse
-
-```js
-parse(
-	buffer: ArrayBuffer
-): Promise<{version: string, featureTable: FeatureTable, batchTable: BatchTable}>
-```
-
-Parses a PNTS buffer and returns the raw tile data.
-
-
-## PriorityQueueItemRemovedError
-
-_extends `Error`_
 
 
 ## Tile
@@ -1281,3 +1320,14 @@ visible: boolean
 ```
 
 Whether this tile is currently visible (loaded, in frustum, meets SSE).
+
+## Functions
+
+### getUrlExtension
+
+```js
+getUrlExtension( url: string ): string
+```
+
+Returns the file extension of the path component of a URL
+

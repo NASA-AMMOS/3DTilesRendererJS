@@ -198,16 +198,8 @@ for ( const { entry, jsdoc } of results ) {
 function runJsDoc( source ) {
 
 	// Default maxBuffer is 1 MB; large source directories can exceed that, so raise it to 32 MB.
-	// jsdoc may exit non-zero on type-expression warnings while still writing valid JSON to stdout.
-	try {
-
-		return JSON.parse( execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString() );
-
-	} catch ( e ) {
-
-		return JSON.parse( e.stdout.toString() );
-
-	}
+	const result = execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString();
+	return JSON.parse( result );
 
 }
 

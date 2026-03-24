@@ -40,7 +40,7 @@ export const CAMERA_FRAME = 1;
  */
 export const OBJECT_FRAME = 2;
 
-/** @typedef { typeof ENU_FRAME | typeof CAMERA_FRAME | typeof OBJECT_FRAME } Frames */
+/** @typedef { ENU_FRAME | CAMERA_FRAME | OBJECT_FRAME } Frames */
 
 /**
  * Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale
