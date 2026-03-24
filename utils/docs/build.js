@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { renderClass, renderComponent, renderTypedef, renderConstants, toAnchor, resolveLinks } from './RenderDocsUtils.js';
+import { renderClass, renderComponent, renderTypedef, renderConstants, renderFunctions, toAnchor, resolveLinks } from './RenderDocsUtils.js';
 import { findRootDir } from '../CommandUtils.js';
 
 const ROOT_DIR = findRootDir();
@@ -51,6 +51,7 @@ const isObjectTypedef = d => d.kind === 'typedef' && d.type.names[ 0 ] !== 'func
 const isCallbackTypedef = d => d.kind === 'typedef' && d.type.names[ 0 ] === 'function';
 const isReactComponent = d => ( d.kind === 'function' || d.kind === 'constant' ) && d.tags && d.tags.some( t => t.title === 'component' );
 const isConstant = d => d.kind === 'constant' && ! d.memberof && ! isReactComponent( d );
+const isFunction = d => d.kind === 'function' && ! d.memberof && ! isReactComponent( d );
 
 // Only classes, non-callback typedefs, and React components get sections (and therefore anchors) in the output.
 const typeRegistry = {}; // name -> output path
@@ -97,18 +98,9 @@ for ( const { entry, jsdoc } of results ) {
 
 	};
 
-	// Sort classes so base classes appear before subclasses
-	const classes = jsdoc
-		.filter( d => isClass( d ) )
-		.sort( ( a, b ) => {
-
-			const aIsBase = ! a.augments || a.augments.length === 0;
-			const bIsBase = ! b.augments || b.augments.length === 0;
-			if ( aIsBase && ! bIsBase ) return - 1;
-			if ( ! aIsBase && bIsBase ) return 1;
-			return a.name.localeCompare( b.name );
-
-		} );
+	// Sort classes topologically so every parent appears before its subclasses.
+	// Within the same "depth level" classes are sorted alphabetically.
+	const classes = topologicalSortClasses( jsdoc.filter( d => isClass( d ) ) );
 
 	// collect @callback typedefs into a map for inline substitution
 	const callbackMap = {};
@@ -140,10 +132,8 @@ for ( const { entry, jsdoc } of results ) {
 		.filter( d => isReactComponent( d ) )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
 
-	// sort constants by source line order
-	const constants = jsdoc
-		.filter( d => isConstant( d ) )
-		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+	const constsByGroup = groupByTag( jsdoc, isConstant, 'Constants' );
+	const funcsByGroup = groupByTag( jsdoc, isFunction, 'Functions' );
 
 	// cache all fields by associated class name
 	const classMembers = {};
@@ -166,7 +156,11 @@ for ( const { entry, jsdoc } of results ) {
 	// construct the readme files
 	const sections = [ `# ${ entry.title }`, '' ];
 
-	sections.push( renderConstants( constants, callbackMap ) );
+	for ( const [ groupName, consts ] of Object.entries( constsByGroup ) ) {
+
+		sections.push( renderConstants( consts, groupName, callbackMap ) );
+
+	}
 
 	for ( const component of components ) {
 
@@ -186,6 +180,12 @@ for ( const { entry, jsdoc } of results ) {
 
 	}
 
+	for ( const [ groupName, funcs ] of Object.entries( funcsByGroup ) ) {
+
+		sections.push( renderFunctions( funcs, groupName, callbackMap ) );
+
+	}
+
 	const header = '<!-- This file is generated automatically. Do not edit it directly. -->\n';
 	const output = header + resolveLinks( sections.join( '\n' ) );
 	fs.writeFileSync( path.join( ROOT_DIR, entry.output ), output );
@@ -198,8 +198,65 @@ for ( const { entry, jsdoc } of results ) {
 function runJsDoc( source ) {
 
 	// Default maxBuffer is 1 MB; large source directories can exceed that, so raise it to 32 MB.
-	const result = execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString();
-	return JSON.parse( result );
+	// jsdoc may exit non-zero on type-expression warnings while still writing valid JSON to stdout.
+	try {
+
+		return JSON.parse( execSync( `npx jsdoc -X -r "${ source }"`, { maxBuffer: 32 * 1024 * 1024 } ).toString() );
+
+	} catch ( e ) {
+
+		return JSON.parse( e.stdout.toString() );
+
+	}
+
+}
+
+function groupByTag( docs, predicate, defaultGroup ) {
+
+	const groups = {};
+	for ( const d of docs.filter( predicate ).sort( ( a, b ) => a.meta.lineno - b.meta.lineno ) ) {
+
+		const groupTag = d.tags && d.tags.find( t => t.title === 'section' );
+		const groupName = groupTag ? groupTag.value : defaultGroup;
+		if ( ! groups[ groupName ] ) groups[ groupName ] = [];
+		groups[ groupName ].push( d );
+
+	}
+
+	return groups;
+
+}
+
+// Topological sort: every parent class appears before its subclasses.
+// Within the same generation classes are ordered alphabetically.
+function topologicalSortClasses( classes ) {
+
+	const byName = Object.fromEntries( classes.map( c => [ c.name, c ] ) );
+	const result = [];
+	const visited = new Set();
+
+	function visit( cls ) {
+
+		if ( visited.has( cls.name ) ) return;
+		visited.add( cls.name );
+
+		// Visit parent(s) first
+		for ( const parent of ( cls.augments || [] ) ) {
+
+			if ( byName[ parent ] ) visit( byName[ parent ] );
+
+		}
+
+		result.push( cls );
+
+	}
+
+	// Alphabetical pre-sort for deterministic output within the same generation
+	[ ...classes ]
+		.sort( ( a, b ) => a.name.localeCompare( b.name ) )
+		.forEach( visit );
+
+	return result;
 
 }
 

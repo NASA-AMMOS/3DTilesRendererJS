@@ -125,7 +125,7 @@ export default [
 			},
 		},
 		rules: {
-			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note' ] } ],
+			'jsdoc/check-tag-names': [ 'error', { definedTags: [ 'component', 'warn', 'note', 'section' ] } ],
 			'jsdoc/check-types': 'error',
 			'jsdoc/no-undefined-types': [ 'error', {
 				definedTypes: [
