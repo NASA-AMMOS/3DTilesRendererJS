@@ -320,6 +320,7 @@ export class TilesRendererBase {
 	/**
 	 * Root tile of the loaded root tileset, or null if not yet loaded.
 	 * @type {Tile|null}
+	 * @readonly
 	 */
 	get root() {
 
@@ -338,6 +339,7 @@ export class TilesRendererBase {
 	/**
 	 * Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 	 * @type {number}
+	 * @readonly
 	 */
 	get loadProgress() {
 

@@ -707,7 +707,7 @@ extend this class to add camera projection, scene management, and tile display.
 ### .root
 
 ```js
-root: Tile | null
+readonly root: Tile | null
 ```
 
 Root tile of the loaded root tileset, or null if not yet loaded.
@@ -716,7 +716,7 @@ Root tile of the loaded root tileset, or null if not yet loaded.
 ### .loadProgress
 
 ```js
-loadProgress: number
+readonly loadProgress: number
 ```
 
 Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
