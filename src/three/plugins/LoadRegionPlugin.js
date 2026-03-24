@@ -168,6 +168,7 @@ export class BaseRegion {
 
 /**
  * A spherical load region. Only tiles that intersect `sphere` are loaded.
+ * @extends BaseRegion
  * @param {Object} [options]
  * @param {Sphere} [options.sphere] The sphere volume; defaults to an empty sphere at the origin.
  * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
@@ -204,6 +205,7 @@ export class SphereRegion extends BaseRegion {
 
 /**
  * A ray-based load region. Only tiles that intersect `ray` are loaded.
+ * @extends BaseRegion
  * @param {Object} [options]
  * @param {Ray} [options.ray] The ray; defaults to a ray at the origin pointing in +Z.
  * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
@@ -240,6 +242,7 @@ export class RayRegion extends BaseRegion {
 
 /**
  * An oriented bounding-box load region. Only tiles that intersect `obb` are loaded.
+ * @extends BaseRegion
  * @param {Object} [options]
  * @param {OBB} [options.obb] The oriented bounding box; defaults to an empty OBB at the origin.
  * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
