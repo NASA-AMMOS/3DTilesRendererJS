@@ -125,13 +125,30 @@ after modifying properties such as `colorMode`, `displayBoxBounds`, or
 so changes can be reflected.
 
 
+## ImageFormatPlugin
+
+Base plugin class for tiled image sources with a consistent size and resolution per
+tile. Subclasses provide a concrete `imageSource` and override `getUrl` and
+`createBoundingVolume` as needed.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		imageSource = null: Object,
+		center = false: boolean,
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
 ## DeepZoomImagePlugin
 
+_extends [`ImageFormatPlugin`](#imageformatplugin)_
+
 Plugin that renders a Deep Zoom Image (DZI) as a 3D Tiles-compatible tiled texture.
-Only a single embedded "Image" is supported. Pass the `.dzi` XML file URL as the
-`TilesRenderer` URL.
-See the [Deep Zoom specification](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
-and [OpenSeadragon](https://openseadragon.github.io).
 
 
 ### .constructor
@@ -142,6 +159,26 @@ constructor(
 		url?: string,
 		center = false: boolean,
 		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+## EllipsoidProjectionTilesPlugin
+
+_extends [`ImageFormatPlugin`](#imageformatplugin)_
+
+Extension of `ImageFormatPlugin` that projects tiled images onto ellipsoidal
+(globe-surface) geometry in addition to the default planar layout. Set
+`options.shape = 'ellipsoid'` to enable globe projection.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		shape = 'planar': string,
+		endCaps = true: boolean,
 	}
 )
 ```
@@ -330,6 +367,8 @@ Disposes all textures used by this instance.
 
 ## OBBRegion
 
+_extends [`BaseRegion`](#baseregion)_
+
 An oriented bounding-box load region. Only tiles that intersect `obb` are loaded.
 
 
@@ -367,6 +406,8 @@ constructor(
 ```
 
 ## RayRegion
+
+_extends [`BaseRegion`](#baseregion)_
 
 A ray-based load region. Only tiles that intersect `ray` are loaded.
 
@@ -427,6 +468,8 @@ with X facing west and Z facing north.
 
 
 ## SphereRegion
+
+_extends [`BaseRegion`](#baseregion)_
 
 A spherical load region. Only tiles that intersect `sphere` are loaded.
 
@@ -659,6 +702,8 @@ constructor(
 
 ## TMSTilesPlugin
 
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
 Plugin that renders TMS (Tile Map Service) image tiles projected onto 3D tile geometry.
 See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification).
 
@@ -740,6 +785,8 @@ constructor( manager: LoadingManager )
 ```
 
 ## WMSTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
 
 Plugin that renders WMS (Web Map Service) image tiles projected onto 3D tile geometry.
 
@@ -892,6 +939,8 @@ This method:
 
 ## WMTSTilesPlugin
 
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
+
 Plugin that renders WMTS (Web Map Tile Service) image tiles projected onto 3D tile
 geometry. Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide
 a URL template directly.
@@ -912,6 +961,8 @@ constructor(
 ```
 
 ## XYZTilesPlugin
+
+_extends [`EllipsoidProjectionTilesPlugin`](#ellipsoidprojectiontilesplugin)_
 
 Plugin that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) projected onto
 3D tile geometry. See the [Slippy map tilenames specification](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
