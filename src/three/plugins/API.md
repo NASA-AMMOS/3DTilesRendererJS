@@ -192,16 +192,6 @@ Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
 multiple source tiles into a single texture per 3D tile region.
 
 
-### .constructor
-
-```js
-constructor(
-	{
-		imageSource = null: TiledImageSource,
-	}
-)
-```
-
 ## GoogleMapsOverlay
 
 _extends [`TiledImageOverlay`](#tiledimageoverlay)_

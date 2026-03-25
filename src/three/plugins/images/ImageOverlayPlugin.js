@@ -1399,9 +1399,6 @@ class ImageOverlay {
  * Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
  * multiple source tiles into a single texture per 3D tile region.
  * @extends ImageOverlay
- * @param {Object} [options]
- * @param {TiledImageSource} [options.imageSource=null] The tiled image source instance to use.
- * All other options are forwarded to {@link ImageOverlay}.
  */
 class TiledImageOverlay extends ImageOverlay {
 
