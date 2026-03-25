@@ -353,7 +353,7 @@ export class Ellipsoid {
 		// From Cesium function Ellipsoid.cartesianToCartographic
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/core/renderer/Ellipsoid.js#L463
 		this.getPositionToSurfacePoint( pos, _vec );
-		this.getPositionToNormal( pos, _norm );
+		this.getPositionToNormal( _vec, _norm );
 
 		const heightDelta = _vec2.subVectors( pos, _vec );
 

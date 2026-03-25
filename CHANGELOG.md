@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
 
+### Fixed
+- Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+
 ## [0.4.23] - 2026-03-18
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
