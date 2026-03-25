@@ -577,7 +577,7 @@ export class TilesRendererBase {
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 */
-		this.loadParentTiles = false;
+		this.loadParents = false;
 
 		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
@@ -776,7 +776,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadParentTiles } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadParents } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -874,7 +874,7 @@ export class TilesRendererBase {
 		usedSet.clear();
 
 		// assign the correct callbacks
-		const priorityCallback = ( optimizedLoadStrategy && ! loadParentTiles ) ? optimizedPriorityCallback : defaultPriorityCallback;
+		const priorityCallback = ( optimizedLoadStrategy && ! loadParents ) ? optimizedPriorityCallback : defaultPriorityCallback;
 		downloadQueue.priorityCallback = priorityCallback;
 		parseQueue.priorityCallback = priorityCallback;
 
