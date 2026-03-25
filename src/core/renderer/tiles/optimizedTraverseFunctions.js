@@ -393,7 +393,7 @@ function markVisibleTiles( tile, renderer ) {
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
 
 		const canFallBackToParent = renderer.loadParentTiles
-			? ( loadedContent || ! tile.internal.hasContent )
+			? loadedContent
 			: tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent );
 
 		if ( canFallBackToParent ) {
@@ -426,7 +426,7 @@ function toggleTiles( tile, renderer ) {
 
 			renderer.markTileUsed( tile );
 
-			if ( tile.internal.hasUnrenderableContent || tile.traversal.allUsedChildrenProcessed || renderer.loadParentTiles ) {
+			if ( tile.internal.hasUnrenderableContent || tile.traversal.allUsedChildrenProcessed ) {
 
 				renderer.queueTileForDownload( tile );
 
@@ -441,6 +441,15 @@ function toggleTiles( tile, renderer ) {
 		} else {
 
 			tile.traversal.active = false;
+
+		}
+
+		// when loading parent tiles as fallbacks, keep all non-leaf used tiles downloaded
+		// regardless of active state so they are available to display while children load
+		if ( renderer.loadParentTiles && ! tile.traversal.isLeaf && tile.internal.hasContent ) {
+
+			renderer.markTileUsed( tile );
+			renderer.queueTileForDownload( tile );
 
 		}
 
