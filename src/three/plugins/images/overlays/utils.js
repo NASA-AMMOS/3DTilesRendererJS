@@ -101,7 +101,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null, range = null ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null, normalizedRange = null ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -140,21 +140,19 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	if ( projection !== null ) {
 
-		// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
-		// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
-		// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
-		// that show the underlying tile data. It's arguable which one is better but in all supported
-		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
-		// globe range.
+		// Clamp the mesh vertex range to the projection's valid bounds (e.g. ~±85° for Mercator) to
+		// avoid NaN UV values for vertices that fall outside the projection range. This also stretches
+		// the texture at the projection boundary rather than leaving gaps.
 
-		if ( range === null ) {
+		// takes generate a normalized range if not already provided
+		if ( normalizedRange === null ) {
 
-			range = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
-			range = projection.toNormalizedRange( range );
+			normalizedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+			normalizedRange = projection.toNormalizedRange( normalizedRange );
 
 		}
 
-		const [ minU, minV, maxU, maxV ] = range;
+		const [ minU, minV, maxU, maxV ] = normalizedRange;
 		uvs.forEach( uv => {
 
 			for ( let i = 0, l = uv.length; i < l; i += 3 ) {
@@ -178,7 +176,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		range: range,
+		range: normalizedRange,
 		region: [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ],
 	};
 
