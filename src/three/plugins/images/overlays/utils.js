@@ -38,8 +38,11 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 	// find a rough mid lat / lon point
 	ellipsoid.getPositionToCartographic( _vec, _cart );
-	const centerLat = _cart.lat;
-	const centerLon = _cart.lon;
+
+	// fall back to 0 because if the geometry is exactly centered at 0, 0, 0 then
+	// the calculated lat / lon will be NaN.
+	const centerLat = _cart.lat || 0;
+	const centerLon = _cart.lon || 0;
 
 	let minLat = Infinity;
 	let minLon = Infinity;

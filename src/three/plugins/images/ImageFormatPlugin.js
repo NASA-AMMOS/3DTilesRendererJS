@@ -204,10 +204,10 @@ export class ImageFormatPlugin {
 			asset: {
 				version: '1.1'
 			},
-			geometricError: 1e5,
+			geometricError: Infinity,
 			root: {
 				refine: 'REPLACE',
-				geometricError: 1e5,
+				geometricError: Infinity,
 				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
 				children,
 
