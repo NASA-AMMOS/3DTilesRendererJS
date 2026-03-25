@@ -889,6 +889,16 @@ potentially causing brief gaps during rapid movement.
 
 Only applies when `optimizedLoadStrategy` is enabled.
 
+### .loadParentTiles
+
+```js
+loadParentTiles: boolean
+```
+
+**Experimental.** When `true`, parent tiles are queued for download and displayed as a fallback while children are loading — similar to the behavior of the standard load strategy. Increases memory usage but provides smoother transitions on first load.
+
+Only applies when `optimizedLoadStrategy` is enabled.
+
 
 ### .maxTilesProcessed
 

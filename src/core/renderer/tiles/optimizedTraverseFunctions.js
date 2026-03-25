@@ -392,7 +392,11 @@ function markVisibleTiles( tile, renderer ) {
 	const thisTileIsVisible = tile.traversal.active && isChildReady( tile );
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
 
-		if ( tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent ) ) {
+		const canFallBackToParent = renderer.loadParentTiles
+			? ( loadedContent || ! tile.internal.hasContent )
+			: tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent );
+
+		if ( canFallBackToParent ) {
 
 			tile.traversal.active = true;
 			kickActiveChildren( tile, renderer );
@@ -422,7 +426,7 @@ function toggleTiles( tile, renderer ) {
 
 			renderer.markTileUsed( tile );
 
-			if ( tile.internal.hasUnrenderableContent || tile.traversal.allUsedChildrenProcessed ) {
+			if ( tile.internal.hasUnrenderableContent || tile.traversal.allUsedChildrenProcessed || renderer.loadParentTiles ) {
 
 				renderer.queueTileForDownload( tile );
 
