@@ -101,7 +101,7 @@ function getGeometryCartographicChannel( geometry, geomToEllipsoidMatrix, ellips
 
 }
 
-export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null ) {
+export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMatrix = null, projection = null, normalizedRange = null ) {
 
 	// find the lat / lon ranges
 	let minLat = Infinity;
@@ -138,18 +138,21 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	} );
 
-	let clampedRange = [ minLon, minLat, maxLon, maxLat ];
 	if ( projection !== null ) {
 
-		// Clamp the lat lon range to the bounds of the projection scheme. Note that clamping the data
-		// allows for "stretching" the texture look at the edges of the projection which leads to a nicer
-		// looking overlay. Eg at the poles of a web-mercator projection - otherwise there will be gaps
-		// that show the underlying tile data. It's arguable which one is better but in all supported
-		// ellipsoid projections (Web mercator, equirect) the projection ranges always span the entire
-		// globe range.
-		// const clampedRange = [ minLon, minLat, maxLon, maxLat ];
-		clampedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
-		const [ minU, minV, maxU, maxV ] = projection.toNormalizedRange( clampedRange );
+		// Clamp the mesh vertex range to the projection's valid bounds (e.g. ~±85° for Mercator) to
+		// avoid NaN UV values for vertices that fall outside the projection range. This also stretches
+		// the texture at the projection boundary rather than leaving gaps.
+
+		// takes generate a normalized range if not already provided
+		if ( normalizedRange === null ) {
+
+			normalizedRange = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
+			normalizedRange = projection.toNormalizedRange( normalizedRange );
+
+		}
+
+		const [ minU, minV, maxU, maxV ] = normalizedRange;
 		uvs.forEach( uv => {
 
 			for ( let i = 0, l = uv.length; i < l; i += 3 ) {
@@ -158,7 +161,9 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 				const lat = uv[ i + 1 ];
 				const h = uv[ i + 2 ];
 
-				const [ u, v ] = projection.toNormalizedPoint( lon, lat );
+				let [ u, v ] = projection.toNormalizedPoint( lon, lat );
+				u = MathUtils.clamp( u, 0, 1 );
+				v = MathUtils.clamp( v, 0, 1 );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 				uv[ i + 2 ] = MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );
@@ -171,7 +176,7 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 
 	return {
 		uvs,
-		range: clampedRange,
+		range: normalizedRange,
 		region: [ minLon, minLat, maxLon, maxLat, minHeight, maxHeight ],
 	};
 

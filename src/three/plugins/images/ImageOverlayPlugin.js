@@ -120,8 +120,6 @@ export class ImageOverlayPlugin {
 
 			}
 
-			// TODO: we could prioritize by overlay order here to ensure consistency
-
 		};
 
 		// save variables
@@ -710,11 +708,6 @@ export class ImageOverlayPlugin {
 			// create a sphere bounding volume
 			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
 
-				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
-				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
-				// through tiles. The same may be the case with frustum checks. In theory, though, we should not need a sphere
-				// bounds if a region bounds are present.
-
 				// compute the sphere center
 				_box
 					.setFromObject( result, true )
@@ -1010,13 +1003,13 @@ export class ImageOverlayPlugin {
 
 			} else if ( tile.boundingVolume.region ) {
 
-				// If the tile has a region bounding volume then mark the tiles to preload
+				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
+				// the overlay image
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
+				let range = [ minLon, minLat, maxLon, maxLat ];
+				range = overlay.projection.clampToBounds( range );
+				range = overlay.projection.toNormalizedRange( range );
 
-				// TODO: locking the texture here causes compositing to happen immediately which can be performance intensive,
-				// particularly in cases like GeoJSON loader. Ideally the compositing / final drw step to "lock" would be deferred
-				// as well, just like the tile image loads.
 				info.range = range;
 				overlay.lockTexture( range, tile );
 
@@ -1101,8 +1094,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
-			range = projection.toNormalizedRange( range );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection, info.range ) );
 			heightInRange = true;
 
 		}
@@ -1112,10 +1104,6 @@ export class ImageOverlayPlugin {
 
 			info.range = range;
 			overlay.lockTexture( range, tile );
-
-		} else {
-
-			range = info.range;
 
 		}
 
