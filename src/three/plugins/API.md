@@ -130,6 +130,241 @@ constructor(
 )
 ```
 
+## ImageOverlay
+
+Base class for all image overlays. Provides the interface that `ImageOverlayPlugin` uses to
+fetch, lock, and release overlay textures.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## GeoJSONOverlay
+
+_extends [`ImageOverlay`](#imageoverlay)_
+
+Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
+Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
+the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
+feature's `properties` object.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		geojson = null: Object,
+		url = null: string,
+		resolution = 256: number,
+		pointRadius = 6: number,
+		strokeStyle = 'white': string,
+		strokeWidth = 2: number,
+		fillStyle = 'rgba( 255, 255, 255, 0.5 )': string,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## TiledImageOverlay
+
+_extends [`ImageOverlay`](#imageoverlay)_
+
+Base class for overlays backed by a tiled image source (XYZ, TMS, WMS, WMTS, etc.).
+Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
+multiple source tiles into a single texture per 3D tile region.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		imageSource = null: TiledImageSource,
+	}
+)
+```
+
+## GoogleMapsOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that streams Google Maps 2D tile imagery on top of 3D tile geometry using the
+Google Maps Tile API.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		apiToken?: string,
+		sessionOptions?: Object,
+		autoRefreshToken = false: boolean,
+		logoUrl = null: string,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## TMSTilesOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that renders TMS (Tile Map Service) image tiles on top of 3D tile geometry.
+See the [TMS specification](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## WMSTilesOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that renders WMS (Web Map Service) image tiles on top of 3D tile geometry.
+See the [WMS specification](https://www.ogc.org/standard/wms/).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		layer?: string,
+		crs?: string,
+		format?: string,
+		tileDimension = 256: number,
+		styles?: string,
+		version?: string,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## WMTSTilesOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that renders WMTS (Web Map Tile Service) image tiles on top of 3D tile geometry.
+Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide a URL template
+directly. See the [WMTS specification](https://www.ogc.org/standard/wmts/).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		capabilities?: Object,
+		layer?: string,
+		tileMatrixSet?: string,
+		style?: string,
+		dimensions?: Object,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## XYZTilesOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) on top of 3D tile
+geometry. See the [Slippy map tilenames specification](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		levels = 20: number,
+		tileDimension = 256: number,
+		projection = 'EPSG:3857': string,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
+## CesiumIonOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Overlay that streams imagery from a Cesium Ion asset. Supports Ion-hosted TMS assets as well
+as external asset types (Google 2D Maps, Bing Maps) that Ion proxies.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		apiToken?: string,
+		assetId?: number,
+		autoRefreshToken = false: boolean,
+		opacity = 1: number,
+		color = 0xffffff: number | Color,
+		frame = null: Matrix4,
+		preprocessURL = null: function,
+		alphaMask = false: boolean,
+		alphaInvert = false: boolean,
+	}
+)
+```
+
 ## DebugTilesPlugin
 
 Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
