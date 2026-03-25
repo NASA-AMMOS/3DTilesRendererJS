@@ -61,6 +61,7 @@ function resetFrameState( tile, renderer ) {
 		tile.traversal.error = Infinity;
 		tile.traversal.distanceFromCamera = Infinity;
 		tile.traversal.allChildrenReady = false;
+		tile.traversal.allChildrenLoaded = false;
 		tile.traversal.kicked = false;
 		tile.traversal.allUsedChildrenProcessed = false;
 
@@ -308,6 +309,31 @@ function markUsedSetLeaves( tile, renderer ) {
 
 		}
 
+		// compute content-readiness so markVisibleTiles can stop traversal at this tile when
+		// loadParents is enabled and children haven't finished loading their content yet.
+		// only computed when anyChildrenUsed — leaf tiles retain allChildrenLoaded = false
+		// (from resetFrameState) so parents correctly see them as not yet loaded.
+		let allChildrenLoaded = true;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			const c = children[ i ];
+			if ( isUsedThisFrame( c, frameCount ) ) {
+
+				const childCanDisplay = ! canUnconditionallyRefine( c );
+				const childContentReady = ! c.internal.hasContent || isDownloadFinished( c.internal.loadingState );
+				const childIsReady = ( childCanDisplay && childContentReady ) || c.traversal.allChildrenLoaded;
+				if ( ! childIsReady ) {
+
+					allChildrenLoaded = false;
+
+				}
+
+			}
+
+		}
+
+		tile.traversal.allChildrenLoaded = allChildrenLoaded;
+
 	}
 
 	// save whether any children are processed
@@ -340,6 +366,16 @@ function markVisibleTiles( tile, renderer ) {
 	const hasContent = tile.internal.hasContent;
 	const loadedContent = isDownloadFinished( tile.internal.loadingState ) && hasContent;
 	const children = tile.children;
+
+	// When loading parent tiles as fallbacks: if children aren't content-ready yet, mark this tile
+	// as a leaf so it is displayed as a placeholder while children load (mirrors legacy behavior).
+	// allChildrenLoaded was computed bottom-up in markUsedSetLeaves so it can be checked before recursing.
+	if ( renderer.loadParents && ! tile.traversal.allChildrenLoaded && ! canUnconditionallyRefine( tile ) ) {
+
+		tile.traversal.isLeaf = true;
+
+	}
+
 	if ( tile.traversal.isLeaf ) {
 
 		// if we're allowed to stop at this tile then mark it as active and allow any previously active tiles to
@@ -392,11 +428,7 @@ function markVisibleTiles( tile, renderer ) {
 	const thisTileIsVisible = tile.traversal.active && isChildReady( tile );
 	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
 
-		const canFallBackToParent = renderer.loadParents
-			? loadedContent
-			: tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent );
-
-		if ( canFallBackToParent ) {
+		if ( tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent ) ) {
 
 			tile.traversal.active = true;
 			kickActiveChildren( tile, renderer );
@@ -444,9 +476,9 @@ function toggleTiles( tile, renderer ) {
 
 		}
 
-		// when loading parent tiles as fallbacks, keep all non-leaf used tiles downloaded
+		// when loading parent tiles as fallbacks, keep all used tiles downloaded
 		// regardless of active state so they are available to display while children load
-		if ( renderer.loadParents && ! tile.traversal.isLeaf && tile.internal.hasContent ) {
+		if ( renderer.loadParents && tile.internal.hasContent ) {
 
 			renderer.markTileUsed( tile );
 			renderer.queueTileForDownload( tile );
