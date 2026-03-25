@@ -904,9 +904,7 @@ export class ImageOverlayPlugin {
 
 		const { tiles } = this;
 
-		overlay.init();
-
-		overlay.whenReady().then( () => {
+		overlay.init().then( () => {
 
 			// Set resolution on the overlay
 			overlay.setResolution( this.resolution );
@@ -1313,6 +1311,8 @@ class ImageOverlay {
 			this._whenReady = this._init().then( () => this.isReady = true );
 
 		}
+
+		return this._whenReady;
 
 	}
 
