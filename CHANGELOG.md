@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+- ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
+- ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
+- ImageOverlays: Updated types.
 
 ## [0.4.23] - 2026-03-18
 ### Added
