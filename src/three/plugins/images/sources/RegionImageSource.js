@@ -94,7 +94,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		//
 
-		// tiles must be composed
+		// Compose path: tiles must be composed into a single texture
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = this.resolution;
 		canvas.height = this.resolution;
@@ -128,8 +128,7 @@ export class TiledRegionImageSource extends RegionImageSource {
 	disposeItem( target ) {
 
 		const { IS_DIRECT_TILE, LOCK_TOKENS } = this;
-		const tokens = target[ LOCK_TOKENS ];
-		const [ minX, minY, maxX, maxY, level ] = tokens;
+		const [ minX, minY, maxX, maxY, level ] = target[ LOCK_TOKENS ];
 
 		target.dispose();
 		delete target[ IS_DIRECT_TILE ];
