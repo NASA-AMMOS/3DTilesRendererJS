@@ -1323,7 +1323,11 @@ class ImageOverlay {
 	}
 
 	// overrideable
-	_init() {}
+	_init() {
+
+		return Promise.resolve();
+
+	}
 
 	fetch( url, options = {} ) {
 
