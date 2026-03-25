@@ -904,27 +904,21 @@ export class ImageOverlayPlugin {
 
 		const { tiles } = this;
 
-		if ( ! overlay.isInitialized ) {
+		overlay.init().then( () => {
 
-			overlay.init();
+			// Set resolution on the overlay
+			overlay.setResolution( this.resolution );
 
-			overlay.whenReady().then( () => {
+			const overlayFetch = overlay.fetch.bind( overlay );
+			overlay.fetch = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
 
-				// Set resolution on the overlay
-				overlay.setResolution( this.resolution );
+					return overlayFetch( ...args );
 
-				const overlayFetch = overlay.fetch.bind( overlay );
-				overlay.fetch = ( ...args ) => tiles
-					.downloadQueue
-					.add( { priority: - performance.now() }, () => {
+				} );
 
-						return overlayFetch( ...args );
-
-					} );
-
-			} );
-
-		}
+		} );
 
 		const promises = [];
 		const initTile = async ( scene, tile ) => {
@@ -1311,8 +1305,14 @@ class ImageOverlay {
 
 	init() {
 
-		this.isInitialized = true;
-		this._whenReady = this._init().then( () => this.isReady = true );
+		if ( ! this.isInitialized ) {
+
+			this.isInitialized = true;
+			this._whenReady = this._init().then( () => this.isReady = true );
+
+		}
+
+		return this._whenReady;
 
 	}
 
@@ -1323,7 +1323,11 @@ class ImageOverlay {
 	}
 
 	// overrideable
-	_init() {}
+	_init() {
+
+		return Promise.resolve();
+
+	}
 
 	fetch( url, options = {} ) {
 
