@@ -904,27 +904,23 @@ export class ImageOverlayPlugin {
 
 		const { tiles } = this;
 
-		if ( ! overlay.isInitialized ) {
+		overlay.init();
 
-			overlay.init();
+		overlay.whenReady().then( () => {
 
-			overlay.whenReady().then( () => {
+			// Set resolution on the overlay
+			overlay.setResolution( this.resolution );
 
-				// Set resolution on the overlay
-				overlay.setResolution( this.resolution );
+			const overlayFetch = overlay.fetch.bind( overlay );
+			overlay.fetch = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
 
-				const overlayFetch = overlay.fetch.bind( overlay );
-				overlay.fetch = ( ...args ) => tiles
-					.downloadQueue
-					.add( { priority: - performance.now() }, () => {
+					return overlayFetch( ...args );
 
-						return overlayFetch( ...args );
+				} );
 
-					} );
-
-			} );
-
-		}
+		} );
 
 		const promises = [];
 		const initTile = async ( scene, tile ) => {
@@ -1311,8 +1307,12 @@ class ImageOverlay {
 
 	init() {
 
-		this.isInitialized = true;
-		this._whenReady = this._init().then( () => this.isReady = true );
+		if ( ! this.isInitialized ) {
+
+			this.isInitialized = true;
+			this._whenReady = this._init().then( () => this.isReady = true );
+
+		}
 
 	}
 
