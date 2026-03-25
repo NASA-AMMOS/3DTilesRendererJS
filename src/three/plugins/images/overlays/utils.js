@@ -152,7 +152,6 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 			range = projection.clampToBounds( [ minLon, minLat, maxLon, maxLat ] );
 			range = projection.toNormalizedRange( range );
 
-
 		}
 
 		const [ minU, minV, maxU, maxV ] = range;
@@ -164,8 +163,9 @@ export function getMeshesCartographicRange( meshes, ellipsoid, meshToEllipsoidMa
 				const lat = uv[ i + 1 ];
 				const h = uv[ i + 2 ];
 
-				const clamped = projection.clampToBounds( [ lon, lat ] );
-				const [ u, v ] = projection.toNormalizedPoint( clamped[ 0 ], clamped[ 1 ] );
+				let [ u, v ] = projection.toNormalizedPoint( lon, lat );
+				u = MathUtils.clamp( u, 0, 1 );
+				v = MathUtils.clamp( v, 0, 1 );
 				uv[ i + 0 ] = MathUtils.mapLinear( u, minU, maxU, 0, 1 );
 				uv[ i + 1 ] = MathUtils.mapLinear( v, minV, maxV, 0, 1 );
 				uv[ i + 2 ] = MathUtils.mapLinear( h, minHeight, maxHeight, 0, 1 );

@@ -1003,10 +1003,10 @@ export class ImageOverlayPlugin {
 
 			} else if ( tile.boundingVolume.region ) {
 
-				// If the tile has a region bounding volume then mark the tiles to preload
+				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
 				let range = [ minLon, minLat, maxLon, maxLat ];
-				range = overlay.projection.clampToBounds( range, false );
+				range = overlay.projection.clampToBounds( range );
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
