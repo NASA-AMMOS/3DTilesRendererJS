@@ -178,6 +178,30 @@ describe( 'Ellipsoid', () => {
 
 	} );
 
+	it( 'should match Cesium Cartesian to Cartographic results.', () => {
+
+		const HEIGHT_EPSILON = 1e-5;
+		const LAT_LON_EPSILON = 1e-7;
+		const LAT = 40;
+		const LON = - 75;
+		const HEIGHT = 5000;
+		const cart = new Cesium.Cartographic( LON, LAT, HEIGHT );
+
+		c_wgsEllipse.cartographicToCartesian( cart, c );
+		v.set( c.x, c.y, c.z );
+
+		const cesiumResult = new Cesium.Cartographic();
+		c_wgsEllipse.cartesianToCartographic( c, cesiumResult );
+
+		const result = {};
+		wgsEllipse.getPositionToCartographic( v, result );
+
+		compareCoord( result.lon, cesiumResult.longitude, LAT_LON_EPSILON );
+		compareCoord( result.lat, cesiumResult.latitude, LAT_LON_EPSILON );
+		compareCoord( result.height, cesiumResult.height, HEIGHT_EPSILON );
+
+	} );
+
 	it( 'should match the expected elevation.', () => {
 
 		//ellipsoid rotation
