@@ -784,7 +784,7 @@ export class ImageOverlayPlugin {
 	 * Adds an image overlay source to the plugin. The `order` parameter controls the draw
 	 * order among overlays; lower values are drawn first. If omitted, the overlay is appended
 	 * after all existing overlays.
-	 * @param {Object} overlay An image source object (e.g. `XYZImageSource`, `WMTSImageSource`).
+	 * @param {ImageOverlay} overlay An image overlay instance.
 	 * @param {number|null} [order=null] Draw order for this overlay.
 	 */
 	addOverlay( overlay, order = null ) {
@@ -818,7 +818,7 @@ export class ImageOverlayPlugin {
 
 	/**
 	 * Updates the draw order for the given overlay.
-	 * @param {Object} overlay The overlay to reorder.
+	 * @param {ImageOverlay} overlay The overlay to reorder.
 	 * @param {number} order New draw order value.
 	 */
 	setOverlayOrder( overlay, order ) {
@@ -835,7 +835,7 @@ export class ImageOverlayPlugin {
 
 	/**
 	 * Removes the given overlay from the plugin.
-	 * @param {Object} overlay The overlay to remove.
+	 * @param {ImageOverlay} overlay The overlay to remove.
 	 */
 	deleteOverlay( overlay ) {
 

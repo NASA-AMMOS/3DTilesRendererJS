@@ -636,7 +636,7 @@ constructor(
 ### .addOverlay
 
 ```js
-addOverlay( overlay: Object, order = null: number | null ): void
+addOverlay( overlay: ImageOverlay, order = null: number | null ): void
 ```
 
 Adds an image overlay source to the plugin. The `order` parameter controls the draw
@@ -647,7 +647,7 @@ after all existing overlays.
 ### .setOverlayOrder
 
 ```js
-setOverlayOrder( overlay: Object, order: number ): void
+setOverlayOrder( overlay: ImageOverlay, order: number ): void
 ```
 
 Updates the draw order for the given overlay.
@@ -656,7 +656,7 @@ Updates the draw order for the given overlay.
 ### .deleteOverlay
 
 ```js
-deleteOverlay( overlay: Object ): void
+deleteOverlay( overlay: ImageOverlay ): void
 ```
 
 Removes the given overlay from the plugin.
