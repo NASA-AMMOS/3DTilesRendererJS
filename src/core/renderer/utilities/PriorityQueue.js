@@ -87,7 +87,7 @@ export class PriorityQueue {
 		 */
 		this.schedulingCallback = func => {
 
-			requestAnimationFrame( func );
+			this.frameScheduler.requestAnimationFrame( func );
 
 		};
 

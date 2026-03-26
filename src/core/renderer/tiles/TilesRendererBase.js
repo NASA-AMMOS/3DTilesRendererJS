@@ -6,6 +6,7 @@ import { runTraversal } from './traverseFunctions.js';
 import { UNLOADED, QUEUED, LOADING, PARSING, LOADED, FAILED } from '../constants.js';
 import { throttle } from '../utilities/throttle.js';
 import { traverseSet } from '../utilities/TraversalUtils.js';
+import { FrameScheduler } from '../utilities/FrameScheduler.js';
 
 /**
  * @callback TileBeforeCallback
@@ -389,19 +390,25 @@ export class TilesRendererBase {
 		this.cachedSinceLoadComplete = new Set();
 		this.isLoading = false;
 
+		const frameScheduler = new FrameScheduler();
+
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;
+		lruCache.frameScheduler = frameScheduler;
 
 		const downloadQueue = new PriorityQueue();
 		downloadQueue.maxJobs = 25;
 		downloadQueue.priorityCallback = defaultPriorityCallback;
+		downloadQueue.frameScheduler = frameScheduler;
 
 		const parseQueue = new PriorityQueue();
 		parseQueue.maxJobs = 5;
 		parseQueue.priorityCallback = defaultPriorityCallback;
+		parseQueue.frameScheduler = frameScheduler;
 
 		const processNodeQueue = new PriorityQueue();
 		processNodeQueue.maxJobs = 25;
+		processNodeQueue.frameScheduler = frameScheduler;
 		processNodeQueue.priorityCallback = ( a, b ) => {
 
 			const aParent = a.parent;
@@ -511,7 +518,7 @@ export class TilesRendererBase {
 
 			this.dispatchEvent( { type: 'needs-update' } );
 
-		} );
+		}, this.frameScheduler );
 
 		// options
 
@@ -577,6 +584,12 @@ export class TilesRendererBase {
 		 * @type {number}
 		 */
 		this.maxTilesProcessed = 250;
+
+	}
+
+	setXRSession( xrsession ) {
+
+		this.frameScheduler.setXRSession( xrsession );
 
 	}
 
