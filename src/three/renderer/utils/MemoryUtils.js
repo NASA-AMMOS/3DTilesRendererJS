@@ -1,11 +1,18 @@
 import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { TextureUtils } from 'three';
+import { TextureUtils, ExternalTexture } from 'three';
 
 export function getTextureByteLength( tex ) {
 
 	if ( ! tex ) {
 
 		return 0;
+
+	}
+
+	// IC: The code below assumes tex was created from an ImageBitmap
+	if ( tex instanceof ExternalTexture && tex.userData?.byteLength ) {
+
+		return tex.userData.byteLength;
 
 	}
 
