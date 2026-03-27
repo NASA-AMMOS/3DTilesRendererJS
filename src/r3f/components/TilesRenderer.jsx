@@ -1,3 +1,5 @@
+/** @import { ReactNode } from 'react' */
+/** @import { Ellipsoid } from '3d-tiles-renderer/three' */
 import { createContext, useMemo, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useReducer } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';

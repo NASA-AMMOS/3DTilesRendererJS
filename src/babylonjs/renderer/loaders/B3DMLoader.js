@@ -1,3 +1,4 @@
+/** @import { Scene } from '@babylonjs/core/scene' */
 import { Matrix } from '@babylonjs/core/Maths/math.vector';
 import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { GLTFLoader } from './GLTFLoader.js';

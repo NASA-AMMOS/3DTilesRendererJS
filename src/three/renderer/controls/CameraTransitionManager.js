@@ -1,3 +1,4 @@
+/** @import { Camera } from 'three' */
 import { Clock, EventDispatcher, MathUtils, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
 const _forward = /* @__PURE__ */ new Vector3();

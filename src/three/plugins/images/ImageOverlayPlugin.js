@@ -1,3 +1,4 @@
+/** @import { WebGLRenderer } from 'three' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -118,8 +119,6 @@ export class ImageOverlayPlugin {
 				return tiles.downloadQueue.priorityCallback( tileA, tileB );
 
 			}
-
-			// TODO: we could prioritize by overlay order here to ensure consistency
 
 		};
 
@@ -709,11 +708,6 @@ export class ImageOverlayPlugin {
 			// create a sphere bounding volume
 			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
 
-				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
-				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
-				// through tiles. The same may be the case with frustum checks. In theory, though, we should not need a sphere
-				// bounds if a region bounds are present.
-
 				// compute the sphere center
 				_box
 					.setFromObject( result, true )
@@ -783,7 +777,7 @@ export class ImageOverlayPlugin {
 	 * Adds an image overlay source to the plugin. The `order` parameter controls the draw
 	 * order among overlays; lower values are drawn first. If omitted, the overlay is appended
 	 * after all existing overlays.
-	 * @param {Object} overlay An image source object (e.g. `XYZImageSource`, `WMTSImageSource`).
+	 * @param {ImageOverlay} overlay An image overlay instance.
 	 * @param {number|null} [order=null] Draw order for this overlay.
 	 */
 	addOverlay( overlay, order = null ) {
@@ -817,7 +811,7 @@ export class ImageOverlayPlugin {
 
 	/**
 	 * Updates the draw order for the given overlay.
-	 * @param {Object} overlay The overlay to reorder.
+	 * @param {ImageOverlay} overlay The overlay to reorder.
 	 * @param {number} order New draw order value.
 	 */
 	setOverlayOrder( overlay, order ) {
@@ -834,7 +828,7 @@ export class ImageOverlayPlugin {
 
 	/**
 	 * Removes the given overlay from the plugin.
-	 * @param {Object} overlay The overlay to remove.
+	 * @param {ImageOverlay} overlay The overlay to remove.
 	 */
 	deleteOverlay( overlay ) {
 
@@ -903,27 +897,21 @@ export class ImageOverlayPlugin {
 
 		const { tiles } = this;
 
-		if ( ! overlay.isInitialized ) {
+		overlay.init().then( () => {
 
-			overlay.init();
+			// Set resolution on the overlay
+			overlay.setResolution( this.resolution );
 
-			overlay.whenReady().then( () => {
+			const overlayFetch = overlay.fetch.bind( overlay );
+			overlay.fetch = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
 
-				// Set resolution on the overlay
-				overlay.setResolution( this.resolution );
+					return overlayFetch( ...args );
 
-				const overlayFetch = overlay.fetch.bind( overlay );
-				overlay.fetch = ( ...args ) => tiles
-					.downloadQueue
-					.add( { priority: - performance.now() }, () => {
+				} );
 
-						return overlayFetch( ...args );
-
-					} );
-
-			} );
-
-		}
+		} );
 
 		const promises = [];
 		const initTile = async ( scene, tile ) => {
@@ -1015,13 +1003,13 @@ export class ImageOverlayPlugin {
 
 			} else if ( tile.boundingVolume.region ) {
 
-				// If the tile has a region bounding volume then mark the tiles to preload
+				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
+				// the overlay image
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
+				let range = [ minLon, minLat, maxLon, maxLat ];
+				range = overlay.projection.clampToBounds( range );
+				range = overlay.projection.toNormalizedRange( range );
 
-				// TODO: locking the texture here causes compositing to happen immediately which can be performance intensive,
-				// particularly in cases like GeoJSON loader. Ideally the compositing / final drw step to "lock" would be deferred
-				// as well, just like the tile image loads.
 				info.range = range;
 				overlay.lockTexture( range, tile );
 
@@ -1106,8 +1094,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
-			range = projection.toNormalizedRange( range );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection, info.range ) );
 			heightInRange = true;
 
 		}
@@ -1117,10 +1104,6 @@ export class ImageOverlayPlugin {
 
 			info.range = range;
 			overlay.lockTexture( range, tile );
-
-		} else {
-
-			range = info.range;
 
 		}
 
@@ -1277,6 +1260,21 @@ export class ImageOverlayPlugin {
 
 }
 
+/**
+ * Base class for all image overlays. Provides the interface that `ImageOverlayPlugin` uses to
+ * fetch, lock, and release overlay textures.
+ * @param {Object} [options]
+ * @param {number} [options.opacity=1] Opacity of the overlay layer (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color multiplied with the overlay texture.
+ * @param {Matrix4} [options.frame=null] World-space transform defining the plane for planar
+ * projection. If null, cartographic (lat/lon) projection is used instead.
+ * @param {Function} [options.preprocessURL=null] Optional function `(url) => url` called before
+ * every fetch to allow URL rewriting or token injection.
+ * @param {boolean} [options.alphaMask=false] If true, the overlay alpha channel masks the
+ * underlying tile surface rather than blending on top of it.
+ * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
+ * applying the mask or blend.
+ */
 class ImageOverlay {
 
 	get isPlanarProjection() {
@@ -1310,8 +1308,14 @@ class ImageOverlay {
 
 	init() {
 
-		this.isInitialized = true;
-		this._whenReady = this._init().then( () => this.isReady = true );
+		if ( ! this.isInitialized ) {
+
+			this.isInitialized = true;
+			this._whenReady = this._init().then( () => this.isReady = true );
+
+		}
+
+		return this._whenReady;
 
 	}
 
@@ -1322,7 +1326,11 @@ class ImageOverlay {
 	}
 
 	// overrideable
-	_init() {}
+	_init() {
+
+		return Promise.resolve();
+
+	}
 
 	fetch( url, options = {} ) {
 
@@ -1374,6 +1382,12 @@ class ImageOverlay {
 
 }
 
+/**
+ * Base class for overlays backed by a tiled image source (XYZ, TMS, WMS, WMTS, etc.).
+ * Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
+ * multiple source tiles into a single texture per 3D tile region.
+ * @extends ImageOverlay
+ */
 class TiledImageOverlay extends ImageOverlay {
 
 	get tiling() {
@@ -1511,6 +1525,22 @@ class TiledImageOverlay extends ImageOverlay {
 
 }
 
+/**
+ * Overlay that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) on top of 3D tile
+ * geometry. See the {@link https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames Slippy map tilenames specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
+ * @param {number} [options.levels=20] Number of zoom levels.
+ * @param {number} [options.tileDimension=256] Tile pixel size.
+ * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class XYZTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1522,6 +1552,29 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
+ * Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
+ * the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
+ * feature's `properties` object.
+ * @extends ImageOverlay
+ * @param {Object} [options]
+ * @param {Object} [options.geojson=null] GeoJSON FeatureCollection or Feature object to render.
+ * If not provided, `url` must be set so the data can be fetched on init.
+ * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
+ * `geojson` is not supplied directly).
+ * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
+ * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
+ * @param {number} [options.strokeWidth=2] Stroke line width in pixels.
+ * @param {string} [options.fillStyle='rgba( 255, 255, 255, 0.5 )'] Canvas fill style for feature interiors.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class GeoJSONOverlay extends ImageOverlay {
 
 	get projection() {
@@ -1654,6 +1707,25 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
+/**
+ * Overlay that renders WMS (Web Map Service) image tiles on top of 3D tile geometry.
+ * See the {@link https://www.ogc.org/standard/wms/ WMS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] WMS base URL.
+ * @param {string} [options.layer] WMS layer name.
+ * @param {string} [options.crs] Coordinate reference system, e.g. `'EPSG:4326'`.
+ * @param {string} [options.format] Image MIME type, e.g. `'image/png'`.
+ * @param {number} [options.tileDimension=256] Tile pixel size.
+ * @param {string} [options.styles] WMS styles parameter.
+ * @param {string} [options.version] WMS version string, e.g. `'1.3.0'`.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class WMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1665,6 +1737,24 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that renders WMTS (Web Map Tile Service) image tiles on top of 3D tile geometry.
+ * Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide a URL template
+ * directly. See the {@link https://www.ogc.org/standard/wmts/ WMTS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {Object} [options.capabilities] Parsed WMTS capabilities from `WMTSCapabilitiesLoader`.
+ * @param {string} [options.layer] WMTS layer identifier.
+ * @param {string} [options.tileMatrixSet] Tile matrix set identifier.
+ * @param {string} [options.style] Style identifier.
+ * @param {Object} [options.dimensions] Additional WMTS dimension parameters.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1676,6 +1766,19 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that renders TMS (Tile Map Service) image tiles on top of 3D tile geometry.
+ * See the {@link https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification TMS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL to the TMS `tilemapresource.xml` descriptor or tile template.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class TMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1687,6 +1790,22 @@ export class TMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that streams imagery from a Cesium Ion asset. Supports Ion-hosted TMS assets as well
+ * as external asset types (Google 2D Maps, Bing Maps) that Ion proxies.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.apiToken] Cesium Ion API token for authentication.
+ * @param {number} [options.assetId] Cesium Ion asset ID.
+ * @param {boolean} [options.autoRefreshToken=false] Automatically refresh the auth token before
+ * it expires.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class CesiumIonOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1793,6 +1912,25 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that streams Google Maps 2D tile imagery on top of 3D tile geometry using the
+ * Google Maps Tile API.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.apiToken] Google Maps API key.
+ * @param {Object} [options.sessionOptions] Session creation options passed to the Google Maps
+ * Tile API when establishing a tile session.
+ * @param {boolean} [options.autoRefreshToken=false] Automatically refresh the session token
+ * before it expires.
+ * @param {string} [options.logoUrl=null] URL to a Google logo image. If provided, it is included
+ * in the overlay attributions as required by Google's terms of service.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {

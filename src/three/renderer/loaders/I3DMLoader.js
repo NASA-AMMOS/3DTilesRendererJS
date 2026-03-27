@@ -1,3 +1,5 @@
+/** @import { LoadingManager, Group } from 'three' */
+/** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
 import { I3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';

@@ -1,3 +1,4 @@
+/** @import { LoadingManager } from 'three' */
 import { WGS84_RADIUS, LoaderBase } from '3d-tiles-renderer/core';
 import { ProjectionScheme } from '../images/utils/ProjectionScheme.js';
 import { MathUtils } from 'three';

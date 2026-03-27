@@ -1,3 +1,6 @@
+/** @import { Scene } from '@babylonjs/core/scene' */
+/** @import { TransformNode } from '@babylonjs/core/Meshes/transformNode' */
+/** @import { AssetContainer } from '@babylonjs/core/assetContainer' */
 import { LoaderBase } from '3d-tiles-renderer/core';
 import { Matrix, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import { LoadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader';

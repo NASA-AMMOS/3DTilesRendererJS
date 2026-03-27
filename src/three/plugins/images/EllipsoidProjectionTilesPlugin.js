@@ -10,6 +10,15 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _uv = /* @__PURE__ */ new Vector2();
 const _sphere = /* @__PURE__ */ new Sphere();
 
+/**
+ * Extension of `ImageFormatPlugin` that projects tiled images onto ellipsoidal
+ * (globe-surface) geometry in addition to the default planar layout. Set
+ * `options.shape = 'ellipsoid'` to enable globe projection.
+ * @extends ImageFormatPlugin
+ * @param {Object} [options]
+ * @param {string} [options.shape='planar'] Projection shape: `'planar'` or `'ellipsoid'`.
+ * @param {boolean} [options.endCaps=true] Snap Mercator-projected poles to ±90° latitude to avoid seams.
+ */
 export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	get projection() {

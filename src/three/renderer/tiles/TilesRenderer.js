@@ -1,3 +1,5 @@
+/** @import { Camera, WebGLRenderer, Box3, Sphere, Raycaster } from 'three' */
+/** @import { Ellipsoid } from '../math/Ellipsoid.js' */
 import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';

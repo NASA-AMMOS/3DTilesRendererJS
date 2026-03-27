@@ -4,6 +4,13 @@
  */
 import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
+/** @typedef { {
+ * 	constant: boolean=,
+ * 	lengthBits: number,
+ * 	bitstream: Uint8Array=
+ * } } ParsedBitstream
+ * */
+
 function isOctreeSubdivision( tile ) {
 
 	return tile.implicitTilingData.root.implicitTiling.subdivisionScheme === 'OCTREE';

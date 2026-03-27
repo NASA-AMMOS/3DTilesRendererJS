@@ -1,3 +1,4 @@
+/** @import { ReactNode } from 'react' */
 import { useContext, useState, useEffect, useMemo } from 'react';
 import { TilesRendererContext } from './TilesRenderer.jsx';
 import { CanvasDOMOverlay } from './CanvasDOMOverlay.jsx';
