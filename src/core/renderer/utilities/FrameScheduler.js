@@ -2,11 +2,11 @@ class FrameScheduler {
 
 	constructor() {
 
-        if ( FrameScheduler.instance ) {
+		if ( FrameScheduler.instance ) {
 
-            return FrameScheduler.instance;
+			return FrameScheduler.instance;
 
-        }
+		}
 
 		// XR session
 		this.session = null;
@@ -93,16 +93,17 @@ class FrameScheduler {
 	}
 
 	// Singleton instance
-    static getInstance() {
-		
-        if ( ! FrameScheduler.instance ) {
+	static getInstance() {
 
-            FrameScheduler.instance = new FrameScheduler();
+		if ( ! FrameScheduler.instance ) {
 
-        }
+			FrameScheduler.instance = new FrameScheduler();
 
-        return FrameScheduler.instance;
-    }
+		}
+
+		return FrameScheduler.instance;
+
+	}
 
 }
 
