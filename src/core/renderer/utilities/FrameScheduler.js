@@ -2,11 +2,19 @@ class FrameScheduler {
 
 	constructor() {
 
+        if ( FrameScheduler.instance ) {
+
+            return FrameScheduler.instance;
+
+        }
+
 		// XR session
 		this.session = null;
 
 		// Pending AFs
 		this.pending = new Map();
+
+		FrameScheduler.instance = this;
 
 	}
 
@@ -83,6 +91,18 @@ class FrameScheduler {
 		} );
 
 	}
+
+	// Singleton instance
+    static getInstance() {
+		
+        if ( ! FrameScheduler.instance ) {
+
+            FrameScheduler.instance = new FrameScheduler();
+
+        }
+
+        return FrameScheduler.instance;
+    }
 
 }
 

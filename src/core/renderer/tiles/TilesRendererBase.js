@@ -391,6 +391,7 @@ export class TilesRendererBase {
 		this.isLoading = false;
 
 		const frameScheduler = new FrameScheduler();
+		this.frameScheduler = frameScheduler;
 
 		const lruCache = new LRUCache();
 		lruCache.unloadPriorityCallback = lruPriorityCallback;

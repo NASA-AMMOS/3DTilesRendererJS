@@ -1,3 +1,5 @@
+import { FrameScheduler } from '../utilities/FrameScheduler.js';
+
 /**
  * Error thrown when a queued item's promise is rejected because the item was removed
  * before its callback could run.
@@ -64,6 +66,7 @@ export class PriorityQueue {
 		this.callbacks = new Map();
 		this.currJobs = 0;
 		this.scheduled = false;
+		this.frameScheduler = new FrameScheduler();
 
 		/**
 		 * If true, job runs are automatically scheduled after `add` and after each job completes.
