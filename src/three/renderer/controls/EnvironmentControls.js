@@ -8,7 +8,6 @@ import {
 	Plane,
 	EventDispatcher,
 	MathUtils,
-	Clock,
 	Ray,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
@@ -229,7 +228,6 @@ export class EnvironmentControls extends EventDispatcher {
 
 		this.up = new Vector3( 0, 1, 0 );
 		this._lastTime = performance.now();
-		this.clock = new Clock();
 
 		this._detachCallback = null;
 		this._upInitialized = false;
@@ -254,7 +252,7 @@ export class EnvironmentControls extends EventDispatcher {
 		const curr = performance.now();
 		const delta = curr - this._lastTime;
 		this._lastTime = curr;
-		return delta;
+		return delta * 1e-3;
 
 	}
 
