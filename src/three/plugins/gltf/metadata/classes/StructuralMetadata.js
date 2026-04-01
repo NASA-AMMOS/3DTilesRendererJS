@@ -170,7 +170,7 @@ export class StructuralMetadata {
 	 * @param {number} triangle Triangle index from a raycast hit.
 	 * @param {Vector3} barycoord Barycentric coordinate of the hit point.
 	 * @param {Array} [target=[]] Optional target array to write into.
-	 * @returns {Promise<Array>}
+	 * @returns {Array}
 	 */
 	async getPropertyTextureDataAsync( triangle, barycoord, target = [] ) {
 
