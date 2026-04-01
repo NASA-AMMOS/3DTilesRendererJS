@@ -242,7 +242,7 @@ export class GlobeControls extends EnvironmentControls {
 
 	}
 
-	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
+	update( deltaTime = Math.min( this._getDeltaTime(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 
