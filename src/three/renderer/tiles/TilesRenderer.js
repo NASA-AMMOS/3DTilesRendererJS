@@ -559,7 +559,7 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
 
-			frustum.setFromProjectionMatrix( tempMat );
+			frustum.setFromProjectionMatrix( tempMat, camera.coordinateSystem, camera.reversedDepth );
 
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );
