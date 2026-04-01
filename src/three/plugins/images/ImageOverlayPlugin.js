@@ -289,7 +289,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -510,7 +510,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target && overlay.shouldSplit( info.range, tile ) ) {
+			if ( info && info.target && overlay.shouldSplit( info.range ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -856,7 +856,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -1011,7 +1011,7 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				overlay.lockTexture( range, tile );
+				overlay.lockTexture( range );
 
 			}
 
@@ -1103,14 +1103,14 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range, tile );
+			overlay.lockTexture( range );
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range, tile ) ) {
+		if ( heightInRange && overlay.hasContent( range ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1123,7 +1123,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range, tile );
+					const regionTarget = await overlay.getTexture( range );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1348,25 +1348,25 @@ class ImageOverlay {
 
 	}
 
-	hasContent( range, tile ) {
+	hasContent( range ) {
 
 		return false;
 
 	}
 
-	async getTexture( range, tile ) {
+	async getTexture( range ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range, tile ) {
+	async lockTexture( range ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range, tile ) {
+	releaseTexture( range ) {
 
 	}
 
@@ -1374,7 +1374,7 @@ class ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		return false;
 
@@ -1449,64 +1449,56 @@ class TiledImageOverlay extends ImageOverlay {
 	}
 
 	// Texture acquisition API implementations
-	calculateLevel( range, tile ) {
+	calculateLevel( range ) {
 
-		if ( this.isPlanarProjection ) {
+		const [ minX, minY, maxX, maxY ] = range;
+		const w = maxX - minX;
+		const h = maxY - minY;
 
-			const [ minX, minY, maxX, maxY ] = range;
-			const w = maxX - minX;
-			const h = maxY - minY;
+		let level = 0;
+		const resolution = this.regionImageSource.resolution;
+		const maxLevel = this.tiling.maxLevel;
+		for ( ; level < maxLevel; level ++ ) {
 
-			let level = 0;
-			const resolution = this.regionImageSource.resolution;
-			const maxLevel = this.tiling.maxLevel;
-			for ( ; level < maxLevel; level ++ ) {
+			// the number of pixels per image on each axis
+			const wProj = resolution / w;
+			const hProj = resolution / h;
 
-				// the number of pixels per image on each axis
-				const wProj = resolution / w;
-				const hProj = resolution / h;
+			const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
+			if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
 
-				const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
-				if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
-
-					break;
-
-				}
+				break;
 
 			}
 
-			// TODO: should this be one layer higher LoD?
-			return level;
-
-		} else {
-
-			return tile.internal.depthFromRenderedParent - 1;
-
 		}
 
-	}
-
-	hasContent( range, tile ) {
-
-		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range, tile ) );
+		// TODO: should this be one layer higher LoD?
+		return level;
 
 	}
 
-	getTexture( range, tile ) {
+	hasContent( range ) {
 
-		return this.regionImageSource.get( ...range, this.calculateLevel( range, tile ) );
-
-	}
-
-	lockTexture( range, tile ) {
-
-		return this.regionImageSource.lock( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range ) );
 
 	}
 
-	releaseTexture( range, tile ) {
+	getTexture( range ) {
 
-		this.regionImageSource.release( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.get( ...range, this.calculateLevel( range ) );
+
+	}
+
+	lockTexture( range ) {
+
+		return this.regionImageSource.lock( ...range, this.calculateLevel( range ) );
+
+	}
+
+	releaseTexture( range ) {
+
+		this.regionImageSource.release( ...range, this.calculateLevel( range ) );
 
 	}
 
@@ -1516,10 +1508,10 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range, tile );
+		return this.tiling.maxLevel > this.calculateLevel( range );
 
 	}
 
@@ -1692,7 +1684,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		// geojson can always split
 		return true;
