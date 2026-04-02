@@ -7,7 +7,6 @@ export class ExtendedFrustum extends Frustum {
 
 	constructor()
 
-	setFromProjectionMatrix( m: Matrix4, coordinateSystem?: CoordinateSystem, reversedDepth?: boolean ): this;
 	calculateFrustumPoints(): void;
 
 }
