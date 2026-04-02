@@ -857,11 +857,11 @@ for how to obtain these values.
 ### .getPropertyTextureDataAsync
 
 ```js
-getPropertyTextureDataAsync(
+async getPropertyTextureDataAsync(
 	triangle: number,
 	barycoord: Vector3,
 	target = []: Array
-): Promise<Array>
+): Array
 ```
 
 Returns the same data as `getPropertyTextureData` but performs texture reads
