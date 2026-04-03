@@ -1,10 +1,16 @@
-class FrameScheduler {
+/**
+ * Class used within TilesRenderer for scheduling requestAnimationFrame events and
+ * toggling between XRSession rAF and window rAF toggles.
+ */
+class Scheduler {
 
 	static pending = new Map();
 	static session = null;
 
-	// Set active XR session
-	// To be called when entering XR
+	/**
+	 * Sets the active "XRSession" value to use to scheduling rAF callbacks.
+	 * @param {XRSession} session
+	 */
 	static setXRSession( session ) {
 
 		// call "flush" before assigning xr session to ensure callbacks are
@@ -18,7 +24,11 @@ class FrameScheduler {
 
 	}
 
-	// Request animation frame (defer to XR session if active)
+	/**
+	 * Request animation frame (defer to XR session if set)
+	 * @param {Function} cb
+	 * @returns {number}
+	 */
 	static requestAnimationFrame( cb ) {
 
 		const { session, pending } = this;
@@ -47,7 +57,10 @@ class FrameScheduler {
 
 	}
 
-	// Cancel animation frame via handle (defer to XR session if active)
+	/**
+	 * Cancel animation frame via handle (defer to XR session if set)
+	 * @param {number} handle
+	 */
 	static cancelAnimationFrame( handle ) {
 
 		const { pending, session } = this;
@@ -65,7 +78,10 @@ class FrameScheduler {
 
 	}
 
-	// Flush and complete pending AFs (defer to XR session if active)
+
+	/**
+	 * Flush and complete pending AFs (defer to XR session if set)
+	 */
 	static flushPending() {
 
 		this.pending.forEach( ( cb, handle ) => {
@@ -79,4 +95,4 @@ class FrameScheduler {
 
 }
 
-export { FrameScheduler };
+export { Scheduler as FrameScheduler };
