@@ -1,4 +1,4 @@
-import { TilesRenderer } from '3d-tiles-renderer';
+import { TilesRenderer, Scheduler } from '3d-tiles-renderer';
 import {
 	Scene,
 	DirectionalLight,
@@ -97,18 +97,6 @@ function init() {
 	// We set camera for tileset
 	tiles.setCamera( camera );
 	tiles.setResolutionFromRenderer( camera, renderer );
-
-
-	// We define a custom scheduling callback to handle also active WebXR sessions
-	const tilesSchedulingCB = func => {
-
-		tasks.push( func );
-
-	};
-
-	// We set our scheduling callback for tiles downloading and parsing
-	tiles.downloadQueue.schedulingCallback = tilesSchedulingCB;
-	tiles.parseQueue.schedulingCallback = tilesSchedulingCB;
 
 	tiles.lruCache.maxSize = 1200;
 	tiles.lruCache.minSize = 900;
@@ -230,7 +218,7 @@ function handleCamera() {
 
 			xrSession = renderer.xr.getSession();
 
-			tiles.setXRSession( xrSession );
+			Scheduler.setXRSession( xrSession );
 
 		}
 
@@ -248,7 +236,7 @@ function handleCamera() {
 
 			xrSession = null;
 
-			tiles.setXRSession( null );
+			Scheduler.setXRSession( null );
 
 		}
 
