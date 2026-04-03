@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.24] - Unreleased
 ### Added
 - TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting the XR session.
 
 ### Changed
 - EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
