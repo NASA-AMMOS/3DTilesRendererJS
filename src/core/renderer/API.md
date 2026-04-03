@@ -539,6 +539,15 @@ Priority queue for scheduling async work with a concurrency limit. Items are
 sorted by `priorityCallback` and dispatched up to `maxJobs` at a time.
 
 
+### .running
+
+```js
+readonly running: boolean
+```
+
+returns whether tasks are queued or actively running
+
+
 ### .maxJobs
 
 ```js
@@ -565,18 +574,6 @@ priorityCallback: ( a: any, b: any ) => number | null
 
 Comparator used to sort queued items. Higher-priority items should sort last
 (i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
-
-
-### .schedulingCallback
-
-```js
-schedulingCallback: ( func: function ) => void
-```
-
-Callback used to schedule when to run jobs next, so more work doesn't happen in a
-single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
-overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
-running in WebXR.
 
 
 ### .sort
@@ -649,6 +646,48 @@ _extends `Error`_
 
 Error thrown when a queued item's promise is rejected because the item was removed
 before its callback could run.
+
+
+## Scheduler
+
+Class used within TilesRenderer for scheduling requestAnimationFrame events and
+toggling between XRSession rAF and window rAF toggles.
+
+
+### static .setXRSession
+
+```js
+static setXRSession( session: XRSession ): void
+```
+
+Sets the active "XRSession" value to use to scheduling rAF callbacks.
+
+
+### static .requestAnimationFrame
+
+```js
+static requestAnimationFrame( cb: function ): number
+```
+
+Request animation frame (defer to XR session if set)
+
+
+### static .cancelAnimationFrame
+
+```js
+static cancelAnimationFrame( handle: number ): void
+```
+
+Cancel animation frame via handle (defer to XR session if set)
+
+
+### static .flushPending
+
+```js
+static flushPending(): void
+```
+
+Flush and complete pending AFs (defer to XR session if set)
 
 
 ## TilesRendererBase
