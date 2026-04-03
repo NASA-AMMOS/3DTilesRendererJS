@@ -3,17 +3,17 @@ import { FrameScheduler } from '../../src/core/renderer/utilities/FrameScheduler
 const nextFrame = async () => new Promise( resolve => requestAnimationFrame( resolve ) );
 describe( 'FrameScheduler', () => {
 
-	let scheduler;
 	beforeEach( () => {
 
-		scheduler = new FrameScheduler();
+		FrameScheduler.flushPending();
+		FrameScheduler.setXRSession( null );
 
 	} );
 
 	it( 'should fire callbacks.', async () => {
 
 		let called = false;
-		scheduler.requestAnimationFrame( () => called = true );
+		FrameScheduler.requestAnimationFrame( () => called = true );
 		expect( called ).toBe( false );
 
 		await nextFrame();
@@ -24,21 +24,21 @@ describe( 'FrameScheduler', () => {
 	it( 'should flush callbacks.', () => {
 
 		let called = false;
-		scheduler.requestAnimationFrame( () => called = true );
-		scheduler.flushPending();
+		FrameScheduler.requestAnimationFrame( () => called = true );
+		FrameScheduler.flushPending();
 
 		expect( called ).toBe( true );
-		expect( scheduler.pending.size ).toBe( 0 );
+		expect( FrameScheduler.pending.size ).toBe( 0 );
 
 	} );
 
 	it( 'should allow for cancelling callbacks.', async () => {
 
 		let called = false;
-		const handle = scheduler.requestAnimationFrame( () => called = true );
+		const handle = FrameScheduler.requestAnimationFrame( () => called = true );
 		expect( called ).toBe( false );
 
-		scheduler.cancelAnimationFrame( handle );
+		FrameScheduler.cancelAnimationFrame( handle );
 		expect( called ).toBe( false );
 
 		await nextFrame();
@@ -49,8 +49,8 @@ describe( 'FrameScheduler', () => {
 	it( 'should flush callbacks when setting xr session.', () => {
 
 		let called = false;
-		scheduler.requestAnimationFrame( () => called = true );
-		scheduler.setXRSession( {} );
+		FrameScheduler.requestAnimationFrame( () => called = true );
+		FrameScheduler.setXRSession( {} );
 		expect( called ).toBe( true );
 
 	} );
@@ -59,15 +59,15 @@ describe( 'FrameScheduler', () => {
 
 		let called = false;
 		let cancelledHandle = null;
-		scheduler.setXRSession( {
+		FrameScheduler.setXRSession( {
 			requestAnimationFrame: () => called = true,
 			cancelAnimationFrame: handle => cancelledHandle = handle,
 		} );
 
-		const handle = scheduler.requestAnimationFrame( () => {} );
+		const handle = FrameScheduler.requestAnimationFrame( () => {} );
 		expect( called ).toBe( true );
 
-		scheduler.cancelAnimationFrame( handle );
+		FrameScheduler.cancelAnimationFrame( handle );
 		expect( cancelledHandle ).toBe( handle );
 
 	} );
@@ -80,16 +80,16 @@ describe( 'FrameScheduler', () => {
 			cancelAnimationFrame,
 		};
 
-		scheduler.requestAnimationFrame( () => called = true );
-		scheduler.setXRSession( null );
+		FrameScheduler.requestAnimationFrame( () => called = true );
+		FrameScheduler.setXRSession( null );
 		expect( called ).toBe( false );
 
-		scheduler.setXRSession( xrSession );
+		FrameScheduler.setXRSession( xrSession );
 		expect( called ).toBe( true );
 
 		called = false;
-		scheduler.requestAnimationFrame( () => called = true );
-		scheduler.setXRSession( xrSession );
+		FrameScheduler.requestAnimationFrame( () => called = true );
+		FrameScheduler.setXRSession( xrSession );
 		expect( called ).toBe( false );
 
 	} );
