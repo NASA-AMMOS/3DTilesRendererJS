@@ -9,7 +9,7 @@ import {
 } from 'three';
 import { SceneObserver } from './SceneObserver.js';
 import { Ellipsoid } from '3d-tiles-renderer/three';
-import { FrameScheduler } from '../../core/renderer/utilities/FrameScheduler.js';
+import { Scheduler } from '../../core/renderer/utilities/Scheduler.js';
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _line0 = /* @__PURE__ */ new Line3();
@@ -202,7 +202,7 @@ export class QueryManager extends EventDispatcher {
 		if ( this.autoRun && ! this.scheduled ) {
 
 			this.scheduled = true;
-			FrameScheduler.requestAnimationFrame( () => {
+			Scheduler.requestAnimationFrame( () => {
 
 				this.scheduled = false;
 				this._runJobs();

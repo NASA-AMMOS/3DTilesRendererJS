@@ -1,4 +1,4 @@
-import { FrameScheduler } from './FrameScheduler.js';
+import { Scheduler } from './Scheduler.js';
 
 const GIGABYTE_BYTES = 2 ** 30;
 
@@ -452,7 +452,7 @@ class LRUCache {
 
 		if ( needsRerun ) {
 
-			this.unloadingHandle = FrameScheduler.requestAnimationFrame( () => this.scheduleUnload() );
+			this.unloadingHandle = Scheduler.requestAnimationFrame( () => this.scheduleUnload() );
 
 		}
 
@@ -463,7 +463,7 @@ class LRUCache {
 	 */
 	scheduleUnload() {
 
-		FrameScheduler.cancelAnimationFrame( this.unloadingHandle );
+		Scheduler.cancelAnimationFrame( this.unloadingHandle );
 
 		if ( ! this.scheduled ) {
 

@@ -1,4 +1,4 @@
-import { FrameScheduler } from '../utilities/FrameScheduler.js';
+import { Scheduler } from './Scheduler.js';
 
 /**
  * Error thrown when a queued item's promise is rejected because the item was removed
@@ -74,7 +74,7 @@ export class PriorityQueue {
 
 	set schedulingCallback( cb ) {
 
-		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use FrameScheduler to switch to an XRSession rAF, instead.' );
+		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use Scheduler to switch to an XRSession rAF, instead.' );
 		this._schedulingCallback = cb;
 
 	}
@@ -107,7 +107,7 @@ export class PriorityQueue {
 
 		this._schedulingCallback = func => {
 
-			FrameScheduler.requestAnimationFrame( func );
+			Scheduler.requestAnimationFrame( func );
 
 		};
 

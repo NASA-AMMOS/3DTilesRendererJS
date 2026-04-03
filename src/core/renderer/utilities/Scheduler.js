@@ -95,4 +95,4 @@ class Scheduler {
 
 }
 
-export { Scheduler as FrameScheduler };
+export { Scheduler };
