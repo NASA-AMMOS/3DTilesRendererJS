@@ -47,10 +47,35 @@ export class PriorityQueueItemRemovedError extends Error {
  */
 export class PriorityQueue {
 
-	// returns whether tasks are queued or actively running
+	/**
+	 * returns whether tasks are queued or actively running
+	 * @readonly
+	 * @type {boolean}
+	 */
 	get running() {
 
 		return this.items.length !== 0 || this.currJobs !== 0;
+
+	}
+
+	/**
+	 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
+	 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
+	 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
+	 * running in WebXR.
+	 * @type {SchedulingCallback}
+	 * @deprecated
+	 */
+	get schedulingCallback() {
+
+		return this._schedulingCallback;
+
+	}
+
+	set schedulingCallback( cb ) {
+
+		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use FrameScheduler to switch to an XRSession rAF, instead.' );
+		this._schedulingCallback = cb;
 
 	}
 
@@ -66,7 +91,6 @@ export class PriorityQueue {
 		this.callbacks = new Map();
 		this.currJobs = 0;
 		this.scheduled = false;
-		this.frameScheduler = new FrameScheduler();
 
 		/**
 		 * If true, job runs are automatically scheduled after `add` and after each job completes.
@@ -81,16 +105,9 @@ export class PriorityQueue {
 		 */
 		this.priorityCallback = null;
 
-		/**
-		 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
-		 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
-		 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
-		 * running in WebXR.
-		 * @type {SchedulingCallback}
-		 */
-		this.schedulingCallback = func => {
+		this._schedulingCallback = func => {
 
-			this.frameScheduler.requestAnimationFrame( func );
+			FrameScheduler.requestAnimationFrame( func );
 
 		};
 
@@ -292,7 +309,7 @@ export class PriorityQueue {
 
 		if ( ! this.scheduled ) {
 
-			this.schedulingCallback( this._runjobs );
+			this._schedulingCallback( this._runjobs );
 
 			this.scheduled = true;
 

@@ -1,26 +1,11 @@
 class FrameScheduler {
 
-	constructor() {
-
-		if ( FrameScheduler.instance ) {
-
-			return FrameScheduler.instance;
-
-		}
-
-		// XR session
-		this.session = null;
-
-		// Pending AFs
-		this.pending = new Map();
-
-		FrameScheduler.instance = this;
-
-	}
+	static pending = new Map();
+	static session = null;
 
 	// Set active XR session
 	// To be called when entering XR
-	setXRSession( session ) {
+	static setXRSession( session ) {
 
 		// call "flush" before assigning xr session to ensure callbacks are
 		// cancelled on the previous handle
@@ -34,7 +19,7 @@ class FrameScheduler {
 	}
 
 	// Request animation frame (defer to XR session if active)
-	requestAnimationFrame( cb ) {
+	static requestAnimationFrame( cb ) {
 
 		const { session, pending } = this;
 		let handle;
@@ -63,7 +48,7 @@ class FrameScheduler {
 	}
 
 	// Cancel animation frame via handle (defer to XR session if active)
-	cancelAnimationFrame( handle ) {
+	static cancelAnimationFrame( handle ) {
 
 		const { pending, session } = this;
 		pending.delete( handle );
@@ -81,7 +66,7 @@ class FrameScheduler {
 	}
 
 	// Flush and complete pending AFs (defer to XR session if active)
-	flushPending() {
+	static flushPending() {
 
 		this.pending.forEach( ( cb, handle ) => {
 
@@ -89,19 +74,6 @@ class FrameScheduler {
 			this.cancelAnimationFrame( handle );
 
 		} );
-
-	}
-
-	// Singleton instance
-	static getInstance() {
-
-		if ( ! FrameScheduler.instance ) {
-
-			FrameScheduler.instance = new FrameScheduler();
-
-		}
-
-		return FrameScheduler.instance;
 
 	}
 

@@ -44,9 +44,6 @@ export class QueryManager extends EventDispatcher {
 		// cameras for sorting
 		this.cameras = new Set();
 
-		// frame scheduler
-		this.frameScheduler = new FrameScheduler();
-
 		// register to mark items as dirty
 		const queueAll = ( () => {
 
@@ -205,7 +202,7 @@ export class QueryManager extends EventDispatcher {
 		if ( this.autoRun && ! this.scheduled ) {
 
 			this.scheduled = true;
-			this.frameScheduler.requestAnimationFrame( () => {
+			FrameScheduler.requestAnimationFrame( () => {
 
 				this.scheduled = false;
 				this._runJobs();
