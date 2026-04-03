@@ -13,3 +13,4 @@ export * as TraversalUtils from './utilities/TraversalUtils.js';
 export * as LoaderUtils from './utilities/LoaderUtils.js';
 export { BatchTable } from './utilities/BatchTable.js';
 export { FeatureTable } from './utilities/FeatureTable.js';
+export { Scheduler } from './utilities/Scheduler.js';
