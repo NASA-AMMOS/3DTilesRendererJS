@@ -79,7 +79,7 @@ animate();
 
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( tiles ) {
 
