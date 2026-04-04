@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
 - ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+- WMTSImageOverlay, WMTSTilesPlugin: Deprecated "capabilities" argument, adjusted options so literals can be passed.
 
 ### Fixed
 - Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
