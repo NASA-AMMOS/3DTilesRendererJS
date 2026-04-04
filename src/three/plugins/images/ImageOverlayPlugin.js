@@ -1,4 +1,5 @@
 /** @import { WebGLRenderer } from 'three' */
+/** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -1743,17 +1744,18 @@ export class WMSTilesOverlay extends TiledImageOverlay {
  * directly. See the {@link https://www.ogc.org/standard/wmts/ WMTS specification}.
  * @extends TiledImageOverlay
  * @param {Object} [options]
- * @param {Object} [options.capabilities] Parsed WMTS capabilities from `WMTSCapabilitiesLoader`.
- * @param {string} [options.layer] WMTS layer identifier.
- * @param {string} [options.tileMatrixSet] Tile matrix set identifier.
- * @param {string} [options.style] Style identifier.
- * @param {Object} [options.dimensions] Additional WMTS dimension parameters.
- * @param {number} [options.opacity=1] Overlay opacity (0–1).
- * @param {number|Color} [options.color=0xffffff] Tint color.
- * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
- * @param {Function} [options.preprocessURL=null] URL rewriting callback.
- * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
- * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {string} [options.url] - WMTS service URL.
+ * @param {string} [options.layer] - WMTS layer identifier.
+ * @param {string} [options.tileMatrixSet] - TileMatrixSet identifier (e.g., 'GoogleMapsCompatible', 'EPSG:3857').
+ * @param {string} [options.style='default'] - Style identifier.
+ * @param {string} [options.format='image/jpeg'] - Output image format (e.g., 'image/png', 'image/jpeg').
+ * @param {Object<string, string|number>|null} [options.dimensions=null] - WMTS dimension values
+ * @param {string[]|null} [options.tileMatrixLabels=null] - Custom TileMatrix identifiers per level
+ * @param {WMTSTileMatrix[]|null} [options.tileMatrices=null] - Explicit per-level tile matrix definitions. When provided, `levels` and `tileMatrixLabels` are ignored.
+ * @param {string|null} [options.projection=null] - Projection identifier ('EPSG:3857' or 'EPSG:4326'). Defaults to 'EPSG:3857' if not specified.
+ * @param {number} [options.levels=20] - Number of zoom levels. Ignored if `tileMatrices` is provided.
+ * @param {number} [options.tileDimension=256] - Default tile width and height in pixels.
+ * @param {number[]|null} [options.contentBoundingBox=null] - Content bounding box in radians, `[west, south, east, north]`. If null, uses full projection bounds.
  */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 

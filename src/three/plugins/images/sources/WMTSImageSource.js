@@ -40,6 +40,7 @@ function isCRS84( crs ) {
  * @property {number} [tileDimension=256] - Default tile width and height in pixels.
  * @property {number[]|null} [contentBoundingBox=null] - Content bounding box in radians
  *   `[west, south, east, north]`. If null, uses full projection bounds.
+ * @ignore
  */
 
 /**
