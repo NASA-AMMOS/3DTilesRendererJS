@@ -43,10 +43,9 @@ function isCRS84( crs ) {
  */
 
 /**
- * Redesigned WMTS (Web Map Tile Service) image source.
+ * WMTS (Web Map Tile Service) image source.
  *
- * All configuration is via literal values -- no capabilities dependency,
- * following Cesium's WebMapTileServiceImageryProvider pattern.
+ * All configuration is via literal values -- no capabilities dependency.
  *
  * Three tiers of configuration complexity:
  *
@@ -70,6 +69,7 @@ function isCRS84( crs ) {
  * Note: `contentBoundingBox` is specified in radians `[west, south, east, north]`.
  *
  * @extends TiledImageSource
+ * @ignore
  */
 export class WMTSImageSource extends TiledImageSource {
 
