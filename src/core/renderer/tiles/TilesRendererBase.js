@@ -106,10 +106,20 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load internal tile sets first
 		return a.internal.hasUnrenderableContent ? 1 : - 1;
 
+	} else if ( a.traversal.error !== b.traversal.error ) {
+
+		// load the tile with the higher error
+		return a.traversal.error > b.traversal.error ? 1 : - 1;
+
 	} else if ( a.traversal.distanceFromCamera !== b.traversal.distanceFromCamera ) {
 
 		// load closer tiles first
 		return a.traversal.distanceFromCamera > b.traversal.distanceFromCamera ? - 1 : 1;
+
+	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
+
+		// when distance is equal (e.g. camera inside bounds), load shallower tiles first
+		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? - 1 : 1;
 
 	}
 
@@ -570,6 +580,16 @@ export class TilesRendererBase {
 		this.loadSiblings = true;
 
 		/**
+		 * **Experimental.** When `true`, parent tiles are queued for download and displayed as a
+		 * fallback while children are loading — similar to the behavior of the standard load
+		 * strategy. Increases memory usage but provides smoother transitions on first load.
+		 *
+		 * Only applies when `optimizedLoadStrategy` is enabled.
+		 * @type {boolean}
+		 */
+		this.loadParents = false;
+
+		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
 		 * what to render. Lower numbers prevent frame hiccups caused by processing too many tiles
 		 * at once when a new tile set is available, while higher values process more tiles
@@ -766,7 +786,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadParents } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -864,7 +884,7 @@ export class TilesRendererBase {
 		usedSet.clear();
 
 		// assign the correct callbacks
-		const priorityCallback = optimizedLoadStrategy ? optimizedPriorityCallback : defaultPriorityCallback;
+		const priorityCallback = ( optimizedLoadStrategy && ! loadParents ) ? optimizedPriorityCallback : defaultPriorityCallback;
 		downloadQueue.priorityCallback = priorityCallback;
 		parseQueue.priorityCallback = priorityCallback;
 
