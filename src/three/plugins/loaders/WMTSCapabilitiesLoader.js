@@ -2,6 +2,8 @@ import { WGS84_RADIUS, LoaderBase } from '3d-tiles-renderer/core';
 import { ProjectionScheme } from '../images/utils/ProjectionScheme.js';
 import { MathUtils } from 'three';
 
+// TODO: return values in a shape that more easily maps to the WMTSImageSource arguments.
+
 const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
 

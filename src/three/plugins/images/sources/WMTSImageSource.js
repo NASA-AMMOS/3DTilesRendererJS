@@ -131,7 +131,11 @@ export class WMTSImageSource extends TiledImageSource {
 	_resolveCapabilities() {
 
 		const capabilities = this.capabilities;
-		if ( ! capabilities ) return;
+		if ( ! capabilities ) {
+
+			return;
+
+		}
 
 		console.warn( 'WMTSImageSource: The "capabilities" option has been deprecated. Use literal options instead.' );
 
@@ -186,14 +190,7 @@ export class WMTSImageSource extends TiledImageSource {
 
 		if ( ! this.tileMatrices ) {
 
-			this.tileMatrices = tileMatrixSet.tileMatrices.map( tm => ( {
-				identifier: tm.identifier,
-				matrixWidth: tm.matrixWidth,
-				matrixHeight: tm.matrixHeight,
-				tileWidth: tm.tileWidth,
-				tileHeight: tm.tileHeight,
-				tileBounds: tm.bounds,
-			} ) );
+			this.tileMatrices = tileMatrixSet.tileMatrices;
 
 		}
 
@@ -222,9 +219,16 @@ export class WMTSImageSource extends TiledImageSource {
 		this._resolveCapabilities();
 
 		const {
-			tiling, tileDimension, levels, dimensions, contentBoundingBox,
-			tileMatrices, style, tileMatrixSet,
+			tiling,
+			tileDimension,
+			levels,
+			dimensions,
+			contentBoundingBox,
+			tileMatrices,
+			style,
+			tileMatrixSet,
 		} = this;
+
 		let { url } = this;
 
 		// Determine projection
@@ -263,7 +267,7 @@ export class WMTSImageSource extends TiledImageSource {
 					tilePixelHeight: th,
 					tileCountX: tm.matrixWidth,
 					tileCountY: tm.matrixHeight,
-					tileBounds: tm.tileBounds,
+					tileBounds: tm.tileBounds || tm.bounds,
 				} );
 
 			} );
