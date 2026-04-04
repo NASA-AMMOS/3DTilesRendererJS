@@ -7,12 +7,11 @@ function zigZagDecode( value ) {
 }
 
 /**
- * @classdesc
  * Base loader for quantized-mesh terrain tiles. Parses the binary quantized-mesh format
  * into structured vertex, index, edge, and extension data. Sets the required `Accept`
  * header automatically. Subclasses should implement geometry construction from the
  * parsed result.
- * @augments LoaderBase
+ * @extends LoaderBase
  */
 export class QuantizedMeshLoaderBase extends LoaderBase {
 

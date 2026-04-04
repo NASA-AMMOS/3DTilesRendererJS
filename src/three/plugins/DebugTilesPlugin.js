@@ -1,6 +1,6 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, DoubleSide } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
+import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
 import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
@@ -59,6 +59,31 @@ const ColorModes = Object.freeze( {
 	LOAD_ORDER,
 } );
 
+/**
+ * @callback GetDebugColorCallback
+ * @param {number} val Normalized [0, 1] value.
+ * @param {Color} target Color to write the result into.
+ */
+
+/**
+ * Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
+ * helpers (box, sphere, region), tile color modes based on depth/error/distance/load
+ * order, and an unlit rendering mode. Color modes are available via the static
+ * `ColorModes` property.
+ * @param {Object} [options]
+ * @param {boolean} [options.displayBoxBounds=false] Show OBB bounding-box helpers.
+ * @param {boolean} [options.displaySphereBounds=false] Show bounding-sphere helpers.
+ * @param {boolean} [options.displayRegionBounds=false] Show bounding-region helpers.
+ * @param {boolean} [options.displayParentBounds=false] Also show ancestor bounding volumes for visible tiles.
+ * @param {number} [options.colorMode=ColorModes.NONE] Initial tile color mode.
+ * @param {number} [options.boundsColorMode=ColorModes.NONE] Color mode applied to bounding-volume helpers.
+ * @param {number} [options.maxDebugDepth=-1] Maximum tree depth for depth-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugDistance=-1] Maximum distance for distance-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugError=-1] Maximum error for error-based coloring (`-1` = auto).
+ * @param {Function|null} [options.customColorCallback=null] Callback `( tile, mesh )` used when `colorMode` is `CUSTOM_COLOR`.
+ * @param {boolean} [options.unlit=false] Replace tile materials with unlit `MeshBasicMaterial`.
+ * @param {boolean} [options.enabled=true] Whether the plugin is active on init.
+ */
 export class DebugTilesPlugin {
 
 	static get ColorModes() {
@@ -232,6 +257,12 @@ export class DebugTilesPlugin {
 		this.customColorCallback = options.customColorCallback;
 		this.unlit = options.unlit;
 
+		/**
+		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
+		 * a black-to-white gradient. Replace with a custom function to use a different color
+		 * ramp.
+		 * @type {GetDebugColorCallback}
+		 */
 		this.getDebugColor = ( value, target ) => {
 
 			target.setRGB( value, value, value );
@@ -336,7 +367,7 @@ export class DebugTilesPlugin {
 
 			if ( result ) {
 
-				return true;
+				return;
 
 			}
 
@@ -387,6 +418,12 @@ export class DebugTilesPlugin {
 
 	}
 
+	/**
+	 * Applies the current plugin field values to all visible tile geometry. Call this
+	 * after modifying properties such as `colorMode`, `displayBoxBounds`, or
+	 * `displayParentBounds` when `TilesRenderer.update` is not being called every frame
+	 * so changes can be reflected.
+	 */
 	update() {
 
 		const { tiles, colorMode, boundsColorMode } = this;
@@ -741,17 +778,17 @@ export class DebugTilesPlugin {
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			const mesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
+			// Create partially transparent mesh
+			const fillMesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
 				color: getIndexedRandomColor( tile.internal.depth ),
 				transparent: true,
 				depthWrite: false,
 				opacity: 0.05,
 				side: DoubleSide,
 			} ) );
-			obb.box.getSize( mesh.scale );
-			mesh.raycast = emptyRaycast;
-			boxHelperGroup.add( mesh );
-
+			obb.box.getSize( fillMesh.scale );
+			fillMesh.raycast = emptyRaycast;
+			boxHelperGroup.add( fillMesh );
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -768,6 +805,18 @@ export class DebugTilesPlugin {
 			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
 			sphereHelper.userData.tile = tile;
+
+			// Create partially transparent mesh
+			const sphereFillMesh = new Mesh( new SphereGeometry( 1 ), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			sphereFillMesh.raycast = emptyRaycast;
+			sphereHelper.add( sphereFillMesh );
+
 			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
@@ -786,6 +835,15 @@ export class DebugTilesPlugin {
 			regionHelper.raycast = emptyRaycast;
 			regionHelper.userData.tile = tile;
 
+			// create partially transparent mesh
+			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			regionFillMesh.material.transparent = true;
+			regionFillMesh.material.depthWrite = false;
+			regionFillMesh.material.opacity = 0.05;
+			regionFillMesh.material.side = DoubleSide;
+			regionFillMesh.raycast = emptyRaycast;
+			regionHelper.add( regionFillMesh );
+
 			// recenter the geometry to avoid rendering artifacts
 			const sphere = new Sphere();
 			region.getBoundingSphere( sphere );
@@ -793,6 +851,7 @@ export class DebugTilesPlugin {
 
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
+			regionFillMesh.geometry.translate( ...sphere.center );
 
 			engineData.regionHelper = regionHelper;
 
@@ -1005,21 +1064,48 @@ export class DebugTilesPlugin {
 		const engineData = tile.engineData;
 		if ( engineData?.boxHelperGroup ) {
 
-			engineData.boxHelperGroup.children[ 0 ].geometry.dispose();
+			engineData.boxHelperGroup.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.boxHelperGroup;
 
 		}
 
 		if ( engineData?.sphereHelper ) {
 
-			engineData.sphereHelper.geometry.dispose();
+			engineData.sphereHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.sphereHelper;
 
 		}
 
 		if ( engineData?.regionHelper ) {
 
-			engineData.regionHelper.geometry.dispose();
+			engineData.regionHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
 			delete engineData.regionHelper;
 
 		}

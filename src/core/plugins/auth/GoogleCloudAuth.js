@@ -3,7 +3,6 @@ import { TraversalUtils } from '3d-tiles-renderer/core';
 const TILES_MAP_URL = 'https://tile.googleapis.com/v1/createSession';
 
 /**
- * @classdesc
  * Authentication helper for Google Cloud Maps APIs. Manages session-token creation and
  * renewal for both the Photorealistic 3D Tiles API and the 2D Map Tiles API, injecting
  * the API key and session token into outgoing requests.

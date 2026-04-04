@@ -1,7 +1,16 @@
+/** @import { LoadingManager, Group } from 'three' */
+/** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
 import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+/**
+ * Loader for the legacy 3D Tiles Batched 3D Model (b3dm) format. Parses the b3dm
+ * container and returns a GLTF result with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @extends B3DMLoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class B3DMLoader extends B3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -12,6 +21,12 @@ export class B3DMLoader extends B3DMLoaderBase {
 
 	}
 
+	/**
+	 * Parses a b3dm buffer and resolves to a GLTF result object extended with legacy
+	 * tile metadata. Both `model` and `model.scene` receive the extra fields.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, scenes: Array, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		const b3dm = super.parse( buffer );

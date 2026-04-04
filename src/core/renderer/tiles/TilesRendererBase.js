@@ -320,6 +320,7 @@ export class TilesRendererBase {
 	/**
 	 * Root tile of the loaded root tileset, or null if not yet loaded.
 	 * @type {Tile|null}
+	 * @readonly
 	 */
 	get root() {
 
@@ -338,6 +339,7 @@ export class TilesRendererBase {
 	/**
 	 * Fraction of tiles loaded since the last idle state, from 0 (nothing loaded) to 1 (all loaded).
 	 * @type {number}
+	 * @readonly
 	 */
 	get loadProgress() {
 
@@ -445,24 +447,28 @@ export class TilesRendererBase {
 
 		/**
 		 * LRU cache managing loaded tile lifecycle and memory eviction.
+		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {LRUCache}
 		 */
 		this.lruCache = lruCache;
 
 		/**
-		 * Priority queue controlling concurrent tile downloads.
+		 * Priority queue controlling concurrent tile downloads. Max jobs defaults to `25`.
+		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
 		this.downloadQueue = downloadQueue;
 
 		/**
-		 * Priority queue controlling concurrent tile parsing.
+		 * Priority queue controlling concurrent tile parsing. Max jobs defaults to `5`.
+		 * @note Cannot be modified once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
 		this.parseQueue = parseQueue;
 
 		/**
-		 * Priority queue controlling deferred tile child preprocessing.
+		 * Priority queue for expanding and initializing tiles for traversal. Max jobs defaults to `25`.
+		 * @note Cannot be replaced once `update()` has been called for the first time.
 		 * @type {PriorityQueue}
 		 */
 		this.processNodeQueue = processNodeQueue;
@@ -510,15 +516,21 @@ export class TilesRendererBase {
 		// options
 
 		/**
-		 * Target screen-space error in pixels. Tiles with a higher SSE are subdivided.
+		 * Target screen-space error in pixels to aim for when updating the geometry. Tiles will
+		 * not render if they are below this level of screen-space error. See the
+		 * {@link https://github.com/CesiumGS/3d-tiles/tree/master/specification#geometric-error geometric error section}
+		 * of the 3D Tiles specification for more information.
 		 * @type {number}
 		 */
 		this.errorTarget = 16.0;
 		this._errorThreshold = Infinity;
 
 		/**
-		 * If true, tiles are displayed at their current LOD while waiting for higher-detail
-		 * children to finish loading, rather than hiding them.
+		 * "Active tiles" are those that are loaded and available but not necessarily visible.
+		 * These tiles are useful for raycasting off-camera or for casting shadows. Active tiles
+		 * not currently in a camera frustum are removed from the scene as an optimization.
+		 * Setting this to `true` keeps them in the scene so they can be rendered from an outside
+		 * camera view not accounted for by the tiles renderer.
 		 * @type {boolean}
 		 */
 		this.displayActiveTiles = false;
@@ -530,20 +542,38 @@ export class TilesRendererBase {
 		this.maxDepth = Infinity;
 
 		/**
-		 * If true, uses an optimized traversal strategy that prioritizes distance over error.
+		 * **Experimental.** Enables an optimized tile loading strategy that loads only the tiles
+		 * needed for the current view, reducing memory usage and improving initial load times.
+		 * Tiles are loaded independently based on screen-space error without requiring all parent
+		 * tiles to load first. Prevents visual gaps and flashing during camera movement.
+		 *
+		 * Based in part on {@link https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html Cesium Native tile selection}.
+		 *
+		 * Default is `false`, which uses the previous approach of loading all parent and sibling
+		 * tiles for guaranteed smooth transitions.
+		 * @warn Setting is currently incompatible with plugins that split tiles and on-the-fly generate and
+		 * dispose of child tiles including the `ImageOverlayPlugin` `enableTileSplitting` setting,
+		 * `QuantizedMeshPlugin`, & `ImageFormatPlugin` subclasses (XYZ, TMS, etc). Any tile sets
+		 * that share caches or queues must also use the same setting.
 		 * @type {boolean}
 		 */
 		this.optimizedLoadStrategy = false;
 
 		/**
-		 * If true, sibling tiles of visible tiles are also loaded to reduce pop-in during camera movement.
+		 * **Experimental.** When `true`, sibling tiles are loaded together to prevent gaps during
+		 * camera movement. When `false`, only visible tiles are loaded, minimizing memory but
+		 * potentially causing brief gaps during rapid movement.
+		 *
+		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 */
 		this.loadSiblings = true;
 
 		/**
-		 * Maximum number of tile children to preprocess per `update` call. Excess tiles are deferred
-		 * to `processNodeQueue`.
+		 * The number of tiles to process immediately when traversing the tile set to determine
+		 * what to render. Lower numbers prevent frame hiccups caused by processing too many tiles
+		 * at once when a new tile set is available, while higher values process more tiles
+		 * immediately so data can be downloaded and displayed sooner.
 		 * @type {number}
 		 */
 		this.maxTilesProcessed = 250;

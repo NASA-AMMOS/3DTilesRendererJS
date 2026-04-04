@@ -34,17 +34,16 @@ export const PARSING = 3;
  */
 export const LOADED = 4;
 
-// https://en.wikipedia.org/wiki/World_Geodetic_System
-// https://en.wikipedia.org/wiki/Flattening
-
 /**
  * WGS84 ellipsoid semi-major axis radius in meters.
+ * See the {@link https://en.wikipedia.org/wiki/World_Geodetic_System WGS84 specification}.
  * @type {number}
  */
 export const WGS84_RADIUS = 6378137;
 
 /**
  * WGS84 ellipsoid flattening factor.
+ * See {@link https://en.wikipedia.org/wiki/Flattening ellipsoid flattening}.
  * @type {number}
  */
 export const WGS84_FLATTENING = 1 / 298.257223563;

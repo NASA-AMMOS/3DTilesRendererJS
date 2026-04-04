@@ -1,3 +1,6 @@
+/** @import { Scene } from '@babylonjs/core/scene' */
+/** @import { TransformNode } from '@babylonjs/core/Meshes/transformNode' */
+/** @import { AssetContainer } from '@babylonjs/core/assetContainer' */
 import { LoaderBase } from '3d-tiles-renderer/core';
 import { Matrix, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import { LoadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader';
@@ -6,10 +9,9 @@ import '@babylonjs/loaders/glTF/2.0';
 const _worldMatrix = /* @__PURE__ */ Matrix.Identity();
 
 /**
- * @classdesc
  * Babylon.js loader for GLTF and GLB tile content. Loads a buffer into a Babylon.js scene
  * and applies an optional adjustment transform for coordinate-system correction.
- * @augments LoaderBase
+ * @extends LoaderBase
  */
 export class GLTFLoader extends LoaderBase {
 

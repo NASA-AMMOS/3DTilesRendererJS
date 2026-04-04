@@ -2,6 +2,23 @@ import { Sphere } from 'three';
 import { OBJECT_FRAME } from '3d-tiles-renderer/three';
 
 const sphere = /* @__PURE__ */ new Sphere();
+
+/**
+ * Plugin for automatically re-orienting and re-centering the tileset to make it visible
+ * near the origin and facing the right direction. If `lat`/`lon` are provided the
+ * tileset is placed at that geographic location; otherwise the plugin tries to determine
+ * if the tileset is on the globe surface and estimates the coordinates. If no coordinates
+ * can be determined the tileset is oriented so the given `up` axis aligns to three.js' +Y.
+ * @param {Object} [options]
+ * @param {number|null} [options.lat=null] Latitude in radians of the surface point to orient to (requires `lon`).
+ * @param {number|null} [options.lon=null] Longitude in radians of the surface point to orient to (requires `lat`).
+ * @param {number} [options.height=0] Height in metres above the ellipsoid surface.
+ * @param {string} [options.up='+z'] Axis to orient toward three.js +Y when no lat/lon is available. Valid values are `±x`, `±y`, `±z`.
+ * @param {boolean} [options.recenter=true] Whether to reposition the tileset to the origin.
+ * @param {number} [options.azimuth=0] Azimuth rotation in radians.
+ * @param {number} [options.elevation=0] Elevation rotation in radians.
+ * @param {number} [options.roll=0] Roll rotation in radians.
+ */
 export class ReorientationPlugin {
 
 	constructor( options ) {
@@ -118,6 +135,16 @@ export class ReorientationPlugin {
 
 	}
 
+	/**
+	 * Centers the tileset such that the given coordinates are positioned at the origin
+	 * with X facing west and Z facing north.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {number} [height=0] Height in metres above the ellipsoid surface.
+	 * @param {number} [azimuth=0] Azimuth rotation in radians.
+	 * @param {number} [elevation=0] Elevation rotation in radians.
+	 * @param {number} [roll=0] Roll rotation in radians.
+	 */
 	transformLatLonHeightToOrigin( lat, lon, height = 0, azimuth = 0, elevation = 0, roll = 0 ) {
 
 		const { group, ellipsoid } = this.tiles;

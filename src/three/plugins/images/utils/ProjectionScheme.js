@@ -235,8 +235,8 @@ export class ProjectionScheme {
 
 		const [ minX, minY, maxX, maxY ] = clampBounds;
 		result[ 0 ] = MathUtils.clamp( result[ 0 ], minX, maxX );
-		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
 		result[ 2 ] = MathUtils.clamp( result[ 2 ], minX, maxX );
+		result[ 1 ] = MathUtils.clamp( result[ 1 ], minY, maxY );
 		result[ 3 ] = MathUtils.clamp( result[ 3 ], minY, maxY );
 
 		return result;

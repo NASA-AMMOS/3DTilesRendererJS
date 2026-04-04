@@ -1,3 +1,4 @@
+/** @import { TilesRendererBase } from '3d-tiles-renderer/core' */
 import { CesiumIonAuth } from './auth/CesiumIonAuth.js';
 import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
 
@@ -9,7 +10,6 @@ import { GoogleCloudAuthPlugin } from './GoogleCloudAuthPlugin.js';
  */
 
 /**
- * @classdesc
  * Plugin for authenticating requests to Cesium Ion. Handles token refresh, asset endpoint
  * resolution, and attribution collection. Automatically registers a GoogleCloudAuthPlugin
  * when the resolved asset is an external Google photorealistic tileset.

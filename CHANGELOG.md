@@ -4,14 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.23] - Unreleased
+## [0.4.24] - Unreleased
+### Added
+- TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting an XR session to use for rAF callbacks.
+
+### Changed
+- EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
+- ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+
+### Fixed
+- Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+- ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
+- ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
+- ImageOverlays: Updated types.
+- EnvironmentControls: Removed use of "THREE.Clock"
+
+## [0.4.23] - 2026-03-18
 ### Added
 - DebugTilesPlugin: Added support for "boundsColorMode".
+- Auto-generated documentation via JSDoc.
+- DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
 
 ### Fixed
 - QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
 - QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
 - ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+- BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
 
 ## [0.4.22] - 2026-03-06
 ### Added

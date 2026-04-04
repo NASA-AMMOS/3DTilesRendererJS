@@ -1,3 +1,5 @@
+import { Scheduler } from './Scheduler.js';
+
 // function that rate limits the amount of time a function can be called to once
 // per frame, initially queuing a new call for the next frame.
 export function throttle( callback ) {
@@ -7,7 +9,7 @@ export function throttle( callback ) {
 
 		if ( handle === null ) {
 
-			handle = requestAnimationFrame( () => {
+			handle = Scheduler.requestAnimationFrame( () => {
 
 				handle = null;
 				callback();

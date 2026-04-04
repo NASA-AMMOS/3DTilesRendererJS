@@ -1,3 +1,41 @@
+// Converts {@link url text} inline tags in a string to Markdown [text](url) links.
+export function resolveLinks( str ) {
+
+	if ( ! str ) return str;
+	return str.replace( /\{@link\s+(\S+?)(?:\s+([^}]*?))?\}/g, ( _, url, text ) => {
+
+		return text ? `[${ text }](${ url })` : `[${ url }](${ url })`;
+
+	} );
+
+}
+
+// Renders any @warn / @note custom tags from a doclet as GFM alert blocks.
+function renderAlertTags( doc ) {
+
+	const lines = [];
+	for ( const tag of ( doc.tags || [] ) ) {
+
+		if ( tag.title === 'warn' || tag.title === 'note' ) {
+
+			const type = tag.title === 'warn' ? 'WARNING' : 'NOTE';
+			lines.push( `> [!${ type }]` );
+			for ( const line of tag.value.split( '\n' ) ) {
+
+				lines.push( `> ${ line }` );
+
+			}
+
+			lines.push( '' );
+
+		}
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
 // Converts a heading name to its GitHub Markdown anchor id.
 export function toAnchor( name ) {
 
@@ -57,39 +95,106 @@ export function formatParam( param, callbackMap = {} ) {
 
 }
 
+// Renders a parameter list into an array of lines. Expands any top-level params that have
+// dotted sub-params as inline destructured objects, with callback types expanded multi-line.
+function renderParamLines( allParams, callbackMap ) {
+
+	const topLevel = allParams.filter( p => ! p.name.includes( '.' ) );
+
+	const nestedMap = {};
+	for ( const p of allParams ) {
+
+		if ( p.name.includes( '.' ) ) {
+
+			const topName = p.name.split( '.' )[ 0 ];
+			if ( ! nestedMap[ topName ] ) nestedMap[ topName ] = [];
+			nestedMap[ topName ].push( p );
+
+		}
+
+	}
+
+	const hasAnyNested = topLevel.some( p => nestedMap[ p.name ] );
+	if ( ! hasAnyNested ) return null; // caller should use simple inline form
+
+	const lines = [];
+	topLevel.forEach( ( p, i ) => {
+
+		const nested = nestedMap[ p.name ];
+		const comma = i < topLevel.length - 1 ? ',' : '';
+
+		if ( nested ) {
+
+			lines.push( '\t{' );
+			for ( const opt of nested ) {
+
+				const name = opt.name.split( '.' ).pop();
+				const defStr = opt.defaultvalue !== undefined ? ` = ${ opt.defaultvalue }` : '';
+				const optional = opt.optional && opt.defaultvalue === undefined ? '?' : '';
+				const typeName = opt.type && opt.type.names && opt.type.names[ 0 ];
+				const callbackDoc = typeName && callbackMap[ typeName ];
+
+				if ( callbackDoc ) {
+
+					const cbParams = callbackDoc.params || [];
+					const cbRet = ( callbackDoc.returns && callbackDoc.returns[ 0 ] )
+						? formatType( callbackDoc.returns[ 0 ].type, callbackMap )
+						: 'void';
+
+					lines.push( `\t\t${ name }${ defStr }${ optional }: (` );
+					cbParams.forEach( ( cp, ci ) => {
+
+						const cpType = formatType( cp.type, callbackMap );
+						const cpComma = ci < cbParams.length - 1 ? ',' : '';
+						lines.push( `\t\t\t${ cp.name }: ${ cpType }${ cpComma }` );
+
+					} );
+					lines.push( `\t\t) => ${ cbRet },` );
+
+				} else {
+
+					const type = formatType( opt.type, callbackMap );
+					lines.push( `\t\t${ name }${ defStr }${ optional }: ${ type },` );
+
+				}
+
+			}
+
+			lines.push( `\t}${ comma }` );
+
+		} else {
+
+			lines.push( `\t${ formatParam( p, callbackMap ) }${ comma }` );
+
+		}
+
+	} );
+
+	return lines;
+
+}
+
 export function renderConstructor( classDoc, callbackMap = {} ) {
 
 	const lines = [];
-
-	const topLevel = ( classDoc.params || [] ).filter( p => ! p.name.includes( '.' ) );
-	const options = ( classDoc.params || [] ).filter( p => p.name.includes( '.' ) );
-
-	// When there is exactly one top-level param and nested option fields, render the
-	// options inline as a destructured object rather than as a separate bullet list.
-	const isOptionsObject = topLevel.length === 1 && options.length > 0;
 
 	lines.push( '### .constructor' );
 	lines.push( '' );
 	lines.push( '```js' );
 
-	if ( isOptionsObject ) {
+	const paramLines = renderParamLines( classDoc.params || [], callbackMap );
+	if ( paramLines ) {
 
-		lines.push( 'constructor( {' );
-		for ( const param of options ) {
-
-			const name = param.name.split( '.' ).pop();
-			const type = formatType( param.type, callbackMap );
-			const defStr = param.defaultvalue !== undefined ? ` = ${ param.defaultvalue }` : '';
-			const optional = param.optional && param.defaultvalue === undefined ? '?' : '';
-			lines.push( `\t${ name }${ defStr }${ optional }: ${ type },` );
-
-		}
-
-		lines.push( '} )' );
+		lines.push( 'constructor(' );
+		lines.push( ...paramLines );
+		lines.push( ')' );
 
 	} else {
 
-		const sig = topLevel.map( p => formatParam( p, callbackMap ) ).join( ', ' );
+		const sig = ( classDoc.params || [] )
+			.filter( p => ! p.name.includes( '.' ) )
+			.map( p => formatParam( p, callbackMap ) )
+			.join( ', ' );
 		lines.push( `constructor( ${ sig } )` );
 
 	}
@@ -101,22 +206,6 @@ export function renderConstructor( classDoc, callbackMap = {} ) {
 	if ( classDoc.description ) {
 
 		lines.push( classDoc.description );
-		lines.push( '' );
-
-	}
-
-	// Bullet list only used for the non-options-object case (e.g. mixed positional + nested params)
-	if ( ! isOptionsObject && options.length > 0 ) {
-
-		for ( const param of options ) {
-
-			const name = param.name.split( '.' ).pop();
-			const type = formatType( param.type, callbackMap );
-			const defStr = param.defaultvalue !== undefined ? ` = ${ param.defaultvalue }` : '';
-			lines.push( `- \`${ name }${ defStr }: ${ type }\` — ${ param.description }` );
-
-		}
-
 		lines.push( '' );
 
 	}
@@ -147,41 +236,57 @@ export function renderMember( doc, callbackMap = {} ) {
 
 	}
 
+	lines.push( renderAlertTags( doc ) );
+
 	return lines.join( '\n' );
 
 }
 
-export function renderMethod( doc, callbackMap = {} ) {
+function renderCallable( doc, heading, sigPrefix, callbackMap ) {
 
 	const lines = [];
 
-	lines.push( `### .${ doc.name }` );
+	lines.push( heading );
 	lines.push( '' );
 	lines.push( '```js' );
 
-	const params = ( doc.params || [] ).map( p => formatParam( p, callbackMap ) );
+	const allParams = doc.params || [];
+	const topLevel = allParams.filter( p => ! p.name.includes( '.' ) );
+
 	const ret = ( doc.returns && doc.returns[ 0 ] )
 		? formatType( doc.returns[ 0 ].type, callbackMap )
 		: 'void';
 
-	const singleLine = params.length
-		? `${ doc.name }( ${ params.join( ', ' ) } ): ${ ret }`
-		: `${ doc.name }(): ${ ret }`;
+	const paramLines = renderParamLines( allParams, callbackMap );
+	if ( paramLines ) {
 
-	if ( singleLine.length > 80 ) {
-
-		lines.push( `${ doc.name }(` );
-		params.forEach( ( p, i ) => {
-
-			const comma = i < params.length - 1 ? ',' : '';
-			lines.push( `\t${ p }${ comma }` );
-
-		} );
+		lines.push( `${ sigPrefix }${ doc.name }(` );
+		lines.push( ...paramLines );
 		lines.push( `): ${ ret }` );
 
 	} else {
 
-		lines.push( singleLine );
+		const params = topLevel.map( p => formatParam( p, callbackMap ) );
+		const singleLine = params.length
+			? `${ sigPrefix }${ doc.name }( ${ params.join( ', ' ) } ): ${ ret }`
+			: `${ sigPrefix }${ doc.name }(): ${ ret }`;
+
+		if ( singleLine.length > 80 ) {
+
+			lines.push( `${ sigPrefix }${ doc.name }(` );
+			params.forEach( ( p, i ) => {
+
+				const comma = i < params.length - 1 ? ',' : '';
+				lines.push( `\t${ p }${ comma }` );
+
+			} );
+			lines.push( `): ${ ret }` );
+
+		} else {
+
+			lines.push( singleLine );
+
+		}
 
 	}
 
@@ -195,17 +300,59 @@ export function renderMethod( doc, callbackMap = {} ) {
 
 	}
 
+	lines.push( renderAlertTags( doc ) );
+
 	return lines.join( '\n' );
 
 }
 
-export function renderConstants( constants, callbackMap = {} ) {
+export function renderMethod( doc, callbackMap = {} ) {
+
+	const isStatic = doc.scope === 'static';
+	const headingPrefix = isStatic ? 'static ' : '';
+	const sigPrefix = isStatic ? `static ${ doc.async ? 'async ' : '' }` : ( doc.async ? 'async ' : '' );
+	return renderCallable( doc, `### ${ headingPrefix }.${ doc.name }`, sigPrefix, callbackMap );
+
+}
+
+export function renderFunction( doc, callbackMap = {} ) {
+
+	return renderCallable( doc, `### ${ doc.name }`, '', callbackMap );
+
+}
+
+export function renderFunctions( funcs, title = 'Functions', callbackMap = {}, typedefs = [], typedefCallbackMap = {}, resolveLink = null ) {
+
+	if ( funcs.length === 0 && typedefs.length === 0 ) return '';
+
+	const lines = [];
+
+	lines.push( `## ${ title }` );
+	lines.push( '' );
+
+	for ( const td of typedefs ) {
+
+		lines.push( renderTypedef( td, typedefCallbackMap, resolveLink, 3 ) );
+
+	}
+
+	for ( const fn of funcs ) {
+
+		lines.push( renderFunction( fn, callbackMap ) );
+
+	}
+
+	return lines.join( '\n' );
+
+}
+
+export function renderConstants( constants, title = 'Constants', callbackMap = {} ) {
 
 	if ( constants.length === 0 ) return '';
 
 	const lines = [];
 
-	lines.push( '## Constants' );
+	lines.push( `## ${ title }` );
 	lines.push( '' );
 
 	for ( const c of constants ) {
@@ -231,11 +378,13 @@ export function renderConstants( constants, callbackMap = {} ) {
 
 }
 
-export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
+export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null, headingLevel = 2 ) {
 
+	const h = '#'.repeat( headingLevel );
+	const hSub = '#'.repeat( headingLevel + 1 );
 	const lines = [];
 
-	lines.push( `## ${ typeDoc.name }` );
+	lines.push( `${ h } ${ typeDoc.name }` );
 	lines.push( '' );
 
 	// If the typedef's base type is not plain Object, treat it as an extension
@@ -256,11 +405,13 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null ) {
 
 	}
 
+	lines.push( renderAlertTags( typeDoc ) );
+
 	for ( const prop of ( typeDoc.properties || [] ) ) {
 
 		const type = formatType( prop.type, callbackMap );
 		const optional = prop.optional ? '?' : '';
-		lines.push( `### .${ prop.name }` );
+		lines.push( `${ hSub } .${ prop.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
 		lines.push( `${ prop.name }${ optional }: ${ type }` );
@@ -414,12 +565,15 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 
 	}
 
-	if ( classDoc.classdesc ) {
+	const classDesc = classDoc.classdesc || classDoc.description;
+	if ( classDesc ) {
 
-		lines.push( classDoc.classdesc );
+		lines.push( classDesc );
 		lines.push( '' );
 
 	}
+
+	lines.push( renderAlertTags( classDoc ) );
 
 	const visible = members.filter( m => m.access !== 'private' );
 	// Treat function doclets that carry an explicit @type tag as properties
@@ -428,9 +582,11 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 	const properties = visible
 		.filter( isProperty )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
-	const methods = visible
+	const allMethods = visible
 		.filter( m => m.kind === 'function' && ! m.type )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
+	const staticMethods = allMethods.filter( m => m.scope === 'static' );
+	const instanceMethods = allMethods.filter( m => m.scope !== 'static' );
 	const events = visible
 		.filter( m => m.kind === 'event' )
 		.sort( ( a, b ) => a.meta.lineno - b.meta.lineno );
@@ -441,20 +597,27 @@ export function renderClass( classDoc, members, callbackMap = {}, resolveLink = 
 
 	}
 
+	// Static methods appear first
+	for ( const method of staticMethods ) {
+
+		lines.push( renderMethod( method, callbackMap ) );
+
+	}
+
 	for ( const member of properties ) {
 
 		lines.push( renderMember( member, callbackMap ) );
 
 	}
 
-	// Constructor before other methods
+	// Constructor before instance methods
 	if ( classDoc.params && classDoc.params.length > 0 ) {
 
 		lines.push( renderConstructor( classDoc, callbackMap ) );
 
 	}
 
-	for ( const method of methods ) {
+	for ( const method of instanceMethods ) {
 
 		lines.push( renderMethod( method, callbackMap ) );
 

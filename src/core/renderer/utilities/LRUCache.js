@@ -1,3 +1,5 @@
+import { Scheduler } from './Scheduler.js';
+
 const GIGABYTE_BYTES = 2 ** 30;
 
 /**
@@ -69,12 +71,14 @@ class LRUCache {
 
 		/**
 		 * Minimum total bytes to retain after eviction.
+		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
 		 */
 		this.minBytesSize = 0.3 * GIGABYTE_BYTES;
 
 		/**
 		 * Maximum total bytes before eviction is triggered.
+		 * @note Only works with three.js r166 or higher.
 		 * @type {number}
 		 */
 		this.maxBytesSize = 0.4 * GIGABYTE_BYTES;
@@ -448,7 +452,7 @@ class LRUCache {
 
 		if ( needsRerun ) {
 
-			this.unloadingHandle = requestAnimationFrame( () => this.scheduleUnload() );
+			this.unloadingHandle = Scheduler.requestAnimationFrame( () => this.scheduleUnload() );
 
 		}
 
@@ -459,7 +463,7 @@ class LRUCache {
 	 */
 	scheduleUnload() {
 
-		cancelAnimationFrame( this.unloadingHandle );
+		Scheduler.cancelAnimationFrame( this.unloadingHandle );
 
 		if ( ! this.scheduled ) {
 

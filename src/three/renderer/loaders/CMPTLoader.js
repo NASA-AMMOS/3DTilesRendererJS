@@ -1,3 +1,4 @@
+/** @import { LoadingManager } from 'three' */
 import { Group, DefaultLoadingManager, Matrix4 } from 'three';
 import { CMPTLoaderBase } from '3d-tiles-renderer/core';
 import { B3DMLoader } from './B3DMLoader.js';
@@ -5,6 +6,13 @@ import { PNTSLoader } from './PNTSLoader.js';
 import { I3DMLoader } from './I3DMLoader.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
+/**
+ * Loader for the legacy 3D Tiles Composite (cmpt) format. Parses a cmpt container
+ * that bundles multiple b3dm, i3dm, and pnts tiles, returning a scene Group containing
+ * all sub-tile scenes.
+ * @extends CMPTLoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class CMPTLoader extends CMPTLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -16,6 +24,12 @@ export class CMPTLoader extends CMPTLoaderBase {
 
 	}
 
+	/**
+	 * Parses a cmpt buffer and resolves to an object containing a `Group` with all
+	 * sub-tile scenes added as children, and the individual sub-tile results.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, tiles: Array }>}
+	 */
 	parse( buffer ) {
 
 		const result = super.parse( buffer );

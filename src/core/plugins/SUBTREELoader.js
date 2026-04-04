@@ -4,6 +4,13 @@
  */
 import { LoaderBase, LoaderUtils } from '3d-tiles-renderer/core';
 
+/** @typedef { {
+ * 	constant: boolean=,
+ * 	lengthBits: number,
+ * 	bitstream: Uint8Array=
+ * } } ParsedBitstream
+ * */
+
 function isOctreeSubdivision( tile ) {
 
 	return tile.implicitTilingData.root.implicitTiling.subdivisionScheme === 'OCTREE';
@@ -94,7 +101,7 @@ export class SUBTREELoader extends LoaderBase {
 	/**
 	 *
 	 * @param {ArrayBuffer} buffer
-	 * @return {Subtree}
+	 * @returns {Subtree}
 	 */
 	parseBuffer( buffer ) {
 
@@ -713,7 +720,7 @@ export class SUBTREELoader extends LoaderBase {
 	 * the actual bounding volumes should not be computed progressively by subdividing a non-root tile volume.
 	 * Instead, the exact bounding volumes are computed directly for a given level.
 	 * @param {Object | SubtreeTile} tile
-	 * @return {Object} object containing the bounding volume.
+	 * @returns {Object} object containing the bounding volume.
 	 */
 	getTileBoundingVolume( tile ) {
 
@@ -800,7 +807,7 @@ export class SUBTREELoader extends LoaderBase {
 	/**
 	 * Each child’s geometricError is half of its parent’s geometricError.
 	 * @param {Object | SubtreeTile} tile
-	 * @return {number}
+	 * @returns {number}
 	 */
 	getGeometricError( tile ) {
 
