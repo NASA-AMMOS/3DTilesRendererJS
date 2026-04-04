@@ -287,17 +287,18 @@ directly. See the [WMTS specification](https://www.ogc.org/standard/wmts/).
 ```js
 constructor(
 	{
-		capabilities?: Object,
+		url?: string,
 		layer?: string,
 		tileMatrixSet?: string,
-		style?: string,
-		dimensions?: Object,
-		opacity = 1: number,
-		color = 0xffffff: number | Color,
-		frame = null: Matrix4,
-		preprocessURL = null: function,
-		alphaMask = false: boolean,
-		alphaInvert = false: boolean,
+		style = 'default': string,
+		format = 'image/jpeg': string,
+		dimensions = null: Object<string, (string|number)> | null,
+		tileMatrixLabels = null: Array<string> | null,
+		tileMatrices = null: Array<WMTSTileMatrix> | null,
+		projection = null: string | null,
+		levels = 20: number,
+		tileDimension = 256: number,
+		contentBoundingBox = null: Array<number> | null,
 	}
 )
 ```
@@ -503,11 +504,18 @@ a URL template directly.
 ```js
 constructor(
 	{
-		capabilities?: Object,
+		url?: string,
 		layer?: string,
 		tileMatrixSet?: string,
-		style?: string,
-		dimensions?: Object,
+		style = 'default': string,
+		format = 'image/jpeg': string,
+		dimensions = null: Object<string, (string|number)> | null,
+		tileMatrixLabels = null: Array<string> | null,
+		tileMatrices = null: Array<WMTSTileMatrix> | null,
+		projection = null: string | null,
+		levels = 20: number,
+		tileDimension = 256: number,
+		contentBoundingBox = null: Array<number> | null,
 	}
 )
 ```
@@ -1101,111 +1109,6 @@ Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order i
 constructor( manager: LoadingManager )
 ```
 
-## WMTSImageSource
-
-_extends `TiledImageSource`_
-
-WMTS (Web Map Tile Service) image source for loading tiled map imagery.
-
-This class provides support for loading map tiles from WMTS-compliant services.
-It handles parsing WMTS capabilities documents and constructing proper tile URLs.
-
-
-### .capabilities
-
-```js
-capabilities: Object | null
-```
-
-Parsed WMTS capabilities object
-
-
-### .layer
-
-```js
-layer: string | Object | null
-```
-
-The layer to render (identifier string or layer object)
-
-
-### .tileMatrixSet
-
-```js
-tileMatrixSet: string | Object | null
-```
-
-The tile matrix set to use (identifier string or object)
-
-
-### .style
-
-```js
-style: string | null
-```
-
-The style identifier
-
-
-### .dimensions
-
-```js
-dimensions: Object
-```
-
-Dimension values for the WMTS request
-
-
-### .url
-
-```js
-url: string | null
-```
-
-The URL template for tile requests
-
-
-### .constructor
-
-```js
-constructor(
-	{
-		capabilities = null: Object,
-		layer = null: string | Object,
-		tileMatrixSet = null: string | Object,
-		style = null: string,
-		url = null: string,
-		dimensions = {}: Object,
-	}
-)
-```
-
-Creates a new WMTSImageSource instance.
-
-### .getUrl
-
-```js
-getUrl( x: number, y: number, level: number ): string
-```
-
-Generates the URL for a specific tile.
-
-
-### .init
-
-```js
-init(): Promise<void>
-```
-
-Initializes the image source by parsing capabilities and setting up the tiling scheme.
-
-This method:
-- Resolves layer, tileMatrixSet, and style from capabilities
-- Determines the projection (EPSG:4326 or EPSG:3857)
-- Configures the tiling scheme with proper bounds and tile sizes
-- Constructs the final URL template
-
-
 ## FeatureInfo
 
 
@@ -1232,3 +1135,56 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## WMTSTileMatrix
+
+
+### .identifier
+
+```js
+identifier: string
+```
+
+TileMatrix identifier (e.g., 'Level0', 'EPSG:3857:0').
+
+### .matrixWidth
+
+```js
+matrixWidth: number
+```
+
+Number of tile columns at this level.
+
+### .matrixHeight
+
+```js
+matrixHeight: number
+```
+
+Number of tile rows at this level.
+
+### .tileWidth
+
+```js
+tileWidth?: number
+```
+
+Tile width in pixels (defaults to tileDimension).
+
+### .tileHeight
+
+```js
+tileHeight?: number
+```
+
+Tile height in pixels (defaults to tileDimension).
+
+### .tileBounds
+
+```js
+tileBounds: Array<number>
+```
+
+Tile grid bounds in radians `[west, south, east, north]`.
+  Required because the actual coverage depends on TopLeftCorner and ScaleDenominator
+  from the capabilities XML and cannot be computed from grid dimensions alone.

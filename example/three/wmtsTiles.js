@@ -160,6 +160,11 @@ function rebuildTiles() {
 
 	}
 
+	const layer = capabilities.layers.find( l => l.identifier === params.layer );
+	const tileMatrixSet = layer.tileMatrixSets.find( tms => tms.identifier === params.tileMatrixSet );
+	const url = layer.resourceUrls[ 0 ].template;
+	const contentBoundingBox = layer.boundingBox.bounds;
+
 	// tiles
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin() );
@@ -167,8 +172,15 @@ function rebuildTiles() {
 	tiles.registerPlugin( new WMTSTilesPlugin( {
 		shape: params.planar ? 'planar' : 'ellipsoid',
 		center: true,
-		capabilities,
-		...params,
+
+		url,
+		tileMatrices: tileMatrixSet.tileMatrices,
+		contentBoundingBox,
+		projection: 'EPSG:4326',
+		dimensions: params.dimensions,
+		style: params.style,
+		layer: params.layer,
+		tileMatrixSet: params.tileMatrixSet,
 	} ) );
 
 	tiles.setCamera( camera );

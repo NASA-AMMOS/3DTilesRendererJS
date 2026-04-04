@@ -14,11 +14,21 @@ interface WMTSServiceIdentification {
 	serviceTypeVersion: string;
 }
 
+export interface WMTSTileMatrix {
+	identifier: string,
+	matrixWidth: number,
+	matrixHeight: number,
+	tileWidth?: number,
+	tileHeight?: number,
+	tileBounds: Array<number>,
+}
+
 export interface WMTSTileMatrixSet {
 	title: string;
 	identifier: string;
 	abstract: string;
 	supportedCRS: string;
+	tileMatrices: Array<WMTSTileMatrix>;
 }
 
 export interface WMTSLayer {
