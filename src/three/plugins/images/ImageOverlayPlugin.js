@@ -1480,7 +1480,6 @@ class TiledImageOverlay extends ImageOverlay {
 
 		}
 
-		// TODO: should this be one layer higher LoD?
 		return level;
 
 	}
