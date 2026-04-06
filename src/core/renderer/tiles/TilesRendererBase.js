@@ -1341,7 +1341,25 @@ export class TilesRendererBase {
 
 	fetchData( url, options ) {
 
-		return fetch( url, options );
+		const { signal } = options;
+		return fetch( url, options ).catch( err => {
+
+			// When an AbortSignal fires while a CORS OPTIONS preflight is in-flight,
+			// browsers (notably Chrome) reset the TCP connection and reject the fetch()
+			// promise with a TypeError ("Failed to fetch") rather than an AbortError.
+			// This happens because the preflight runs with its own inner fetch params,
+			// and the abort signal may not propagate to those inner params before the
+			// preflight returns a plain network error — which the spec maps to TypeError.
+			// Normalize this here so that callers only need to handle AbortError.
+			if ( err.name === 'TypeError' && signal && signal.aborted ) {
+
+				throw new DOMException( 'Aborted', 'AbortError' );
+
+			}
+
+			throw err;
+
+		} );
 
 	}
 
