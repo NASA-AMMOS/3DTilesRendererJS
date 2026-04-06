@@ -2,7 +2,7 @@
 /** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
 import { B3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /**
  * Loader for the legacy 3D Tiles Batched 3D Model (b3dm) format. Parses the b3dm
