@@ -1464,7 +1464,14 @@ class TiledImageOverlay extends ImageOverlay {
 			const wProj = resolution / w;
 			const hProj = resolution / h;
 
-			const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
+			const levelData = this.tiling.getLevel( level );
+			if ( levelData === null || levelData === undefined ) {
+
+				continue;
+
+			}
+
+			const { pixelWidth, pixelHeight } = levelData;
 			if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
 
 				break;
