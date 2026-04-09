@@ -146,17 +146,40 @@ export class ImageFormatPlugin {
 
 	}
 
-	preprocessNode( tile ) {
+	ensureChildrenAreExpanded( tile ) {
 
-		// generate children
-		const { tiling } = this;
-		const maxLevel = tiling.maxLevel;
+		if ( ! ( TILE_LEVEL in tile ) ) {
+
+			return;
+
+		}
+
 		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel && tile.parent !== null ) {
+		if ( level === - 1 || level < this.tiling.maxLevel ) {
+
+			// skip if all children are already present
+			if ( tile._imageChildrenComplete ) {
+
+				return;
+
+			}
 
 			this.expandChildren( tile );
 
 		}
+
+	}
+
+	pruneUnusedSubtrees() {
+
+		const { tiles } = this;
+		if ( ! tiles.root ) {
+
+			return;
+
+		}
+
+		this._pruneUnusedSubtrees( tiles.root );
 
 	}
 
@@ -178,26 +201,19 @@ export class ImageFormatPlugin {
 	// Local functions
 	getTileset( baseUrl ) {
 
-		const { tiling, tiles } = this;
-		const minLevel = tiling.minLevel;
-		const { tileCountX, tileCountY } = tiling.getLevel( minLevel );
+		const { tiles } = this;
+		const root = {
+			refine: 'REPLACE',
+			geometricError: Infinity,
+			boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
+			children: [],
 
-		// generate all children for the root
-		const children = [];
-		for ( let x = 0; x < tileCountX; x ++ ) {
+			[ TILE_LEVEL ]: - 1,
+			[ TILE_X ]: 0,
+			[ TILE_Y ]: 0,
+		};
 
-			for ( let y = 0; y < tileCountY; y ++ ) {
-
-				const child = this.createChild( x, y, minLevel );
-				if ( child !== null ) {
-
-					children.push( child );
-
-				}
-
-			}
-
-		}
+		this.expandChildren( root );
 
 		// generate tileset
 		const tileset = {
@@ -205,16 +221,7 @@ export class ImageFormatPlugin {
 				version: '1.1'
 			},
 			geometricError: Infinity,
-			root: {
-				refine: 'REPLACE',
-				geometricError: Infinity,
-				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
-				children,
-
-				[ TILE_LEVEL ]: - 1,
-				[ TILE_X ]: 0,
-				[ TILE_Y ]: 0,
-			}
+			root,
 		};
 
 		tiles.preprocessTileset( tileset, baseUrl );
@@ -321,24 +328,184 @@ export class ImageFormatPlugin {
 	expandChildren( tile ) {
 
 		const level = tile[ TILE_LEVEL ];
-		const x = tile[ TILE_X ];
-		const y = tile[ TILE_Y ];
+		const existingChildren = new Set();
+		const { children } = tile;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-		const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
-		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
+			const child = children[ i ];
+			if ( TILE_LEVEL in child ) {
 
-			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
+				existingChildren.add( `${ child[ TILE_LEVEL ] }:${ child[ TILE_X ] }:${ child[ TILE_Y ] }` );
 
-				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
-				if ( child ) {
+			}
 
-					tile.children.push( child );
+		}
+
+		const insertionPoint = children.length - ( tile.internal?.virtualChildCount || 0 );
+		const pendingChildren = [];
+		if ( level === - 1 ) {
+
+			const minLevel = this.tiling.minLevel;
+			const { tileCountX, tileCountY } = this.tiling.getLevel( minLevel );
+			for ( let x = 0; x < tileCountX; x ++ ) {
+
+				for ( let y = 0; y < tileCountY; y ++ ) {
+
+					const key = `${ minLevel }:${ x }:${ y }`;
+					if ( existingChildren.has( key ) ) {
+
+						continue;
+
+					}
+
+					const child = this.createChild( x, y, minLevel );
+					if ( child ) {
+
+						pendingChildren.push( child );
+
+					}
+
+				}
+
+			}
+
+		} else if ( level < this.tiling.maxLevel ) {
+
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+			const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
+			for ( let cx = 0; cx < tileSplitX; cx ++ ) {
+
+				for ( let cy = 0; cy < tileSplitY; cy ++ ) {
+
+					const childX = tileSplitX * x + cx;
+					const childY = tileSplitY * y + cy;
+					const childLevel = level + 1;
+					const key = `${ childLevel }:${ childX }:${ childY }`;
+					if ( existingChildren.has( key ) ) {
+
+						continue;
+
+					}
+
+					const child = this.createChild( childX, childY, childLevel );
+					if ( child ) {
+
+						pendingChildren.push( child );
+
+					}
 
 				}
 
 			}
 
 		}
+
+		if ( pendingChildren.length > 0 ) {
+
+			children.splice( insertionPoint, 0, ...pendingChildren );
+			tile._imageChildrenComplete = false;
+
+		} else {
+
+			tile._imageChildrenComplete = true;
+
+		}
+
+	}
+
+	_pruneUnusedSubtrees( tile ) {
+
+		const { children } = tile;
+		for ( let i = 0; i < children.length; i ++ ) {
+
+			const child = children[ i ];
+			if ( ! ( TILE_LEVEL in child ) ) {
+
+				continue;
+
+			}
+
+			if ( this._canPruneSubtree( child ) ) {
+
+				this._disposeSubtree( child );
+				children.splice( i, 1 );
+				i --;
+				tile._imageChildrenComplete = false;
+
+			} else {
+
+				this._pruneUnusedSubtrees( child );
+
+			}
+
+		}
+
+	}
+
+	_canPruneSubtree( tile ) {
+
+		if ( this._isTileRetained( tile ) ) {
+
+			return false;
+
+		}
+
+		const { children } = tile;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			if ( ! this._canPruneSubtree( children[ i ] ) ) {
+
+				return false;
+
+			}
+
+		}
+
+		return true;
+
+	}
+
+	_isTileRetained( tile ) {
+
+		const { tiles } = this;
+		return tiles.lruCache.has( tile ) || Boolean( tile.traversal && (
+			tile.traversal.used ||
+			tile.traversal.usedLastFrame ||
+			tile.traversal.active ||
+			tile.traversal.visible ||
+			tile.traversal.wasSetActive ||
+			tile.traversal.wasSetVisible
+		) );
+
+	}
+
+	_disposeSubtree( tile ) {
+
+		const { tiles } = this;
+		const { children } = tile;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			this._disposeSubtree( children[ i ] );
+
+		}
+
+		tiles.processNodeQueue.remove( tile );
+		const queuedIndex = tiles.queuedTiles.indexOf( tile );
+		if ( queuedIndex !== - 1 ) {
+
+			tiles.queuedTiles.splice( queuedIndex, 1 );
+
+		}
+
+		tiles.usedSet.delete( tile );
+		tiles.loadingTiles.delete( tile );
+		tiles.activeTiles.delete( tile );
+		tiles.visibleTiles.delete( tile );
+		tiles.lruCache.remove( tile );
+
+		tile.parent = null;
+		tile.children.length = 0;
 
 	}
 

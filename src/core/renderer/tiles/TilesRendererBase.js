@@ -885,6 +885,18 @@ export class TilesRendererBase {
 		// remove any tiles that are loading but no longer used
 		this.removeUnusedPendingTiles();
 
+		const plugins = this.plugins;
+		for ( let i = 0, l = plugins.length; i < l; i ++ ) {
+
+			const plugin = plugins[ i ];
+			if ( plugin.pruneUnusedSubtrees ) {
+
+				plugin.pruneUnusedSubtrees();
+
+			}
+
+		}
+
 		// TODO: This will only sort for one tileset. We may want to store this queue on the
 		// LRUCache so multiple tilesets can use it at once
 		// start the downloads of the tiles as needed
@@ -1346,6 +1358,18 @@ export class TilesRendererBase {
 	}
 
 	ensureChildrenArePreprocessed( tile, forceImmediate = this.stats.tilesProcessed < this.maxTilesProcessed ) {
+
+		const plugins = this.plugins;
+		for ( let i = 0, l = plugins.length; i < l; i ++ ) {
+
+			const plugin = plugins[ i ];
+			if ( plugin.ensureChildrenAreExpanded ) {
+
+				plugin.ensureChildrenAreExpanded( tile );
+
+			}
+
+		}
 
 		const children = tile.children;
 		if ( children.length === 0 || children[ children.length - 1 ].traversal ) {

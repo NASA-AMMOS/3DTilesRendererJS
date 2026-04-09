@@ -72,14 +72,19 @@ function resetFrameState( tile, renderer ) {
 // Recursively mark tiles used down to the next layer, skipping external tilesets
 function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
-	renderer.ensureChildrenArePreprocessed( tile );
-
 	resetFrameState( tile, renderer );
 	markUsed( tile, renderer, cacheOnly );
 
 	// don't traverse if the children have not been processed, yet but tileset content
 	// should be considered to be "replaced" by the loaded children so await that here.
-	if ( canUnconditionallyRefine( tile ) && areChildrenProcessed( tile ) ) {
+	if ( canUnconditionallyRefine( tile ) ) {
+
+		renderer.ensureChildrenArePreprocessed( tile );
+		if ( ! areChildrenProcessed( tile ) ) {
+
+			return;
+
+		}
 
 		const children = tile.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
@@ -94,8 +99,6 @@ function recursivelyMarkUsed( tile, renderer, cacheOnly = false ) {
 
 // Recursively traverses to the next tiles with unloaded renderable content to load them
 function recursivelyLoadNextRenderableTiles( tile, renderer ) {
-
-	renderer.ensureChildrenArePreprocessed( tile );
 
 	// exit the recursion if the tile hasn't been used this frame
 	if ( isUsedThisFrame( tile, renderer.frameCount ) ) {
@@ -167,6 +170,8 @@ function canTraverse( tile, renderer ) {
 
 	}
 
+	renderer.ensureChildrenArePreprocessed( tile );
+
 	// Early out if the children haven't been processed, yet
 	if ( ! areChildrenProcessed( tile ) ) {
 
@@ -180,10 +185,6 @@ function canTraverse( tile, renderer ) {
 
 // Determine which tiles are used by the renderer given the current camera configuration
 function markUsedTiles( tile, renderer ) {
-
-	// determine frustum set is run first so we can ensure the preprocessing of all the necessary
-	// child tiles has happened here.
-	renderer.ensureChildrenArePreprocessed( tile );
 
 	resetFrameState( tile, renderer );
 
