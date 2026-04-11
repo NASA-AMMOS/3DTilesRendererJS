@@ -173,6 +173,8 @@ export class ImageFormatPlugin {
 
 		}
 
+		tile.children.length = 0;
+
 	}
 
 	// Local functions
