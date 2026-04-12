@@ -4,7 +4,7 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, XYZTilesPlugin, } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
@@ -75,13 +75,16 @@ function initTiles() {
 
 	// tiles
 	tiles = new TilesRenderer();
+	const overlay = new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
+
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new XYZTilesPlugin( {
+	tiles.registerPlugin( new GeneratedSurfacePlugin( {
+		overlay,
 		center: true,
 		shape: params.planar ? 'planar' : 'ellipsoid',
-		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 	} ) );
+	tiles.registerPlugin( new ImageOverlayPlugin( { renderer, overlays: [ overlay ] } ) );
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
