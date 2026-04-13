@@ -102,8 +102,9 @@ export class GeneratedSurfacePlugin {
 
 		const { shape, transparent, overlay } = this;
 		const { projection, tiling } = overlay;
+		const useRegions = projection.isCartographic && shape === 'ellipsoid';
 		let res;
-		if ( projection.isCartographic && shape === 'ellipsoid' ) {
+		if ( useRegions ) {
 
 			res = this._createEllipsoidMesh( tile );
 
@@ -115,19 +116,6 @@ export class GeneratedSurfacePlugin {
 
 		res.material.transparent = transparent;
 		res.material.side = 2;
-
-		// Apply the overlay texture directly
-		if ( ! overlay.isReady ) {
-
-			await overlay.whenReady();
-
-		}
-
-		if ( abortSignal.aborted ) {
-
-			return null;
-
-		}
 
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
@@ -371,12 +359,24 @@ export class GeneratedSurfacePlugin {
 		const { shape, overlay } = this;
 		const { tiling, projection } = overlay;
 
+		const isRoot = level === - 1;
 		if ( projection.isCartographic && shape === 'ellipsoid' ) {
 
 			const { endCaps } = this;
-			const isRoot = level === - 1;
-			const normalizedBounds = isRoot ? tiling.getContentBounds( true ) : tiling.getTileBounds( x, y, level, true, true );
-			const cartBounds = isRoot ? tiling.getContentBounds() : tiling.getTileBounds( x, y, level, false, true );
+
+			let normalizedBounds;
+			let cartBounds;
+			if ( isRoot ) {
+
+				normalizedBounds = tiling.getContentBounds( true );
+				cartBounds = tiling.getContentBounds();
+
+			} else {
+
+				normalizedBounds = tiling.getTileBounds( x, y, level, true, true );
+				cartBounds = tiling.getTileBounds( x, y, level, false, true );
+
+			}
 
 			if ( endCaps ) {
 
@@ -390,10 +390,18 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			const { center } = this;
-			const [ minX, minY, maxX, maxY ] = level === - 1
-				? tiling.getContentBounds( true )
-				: tiling.getTileBounds( x, y, level, true );
+			let normalizedBounds;
+			if ( isRoot ) {
 
+				normalizedBounds = tiling.getContentBounds( true );
+
+			} else {
+
+				normalizedBounds = tiling.getTileBounds( x, y, level, true );
+
+			}
+
+			const [ minX, minY, maxX, maxY ] = normalizedBounds;
 			let extentsX = ( maxX - minX ) / 2;
 			let extentsY = ( maxY - minY ) / 2;
 			let centerX = minX + extentsX;
