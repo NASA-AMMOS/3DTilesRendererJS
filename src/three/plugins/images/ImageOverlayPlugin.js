@@ -15,6 +15,7 @@ import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
 import { TiledRegionImageSource } from './sources/RegionImageSource.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
+import { DeepZoomImageSource } from './sources/DeepZoomImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -1546,6 +1547,25 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 		super( options );
 		this.imageSource = new XYZImageSource( options );
+
+	}
+
+}
+
+/**
+ * Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+ * See the {@link https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95) Deep Zoom specification}
+ * and {@link https://openseadragon.github.io OpenSeadragon}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL to the `.dzi` descriptor file.
+ */
+export class DeepZoomOverlay extends TiledImageOverlay {
+
+	constructor( options ) {
+
+		super( options );
+		this.imageSource = new DeepZoomImageSource( options );
 
 	}
 
