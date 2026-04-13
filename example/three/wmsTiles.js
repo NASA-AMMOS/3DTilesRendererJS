@@ -1,6 +1,6 @@
 import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
 import { TilesRenderer, GlobeControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, WMSCapabilitiesLoader, WMSTilesPlugin } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, WMSCapabilitiesLoader, WMSTilesOverlay, GeneratedSurfacePlugin } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 const url =
@@ -110,9 +110,8 @@ function rebuildTiles() {
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin(
-		new WMSTilesPlugin( {
-			shape: 'ellipsoid',
+	tiles.registerPlugin( new GeneratedSurfacePlugin( {
+		overlay: new WMSTilesOverlay( {
 			url: capabilities.request.GetMap.href,
 			layer: params.layer,
 			contentBoundingBox: layer.contentBoundingBox,
@@ -122,7 +121,8 @@ function rebuildTiles() {
 			styles: params.styles,
 			version: capabilities.version,
 		} ),
-	);
+		shape: 'ellipsoid',
+	} ) );
 
 	tiles.group.rotation.x = - Math.PI / 2;
 	scene.add( tiles.group );
