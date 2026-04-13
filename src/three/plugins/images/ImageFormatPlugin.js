@@ -25,7 +25,7 @@ export class ImageFormatPlugin {
 
 	constructor( options = {} ) {
 
-		console.warn( '"ImageFormatPlugin" and derivative plugins have been deprecated. Use "GeneratedSurfacePlugin", instead.' );
+		console.warn( `${ this.constructor.name } has been deprecated. Use "GeneratedSurfacePlugin", instead.` );
 
 		const {
 			pixelSize = null,
