@@ -2,10 +2,11 @@ import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils } from 'three';
 import { TilesRenderer, GlobeControls, CAMERA_FRAME } from '3d-tiles-renderer';
 import {
 	GeoJSONOverlay,
+	GeneratedSurfacePlugin,
 	ImageOverlayPlugin,
 	TilesFadePlugin,
 	UpdateOnChangePlugin,
-	XYZTilesPlugin,
+	XYZTilesOverlay,
 } from '3d-tiles-renderer/plugins';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
@@ -99,10 +100,12 @@ function init() {
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
 	tiles.registerPlugin(
-		new XYZTilesPlugin( {
+		new GeneratedSurfacePlugin( {
+			overlay: new XYZTilesOverlay( {
+				url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+			} ),
 			center: true,
 			shape: 'ellipsoid',
-			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 		} ),
 	);
 
