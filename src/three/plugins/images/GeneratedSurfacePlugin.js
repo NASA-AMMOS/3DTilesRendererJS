@@ -205,6 +205,21 @@ export class GeneratedSurfacePlugin {
 		}
 
 		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+
+		const tx = tile[ TILE_X ];
+		const ty = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		const uvRange = this.overlay.tiling.getTileContentUVBounds( tx, ty, level );
+		const { uv } = geometry.attributes;
+		for ( let i = 0; i < uv.count; i ++ ) {
+
+			uv.setXY( i,
+				MathUtils.mapLinear( uv.getX( i ), 0, 1, uvRange[ 0 ], uvRange[ 2 ] ),
+				MathUtils.mapLinear( uv.getY( i ), 0, 1, uvRange[ 1 ], uvRange[ 3 ] ),
+			);
+
+		}
+
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, z );
 		return mesh;

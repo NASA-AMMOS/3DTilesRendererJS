@@ -14,8 +14,6 @@ let tiles, transition;
 const params = {
 
 	errorTarget: 1,
-	renderScale: 1,
-
 	orthographic: false,
 
 };
@@ -95,12 +93,11 @@ function init() {
 
 	} );
 
-	gui.add( params, 'errorTarget', 0, 100 ).onChange( () => {
+	gui.add( params, 'errorTarget', 1, 100 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
 
 	} );
-	gui.add( params, 'renderScale', 0.1, 1.0, 0.05 ).onChange( v => renderer.setPixelRatio( v * window.devicePixelRatio ) );
 
 	gui.open();
 
