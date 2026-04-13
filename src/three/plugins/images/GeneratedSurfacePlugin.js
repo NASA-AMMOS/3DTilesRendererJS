@@ -115,7 +115,6 @@ export class GeneratedSurfacePlugin {
 		}
 
 		res.material.transparent = transparent;
-		res.material.side = 2;
 
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
