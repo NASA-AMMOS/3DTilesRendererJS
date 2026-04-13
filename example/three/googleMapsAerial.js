@@ -1,5 +1,7 @@
 import { GeoUtils, WGS84_ELLIPSOID, TilesRenderer } from '3d-tiles-renderer';
-import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, CesiumIonAuthPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
+import { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
+import { TilesFadePlugin, TileCompressionPlugin, GLTFExtensionsPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
+import { estimateBytesUsed } from '../../src/three/renderer/utils/MemoryUtils.js';
 import {
 	Scene,
 	WebGLRenderer,
@@ -9,14 +11,27 @@ import {
 } from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { SparkGL } from '@ludicon/spark.js';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { createSparkPlugins } from '@ludicon/spark.js/three-gltf';
 
 let camera, controls, scene, renderer, tiles;
+let spark;
+let stats;
+
+const params = {
+	enableSpark: true,
+	preferLowQuality: true,
+	generateMipmaps: false,
+	errorTarget: 16.0,
+	textureVRAM: 0,
+};
 
 const raycaster = new Raycaster();
 raycaster.firstHitOnly = true;
 
-init();
-animate();
+init().then( () => animate() );
 
 function reinstantiateTiles() {
 
@@ -35,7 +50,8 @@ function reinstantiateTiles() {
 	tiles.registerPlugin( new GLTFExtensionsPlugin( {
 		// Note the DRACO compression files need to be supplied via an explicit source.
 		// We use unpkg here but in practice should be provided by the application.
-		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' )
+		dracoLoader: new DRACOLoader().setDecoderPath( 'https://unpkg.com/three@0.153.0/examples/jsm/libs/draco/gltf/' ),
+		plugins: params.enableSpark ? createSparkPlugins( spark, { preferLowQuality: params.preferLowQuality, generateMipmaps: params.generateMipmaps } ) : []
 	} ) );
 	tiles.registerPlugin( new ReorientationPlugin( { lat: 35.6586 * MathUtils.DEG2RAD, lon: 139.7454 * MathUtils.DEG2RAD } ) );
 
@@ -55,7 +71,7 @@ function reinstantiateTiles() {
 
 }
 
-function init() {
+async function init() {
 
 	scene = new Scene();
 
@@ -79,7 +95,34 @@ function init() {
 	controls.autoRotateSpeed = 0.5;
 	controls.enablePan = false;
 
+	// initialize Spark
+	const gl = renderer.getContext();
+	spark = await SparkGL.create( gl, {
+		preload: [ 'rgb' ],
+		cacheTempResources: true,
+		verbose: true,
+	} );
+
 	reinstantiateTiles();
+
+	// Initialize stats
+	stats = new Stats();
+	stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+	document.body.appendChild( stats.dom );
+
+	// Create GUI
+	const gui = new GUI();
+	gui.add( params, 'enableSpark' ).name( 'Enable Spark' ).onChange( () => {
+		reinstantiateTiles();
+	} );
+	gui.add( params, 'preferLowQuality' ).name( 'BC1 / ETC2' ).onChange( () => {
+		reinstantiateTiles();
+	} );
+	gui.add( params, 'generateMipmaps' ).name( 'Generate Mipmaps' ).onChange( () => {
+		reinstantiateTiles();
+	} );
+	gui.add( params, 'errorTarget', 4, 16, 0.1 ).name( 'Error Target' );
+	gui.add( params, 'textureVRAM' ).name( 'Texture VRAM (MB)' ).listen().disable();
 
 	onWindowResize();
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -120,11 +163,14 @@ function animate() {
 
 	requestAnimationFrame( animate );
 
+	if ( stats ) stats.begin();
+
 	if ( ! tiles ) return;
 
 	controls.update();
 
 	// update options
+	tiles.errorTarget = params.errorTarget;
 	tiles.setResolutionFromRenderer( camera, renderer );
 	tiles.setCamera( camera );
 
@@ -133,6 +179,8 @@ function animate() {
 	tiles.update();
 
 	render();
+
+	if ( stats ) stats.end();
 
 }
 
@@ -153,5 +201,9 @@ function render() {
 		document.getElementById( 'credits' ).innerText = GeoUtils.toLatLonString( res.lat, res.lon ) + '\n' + attributions;
 
 	}
+
+	// Update GPU memory info
+	const approximateVRAM = estimateBytesUsed( scene );
+	params.textureVRAM = ( approximateVRAM / ( 1024 * 1024 ) ).toFixed( 1 );
 
 }
