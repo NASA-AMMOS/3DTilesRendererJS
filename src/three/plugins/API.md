@@ -192,6 +192,25 @@ Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
 multiple source tiles into a single texture per 3D tile region.
 
 
+## DeepZoomOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+See the [Deep Zoom specification](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
+and [OpenSeadragon](https://openseadragon.github.io).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+	}
+)
+```
+
 ## GoogleMapsOverlay
 
 _extends [`TiledImageOverlay`](#tiledimageoverlay)_
@@ -561,6 +580,31 @@ constructor(
 	{
 		url?: string,
 		center = false: boolean,
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+## GeneratedSurfacePlugin
+
+Plugin that generates tiled surface geometry from a tiling scheme, without loading
+any image data. Intended to be paired with `ImageOverlayPlugin` which handles
+image fetching and texturing separately.
+
+The tiling scheme and projection are derived from a provided overlay or image source.
+If the source's projection is cartographic (any EPSG scheme), the plugin supports
+both planar and ellipsoidal geometry via the `shape` option.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		overlay = null: TiledImageOverlay,
+		shape = 'planar': string,
+		endCaps = true: boolean,
+		center = true: boolean,
 		useRecommendedSettings = true: boolean,
 	}
 )
