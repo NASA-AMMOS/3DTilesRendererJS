@@ -100,11 +100,10 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const { shape, transparent, overlay } = this;
-		const { projection, tiling } = overlay;
-		const useRegions = projection.isCartographic && shape === 'ellipsoid';
+		const { transparent, overlay } = this;
+		const { tiling } = overlay;
 		let res;
-		if ( useRegions ) {
+		if ( this._useEllipsoid() ) {
 
 			res = this._createEllipsoidMesh( tile );
 
@@ -173,6 +172,12 @@ export class GeneratedSurfacePlugin {
 			this.overlay.releaseTexture( overlayRange );
 
 		}
+
+	}
+
+	_useEllipsoid() {
+
+		return this.overlay.projection.isCartographic && this.shape === 'ellipsoid';
 
 	}
 
@@ -355,11 +360,11 @@ export class GeneratedSurfacePlugin {
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { shape, overlay } = this;
-		const { tiling, projection } = overlay;
+		const { overlay } = this;
+		const { tiling } = overlay;
 
 		const isRoot = level === - 1;
-		if ( projection.isCartographic && shape === 'ellipsoid' ) {
+		if ( this._useEllipsoid() ) {
 
 			const { endCaps } = this;
 
@@ -434,7 +439,7 @@ export class GeneratedSurfacePlugin {
 
 	createChild( x, y, level ) {
 
-		const { shape, overlay } = this;
+		const { overlay } = this;
 		const { tiling, projection } = overlay;
 		if ( ! tiling.getTileExists( x, y, level ) ) {
 
@@ -443,7 +448,7 @@ export class GeneratedSurfacePlugin {
 		}
 
 		let geometricError;
-		const useRegions = projection.isCartographic && shape === 'ellipsoid';
+		const useRegions = this._useEllipsoid();
 		if ( useRegions ) {
 
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
