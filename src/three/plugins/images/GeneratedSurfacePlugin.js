@@ -33,7 +33,6 @@ export class GeneratedSurfacePlugin {
 	constructor( options = {} ) {
 
 		// TODO:
-		// - automatically add texture overlay here
 		// - defaults to a basic quad, equirect surface otherwise
 		// - add skirts (option?)
 		// - need a target projection for planar definitions? How can we display the tiled
@@ -71,24 +70,20 @@ export class GeneratedSurfacePlugin {
 
 		this.tiles = tiles;
 
-		const { imageSource } = this.overlay;
-		imageSource.fetchOptions = tiles.fetchOptions;
-		imageSource.fetchData = ( url, options ) => {
-
-			tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-			return tiles.invokeOnePlugin( plugin => plugin !== this && plugin.fetchData && plugin.fetchData( url, options ) );
-
-		};
+		this.overlay.imageSource.fetchOptions = tiles.fetchOptions;
 
 	}
 
 	async loadRootTileset() {
 
 		const { tiles } = this;
-		const { imageSource } = this.overlay;
+		const { overlay } = this;
+		const { imageSource } = overlay;
 		imageSource.url = imageSource.url || tiles.rootURL;
 		tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
-		await imageSource.init();
+
+		// overlay.init() initializes the image source and creates regionImageSource
+		await overlay.init();
 
 		tiles.rootURL = imageSource.url;
 		return this.getTileset( imageSource.url );
@@ -109,8 +104,8 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const { shape, transparent } = this;
-		const { projection } = this.overlay;
+		const { shape, transparent, overlay } = this;
+		const { projection, tiling } = overlay;
 		let res;
 		if ( projection.isCartographic && shape === 'ellipsoid' ) {
 
@@ -123,6 +118,52 @@ export class GeneratedSurfacePlugin {
 		}
 
 		res.material.transparent = transparent;
+
+		// Apply the overlay texture directly
+		if ( ! overlay.isReady ) {
+
+			await overlay.whenReady();
+
+		}
+
+		if ( abortSignal.aborted ) {
+
+			return null;
+
+		}
+
+		const x = tile[ TILE_X ];
+		const y = tile[ TILE_Y ];
+		const level = tile[ TILE_LEVEL ];
+		const range = tiling.getTileBounds( x, y, level, true, true );
+
+		await overlay.lockTexture( range );
+
+		if ( abortSignal.aborted ) {
+
+			overlay.releaseTexture( range );
+			return null;
+
+		}
+
+		tile.overlayRange = range;
+
+		if ( overlay.hasContent( range ) ) {
+
+			const texture = await overlay.getTexture( range );
+
+			if ( abortSignal.aborted ) {
+
+				overlay.releaseTexture( range );
+				return null;
+
+			}
+
+			res.material.map = texture;
+			res.material.needsUpdate = true;
+
+		}
+
 		return res;
 
 	}
@@ -135,6 +176,17 @@ export class GeneratedSurfacePlugin {
 		if ( level < maxLevel && tile.parent !== null ) {
 
 			this.expandChildren( tile );
+
+		}
+
+	}
+
+	disposeTile( tile ) {
+
+		const { overlayRange } = tile;
+		if ( overlayRange ) {
+
+			this.overlay.releaseTexture( overlayRange );
 
 		}
 
@@ -210,8 +262,13 @@ export class GeneratedSurfacePlugin {
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
+			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
+			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
+			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
+
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
 			normal.setXYZ( i, _norm.x, _norm.y, _norm.z );
+			uv.setXY( i, u, v );
 
 		}
 

@@ -4,7 +4,7 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, ImageOverlayPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
@@ -75,22 +75,19 @@ function initTiles() {
 
 	// tiles
 	tiles = new TilesRenderer();
-	const overlay = new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
-
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new GeneratedSurfacePlugin( {
-		overlay,
-		center: true,
+		overlay: new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } ),
 		shape: params.planar ? 'planar' : 'ellipsoid',
 	} ) );
-	tiles.registerPlugin( new ImageOverlayPlugin( { renderer, overlays: [ overlay ] } ) );
 
 	tiles.lruCache.minSize = 900;
 	tiles.lruCache.maxSize = 1300;
 	tiles.parseQueue.maxJobs = 3;
 	tiles.setCamera( camera );
 	scene.add( tiles.group );
+	window.TILES = tiles;
 
 	if ( params.planar ) {
 
