@@ -211,15 +211,6 @@ export class GeneratedSurfacePlugin {
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, z );
 
-		tile.__DATA = [ sx, sy ];
-
-
-		if ( level === 9 ) {
-
-			console.log( sx, sy );
-
-		}
-
 		const uvRange = overlay.tiling.getTileContentUVBounds( tx, ty, level );
 		const { uv } = geometry.attributes;
 		for ( let i = 0; i < uv.count; i ++ ) {
@@ -417,10 +408,6 @@ export class GeneratedSurfacePlugin {
 
 			centerX *= tiling.aspectRatio;
 			extentsX *= tiling.aspectRatio;
-
-
-			if ( level === 9 )
-				console.log( centerX.toFixed( 3 ), centerY.toFixed( 3 ), extentsX.toFixed( 3 ), extentsY.toFixed( 3 ) )
 
 			return {
 				box: [
