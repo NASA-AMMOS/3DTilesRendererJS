@@ -1,12 +1,11 @@
 /** @import { TiledImageOverlay } from './ImageOverlayPlugin.js' */
-import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector2, Vector3, Sphere } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector3, Sphere } from 'three';
 import { TILE_X, TILE_Y, TILE_LEVEL } from './ImageFormatPlugin.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
 
 const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
 
-const _uv = /* @__PURE__ */ new Vector2();
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
@@ -34,7 +33,6 @@ export class GeneratedSurfacePlugin {
 
 		// TODO:
 		// - defaults to a basic quad, equirect surface otherwise
-		// - add skirts (option?)
 		// - need a target projection for planar definitions? How can we display the tiled
 		// carto image set as it's original aspect / projection? Separate option?
 
@@ -118,6 +116,7 @@ export class GeneratedSurfacePlugin {
 		}
 
 		res.material.transparent = transparent;
+		res.material.side = 2;
 
 		// Apply the overlay texture directly
 		if ( ! overlay.isReady ) {
@@ -223,7 +222,9 @@ export class GeneratedSurfacePlugin {
 		const [ west, south, east, north ] = tile.boundingVolume.region;
 		const latVerts = Math.max( MIN_LAT_VERTS, Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 ) );
 		const lonVerts = Math.max( MIN_LON_VERTS, Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 ) );
-		const geometry = new PlaneGeometry( 1, 1, lonVerts, latVerts );
+		const cols = lonVerts + 3;
+		const rows = latVerts + 3;
+		const geometry = new PlaneGeometry( 1, 1, lonVerts + 2, latVerts + 2 );
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 
@@ -233,26 +234,33 @@ export class GeneratedSurfacePlugin {
 
 		for ( let i = 0; i < vertCount; i ++ ) {
 
-			_uv.fromBufferAttribute( uv, i );
+			const col = i % cols;
+			const row = Math.floor( i / cols );
+			const isSkirt = col === 0 || col === cols - 1 || row === 0 || row === rows - 1;
 
-			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( _uv.x, 0, 1, minU, maxU ) );
-			let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( _uv.y, 0, 1, minV, maxV ) );
+			const innerCol = Math.max( 1, Math.min( cols - 2, col ) );
+			const innerRow = Math.max( 1, Math.min( rows - 2, row ) );
+			const uNorm = ( innerCol - 1 ) / lonVerts;
+			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
+
+			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ) );
+			let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ) );
 
 			// snap edges to poles for Mercator to avoid seams
 			if ( projection.isMercator && endCaps ) {
 
-				if ( maxV === 1 && _uv.y === 1 ) lat = Math.PI / 2;
-				if ( minV === 0 && _uv.y === 0 ) lat = - Math.PI / 2;
+				if ( maxV === 1 && vNorm === 1 ) lat = Math.PI / 2;
+				if ( minV === 0 && vNorm === 0 ) lat = - Math.PI / 2;
 
 			}
 
 			// insert edge loop at Mercator lat limit to reduce UV distortion at low LoDs
-			if ( projection.isMercator && _uv.y !== 0 && _uv.y !== 1 ) {
+			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
 				const latLimit = projection.convertNormalizedToLatitude( 1 );
 				const vStep = 1 / latVerts;
-				const prevLat = MathUtils.mapLinear( _uv.y - vStep, 0, 1, south, north );
-				const nextLat = MathUtils.mapLinear( _uv.y + vStep, 0, 1, south, north );
+				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
+				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
 
 				if ( lat > latLimit && prevLat < latLimit ) lat = latLimit;
 				if ( lat < - latLimit && nextLat > - latLimit ) lat = - latLimit;
@@ -261,6 +269,12 @@ export class GeneratedSurfacePlugin {
 
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
+
+			if ( isSkirt ) {
+
+				_pos.addScaledVector( _norm, - tile.geometricError );
+
+			}
 
 			// derive UV from the final (potentially adjusted) lat/lon so the overlay samples correctly
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
@@ -337,7 +351,7 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	createBoundingVolume( x, y, level ) {
+	createBoundingVolume( x, y, level, skirtDepth = 0 ) {
 
 		const { shape } = this;
 		const { tiling, projection } = this.overlay;
@@ -356,7 +370,7 @@ export class GeneratedSurfacePlugin {
 
 			}
 
-			return { region: [ ...cartBounds, - 1, 1 ] };
+			return { region: [ ...cartBounds, - skirtDepth, 1 ] };
 
 		} else {
 
@@ -431,7 +445,7 @@ export class GeneratedSurfacePlugin {
 		return {
 			refine: 'REPLACE',
 			geometricError,
-			boundingVolume: this.createBoundingVolume( x, y, level ),
+			boundingVolume: this.createBoundingVolume( x, y, level, projection.isCartographic && shape === 'ellipsoid' ? geometricError : 0 ),
 			content: { uri: this.getUrl( x, y, level ) },
 			children: [],
 
