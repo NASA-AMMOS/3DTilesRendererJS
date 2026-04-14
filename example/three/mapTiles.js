@@ -8,7 +8,7 @@ import {
 	MathUtils,
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
-import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { TilesFadePlugin, UpdateOnChangePlugin, GeneratedSurfacePlugin, XYZTilesOverlay, CesiumIonOverlay } from '3d-tiles-renderer/plugins';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
@@ -23,6 +23,7 @@ const params = {
 
 	errorTarget: 1,
 	planar: false,
+	overlay: 'OpenStreetMap',
 
 };
 
@@ -58,6 +59,7 @@ function init() {
 	// gui initialization
 	const gui = new GUI();
 	gui.add( params, 'planar' ).onChange( initTiles );
+	gui.add( params, 'overlay', [ 'OpenStreetMap', 'Sentinel-2' ] ).onChange( initTiles );
 	gui.add( params, 'errorTarget', 1, 40 ).onChange( () => {
 
 		tiles.getPluginByName( 'UPDATE_ON_CHANGE_PLUGIN' ).needsUpdate = true;
@@ -83,12 +85,16 @@ function initTiles() {
 
 	}
 
+	const overlay = params.overlay === 'Sentinel-2'
+		? new CesiumIonOverlay( { assetId: 3954, apiToken: import.meta.env.VITE_ION_KEY } )
+		: new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } );
+
 	// tiles
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new TilesFadePlugin( { maximumFadeOutTiles: 200 } ) );
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	surfacePlugin = new GeneratedSurfacePlugin( {
-		overlay: new XYZTilesOverlay( { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' } ),
+		overlay,
 		shape: params.planar ? 'planar' : 'ellipsoid',
 	} );
 	tiles.registerPlugin( surfacePlugin );
