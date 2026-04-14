@@ -1,5 +1,23 @@
 import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { TextureUtils, ExternalTexture } from 'three';
+import { TextureUtils, ExternalTexture, CompressedTexture } from 'three';
+
+// Returned when a texture's size cannot be determined (missing image, unknown
+// format, etc). Using 0 avoids surprising callers that sum byte counts.
+export const UNKNOWN_TEXTURE_BYTE_LENGTH = 0;
+
+function getFormatByteLength( width, height, format, type ) {
+
+	try {
+
+		return TextureUtils.getByteLength( width, height, format, type );
+
+	} catch {
+
+		return UNKNOWN_TEXTURE_BYTE_LENGTH;
+
+	}
+
+}
 
 export function getTextureByteLength( tex ) {
 
@@ -9,17 +27,47 @@ export function getTextureByteLength( tex ) {
 
 	}
 
-	// IC: The code below assumes tex was created from an ImageBitmap
-	if ( tex instanceof ExternalTexture && tex.userData?.byteLength ) {
+	// External textures track their own byte length via userData (eg. spark
+	// textures created from an ImageBitmap or uploaded by a third-party lib).
+	if ( tex instanceof ExternalTexture ) {
 
-		return tex.userData.byteLength;
+		return tex.userData?.byteLength ?? UNKNOWN_TEXTURE_BYTE_LENGTH;
 
 	}
 
-	const { format, type, image } = tex;
-	const { width, height } = image;
+	const { format, type, image, mipmaps } = tex;
 
-	let bytes = TextureUtils.getByteLength( width, height, format, type );
+	// Block-compressed 2D textures carry their mip chain as an array of
+	// { data, width, height } entries. Summing the existing data buffers is
+	// the most reliable size source.
+	if ( tex instanceof CompressedTexture && Array.isArray( mipmaps ) && mipmaps.length > 0 ) {
+
+		let bytes = 0;
+		for ( const mip of mipmaps ) {
+
+			if ( mip?.data?.byteLength ) {
+
+				bytes += mip.data.byteLength;
+
+			} else if ( mip ) {
+
+				bytes += getFormatByteLength( mip.width, mip.height, format, type );
+
+			}
+
+		}
+
+		return bytes;
+
+	}
+
+	if ( ! image || ! image.width || ! image.height ) {
+
+		return UNKNOWN_TEXTURE_BYTE_LENGTH;
+
+	}
+
+	let bytes = getFormatByteLength( image.width, image.height, format, type );
 	bytes *= tex.generateMipmaps ? 4 / 3 : 1;
 
 	return bytes;
