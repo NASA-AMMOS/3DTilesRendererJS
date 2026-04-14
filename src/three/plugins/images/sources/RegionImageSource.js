@@ -7,6 +7,28 @@ import { SRGBColorSpace, CanvasTexture } from 'three';
 // image tile.
 const BOUNDS_EPSILON = 1e-10;
 
+function isArrayEqual( a, b, eps = 0 ) {
+
+	if ( a.length !== b.length ) {
+
+		return false;
+
+	}
+
+	for ( let i = 0, l = a.length; i < l; i ++ ) {
+
+		if ( Math.abs( a[ i ] - b[ i ] ) > eps ) {
+
+			return false;
+
+		}
+
+	}
+
+	return true;
+
+}
+
 export class RegionImageSource extends DataCache {
 
 	hasContent( ...tokens ) {
@@ -86,6 +108,8 @@ export class TiledRegionImageSource extends RegionImageSource {
 				const clone = tiledImageSource.get( tx, ty, tl ).clone();
 				clone[ IS_DIRECT_TILE ] = true;
 				clone[ LOCK_TOKENS ] = tokens;
+
+				clone.__COUNT = tileCount;
 				return clone;
 
 			}
@@ -116,10 +140,13 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 			// draw using normalized bounds since the mercator bounds are non-linear
 			const span = tiling.getTileBounds( tx, ty, tl, true, false );
+
 			const tex = tiledImageSource.get( tx, ty, tl );
 			tileComposer.draw( tex, span );
 
 		} );
+
+		target.__COUNT = tileCount;
 
 		return target;
 

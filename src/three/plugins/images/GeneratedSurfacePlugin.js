@@ -2,9 +2,12 @@
 import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector3, Sphere } from 'three';
 import { TILE_X, TILE_Y, TILE_LEVEL } from './ImageFormatPlugin.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
+import { TilingScheme } from './utils/TilingScheme.js';
+import { ProjectionScheme } from './utils/ProjectionScheme.js';
 
 const MIN_LON_VERTS = 30;
 const MIN_LAT_VERTS = 15;
+const DEFAULT_LEVELS = 20;
 
 const _pos = /* @__PURE__ */ new Vector3();
 const _norm = /* @__PURE__ */ new Vector3();
@@ -55,6 +58,8 @@ export class GeneratedSurfacePlugin {
 		this.transparent = transparent;
 		this.useRecommendedSettings = useRecommendedSettings;
 
+		this._tiling = null;
+
 	}
 
 	// Plugin functions
@@ -72,17 +77,26 @@ export class GeneratedSurfacePlugin {
 
 	async loadRootTileset() {
 
-		const { tiles } = this;
-		const { overlay } = this;
-		const { imageSource } = overlay;
-		imageSource.url = imageSource.url || tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
+		const { tiles, overlay } = this;
+		if ( overlay ) {
 
-		// overlay.init() initializes the image source and creates regionImageSource
-		await overlay.init();
+			const { imageSource } = overlay;
+			imageSource.url = imageSource.url || tiles.rootURL;
+			tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
 
-		tiles.rootURL = imageSource.url;
-		return this.getTileset( imageSource.url );
+			// overlay.init() initializes the image source and creates regionImageSource
+			await overlay.init();
+
+			this._tiling = overlay.tiling;
+			tiles.rootURL = imageSource.url;
+			return this.getTileset( imageSource.url );
+
+		} else {
+
+			this._tiling = this._createDefaultTiling();
+			return this.getTileset( tiles.rootURL );
+
+		}
 
 	}
 
@@ -101,7 +115,6 @@ export class GeneratedSurfacePlugin {
 		}
 
 		const { transparent, overlay } = this;
-		const { tiling } = overlay;
 		let res;
 		if ( this._useEllipsoid() ) {
 
@@ -115,25 +128,14 @@ export class GeneratedSurfacePlugin {
 
 		res.material.transparent = transparent;
 
-		const x = tile[ TILE_X ];
-		const y = tile[ TILE_Y ];
-		const level = tile[ TILE_LEVEL ];
-		const range = tiling.getTileBounds( x, y, level, true, true );
+		if ( overlay ) {
 
-		await overlay.lockTexture( range );
+			const x = tile[ TILE_X ];
+			const y = tile[ TILE_Y ];
+			const level = tile[ TILE_LEVEL ];
+			const range = this._tiling.getTileBounds( x, y, level, true, true );
 
-		if ( abortSignal.aborted ) {
-
-			overlay.releaseTexture( range );
-			return null;
-
-		}
-
-		tile.overlayRange = range;
-
-		if ( overlay.hasContent( range ) ) {
-
-			const texture = await overlay.getTexture( range );
+			await overlay.lockTexture( range );
 
 			if ( abortSignal.aborted ) {
 
@@ -142,8 +144,23 @@ export class GeneratedSurfacePlugin {
 
 			}
 
-			res.material.map = texture;
-			res.material.needsUpdate = true;
+			tile.overlayRange = range;
+
+			if ( overlay.hasContent( range ) ) {
+
+				const texture = await overlay.getTexture( range );
+
+				if ( abortSignal.aborted ) {
+
+					overlay.releaseTexture( range );
+					return null;
+
+				}
+
+				res.material.map = texture;
+				res.material.needsUpdate = true;
+
+			}
 
 		}
 
@@ -153,7 +170,7 @@ export class GeneratedSurfacePlugin {
 
 	preprocessNode( tile ) {
 
-		const { tiling } = this.overlay;
+		const tiling = this._tiling;
 		const maxLevel = tiling.maxLevel;
 		const level = tile[ TILE_LEVEL ];
 		if ( level < maxLevel && tile.parent !== null ) {
@@ -167,7 +184,7 @@ export class GeneratedSurfacePlugin {
 	disposeTile( tile ) {
 
 		const { overlayRange } = tile;
-		if ( overlayRange ) {
+		if ( this.overlay && overlayRange ) {
 
 			this.overlay.releaseTexture( overlayRange );
 
@@ -177,14 +194,13 @@ export class GeneratedSurfacePlugin {
 
 	_useEllipsoid() {
 
-		return this.overlay.projection.isCartographic && this.shape === 'ellipsoid';
+		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
 
 	}
 
 	// Local functions
 	_createPlanarMesh( tile ) {
 
-		const { overlay } = this;
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
@@ -203,7 +219,7 @@ export class GeneratedSurfacePlugin {
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, z );
 
-		const uvRange = overlay.tiling.getTileContentUVBounds( tx, ty, level );
+		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
 		const { uv } = geometry.attributes;
 		for ( let i = 0; i < uv.count; i ++ ) {
 
@@ -220,8 +236,8 @@ export class GeneratedSurfacePlugin {
 
 	_createEllipsoidMesh( tile ) {
 
-		const { tiles, endCaps } = this;
-		const { projection, tiling } = this.overlay;
+		const { tiles, endCaps, _tiling: tiling } = this;
+		const { projection } = tiling;
 		const level = tile[ TILE_LEVEL ];
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
@@ -301,8 +317,7 @@ export class GeneratedSurfacePlugin {
 
 	getTileset( baseUrl ) {
 
-		const { tiles, overlay } = this;
-		const { tiling } = overlay;
+		const { tiles, _tiling: tiling } = this;
 		const minLevel = tiling.minLevel;
 		const { tileCountX, tileCountY } = tiling.getLevel( minLevel );
 
@@ -360,8 +375,7 @@ export class GeneratedSurfacePlugin {
 
 	createBoundingVolume( x, y, level, regionHeight = 0 ) {
 
-		const { overlay } = this;
-		const { tiling } = overlay;
+		const { _tiling: tiling } = this;
 
 		const isRoot = level === - 1;
 		if ( this._useEllipsoid() ) {
@@ -439,8 +453,8 @@ export class GeneratedSurfacePlugin {
 
 	createChild( x, y, level ) {
 
-		const { overlay } = this;
-		const { tiling, projection } = overlay;
+		const { _tiling: tiling } = this;
+		const { projection } = tiling;
 		if ( ! tiling.getTileExists( x, y, level ) ) {
 
 			return null;
@@ -495,7 +509,7 @@ export class GeneratedSurfacePlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		const { tileSplitX, tileSplitY } = this.overlay.tiling.getLevel( level );
+		const { tileSplitX, tileSplitY } = this._tiling.getLevel( level );
 		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
 			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
@@ -510,6 +524,29 @@ export class GeneratedSurfacePlugin {
 			}
 
 		}
+
+	}
+
+	_createDefaultTiling() {
+
+		const tiling = new TilingScheme();
+		if ( this.shape === 'ellipsoid' ) {
+
+			const projection = new ProjectionScheme( 'EPSG:4326' );
+			tiling.setProjection( projection );
+			tiling.setContentBounds( ...projection.getBounds() );
+			tiling.generateLevels( DEFAULT_LEVELS, projection.tileCountX, projection.tileCountY );
+
+		} else {
+
+			const projection = new ProjectionScheme( 'none' );
+			tiling.setProjection( projection );
+			tiling.setContentBounds( ...projection.getBounds() );
+			tiling.generateLevels( DEFAULT_LEVELS, 1, 1 );
+
+		}
+
+		return tiling;
 
 	}
 
