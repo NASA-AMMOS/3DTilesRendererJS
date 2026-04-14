@@ -138,8 +138,6 @@ export class TiledRegionImageSource extends RegionImageSource {
 
 		} );
 
-		target.__COUNT = tileCount;
-
 		return target;
 
 	}

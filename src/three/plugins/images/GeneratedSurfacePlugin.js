@@ -173,6 +173,75 @@ export class GeneratedSurfacePlugin {
 
 	}
 
+	/**
+	 * Returns the cartographic coordinates for a given world-space position.
+	 * @param {Vector3} position - World-space position. For ellipsoid surfaces this is a
+	 * 3D point on the surface; for planar surfaces it is a 2D point in the plane.
+	 * @param {{ lat: number, lon: number }} [target={}] - Optional target object to write results into.
+	 * @returns {{ lat: number, lon: number }} The cartographic coordinates in radians.
+	 * @throws {Error} If the tiling projection is not cartographic.
+	 */
+	getCartographicFromPosition( position, target = {} ) {
+
+		const { _tiling: tiling } = this;
+		const { projection } = tiling;
+
+		if ( ! projection.isCartographic ) {
+
+			throw new Error( 'GeneratedSurfacePlugin: getCartographicFromPosition requires a cartographic projection.' );
+
+		}
+
+		if ( this._useEllipsoid() ) {
+
+			return this.tiles.ellipsoid.getPositionToCartographic( position, target );
+
+		}
+
+		const { center } = this;
+		const normX = position.x / tiling.aspectRatio + ( center ? 0.5 : 0 );
+		const normY = position.y + ( center ? 0.5 : 0 );
+		target.lat = projection.convertNormalizedToLatitude( normY );
+		target.lon = projection.convertNormalizedToLongitude( normX );
+		return target;
+
+	}
+
+	/**
+	 * Returns the world-space position for a given cartographic coordinate.
+	 * @param {number} lat - Latitude in radians.
+	 * @param {number} lon - Longitude in radians.
+	 * @param {Vector3} [target=new Vector3()] - Optional target Vector3 to write results into.
+	 * @returns {Vector3} The world-space position. For planar surfaces z is set to 0.
+	 * @throws {Error} If the tiling projection is not cartographic.
+	 */
+	getPositionFromCartographic( lat, lon, target = new Vector3() ) {
+
+		const { _tiling: tiling } = this;
+		const { projection } = tiling;
+
+		if ( ! projection.isCartographic ) {
+
+			throw new Error( 'GeneratedSurfacePlugin: getPositionFromCartographic requires a cartographic projection.' );
+
+		}
+
+		if ( this._useEllipsoid() ) {
+
+			return this.tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, target );
+
+		}
+
+		const { center } = this;
+		const normX = projection.convertLongitudeToNormalized( lon );
+		const normY = projection.convertLatitudeToNormalized( lat );
+		target.x = ( normX - ( center ? 0.5 : 0 ) ) * tiling.aspectRatio;
+		target.y = normY - ( center ? 0.5 : 0 );
+		target.z = 0;
+		return target;
+
+	}
+
 	_useEllipsoid() {
 
 		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
@@ -296,7 +365,7 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	getTileset( baseUrl = '' ) {
+	getTileset() {
 
 		const { tiles, _tiling: tiling } = this;
 		const minLevel = tiling.minLevel;
@@ -333,7 +402,7 @@ export class GeneratedSurfacePlugin {
 			},
 		};
 
-		tiles.preprocessTileset( tileset, baseUrl );
+		tiles.preprocessTileset( tileset, '' );
 		return tileset;
 
 	}
@@ -515,14 +584,12 @@ export class GeneratedSurfacePlugin {
 
 			const projection = new ProjectionScheme( 'EPSG:4326' );
 			tiling.setProjection( projection );
-			tiling.setContentBounds( ...projection.getBounds() );
 			tiling.generateLevels( DEFAULT_LEVELS, projection.tileCountX, projection.tileCountY );
 
 		} else {
 
 			const projection = new ProjectionScheme( 'none' );
 			tiling.setProjection( projection );
-			tiling.setContentBounds( ...projection.getBounds() );
 			tiling.generateLevels( DEFAULT_LEVELS, 1, 1 );
 
 		}
