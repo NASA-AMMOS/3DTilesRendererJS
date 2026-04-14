@@ -1,4 +1,4 @@
-/** @import { TiledImageOverlay } from './ImageOverlayPlugin.js' */
+/** @import { ImageOverlay } from './ImageOverlayPlugin.js' */
 import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector3, Sphere } from 'three';
 import { TILE_X, TILE_Y, TILE_LEVEL } from './ImageFormatPlugin.js';
 import { getCartographicToMeterDerivative } from './utils/getCartographicToMeterDerivative.js';
@@ -23,7 +23,7 @@ const _sphere = /* @__PURE__ */ new Sphere();
  * both planar and ellipsoidal geometry via the `shape` option.
  *
  * @param {Object} [options]
- * @param {TiledImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from.
+ * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from.
  * @param {string} [options.shape='planar'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
@@ -77,26 +77,19 @@ export class GeneratedSurfacePlugin {
 
 	async loadRootTileset() {
 
-		const { tiles, overlay } = this;
+		const { overlay } = this;
 		if ( overlay ) {
 
-			const { imageSource } = overlay;
-			imageSource.url = imageSource.url || tiles.rootURL;
-			tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
-
-			// overlay.init() initializes the image source and creates regionImageSource
 			await overlay.init();
-
-			this._tiling = overlay.tiling;
-			tiles.rootURL = imageSource.url;
-			return this.getTileset( imageSource.url );
+			this._tiling = overlay.tiling || this._createDefaultTiling();
 
 		} else {
 
 			this._tiling = this._createDefaultTiling();
-			return this.getTileset();
 
 		}
+
+		return this.getTileset();
 
 	}
 
