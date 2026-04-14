@@ -24,7 +24,7 @@ const _sphere = /* @__PURE__ */ new Sphere();
  *
  * @param {Object} [options]
  * @param {ImageOverlay} [options.overlay=null] Overlay instance to derive the tiling scheme from.
- * @param {string} [options.shape='planar'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
+ * @param {string} [options.shape='ellipsoid'] Geometry shape: `'planar'` or `'ellipsoid'`. Only
  *   meaningful for cartographic sources.
  * @param {boolean} [options.endCaps=true] For Mercator ellipsoid mode, snap poles to ±90° lat.
  * @param {boolean} [options.center=true] Shift planar tiles so the image is centered at origin.
@@ -34,18 +34,12 @@ export class GeneratedSurfacePlugin {
 
 	constructor( options = {} ) {
 
-		// TODO:
-		// - defaults to a basic quad, equirect surface otherwise
-		// - need a target projection for planar definitions? How can we display the tiled
-		// carto image set as it's original aspect / projection? Separate option?
-
 		const {
 			overlay = null,
-			shape = 'planar',
+			shape = 'ellipsoid',
 			endCaps = true,
 			center = true,
 			useRecommendedSettings = true,
-			transparent = false,
 		} = options;
 
 		this.priority = - 10;
@@ -55,7 +49,6 @@ export class GeneratedSurfacePlugin {
 		this.shape = shape;
 		this.endCaps = endCaps;
 		this.center = center;
-		this.transparent = transparent;
 		this.useRecommendedSettings = useRecommendedSettings;
 
 		this._tiling = null;
@@ -107,7 +100,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
-		const { transparent, overlay } = this;
+		const { overlay } = this;
 		let res;
 		if ( this._useEllipsoid() ) {
 
@@ -118,8 +111,6 @@ export class GeneratedSurfacePlugin {
 			res = this._createPlanarMesh( tile );
 
 		}
-
-		res.material.transparent = transparent;
 
 		if ( overlay ) {
 
