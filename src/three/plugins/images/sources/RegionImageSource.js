@@ -81,38 +81,30 @@ export class TiledRegionImageSource extends RegionImageSource {
 		// Fast path: if the range maps to exactly one tile with matching bounds, use its
 		// texture directly without compositing into an intermediate canvas to save memory.
 		let singleTileBounds = null;
-		let tileCount = 0;
 		forEachTileInBounds( range, level, tiling, ( tx, ty, tl ) => {
 
-			tileCount ++;
-			singleTileBounds = [ tx, ty, tl ];
+			const thisBounds = tiling.getTileBounds( tx, ty, tl, true, false );
+			if ( isArrayEqual( thisBounds, range, BOUNDS_EPSILON ) ) {
+
+				singleTileBounds = [ tx, ty, tl ];
+
+			}
 
 		} );
 
-		if ( tileCount === 1 ) {
+		if ( singleTileBounds !== null ) {
 
+			// Clone rather than returning the texture directly so each region cache entry owns
+			// a distinct object. Returning the shared texture would cause symbol properties
+			// to be overwritten or deleted by concurrent cache entries during race conditions,
+			// (create, delete, create) leading to errors on disposal.
+			// Cloning shares the underlying Source so no extra GPU memory is used.
 			const [ tx, ty, tl ] = singleTileBounds;
-			const tileBounds = tiling.getTileBounds( tx, ty, tl, true, false );
-			if (
-				Math.abs( tileBounds[ 0 ] - minX ) <= BOUNDS_EPSILON &&
-				Math.abs( tileBounds[ 1 ] - minY ) <= BOUNDS_EPSILON &&
-				Math.abs( tileBounds[ 2 ] - maxX ) <= BOUNDS_EPSILON &&
-				Math.abs( tileBounds[ 3 ] - maxY ) <= BOUNDS_EPSILON
-			) {
+			const clone = tiledImageSource.get( tx, ty, tl ).clone();
+			clone[ IS_DIRECT_TILE ] = true;
+			clone[ LOCK_TOKENS ] = tokens;
 
-				// Clone rather than returning the texture directly so each region cache entry owns
-				// a distinct object. Returning the shared texture would cause symbol properties
-				// to be overwritten or deleted by concurrent cache entries during race conditions,
-				// (create, delete, create) leading to errors on disposal.
-				// Cloning shares the underlying Source so no extra GPU memory is used.
-				const clone = tiledImageSource.get( tx, ty, tl ).clone();
-				clone[ IS_DIRECT_TILE ] = true;
-				clone[ LOCK_TOKENS ] = tokens;
-
-				clone.__COUNT = tileCount;
-				return clone;
-
-			}
+			return clone;
 
 		}
 

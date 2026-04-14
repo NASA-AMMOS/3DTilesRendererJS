@@ -135,17 +135,19 @@ export class GeneratedSurfacePlugin {
 			const level = tile[ TILE_LEVEL ];
 			const range = this._tiling.getTileBounds( x, y, level, true, true );
 
-			if ( overlay.hasContent( range ) ) {
+			if ( overlay.hasContent( range, level ) ) {
 
-				await overlay.lockTexture( range );
+				await overlay.lockTexture( range, level );
 
-				const texture = overlay.getTexture( range );
+				const texture = overlay.getTexture( range, level );
 				tile.overlayRange = range;
+				tile.overlayLevel = level;
 
 				if ( abortSignal.aborted ) {
 
-					overlay.releaseTexture( range );
+					overlay.releaseTexture( range, level );
 					tile.overlayRange = null;
+					tile.overlayLevel = null;
 					return null;
 
 				}
@@ -176,11 +178,12 @@ export class GeneratedSurfacePlugin {
 
 	disposeTile( tile ) {
 
-		const { overlayRange } = tile;
+		const { overlayRange, overlayLevel } = tile;
 		if ( this.overlay && overlayRange ) {
 
-			this.overlay.releaseTexture( overlayRange );
+			this.overlay.releaseTexture( overlayRange, overlayLevel );
 			tile.overlayRange = null;
+			tile.overlayLevel = null;
 
 		}
 
