@@ -601,8 +601,8 @@ both planar and ellipsoidal geometry via the `shape` option.
 ```js
 constructor(
 	{
-		overlay = null: TiledImageOverlay,
-		shape = 'planar': string,
+		overlay = null: ImageOverlay,
+		shape = 'ellipsoid': string,
 		endCaps = true: boolean,
 		center = true: boolean,
 		useRecommendedSettings = true: boolean,
