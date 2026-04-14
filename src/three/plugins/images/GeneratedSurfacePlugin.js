@@ -94,7 +94,7 @@ export class GeneratedSurfacePlugin {
 		} else {
 
 			this._tiling = this._createDefaultTiling();
-			return this.getTileset( tiles.rootURL );
+			return this.getTileset();
 
 		}
 
@@ -315,7 +315,7 @@ export class GeneratedSurfacePlugin {
 
 	}
 
-	getTileset( baseUrl ) {
+	getTileset( baseUrl = '' ) {
 
 		const { tiles, _tiling: tiling } = this;
 		const minLevel = tiling.minLevel;
