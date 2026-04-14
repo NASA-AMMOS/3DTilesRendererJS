@@ -2,8 +2,8 @@ import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/util
 import { TextureUtils, ExternalTexture, CompressedTexture } from 'three';
 
 // Returned when a texture's size cannot be determined (missing image, unknown
-// format, etc). Using 0 avoids surprising callers that sum byte counts.
-export const UNKNOWN_TEXTURE_BYTE_LENGTH = 0;
+// format, etc).
+const UNKNOWN_TEXTURE_BYTE_LENGTH = 0;
 
 function getFormatByteLength( width, height, format, type ) {
 
