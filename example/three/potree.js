@@ -9,12 +9,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 // Public Potree 2.0 dataset hosted by potree.github.io (CORS-enabled)
-const POTREE_URL = 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/lion_takanawa/';
+const POTREE_URL = 'https://raw.githubusercontent.com/potree/potree/refs/heads/develop/pointclouds/lion_takanawa/cloud.js';
 
 let camera, controls, scene, renderer, tiles;
 
 const params = {
-	errorTarget: 2,
+	errorTarget: 16,
 	pointSize: 1,
 };
 
@@ -43,7 +43,8 @@ function init() {
 
 	// tiles
 	tiles = new TilesRenderer( POTREE_URL );
-	tiles.registerPlugin( new PotreePlugin( { pointSize: params.pointSize } ) );
+	tiles.registerPlugin( new PotreePlugin() );
+	tiles.errorTarget = params.errorTarget;
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.group.position.y = - 5;
@@ -65,12 +66,12 @@ function init() {
 
 	// gui
 	const gui = new GUI();
-	gui.add( params, 'errorTarget', 0, 10, 0.1 ).name( 'error target' ).onChange( v => {
+	gui.add( params, 'errorTarget', 0, 50, 0.1 ).name( 'error target' ).onChange( v => {
 
 		tiles.errorTarget = v;
 
 	} );
-	gui.add( params, 'pointSize', 1, 5 ).name( 'point size' ).onChange( v => {
+	gui.add( params, 'pointSize', 1, 20 ).name( 'point size' ).onChange( v => {
 
 		tiles.forEachLoadedModel( scene => {
 

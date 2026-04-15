@@ -23,7 +23,7 @@ const POTREE_V1_ATTR = {
 };
 
 // Byte size per element for Potree v2 type strings
-function _v2ElementSize( type ) {
+function v2ElementSize( type ) {
 
 	switch ( type ) {
 
@@ -38,7 +38,7 @@ function _v2ElementSize( type ) {
 }
 
 // Build a 3D Tiles box array [cx,cy,cz, hx,0,0, 0,hy,0, 0,0,hz] from min/max
-function _makeBox( min, max ) {
+function makeBoundingBox( min, max ) {
 
 	const cx = ( min[ 0 ] + max[ 0 ] ) / 2;
 	const cy = ( min[ 1 ] + max[ 1 ] ) / 2;
@@ -51,7 +51,7 @@ function _makeBox( min, max ) {
 }
 
 // Extract [min, max] arrays from a 3D Tiles box array
-function _boxToMinMax( box ) {
+function boxToMinMax( box ) {
 
 	const [ cx, cy, cz, hx, , , , hy, , , , hz ] = box;
 	return [
@@ -63,7 +63,7 @@ function _boxToMinMax( box ) {
 
 // Compute the bounding box of a child octant by halving the parent bbox.
 // Potree octant convention: bit2 (4)=x, bit1 (2)=y, bit0 (1)=z.
-function _childBbox( parentMin, parentMax, octant ) {
+function getChildBoundingBox( parentMin, parentMax, octant ) {
 
 	const mx = ( parentMin[ 0 ] + parentMax[ 0 ] ) / 2;
 	const my = ( parentMin[ 1 ] + parentMax[ 1 ] ) / 2;
@@ -87,7 +87,7 @@ function _childBbox( parentMin, parentMax, octant ) {
 // Format: BFS-ordered 5-byte entries — childMask(uint8) + numPoints(uint32 LE).
 // chunkRoot identifies the subtree directory where this chunk's data files live
 // (e.g. 'r' for the root chunk → all data at octreeDir/r/{nodeKey}.bin).
-function _parseHierarchyV1( buffer, chunkRoot ) {
+function v1ParseHierarchy( buffer, chunkRoot ) {
 
 	const view = new DataView( buffer );
 	const hierarchy = new Map();
@@ -124,7 +124,7 @@ function _parseHierarchyV1( buffer, chunkRoot ) {
 //   type(uint8) + childMask(uint8) + numPoints(uint32 LE) +
 //   byteOffset(int64 LE) + byteSize(int64 LE).
 // type 4 = proxy node pointing to a sub-hierarchy file; treated as leaf here.
-function _parseHierarchyV2( buffer ) {
+function v2ParseHierarchy( buffer ) {
 
 	const view = new DataView( buffer );
 	const hierarchy = new Map();
@@ -171,23 +171,15 @@ function _parseHierarchyV2( buffer ) {
  *
  * Potree uses additive LOD (`refine: 'ADD'`): parent nodes remain visible while
  * higher-density children load in.
- *
- * @param {Object} [options]
- * @param {boolean} [options.useRecommendedSettings=true] Lower `errorTarget` to 2 for tighter LOD.
  */
 export class PotreePlugin {
 
-	constructor( options = {} ) {
-
-		const {
-			useRecommendedSettings = true,
-		} = options;
+	constructor() {
 
 		this.name = 'POTREE_PLUGIN';
 		this.priority = - 1000;
 
 		this.tiles = null;
-		this.useRecommendedSettings = useRecommendedSettings;
 
 		this._version = null;
 		this._metadata = null;
@@ -200,12 +192,6 @@ export class PotreePlugin {
 	// Plugin lifecycle
 
 	init( tiles ) {
-
-		if ( this.useRecommendedSettings ) {
-
-			tiles.errorTarget = 2;
-
-		}
 
 		this.tiles = tiles;
 
@@ -225,47 +211,28 @@ export class PotreePlugin {
 
 		const { tiles } = this;
 
-		// Resolve and normalize the base directory URL
-		let baseUrl = new URL( tiles.rootURL, location.href ).href;
+		// Resolve the metadata file URL (rootURL must point directly to cloud.js or metadata.json)
+		let metaUrl = new URL( tiles.rootURL, location.href ).href;
 		tiles.invokeAllPlugins( plugin => {
 
-			baseUrl = plugin.preprocessURL ? plugin.preprocessURL( baseUrl, null ) : baseUrl;
+			metaUrl = plugin.preprocessURL ? plugin.preprocessURL( metaUrl, null ) : metaUrl;
 
 		} );
 
-		if ( ! baseUrl.endsWith( '/' ) ) {
+		const metaFile = metaUrl.split( '/' ).pop();
+		const baseUrl = metaUrl.slice( 0, metaUrl.lastIndexOf( '/' ) + 1 );
 
-			baseUrl = baseUrl.slice( 0, baseUrl.lastIndexOf( '/' ) + 1 );
+		// Version is determined by the metadata filename, not by probing
+		const version = metaFile === 'metadata.json' ? 2 : 1;
 
-		}
+		const res = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( metaUrl, tiles.fetchOptions ) );
+		if ( ! ( res instanceof Response ) || ! res.ok ) {
 
-		// Detect Potree version: try v2 (metadata.json) then v1 (cloud.js)
-		let json = null;
-		let version = null;
-
-		const v2Url = new URL( 'metadata.json', baseUrl ).href;
-		let res = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( v2Url, tiles.fetchOptions ) );
-		if ( res instanceof Response && res.ok ) {
-
-			json = await res.json();
-			version = 2;
-
-		} else {
-
-			const v1Url = new URL( 'cloud.js', baseUrl ).href;
-			res = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( v1Url, tiles.fetchOptions ) );
-			if ( res instanceof Response && res.ok ) {
-
-				json = await res.json();
-				version = 1;
-
-			} else {
-
-				throw new Error( 'PotreePlugin: Could not find metadata.json or cloud.js at ' + baseUrl );
-
-			}
+			throw new Error( `PotreePlugin: Could not fetch ${ metaUrl } (${ res && res.status })` );
 
 		}
+
+		const json = await res.json();
 
 		this._version = version;
 		this._metadata = version === 2 ? this._normalizeV2( json ) : this._normalizeV1( json );
@@ -279,7 +246,7 @@ export class PotreePlugin {
 			const hierUrl = new URL( 'hierarchy.bin', baseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
 			const hierBuf = await hierRes.arrayBuffer();
-			this._hierarchy = _parseHierarchyV2( hierBuf );
+			this._hierarchy = v2ParseHierarchy( hierBuf );
 
 		} else {
 
@@ -292,7 +259,7 @@ export class PotreePlugin {
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
 			if ( ! hierRes.ok ) throw new Error( `PotreePlugin: Could not fetch hierarchy (${ hierRes.status }): ${ hierUrl }` );
 			const hierBuf = await hierRes.arrayBuffer();
-			this._hierarchy = _parseHierarchyV1( hierBuf, 'r' );
+			this._hierarchy = v1ParseHierarchy( hierBuf, 'r' );
 
 		}
 
@@ -306,7 +273,7 @@ export class PotreePlugin {
 			root: {
 				refine: 'ADD',
 				geometricError: spacing,
-				boundingVolume: { box: _makeBox( min, max ) },
+				boundingVolume: { box: makeBoundingBox( min, max ) },
 				content: { uri: 'potree://r' },
 				children: [],
 				[ TILE_NODE_KEY ]: 'r',
@@ -356,7 +323,7 @@ export class PotreePlugin {
 		const node = this._hierarchy ? this._hierarchy.get( nodeKey ) : null;
 		if ( ! node ) return null;
 
-		const [ tileMin, tileMax ] = _boxToMinMax( tile.boundingVolume.box );
+		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax );
 		this._expandChildren( tile );
 		return points;
@@ -437,7 +404,7 @@ export class PotreePlugin {
 
 		const attributes = ( json.attributes || [] ).map( attr => {
 
-			const elementSize = attr.elementSize || _v2ElementSize( attr.type );
+			const elementSize = attr.elementSize || v2ElementSize( attr.type );
 			const byteSize = attr.size || ( elementSize * ( attr.numElements || 1 ) );
 
 			// v2 position is decoded with the top-level scale/offset from metadata
@@ -613,7 +580,7 @@ export class PotreePlugin {
 		const node = this._hierarchy.get( nodeKey );
 		if ( ! node || node.childMask === 0 ) return;
 
-		const [ parentMin, parentMax ] = _boxToMinMax( tile.boundingVolume.box );
+		const [ parentMin, parentMax ] = boxToMinMax( tile.boundingVolume.box );
 		const childError = tile.geometricError / 2;
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
@@ -623,11 +590,11 @@ export class PotreePlugin {
 			const childKey = nodeKey + octant;
 			if ( ! this._hierarchy.has( childKey ) ) continue;
 
-			const [ childMin, childMax ] = _childBbox( parentMin, parentMax, octant );
+			const [ childMin, childMax ] = getChildBoundingBox( parentMin, parentMax, octant );
 			tile.children.push( {
 				refine: 'ADD',
 				geometricError: childError,
-				boundingVolume: { box: _makeBox( childMin, childMax ) },
+				boundingVolume: { box: makeBoundingBox( childMin, childMax ) },
 				content: { uri: `potree://${ childKey }` },
 				children: [],
 				[ TILE_NODE_KEY ]: childKey,
