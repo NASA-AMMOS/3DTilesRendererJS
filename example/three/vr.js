@@ -21,9 +21,9 @@ import {
 	RingGeometry,
 	Sphere,
 } from 'three';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
 let camera, scene, renderer, tiles;
 let workspace;

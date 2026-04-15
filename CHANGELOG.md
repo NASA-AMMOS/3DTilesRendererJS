@@ -4,7 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.24] - Unreleased
+## Unreleased
+### Added
+- "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+
+### Fixed
+- ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
+- Converted remaining "three/examples/jsm/" paths to "three/addons/"
+
+### Changed
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin", instead.
+
+## [0.4.24] - 2026.04.10
 ### Added
 - TilesRenderer: Added support for reverse depth buffer.
 - Scheduler class for setting an XR session to use for rAF callbacks.
