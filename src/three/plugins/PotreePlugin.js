@@ -292,7 +292,7 @@ export class PotreePlugin {
 				refine: 'ADD',
 				geometricError: spacing,
 				boundingVolume: { box: makeBoundingBox( min, max ) },
-				content: { uri: 'potree://r' },
+				content: { uri: 'chunk.potree' },
 				children: [],
 				[ TILE_NODE_KEY ]: 'r',
 			},
@@ -305,13 +305,13 @@ export class PotreePlugin {
 
 	fetchData( uri, options ) {
 
-		if ( ! String( uri ).startsWith( 'potree://' ) ) {
+		if ( ! /\.potree$/.test( String( uri ) ) ) {
 
 			return null;
 
 		}
 
-		const nodeKey = String( uri ).slice( 'potree://'.length );
+		const nodeKey = String( uri ).split( '/' ).pop().replace( /\.potree$/, '' );
 		const node = this._hierarchy.get( nodeKey );
 
 		if ( this._version === 2 ) {
@@ -335,15 +335,15 @@ export class PotreePlugin {
 
 	}
 
-	parseToMesh( buffer, tile, extension, uri, abortSignal ) {
+	parseToMesh( buffer, tile, extension, uri ) {
 
-		if ( ! String( uri ).startsWith( 'potree://' ) ) {
+		if ( extension !== 'potree' ) {
 
 			return null;
 
 		}
 
-		const nodeKey = String( uri ).slice( 'potree://'.length );
+		const nodeKey = String( uri ).split( '/' ).pop().replace( /\.potree$/, '' );
 		const node = this._hierarchy.get( nodeKey );
 
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
@@ -653,7 +653,7 @@ export class PotreePlugin {
 				refine: 'ADD',
 				geometricError: childError,
 				boundingVolume: { box: makeBoundingBox( childMin, childMax ) },
-				content: { uri: `potree://${ childKey }` },
+				content: { uri: `${ childKey }.potree` },
 				children: [],
 				[ TILE_NODE_KEY ]: childKey,
 			} );
