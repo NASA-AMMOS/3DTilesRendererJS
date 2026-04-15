@@ -314,12 +314,6 @@ export class PotreePlugin {
 		const nodeKey = String( uri ).slice( 'potree://'.length );
 		const node = this._hierarchy.get( nodeKey );
 
-		if ( ! node ) {
-
-			return null;
-
-		}
-
 		if ( this._version === 2 ) {
 
 			const start = node.byteOffset;
@@ -351,12 +345,6 @@ export class PotreePlugin {
 
 		const nodeKey = String( uri ).slice( 'potree://'.length );
 		const node = this._hierarchy.get( nodeKey );
-
-		if ( ! node ) {
-
-			return null;
-
-		}
 
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax );
