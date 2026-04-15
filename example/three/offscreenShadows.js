@@ -12,9 +12,9 @@ import {
 	PCFSoftShadowMap,
 	Sphere,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 let camera, controls, scene, renderer, tiles, orthoCamera;
 let offsetParent, box, sphere, dirLight;

@@ -159,6 +159,16 @@ function onUpdateAfter() {
 
 }
 
+/**
+ * Plugin that overrides material shaders to fade tile geometry in and out as tile LODs
+ * change, preventing pop-in. Dispatches `fade-change`, `fade-start`, and `fade-end`
+ * events on the `TilesRenderer` during animation — use these when doing on-demand
+ * rendering. Works alongside `BatchedTilesPlugin` when present.
+ * @param {Object} [options]
+ * @param {number} [options.fadeDuration=250] Time in milliseconds for a tile to fully fade in or out.
+ * @param {number} [options.maximumFadeOutTiles=50] Maximum simultaneous fade-out tiles. If exceeded, tiles pop instead of fading.
+ * @param {boolean} [options.fadeRootTiles=false] Whether root-level tiles fade in on their first appearance.
+ */
 export class TilesFadePlugin {
 
 	get fadeDuration() {

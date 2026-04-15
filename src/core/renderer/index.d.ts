@@ -1,7 +1,6 @@
 // common
-export { TilesRendererBase } from './tiles/TilesRendererBase.js';
-export { Tile } from './tiles/Tile.js';
-export { TileBase } from './tiles/TileBase.js';
+export * from './tiles/TilesRendererBase.js';
+export { Tile, TileInternalData, TileTraversalData } from './tiles/Tile.js';
 export { Tileset } from './tiles/Tileset.js';
 export * from './loaders/B3DMLoaderBase.js';
 export * from './loaders/I3DMLoaderBase.js';
@@ -14,3 +13,4 @@ export { LRUCache } from './utilities/LRUCache.js';
 export { PriorityQueue } from './utilities/PriorityQueue.js';
 export { BatchTable } from './utilities/BatchTable.js';
 export { FeatureTable } from './utilities/FeatureTable.js';
+export { Scheduler } from './utilities/Scheduler.js';

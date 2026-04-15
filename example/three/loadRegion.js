@@ -17,7 +17,7 @@ import {
 	Clock,
 	Line,
 } from 'three';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer, tiles;
 let rayRegion, sphereRegion, boxRegion;

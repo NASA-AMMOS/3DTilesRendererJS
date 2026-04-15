@@ -6,6 +6,7 @@ export class CesiumIonAuthPlugin {
 		apiToken: string,
 		assetId?: string | null,
 		autoRefreshToken?: boolean,
+		useRecommendedSettings?: boolean,
 		assetTypeHandler?: ( type: string, tiles: TilesRendererBase, asset: object ) => void,
 	} );
 

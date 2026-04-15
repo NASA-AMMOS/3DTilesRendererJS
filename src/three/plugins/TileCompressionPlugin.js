@@ -103,6 +103,22 @@ function compressPositionAttribute( mesh, arrayType = Int16Array ) {
 
 }
 
+/**
+ * Plugin that processes tile geometry buffer attributes into smaller data types on load
+ * and disables texture mipmaps to save memory. Can reduce geometry memory footprint by
+ * more than half and texture memory by around a third. Note that the default attribute
+ * size when compression is enabled is fairly aggressive and may cause visual artifacts.
+ * @param {Object} [options]
+ * @param {boolean} [options.generateNormals=false] Generate vertex normals if absent.
+ * @param {boolean} [options.disableMipmaps=true] Disable mipmap generation on tile textures.
+ * @param {boolean} [options.compressIndex=true] Compress index buffers to the smallest fitting integer type.
+ * @param {boolean} [options.compressNormals=false] Compress normal attributes.
+ * @param {boolean} [options.compressUvs=false] Compress UV attributes.
+ * @param {boolean} [options.compressPosition=false] Compress position attributes.
+ * @param {TypedArrayConstructor} [options.uvType=Int8Array] Target type for UV compression.
+ * @param {TypedArrayConstructor} [options.normalType=Int8Array] Target type for normal compression.
+ * @param {TypedArrayConstructor} [options.positionType=Int16Array] Target type for position compression.
+ */
 export class TileCompressionPlugin {
 
 	constructor( options ) {

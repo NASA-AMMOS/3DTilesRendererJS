@@ -1,5 +1,5 @@
 import { Vector3, BufferGeometry, Texture } from 'three';
-import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoaderPlugin } from 'three/addons/loaders/GLTFLoader.js';
 
 export class GLTFMeshFeaturesExtension implements GLTFLoaderPlugin {
 
@@ -7,13 +7,21 @@ export class GLTFMeshFeaturesExtension implements GLTFLoaderPlugin {
 
 }
 
+export interface MeshFeatureInfo {
+	label: string | null;
+	propertyTable: number | null;
+	nullFeatureId: number | null;
+	texture?: { index: number, texCoord: number, channels: Array<number> };
+}
+
 export class MeshFeatures {
 
 	constructor( geometry: BufferGeometry, textures: Array<Texture | null>, data: any );
 
-	getFeatures( triangle: number, barycoord: Vector3 ): Array<number>;
-	getFeaturesAsync( triangle: number, barycoord: Vector3 ): Promise<Array<number>>;
-	getFeaturesInfo(): Array<{ label: string, propertyTable: number, nullFeatureId: number | null }>;
+	getTextures(): Array<Texture | null>;
+	getFeatureInfo(): Array<MeshFeatureInfo>;
+	getFeatures( triangle: number, barycoord: Vector3 ): Array<number | null>;
+	getFeaturesAsync( triangle: number, barycoord: Vector3 ): Promise<Array<number | null>>;
 	dispose(): void;
 
 }

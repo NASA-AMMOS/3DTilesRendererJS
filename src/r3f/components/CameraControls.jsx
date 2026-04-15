@@ -1,3 +1,4 @@
+/** @import { Camera, Object3D } from 'three' */
 import { forwardRef, useMemo, useEffect, useContext } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { EnvironmentControls as EnvironmentControlsImpl, GlobeControls as GlobeControlsImpl } from '3d-tiles-renderer/three';
@@ -108,12 +109,30 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 } );
 
+/**
+ * Wraps the three.js EnvironmentControls class. Automatically attaches to the R3F camera, scene,
+ * and canvas. All EnvironmentControls properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {Camera} [props.camera] - Override the default R3F camera.
+ * @param {Object3D} [props.scene] - Override the default R3F scene.
+ * @param {HTMLCanvasElement} [props.domElement] - Override the default canvas element.
+ */
 export const EnvironmentControls = forwardRef( function EnvironmentControls( props, ref ) {
 
 	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ EnvironmentControlsImpl } />;
 
 } );
 
+/**
+ * Wraps the three.js GlobeControls class. Must be a child of TilesRenderer to receive ellipsoid
+ * context. All GlobeControls properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {Camera} [props.camera] - Override the default R3F camera.
+ * @param {Object3D} [props.scene] - Override the default R3F scene.
+ * @param {HTMLCanvasElement} [props.domElement] - Override the default canvas element.
+ */
 export const GlobeControls = forwardRef( function GlobeControls( props, ref ) {
 
 	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ GlobeControlsImpl } />;

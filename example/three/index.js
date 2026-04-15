@@ -25,11 +25,11 @@ import {
 	Sphere,
 } from 'three';
 import { FlyOrbitControls } from './src/controls/FlyOrbitControls.js';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
 
 const NONE = 0;
 const ALL_HITS = 1;
@@ -66,6 +66,7 @@ const params = {
 	displaySphereBounds: false,
 	displayRegionBounds: false,
 	colorMode: urlParams.get( 'colorMode' ) in DebugTilesPlugin.ColorModes ? DebugTilesPlugin.ColorModes[ urlParams.get( 'colorMode' ) ] : DebugTilesPlugin.ColorModes.NONE,
+	boundsColorMode: DebugTilesPlugin.ColorModes.NONE,
 	unlit: Boolean( urlParams.get( 'unlit' ) ),
 	showThirdPerson: false,
 	showSecondView: false,
@@ -78,7 +79,7 @@ animate();
 
 function reinstantiateTiles() {
 
-	const url = hashUrl || '../../data/tileset.json';
+	const url = hashUrl || '../data/tileset.json';
 
 	if ( tiles ) {
 
@@ -269,6 +270,7 @@ function init() {
 	debug.add( params, 'displaySphereBounds' );
 	debug.add( params, 'displayRegionBounds' );
 	debug.add( params, 'colorMode', DebugTilesPlugin.ColorModes );
+	debug.add( params, 'boundsColorMode', DebugTilesPlugin.ColorModes );
 	debug.add( params, 'unlit' );
 	debug.open();
 
@@ -472,6 +474,7 @@ function animate() {
 	plugin.displaySphereBounds = params.displaySphereBounds;
 	plugin.displayRegionBounds = params.displayRegionBounds;
 	plugin.colorMode = parseFloat( params.colorMode );
+	plugin.boundsColorMode = parseFloat( params.boundsColorMode );
 	plugin.unlit = params.unlit;
 
 	if ( params.orthographic ) {

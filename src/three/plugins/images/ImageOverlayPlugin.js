@@ -1,3 +1,5 @@
+/** @import { WebGLRenderer } from 'three' */
+/** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -22,8 +24,18 @@ const _normal = /* @__PURE__ */ new Vector3();
 const _box = /* @__PURE__ */ new Box3();
 const SPLIT_TILE_DATA = Symbol( 'SPLIT_TILE_DATA' );
 const SPLIT_HASH = Symbol( 'SPLIT_HASH' );
+const ORIGINAL_REFINE = Symbol( 'ORIGINAL_REFINE' );
 
-// Plugin for overlaying tiled image data on top of 3d tiles geometry.
+/**
+ * Plugin that composites one or more tiled image overlays onto 3D tile geometry by
+ * generating per-tile textures from image sources (XYZ, TMS, WMTS, WMS, GeoJSON, etc.).
+ * Image sources are added via `addOverlay()` and removed via `deleteOverlay()`.
+ * @param {Object} [options]
+ * @param {WebGLRenderer} options.renderer The renderer used for constructing and rendering to render targets.
+ * @param {Array} [options.overlays=[]] Initial image overlay sources to add.
+ * @param {number} [options.resolution=256] Resolution of each generated tile texture in pixels.
+ * @param {boolean} [options.enableTileSplitting=true] Allow tiles to be split to match image tile boundaries.
+ */
 export class ImageOverlayPlugin {
 
 	get enableTileSplitting() {
@@ -108,8 +120,6 @@ export class ImageOverlayPlugin {
 				return tiles.downloadQueue.priorityCallback( tileA, tileB );
 
 			}
-
-			// TODO: we could prioritize by overlay order here to ensure consistency
 
 		};
 
@@ -221,11 +231,45 @@ export class ImageOverlayPlugin {
 
 	}
 
+	_removeVirtualChildren( tile ) {
+
+		if ( ! ( ORIGINAL_REFINE in tile ) ) {
+
+			return;
+
+		}
+
+		// remove the virtual children associated with the given tile
+		const { tiles } = this;
+		const { virtualChildCount } = tile.internal;
+		const len = tile.children.length;
+		const start = len - virtualChildCount;
+		for ( let i = start; i < len; i ++ ) {
+
+			const child = tile.children[ i ];
+			tiles.processNodeQueue.remove( child );
+			tiles.lruCache.remove( child );
+			child.parent = null;
+
+		}
+
+		tile.children.length -= virtualChildCount;
+		tile.internal.virtualChildCount = 0;
+		tile.refine = tile[ ORIGINAL_REFINE ];
+		delete tile[ ORIGINAL_REFINE ];
+		delete tile[ SPLIT_HASH ];
+
+	}
+
 	disposeTile( tile ) {
 
 		const { overlayInfo, tileControllers, processQueue, pendingTiles, processedTiles } = this;
 
 		processedTiles.delete( tile );
+
+		// remove any virtual children since they depend on this tile being loaded for regeneration.
+		// they will be recreated with fresh split configuration when the tile is reloaded.
+		this._removeVirtualChildren( tile );
 
 		// Cancel any ongoing tasks. If a tile is cancelled while downloading
 		// this will not have been created, yet.
@@ -246,7 +290,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -354,8 +398,6 @@ export class ImageOverlayPlugin {
 			this._updateLayers( tile );
 			this.disposeTile( tile );
 
-			delete tile[ SPLIT_HASH ];
-
 		} );
 
 		tiles.removeEventListener( 'update-after', this._onUpdateAfter );
@@ -403,49 +445,37 @@ export class ImageOverlayPlugin {
 
 		}
 
-		// collect the tiles split into virtual tiles
+		// collect the tiles split into virtual tiles, sorted deepest-first so nested virtual tiles
+		// are cleaned up before their parents when iterating
 		const { tiles } = this;
-		const parents = new Set();
+		const splitTiles = [];
 		this.processedTiles.forEach( tile => {
 
 			if ( SPLIT_HASH in tile ) {
 
-				parents.add( tile );
+				splitTiles.push( tile );
 
 			}
 
 		} );
 
-		// dispose of the virtual children if this tile would not be split or the spilt could change
+		// ensure we clean depth first
+		splitTiles.sort( ( a, b ) => b.internal.depth - a.internal.depth );
+
+		// dispose of the virtual children if this tile would not be split or the split could change
 		// under the current overlays used.
-		parents.forEach( parent => {
+		splitTiles.forEach( tile => {
 
-			if ( parent.parent === null ) {
-
-				return;
-
-			}
-
-			const clone = parent.engineData.scene.clone();
+			const clone = tile.engineData.scene.clone();
 			clone.updateMatrixWorld();
 
-			if ( fullDispose || parent[ SPLIT_HASH ] !== this._getSplitVectors( clone, parent ).hash ) {
-
-				// TODO: if are parent tile is forcibly remove then we should make sure that all the children are, too?
-				const children = collectChildren( parent );
-				children.sort( ( a, b ) => ( b.internal.depth || 0 ) - ( a.internal.depth || 0 ) );
+			if ( fullDispose || tile[ SPLIT_HASH ] !== this._getSplitVectors( clone, tile ).hash ) {
 
 				// note that we need to remove children from the processing queue in this case
-				// because we are forcibly evicting them from the cache.
-				children.forEach( child => {
-
-					tiles.processNodeQueue.remove( child );
-					tiles.lruCache.remove( child );
-					child.parent = null;
-
-				} );
-
-				parent.children.length = 0;
+				// because we are forcibly evicting them from the cache. Since parents is sorted
+				// deepest-first, nested virtual tiles are already cleaned up before we reach
+				// their parent here.
+				this._removeVirtualChildren( tile );
 
 			}
 
@@ -459,18 +489,6 @@ export class ImageOverlayPlugin {
 				this.expandVirtualChildren( scene, tile );
 
 			} );
-
-		}
-
-		function collectChildren( root, target = [] ) {
-
-			root.children.forEach( child => {
-
-				target.push( child );
-				collectChildren( child, target );
-
-			} );
-			return target;
 
 		}
 
@@ -493,7 +511,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target && overlay.shouldSplit( info.range, tile ) ) {
+			if ( info && info.target && overlay.shouldSplit( info.range ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -567,7 +585,16 @@ export class ImageOverlayPlugin {
 
 	async expandVirtualChildren( scene, tile ) {
 
-		if ( tile.children.length !== 0 || this.enableTileSplitting === false ) {
+		const { refine } = tile;
+
+		// Only split tiles that would benefit from it:
+		// - REPLACE tiles with no children are leaf tiles where splitting improves overlay UV projection quality. REPLACE tiles
+		// that already have children are already refined by their children so splitting is unnecessary.
+		// - ADD tiles always need splitting since their content is rendered alongside children at all levels.
+		// Also skip any tiles that already have virtual children to avoid interfering with other plugins.
+		const shouldSplit = ( refine === 'REPLACE' && tile.children.length === 0 ) || refine === 'ADD';
+		const alreadySplit = tile.internal.virtualChildCount !== 0;
+		if ( this.enableTileSplitting === false || ! shouldSplit || alreadySplit ) {
 
 			return;
 
@@ -577,16 +604,15 @@ export class ImageOverlayPlugin {
 		const clone = scene.clone();
 		clone.updateMatrixWorld();
 
-		// get the directions to split on
+		// get the directions to split on & if there are no directions to split on then exit early
 		const { directions, hash } = this._getSplitVectors( clone, tile, _center );
-		tile[ SPLIT_HASH ] = hash;
-
-		// if there are no directions to split on then exit early
 		if ( directions.length === 0 ) {
 
 			return;
 
 		}
+
+		tile[ SPLIT_HASH ] = hash;
 
 		// set up the splitter to ignore overlay uvs
 		const clipper = new GeometryClipper();
@@ -604,7 +630,7 @@ export class ImageOverlayPlugin {
 
 		// run the clipping operations by performing every permutation of sides
 		// defined by the split directions
-		const children = [];
+		const splitChildren = [];
 		clipper.forEachSplitPermutation( () => {
 
 			// clip the object itself
@@ -683,11 +709,6 @@ export class ImageOverlayPlugin {
 			// create a sphere bounding volume
 			if ( tile.boundingVolume.box || tile.boundingVolume.sphere ) {
 
-				// TODO: we create a sphere even when a region is present because currently the handling of region volumes
-				// is a bit flaky especially at small scales. OBBs are generated which can be imperfect resulting rays passing
-				// through tiles. The same may be the case with frustum checks. In theory, though, we should not need a sphere
-				// bounds if a region bounds are present.
-
 				// compute the sphere center
 				_box
 					.setFromObject( result, true )
@@ -720,7 +741,8 @@ export class ImageOverlayPlugin {
 
 			}
 
-			children.push( {
+			splitChildren.push( {
+				internal: { isVirtual: true },
 				refine: 'REPLACE',
 				geometricError: tile.geometricError * 0.5,
 				boundingVolume: boundingVolume,
@@ -731,12 +753,13 @@ export class ImageOverlayPlugin {
 
 		} );
 
-		// force the tile "refine" mode to be set to "REPLACE" if we're splitting tiles
-		// TODO: If a tile is of type "ADD" refine and it has children then it will not be split
-		// as expected since only geometry tiles with no children are split. Instead we'd want
-		// to split this tiles geometry in addition to adding the child tiles.
+		// force the tile "refine" mode to be set to "REPLACE" so that the virtual children
+		// replace this tile's geometry display. Save the original mode so it can be restored
+		// if virtual children are later removed.
+		tile[ ORIGINAL_REFINE ] = tile.refine;
 		tile.refine = 'REPLACE';
-		tile.children.push( ...children );
+		tile.children.push( ...splitChildren );
+		tile.internal.virtualChildCount += splitChildren.length;
 
 	}
 
@@ -751,7 +774,13 @@ export class ImageOverlayPlugin {
 
 	}
 
-	// public
+	/**
+	 * Adds an image overlay source to the plugin. The `order` parameter controls the draw
+	 * order among overlays; lower values are drawn first. If omitted, the overlay is appended
+	 * after all existing overlays.
+	 * @param {ImageOverlay} overlay An image overlay instance.
+	 * @param {number|null} [order=null] Draw order for this overlay.
+	 */
 	addOverlay( overlay, order = null ) {
 
 		const { tiles, overlays, overlayInfo } = this;
@@ -781,6 +810,11 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Updates the draw order for the given overlay.
+	 * @param {ImageOverlay} overlay The overlay to reorder.
+	 * @param {number} order New draw order value.
+	 */
 	setOverlayOrder( overlay, order ) {
 
 		const index = this.overlays.indexOf( overlay );
@@ -793,6 +827,10 @@ export class ImageOverlayPlugin {
 
 	}
 
+	/**
+	 * Removes the given overlay from the plugin.
+	 * @param {ImageOverlay} overlay The overlay to remove.
+	 */
 	deleteOverlay( overlay ) {
 
 		const { overlays, overlayInfo, processQueue, processedTiles } = this;
@@ -819,7 +857,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range, tile );
+					overlay.releaseTexture( range );
 
 				}
 
@@ -860,27 +898,21 @@ export class ImageOverlayPlugin {
 
 		const { tiles } = this;
 
-		if ( ! overlay.isInitialized ) {
+		overlay.init().then( () => {
 
-			overlay.init();
+			// Set resolution on the overlay
+			overlay.setResolution( this.resolution );
 
-			overlay.whenReady().then( () => {
+			const overlayFetch = overlay.fetch.bind( overlay );
+			overlay.fetch = ( ...args ) => tiles
+				.downloadQueue
+				.add( { priority: - performance.now() }, () => {
 
-				// Set resolution on the overlay
-				overlay.setResolution( this.resolution );
+					return overlayFetch( ...args );
 
-				const overlayFetch = overlay.fetch.bind( overlay );
-				overlay.fetch = ( ...args ) => tiles
-					.downloadQueue
-					.add( { priority: - performance.now() }, () => {
+				} );
 
-						return overlayFetch( ...args );
-
-					} );
-
-			} );
-
-		}
+		} );
 
 		const promises = [];
 		const initTile = async ( scene, tile ) => {
@@ -972,15 +1004,15 @@ export class ImageOverlayPlugin {
 
 			} else if ( tile.boundingVolume.region ) {
 
-				// If the tile has a region bounding volume then mark the tiles to preload
+				// If the tile has a region bounding volume then mark the tiles to preload, clamped to the extents of
+				// the overlay image
 				const [ minLon, minLat, maxLon, maxLat ] = tile.boundingVolume.region;
-				const range = overlay.projection.toNormalizedRange( [ minLon, minLat, maxLon, maxLat ] );
+				let range = [ minLon, minLat, maxLon, maxLat ];
+				range = overlay.projection.clampToBounds( range );
+				range = overlay.projection.toNormalizedRange( range );
 
-				// TODO: locking the texture here causes compositing to happen immediately which can be performance intensive,
-				// particularly in cases like GeoJSON loader. Ideally the compositing / final drw step to "lock" would be deferred
-				// as well, just like the tile image loads.
 				info.range = range;
-				overlay.lockTexture( range, tile );
+				overlay.lockTexture( range );
 
 			}
 
@@ -1063,8 +1095,7 @@ export class ImageOverlayPlugin {
 
 			}
 
-			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection ) );
-			range = projection.toNormalizedRange( range );
+			( { range, uvs } = getMeshesCartographicRange( meshes, ellipsoid, _matrix, projection, info.range ) );
 			heightInRange = true;
 
 		}
@@ -1073,18 +1104,14 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range, tile );
-
-		} else {
-
-			range = info.range;
+			overlay.lockTexture( range );
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range, tile ) ) {
+		if ( heightInRange && overlay.hasContent( range ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1097,7 +1124,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range, tile );
+					const regionTarget = await overlay.getTexture( range );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1135,7 +1162,7 @@ export class ImageOverlayPlugin {
 
 	_updateLayers( tile ) {
 
-		const { overlayInfo, overlays, tileControllers } = this;
+		const { overlayInfo, overlays, tileControllers, meshParams } = this;
 		const tileController = tileControllers.get( tile );
 
 		// by this point all targets should be present and we can force the memory to update
@@ -1143,6 +1170,34 @@ export class ImageOverlayPlugin {
 
 		// if the tile has been disposed before this function is called then exit early
 		if ( ! tileController || tileController.signal.aborted ) {
+
+			return;
+
+		}
+
+		// handle the case where all overlays have been removed - we need to reset
+		// the materials to have no layers
+		if ( overlays.length === 0 ) {
+
+			const scene = tile.engineData && tile.engineData.scene;
+			if ( scene ) {
+
+				scene.traverse( c => {
+
+					if ( c.material && meshParams.has( c ) ) {
+
+						const params = meshParams.get( c );
+						params.layerMaps.length = 0;
+						params.layerInfo.length = 0;
+
+						c.material.defines.LAYER_COUNT = 0;
+						c.material.needsUpdate = true;
+
+					}
+
+				} );
+
+			}
 
 			return;
 
@@ -1156,7 +1211,7 @@ export class ImageOverlayPlugin {
 			meshInfo.forEach( ( { attribute }, mesh ) => {
 
 				const { geometry, material } = mesh;
-				const params = this.meshParams.get( mesh );
+				const params = meshParams.get( mesh );
 
 				// assign the new uvs
 				const key = `layer_uv_${ i }`;
@@ -1206,6 +1261,21 @@ export class ImageOverlayPlugin {
 
 }
 
+/**
+ * Base class for all image overlays. Provides the interface that `ImageOverlayPlugin` uses to
+ * fetch, lock, and release overlay textures.
+ * @param {Object} [options]
+ * @param {number} [options.opacity=1] Opacity of the overlay layer (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color multiplied with the overlay texture.
+ * @param {Matrix4} [options.frame=null] World-space transform defining the plane for planar
+ * projection. If null, cartographic (lat/lon) projection is used instead.
+ * @param {Function} [options.preprocessURL=null] Optional function `(url) => url` called before
+ * every fetch to allow URL rewriting or token injection.
+ * @param {boolean} [options.alphaMask=false] If true, the overlay alpha channel masks the
+ * underlying tile surface rather than blending on top of it.
+ * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
+ * applying the mask or blend.
+ */
 class ImageOverlay {
 
 	get isPlanarProjection() {
@@ -1239,8 +1309,14 @@ class ImageOverlay {
 
 	init() {
 
-		this.isInitialized = true;
-		this._whenReady = this._init().then( () => this.isReady = true );
+		if ( ! this.isInitialized ) {
+
+			this.isInitialized = true;
+			this._whenReady = this._init().then( () => this.isReady = true );
+
+		}
+
+		return this._whenReady;
 
 	}
 
@@ -1251,7 +1327,11 @@ class ImageOverlay {
 	}
 
 	// overrideable
-	_init() {}
+	_init() {
+
+		return Promise.resolve();
+
+	}
 
 	fetch( url, options = {} ) {
 
@@ -1269,25 +1349,25 @@ class ImageOverlay {
 
 	}
 
-	hasContent( range, tile ) {
+	hasContent( range ) {
 
 		return false;
 
 	}
 
-	async getTexture( range, tile ) {
+	async getTexture( range ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range, tile ) {
+	async lockTexture( range ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range, tile ) {
+	releaseTexture( range ) {
 
 	}
 
@@ -1295,7 +1375,7 @@ class ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		return false;
 
@@ -1303,6 +1383,12 @@ class ImageOverlay {
 
 }
 
+/**
+ * Base class for overlays backed by a tiled image source (XYZ, TMS, WMS, WMTS, etc.).
+ * Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
+ * multiple source tiles into a single texture per 3D tile region.
+ * @extends ImageOverlay
+ */
 class TiledImageOverlay extends ImageOverlay {
 
 	get tiling() {
@@ -1364,64 +1450,62 @@ class TiledImageOverlay extends ImageOverlay {
 	}
 
 	// Texture acquisition API implementations
-	calculateLevel( range, tile ) {
+	calculateLevel( range ) {
 
-		if ( this.isPlanarProjection ) {
+		const [ minX, minY, maxX, maxY ] = range;
+		const w = maxX - minX;
+		const h = maxY - minY;
 
-			const [ minX, minY, maxX, maxY ] = range;
-			const w = maxX - minX;
-			const h = maxY - minY;
+		let level = 0;
+		const resolution = this.regionImageSource.resolution;
+		const maxLevel = this.tiling.maxLevel;
+		for ( ; level < maxLevel; level ++ ) {
 
-			let level = 0;
-			const resolution = this.regionImageSource.resolution;
-			const maxLevel = this.tiling.maxLevel;
-			for ( ; level < maxLevel; level ++ ) {
+			// the number of pixels per image on each axis
+			const wProj = resolution / w;
+			const hProj = resolution / h;
 
-				// the number of pixels per image on each axis
-				const wProj = resolution / w;
-				const hProj = resolution / h;
+			const levelData = this.tiling.getLevel( level );
+			if ( levelData === null || levelData === undefined ) {
 
-				const { pixelWidth, pixelHeight } = this.tiling.getLevel( level );
-				if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
-
-					break;
-
-				}
+				continue;
 
 			}
 
-			// TODO: should this be one layer higher LoD?
-			return level;
+			const { pixelWidth, pixelHeight } = levelData;
+			if ( pixelWidth >= wProj || pixelHeight >= hProj ) {
 
-		} else {
+				break;
 
-			return tile.internal.depthFromRenderedParent - 1;
+			}
 
 		}
 
-	}
-
-	hasContent( range, tile ) {
-
-		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range, tile ) );
+		return level;
 
 	}
 
-	getTexture( range, tile ) {
+	hasContent( range ) {
 
-		return this.regionImageSource.get( ...range, this.calculateLevel( range, tile ) );
-
-	}
-
-	lockTexture( range, tile ) {
-
-		return this.regionImageSource.lock( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range ) );
 
 	}
 
-	releaseTexture( range, tile ) {
+	getTexture( range ) {
 
-		this.regionImageSource.release( ...range, this.calculateLevel( range, tile ) );
+		return this.regionImageSource.get( ...range, this.calculateLevel( range ) );
+
+	}
+
+	lockTexture( range ) {
+
+		return this.regionImageSource.lock( ...range, this.calculateLevel( range ) );
+
+	}
+
+	releaseTexture( range ) {
+
+		this.regionImageSource.release( ...range, this.calculateLevel( range ) );
 
 	}
 
@@ -1431,15 +1515,31 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range, tile );
+		return this.tiling.maxLevel > this.calculateLevel( range );
 
 	}
 
 }
 
+/**
+ * Overlay that renders XYZ/Slippy-map image tiles (e.g. OpenStreetMap) on top of 3D tile
+ * geometry. See the {@link https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames Slippy map tilenames specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
+ * @param {number} [options.levels=20] Number of zoom levels.
+ * @param {number} [options.tileDimension=256] Tile pixel size.
+ * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class XYZTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1451,6 +1551,29 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
+ * Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
+ * the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
+ * feature's `properties` object.
+ * @extends ImageOverlay
+ * @param {Object} [options]
+ * @param {Object} [options.geojson=null] GeoJSON FeatureCollection or Feature object to render.
+ * If not provided, `url` must be set so the data can be fetched on init.
+ * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
+ * `geojson` is not supplied directly).
+ * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
+ * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
+ * @param {number} [options.strokeWidth=2] Stroke line width in pixels.
+ * @param {string} [options.fillStyle='rgba( 255, 255, 255, 0.5 )'] Canvas fill style for feature interiors.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class GeoJSONOverlay extends ImageOverlay {
 
 	get projection() {
@@ -1568,7 +1691,7 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range, tile ) {
+	shouldSplit( range ) {
 
 		// geojson can always split
 		return true;
@@ -1583,6 +1706,28 @@ export class GeoJSONOverlay extends ImageOverlay {
 
 }
 
+/**
+ * Overlay that renders WMS (Web Map Service) image tiles on top of 3D tile geometry.
+ * See the {@link https://www.ogc.org/standard/wms/ WMS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] WMS base URL.
+ * @param {string} [options.layer] WMS layer name.
+ * @param {string} [options.crs] Coordinate reference system, e.g. `'EPSG:4326'`.
+ * @param {string} [options.format] Image MIME type, e.g. `'image/png'`.
+ * @param {number} [options.tileDimension=256] Tile pixel size.
+ * @param {string} [options.styles] WMS styles parameter.
+ * @param {string} [options.version='1.3.0'] WMS version string.
+ * @param {boolean} [options.transparent=false] Whether to request a transparent image.
+ * @param {number} [options.levels=18] Number of zoom levels.
+ * @param {number[]|null} [options.contentBoundingBox=null] Content bounding box in radians `[west, south, east, north]`. If null, uses full projection bounds.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class WMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1594,6 +1739,25 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that renders WMTS (Web Map Tile Service) image tiles on top of 3D tile geometry.
+ * Pass a parsed capabilities object from `WMTSCapabilitiesLoader` or provide a URL template
+ * directly. See the {@link https://www.ogc.org/standard/wmts/ WMTS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] - WMTS service URL.
+ * @param {string} [options.layer] - WMTS layer identifier.
+ * @param {string} [options.tileMatrixSet] - TileMatrixSet identifier (e.g., 'GoogleMapsCompatible', 'EPSG:3857').
+ * @param {string} [options.style='default'] - Style identifier.
+ * @param {string} [options.format='image/jpeg'] - Output image format (e.g., 'image/png', 'image/jpeg').
+ * @param {Object<string, string|number>|null} [options.dimensions=null] - WMTS dimension values
+ * @param {string[]|null} [options.tileMatrixLabels=null] - Custom TileMatrix identifiers per level
+ * @param {WMTSTileMatrix[]|null} [options.tileMatrices=null] - Explicit per-level tile matrix definitions. When provided, `levels` and `tileMatrixLabels` are ignored.
+ * @param {string|null} [options.projection=null] - Projection identifier ('EPSG:3857' or 'EPSG:4326'). Defaults to 'EPSG:3857' if not specified.
+ * @param {number} [options.levels=20] - Number of zoom levels. Ignored if `tileMatrices` is provided.
+ * @param {number} [options.tileDimension=256] - Default tile width and height in pixels.
+ * @param {number[]|null} [options.contentBoundingBox=null] - Content bounding box in radians, `[west, south, east, north]`. If null, uses full projection bounds.
+ */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1605,6 +1769,19 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that renders TMS (Tile Map Service) image tiles on top of 3D tile geometry.
+ * See the {@link https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification TMS specification}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL to the TMS `tilemapresource.xml` descriptor or tile template.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class TMSTilesOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1616,6 +1793,22 @@ export class TMSTilesOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that streams imagery from a Cesium Ion asset. Supports Ion-hosted TMS assets as well
+ * as external asset types (Google 2D Maps, Bing Maps) that Ion proxies.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.apiToken] Cesium Ion API token for authentication.
+ * @param {number} [options.assetId] Cesium Ion asset ID.
+ * @param {boolean} [options.autoRefreshToken=false] Automatically refresh the auth token before
+ * it expires.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class CesiumIonOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {
@@ -1722,6 +1915,25 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 
 }
 
+/**
+ * Overlay that streams Google Maps 2D tile imagery on top of 3D tile geometry using the
+ * Google Maps Tile API.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.apiToken] Google Maps API key.
+ * @param {Object} [options.sessionOptions] Session creation options passed to the Google Maps
+ * Tile API when establishing a tile session.
+ * @param {boolean} [options.autoRefreshToken=false] Automatically refresh the session token
+ * before it expires.
+ * @param {string} [options.logoUrl=null] URL to a Google logo image. If provided, it is included
+ * in the overlay attributions as required by Google's terms of service.
+ * @param {number} [options.opacity=1] Overlay opacity (0–1).
+ * @param {number|Color} [options.color=0xffffff] Tint color.
+ * @param {Matrix4} [options.frame=null] Planar projection frame. If null, cartographic projection is used.
+ * @param {Function} [options.preprocessURL=null] URL rewriting callback.
+ * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
+ * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ */
 export class GoogleMapsOverlay extends TiledImageOverlay {
 
 	constructor( options = {} ) {

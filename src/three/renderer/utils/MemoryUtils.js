@@ -1,4 +1,4 @@
-import { estimateBytesUsed as _estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { estimateBytesUsed as _estimateBytesUsed } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TextureUtils, ExternalTexture, CompressedTexture } from 'three';
 
 // Returned when a texture's size cannot be determined (missing image, unknown
