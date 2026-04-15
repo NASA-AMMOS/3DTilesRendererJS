@@ -267,12 +267,6 @@ export class PotreePlugin {
 			// {octreeDir}/r/ — the chunk directory named after the chunk root key.
 			const hierUrl = new URL( 'r/r.hrc', this._dataBaseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
-			if ( ! hierRes.ok ) {
-
-				throw new Error( `PotreePlugin: Could not fetch hierarchy (${ hierRes.status }): ${ hierUrl }` );
-
-			}
-
 			const hierBuf = await hierRes.arrayBuffer();
 			this._hierarchy = v1ParseHierarchy( hierBuf, 'r' );
 
