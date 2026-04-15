@@ -1,9 +1,9 @@
 
 import { GlobeControls, TilesRenderer, CAMERA_FRAME, EnvironmentControls } from '3d-tiles-renderer';
 import { Scene, WebGLRenderer, PerspectiveCamera, MathUtils, Sphere, TextureUtils, DirectionalLight, DataTexture, EquirectangularReflectionMapping } from 'three';
-import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { estimateBytesUsed } from 'three/addons/utils/BufferGeometryUtils.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { GLTFExtensionsPlugin } from '3d-tiles-renderer/plugins';
 
 const url = new URLSearchParams( location.search ).get( 'url' ) || '../../data/tileset.json';

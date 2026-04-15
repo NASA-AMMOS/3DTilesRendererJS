@@ -20,7 +20,7 @@ import {
 	GLTFExtensionsPlugin,
 } from '3d-tiles-renderer/plugins';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
-import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
 // FEATURE_IDs
 // const URL = 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/main/glTF/EXT_mesh_features/FeatureIdAttribute/tileset.json';

@@ -5,7 +5,7 @@ import {
 } from 'three';
 import { TilesRenderer, GlobeControls, EnvironmentControls } from '3d-tiles-renderer';
 import { TilesFadePlugin, UpdateOnChangePlugin, WMTSCapabilitiesLoader, WMTSTilesPlugin } from '3d-tiles-renderer/plugins';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const url = window.location.hash.replace( /^#/, '' ) || 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&request=GetCapabilities';
 const compatibleCRSList = [ 'EPSG:4326', 'EPSG:3857' ];

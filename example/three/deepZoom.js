@@ -6,7 +6,7 @@ import {
 } from 'three';
 import { EnvironmentControls, TilesRenderer, CameraTransitionManager } from '3d-tiles-renderer';
 import { DeepZoomImagePlugin, UpdateOnChangePlugin } from '3d-tiles-renderer/plugins';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let controls, scene, renderer;
 let tiles, transition;
