@@ -14,11 +14,10 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _sphere = /* @__PURE__ */ new Sphere();
 
 /**
- * Plugin that generates tiled surface geometry from a tiling scheme, without loading
- * any image data. Intended to be paired with `ImageOverlayPlugin` which handles
- * image fetching and texturing separately.
+ * Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
+ * image overlay data.
  *
- * The tiling scheme and projection are derived from a provided overlay or image source.
+ * The tiling scheme and projection are derived from a provided overlay.
  * If the source's projection is cartographic (any EPSG scheme), the plugin supports
  * both planar and ellipsoidal geometry via the `shape` option.
  *
@@ -87,12 +86,6 @@ export class GeneratedSurfacePlugin {
 	}
 
 	async parseToMesh( buffer, tile, extension, uri, abortSignal ) {
-
-		if ( abortSignal.aborted ) {
-
-			return null;
-
-		}
 
 		if ( extension !== 'generated_surface' ) {
 
@@ -243,13 +236,13 @@ export class GeneratedSurfacePlugin {
 
 	}
 
+	// whether the plugin is loading as an ellipsoid or not
 	_useEllipsoid() {
 
 		return this._tiling.projection.isCartographic && this.shape === 'ellipsoid';
 
 	}
 
-	// Local functions
 	_createPlanarMesh( tile ) {
 
 		const tx = tile[ TILE_X ];
@@ -266,10 +259,13 @@ export class GeneratedSurfacePlugin {
 
 		}
 
+		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
+		// when rendering.
 		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
 		const mesh = new Mesh( geometry, new MeshBasicMaterial() );
 		mesh.position.set( x, y, z );
 
+		// adjust the uvs so only the relevant texture portion is visible
 		const uvRange = this._tiling.getTileContentUVBounds( tx, ty, level );
 		const { uv } = geometry.attributes;
 		for ( let i = 0; i < uv.count; i ++ ) {
@@ -293,6 +289,8 @@ export class GeneratedSurfacePlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
+		// new geometry
+		// default to a minimum number of vertices per degree on each axis
 		const [ west, south, east, north ] = tile.boundingVolume.region;
 		const latVerts = Math.max( MIN_LAT_VERTS, Math.ceil( ( north - south ) * MathUtils.RAD2DEG * 0.25 ) );
 		const lonVerts = Math.max( MIN_LON_VERTS, Math.ceil( ( east - west ) * MathUtils.RAD2DEG * 0.25 ) );
@@ -302,12 +300,13 @@ export class GeneratedSurfacePlugin {
 
 		const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true, true );
 
+		// adjust the geometry to position it at the region
 		const { position, normal, uv } = geometry.attributes;
 		const vertCount = position.count;
 		tile.engineData.boundingVolume.getSphere( _sphere );
-
 		for ( let i = 0; i < vertCount; i ++ ) {
 
+			// determine whether this vertex is part of the skirt or not
 			const col = i % cols;
 			const row = Math.floor( i / cols );
 			const isSkirt = col === 0 || col === cols - 1 || row === 0 || row === rows - 1;
@@ -317,18 +316,29 @@ export class GeneratedSurfacePlugin {
 			const uNorm = ( innerCol - 1 ) / lonVerts;
 			const vNorm = 1 - ( innerRow - 1 ) / latVerts;
 
+			// convert the plane position to lat / lon
 			const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( uNorm, 0, 1, minU, maxU ) );
 			let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( vNorm, 0, 1, minV, maxV ) );
 
 			// snap edges to poles for Mercator to avoid seams
 			if ( projection.isMercator && endCaps ) {
 
-				if ( maxV === 1 && vNorm === 1 ) lat = Math.PI / 2;
-				if ( minV === 0 && vNorm === 0 ) lat = - Math.PI / 2;
+				if ( maxV === 1 && vNorm === 1 ) {
+
+					lat = Math.PI / 2;
+
+				}
+
+				if ( minV === 0 && vNorm === 0 ) {
+
+					lat = - Math.PI / 2;
+
+				}
 
 			}
 
-			// insert edge loop at Mercator lat limit to reduce UV distortion at low LoDs
+			// ensure we have an edge loop positioned at the mercator limit to avoid UV distortion
+			// as much as possible at low LoDs.
 			if ( projection.isMercator && vNorm !== 0 && vNorm !== 1 ) {
 
 				const latLimit = projection.convertNormalizedToLatitude( 1 );
@@ -336,11 +346,21 @@ export class GeneratedSurfacePlugin {
 				const prevLat = MathUtils.mapLinear( vNorm - vStep, 0, 1, south, north );
 				const nextLat = MathUtils.mapLinear( vNorm + vStep, 0, 1, south, north );
 
-				if ( lat > latLimit && prevLat < latLimit ) lat = latLimit;
-				if ( lat < - latLimit && nextLat > - latLimit ) lat = - latLimit;
+				if ( lat > latLimit && prevLat < latLimit ) {
+
+					lat = latLimit;
+
+				}
+
+				if ( lat < - latLimit && nextLat > - latLimit ) {
+
+					lat = - latLimit;
+
+				}
 
 			}
 
+			// get the position and normal
 			tiles.ellipsoid.getCartographicToPosition( lat, lon, 0, _pos ).sub( _sphere.center );
 			tiles.ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
@@ -354,6 +374,7 @@ export class GeneratedSurfacePlugin {
 			const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, 0, 1 );
 			const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, 0, 1 );
 
+			// update the geometry
 			position.setXYZ( i, _pos.x, _pos.y, _pos.z );
 			normal.setXYZ( i, _norm.x, _norm.y, _norm.z );
 			uv.setXY( i, u, v );
