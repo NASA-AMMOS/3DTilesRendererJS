@@ -99,7 +99,12 @@ function v1ParseHierarchy( buffer, chunkRoot ) {
 		const childMask = view.getUint8( offset );
 		const numPoints = view.getUint32( offset + 1, true );
 		const key = queue[ i ];
-		if ( key === undefined ) break;
+
+		if ( key === undefined ) {
+
+			break;
+
+		}
 
 		hierarchy.set( key, { childMask, numPoints, chunkRoot } );
 
@@ -139,7 +144,12 @@ function v2ParseHierarchy( buffer ) {
 		const byteOffset = view.getBigInt64( offset + 6, true );
 		const byteSize = view.getBigInt64( offset + 14, true );
 		const key = queue[ i ];
-		if ( key === undefined ) break;
+
+		if ( key === undefined ) {
+
+			break;
+
+		}
 
 		// Proxy nodes (type 4) reference a separate hierarchy file; treat as leaves
 		const effectiveChildMask = ( type === 4 ) ? 0 : childMask;
@@ -164,10 +174,13 @@ function v2ParseHierarchy( buffer ) {
 /**
  * Plugin that adds support for Potree point cloud datasets (v1.x and v2.0).
  *
- * Auto-detects the version by probing for `metadata.json` (v2) or `cloud.js` (v1)
- * relative to `tiles.rootURL`. Builds a synthetic 3D Tiles tileset and streams
- * point cloud nodes on demand using the same lazy-expansion / disposal pattern as
- * `QuantizedMeshPlugin`.
+ * `tiles.rootURL` must point directly to the dataset metadata file:
+ * - Potree v1: `cloud.js`
+ * - Potree v2: `metadata.json`
+ *
+ * The version is determined from the filename. Builds a synthetic 3D Tiles
+ * tileset and streams point cloud nodes on demand using the same lazy-expansion
+ * and disposal pattern as `QuantizedMeshPlugin`.
  *
  * Potree uses additive LOD (`refine: 'ADD'`): parent nodes remain visible while
  * higher-density children load in.
@@ -257,7 +270,12 @@ export class PotreePlugin {
 			// {octreeDir}/r/ — the chunk directory named after the chunk root key.
 			const hierUrl = new URL( 'r/r.hrc', this._dataBaseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
-			if ( ! hierRes.ok ) throw new Error( `PotreePlugin: Could not fetch hierarchy (${ hierRes.status }): ${ hierUrl }` );
+			if ( ! hierRes.ok ) {
+
+				throw new Error( `PotreePlugin: Could not fetch hierarchy (${ hierRes.status }): ${ hierUrl }` );
+
+			}
+
 			const hierBuf = await hierRes.arrayBuffer();
 			this._hierarchy = v1ParseHierarchy( hierBuf, 'r' );
 
@@ -287,11 +305,20 @@ export class PotreePlugin {
 
 	fetchData( uri, options ) {
 
-		if ( ! String( uri ).startsWith( 'potree://' ) ) return null;
+		if ( ! String( uri ).startsWith( 'potree://' ) ) {
+
+			return null;
+
+		}
 
 		const nodeKey = String( uri ).slice( 'potree://'.length );
-		const node = this._hierarchy ? this._hierarchy.get( nodeKey ) : null;
-		if ( ! node ) return null;
+		const node = this._hierarchy.get( nodeKey );
+
+		if ( ! node ) {
+
+			return null;
+
+		}
 
 		if ( this._version === 2 ) {
 
@@ -316,12 +343,20 @@ export class PotreePlugin {
 
 	parseToMesh( buffer, tile, extension, uri, abortSignal ) {
 
-		if ( ! String( uri ).startsWith( 'potree://' ) ) return null;
-		if ( abortSignal && abortSignal.aborted ) return null;
+		if ( ! String( uri ).startsWith( 'potree://' ) ) {
+
+			return null;
+
+		}
 
 		const nodeKey = String( uri ).slice( 'potree://'.length );
-		const node = this._hierarchy ? this._hierarchy.get( nodeKey ) : null;
-		if ( ! node ) return null;
+		const node = this._hierarchy.get( nodeKey );
+
+		if ( ! node ) {
+
+			return null;
+
+		}
 
 		const [ tileMin, tileMax ] = boxToMinMax( tile.boundingVolume.box );
 		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax );
@@ -332,7 +367,11 @@ export class PotreePlugin {
 
 	disposeTile( tile ) {
 
-		if ( ! ( TILE_NODE_KEY in tile ) ) return;
+		if ( ! ( TILE_NODE_KEY in tile ) ) {
+
+			return;
+
+		}
 
 		const { processNodeQueue } = this.tiles;
 		for ( let i = 0, l = tile.children.length; i < l; i ++ ) {
@@ -365,6 +404,7 @@ export class PotreePlugin {
 
 			const name = attrNames[ i ];
 			const desc = POTREE_V1_ATTR[ name ];
+
 			if ( ! desc ) {
 
 				console.warn( `PotreePlugin: Unknown v1 attribute '${ name }', skipping` );
@@ -372,7 +412,7 @@ export class PotreePlugin {
 
 			}
 
-			// Position is decoded via scale + bbox-min offset; other attributes are raw
+			// Position is decoded via scale + node bbox-min offset; other attributes are raw
 			const attrScale = name === 'POSITION_CARTESIAN' ? [ scale, scale, scale ] : null;
 			const attrOffset = name === 'POSITION_CARTESIAN' ? min : null;
 			attributes.push( { name, ...desc, scale: attrScale, offset: attrOffset } );
@@ -407,7 +447,7 @@ export class PotreePlugin {
 			const elementSize = attr.elementSize || v2ElementSize( attr.type );
 			const byteSize = attr.size || ( elementSize * ( attr.numElements || 1 ) );
 
-			// v2 position is decoded with the top-level scale/offset from metadata
+			// v2 position is decoded with the top-level scale/offset from metadata.json
 			const isPosition = attr.name === 'position';
 			return {
 				name: attr.name,
@@ -500,6 +540,7 @@ export class PotreePlugin {
 					wx = view.getFloat32( off, true );
 					wy = view.getFloat32( off + 4, true );
 					wz = view.getFloat32( off + 8, true );
+
 					if ( attr.scale ) {
 
 						const sc = attr.scale;
@@ -554,15 +595,25 @@ export class PotreePlugin {
 
 		const geometry = new BufferGeometry();
 		geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
-		if ( colors ) geometry.setAttribute( 'color', new BufferAttribute( colors, 3, true ) );
-		if ( intensities ) geometry.setAttribute( 'intensity', new BufferAttribute( intensities, 1 ) );
+
+		if ( colors ) {
+
+			geometry.setAttribute( 'color', new BufferAttribute( colors, 3, true ) );
+
+		}
+
+		if ( intensities ) {
+
+			geometry.setAttribute( 'intensity', new BufferAttribute( intensities, 1 ) );
+
+		}
 
 		const material = new PointsMaterial( {
 			vertexColors: !! colors,
 			sizeAttenuation: false,
 		} );
 
-		// Offset the scene by the bbox center so positions are near the origin
+		// Offset the mesh by the tile bbox center so positions are near the origin
 		const points = new Points( geometry, material );
 		points.position.set( ocx, ocy, ocz );
 		points.updateMatrix();
@@ -575,20 +626,39 @@ export class PotreePlugin {
 	_expandChildren( tile ) {
 
 		const nodeKey = tile[ TILE_NODE_KEY ];
-		if ( nodeKey === undefined ) return;
+
+		if ( nodeKey === undefined ) {
+
+			return;
+
+		}
 
 		const node = this._hierarchy.get( nodeKey );
-		if ( ! node || node.childMask === 0 ) return;
+
+		if ( ! node || node.childMask === 0 ) {
+
+			return;
+
+		}
 
 		const [ parentMin, parentMax ] = boxToMinMax( tile.boundingVolume.box );
 		const childError = tile.geometricError / 2;
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
 
-			if ( ! ( node.childMask & ( 1 << octant ) ) ) continue;
+			if ( ! ( node.childMask & ( 1 << octant ) ) ) {
+
+				continue;
+
+			}
 
 			const childKey = nodeKey + octant;
-			if ( ! this._hierarchy.has( childKey ) ) continue;
+
+			if ( ! this._hierarchy.has( childKey ) ) {
+
+				continue;
+
+			}
 
 			const [ childMin, childMax ] = getChildBoundingBox( parentMin, parentMax, octant );
 			tile.children.push( {
