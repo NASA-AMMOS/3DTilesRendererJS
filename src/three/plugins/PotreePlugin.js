@@ -1,8 +1,5 @@
 import { BufferGeometry, BufferAttribute, Points, PointsMaterial } from 'three';
 
-// Symbol for tagging tile objects created by this plugin
-const TILE_NODE_KEY = Symbol( 'TILE_NODE_KEY' );
-
 // Potree v1 point attribute byte layouts, keyed by attribute name string
 const POTREE_V1_ATTR = {
 	'POSITION_CARTESIAN': { byteSize: 12, numElements: 3, type: 'int32' },
@@ -292,9 +289,8 @@ export class PotreePlugin {
 				refine: 'ADD',
 				geometricError: spacing,
 				boundingVolume: { box: makeBoundingBox( min, max ) },
-				content: { uri: 'chunk.potree' },
+				content: { uri: 'r.potree' },
 				children: [],
-				[ TILE_NODE_KEY ]: 'r',
 			},
 		};
 
@@ -355,7 +351,7 @@ export class PotreePlugin {
 
 	disposeTile( tile ) {
 
-		if ( ! ( TILE_NODE_KEY in tile ) ) {
+		if ( ! tile.content?.uri || ! /\.potree$/.test( tile.content.uri ) ) {
 
 			return;
 
@@ -613,14 +609,7 @@ export class PotreePlugin {
 	// Called from parseToMesh after a node's content has been decoded.
 	_expandChildren( tile ) {
 
-		const nodeKey = tile[ TILE_NODE_KEY ];
-
-		if ( nodeKey === undefined ) {
-
-			return;
-
-		}
-
+		const nodeKey = tile.content.uri.split( '/' ).pop().replace( /\.potree$/, '' );
 		const node = this._hierarchy.get( nodeKey );
 
 		if ( ! node || node.childMask === 0 ) {
@@ -655,7 +644,6 @@ export class PotreePlugin {
 				boundingVolume: { box: makeBoundingBox( childMin, childMax ) },
 				content: { uri: `${ childKey }.potree` },
 				children: [],
-				[ TILE_NODE_KEY ]: childKey,
 			} );
 
 		}
