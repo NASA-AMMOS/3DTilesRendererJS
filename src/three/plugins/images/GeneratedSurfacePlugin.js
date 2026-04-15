@@ -409,6 +409,7 @@ export class GeneratedSurfacePlugin {
 
 		}
 
+		// generate tileset
 		const tileset = {
 			asset: { version: '1.1' },
 			geometricError: Infinity,
@@ -491,6 +492,7 @@ export class GeneratedSurfacePlugin {
 
 			}
 
+			// calculate the world space bounds position from the range
 			const [ minX, minY, maxX, maxY ] = normalizedBounds;
 			let extentsX = ( maxX - minX ) / 2;
 			let extentsY = ( maxY - minY ) / 2;
@@ -504,9 +506,11 @@ export class GeneratedSurfacePlugin {
 
 			}
 
+			// scale the fields
 			centerX *= tiling.aspectRatio;
 			extentsX *= tiling.aspectRatio;
 
+			// return bounding box
 			return {
 				box: [
 					// center
@@ -540,25 +544,35 @@ export class GeneratedSurfacePlugin {
 			const [ minU, minV, maxU, maxV ] = tiling.getTileBounds( x, y, level, true );
 			const { tilePixelWidth, tilePixelHeight } = tiling.getLevel( level );
 
+			// one pixel width in uv space
 			const tileUWidth = ( maxU - minU ) / tilePixelWidth;
 			const tileVWidth = ( maxV - minV ) / tilePixelHeight;
 
-			const [ , south, east, north ] = tiling.getTileBounds( x, y, level );
+			// calculate the region ranges
+			const [ /* west */, south, east, north ] = tiling.getTileBounds( x, y, level );
+
+			// calculate the changes in lat / lon at the given point
+			// find the most bowed point of the latitude range since the amount that latitude changes is
+			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
 			const midV = projection.convertLatitudeToNormalized( midLat );
 			const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
 			const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
 
+			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );
 			geometricError = Math.max( tileUWidth * lonFactor * xDeriv, tileVWidth * latFactor * yDeriv );
 
 		} else {
 
+			// Calculate geometric error: size of one pixel in world space.
+			// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
 			const { pixelWidth, pixelHeight } = tiling.getLevel( level );
 			geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
 
 		}
 
+		// Generate the node
 		return {
 			refine: 'REPLACE',
 			geometricError,
@@ -568,6 +582,7 @@ export class GeneratedSurfacePlugin {
 			},
 			children: [],
 
+			// save the tile params so we can expand later
 			[ TILE_X ]: x,
 			[ TILE_Y ]: y,
 			[ TILE_LEVEL ]: level,
@@ -604,7 +619,7 @@ export class GeneratedSurfacePlugin {
 		const tiling = new TilingScheme();
 		if ( this.shape === 'ellipsoid' ) {
 
-			const projection = new ProjectionScheme( 'EPSG:4326' );
+			const projection = new ProjectionScheme();
 			tiling.setProjection( projection );
 			tiling.generateLevels( DEFAULT_LEVELS, projection.tileCountX, projection.tileCountY );
 
