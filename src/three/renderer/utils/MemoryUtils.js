@@ -49,7 +49,7 @@ export function getTextureByteLength( tex ) {
 
 				bytes += mip.data.byteLength;
 
-			} else if ( mip ) {
+			} else {
 
 				bytes += getFormatByteLength( mip.width, mip.height, format, type );
 
@@ -61,7 +61,7 @@ export function getTextureByteLength( tex ) {
 
 	}
 
-	if ( ! image || ! image.width || ! image.height ) {
+	if ( ! image ) {
 
 		return UNKNOWN_TEXTURE_BYTE_LENGTH;
 
