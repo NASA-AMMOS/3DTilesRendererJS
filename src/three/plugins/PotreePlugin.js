@@ -85,7 +85,9 @@ function _childBbox( parentMin, parentMax, octant ) {
 
 // Parse a Potree v1 .hrc hierarchy file.
 // Format: BFS-ordered 5-byte entries — childMask(uint8) + numPoints(uint32 LE).
-function _parseHierarchyV1( buffer ) {
+// chunkRoot identifies the subtree directory where this chunk's data files live
+// (e.g. 'r' for the root chunk → all data at octreeDir/r/{nodeKey}.bin).
+function _parseHierarchyV1( buffer, chunkRoot ) {
 
 	const view = new DataView( buffer );
 	const hierarchy = new Map();
@@ -99,7 +101,7 @@ function _parseHierarchyV1( buffer ) {
 		const key = queue[ i ];
 		if ( key === undefined ) break;
 
-		hierarchy.set( key, { childMask, numPoints } );
+		hierarchy.set( key, { childMask, numPoints, chunkRoot } );
 
 		for ( let octant = 0; octant < 8; octant ++ ) {
 
@@ -171,7 +173,6 @@ function _parseHierarchyV2( buffer ) {
  * higher-density children load in.
  *
  * @param {Object} [options]
- * @param {number} [options.pointSize=1.0] Size passed to `THREE.PointsMaterial`.
  * @param {boolean} [options.useRecommendedSettings=true] Lower `errorTarget` to 2 for tighter LOD.
  */
 export class PotreePlugin {
@@ -179,7 +180,6 @@ export class PotreePlugin {
 	constructor( options = {} ) {
 
 		const {
-			pointSize = 1.0,
 			useRecommendedSettings = true,
 		} = options;
 
@@ -187,7 +187,6 @@ export class PotreePlugin {
 		this.priority = - 1000;
 
 		this.tiles = null;
-		this.pointSize = pointSize;
 		this.useRecommendedSettings = useRecommendedSettings;
 
 		this._version = null;
@@ -287,10 +286,13 @@ export class PotreePlugin {
 			const octreeDir = json.octreeDir || 'data';
 			this._dataBaseUrl = new URL( octreeDir + '/', baseUrl ).href;
 
-			const hierUrl = new URL( 'r.hrc', this._dataBaseUrl ).href;
+			// v1 layout: the root hierarchy and all its node data files live in
+			// {octreeDir}/r/ — the chunk directory named after the chunk root key.
+			const hierUrl = new URL( 'r/r.hrc', this._dataBaseUrl ).href;
 			const hierRes = await tiles.invokeOnePlugin( plugin => plugin.fetchData && plugin.fetchData( hierUrl, tiles.fetchOptions ) );
+			if ( ! hierRes.ok ) throw new Error( `PotreePlugin: Could not fetch hierarchy (${ hierRes.status }): ${ hierUrl }` );
 			const hierBuf = await hierRes.arrayBuffer();
-			this._hierarchy = _parseHierarchyV1( hierBuf );
+			this._hierarchy = _parseHierarchyV1( hierBuf, 'r' );
 
 		}
 
@@ -338,7 +340,8 @@ export class PotreePlugin {
 
 		} else {
 
-			return fetch( `${ this._dataBaseUrl }${ nodeKey }.bin`, options );
+			// v1: data files live in {octreeDir}/{chunkRoot}/{nodeKey}.bin
+			return fetch( `${ this._dataBaseUrl }${ node.chunkRoot }/${ nodeKey }.bin`, options );
 
 		}
 
@@ -353,7 +356,8 @@ export class PotreePlugin {
 		const node = this._hierarchy ? this._hierarchy.get( nodeKey ) : null;
 		if ( ! node ) return null;
 
-		const points = this._decodePointBuffer( buffer, node.numPoints );
+		const [ tileMin, tileMax ] = _boxToMinMax( tile.boundingVolume.box );
+		const points = this._decodePointBuffer( buffer, node.numPoints, tileMin, tileMax );
 		this._expandChildren( tile );
 		return points;
 
@@ -584,7 +588,6 @@ export class PotreePlugin {
 		if ( intensities ) geometry.setAttribute( 'intensity', new BufferAttribute( intensities, 1 ) );
 
 		const material = new PointsMaterial( {
-			size: this.pointSize,
 			vertexColors: !! colors,
 			sizeAttenuation: false,
 		} );
