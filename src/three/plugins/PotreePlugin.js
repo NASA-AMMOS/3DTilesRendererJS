@@ -282,6 +282,7 @@ export class PotreePlugin {
 		const { spacing, boundingBox } = this._metadata;
 		const { min, max } = boundingBox;
 
+		// 'r' is the Potree root node key; children are named r0, r1, … r7, r00, ...
 		const tileset = {
 			asset: { version: '1.1' },
 			geometricError: Infinity,
