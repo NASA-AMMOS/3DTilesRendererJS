@@ -110,7 +110,7 @@ export class GeneratedSurfacePlugin {
 			const x = tile[ TILE_X ];
 			const y = tile[ TILE_Y ];
 			const level = tile[ TILE_LEVEL ];
-			const range = this._tiling.getTileBounds( x, y, level, true, true );
+			const range = this._tiling.getTileBounds( x, y, level, true, false );
 
 			if ( overlay.hasContent( range, level ) ) {
 

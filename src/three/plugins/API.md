@@ -587,11 +587,10 @@ constructor(
 
 ## GeneratedSurfacePlugin
 
-Plugin that generates tiled surface geometry from a tiling scheme, without loading
-any image data. Intended to be paired with `ImageOverlayPlugin` which handles
-image fetching and texturing separately.
+Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
+image overlay data.
 
-The tiling scheme and projection are derived from a provided overlay or image source.
+The tiling scheme and projection are derived from a provided overlay.
 If the source's projection is cartographic (any EPSG scheme), the plugin supports
 both planar and ellipsoidal geometry via the `shape` option.
 
