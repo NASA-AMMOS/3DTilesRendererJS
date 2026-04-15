@@ -62,7 +62,7 @@ function _boxToMinMax( box ) {
 }
 
 // Compute the bounding box of a child octant by halving the parent bbox.
-// Octant bit convention: bit0=x, bit1=y, bit2=z (0=min half, 1=max half).
+// Potree octant convention: bit2 (4)=x, bit1 (2)=y, bit0 (1)=z.
 function _childBbox( parentMin, parentMax, octant ) {
 
 	const mx = ( parentMin[ 0 ] + parentMax[ 0 ] ) / 2;
@@ -70,14 +70,14 @@ function _childBbox( parentMin, parentMax, octant ) {
 	const mz = ( parentMin[ 2 ] + parentMax[ 2 ] ) / 2;
 	return [
 		[
-			( octant & 1 ) ? mx : parentMin[ 0 ],
+			( octant & 4 ) ? mx : parentMin[ 0 ],
 			( octant & 2 ) ? my : parentMin[ 1 ],
-			( octant & 4 ) ? mz : parentMin[ 2 ],
+			( octant & 1 ) ? mz : parentMin[ 2 ],
 		],
 		[
-			( octant & 1 ) ? parentMax[ 0 ] : mx,
+			( octant & 4 ) ? parentMax[ 0 ] : mx,
 			( octant & 2 ) ? parentMax[ 1 ] : my,
-			( octant & 4 ) ? parentMax[ 2 ] : mz,
+			( octant & 1 ) ? parentMax[ 2 ] : mz,
 		],
 	];
 
@@ -467,10 +467,10 @@ export class PotreePlugin {
 
 	// Decode a raw point buffer into a THREE.Points scene object.
 	// Positions are stored relative to the tile bbox center for float32 precision.
-	_decodePointBuffer( buffer, numPoints ) {
+	_decodePointBuffer( buffer, numPoints, tileMin, tileMax ) {
 
 		const { _metadata: metadata } = this;
-		const { attributes, boundingBox } = metadata;
+		const { attributes } = metadata;
 
 		// Compute per-attribute byte offsets within the interleaved point record
 		let stride = 0;
@@ -498,10 +498,11 @@ export class PotreePlugin {
 		const colors = colIdx !== - 1 ? new Float32Array( numPoints * 3 ) : null;
 		const intensities = intIdx !== - 1 ? new Float32Array( numPoints ) : null;
 
-		// Tile bbox center used as local origin for float32 precision
-		const ocx = ( boundingBox.min[ 0 ] + boundingBox.max[ 0 ] ) / 2;
-		const ocy = ( boundingBox.min[ 1 ] + boundingBox.max[ 1 ] ) / 2;
-		const ocz = ( boundingBox.min[ 2 ] + boundingBox.max[ 2 ] ) / 2;
+		// Use the tile's bbox center as local origin for float32 precision.
+		// Points are stored relative to this center; points.position is set to it.
+		const ocx = ( tileMin[ 0 ] + tileMax[ 0 ] ) / 2;
+		const ocy = ( tileMin[ 1 ] + tileMax[ 1 ] ) / 2;
+		const ocz = ( tileMin[ 2 ] + tileMax[ 2 ] ) / 2;
 
 		const view = new DataView( buffer );
 
@@ -519,7 +520,9 @@ export class PotreePlugin {
 				if ( attr.type === 'int32' ) {
 
 					const sc = attr.scale;
-					const ofs = attr.offset;
+					// v1: positions are quantized relative to each node's own bbox min.
+					// v2: positions use the global offset from metadata.json.
+					const ofs = this._version === 1 ? tileMin : attr.offset;
 					wx = view.getInt32( off, true ) * sc[ 0 ] + ofs[ 0 ];
 					wy = view.getInt32( off + 4, true ) * sc[ 1 ] + ofs[ 1 ];
 					wz = view.getInt32( off + 8, true ) * sc[ 2 ] + ofs[ 2 ];
