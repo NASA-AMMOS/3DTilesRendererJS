@@ -174,7 +174,8 @@ export class GeneratedSurfacePlugin {
 	}
 
 	/**
-	 * Returns the cartographic coordinates for a given world-space position.
+	 * Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
+	 * to the target object.
 	 * @param {Vector3} position - World-space position. For ellipsoid surfaces this is a
 	 * 3D point on the surface; for planar surfaces it is a 2D point in the plane.
 	 * @param {{ lat: number, lon: number }} [target={}] - Optional target object to write results into.

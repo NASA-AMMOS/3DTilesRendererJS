@@ -610,6 +610,29 @@ constructor(
 )
 ```
 
+### .getCartographicFromPosition
+
+```js
+getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
+```
+
+Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
+to the target object.
+
+
+### .getPositionFromCartographic
+
+```js
+getPositionFromCartographic(
+	lat: number,
+	lon: number,
+	target = new Vector3(): Vector3
+): Vector3
+```
+
+Returns the world-space position for a given cartographic coordinate.
+
+
 ## GLTFCesiumRTCExtension
 
 GLTF loader plugin that applies the [CESIUM_RTC](https://github.com/KhronosGroup/glTF/blob/main/extensions/1.0/Vendor/CESIUM_RTC/README.md)
