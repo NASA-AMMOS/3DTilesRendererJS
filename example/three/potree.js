@@ -4,7 +4,7 @@ import {
 	PerspectiveCamera,
 } from 'three';
 import { TilesRenderer } from '3d-tiles-renderer';
-import { PotreePlugin } from '3d-tiles-renderer/plugins';
+import { PotreePlugin } from './src/plugins/PotreePlugin.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
