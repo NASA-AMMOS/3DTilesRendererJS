@@ -1,6 +1,12 @@
 import { Ray, Sphere } from 'three';
-import { OBB } from '../../three/renderer/math/OBB.js';
+import { OBB } from '3d-tiles-renderer/three';
 
+/**
+ * Plugin that restricts tile loading and traversal to one or more geometric regions
+ * (`SphereRegion`, `RayRegion`, `OBBRegion`). Only tiles that intersect an active
+ * region are loaded and refined. Regions marked as masks additionally prevent tiles
+ * outside them from loading.
+ */
 export class LoadRegionPlugin {
 
 	constructor() {
@@ -50,27 +56,55 @@ export class LoadRegionPlugin {
 
 	}
 
+	// Calculates shape intersections and associated error values to use. If "mask" shapes are present then
+	// tiles are only loaded if they are within those shapes.
 	calculateTileViewError( tile, target ) {
 
-		const boundingVolume = tile.cached.boundingVolume;
+		const boundingVolume = tile.engineData.boundingVolume;
 		const { regions, tiles } = this;
 
-		let visible = false;
-		let maxError = - Infinity;
+		// "inShape" indicates whether the tile intersects the given shape.
+		// "inMask" indicates whether the tile is _within_ a mask if boolean, if
+		// null then it is ignored.
+		// "maxError" is the maximum error from the shapes.
+		let inShape = false;
+		let inMask = null;
+		let maxError = 0;
+		let minDistance = Infinity;
 		for ( const region of regions ) {
 
+			// TODO: we should only set the error if it is "intersected".
+
+			// Check if the tile is intersecting the shape and calculate the
+			// view and error values.
 			const intersects = region.intersectsTile( boundingVolume, tile, tiles );
+			inShape = inShape || intersects;
+
 			if ( intersects ) {
 
-				visible = true;
 				maxError = Math.max( region.calculateError( tile, tiles ), maxError );
+				minDistance = Math.min( region.calculateDistance( boundingVolume, tile, tiles ), minDistance );
+
+			}
+
+			// Store whether the tile is in a "mask" shape if they exist. If "inMask" is
+			// still "null" by the end of the loop then there are no mask elements.
+			if ( region.mask ) {
+
+				inMask = inMask || intersects;
 
 			}
 
 		}
 
-		target.inView = visible;
+		// A tile should only be visible if it intersects a shape and a mask shape or there
+		// are no masks.
+		target.inView = inShape && inMask !== false;
 		target.error = maxError;
+		target.distance = minDistance;
+
+		// Returning "false" indicates "no operation" and all results will be ignored.
+		return target.inView || inMask !== null;
 
 	}
 
@@ -83,15 +117,46 @@ export class LoadRegionPlugin {
 }
 
 // Definitions of predefined regions
+
+/**
+ * Abstract base class for `LoadRegionPlugin` regions. Subclass and override
+ * `intersectsTile` to define custom load regions.
+ * @param {Object} [options]
+ * @param {number} [options.errorTarget=10] Geometric error target used when this region controls refinement.
+ * @param {boolean} [options.mask=false] When `true`, tiles outside this region are suppressed (mask mode).
+ */
 export class BaseRegion {
 
-	constructor( errorTarget = 10 ) {
+	constructor( options = {} ) {
+
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'LoadRegionPlugin: Region constructor has been changed to take options as an object.' );
+			options = { errorTarget: options };
+
+		}
+
+		const {
+			errorTarget = 10,
+			mask = false,
+		} = options;
 
 		this.errorTarget = errorTarget;
+		this.mask = mask;
 
 	}
 
-	intersectsTile() {}
+	intersectsTile( boundingVolume, tile, tiles ) {
+
+		return false;
+
+	}
+
+	calculateDistance( boundingVolume, tile, tiles ) {
+
+		return Infinity;
+
+	}
 
 	calculateError( tile, tilesRenderer ) {
 
@@ -101,11 +166,31 @@ export class BaseRegion {
 
 }
 
+/**
+ * A spherical load region. Only tiles that intersect `sphere` are loaded.
+ * @extends BaseRegion
+ * @param {Object} [options]
+ * @param {Sphere} [options.sphere] The sphere volume; defaults to an empty sphere at the origin.
+ * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
+ * @param {boolean} [options.mask=false] Mask mode — suppresses tiles outside this region.
+ */
 export class SphereRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, sphere = new Sphere() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'SphereRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				sphere: arguments[ 1 ],
+			};
+
+		}
+
+		const { sphere = new Sphere() } = options;
+
+		super( options );
 		this.sphere = sphere.clone();
 
 	}
@@ -118,11 +203,31 @@ export class SphereRegion extends BaseRegion {
 
 }
 
+/**
+ * A ray-based load region. Only tiles that intersect `ray` are loaded.
+ * @extends BaseRegion
+ * @param {Object} [options]
+ * @param {Ray} [options.ray] The ray; defaults to a ray at the origin pointing in +Z.
+ * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
+ * @param {boolean} [options.mask=false] Mask mode — suppresses tiles outside this region.
+ */
 export class RayRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, ray = new Ray() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				ray: arguments[ 1 ],
+			};
+
+		}
+
+		const { ray = new Ray() } = options;
+
+		super( options );
 		this.ray = ray.clone();
 
 	}
@@ -135,11 +240,31 @@ export class RayRegion extends BaseRegion {
 
 }
 
+/**
+ * An oriented bounding-box load region. Only tiles that intersect `obb` are loaded.
+ * @extends BaseRegion
+ * @param {Object} [options]
+ * @param {OBB} [options.obb] The oriented bounding box; defaults to an empty OBB at the origin.
+ * @param {number} [options.errorTarget=10] Geometric error target for tiles inside the region.
+ * @param {boolean} [options.mask=false] Mask mode — suppresses tiles outside this region.
+ */
 export class OBBRegion extends BaseRegion {
 
-	constructor( errorTarget = 10, obb = new OBB() ) {
+	constructor( options = {} ) {
 
-		super( errorTarget );
+		if ( typeof options === 'number' ) {
+
+			console.warn( 'RayRegion: Region constructor has been changed to take options as an object.' );
+			options = {
+				errorTarget: arguments[ 0 ],
+				obb: arguments[ 1 ],
+			};
+
+		}
+
+		const { obb = new OBB() } = options;
+
+		super( options );
 		this.obb = obb.clone();
 		this.obb.update();
 

@@ -2,10 +2,12 @@ import { TiledImageSource } from './TiledImageSource.js';
 
 export class DeepZoomImageSource extends TiledImageSource {
 
-	constructor( ...args ) {
+	constructor( options = {} ) {
 
-		super( ...args );
+		const { url = null, ...rest } = options;
+		super( rest );
 
+		this.url = url;
 		this.format = null;
 		this.stem = null;
 
@@ -17,7 +19,9 @@ export class DeepZoomImageSource extends TiledImageSource {
 
 	}
 
-	init( url ) {
+	init() {
+
+		const { url } = this;
 
 		// If implementing DeepZoom with limitations like a fixed orthographic camera perspective then
 		// the target tile level can be immediately 'jumped' to for the entire image and in-view tiles

@@ -1,5 +1,5 @@
-import { Tile } from '../../core/renderer/tiles/Tile.js';
-import { Color } from 'three';
+import { Color, Object3D } from 'three';
+import { Tile } from '3d-tiles-renderer/core';
 
 export enum ColorMode {}
 export const NONE : ColorMode;
@@ -21,10 +21,11 @@ export class DebugTilesPlugin {
 		displaySphereBounds?: boolean,
 		displayRegionBounds?: boolean,
 		colorMode?: ColorMode,
+		boundsColorMode?: ColorMode,
 		maxDebugDepth?: number,
 		maxDebugDistance?: number,
 		maxDebugError?: number,
-		customColorCallback?: ( val: Tile, target: Color ) => void,
+		customColorCallback?: ( tile: Tile, object: Object3D ) => void,
 		unlit?: boolean,
 		enabled?: boolean,
 	} );
@@ -36,13 +37,16 @@ export class DebugTilesPlugin {
 	displayBoxBounds : boolean;
 	displaySphereBounds : boolean;
 	displayRegionBounds : boolean;
+	displayParentBounds : boolean;
 	colorMode : ColorMode;
+	boundsColorMode : ColorMode;
 	unlit: boolean;
 	maxDebugDepth : number;
 	maxDebugDistance : number;
 	maxDebugError : number;
 
+	update(): void;
 	getDebugColor : ( val: number, target: Color ) => void;
-	customColorCallback : ( val: Tile, target: Color ) => void;
+	customColorCallback : ( tile: Tile, object: Object3D ) => void;
 
 }

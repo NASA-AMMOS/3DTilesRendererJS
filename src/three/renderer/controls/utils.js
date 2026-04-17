@@ -1,8 +1,7 @@
 import { Matrix4, Ray, Vector3 } from 'three';
 
-const _matrix = new Matrix4();
-const _ray = new Ray();
-const _vec = new Vector3();
+const _matrix = /* @__PURE__ */ new Matrix4();
+const _vec = /* @__PURE__ */ new Vector3();
 
 // helper function for constructing a matrix for rotating around a point
 export function makeRotateAroundPoint( point, quat, target ) {
@@ -19,38 +18,15 @@ export function makeRotateAroundPoint( point, quat, target ) {
 
 }
 
-// get the three.js pointer coords from an event
-export function mouseToCoords( clientX, clientY, element, target ) {
+// get the three.js pointer coords from an adjusted pointer (via PointerTracker)
+export function adjustedPointerToCoords( pointer, element, target ) {
 
-	target.x = ( ( clientX - element.offsetLeft ) / element.clientWidth ) * 2 - 1;
-	target.y = - ( ( clientY - element.offsetTop ) / element.clientHeight ) * 2 + 1;
+	target.x = ( pointer.x / element.clientWidth ) * 2 - 1;
+	target.y = - ( pointer.y / element.clientHeight ) * 2 + 1;
 
 	if ( target.isVector3 ) {
 
 		target.z = 0;
-
-	}
-
-}
-
-// Returns an estimate of the closest point on the ellipsoid to the ray. Returns
-// the surface intersection if they collide.
-export function closestRayEllipsoidSurfacePointEstimate( ray, ellipsoid, target ) {
-
-	if ( ellipsoid.intersectRay( ray, target ) ) {
-
-		return target;
-
-	} else {
-
-		_matrix.makeScale( ...ellipsoid.radius ).invert();
-		_ray.copy( ray ).applyMatrix4( _matrix );
-
-		_vec.set( 0, 0, 0 );
-		_ray.closestPointToPoint( _vec, target ).normalize();
-
-		_matrix.makeScale( ...ellipsoid.radius );
-		return target.applyMatrix4( _matrix );
 
 	}
 

@@ -1,15 +1,15 @@
+/** @import { Camera, Object3D } from 'three' */
 import { forwardRef, useMemo, useEffect, useContext } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { EnvironmentControls as EnvironmentControlsImpl } from '../../three/renderer/controls/EnvironmentControls.js';
-import { GlobeControls as GlobeControlsImpl } from '../../three/renderer/controls/GlobeControls.js';
+import { EnvironmentControls as EnvironmentControlsImpl, GlobeControls as GlobeControlsImpl } from '3d-tiles-renderer/three';
 import { useShallowOptions } from '../utilities/useOptions.js';
-import { TilesRendererContext } from './TilesRenderer.jsx';
+import { EllipsoidContext } from './TilesRenderer.jsx';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
 
 // Add a base component implementation for both EnvironmentControls and GlobeControls
 const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props, ref ) {
 
-	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, tilesRenderer, ...rest } = props;
+	const { controlsConstructor, domElement, scene, camera, ellipsoid, ellipsoidFrame, ...rest } = props;
 
 	const [ defaultCamera ] = useThree( state => [ state.camera ] );
 	const [ gl ] = useThree( state => [ state.gl ] );
@@ -18,13 +18,12 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 	const [ get ] = useThree( state => [ state.get ] );
 	const [ set ] = useThree( state => [ state.set ] );
 
-	const contextTilesRenderer = useContext( TilesRendererContext );
-	const appliedTilesRenderer = tilesRenderer || contextTilesRenderer;
+	const ellipsoidContext = useContext( EllipsoidContext );
 	const appliedCamera = camera || defaultCamera || null;
 	const appliedScene = scene || defaultScene || null;
 	const appliedDomElement = domElement || gl.domElement || null;
-	const appliedEllipsoid = ellipsoid || appliedTilesRenderer?.ellipsoid || null;
-	const appliedEllipsoidFrame = ellipsoidFrame || appliedTilesRenderer?.group || null;
+	const appliedEllipsoid = ellipsoid || ellipsoidContext?.ellipsoid || null;
+	const appliedEllipsoidFrame = ellipsoidFrame || ellipsoidContext?.frame || null;
 
 	// create a controls instance
 	const controls = useMemo( () => {
@@ -110,12 +109,30 @@ const ControlsBaseComponent = forwardRef( function ControlsBaseComponent( props,
 
 } );
 
+/**
+ * Wraps the three.js EnvironmentControls class. Automatically attaches to the R3F camera, scene,
+ * and canvas. All EnvironmentControls properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {Camera} [props.camera] - Override the default R3F camera.
+ * @param {Object3D} [props.scene] - Override the default R3F scene.
+ * @param {HTMLCanvasElement} [props.domElement] - Override the default canvas element.
+ */
 export const EnvironmentControls = forwardRef( function EnvironmentControls( props, ref ) {
 
 	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ EnvironmentControlsImpl } />;
 
 } );
 
+/**
+ * Wraps the three.js GlobeControls class. Must be a child of TilesRenderer to receive ellipsoid
+ * context. All GlobeControls properties can be set as props.
+ * @component
+ * @param {Object} props
+ * @param {Camera} [props.camera] - Override the default R3F camera.
+ * @param {Object3D} [props.scene] - Override the default R3F scene.
+ * @param {HTMLCanvasElement} [props.domElement] - Override the default canvas element.
+ */
 export const GlobeControls = forwardRef( function GlobeControls( props, ref ) {
 
 	return <ControlsBaseComponent { ...props } ref={ ref } controlsConstructor={ GlobeControlsImpl } />;

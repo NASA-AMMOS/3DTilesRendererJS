@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.14",
+  "version": "0.4.24+1",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -9,6 +9,8 @@
     "b3dm",
     "gltf",
     "threejs",
+    "babylonjs",
+    "r3f",
     "rendering",
     "geometry",
     "terrain",
@@ -19,23 +21,55 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "files": [
-    "src/*"
+    "src/*",
+    "build/*"
   ],
   "exports": {
-    ".": "./src/index.js",
-    "./plugins": "./src/plugins.js",
-    "./core": "./src/core/renderer/index.js",
-    "./three": "./src/three/renderer/index.js",
-    "./r3f": "./src/r3f/index.jsx",
-    "./core/plugins": "./src/core/plugins/index.js",
-    "./three/plugins": "./src/three/plugins/index.js",
-    "./src/*": "./src/*"
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./build/index.js"
+    },
+    "./plugins": {
+      "types": "./src/plugins.d.ts",
+      "import": "./build/index.plugins.js"
+    },
+    "./core": {
+      "types": "./src/core/renderer/index.d.ts",
+      "import": "./build/index.core.js"
+    },
+    "./three": {
+      "types": "./src/three/renderer/index.d.ts",
+      "import": "./build/index.three.js"
+    },
+    "./r3f": {
+      "types": "./src/r3f/index.d.ts",
+      "import": "./build/index.r3f.js"
+    },
+    "./babylonjs": {
+      "types": "./src/babylonjs/renderer/index.d.ts",
+      "import": "./build/index.babylonjs.js"
+    },
+    "./core/plugins": {
+      "types": "./src/core/plugins/index.d.ts",
+      "import": "./build/index.core-plugins.js"
+    },
+    "./three/plugins": {
+      "types": "./src/three/plugins/index.d.ts",
+      "import": "./build/index.three-plugins.js"
+    },
+    "./src/*": {
+      "types": "./src/*.d.ts",
+      "import": "./src/*"
+    }
   },
   "scripts": {
     "start": "vite --config ./vite.config.js",
     "build-examples": "vite build --config ./vite.config.js",
-    "lint": "eslint \"src/**/*.{js,jsx,ts}\" \"test/**/*.{js,ts,tsx,jsx}\" \"example/**/*.{js,jsx}\" && tsc -p tsconfig.json --noEmit",
-    "test": "tsc --project tsconfig.test.json && jest"
+    "build-lib": "vite build --config ./vite.lib-config.js",
+    "lint": "eslint . && tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
+    "prepublishOnly": "npm run build-lib",
+    "docs:build": "node utils/docs/build.js"
   },
   "repository": {
     "type": "git",
@@ -48,55 +82,63 @@
   "author": "Garrett Johnson <garrett.kjohnson@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/core": "^7.21.8",
-    "@babel/preset-env": "^7.21.5",
     "@babel/preset-modules": "^0.1.6",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
-    "@react-three/drei": "^9.114.3",
-    "@react-three/postprocessing": "^2.16.3",
-    "@takram/three-atmosphere": "^0.10.3",
-    "@takram/three-geospatial": "^0.1.0",
-    "@takram/three-geospatial-effects": "^0.1.0",
-    "@types/eslint": "^7.28.1",
-    "@types/jest": "^27.5.2",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@types/three": "^0.166.0",
-    "@typescript-eslint/eslint-plugin": "^7.14.1",
-    "@typescript-eslint/parser": "^7.14.1",
+    "@babylonjs/core": "^8.47.2",
+    "@babylonjs/loaders": "^8.47.2",
+    "@eslint/js": "^9.0.0",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.2",
-    "babel-jest": "^27.5.1",
-    "cesium": "^1.131.0",
+    "@vitest/eslint-plugin": "^1.5.1",
+    "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
-    "eslint": "^8.57.1",
+    "eslint": "^9.0.0",
     "eslint-config-mdcs": "^5.0.0",
-    "eslint-plugin-jest": "^28.6.0",
+    "eslint-plugin-jsdoc": "^62.8.0",
     "eslint-plugin-react": "^7.37.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "jest": "^27.1.1",
-    "jest-cli": "^27.1.1",
-    "leva": "^0.9.35",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^16.5.0",
+    "jsdoc": "^4.0.5",
+    "leva": "^0.10.0",
+    "lil-gui": "^0.21.0",
     "postprocessing": "^6.36.4",
-    "three": "^0.178.0",
-    "ts-jest": "^27.1.5",
-    "typescript": "^4.9.5",
-    "vite": "^6.2.2"
+    "three": "^0.170.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.48.1",
+    "vite": "^6.2.2",
+    "vitest": "^4.0.15"
   },
   "peerDependencies": {
+    "@babylonjs/core": ">=8.0.0",
+    "@babylonjs/loaders": ">=8.0.0",
     "@react-three/fiber": "^8.17.9 || ^9.0.0",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
-    "three": ">=0.166.0"
+    "three": ">=0.167.0"
   },
   "peerDependenciesMeta": {
     "@react-three/fiber": {
+      "optional": true
+    },
+    "@babylonjs/core": {
+      "optional": true
+    },
+    "@babylonjs/loaders": {
       "optional": true
     },
     "react": {
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "three": {
       "optional": true
     }
   },

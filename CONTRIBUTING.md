@@ -22,7 +22,7 @@ On Debian or Ubuntu, run `sudo apt install build-essential`.
 
 - To install dependencies, run `npm install`
 - Once that has successfully completed, make sure all tests pass by running `npm test`. If any tests failed, you'll see red output indicating the number of failures. This may indicate a problem with your setup
-- If you want to check the library's performance on different systems or after making changes, run `npm run benchmark`
+- Run `npm start` to build and run the examples using vite. The individual demos can be viewed at `localhost:5173/<demo>.html`. The path is relative ot the examples folder.
 
 ### Running Demos with Cesium Ion Tokens Locally
 
@@ -34,6 +34,12 @@ VITE_ION_KEY=<Personal Cesium Ion Key>
 ```
 
 During example deployment this environment variable is defined by a Github secret.
+
+### Building the Library
+
+Running `npm run build-lib` will build the library files to `/build` that are used when importing from the `3d-tiles-renderer` package.
+Running the examples with `npm start` will build and run library files from the `src` directory using the Vite "alias" option. In order
+to test them with the built dependencies you can run `npm start -- --mode=use-build` to skip creating aliases and use the built files, instead.
 
 ## Pull Requests
 

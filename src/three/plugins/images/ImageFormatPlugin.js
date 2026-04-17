@@ -1,10 +1,20 @@
-import { Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import { Mesh, MeshBasicMaterial, PlaneGeometry, MathUtils, Vector2 } from 'three';
+
+const _uv = /* @__PURE__ */ new Vector2();
 
 export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
 export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
-// Base class for supporting tiled images with a consistent size / resolution per tile
+/**
+ * Base plugin class for tiled image sources with a consistent size and resolution per
+ * tile. Subclasses provide a concrete `imageSource` and override `getUrl` and
+ * `createBoundingVolume` as needed.
+ * @param {Object} [options]
+ * @param {Object} [options.imageSource=null] Image source that provides tiling metadata and URL generation.
+ * @param {boolean} [options.center=false] Shift tiles so the image is centered at the origin.
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended `TilesRenderer` settings (e.g. `errorTarget = 1`).
+ */
 export class ImageFormatPlugin {
 
 	get tiling() {
@@ -16,7 +26,7 @@ export class ImageFormatPlugin {
 	constructor( options = {} ) {
 
 		const {
-			pixelSize = 0.01,
+			pixelSize = null,
 			center = false,
 			useRecommendedSettings = true,
 			imageSource = null,
@@ -32,6 +42,12 @@ export class ImageFormatPlugin {
 		this.pixelSize = pixelSize;
 		this.center = center;
 		this.useRecommendedSettings = useRecommendedSettings;
+
+		if ( pixelSize !== null ) {
+
+			console.warn( 'ImageFormatPlugin: "pixelSize" has been deprecated in favor of scaling the tiles root.' );
+
+		}
 
 	}
 
@@ -57,14 +73,15 @@ export class ImageFormatPlugin {
 
 	}
 
-	async loadRootTileSet() {
+	async loadRootTileset() {
 
 		const { tiles, imageSource } = this;
-		let url = tiles.rootURL;
-		tiles.invokeAllPlugins( plugin => url = plugin.preprocessURL ? plugin.preprocessURL( url, null ) : url );
-		await imageSource.init( url );
+		imageSource.url = imageSource.url || tiles.rootURL;
+		tiles.invokeAllPlugins( plugin => imageSource.url = plugin.preprocessURL ? plugin.preprocessURL( imageSource.url, null ) : imageSource.url );
+		await imageSource.init();
 
-		return this.getTileset( url );
+		tiles.rootURL = imageSource.url;
+		return this.getTileset( imageSource.url );
 
 	}
 
@@ -77,10 +94,11 @@ export class ImageFormatPlugin {
 		}
 
 		// Construct texture
+		const { imageSource } = this;
 		const tx = tile[ TILE_X ];
 		const ty = tile[ TILE_Y ];
 		const level = tile[ TILE_LEVEL ];
-		const texture = await this.imageSource.processBufferToTexture( buffer );
+		const texture = await imageSource.processBufferToTexture( buffer );
 
 		// clean up the texture if it's not going to be used.
 		if ( abortSignal.aborted ) {
@@ -91,7 +109,7 @@ export class ImageFormatPlugin {
 
 		}
 
-		this.imageSource.setData( tx, ty, level, texture );
+		imageSource.setData( tx, ty, level, texture );
 
 		// Construct mesh
 		let sx = 1, sy = 1;
@@ -108,24 +126,31 @@ export class ImageFormatPlugin {
 
 		// adjust the geometry transform itself rather than the mesh because it reduces the artifact errors
 		// when using batched mesh rendering.
-		const mesh = new Mesh( new PlaneGeometry( 2 * sx, 2 * sy ), new MeshBasicMaterial( { map: texture, transparent: true } ) );
+		const geometry = new PlaneGeometry( 2 * sx, 2 * sy );
+		const mesh = new Mesh( geometry, new MeshBasicMaterial( { map: texture, transparent: true } ) );
 		mesh.position.set( x, y, z );
 
-		return mesh;
+		const tiling = imageSource.tiling;
+		const uvRange = tiling.getTileContentUVBounds( tx, ty, level );
+		const { uv } = geometry.attributes;
+		for ( let i = 0; i < uv.count; i ++ ) {
 
-	}
+			_uv.fromBufferAttribute( uv, i );
+			_uv.x = MathUtils.mapLinear( _uv.x, 0, 1, uvRange[ 0 ], uvRange[ 2 ] );
+			_uv.y = MathUtils.mapLinear( _uv.y, 0, 1, uvRange[ 1 ], uvRange[ 3 ] );
+			uv.setXY( i, _uv.x, _uv.y );
 
-	preprocessNode( tile ) {
+		}
 
-		// generate children
-		const { tiling } = this;
-		const maxLevel = tiling.maxLevel;
-		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel && tile.parent !== null ) {
+		// Only expose descendants while the tile content is resident so unload can clear the
+		// branch and a later reload will recreate it symmetrically.
+		if ( level < tiling.maxLevel && tile.children.length === 0 ) {
 
 			this.expandChildren( tile );
 
 		}
+
+		return mesh;
 
 	}
 
@@ -141,6 +166,14 @@ export class ImageFormatPlugin {
 			imageSource.release( tx, ty, level );
 
 		}
+
+
+		tile.children.forEach( child => {
+
+			this.tiles.processNodeQueue.remove( child );
+
+		} );
+		tile.children.length = 0;
 
 	}
 
@@ -168,15 +201,15 @@ export class ImageFormatPlugin {
 
 		}
 
-		// generate tile set
+		// generate tileset
 		const tileset = {
 			asset: {
 				version: '1.1'
 			},
-			geometricError: 1e5,
+			geometricError: Infinity,
 			root: {
 				refine: 'REPLACE',
-				geometricError: 1e5,
+				geometricError: Infinity,
 				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
 				children,
 
@@ -186,7 +219,7 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		tiles.preprocessTileSet( tileset, baseUrl );
+		tiles.preprocessTileset( tileset, baseUrl );
 
 		return tileset;
 
@@ -204,7 +237,7 @@ export class ImageFormatPlugin {
 		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
 
 		// calculate the world space bounds position from the range
-		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getFullBounds( true ) : tiling.getTileBounds( x, y, level, true );
+		const [ minX, minY, maxX, maxY ] = level === - 1 ? tiling.getContentBounds( true ) : tiling.getTileBounds( x, y, level, true );
 		let extentsX = ( maxX - minX ) / 2;
 		let extentsY = ( maxY - minY ) / 2;
 		let centerX = minX + extentsX;
@@ -217,11 +250,20 @@ export class ImageFormatPlugin {
 		}
 
 		// scale the fields
-		centerX *= pixelWidth * pixelSize;
-		extentsX *= pixelWidth * pixelSize;
+		if ( pixelSize ) {
 
-		centerY *= pixelHeight * pixelSize;
-		extentsY *= pixelHeight * pixelSize;
+			centerX *= pixelWidth * pixelSize;
+			extentsX *= pixelWidth * pixelSize;
+
+			centerY *= pixelHeight * pixelSize;
+			extentsY *= pixelHeight * pixelSize;
+
+		} else {
+
+			centerX *= tiling.aspectRatio;
+			extentsX *= tiling.aspectRatio;
+
+		}
 
 		// return bounding box
 		return {
@@ -247,10 +289,18 @@ export class ImageFormatPlugin {
 
 		}
 
-		// the scale ration of the image at this level
-		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
-		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		const geometricError = pixelSize * ( Math.max( pixelWidth / levelWidth, pixelHeight / levelHeight ) - 1 );
+		// Calculate geometric error: size of one pixel in world space.
+		// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
+		const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+		let geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+
+		// apply deprecated pixelSize scaling if specified
+		if ( pixelSize ) {
+
+			const maxLevelInfo = tiling.getLevel( tiling.maxLevel );
+			geometricError *= pixelSize * Math.max( maxLevelInfo.pixelWidth, maxLevelInfo.pixelHeight );
+
+		}
 
 		// Generate the node
 		return {
@@ -276,11 +326,12 @@ export class ImageFormatPlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		for ( let cx = 0; cx < 2; cx ++ ) {
+		const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
+		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
-			for ( let cy = 0; cy < 2; cy ++ ) {
+			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
 
-				const child = this.createChild( 2 * x + cx, 2 * y + cy, level + 1 );
+				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
 
 					tile.children.push( child );

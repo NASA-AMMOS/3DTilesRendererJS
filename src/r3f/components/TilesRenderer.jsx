@@ -1,17 +1,21 @@
-import { createContext, useContext, useEffect, useRef, forwardRef, useMemo, useCallback, useState, useLayoutEffect } from 'react';
+/** @import { ReactNode } from 'react' */
+/** @import { Ellipsoid } from '3d-tiles-renderer/three' */
+import { createContext, useMemo, useContext, useEffect, useRef, forwardRef, useCallback, useState, useLayoutEffect, useReducer } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Object3D } from 'three';
-import { TilesRenderer as TilesRendererImpl } from '../../three/renderer/tiles/TilesRenderer.js';
+import { TilesRenderer as TilesRendererImpl, WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 import { useDeepOptions } from '../utilities/useOptions.js';
 import { useObjectDep } from '../utilities/useObjectDep.js';
 import { useApplyRefs } from '../utilities/useApplyRefs.js';
-import { WGS84_ELLIPSOID } from '../../three/renderer/math/GeoConstants.js';
 
-// context for accessing the tile set
+// context for accessing the tileset
 export const TilesRendererContext = createContext( null );
 export const TilesPluginContext = createContext( null );
 
-// group that matches the transform of the tile set root group
+// context for accessing just ellipsoid and frame data
+export const EllipsoidContext = createContext( null );
+
+// group that matches the transform of the tileset root group
 function TileSetRoot( { children } ) {
 
 	const tiles = useContext( TilesRendererContext );
@@ -30,6 +34,20 @@ function TileSetRoot( { children } ) {
 
 }
 
+/**
+ * Creates a group positioned and oriented at a geographic coordinate on the tileset ellipsoid.
+ * Must be a child of TilesRenderer. Does not modify the tileset transform.
+ * @component
+ * @param {Object} props
+ * @param {number} [props.lat=0] - Latitude in radians.
+ * @param {number} [props.lon=0] - Longitude in radians.
+ * @param {number} [props.height=0] - Height above the ellipsoid in meters.
+ * @param {number} [props.az=0] - Azimuth rotation in radians, applied first.
+ * @param {number} [props.el=0] - Elevation rotation in radians, applied second.
+ * @param {number} [props.roll=0] - Roll rotation in radians, applied third.
+ * @param {Ellipsoid} [props.ellipsoid] - Ellipsoid to use when no TilesRenderer parent is present.
+ * @param {ReactNode} [props.children] - Children positioned relative to the east-north-up frame.
+ */
 export function EastNorthUpFrame( props ) {
 
 	const {
@@ -71,7 +89,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ invalidate, tiles, lat, lon, height, az, el, roll, ellipsoid, group, useObjectDep( ellipsoid.radius ) ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// adjust the matrix world update logic if a tile set is present so that we can position the frame
+	// adjust the matrix world update logic if a tileset is present so that we can position the frame
 	// correctly regardless of the parent.
 	useEffect( () => {
 
@@ -118,7 +136,7 @@ export function EastNorthUpFrame( props ) {
 
 	}, [ updateCallback ] );
 
-	// update the position when a tile set is loaded since it may modify the ellipsoid
+	// update the position when a tileset is loaded since it may modify the ellipsoid
 	useEffect( () => {
 
 		if ( tiles === null ) {
@@ -127,10 +145,10 @@ export function EastNorthUpFrame( props ) {
 
 		}
 
-		tiles.addEventListener( 'load-tile-set', updateCallback );
+		tiles.addEventListener( 'load-tileset', updateCallback );
 		return () => {
 
-			tiles.removeEventListener( 'load-tile-set', updateCallback );
+			tiles.removeEventListener( 'load-tileset', updateCallback );
 
 		};
 
@@ -140,18 +158,29 @@ export function EastNorthUpFrame( props ) {
 
 }
 
+/**
+ * Registers a plugin on the nearest parent TilesRenderer. Must be a child of TilesRenderer.
+ * All properties on the plugin instance can be set as props directly. Note that some plugin
+ * properties cannot be changed after construction.
+ * @component
+ * @param {Object} props
+ * @param {Function} props.plugin - The plugin class to instantiate.
+ * @param {Object|Array} [props.args] - Constructor arguments: an object (single arg) or array (spread as multiple args).
+ * @param {ReactNode} [props.children] - Children rendered once the plugin is registered.
+ */
 // component for registering a plugin
 export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 	const { plugin, args, children, ...options } = props;
 	const tiles = useContext( TilesRendererContext );
+	const [ instance, setInstance ] = useState( null );
+	const [ , forceUpdate ] = useReducer( x => x + 1, 0 );
 
-	// create the instance
-	const instance = useMemo( () => {
+	useLayoutEffect( () => {
 
 		if ( tiles === null ) {
 
-			return null;
+			return;
 
 		}
 
@@ -166,64 +195,96 @@ export const TilesPlugin = forwardRef( function TilesPlugin( props, ref ) {
 
 		}
 
-		return instance;
+		setInstance( instance );
 
-		// we must create a new plugin if the tile set has changed
+		return () => {
 
-	}, [ tiles, plugin, useObjectDep( args ) ] ); // eslint-disable-line
+			setInstance( null );
+
+		};
+
+	}, [ plugin, tiles, useObjectDep( args ) ] ); // eslint-disable-line
 
 	// assigns any provided options to the plugin
 	useDeepOptions( instance, options );
 
-	// assign ref
-	useApplyRefs( instance, ref );
-
-	// register the instance
+	// register the plugin
 	useLayoutEffect( () => {
 
-		if ( tiles === null ) {
+		if ( instance === null ) {
 
 			return;
 
 		}
 
+		// force the component to rerender after registering the plugin because we don't
+		// include the children until the plugin is added.
 		tiles.registerPlugin( instance );
+		forceUpdate();
+
 		return () => {
 
 			tiles.unregisterPlugin( instance );
 
 		};
 
-	}, [ instance, tiles ] );
+		// "tiles" is excluded from the dependencies since this would otherwise run once with the
+		// new tiles renderer, resulting in an error when the instance is added to a second renderer.
+
+	}, [ instance ] ); // eslint-disable-line
+
+	// assign ref
+	useApplyRefs( instance, ref );
+
+	// only render out the plugin once the instance and context are ready and registered
+	if ( ! instance || ! tiles.plugins.includes( instance ) ) {
+
+		return;
+
+	}
 
 	return <TilesPluginContext.Provider value={ instance }>{ children }</TilesPluginContext.Provider>;
 
 } );
 
+/**
+ * Wrapper for the three.js TilesRenderer class. All properties on the TilesRenderer instance can
+ * be set as props using dot-notation for nested properties (e.g. `lruCache-minSize`). Events are
+ * registered with a camel-cased `on` prefix (e.g. `onLoadModel`).
+ * @component
+ * @param {Object} props
+ * @param {string} [props.url] - URL of the tileset to load.
+ * @param {boolean} [props.enabled=true] - If false, `update` is not called on the renderer each frame.
+ * @param {Object} [props.group] - Props applied to the root Three.js group of the tileset.
+ * @param {ReactNode} [props.children] - Child components such as TilesPlugin, GlobeControls, etc.
+ */
 // component for adding a TilesRenderer to the scene
 export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	const { url, group = {}, enabled = true, children, ...options } = props;
 	const [ camera, gl, invalidate ] = useThree( state => [ state.camera, state.gl, state.invalidate ] );
+	const [ tiles, setTiles ] = useState( null );
 
-	const tiles = useMemo( () => {
-
-		return new TilesRendererImpl( url );
-
-	}, [ url ] );
-
-	// create the tile set
+	// create the tileset
 	useEffect( () => {
 
-		tiles.addEventListener( 'needs-render', () => invalidate() );
-		tiles.addEventListener( 'needs-update', () => invalidate() );
+		const needsRender = () => invalidate();
+
+		const tiles = new TilesRendererImpl( url );
+		tiles.addEventListener( 'needs-render', needsRender );
+		tiles.addEventListener( 'needs-update', needsRender );
+		setTiles( tiles );
+
 		return () => {
 
+			tiles.removeEventListener( 'needs-render', needsRender );
+			tiles.removeEventListener( 'needs-update', needsRender );
 			tiles.dispose();
+			setTiles( null );
 
 		};
 
-	}, [ tiles, invalidate ] );
+	}, [ url, invalidate ] );
 
 	// update the resolution for the camera
 	useFrame( () => {
@@ -241,7 +302,7 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 	} );
 
 	// add the camera
-	useEffect( () => {
+	useLayoutEffect( () => {
 
 		if ( tiles === null ) {
 
@@ -263,13 +324,32 @@ export const TilesRenderer = forwardRef( function TilesRenderer( props, ref ) {
 
 	// assign options recursively
 	useDeepOptions( tiles, options );
+	const ellipsoidContextValue = useMemo( () => {
+
+		if ( ! tiles ) return null;
+
+		return {
+			ellipsoid: tiles.ellipsoid,
+			frame: tiles.group,
+		};
+
+	}, [ tiles?.ellipsoid, tiles?.group ] );
+
+	// only render out the tiles once the instance and context are ready
+	if ( ! tiles ) {
+
+		return null;
+
+	}
 
 	return <>
 		<primitive object={ tiles.group } { ...group } />
 		<TilesRendererContext.Provider value={ tiles }>
-			<TileSetRoot>
-				{ children }
-			</TileSetRoot>
+			<EllipsoidContext.Provider value={ ellipsoidContextValue }>
+				<TileSetRoot>
+					{ children }
+				</TileSetRoot>
+			</EllipsoidContext.Provider>
 		</TilesRendererContext.Provider>
 	</>;
 

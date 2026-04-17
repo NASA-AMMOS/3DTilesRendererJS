@@ -3,7 +3,7 @@ import { Group, Matrix4 } from 'three';
 // Specialization of "Group" that only updates world matrices of children if
 // the transform has changed since the last update and ignores the "force"
 // parameter under the assumption that the children tiles will not move.
-const tempMat = new Matrix4();
+const tempMat = /* @__PURE__ */ new Matrix4();
 export class TilesGroup extends Group {
 
 	constructor( tilesRenderer ) {

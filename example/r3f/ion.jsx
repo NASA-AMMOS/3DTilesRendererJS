@@ -6,7 +6,7 @@ import { TilesPlugin, TilesRenderer, TilesAttributionOverlay, EnvironmentControl
 import { CesiumIonAuthPlugin, UpdateOnChangePlugin, GLTFExtensionsPlugin, ReorientationPlugin } from '3d-tiles-renderer/plugins';
 
 // Plugins
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas } from '@react-three/fiber';
@@ -51,7 +51,7 @@ function App() {
 			} }
 		>
 			{/*
-				3D Tiles renderer tile set
+				3D Tiles renderer tileset
 				Use a "key" property to ensure the tiles renderer gets recreated when the api token or asset change
 			*/}
 			<TilesRenderer key={ assetId }>
@@ -75,7 +75,6 @@ function App() {
 			<GizmoHelper alignment="bottom-right">
 				<GizmoViewport />
 			</GizmoHelper>
-
 		</Canvas>
 	);
 

@@ -1,4 +1,4 @@
-import { GLTFLoaderPlugin } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoaderPlugin } from 'three/addons/loaders/GLTFLoader.js';
 
 export class GLTFCesiumRTCExtension implements GLTFLoaderPlugin {
 

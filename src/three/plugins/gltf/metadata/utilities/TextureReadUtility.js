@@ -1,5 +1,5 @@
 import { WebGLRenderTarget, WebGLRenderer, Box2, Vector2, ShaderMaterial, CustomBlending, ZeroFactor, OneFactor } from 'three';
-import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 const _box = /* @__PURE__ */ new Box2();
 

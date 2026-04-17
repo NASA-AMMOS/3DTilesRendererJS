@@ -1,4 +1,4 @@
-import { arrayToString } from './arrayToString.js';
+import { arrayToString } from './LoaderUtils.js';
 
 export function parseBinArray( buffer, arrayStart, count, type, componentType, propertyName ) {
 
@@ -72,12 +72,36 @@ export function parseBinArray( buffer, arrayStart, count, type, componentType, p
 
 }
 
+/**
+ * Parses a 3D Tiles feature table from a binary buffer, providing access to
+ * per-feature properties stored as JSON scalars or typed binary arrays.
+ */
 export class FeatureTable {
 
+	/**
+	 * @param {ArrayBuffer} buffer
+	 * @param {number} start - Byte offset of the feature table within the buffer
+	 * @param {number} headerLength - Byte length of the JSON header
+	 * @param {number} binLength - Byte length of the binary body
+	 */
 	constructor( buffer, start, headerLength, binLength ) {
 
+		/**
+		 * The underlying buffer containing the feature table data.
+		 * @type {ArrayBuffer}
+		 */
 		this.buffer = buffer;
+
+		/**
+		 * Byte offset of the binary body within the buffer.
+		 * @type {number}
+		 */
 		this.binOffset = start + headerLength;
+
+		/**
+		 * Byte length of the binary body.
+		 * @type {number}
+		 */
 		this.binLength = binLength;
 
 		let header = null;
@@ -91,16 +115,34 @@ export class FeatureTable {
 			header = {};
 
 		}
+
+		/**
+		 * Parsed JSON header object.
+		 * @type {Object}
+		 */
 		this.header = header;
 
 	}
 
+	/**
+	 * Returns all property key names defined in the feature table header, excluding `extensions`.
+	 * @returns {Array<string>}
+	 */
 	getKeys() {
 
-		return Object.keys( this.header );
+		return Object.keys( this.header ).filter( key => key !== 'extensions' );
 
 	}
 
+	/**
+	 * Returns the value for the given property key. For binary properties, reads typed array data
+	 * from the binary body using the provided count, component type, and vector type.
+	 * @param {string} key
+	 * @param {number} count - Number of elements to read for binary properties
+	 * @param {string | null} [defaultComponentType] - Fallback component type (e.g. `'FLOAT'`, `'UNSIGNED_SHORT'`)
+	 * @param {string | null} [defaultType] - Fallback vector type (e.g. `'SCALAR'`, `'VEC3'`)
+	 * @returns {number | string | ArrayBufferView | null}
+	 */
 	getData( key, count, defaultComponentType = null, defaultType = null ) {
 
 		const header = this.header;
@@ -149,6 +191,12 @@ export class FeatureTable {
 
 	}
 
+	/**
+	 * Returns a slice of the binary body at the given offset and length.
+	 * @param {number} byteOffset
+	 * @param {number} byteLength
+	 * @returns {ArrayBuffer}
+	 */
 	getBuffer( byteOffset, byteLength ) {
 
 		const { buffer, binOffset } = this;

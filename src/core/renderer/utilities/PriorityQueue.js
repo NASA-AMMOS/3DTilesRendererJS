@@ -1,23 +1,108 @@
-class PriorityQueue {
+import { Scheduler } from './Scheduler.js';
 
-	// returns whether tasks are queued or actively running
+/**
+ * Error thrown when a queued item's promise is rejected because the item was removed
+ * before its callback could run.
+ *
+ * @extends Error
+ */
+export class PriorityQueueItemRemovedError extends Error {
+
+	constructor() {
+
+		super( 'PriorityQueue: Item removed' );
+		this.name = 'PriorityQueueItemRemovedError';
+
+	}
+
+}
+
+/**
+ * @callback PriorityCallback
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
+
+/**
+ * @callback SchedulingCallback
+ * @param {Function} func
+ */
+
+/**
+ * @callback ItemCallback
+ * @param {any} item
+ * @returns {Promise<any>|any}
+ */
+
+/**
+ * @callback FilterCallback
+ * @param {any} item
+ * @returns {boolean}
+ */
+
+/**
+ * Priority queue for scheduling async work with a concurrency limit. Items are
+ * sorted by `priorityCallback` and dispatched up to `maxJobs` at a time.
+ */
+export class PriorityQueue {
+
+	/**
+	 * returns whether tasks are queued or actively running
+	 * @readonly
+	 * @type {boolean}
+	 */
 	get running() {
 
 		return this.items.length !== 0 || this.currJobs !== 0;
 
 	}
 
+	/**
+	 * Callback used to schedule when to run jobs next, so more work doesn't happen in a
+	 * single frame than there is time for. Defaults to `requestAnimationFrame`. Should be
+	 * overridden in scenarios where `requestAnimationFrame` is not reliable, such as when
+	 * running in WebXR.
+	 * @type {SchedulingCallback}
+	 * @deprecated
+	 */
+	get schedulingCallback() {
+
+		return this._schedulingCallback;
+
+	}
+
+	set schedulingCallback( cb ) {
+
+		console.log( 'PriorityQueue: Setting "schedulingCallback" has been deprecated. Use Scheduler to switch to an XRSession rAF, instead.' );
+		this._schedulingCallback = cb;
+
+	}
+
 	constructor() {
 
-		// options
+		/**
+		 * Maximum number of jobs that can run concurrently.
+		 * @type {number}
+		 */
 		this.maxJobs = 6;
 
 		this.items = [];
 		this.callbacks = new Map();
 		this.currJobs = 0;
 		this.scheduled = false;
+
+		/**
+		 * If true, job runs are automatically scheduled after `add` and after each job completes.
+		 * @type {boolean}
+		 */
 		this.autoUpdate = true;
 
+		/**
+		 * Comparator used to sort queued items. Higher-priority items should sort last
+		 * (i.e. return positive when `itemA` should run before `itemB`). Defaults to `null`.
+		 * @type {PriorityCallback|null}
+		 */
 		this.priorityCallback = null;
 
 		this.priorityFunction = ( tile ) => {
@@ -26,10 +111,16 @@ class PriorityQueue {
 
 		};
 
-		// Customizable scheduling callback. Default using requestAnimationFrame()
-		this.schedulingCallback = func => {
+		this.priorityFunction = ( tile ) => {
 
-			requestAnimationFrame( func );
+			throw new Error( 'PriorityQueue: PriorityFunction not defined.' );
+
+		};
+		
+		// Customizable scheduling callback. Default using requestAnimationFrame()
+		this._schedulingCallback = func => {
+
+			Scheduler.requestAnimationFrame( func );
 
 		};
 
@@ -42,6 +133,9 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Sorts the pending item list using `priorityCallback`, if set.
+	 */
 	sort() {
 
 		if ( ! this.priorityFunction ) return;
@@ -55,12 +149,24 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Returns whether the given item is currently queued.
+	 * @param {any} item
+	 * @returns {boolean}
+	 */
 	has( item ) {
 
 		return this.callbacks.has( item );
 
 	}
 
+	/**
+	 * Adds an item to the queue and returns a Promise that resolves when the item's
+	 * callback completes, or rejects if the item is removed before running.
+	 * @param {any} item
+	 * @param {ItemCallback} callback - Invoked with `item` when it is dequeued; may return a Promise
+	 * @returns {Promise<any>}
+	 */
 	add( item, callback ) {
 
 		const data = {
@@ -93,6 +199,10 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Removes an item from the queue, rejecting its promise with `PriorityQueueItemRemovedError`.
+	 * @param {any} item
+	 */
 	remove( item ) {
 
 		const items = this.items;
@@ -105,8 +215,16 @@ class PriorityQueue {
 			// catch here to handle the case where the promise was never used anywhere
 			// else.
 			const info = callbacks.get( item );
-			info.promise.catch( () => {} );
-			info.reject( new Error( 'PriorityQueue: Item removed.' ) );
+			info.promise.catch( err => {
+
+				if ( ! ( err instanceof PriorityQueueItemRemovedError ) ) {
+
+					throw err;
+
+				}
+
+			} );
+			info.reject( new PriorityQueueItemRemovedError() );
 
 			items.splice( index, 1 );
 			callbacks.delete( item );
@@ -115,6 +233,10 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Removes all queued items for which `filter` returns true.
+	 * @param {FilterCallback} filter - Called with each item; return true to remove
+	 */
 	removeByFilter( filter ) {
 
 		const { items } = this;
@@ -124,6 +246,7 @@ class PriorityQueue {
 			if ( filter( item ) ) {
 
 				this.remove( item );
+				i --;
 
 			}
 
@@ -131,6 +254,9 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Immediately attempts to dequeue and run pending jobs up to `maxJobs` concurrency.
+	 */
 	tryRunJobs() {
 
 		this.sort();
@@ -190,11 +316,14 @@ class PriorityQueue {
 
 	}
 
+	/**
+	 * Schedules a deferred call to `tryRunJobs` via `schedulingCallback`.
+	 */
 	scheduleJobRun() {
 
 		if ( ! this.scheduled ) {
 
-			this.schedulingCallback( this._runjobs );
+			this._schedulingCallback( this._runjobs );
 
 			this.scheduled = true;
 
@@ -203,5 +332,3 @@ class PriorityQueue {
 	}
 
 }
-
-export { PriorityQueue };

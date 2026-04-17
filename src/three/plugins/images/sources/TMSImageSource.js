@@ -4,13 +4,18 @@ import { MathUtils } from 'three';
 
 export class TMSImageSource extends TiledImageSource {
 
-	constructor() {
+	constructor( options = {} ) {
 
-		super();
+		const {
+			url = null,
+			...rest
+		} = options;
+
+		super( rest );
 
 		this.tileSets = null;
 		this.extension = null;
-		this.url = null;
+		this.url = url;
 
 	}
 
@@ -21,7 +26,9 @@ export class TMSImageSource extends TiledImageSource {
 
 	}
 
-	init( url ) {
+	init() {
+
+		const { url } = this;
 
 		return this
 			.fetchData( new URL( 'tilemapresource.xml', url ), this.fetchOptions )
@@ -33,11 +40,10 @@ export class TMSImageSource extends TiledImageSource {
 				// elements
 				const xml = new DOMParser().parseFromString( text, 'text/xml' );
 				const boundingBox = xml.querySelector( 'BoundingBox' );
-				const origin = xml.querySelector( 'Origin' );
 				const tileFormat = xml.querySelector( 'TileFormat' );
 				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
 
-				// tile set definitions
+				// tileset definitions
 				const tileSetList = [ ...tileSets ]
 					.map( ts => ( {
 						href: parseInt( ts.getAttribute( 'href' ) ),
@@ -57,8 +63,11 @@ export class TMSImageSource extends TiledImageSource {
 				const maxY = parseFloat( boundingBox.getAttribute( 'maxy' ) ) * MathUtils.DEG2RAD;
 
 				// origin in lat / lon
-				const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
-				const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
+				// Note: The "origin" value in TMS is documented but otherwise not used in any data set as
+				// defined by the spec so ignore it here.
+				// const origin = xml.querySelector( 'Origin' );
+				// const originX = parseFloat( origin.getAttribute( 'x' ) ) * MathUtils.DEG2RAD;
+				// const originY = parseFloat( origin.getAttribute( 'y' ) ) * MathUtils.DEG2RAD;
 
 				// image dimensions in pixels
 				const tileWidth = parseInt( tileFormat.getAttribute( 'width' ) );
@@ -73,8 +82,7 @@ export class TMSImageSource extends TiledImageSource {
 
 				// initialize tiling and projection schemes
 				tiling.setProjection( new ProjectionScheme( srs ) );
-				tiling.setOrigin( originX, originY );
-				tiling.setBounds( minX, minY, maxX, maxY );
+				tiling.setContentBounds( minX, minY, maxX, maxY );
 
 				tileSetList.forEach( ( { order } ) => {
 

@@ -1,9 +1,2 @@
-export class CesiumIonAuthPlugin {
+export { CesiumIonAuthPlugin } from '3d-tiles-renderer/core/plugins';
 
-	constructor( options : {
-		apiToken: string,
-		assetId?: string | null,
-		autoRefreshToken?: boolean
-	} );
-
-}

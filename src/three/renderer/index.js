@@ -11,6 +11,7 @@ export * as GeoUtils from './math/GeoUtils.js';
 export * from './math/GeoConstants.js';
 export * from './math/OBB.js';
 export * from './math/TileBoundingVolume.js';
+export * as MemoryUtils from './utils/MemoryUtils.js';
 
 // three.js controls
 export { GlobeControls } from './controls/GlobeControls.js';

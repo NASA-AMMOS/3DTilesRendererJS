@@ -1,7 +1,7 @@
-import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial } from 'three';
+import { Box3Helper, Group, MeshStandardMaterial, PointsMaterial, Sphere, Color, MeshBasicMaterial, Mesh, BoxGeometry, SphereGeometry, DoubleSide } from 'three';
 import { SphereHelper } from './objects/SphereHelper.js';
-import { EllipsoidRegionLineHelper } from './objects/EllipsoidRegionHelper.js';
-import { traverseAncestors, traverseSet } from '../../core/renderer/tiles/traverseFunctions.js';
+import { EllipsoidRegionLineHelper, EllipsoidRegionHelper } from './objects/EllipsoidRegionHelper.js';
+import { TraversalUtils } from '3d-tiles-renderer/core';
 
 const ORIGINAL_MATERIAL = Symbol( 'ORIGINAL_MATERIAL' );
 const HAS_RANDOM_COLOR = Symbol( 'HAS_RANDOM_COLOR' );
@@ -11,10 +11,11 @@ const PARENT_BOUND_REF_COUNT = Symbol( 'PARENT_BOUND_REF_COUNT' );
 
 const _sphere = /* @__PURE__ */ new Sphere();
 const emptyRaycast = () => {};
+
 const colors = {};
 
 // Return a consistent random color for an index
-export function getIndexedRandomColor( index ) {
+function getIndexedRandomColor( index ) {
 
 	if ( ! colors[ index ] ) {
 
@@ -25,6 +26,7 @@ export function getIndexedRandomColor( index ) {
 		colors[ index ] = new Color().setHSL( h, s, l );
 
 	}
+
 	return colors[ index ];
 
 }
@@ -41,6 +43,7 @@ const RANDOM_COLOR = 7;
 const RANDOM_NODE_COLOR = 8;
 const CUSTOM_COLOR = 9;
 const LOAD_ORDER = 10;
+const INDEXED_COLOR = 11;
 
 const ColorModes = Object.freeze( {
 	NONE,
@@ -56,6 +59,31 @@ const ColorModes = Object.freeze( {
 	LOAD_ORDER,
 } );
 
+/**
+ * @callback GetDebugColorCallback
+ * @param {number} val Normalized [0, 1] value.
+ * @param {Color} target Color to write the result into.
+ */
+
+/**
+ * Plugin that adds visual debugging aids to a `TilesRenderer`: bounding-volume
+ * helpers (box, sphere, region), tile color modes based on depth/error/distance/load
+ * order, and an unlit rendering mode. Color modes are available via the static
+ * `ColorModes` property.
+ * @param {Object} [options]
+ * @param {boolean} [options.displayBoxBounds=false] Show OBB bounding-box helpers.
+ * @param {boolean} [options.displaySphereBounds=false] Show bounding-sphere helpers.
+ * @param {boolean} [options.displayRegionBounds=false] Show bounding-region helpers.
+ * @param {boolean} [options.displayParentBounds=false] Also show ancestor bounding volumes for visible tiles.
+ * @param {number} [options.colorMode=ColorModes.NONE] Initial tile color mode.
+ * @param {number} [options.boundsColorMode=ColorModes.NONE] Color mode applied to bounding-volume helpers.
+ * @param {number} [options.maxDebugDepth=-1] Maximum tree depth for depth-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugDistance=-1] Maximum distance for distance-based coloring (`-1` = auto).
+ * @param {number} [options.maxDebugError=-1] Maximum error for error-based coloring (`-1` = auto).
+ * @param {Function|null} [options.customColorCallback=null] Callback `( tile, mesh )` used when `colorMode` is `CUSTOM_COLOR`.
+ * @param {boolean} [options.unlit=false] Replace tile materials with unlit `MeshBasicMaterial`.
+ * @param {boolean} [options.enabled=true] Whether the plugin is active on init.
+ */
 export class DebugTilesPlugin {
 
 	static get ColorModes() {
@@ -98,54 +126,20 @@ export class DebugTilesPlugin {
 
 	}
 
-	constructor( options ) {
+	get boundsColorMode() {
 
-		options = {
-			displayParentBounds: false,
-			displayBoxBounds: false,
-			displaySphereBounds: false,
-			displayRegionBounds: false,
-			colorMode: NONE,
-			maxDebugDepth: - 1,
-			maxDebugDistance: - 1,
-			maxDebugError: - 1,
-			customColorCallback: null,
-			unlit: false,
-			enabled: true,
-			...options,
-		};
+		return this._boundsColorMode;
 
-		this.name = 'DEBUG_TILES_PLUGIN';
-		this.tiles = null;
+	}
 
-		this._colorMode = null;
-		this._unlit = null;
-		this.materialsNeedUpdate = false;
+	set boundsColorMode( v ) {
 
-		this.extremeDebugDepth = - 1;
-		this.extremeDebugError = - 1;
-		this.boxGroup = null;
-		this.sphereGroup = null;
-		this.regionGroup = null;
+		if ( v !== this._boundsColorMode ) {
 
-		// options
-		this._enabled = options.enabled;
-		this._displayParentBounds = options.displayParentBounds;
-		this.displayBoxBounds = options.displayBoxBounds;
-		this.displaySphereBounds = options.displaySphereBounds;
-		this.displayRegionBounds = options.displayRegionBounds;
-		this.colorMode = options.colorMode;
-		this.maxDebugDepth = options.maxDebugDepth;
-		this.maxDebugDistance = options.maxDebugDistance;
-		this.maxDebugError = options.maxDebugError;
-		this.customColorCallback = options.customColorCallback;
-		this.unlit = options.unlit;
+			this._boundsColorMode = v;
+			this.materialsNeedUpdate = true;
 
-		this.getDebugColor = ( value, target ) => {
-
-			target.setRGB( value, value, value );
-
-		};
+		}
 
 	}
 
@@ -159,6 +153,8 @@ export class DebugTilesPlugin {
 
 		if ( v !== this._enabled && this.tiles !== null ) {
 
+			this._enabled = v;
+
 			if ( v ) {
 
 				this.init( this.tiles );
@@ -171,7 +167,6 @@ export class DebugTilesPlugin {
 
 		}
 
-		this._enabled = v;
 
 	}
 
@@ -190,10 +185,10 @@ export class DebugTilesPlugin {
 			if ( ! v ) {
 
 				// Reset all ref counts
-				traverseSet( this.tiles.root, null, tile => {
+				this.tiles.traverse( tile => {
 
 					tile[ PARENT_BOUND_REF_COUNT ] = null;
-					this._onTileVisibilityChange( tile, tile.__visible );
+					this._onTileVisibilityChange( tile, tile.traversal.visible );
 
 				} );
 
@@ -202,7 +197,7 @@ export class DebugTilesPlugin {
 				// Initialize ref count for existing tiles
 				this.tiles.traverse( tile => {
 
-					if ( tile.__visible ) {
+					if ( tile.traversal.visible ) {
 
 						this._onTileVisibilityChange( tile, true );
 
@@ -213,6 +208,66 @@ export class DebugTilesPlugin {
 			}
 
 		}
+
+	}
+
+	constructor( options ) {
+
+		options = {
+			displayParentBounds: false,
+			displayBoxBounds: false,
+			displaySphereBounds: false,
+			displayRegionBounds: false,
+			colorMode: NONE,
+			boundsColorMode: NONE,
+			maxDebugDepth: - 1,
+			maxDebugDistance: - 1,
+			maxDebugError: - 1,
+			customColorCallback: null,
+			unlit: false,
+			enabled: true,
+			...options,
+		};
+
+		this.name = 'DEBUG_TILES_PLUGIN';
+		this.tiles = null;
+
+		this._colorMode = null;
+		this._boundsColorMode = null;
+		this._unlit = null;
+		this.materialsNeedUpdate = false;
+
+		this.extremeDebugDepth = - 1;
+		this.extremeDebugError = - 1;
+		this.boxGroup = null;
+		this.sphereGroup = null;
+		this.regionGroup = null;
+
+		// options
+		this._enabled = options.enabled;
+		this._displayParentBounds = options.displayParentBounds;
+		this.displayBoxBounds = options.displayBoxBounds;
+		this.displaySphereBounds = options.displaySphereBounds;
+		this.displayRegionBounds = options.displayRegionBounds;
+		this.colorMode = options.colorMode;
+		this.boundsColorMode = options.boundsColorMode;
+		this.maxDebugDepth = options.maxDebugDepth;
+		this.maxDebugDistance = options.maxDebugDistance;
+		this.maxDebugError = options.maxDebugError;
+		this.customColorCallback = options.customColorCallback;
+		this.unlit = options.unlit;
+
+		/**
+		 * Maps a normalized [0, 1] value to a `Color` for debug visualizations. Defaults to
+		 * a black-to-white gradient. Replace with a custom function to use a different color
+		 * ramp.
+		 * @type {GetDebugColorCallback}
+		 */
+		this.getDebugColor = ( value, target ) => {
+
+			target.setRGB( value, value, value );
+
+		};
 
 	}
 
@@ -245,7 +300,7 @@ export class DebugTilesPlugin {
 		this.regionGroup.updateMatrixWorld();
 
 		// register events
-		this._onLoadTileSetCB = () => {
+		this._onLoadTilesetCB = () => {
 
 			this._initExtremes();
 
@@ -265,7 +320,7 @@ export class DebugTilesPlugin {
 
 		this._onUpdateAfterCB = () => {
 
-			this._onUpdateAfter();
+			this.update();
 
 		};
 
@@ -275,7 +330,7 @@ export class DebugTilesPlugin {
 
 		};
 
-		tiles.addEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.addEventListener( 'load-tileset', this._onLoadTilesetCB );
 		tiles.addEventListener( 'load-model', this._onLoadModelCB );
 		tiles.addEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.addEventListener( 'update-after', this._onUpdateAfterCB );
@@ -286,9 +341,9 @@ export class DebugTilesPlugin {
 		// initialize an already-loaded tiles
 		tiles.traverse( tile => {
 
-			if ( tile.cached.scene ) {
+			if ( tile.engineData.scene ) {
 
-				this._onLoadModel( tile.cached.scene, tile );
+				this._onLoadModel( tile.engineData.scene, tile );
 
 			}
 
@@ -302,28 +357,28 @@ export class DebugTilesPlugin {
 
 	}
 
-	getTileInformationFromActiveObject( object ) {
+	getTileFromObject3D( object ) {
 
 		// Find which tile this scene is associated with. This is slow and
 		// intended for debug purposes only.
-		let targetTile = null;
+		let result = null;
 		const activeTiles = this.tiles.activeTiles;
 		activeTiles.forEach( tile => {
 
-			if ( targetTile ) {
+			if ( result ) {
 
-				return true;
+				return;
 
 			}
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.traverse( c => {
 
 					if ( c === object ) {
 
-						targetTile = tile;
+						result = tile;
 
 					}
 
@@ -333,23 +388,7 @@ export class DebugTilesPlugin {
 
 		} );
 
-		if ( targetTile ) {
-
-			return {
-
-				distanceToCamera: targetTile.__distanceFromCamera,
-				geometricError: targetTile.geometricError,
-				screenSpaceError: targetTile.__error,
-				depth: targetTile.__depth,
-				isLeaf: targetTile.__isLeaf
-
-			};
-
-		} else {
-
-			return null;
-
-		}
+		return result;
 
 	}
 
@@ -367,21 +406,27 @@ export class DebugTilesPlugin {
 
 		// Note that we are not using this.tiles.traverse()
 		// as we don't want to pay the cost of preprocessing tiles.
-		traverseSet( this.tiles.root, null, ( tile, _, depth ) => {
+		this.tiles.traverse( null, ( tile, _, depth ) => {
 
 			maxDepth = Math.max( maxDepth, depth );
 			maxError = Math.max( maxError, tile.geometricError );
 
-		} );
+		}, false );
 
 		this.extremeDebugDepth = maxDepth;
 		this.extremeDebugError = maxError;
 
 	}
 
-	_onUpdateAfter() {
+	/**
+	 * Applies the current plugin field values to all visible tile geometry. Call this
+	 * after modifying properties such as `colorMode`, `displayBoxBounds`, or
+	 * `displayParentBounds` when `TilesRenderer.update` is not being called every frame
+	 * so changes can be reflected.
+	 */
+	update() {
 
-		const { tiles, colorMode } = this;
+		const { tiles, colorMode, boundsColorMode } = this;
 
 		if ( ! tiles.root ) {
 
@@ -442,7 +487,7 @@ export class DebugTilesPlugin {
 
 		const { errorTarget, visibleTiles } = tiles;
 		let sortedTiles;
-		if ( colorMode === LOAD_ORDER ) {
+		if ( colorMode === LOAD_ORDER || boundsColorMode === LOAD_ORDER ) {
 
 			sortedTiles = Array.from( visibleTiles ).sort( ( a, b ) => {
 
@@ -452,10 +497,157 @@ export class DebugTilesPlugin {
 
 		}
 
-		// update plugins
+		// Set the color on the material based on the given color mode
+		const applyColor = ( mode, tile, child, h, s, l ) => {
+
+			if ( mode !== RANDOM_COLOR ) {
+
+				delete child.material[ HAS_RANDOM_COLOR ];
+
+			}
+
+			if ( mode !== RANDOM_NODE_COLOR ) {
+
+				delete child.material[ HAS_RANDOM_NODE_COLOR ];
+
+			}
+
+			switch ( mode ) {
+
+				case DEPTH: {
+
+					const val = tile.internal.depth / maxDepth;
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case RELATIVE_DEPTH: {
+
+					const val = tile.internal.depthFromRenderedParent / maxDepth;
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case SCREEN_ERROR: {
+
+					const val = tile.traversal.error / errorTarget;
+					if ( val > 1.0 ) {
+
+						child.material.color.setRGB( 1.0, 0.0, 0.0 );
+
+					} else {
+
+						this.getDebugColor( val, child.material.color );
+
+					}
+
+					break;
+
+				}
+
+				case GEOMETRIC_ERROR: {
+
+					const val = Math.min( tile.geometricError / maxError, 1 );
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case DISTANCE: {
+
+					// We don't update the distance if the geometric error is 0.0 so
+					// it will always be black.
+					const val = Math.min( tile.traversal.distanceFromCamera / maxDistance, 1 );
+					this.getDebugColor( val, child.material.color );
+					break;
+
+				}
+
+				case IS_LEAF: {
+
+					if ( ! tile.children || tile.children.length === 0 ) {
+
+						this.getDebugColor( 1.0, child.material.color );
+
+					} else {
+
+						this.getDebugColor( 0.0, child.material.color );
+
+					}
+
+					break;
+
+				}
+
+				case RANDOM_NODE_COLOR: {
+
+					if ( ! child.material[ HAS_RANDOM_NODE_COLOR ] ) {
+
+						child.material.color.setHSL( h, s, l );
+						child.material[ HAS_RANDOM_NODE_COLOR ] = true;
+
+					}
+
+					break;
+
+				}
+
+				case RANDOM_COLOR: {
+
+					if ( ! child.material[ HAS_RANDOM_COLOR ] ) {
+
+						child.material.color.setHSL( h, s, l );
+						child.material[ HAS_RANDOM_COLOR ] = true;
+
+					}
+
+					break;
+
+				}
+
+				case CUSTOM_COLOR: {
+
+					if ( this.customColorCallback ) {
+
+						this.customColorCallback( tile, child );
+
+					} else {
+
+						console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
+
+					}
+
+					break;
+
+				}
+
+				case LOAD_ORDER: {
+
+					const value = sortedTiles.indexOf( tile );
+					this.getDebugColor( value / ( sortedTiles.length - 1 ), child.material.color );
+					break;
+
+				}
+
+				case INDEXED_COLOR: {
+
+					child.material.color.copy( getIndexedRandomColor( tile.internal.depth ) );
+					delete child.material[ HAS_RANDOM_COLOR ];
+					delete child.material[ HAS_RANDOM_NODE_COLOR ];
+					break;
+
+				}
+
+			}
+
+		};
+
+		// update tile materials
 		visibleTiles.forEach( tile => {
 
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 
 			// create a random color per-tile
 			let h, s, l;
@@ -479,125 +671,7 @@ export class DebugTilesPlugin {
 
 				if ( c.material ) {
 
-					if ( colorMode !== RANDOM_COLOR ) {
-
-						delete c.material[ HAS_RANDOM_COLOR ];
-
-					}
-
-					if ( colorMode !== RANDOM_NODE_COLOR ) {
-
-						delete c.material[ HAS_RANDOM_NODE_COLOR ];
-
-					}
-
-					// Set the color on the basic material
-					switch ( colorMode ) {
-
-						case DEPTH: {
-
-							const val = tile.__depth / maxDepth;
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-						case RELATIVE_DEPTH: {
-
-							const val = tile.__depthFromRenderedParent / maxDepth;
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-						case SCREEN_ERROR: {
-
-							const val = tile.__error / errorTarget;
-							if ( val > 1.0 ) {
-
-								c.material.color.setRGB( 1.0, 0.0, 0.0 );
-
-							} else {
-
-								this.getDebugColor( val, c.material.color );
-
-							}
-							break;
-
-						}
-						case GEOMETRIC_ERROR: {
-
-							const val = Math.min( tile.geometricError / maxError, 1 );
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-						case DISTANCE: {
-
-							// We don't update the distance if the geometric error is 0.0 so
-							// it will always be black.
-							const val = Math.min( tile.__distanceFromCamera / maxDistance, 1 );
-							this.getDebugColor( val, c.material.color );
-							break;
-
-						}
-						case IS_LEAF: {
-
-							if ( ! tile.children || tile.children.length === 0 ) {
-
-								this.getDebugColor( 1.0, c.material.color );
-
-							} else {
-
-								this.getDebugColor( 0.0, c.material.color );
-
-							}
-							break;
-
-						}
-						case RANDOM_NODE_COLOR: {
-
-							if ( ! c.material[ HAS_RANDOM_NODE_COLOR ] ) {
-
-								c.material.color.setHSL( h, s, l );
-								c.material[ HAS_RANDOM_NODE_COLOR ] = true;
-
-							}
-							break;
-
-						}
-						case RANDOM_COLOR: {
-
-							if ( ! c.material[ HAS_RANDOM_COLOR ] ) {
-
-								c.material.color.setHSL( h, s, l );
-								c.material[ HAS_RANDOM_COLOR ] = true;
-
-							}
-							break;
-
-						}
-						case CUSTOM_COLOR: {
-
-							if ( this.customColorCallback ) {
-
-								this.customColorCallback( tile, c );
-
-							} else {
-
-								console.warn( 'DebugTilesRenderer: customColorCallback not defined' );
-
-							}
-							break;
-
-						}
-						case LOAD_ORDER: {
-
-							const value = sortedTiles.indexOf( tile );
-							this.getDebugColor( value / ( sortedTiles.length - 1 ), c.material.color );
-							break;
-
-						}
-
-					}
+					applyColor( colorMode, tile, c, h, s, l );
 
 				}
 
@@ -605,13 +679,53 @@ export class DebugTilesPlugin {
 
 		} );
 
+		// update bounds helper colors
+		const effectiveBoundsColorMode = boundsColorMode === NONE ? INDEXED_COLOR : boundsColorMode;
+		const groups = [ this.boxGroup, this.sphereGroup, this.regionGroup ];
+		for ( const group of groups ) {
+
+			for ( const helper of group.children ) {
+
+				const tile = helper.userData.tile;
+
+				let h, s, l;
+				if ( effectiveBoundsColorMode === RANDOM_COLOR ) {
+
+					h = Math.random();
+					s = 0.5 + Math.random() * 0.5;
+					l = 0.375 + Math.random() * 0.25;
+
+				}
+
+				helper.traverse( c => {
+
+					if ( effectiveBoundsColorMode === RANDOM_NODE_COLOR ) {
+
+						h = Math.random();
+						s = 0.5 + Math.random() * 0.5;
+						l = 0.375 + Math.random() * 0.25;
+
+					}
+
+					if ( c.material ) {
+
+						applyColor( effectiveBoundsColorMode, tile, c, h, s, l );
+
+					}
+
+				} );
+
+			}
+
+		}
+
 	}
 
 	_onTileVisibilityChange( tile, visible ) {
 
 		if ( this.displayParentBounds ) {
 
-			traverseAncestors( tile, current => {
+			TraversalUtils.traverseAncestors( tile, current => {
 
 				if ( current[ PARENT_BOUND_REF_COUNT ] == null ) {
 
@@ -646,8 +760,8 @@ export class DebugTilesPlugin {
 	_createBoundHelper( tile ) {
 
 		const tiles = this.tiles;
-		const cached = tile.cached;
-		const { sphere, obb, region } = cached.boundingVolume;
+		const engineData = tile.engineData;
+		const { sphere, obb, region } = engineData.boundingVolume;
 		if ( obb ) {
 
 			// Create debug bounding box
@@ -657,12 +771,24 @@ export class DebugTilesPlugin {
 			boxHelperGroup.name = 'DebugTilesRenderer.boxHelperGroup';
 			boxHelperGroup.matrix.copy( obb.transform );
 			boxHelperGroup.matrixAutoUpdate = false;
+			boxHelperGroup.userData.tile = tile;
+			engineData.boxHelperGroup = boxHelperGroup;
 
-			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.__depth ) );
+			const boxHelper = new Box3Helper( obb.box, getIndexedRandomColor( tile.internal.depth ) );
 			boxHelper.raycast = emptyRaycast;
 			boxHelperGroup.add( boxHelper );
 
-			cached.boxHelperGroup = boxHelperGroup;
+			// Create partially transparent mesh
+			const fillMesh = new Mesh( new BoxGeometry(), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			obb.box.getSize( fillMesh.scale );
+			fillMesh.raycast = emptyRaycast;
+			boxHelperGroup.add( fillMesh );
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayBoxBounds ) {
 
@@ -676,9 +802,22 @@ export class DebugTilesPlugin {
 		if ( sphere ) {
 
 			// Create debug bounding sphere
-			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.__depth ) );
+			const sphereHelper = new SphereHelper( sphere, getIndexedRandomColor( tile.internal.depth ) );
 			sphereHelper.raycast = emptyRaycast;
-			cached.sphereHelper = sphereHelper;
+			sphereHelper.userData.tile = tile;
+
+			// Create partially transparent mesh
+			const sphereFillMesh = new Mesh( new SphereGeometry( 1 ), new MeshBasicMaterial( {
+				color: getIndexedRandomColor( tile.internal.depth ),
+				transparent: true,
+				depthWrite: false,
+				opacity: 0.05,
+				side: DoubleSide,
+			} ) );
+			sphereFillMesh.raycast = emptyRaycast;
+			sphereHelper.add( sphereFillMesh );
+
+			engineData.sphereHelper = sphereHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displaySphereBounds ) {
 
@@ -692,8 +831,18 @@ export class DebugTilesPlugin {
 		if ( region ) {
 
 			// Create debug bounding region
-			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.__depth ) );
+			const regionHelper = new EllipsoidRegionLineHelper( region, getIndexedRandomColor( tile.internal.depth ) );
 			regionHelper.raycast = emptyRaycast;
+			regionHelper.userData.tile = tile;
+
+			// create partially transparent mesh
+			const regionFillMesh = new EllipsoidRegionHelper( region, getIndexedRandomColor( tile.internal.depth ) );
+			regionFillMesh.material.transparent = true;
+			regionFillMesh.material.depthWrite = false;
+			regionFillMesh.material.opacity = 0.05;
+			regionFillMesh.material.side = DoubleSide;
+			regionFillMesh.raycast = emptyRaycast;
+			regionHelper.add( regionFillMesh );
 
 			// recenter the geometry to avoid rendering artifacts
 			const sphere = new Sphere();
@@ -702,8 +851,9 @@ export class DebugTilesPlugin {
 
 			sphere.center.multiplyScalar( - 1 );
 			regionHelper.geometry.translate( ...sphere.center );
+			regionFillMesh.geometry.translate( ...sphere.center );
 
-			cached.regionHelper = regionHelper;
+			engineData.regionHelper = regionHelper;
 
 			if ( tiles.visibleTiles.has( tile ) && this.displayRegionBounds ) {
 
@@ -716,33 +866,44 @@ export class DebugTilesPlugin {
 
 	}
 
-	_updateHelperMaterial( tile, material ) {
+	_updateHelperMaterials( tile, group ) {
 
-		if ( tile.__visible || ! this.displayParentBounds ) {
+		group.traverse( c => {
 
-			material.opacity = 1;
+			const { material } = c;
+			if ( ! material ) {
 
-		} else {
+				return;
 
-			material.opacity = 0.2;
+			}
 
-		}
+			if ( tile.traversal.visible || ! this.displayParentBounds ) {
 
-		const transparent = material.transparent;
-		material.transparent = material.opacity < 1;
-		if ( material.transparent !== transparent ) {
+				material.opacity = c.isMesh ? 0.05 : 1;
 
-			material.needsUpdate = true;
+			} else {
 
-		}
+				material.opacity = c.isMesh ? 0.01 : 0.2;
+
+			}
+
+			const transparent = material.transparent;
+			material.transparent = material.opacity < 1;
+			if ( material.transparent !== transparent ) {
+
+				material.needsUpdate = true;
+
+			}
+
+		} );
 
 	}
 
 	_updateBoundHelper( tile, visible ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 
-		if ( ! cached ) {
+		if ( ! engineData ) {
 
 			return;
 
@@ -752,15 +913,15 @@ export class DebugTilesPlugin {
 		const boxGroup = this.boxGroup;
 		const regionGroup = this.regionGroup;
 
-		if ( visible && ( cached.boxHelperGroup == null && cached.sphereHelper == null && cached.regionHelper == null ) ) {
+		if ( visible && ( engineData.boxHelperGroup == null && engineData.sphereHelper == null && engineData.regionHelper == null ) ) {
 
 			this._createBoundHelper( tile );
 
 		}
 
-		const boxHelperGroup = cached.boxHelperGroup;
-		const sphereHelper = cached.sphereHelper;
-		const regionHelper = cached.regionHelper;
+		const boxHelperGroup = engineData.boxHelperGroup;
+		const sphereHelper = engineData.sphereHelper;
+		const regionHelper = engineData.regionHelper;
 
 		if ( ! visible ) {
 
@@ -790,7 +951,7 @@ export class DebugTilesPlugin {
 				boxGroup.add( boxHelperGroup );
 				boxHelperGroup.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, boxHelperGroup.children[ 0 ].material );
+				this._updateHelperMaterials( tile, boxHelperGroup );
 
 			}
 
@@ -799,7 +960,7 @@ export class DebugTilesPlugin {
 				sphereGroup.add( sphereHelper );
 				sphereHelper.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, sphereHelper.material );
+				this._updateHelperMaterials( tile, sphereHelper );
 
 			}
 
@@ -808,7 +969,7 @@ export class DebugTilesPlugin {
 				regionGroup.add( regionHelper );
 				regionHelper.updateMatrixWorld( true );
 
-				this._updateHelperMaterial( tile, regionHelper.material );
+				this._updateHelperMaterials( tile, regionHelper );
 
 			}
 
@@ -900,25 +1061,52 @@ export class DebugTilesPlugin {
 
 	_onDisposeModel( tile ) {
 
-		const cached = tile.cached;
-		if ( cached.boxHelperGroup ) {
+		const engineData = tile.engineData;
+		if ( engineData?.boxHelperGroup ) {
 
-			cached.boxHelperGroup.children[ 0 ].geometry.dispose();
-			delete cached.boxHelperGroup;
+			engineData.boxHelperGroup.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
+			delete engineData.boxHelperGroup;
 
 		}
 
-		if ( cached.sphereHelper ) {
+		if ( engineData?.sphereHelper ) {
 
-			cached.sphereHelper.geometry.dispose();
-			delete cached.sphereHelper;
+			engineData.sphereHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
+			delete engineData.sphereHelper;
 
 		}
 
-		if ( cached.regionHelper ) {
+		if ( engineData?.regionHelper ) {
 
-			cached.regionHelper.geometry.dispose();
-			delete cached.regionHelper;
+			engineData.regionHelper.traverse( c => {
+
+				if ( c.geometry ) {
+
+					c.geometry.dispose();
+					c.material.dispose();
+
+				}
+
+			} );
+			delete engineData.regionHelper;
 
 		}
 
@@ -926,15 +1114,9 @@ export class DebugTilesPlugin {
 
 	dispose() {
 
-		if ( ! this.enabled ) {
-
-			return;
-
-		}
-
 		const tiles = this.tiles;
 
-		tiles.removeEventListener( 'load-tile-set', this._onLoadTileSetCB );
+		tiles.removeEventListener( 'load-tileset', this._onLoadTilesetCB );
 		tiles.removeEventListener( 'load-model', this._onLoadModelCB );
 		tiles.removeEventListener( 'dispose-model', this._onDisposeModelCB );
 		tiles.removeEventListener( 'update-after', this._onUpdateAfterCB );
@@ -942,6 +1124,7 @@ export class DebugTilesPlugin {
 
 		// reset all materials
 		this.colorMode = NONE;
+		this.boundsColorMode = NONE;
 		this.unlit = false;
 		tiles.forEachLoadedModel( scene => {
 
@@ -954,7 +1137,7 @@ export class DebugTilesPlugin {
 
 			this._onDisposeModel( tile );
 
-		} );
+		}, null, false );
 
 		this.boxGroup?.removeFromParent();
 		this.sphereGroup?.removeFromParent();

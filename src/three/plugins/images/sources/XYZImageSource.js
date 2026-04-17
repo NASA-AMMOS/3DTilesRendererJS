@@ -5,18 +5,20 @@ export class XYZImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
 
-		super();
-
 		const {
 			levels = 20,
 			tileDimension = 256,
 			projection = 'EPSG:3857',
+			url = null,
+			...rest
 		} = options;
+
+		super( rest );
 
 		this.tileDimension = tileDimension;
 		this.levels = levels;
 		this.projection = projection;
-		this.url = null;
+		this.url = url;
 
 	}
 
@@ -29,18 +31,37 @@ export class XYZImageSource extends TiledImageSource {
 
 	}
 
-	init( url ) {
+	init() {
 
 		// transform the url
-		const { tiling, tileDimension, levels, projection } = this;
-
+		const { tiling, tileDimension, levels, url, projection } = this;
 		tiling.flipY = ! /{\s*reverseY|-\s*y\s*}/g.test( url );
 		tiling.setProjection( new ProjectionScheme( projection ) );
-		tiling.setBounds( ...tiling.projection.getBounds() );
-		tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
-			tilePixelWidth: tileDimension,
-			tilePixelHeight: tileDimension,
-		} );
+		tiling.setContentBounds( ...tiling.projection.getBounds() );
+		if ( Array.isArray( levels ) ) {
+
+			levels.forEach( ( info, level ) => {
+
+				if ( info !== null ) {
+
+					tiling.setLevel( level, {
+						tilePixelWidth: tileDimension,
+						tilePixelHeight: tileDimension,
+						...info
+					} );
+
+				}
+
+			} );
+
+		} else {
+
+			tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
+				tilePixelWidth: tileDimension,
+				tilePixelHeight: tileDimension,
+			} );
+
+		}
 
 		this.url = url;
 

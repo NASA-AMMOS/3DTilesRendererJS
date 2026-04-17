@@ -1,7 +1,7 @@
 import { Spherical, Vector3, MathUtils } from 'three';
 
-const _spherical = new Spherical();
-const _vec = new Vector3();
+const _spherical = /* @__PURE__ */ new Spherical();
+const _vec = /* @__PURE__ */ new Vector3();
 const _geoResults = {};
 
 // Cesium / 3D tiles Spheroid:
@@ -25,6 +25,11 @@ const _geoResults = {};
 //     /
 //   Z
 
+/**
+ * Swaps a Vector3 from the three.js coordinate frame to the geo/Cesium coordinate frame in-place.
+ * @param {Vector3} target
+ * @ignore
+ */
 export function swapToGeoFrame( target ) {
 
 	const { x, y, z } = target;
@@ -34,6 +39,11 @@ export function swapToGeoFrame( target ) {
 
 }
 
+/**
+ * Swaps a Vector3 from the geo/Cesium coordinate frame to the three.js coordinate frame in-place.
+ * @param {Vector3} target
+ * @ignore
+ */
 export function swapToThreeFrame( target ) {
 
 	const { x, y, z } = target;
@@ -43,12 +53,26 @@ export function swapToThreeFrame( target ) {
 
 }
 
+/**
+ * Converts a three.js spherical phi angle (polar angle from +Y axis, in radians) to a
+ * geographic latitude (angle from the equator, in radians).
+ * @param {number} phi
+ * @returns {number}
+ * @ignore
+ */
 export function sphericalPhiToLatitude( phi ) {
 
 	return - ( phi - Math.PI / 2 );
 
 }
 
+/**
+ * Converts a geographic latitude (angle from the equator, in radians) to a three.js
+ * spherical phi angle (polar angle from +Y axis, in radians).
+ * @param {number} latitude
+ * @returns {number}
+ * @ignore
+ */
 export function latitudeToSphericalPhi( latitude ) {
 
 	return - latitude + Math.PI / 2;

@@ -1,4 +1,5 @@
 import { Mesh, PlaneGeometry, ShaderMaterial, Vector2 } from 'three';
+
 export class PivotPointMesh extends Mesh {
 
 	constructor() {
@@ -51,7 +52,6 @@ class PivotMaterial extends ShaderMaterial {
 
 			vertexShader: /* glsl */`
 
-				uniform float pixelRatio;
 				uniform float size;
 				uniform float thickness;
 				uniform vec2 resolution;

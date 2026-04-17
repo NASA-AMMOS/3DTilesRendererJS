@@ -1,7 +1,7 @@
 import { Vector2 } from 'three';
 
-const _vec = new Vector2();
-const _vec2 = new Vector2();
+const _vec = /* @__PURE__ */ new Vector2();
+const _vec2 = /* @__PURE__ */ new Vector2();
 export class PointerTracker {
 
 	constructor() {
@@ -131,7 +131,7 @@ export class PointerTracker {
 		delete this.previousPositions[ id ];
 		delete this.startPositions[ id ];
 
-		if ( this.getPointerCount.length === 0 ) {
+		if ( this.getPointerCount() === 0 ) {
 
 			this.buttons = 0;
 			this.pointerType = null;
