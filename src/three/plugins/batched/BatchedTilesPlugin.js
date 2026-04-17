@@ -1,5 +1,6 @@
+/** @import { WebGLRenderer, Material } from 'three' */
 import { WebGLArrayRenderTarget, MeshBasicMaterial, DataTexture, REVISION } from 'three';
-import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { ExpandingBatchedMesh } from './ExpandingBatchedMesh.js';
 import { convertMapToArrayTexture, isColorWhite } from './utilities.js';
 
@@ -7,6 +8,27 @@ const _textureRenderQuad = new FullScreenQuad( new MeshBasicMaterial() );
 const _whiteTex = new DataTexture( new Uint8Array( [ 255, 255, 255, 255 ] ), 1, 1 );
 _whiteTex.needsUpdate = true;
 
+/**
+ * Plugin that uses three.js `BatchedMesh` to limit the number of draw calls required and
+ * improve performance. The `BatchedMesh` geometry and instance size are automatically resized
+ * and optimized as new geometry is added and removed. Note that the `renderer` field is
+ * required. Requires Three.js r170 or later.
+ *
+ * @warn All tile geometry rendered with `BatchedMesh` will use the same material and only a single
+ * material map is supported. Only tile geometry containing a single mesh is supported. Not
+ * compatible with plugins that modify mesh materials or rely on bespoke mesh data (e.g.
+ * `TilesFadePlugin`, `DebugTilesPlugin`, GLTF Metadata extensions).
+ * @param {Object} options
+ * @param {WebGLRenderer} options.renderer The renderer used to generate a `WebGLArrayRenderTarget`.
+ * @param {number} [options.instanceCount=500] Initial number of instances in the batched mesh.
+ * @param {number} [options.vertexCount=1000] Minimum vertex space to reserve per tile geometry added.
+ * @param {number} [options.indexCount=1000] Minimum index space to reserve per tile geometry added.
+ * @param {number} [options.expandPercent=0.25] Fraction by which to grow the mesh when capacity is exceeded.
+ * @param {number} [options.maxInstanceCount=Infinity] Hard cap on instance count (clamped to GPU limits).
+ * @param {boolean} [options.discardOriginalContent=true] Free the original tile scene after batching. Set to `false` when used with `UnloadTilesPlugin`.
+ * @param {number|null} [options.textureSize=null] Override width/height for the texture array; defaults to the first tile's texture size.
+ * @param {Material|null} [options.material=null] Custom material for the batched mesh; defaults to the first tile's material type.
+ */
 export class BatchedTilesPlugin {
 
 	constructor( options = {} ) {
@@ -25,7 +47,6 @@ export class BatchedTilesPlugin {
 			maxInstanceCount: Infinity,
 			discardOriginalContent: true,
 			textureSize: null,
-
 			material: null,
 			renderer: null,
 			...options
@@ -52,44 +73,25 @@ export class BatchedTilesPlugin {
 		this.batchedMesh = null;
 		this.arrayTarget = null;
 		this.tiles = null;
-		this._onLoadModel = null;
-		this._onDisposeModel = null;
-		this._onVisibilityChange = null;
 		this._tileToInstanceId = new Map();
 
 	}
 
 	init( tiles ) {
 
-		this._onDisposeModel = ( { scene, tile } ) => {
-
-			this.removeSceneFromBatchedMesh( scene, tile );
-
-		};
-
-		// register events
-		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 		this.tiles = tiles;
 
 	}
 
-	// init the batched mesh if it's not ready
-	initBatchedMesh( target ) {
+	initTextureArray( target ) {
 
-		if ( this.batchedMesh !== null ) {
+		if ( this.arrayTarget !== null || target.material.map === null ) {
 
 			return;
 
 		}
 
-		// init the batched mesh
-		const { instanceCount, vertexCount, indexCount, tiles, renderer, textureSize } = this;
-		const material = this.material ? this.material : new target.material.constructor();
-		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
-		batchedMesh.name = 'BatchTilesPlugin';
-		batchedMesh.frustumCulled = false;
-		tiles.group.add( batchedMesh );
-		batchedMesh.updateMatrixWorld();
+		const { instanceCount, renderer, textureSize, batchedMesh } = this;
 
 		// init the array texture render target
 		const map = target.material.map;
@@ -108,21 +110,55 @@ export class BatchedTilesPlugin {
 		Object.assign( arrayTarget.texture, textureOptions );
 		renderer.initRenderTarget( arrayTarget );
 
-		// init the material
-		material.map = arrayTarget.texture;
-		convertMapToArrayTexture( material );
+		// assign the material
+		batchedMesh.material.map = arrayTarget.texture;
 
 		this.arrayTarget = arrayTarget;
+
+		// once the texture array is initialized we fill in textures for all previously-initialized instances
+		// since they may have been skipped due to not having textures
+		this._tileToInstanceId.forEach( value => {
+
+			value.forEach( id => {
+
+				this.assignTextureToLayer( _whiteTex, id );
+
+			} );
+
+		} );
+
+	}
+
+	// init the batched mesh if it's not ready
+	initBatchedMesh( target ) {
+
+		if ( this.batchedMesh !== null ) {
+
+			return;
+
+		}
+
+		// init the batched mesh
+		const { instanceCount, vertexCount, indexCount, tiles } = this;
+		const material = this.material ? this.material : new target.material.constructor();
+		const batchedMesh = new ExpandingBatchedMesh( instanceCount, instanceCount * vertexCount, instanceCount * indexCount, material );
+		batchedMesh.name = 'BatchTilesPlugin';
+		batchedMesh.frustumCulled = false;
+		tiles.group.add( batchedMesh );
+		batchedMesh.updateMatrixWorld();
+
+		convertMapToArrayTexture( batchedMesh.material );
+
 		this.batchedMesh = batchedMesh;
 
 	}
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		if ( visible ) {
 
-			// Add tile set to the batched mesh if it hasn't been added already
+			// Add tileset to the batched mesh if it hasn't been added already
 			this.addSceneToBatchedMesh( scene, tile );
 
 		}
@@ -164,11 +200,17 @@ export class BatchedTilesPlugin {
 
 	}
 
+	disposeTile( tile ) {
+
+		this.removeSceneFromBatchedMesh( tile );
+
+	}
+
 	unloadTileFromGPU( scene, tile ) {
 
 		if ( ! this.discardOriginalContent && this._tileToInstanceId.has( tile ) ) {
 
-			this.removeSceneFromBatchedMesh( scene, tile );
+			this.removeSceneFromBatchedMesh( tile );
 			return true;
 
 		}
@@ -179,6 +221,13 @@ export class BatchedTilesPlugin {
 
 	// render the given into the given layer
 	assignTextureToLayer( texture, layer ) {
+
+		// if the array target has not been created yet then skip the assignment and expansion
+		if ( ! this.arrayTarget ) {
+
+			return;
+
+		}
 
 		this.expandArrayTargetIfNeeded();
 
@@ -232,7 +281,7 @@ export class BatchedTilesPlugin {
 
 	}
 
-	removeSceneFromBatchedMesh( scene, tile ) {
+	removeSceneFromBatchedMesh( tile ) {
 
 		if ( this._tileToInstanceId.has( tile ) ) {
 
@@ -297,9 +346,12 @@ export class BatchedTilesPlugin {
 			scene.updateMatrixWorld();
 
 			const instanceIds = [];
+			this._tileToInstanceId.set( tile, instanceIds );
+
 			meshes.forEach( mesh => {
 
 				this.initBatchedMesh( mesh );
+				this.initTextureArray( mesh );
 
 				const { geometry, material } = mesh;
 				const { batchedMesh, expandPercent } = this;
@@ -333,13 +385,12 @@ export class BatchedTilesPlugin {
 
 			} );
 
-			this._tileToInstanceId.set( tile, instanceIds );
 
 			// discard all data if the option is set
 			// TODO: this would be best done in a more general way
 			if ( this.discardOriginalContent ) {
 
-				tile.cached.textures.forEach( tex => {
+				tile.engineData.textures.forEach( tex => {
 
 					if ( tex.image instanceof ImageBitmap ) {
 
@@ -349,10 +400,10 @@ export class BatchedTilesPlugin {
 
 				} );
 
-				tile.cached.scene = null;
-				tile.cached.materials = [];
-				tile.cached.geometries = [];
-				tile.cached.textures = [];
+				tile.engineData.scene = null;
+				tile.engineData.materials = [];
+				tile.engineData.geometries = [];
+				tile.engineData.textures = [];
 
 			}
 
@@ -382,7 +433,7 @@ export class BatchedTilesPlugin {
 
 	dispose() {
 
-		const { arrayTarget, tiles, batchedMesh } = this;
+		const { arrayTarget, batchedMesh } = this;
 		if ( arrayTarget ) {
 
 			arrayTarget.dispose();
@@ -397,8 +448,6 @@ export class BatchedTilesPlugin {
 			batchedMesh.removeFromParent();
 
 		}
-
-		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
 
 	}
 

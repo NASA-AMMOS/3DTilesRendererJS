@@ -1,4 +1,6 @@
-import { TilesRendererBase } from '../../../core/renderer/tiles/TilesRendererBase.js';
+/** @import { Camera, WebGLRenderer, Box3, Sphere, Raycaster } from 'three' */
+/** @import { Ellipsoid } from '../math/Ellipsoid.js' */
+import { TilesRendererBase, LoaderUtils } from '3d-tiles-renderer/core';
 import { B3DMLoader } from '../loaders/B3DMLoader.js';
 import { PNTSLoader } from '../loaders/PNTSLoader.js';
 import { I3DMLoader } from '../loaders/I3DMLoader.js';
@@ -14,28 +16,23 @@ import {
 	Group,
 } from 'three';
 import { raycastTraverse, raycastTraverseFirstHit } from './raycastTraverse.js';
-import { readMagicBytes } from '../../../core/renderer/utilities/readMagicBytes.js';
 import { TileBoundingVolume } from '../math/TileBoundingVolume.js';
 import { ExtendedFrustum } from '../math/ExtendedFrustum.js';
-import { estimateBytesUsed } from './utilities.js';
+import { estimateBytesUsed } from '../utils/MemoryUtils.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const _mat = new Matrix4();
-const _euler = new Euler();
+const _mat = /* @__PURE__ */ new Matrix4();
+const _euler = /* @__PURE__ */ new Euler();
 
 // In three.js r165 and higher raycast traversal can be ended early
 const INITIAL_FRUSTUM_CULLED = Symbol( 'INITIAL_FRUSTUM_CULLED' );
-const tempMat = new Matrix4();
-const tempVector = new Vector3();
-const tempVector2 = new Vector2();
-const viewErrorTarget = {
-	inView: false,
-	error: Infinity,
-};
+const tempMat = /* @__PURE__ */ new Matrix4();
+const tempVector = /* @__PURE__ */ new Vector3();
+const tempVector2 = /* @__PURE__ */ new Vector2();
 
-const X_AXIS = new Vector3( 1, 0, 0 );
-const Y_AXIS = new Vector3( 0, 1, 0 );
+const X_AXIS = /* @__PURE__ */ new Vector3( 1, 0, 0 );
+const Y_AXIS = /* @__PURE__ */ new Vector3( 0, 1, 0 );
 
 function updateFrustumCulled( object, toInitialValue ) {
 
@@ -47,8 +44,20 @@ function updateFrustumCulled( object, toInitialValue ) {
 
 }
 
+/**
+ * Three.js implementation of a 3D Tiles renderer. Extends `TilesRendererBase` with
+ * camera management, three.js scene integration, and GPU-accelerated tile loading.
+ * Add `tiles.group` to your scene and call `tiles.update()` each frame.
+ * @extends TilesRendererBase
+ */
 export class TilesRenderer extends TilesRendererBase {
 
+	/**
+	 * If `true`, all tile meshes automatically have `frustumCulled` set to `false` since the
+	 * tiles renderer performs its own frustum culling. If `displayActiveTiles` is `true` or
+	 * multiple cameras are being used, consider setting this to `false`.
+	 * @type {boolean}
+	 */
 	get autoDisableRendererCulling() {
 
 		return this._autoDisableRendererCulling;
@@ -86,8 +95,27 @@ export class TilesRenderer extends TilesRendererBase {
 	constructor( ...args ) {
 
 		super( ...args );
+
+		/**
+		 * The container `Group` for the 3D tiles. Add this to the three.js scene. The group
+		 * also exposes a `matrixWorldInverse` field for transforming objects into the local
+		 * tileset frame.
+		 * @type {Group}
+		 */
 		this.group = new TilesGroup( this );
+
+		/**
+		 * The ellipsoid definition used for the tileset. Defaults to WGS84 and may be
+		 * overridden by the `3DTILES_ellipsoid` extension. Specified in the local frame of
+		 * `TilesRenderer.group`.
+		 * @type {Ellipsoid}
+		 */
 		this.ellipsoid = WGS84_ELLIPSOID.clone();
+
+		/**
+		 * Array of cameras registered with this renderer.
+		 * @type {Camera[]}
+		 */
 		this.cameras = [];
 		this.cameraMap = new Map();
 		this.cameraInfo = [];
@@ -98,52 +126,84 @@ export class TilesRenderer extends TilesRendererBase {
 		// flag indicating whether frustum culling should be disabled
 		this._autoDisableRendererCulling = true;
 
-		const manager = new LoadingManager();
-		manager.setURLModifier( url => {
-
-			if ( this.preprocessURL ) {
-
-				return this.preprocessURL( url );
-
-			} else {
-
-				return url;
-
-			}
-
-		} );
-		this.manager = manager;
+		/**
+		 * The `LoadingManager` used when loading tile geometry.
+		 * @type {LoadingManager}
+		 */
+		this.manager = new LoadingManager();
 
 		// saved for event dispatcher functions
 		this._listeners = {};
 
 	}
 
-	addEventListener( ...args ) {
+	addEventListener( type, listener ) {
 
-		EventDispatcher.prototype.addEventListener.call( this, ...args );
+		if ( type === 'load-tile-set' ) {
 
-	}
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
 
-	hasEventListener( ...args ) {
+		}
 
-		EventDispatcher.prototype.hasEventListener.call( this, ...args );
-
-	}
-
-	removeEventListener( ...args ) {
-
-		EventDispatcher.prototype.removeEventListener.call( this, ...args );
+		EventDispatcher.prototype.addEventListener.call( this, type, listener );
 
 	}
 
-	dispatchEvent( ...args ) {
+	hasEventListener( type, listener ) {
 
-		EventDispatcher.prototype.dispatchEvent.call( this, ...args );
+		if ( type === 'load-tile-set' ) {
+
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
+
+		}
+
+		return EventDispatcher.prototype.hasEventListener.call( this, type, listener );
+
+	}
+
+	removeEventListener( type, listener ) {
+
+		if ( type === 'load-tile-set' ) {
+
+			console.warn( 'TilesRenderer: "load-tile-set" event has been deprecated. Use "load-tileset" instead.' );
+			type = 'load-tileset';
+
+		}
+
+		EventDispatcher.prototype.removeEventListener.call( this, type, listener );
+
+	}
+
+	dispatchEvent( e ) {
+
+		if ( 'tileset' in e ) {
+
+			Object.defineProperty( e, 'tileSet', {
+				get() {
+
+					console.warn( 'TilesRenderer: "event.tileSet" has been deprecated. Use "event.tileset" instead.' );
+					return e.tileset;
+
+				},
+				enumerable: false,
+				configurable: true,
+			} );
+
+		}
+
+		EventDispatcher.prototype.dispatchEvent.call( this, e );
 
 	}
 
 	/* Public API */
+
+	/**
+	 * Returns the axis-aligned bounding box of the root tile in the group's local space.
+	 * @param {Box3} target - Target box to write into.
+	 * @returns {boolean} Whether the tileset is loaded and a bounding box is available.
+	 */
 	getBoundingBox( target ) {
 
 		if ( ! this.root ) {
@@ -152,7 +212,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getAABB( target );
@@ -166,6 +226,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns the oriented bounding box and transform of the root tile.
+	 * @param {Box3} targetBox - Target box to write into (in local OBB space).
+	 * @param {Matrix4} targetMatrix - Transform from OBB local space to group local space.
+	 * @returns {boolean} Whether the tileset is loaded and an OBB is available.
+	 */
 	getOrientedBoundingBox( targetBox, targetMatrix ) {
 
 		if ( ! this.root ) {
@@ -174,7 +240,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getOBB( targetBox, targetMatrix );
@@ -188,6 +254,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns the bounding sphere of the root tile in the group's local space.
+	 * @param {Sphere} target - Target sphere to write into.
+	 * @returns {boolean} Whether the tileset is loaded and a bounding sphere is available.
+	 */
 	getBoundingSphere( target ) {
 
 		if ( ! this.root ) {
@@ -196,7 +267,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		const boundingVolume = this.root.cached.boundingVolume;
+		const boundingVolume = this.root.engineData.boundingVolume;
 		if ( boundingVolume ) {
 
 			boundingVolume.getSphere( target );
@@ -210,11 +281,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Iterates over all currently loaded tile scenes.
+	 * @param {Function} callback - Called with `( scene: Object3D, tile: object )` for each loaded tile.
+	 */
 	forEachLoadedModel( callback ) {
 
 		this.traverse( tile => {
 
-			const scene = tile.cached && tile.cached.scene;
+			const scene = tile.engineData && tile.engineData.scene;
 			if ( scene ) {
 
 				callback( scene, tile );
@@ -225,6 +300,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Performs a raycast against all loaded tile scenes. Compatible with Three.js raycasting.
+	 * Supports `raycaster.firstHitOnly` for early termination.
+	 * @param {Raycaster} raycaster
+	 * @param {Array} intersects - Array to push intersection results into.
+	 */
 	raycast( raycaster, intersects ) {
 
 		if ( ! this.root ) {
@@ -250,12 +331,23 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Returns whether the given camera is registered with this renderer.
+	 * @param {Camera} camera
+	 * @returns {boolean}
+	 */
 	hasCamera( camera ) {
 
 		return this.cameraMap.has( camera );
 
 	}
 
+	/**
+	 * Registers a camera with the renderer so it is used for tile selection and screen-space error
+	 * calculation. Use `setResolution` or `setResolutionFromRenderer` to provide the camera's resolution.
+	 * @param {Camera} camera
+	 * @returns {boolean} Whether the camera was newly added.
+	 */
 	setCamera( camera ) {
 
 		const cameras = this.cameras;
@@ -269,10 +361,18 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		}
+
 		return false;
 
 	}
 
+	/**
+	 * Sets the render resolution for a registered camera, used for screen-space error calculation.
+	 * @param {Camera} camera - A previously registered camera.
+	 * @param {number|Vector2} xOrVec - Render width in pixels, or a Vector2 containing width and height.
+	 * @param {number} [y] - Render height in pixels when `xOrVec` is a number.
+	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 */
 	setResolution( camera, xOrVec, y ) {
 
 		const cameraMap = this.cameraMap;
@@ -297,6 +397,12 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Sets the render resolution for a camera by reading the current size from a WebGLRenderer.
+	 * @param {Camera} camera - A previously registered camera.
+	 * @param {WebGLRenderer} renderer
+	 * @returns {boolean} Whether the camera is registered and the resolution was updated.
+	 */
 	setResolutionFromRenderer( camera, renderer ) {
 
 		renderer.getSize( tempVector2 );
@@ -305,6 +411,11 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
+	/**
+	 * Unregisters a camera from the renderer.
+	 * @param {Camera} camera
+	 * @returns {boolean} Whether the camera was found and removed.
+	 */
 	deleteCamera( camera ) {
 
 		const cameras = this.cameras;
@@ -319,17 +430,18 @@ export class TilesRenderer extends TilesRendererBase {
 			return true;
 
 		}
+
 		return false;
 
 	}
 
 	/* Overriden */
-	loadRootTileSet( ...args ) {
+	loadRootTileset( ...args ) {
 
-		return super.loadRootTileSet( ...args )
+		return super.loadRootTileset( ...args )
 			.then( root => {
 
-				// cache the gltf tile set rotation matrix
+				// cache the gltf tileset rotation matrix
 				const { asset, extensions = {} } = root;
 				const upAxis = asset && asset.gltfUpAxis || 'y';
 				switch ( upAxis.toLowerCase() ) {
@@ -368,39 +480,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	update() {
-
-		// check if the plugins that can block the tile updates require it
-		let needsUpdate = null;
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin.doTilesNeedUpdate ) {
-
-				const res = plugin.doTilesNeedUpdate();
-				if ( needsUpdate === null ) {
-
-					needsUpdate = res;
-
-				} else {
-
-					needsUpdate = Boolean( needsUpdate || res );
-
-				}
-
-			}
-
-		} );
-
-		if ( needsUpdate === false ) {
-
-			this.dispatchEvent( { type: 'update-before' } );
-			this.dispatchEvent( { type: 'update-after' } );
-			return;
-
-		}
-
-		// follow through with the update
-		this.dispatchEvent( { type: 'update-before' } );
+	prepareForTraversal() {
 
 		const group = this.group;
 		const cameras = this.cameras;
@@ -479,7 +559,7 @@ export class TilesRenderer extends TilesRendererBase {
 			tempMat.premultiply( camera.matrixWorldInverse );
 			tempMat.premultiply( camera.projectionMatrix );
 
-			frustum.setFromProjectionMatrix( tempMat );
+			frustum.setFromProjectionMatrix( tempMat, camera.coordinateSystem, camera.reversedDepth );
 
 			// get transform position in group root frame
 			position.set( 0, 0, 0 );
@@ -488,12 +568,14 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
+	}
+
+	update() {
+
 		super.update();
 
-		this.dispatchEvent( { type: 'update-after' } );
-
-		// check for cameras _after_ base update so we can enable pre-loading the root tile set
-		if ( cameras.length === 0 && this.root ) {
+		// check for cameras _after_ base update so we can enable pre-loading the root tileset
+		if ( this.cameras.length === 0 && this.root ) {
 
 			let found = false;
 			this.invokeAllPlugins( plugin => found = found || Boolean( plugin !== this && plugin.calculateTileViewError ) );
@@ -507,9 +589,9 @@ export class TilesRenderer extends TilesRendererBase {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile = null ) {
+	preprocessNode( tile, tilesetDir, parentTile = null ) {
 
-		super.preprocessNode( tile, tileSetDir, parentTile );
+		super.preprocessNode( tile, tilesetDir, parentTile );
 
 		const transform = new Matrix4();
 		if ( tile.transform ) {
@@ -525,7 +607,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		if ( parentTile ) {
 
-			transform.premultiply( parentTile.cached.transform );
+			transform.premultiply( parentTile.engineData.transform );
 
 		}
 
@@ -549,39 +631,29 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		tile.cached = {
-
-			transform,
-			transformInverse,
-
-			active: false,
-
-			boundingVolume,
-
-			metadata: null,
-			scene: null,
-			geometry: null,
-			materials: null,
-			textures: null,
-
-		};
+		// Extend the base engineData structure with Three.js-specific fields
+		// Base class initializes: scene, metadata, boundingVolume
+		tile.engineData.transform = transform;
+		tile.engineData.transformInverse = transformInverse;
+		tile.engineData.boundingVolume = boundingVolume;
+		tile.engineData.geometry = null;
+		tile.engineData.materials = null;
+		tile.engineData.textures = null;
 
 	}
 
 	async parseTile( buffer, tile, extension, uri, abortSignal ) {
 
-		const cached = tile.cached;
-		const uriSplits = uri.split( /[\\/]/g );
-		uriSplits.pop();
-		const workingPath = uriSplits.join( '/' );
+		const engineData = tile.engineData;
+		const workingPath = LoaderUtils.getWorkingPath( uri );
 		const fetchOptions = this.fetchOptions;
 
 		const manager = this.manager;
 		let promise = null;
 
-		const cachedTransform = cached.transform;
+		const tileTransform = engineData.transform;
 		const upRotationMatrix = this._upRotationMatrix;
-		const fileType = ( readMagicBytes( buffer ) || extension ).toLowerCase();
+		const fileType = ( LoaderUtils.readMagicBytes( buffer ) || extension ).toLowerCase();
 		switch ( fileType ) {
 
 			case 'b3dm': {
@@ -716,7 +788,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 		// ensure the matrix is up to date in case the scene has a transform applied
 		scene.updateMatrix();
-		scene.matrix.premultiply( cachedTransform );
+		scene.matrix.premultiply( tileTransform );
 		scene.matrix.decompose( scene.position, scene.quaternion, scene.scale );
 
 		// wait for extra processing by plugins if needed
@@ -790,31 +862,32 @@ export class TilesRenderer extends TilesRendererBase {
 
 		}
 
-		cached.materials = materials;
-		cached.geometry = geometry;
-		cached.textures = textures;
-		cached.scene = scene;
-		cached.metadata = metadata;
+		engineData.materials = materials;
+		engineData.geometry = geometry;
+		engineData.textures = textures;
+		engineData.scene = scene;
+		engineData.metadata = metadata;
 
 	}
 
 	disposeTile( tile ) {
 
+		// TODO: call this "disposeTileModel"?
 		super.disposeTile( tile );
 
 		// This could get called before the tile has finished downloading
-		const cached = tile.cached;
-		if ( cached.scene ) {
+		const engineData = tile.engineData;
+		if ( engineData.scene ) {
 
-			const materials = cached.materials;
-			const geometry = cached.geometry;
-			const textures = cached.textures;
-			const parent = cached.scene.parent;
+			const materials = engineData.materials;
+			const geometry = engineData.geometry;
+			const textures = engineData.textures;
+			const parent = engineData.scene.parent;
 
 			// dispose of any textures required by the mesh features extension
 			// TODO: these are being discarded here to remove the image bitmaps -
 			// can this be handled in another way? Or more generically?
-			cached.scene.traverse( child => {
+			engineData.scene.traverse( child => {
 
 				if ( child.userData.meshFeatures ) {
 
@@ -858,21 +931,15 @@ export class TilesRenderer extends TilesRendererBase {
 
 			if ( parent ) {
 
-				parent.remove( cached.scene );
+				parent.remove( engineData.scene );
 
 			}
 
-			this.dispatchEvent( {
-				type: 'dispose-model',
-				scene: cached.scene,
-				tile,
-			} );
-
-			cached.scene = null;
-			cached.materials = null;
-			cached.textures = null;
-			cached.geometry = null;
-			cached.metadata = null;
+			engineData.scene = null;
+			engineData.materials = null;
+			engineData.textures = null;
+			engineData.geometry = null;
+			engineData.metadata = null;
 
 		}
 
@@ -880,7 +947,7 @@ export class TilesRenderer extends TilesRendererBase {
 
 	setTileVisible( tile, visible ) {
 
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const group = this.group;
 
 		if ( visible ) {
@@ -904,13 +971,6 @@ export class TilesRenderer extends TilesRendererBase {
 
 		super.setTileVisible( tile, visible );
 
-		this.dispatchEvent( {
-			type: 'tile-visibility-change',
-			scene,
-			tile,
-			visible,
-		} );
-
 	}
 
 	calculateBytesUsed( tile, scene ) {
@@ -928,16 +988,16 @@ export class TilesRenderer extends TilesRendererBase {
 
 	calculateTileViewError( tile, target ) {
 
-		const cached = tile.cached;
+		const engineData = tile.engineData;
 		const cameras = this.cameras;
 		const cameraInfo = this.cameraInfo;
-		const boundingVolume = cached.boundingVolume;
+		const boundingVolume = engineData.boundingVolume;
 
 		let inView = false;
-		let inViewError = - Infinity;
+		let inViewError = 0;
 		let inViewDistance = Infinity;
-		let maxError = - Infinity;
-		let minDistance = Infinity;
+		let maxCameraError = 0;
+		let minCameraDistance = Infinity;
 
 		for ( let i = 0, l = cameras.length; i < l; i ++ ) {
 
@@ -972,42 +1032,24 @@ export class TilesRenderer extends TilesRendererBase {
 
 			}
 
-			maxError = Math.max( maxError, error );
-			minDistance = Math.min( minDistance, distance );
+			maxCameraError = Math.max( maxCameraError, error );
+			minCameraDistance = Math.min( minCameraDistance, distance );
 
 		}
 
-		// check the plugin visibility
-		this.invokeAllPlugins( plugin => {
-
-			if ( plugin !== this && plugin.calculateTileViewError ) {
-
-				plugin.calculateTileViewError( tile, viewErrorTarget );
-				if ( viewErrorTarget.inView ) {
-
-					inView = true;
-					inViewError = Math.max( inViewError, viewErrorTarget.error );
-
-				}
-
-				maxError = Math.max( maxError, viewErrorTarget.error );
-
-			}
-
-		} );
-
-		// If the tiles are out of view then use the global distance and error calculated
 		if ( inView ) {
 
+			// write the in-camera error and distance parameters
 			target.inView = true;
 			target.error = inViewError;
 			target.distanceFromCamera = inViewDistance;
 
 		} else {
 
+			// otherwise write variables for load priority
 			target.inView = false;
-			target.error = maxError;
-			target.distanceFromCamera = minDistance;
+			target.error = maxCameraError;
+			target.distanceFromCamera = minCameraDistance;
 
 		}
 

@@ -1,7 +1,5 @@
 import { MeshFeatures } from './metadata/classes/MeshFeatures.js';
 
-// https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features
-
 const EXT_NAME = 'EXT_mesh_features';
 
 function forEachPrimitiveExtension( scene, parser, callback ) {
@@ -27,6 +25,13 @@ function forEachPrimitiveExtension( scene, parser, callback ) {
 
 }
 
+/**
+ * GLTF loader plugin that parses the {@link https://github.com/CesiumGS/glTF/tree/3d-tiles-next/extensions/2.0/Vendor/EXT_mesh_features EXT_mesh_features}
+ * extension and attaches a `MeshFeatures` instance to `mesh.userData.meshFeatures` on
+ * each primitive. Register with a `GLTFLoader` via
+ * `loader.register( () => new GLTFMeshFeaturesExtension() )`.
+ * @param {Object} parser The GLTF parser instance provided by the loader.
+ */
 export class GLTFMeshFeaturesExtension {
 
 	constructor( parser ) {

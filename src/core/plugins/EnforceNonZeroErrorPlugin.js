@@ -1,3 +1,8 @@
+/**
+ * Plugin that ensures every tile has a non-zero geometric error. Tiles with a geometric
+ * error of zero are assigned a derived value based on the nearest ancestor with a non-zero
+ * error, halved once per level of depth below that ancestor.
+ */
 export class EnforceNonZeroErrorPlugin {
 
 	constructor() {
@@ -16,28 +21,17 @@ export class EnforceNonZeroErrorPlugin {
 
 			let parent = tile.parent;
 			let depth = 1;
-
-			let targetDepth = - 1;
-			let targetError = Infinity;
 			while ( parent !== null ) {
 
-				if ( parent.geometricError !== 0 && parent.geometricError < targetError ) {
+				if ( parent.geometricError !== 0 ) {
 
-					targetError = parent.geometricError;
-					targetDepth = depth;
+					tile.geometricError = parent.geometricError * ( 2 ** - depth );
+					break;
 
 				}
 
 				parent = parent.parent;
 				depth ++;
-
-			}
-
-			// find the smallest error in the parent list to avoid grabbing artificially inflated error values
-			// for the sake of forced refinement. Then scale the error by the depth.
-			if ( targetDepth !== - 1 ) {
-
-				tile.geometricError = targetError * ( 2 ** - depth );
 
 			}
 

@@ -1,5 +1,10 @@
 import { SUBTREELoader } from './SUBTREELoader.js';
 
+/**
+ * Plugin that adds support for 3D Tiles 1.1 implicit tiling. Intercepts tiles that carry
+ * an `implicitTiling` field and expands them by loading and parsing `.subtree` files,
+ * generating child tiles according to the implicit subdivision scheme.
+ */
 export class ImplicitTilingPlugin {
 
 	constructor() {
@@ -14,28 +19,32 @@ export class ImplicitTilingPlugin {
 
 	}
 
-	preprocessNode( tile, tileSetDir, parentTile ) {
+	preprocessNode( tile, tilesetDir, parentTile ) {
 
 		if ( tile.implicitTiling ) {
 
-			tile.__hasUnrenderableContent = true;
-			tile.__hasRenderableContent = false;
+			tile.internal.hasUnrenderableContent = true;
+			tile.internal.hasRenderableContent = false;
 
-			// Declare some properties
-			tile.__subtreeIdx = 0;	// Idx of the tile in its subtree
-			tile.__implicitRoot = tile;	// Keep this tile as an Implicit Root Tile
+			tile.implicitTilingData = {
+				// Keep this tile as an Implicit Root Tile
+				root: tile,
 
-			// Coords of the tile
-			tile.__x = 0;
-			tile.__y = 0;
-			tile.__z = 0;
-			tile.__level = 0;
+				// Idx of the tile in its subtree
+				subtreeIdx: 0,
+
+				// Coords of the tile
+				x: 0,
+				y: 0,
+				z: 0,
+				level: 0,
+			};
 
 		} else if ( /.subtree$/i.test( tile.content?.uri ) ) {
 
 			// Handling content uri pointing to a subtree file
-			tile.__hasUnrenderableContent = true;
-			tile.__hasRenderableContent = false;
+			tile.internal.hasUnrenderableContent = true;
+			tile.internal.hasRenderableContent = false;
 
 		}
 
@@ -46,7 +55,7 @@ export class ImplicitTilingPlugin {
 		if ( /^subtree$/i.test( extension ) ) {
 
 			const loader = new SUBTREELoader( tile );
-			loader.workingPath = tile.__basePath;
+			loader.workingPath = tile.internal.basePath;
 			loader.fetchOptions = this.tiles.fetchOptions;
 			return loader.parse( buffer );
 
@@ -59,12 +68,12 @@ export class ImplicitTilingPlugin {
 		if ( tile && tile.implicitTiling ) {
 
 			const implicitUri = tile.implicitTiling.subtrees.uri
-				.replace( '{level}', tile.__level )
-				.replace( '{x}', tile.__x )
-				.replace( '{y}', tile.__y )
-				.replace( '{z}', tile.__z );
+				.replace( '{level}', tile.implicitTilingData.level )
+				.replace( '{x}', tile.implicitTilingData.x )
+				.replace( '{y}', tile.implicitTilingData.y )
+				.replace( '{z}', tile.implicitTilingData.z );
 
-			return new URL( implicitUri, tile.__basePath + '/' ).toString();
+			return new URL( implicitUri, tile.internal.basePath + '/' ).toString();
 
 		}
 
@@ -84,7 +93,6 @@ export class ImplicitTilingPlugin {
 
 			} );
 			tile.children.length = 0;
-			tile.__childrenProcessed = 0;
 
 		}
 

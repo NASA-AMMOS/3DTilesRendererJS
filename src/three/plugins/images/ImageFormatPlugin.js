@@ -6,7 +6,15 @@ export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
 export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
-// Base class for supporting tiled images with a consistent size / resolution per tile
+/**
+ * Base plugin class for tiled image sources with a consistent size and resolution per
+ * tile. Subclasses provide a concrete `imageSource` and override `getUrl` and
+ * `createBoundingVolume` as needed.
+ * @param {Object} [options]
+ * @param {Object} [options.imageSource=null] Image source that provides tiling metadata and URL generation.
+ * @param {boolean} [options.center=false] Shift tiles so the image is centered at the origin.
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended `TilesRenderer` settings (e.g. `errorTarget = 1`).
+ */
 export class ImageFormatPlugin {
 
 	get tiling() {
@@ -65,7 +73,7 @@ export class ImageFormatPlugin {
 
 	}
 
-	async loadRootTileSet() {
+	async loadRootTileset() {
 
 		const { tiles, imageSource } = this;
 		imageSource.url = imageSource.url || tiles.rootURL;
@@ -134,21 +142,15 @@ export class ImageFormatPlugin {
 
 		}
 
-		return mesh;
-
-	}
-
-	preprocessNode( tile ) {
-
-		// generate children
-		const { tiling } = this;
-		const maxLevel = tiling.maxLevel;
-		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel && tile.parent !== null ) {
+		// Only expose descendants while the tile content is resident so unload can clear the
+		// branch and a later reload will recreate it symmetrically.
+		if ( level < tiling.maxLevel && tile.children.length === 0 ) {
 
 			this.expandChildren( tile );
 
 		}
+
+		return mesh;
 
 	}
 
@@ -164,6 +166,14 @@ export class ImageFormatPlugin {
 			imageSource.release( tx, ty, level );
 
 		}
+
+
+		tile.children.forEach( child => {
+
+			this.tiles.processNodeQueue.remove( child );
+
+		} );
+		tile.children.length = 0;
 
 	}
 
@@ -191,15 +201,15 @@ export class ImageFormatPlugin {
 
 		}
 
-		// generate tile set
+		// generate tileset
 		const tileset = {
 			asset: {
 				version: '1.1'
 			},
-			geometricError: 1e5,
+			geometricError: Infinity,
 			root: {
 				refine: 'REPLACE',
-				geometricError: 1e5,
+				geometricError: Infinity,
 				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
 				children,
 
@@ -209,7 +219,7 @@ export class ImageFormatPlugin {
 			}
 		};
 
-		tiles.preprocessTileSet( tileset, baseUrl );
+		tiles.preprocessTileset( tileset, baseUrl );
 
 		return tileset;
 
@@ -255,7 +265,6 @@ export class ImageFormatPlugin {
 
 		}
 
-
 		// return bounding box
 		return {
 			box: [
@@ -280,13 +289,16 @@ export class ImageFormatPlugin {
 
 		}
 
-		// the scale ration of the image at this level
-		const { pixelWidth, pixelHeight } = tiling.getLevel( tiling.maxLevel );
-		const { pixelWidth: levelWidth, pixelHeight: levelHeight } = tiling.getLevel( level );
-		let geometricError = Math.max( 1 / levelWidth, 1 / levelHeight );
+		// Calculate geometric error: size of one pixel in world space.
+		// The tile contents span [0, 1] along Y and [0, aspectRatio] along X.
+		const { pixelWidth, pixelHeight } = tiling.getLevel( level );
+		let geometricError = Math.max( tiling.aspectRatio / pixelWidth, 1 / pixelHeight );
+
+		// apply deprecated pixelSize scaling if specified
 		if ( pixelSize ) {
 
-			geometricError *= pixelSize * Math.max( pixelWidth, pixelHeight );
+			const maxLevelInfo = tiling.getLevel( tiling.maxLevel );
+			geometricError *= pixelSize * Math.max( maxLevelInfo.pixelWidth, maxLevelInfo.pixelHeight );
 
 		}
 
@@ -314,11 +326,12 @@ export class ImageFormatPlugin {
 		const x = tile[ TILE_X ];
 		const y = tile[ TILE_Y ];
 
-		for ( let cx = 0; cx < 2; cx ++ ) {
+		const { tileSplitX, tileSplitY } = this.tiling.getLevel( level );
+		for ( let cx = 0; cx < tileSplitX; cx ++ ) {
 
-			for ( let cy = 0; cy < 2; cy ++ ) {
+			for ( let cy = 0; cy < tileSplitY; cy ++ ) {
 
-				const child = this.createChild( 2 * x + cx, 2 * y + cy, level + 1 );
+				const child = this.createChild( tileSplitX * x + cx, tileSplitY * y + cy, level + 1 );
 				if ( child ) {
 
 					tile.children.push( child );

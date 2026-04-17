@@ -1,6 +1,8 @@
-import { I3DMLoaderBase } from '../../../core/renderer/loaders/I3DMLoaderBase.js';
+/** @import { LoadingManager, Group } from 'three' */
+/** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
+import { I3DMLoaderBase } from '3d-tiles-renderer/core';
 import { DefaultLoadingManager, Matrix4, InstancedMesh, Vector3, Quaternion } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { WGS84_ELLIPSOID } from '../math/GeoConstants.js';
 
 const tempFwd = /* @__PURE__ */ new Vector3();
@@ -17,6 +19,39 @@ const tempEnuFrame = /* @__PURE__ */ new Matrix4();
 const tempLocalQuat = /* @__PURE__ */ new Quaternion();
 const tempLatLon = {};
 
+// Oct-encoding helper functions
+// Decode oct-encoded normal from unsigned [0, rangeMax] to normalized vector
+// Based on CesiumJS's AttributeCompression.octDecodeInRange
+function octDecodeInRange( x, y, rangeMax, result ) {
+
+	// Map from unsigned [0, rangeMax] to signed normalized [-1.0, 1.0]
+	x = ( x / rangeMax ) * 2.0 - 1.0;
+	y = ( y / rangeMax ) * 2.0 - 1.0;
+
+	result.x = x;
+	result.y = y;
+	result.z = 1.0 - Math.abs( x ) - Math.abs( y );
+
+	if ( result.z < 0.0 ) {
+
+		const oldX = result.x;
+		result.x = ( 1.0 - Math.abs( result.y ) ) * ( oldX >= 0.0 ? 1.0 : - 1.0 );
+		result.y = ( 1.0 - Math.abs( oldX ) ) * ( result.y >= 0.0 ? 1.0 : - 1.0 );
+
+	}
+
+	result.normalize();
+	return result;
+
+}
+
+/**
+ * Loader for the legacy 3D Tiles Instanced 3D Model (i3dm) format. Parses the i3dm
+ * container and returns instanced meshes with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @extends I3DMLoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class I3DMLoader extends I3DMLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -34,6 +69,13 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 	}
 
+	/**
+	 * Parses an i3dm buffer and resolves to a GLTF result object where the scene's
+	 * meshes have been replaced with `InstancedMesh` objects (one per GLTF mesh), with
+	 * metadata attached to both `model` and `model.scene`.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Group, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		return super
@@ -79,29 +121,33 @@ export class I3DMLoader extends I3DMLoaderBase {
 					loader.parse( gltfBuffer, workingPath, model => {
 
 						const INSTANCES_LENGTH = featureTable.getData( 'INSTANCES_LENGTH' );
-						const POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						let POSITION = featureTable.getData( 'POSITION', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const POSITION_QUANTIZED = featureTable.getData( 'POSITION_QUANTIZED', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC3' );
+						const QUANTIZED_VOLUME_OFFSET = featureTable.getData( 'QUANTIZED_VOLUME_OFFSET', 1, 'FLOAT', 'VEC3' );
+						const QUANTIZED_VOLUME_SCALE = featureTable.getData( 'QUANTIZED_VOLUME_SCALE', 1, 'FLOAT', 'VEC3' );
 						const NORMAL_UP = featureTable.getData( 'NORMAL_UP', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const NORMAL_RIGHT = featureTable.getData( 'NORMAL_RIGHT', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
+						const NORMAL_UP_OCT32P = featureTable.getData( 'NORMAL_UP_OCT32P', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC2' );
+						const NORMAL_RIGHT_OCT32P = featureTable.getData( 'NORMAL_RIGHT_OCT32P', INSTANCES_LENGTH, 'UNSIGNED_SHORT', 'VEC2' );
 						const SCALE_NON_UNIFORM = featureTable.getData( 'SCALE_NON_UNIFORM', INSTANCES_LENGTH, 'FLOAT', 'VEC3' );
 						const SCALE = featureTable.getData( 'SCALE', INSTANCES_LENGTH, 'FLOAT', 'SCALAR' );
 						const RTC_CENTER = featureTable.getData( 'RTC_CENTER', 1, 'FLOAT', 'VEC3' );
 						const EAST_NORTH_UP = featureTable.getData( 'EAST_NORTH_UP' );
 
-						[
-							'QUANTIZED_VOLUME_OFFSET',
-							'QUANTIZED_VOLUME_SCALE',
-							'POSITION_QUANTIZED',
-							'NORMAL_UP_OCT32P',
-							'NORMAL_RIGHT_OCT32P',
-						].forEach( feature => {
+						// use quantized position if position is missing
+						if ( ! POSITION && POSITION_QUANTIZED ) {
 
-							if ( feature in featureTable.header ) {
+							POSITION = new Float32Array( INSTANCES_LENGTH * 3 );
 
-								console.warn( `I3DMLoader: Unsupported FeatureTable feature "${ feature }" detected.` );
+							for ( let i = 0; i < INSTANCES_LENGTH; i ++ ) {
+
+								POSITION[ i * 3 + 0 ] = QUANTIZED_VOLUME_OFFSET[ 0 ] + ( POSITION_QUANTIZED[ i * 3 + 0 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 0 ];
+								POSITION[ i * 3 + 1 ] = QUANTIZED_VOLUME_OFFSET[ 1 ] + ( POSITION_QUANTIZED[ i * 3 + 1 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 1 ];
+								POSITION[ i * 3 + 2 ] = QUANTIZED_VOLUME_OFFSET[ 2 ] + ( POSITION_QUANTIZED[ i * 3 + 2 ] / 65535.0 ) * QUANTIZED_VOLUME_SCALE[ 2 ];
 
 							}
 
-						} );
+						}
 
 						// get the average vector center so we can avoid floating point error due to lower
 						// precision transformation calculations on the GPU
@@ -158,7 +204,9 @@ export class I3DMLoader extends I3DMLoaderBase {
 
 							// account for EAST_NORTH_UP per-instance below
 
-							if ( NORMAL_UP ) {
+							// Use NORMAL_UP and NORMAL_RIGHT if available (higher precision)
+							// Otherwise fall back to oct-encoded normals
+							if ( NORMAL_UP && NORMAL_RIGHT ) {
 
 								tempUp.set(
 									NORMAL_UP[ i * 3 + 0 ],
@@ -170,6 +218,34 @@ export class I3DMLoader extends I3DMLoaderBase {
 									NORMAL_RIGHT[ i * 3 + 0 ],
 									NORMAL_RIGHT[ i * 3 + 1 ],
 									NORMAL_RIGHT[ i * 3 + 2 ],
+								);
+
+								tempFwd.crossVectors( tempRight, tempUp )
+									.normalize();
+
+								tempMat.makeBasis(
+									tempRight,
+									tempUp,
+									tempFwd,
+								);
+
+								tempQuat.setFromRotationMatrix( tempMat );
+
+							} else if ( NORMAL_UP_OCT32P && NORMAL_RIGHT_OCT32P ) {
+
+								// Decode oct-encoded normals
+								octDecodeInRange(
+									NORMAL_UP_OCT32P[ i * 2 + 0 ],
+									NORMAL_UP_OCT32P[ i * 2 + 1 ],
+									65535,
+									tempUp
+								);
+
+								octDecodeInRange(
+									NORMAL_RIGHT_OCT32P[ i * 2 + 0 ],
+									NORMAL_RIGHT_OCT32P[ i * 2 + 1 ],
+									65535,
+									tempRight
 								);
 
 								tempFwd.crossVectors( tempRight, tempUp )

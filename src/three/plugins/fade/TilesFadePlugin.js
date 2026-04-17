@@ -4,11 +4,11 @@ import { FadeMaterialManager } from './FadeMaterialManager.js';
 import { FadeBatchedMesh } from './FadeBatchedMesh.js';
 
 const HAS_POPPED_IN = Symbol( 'HAS_POPPED_IN' );
-const _fromPos = new Vector3();
-const _toPos = new Vector3();
-const _fromQuat = new Quaternion();
-const _toQuat = new Quaternion();
-const _scale = new Vector3();
+const _fromPos = /* @__PURE__ */ new Vector3();
+const _toPos = /* @__PURE__ */ new Vector3();
+const _fromQuat = /* @__PURE__ */ new Quaternion();
+const _toQuat = /* @__PURE__ */ new Quaternion();
+const _scale = /* @__PURE__ */ new Vector3();
 
 function onUpdateBefore() {
 
@@ -59,17 +59,17 @@ function onUpdateAfter() {
 
 			// if a tile is fading out then it may not be traversed and thus will not have
 			// the frustum flag set correctly.
-			const scene = t.cached.scene;
+			const scene = t.engineData.scene;
 			if ( scene ) {
 
-				scene.visible = t.__inFrustum;
+				scene.visible = t.traversal.inFrustum;
 
 			}
 
 			this.forEachBatchIds( t, ( id, batchedMesh, plugin ) => {
 
-				batchedMesh.setVisibleAt( id, t.__inFrustum );
-				plugin.batchedMesh.setVisibleAt( id, t.__inFrustum );
+				batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
+				plugin.batchedMesh.setVisibleAt( id, t.traversal.inFrustum );
 
 			} );
 
@@ -124,7 +124,7 @@ function onUpdateAfter() {
 	fadeManager.forEachObject( ( tile, { fadeIn, fadeOut } ) => {
 
 		// prevent faded tiles from being unloaded
-		const scene = tile.cached.scene;
+		const scene = tile.engineData.scene;
 		const isFadingOut = fadeManager.isFadingOut( tile );
 		tiles.markTileUsed( tile );
 		if ( scene ) {
@@ -159,6 +159,16 @@ function onUpdateAfter() {
 
 }
 
+/**
+ * Plugin that overrides material shaders to fade tile geometry in and out as tile LODs
+ * change, preventing pop-in. Dispatches `fade-change`, `fade-start`, and `fade-end`
+ * events on the `TilesRenderer` during animation — use these when doing on-demand
+ * rendering. Works alongside `BatchedTilesPlugin` when present.
+ * @param {Object} [options]
+ * @param {number} [options.fadeDuration=250] Time in milliseconds for a tile to fully fade in or out.
+ * @param {number} [options.maximumFadeOutTiles=50] Maximum simultaneous fade-out tiles. If exceeded, tiles pop instead of fading.
+ * @param {boolean} [options.fadeRootTiles=false] Whether root-level tiles fade in on their first appearance.
+ */
 export class TilesFadePlugin {
 
 	get fadeDuration() {
@@ -216,6 +226,7 @@ export class TilesFadePlugin {
 			this._fadeMaterialManager.prepareScene( scene );
 
 		};
+
 		this._onDisposeModel = ( { tile, scene } ) => {
 
 			if ( this.tiles.visibleTiles.has( tile ) ) {
@@ -231,24 +242,27 @@ export class TilesFadePlugin {
 			this._fadeMaterialManager.deleteScene( scene );
 
 		};
+
 		this._onAddCamera = ( { camera } ) => {
 
 			// track the camera transform
 			this._prevCameraTransforms.set( camera, new Matrix4() );
 
 		};
+
 		this._onDeleteCamera = ( { camera } )=> {
 
 			// remove the camera transform
 			this._prevCameraTransforms.delete( camera );
 
 		};
+
 		this._onTileVisibilityChange = ( { tile, visible } ) => {
 
 			// this function gets fired _after_ all set visible callbacks including the batched meshes
 
 			// revert the scene and fade to the initial state when toggling
-			const scene = tile.cached.scene;
+			const scene = tile.engineData.scene;
 			if ( scene ) {
 
 				scene.visible = true;
@@ -264,11 +278,13 @@ export class TilesFadePlugin {
 			} );
 
 		};
+
 		this._onUpdateBefore = () => {
 
 			onUpdateBefore.call( this );
 
 		};
+
 		this._onUpdateAfter = () => {
 
 			onUpdateAfter.call( this );
@@ -302,7 +318,7 @@ export class TilesFadePlugin {
 		fadeManager.onFadeComplete = ( tile, visible ) => {
 
 			// mark the fade as finished and reset the fade parameters
-			this._fadeMaterialManager.setFade( tile.cached.scene, 0, 0 );
+			this._fadeMaterialManager.setFade( tile.engineData.scene, 0, 0 );
 
 			this.forEachBatchIds( tile, ( id, batchedMesh, plugin ) => {
 
@@ -403,7 +419,7 @@ export class TilesFadePlugin {
 
 			// if this is a root renderable tile and this is the first time rendering in
 			// then pop it in
-			const isRootRenderableTile = tile.__depthFromRenderedParent === 1;
+			const isRootRenderableTile = tile.internal.depthFromRenderedParent === 1;
 			if ( isRootRenderableTile ) {
 
 				if ( tile[ HAS_POPPED_IN ] || this.fadeRootTiles ) {

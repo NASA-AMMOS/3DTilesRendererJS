@@ -1,4 +1,6 @@
-export class BatchTable {
+import { FeatureTable } from './FeatureTable.js';
+
+export class BatchTable extends FeatureTable {
 
 	count : number;
 

@@ -1,3 +1,4 @@
+/** @import { Object3D, Camera } from 'three' */
 import {
 	Matrix4,
 	Quaternion,
@@ -7,12 +8,11 @@ import {
 	Plane,
 	EventDispatcher,
 	MathUtils,
-	Clock,
 	Ray,
 } from 'three';
 import { PivotPointMesh } from './PivotPointMesh.js';
 import { PointerTracker } from './PointerTracker.js';
-import { mouseToCoords, makeRotateAroundPoint, setRaycasterFromCamera } from './utils.js';
+import { adjustedPointerToCoords, makeRotateAroundPoint, setRaycasterFromCamera } from './utils.js';
 
 export const NONE = 0;
 export const DRAG = 1;
@@ -52,8 +52,21 @@ const _changeEvent = { type: 'change' };
 const _startEvent = { type: 'start' };
 const _endEvent = { type: 'end' };
 
+/**
+ * Camera controls for exploring a 3D environment. Supports drag-to-pan, scroll-to-zoom,
+ * right-click-to-rotate, and optional damping/inertia. Works with any Three.js scene.
+ * @extends EventDispatcher
+ * @param {Object3D} [scene=null] - The scene to raycast against for surface interaction.
+ * @param {Camera} [camera=null] - The camera to control.
+ * @param {HTMLElement} [domElement=null] - The DOM element to attach pointer events to.
+ */
 export class EnvironmentControls extends EventDispatcher {
 
+	/**
+	 * Whether the controls are active. When set to false, all input is ignored
+	 * and inertia is cleared.
+	 * @type {boolean}
+	 */
 	get enabled() {
 
 		return this._enabled;
@@ -92,20 +105,89 @@ export class EnvironmentControls extends EventDispatcher {
 
 		// settings
 		this._enabled = true;
+
+		/**
+		 * Minimum camera distance above the surface in world units. Prevents clipping into terrain. Default is 5.
+		 * @type {number}
+		 */
 		this.cameraRadius = 5;
+
+		/**
+		 * Rotation sensitivity multiplier. Default is 1.
+		 * @type {number}
+		 */
 		this.rotationSpeed = 1;
+
+		/**
+		 * Minimum camera angle above the horizon in radians. Default is 0.
+		 * @type {number}
+		 */
 		this.minAltitude = 0;
+
+		/**
+		 * Maximum camera angle above the horizon in radians. Default is 0.45π.
+		 * @type {number}
+		 */
 		this.maxAltitude = 0.45 * Math.PI;
+
+		/**
+		 * Minimum zoom distance in world units. Default is 10.
+		 * @type {number}
+		 */
 		this.minDistance = 10;
+
+		/**
+		 * Maximum zoom distance in world units. Default is Infinity.
+		 * @type {number}
+		 */
 		this.maxDistance = Infinity;
+
+		/**
+		 * Minimum orthographic zoom level. Default is 0.
+		 * @type {number}
+		 */
 		this.minZoom = 0;
+
+		/**
+		 * Maximum orthographic zoom level. Default is Infinity.
+		 * @type {number}
+		 */
 		this.maxZoom = Infinity;
+
+		/**
+		 * Zoom sensitivity multiplier. Default is 1.
+		 * @type {number}
+		 */
 		this.zoomSpeed = 1;
+
+		/**
+		 * When true, the camera height is automatically adjusted to avoid clipping into the terrain. Default is true.
+		 * @type {boolean}
+		 */
 		this.adjustHeight = true;
+
+		/**
+		 * When true, camera movements decelerate gradually after input ends. Default is false.
+		 * @type {boolean}
+		 */
 		this.enableDamping = false;
+
+		/**
+		 * Rate of inertia decay per frame when damping is enabled. Lower values produce longer coasting. Default is 0.15.
+		 * @type {number}
+		 */
 		this.dampingFactor = 0.15;
 
+		/**
+		 * Fallback plane used for drag/zoom when no scene geometry is hit. Default is the XZ plane (y=0).
+		 * @type {Plane}
+		 */
 		this.fallbackPlane = new Plane( new Vector3( 0, 1, 0 ), 0 );
+
+		/**
+		 * When true, the fallback plane is used when raycasting misses scene geometry. Default is true.
+		 * @type {boolean}
+		 */
 		this.useFallbackPlane = true;
 
 		// settings for GlobeControls
@@ -137,6 +219,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// circular pivot mesh
 		this.pivotMesh = new PivotPointMesh();
 		this.pivotMesh.raycast = () => {};
+
 		this.pivotMesh.scale.setScalar( 0.25 );
 
 		// raycaster
@@ -144,7 +227,7 @@ export class EnvironmentControls extends EventDispatcher {
 		this.raycaster.firstHitOnly = true;
 
 		this.up = new Vector3( 0, 1, 0 );
-		this.clock = new Clock();
+		this._lastTime = performance.now();
 
 		this._detachCallback = null;
 		this._upInitialized = false;
@@ -162,12 +245,31 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	_getDeltaTime() {
+
+		// custom delta time function that increments the last time used since "Clock" has
+		// been removed from three.js.
+		const curr = performance.now();
+		const delta = curr - this._lastTime;
+		this._lastTime = curr;
+		return delta * 1e-3;
+
+	}
+
+	/**
+	 * Sets the scene to raycast against for surface-based interaction.
+	 * @param {Object3D} scene
+	 */
 	setScene( scene ) {
 
 		this.scene = scene;
 
 	}
 
+	/**
+	 * Sets the camera to control.
+	 * @param {Camera} camera
+	 */
 	setCamera( camera ) {
 
 		this.camera = camera;
@@ -193,6 +295,10 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Attaches the controls to a DOM element, registering all pointer and keyboard event listeners.
+	 * @param {HTMLElement} domElement
+	 */
 	attach( domElement ) {
 
 		if ( this.domElement ) {
@@ -270,7 +376,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// the "pointer" for zooming and rotating should be based on the center point
 			pointerTracker.getCenterPoint( _pointer );
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			adjustedPointerToCoords( _pointer, domElement, _pointer );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
 
 			// prevent the drag distance from getting too severe by limiting the drag point
@@ -294,23 +400,23 @@ export class EnvironmentControls extends EventDispatcher {
 					pointerTracker.isLeftClicked() && e.shiftKey
 				) {
 
-					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
-
 					pivotPoint.copy( hit.point );
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.visible = pointerTracker.isPointerTouch() ? false : enabled;
 					pivotMesh.updateMatrixWorld();
 					scene.add( pivotMesh );
 
+					this.setState( pointerTracker.isPointerTouch() ? WAITING : ROTATE );
+
 				} else if ( pointerTracker.isLeftClicked() ) {
 
-					// if the clicked point is coming from below the plane then don't perform the drag
-					this.setState( DRAG );
 					pivotPoint.copy( hit.point );
-
 					pivotMesh.position.copy( hit.point );
 					pivotMesh.updateMatrixWorld();
 					scene.add( pivotMesh );
+
+					// if the clicked point is coming from below the plane then don't perform the drag
+					this.setState( DRAG );
 
 				}
 
@@ -529,6 +635,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Detaches the controls from the DOM element, removing all event listeners.
+	 */
 	detach() {
 
 		this.domElement = null;
@@ -543,20 +652,33 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// override-able functions for retrieving the up direction at a point
+	/**
+	 * Returns the local up direction at a world-space point. Override to provide terrain-aware
+	 * up vectors (e.g. ellipsoid normals). Default returns the controls' `up` vector.
+	 * @param {Vector3} point - World-space point to query.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 */
 	getUpDirection( point, target ) {
 
 		target.copy( this.up );
 
 	}
 
+	/**
+	 * Returns the local up direction at the camera's current position.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 */
 	getCameraUpDirection( target ) {
 
 		this.getUpDirection( this.camera.position, target );
 
 	}
 
-	// returns the active / last used pivot point for the scene
+	/**
+	 * Returns the current drag or rotation pivot point in world space.
+	 * @param {Vector3} target - Target vector to write the result into.
+	 * @returns {Vector3|null} The target vector, or null if no pivot is active.
+	 */
 	getPivotPoint( target ) {
 
 		let result = null;
@@ -608,6 +730,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Clears the current interaction state, cancelling any active drag, rotate, or zoom.
+	 */
 	resetState() {
 
 		if ( this.state !== NONE ) {
@@ -624,6 +749,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Sets the current control state (e.g. `NONE`, `DRAG`, `ROTATE`, `ZOOM`).
+	 * @param {number} [state] - One of the exported state constants. Defaults to current state.
+	 * @param {boolean} [fireEvent=true] - Whether to dispatch `'start'` and `'end'` events.
+	 */
 	setState( state = this.state, fireEvent = true ) {
 
 		if ( this.state === state ) {
@@ -652,7 +782,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	update( deltaTime = Math.min( this.clock.getDelta(), 64 / 1000 ) ) {
+	/**
+	 * Applies pending input and inertia to the camera. Must be called each frame.
+	 * @param {number} [deltaTime] - Time in seconds since the last frame. Defaults to the clock delta, capped at 64ms.
+	 */
+	update( deltaTime = Math.min( this._getDeltaTime(), 64 / 1000 ) ) {
 
 		if ( ! this.enabled || ! this.camera || deltaTime === 0 ) {
 
@@ -772,7 +906,11 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// updates the camera to position it based on the constraints of the controls
+	/**
+	 * Adjusts the camera to satisfy altitude and distance constraints. Called automatically by `update`.
+	 * Override in subclasses to add custom camera adjustment behaviour (e.g. near/far plane updates).
+	 * @param {Camera} camera
+	 */
 	adjustCamera( camera ) {
 
 		const { adjustHeight, cameraRadius } = this;
@@ -796,6 +934,9 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
+	/**
+	 * Disposes of event listeners and internal resources. Calls `detach` if currently attached.
+	 */
 	dispose() {
 
 		this.detach();
@@ -987,7 +1128,7 @@ export class EnvironmentControls extends EventDispatcher {
 			if ( zoomIntoPoint ) {
 
 				// get the mouse position after zoom
-				mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseAfter );
+				adjustedPointerToCoords( _pointer, domElement, _mouseAfter );
 				_mouseAfter.unproject( camera );
 
 				// shift the camera on the near plane so the mouse is in the same spot
@@ -1055,7 +1196,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 		const { domElement, raycaster, camera, zoomDirection, pointerTracker } = this;
 		pointerTracker.getLatestPoint( _pointer );
-		mouseToCoords( _pointer.x, _pointer.y, domElement, _mouseBefore );
+		adjustedPointerToCoords( _pointer, domElement, _mouseBefore );
 		setRaycasterFromCamera( raycaster, _mouseBefore, camera );
 		zoomDirection.copy( raycaster.ray.direction ).normalize();
 		this.zoomDirectionSet = true;
@@ -1086,7 +1227,7 @@ export class EnvironmentControls extends EventDispatcher {
 		// If using an orthographic camera we have to account for the mouse position when picking the point
 		if ( camera.isOrthographicCamera && pointerTracker.getLatestPoint( _zoomPointPointer ) ) {
 
-			mouseToCoords( _zoomPointPointer.x, _zoomPointPointer.y, domElement, _zoomPointPointer );
+			adjustedPointerToCoords( _zoomPointPointer, domElement, _zoomPointPointer );
 			setRaycasterFromCamera( raycaster, _zoomPointPointer, camera );
 
 		} else {
@@ -1151,7 +1292,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 			// get the pointer and plane
 			pointerTracker.getCenterPoint( _pointer );
-			mouseToCoords( _pointer.x, _pointer.y, domElement, _pointer );
+			adjustedPointerToCoords( _pointer, domElement, _pointer );
 
 			_plane.setFromNormalAndCoplanarPoint( up, pivotPoint );
 			setRaycasterFromCamera( raycaster, _pointer, camera );
@@ -1326,7 +1467,7 @@ export class EnvironmentControls extends EventDispatcher {
 
 	}
 
-	// sets the "up" axis for the current surface of the tile set
+	// sets the "up" axis for the current surface of the tileset
 	_setFrame( newUp ) {
 
 		const {

@@ -20,7 +20,7 @@ import {
 	TilesFadePlugin,
 	GLTFExtensionsPlugin,
 } from '3d-tiles-renderer/plugins';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // R3F, DREI and LEVA imports
 import { Canvas, useFrame } from '@react-three/fiber';

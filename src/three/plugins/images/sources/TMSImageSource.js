@@ -6,9 +6,12 @@ export class TMSImageSource extends TiledImageSource {
 
 	constructor( options = {} ) {
 
-		const { url = null } = options;
+		const {
+			url = null,
+			...rest
+		} = options;
 
-		super();
+		super( rest );
 
 		this.tileSets = null;
 		this.extension = null;
@@ -40,7 +43,7 @@ export class TMSImageSource extends TiledImageSource {
 				const tileFormat = xml.querySelector( 'TileFormat' );
 				const tileSets = xml.querySelector( 'TileSets' ).querySelectorAll( 'TileSet' );
 
-				// tile set definitions
+				// tileset definitions
 				const tileSetList = [ ...tileSets ]
 					.map( ts => ( {
 						href: parseInt( ts.getAttribute( 'href' ) ),

@@ -1,8 +1,8 @@
+/** @import { ReactNode } from 'react' */
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { BackSide, Matrix4, OrthographicCamera, Ray, Scene, Vector3 } from 'three';
-import { TilesRendererContext } from './TilesRenderer.jsx';
-import { closestRayEllipsoidSurfacePointEstimate } from '../../three/renderer/controls/utils.js';
+import { EllipsoidContext } from './TilesRenderer.jsx';
 
 // Based in part on @pmndrs/drei's Gizmo component
 
@@ -24,7 +24,7 @@ function getCameraFocusPoint( camera, ellipsoid, tilesGroup, target ) {
 	_ray.applyMatrix4( tilesGroup.matrixWorldInverse );
 
 	// get the closest point to the ray on the globe in the global coordinate frame
-	closestRayEllipsoidSurfacePointEstimate( _ray, ellipsoid, _pos );
+	ellipsoid.closestPointToRayEstimate( _ray, _pos );
 	_pos.applyMatrix4( tilesGroup.matrixWorld );
 
 	// get ortho camera info
@@ -150,10 +150,23 @@ function CompassGraphic( { northColor = 0xEF5350, southColor = 0xFFFFFF } ) {
 
 }
 
+/**
+ * Renders a compass overlay that rotates to indicate north based on the camera orientation relative
+ * to the tileset ellipsoid. Must be a child of TilesRenderer. Remaining props are passed to the
+ * root group element.
+ * @component
+ * @param {Object} props
+ * @param {string} [props.mode='3d'] - Rotation mode: `'3d'` tracks full camera orientation, `'2d'` tracks yaw only.
+ * @param {number} [props.scale=35] - Size of the compass in pixels.
+ * @param {number|Array} [props.margin=10] - Margin from the bottom-right corner in pixels. Pass `[x, y]` to set each axis independently.
+ * @param {boolean} [props.visible=true] - Whether the compass is rendered.
+ * @param {boolean} [props.overrideRenderLoop] - If true, renders the main scene before drawing the compass overlay.
+ * @param {ReactNode} [props.children] - Custom compass graphic replacing the default. Should fit within a -0.5 to 0.5 unit cube with +Y pointing north and +X pointing east.
+ */
 export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margin = 10, scale = 35, visible = true, ...rest } ) {
 
 	const [ defaultCamera, defaultScene, size ] = useThree( state => [ state.camera, state.scene, state.size ] );
-	const tiles = useContext( TilesRendererContext );
+	const ellipsoidContext = useContext( EllipsoidContext );
 	const groupRef = useRef( null );
 	const scene = useMemo( () => {
 
@@ -176,22 +189,24 @@ export function CompassGizmo( { children, overrideRenderLoop, mode = '3d', margi
 
 	useFrame( () => {
 
-		if ( tiles === null || groupRef.current === null ) {
+		const ellipsoid = ellipsoidContext?.ellipsoid;
+		const frame = ellipsoidContext?.frame;
+
+		if ( ( ! ellipsoid || ! frame ) || groupRef.current === null ) {
 
 			return null;
 
 		}
 
-		const { ellipsoid } = tiles;
 		const group = groupRef.current;
 
 		// get the ENU frame in world space
-		getCameraFocusPoint( defaultCamera, ellipsoid, tiles.group, _pos ).applyMatrix4( tiles.group.matrixWorldInverse );
+		getCameraFocusPoint( defaultCamera, ellipsoid, frame, _pos ).applyMatrix4( frame.matrixWorldInverse );
 		ellipsoid.getPositionToCartographic( _pos, _cart );
 
 		ellipsoid
 			.getEastNorthUpFrame( _cart.lat, _cart.lon, 0, _enuMatrix )
-			.premultiply( tiles.group.matrixWorld );
+			.premultiply( frame.matrixWorld );
 
 		// get the camera orientation in the local ENU frame
 		_enuMatrix.invert();

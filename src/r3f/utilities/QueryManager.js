@@ -8,7 +8,8 @@ import {
 	Vector2,
 } from 'three';
 import { SceneObserver } from './SceneObserver.js';
-import { Ellipsoid } from '../../three/renderer/math/Ellipsoid.js';
+import { Ellipsoid } from '3d-tiles-renderer/three';
+import { Scheduler } from '../../core/renderer/utilities/Scheduler.js';
 
 const _raycaster = /* @__PURE__ */ new Raycaster();
 const _line0 = /* @__PURE__ */ new Line3();
@@ -201,7 +202,7 @@ export class QueryManager extends EventDispatcher {
 		if ( this.autoRun && ! this.scheduled ) {
 
 			this.scheduled = true;
-			requestAnimationFrame( () => {
+			Scheduler.requestAnimationFrame( () => {
 
 				this.scheduled = false;
 				this._runJobs();
@@ -427,7 +428,7 @@ const closestPointLineToLine = ( function () {
 
 		}
 
-		d2 = ( d0232 + d * d3210 ) / d3232; // eslint-disable-line
+		d2 = ( d0232 + d * d3210 ) / d3232;
 
 		result.x = d;
 		result.y = d2;

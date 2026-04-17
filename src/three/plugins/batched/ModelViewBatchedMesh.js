@@ -1,8 +1,8 @@
 import { BatchedMesh, Matrix4, Vector3, Source } from 'three';
 
-const matrix = new Matrix4();
-const vec1 = new Vector3();
-const vec2 = new Vector3();
+const matrix = /* @__PURE__ */ new Matrix4();
+const vec1 = /* @__PURE__ */ new Vector3();
+const vec2 = /* @__PURE__ */ new Vector3();
 export class ModelViewBatchedMesh extends BatchedMesh {
 
 	constructor( ...args ) {

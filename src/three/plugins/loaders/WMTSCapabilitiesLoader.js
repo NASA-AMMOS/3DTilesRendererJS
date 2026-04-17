@@ -1,17 +1,12 @@
-import { WGS84_RADIUS } from '../../../core/renderer/constants.js';
-import { LoaderBase } from '../../../core/renderer/loaders/LoaderBase.js';
+/** @import { LoadingManager } from 'three' */
+import { WGS84_RADIUS, LoaderBase } from '3d-tiles-renderer/core';
 import { ProjectionScheme } from '../images/utils/ProjectionScheme.js';
 import { MathUtils } from 'three';
 
+// TODO: return values in a shape that more easily maps to the WMTSImageSource arguments.
+
 const EQUATOR_CIRCUMFERENCE = WGS84_RADIUS * Math.PI * 2;
 const mercatorProjection = /* @__PURE__ */ new ProjectionScheme( 'EPSG:3857' );
-
-// this CRS84 crs is the same as EPSG:4326 except the order of lat / lon are swapped
-function isCRS84( crs ) {
-
-	return /(:84|:crs84)$/i.test( crs );
-
-}
 
 function isEPSG4326( crs ) {
 
@@ -50,8 +45,8 @@ function correctTupleUnits( tuple, crs ) {
 
 	if ( isWebMercator( crs ) ) {
 
-		tuple[ 0 ] = mercatorProjection.convertProjectionToLongitude( 0.5 + tuple[ 0 ] / EQUATOR_CIRCUMFERENCE );
-		tuple[ 1 ] = mercatorProjection.convertProjectionToLatitude( 0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE );
+		tuple[ 0 ] = mercatorProjection.convertNormalizedToLongitude( 0.5 + tuple[ 0 ] / EQUATOR_CIRCUMFERENCE );
+		tuple[ 1 ] = mercatorProjection.convertNormalizedToLatitude( 0.5 + tuple[ 1 ] / EQUATOR_CIRCUMFERENCE );
 
 		// to degrees
 		tuple[ 0 ] *= MathUtils.RAD2DEG;
@@ -70,6 +65,23 @@ function tupleToRadians( tuple ) {
 
 }
 
+/**
+ * Loader that fetches and parses a WMTS `GetCapabilities` XML document into a structured
+ * JavaScript object. The result can be passed directly to `WMTSTilesPlugin`.
+ *
+ * The parsed result has the shape:
+ * ```
+ * {
+ *   serviceIdentification: { title, abstract, serviceType, serviceTypeVersion },
+ *   tileMatrixSets: [ { identifier, title, abstract, supportedCRS, tileMatrices } ],
+ *   layers: [ { title, identifier, format, boundingBox, dimensions, styles,
+ *               resourceUrls, tileMatrixSetLinks, tileMatrixSets } ],
+ * }
+ * ```
+ * Bounding box `bounds` arrays are in `[ minLon, minLat, maxLon, maxLat ]` order in radians.
+ * @extends LoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class WMTSCapabilitiesLoader extends LoaderBase {
 
 	parse( buffer ) {
@@ -208,7 +220,7 @@ function parseBoundingBox( el ) {
 
 	}
 
-	let crs = el.getAttribute( 'crs' );
+	const crs = el.nodeName.endsWith( 'WGS84BoundingBox' ) ? 'urn:ogc:def:crs:CRS::84' : el.getAttribute( 'crs' );
 	const lowerCorner = parseTuple( el.querySelector( 'LowerCorner' ).textContent );
 	const upperCorner = parseTuple( el.querySelector( 'UpperCorner' ).textContent );
 
@@ -220,16 +232,6 @@ function parseBoundingBox( el ) {
 
 	tupleToRadians( lowerCorner );
 	tupleToRadians( upperCorner );
-
-	if ( isCRS84( crs ) ) {
-
-		crs = 'EPSG:4326';
-
-	} else if ( isWebMercator( crs ) ) {
-
-		crs = 'EPSG:3857';
-
-	}
 
 	return {
 		crs,
@@ -243,7 +245,7 @@ function parseBoundingBox( el ) {
 // parse layer <Style> tag
 function parseStyle( el ) {
 
-	const title = el.querySelector( 'Title' ).textContent;
+	const title = el.querySelector( 'Title' )?.textContent || null;
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const isDefault = el.getAttribute( 'isDefault' ) === 'true';
 
@@ -258,7 +260,7 @@ function parseStyle( el ) {
 // parse <TileMatrixSet> tag
 function parseTileMatrixSet( el ) {
 
-	let supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
+	const supportedCRS = el.querySelector( 'SupportedCRS' ).textContent;
 	const title = el.querySelector( 'Title' )?.textContent || '';
 	const identifier = el.querySelector( 'Identifier' ).textContent;
 	const abstract = el.querySelector( 'Abstract' )?.textContent || '';
@@ -307,16 +309,6 @@ function parseTileMatrixSet( el ) {
 			tileMatrices.push( tm );
 
 		} );
-
-	if ( isCRS84( supportedCRS ) ) {
-
-		supportedCRS = 'EPSG:4326';
-
-	} else if ( isWebMercator( supportedCRS ) ) {
-
-		supportedCRS = 'EPSG:3857';
-
-	}
 
 	return {
 		title,

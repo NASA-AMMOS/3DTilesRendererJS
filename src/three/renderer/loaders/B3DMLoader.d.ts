@@ -1,8 +1,6 @@
-import { B3DMBaseResult, B3DMLoaderBase } from '../../../core/renderer/loaders/B3DMLoaderBase.js';
-import { BatchTable } from '../../../core/renderer/utilities/BatchTable.js';
-import { FeatureTable } from '../../../core/renderer/utilities/FeatureTable.js';
+import { B3DMBaseResult, B3DMLoaderBase, BatchTable, FeatureTable } from '3d-tiles-renderer/core';
 import { LoadingManager, Group } from 'three';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 
 interface B3DMScene extends Group {
 

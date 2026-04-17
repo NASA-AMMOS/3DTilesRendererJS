@@ -1,14 +1,14 @@
-import { TileBoundingVolume } from '../../three/renderer/math/TileBoundingVolume.js';
-import { Tile } from '../../core/renderer/tiles/Tile.js';
-import { TilesRenderer } from '../../three/renderer/tiles/TilesRenderer.js';
-import { OBB } from '../../three/renderer/math/OBB.js';
+import { TileBoundingVolume, TilesRenderer, OBB } from '3d-tiles-renderer/three';
+import { Tile } from '3d-tiles-renderer/core';
 import { Sphere, Ray } from 'three';
 
 declare class BaseRegion {
 
-	constructor( errorTarget?: number );
 	errorTarget: number;
+	mask: boolean;
+	constructor( options?: { errorTarget?: number, mask?: boolean } );
 	intersectsTile( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): boolean
+	calculateDistance( boundingVolume: TileBoundingVolume, tile: Tile, tilesRenderer: TilesRenderer ): number
 	calculateError( tile: Tile, tilesRenderer: TilesRenderer ): number
 
 }
@@ -25,20 +25,20 @@ export class LoadRegionPlugin {
 export class OBBRegion extends BaseRegion {
 
 	obb: OBB;
-	constructor( errorTarget?: number, obb?: OBB );
+	constructor( options?: { errorTarget?: number, mask?: boolean, obb?: OBB } );
 
 }
 
 export class RayRegion extends BaseRegion {
 
 	ray: Ray;
-	constructor( errorTarget?: number, ray?: Ray );
+	constructor( options?: { errorTarget?: number, mask?: boolean, ray?: Ray } );
 
 }
 
 export class SphereRegion extends BaseRegion {
 
 	sphere: Sphere;
-	constructor( errorTarget?: number, sphere?: Sphere );
+	constructor( options?: { errorTarget?: number, mask?: boolean, sphere?: Sphere } );
 
 }

@@ -10,6 +10,15 @@ const _norm = /* @__PURE__ */ new Vector3();
 const _uv = /* @__PURE__ */ new Vector2();
 const _sphere = /* @__PURE__ */ new Sphere();
 
+/**
+ * Extension of `ImageFormatPlugin` that projects tiled images onto ellipsoidal
+ * (globe-surface) geometry in addition to the default planar layout. Set
+ * `options.shape = 'ellipsoid'` to enable globe projection.
+ * @extends ImageFormatPlugin
+ * @param {Object} [options]
+ * @param {string} [options.shape='planar'] Projection shape: `'planar'` or `'ellipsoid'`.
+ * @param {boolean} [options.endCaps=true] Snap Mercator-projected poles to ±90° latitude to avoid seams.
+ */
 export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 
 	get projection() {
@@ -63,7 +72,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// adjust the geometry to position it at the region
 			const { position, normal, uv } = geometry.attributes;
 			const vertCount = position.count;
-			tile.cached.boundingVolume.getSphere( _sphere );
+			tile.engineData.boundingVolume.getSphere( _sphere );
 			for ( let i = 0; i < vertCount; i ++ ) {
 
 				// retrieve attributes
@@ -71,8 +80,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				_uv.fromBufferAttribute( uv, i );
 
 				// convert the plane position to lat / lon
-				const lon = projection.convertProjectionToLongitude( MathUtils.mapLinear( _uv.x, 0, 1, minU, maxU ) );
-				let lat = projection.convertProjectionToLatitude( MathUtils.mapLinear( _uv.y, 0, 1, minV, maxV ) );
+				const lon = projection.convertNormalizedToLongitude( MathUtils.mapLinear( _uv.x, 0, 1, minU, maxU ) );
+				let lat = projection.convertNormalizedToLatitude( MathUtils.mapLinear( _uv.y, 0, 1, minV, maxV ) );
 
 				// snap the edges to the poles if using mercator projection and end caps are enabled
 				if ( projection.isMercator && this.endCaps ) {
@@ -95,7 +104,7 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				// as much as possible at low LoDs.
 				if ( projection.isMercator && _uv.y !== 0 && _uv.y !== 1 ) {
 
-					const latLimit = projection.convertProjectionToLatitude( 1 );
+					const latLimit = projection.convertNormalizedToLatitude( 1 );
 					const vStep = 1 / yVerts;
 
 					const prevLat = MathUtils.mapLinear( _uv.y - vStep, 0, 1, south, north );
@@ -119,8 +128,8 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 				ellipsoid.getCartographicToNormal( lat, lon, _norm );
 
 				// map from the uvs for the tile into the uv range
-				const u = MathUtils.mapLinear( projection.convertLongitudeToProjection( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
-				const v = MathUtils.mapLinear( projection.convertLatitudeToProjection( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
+				const u = MathUtils.mapLinear( projection.convertLongitudeToNormalized( lon ), minU, maxU, uvRange[ 0 ], uvRange[ 2 ] );
+				const v = MathUtils.mapLinear( projection.convertLatitudeToNormalized( lat ), minV, maxV, uvRange[ 1 ], uvRange[ 3 ] );
 
 				// update the geometry
 				uv.setXY( i, u, v );
@@ -210,9 +219,9 @@ export class EllipsoidProjectionTilesPlugin extends ImageFormatPlugin {
 			// find the most bowed point of the latitude range since the amount that latitude changes is
 			// dependent on the Y value of the image
 			const midLat = ( south > 0 ) !== ( north > 0 ) ? 0 : Math.min( Math.abs( south ), Math.abs( north ) );
-			const midV = projection.convertLatitudeToProjection( midLat );
-			const lonFactor = projection.getLongitudeDerivativeAtProjection( minU );
-			const latFactor = projection.getLatitudeDerivativeAtProjection( midV );
+			const midV = projection.convertLatitudeToNormalized( midLat );
+			const lonFactor = projection.getLongitudeDerivativeAtNormalized( minU );
+			const latFactor = projection.getLatitudeDerivativeAtNormalized( midV );
 
 			// calculate the size of a pixel on the surface
 			const [ xDeriv, yDeriv ] = getCartographicToMeterDerivative( this.tiles.ellipsoid, midLat, east );

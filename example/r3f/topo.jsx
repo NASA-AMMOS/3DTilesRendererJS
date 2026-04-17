@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import { TilesPlugin, TilesRenderer, EnvironmentControls } from '3d-tiles-renderer/r3f';
 import { TilesFadePlugin } from '3d-tiles-renderer/plugins';
-import { TopoLinesPlugin } from '../src/plugins/topolines/TopoLinesPlugin.js';
+import { TopoLinesPlugin } from '../three/src/plugins/topolines/TopoLinesPlugin.js';
 import { TopoLineScaleWidget } from './components/TopoLineScaleWidget.jsx';
 
 const tilesetUrl = 'https://raw.githubusercontent.com/NASA-AMMOS/3DTilesSampleData/master/msl-dingo-gap/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize/0528_0260184_to_s64o256_colorize_tileset.json';
@@ -40,7 +40,6 @@ function App() {
 
 			{/* Controls */}
 			<EnvironmentControls enableDamping={ true } maxDistance={ 500 } minDistance={ 1 } cameraRadius={ 0.5 } />
-
 		</Canvas>
 	);
 

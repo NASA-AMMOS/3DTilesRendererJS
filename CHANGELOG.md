@@ -4,12 +4,184 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.15] - Unreleased
+## Unreleased
+### Added
+- "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+
+### Fixed
+- ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
+- Converted remaining "three/examples/jsm/" paths to "three/addons/"
+
+### Changed
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin", instead.
+
+## [0.4.24] - 2026.04.10
+### Added
+- TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting an XR session to use for rAF callbacks.
+
+### Changed
+- EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
+- ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+- WMTSImageOverlay, WMTSTilesPlugin: Deprecated "capabilities" argument, adjusted options so literals can be passed.
+- Changed "three/examples/jsm" paths to "three/addons"
+- ImageOverlayPlugin: Image overlay tile levels are now determined using image resolution rather than depth.
+
+### Fixed
+- Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+- ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
+- ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
+- ImageOverlays: Updated types.
+- EnvironmentControls: Removed use of "THREE.Clock"
+
+## [0.4.23] - 2026-03-18
+### Added
+- DebugTilesPlugin: Added support for "boundsColorMode".
+- Auto-generated documentation via JSDoc.
+- DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
+
+### Fixed
+- QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
+- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
+- ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+- BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
+
+## [0.4.22] - 2026-03-06
+### Added
+- Types for gltf metadata extensions.
+- Event and other types to TilesRendererBase for use in thee.js and Babylon.js.
+- ImageOverlayPlugin: Add support for splitting "ADD" refinement tiles.
+- Babylon TilesRenderer: Added "checkCollisions" option.
+
+### Fixed
+- LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
+- GlobeContorls: Account for ellipsoid frame scale when calculating max zoom out distance.
+- Babylon TilesRenderer: Adjusted imports to support treeshaking.
+- ImageOverlayPlugin: Fix case where removing all overlays does not clear overlay textures correctly.
+- UnloadTilesPlugin: Fix case where the plugin would incorrectly retain tiles references, resulting in a memory leak.
+- OptimizedLoadStrategy Option: Add compatibility for QuantizedMeshPlugin, ImageOverlayPlugin.enableTileSplitting.
+
+## [0.4.21] - 2026-02-04
+### Fixed
+- Fixed path for babylonjs typescript definitions.
+
+## [0.4.20] - 2026-02-03
+### Added
+- TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
+- TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
+- I3DMLoader: Added support for oct-encoded normals.
+- TilesRenderer: Added "optimizedLoadStrategy" and "loadSiblings" options. These are experimental settings and are planned to be the default and only tile load strategy.
+- R3F: added "EllipsoidContext" with "ellipsoid" and "frame" fields
+- Export FeatureTable, BatchTable classes.
+- TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
+- XYZImageFormat: add "projection" option and ability to set tile settings per-level.
+- DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting.
+- TilesRenderer: Added "maxTilesProcessed" field to adjust how much time is spent per frame processing tiles during traversal.
+
+### Changed
+- ImageOverlayPlugin: Textures are now assumed to be straight alpha.
+- ImageOverlayPlugin: Refactor image overlays to afford drawing directly to region textures.
+- GeoJSONOverlay: Add "redraw" function to redraw the geojson once it's changed
+- Renamed the "cached" tile subfield to "engineData".
+- Moved a number of tile fields into "traversal" and "internal" subfields on "tile" object.
+- ImplicitTilingPlugin: Moved implicit tiling fields onto a new "implicitTilingData" object.
+- DebugTilesPlugin: Replaced "getTileInformationFromActiveObject" function with "getTileFromObject3D".
+- DebugTilesPlugin: Add transparent mesh to box helper visualization.
+- TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
+- Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
+- TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
+- Simplified handling of processed children, removed `internal.processedChildren`.
+
+### Fixed
+- Fix mouse offset in Controls.
+- Fixed case where DebugTilesPlugin could throw an error when toggling "enabled".
+- DebugTilesPlugin: Fixed case where "enabled" was not resepected if set to false on creation.
+
+## [0.4.19] - 2025.12.19
+### Changed
+- Moved "GoogleCloudAuthPlugin" to "3d-tiles-renderer/core/plugins".
+- Moved "CesiumIonAuthPlugin" to "3d-tiles-renderer/core/plugins".
+- CesiumIonAuthPlugin: Auto-registration of QuantizedMesh and TMS plugins has been removed. See "assetTypeHandler" to register the necessary plugins as-needed.
+- TilesRenderer: "load-tile-set" event has been renamed to "load-tileset"
+- TilesRenderer: "load-tileset" payload member "tileSet" has been renamed to "tileset"
+- TilesRenderer: "rootTileSet" member has been renamed "rootTileset"
+- TilesRenderer: "loadRootTileSet" function has been renamed to "loadRootTileSet"
+- TilesRenderer: "preprocessTileSet" function has been renamed to "preprocessTileSet"
+- Documentation and other variable names have adjusted any instances of "tile set" to "tileset" to align with the 3D Tiles specification nomenclature.
+
+### Added
+- Added "assetTypeHandler" to "CesiumIonAuthPlugin" for registering plugins based on loaded asset type.
+- Empty "addEventListener" and "removeEventListener" implementations to TilesRendererBase.
+- ImageOverlay: Added "alphaMask", "alphaInvert" options.
+- CesiumIonOverlay: Added automatic support Bing & Google Maps overlays.
+- QuantizedMeshLoader, QuantizedMeshPlugin: Added "generateNormals" option for cases where normals are not embedded.
+- Added "load-root-tileset" event.
+
+### Fixed
+- Controls: Fixed case where pointer state may not have been reset correctly.
+- ImageOverlayPlugin: "enableTileSplitting" now works with "ADDITIVE" tiles.
+- EnforceNonZeroErrorPlugin: adjusted error is now based on the first parent with geometric error encountered.
+- Fixed up some types.
+- Improved "Bounding OBB" and "Bounding Sphere" generation for "Region" bounding volumes.
+- PriorityQueue: fix case where entries were not being moved correctly by "removeByFilter".
+- ImageOverlayPlugin: Fix case where overlay data were not being handled correctly when adjusting frames.
+- ImageOverlayPlugin: Added a more clear error when "renderer" is not provided.
+- ImageFormatPlugin: Adjust the plugin to account for aspect ratio in error calculation.
+
+## [0.4.18] - 2025.11.14
+### Added
+- Support for skipping the display of tiles that have a higher geometric error than their parents to accommodate workaronds for some erroneous data sets.
+- A small optimization for tile traversal.
+- ImageOverlays: Added support for a "preprocessUrl" function.
+
+### Fixed
+- Added and fixed some types.
+- Removed referenced to `TextureUtils` which was causing tree shaking issues.
+- XYZ Tiles Plugins: Removed unused "bounds" argument.
+- BatchedTilesPlugin: Fix case where the plugin would throw an error if a mesh with no texture were encountered first.
+- Update types for GLTFExtensionPlugin.
+- Adjust minimum three.js version to r167 from r166. The project required an import for Matrix2, only available in 167.
+- ImageOverlayPlugin: Fix some platforms displaying untextured triangles in some cases.
+- TilesRenderer: Fixed "removePluginByName" not removing the plugin correctly.
+- WMS, WMTS ImageOverlay, TilesPlugin: Plugins now accept CRS definitions like "CRS:84".
+
+### Changed
+- WMTSCapabilitiesLoader, WMSCapabilitiesLoader: Loaders no longer automatically convert CRS tokens to an "EPSG:XXXX" variant.
+
+## [0.4.17] - 2025.09.27
+### Added
+- LoadRegionPlugin: Added support for "mask" regions that allow for only loading tiles within the shape.
+- Added WMSTilesOverlay & WMSTilesPlugin for displaying and overlaying WMS image tiles.
+- I3DMLoader: Add support for quantized position data.
+- Added in-progress "GeoJSONOverlay" for overlaying GeoJSON data.
+
+### Fixed
+- Fixed types not being defined correctly in the package.json.
+- ImageOverlays: Fixed case where overlay textures were generated even when no content was present.
+- TilesRenderer.manager checking for a non existent "preprocessURL" function when transforming a URL.
+
+## [0.4.16] - 2025.09.10
+### Fixed
+- GlobeControls: Fix case where camera position could become "NaN" when zooming into the sky.
+- Fixed built files possibly not being correctly bundled.
+
+## [0.4.15] - 2025.09.03
 ### Changed
 - Adjusted the package to export a bundled version of the library.
+- Some execution timing of react components may have changed.
+- LoadRegionPlugin: "Region" constructors have changed to take options as an object rather than individual arguments.
+- TilesRenderer Plugins: Return value for "calculateTileViewError" has been added.
 
 ### Fixed
 - Fixed bug introduced when loading GoogleMapsOverlay with ImageOverlayPlugin.
+- ImageFormatPlugin types.
+- DebugTilesRenderer: fix case where disabling and reenabling the plugin could cause errors.
+- QuantizedMeshPlugin: fix case where quantized mesh could not expand to the lowest levels of detail.
+- Fixed behavior of TilesRenderer and TilesPlugin components in "strict mode" with React 19.
+- Improved performance of extracting url file extensions.
+- Fixed case where a loaders "working path" was not generated correctly.
+- BatchTable, FeatureTable: Filter the reserved "extensions" field from the batch data "getKeys" function.
 
 ## [0.4.14] - 2025.08.09
 ### Fixed
@@ -105,7 +277,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Change `load-error` event field from `uri` to `url` as documented.
 - Fixed type definitions for some events.
 - B3DM, I3DM, PNTS Loaders: Fixed case where RTC_CENTER feature would not be parsed correctly.
-- Re-add "load-tile-set" event when child tile sets are loaded.
+- Re-add "load-tile-set" event when child tilesets are loaded.
 - Re-add url to "load-tile-set" event.
 - TMSTilesPlugin: Add support for limited bounds.
 
@@ -139,7 +311,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Internal "force-rerender" function renamed to "needs-render".
-- TilesRenderer: Move check for cameras after update traversal to enable loading the root tile set file without a camera defined.
+- TilesRenderer: Move check for cameras after update traversal to enable loading the root tileset file without a camera defined.
 
 ## [0.4.8] - 2025.04.07
 ### Fixed
@@ -150,7 +322,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Fixed shift key not working as expected.
 - Fixed error caused by loading a glTF file with no scenes.
 - GLTF Metadata Extensions: Fix case where an error would be thrown when non-mesh nodes are present.
-- Fixed case where tile sets with implicit tiling would not be loaded correctly if an external availability buffer was used.
+- Fixed case where tilesets with implicit tiling would not be loaded correctly if an external availability buffer was used.
 - Asynchronously process child tiles to avoid processing stalls.
 - CesiumIonPlugin: Forward "autoRefreshToken" value to GoogleCloudAuthPlugin.
 
@@ -163,7 +335,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.7] - 2025.03.03
 ### Added
-- GlobeControls: If no raycast intersection is fund then fallback to intersecting the tile set globe.
+- GlobeControls: If no raycast intersection is fund then fallback to intersecting the tileset globe.
 - EnvironmentControls, GlobeControls: Fix inertia calculations for orthographic cameras.
 - R3F EastNorthUpFrame: Add support for passing the ellipsoid in directly.
 - TilesRenderer.group: Added "matrixWorldInverse" field.
@@ -189,7 +361,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix GLTF Metadata plugin not returning matrix values correctly.
 - TMS, XYZ Plugins: Fix case where texture would be distorted due to incorrect vertex placement when using mercator projection.
 - Case where TilesRenderer.root was not initialized before the "load-tile-set" event was fired.
-- R3F TilesRenderer: Update the tile set when a tile set is loaded.
+- R3F TilesRenderer: Update the tileset when a tileset is loaded.
 - ImageFormatPlugins: Fix plugin so it does not preclude updates incorrectly.
 - R3F TilesRenderer: Prevent reinstantiation of all child plugins, objects on options change.
 - R3F EastNorthUpFrame: Automatically update based on ellipsoid updates.
@@ -213,13 +385,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.4] - 2025.01.24
 ### Added
-- `load-error` events when model, tile set, and API token requests fail to fetch or parse.
+- `load-error` events when model, tileset, and API token requests fail to fetch or parse.
 - CanvasDOMOverlay: Add support for "ref".
 - CameraTransitionManager: Add `easeFunction` setting.
 - CameraTransitionManager: Add option to pass delta time to the update function.
 
 ### Fixed
-- Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tile sets).
+- Improved the behavior of `loadProgress` so it "bounces" less during loading by queueing all tiles load immediately (other than cases with external tilesets).
 - Moved the dispatch location of "load-model", "tiles-load-start", and "tiles-load-end" so the behavior is more consistent.
 
 ## [0.4.3] - 2025.01.19
@@ -278,7 +450,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - TilesFadePlugin: TilesRenderer will now fire visibility hidden events once the tile is completely faded out.
-- TilesFadePlugin: Fading tiles are now present in the tile set root rather than a sub group.
+- TilesFadePlugin: Fading tiles are now present in the tileset root rather than a sub group.
 - TileCompressionPlugin: Change the defaults to not automatically compress normals, uvs to avoid artifacts.
 - GlobeControls: Orthographic "near" margin around the globe has been increased from 10% to 25% of the large ellipsoid radius value.
 
@@ -333,7 +505,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.3.40] - 2024.10.29
 ### Added
 - I3DMLoader: Add support for EAST_NORTH_UP semantic.
-- R3F TilesRenderer: Added `group` property for passing react properties to the root tile set object.
+- R3F TilesRenderer: Added `group` property for passing react properties to the root tileset object.
 - R3F `<CompassGizmo>` component.
 
 ### Changed
@@ -367,7 +539,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve EnvironmentControls momementum thresholds so movement stops sooner.
 
 ### Fixed
-- Case where tile set scale was incorrectly used when computed screenspace error.
+- Case where tileset scale was incorrectly used when computed screenspace error.
 - Case where `setTileVisibility` could get called asymmetrically.
 - Case where `TilesFadePlugin` would hold on to scene geometry after disposal.
 
@@ -396,7 +568,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EnvironmentControls: Added "enableDamping" option for inertial animation.
 - Ellipsoid: Added "getEastNorthUpAxes".
 - Ellipsoid: Added "getAzElRollFromRotationMatrix" and "getRotationMatrixFromAzElRoll"
-- TilesRendererBase: Tiles are now queued and sorted before triggering load to avoid only a single tile set branch loading and filling up the lru cache.
+- TilesRendererBase: Tiles are now queued and sorted before triggering load to avoid only a single tileset branch loading and filling up the lru cache.
 
 ### Changed
 - TilesOverlayPlugin: Changed constructor to take options object, instead.
@@ -440,14 +612,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - GLTFStructureMetadata extension exits gracefully if no extension is present.
 
 ### Changed
-- CesiumIonTilesRenderer: Will immediately load the tile set after resolving credentials.
+- CesiumIonTilesRenderer: Will immediately load the tileset after resolving credentials.
 - Examples FadeTilesRenderer has been changed to a plugin.
 - Deprecated `GoogleTilesRenderer` and `CesiumIonTilesRenderer` in favor of using the new authentication plugins.
 - Loaders: ".load" function has been renamed to ".loadAsync".
 - Deprecated `onLoadTileset`, `onLoadModel`, `onDisposeModel`, and `onTileVisibilityChange` in favor of their event equivalents.
 - LRUCache: "unloadPriorityCallback" has been changted to take two tile arguments to sort instead of one.
 - DebugTilesRenderer has been deprecated in favor of the "DebugTilesPlugin".
-- LRU Cache unload priority function now unloads deepest tiles first, then least recently used, then non-external tile sets.
+- LRU Cache unload priority function now unloads deepest tiles first, then least recently used, then non-external tilesets.
 
 ## [0.3.35] - 2024.06.25
 ### Fixed
@@ -462,7 +634,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.3.33] - 2024.05.31
 ### Fixed
-- Remove logged error when a tile set is aborted.
+- Remove logged error when a tileset is aborted.
 - Adjusted raycast early exit behavior based on three.js r165.
 - EnvironmentControls: fix case where the dragging does not work from below
 - Remote glTF textures failing to load.
@@ -760,7 +932,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.2.1] - 2020-12-15
 ### Added
-- Support for external tile sets.
+- Support for external tilesets.
 - B3DM support for RTC_CENTER.
 
 ### Fixed

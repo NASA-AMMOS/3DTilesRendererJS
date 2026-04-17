@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { ImageOverlayPlugin as ImageOverlayPluginImpl } from '3d-tiles-renderer/plugins';
 import { TilesPlugin, TilesPluginContext, TilesRendererContext } from '3d-tiles-renderer/r3f';
 import { forwardRef, useContext, useEffect, useMemo, useRef } from 'react';
+import { Matrix4 } from 'three';
 
 export const ImageOverlayPlugin = forwardRef( function ImageOverlayPlugin( { children, ...rest }, ref ) {
 
@@ -21,7 +22,7 @@ export const ImageOverlay = forwardRef( function ImageOverlay( props, ref ) {
 		order = null,
 		opacity = 1,
 		color = 0xffffff,
-		worldFrame = null,
+		worldToProjection = null,
 		...rest
 	} = props;
 
@@ -55,23 +56,23 @@ export const ImageOverlay = forwardRef( function ImageOverlay( props, ref ) {
 
 		overlay.opacity = opacity;
 		overlay.color.set( color );
-		if ( worldFrame && ! overlay.frame ) {
+		if ( worldToProjection && ! overlay.frame ) {
 
-			overlay.frame = worldFrame.clone();
+			overlay.frame = new Matrix4();
 
-		} else if ( ! worldFrame && overlay.frame ) {
+		} else if ( ! worldToProjection && overlay.frame ) {
 
 			overlay.frame = null;
 
 		}
 
-	}, [ overlay, opacity, color, worldFrame ] );
+	}, [ overlay, opacity, color, worldToProjection ] );
 
 	useFrame( () => {
 
-		if ( worldFrame && tiles ) {
+		if ( worldToProjection && tiles ) {
 
-			overlay.frame.copy( worldFrame ).premultiply( tiles.group.matrixWorldInverse );
+			overlay.frame.copy( worldToProjection ).multiply( tiles.group.matrixWorld );
 
 		}
 

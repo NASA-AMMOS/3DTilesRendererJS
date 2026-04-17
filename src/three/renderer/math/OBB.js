@@ -1,9 +1,9 @@
 import { Matrix4, Box3, Vector3, Plane, Ray } from 'three';
 
-const _worldMin = new Vector3();
-const _worldMax = new Vector3();
-const _norm = new Vector3();
-const _ray = new Ray();
+const _worldMin = /* @__PURE__ */ new Vector3();
+const _worldMax = /* @__PURE__ */ new Vector3();
+const _norm = /* @__PURE__ */ new Vector3();
+const _ray = /* @__PURE__ */ new Ray();
 
 export class OBB {
 

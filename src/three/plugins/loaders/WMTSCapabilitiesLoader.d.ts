@@ -1,4 +1,4 @@
-import { LoaderBase } from '../../../core/renderer/loaders/LoaderBase.js';
+import { LoaderBase } from '3d-tiles-renderer/core';
 
 interface WMTSBoundingBox {
 	crs: string,
@@ -7,14 +7,31 @@ interface WMTSBoundingBox {
 	bounds: [ number, number, number, number ],
 }
 
-interface WMTSTileMatrixSet {
+interface WMTSServiceIdentification {
+	title: string;
+	abstract: string;
+	serviceType: string;
+	serviceTypeVersion: string;
+}
+
+export interface WMTSTileMatrix {
+	identifier: string,
+	matrixWidth: number,
+	matrixHeight: number,
+	tileWidth?: number,
+	tileHeight?: number,
+	tileBounds: Array<number>,
+}
+
+export interface WMTSTileMatrixSet {
 	title: string;
 	identifier: string;
 	abstract: string;
 	supportedCRS: string;
+	tileMatrices: Array<WMTSTileMatrix>;
 }
 
-interface WMTSLayer {
+export interface WMTSLayer {
 	title: string;
 	identifier: string;
 	format: string;
@@ -23,13 +40,6 @@ interface WMTSLayer {
 	styles: Array<{ identifier: string, title: string, isDefault: string }>,
 	resourceUrls: Array<{ template: string, format: string, resourceType: string }>,
 	tileMatrixSets: Array<WMTSTileMatrixSet>,
-}
-
-interface WMTSServiceIdentification {
-	title: string;
-	abstract: string;
-	serviceType: string;
-	serviceTypeVersion: string;
 }
 
 export interface WMTSCapabilitiesResult {

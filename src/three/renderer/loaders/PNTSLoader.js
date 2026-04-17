@@ -1,4 +1,6 @@
-import { PNTSLoaderBase } from '../../../core/renderer/loaders/PNTSLoaderBase.js';
+/** @import { LoadingManager } from 'three' */
+/** @import { BatchTable, FeatureTable } from '3d-tiles-renderer/core' */
+import { PNTSLoaderBase } from '3d-tiles-renderer/core';
 import {
 	Points,
 	PointsMaterial,
@@ -8,7 +10,7 @@ import {
 	Vector3,
 	Color,
 } from 'three';
-import { rgb565torgb } from '../../../core/renderer/utilities/rgb565torgb.js';
+import { rgb565torgb } from './rgb565torgb.js';
 import { decodeOctNormal } from './decodeOctNormal.js';
 
 const DRACO_ATTRIBUTE_MAP = {
@@ -16,6 +18,13 @@ const DRACO_ATTRIBUTE_MAP = {
 	POSITION: 'position',
 };
 
+/**
+ * Loader for the legacy 3D Tiles Point Cloud (pnts) format. Parses the pnts container
+ * and returns a three.js Points object with `batchTable` and `featureTable` attached
+ * to the resolved scene object.
+ * @extends PNTSLoaderBase
+ * @param {LoadingManager} [manager]
+ */
 export class PNTSLoader extends PNTSLoaderBase {
 
 	constructor( manager = DefaultLoadingManager ) {
@@ -25,6 +34,12 @@ export class PNTSLoader extends PNTSLoaderBase {
 
 	}
 
+	/**
+	 * Parses a pnts buffer and resolves to a result object containing a constructed
+	 * three.js `Points` scene with metadata attached.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ scene: Points, batchTable: BatchTable, featureTable: FeatureTable }>}
+	 */
 	parse( buffer ) {
 
 		return super.parse( buffer ).then( async ( result ) => {
@@ -108,6 +123,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 						}
 
 					}
+
 					translationOffset.x = QUANTIZED_VOLUME_OFFSET[ 0 ];
 					translationOffset.y = QUANTIZED_VOLUME_OFFSET[ 1 ];
 					translationOffset.z = QUANTIZED_VOLUME_OFFSET[ 2 ];
@@ -172,6 +188,7 @@ export class PNTSLoader extends PNTSLoaderBase {
 						}
 
 					}
+
 					geometry.setAttribute( 'color', new BufferAttribute( color, 3, true ) );
 					material.vertexColors = true;
 
