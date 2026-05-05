@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+- Improved support for ExternalTexture memory tracking.
 
 ### Fixed
 - ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
