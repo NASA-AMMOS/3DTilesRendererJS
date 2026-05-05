@@ -1,5 +1,5 @@
 import { estimateBytesUsed as _estimateBytesUsed } from 'three/addons/utils/BufferGeometryUtils.js';
-import { TextureUtils, ExternalTexture, CompressedTexture } from 'three';
+import { TextureUtils } from 'three';
 
 // Returned when a texture's size cannot be determined (missing image, unknown
 // format, etc).
@@ -29,7 +29,7 @@ export function getTextureByteLength( tex ) {
 
 	// External textures track their own byte length via userData (eg. spark
 	// textures created from an ImageBitmap or uploaded by a third-party lib).
-	if ( tex instanceof ExternalTexture ) {
+	if ( tex.isExternalTexture ) {
 
 		return tex.userData?.byteLength ?? UNKNOWN_TEXTURE_BYTE_LENGTH;
 
@@ -40,7 +40,7 @@ export function getTextureByteLength( tex ) {
 	// Block-compressed 2D textures carry their mip chain as an array of
 	// { data, width, height } entries. Summing the existing data buffers is
 	// the most reliable size source.
-	if ( tex instanceof CompressedTexture && Array.isArray( mipmaps ) && mipmaps.length > 0 ) {
+	if ( tex.isCompressedTexture && Array.isArray( mipmaps ) && mipmaps.length > 0 ) {
 
 		let bytes = 0;
 		for ( const mip of mipmaps ) {
