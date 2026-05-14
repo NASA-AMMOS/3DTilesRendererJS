@@ -8,11 +8,15 @@ See the [API reference](./API.md) for full class and method documentation.
 
 #### [3D-Tiles-RendererJS-3DGS-Plugin](https://github.com/WilliamLiu-1997/3D-Tiles-RendererJS-3DGS-Plugin)
 
-Plugin for rendering gaussian-splat-embeded glTF tile sets.
+Plugin to render gaussian-splat-embeded glTF tile sets.
 
 #### [3dtilesrenderer-styling-plugin](https://github.com/bertt/3dtilesrenderer-styling-plugin)
 
-Plugin for adding Cesium 3D Tiles Styling specification support.
+Plugin to add Cesium 3D Tiles Styling specification support.
+
+#### [3dtilesrenderer-outline-plugin](https://github.com/bertt/3dtilesrenderer-outline-plugin)
+
+Plugin to add support for `CESIUM_primitive_outline` glTF extension.
 
 # Use
 
