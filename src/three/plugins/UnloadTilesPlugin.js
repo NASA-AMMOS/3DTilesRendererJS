@@ -4,6 +4,16 @@ import { LRUCache } from '3d-tiles-renderer/core';
 
 // TODO:
 // - abstract the "tile visible" callback so fade tiles can call it when tiles are _actually_ marked as non-visible
+
+/**
+ * Plugin that unloads geometry, textures, and materials of any given tile when its
+ * visibility changes to non-visible, freeing GPU memory. The model data still exists on
+ * the CPU until it is completely removed from the cache, allowing it to be re-uploaded
+ * without re-fetching.
+ * @param {Object} [options]
+ * @param {number} [options.delay=0] Milliseconds to wait after a tile is hidden before freeing its GPU data. Useful to avoid thrashing when the camera is moving.
+ * @param {number} [options.bytesTarget=0] Target GPU byte budget to unload down to. `0` means unload with no budget limit.
+ */
 export class UnloadTilesPlugin {
 
 	set delay( v ) {
@@ -30,6 +40,12 @@ export class UnloadTilesPlugin {
 
 	}
 
+	/**
+	 * The number of bytes currently uploaded to the GPU for rendering. Compare to
+	 * `lruCache.cachedBytes` which reports all downloaded bytes including those not
+	 * yet on the GPU.
+	 * @type {number}
+	 */
 	get estimatedGpuBytes() {
 
 		return this.lruCache.cachedBytes;
@@ -59,20 +75,15 @@ export class UnloadTilesPlugin {
 		this.tiles = tiles;
 
 		const { lruCache, deferCallbacks } = this;
-		deferCallbacks.callback = tile => {
-
-			lruCache.markUnused( tile );
-			lruCache.scheduleUnload( false );
-
-		};
 
 		const unloadCallback = tile => {
 
+			// trigger a tile unload from the GPU if it's not currently visible
 			const scene = tile.engineData.scene;
 			const visible = tiles.visibleTiles.has( tile );
-
 			if ( ! visible ) {
 
+				// extra visible check in case another plugin or system has forced it to be visible
 				tiles.invokeOnePlugin( plugin => plugin.unloadTileFromGPU && plugin.unloadTileFromGPU( scene, tile ) );
 
 			}
@@ -83,40 +94,66 @@ export class UnloadTilesPlugin {
 
 			// update lruCache in "update" in case the callback values change
 			lruCache.unloadPriorityCallback = tiles.lruCache.unloadPriorityCallback;
-			lruCache.computeMemoryUsageCallback = tiles.lruCache.computeMemoryUsageCallback;
+
+			// adjust the settings so we don't reject tiles added
 			lruCache.minSize = Infinity;
 			lruCache.maxSize = Infinity;
 			lruCache.maxBytesSize = Infinity;
+
+			// unload all tiles possible at once
 			lruCache.unloadPercent = 1;
+
+			// do not run mark unused without an explicit call
 			lruCache.autoMarkUnused = false;
 
 		};
 
-		this._onVisibilityChangeCallback = ( { tile, visible } ) => {
+		this._onVisibilityChangeCallback = ( { tile, scene, visible } ) => {
 
 			if ( visible ) {
 
+				// if the tile is visible then do not trigger disposal - for the tile to have at least 1 byte of
+				// memory usage to ensure the lru cache will always remove the item to reduce memory pressure
 				lruCache.add( tile, unloadCallback );
+				lruCache.setMemoryUsage( tile, tiles.calculateBytesUsed( tile, scene ) || 1 );
 				tiles.markTileUsed( tile );
 				deferCallbacks.cancel( tile );
 
 			} else {
 
+				// mark the tile as unused in our cache and trigger an unload after the delay
 				deferCallbacks.run( tile );
 
 			}
 
 		};
 
+		this._onDisposeModel = ( { tile } ) => {
+
+			lruCache.remove( tile );
+			deferCallbacks.cancel( tile );
+
+		};
+
+		deferCallbacks.callback = tile => {
+
+			// try to unload the tile up to our limit
+			lruCache.markUnused( tile );
+			lruCache.scheduleUnload();
+
+		};
+
+		// initialize all existing tiles
 		tiles.forEachLoadedModel( ( scene, tile ) => {
 
 			const visible = tiles.visibleTiles.has( tile );
-			this._onVisibilityChangeCallback( { scene, visible } );
+			this._onVisibilityChangeCallback( { tile, visible } );
 
 		} );
 
 		tiles.addEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
 		tiles.addEventListener( 'update-before', this._onUpdateBefore );
+		tiles.addEventListener( 'dispose-model', this._onDisposeModel );
 
 	}
 
@@ -124,6 +161,8 @@ export class UnloadTilesPlugin {
 
 		if ( scene ) {
 
+			// disposes of all GPU memory and materials associated with the tile but does not
+			// close any image bitmaps so we can reupload them as needed
 			scene.traverse( c => {
 
 				if ( c.material ) {
@@ -158,9 +197,19 @@ export class UnloadTilesPlugin {
 
 	dispose() {
 
-		this.tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
-		this.tiles.removeEventListener( 'update-before', this._onUpdateBefore );
-		this.deferCallbacks.cancelAll();
+		const { lruCache, tiles, deferCallbacks } = this;
+
+		tiles.removeEventListener( 'tile-visibility-change', this._onVisibilityChangeCallback );
+		tiles.removeEventListener( 'update-before', this._onUpdateBefore );
+		tiles.removeEventListener( 'dispose-model', this._onDisposeModel );
+		deferCallbacks.cancelAll();
+
+		// clear the lru cache
+		lruCache.minBytesSize = 0;
+		lruCache.minSize = 0;
+		lruCache.maxSize = 0;
+		lruCache.markAllUnused();
+		lruCache.scheduleUnload();
 
 	}
 
@@ -192,7 +241,12 @@ class DeferCallbackManager {
 
 		} else {
 
-			map.set( tile, setTimeout( () => this.callback( tile ), delay ) );
+			map.set( tile, setTimeout( () => {
+
+				this.callback( tile );
+				map.delete( tile );
+
+			}, delay ) );
 
 		}
 

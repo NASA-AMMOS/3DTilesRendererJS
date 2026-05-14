@@ -1,5 +1,10 @@
 import { SUBTREELoader } from './SUBTREELoader.js';
 
+/**
+ * Plugin that adds support for 3D Tiles 1.1 implicit tiling. Intercepts tiles that carry
+ * an `implicitTiling` field and expands them by loading and parsing `.subtree` files,
+ * generating child tiles according to the implicit subdivision scheme.
+ */
 export class ImplicitTilingPlugin {
 
 	constructor() {
@@ -88,7 +93,6 @@ export class ImplicitTilingPlugin {
 
 			} );
 			tile.children.length = 0;
-			tile.internal.childrenProcessed = 0;
 
 		}
 

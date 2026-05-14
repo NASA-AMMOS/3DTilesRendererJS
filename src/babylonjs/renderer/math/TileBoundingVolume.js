@@ -1,4 +1,5 @@
-import { Vector3, Matrix, BoundingSphere } from '@babylonjs/core';
+import { Vector3, Matrix } from '@babylonjs/core/Maths/math.vector';
+import { BoundingSphere } from '@babylonjs/core/Culling/boundingSphere';
 import { OBB } from './OBB.js';
 
 const _vecX = /* @__PURE__ */ new Vector3();

@@ -6,8 +6,20 @@ import { FeatureTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
 import { readMagicBytes } from '../utilities/LoaderUtils.js';
 
+/**
+ * Base loader for the B3DM (Batched 3D Model) tile format. Parses the B3DM binary
+ * structure and extracts the embedded GLB bytes along with batch and feature tables.
+ * Extend this class to integrate B3DM loading into a specific rendering engine.
+ *
+ * @extends LoaderBase
+ */
 export class B3DMLoaderBase extends LoaderBase {
 
+	/**
+	 * Parses a B3DM buffer and returns the raw tile data.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {{ version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array }}
+	 */
 	parse( buffer ) {
 
 		// TODO: this should be able to take a uint8array with an offset and length

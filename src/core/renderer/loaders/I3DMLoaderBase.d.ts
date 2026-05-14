@@ -8,6 +8,7 @@ export interface I3DMBaseResult {
 	featureTable: FeatureTable;
 	batchTable : BatchTable;
 	glbBytes : Uint8Array;
+	gltfWorkingPath : string | null;
 
 }
 

@@ -9,7 +9,7 @@ export class OBB {
 	points: Vector3[];
 	planes: Plane[];
 
-	constructor( box: Box3, transform: Matrix4 )
+	constructor( box?: Box3, transform?: Matrix4 )
 
 	copy(): this;
 	clone(): OBB;

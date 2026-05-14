@@ -6,7 +6,15 @@ export const TILE_X = Symbol( 'TILE_X' );
 export const TILE_Y = Symbol( 'TILE_Y' );
 export const TILE_LEVEL = Symbol( 'TILE_LEVEL' );
 
-// Base class for supporting tiled images with a consistent size / resolution per tile
+/**
+ * Base plugin class for tiled image sources with a consistent size and resolution per
+ * tile. Subclasses provide a concrete `imageSource` and override `getUrl` and
+ * `createBoundingVolume` as needed.
+ * @param {Object} [options]
+ * @param {Object} [options.imageSource=null] Image source that provides tiling metadata and URL generation.
+ * @param {boolean} [options.center=false] Shift tiles so the image is centered at the origin.
+ * @param {boolean} [options.useRecommendedSettings=true] Apply recommended `TilesRenderer` settings (e.g. `errorTarget = 1`).
+ */
 export class ImageFormatPlugin {
 
 	get tiling() {
@@ -134,21 +142,15 @@ export class ImageFormatPlugin {
 
 		}
 
-		return mesh;
-
-	}
-
-	preprocessNode( tile ) {
-
-		// generate children
-		const { tiling } = this;
-		const maxLevel = tiling.maxLevel;
-		const level = tile[ TILE_LEVEL ];
-		if ( level < maxLevel && tile.parent !== null ) {
+		// Only expose descendants while the tile content is resident so unload can clear the
+		// branch and a later reload will recreate it symmetrically.
+		if ( level < tiling.maxLevel && tile.children.length === 0 ) {
 
 			this.expandChildren( tile );
 
 		}
+
+		return mesh;
 
 	}
 
@@ -164,6 +166,14 @@ export class ImageFormatPlugin {
 			imageSource.release( tx, ty, level );
 
 		}
+
+
+		tile.children.forEach( child => {
+
+			this.tiles.processNodeQueue.remove( child );
+
+		} );
+		tile.children.length = 0;
 
 	}
 
@@ -196,10 +206,10 @@ export class ImageFormatPlugin {
 			asset: {
 				version: '1.1'
 			},
-			geometricError: 1e5,
+			geometricError: Infinity,
 			root: {
 				refine: 'REPLACE',
-				geometricError: 1e5,
+				geometricError: Infinity,
 				boundingVolume: this.createBoundingVolume( 0, 0, - 1 ),
 				children,
 

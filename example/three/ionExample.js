@@ -10,8 +10,8 @@ import {
 	DataTexture,
 	EquirectangularReflectionMapping
 } from 'three';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let camera, controls, scene, renderer, tiles;
 

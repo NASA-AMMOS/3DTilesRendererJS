@@ -6,8 +6,21 @@ import { FeatureTable } from '../utilities/FeatureTable.js';
 import { LoaderBase } from './LoaderBase.js';
 import { readMagicBytes, arrayToString, getWorkingPath } from '../utilities/LoaderUtils.js';
 
+/**
+ * Base loader for the I3DM (Instanced 3D Model) tile format. Parses the I3DM binary
+ * structure and extracts the embedded GLB bytes (or fetches an external GLTF) along
+ * with batch and feature tables. Extend this class to integrate I3DM loading into a
+ * specific rendering engine.
+ *
+ * @extends LoaderBase
+ */
 export class I3DMLoaderBase extends LoaderBase {
 
+	/**
+	 * Parses an I3DM buffer and returns the raw tile data.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ version: string, featureTable: FeatureTable, batchTable: BatchTable, glbBytes: Uint8Array, gltfWorkingPath: string }>}
+	 */
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );

@@ -1,4 +1,8 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, Color4 } from '@babylonjs/core';
+import { Engine } from '@babylonjs/core/Engines/engine';
+import { Scene } from '@babylonjs/core/scene';
+import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { Color4 } from '@babylonjs/core/Maths/math.color';
 import { TilesRenderer } from '3d-tiles-renderer/babylonjs';
 import GUI from 'lil-gui';
 

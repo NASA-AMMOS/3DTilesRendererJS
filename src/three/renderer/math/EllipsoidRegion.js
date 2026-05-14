@@ -1,3 +1,4 @@
+/** @import { Sphere } from 'three' */
 import { Matrix4, Vector3, Box3 } from 'three';
 import { Ellipsoid } from './Ellipsoid.js';
 
@@ -26,6 +27,21 @@ function isTriaxial( radii ) {
 
 }
 
+/**
+ * Represents a geographic region on an ellipsoid, defined by a range of latitudes, longitudes,
+ * and heights. Extends `Ellipsoid` with bounding-box and bounding-sphere computation for the
+ * specified region. Only oblate spheroids (x === y) are supported.
+ * @param {number} [x=1] Semi-axis radius along the X axis.
+ * @param {number} [y=1] Semi-axis radius along the Y axis.
+ * @param {number} [z=1] Semi-axis radius along the Z axis.
+ * @param {number} [latStart=-π/2] Start latitude of the region in radians.
+ * @param {number} [latEnd=π/2] End latitude of the region in radians.
+ * @param {number} [lonStart=0] Start longitude of the region in radians.
+ * @param {number} [lonEnd=2π] End longitude of the region in radians.
+ * @param {number} [heightStart=0] Minimum height above the ellipsoid surface in meters.
+ * @param {number} [heightEnd=0] Maximum height above the ellipsoid surface in meters.
+ * @ignore
+ */
 export class EllipsoidRegion extends Ellipsoid {
 
 	constructor(
@@ -36,15 +52,51 @@ export class EllipsoidRegion extends Ellipsoid {
 	) {
 
 		super( x, y, z );
+
+		/**
+		 * Start latitude of the region in radians.
+		 * @type {number}
+		 */
 		this.latStart = latStart;
+
+		/**
+		 * End latitude of the region in radians.
+		 * @type {number}
+		 */
 		this.latEnd = latEnd;
+
+		/**
+		 * Start longitude of the region in radians.
+		 * @type {number}
+		 */
 		this.lonStart = lonStart;
+
+		/**
+		 * End longitude of the region in radians.
+		 * @type {number}
+		 */
 		this.lonEnd = lonEnd;
+
+		/**
+		 * Minimum height above the ellipsoid surface in meters.
+		 * @type {number}
+		 */
 		this.heightStart = heightStart;
+
+		/**
+		 * Maximum height above the ellipsoid surface in meters.
+		 * @type {number}
+		 */
 		this.heightEnd = heightEnd;
 
 	}
 
+	/**
+	 * Computes an oriented bounding box for this region. Writes the box extents into `box` and
+	 * the orientation frame into `matrix`.
+	 * @param {Box3} box
+	 * @param {Matrix4} matrix
+	 */
 	getBoundingBox( box, matrix ) {
 
 		if ( isTriaxial( this.radius ) ) {
@@ -186,6 +238,10 @@ export class EllipsoidRegion extends Ellipsoid {
 
 	}
 
+	/**
+	 * Computes a bounding sphere for this region. Writes the result into `sphere`.
+	 * @param {Sphere} sphere
+	 */
 	getBoundingSphere( sphere ) {
 
 		if ( isTriaxial( this.radius ) ) {

@@ -1,6 +1,6 @@
 {
   "name": "3d-tiles-renderer",
-  "version": "0.4.19",
+  "version": "0.4.24",
   "description": "https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification",
   "keywords": [
     "3d-tiles",
@@ -9,6 +9,8 @@
     "b3dm",
     "gltf",
     "threejs",
+    "babylonjs",
+    "r3f",
     "rendering",
     "geometry",
     "terrain",
@@ -44,7 +46,7 @@
       "import": "./build/index.r3f.js"
     },
     "./babylonjs": {
-      "types": "./src/babylonjs/index.d.ts",
+      "types": "./src/babylonjs/renderer/index.d.ts",
       "import": "./build/index.babylonjs.js"
     },
     "./core/plugins": {
@@ -66,7 +68,8 @@
     "build-lib": "vite build --config ./vite.lib-config.js",
     "lint": "eslint . && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.test.json --noEmit && vitest run",
-    "prepublishOnly": "npm run build-lib"
+    "prepublishOnly": "npm run build-lib",
+    "docs:build": "node utils/docs/build.js"
   },
   "repository": {
     "type": "git",
@@ -83,6 +86,8 @@
     "@mapbox/vector-tile": "^2.0.3",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
+    "@babylonjs/core": "^8.47.2",
+    "@babylonjs/loaders": "^8.47.2",
     "@eslint/js": "^9.0.0",
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
@@ -92,15 +97,15 @@
     "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitest/eslint-plugin": "^1.5.1",
-    "@babylonjs/core": "^8.47.2",
-    "@babylonjs/loaders": "^8.47.2",
     "cesium": "^1.132.0",
     "concurrently": "^6.2.1",
     "eslint": "^9.0.0",
     "eslint-config-mdcs": "^5.0.0",
+    "eslint-plugin-jsdoc": "^62.8.0",
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^16.5.0",
+    "jsdoc": "^4.0.5",
     "leva": "^0.10.0",
     "lil-gui": "^0.21.0",
     "pbf": "^4.0.1",
@@ -113,10 +118,10 @@
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
-    "@mapbox/vector-tile": "^2.0.3",
-    "@react-three/fiber": "^8.17.9 || ^9.0.0",
     "@babylonjs/core": ">=8.0.0",
     "@babylonjs/loaders": ">=8.0.0",
+    "@mapbox/vector-tile": "^2.0.3",
+    "@react-three/fiber": "^8.17.9 || ^9.0.0",
     "pbf": "^4.0.1",
     "pmtiles": "^4.3.2",
     "react": "^18.3.1 || ^19.0.0",

@@ -1,5 +1,5 @@
 import { Clock, Vector3, Vector4 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const changeEvent = { type: 'fly-change' };
 const startEvent = { type: 'fly-start' };

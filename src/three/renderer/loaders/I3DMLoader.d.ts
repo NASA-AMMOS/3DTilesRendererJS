@@ -1,5 +1,5 @@
 import { I3DMBaseResult, I3DMLoaderBase, BatchTable, FeatureTable } from '3d-tiles-renderer/core';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { Group, LoadingManager } from 'three';
 
 interface I3DMScene extends Group {

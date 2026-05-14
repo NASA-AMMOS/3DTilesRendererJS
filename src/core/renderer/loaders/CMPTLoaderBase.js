@@ -3,8 +3,20 @@
 import { LoaderBase } from './LoaderBase.js';
 import { readMagicBytes } from '../utilities/LoaderUtils.js';
 
+/**
+ * Base loader for the CMPT (Composite) tile format. Parses the CMPT binary structure
+ * and returns the individual inner tile buffers with their format types. Extend this
+ * class to integrate CMPT loading into a specific rendering engine.
+ *
+ * @extends LoaderBase
+ */
 export class CMPTLoaderBase extends LoaderBase {
 
+	/**
+	 * Parses a CMPT buffer and returns an object containing each inner tile's type and raw buffer.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {{ version: string, tiles: Array<{ type: string, buffer: Uint8Array, version: number }> }}
+	 */
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );
