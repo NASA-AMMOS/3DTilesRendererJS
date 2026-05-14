@@ -4,7 +4,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.20] - Unreleased
+## Unreleased
+### Added
+- "GeneratedSurfacePlugin" for generating an ellipsoidal or planar surface based on an "ImageOverlay".
+- Improved support for ExternalTexture memory tracking.
+- StructuralMetadata: Throw an error in `getPropertyTableData` when non-matching argument types are passed.
+
+### Fixed
+- ImageFormatPlugins: Fixed case where tile nodes could be created and never released.
+- Converted remaining "three/examples/jsm/" paths to "three/addons/"
+
+### Changed
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin", instead.
+
+## [0.4.24] - 2026.04.10
+### Added
+- TilesRenderer: Added support for reverse depth buffer.
+- Scheduler class for setting an XR session to use for rAF callbacks.
+
+### Changed
+- EnvironmentControls: PivotMesh is now added to the scene before the "start" event is fired.
+- ImageOverlayPlugin: Do not allocate a render target for compositing if only a single tile is returned that exactly matches the tile bounds.
+- WMTSImageOverlay, WMTSTilesPlugin: Deprecated "capabilities" argument, adjusted options so literals can be passed.
+- Changed "three/examples/jsm" paths to "three/addons"
+- ImageOverlayPlugin: Image overlay tile levels are now determined using image resolution rather than depth.
+
+### Fixed
+- Ellipsoid.getPositionToCartographic: fixed incorrect calculation of cartographic point.
+- ImageOverlayPlugin: Fix case where UVs can be generated as NaN.
+- ImageFormatPlugin: Adjust root tile geometricError to be Infinity.
+- ImageOverlays: Updated types.
+- EnvironmentControls: Removed use of "THREE.Clock"
+
+## [0.4.23] - 2026-03-18
+### Added
+- DebugTilesPlugin: Added support for "boundsColorMode".
+- Auto-generated documentation via JSDoc.
+- DebugTilesPlugin: Add partially transparent solid geometry for region & sphere helpers.
+
+### Fixed
+- QuantizedMeshPlugin: Fixed case where child tiles could be added redundantly.
+- QuantizedMeshPlugin: Fixed case where tiles could throw error on disposal due to be incomplete. 
+- ImageOverlayPlugin: Fixed case where split tiles could be added and not be processed.
+- BatchedMesh: Fix instances not being released when "discardOriginalContent" is true.
+
+## [0.4.22] - 2026-03-06
+### Added
+- Types for gltf metadata extensions.
+- Event and other types to TilesRendererBase for use in thee.js and Babylon.js.
+- ImageOverlayPlugin: Add support for splitting "ADD" refinement tiles.
+- Babylon TilesRenderer: Added "checkCollisions" option.
+
+### Fixed
+- LoadRegionPlugin: Add typings for new function, fix bug related to "distance" calculations.
+- GlobeContorls: Account for ellipsoid frame scale when calculating max zoom out distance.
+- Babylon TilesRenderer: Adjusted imports to support treeshaking.
+- ImageOverlayPlugin: Fix case where removing all overlays does not clear overlay textures correctly.
+- UnloadTilesPlugin: Fix case where the plugin would incorrectly retain tiles references, resulting in a memory leak.
+- OptimizedLoadStrategy Option: Add compatibility for QuantizedMeshPlugin, ImageOverlayPlugin.enableTileSplitting.
+
+## [0.4.21] - 2026-02-04
+### Fixed
+- Fixed path for babylonjs typescript definitions.
+
+## [0.4.20] - 2026-02-03
 ### Added
 - TilesRenderer: Add "queued" status and stats counter for tiles in addition to "downloading" and "parsing".
 - TilesRenderer now removes tiles from the download queue if they are no longer needed for rendering. Tiles will continue to process if they are mid-download or parsing.
@@ -15,7 +78,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilingScheme: "tileSplitX" and "tileSplitY" variables per tile
 - XYZImageFormat: add "projection" option and ability to set tile settings per-level.
 - DebugTilesPlugin: add "update" function so settings can be updated without updating tiles.
-- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting
+- LoadRegionPlugin: Added "calculateDistance" function to regions, used for tile load sorting.
+- TilesRenderer: Added "maxTilesProcessed" field to adjust how much time is spent per frame processing tiles during traversal.
 
 ### Changed
 - ImageOverlayPlugin: Textures are now assumed to be straight alpha.
@@ -29,6 +93,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TilesRenderer: Moved "update-before", "update-after" events to TilesRendererBase.
 - Plugins: moved handling of "doTilesNeedUpdate" to TilesRendererBase.
 - TilesRenderer: "dispose-model" even is now fired before "dispose" is called on sub objects.
+- Simplified handling of processed children, removed `internal.processedChildren`.
 
 ### Fixed
 - Fix mouse offset in Controls.

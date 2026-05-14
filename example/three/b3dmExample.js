@@ -15,7 +15,7 @@ import {
 	ShaderMaterial,
 	Color,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let camera, controls, scene, renderer, offsetGroup;
 let dirLight;

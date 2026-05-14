@@ -33,7 +33,8 @@ function isProcessed( tile ) {
 
 function areChildrenProcessed( tile ) {
 
-	return tile.internal.childrenProcessed === tile.children.length;
+	const children = tile.children;
+	return children.length === 0 || isProcessed( children[ children.length - 1 ] );
 
 }
 

@@ -1,3 +1,4 @@
+/** @import { WGS84_ELLIPSOID } from './GeoConstants.js' */
 import { Vector3, Spherical, MathUtils, Ray, Matrix4, Sphere, Euler } from 'three';
 import { swapToGeoFrame, latitudeToSphericalPhi } from './GeoUtils.js';
 
@@ -21,19 +22,59 @@ const _ray = /* @__PURE__ */ new Ray();
 const EPSILON12 = 1e-12;
 const CENTER_EPS = 0.1;
 
+/**
+ * Frame constant for the East-North-Up (ENU) coordinate frame, with X pointing east,
+ * Y pointing north, and Z pointing up (away from the ellipsoid surface).
+ */
 export const ENU_FRAME = 0;
+
+/**
+ * Frame constant for a camera-convention frame relative to the ENU frame, oriented with
+ * "+Y" up and "-Z" forward (matching three.js camera conventions).
+ */
 export const CAMERA_FRAME = 1;
+
+/**
+ * Frame constant for an object-convention frame relative to the ENU frame, oriented with
+ * "+Y" up and "+Z" forward (matching three.js object conventions).
+ */
 export const OBJECT_FRAME = 2;
 
+/** @typedef { ENU_FRAME | CAMERA_FRAME | OBJECT_FRAME } Frames */
+
+/**
+ * Represents a triaxial ellipsoid defined by three semi-axis radii. Used to model planet-scale
+ * surfaces such as the Earth (see {@link WGS84_ELLIPSOID}). All geographic coordinates use
+ * latitude and longitude in radians.
+ * @param {number} [x=1] Semi-axis radius along the X axis.
+ * @param {number} [y=1] Semi-axis radius along the Y axis.
+ * @param {number} [z=1] Semi-axis radius along the Z axis.
+ */
 export class Ellipsoid {
 
 	constructor( x = 1, y = 1, z = 1 ) {
 
+		/**
+		 * Optional name for this ellipsoid instance.
+		 * @type {string}
+		 */
 		this.name = '';
+
+		/**
+		 * Semi-axis radii of the ellipsoid.
+		 * @type {Vector3}
+		 */
 		this.radius = new Vector3( x, y, z );
 
 	}
 
+	/**
+	 * Returns the point where the given ray intersects the ellipsoid surface, or null if no
+	 * intersection exists. Writes the result into `target`.
+	 * @param {Ray} ray
+	 * @param {Vector3} target
+	 * @returns {Vector3|null}
+	 */
 	intersectRay( ray, target ) {
 
 		_matrix.makeScale( ...this.radius ).invert();
@@ -55,7 +96,15 @@ export class Ellipsoid {
 
 	}
 
-	// returns a frame with Z indicating altitude, Y pointing north, X pointing east
+	/**
+	 * Returns a Matrix4 representing the East-North-Up (ENU) frame at the given geographic
+	 * position: X points east, Y points north, Z points up. Writes the result into `target`.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {number} height Height above the ellipsoid surface in meters.
+	 * @param {Matrix4} target
+	 * @returns {Matrix4}
+	 */
 	getEastNorthUpFrame( lat, lon, height, target ) {
 
 		if ( height.isMatrix4 ) {
@@ -73,19 +122,39 @@ export class Ellipsoid {
 
 	}
 
-	// returns a frame with z indicating altitude and az, el, roll rotation within that frame
-	// - azimuth: measured off of true north, increasing towards "east" (z-axis)
-	// - elevation: measured off of the horizon, increasing towards sky (x-axis)
-	// - roll: rotation around northern axis (y-axis)
+	/**
+	 * Returns a Matrix4 representing the ENU frame at the given position, rotated by the given
+	 * azimuth, elevation, and roll. Equivalent to `getObjectFrame` with `ENU_FRAME`.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {number} height Height above the ellipsoid surface in meters.
+	 * @param {number} az Azimuth in radians, measured from true north towards east.
+	 * @param {number} el Elevation in radians, measured from the horizon upward.
+	 * @param {number} roll Roll in radians around the north axis.
+	 * @param {Matrix4} target
+	 * @returns {Matrix4}
+	 */
 	getOrientedEastNorthUpFrame( lat, lon, height, az, el, roll, target ) {
 
 		return this.getObjectFrame( lat, lon, height, az, el, roll, target, ENU_FRAME );
 
 	}
 
-	// returns a frame similar to the ENU frame but rotated to match three.js object and camera conventions
-	// OBJECT_FRAME: oriented such that "+Y" is up and "+Z" is forward.
-	// CAMERA_FRAME: oriented such that "+Y" is up and "-Z" is forward.
+	/**
+	 * Returns a Matrix4 representing a frame at the given geographic position, rotated by the
+	 * given azimuth, elevation, and roll, and adjusted to match the three.js `frame` convention.
+	 * `OBJECT_FRAME` orients with "+Y" up and "+Z" forward; `CAMERA_FRAME` orients with "+Y" up
+	 * and "-Z" forward; `ENU_FRAME` returns the raw ENU-relative rotation.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {number} height Height above the ellipsoid surface in meters.
+	 * @param {number} az Azimuth in radians, measured from true north towards east.
+	 * @param {number} el Elevation in radians, measured from the horizon upward.
+	 * @param {number} roll Roll in radians around the north axis.
+	 * @param {Matrix4} target
+	 * @param {Frames} [frame=OBJECT_FRAME]
+	 * @returns {Matrix4}
+	 */
 	getObjectFrame( lat, lon, height, az, el, roll, target, frame = OBJECT_FRAME ) {
 
 		this.getEastNorthUpFrame( lat, lon, height, _matrix );
@@ -115,6 +184,15 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Extracts geographic position and orientation (lat, lon, height, azimuth, elevation, roll)
+	 * from the given object/camera frame matrix. The inverse of `getObjectFrame`. Writes the
+	 * result into `target` and returns it.
+	 * @param {Matrix4} matrix
+	 * @param {Object} target
+	 * @param {Frames} [frame=OBJECT_FRAME]
+	 * @returns {{ lat: number, lon: number, height: number, azimuth: number, elevation: number, roll: number }}
+	 */
 	getCartographicFromObjectFrame( matrix, target, frame = OBJECT_FRAME ) {
 
 		// if working with a frame that is not the ENU_FRAME then multiply in the
@@ -151,6 +229,16 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Fills in the east, north, and up unit vectors for the ENU frame at the given latitude and
+	 * longitude. Optionally writes the surface position into `point`.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {Vector3} vecEast
+	 * @param {Vector3} vecNorth
+	 * @param {Vector3} vecUp
+	 * @param {Vector3} [point]
+	 */
 	getEastNorthUpAxes( lat, lon, vecEast, vecNorth, vecUp, point = _pos ) {
 
 		this.getCartographicToPosition( lat, lon, 0, point );
@@ -160,9 +248,15 @@ export class Ellipsoid {
 
 	}
 
-	// azimuth: measured off of true north, increasing towards "east"
-	// elevation: measured off of the horizon, increasing towards sky
-	// roll: rotation around northern axis
+	/**
+	 * @deprecated Use `getCartographicFromObjectFrame` instead.
+	 * @param {number} lat
+	 * @param {number} lon
+	 * @param {Matrix4} rotationMatrix
+	 * @param {Object} target
+	 * @param {Frames} frame
+	 * @returns {{ azimuth: number, elevation: number, roll: number }}
+	 */
 	getAzElRollFromRotationMatrix( lat, lon, rotationMatrix, target, frame = ENU_FRAME ) {
 
 		console.warn( 'Ellipsoid: "getAzElRollFromRotationMatrix" is deprecated. Use "getCartographicFromObjectFrame", instead.' );
@@ -179,6 +273,17 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * @deprecated Use `getObjectFrame` instead.
+	 * @param {number} lat
+	 * @param {number} lon
+	 * @param {number} az
+	 * @param {number} el
+	 * @param {number} roll
+	 * @param {Matrix4} target
+	 * @param {Frames} frame
+	 * @returns {Matrix4}
+	 */
 	getRotationMatrixFromAzElRoll( lat, lon, az, el, roll, target, frame = ENU_FRAME ) {
 
 		console.warn( 'Ellipsoid: "getRotationMatrixFromAzElRoll" function has been deprecated. Use "getObjectFrame", instead.' );
@@ -189,6 +294,18 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * @deprecated Use `getObjectFrame` instead.
+	 * @param {number} lat
+	 * @param {number} lon
+	 * @param {number} az
+	 * @param {number} el
+	 * @param {number} roll
+	 * @param {number} height
+	 * @param {Matrix4} target
+	 * @param {Frames} frame
+	 * @returns {Matrix4}
+	 */
 	getFrame( lat, lon, az, el, roll, height, target, frame = ENU_FRAME ) {
 
 		console.warn( 'Ellipsoid: "getFrame" function has been deprecated. Use "getObjectFrame", instead.' );
@@ -196,6 +313,15 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Converts geographic coordinates to a 3D Cartesian position on the ellipsoid surface
+	 * (plus the given height offset). Writes the result into `target` and returns it.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {number} height Height above the ellipsoid surface in meters.
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
 	getCartographicToPosition( lat, lon, height, target ) {
 
 		// From Cesium function Ellipsoid.cartographicToCartesian
@@ -215,12 +341,19 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Converts a 3D Cartesian position to geographic coordinates (lat, lon, height). Writes the
+	 * result into `target` and returns it.
+	 * @param {Vector3} pos
+	 * @param {Object} target
+	 * @returns {{ lat: number, lon: number, height: number }}
+	 */
 	getPositionToCartographic( pos, target ) {
 
 		// From Cesium function Ellipsoid.cartesianToCartographic
 		// https://github.com/CesiumGS/cesium/blob/665ec32e813d5d6fe906ec3e87187f6c38ed5e49/packages/engine/Source/core/renderer/Ellipsoid.js#L463
 		this.getPositionToSurfacePoint( pos, _vec );
-		this.getPositionToNormal( pos, _norm );
+		this.getPositionToNormal( _vec, _norm );
 
 		const heightDelta = _vec2.subVectors( pos, _vec );
 
@@ -231,6 +364,14 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns the surface normal of the ellipsoid at the given latitude and longitude. Writes the
+	 * result into `target` and returns it.
+	 * @param {number} lat Latitude in radians.
+	 * @param {number} lon Longitude in radians.
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
 	getCartographicToNormal( lat, lon, target ) {
 
 		_spherical.set( 1, latitudeToSphericalPhi( lat ), lon );
@@ -242,6 +383,13 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns the surface normal of the ellipsoid at the given 3D Cartesian position. Writes the
+	 * result into `target` and returns it.
+	 * @param {Vector3} pos
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
 	getPositionToNormal( pos, target ) {
 
 		const radius = this.radius;
@@ -255,6 +403,13 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Projects the given 3D position onto the ellipsoid surface along the geodetic normal.
+	 * Returns null if the position is at or near the center. Writes the result into `target`.
+	 * @param {Vector3} pos
+	 * @param {Vector3} target
+	 * @returns {Vector3|null}
+	 */
 	getPositionToSurfacePoint( pos, target ) {
 
 		// From Cesium function Ellipsoid.scaleToGeodeticSurface
@@ -335,6 +490,13 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns the geometric distance to the horizon from the given latitude and elevation above
+	 * the ellipsoid surface.
+	 * @param {number} latitude Latitude in degrees.
+	 * @param {number} elevation Height above the ellipsoid surface in meters.
+	 * @returns {number}
+	 */
 	calculateHorizonDistance( latitude, elevation ) {
 
 		// from https://aty.sdsu.edu/explain/atmos_refr/horizon.html
@@ -344,6 +506,12 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns the prime vertical radius of curvature (distance from the center of the ellipsoid
+	 * to the surface along the normal) at the given latitude.
+	 * @param {number} latitude Latitude in degrees.
+	 * @returns {number}
+	 */
 	calculateEffectiveRadius( latitude ) {
 
 		// This radius represents the distance from the center of the ellipsoid to the surface along the normal at the given latitude.
@@ -360,6 +528,11 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns the height of the given 3D position above (or below) the ellipsoid surface.
+	 * @param {Vector3} pos
+	 * @returns {number}
+	 */
 	getPositionElevation( pos ) {
 
 		// logic from "getPositionToCartographic"
@@ -370,8 +543,13 @@ export class Ellipsoid {
 
 	}
 
-	// Returns an estimate of the closest point on the ellipsoid to the ray. Returns
-	// the surface intersection if they collide.
+	/**
+	 * Returns an estimate of the closest point on the ellipsoid surface to the given ray.
+	 * Returns the exact surface intersection point if the ray intersects the ellipsoid.
+	 * @param {Ray} ray
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
 	closestPointToRayEstimate( ray, target ) {
 
 		if ( this.intersectRay( ray, target ) ) {
@@ -393,6 +571,11 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Copies the radius from the given ellipsoid into this one.
+	 * @param {Ellipsoid} source
+	 * @returns {this}
+	 */
 	copy( source ) {
 
 		this.radius.copy( source.radius );
@@ -400,6 +583,10 @@ export class Ellipsoid {
 
 	}
 
+	/**
+	 * Returns a new Ellipsoid with the same radius as this one.
+	 * @returns {Ellipsoid}
+	 */
 	clone() {
 
 		return new this.constructor().copy( this );

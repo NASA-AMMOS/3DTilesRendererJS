@@ -6,8 +6,21 @@ import { FeatureTable } from '../utilities/FeatureTable.js';
 import { readMagicBytes } from '../utilities/LoaderUtils.js';
 import { LoaderBase } from './LoaderBase.js';
 
+/**
+ * Base loader for the PNTS (Point Cloud) tile format. Parses the PNTS binary
+ * structure and extracts the feature and batch tables containing point positions,
+ * colors, and normals. Extend this class to integrate PNTS loading into a specific
+ * rendering engine.
+ *
+ * @extends LoaderBase
+ */
 export class PNTSLoaderBase extends LoaderBase {
 
+	/**
+	 * Parses a PNTS buffer and returns the raw tile data.
+	 * @param {ArrayBuffer} buffer
+	 * @returns {Promise<{ version: string, featureTable: FeatureTable, batchTable: BatchTable }>}
+	 */
 	parse( buffer ) {
 
 		const dataView = new DataView( buffer );
