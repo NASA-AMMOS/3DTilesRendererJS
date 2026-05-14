@@ -4,6 +4,16 @@ Plugins and extensions for the 3D Tiles renderer.
 
 See the [API reference](./API.md) for full class and method documentation.
 
+# Community Plugins
+
+#### [3D-Tiles-RendererJS-3DGS-Plugin](https://github.com/WilliamLiu-1997/3D-Tiles-RendererJS-3DGS-Plugin)
+
+Plugin for rendering gaussian-splat-embeded glTF tile sets.
+
+#### [3dtilesrenderer-styling-plugin](https://github.com/bertt/3dtilesrenderer-styling-plugin)
+
+Plugin for adding Cesium 3D Tiles Styling specification support.
+
 # Use
 
 ## GLTF Plugins
