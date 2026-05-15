@@ -1389,7 +1389,7 @@ export class ImageOverlay {
  * multiple source tiles into a single texture per 3D tile region.
  * @extends ImageOverlay
  */
-class TiledImageOverlay extends ImageOverlay {
+export class TiledImageOverlay extends ImageOverlay {
 
 	get tiling() {
 
