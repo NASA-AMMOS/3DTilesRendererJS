@@ -1,4 +1,5 @@
 const MVT_EXTENT = 4096;
+const _point = [ 0, 0 ];
 
 export class VectorTileCanvasRenderer {
 
@@ -21,9 +22,9 @@ export class VectorTileCanvasRenderer {
 
 			const normX = tMinX + ( px / MVT_EXTENT ) * ( tMaxX - tMinX );
 			const normY = tMaxY - ( py / MVT_EXTENT ) * ( tMaxY - tMinY );
-			const canvasX = Math.round( ( normX - rMinX ) / ( rMaxX - rMinX ) * width );
-			const canvasY = Math.round( ( 1 - ( normY - rMinY ) / ( rMaxY - rMinY ) ) * height );
-			return [ canvasX, canvasY ];
+			_point[ 0 ] = Math.round( ( normX - rMinX ) / ( rMaxX - rMinX ) * width );
+			_point[ 1 ] = Math.round( ( 1 - ( normY - rMinY ) / ( rMaxY - rMinY ) ) * height );
+			return _point;
 
 		};
 
