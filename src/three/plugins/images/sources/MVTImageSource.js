@@ -9,6 +9,21 @@ import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
 
+const DEFAULT_STYLES = {
+	default:         { fill: '#222222', order: Infinity },
+	landuse:         { fill: '#caedc1', order: 0 },
+	landuse_overlay: { fill: '#caedc1', order: 1 },
+	park:            { fill: '#5da859', order: 2 },
+	water:           { fill: '#201f20', order: 3 },
+	waterway:        { fill: '#201f20', order: 4 },
+	transportation:  { stroke: '#444444', order: 5 },
+	road:            { stroke: '#444444', order: 6 },
+	building:        { fill: '#eeeeee', order: 7 },
+	boundaries:      { stroke: '#444545', order: 8 },
+	poi:             { fill: '#222222', radius: 3, order: 9 },
+	place_label:     { fill: '#222222', order: 10 },
+};
+
 // Fetches and caches parsed MVT tile content (vectorTile + tileBounds) keyed by (tx, ty, tl).
 export class MVTContentCache extends DataCache {
 
@@ -128,7 +143,7 @@ export class MVTImageSource extends RegionImageSource {
 		super();
 
 		this.resolution = resolution;
-		this._styler = new VectorTileStyler( { filter, styles } );
+		this._styler = new VectorTileStyler( { filter, styles: { ...DEFAULT_STYLES, ...styles } } );
 		this._renderer = new VectorTileCanvasRenderer( { styler: this._styler } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 

@@ -1,45 +1,51 @@
-import { Color } from 'three';
-import { LAYER_COLORS, DEFAULT_LAYER_ORDER } from './layerColors.js';
-
-const _color = /* @__PURE__ */ new Color();
-
 export class VectorTileStyler {
 
 	constructor( options = {} ) {
 
-		this.filter = options.filter || ( () => true );
-		this._layerOrder = options.layerOrder || DEFAULT_LAYER_ORDER;
-		this._styles = {};
+		const { styles = {}, filter = () => true } = options;
 
-		const colorsToSet = Object.assign( {}, LAYER_COLORS, options.styles || {} );
-		for ( const key in colorsToSet ) {
+		this.filter = filter;
+		this._styles = {
+			...styles,
+			default: { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true, ...styles.default },
+		};
 
-			_color.set( colorsToSet[ key ] );
-			this._styles[ key ] = {
-				hex: _color.getHex(),
-				css: _color.getStyle()
-			};
+	}
+
+	getStyle( layerName ) {
+
+		const styles = this._styles;
+		const defaultStyle = styles.default;
+		if ( layerName in styles ) {
+
+			return { ...defaultStyle, ...styles[ layerName ] };
+
+		} else {
+
+			return defaultStyle;
 
 		}
 
 	}
 
-	getColor( layerName, format = 'hex' ) {
-
-		const style = this._styles[ layerName ] || this._styles[ 'default' ];
-		return format === 'css' ? style.css : style.hex;
-
-	}
-
 	sortLayers( layerNames ) {
+
+		const styles = this._styles;
+		const defaultOrder = styles.default.order;
 
 		return [ ...layerNames ].sort( ( a, b ) => {
 
-			let idxA = this._layerOrder.indexOf( a );
-			let idxB = this._layerOrder.indexOf( b );
-			if ( idxA === - 1 ) idxA = 0;
-			if ( idxB === - 1 ) idxB = 0;
-			return idxA - idxB;
+			const orderA = styles[ a ]?.order ?? defaultOrder;
+			const orderB = styles[ b ]?.order ?? defaultOrder;
+			if ( orderA !== orderB ) {
+
+				return orderA - orderB;
+
+			} else {
+
+				return a.localeCompare( b );
+
+			}
 
 		} );
 

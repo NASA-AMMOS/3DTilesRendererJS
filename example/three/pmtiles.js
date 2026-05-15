@@ -14,17 +14,17 @@ import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
 // Layer config for Protomaps v4 basemap — colors from the Protomaps "Light" theme
 const LAYERS = {
-	earth: { enabled: true, color: '#e2dfda' },
-	water: { enabled: true, color: '#80deea' },
-	landcover: { enabled: true, color: '#c4e7d2' },
-	landuse: { enabled: true, color: '#cfddd5' },
-	natural: { enabled: true, color: '#e2e0d7' },
-	buildings: { enabled: true, color: '#cccccc' },
-	roads: { enabled: true, color: '#ebebeb' },
-	transit: { enabled: true, color: '#a7b1b3' },
-	boundaries: { enabled: true, color: '#adadad' },
-	places: { enabled: true, color: '#5c5c5c' },
-	pois: { enabled: true, color: '#1a8cbd' },
+	earth: { enabled: true, fill: '#e2dfda', order: 0 },
+	water: { enabled: true, fill: '#80deea', order: 1 },
+	landcover: { enabled: true, fill: '#c4e7d2', order: 2 },
+	landuse: { enabled: true, fill: '#cfddd5', order: 3 },
+	natural: { enabled: true, fill: '#e2e0d7', order: 4 },
+	buildings: { enabled: true, fill: '#cccccc', order: 5 },
+	roads: { enabled: true, stroke: '#ebebeb', order: 6 },
+	transit: { enabled: true, stroke: '#a7b1b3', order: 7 },
+	boundaries: { enabled: true, stroke: '#adadad', order: 8 },
+	places: { enabled: true, fill: '#5c5c5c', order: 9 },
+	pois: { enabled: true, fill: '#1a8cbd', radius: 3, order: 10 },
 };
 
 let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
@@ -34,10 +34,11 @@ render();
 
 function getStyles() {
 
-	const styles = { default: '#cccccc' };
+	const styles = { default: { fill: '#cccccc' } };
 	for ( const key in LAYERS ) {
 
-		styles[ key ] = LAYERS[ key ].color;
+		const { fill, stroke, radius, order } = LAYERS[ key ];
+		styles[ key ] = { fill, stroke, order, ...( radius !== undefined && { radius } ) };
 
 	}
 
@@ -114,7 +115,7 @@ function setupGUI() {
 
 		const folder = gui.addFolder( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) );
 		folder.add( LAYERS[ key ], 'enabled' ).onChange( updateOverlay );
-		folder.addColor( LAYERS[ key ], 'color' ).onChange( updateOverlay );
+		folder.addColor( LAYERS[ key ], LAYERS[ key ].fill !== undefined ? 'fill' : 'stroke' ).onChange( updateOverlay );
 		folder.close();
 
 	}

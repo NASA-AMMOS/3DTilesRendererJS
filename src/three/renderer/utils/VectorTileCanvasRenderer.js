@@ -22,14 +22,16 @@ export class VectorTileCanvasRenderer {
 
 		for ( const { layerName, geometry, type } of this._getFeatures( vectorTile ) ) {
 
-			const color = this.styler.getColor( layerName, 'css' );
-			_ctx.fillStyle = color;
-			_ctx.strokeStyle = color;
-			_ctx.lineWidth = _invScale;
+			const style = this.styler.getStyle( layerName );
+			if ( ! style || ! style.visible ) continue;
+
+			_ctx.fillStyle = style.fill ?? 'transparent';
+			_ctx.strokeStyle = style.stroke ?? 'transparent';
+			_ctx.lineWidth = ( style.strokeWidth ?? 1 ) * _invScale;
 
 			if ( type === 1 ) {
 
-				this._renderPoints( geometry, layerName );
+				this._renderPoints( geometry, style.radius ?? 2 );
 
 			} else if ( type === 2 ) {
 
@@ -107,10 +109,10 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_renderPoints( geometry, layerName ) {
+	_renderPoints( geometry, radius ) {
 
 		const { _ctx, _invScale, _getX, _getY } = this;
-		const radius = ( ( layerName === 'poi' ) ? 3 : 2 ) * _invScale;
+		const scaledRadius = radius * _invScale;
 
 		for ( const multiPoint of geometry ) {
 
@@ -118,8 +120,8 @@ export class VectorTileCanvasRenderer {
 
 				const x = _getX( p ), y = _getY( p );
 				_ctx.beginPath();
-				_ctx.moveTo( x + radius, y );
-				_ctx.arc( x, y, radius, 0, Math.PI * 2 );
+				_ctx.moveTo( x + scaledRadius, y );
+				_ctx.arc( x, y, scaledRadius, 0, Math.PI * 2 );
 				_ctx.fill();
 
 			}
