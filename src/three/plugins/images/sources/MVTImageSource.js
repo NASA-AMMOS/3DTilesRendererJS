@@ -8,8 +8,6 @@ import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
 
-const _TILE_KEYS = Symbol( 'TILE_KEYS' );
-
 // Fetches and caches parsed MVT tile content (vectorTile + tileBounds) keyed by (tx, ty, tl).
 export class MVTContentCache extends DataCache {
 
@@ -172,14 +170,17 @@ export class MVTImageSource extends RegionImageSource {
 
 		} );
 
-		const tileKeys = [];
 		await Promise.all( tiles.map( async ( [ tx, ty, tl ] ) => {
 
 			let vectorTile = _contentCache.lock( tx, ty, tl );
 			if ( vectorTile instanceof Promise ) vectorTile = await vectorTile;
-			if ( ! vectorTile ) return;
+			if ( ! vectorTile ) {
 
-			tileKeys.push( [ tx, ty, tl ] );
+				_contentCache.release( tx, ty, tl );
+				return;
+
+			}
+
 			const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
 			_renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
 
@@ -189,18 +190,23 @@ export class MVTImageSource extends RegionImageSource {
 		tex.colorSpace = SRGBColorSpace;
 		tex.generateMipmaps = false;
 		tex.needsUpdate = true;
-		tex[ _TILE_KEYS ] = tileKeys;
+		tex._regionArgs = [ minX, minY, maxX, maxY, level ];
 		return tex;
 
 	}
 
 	disposeItem( texture ) {
 
-		for ( const [ tx, ty, tl ] of texture[ _TILE_KEYS ] ) {
+		const [ minX, minY, maxX, maxY, level ] = texture._regionArgs;
+		forEachTileInBounds( [ minX, minY, maxX, maxY ], level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
-			this._contentCache.release( tx, ty, tl );
+			if ( this._contentCache.get( tx, ty, tl ) ) {
 
-		}
+				this._contentCache.release( tx, ty, tl );
+
+			}
+
+		} );
 
 		texture.dispose();
 
@@ -217,20 +223,21 @@ export class MVTImageSource extends RegionImageSource {
 
 		this.forEachItem( ( tex, args ) => {
 
-			const regionBounds = args.slice( 0, 4 );
+			const [ minX, minY, maxX, maxY, level ] = args;
+			const regionBounds = [ minX, minY, maxX, maxY ];
 			const canvas = tex.image;
 			const ctx = canvas.getContext( '2d' );
 			ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
-			for ( const [ tx, ty, tl ] of tex[ _TILE_KEYS ] ) {
+			forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
 				const vectorTile = this._contentCache.get( tx, ty, tl );
-				if ( ! vectorTile ) continue;
+				if ( ! vectorTile ) return;
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
 				this._renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
 
-			}
+			} );
 
 			tex.needsUpdate = true;
 
