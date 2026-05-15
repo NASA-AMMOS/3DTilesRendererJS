@@ -290,7 +290,7 @@ export class ImageOverlayPlugin {
 
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range );
+					overlay.releaseTexture( range, tile );
 
 				}
 
@@ -511,7 +511,7 @@ export class ImageOverlayPlugin {
 			// if the tile has a render target associated with the overlay and the last level of detail
 			// is not being displayed, yet, then we need to split
 			const info = tileInfo.get( tile );
-			if ( info && info.target && overlay.shouldSplit( info.range ) ) {
+			if ( info && info.target && overlay.shouldSplit( info.range, tile ) ) {
 
 				// get the vector representing the projection direction
 				if ( overlay.frame ) {
@@ -857,7 +857,7 @@ export class ImageOverlayPlugin {
 				// release the ranges
 				if ( range !== null ) {
 
-					overlay.releaseTexture( range );
+					overlay.releaseTexture( range, tile );
 
 				}
 
@@ -1012,7 +1012,7 @@ export class ImageOverlayPlugin {
 				range = overlay.projection.toNormalizedRange( range );
 
 				info.range = range;
-				overlay.lockTexture( range );
+				overlay.lockTexture( range, tile );
 
 			}
 
@@ -1104,14 +1104,14 @@ export class ImageOverlayPlugin {
 		if ( info.range === null ) {
 
 			info.range = range;
-			overlay.lockTexture( range );
+			overlay.lockTexture( range, tile );
 
 		}
 
 		// if the image projection is outside the 0, 1 uvw range or there are no textures to draw in
 		// the tiled image set the don't allocate a texture for it.
 		let target = null;
-		if ( heightInRange && overlay.hasContent( range ) ) {
+		if ( heightInRange && overlay.hasContent( range, tile ) ) {
 
 			target = await processQueue
 				.add( { tile, overlay }, async () => {
@@ -1124,7 +1124,7 @@ export class ImageOverlayPlugin {
 					}
 
 					// Get the texture from the overlay
-					const regionTarget = await overlay.getTexture( range );
+					const regionTarget = await overlay.getTexture( range, tile );
 
 					// check if the overlay has been disposed since starting this function
 					if ( controller.signal.aborted || tileController.signal.aborted ) {
@@ -1349,25 +1349,25 @@ export class ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, tile ) {
 
 		return false;
 
 	}
 
-	async getTexture( range ) {
+	async getTexture( range, tile ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range ) {
+	async lockTexture( range, tile ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range ) {
+	releaseTexture( range, tile ) {
 
 	}
 
@@ -1375,7 +1375,7 @@ export class ImageOverlay {
 
 	}
 
-	shouldSplit( range ) {
+	shouldSplit( range, tile ) {
 
 		return false;
 
@@ -1388,6 +1388,10 @@ export class ImageOverlay {
  * Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
  * multiple source tiles into a single texture per 3D tile region.
  * @extends ImageOverlay
+ * @param {Object} [options]
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class TiledImageOverlay extends ImageOverlay {
 
@@ -1423,10 +1427,11 @@ export class TiledImageOverlay extends ImageOverlay {
 
 	constructor( options = {} ) {
 
-		const { imageSource = null, ...rest } = options;
+		const { imageSource = null, mapZoomLevelToTile = null, ...rest } = options;
 		super( rest );
 		this.imageSource = imageSource;
 		this.regionImageSource = null;
+		this.mapZoomLevelToTile = mapZoomLevelToTile;
 
 	}
 
@@ -1450,7 +1455,7 @@ export class TiledImageOverlay extends ImageOverlay {
 	}
 
 	// Texture acquisition API implementations
-	calculateLevel( range ) {
+	calculateLevel( range, tile ) {
 
 		const [ minX, minY, maxX, maxY ] = range;
 		const w = maxX - minX;
@@ -1481,31 +1486,44 @@ export class TiledImageOverlay extends ImageOverlay {
 
 		}
 
+		if ( this.mapZoomLevelToTile !== null ) {
+
+			level = this.mapZoomLevelToTile( level, tile );
+
+		}
+
 		return level;
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, tile ) {
 
-		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range ) );
+		const level = this.calculateLevel( range, tile );
+		if ( level === null || level < this.tiling.minLevel ) {
 
-	}
+			return false;
 
-	getTexture( range ) {
+		}
 
-		return this.regionImageSource.get( ...range, this.calculateLevel( range ) );
-
-	}
-
-	lockTexture( range ) {
-
-		return this.regionImageSource.lock( ...range, this.calculateLevel( range ) );
+		return this.regionImageSource.hasContent( ...range, level );
 
 	}
 
-	releaseTexture( range ) {
+	getTexture( range, tile ) {
 
-		this.regionImageSource.release( ...range, this.calculateLevel( range ) );
+		return this.regionImageSource.get( ...range, this.calculateLevel( range, tile ) );
+
+	}
+
+	lockTexture( range, tile ) {
+
+		return this.regionImageSource.lock( ...range, this.calculateLevel( range, tile ) );
+
+	}
+
+	releaseTexture( range, tile ) {
+
+		this.regionImageSource.release( ...range, this.calculateLevel( range, tile ) );
 
 	}
 
@@ -1515,10 +1533,10 @@ export class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	shouldSplit( range ) {
+	shouldSplit( range, tile ) {
 
 		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range );
+		return this.tiling.maxLevel > this.calculateLevel( range, tile );
 
 	}
 
@@ -1539,6 +1557,9 @@ export class TiledImageOverlay extends ImageOverlay {
  * @param {Function} [options.preprocessURL=null] URL rewriting callback.
  * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
  * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class XYZTilesOverlay extends TiledImageOverlay {
 
@@ -1727,6 +1748,9 @@ export class GeoJSONOverlay extends ImageOverlay {
  * @param {Function} [options.preprocessURL=null] URL rewriting callback.
  * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
  * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class WMSTilesOverlay extends TiledImageOverlay {
 
@@ -1757,6 +1781,9 @@ export class WMSTilesOverlay extends TiledImageOverlay {
  * @param {number} [options.levels=20] - Number of zoom levels. Ignored if `tileMatrices` is provided.
  * @param {number} [options.tileDimension=256] - Default tile width and height in pixels.
  * @param {number[]|null} [options.contentBoundingBox=null] - Content bounding box in radians, `[west, south, east, north]`. If null, uses full projection bounds.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class WMTSTilesOverlay extends TiledImageOverlay {
 
@@ -1781,6 +1808,9 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
  * @param {Function} [options.preprocessURL=null] URL rewriting callback.
  * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
  * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class TMSTilesOverlay extends TiledImageOverlay {
 
@@ -1808,6 +1838,9 @@ export class TMSTilesOverlay extends TiledImageOverlay {
  * @param {Function} [options.preprocessURL=null] URL rewriting callback.
  * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
  * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class CesiumIonOverlay extends TiledImageOverlay {
 
@@ -1933,6 +1966,9 @@ export class CesiumIonOverlay extends TiledImageOverlay {
  * @param {Function} [options.preprocessURL=null] URL rewriting callback.
  * @param {boolean} [options.alphaMask=false] Use alpha channel as a surface mask.
  * @param {boolean} [options.alphaInvert=false] Invert the alpha channel.
+ * @param {Function} [options.mapZoomLevelToTile=null] Optional callback allowing user to override the tile level
+ * selection. Passes the default computed tile level and the tile object. Should return the overriden tile level or
+ * `null` to prevent the tile from being rendered.
  */
 export class GoogleMapsOverlay extends TiledImageOverlay {
 

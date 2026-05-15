@@ -1,5 +1,6 @@
 import { Color, Matrix4, WebGLRenderer } from 'three';
 import { WMTSTileMatrix } from '../loaders/WMTSCapabilitiesLoader.js';
+import { Tile } from '../../../core/renderer/tiles/Tile.js';
 
 export class ImageOverlayPlugin {
 
@@ -37,6 +38,7 @@ export class TiledImageOverlay extends ImageOverlay {
 	readonly projection: any;
 	readonly aspectRatio: number;
 	fetchOptions: any;
+	mapZoomLevelToTile: ( ( level: number, tile: Tile ) => number | null ) | null;
 
 }
 
@@ -54,6 +56,7 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
@@ -99,6 +102,7 @@ export class WMSTilesOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
@@ -124,6 +128,7 @@ export class WMTSTilesOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
@@ -139,6 +144,7 @@ export class TMSTilesOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
@@ -156,6 +162,7 @@ export class CesiumIonOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
@@ -174,6 +181,7 @@ export class GoogleMapsOverlay extends TiledImageOverlay {
 		preprocessURL?: ( url: string ) => string | null;
 		alphaMask?: boolean,
 		alphaInvert?: boolean,
+		mapZoomLevelToTile?: ( level: number, tile: Tile ) => number | null;
 	} );
 
 }
