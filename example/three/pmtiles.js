@@ -32,20 +32,6 @@ let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
 init();
 render();
 
-function getStyle() {
-
-	return layerName => {
-
-		const layer = LAYERS[ layerName ];
-		if ( ! layer?.enabled ) return null;
-
-		const { fill, stroke, radius, order } = layer;
-		return { fill, stroke, order, ...( radius !== undefined && { radius } ) };
-
-	};
-
-}
-
 function init() {
 
 	renderer = new WebGLRenderer( { antialias: true } );
@@ -76,7 +62,7 @@ function init() {
 	// PMTiles overlay: vector tile data composited on top of the base geometry
 	overlay = new PMTilesOverlay( {
 		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
-		getStyle: getStyle(),
+		getStyle,
 	} );
 	overlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], renderer } );
 	tiles.registerPlugin( overlayPlugin );
@@ -93,9 +79,17 @@ function init() {
 
 }
 
+function getStyle( layerName, properties ) {
+
+	if ( ! ( layerName in LAYERS ) ) return null;
+
+	const layer = LAYERS[ layerName ];
+	return layer.enabled ? layer : null;
+
+}
+
 function updateOverlay() {
 
-	overlay.setStyle( getStyle() );
 	overlay.redraw();
 
 }

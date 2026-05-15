@@ -1,4 +1,5 @@
 const MVT_EXTENT = 4096;
+const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true };
 
 export class VectorTileCanvasRenderer {
 
@@ -11,27 +12,36 @@ export class VectorTileCanvasRenderer {
 		} = options;
 
 		this.styler = styler;
-		this._getX = getX;
-		this._getY = getY;
+		this.getX = getX;
+		this.getY = getY;
+
+		this._invScale = 1;
+		this._ctx = null;
 
 	}
 
 	renderToCanvas( vectorTile ) {
 
-		const { _ctx, _invScale } = this;
+		const { _ctx, _invScale, styler } = this;
 
 		for ( const { layerName, properties, geometry, type } of this._getFeatures( vectorTile ) ) {
 
-			const style = this.styler.getStyle( layerName, properties );
-			if ( ! style || style.visible === false ) continue;
+			const style = styler.getStyle( layerName, properties );
+			const visible = style?.visible ?? DEFAULT_STYLE.visible;
+			if ( ! style || visible === false ) {
 
-			_ctx.fillStyle = style.fill ?? 'transparent';
-			_ctx.strokeStyle = style.stroke ?? 'transparent';
-			_ctx.lineWidth = ( style.strokeWidth ?? 1 ) * _invScale;
+				continue;
+
+			}
+
+			_ctx.fillStyle = style.fill ?? DEFAULT_STYLE.fill;
+			_ctx.strokeStyle = style.stroke ?? DEFAULT_STYLE.stroke;
+			_ctx.lineWidth = ( style.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
+			const scaledRadius = ( style.radius ?? DEFAULT_STYLE.radius ) * _invScale;
 
 			if ( type === 1 ) {
 
-				this._renderPoints( geometry, style.radius ?? 2 );
+				this._renderPoints( geometry, scaledRadius );
 
 			} else if ( type === 2 ) {
 
@@ -107,17 +117,15 @@ export class VectorTileCanvasRenderer {
 
 	_renderPoints( geometry, radius ) {
 
-		const { _ctx, _invScale, _getX, _getY } = this;
-		const scaledRadius = radius * _invScale;
-
+		const { _ctx, getX, getY } = this;
 		for ( const multiPoint of geometry ) {
 
 			for ( const p of multiPoint ) {
 
-				const x = _getX( p ), y = _getY( p );
+				const x = getX( p ), y = getY( p );
 				_ctx.beginPath();
-				_ctx.moveTo( x + scaledRadius, y );
-				_ctx.arc( x, y, scaledRadius, 0, Math.PI * 2 );
+				_ctx.moveTo( x + radius, y );
+				_ctx.arc( x, y, radius, 0, Math.PI * 2 );
 				_ctx.fill();
 
 			}
@@ -128,7 +136,7 @@ export class VectorTileCanvasRenderer {
 
 	_renderLines( geometry ) {
 
-		const { _ctx, _getX, _getY } = this;
+		const { _ctx, getX, getY } = this;
 
 		_ctx.beginPath();
 
@@ -136,8 +144,8 @@ export class VectorTileCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				if ( k === 0 ) _ctx.moveTo( _getX( ring[ k ] ), _getY( ring[ k ] ) );
-				else _ctx.lineTo( _getX( ring[ k ] ), _getY( ring[ k ] ) );
+				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ), getY( ring[ k ] ) );
+				else _ctx.lineTo( getX( ring[ k ] ), getY( ring[ k ] ) );
 
 			}
 
@@ -149,7 +157,7 @@ export class VectorTileCanvasRenderer {
 
 	_renderPolygons( geometry ) {
 
-		const { _ctx, _getX, _getY } = this;
+		const { _ctx, getX, getY } = this;
 
 		_ctx.beginPath();
 
@@ -157,8 +165,8 @@ export class VectorTileCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				if ( k === 0 ) _ctx.moveTo( _getX( ring[ k ] ), _getY( ring[ k ] ) );
-				else _ctx.lineTo( _getX( ring[ k ] ), _getY( ring[ k ] ) );
+				if ( k === 0 ) _ctx.moveTo( getX( ring[ k ] ), getY( ring[ k ] ) );
+				else _ctx.lineTo( getX( ring[ k ] ), getY( ring[ k ] ) );
 
 			}
 
