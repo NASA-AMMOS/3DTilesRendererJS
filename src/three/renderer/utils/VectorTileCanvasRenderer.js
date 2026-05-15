@@ -6,12 +6,12 @@ export class VectorTileCanvasRenderer {
 	constructor( options = {} ) {
 
 		const {
-			styler = null,
+			getStyle = null,
 			getX = p => p.x,
 			getY = p => p.y,
 		} = options;
 
-		this.styler = styler;
+		this.getStyle = getStyle;
 		this.getX = getX;
 		this.getY = getY;
 
@@ -22,11 +22,11 @@ export class VectorTileCanvasRenderer {
 
 	renderToCanvas( vectorTile ) {
 
-		const { _ctx, _invScale, styler } = this;
+		const { _ctx, _invScale, getStyle } = this;
 
 		for ( const { layerName, properties, geometry, type } of this._getFeatures( vectorTile ) ) {
 
-			const style = styler.getStyle( layerName, properties );
+			const style = getStyle ? getStyle( layerName, properties ) : DEFAULT_STYLE;
 			const visible = style?.visible ?? DEFAULT_STYLE.visible;
 			if ( ! style || visible === false ) {
 
@@ -87,11 +87,35 @@ export class VectorTileCanvasRenderer {
 
 	}
 
+	_sortLayers( layerNames ) {
+
+		const { getStyle } = this;
+
+		return [ ...layerNames ].sort( ( a, b ) => {
+
+			if ( getStyle ) {
+
+				const orderA = getStyle( a, null )?.order ?? DEFAULT_STYLE.order;
+				const orderB = getStyle( b, null )?.order ?? DEFAULT_STYLE.order;
+				if ( orderA !== orderB ) {
+
+					return orderA - orderB;
+
+				}
+
+			}
+
+			return a.localeCompare( b );
+
+		} );
+
+	}
+
 	_getFeatures( vectorTile ) {
 
 		const results = [];
 		const layerNames = Object.keys( vectorTile.layers );
-		const sortedLayers = this.styler.sortLayers( layerNames );
+		const sortedLayers = this._sortLayers( layerNames );
 
 		for ( const layerName of sortedLayers ) {
 

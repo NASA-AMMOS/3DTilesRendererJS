@@ -3,7 +3,6 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { VectorTileStyler } from '../../../renderer/utils/VectorTileStyler.js';
 import { VectorTileCanvasRenderer } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
@@ -142,8 +141,7 @@ export class MVTImageSource extends RegionImageSource {
 		super();
 
 		this.resolution = resolution;
-		this._styler = new VectorTileStyler( { getStyle } );
-		this._renderer = new VectorTileCanvasRenderer( { styler: this._styler } );
+		this._renderer = new VectorTileCanvasRenderer( { getStyle } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}
@@ -216,8 +214,7 @@ export class MVTImageSource extends RegionImageSource {
 
 	setStyle( getStyle ) {
 
-		this._styler = new VectorTileStyler( { getStyle } );
-		this._renderer.styler = this._styler;
+		this._renderer.getStyle = getStyle;
 
 	}
 
