@@ -32,23 +32,17 @@ let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
 init();
 render();
 
-function getStyles() {
+function getStyle() {
 
-	const styles = { default: { fill: '#cccccc' } };
-	for ( const key in LAYERS ) {
+	return layerName => {
 
-		const { fill, stroke, radius, order } = LAYERS[ key ];
-		styles[ key ] = { fill, stroke, order, ...( radius !== undefined && { radius } ) };
+		const layer = LAYERS[ layerName ];
+		if ( ! layer?.enabled ) return null;
 
-	}
+		const { fill, stroke, radius, order } = layer;
+		return { fill, stroke, order, ...( radius !== undefined && { radius } ) };
 
-	return styles;
-
-}
-
-function getFilter() {
-
-	return ( _feature, layerName ) => LAYERS[ layerName ]?.enabled ?? false;
+	};
 
 }
 
@@ -82,8 +76,7 @@ function init() {
 	// PMTiles overlay: vector tile data composited on top of the base geometry
 	overlay = new PMTilesOverlay( {
 		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
-		styles: getStyles(),
-		filter: getFilter(),
+		getStyle: getStyle(),
 	} );
 	overlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], renderer } );
 	tiles.registerPlugin( overlayPlugin );
@@ -102,7 +95,7 @@ function init() {
 
 function updateOverlay() {
 
-	overlay.setStyles( getStyles(), getFilter() );
+	overlay.setStyle( getStyle() );
 	overlay.redraw();
 
 }

@@ -134,8 +134,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		const {
 			resolution = 512,
-			filter,
-			styles,
+			getStyle,
 			contentCache,
 			...rest
 		} = options;
@@ -143,7 +142,7 @@ export class MVTImageSource extends RegionImageSource {
 		super();
 
 		this.resolution = resolution;
-		this._styler = new VectorTileStyler( { filter, styles: { ...DEFAULT_STYLES, ...styles } } );
+		this._styler = new VectorTileStyler( { getStyle } );
 		this._renderer = new VectorTileCanvasRenderer( { styler: this._styler } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
@@ -215,9 +214,9 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	setStyles( styles, filter ) {
+	setStyle( getStyle ) {
 
-		this._styler = new VectorTileStyler( { styles, filter } );
+		this._styler = new VectorTileStyler( { getStyle } );
 		this._renderer.styler = this._styler;
 
 	}

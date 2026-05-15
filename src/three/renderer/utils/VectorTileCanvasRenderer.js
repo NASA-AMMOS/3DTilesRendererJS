@@ -20,10 +20,10 @@ export class VectorTileCanvasRenderer {
 
 		const { _ctx, _invScale } = this;
 
-		for ( const { layerName, geometry, type } of this._getFeatures( vectorTile ) ) {
+		for ( const { layerName, properties, geometry, type } of this._getFeatures( vectorTile ) ) {
 
-			const style = this.styler.getStyle( layerName );
-			if ( ! style || ! style.visible ) continue;
+			const style = this.styler.getStyle( layerName, properties );
+			if ( ! style || style.visible === false ) continue;
 
 			_ctx.fillStyle = style.fill ?? 'transparent';
 			_ctx.strokeStyle = style.stroke ?? 'transparent';
@@ -90,16 +90,12 @@ export class VectorTileCanvasRenderer {
 			for ( let i = 0; i < layer.length; i ++ ) {
 
 				const feature = layer.feature( i );
-
-				if ( this.styler.shouldIncludeFeature( feature, layerName ) ) {
-
-					results.push( {
-						layerName,
-						geometry: feature.loadGeometry(),
-						type: feature.type,
-					} );
-
-				}
+				results.push( {
+					layerName,
+					properties: feature.properties,
+					geometry: feature.loadGeometry(),
+					type: feature.type,
+				} );
 
 			}
 
