@@ -129,7 +129,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		this.resolution = resolution;
 		this._styler = new VectorTileStyler( { filter, styles } );
-		this._renderer = new VectorTileCanvasRenderer( this._styler );
+		this._renderer = new VectorTileCanvasRenderer( { styler: this._styler } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}
@@ -167,7 +167,8 @@ export class MVTImageSource extends RegionImageSource {
 				if ( vectorTile ) {
 
 					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
+					_renderer.setFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
+					_renderer.renderToCanvas( vectorTile );
 
 				}
 
@@ -222,7 +223,8 @@ export class MVTImageSource extends RegionImageSource {
 				if ( ! vectorTile ) return;
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-				this._renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
+				this._renderer.setFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
+				this._renderer.renderToCanvas( vectorTile );
 
 			} );
 
