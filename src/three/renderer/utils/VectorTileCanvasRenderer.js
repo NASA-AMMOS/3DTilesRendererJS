@@ -28,6 +28,69 @@ export class VectorTileCanvasRenderer {
 
 		};
 
+		const renderPoints = ( geometry, layerName ) => {
+
+			for ( const multiPoint of geometry ) {
+
+				for ( const p of multiPoint ) {
+
+					const [ x, y ] = projectPoint( p.x, p.y );
+					const radius = ( layerName === 'poi' ) ? 3 : 2;
+
+					ctx.beginPath();
+					ctx.moveTo( x + radius, y );
+					ctx.arc( x, y, radius, 0, Math.PI * 2 );
+					ctx.fill();
+
+				}
+
+			}
+
+		};
+
+		const renderLines = ( geometry ) => {
+
+			ctx.beginPath();
+
+			for ( const ring of geometry ) {
+
+				for ( let k = 0; k < ring.length; k ++ ) {
+
+					const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
+					if ( k === 0 ) ctx.moveTo( x, y );
+					else ctx.lineTo( x, y );
+
+				}
+
+			}
+
+			ctx.stroke();
+
+		};
+
+		const renderPolygons = ( geometry ) => {
+
+			ctx.beginPath();
+
+			for ( const ring of geometry ) {
+
+				for ( let k = 0; k < ring.length; k ++ ) {
+
+					const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
+					if ( k === 0 ) ctx.moveTo( x, y );
+					else ctx.lineTo( x, y );
+
+				}
+
+				ctx.closePath();
+
+			}
+
+			ctx.fill( 'evenodd' );
+			ctx.stroke();
+
+		};
+
 		// Clip to the tile's logical bounds so MVT buffer geometry (vertices outside [0, 4096])
 		// doesn't bleed into adjacent tiles and cause evenodd fill cancellation at boundaries.
 		const clipX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width;
@@ -49,15 +112,15 @@ export class VectorTileCanvasRenderer {
 
 			if ( type === 1 ) {
 
-				this._renderPoints( ctx, geometry, layerName, projectPoint );
+				renderPoints( geometry, layerName );
 
 			} else if ( type === 2 ) {
 
-				this._renderLines( ctx, geometry, projectPoint );
+				renderLines( geometry );
 
 			} else if ( type === 3 ) {
 
-				this._renderPolygons( ctx, geometry, projectPoint );
+				renderPolygons( geometry );
 
 			}
 
@@ -96,69 +159,6 @@ export class VectorTileCanvasRenderer {
 		}
 
 		return results;
-
-	}
-
-	_renderPoints( ctx, geometry, layerName, projectPoint ) {
-
-		for ( const multiPoint of geometry ) {
-
-			for ( const p of multiPoint ) {
-
-				const [ x, y ] = projectPoint( p.x, p.y );
-				const radius = ( layerName === 'poi' ) ? 3 : 2;
-
-				ctx.beginPath();
-				ctx.moveTo( x + radius, y );
-				ctx.arc( x, y, radius, 0, Math.PI * 2 );
-				ctx.fill();
-
-			}
-
-		}
-
-	}
-
-	_renderLines( ctx, geometry, projectPoint ) {
-
-		ctx.beginPath();
-
-		for ( const ring of geometry ) {
-
-			for ( let k = 0; k < ring.length; k ++ ) {
-
-				const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
-				if ( k === 0 ) ctx.moveTo( x, y );
-				else ctx.lineTo( x, y );
-
-			}
-
-		}
-
-		ctx.stroke();
-
-	}
-
-	_renderPolygons( ctx, geometry, projectPoint ) {
-
-		ctx.beginPath();
-
-		for ( const ring of geometry ) {
-
-			for ( let k = 0; k < ring.length; k ++ ) {
-
-				const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
-				if ( k === 0 ) ctx.moveTo( x, y );
-				else ctx.lineTo( x, y );
-
-			}
-
-			ctx.closePath();
-
-		}
-
-		ctx.fill( 'evenodd' );
-		ctx.stroke();
 
 	}
 
