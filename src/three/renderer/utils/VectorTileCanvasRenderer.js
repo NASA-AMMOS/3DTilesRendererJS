@@ -1,5 +1,4 @@
 const MVT_EXTENT = 4096;
-const _point = [ 0, 0 ];
 
 export class VectorTileCanvasRenderer {
 
@@ -16,91 +15,21 @@ export class VectorTileCanvasRenderer {
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
 
-		// Project an MVT tile-local point (px, py ∈ [0, 4096]) into canvas pixel space.
+		// Affine transform: MVT tile coords [0, MVT_EXTENT] → canvas pixels.
 		// MVT Y increases downward; normalized Y increases northward; canvas Y increases downward.
-		const projectPoint = ( px, py ) => {
-
-			const normX = tMinX + ( px / MVT_EXTENT ) * ( tMaxX - tMinX );
-			const normY = tMaxY - ( py / MVT_EXTENT ) * ( tMaxY - tMinY );
-			_point[ 0 ] = Math.round( ( normX - rMinX ) / ( rMaxX - rMinX ) * width );
-			_point[ 1 ] = Math.round( ( 1 - ( normY - rMinY ) / ( rMaxY - rMinY ) ) * height );
-			return _point;
-
-		};
-
-		const renderPoints = ( geometry, layerName ) => {
-
-			for ( const multiPoint of geometry ) {
-
-				for ( const p of multiPoint ) {
-
-					const [ x, y ] = projectPoint( p.x, p.y );
-					const radius = ( layerName === 'poi' ) ? 3 : 2;
-
-					ctx.beginPath();
-					ctx.moveTo( x + radius, y );
-					ctx.arc( x, y, radius, 0, Math.PI * 2 );
-					ctx.fill();
-
-				}
-
-			}
-
-		};
-
-		const renderLines = ( geometry ) => {
-
-			ctx.beginPath();
-
-			for ( const ring of geometry ) {
-
-				for ( let k = 0; k < ring.length; k ++ ) {
-
-					const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
-					if ( k === 0 ) ctx.moveTo( x, y );
-					else ctx.lineTo( x, y );
-
-				}
-
-			}
-
-			ctx.stroke();
-
-		};
-
-		const renderPolygons = ( geometry ) => {
-
-			ctx.beginPath();
-
-			for ( const ring of geometry ) {
-
-				for ( let k = 0; k < ring.length; k ++ ) {
-
-					const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
-					if ( k === 0 ) ctx.moveTo( x, y );
-					else ctx.lineTo( x, y );
-
-				}
-
-				ctx.closePath();
-
-			}
-
-			ctx.fill( 'evenodd' );
-			ctx.stroke();
-
-		};
-
-		// Clip to the tile's logical bounds so MVT buffer geometry (vertices outside [0, 4096])
-		// doesn't bleed into adjacent tiles and cause evenodd fill cancellation at boundaries.
-		const clipX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width;
-		const clipY = ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height;
-		const clipW = ( tMaxX - tMinX ) / ( rMaxX - rMinX ) * width;
-		const clipH = ( tMaxY - tMinY ) / ( rMaxY - rMinY ) * height;
+		const scaleX = ( tMaxX - tMinX ) / MVT_EXTENT / ( rMaxX - rMinX ) * width;
+		const scaleY = ( tMaxY - tMinY ) / MVT_EXTENT / ( rMaxY - rMinY ) * height;
+		const offsetX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width;
+		const offsetY = ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height;
+		const invScale = 1 / scaleX;
 
 		ctx.save();
+		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
+
+		// Clip to [0, MVT_EXTENT] in tile space — prevents MVT buffer geometry from bleeding
+		// into adjacent tiles and causing evenodd fill cancellation at boundaries.
 		ctx.beginPath();
-		ctx.rect( clipX, clipY, clipW, clipH );
+		ctx.rect( 0, 0, MVT_EXTENT, MVT_EXTENT );
 		ctx.clip();
 
 		for ( const { layerName, geometry, type } of this._getFeatures( vectorTile ) ) {
@@ -108,7 +37,7 @@ export class VectorTileCanvasRenderer {
 			const color = this.styler.getColor( layerName, 'css' );
 			ctx.fillStyle = color;
 			ctx.strokeStyle = color;
-			ctx.lineWidth = 1;
+			ctx.lineWidth = invScale;
 
 			if ( type === 1 ) {
 
@@ -127,6 +56,66 @@ export class VectorTileCanvasRenderer {
 		}
 
 		ctx.restore();
+
+		function renderPoints( geometry, layerName ) {
+
+			const radius = ( ( layerName === 'poi' ) ? 3 : 2 ) * invScale;
+
+			for ( const multiPoint of geometry ) {
+
+				for ( const p of multiPoint ) {
+
+					ctx.beginPath();
+					ctx.moveTo( p.x + radius, p.y );
+					ctx.arc( p.x, p.y, radius, 0, Math.PI * 2 );
+					ctx.fill();
+
+				}
+
+			}
+
+		}
+
+		function renderLines( geometry ) {
+
+			ctx.beginPath();
+
+			for ( const ring of geometry ) {
+
+				for ( let k = 0; k < ring.length; k ++ ) {
+
+					if ( k === 0 ) ctx.moveTo( ring[ k ].x, ring[ k ].y );
+					else ctx.lineTo( ring[ k ].x, ring[ k ].y );
+
+				}
+
+			}
+
+			ctx.stroke();
+
+		}
+
+		function renderPolygons( geometry ) {
+
+			ctx.beginPath();
+
+			for ( const ring of geometry ) {
+
+				for ( let k = 0; k < ring.length; k ++ ) {
+
+					if ( k === 0 ) ctx.moveTo( ring[ k ].x, ring[ k ].y );
+					else ctx.lineTo( ring[ k ].x, ring[ k ].y );
+
+				}
+
+				ctx.closePath();
+
+			}
+
+			ctx.fill( 'evenodd' );
+			ctx.stroke();
+
+		}
 
 	}
 
