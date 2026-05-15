@@ -72,18 +72,13 @@ export class MVTContentCache extends DataCache {
 
 	async fetchItem( [ tx, ty, tl ], signal ) {
 
-		let buffer;
-		try {
+		let buffer = await this.fetchTileBuffer( tl, tx, ty, signal );
 
-			buffer = await this.fetchTileBuffer( tl, tx, ty, signal );
-
-		} catch {
+		if ( ! buffer || buffer.byteLength === 0 ) {
 
 			return null;
 
 		}
-
-		if ( ! buffer || buffer.byteLength === 0 ) return null;
 
 		const { vectorTile } = await this.loader.parse( buffer );
 		return vectorTile;
@@ -158,33 +153,29 @@ export class MVTImageSource extends RegionImageSource {
 		const canvas = document.createElement( 'canvas' );
 		canvas.width = this.resolution;
 		canvas.height = this.resolution;
-		const ctx = canvas.getContext( '2d' );
 
+		const ctx = canvas.getContext( '2d' );
 		const regionBounds = [ minX, minY, maxX, maxY ];
 		const { _contentCache, _renderer } = this;
 
-		const tiles = [];
+		const promises = [];
 		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
 
-			tiles.push( [ tx, ty, tl ] );
+			promises.push( ( async () => {
+
+				const vectorTile = await _contentCache.lock( tx, ty, tl );
+				if ( vectorTile ) {
+
+					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
+					_renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
+
+				}
+
+			} )() );
 
 		} );
 
-		await Promise.all( tiles.map( async ( [ tx, ty, tl ] ) => {
-
-			let vectorTile = _contentCache.lock( tx, ty, tl );
-			if ( vectorTile instanceof Promise ) vectorTile = await vectorTile;
-			if ( ! vectorTile ) {
-
-				_contentCache.release( tx, ty, tl );
-				return;
-
-			}
-
-			const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-			_renderer.renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, canvas.width, canvas.height );
-
-		} ) );
+		await Promise.all( promises	);
 
 		const tex = new CanvasTexture( canvas );
 		tex.colorSpace = SRGBColorSpace;
@@ -200,11 +191,7 @@ export class MVTImageSource extends RegionImageSource {
 		const [ minX, minY, maxX, maxY, level ] = texture._regionArgs;
 		forEachTileInBounds( [ minX, minY, maxX, maxY ], level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
-			if ( this._contentCache.get( tx, ty, tl ) ) {
-
-				this._contentCache.release( tx, ty, tl );
-
-			}
+			this._contentCache.release( tx, ty, tl );
 
 		} );
 

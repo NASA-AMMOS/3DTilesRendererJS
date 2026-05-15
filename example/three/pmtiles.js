@@ -27,24 +27,29 @@ const LAYERS = {
 	pois: { enabled: true, color: '#1a8cbd' },
 };
 
-const state = {
-	layers: {},
-	colors: {},
-};
-
-for ( const key in LAYERS ) {
-
-	state.layers[ key ] = LAYERS[ key ].enabled;
-	state.colors[ key ] = LAYERS[ key ].color;
-
-}
-
-state.colors.default = '#cccccc';
-
 let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
 
 init();
 render();
+
+function getStyles() {
+
+	const styles = { default: '#cccccc' };
+	for ( const key in LAYERS ) {
+
+		styles[ key ] = LAYERS[ key ].color;
+
+	}
+
+	return styles;
+
+}
+
+function getFilter() {
+
+	return ( _feature, layerName ) => LAYERS[ layerName ]?.enabled ?? false;
+
+}
 
 function init() {
 
@@ -74,7 +79,11 @@ function init() {
 	scene.add( tiles.group );
 
 	// PMTiles overlay: vector tile data composited on top of the base geometry
-	overlay = createOverlay();
+	overlay = new PMTilesOverlay( {
+		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		styles: getStyles(),
+		filter: getFilter(),
+	} );
 	overlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], renderer } );
 	tiles.registerPlugin( overlayPlugin );
 
@@ -90,19 +99,9 @@ function init() {
 
 }
 
-function createOverlay() {
-
-	return new PMTilesOverlay( {
-		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
-		styles: { ...state.colors },
-		filter: ( _feature, layerName ) => state.layers[ layerName ] ?? false,
-	} );
-
-}
-
 function updateOverlay() {
 
-	overlay.setStyles( state.colors, ( _feature, layerName ) => state.layers[ layerName ] ?? false );
+	overlay.setStyles( getStyles(), getFilter() );
 	overlay.redraw();
 
 }
@@ -111,25 +110,14 @@ function setupGUI() {
 
 	const gui = new GUI();
 
-	const layersFolder = gui.addFolder( 'Layers' );
 	for ( const key in LAYERS ) {
 
-		layersFolder.add( state.layers, key )
-			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
-			.onChange( updateOverlay );
+		const folder = gui.addFolder( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) );
+		folder.add( LAYERS[ key ], 'enabled' ).onChange( updateOverlay );
+		folder.addColor( LAYERS[ key ], 'color' ).onChange( updateOverlay );
+		folder.close();
 
 	}
-
-	const colorsFolder = gui.addFolder( 'Colors' );
-	for ( const key in LAYERS ) {
-
-		colorsFolder.addColor( state.colors, key )
-			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
-			.onChange( updateOverlay );
-
-	}
-
-	colorsFolder.close();
 
 }
 
@@ -143,16 +131,12 @@ function onWindowResize() {
 
 function render() {
 
-	if ( controls ) controls.update();
+	controls.update();
 
-	if ( tiles ) {
-
-		camera.updateMatrixWorld();
-		tiles.setCamera( camera );
-		tiles.setResolutionFromRenderer( camera, renderer );
-		tiles.update();
-
-	}
+	camera.updateMatrixWorld();
+	tiles.setCamera( camera );
+	tiles.setResolutionFromRenderer( camera, renderer );
+	tiles.update();
 
 	renderer.render( scene, camera );
 
