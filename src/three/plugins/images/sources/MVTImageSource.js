@@ -1,7 +1,8 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
+import { VectorTile } from '@mapbox/vector-tile';
+import Protobuf from 'pbf';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { MVTLoaderBase } from '../../../../core/renderer/loaders/MVTLoaderBase.js';
 import { VectorTileStyler } from '../../../renderer/utils/VectorTileStyler.js';
 import { VectorTileCanvasRenderer } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
@@ -28,7 +29,6 @@ export class MVTContentCache extends DataCache {
 		this.projectionId = projection;
 
 		this.tiling = new TilingScheme();
-		this.loader = new MVTLoaderBase();
 		this.fetchData = ( ...args ) => fetch( ...args );
 		this.fetchOptions = {};
 
@@ -80,7 +80,7 @@ export class MVTContentCache extends DataCache {
 
 		}
 
-		const { vectorTile } = await this.loader.parse( buffer );
+		const vectorTile = new VectorTile( new Protobuf( buffer ) );
 		return vectorTile;
 
 	}
