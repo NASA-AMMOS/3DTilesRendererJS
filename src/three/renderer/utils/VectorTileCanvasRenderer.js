@@ -24,8 +24,9 @@ export class VectorTileCanvasRenderer {
 
 		const { _ctx, _invScale, getStyle } = this;
 
-		for ( const { layerName, properties, geometry, type } of this._getFeatures( vectorTile ) ) {
+		for ( const feature of this._getFeatures( vectorTile ) ) {
 
+			const { layerName, properties, geometry, type } = feature;
 			const style = getStyle ? getStyle( layerName, properties ) : DEFAULT_STYLE;
 			const visible = style?.visible ?? DEFAULT_STYLE.visible;
 			if ( ! style || visible === false ) {
