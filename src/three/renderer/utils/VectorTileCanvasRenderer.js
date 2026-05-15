@@ -28,6 +28,18 @@ export class VectorTileCanvasRenderer {
 
 		};
 
+		// Clip to the tile's logical bounds so MVT buffer geometry (vertices outside [0, 4096])
+		// doesn't bleed into adjacent tiles and cause evenodd fill cancellation at boundaries.
+		const clipX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width;
+		const clipY = ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height;
+		const clipW = ( tMaxX - tMinX ) / ( rMaxX - rMinX ) * width;
+		const clipH = ( tMaxY - tMinY ) / ( rMaxY - rMinY ) * height;
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect( clipX, clipY, clipW, clipH );
+		ctx.clip();
+
 		for ( const { layerName, geometry, type } of this._getFeatures( vectorTile ) ) {
 
 			const color = this.styler.getColor( layerName, 'css' );
@@ -50,6 +62,8 @@ export class VectorTileCanvasRenderer {
 			}
 
 		}
+
+		ctx.restore();
 
 	}
 
