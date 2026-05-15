@@ -1,19 +1,20 @@
 import { MVTContentCache, MVTImageSource } from './MVTImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
-import { PMTilesLoaderBase } from '../../../../core/renderer/loaders/PMTilesLoaderBase.js';
+import { PMTiles } from 'pmtiles';
 
 class PMTilesContentCache extends MVTContentCache {
 
 	constructor( options = {} ) {
 
 		super( options );
-		this.pmtilesLoader = new PMTilesLoaderBase();
+		this._pmtiles = null;
 
 	}
 
 	async init() {
 
-		const header = await this.pmtilesLoader.init( this.url );
+		this._pmtiles = new PMTiles( this.url );
+		const header = await this._pmtiles.getHeader();
 		this.tiling.flipY = true;
 		this.tiling.setProjection( new ProjectionScheme( 'EPSG:3857' ) );
 		this.tiling.generateLevels( header.maxZoom, this.tiling.projection.tileCountX, this.tiling.projection.tileCountY, {
@@ -25,7 +26,8 @@ class PMTilesContentCache extends MVTContentCache {
 
 	async fetchTileBuffer( z, x, y, signal ) {
 
-		return this.pmtilesLoader.getTile( z, x, y, signal );
+		const res = await this._pmtiles.getZxy( z, x, y, signal );
+		return res ? res.data : null;
 
 	}
 
