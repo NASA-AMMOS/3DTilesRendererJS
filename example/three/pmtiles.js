@@ -1,44 +1,37 @@
-import {
-	Scene,
-	WebGLRenderer,
-	PerspectiveCamera,
-	AmbientLight,
-	DirectionalLight,
-} from 'three';
+import { Scene, WebGLRenderer, PerspectiveCamera } from 'three';
 import {
 	TilesRenderer,
 	GlobeControls,
 } from '3d-tiles-renderer';
 import {
 	UpdateOnChangePlugin,
-	PMTilesPlugin,
+	TilesFadePlugin,
+	XYZTilesPlugin,
+	ImageOverlayPlugin,
+	PMTilesOverlay,
 } from '3d-tiles-renderer/plugins';
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
-let scene, renderer, camera, controls, tiles, gui;
-
-// Layer configuration for Protomaps v4 basemap
+// Layer config for Protomaps v4 basemap — colors from the Protomaps "Light" theme
 const LAYERS = {
-	water: { enabled: true, color: '#4a90d9' },
-	earth: { enabled: true, color: '#f2efe9' },
-	landuse: { enabled: false, color: '#e8e4d8' },
-	landcover: { enabled: false, color: '#d4e8c2' },
-	natural: { enabled: false, color: '#c8d9af' },
-	roads: { enabled: false, color: '#ffffff' },
-	buildings: { enabled: false, color: '#d9d0c9' },
-	transit: { enabled: false, color: '#888888' },
-	boundaries: { enabled: true, color: '#ff6b6b' },
-	places: { enabled: true, color: '#333333' },
-	pois: { enabled: false, color: '#7d4e24' },
+	earth: { enabled: true, color: '#e2dfda' },
+	water: { enabled: true, color: '#80deea' },
+	landcover: { enabled: true, color: '#c4e7d2' },
+	landuse: { enabled: true, color: '#cfddd5' },
+	natural: { enabled: true, color: '#e2e0d7' },
+	buildings: { enabled: true, color: '#cccccc' },
+	roads: { enabled: true, color: '#ebebeb' },
+	transit: { enabled: true, color: '#a7b1b3' },
+	boundaries: { enabled: true, color: '#adadad' },
+	places: { enabled: true, color: '#5c5c5c' },
+	pois: { enabled: true, color: '#1a8cbd' },
 };
 
-// Application state
 const state = {
 	layers: {},
 	colors: {},
 };
 
-// Initialize state from layer config
 for ( const key in LAYERS ) {
 
 	state.layers[ key ] = LAYERS[ key ].enabled;
@@ -48,102 +41,91 @@ for ( const key in LAYERS ) {
 
 state.colors.default = '#cccccc';
 
+let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
+
 init();
-setupGUI();
-createTiles();
+render();
 
 function init() {
 
 	renderer = new WebGLRenderer( { antialias: true } );
-	renderer.setAnimationLoop( render );
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	renderer.setClearColor( 0x111111 );
+	renderer.setAnimationLoop( render );
 	document.body.appendChild( renderer.domElement );
 
 	scene = new Scene();
-	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 100, 1e8 );
+	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
 
-	const dirLight = new DirectionalLight( 0xffffff );
-	dirLight.position.set( 1, 1, 1 );
-	scene.add( dirLight );
-	scene.add( new AmbientLight( 0x444444 ) );
-
-	controls = new GlobeControls( scene, camera, renderer.domElement );
-	controls.enableDamping = true;
-	controls.camera.position.set( 0, 0, 1.5 * 1e7 );
-
-	window.addEventListener( 'resize', onWindowResize, false );
-
-}
-
-function createFilter() {
-
-	return function ( feature, layerName ) {
-
-		if ( layerName in state.layers ) {
-
-			return state.layers[ layerName ] === true;
-
-		}
-
-		// Unknown layers: hide by default
-		return false;
-
-	};
-
-}
-
-function createTiles() {
-
-	if ( tiles ) {
-
-		scene.remove( tiles.group );
-		tiles.dispose();
-
-	}
-
+	// Base tile layer: XYZ raster tiles provide the globe geometry
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
-	tiles.registerPlugin( new PMTilesPlugin( {
-		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+	tiles.registerPlugin( new TilesFadePlugin() );
+	tiles.registerPlugin( new XYZTilesPlugin( {
 		center: true,
 		shape: 'ellipsoid',
-		levels: 15,
-		tileDimension: 512,
-		styles: state.colors,
-		filter: createFilter()
+		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
 	} ) );
 
-	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.setCamera( camera );
+	tiles.group.rotation.x = - Math.PI / 2;
+	tiles.group.updateMatrixWorld();
 	scene.add( tiles.group );
 
-	if ( controls ) controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+	// PMTiles overlay: vector tile data composited on top of the base geometry
+	overlay = createOverlay();
+	overlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], renderer } );
+	tiles.registerPlugin( overlayPlugin );
+
+	// Controls
+	controls = new GlobeControls( scene, camera, renderer.domElement );
+	controls.setEllipsoid( tiles.ellipsoid, tiles.group );
+	controls.enableDamping = true;
+	controls.camera.position.set( 0, 0, 1.5e7 );
+
+	window.addEventListener( 'resize', onWindowResize );
+
+	setupGUI();
+
+}
+
+function createOverlay() {
+
+	return new PMTilesOverlay( {
+		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		styles: { ...state.colors },
+		filter: ( _feature, layerName ) => state.layers[ layerName ] ?? false,
+	} );
+
+}
+
+function updateOverlay() {
+
+	overlay.setStyles( state.colors, ( _feature, layerName ) => state.layers[ layerName ] ?? false );
+	overlay.redraw();
 
 }
 
 function setupGUI() {
 
-	gui = new GUI();
+	const gui = new GUI();
 
-	// Layers folder
 	const layersFolder = gui.addFolder( 'Layers' );
 	for ( const key in LAYERS ) {
 
 		layersFolder.add( state.layers, key )
 			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
-			.onChange( createTiles );
+			.onChange( updateOverlay );
 
 	}
 
-	// Colors folder
 	const colorsFolder = gui.addFolder( 'Colors' );
 	for ( const key in LAYERS ) {
 
 		colorsFolder.addColor( state.colors, key )
 			.name( key.charAt( 0 ).toUpperCase() + key.slice( 1 ) )
-			.onChange( createTiles );
+			.onChange( updateOverlay );
 
 	}
 
@@ -161,7 +143,8 @@ function onWindowResize() {
 
 function render() {
 
-	controls.update();
+	if ( controls ) controls.update();
+
 	if ( tiles ) {
 
 		camera.updateMatrixWorld();

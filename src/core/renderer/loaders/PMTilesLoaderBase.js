@@ -48,7 +48,7 @@ export class PMTilesLoaderBase {
 	// Generate a virtual URL for a tile (used by tiling scheme)
 	getUrl( z, x, y ) {
 
-		return `pmtiles://${z}/${x}/${y}`;
+		return `pmtiles://${ z }/${ x }/${ y }`;
 
 	}
 

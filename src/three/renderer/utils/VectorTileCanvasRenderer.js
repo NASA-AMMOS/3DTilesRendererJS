@@ -1,21 +1,31 @@
-import { CanvasTexture, SRGBColorSpace } from 'three';
-
 const MVT_EXTENT = 4096;
 
 export class VectorTileCanvasRenderer {
 
-	constructor( styler, options = {} ) {
+	constructor( styler ) {
 
 		this.styler = styler;
-		this.tileDimension = options.tileDimension || 512;
 
 	}
 
-	render( vectorTile ) {
+	// Render features from one MVT tile onto an existing canvas context.
+	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
+	renderToCanvas( ctx, vectorTile, tileBounds, regionBounds, width, height ) {
 
-		const canvas = this._createCanvas( this.tileDimension, this.tileDimension );
-		const ctx = canvas.getContext( '2d' );
-		const scale = this.tileDimension / MVT_EXTENT;
+		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
+		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
+
+		// Project an MVT tile-local point (px, py ∈ [0, 4096]) into canvas pixel space.
+		// MVT Y increases downward; normalized Y increases northward; canvas Y increases downward.
+		const projectPoint = ( px, py ) => {
+
+			const normX = tMinX + ( px / MVT_EXTENT ) * ( tMaxX - tMinX );
+			const normY = tMaxY - ( py / MVT_EXTENT ) * ( tMaxY - tMinY );
+			const canvasX = Math.round( ( normX - rMinX ) / ( rMaxX - rMinX ) * width );
+			const canvasY = Math.round( ( 1 - ( normY - rMinY ) / ( rMaxY - rMinY ) ) * height );
+			return [ canvasX, canvasY ];
+
+		};
 
 		for ( const { layerName, geometry, type } of this._getFeatures( vectorTile ) ) {
 
@@ -26,21 +36,19 @@ export class VectorTileCanvasRenderer {
 
 			if ( type === 1 ) {
 
-				this._renderPoints( ctx, geometry, layerName, scale );
+				this._renderPoints( ctx, geometry, layerName, projectPoint );
 
 			} else if ( type === 2 ) {
 
-				this._renderLines( ctx, geometry, scale );
+				this._renderLines( ctx, geometry, projectPoint );
 
 			} else if ( type === 3 ) {
 
-				this._renderPolygons( ctx, geometry, scale );
+				this._renderPolygons( ctx, geometry, projectPoint );
 
 			}
 
 		}
-
-		return this._createTexture( canvas );
 
 	}
 
@@ -76,54 +84,19 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_createCanvas( width, height ) {
-
-		if ( typeof OffscreenCanvas !== 'undefined' ) {
-
-			return new OffscreenCanvas( width, height );
-
-		} else {
-
-			const canvas = document.createElement( 'canvas' );
-			canvas.width = width;
-			canvas.height = height;
-			return canvas;
-
-		}
-
-	}
-
-	_createTexture( canvas ) {
-
-		const tex = new CanvasTexture( canvas );
-		tex.colorSpace = SRGBColorSpace;
-		tex.generateMipmaps = false;
-		tex.needsUpdate = true;
-		return tex;
-
-	}
-
-	_renderPoints( ctx, geometry, layerName, scale ) {
-
-		const isLabelLayer = ( layerName === 'place_label' );
+	_renderPoints( ctx, geometry, layerName, projectPoint ) {
 
 		for ( const multiPoint of geometry ) {
 
 			for ( const p of multiPoint ) {
 
-				const x = p.x * scale;
-				const y = p.y * scale;
+				const [ x, y ] = projectPoint( p.x, p.y );
+				const radius = ( layerName === 'poi' ) ? 3 : 2;
 
-				if ( ! isLabelLayer ) {
-
-					const radius = ( layerName === 'poi' ) ? 3 : 2;
-
-					ctx.beginPath();
-					ctx.moveTo( x + radius, y );
-					ctx.arc( x, y, radius, 0, Math.PI * 2 );
-					ctx.fill();
-
-				}
+				ctx.beginPath();
+				ctx.moveTo( x + radius, y );
+				ctx.arc( x, y, radius, 0, Math.PI * 2 );
+				ctx.fill();
 
 			}
 
@@ -131,7 +104,7 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_renderLines( ctx, geometry, scale ) {
+	_renderLines( ctx, geometry, projectPoint ) {
 
 		ctx.beginPath();
 
@@ -139,9 +112,9 @@ export class VectorTileCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				const p = ring[ k ];
-				if ( k === 0 ) ctx.moveTo( p.x * scale, p.y * scale );
-				else ctx.lineTo( p.x * scale, p.y * scale );
+				const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
+				if ( k === 0 ) ctx.moveTo( x, y );
+				else ctx.lineTo( x, y );
 
 			}
 
@@ -151,7 +124,7 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_renderPolygons( ctx, geometry, scale ) {
+	_renderPolygons( ctx, geometry, projectPoint ) {
 
 		ctx.beginPath();
 
@@ -159,9 +132,9 @@ export class VectorTileCanvasRenderer {
 
 			for ( let k = 0; k < ring.length; k ++ ) {
 
-				const p = ring[ k ];
-				if ( k === 0 ) ctx.moveTo( p.x * scale, p.y * scale );
-				else ctx.lineTo( p.x * scale, p.y * scale );
+				const [ x, y ] = projectPoint( ring[ k ].x, ring[ k ].y );
+				if ( k === 0 ) ctx.moveTo( x, y );
+				else ctx.lineTo( x, y );
 
 			}
 
@@ -169,7 +142,8 @@ export class VectorTileCanvasRenderer {
 
 		}
 
-		ctx.fill();
+		ctx.fill( 'evenodd' );
+		ctx.stroke();
 
 	}
 
