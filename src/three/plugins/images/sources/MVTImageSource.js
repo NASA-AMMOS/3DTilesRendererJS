@@ -1,12 +1,20 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
-import { VectorTile } from '@mapbox/vector-tile';
-import Protobuf from 'pbf';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
 import { VectorTileCanvasRenderer } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
+
+let _mvtImport = null;
+function importMVTDeps() {
+
+	return _mvtImport ??= Promise.all( [
+		import( '@mapbox/vector-tile' ),
+		import( 'pbf' ),
+	] ).then( ( [ { VectorTile }, { default: Protobuf } ] ) => ( { VectorTile, Protobuf } ) );
+
+}
 
 // Fetches and caches parsed MVT tile content (vectorTile + tileBounds) keyed by (tx, ty, tl).
 export class MVTContentCache extends DataCache {
@@ -79,6 +87,7 @@ export class MVTContentCache extends DataCache {
 
 		}
 
+		const { VectorTile, Protobuf } = await importMVTDeps();
 		const vectorTile = new VectorTile( new Protobuf( buffer ) );
 		return vectorTile;
 

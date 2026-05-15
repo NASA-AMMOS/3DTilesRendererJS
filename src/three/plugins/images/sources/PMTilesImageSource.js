@@ -2,9 +2,14 @@ import { CanvasTexture, SRGBColorSpace } from 'three';
 import { MVTContentCache, MVTImageSource } from './MVTImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
-import { PMTiles } from 'pmtiles';
-
 const DEG2RAD = Math.PI / 180;
+
+let _pmtilesImport = null;
+function importPMTiles() {
+
+	return _pmtilesImport ??= import( 'pmtiles' ).then( m => m.PMTiles );
+
+}
 
 class PMTilesContentCache extends MVTContentCache {
 
@@ -20,6 +25,7 @@ class PMTilesContentCache extends MVTContentCache {
 
 		const { tiling, tileDimension } = this;
 
+		const PMTiles = await importPMTiles();
 		this.instance = new PMTiles( this.url );
 
 		const header = await this.instance.getHeader();
