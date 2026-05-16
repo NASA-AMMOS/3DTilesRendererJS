@@ -62,7 +62,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
-		this._renderer = new VectorTileCanvasRenderer( {
+		this._renderer = new VectorShapeCanvasRenderer( {
 			getX: p => p[ 0 ],
 			getY: p => p[ 1 ],
 		} );
