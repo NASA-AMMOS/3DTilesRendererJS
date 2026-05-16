@@ -1,13 +1,35 @@
-import { CanvasTexture, SRGBColorSpace } from 'three';
 import { MVTContentCache, MVTImageSource } from './MVTImageSource.js';
+import { TiledImageSource } from './TiledImageSource.js';
+import { RegionImageSource, TiledRegionImageSource } from './RegionImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
-import { forEachTileInBounds } from '../overlays/utils.js';
+
 const DEG2RAD = Math.PI / 180;
 
 let _pmtilesImport = null;
 function importPMTiles() {
 
 	return _pmtilesImport ??= import( 'pmtiles' ).then( m => m.PMTiles );
+
+}
+
+// Fetches individual raster tiles from a PMTiles instance and converts them to textures.
+class PMTilesRasterTileSource extends TiledImageSource {
+
+	constructor( instance, tiling ) {
+
+		super();
+		this.instance = instance;
+		this.tiling = tiling;
+
+	}
+
+	async fetchItem( [ tx, ty, tl ], signal ) {
+
+		const res = await this.instance.getZxy( tl, tx, ty, signal );
+		if ( ! res || ! res.data || res.data.byteLength === 0 ) return null;
+		return this.processBufferToTexture( res.data );
+
+	}
 
 }
 
@@ -89,88 +111,125 @@ class PMTilesContentCache extends MVTContentCache {
 	async fetchItem( [ tx, ty, tl ], signal ) {
 
 		const res = await this.instance.getZxy( tl, tx, ty, signal );
-		const buffer = res ? res.data : null;
-
-		if ( this.tileType !== 1 ) {
-
-			// Raster: store raw buffer instead of parsing as VectorTile
-			return ( buffer && buffer.byteLength > 0 ) ? buffer : null;
-
-		}
-
-		return this._parseVectorTile( buffer );
+		return this._parseVectorTile( res ? res.data : null );
 
 	}
 
 }
 
-export class PMTilesImageSource extends MVTImageSource {
+export class PMTilesImageSource extends RegionImageSource {
 
-	constructor( options = {} ) {
+	get tiling() {
 
-		super( { ...options, contentCache: new PMTilesContentCache( options ) } );
+		return this._contentCache.tiling;
 
 	}
 
-	async fetchItem( [ minX, minY, maxX, maxY, level ], signal ) {
+	get fetchData() {
 
-		const { _contentCache, resolution } = this;
-		if ( _contentCache.tileType === 1 ) {
+		return this._contentCache.fetchData;
 
-			// Vector tile path
-			return super.fetchItem( [ minX, minY, maxX, maxY, level ], signal );
+	}
+
+	set fetchData( v ) {
+
+		this._contentCache.fetchData = v;
+
+	}
+
+	get resolution() {
+
+		return this._resolution;
+
+	}
+
+	set resolution( v ) {
+
+		this._resolution = v;
+		if ( this._deferredSource ) {
+
+			this._deferredSource.resolution = v;
 
 		}
 
-		// Raster compositing path if not vector tiles
-		const canvas = document.createElement( 'canvas' );
-		canvas.width = resolution;
-		canvas.height = resolution;
+	}
 
-		const ctx = canvas.getContext( '2d' );
-		const regionBounds = [ minX, minY, maxX, maxY ];
-		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
+	constructor( options = {} ) {
 
-		const promises = [];
-		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
+		super();
 
-			promises.push( ( async () => {
+		const { resolution = 512, getStyle = null } = options;
+		this._resolution = resolution;
+		this._getStyle = getStyle;
+		this._contentCache = new PMTilesContentCache( options );
+		this._deferredSource = null;
 
-				const buffer = await _contentCache.lock( tx, ty, tl );
-				if ( buffer ) {
+	}
 
-					const [ tMinX, tMinY, tMaxX, tMaxY ] = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					const destX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * resolution;
-					const destY = ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * resolution;
-					const destW = ( tMaxX - tMinX ) / ( rMaxX - rMinX ) * resolution;
-					const destH = ( tMaxY - tMinY ) / ( rMaxY - rMinY ) * resolution;
-					const bitmap = await createImageBitmap( new Blob( [ buffer ] ) );
-					ctx.drawImage( bitmap, destX, destY, destW, destH );
-					bitmap.close();
+	async init() {
 
-				}
+		await this._contentCache.init();
+		const { _contentCache } = this;
 
-			} )() );
+		if ( _contentCache.tileType === 1 ) {
 
-		} );
+			this._deferredSource = new MVTImageSource( {
+				resolution: this._resolution,
+				getStyle: this._getStyle,
+				contentCache: _contentCache,
+			} );
 
-		await Promise.all( promises );
+		} else {
 
-		const tex = new CanvasTexture( canvas );
-		tex.colorSpace = SRGBColorSpace;
-		tex.generateMipmaps = false;
-		tex.needsUpdate = true;
-		tex._regionArgs = [ minX, minY, maxX, maxY, level ];
-		return tex;
+			const rasterSource = new PMTilesRasterTileSource( _contentCache.instance, _contentCache.tiling );
+			this._deferredSource = new TiledRegionImageSource( rasterSource );
+			this._deferredSource.resolution = this._resolution;
+
+		}
+
+	}
+
+	hasContent( minX, minY, maxX, maxY, level ) {
+
+		return this._deferredSource.hasContent( minX, minY, maxX, maxY, level );
+
+	}
+
+	lock( ...args ) {
+
+		return this._deferredSource.lock( ...args );
+
+	}
+
+	release( ...args ) {
+
+		this._deferredSource.release( ...args );
+
+	}
+
+	get( ...args ) {
+
+		return this._deferredSource.get( ...args );
 
 	}
 
 	redraw() {
 
-		// Raster tiles have no style to re-apply; only delegate for vector tiles
-		if ( this._contentCache.tileType === 1 ) {
+		if ( this._deferredSource instanceof MVTImageSource ) {
 
-			super.redraw();
+			this._deferredSource.redraw();
+
+		}
+
+	}
+
+	dispose() {
+
+		super.dispose();
+		this._contentCache.dispose();
+		if ( this._deferredSource ) {
+
+			this._deferredSource.dispose();
 
 		}
 
