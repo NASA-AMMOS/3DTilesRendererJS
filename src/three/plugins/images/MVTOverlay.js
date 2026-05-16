@@ -9,9 +9,9 @@ import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
  * @param {Object} [options]
  * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
  * @param {number} [options.levels=20] Number of zoom levels.
- * @param {number} [options.tileDimension=256] Tile pixel size.
  * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
+ * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` that returns per-feature render styles.
  */
 export class MVTOverlay extends ImageOverlay {
 
@@ -134,8 +134,7 @@ export class MVTOverlay extends ImageOverlay {
  * @param {string} [options.url] URL to the `.pmtiles` archive.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
  * @param {number} [options.tileDimension=256] Tile pixel size used when generating tiling levels.
- * @param {Object} [options.styles] Per-layer color overrides.
- * @param {Function} [options.filter] Feature filter callback `(feature, layerName) => boolean`.
+ * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` that returns per-feature render styles.
  */
 export class PMTilesOverlay extends MVTOverlay {
 

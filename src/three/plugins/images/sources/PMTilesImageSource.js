@@ -45,7 +45,7 @@ class PMTilesContentCache extends MVTContentCache {
 
 	async init() {
 
-		const { tiling, tileDimension } = this;
+		const { tiling } = this;
 
 		const PMTiles = await importPMTiles();
 
@@ -101,8 +101,8 @@ class PMTilesContentCache extends MVTContentCache {
 			DEG2RAD * header.maxLat,
 		);
 		tiling.generateLevels( header.maxZoom + 1, projection.tileCountX, projection.tileCountY, {
-			tilePixelWidth: tileDimension,
-			tilePixelHeight: tileDimension,
+			tilePixelWidth: 512,
+			tilePixelHeight: 512,
 			minLevel: header.minZoom,
 		} );
 

@@ -26,13 +26,11 @@ export class MVTContentCache extends DataCache {
 		const {
 			url = null,
 			levels = 20,
-			tileDimension = 256,
 			projection = 'EPSG:3857',
 		} = options;
 
 		this.url = url;
 		this.levels = levels;
-		this.tileDimension = tileDimension;
 		this.projectionId = projection;
 
 		this.tiling = new TilingScheme();
@@ -43,11 +41,14 @@ export class MVTContentCache extends DataCache {
 
 	init() {
 
-		const { tiling, tileDimension, levels, url, projectionId } = this;
+		const { tiling, levels, url, projectionId } = this;
 		tiling.flipY = ! /{\s*reverseY|-\s*y\s*}/g.test( url );
 		tiling.setProjection( new ProjectionScheme( projectionId ) );
 		tiling.setContentBounds( ...tiling.projection.getBounds() );
 
+		// 512 is used as the reference tile size for zoom level selection, matching the approach
+		// used by Maplibre GL JS (see coveringZoomLevel in maplibre-gl-js/src/geo/projection/covering_tiles.ts).
+		const TILE_SIZE = 512;
 		if ( Array.isArray( levels ) ) {
 
 			levels.forEach( ( info, level ) => {
@@ -55,8 +56,8 @@ export class MVTContentCache extends DataCache {
 				if ( info !== null ) {
 
 					tiling.setLevel( level, {
-						tilePixelWidth: tileDimension,
-						tilePixelHeight: tileDimension,
+						tilePixelWidth: TILE_SIZE,
+						tilePixelHeight: TILE_SIZE,
 						...info,
 					} );
 
@@ -67,8 +68,8 @@ export class MVTContentCache extends DataCache {
 		} else {
 
 			tiling.generateLevels( levels, tiling.projection.tileCountX, tiling.projection.tileCountY, {
-				tilePixelWidth: tileDimension,
-				tilePixelHeight: tileDimension,
+				tilePixelWidth: TILE_SIZE,
+				tilePixelHeight: TILE_SIZE,
 			} );
 
 		}
