@@ -60,18 +60,26 @@ export class VectorShapeCanvasRenderer {
 
 	// Sets up the canvas transform and clip for geographic (Y-up, degree) coordinates.
 	// tileBoundsDeg and regionBoundsDeg are in the same coordinate space as getX/getY returns.
-	setGeographicFrame( ctx, tileBoundsDeg, regionBoundsDeg, width, height ) {
+	setGeographicFrame( ctx, tileBoundsDeg, regionBoundsDeg ) {
 
 		ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBoundsDeg;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBoundsDeg;
+		const { width, height } = ctx.canvas;
 
 		// Geographic Y increases northward; canvas Y increases downward — negate scaleY.
 		const scaleX = width / ( rMaxX - rMinX );
 		const scaleY = - height / ( rMaxY - rMinY );
-		const offsetX = Math.round( - rMinX * scaleX );
-		const offsetY = Math.round( rMaxY * height / ( rMaxY - rMinY ) );
+
+		// Canvas position of the tile's top-left corner.
+		const tileLeft = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
+		const tileTop = Math.round( ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) * height );
+
+		// Offset: tile corner position adjusted for the geographic coordinate at that corner
+		// (geo data is in global degree space, not tile-local space).
+		const offsetX = tileLeft - tMinX * scaleX;
+		const offsetY = tileTop - tMaxY * scaleY;
 
 		ctx.save();
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
@@ -101,19 +109,27 @@ export class VectorShapeCanvasRenderer {
 
 	// Sets up the canvas transform and clip for one MVT tile.
 	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
-	setVectorTileFrame( ctx, tileBounds, regionBounds, width, height ) {
+	setVectorTileFrame( ctx, tileBounds, regionBounds ) {
 
 		ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
+		const { width, height } = ctx.canvas;
 
 		// Affine transform: MVT tile coords [0, MVT_EXTENT] → canvas pixels.
 		// MVT Y increases downward; normalized Y increases northward; canvas Y increases downward.
 		const scaleX = ( tMaxX - tMinX ) / MVT_EXTENT / ( rMaxX - rMinX ) * width;
 		const scaleY = ( tMaxY - tMinY ) / MVT_EXTENT / ( rMaxY - rMinY ) * height;
-		const offsetX = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
-		const offsetY = Math.round( ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height );
+
+		// Canvas position of the tile's top-left corner.
+		const tileLeft = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
+		const tileTop = Math.round( ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) * height );
+
+		// Offset: tile corner position is the transform offset directly
+		// (MVT data is in tile-local space starting at (0, 0)).
+		const offsetX = tileLeft;
+		const offsetY = tileTop;
 
 		ctx.save();
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );

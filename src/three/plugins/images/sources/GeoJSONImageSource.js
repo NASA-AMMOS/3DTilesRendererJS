@@ -196,7 +196,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		];
 
 		const ctx = canvas.getContext( '2d' );
-		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg, resolution, resolution );
+		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg );
 
 		for ( const feature of features ) {
 
