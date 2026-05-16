@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { VectorShapeCanvasRenderer, DEFAULT_STYLE } from '../../../renderer/utils/VectorShapeCanvasRenderer.js';
+import { VectorShapeCanvasRenderer } from '../../../renderer/utils/VectorShapeCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
@@ -216,8 +216,8 @@ export class MVTImageSource extends RegionImageSource {
 
 			if ( getStyle ) {
 
-				const orderA = getStyle( a, null )?.order ?? DEFAULT_STYLE.order;
-				const orderB = getStyle( b, null )?.order ?? DEFAULT_STYLE.order;
+				const orderA = getStyle( a, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
+				const orderB = getStyle( b, null )?.order ?? VectorShapeCanvasRenderer.DEFAULT_STYLE.order;
 				if ( orderA !== orderB ) return orderA - orderB;
 
 			}

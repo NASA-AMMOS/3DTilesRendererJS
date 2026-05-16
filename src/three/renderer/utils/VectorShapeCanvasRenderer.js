@@ -1,6 +1,19 @@
-export const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true };
+const DEFAULT_STYLE = Object.freeze( {
+	fill: '#cccccc',
+	stroke: 'transparent',
+	strokeWidth: 1,
+	radius: 2,
+	order: 0,
+	visible: true,
+} );
 
 export class VectorShapeCanvasRenderer {
+
+	static get DEFAULT_STYLE() {
+
+		return DEFAULT_STYLE;
+
+	}
 
 	get fill() {
 
