@@ -9,6 +9,7 @@ import {
 	XYZTilesPlugin,
 	ImageOverlayPlugin,
 	PMTilesOverlay,
+	GeneratedSurfacePlugin,
 } from '3d-tiles-renderer/plugins';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
 
@@ -44,28 +45,30 @@ function init() {
 	scene = new Scene();
 	camera = new PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.001, 10000 );
 
+	// PMTiles overlay: vector tile data composited on top of the base geometry
+	overlay = new PMTilesOverlay( {
+		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
+		getStyle,
+	} );
+
 	// Base tile layer: XYZ raster tiles provide the globe geometry
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new UpdateOnChangePlugin() );
 	tiles.registerPlugin( new TilesFadePlugin() );
-	tiles.registerPlugin( new XYZTilesPlugin( {
+	tiles.registerPlugin( new GeneratedSurfacePlugin( {
 		center: true,
 		shape: 'ellipsoid',
-		url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+		overlay,
+	} ) );
+	tiles.registerPlugin( new ImageOverlayPlugin( {
+		overlays: [ overlay ],
+		renderer,
 	} ) );
 
 	tiles.setCamera( camera );
 	tiles.group.rotation.x = - Math.PI / 2;
 	tiles.group.updateMatrixWorld();
 	scene.add( tiles.group );
-
-	// PMTiles overlay: vector tile data composited on top of the base geometry
-	overlay = new PMTilesOverlay( {
-		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
-		getStyle,
-	} );
-	overlayPlugin = new ImageOverlayPlugin( { overlays: [ overlay ], renderer } );
-	tiles.registerPlugin( overlayPlugin );
 
 	// Controls
 	controls = new GlobeControls( scene, camera, renderer.domElement );
