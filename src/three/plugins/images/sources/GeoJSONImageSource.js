@@ -135,6 +135,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 	_updateCache( force = false ) {
 
+		// TODO: if we "bake" shapes or geometries to Path2Ds the redraw performance
+		// can improve by up to 2x.
+
 		const { geojson, featureBounds } = this;
 		if ( ! geojson || ( this.features && ! force ) ) {
 
