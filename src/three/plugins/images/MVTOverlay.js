@@ -12,8 +12,6 @@ import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
  * @param {number} [options.tileDimension=256] Tile pixel size.
  * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {Object} [options.styles] Per-layer color overrides.
- * @param {Function} [options.filter] Feature filter callback `(feature, layerName) => boolean`.
  */
 export class MVTOverlay extends ImageOverlay {
 
