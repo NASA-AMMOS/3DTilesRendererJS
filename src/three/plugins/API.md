@@ -192,6 +192,25 @@ Manages a `TiledImageSource` and a `RegionImageSource` that handles compositing
 multiple source tiles into a single texture per 3D tile region.
 
 
+## DeepZoomOverlay
+
+_extends [`TiledImageOverlay`](#tiledimageoverlay)_
+
+Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+See the [Deep Zoom specification](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
+and [OpenSeadragon](https://openseadragon.github.io).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+	}
+)
+```
+
 ## GoogleMapsOverlay
 
 _extends [`TiledImageOverlay`](#tiledimageoverlay)_
@@ -565,6 +584,53 @@ constructor(
 	}
 )
 ```
+
+## GeneratedSurfacePlugin
+
+Plugin that generates tiled surface geometry from a tiling scheme, optionally loading
+image overlay data.
+
+The tiling scheme and projection are derived from a provided overlay.
+If the source's projection is cartographic (any EPSG scheme), the plugin supports
+both planar and ellipsoidal geometry via the `shape` option.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		overlay = null: ImageOverlay,
+		shape = 'ellipsoid': string,
+		endCaps = true: boolean,
+		center = true: boolean,
+		useRecommendedSettings = true: boolean,
+	}
+)
+```
+
+### .getCartographicFromPosition
+
+```js
+getCartographicFromPosition( position: Vector3, target = {}: Object ): Object
+```
+
+Returns the cartographic coordinates for a given world-space position. "lat" and "lon" are assigned
+to the target object.
+
+
+### .getPositionFromCartographic
+
+```js
+getPositionFromCartographic(
+	lat: number,
+	lon: number,
+	target = new Vector3(): Vector3
+): Vector3
+```
+
+Returns the world-space position for a given cartographic coordinate.
+
 
 ## GLTFCesiumRTCExtension
 

@@ -10,6 +10,12 @@ export class ProjectionScheme {
 
 	}
 
+	get isCartographic() {
+
+		return this.scheme !== 'none';
+
+	}
+
 	constructor( scheme = 'EPSG:4326' ) {
 
 		this.scheme = scheme;
