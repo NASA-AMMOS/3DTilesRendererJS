@@ -1382,7 +1382,6 @@ export class ImageOverlay {
 
 	}
 
-
 }
 
 /**
@@ -1514,7 +1513,7 @@ export class TiledImageOverlay extends ImageOverlay {
 	shouldSplit( range, level = this.calculateLevel( range ) ) {
 
 		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range );
+		return this.tiling.maxLevel > level;
 
 	}
 
