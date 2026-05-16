@@ -207,8 +207,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		}
 
-		ctx.restore();
-
 	}
 
 	// bounding box quick test in projected units

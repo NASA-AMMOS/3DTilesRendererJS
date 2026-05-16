@@ -1,5 +1,5 @@
 const MVT_EXTENT = 4096;
-const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true };
+export const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true };
 
 export class VectorTileCanvasRenderer {
 
@@ -42,63 +42,27 @@ export class VectorTileCanvasRenderer {
 	constructor( options = {} ) {
 
 		const {
-			getStyle = null,
 			getX = p => p.x,
 			getY = p => p.y,
 		} = options;
 
-		this.getStyle = getStyle;
 		this.getX = getX;
 		this.getY = getY;
 
 		// styles
 		this.radius = DEFAULT_STYLE.radius;
+		this.visible = true;
 
 		this._invScale = 1;
 		this._ctx = null;
 
 	}
 
-	renderToCanvas( vectorTile ) {
-
-		const { _ctx, getStyle } = this;
-
-		for ( const feature of this._getFeatures( vectorTile ) ) {
-
-			const { layerName, properties, geometry, type } = feature;
-			const style = getStyle ? getStyle( layerName, properties ) : DEFAULT_STYLE;
-			const visible = style?.visible ?? DEFAULT_STYLE.visible;
-			if ( ! style || visible === false ) {
-
-				continue;
-
-			}
-
-			this.setStyle( style );
-
-			if ( type === 1 ) {
-
-				this._renderPoints( geometry );
-
-			} else if ( type === 2 ) {
-
-				this._renderLines( geometry );
-
-			} else if ( type === 3 ) {
-
-				this._renderPolygons( geometry );
-
-			}
-
-		}
-
-		_ctx.restore();
-
-	}
-
 	// Sets up the canvas transform and clip for geographic (Y-up, degree) coordinates.
 	// tileBoundsDeg and regionBoundsDeg are in the same coordinate space as getX/getY returns.
 	setGeographicFrame( ctx, tileBoundsDeg, regionBoundsDeg, width, height ) {
+
+		if ( ctx === this._ctx ) ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBoundsDeg;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBoundsDeg;
@@ -119,17 +83,17 @@ export class VectorTileCanvasRenderer {
 		this._ctx = ctx;
 		this._invScale = 1 / scaleX;
 
-
 	}
 
 	// Applies a style object (as returned by getStyle) to the current canvas context.
 	setStyle( style ) {
 
 		const { _invScale } = this;
-		this.fill = style.fill ?? DEFAULT_STYLE.fill;
-		this.stroke = style.stroke ?? DEFAULT_STYLE.stroke;
-		this.strokeWidth = ( style.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
-		this.radius = ( style.radius ?? DEFAULT_STYLE.radius ) * _invScale;
+		this.fill = style?.fill ?? DEFAULT_STYLE.fill;
+		this.stroke = style?.stroke ?? DEFAULT_STYLE.stroke;
+		this.strokeWidth = ( style?.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
+		this.radius = ( style?.radius ?? DEFAULT_STYLE.radius ) * _invScale;
+		this.visible = style?.visible ?? DEFAULT_STYLE.visible;
 
 	}
 
@@ -138,6 +102,8 @@ export class VectorTileCanvasRenderer {
 	// Sets up the canvas transform and clip for one MVT tile.
 	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
 	setVectorTileFrame( ctx, tileBounds, regionBounds, width, height ) {
+
+		if ( ctx === this._ctx ) ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
@@ -163,61 +129,15 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_sortLayers( layerNames ) {
+	_renderPoints( geometry, aspectRatio = 1 ) {
 
-		const { getStyle } = this;
+		const { _ctx, radius, getX, getY, visible } = this;
+		if ( ! visible ) {
 
-		return [ ...layerNames ].sort( ( a, b ) => {
-
-			if ( getStyle ) {
-
-				const orderA = getStyle( a, null )?.order ?? DEFAULT_STYLE.order;
-				const orderB = getStyle( b, null )?.order ?? DEFAULT_STYLE.order;
-				if ( orderA !== orderB ) {
-
-					return orderA - orderB;
-
-				}
-
-			}
-
-			return a.localeCompare( b );
-
-		} );
-
-	}
-
-	_getFeatures( vectorTile ) {
-
-		const results = [];
-		const layerNames = Object.keys( vectorTile.layers );
-		const sortedLayers = this._sortLayers( layerNames );
-
-		for ( const layerName of sortedLayers ) {
-
-			const layer = vectorTile.layers[ layerName ];
-
-			for ( let i = 0; i < layer.length; i ++ ) {
-
-				const feature = layer.feature( i );
-				results.push( {
-					layerName,
-					properties: feature.properties,
-					geometry: feature.loadGeometry(),
-					type: feature.type,
-				} );
-
-			}
+			return;
 
 		}
 
-		return results;
-
-	}
-
-	_renderPoints( geometry, aspectRatio = 1 ) {
-
-		const { _ctx, radius, getX, getY } = this;
 		for ( const multiPoint of geometry ) {
 
 			for ( const p of multiPoint ) {
@@ -237,7 +157,12 @@ export class VectorTileCanvasRenderer {
 
 	_renderLines( geometry ) {
 
-		const { _ctx, getX, getY } = this;
+		const { _ctx, getX, getY, visible } = this;
+		if ( ! visible ) {
+
+			return;
+
+		}
 
 		_ctx.beginPath();
 
@@ -258,7 +183,12 @@ export class VectorTileCanvasRenderer {
 
 	_renderPolygons( geometry ) {
 
-		const { _ctx, getX, getY } = this;
+		const { _ctx, getX, getY, visible } = this;
+		if ( ! visible ) {
+
+			return;
+
+		}
 
 		_ctx.beginPath();
 

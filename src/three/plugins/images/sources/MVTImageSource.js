@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { VectorTileCanvasRenderer } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
+import { VectorTileCanvasRenderer, DEFAULT_STYLE } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
@@ -127,7 +127,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		const {
 			resolution = 512,
-			getStyle,
+			getStyle = null,
 			contentCache,
 			...rest
 		} = options;
@@ -135,7 +135,8 @@ export class MVTImageSource extends RegionImageSource {
 		super();
 
 		this.resolution = resolution;
-		this._renderer = new VectorTileCanvasRenderer( { getStyle } );
+		this.getStyle = getStyle;
+		this._renderer = new VectorTileCanvasRenderer();
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}
@@ -174,7 +175,7 @@ export class MVTImageSource extends RegionImageSource {
 
 					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
 					_renderer.setVectorTileFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
-					_renderer.renderToCanvas( vectorTile );
+					this._renderVectorTile( vectorTile );
 
 				}
 
@@ -208,7 +209,63 @@ export class MVTImageSource extends RegionImageSource {
 
 	setStyle( getStyle ) {
 
-		this._renderer.getStyle = getStyle;
+		this.getStyle = getStyle;
+
+	}
+
+	_renderVectorTile( vectorTile ) {
+
+		const { _renderer, getStyle } = this;
+
+		// Sort layers by user-defined order, falling back to alphabetical.
+		const layerNames = [ ...Object.keys( vectorTile.layers ) ].sort( ( a, b ) => {
+
+			if ( getStyle ) {
+
+				const orderA = getStyle( a, null )?.order ?? DEFAULT_STYLE.order;
+				const orderB = getStyle( b, null )?.order ?? DEFAULT_STYLE.order;
+				if ( orderA !== orderB ) return orderA - orderB;
+
+			}
+
+			return a.localeCompare( b );
+
+		} );
+
+		// render each layer
+		for ( const layerName of layerNames ) {
+
+			const layer = vectorTile.layers[ layerName ];
+
+			for ( let i = 0; i < layer.length; i ++ ) {
+
+				const feature = layer.feature( i );
+				const { properties, type } = feature;
+
+				// Apply per-feature style; skip invisible features.
+				const style = getStyle( layerName, properties );
+				_renderer.setStyle( style );
+				if ( ! _renderer.visible ) continue;
+
+				// Dispatch to the appropriate draw primitive (1=point, 2=line, 3=polygon).
+				const geometry = feature.loadGeometry();
+				if ( type === 1 ) {
+
+					_renderer._renderPoints( geometry );
+
+				} else if ( type === 2 ) {
+
+					_renderer._renderLines( geometry );
+
+				} else if ( type === 3 ) {
+
+					_renderer._renderPolygons( geometry );
+
+				}
+
+			}
+
+		}
 
 	}
 
@@ -229,7 +286,7 @@ export class MVTImageSource extends RegionImageSource {
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
 				this._renderer.setVectorTileFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
-				this._renderer.renderToCanvas( vectorTile );
+				this._renderVectorTile( vectorTile );
 
 			} );
 
