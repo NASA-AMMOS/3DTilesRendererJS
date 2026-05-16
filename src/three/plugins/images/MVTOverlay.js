@@ -119,12 +119,6 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
-	setStyles( styles, filter ) {
-
-		this.imageSource.setStyles( styles, filter );
-
-	}
-
 	redraw() {
 
 		this.imageSource.redraw();

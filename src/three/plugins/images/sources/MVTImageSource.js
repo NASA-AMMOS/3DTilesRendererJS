@@ -207,12 +207,6 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
-	setStyle( getStyle ) {
-
-		this.getStyle = getStyle;
-
-	}
-
 	_renderVectorTile( vectorTile ) {
 
 		const { _renderer, getStyle } = this;
