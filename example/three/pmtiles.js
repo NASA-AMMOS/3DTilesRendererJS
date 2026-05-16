@@ -6,7 +6,6 @@ import {
 import {
 	UpdateOnChangePlugin,
 	TilesFadePlugin,
-	XYZTilesPlugin,
 	ImageOverlayPlugin,
 	PMTilesOverlay,
 	GeneratedSurfacePlugin,
@@ -28,7 +27,7 @@ const LAYERS = {
 	pois: { enabled: true, fill: '#1a8cbd', radius: 3, order: 10 },
 };
 
-let scene, renderer, camera, controls, tiles, overlay, overlayPlugin;
+let scene, renderer, camera, controls, tiles, overlay;
 
 init();
 render();
