@@ -94,13 +94,16 @@ export class VectorShapeCanvasRenderer {
 		const spanX = tileExtent ?? ( tMaxX - tMinX );
 		const spanY = tileExtent ?? ( tMaxY - tMinY );
 
-		// flipY negates scaleY for Y-up coordinate systems (geographic).
-		const scaleX = width * ( tMaxX - tMinX ) / spanX / ( rMaxX - rMinX );
-		const scaleY = ( flipY ? - 1 : 1 ) * height * ( tMaxY - tMinY ) / spanY / ( rMaxY - rMinY );
-
-		// Canvas position of the tile's top-left corner.
+		// Round all four tile edges to integer pixel positions so adjacent clip rects share
+		// the exact same boundary pixel — preventing sub-pixel gaps or overlaps at seams.
 		const tileLeft = Math.round( width * ( tMinX - rMinX ) / ( rMaxX - rMinX ) );
+		const tileRight = Math.round( width * ( tMaxX - rMinX ) / ( rMaxX - rMinX ) );
 		const tileTop = Math.round( height * ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) );
+		const tileBottom = Math.round( height * ( rMaxY - tMinY ) / ( rMaxY - rMinY ) );
+
+		// Derive scale from rounded pixel dimensions so geometry fills exactly the rounded clip rect.
+		const scaleX = ( tileRight - tileLeft ) / spanX;
+		const scaleY = ( flipY ? - 1 : 1 ) * ( tileBottom - tileTop ) / spanY;
 
 		// Tile-local coordinate at the tile's canvas corner.
 		// Fixed-extent tiles (e.g. MVT) start at (0, 0); geographic tiles start at the tile bounds corner.
