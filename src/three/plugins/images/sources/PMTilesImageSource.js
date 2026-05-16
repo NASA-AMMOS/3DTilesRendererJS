@@ -49,25 +49,19 @@ class PMTilesContentCache extends MVTContentCache {
 
 	}
 
-	async fetchItem( key, signal ) {
+	async fetchItem( [ tx, ty, tl ], signal ) {
+
+		const res = await this.instance.getZxy( tl, tx, ty, signal );
+		const buffer = res ? res.data : null;
 
 		if ( this.tileType !== 1 ) {
 
 			// Raster: store raw buffer instead of parsing as VectorTile
-			const [ tx, ty, tl ] = key;
-			const buffer = await this.fetchTileBuffer( tl, tx, ty, signal );
 			return ( buffer && buffer.byteLength > 0 ) ? buffer : null;
 
 		}
 
-		return super.fetchItem( key, signal );
-
-	}
-
-	async fetchTileBuffer( z, x, y, signal ) {
-
-		const res = await this.instance.getZxy( z, x, y, signal );
-		return res ? res.data : null;
+		return this._parseVectorTile( buffer );
 
 	}
 

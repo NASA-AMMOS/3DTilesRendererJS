@@ -79,7 +79,14 @@ export class MVTContentCache extends DataCache {
 
 	async fetchItem( [ tx, ty, tl ], signal ) {
 
-		let buffer = await this.fetchTileBuffer( tl, tx, ty, signal );
+		const url = this.getUrl( tx, ty, tl );
+		const res = await this.fetchData( url, { ...this.fetchOptions, signal } );
+		const buffer = await res.arrayBuffer();
+		return this._parseVectorTile( buffer );
+
+	}
+
+	async _parseVectorTile( buffer ) {
 
 		if ( ! buffer || buffer.byteLength === 0 ) {
 
@@ -88,21 +95,12 @@ export class MVTContentCache extends DataCache {
 		}
 
 		const { VectorTile, Protobuf } = await importMVTDeps();
-		const vectorTile = new VectorTile( new Protobuf( buffer ) );
-		return vectorTile;
+		return new VectorTile( new Protobuf( buffer ) );
 
 	}
 
 	// Parsed JS objects — nothing to dispose
 	disposeItem() {}
-
-	async fetchTileBuffer( z, x, y, signal ) {
-
-		const url = this.getUrl( x, y, z );
-		const res = await this.fetchData( url, { ...this.fetchOptions, signal } );
-		return res.arrayBuffer();
-
-	}
 
 	getUrl( x, y, level ) {
 
