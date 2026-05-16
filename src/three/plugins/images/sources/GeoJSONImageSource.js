@@ -1,6 +1,7 @@
 import { CanvasTexture, MathUtils, Vector3, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
+import { VectorTileCanvasRenderer } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
 import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
 // TODO: Consider option to support world-space thickness definitions. Eg world-space point size or line thickness in meters.
@@ -52,6 +53,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
+		this._renderer = new VectorTileCanvasRenderer( { getX: p => p[ 0 ], getY: p => p[ 1 ] } );
 
 	}
 
@@ -159,7 +161,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this._updateCache();
 
 		const [ minX, minY, maxX, maxY ] = tokens;
-		const { projection, resolution, features } = this;
+		const { projection, resolution, features, _renderer } = this;
 
 		canvas.width = resolution;
 		canvas.height = resolution;
@@ -176,8 +178,9 @@ export class GeoJSONImageSource extends RegionImageSource {
 			maxLatRad * MathUtils.RAD2DEG,
 		];
 
-		// draw features
 		const ctx = canvas.getContext( '2d' );
+		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg, canvas.width, canvas.height );
+
 		for ( let i = 0; i < features.length; i ++ ) {
 
 			// TODO: Add support for padding of tiles to avoid clipping "wide" elements that may extend beyond
@@ -190,6 +193,8 @@ export class GeoJSONImageSource extends RegionImageSource {
 			}
 
 		}
+
+		ctx.restore();
 
 	}
 
@@ -295,179 +300,63 @@ export class GeoJSONImageSource extends RegionImageSource {
 	}
 
 	// draw feature on canvas ( assumes intersects already )
-	_drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, width, height ) {
+	_drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, height ) {
 
 		const { geometry = null, properties = {} } = feature;
 		if ( ! geometry ) {
 
-			// A feature may have null geometry in GeoJSON
 			return;
 
 		}
 
-		const [ minLonDeg, minLatDeg, maxLonDeg, maxLatDeg ] = tileBoundsDeg;
+		const [ , minLatDeg, , maxLatDeg ] = tileBoundsDeg;
 		const strokeStyle = properties.strokeStyle || this.strokeStyle;
 		const fillStyle = properties.fillStyle || this.fillStyle;
 		const pointRadius = properties.pointRadius || this.pointRadius;
 		const strokeWidth = properties.strokeWidth || this.strokeWidth;
 
+		const { _renderer } = this;
+
 		ctx.save();
 		ctx.strokeStyle = strokeStyle;
 		ctx.fillStyle = fillStyle;
-		ctx.lineWidth = strokeWidth;
-
-		// Compute pixel from cartographic coordinates and tile bounds
-		const arr = new Array( 2 );
-		const projectPoint = ( lon, lat, target = arr ) => {
-
-			// canvas y origin is top, projection y increases north -> flip
-			const x = MathUtils.mapLinear( lon, minLonDeg, maxLonDeg, 0, width );
-			const y = height - MathUtils.mapLinear( lat, minLatDeg, maxLatDeg, 0, height );
-
-			// round to integer to gain performance
-			// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#avoid_floating-point_coordinates_and_use_integers_instead
-			target[ 0 ] = Math.round( x );
-			target[ 1 ] = Math.round( y );
-			return target;
-
-		};
-
-		const calculateAspectRatio = ( lon, lat ) => {
-
-			// calculates the aspect ratio with which to draw points
-			const latRad = lat * MathUtils.DEG2RAD;
-			const lonRad = lon * MathUtils.DEG2RAD;
-			const pxLat = ( maxLatDeg - minLatDeg ) / height;
-			const pxLon = ( maxLonDeg - minLonDeg ) / width;
-			const pixelRatio = pxLon / pxLat;
-
-			// TODO: this should use the ellipsoid defined on the relevant tiles renderer
-			return pixelRatio * calculateArcRatioAtPoint( WGS84_ELLIPSOID, latRad, lonRad );
-
-		};
+		ctx.lineWidth = strokeWidth * _renderer._invScale;
 
 		const type = geometry.type;
-		if ( type === 'Point' ) {
 
-			const [ lon, lat ] = geometry.coordinates;
-			const [ px, py ] = projectPoint( lon, lat );
-			const drawRatio = calculateAspectRatio( lon, lat );
+		if ( type === 'Point' || type === 'MultiPoint' ) {
 
-			ctx.beginPath();
-			ctx.ellipse( px, py, pointRadius / drawRatio, pointRadius, 0, 0, Math.PI * 2 );
-			ctx.fill();
-			ctx.stroke();
+			// Radius in geographic units (degrees) so the canvas transform handles positioning.
+			const scaledRadius = pointRadius * ( maxLatDeg - minLatDeg ) / height;
+			const points = type === 'Point' ? [ geometry.coordinates ] : geometry.coordinates;
+			for ( const point of points ) {
 
-		} else if ( type === 'MultiPoint' ) {
+				// TODO: this should use the ellipsoid defined on the relevant tiles renderer
+				const arcRatio = calculateArcRatioAtPoint(
+					WGS84_ELLIPSOID,
+					point[ 1 ] * MathUtils.DEG2RAD,
+					point[ 0 ] * MathUtils.DEG2RAD,
+				);
+				const pointGroup = [ point ];
+				_renderer._renderPoints( [ pointGroup ], scaledRadius, arcRatio );
 
-			geometry.coordinates.forEach( ( [ lon, lat ] ) => {
-
-				const [ px, py ] = projectPoint( lon, lat );
-				const drawRatio = calculateAspectRatio( lon, lat );
-
-				ctx.beginPath();
-				ctx.ellipse( px, py, pointRadius / drawRatio, pointRadius, 0, 0, Math.PI * 2 );
-				ctx.fill();
-				ctx.stroke();
-
-			} );
+			}
 
 		} else if ( type === 'LineString' ) {
 
-			ctx.beginPath();
-			geometry.coordinates.forEach( ( [ lon, lat ], i ) => {
-
-				const [ px, py ] = projectPoint( lon, lat );
-				if ( i === 0 ) {
-
-					ctx.moveTo( px, py );
-
-				} else {
-
-					ctx.lineTo( px, py );
-
-				}
-
-			} );
-
-			ctx.stroke();
+			_renderer._renderLines( [ geometry.coordinates ] );
 
 		} else if ( type === 'MultiLineString' ) {
 
-			ctx.beginPath();
-			geometry.coordinates.forEach( ( line ) => {
-
-				line.forEach( ( [ lon, lat ], i ) => {
-
-					const [ px, py ] = projectPoint( lon, lat );
-					if ( i === 0 ) {
-
-						ctx.moveTo( px, py );
-
-					} else {
-
-						ctx.lineTo( px, py );
-
-					}
-
-				} );
-
-			} );
-			ctx.stroke();
+			_renderer._renderLines( geometry.coordinates );
 
 		} else if ( type === 'Polygon' ) {
 
-			ctx.beginPath();
-			geometry.coordinates.forEach( ( ring, rIndex ) => {
-
-				ring.forEach( ( [ lon, lat ], i ) => {
-
-					const [ px, py ] = projectPoint( lon, lat );
-					if ( i === 0 ) {
-
-						ctx.moveTo( px, py );
-
-					} else {
-
-						ctx.lineTo( px, py );
-
-					}
-
-				} );
-				ctx.closePath();
-
-			} );
-			ctx.fill( 'evenodd' );
-			ctx.stroke();
+			_renderer._renderPolygons( geometry.coordinates );
 
 		} else if ( type === 'MultiPolygon' ) {
 
-			geometry.coordinates.forEach( ( polygon ) => {
-
-				ctx.beginPath();
-				polygon.forEach( ( ring, rIndex ) => {
-
-					ring.forEach( ( [ lon, lat ], i ) => {
-
-						const [ px, py ] = projectPoint( lon, lat );
-						if ( i === 0 ) {
-
-							ctx.moveTo( px, py );
-
-						} else {
-
-							ctx.lineTo( px, py );
-
-						}
-
-					} );
-					ctx.closePath();
-
-				} );
-				ctx.fill( 'evenodd' );
-				ctx.stroke();
-
-			} );
+			geometry.coordinates.forEach( polygon => _renderer._renderPolygons( polygon ) );
 
 		}
 

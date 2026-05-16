@@ -60,6 +60,32 @@ export class VectorTileCanvasRenderer {
 
 	}
 
+	// Sets up the canvas transform and clip for geographic (Y-up, degree) coordinates.
+	// tileBoundsDeg and regionBoundsDeg are in the same coordinate space as getX/getY returns.
+	setGeographicFrame( ctx, tileBoundsDeg, regionBoundsDeg, width, height ) {
+
+		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBoundsDeg;
+		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBoundsDeg;
+
+		// Geographic Y increases northward; canvas Y increases downward — negate scaleY.
+		const scaleX = width / ( rMaxX - rMinX );
+		const scaleY = - height / ( rMaxY - rMinY );
+		const offsetX = - rMinX * scaleX;
+		const offsetY = rMaxY * height / ( rMaxY - rMinY );
+
+		ctx.save();
+		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
+
+		ctx.beginPath();
+		ctx.rect( tMinX, tMinY, tMaxX - tMinX, tMaxY - tMinY );
+		ctx.clip();
+
+		this._ctx = ctx;
+		this._invScale = 1 / scaleX;
+
+
+	}
+
 	// Sets up the canvas transform and clip for one MVT tile.
 	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
 	setFrame( ctx, tileBounds, regionBounds, width, height ) {
@@ -140,7 +166,7 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_renderPoints( geometry, radius ) {
+	_renderPoints( geometry, radius, aspectRatio = 1 ) {
 
 		const { _ctx, getX, getY } = this;
 		for ( const multiPoint of geometry ) {
@@ -149,8 +175,7 @@ export class VectorTileCanvasRenderer {
 
 				const x = getX( p ), y = getY( p );
 				_ctx.beginPath();
-				_ctx.moveTo( x + radius, y );
-				_ctx.arc( x, y, radius, 0, Math.PI * 2 );
+				_ctx.ellipse( x, y, radius / aspectRatio, radius, 0, 0, Math.PI * 2 );
 				_ctx.fill();
 
 			}
