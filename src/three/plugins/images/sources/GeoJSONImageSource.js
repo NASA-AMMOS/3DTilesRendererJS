@@ -318,16 +318,14 @@ export class GeoJSONImageSource extends RegionImageSource {
 		const { _renderer } = this;
 
 		ctx.save();
-		ctx.strokeStyle = strokeStyle;
-		ctx.fillStyle = fillStyle;
-		ctx.lineWidth = strokeWidth * _renderer._invScale;
+		_renderer.setStyle( { fill: fillStyle, stroke: strokeStyle, strokeWidth } );
 
 		const type = geometry.type;
 
 		if ( type === 'Point' || type === 'MultiPoint' ) {
 
 			// Radius in geographic units (degrees) so the canvas transform handles positioning.
-			const scaledRadius = pointRadius * ( maxLatDeg - minLatDeg ) / height;
+			_renderer.radius = pointRadius * ( maxLatDeg - minLatDeg ) / height;
 			const points = type === 'Point' ? [ geometry.coordinates ] : geometry.coordinates;
 			for ( const point of points ) {
 
@@ -338,7 +336,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 					point[ 0 ] * MathUtils.DEG2RAD,
 				);
 				const pointGroup = [ point ];
-				_renderer._renderPoints( [ pointGroup ], scaledRadius, arcRatio );
+				_renderer._renderPoints( [ pointGroup ], arcRatio );
 
 			}
 

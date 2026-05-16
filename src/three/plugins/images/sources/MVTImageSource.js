@@ -173,7 +173,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( vectorTile ) {
 
 					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_renderer.setFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
+					_renderer.setVectorTileFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
 					_renderer.renderToCanvas( vectorTile );
 
 				}
@@ -228,7 +228,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( ! vectorTile ) return;
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-				this._renderer.setFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
+				this._renderer.setVectorTileFrame( ctx, tileBounds, regionBounds, canvas.width, canvas.height );
 				this._renderer.renderToCanvas( vectorTile );
 
 			} );

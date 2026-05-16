@@ -3,6 +3,42 @@ const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, 
 
 export class VectorTileCanvasRenderer {
 
+	get fill() {
+
+		return this._ctx.fillStyle;
+
+	}
+
+	set fill( v ) {
+
+		this._ctx.fillStyle = v;
+
+	}
+
+	get stroke() {
+
+		return this._ctx.strokeStyle;
+
+	}
+
+	set stroke( v ) {
+
+		this._ctx.strokeStyle = v;
+
+	}
+
+	get strokeWidth() {
+
+		return this._ctx.lineWidth;
+
+	}
+
+	set strokeWidth( v ) {
+
+		this._ctx.lineWidth = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {
@@ -15,6 +51,9 @@ export class VectorTileCanvasRenderer {
 		this.getX = getX;
 		this.getY = getY;
 
+		// styles
+		this.radius = DEFAULT_STYLE.radius;
+
 		this._invScale = 1;
 		this._ctx = null;
 
@@ -22,7 +61,7 @@ export class VectorTileCanvasRenderer {
 
 	renderToCanvas( vectorTile ) {
 
-		const { _ctx, _invScale, getStyle } = this;
+		const { _ctx, getStyle } = this;
 
 		for ( const feature of this._getFeatures( vectorTile ) ) {
 
@@ -35,14 +74,11 @@ export class VectorTileCanvasRenderer {
 
 			}
 
-			_ctx.fillStyle = style.fill ?? DEFAULT_STYLE.fill;
-			_ctx.strokeStyle = style.stroke ?? DEFAULT_STYLE.stroke;
-			_ctx.lineWidth = ( style.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
-			const scaledRadius = ( style.radius ?? DEFAULT_STYLE.radius ) * _invScale;
+			this.setStyle( style );
 
 			if ( type === 1 ) {
 
-				this._renderPoints( geometry, scaledRadius );
+				this._renderPoints( geometry );
 
 			} else if ( type === 2 ) {
 
@@ -86,9 +122,22 @@ export class VectorTileCanvasRenderer {
 
 	}
 
+	// Applies a style object (as returned by getStyle) to the current canvas context.
+	setStyle( style ) {
+
+		const { _invScale } = this;
+		this.fill = style.fill ?? DEFAULT_STYLE.fill;
+		this.stroke = style.stroke ?? DEFAULT_STYLE.stroke;
+		this.strokeWidth = ( style.strokeWidth ?? DEFAULT_STYLE.strokeWidth ) * _invScale;
+		this.radius = ( style.radius ?? DEFAULT_STYLE.radius ) * _invScale;
+
+	}
+
+	// TODO: merge setVectorTileFrame and setGeographicFrame into a single method.
+
 	// Sets up the canvas transform and clip for one MVT tile.
 	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
-	setFrame( ctx, tileBounds, regionBounds, width, height ) {
+	setVectorTileFrame( ctx, tileBounds, regionBounds, width, height ) {
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
@@ -166,9 +215,9 @@ export class VectorTileCanvasRenderer {
 
 	}
 
-	_renderPoints( geometry, radius, aspectRatio = 1 ) {
+	_renderPoints( geometry, aspectRatio = 1 ) {
 
-		const { _ctx, getX, getY } = this;
+		const { _ctx, radius, getX, getY } = this;
 		for ( const multiPoint of geometry ) {
 
 			for ( const p of multiPoint ) {
@@ -181,6 +230,8 @@ export class VectorTileCanvasRenderer {
 			}
 
 		}
+
+		_ctx.stroke();
 
 	}
 
