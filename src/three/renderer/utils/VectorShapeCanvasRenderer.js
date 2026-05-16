@@ -62,7 +62,7 @@ export class VectorShapeCanvasRenderer {
 	// tileBoundsDeg and regionBoundsDeg are in the same coordinate space as getX/getY returns.
 	setGeographicFrame( ctx, tileBoundsDeg, regionBoundsDeg, width, height ) {
 
-		if ( ctx === this._ctx ) ctx.restore();
+		ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBoundsDeg;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBoundsDeg;
@@ -70,8 +70,8 @@ export class VectorShapeCanvasRenderer {
 		// Geographic Y increases northward; canvas Y increases downward — negate scaleY.
 		const scaleX = width / ( rMaxX - rMinX );
 		const scaleY = - height / ( rMaxY - rMinY );
-		const offsetX = - rMinX * scaleX;
-		const offsetY = rMaxY * height / ( rMaxY - rMinY );
+		const offsetX = Math.round( - rMinX * scaleX );
+		const offsetY = Math.round( rMaxY * height / ( rMaxY - rMinY ) );
 
 		ctx.save();
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
@@ -103,7 +103,7 @@ export class VectorShapeCanvasRenderer {
 	// tileBounds and regionBounds are normalized [0,1] coordinates, Y increases northward.
 	setVectorTileFrame( ctx, tileBounds, regionBounds, width, height ) {
 
-		if ( ctx === this._ctx ) ctx.restore();
+		ctx.restore();
 
 		const [ tMinX, tMinY, tMaxX, tMaxY ] = tileBounds;
 		const [ rMinX, rMinY, rMaxX, rMaxY ] = regionBounds;
@@ -112,8 +112,8 @@ export class VectorShapeCanvasRenderer {
 		// MVT Y increases downward; normalized Y increases northward; canvas Y increases downward.
 		const scaleX = ( tMaxX - tMinX ) / MVT_EXTENT / ( rMaxX - rMinX ) * width;
 		const scaleY = ( tMaxY - tMinY ) / MVT_EXTENT / ( rMaxY - rMinY ) * height;
-		const offsetX = ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width;
-		const offsetY = ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height;
+		const offsetX = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
+		const offsetY = Math.round( ( 1 - ( tMaxY - rMinY ) / ( rMaxY - rMinY ) ) * height );
 
 		ctx.save();
 		ctx.setTransform( scaleX, 0, 0, scaleY, offsetX, offsetY );
