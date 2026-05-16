@@ -136,7 +136,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		this.resolution = resolution;
 		this.getStyle = getStyle;
-		this._renderer = new VectorShapeCanvasRenderer();
+		this._renderer = new VectorShapeCanvasRenderer( { tileExtent: 4096 } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}
@@ -174,7 +174,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( vectorTile ) {
 
 					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_renderer.setVectorTileFrame( ctx, tileBounds, regionBounds );
+					_renderer.setFrame( ctx, tileBounds, regionBounds );
 					this._renderVectorTile( vectorTile );
 
 				}
@@ -279,7 +279,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( ! vectorTile ) return;
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-				this._renderer.setVectorTileFrame( ctx, tileBounds, regionBounds );
+				this._renderer.setFrame( ctx, tileBounds, regionBounds );
 				this._renderVectorTile( vectorTile );
 
 			} );

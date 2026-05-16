@@ -63,6 +63,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
 		this._renderer = new VectorShapeCanvasRenderer( {
+			flipY: true,
 			getX: p => p[ 0 ],
 			getY: p => p[ 1 ],
 		} );
@@ -196,7 +197,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		];
 
 		const ctx = canvas.getContext( '2d' );
-		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg );
+		_renderer.setFrame( ctx, regionBoundsDeg, regionBoundsDeg );
 
 		for ( const feature of features ) {
 
