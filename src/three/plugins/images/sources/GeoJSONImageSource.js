@@ -6,6 +6,8 @@ import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
 // TODO: Consider option to support world-space thickness definitions. Eg world-space point size or line thickness in meters.
 
+const GEOMETRY_TYPES = new Set( [ 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon' ] );
+
 // function for calculating the the change in arc length at a given cartographic point
 // in order to preserve a circular look when drawing points
 const _v0 = /* @__PURE__ */ new Vector3();
@@ -137,7 +139,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		// extract the relevant features
 		this.features = this._featuresFromGeoJSON( geojson );
-		this.features.forEach( feature => {
+		for ( const feature of this.features ) {
 
 			// save the feature bounds
 			const bounds = this._getFeatureBounds( feature );
@@ -150,7 +152,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 			maxLon = Math.max( maxLon, fMaxLon );
 			maxLat = Math.max( maxLat, fMaxLat );
 
-		} );
+		}
 
 		this.contentBounds = [ minLon, minLat, maxLon, maxLat ];
 
@@ -179,16 +181,15 @@ export class GeoJSONImageSource extends RegionImageSource {
 		];
 
 		const ctx = canvas.getContext( '2d' );
-		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg, canvas.width, canvas.height );
+		_renderer.setGeographicFrame( ctx, regionBoundsDeg, regionBoundsDeg, resolution, resolution );
 
-		for ( let i = 0; i < features.length; i ++ ) {
+		for ( const feature of features ) {
 
 			// TODO: Add support for padding of tiles to avoid clipping "wide" elements that may extend beyond
 			// edge of the bounds like stroke, point size.
-			const feature = features[ i ];
 			if ( this._featureIntersectsTile( feature, regionBoundsDeg ) ) {
 
-				this._drawFeatureOnCanvas( ctx, feature, regionBoundsDeg, canvas.width, canvas.height );
+				this._drawFeatureOnCanvas( ctx, feature, regionBoundsDeg, resolution );
 
 			}
 
@@ -273,7 +274,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 	_featuresFromGeoJSON( root ) {
 
 		const type = root.type;
-		const geomTypes = new Set( [ 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon' ] );
 
 		if ( type === 'FeatureCollection' ) {
 
@@ -287,7 +287,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 			return root.geometries.map( g => ( { type: 'Feature', geometry: g, properties: {} } ) );
 
-		} else if ( geomTypes.has( type ) ) {
+		} else if ( GEOMETRY_TYPES.has( type ) ) {
 
 			return [ { type: 'Feature', geometry: root, properties: {} } ];
 
