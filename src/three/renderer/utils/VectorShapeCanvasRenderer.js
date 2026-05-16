@@ -73,8 +73,8 @@ export class VectorShapeCanvasRenderer {
 		const scaleY = - height / ( rMaxY - rMinY );
 
 		// Canvas position of the tile's top-left corner.
-		const tileLeft = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
-		const tileTop = Math.round( ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) * height );
+		const tileLeft = Math.round( width * ( tMinX - rMinX ) / ( rMaxX - rMinX ) );
+		const tileTop = Math.round( height * ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) );
 
 		// Offset: tile corner position adjusted for the geographic coordinate at that corner
 		// (geo data is in global degree space, not tile-local space).
@@ -119,12 +119,12 @@ export class VectorShapeCanvasRenderer {
 
 		// Affine transform: MVT tile coords [0, MVT_EXTENT] → canvas pixels.
 		// MVT Y increases downward; normalized Y increases northward; canvas Y increases downward.
-		const scaleX = ( tMaxX - tMinX ) / MVT_EXTENT / ( rMaxX - rMinX ) * width;
-		const scaleY = ( tMaxY - tMinY ) / MVT_EXTENT / ( rMaxY - rMinY ) * height;
+		const scaleX = width * ( tMaxX - tMinX ) / MVT_EXTENT / ( rMaxX - rMinX );
+		const scaleY = height * ( tMaxY - tMinY ) / MVT_EXTENT / ( rMaxY - rMinY );
 
 		// Canvas position of the tile's top-left corner.
-		const tileLeft = Math.round( ( tMinX - rMinX ) / ( rMaxX - rMinX ) * width );
-		const tileTop = Math.round( ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) * height );
+		const tileLeft = Math.round( width * ( tMinX - rMinX ) / ( rMaxX - rMinX ) );
+		const tileTop = Math.round( height * ( rMaxY - tMaxY ) / ( rMaxY - rMinY ) );
 
 		// Offset: tile corner position is the transform offset directly
 		// (MVT data is in tile-local space starting at (0, 0)).
