@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { VectorTileCanvasRenderer, DEFAULT_STYLE } from '../../../renderer/utils/VectorTileCanvasRenderer.js';
+import { VectorShapeCanvasRenderer, DEFAULT_STYLE } from '../../../renderer/utils/VectorShapeCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';
@@ -136,7 +136,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		this.resolution = resolution;
 		this.getStyle = getStyle;
-		this._renderer = new VectorTileCanvasRenderer();
+		this._renderer = new VectorShapeCanvasRenderer();
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}

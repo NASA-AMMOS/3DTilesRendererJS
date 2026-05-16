@@ -1,7 +1,7 @@
 const MVT_EXTENT = 4096;
 export const DEFAULT_STYLE = { fill: '#cccccc', stroke: 'transparent', strokeWidth: 1, radius: 2, order: 0, visible: true };
 
-export class VectorTileCanvasRenderer {
+export class VectorShapeCanvasRenderer {
 
 	get fill() {
 
