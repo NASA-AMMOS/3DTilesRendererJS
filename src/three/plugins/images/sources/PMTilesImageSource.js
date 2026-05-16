@@ -26,7 +26,44 @@ class PMTilesContentCache extends MVTContentCache {
 		const { tiling, tileDimension } = this;
 
 		const PMTiles = await importPMTiles();
-		this.instance = new PMTiles( this.url );
+
+		// Custom Source routes all PMTiles range requests through fetchData so they
+		// go through the shared download queue rather than PMTiles' internal fetch.
+		this.instance = new PMTiles( {
+			getKey: () => this.url,
+			getBytes: async ( offset, length, signal ) => {
+
+				const { fetchOptions, url } = this;
+				const res = await this.fetchData( url, {
+					...fetchOptions,
+					signal,
+					headers: {
+						...fetchOptions.headers,
+						range: `bytes=${ offset }-${ offset + length - 1 }`,
+					},
+				} );
+
+				if ( ! res.ok ) {
+
+					throw new Error( `PMTilesImageSource: Bad response code: ${ res.status }` );
+
+				}
+
+				if ( res.status !== 206 ) {
+
+					throw new Error( 'PMTilesImageSource: Server does not support HTTP Byte Serving.' );
+
+				}
+
+				return {
+					data: await res.arrayBuffer(),
+					etag: res.headers.get( 'ETag' ),
+					cacheControl: res.headers.get( 'Cache-Control' ),
+					expires: res.headers.get( 'Expires' ),
+				};
+
+			},
+		} );
 
 		const header = await this.instance.getHeader();
 		this.tileType = header.tileType;
