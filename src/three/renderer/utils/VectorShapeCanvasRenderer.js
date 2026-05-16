@@ -164,6 +164,13 @@ export class VectorShapeCanvasRenderer {
 
 		}
 
+		if ( geometry instanceof Path2D ) {
+
+			_ctx.stroke( geometry );
+			return;
+
+		}
+
 		_ctx.beginPath();
 
 		for ( const ring of geometry ) {
@@ -186,6 +193,14 @@ export class VectorShapeCanvasRenderer {
 		const { _ctx, getX, getY, visible } = this;
 		if ( ! visible ) {
 
+			return;
+
+		}
+
+		if ( geometry instanceof Path2D ) {
+
+			_ctx.fill( geometry, 'evenodd' );
+			_ctx.stroke( geometry );
 			return;
 
 		}
