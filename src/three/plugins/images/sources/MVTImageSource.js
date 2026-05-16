@@ -123,6 +123,18 @@ export class MVTImageSource extends RegionImageSource {
 
 	}
 
+	get fetchData() {
+
+		return this._contentCache.fetchData;
+
+	}
+
+	set fetchData( v ) {
+
+		this._contentCache.fetchData = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		const {

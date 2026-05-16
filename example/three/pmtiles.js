@@ -57,7 +57,6 @@ function init() {
 	tiles.registerPlugin( new GeneratedSurfacePlugin( {
 		center: true,
 		shape: 'ellipsoid',
-		overlay,
 	} ) );
 	tiles.registerPlugin( new ImageOverlayPlugin( {
 		overlays: [ overlay ],
