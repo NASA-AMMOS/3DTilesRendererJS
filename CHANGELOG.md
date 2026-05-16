@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Converted remaining "three/examples/jsm/" paths to "three/addons/"
 
 ### Changed
-- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin", instead.
+- Deprecated "ImageFormatPlugin" and derivative plugins to reduce code redundancy. Use "GeneratedSurfacePlugin" & "ImageOverlayPlugin", instead.
 
 ## [0.4.24] - 2026.04.10
 ### Added
