@@ -36,6 +36,12 @@ export class GeoJSONImageSource extends RegionImageSource {
 		strokeStyle = 'white',
 		strokeWidth = 2,
 		fillStyle = 'rgba( 255, 255, 255, 0.5 )',
+		getStyle = ( ( _feature, properties ) => ( {
+			fill: properties.fillStyle || this.fillStyle,
+			stroke: properties.strokeStyle || this.strokeStyle,
+			strokeWidth: properties.strokeWidth || this.strokeWidth,
+			radius: properties.pointRadius || this.pointRadius,
+		} ) ),
 		...rest
 	} = {} ) {
 
@@ -48,6 +54,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this.strokeStyle = strokeStyle;
 		this.strokeWidth = strokeWidth;
 		this.fillStyle = fillStyle;
+		this.getStyle = getStyle;
 
 		this.features = null;
 		this.featureBounds = new Map();
@@ -55,7 +62,10 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
-		this._renderer = new VectorTileCanvasRenderer( { getX: p => p[ 0 ], getY: p => p[ 1 ] } );
+		this._renderer = new VectorTileCanvasRenderer( {
+			getX: p => p[ 0 ],
+			getY: p => p[ 1 ],
+		} );
 
 	}
 
@@ -310,22 +320,18 @@ export class GeoJSONImageSource extends RegionImageSource {
 		}
 
 		const [ , minLatDeg, , maxLatDeg ] = tileBoundsDeg;
-		const strokeStyle = properties.strokeStyle || this.strokeStyle;
-		const fillStyle = properties.fillStyle || this.fillStyle;
-		const pointRadius = properties.pointRadius || this.pointRadius;
-		const strokeWidth = properties.strokeWidth || this.strokeWidth;
-
 		const { _renderer } = this;
+		const style = this.getStyle( feature, properties );
 
 		ctx.save();
-		_renderer.setStyle( { fill: fillStyle, stroke: strokeStyle, strokeWidth } );
+		_renderer.setStyle( style );
 
 		const type = geometry.type;
 
 		if ( type === 'Point' || type === 'MultiPoint' ) {
 
 			// Radius in geographic units (degrees) so the canvas transform handles positioning.
-			_renderer.radius = pointRadius * ( maxLatDeg - minLatDeg ) / height;
+			_renderer.radius = style.radius * ( maxLatDeg - minLatDeg ) / height;
 			const points = type === 'Point' ? [ geometry.coordinates ] : geometry.coordinates;
 			for ( const point of points ) {
 
