@@ -91,6 +91,8 @@ export class GeoJSONImageSource extends RegionImageSource {
 		// TODO: this won't get "dirtied" - no textures will be generated for those cases
 		// where "false" has already been returned on redraw. How to fix? Return a "false"
 		// target to fill in later if needed?
+		// TODO: we may want to include the LoD or resolution or something here, as well, since that will
+		// impact the size of the points, etc.
 
 		const boundsDeg = [ minX, minY, maxX, maxY ].map( v => v * Math.RAD2DEG );
 		return this._boundsIntersectBounds( boundsDeg, this.contentBounds );
@@ -199,7 +201,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 			// edge of the bounds like stroke, point size.
 			if ( this._featureIntersectsTile( feature, regionBoundsDeg ) ) {
 
-				this._drawFeatureOnCanvas( ctx, feature, regionBoundsDeg, resolution );
+				this._drawFeatureOnCanvas( feature, regionBoundsDeg, resolution );
 
 			}
 
@@ -310,7 +312,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 	}
 
 	// draw feature on canvas ( assumes intersects already )
-	_drawFeatureOnCanvas( ctx, feature, tileBoundsDeg, height ) {
+	_drawFeatureOnCanvas( feature, tileBoundsDeg, height ) {
 
 		const { geometry = null, properties = {} } = feature;
 		if ( ! geometry ) {
@@ -323,7 +325,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 		const { _renderer } = this;
 		const style = this.getStyle( feature, properties );
 
-		ctx.save();
 		_renderer.setStyle( style );
 
 		const type = geometry.type;
@@ -363,8 +364,6 @@ export class GeoJSONImageSource extends RegionImageSource {
 			geometry.coordinates.forEach( polygon => _renderer._renderPolygons( polygon ) );
 
 		}
-
-		ctx.restore();
 
 	}
 
