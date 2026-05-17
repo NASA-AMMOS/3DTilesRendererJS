@@ -42,11 +42,8 @@ export class MVTOverlay extends ImageOverlay {
 
 	_init() {
 
-		return this.imageSource.init().then( () => {
-
-			this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
-
-		} );
+		this.imageSource.fetchData = ( ...args ) => this.fetch( ...args );
+		return this.imageSource.init();
 
 	}
 

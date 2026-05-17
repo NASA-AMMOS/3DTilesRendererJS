@@ -138,7 +138,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		const {
 			resolution = 512,
-			getStyle = null,
+			getStyle = () => null,
 			contentCache,
 			...rest
 		} = options;
