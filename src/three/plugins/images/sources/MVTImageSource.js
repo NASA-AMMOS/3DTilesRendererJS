@@ -12,7 +12,11 @@ function importMVTDeps() {
 	return _mvtImport ??= Promise.all( [
 		import( '@mapbox/vector-tile' ),
 		import( 'pbf' ),
-	] ).then( ( [ { VectorTile }, { default: Protobuf } ] ) => ( { VectorTile, Protobuf } ) );
+	] ).then( ( [ { VectorTile }, { default: Protobuf } ] ) => {
+
+		return { VectorTile, Protobuf };
+
+	} );
 
 }
 
@@ -251,7 +255,6 @@ export class MVTImageSource extends RegionImageSource {
 				// Apply per-feature style; skip invisible features.
 				const style = getStyle( layerName, properties );
 				_canvasRenderer.setStyle( style );
-				if ( ! _canvasRenderer.visible ) continue;
 
 				// Dispatch to the appropriate draw primitive (1=point, 2=line, 3=polygon).
 				const geometry = feature.loadGeometry();
@@ -288,11 +291,13 @@ export class MVTImageSource extends RegionImageSource {
 			forEachTileInBounds( regionBounds, level, this._contentCache.tiling, ( tx, ty, tl ) => {
 
 				const vectorTile = this._contentCache.get( tx, ty, tl );
-				if ( ! vectorTile ) return;
+				if ( vectorTile ) {
 
-				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-				this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
-				this._renderVectorTile( vectorTile );
+					const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
+					this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
+					this._renderVectorTile( vectorTile );
+
+				}
 
 			} );
 

@@ -26,8 +26,15 @@ class PMTilesRasterTileSource extends TiledImageSource {
 	async fetchItem( [ tx, ty, tl ], signal ) {
 
 		const res = await this.instance.getZxy( tl, tx, ty, signal );
-		if ( ! res || ! res.data || res.data.byteLength === 0 ) return null;
-		return this.processBufferToTexture( res.data );
+		if ( ! res || ! res.data || res.data.byteLength === 0 ) {
+
+			return null;
+
+		} else {
+
+			return this.processBufferToTexture( res.data );
+
+		}
 
 	}
 
