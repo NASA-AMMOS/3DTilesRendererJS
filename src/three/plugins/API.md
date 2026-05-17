@@ -194,6 +194,12 @@ _extends [`ImageOverlay`](#imageoverlay)_
 Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
 See the [Mapbox Vector Tile specification](https://github.com/mapbox/vector-tile-spec).
 
+Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
+imported dynamically on first use and must be installed separately:
+```
+npm install @mapbox/vector-tile pbf
+```
+
 
 ### .constructor
 
@@ -218,6 +224,13 @@ _extends [`MVTOverlay`](#mvtoverlay)_
 
 Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
 Projection and zoom levels are read automatically from the PMTiles archive header.
+
+Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
+and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
+and `pbf`:
+```
+npm install pmtiles @mapbox/vector-tile pbf
+```
 
 
 ### .constructor

@@ -13,6 +13,12 @@ import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
 /**
  * Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
  * See the {@link https://github.com/mapbox/vector-tile-spec Mapbox Vector Tile specification}.
+ *
+ * Requires the optional peer dependencies `@mapbox/vector-tile` and `pbf`, which are
+ * imported dynamically on first use and must be installed separately:
+ * ```
+ * npm install @mapbox/vector-tile pbf
+ * ```
  * @extends ImageOverlay
  * @param {Object} [options]
  * @param {string} [options.url] URL template with `{x}`, `{y}`, `{z}` placeholders.
@@ -133,6 +139,13 @@ export class MVTOverlay extends ImageOverlay {
 /**
  * Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
  * Projection and zoom levels are read automatically from the PMTiles archive header.
+ *
+ * Requires the optional peer dependency `pmtiles`, which is imported dynamically on first use
+ * and must be installed separately. Vector archives additionally require `@mapbox/vector-tile`
+ * and `pbf`:
+ * ```
+ * npm install pmtiles @mapbox/vector-tile pbf
+ * ```
  * @extends MVTOverlay
  * @param {Object} [options]
  * @param {string} [options.url] URL to the `.pmtiles` archive.
