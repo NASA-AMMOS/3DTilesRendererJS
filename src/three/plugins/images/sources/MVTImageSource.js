@@ -195,7 +195,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		} );
 
-		await Promise.all( promises	);
+		await Promise.all( promises );
 
 		const tex = new CanvasTexture( canvas );
 		tex.colorSpace = SRGBColorSpace;
