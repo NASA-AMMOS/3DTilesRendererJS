@@ -1,5 +1,6 @@
 /** @import { WebGLRenderer } from 'three' */
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
+/** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -15,6 +16,7 @@ import { GeoJSONImageSource } from './sources/GeoJSONImageSource.js';
 import { WMSImageSource } from './sources/WMSImageSource.js';
 import { TiledRegionImageSource } from './sources/RegionImageSource.js';
 import { TiledTextureComposer } from './overlays/TiledTextureComposer.js';
+import { DeepZoomImageSource } from './sources/DeepZoomImageSource.js';
 
 const _matrix = /* @__PURE__ */ new Matrix4();
 const _vec = /* @__PURE__ */ new Vector3();
@@ -1276,7 +1278,7 @@ export class ImageOverlayPlugin {
  * @param {boolean} [options.alphaInvert=false] If true, inverts the alpha channel before
  * applying the mask or blend.
  */
-class ImageOverlay {
+export class ImageOverlay {
 
 	get isPlanarProjection() {
 
@@ -1349,35 +1351,35 @@ class ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, level = null ) {
 
 		return false;
 
 	}
 
-	async getTexture( range ) {
+	async getTexture( range, level = null ) {
 
 		return null;
 
 	}
 
-	async lockTexture( range ) {
+	async lockTexture( range, level = null ) {
 
 		return null;
 
 	}
 
-	releaseTexture( range ) {
+	releaseTexture( range, level = null ) {
+
+	}
+
+	shouldSplit( range, level = null ) {
+
+		return false;
 
 	}
 
 	setResolution( resolution ) {
-
-	}
-
-	shouldSplit( range ) {
-
-		return false;
 
 	}
 
@@ -1389,7 +1391,7 @@ class ImageOverlay {
  * multiple source tiles into a single texture per 3D tile region.
  * @extends ImageOverlay
  */
-class TiledImageOverlay extends ImageOverlay {
+export class TiledImageOverlay extends ImageOverlay {
 
 	get tiling() {
 
@@ -1485,40 +1487,40 @@ class TiledImageOverlay extends ImageOverlay {
 
 	}
 
-	hasContent( range ) {
+	hasContent( range, level = this.calculateLevel( range ) ) {
 
-		return this.regionImageSource.hasContent( ...range, this.calculateLevel( range ) );
-
-	}
-
-	getTexture( range ) {
-
-		return this.regionImageSource.get( ...range, this.calculateLevel( range ) );
+		return this.regionImageSource.hasContent( ...range, level );
 
 	}
 
-	lockTexture( range ) {
+	getTexture( range, level = this.calculateLevel( range ) ) {
 
-		return this.regionImageSource.lock( ...range, this.calculateLevel( range ) );
+		return this.regionImageSource.get( ...range, level );
 
 	}
 
-	releaseTexture( range ) {
+	lockTexture( range, level = this.calculateLevel( range ) ) {
 
-		this.regionImageSource.release( ...range, this.calculateLevel( range ) );
+		return this.regionImageSource.lock( ...range, level );
+
+	}
+
+	releaseTexture( range, level = this.calculateLevel( range ) ) {
+
+		this.regionImageSource.release( ...range, level );
+
+	}
+
+	shouldSplit( range, level = this.calculateLevel( range ) ) {
+
+		// if we haven't reached the max level yet then continue splitting
+		return this.tiling.maxLevel > level;
 
 	}
 
 	setResolution( resolution ) {
 
 		this.regionImageSource.resolution = resolution;
-
-	}
-
-	shouldSplit( range ) {
-
-		// if we haven't reached the max level yet then continue splitting
-		return this.tiling.maxLevel > this.calculateLevel( range );
 
 	}
 
@@ -1552,6 +1554,32 @@ export class XYZTilesOverlay extends TiledImageOverlay {
 }
 
 /**
+ * Plugin that renders a Deep Zoom Image (DZI) as a tiled overlay. Only a single embedded "Image" is supported.
+ * See the {@link https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95) Deep Zoom specification}
+ * and {@link https://openseadragon.github.io OpenSeadragon}.
+ * @extends TiledImageOverlay
+ * @param {Object} [options]
+ * @param {string} [options.url] URL to the `.dzi` descriptor file.
+ */
+export class DeepZoomOverlay extends TiledImageOverlay {
+
+	constructor( options ) {
+
+		super( options );
+		this.imageSource = new DeepZoomImageSource( options );
+
+	}
+
+}
+
+/**
+ * @callback GeoJSONGetStyleCallback
+ * @param {Object} feature The GeoJSON feature object being rendered.
+ * @param {Object} properties The feature's properties object.
+ * @returns {VectorTileStyle|null} Style to apply, or `null` to use defaults.
+ */
+
+/**
  * Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
  * Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
  * the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
@@ -1563,6 +1591,7 @@ export class XYZTilesOverlay extends TiledImageOverlay {
  * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
  * `geojson` is not supplied directly).
  * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {GeoJSONGetStyleCallback} [options.getStyle] Per-feature style callback. When provided, overrides `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius`.
  * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
  * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
  * @param {number} [options.strokeWidth=2] Stroke line width in pixels.

@@ -185,9 +185,9 @@ export class TilingScheme {
 	getTileAtPoint( bx, by, level, normalized = false ) {
 
 		const { flipY } = this;
-		const { tileCountX, tileCountY, tileBounds } = this.getLevel( level );
-		const xStride = 1 / tileCountX;
-		const yStride = 1 / tileCountY;
+		const { tileCountY, tileBounds, pixelHeight, pixelWidth, tilePixelHeight, tilePixelWidth } = this.getLevel( level );
+		const xStride = tilePixelWidth / pixelWidth;
+		const yStride = tilePixelHeight / pixelHeight;
 
 		if ( ! normalized ) {
 

@@ -68,7 +68,7 @@ export class StructuralMetadata {
 	 */
 	getPropertyTableData( tableIndices, ids, target = null ) {
 
-		if ( ! Array.isArray( tableIndices ) || ! Array.isArray( ids ) ) {
+		if ( ! Array.isArray( tableIndices ) ) {
 
 			// only return a single tables data
 			target = target || {};
@@ -90,6 +90,13 @@ export class StructuralMetadata {
 				target[ i ] = table.getData( ids[ i ], target[ i ] );
 
 			}
+
+		}
+
+		// throw an error if users try to pass a mix of scalar and array inputs.
+		if ( Array.isArray( tableIndices ) !== Array.isArray( target ) || Array.isArray( tableIndices ) !== Array.isArray( ids ) ) {
+
+			throw new Error( 'StructuralMetadata: Scalar and array inputs cannot be mixed.' );
 
 		}
 

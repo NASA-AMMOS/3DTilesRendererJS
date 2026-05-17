@@ -8,6 +8,10 @@ import {
 	Raycaster,
 	Triangle,
 	Vector3,
+	Vector4,
+	Matrix2,
+	Matrix3,
+	Matrix4,
 	Sphere,
 	Group,
 } from 'three';
@@ -18,6 +22,7 @@ import {
 import {
 	CesiumIonAuthPlugin,
 	GLTFExtensionsPlugin,
+	ImplicitTilingPlugin,
 } from '3d-tiles-renderer/plugins';
 import { MeshFeaturesMaterialMixin } from './src/MeshFeaturesMaterial';
 import GUI from 'three/addons/libs/lil-gui.module.min.js';
@@ -176,6 +181,7 @@ function reinstantiateTiles() {
 	// create tileset
 	tiles = new TilesRenderer();
 	tiles.registerPlugin( new CesiumIonAuthPlugin( { apiToken: params.accessToken, assetId: params.assetId } ) );
+	tiles.registerPlugin( new ImplicitTilingPlugin() );
 	tiles.registerPlugin( new GLTFExtensionsPlugin( { metadata: true } ) );
 
 	tiles.setCamera( camera );
@@ -256,27 +262,65 @@ function appendStructuralMetadata( structuralMetadata, triangle, barycoord, inde
 			for ( const propertyName in properties ) {
 
 				let field = properties[ propertyName ];
-				if ( field && field.toArray ) {
-
-					field = field.toArray();
-
-				}
 
 				if ( field && field.join ) {
 
 					field = '\n' + field
-						.map( n => n.toFixed ? parseFloat( n.toFixed( 6 ) ) : n )
-						.map( ( v, i ) => `    [${ i }] ${ v }` ).join( '\n' );
-
-				}
-
-				if ( typeof field === 'number' ) {
-
-					field = parseFloat( field.toFixed( 6 ) );
+						.map( ( v, i ) => `    [${ i }] ${ convertToString( v ) }` )
+						.join( '\n' );
 
 				}
 
 				structuralMetadataEl.innerText += `  ${ propertyName.padEnd( maxPropertyName + 1 ) } : ${ field }\n`;
+
+				function convertToString( v ) {
+
+					if ( v && v.toArray ) {
+
+						let prefix = '';
+						if ( v instanceof Vector2 ) {
+
+							prefix = 'vec2';
+
+						} else if ( v instanceof Vector3 ) {
+
+							prefix = 'vec3';
+
+						} else if ( v instanceof Vector4 ) {
+
+							prefix = 'vec4';
+
+						} else if ( v instanceof Matrix2 ) {
+
+							prefix = 'mat2';
+
+						} else if ( v instanceof Matrix3 ) {
+
+							prefix = 'mat3';
+
+						} else if ( v instanceof Matrix4 ) {
+
+							prefix = 'mat4';
+
+						}
+
+						return prefix + convertToString( v.toArray() );
+
+					} else if ( Array.isArray( v ) ) {
+
+						return `[ ${ v.map( f => convertToString( f ) ).join( ', ' ) } ]`;
+
+					} else if ( typeof v === 'number' ) {
+
+						return parseFloat( v.toFixed( 6 ) );
+
+					} else {
+
+						return v;
+
+					}
+
+				}
 
 			}
 

@@ -194,6 +194,31 @@ describe( 'TilingScheme', () => {
 
 	} );
 
+	it( 'should correctly compute tile indices when pixelWidth is not a multiple of tilePixelWidth.', () => {
+
+		// 300 total pixels, 256 per tile → 2 tiles where the last is partial
+		// tile 0 covers pixels [0, 256)  → normalized [0, 256/300)  ≈ [0, 0.853)
+		// tile 1 covers pixels [256, 300) → normalized [256/300, 1]
+		const scheme = new TilingScheme();
+		scheme.setLevel( 0, {
+			tileCountX: 2,
+			tileCountY: 2,
+			pixelWidth: 300,
+			pixelHeight: 300,
+			tilePixelWidth: 256,
+			tilePixelHeight: 256,
+		} );
+
+		// normalized 0.6 → pixel 180 → tile 0 (not tile 1 as old 1/tileCount stride would give)
+		expect( scheme.getTileAtPoint( 0.6, 0.4, 0, true ) ).toEqual( [ 0, 0 ] );
+		expect( scheme.getTileAtPoint( 0.4, 0.6, 0, true ) ).toEqual( [ 0, 0 ] );
+
+		// normalized 0.9 → pixel 270 → tile 1
+		expect( scheme.getTileAtPoint( 0.9, 0.4, 0, true ) ).toEqual( [ 1, 0 ] );
+		expect( scheme.getTileAtPoint( 0.4, 0.9, 0, true ) ).toEqual( [ 0, 1 ] );
+
+	} );
+
 	it( 'should correctly report the tile image uv range correctly when a levels bounds are larger.', () => {
 
 		const scheme = new TilingScheme();
