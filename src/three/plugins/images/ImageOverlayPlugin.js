@@ -1,5 +1,6 @@
 /** @import { WebGLRenderer } from 'three' */
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
+/** @import { VectorTileStyle } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -1572,6 +1573,13 @@ export class DeepZoomOverlay extends TiledImageOverlay {
 }
 
 /**
+ * @callback GeoJSONGetStyleCallback
+ * @param {Object} feature The GeoJSON feature object being rendered.
+ * @param {Object} properties The feature's properties object.
+ * @returns {VectorTileStyle|null} Style to apply, or `null` to use defaults.
+ */
+
+/**
  * Overlay that rasterizes a GeoJSON dataset onto 3D tile geometry. Features are drawn using the
  * Canvas 2D API at the tile's native resolution. Per-feature style overrides can be provided via
  * the `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius` properties on each GeoJSON
@@ -1583,6 +1591,7 @@ export class DeepZoomOverlay extends TiledImageOverlay {
  * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
  * `geojson` is not supplied directly).
  * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {GeoJSONGetStyleCallback} [options.getStyle] Per-feature style callback. When provided, overrides `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius`.
  * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
  * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
  * @param {number} [options.strokeWidth=2] Stroke line width in pixels.

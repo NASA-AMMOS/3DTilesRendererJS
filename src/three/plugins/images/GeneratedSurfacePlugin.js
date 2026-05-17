@@ -619,7 +619,7 @@ export class GeneratedSurfacePlugin {
 		const tiling = new TilingScheme();
 		if ( this.shape === 'ellipsoid' ) {
 
-			const projection = new ProjectionScheme();
+			const projection = new ProjectionScheme( 'EPSG:3857' );
 			tiling.setProjection( projection );
 			tiling.generateLevels( DEFAULT_LEVELS, projection.tileCountX, projection.tileCountY );
 

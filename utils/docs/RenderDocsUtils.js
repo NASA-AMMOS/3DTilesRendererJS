@@ -410,11 +410,12 @@ export function renderTypedef( typeDoc, callbackMap = {}, resolveLink = null, he
 	for ( const prop of ( typeDoc.properties || [] ) ) {
 
 		const type = formatType( prop.type, callbackMap );
-		const optional = prop.optional ? '?' : '';
+		const optional = prop.optional && prop.defaultvalue === undefined ? '?' : '';
+		const defStr = prop.defaultvalue !== undefined ? ` = ${ prop.defaultvalue }` : '';
 		lines.push( `${ hSub } .${ prop.name }` );
 		lines.push( '' );
 		lines.push( '```js' );
-		lines.push( `${ prop.name }${ optional }: ${ type }` );
+		lines.push( `${ prop.name }${ optional }${ defStr }: ${ type }` );
 		lines.push( '```' );
 		lines.push( '' );
 
