@@ -110,7 +110,7 @@ export class MVTOverlay extends ImageOverlay {
 
 	shouldSplit( range ) {
 
-		return this.tiling.maxLevel > this.calculateLevel( range );
+		return true;
 
 	}
 
