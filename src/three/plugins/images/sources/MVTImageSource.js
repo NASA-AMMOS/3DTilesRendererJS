@@ -147,7 +147,7 @@ export class MVTImageSource extends RegionImageSource {
 
 		this.resolution = resolution;
 		this.getStyle = getStyle;
-		this._renderer = new VectorShapeCanvasRenderer( { tileExtent: 4096 } );
+		this._canvasRenderer = new VectorShapeCanvasRenderer( { tileExtent: 4096 } );
 		this._contentCache = contentCache ?? new MVTContentCache( rest );
 
 	}
@@ -168,13 +168,14 @@ export class MVTImageSource extends RegionImageSource {
 
 	async fetchItem( [ minX, minY, maxX, maxY, level ], _signal ) {
 
+		const { resolution } = this;
 		const canvas = document.createElement( 'canvas' );
-		canvas.width = this.resolution;
-		canvas.height = this.resolution;
+		canvas.width = resolution;
+		canvas.height = resolution;
 
 		const ctx = canvas.getContext( '2d' );
 		const regionBounds = [ minX, minY, maxX, maxY ];
-		const { _contentCache, _renderer } = this;
+		const { _contentCache, _canvasRenderer } = this;
 
 		const promises = [];
 		forEachTileInBounds( regionBounds, level, _contentCache.tiling, ( tx, ty, tl ) => {
@@ -185,7 +186,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( vectorTile ) {
 
 					const tileBounds = _contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-					_renderer.setFrame( ctx, tileBounds, regionBounds );
+					_canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
 					this._renderVectorTile( vectorTile );
 
 				}
@@ -220,7 +221,7 @@ export class MVTImageSource extends RegionImageSource {
 
 	_renderVectorTile( vectorTile ) {
 
-		const { _renderer, getStyle } = this;
+		const { _canvasRenderer, getStyle } = this;
 
 		// Sort layers by user-defined order, falling back to alphabetical.
 		const layerNames = [ ...Object.keys( vectorTile.layers ) ].sort( ( a, b ) => {
@@ -249,22 +250,22 @@ export class MVTImageSource extends RegionImageSource {
 
 				// Apply per-feature style; skip invisible features.
 				const style = getStyle( layerName, properties );
-				_renderer.setStyle( style );
-				if ( ! _renderer.visible ) continue;
+				_canvasRenderer.setStyle( style );
+				if ( ! _canvasRenderer.visible ) continue;
 
 				// Dispatch to the appropriate draw primitive (1=point, 2=line, 3=polygon).
 				const geometry = feature.loadGeometry();
 				if ( type === 1 ) {
 
-					_renderer._renderPoints( geometry );
+					_canvasRenderer._renderPoints( geometry );
 
 				} else if ( type === 2 ) {
 
-					_renderer._renderLines( geometry );
+					_canvasRenderer._renderLines( geometry );
 
 				} else if ( type === 3 ) {
 
-					_renderer._renderPolygons( geometry );
+					_canvasRenderer._renderPolygons( geometry );
 
 				}
 
@@ -290,7 +291,7 @@ export class MVTImageSource extends RegionImageSource {
 				if ( ! vectorTile ) return;
 
 				const tileBounds = this._contentCache.tiling.getTileBounds( tx, ty, tl, true, false );
-				this._renderer.setFrame( ctx, tileBounds, regionBounds );
+				this._canvasRenderer.setFrame( ctx, tileBounds, regionBounds );
 				this._renderVectorTile( vectorTile );
 
 			} );

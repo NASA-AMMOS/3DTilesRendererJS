@@ -62,7 +62,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 
 		this.projection = new ProjectionScheme();
 		this.fetchData = ( ...args ) => fetch( ...args );
-		this._renderer = new VectorShapeCanvasRenderer( {
+		this._canvasRenderer = new VectorShapeCanvasRenderer( {
 			flipY: true,
 			getX: p => p[ 0 ],
 			getY: p => p[ 1 ],
@@ -179,7 +179,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		this._updateCache();
 
 		const [ minX, minY, maxX, maxY ] = tokens;
-		const { projection, resolution, features, _renderer } = this;
+		const { projection, resolution, features, _canvasRenderer } = this;
 
 		canvas.width = resolution;
 		canvas.height = resolution;
@@ -197,7 +197,7 @@ export class GeoJSONImageSource extends RegionImageSource {
 		];
 
 		const ctx = canvas.getContext( '2d' );
-		_renderer.setFrame( ctx, regionBoundsDeg, regionBoundsDeg );
+		_canvasRenderer.setFrame( ctx, regionBoundsDeg, regionBoundsDeg );
 
 		for ( const feature of features ) {
 
@@ -324,17 +324,17 @@ export class GeoJSONImageSource extends RegionImageSource {
 		}
 
 		const [ , minLatDeg, , maxLatDeg ] = tileBoundsDeg;
-		const { _renderer } = this;
+		const { _canvasRenderer } = this;
 		const style = this.getStyle( feature, properties );
 
-		_renderer.setStyle( style );
+		_canvasRenderer.setStyle( style );
 
 		const type = geometry.type;
 
 		if ( type === 'Point' || type === 'MultiPoint' ) {
 
 			// Radius in geographic units (degrees) so the canvas transform handles positioning.
-			_renderer.radius = style.radius * ( maxLatDeg - minLatDeg ) / height;
+			_canvasRenderer.radius = style.radius * ( maxLatDeg - minLatDeg ) / height;
 			const points = type === 'Point' ? [ geometry.coordinates ] : geometry.coordinates;
 			for ( const point of points ) {
 
@@ -345,25 +345,25 @@ export class GeoJSONImageSource extends RegionImageSource {
 					point[ 0 ] * MathUtils.DEG2RAD,
 				);
 				const pointGroup = [ point ];
-				_renderer._renderPoints( [ pointGroup ], arcRatio );
+				_canvasRenderer._renderPoints( [ pointGroup ], arcRatio );
 
 			}
 
 		} else if ( type === 'LineString' ) {
 
-			_renderer._renderLines( [ geometry.coordinates ] );
+			_canvasRenderer._renderLines( [ geometry.coordinates ] );
 
 		} else if ( type === 'MultiLineString' ) {
 
-			_renderer._renderLines( geometry.coordinates );
+			_canvasRenderer._renderLines( geometry.coordinates );
 
 		} else if ( type === 'Polygon' ) {
 
-			_renderer._renderPolygons( geometry.coordinates );
+			_canvasRenderer._renderPolygons( geometry.coordinates );
 
 		} else if ( type === 'MultiPolygon' ) {
 
-			geometry.coordinates.forEach( polygon => _renderer._renderPolygons( polygon ) );
+			geometry.coordinates.forEach( polygon => _canvasRenderer._renderPolygons( polygon ) );
 
 		}
 
