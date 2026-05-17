@@ -123,15 +123,13 @@ export class MVTOverlay extends ImageOverlay {
 }
 
 /**
- * Overlay that renders PMTiles (MVT) vector data on top of 3D tile geometry.
- * Pass a PMTiles archive URL; the source projection and zoom levels are read
- * from the archive header automatically.
+ * Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
+ * Projection and zoom levels are read automatically from the PMTiles archive header.
  * @extends MVTOverlay
  * @param {Object} [options]
  * @param {string} [options.url] URL to the `.pmtiles` archive.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {number} [options.tileDimension=256] Tile pixel size used when generating tiling levels.
- * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` that returns per-feature render styles.
+ * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` for per-feature render styles. Only applies to vector archives.
  */
 export class PMTilesOverlay extends MVTOverlay {
 
