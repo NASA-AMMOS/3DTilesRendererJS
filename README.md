@@ -65,6 +65,7 @@ See the [Three.js usage guide](./USAGE.md) or [Babylon.js usage guide](./src/bab
 | [Quantized Mesh](https://nasa-ammos.github.io/3DTilesRendererJS/three/quantMeshOverlays.html) | Quantized mesh with overlays |
 | [Load Region](https://nasa-ammos.github.io/3DTilesRendererJS/three/loadRegion.html) | Loading tiles in region volumes |
 | [GeoJSON](https://nasa-ammos.github.io/3DTilesRendererJS/three/geojson.html) | GeoJSON overlays |
+| [3TZ Archive](https://nasa-ammos.github.io/3DTilesRendererJS/three/tz3Example.html) | Streaming a `.3tz` single-file tileset archive via HTTP range requests |
 
 ¹ Requires a [Google Tiles API Key](https://developers.google.com/maps/documentation/tile/3d-tiles) or [Cesium Ion API Key](https://cesium.com/platform/cesium-ion/)
 
