@@ -169,6 +169,10 @@ constructor(
 		geojson = null: Object,
 		url = null: string,
 		resolution = 256: number,
+		getStyle?: (
+			feature: Object,
+			properties: Object
+		) => VectorTileStyle | null,
 		pointRadius = 6: number,
 		strokeStyle = 'white': string,
 		strokeWidth = 2: number,
@@ -179,6 +183,54 @@ constructor(
 		preprocessURL = null: function,
 		alphaMask = false: boolean,
 		alphaInvert = false: boolean,
+	}
+)
+```
+
+## MVTOverlay
+
+_extends [`ImageOverlay`](#imageoverlay)_
+
+Overlay that renders XYZ-template MVT vector tiles on top of 3D tile geometry.
+See the [Mapbox Vector Tile specification](https://github.com/mapbox/vector-tile-spec).
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		levels = 20: number,
+		projection = 'EPSG:3857': string,
+		resolution = 512: number,
+		getStyle?: (
+			layerName: string,
+			properties: Object | null
+		) => VectorTileStyle | null,
+	}
+)
+```
+
+## PMTilesOverlay
+
+_extends [`MVTOverlay`](#mvtoverlay)_
+
+Overlay that renders PMTiles vector or raster data on top of 3D tile geometry.
+Projection and zoom levels are read automatically from the PMTiles archive header.
+
+
+### .constructor
+
+```js
+constructor(
+	{
+		url?: string,
+		resolution = 512: number,
+		getStyle?: (
+			layerName: string,
+			properties: Object | null
+		) => VectorTileStyle | null,
 	}
 )
 ```
@@ -1207,6 +1259,57 @@ nullFeatureId: number | null
 ```js
 texture?: Object
 ```
+
+## VectorTileStyle
+
+
+### .fill
+
+```js
+fill?: string
+```
+
+CSS fill color.
+
+### .stroke
+
+```js
+stroke?: string
+```
+
+CSS stroke color.
+
+### .strokeWidth
+
+```js
+strokeWidth?: number
+```
+
+Stroke width in pixels.
+
+### .radius
+
+```js
+radius?: number
+```
+
+Point radius in pixels.
+
+### .order
+
+```js
+order?: number
+```
+
+Layer draw order; lower values are drawn first.
+
+### .visible
+
+```js
+visible?: boolean
+```
+
+Whether the feature is rendered.
 
 ## WMTSTileMatrix
 
