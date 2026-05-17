@@ -1266,7 +1266,7 @@ texture?: Object
 ### .fill
 
 ```js
-fill?: string
+fill = '#cccccc': string
 ```
 
 CSS fill color.
@@ -1274,7 +1274,7 @@ CSS fill color.
 ### .stroke
 
 ```js
-stroke?: string
+stroke = 'transparent': string
 ```
 
 CSS stroke color.
@@ -1282,7 +1282,7 @@ CSS stroke color.
 ### .strokeWidth
 
 ```js
-strokeWidth?: number
+strokeWidth = 1: number
 ```
 
 Stroke width in pixels.
@@ -1290,7 +1290,7 @@ Stroke width in pixels.
 ### .radius
 
 ```js
-radius?: number
+radius = 2: number
 ```
 
 Point radius in pixels.
@@ -1298,7 +1298,7 @@ Point radius in pixels.
 ### .order
 
 ```js
-order?: number
+order = 0: number
 ```
 
 Layer draw order; lower values are drawn first.
@@ -1306,7 +1306,7 @@ Layer draw order; lower values are drawn first.
 ### .visible
 
 ```js
-visible?: boolean
+visible = true: boolean
 ```
 
 Whether the feature is rendered.

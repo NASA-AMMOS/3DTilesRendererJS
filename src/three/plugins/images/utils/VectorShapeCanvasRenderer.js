@@ -1,7 +1,7 @@
 /**
  * @typedef {Object} VectorTileStyle
- * @property {string} [fill] CSS fill color.
- * @property {string} [stroke] CSS stroke color.
+ * @property {string} [fill='#cccccc'] CSS fill color.
+ * @property {string} [stroke='transparent'] CSS stroke color.
  * @property {number} [strokeWidth=1] Stroke width in pixels.
  * @property {number} [radius=2] Point radius in pixels.
  * @property {number} [order=0] Layer draw order; lower values are drawn first.
