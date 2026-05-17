@@ -139,4 +139,12 @@ export class PMTilesOverlay extends MVTOverlay {
 
 	}
 
+	shouldSplit( range ) {
+
+		// Vector archives can always split further for higher-resolution rasterization.
+		// Raster archives are capped at their max data zoom level.
+		return this.imageSource.isVectorTile ? true : super.shouldSplit( range );
+
+	}
+
 }

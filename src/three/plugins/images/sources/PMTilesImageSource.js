@@ -163,6 +163,7 @@ export class PMTilesImageSource extends RegionImageSource {
 		this._getStyle = getStyle;
 		this._contentCache = new PMTilesContentCache( options );
 		this._deferredSource = null;
+		this.isVectorTile = false;
 
 	}
 
@@ -171,7 +172,9 @@ export class PMTilesImageSource extends RegionImageSource {
 		await this._contentCache.init();
 		const { _contentCache } = this;
 
-		if ( _contentCache.tileType === 1 ) {
+		this.isVectorTile = _contentCache.tileType === 1;
+
+		if ( this.isVectorTile ) {
 
 			this._deferredSource = new MVTImageSource( {
 				resolution: this._resolution,
