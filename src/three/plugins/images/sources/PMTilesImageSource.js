@@ -158,7 +158,11 @@ export class PMTilesImageSource extends RegionImageSource {
 
 		super();
 
-		const { resolution = 512, getStyle = null } = options;
+		const {
+			resolution = 512,
+			getStyle = () => null,
+		} = options;
+
 		this._resolution = resolution;
 		this._getStyle = getStyle;
 		this._contentCache = new PMTilesContentCache( options );
