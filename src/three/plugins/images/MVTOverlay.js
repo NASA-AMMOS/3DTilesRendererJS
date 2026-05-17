@@ -1,3 +1,4 @@
+/** @import { GetStyleCallback } from './utils/VectorShapeCanvasRenderer.js' */
 import { ImageOverlay } from './ImageOverlayPlugin.js';
 import { MVTImageSource } from './sources/MVTImageSource.js';
 import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
@@ -11,7 +12,7 @@ import { PMTilesImageSource } from './sources/PMTilesImageSource.js';
  * @param {number} [options.levels=20] Number of zoom levels.
  * @param {string} [options.projection='EPSG:3857'] Projection scheme identifier.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` that returns per-feature render styles.
+ * @param {GetStyleCallback} [options.getStyle] Per-feature style callback.
  */
 export class MVTOverlay extends ImageOverlay {
 
@@ -129,7 +130,7 @@ export class MVTOverlay extends ImageOverlay {
  * @param {Object} [options]
  * @param {string} [options.url] URL to the `.pmtiles` archive.
  * @param {number} [options.resolution=512] Canvas resolution for generated tile textures.
- * @param {Function} [options.getStyle] Callback `(layerName, properties) => style` for per-feature render styles. Only applies to vector archives.
+ * @param {GetStyleCallback} [options.getStyle] Per-feature style callback. Only applies to vector archives.
  */
 export class PMTilesOverlay extends MVTOverlay {
 
@@ -143,7 +144,8 @@ export class PMTilesOverlay extends MVTOverlay {
 
 		// Vector archives can always split further for higher-resolution rasterization.
 		// Raster archives are capped at their max data zoom level.
-		return this.imageSource.isVectorTile ? true : super.shouldSplit( range );
+		if ( this.imageSource.isVectorTile ) return true;
+		return this.tiling.maxLevel > this.calculateLevel( range );
 
 	}
 

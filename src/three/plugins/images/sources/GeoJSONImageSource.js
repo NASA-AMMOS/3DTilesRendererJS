@@ -1,7 +1,7 @@
 import { CanvasTexture, MathUtils, Vector3, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
-import { VectorShapeCanvasRenderer } from '../../../renderer/utils/VectorShapeCanvasRenderer.js';
+import { VectorShapeCanvasRenderer } from '../utils/VectorShapeCanvasRenderer.js';
 import { WGS84_ELLIPSOID } from '3d-tiles-renderer/three';
 
 // TODO: Consider option to support world-space thickness definitions. Eg world-space point size or line thickness in meters.

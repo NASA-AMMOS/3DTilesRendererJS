@@ -1,7 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { RegionImageSource } from './RegionImageSource.js';
 import { DataCache } from '../utils/DataCache.js';
-import { VectorShapeCanvasRenderer } from '../../../renderer/utils/VectorShapeCanvasRenderer.js';
+import { VectorShapeCanvasRenderer } from '../utils/VectorShapeCanvasRenderer.js';
 import { TilingScheme } from '../utils/TilingScheme.js';
 import { ProjectionScheme } from '../utils/ProjectionScheme.js';
 import { forEachTileInBounds } from '../overlays/utils.js';

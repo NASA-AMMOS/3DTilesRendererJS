@@ -1,3 +1,20 @@
+/**
+ * @typedef {Object} VectorTileStyle
+ * @property {string} [fill] CSS fill color.
+ * @property {string} [stroke] CSS stroke color.
+ * @property {number} [strokeWidth=1] Stroke width in pixels.
+ * @property {number} [radius=2] Point radius in pixels.
+ * @property {number} [order=0] Layer draw order; lower values are drawn first.
+ * @property {boolean} [visible=true] Whether the feature is rendered.
+ */
+
+/**
+ * @callback GetStyleCallback
+ * @param {string|Object} context Layer name (MVT) or feature object (GeoJSON) for the feature being rendered.
+ * @param {Object|null} properties Feature properties, or `null` when queried for layer-level sort order only.
+ * @returns {VectorTileStyle|null} Style to apply, or `null` to use defaults.
+ */
+
 const DEFAULT_STYLE = Object.freeze( {
 	fill: '#cccccc',
 	stroke: 'transparent',

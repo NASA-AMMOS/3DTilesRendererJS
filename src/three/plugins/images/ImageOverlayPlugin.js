@@ -1,5 +1,6 @@
 /** @import { WebGLRenderer } from 'three' */
 /** @import { WMTSTileMatrix } from './WMTSImageSource.js' */
+/** @import { GetStyleCallback } from './utils/VectorShapeCanvasRenderer.js' */
 import { Color, BufferAttribute, Matrix4, Vector3, Box3, Triangle, CanvasTexture } from 'three';
 import { PriorityQueue, PriorityQueueItemRemovedError } from '3d-tiles-renderer/core';
 import { CesiumIonAuth, GoogleCloudAuth } from '3d-tiles-renderer/core/plugins';
@@ -1583,6 +1584,7 @@ export class DeepZoomOverlay extends TiledImageOverlay {
  * @param {string} [options.url=null] URL to a GeoJSON file to fetch on initialization (used when
  * `geojson` is not supplied directly).
  * @param {number} [options.resolution=256] Canvas resolution (pixels) used when compositing tiles.
+ * @param {GetStyleCallback} [options.getStyle] Per-feature style callback. When provided, overrides `strokeStyle`, `fillStyle`, `strokeWidth`, and `pointRadius`.
  * @param {number} [options.pointRadius=6] Radius in pixels used to render Point features.
  * @param {string} [options.strokeStyle='white'] Canvas stroke style for feature outlines.
  * @param {number} [options.strokeWidth=2] Stroke line width in pixels.
