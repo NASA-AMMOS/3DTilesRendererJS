@@ -337,8 +337,6 @@ function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	const hasContent = tile.internal.hasContent;
-	const loadedContent = isDownloadFinished( tile.internal.loadingState ) && hasContent;
 	const children = tile.children;
 	if ( tile.traversal.isLeaf ) {
 
@@ -389,15 +387,10 @@ function markVisibleTiles( tile, renderer ) {
 
 	// If we find that the subsequent children are not ready such that this tile gap can be filled then
 	// mark all lower tiles as non active and prepare this one to be displayed if possible
-	const thisTileIsVisible = tile.traversal.active && isChildReady( tile );
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
+	if ( ! allChildrenReady && tile.traversal.wasSetActive && isChildReady( tile ) ) {
 
-		if ( tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent ) ) {
-
-			tile.traversal.active = true;
-			kickActiveChildren( tile, renderer );
-
-		}
+		tile.traversal.active = true;
+		kickActiveChildren( tile, renderer );
 
 	}
 
