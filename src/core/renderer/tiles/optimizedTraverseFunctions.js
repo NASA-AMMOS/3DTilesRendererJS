@@ -490,16 +490,26 @@ function toggleTiles( tile, renderer ) {
 		// If the active or visible state changed then call the functions.
 		if ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) {
 
+			if ( setActive ) {
+
+				renderer.stats.active ++;
+
+			}
+
+			if ( setVisible ) {
+
+				renderer.stats.visible ++;
+
+			}
+
 			if ( tile.traversal.wasSetActive !== setActive ) {
 
-				renderer.stats.active += setActive ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, setActive ) );
 
 			}
 
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
-				renderer.stats.visible += setVisible ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
 
 			}
