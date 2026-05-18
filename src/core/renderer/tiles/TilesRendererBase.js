@@ -111,6 +111,10 @@ const optimizedPriorityCallback = ( a, b ) => {
 		// load closer tiles first
 		return a.traversal.distanceFromCamera > b.traversal.distanceFromCamera ? - 1 : 1;
 
+	} else if ( a.internal.depthFromRenderedParent !== b.internal.depthFromRenderedParent ) {
+
+		return a.internal.depthFromRenderedParent > b.internal.depthFromRenderedParent ? - 1 : 1;
+
 	}
 
 	return 0;
