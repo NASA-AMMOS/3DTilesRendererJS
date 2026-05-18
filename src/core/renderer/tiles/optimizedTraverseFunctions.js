@@ -110,7 +110,7 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 
 	if ( tile.traversal.usedLastFrame ) {
 
-		markUsed( tile, renderer );
+		markUsed( tile );
 
 		if ( tile.traversal.wasSetActive ) {
 
