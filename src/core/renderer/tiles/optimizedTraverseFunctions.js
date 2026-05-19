@@ -110,7 +110,7 @@ function recursivelyMarkPreviouslyUsed( tile, renderer ) {
 
 	if ( tile.traversal.usedLastFrame ) {
 
-		markUsed( tile, renderer );
+		markUsed( tile );
 
 		if ( tile.traversal.wasSetActive ) {
 
@@ -337,8 +337,6 @@ function markVisibleTiles( tile, renderer ) {
 
 	}
 
-	const hasContent = tile.internal.hasContent;
-	const loadedContent = isDownloadFinished( tile.internal.loadingState ) && hasContent;
 	const children = tile.children;
 	if ( tile.traversal.isLeaf ) {
 
@@ -389,15 +387,10 @@ function markVisibleTiles( tile, renderer ) {
 
 	// If we find that the subsequent children are not ready such that this tile gap can be filled then
 	// mark all lower tiles as non active and prepare this one to be displayed if possible
-	const thisTileIsVisible = tile.traversal.active && isChildReady( tile );
-	if ( ! canUnconditionallyRefine( tile ) && ! allChildrenReady && ! thisTileIsVisible ) {
+	if ( ! allChildrenReady && tile.traversal.wasSetActive && isChildReady( tile ) ) {
 
-		if ( tile.traversal.wasSetActive && ( loadedContent || ! tile.internal.hasContent ) ) {
-
-			tile.traversal.active = true;
-			kickActiveChildren( tile, renderer );
-
-		}
+		tile.traversal.active = true;
+		kickActiveChildren( tile, renderer );
 
 	}
 
@@ -490,16 +483,26 @@ function toggleTiles( tile, renderer ) {
 		// If the active or visible state changed then call the functions.
 		if ( tile.internal.hasRenderableContent && tile.internal.loadingState === LOADED ) {
 
+			if ( setActive ) {
+
+				renderer.stats.active ++;
+
+			}
+
+			if ( setVisible ) {
+
+				renderer.stats.visible ++;
+
+			}
+
 			if ( tile.traversal.wasSetActive !== setActive ) {
 
-				renderer.stats.active += setActive ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileActive && plugin.setTileActive( tile, setActive ) );
 
 			}
 
 			if ( tile.traversal.wasSetVisible !== setVisible ) {
 
-				renderer.stats.visible += setVisible ? 1 : - 1;
 				renderer.invokeOnePlugin( plugin => plugin.setTileVisible && plugin.setTileVisible( tile, setVisible ) );
 
 			}
