@@ -161,6 +161,18 @@ export class PMTilesImageSource extends RegionImageSource {
 
 	}
 
+	get fetchOptions() {
+
+		return this._contentCache.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this._contentCache.fetchOptions = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		super();

@@ -47,6 +47,18 @@ export class MVTOverlay extends ImageOverlay {
 
 	}
 
+	get fetchOptions() {
+
+		return this.imageSource.fetchOptions;
+
+	}
+
+	set fetchOptions( v ) {
+
+		this.imageSource.fetchOptions = v;
+
+	}
+
 	constructor( options = {} ) {
 
 		super( options );

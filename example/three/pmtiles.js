@@ -49,6 +49,9 @@ function init() {
 		url: 'https://demo-bucket.protomaps.com/v4.pmtiles',
 		getStyle,
 	} );
+	overlay.fetchOptions = {
+		mode: 'cors',
+	};
 
 	// Base tile layer: XYZ raster tiles provide the globe geometry
 	tiles = new TilesRenderer();
