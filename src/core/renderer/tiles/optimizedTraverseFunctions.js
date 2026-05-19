@@ -310,7 +310,7 @@ function markUsedSetLeaves( tile, renderer ) {
 		}
 
 		// compute content-readiness so markVisibleTiles can stop traversal at this tile when
-		// loadParents is enabled and children haven't finished loading their content yet.
+		// loadAncestors is enabled and children haven't finished loading their content yet.
 		// only computed when anyChildrenUsed — leaf tiles retain allChildrenLoaded = false
 		// (from resetFrameState) so parents correctly see them as not yet loaded.
 		let allChildrenLoaded = true;
@@ -368,7 +368,7 @@ function markVisibleTiles( tile, renderer ) {
 	// When loading parent tiles as fallbacks: if children aren't content-ready yet, mark this tile
 	// as a leaf so it is displayed as a placeholder while children load (mirrors legacy behavior).
 	// allChildrenLoaded was computed bottom-up in markUsedSetLeaves so it can be checked before recursing.
-	if ( renderer.loadParents && ! tile.traversal.allChildrenLoaded && ! canUnconditionallyRefine( tile ) ) {
+	if ( renderer.loadAncestors && ! tile.traversal.allChildrenLoaded && ! canUnconditionallyRefine( tile ) ) {
 
 		tile.traversal.isLeaf = true;
 
@@ -471,7 +471,7 @@ function toggleTiles( tile, renderer ) {
 
 		// when loading parent tiles as fallbacks, keep all used tiles downloaded
 		// regardless of active state so they are available to display while children load
-		if ( renderer.loadParents && tile.internal.hasContent ) {
+		if ( renderer.loadAncestors && tile.internal.hasContent ) {
 
 			renderer.markTileUsed( tile );
 			renderer.queueTileForDownload( tile );

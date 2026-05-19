@@ -575,14 +575,15 @@ export class TilesRendererBase {
 		this.loadSiblings = true;
 
 		/**
-		 * **Experimental.** When `true`, parent tiles are queued for download and displayed as a
+		 * **Experimental.** When `true`, ancestor tiles are queued for download and displayed as a
 		 * fallback while children are loading — similar to the behavior of the standard load
 		 * strategy. Increases memory usage but provides smoother transitions on first load.
+		 * Implicitly enables sibling loading to prevent flickering during camera movement.
 		 *
 		 * Only applies when `optimizedLoadStrategy` is enabled.
 		 * @type {boolean}
 		 */
-		this.loadParents = false;
+		this.loadAncestors = true;
 
 		/**
 		 * The number of tiles to process immediately when traversing the tile set to determine
@@ -781,7 +782,7 @@ export class TilesRendererBase {
 	update() {
 
 		// load root
-		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadParents } = this;
+		const { lruCache, usedSet, stats, root, downloadQueue, parseQueue, processNodeQueue, optimizedLoadStrategy, loadAncestors } = this;
 		if ( this.rootLoadingState === UNLOADED ) {
 
 			this.rootLoadingState = LOADING;
@@ -879,7 +880,7 @@ export class TilesRendererBase {
 		usedSet.clear();
 
 		// assign the correct callbacks
-		const priorityCallback = ( optimizedLoadStrategy && ! loadParents ) ? optimizedPriorityCallback : defaultPriorityCallback;
+		const priorityCallback = ( optimizedLoadStrategy && ! loadAncestors ) ? optimizedPriorityCallback : defaultPriorityCallback;
 		downloadQueue.priorityCallback = priorityCallback;
 		parseQueue.priorityCallback = priorityCallback;
 
